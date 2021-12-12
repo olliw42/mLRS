@@ -1,3 +1,5 @@
+src/Common/mavlink/out/*
+
 # Prerequisites
 *.d
 

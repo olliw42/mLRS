@@ -1,0 +1,9 @@
+[submodule "src/modules/fastmavlink"]
+	path = src/modules/fastmavlink
+	url = https://github.com/olliw42/fastmavlink.git
+[submodule "src/modules/sx128x-lib"]
+	path = src/modules/sx128x-lib
+	url = https://github.com/olliw42/sx128x-lib.git
+[submodule "src/modules/mavlink"]
+	path = src/modules/mavlink
+	url = https://github.com/mavlink/mavlink.git
