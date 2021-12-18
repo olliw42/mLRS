@@ -1,0 +1,7 @@
+08:22:15 **** Incremental Build of configuration Release for project rx-siyi-f373cc ****
+make -j8 all 
+arm-none-eabi-size   rx-siyi-f373cc.elf 
+   text	   data	    bss	    dec	    hex	filename
+  14348	    128	   7248	  21724	   54dc	rx-siyi-f373cc.elf
+Finished building: default.size.stdout
+ 

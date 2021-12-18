@@ -1,0 +1,11 @@
+stm32f3xx_ll_gpio.h:273:22:LL_GPIO_SetPinMode	40	static,ignoring_inline_asm
+stm32f3xx_ll_gpio.h:342:22:LL_GPIO_SetPinOutputType	24	static
+stm32f3xx_ll_gpio.h:412:22:LL_GPIO_SetPinSpeed	40	static,ignoring_inline_asm
+stm32f3xx_ll_gpio.h:482:22:LL_GPIO_SetPinPull	40	static,ignoring_inline_asm
+stm32f3xx_ll_gpio.h:554:22:LL_GPIO_SetAFPin_0_7	40	static,ignoring_inline_asm
+stm32f3xx_ll_gpio.h:631:22:LL_GPIO_SetAFPin_8_15	40	static,ignoring_inline_asm
+stm32f3xx_ll_bus.h:426:22:LL_AHB1_GRP1_ForceReset	16	static
+stm32f3xx_ll_bus.h:465:22:LL_AHB1_GRP1_ReleaseReset	16	static
+stm32f3xx_ll_gpio.c:119:13:LL_GPIO_DeInit	24	static
+stm32f3xx_ll_gpio.c:194:13:LL_GPIO_Init	40	static,ignoring_inline_asm
+stm32f3xx_ll_gpio.c:267:6:LL_GPIO_StructInit	16	static

@@ -1,0 +1,9 @@
+stm32f3xx_hal_exti.c:144:19:HAL_EXTI_SetConfigLine	40	static
+stm32f3xx_hal_exti.c:265:19:HAL_EXTI_GetConfigLine	40	static
+stm32f3xx_hal_exti.c:358:19:HAL_EXTI_ClearConfigLine	40	static
+stm32f3xx_hal_exti.c:423:19:HAL_EXTI_RegisterCallback	32	static
+stm32f3xx_hal_exti.c:448:19:HAL_EXTI_GetHandle	16	static
+stm32f3xx_hal_exti.c:488:6:HAL_EXTI_IRQHandler	32	static
+stm32f3xx_hal_exti.c:525:10:HAL_EXTI_GetPending	40	static
+stm32f3xx_hal_exti.c:559:6:HAL_EXTI_ClearPending	32	static
+stm32f3xx_hal_exti.c:586:6:HAL_EXTI_GenerateSWI	32	static

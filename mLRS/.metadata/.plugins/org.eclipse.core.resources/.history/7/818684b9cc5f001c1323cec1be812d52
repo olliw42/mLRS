@@ -1,0 +1,16 @@
+stm32f3xx_hal_flash_ex.c:159:19:HAL_FLASHEx_Erase	24	static
+stm32f3xx_hal_flash_ex.c:240:19:HAL_FLASHEx_Erase_IT	24	static
+stm32f3xx_hal_flash_ex.c:313:19:HAL_FLASHEx_OBErase	16	static
+stm32f3xx_hal_flash_ex.c:362:19:HAL_FLASHEx_OBProgram	24	static
+stm32f3xx_hal_flash_ex.c:443:6:HAL_FLASHEx_OBGetConfig	16	static
+stm32f3xx_hal_flash_ex.c:465:10:HAL_FLASHEx_OBGetUserData	40	static,ignoring_inline_asm
+stm32f3xx_hal_flash_ex.c:500:13:FLASH_MassErase	4	static
+stm32f3xx_hal_flash_ex.c:521:26:FLASH_OB_EnableWRP	32	static
+stm32f3xx_hal_flash_ex.c:633:26:FLASH_OB_DisableWRP	32	static
+stm32f3xx_hal_flash_ex.c:743:26:FLASH_OB_RDP_LevelConfig	24	static
+stm32f3xx_hal_flash_ex.c:794:26:FLASH_OB_UserConfig	24	static
+stm32f3xx_hal_flash_ex.c:848:26:FLASH_OB_ProgramData	24	static
+stm32f3xx_hal_flash_ex.c:881:17:FLASH_OB_GetWRP	4	static
+stm32f3xx_hal_flash_ex.c:895:17:FLASH_OB_GetRDP	16	static
+stm32f3xx_hal_flash_ex.c:930:16:FLASH_OB_GetUser	16	static,ignoring_inline_asm
+stm32f3xx_hal_flash_ex.c:959:6:FLASH_PageErase	16	static

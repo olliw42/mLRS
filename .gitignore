@@ -1,4 +1,5 @@
 mLRS/Common/mavlink/out/*
+*.su
 
 # Prerequisites
 *.d
