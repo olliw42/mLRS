@@ -1,0 +1,213 @@
+//*******************************************************
+// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// MLRS project
+// GPL3
+// https://www.gnu.org/licenses/gpl-3.0.de.html
+//*******************************************************
+// hal
+//*******************************************************
+
+//-------------------------------------------------------
+// TX Siyi FM30 STM32F103C8
+//-------------------------------------------------------
+// the info on the pin assignments is taken from
+// https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/FM30_TX.h
+// https://github.com/ExpressLRS/ExpressLRS/issues/381
+// https://github.com/ExpressLRS/ExpressLRS/pull/388
+// https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/FM30_RX_MINI.h
+// https://github.com/ExpressLRS/ExpressLRS/issues/308
+// MANY thx to CapnBry !
+
+
+#define DEVICE_IS_TRANSMITTER
+
+
+//-- Timers, Timing and such stuff
+
+#define DELAY_USE_DWT
+
+#define SYSTICK_TIMESTEP          1000
+#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
+
+
+//-- UARTS
+// UARTB = serial port, UARTC = debug port
+// UART = SPORT (pin5) on JR or sbus output or whatever
+
+#define UARTB_USE_UART2
+#define UARTB_BAUD                57600 // 115200
+#define UARTB_USE_TX
+#define UARTB_TXBUFSIZE           512
+#define UARTB_USE_TX_ISR
+#define UARTB_USE_RX
+#define UARTB_RXBUFSIZE           512
+
+#define UARTC_USE_UART3
+#define UARTC_BAUD                115200
+#define UARTC_USE_TX
+#define UARTC_TXBUFSIZE           512
+#define UARTC_USE_TX_ISR
+//#define UARTC_USE_RX
+//#define UARTC_RXBUFSIZE           512
+
+#define UART_USE_UART1
+#define UART_BAUD                 400000 // 115200
+#define UART_USE_TX
+#define UART_TXBUFSIZE            512
+#define UART_USE_TX_ISR
+#define UART_USE_RX
+#define UART_RXBUFSIZE            512
+
+#define TX1_XOR                   IO_PB7
+#define TX1_SET_NORMAL            gpio_low(TX1_XOR)
+#define TX1_SET_INVERTED          gpio_high(TX1_XOR)
+
+#define RX1_XOR                   IO_PB6
+#define RX1_SET_NORMAL            gpio_low(RX1_XOR) //TODO: test
+#define RX1_SET_INVERTED          gpio_high(RX1_XOR)
+
+//-- SPI & SX12xx
+
+#define SPI_USE_SPI2
+#define SPI_CS_IO                 IO_PB12
+#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ // 9 MHz seems to be too fast! got Tx lockups
+
+#define SX_RESET                  IO_PB3
+#define SX_DIO1                   IO_PB8
+//#define SX_BUSY                 // not available
+#define SX_AMP_CTX                IO_PB9 // high for transmit, low for receive
+#define SX_ANT_SELECT             IO_PB4 // low for left (stock), high for right (empty)
+
+#define SX_USE_DCDC
+
+#define SX_POWER_MAX              SX1280_POWER_DBM_TO_REG(0) // don't blast all at it
+
+#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
+#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE8
+#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_8
+#define SX_DIO1_EXTI_IRQn             EXTI9_5_IRQn
+#define SX_DIO1_EXTI_IRQHandler       EXTI9_5_IRQHandler
+//#define SX_DIO1_EXTI_IRQ_PRIORITY   11
+
+void sx_init_gpio(void)
+{
+  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+  gpio_init(SX_ANT_SELECT, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+  gpio_init(SX_AMP_CTX, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+
+  gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+}
+
+bool sx_dio1_read(void)
+{
+  return (gpio_read_activehigh(SX_DIO1)) ? true : false;
+}
+
+void sx_amp_transmit(void)
+{
+  gpio_high(SX_AMP_CTX);
+}
+
+void sx_amp_receive(void)
+{
+  gpio_low(SX_AMP_CTX);
+}
+
+void sx_dio1_init_exti_isroff(void)
+{
+  LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
+
+  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+  LL_EXTI_DisableEvent_0_31(SX_DIO1_EXTI_LINE_x);
+  LL_EXTI_DisableIT_0_31(SX_DIO1_EXTI_LINE_x);
+  LL_EXTI_DisableFallingTrig_0_31(SX_DIO1_EXTI_LINE_x);
+  LL_EXTI_EnableRisingTrig_0_31(SX_DIO1_EXTI_LINE_x);
+
+  NVIC_SetPriority(SX_DIO1_EXTI_IRQn, SX_DIO1_EXTI_IRQ_PRIORITY);
+  NVIC_EnableIRQ(SX_DIO1_EXTI_IRQn);
+}
+
+void sx_dio1_enable_isr(void)
+{
+  LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
+  LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);
+}
+
+
+//-- LEDs
+
+#define LED_LEFT_GREEN            IO_PA7
+#define LED_LEFT_RED              IO_PA15
+#define LED_RIGHT_GREEN           IO_PB1
+#define LED_RIGHT_RED             IO_PB2
+
+#define LED_GREEN_ON              gpio_low(LED_LEFT_GREEN)
+#define LED_RED_ON                gpio_low(LED_LEFT_RED)
+#define LED_RIGHT_RED_ON          gpio_low(LED_RIGHT_RED)
+#define LED_RIGHT_GREEN_ON        gpio_low(LED_RIGHT_GREEN)
+
+#define LED_GREEN_OFF             gpio_high(LED_LEFT_GREEN)
+#define LED_RED_OFF               gpio_high(LED_LEFT_RED)
+#define LED_RIGHT_RED_OFF         gpio_high(LED_RIGHT_RED)
+#define LED_RIGHT_GREEN_OFF       gpio_high(LED_RIGHT_GREEN)
+
+#define LED_GREEN_TOGGLE          gpio_toggle(LED_LEFT_GREEN)
+#define LED_RED_TOGGLE            gpio_toggle(LED_LEFT_RED)
+#define LED_RIGHT_RED_TOGGLE      gpio_toggle(LED_RIGHT_RED)
+#define LED_RIGHT_GREEN_TOGGLE    gpio_toggle(LED_RIGHT_GREEN)
+
+void leds_init(void)
+{
+  gpio_init(LED_LEFT_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+  gpio_init(LED_LEFT_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+  gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+  gpio_init(LED_RIGHT_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+  LED_GREEN_OFF;
+  LED_RED_OFF;
+  LED_RIGHT_RED_OFF;
+  LED_RIGHT_GREEN_OFF;
+}
+
+
+//-- Position Switch
+
+#define POS_SWITCH_BIT1           IO_PA0
+#define POS_SWITCH_BIT2           IO_PA1
+#define POS_SWITCH_BIT3           IO_PA4
+#define POS_SWITCH_BIT4           IO_PA5
+
+void pos_switch_init(void)
+{
+  gpio_init(POS_SWITCH_BIT1, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+  gpio_init(POS_SWITCH_BIT2, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+  gpio_init(POS_SWITCH_BIT3, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+  gpio_init(POS_SWITCH_BIT4, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+uint8_t pos_switch_read(void)
+{
+  return (uint8_t)gpio_read_activelow(POS_SWITCH_BIT1) +
+         ((uint8_t)gpio_read_activelow(POS_SWITCH_BIT2) << 1) +
+         ((uint8_t)gpio_read_activelow(POS_SWITCH_BIT3) << 2) +
+         ((uint8_t)gpio_read_activelow(POS_SWITCH_BIT4) << 3);
+}
+
+
+//-- Button
+
+#define BUTTON                    IO_PB0
+
+#define BUTTON_PRESSED            gpio_read_activelow(BUTTON)
+
+void button_init(void)
+{
+  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+
+
+
+
+
+
