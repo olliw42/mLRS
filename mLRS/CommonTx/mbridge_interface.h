@@ -12,6 +12,74 @@
 
 #if (SETUP_TX_USE_MBRIDGE == 1)
 
+#include "mbridge.h"
+
+
+//-------------------------------------------------------
+// some helper definitions
+
+
+// mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
+//          ch14-15:  0 .. 512 .. 1023, 10 bits
+//          ch16-17:  0 .. 1, 1 bit
+// rcData:            0 .. 1024 .. 2047, 11 bits
+void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
+{
+  rc->ch[0] = mbuf->ch0;
+  rc->ch[1] = mbuf->ch1;
+  rc->ch[2] = mbuf->ch2;
+  rc->ch[3] = mbuf->ch3;
+  rc->ch[4] = mbuf->ch4;
+  rc->ch[5] = mbuf->ch5;
+  rc->ch[6] = mbuf->ch6;
+  rc->ch[7] = mbuf->ch7;
+  rc->ch[8] = mbuf->ch8;
+  rc->ch[9] = mbuf->ch9;
+  rc->ch[10] = mbuf->ch10;
+  rc->ch[11] = mbuf->ch11;
+  rc->ch[12] = mbuf->ch12;
+  rc->ch[13] = mbuf->ch13;
+  rc->ch[14] = mbuf->ch14 * 2;
+  rc->ch[15] = mbuf->ch15 * 2;
+  rc->ch[16] = (mbuf->ch16) ? 2047 : 0;
+  rc->ch[17] = (mbuf->ch17) ? 2047 : 0;
+}
+
+
+typedef enum {
+  MBRIDGE_CMD_TX_LINK_STATS = 0x02,
+} MBRIDGE_CMD_TX_ENUM;
+
+
+PACKED(
+typedef struct
+{
+  uint8_t rssi;
+  uint8_t LQ;
+  int8_t snr;
+  uint8_t rssi2; // in case of 2nd antenna, invalid = UINT8_MAX
+
+  uint8_t receiver_rssi;
+  uint8_t receiver_LQ;
+  int8_t receiver_snr; // invalid = INT8_MAX
+  uint8_t receiver_rssi2; // in case of 2nd antenna, invalid = UINT8_MAX
+
+  uint8_t ant_no : 1; // 0: antenna 1, 1: antenna 2
+  uint8_t receiver_ant_no : 1; // 0: antenna 1, 1: antenna 2
+  uint8_t spare_bits : 6;
+
+  uint8_t LQ_frames_received;
+  uint8_t LQ_received;
+  uint8_t LQ_valid_received;
+}) tMBridgeLinkStats;
+
+
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_COMMANDPACKET_TX_SIZE, "tMBridgeLinkStats len missmatch")
+
+
+//-------------------------------------------------------
+// Interface Implementation
+
 uint16_t micros(void);
 
 void uart_rx_callback(uint8_t c);
@@ -21,7 +89,6 @@ void uart_tc_callback(void);
 #define UART_TC_CALLBACK()          uart_tc_callback()
 
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
-#include "mbridge.h"
 #include "fifo.h"
 
 
@@ -111,33 +178,6 @@ void uart_tc_callback(void)
 {
   bridge.transmit_enable(DISABLE);
   bridge.tx_state = tMBridge::TXSTATE_IDLE;
-}
-
-
-// mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
-//          ch14-15:  0 .. 512 .. 1023, 10 bits
-//          ch16-17:  0 .. 1, 1 bit
-// rcData:            0 .. 1024 .. 2047, 11 bits
-void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
-{
-  rc->ch[0] = mbuf->ch0;
-  rc->ch[1] = mbuf->ch1;
-  rc->ch[2] = mbuf->ch2;
-  rc->ch[3] = mbuf->ch3;
-  rc->ch[4] = mbuf->ch4;
-  rc->ch[5] = mbuf->ch5;
-  rc->ch[6] = mbuf->ch6;
-  rc->ch[7] = mbuf->ch7;
-  rc->ch[8] = mbuf->ch8;
-  rc->ch[9] = mbuf->ch9;
-  rc->ch[10] = mbuf->ch10;
-  rc->ch[11] = mbuf->ch11;
-  rc->ch[12] = mbuf->ch12;
-  rc->ch[13] = mbuf->ch13;
-  rc->ch[14] = mbuf->ch14 * 2;
-  rc->ch[15] = mbuf->ch15 * 2;
-  rc->ch[16] = (mbuf->ch16) ? 2047 : 0;
-  rc->ch[17] = (mbuf->ch17) ? 2047 : 0;
 }
 
 

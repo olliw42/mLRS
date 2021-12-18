@@ -369,17 +369,22 @@ int main_main(void)
 #if (SETUP_TX_USE_MBRIDGE == 1)
     if (bridge.channels_updated) {
       bridge.channels_updated = 0;
-      // send stats to transmitter
-      uint8_t cmd = 0x01;
-      uint8_t payload[MBRIDGE_COMMANDPACKET_TX_SIZE] = {0};
-      payload[0] = -(stats.last_rssi);
-      payload[1] = txstats.GetLQ();
-      payload[2] = -(stats.received_rssi);
-      payload[3] = stats.received_LQ;
-      payload[4] = txstats.GetFramesReceivedLQ();
-      payload[5] = stats.LQ_received;
-      payload[6] = stats.LQ_valid_received;
-      bridge.cmd_to_transmitter(cmd, payload, MBRIDGE_COMMANDPACKET_TX_SIZE);
+      // when we received channels packet from the transmitter, we send link stats to transmitter
+      tMBridgeLinkStats lstats = {0};
+      lstats.rssi = -(stats.last_rssi);
+      lstats.LQ = txstats.GetLQ();
+      lstats.snr = stats.last_snr;
+      lstats.rssi2 = UINT8_MAX;
+      lstats.ant_no = 0;
+      lstats.receiver_rssi = -(stats.received_rssi);
+      lstats.receiver_LQ = stats.received_LQ;
+      lstats.receiver_snr = INT8_MAX;
+      lstats.receiver_rssi2 = UINT8_MAX;
+      lstats.receiver_ant_no = 0;
+      lstats.LQ_frames_received = txstats.GetFramesReceivedLQ();
+      lstats.LQ_received = stats.LQ_received;
+      lstats.LQ_valid_received = stats.LQ_valid_received;
+      bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels
       fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
