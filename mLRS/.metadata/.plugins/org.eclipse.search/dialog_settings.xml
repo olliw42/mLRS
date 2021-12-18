@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<section name="Workbench">
-	<section name="">
-		<item key="org.eclipse.search.resultpage.limit" value="1000"/>
-	</section>
-	<section name="org.eclipse.search.text.FileSearchResultPage">
-		<item key="org.eclipse.search.resultpage.limit" value="1000"/>
-	</section>
-</section>

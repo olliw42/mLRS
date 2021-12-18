@@ -1,5 +1,0 @@
-stm32f3xx_ll_bus.h:287:22:void LL_AHB1_GRP1_EnableClock(uint32_t)	24	static
-main.cpp:64:5:int main()	8	static
-main.cpp:107:6:void SystemClock_Config()	72	static
-main.cpp:146:13:void MX_GPIO_Init()	8	static
-main.cpp:163:6:void Error_Handler()	4	static,ignoring_inline_asm
