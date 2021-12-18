@@ -1,8 +1,8 @@
 //*******************************************************
-// Copyright (c) OlliW, OlliW42, www.olliw.eu
-// MLRS project
+// Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
+// OlliW @ www.olliw.eu
 //*******************************************************
 // common config
 //*******************************************************
