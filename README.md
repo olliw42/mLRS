@@ -31,7 +31,15 @@ It is "working" in the sense that it offers a bidirectional serial link with RC 
 
 ## Installation Bits and Bops ##
 
-This is a STM32CubeIde project. So download it, and it should work (I don't have yet much experience with this framework, so I can't say more than that currently).
+This is a STM32CubeIde project. I don't have yet much experience with this framework, so I can't say much reliable, but this may work:
+- download and install latest STM32CubeIde
+- clone this repository; ensure that the submodules are also retrieved (if not run git submodule --init --recursive)
+- open Stm32CubeIde and go to 'File'->'New'->'STM32 Project from existing .ioc' and browse to one of the .ioc files. IMPORTANT: before hitting 'Finish' check the 'C++' box.
+- repeat this for all .ioc you want to open
+- copy from the 'st-hal' folder the content of the respective 'STM32FXxx_HAL_Driver' folder to the equally named folder in the 'Driver' folder
+- run 'fmav_generate_c_library.py' in 'mLRS/Common/mavlink'
+
+Not very convennient yet, but this will improve with time :)
 
 ## Hardware ##
 
