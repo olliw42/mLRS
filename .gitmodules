@@ -1,12 +1,12 @@
-[submodule "src/modules/mavlink"]
-	path = src/modules/mavlink
+[submodule "mLRS/modules/mavlink"]
+	path = mLRS/modules/mavlink
 	url = https://github.com/mavlink/mavlink.git
-[submodule "src/modules/fastmavlink"]
-	path = src/modules/fastmavlink
+[submodule "mLRS/modules/fastmavlink"]
+	path = mLRS/modules/fastmavlink
 	url = https://github.com/olliw42/fastmavlink.git
-[submodule "src/modules/sx12xx-lib"]
-	path = src/modules/sx12xx-lib
-	url = https://github.com/olliw42/sx12xx-lib.git
-[submodule "src/modules/stm32ll-lib"]
-	path = src/modules/stm32ll-lib
+[submodule "mLRS/modules/stm32ll-lib"]
+	path = mLRS/modules/stm32ll-lib
 	url = https://github.com/olliw42/stm32ll-lib.git
+[submodule "mLRS/modules/sx12xx-lib"]
+	path = mLRS/modules/sx12xx-lib
+	url = https://github.com/olliw42/sx12xx-lib.git
