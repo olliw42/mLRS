@@ -25,7 +25,7 @@ v0.0.00:
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\hal\tx-hal-siyi-f103c8.h"
+#include "..\Common\hal\hal.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #include "..\modules\sx12xx-lib\src\sx128x.h"

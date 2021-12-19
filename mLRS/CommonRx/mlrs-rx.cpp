@@ -39,7 +39,7 @@ can one put now ReadfRame out of isr? would allow using one spi for two sx
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\hal\rx-hal-siyi-f373cc.h"
+#include "..\Common\hal\hal.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #include "..\modules\sx12xx-lib\src\sx128x.h"
