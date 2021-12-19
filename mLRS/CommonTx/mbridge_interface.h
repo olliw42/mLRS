@@ -54,15 +54,15 @@ typedef enum {
 PACKED(
 typedef struct
 {
-  uint8_t rssi;
+  int8_t rssi;
   uint8_t LQ;
-  int8_t snr;
-  uint8_t rssi2; // in case of 2nd antenna, invalid = UINT8_MAX
+  int8_t snr; // invalid = INT8_MAX
+  int8_t rssi2; // in case of 2nd antenna, invalid = INT8_MAX
 
-  uint8_t receiver_rssi;
+  int8_t receiver_rssi;
   uint8_t receiver_LQ;
   int8_t receiver_snr; // invalid = INT8_MAX
-  uint8_t receiver_rssi2; // in case of 2nd antenna, invalid = UINT8_MAX
+  int8_t receiver_rssi2; // in case of 2nd antenna, invalid = INT8_MAX
 
   uint8_t ant_no : 1; // 0: antenna 1, 1: antenna 2
   uint8_t receiver_ant_no : 1; // 0: antenna 1, 1: antenna 2

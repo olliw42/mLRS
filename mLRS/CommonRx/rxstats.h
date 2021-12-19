@@ -28,15 +28,14 @@ class RxStats
 
     void Init(uint8_t _period);
     void Update1Hz(void);
-    void Reset(void);
 
+    void Clear(void);
     void Next(void);
     void Set(void);
 
     void doFrameReceived(void);
     void doValidCrc1FrameReceived(void);
     void doValidFrameReceived(void);
-    void doFrameTransmitted(void);
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
@@ -54,17 +53,17 @@ void RxStats::Init(uint8_t _period)
     valid_lq.Init(_period);
     received_lq.Init(_period);
 
-    Reset();
+    Clear();
 }
 
 
 void RxStats::Update1Hz(void)
 {
-    stats.Update();
+    stats.Update1Hz();
 }
 
 
-void RxStats::Reset(void)
+void RxStats::Clear(void)
 {
     valid_crc1_frame_received = false;
     valid_frame_received = false;
@@ -109,12 +108,6 @@ void RxStats::doValidFrameReceived(void)
 }
 
 
-void RxStats::doFrameTransmitted(void)
-{
-    stats.frames_transmitted++;
-}
-
-
 uint8_t RxStats::GetRawLQ(void)
 {
     return valid_lq.GetRaw();
@@ -132,7 +125,11 @@ uint8_t RxStats::GetLQ(bool is_connected)
 {
     if (!is_connected) return 0;
 
+return stats.rx_LQ; //XX
+
+
     uint8_t valid_LQ = valid_lq.GetNormalized();
+
     if (valid_LQ >= 25) return valid_LQ;
 
     uint8_t valid_crc1_LQ = valid_crc1_lq.GetNormalized(); // we can expect that always valid_crc1_LQ >= valid_LQ

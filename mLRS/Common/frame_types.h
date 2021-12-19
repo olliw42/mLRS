@@ -26,6 +26,7 @@
 typedef struct
 {
   uint8_t seq_no;
+  uint8_t ack;
   int8_t rssi;
   int8_t snr;
   uint8_t LQ;

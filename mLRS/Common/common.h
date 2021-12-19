@@ -48,7 +48,6 @@ STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch RxFrame"
 
 void pack_tx_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
 {
-static uint8_t seq_no = 0;
 uint16_t crc;
 
     if (payload_len > FRAME_TX_PAYLOAD_LEN) payload_len = FRAME_TX_PAYLOAD_LEN; // should never occur, but play it safe
@@ -57,9 +56,8 @@ uint16_t crc;
 
     // generate header
     frame->sync_word = FRAME_SYNCWORD;
-    frame->status.seq_no = seq_no;
-    seq_no++;
-    frame->status.ack = 0;
+    frame->status.seq_no = frame_stats->seq_no;
+    frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_TX;
     frame->status.rssi_u8 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
@@ -158,7 +156,7 @@ uint16_t crc;
 
     frame->sync_word = FRAME_SYNCWORD;
     frame->status.seq_no = frame_stats->seq_no;
-    frame->status.ack = 0;
+    frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_RX;
     frame->status.rssi_u8 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
@@ -200,67 +198,82 @@ uint16_t crc;
 
 class Stats {
   public:
-    uint32_t frames_transmitted; // this is quite useless, seems to be always 100%
+	// this is one of the ways to calculate stats
     uint32_t frames_received;
+    uint32_t valid_crc1_frames_received; // received frames which passed check_rx_frame() up to crc1, but not crc
     uint32_t valid_frames_received; // received frames which also pass check_rx_frame()
 
-    uint8_t LQ_transmitted; // this is quite useless, seems to be always 100%
     uint8_t LQ_received;
+    uint8_t LQ_valid_crc1_received;
     uint8_t LQ_valid_received;
 
-    int8_t last_rssi; // note: is negative!
-    int8_t last_snr; // note: can be negative!
-    uint8_t LQ;
+    uint32_t frames_received_last;
+    uint32_t valid_crc1_frames_received_last;
+    uint32_t valid_frames_received_last;
 
-    uint32_t valid_crc1_frames_received; // received frames which passed check_rx_frame() up to crc1, but not crc
-    uint8_t LQ_valid_crc1_received;
+    // statistics for our device
+    int8_t last_rx_rssi; // note: is negative!
+    int8_t last_rx_snr; // note: can be negative!
+    uint8_t rx_LQ;
 
     // statistics received from the other end
-    uint8_t received_seq_no;
     int8_t received_rssi; // note: is negative!
     uint8_t received_LQ;
 
+    uint8_t tx_seq_no;
+    uint8_t received_seq_no;
+
+    uint8_t tx_ack;
+    uint8_t received_ack;
+
     void Init(void)
     {
-      frames_transmitted = frames_received = valid_frames_received = 0;
-      LQ_transmitted = LQ_received = LQ_valid_received = LQ = 0; //UINT8_MAX;
-      last_rssi = last_snr = INT8_MAX;
-      received_seq_no = 0;
+      frames_received = valid_crc1_frames_received = valid_frames_received = 0;
+      LQ_received = LQ_valid_crc1_received = LQ_valid_received = 0; //UINT8_MAX;
+      frames_received_last = valid_crc1_frames_received_last = valid_frames_received_last = 0;
+
+      last_rx_rssi = INT8_MAX;
+      last_rx_snr = INT8_MAX;
+      rx_LQ = 0; //UINT8_MAX;
+
       received_rssi = INT8_MAX;
       received_LQ = 0; //UINT8_MAX;
-
-      // only tx frames
-      valid_crc1_frames_received = 0;
-      LQ_valid_crc1_received = 0;
     }
 
-    void Update(void)
+    void Update1Hz(void)
     {
-      LQ_transmitted = (frames_transmitted * 100 * FRAME_RATE_MS) / 1000;
-      LQ_received = (frames_received * 100 * FRAME_RATE_MS) / 1000;
-      LQ_valid_received = (valid_frames_received * 100 * FRAME_RATE_MS) / 1000;
+    uint32_t diff;
 
-      LQ = LQ_transmitted;
-      if (LQ_received < LQ) LQ = LQ_received;
+      diff = frames_received - frames_received_last;
+      LQ_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+
+      diff = valid_crc1_frames_received - valid_crc1_frames_received_last;
+      LQ_valid_crc1_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+
+      diff = valid_frames_received - valid_frames_received_last;
+      LQ_valid_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+
+      frames_received_last = frames_received;
+      valid_crc1_frames_received_last = valid_crc1_frames_received;
+      valid_frames_received_last = valid_frames_received;
+
 #ifdef DEVICE_IS_TRANSMITTER
-      if (LQ_valid_received < LQ) LQ = LQ_valid_received;
+      // same logic as for txstats
+      rx_LQ = LQ_valid_received; // this should always be <= valid_received !
+      if (rx_LQ == 0) rx_LQ = 1;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-      LQ_valid_crc1_received = (valid_crc1_frames_received * 100 * FRAME_RATE_MS) / 1000;
-      valid_crc1_frames_received = 0;
-
-      if (LQ_valid_crc1_received < LQ) LQ = LQ_valid_crc1_received; //TODO: we may want to choose a better algorithm
-      if (LQ_valid_received < LQ) LQ = LQ_valid_received;
+      // same logic as for rxstats
+      if (LQ_valid_received >= 25) {
+    	rx_LQ = LQ_valid_received;
+      } else
+      if (LQ_valid_crc1_received >= 25) {
+  	    rx_LQ = 25;
+      } else {
+    	rx_LQ = LQ_valid_crc1_received;
+      }
+      if (rx_LQ == 0) rx_LQ = 1;
 #endif
-
-      frames_transmitted = 0;
-      frames_received = 0;
-      valid_frames_received = 0;
-    }
-
-    void Reset(void)
-    {
-      Init();
     }
 };
 

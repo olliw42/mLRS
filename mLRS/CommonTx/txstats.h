@@ -23,7 +23,6 @@ class TxStats
 
     void SetFrameReceived(void);
     void SetValidFrameReceived(void);
-    void SetFrameTransmitted(void);
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
@@ -47,7 +46,7 @@ void TxStats::Init(uint8_t _period)
 
 void TxStats::Update1Hz(void)
 {
-    stats.Update();
+    stats.Update1Hz();
 }
 
 
@@ -72,12 +71,6 @@ void TxStats::SetValidFrameReceived(void)
 }
 
 
-void TxStats::SetFrameTransmitted(void)
-{
-    stats.frames_transmitted++;
-}
-
-
 uint8_t TxStats::GetRawLQ(void)
 {
     return valid_lq.GetRaw();
@@ -93,6 +86,8 @@ uint8_t TxStats::GetNormalizedLQ(void)
 uint8_t TxStats::GetLQ(bool is_connected)
 {
     if (!is_connected) return 0;
+
+    return stats.rx_LQ; //XX
 
     uint8_t valid_LQ = valid_lq.GetNormalized();
     if (valid_LQ == 0) return 1; // when connected LQ should always be > 0, as it means that we receive "something"

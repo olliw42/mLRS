@@ -61,6 +61,7 @@ class PllBase
     // is split in two since the SX seems to not like it, if lots is done before the rx packet is read
     void rx_done1(void);
     void rx_done2(void);
+    void rx_done(void) { rx_done1(); rx_done2(); }
 
 //  private:
     uint16_t expected_period;

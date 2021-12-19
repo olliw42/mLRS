@@ -46,18 +46,18 @@ void f_send(void)
 void send_radio_status(void)
 {
 uint8_t rssi, remrssi;
-
+/*
   // this would be the naive thing
   // scale is "inverted" to make it that it is higher the better
-  rssi = (127 + stats.last_rssi);
-  remrssi = (127 +stats.received_rssi);
+  rssi = (127 + stats.last_rx_rssi);
+  remrssi = (127 + stats.received_rssi);
 
   // https://ardupilot.org/copter/docs/common-3dr-radio-advanced-configuration-and-technical-information.html#monitoring-the-link-quality
   // for Sik radios holds signal_dBm approx rssi_SiK/1.9 - 127  => 150 approx -48dBm, 70 approx -90dBm
   // so we fake here a SiK scale
   //   rssi_SiK = ( signal_dBm + 127 ) * 1.9
 
-  int32_t rssi_SiK = ( ((int32_t)stats.last_rssi + 127) * 19000 ) / 10000;
+  int32_t rssi_SiK = ( ((int32_t)stats.last_rx_rssi + 127) * 19000 ) / 10000;
   if (rssi_SiK < 0) rssi_SiK = 0;
   if (rssi_SiK > 250) rssi_SiK = 250;
   rssi = rssi_SiK;
@@ -66,7 +66,7 @@ uint8_t rssi, remrssi;
   if (remrssi_SiK < 0) remrssi_SiK = 0;
   if (remrssi_SiK > 250) remrssi_SiK = 250;
   remrssi = remrssi_SiK;
-
+*/
   // argh, what a nonsense the sx12xx rssi & snr is
   // so substitute with LQ
   rssi = txstats.GetLQ();
@@ -90,7 +90,7 @@ void send_radio_status_v2(void)
       &f_msg,
       51, // sysid, SiK uses 51, 68
       MAV_COMP_ID_TELEMETRY_RADIO,
-      stats.last_rssi, (128 + stats.last_rssi), txstats.GetLQ(), stats.last_snr,
+      stats.last_rx_rssi, (128 + stats.last_rx_rssi), txstats.GetLQ(), stats.last_rx_snr,
       stats.received_rssi, (128 + stats.received_rssi), stats.received_LQ, INT8_MAX,
       //int8_t rssi_dbm, uint8_t rssi_au, uint8_t LQ, int8_t snr_dbm,
       //int8_t rem_rssi_dbm, uint8_t rem_rssi_au, uint8_t rem_LQ, int8_t rem_snr_dbm,

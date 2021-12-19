@@ -112,7 +112,7 @@ typedef enum {
 } LINK_STATE_ENUM;
 
 
-void do_transmit(void) // we send a TX frame to receiver
+void do_transmit(bool set_ack) // we send a TX frame to receiver
 {
   uint8_t payload[FRAME_TX_PAYLOAD_LEN] = {0};
   uint8_t payload_len = 0;
@@ -128,11 +128,11 @@ void do_transmit(void) // we send a TX frame to receiver
     payload_len++;
   }
 
-  sx.GetPacketStatus(&stats.last_rssi, &stats.last_snr);
   tFrameStats frame_stats;
-  frame_stats.seq_no = 0; // not used
-  frame_stats.rssi = stats.last_rssi;
-  frame_stats.snr = stats.last_snr;
+  frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
+  frame_stats.ack = (set_ack) ? 1 : 0;
+  frame_stats.rssi = stats.last_rx_rssi;
+  frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = txstats.GetLQ();
 
   pack_tx_frame(&txFrame, &frame_stats, &rcData, payload, payload_len);
@@ -140,25 +140,27 @@ void do_transmit(void) // we send a TX frame to receiver
 }
 
 
-bool do_receive(void) // we receive a RX frame from receiver
+uint8_t check_received_frame(void) // we receive a RX frame from receiver, 0: fail, 1: ok
 {
   uint16_t err = check_rx_frame(&rxFrame);
 
   if (err) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
 uartc_puts("fail "); uartc_puts(u16toHEX_s(err));uartc_putc('\n');
-    return false;
+    return 0;
   }
 
-  return true;
+  return 1;
 }
 
 
 void process_received_frame(void)
 {
-  stats.received_seq_no = rxFrame.status.seq_no;
   stats.received_rssi = -(rxFrame.status.rssi_u8);
   stats.received_LQ = rxFrame.status.LQ;
+
+  stats.received_seq_no = rxFrame.status.seq_no;
+  stats.received_ack = rxFrame.status.ack;
 
   for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) {
     uint8_t c = rxFrame.payload[i];
@@ -183,12 +185,32 @@ void process_received_frame(void)
   }
 
   DBG_MAIN(char s[16];
-  u8toBCDstr(rxFrame.status.seq_no, s);
   uartc_puts("got "); uartc_puts(s); uartc_puts(": ");
   for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) uartc_putc(rxFrame.payload[i]);
   uartc_putc('\n');)
 }
 
+
+bool do_receive(void)
+{
+bool ok = false;
+
+  bool res = check_received_frame();
+
+  if (res > 0) {
+    process_received_frame();
+	txstats.SetValidFrameReceived();
+	ok = true;
+  }
+
+  // read it here, we want to have it even if it's a bad packet
+  sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+
+  // we count all received frames
+  txstats.SetFrameReceived();
+
+  return ok;
+}
 
 
 //##############################################################################################################
@@ -278,17 +300,16 @@ int main_main(void)
 
         uartc_puts("TX: ");
         uartc_puts(u8toBCD_s(txstats.GetRawLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ));
+        uartc_puts(u8toBCD_s(stats.rx_LQ));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_received)); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ_transmitted)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_received));
         uartc_puts("),");
         uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
 
-        uartc_puts(s8toBCD_s(stats.last_rssi)); uartc_putc(',');
+        uartc_puts(s8toBCD_s(stats.last_rx_rssi)); uartc_putc(',');
         uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_snr));
+        uartc_puts(s8toBCD_s(stats.last_rx_snr));
         uartc_putc('\n');
       }
 
@@ -308,7 +329,7 @@ int main_main(void)
     case LINK_STATE_TRANSMIT:
       fhss.HopToNext();
       sx.SetRfFrequency(fhss.GetCurr());
-      do_transmit();
+      do_transmit(false);
       link_state = LINK_STATE_TRANSMIT_WAIT;
       DBG_MAIN_FULL(uartc_puts("TX: tx\n");)
       DBG_MAIN_SLIM(uartc_puts(">");)
@@ -327,7 +348,6 @@ int main_main(void)
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
         if (irq_status & SX1280_IRQ_TX_DONE) {
           irq_status = 0;
-          txstats.SetFrameTransmitted();
           link_state = LINK_STATE_RECEIVE;
           DBG_MAIN_FULL(uartc_puts("TX: tx done\n");)
           DBG_MAIN_SLIM(uartc_puts("!");)
@@ -338,11 +358,8 @@ int main_main(void)
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
           if (do_receive()) {
-            process_received_frame();
-            txstats.SetValidFrameReceived();
             connected_tmo_cnt = CONNECT_TMO_SYSTICKS;
           }
-          txstats.SetFrameReceived();
           link_state = LINK_STATE_IDLE; // ready for next frame
           DBG_MAIN_FULL(uartc_puts("TX: rx done\n");)
           DBG_MAIN_SLIM(uartc_puts("<\n");)
@@ -371,15 +388,15 @@ int main_main(void)
       bridge.channels_updated = 0;
       // when we received channels packet from the transmitter, we send link stats to transmitter
       tMBridgeLinkStats lstats = {0};
-      lstats.rssi = -(stats.last_rssi);
+      lstats.rssi = stats.last_rx_rssi;
       lstats.LQ = txstats.GetLQ();
-      lstats.snr = stats.last_snr;
-      lstats.rssi2 = UINT8_MAX;
+      lstats.snr = stats.last_rx_snr;
+      lstats.rssi2 = INT8_MAX;
       lstats.ant_no = 0;
-      lstats.receiver_rssi = -(stats.received_rssi);
+      lstats.receiver_rssi = stats.received_rssi;
       lstats.receiver_LQ = stats.received_LQ;
       lstats.receiver_snr = INT8_MAX;
-      lstats.receiver_rssi2 = UINT8_MAX;
+      lstats.receiver_rssi2 = INT8_MAX;
       lstats.receiver_ant_no = 0;
       lstats.LQ_frames_received = txstats.GetFramesReceivedLQ();
       lstats.LQ_received = stats.LQ_received;
