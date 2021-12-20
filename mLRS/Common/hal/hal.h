@@ -17,3 +17,12 @@
 #ifdef TX_SIYI_F103C8
 #include "tx-hal-siyi-f103c8.h"
 #endif
+
+
+#ifdef RX_DIY_BOARD01_F103CB
+#include "rx-hal-diy-board01-f103cb.h"
+#endif
+
+#ifdef TX_DIY_MODULE01_G491RE
+#include "tx-hal-diy-module01-g491re.h"
+#endif
