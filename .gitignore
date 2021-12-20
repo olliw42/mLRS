@@ -1,8 +1,9 @@
 mLRS/Common/mavlink/out/*
-*.su
 mLRS/.metadata/*
+**/.settings/*
 **/Release/*
 **/Debug/*
+*.launch
 
 # Prerequisites
 *.d
