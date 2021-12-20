@@ -32,9 +32,9 @@
 
 //-- UARTS
 // UARTB = serial port, UARTC = debug port
-// UART = SPORT (pin5) on JR or sbus output or whatever
+// UART = SPORT (pin5) on JR bay
 
-#define UARTB_USE_UART2
+#define UARTB_USE_UART2 // serial
 #define UARTB_BAUD                57600 // 115200
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           512
@@ -42,7 +42,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           512
 
-#define UARTC_USE_UART3
+#define UARTC_USE_UART3 // debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           512
@@ -50,7 +50,7 @@
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
 
-#define UART_USE_UART1
+#define UART_USE_UART1 // MBridge
 #define UART_BAUD                 400000 // 115200
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -75,7 +75,7 @@
 
 #define SX_RESET                  IO_PB3
 #define SX_DIO1                   IO_PB8
-//#define SX_BUSY                 // not available
+//#define SX_BUSY
 #define SX_AMP_CTX                IO_PB9 // high for transmit, low for receive
 #define SX_ANT_SELECT             IO_PB4 // low for left (stock), high for right (empty)
 
@@ -132,6 +132,21 @@ void sx_dio1_enable_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);
+}
+
+
+//-- Button
+
+#define BUTTON                    IO_PB0
+
+void button_init(void)
+{
+  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+bool button_pressed(void)
+{
+  return gpio_read_activelow(BUTTON);
 }
 
 
@@ -194,16 +209,7 @@ uint8_t pos_switch_read(void)
 }
 
 
-//-- Button
 
-#define BUTTON                    IO_PB0
-
-#define BUTTON_PRESSED            gpio_read_activelow(BUTTON)
-
-void button_init(void)
-{
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-}
 
 
 

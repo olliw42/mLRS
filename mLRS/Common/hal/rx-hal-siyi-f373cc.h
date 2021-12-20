@@ -32,9 +32,9 @@
 
 //-- UARTS
 // UARTB = serial port, UARTC = debug port
-// UART = SPORT (pin5) on JR or sbus output or whatever
+// UART = SBus output or whatever
 
-#define UARTB_USE_UART2
+#define UARTB_USE_UART2 // serial
 #define UARTB_BAUD                SETUP_RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           512
@@ -42,7 +42,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           512
 
-#define UARTC_USE_UART3
+#define UARTC_USE_UART3 // debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           4096 //512
@@ -50,7 +50,7 @@
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
 
-#define UART_USE_UART1
+#define UART_USE_UART1 // SBus
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -148,7 +148,7 @@ void sx_dio1_enable_isr(void)
 }
 
 
-//-- SPort output pin
+//-- SBus output pin
 
 #define OUT                       IO_PA9 // UART1 TX
 #define OUT_XOR                   IO_PF6
@@ -160,6 +160,20 @@ void out_init_gpio(void)
 //  gpio_init(OUT, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(OUT_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
   OUT_SET_NORMAL;
+}
+
+
+//-- Button
+
+//#define BUTTON
+
+void button_init(void)
+{
+}
+
+bool button_pressed(void)
+{
+  return false;
 }
 
 
