@@ -206,7 +206,7 @@ class SxDriver : public SxDriverBase
 
         Configure();
 
-        sx_dio1_enable_isr();
+        sx_dio1_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop

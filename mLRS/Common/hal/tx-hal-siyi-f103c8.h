@@ -92,10 +92,10 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_ANT_SELECT, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
   gpio_init(SX_AMP_CTX, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
 
+  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 }
 
@@ -128,7 +128,7 @@ void sx_dio1_init_exti_isroff(void)
   NVIC_EnableIRQ(SX_DIO1_EXTI_IRQn);
 }
 
-void sx_dio1_enable_isr(void)
+void sx_dio1_enable_exti_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);

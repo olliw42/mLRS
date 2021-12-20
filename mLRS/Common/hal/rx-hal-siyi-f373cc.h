@@ -59,7 +59,7 @@
 //#define UART_RXBUFSIZE            512
 
 
-//-- SPI & SX12xx
+//-- SX1: SX12xx & SPI
 
 #define SPI_USE_SPI1              // PB3, PB4, PB5
 #define SPI_CS_IO                 IO_PA15
@@ -85,7 +85,6 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_AMP_CTX, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
 #ifdef SETUP_RX_ANTENNA
   #if SETUP_RX_ANTENNA == 1
@@ -95,9 +94,9 @@ void sx_init_gpio(void)
   #endif
 #else
   gpio_init(SX_ANT_SELECT, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-//  gpio_init(SX_ANT_SELECT, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
 #endif
 
+  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 #ifdef SX_BUSY
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
@@ -141,7 +140,7 @@ void sx_dio1_init_exti_isroff(void)
   NVIC_EnableIRQ(SX_DIO1_EXTI_IRQn);
 }
 
-void sx_dio1_enable_isr(void)
+void sx_dio1_enable_exti_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);
@@ -152,14 +151,21 @@ void sx_dio1_enable_isr(void)
 
 #define OUT                       IO_PA9 // UART1 TX
 #define OUT_XOR                   IO_PF6
-#define OUT_SET_NORMAL            gpio_low(OUT_XOR)
-#define OUT_SET_INVERTED          gpio_high(OUT_XOR)
 
 void out_init_gpio(void)
 {
-//  gpio_init(OUT, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(OUT_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  OUT_SET_NORMAL;
+  gpio_low(OUT_XOR);
+}
+
+void out_set_normal(void)
+{
+  gpio_low(OUT_XOR);
+}
+
+void out_set_inverted(void)
+{
+  gpio_high(OUT_XOR);
 }
 
 

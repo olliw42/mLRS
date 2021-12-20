@@ -116,7 +116,7 @@ public:
   virtual void config_sbus(void) override
   {
     uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-    OUT_SET_INVERTED;
+    out_set_inverted();
     uart_rx_enableisr(ENABLE);
   }
 
