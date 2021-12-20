@@ -14,6 +14,8 @@ we need multiple "connected" time scales
 - for deciding to output sbus
 - for deciding when pll locks and unlocks, so it re-locks
 - for deciding when to stay in RX, i.e, we shouldn't send TX if we want to reconnect
+- for deciding when to try a "fast" reconnect
+- for deciding when to go back to "full" connect
 - for deciding if it got a signal
 - for deciding when/how to calculate LQ
 ??
@@ -21,6 +23,9 @@ we need multiple "connected" time scales
 effect of USE_DCDC? where to place it??
 
 can one put now ReadfRame out of isr? would allow using one spi for two sx
+
+should we do a delay between rxdone and transmitting?
+technically yes, but it seems no need to be done explicitly
 */
 
 #define DBG_MAIN(x)
@@ -173,7 +178,6 @@ typedef enum {
 
     LINK_STATE_RECEIVE,
     LINK_STATE_RECEIVE_WAIT,
-    LINK_STATE_DELAY,
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
 } LINK_STATE_ENUM;
@@ -305,21 +309,8 @@ uint16_t tick_1hz;
 
 uint8_t link_state;
 uint16_t connected_tmo_cnt;
-uint16_t link_tdelay_10us;
 
 uint32_t link_rescue_cnt; // rescue in state transmit
-
-void link_set_delay(void)
-{
-  link_tdelay_10us = pll.tim_10us();
-  link_state = LINK_STATE_DELAY;
-}
-
-bool link_delay_passed(void)
-{
-  uint16_t tnow_10us = pll.tim_10us();
-  return ((tnow_10us - link_tdelay_10us) >= 50);
-}
 
 
 // receiving means:
@@ -445,10 +436,6 @@ int main_main(void)
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
-    case LINK_STATE_DELAY:
-      if (link_delay_passed()) link_state = LINK_STATE_TRANSMIT;
-      break;
-
     case LINK_STATE_TRANSMIT: {
 /*      uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
@@ -505,6 +492,7 @@ int main_main(void)
       }
     }
 
+    // this happens ca 1 ms after a frame was or should have been received
     if (do_post_receive) {
       do_post_receive = false;
 

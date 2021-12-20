@@ -259,7 +259,9 @@ int main_main(void)
   link_state = LINK_STATE_IDLE;
   tx_tick = 0;
   connected_tmo_cnt = 0;
+
   txstats.Init(LQ_AVERAGING_PERIOD);
+
   f_init();
 
   led_blink = 0;
@@ -382,7 +384,7 @@ int main_main(void)
       }
     }
 
-    //-- Bridge handling
+    //-- MBridge handling
 #if (SETUP_TX_USE_MBRIDGE == 1)
     if (bridge.channels_updated) {
       bridge.channels_updated = 0;
