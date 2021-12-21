@@ -147,17 +147,16 @@ void do_transmit(bool set_ack) // we send a TX frame to receiver
 }
 
 
-uint8_t check_received_frame(void) // we receive a RX frame from receiver, 0: fail, 1: ok
+uint8_t check_received_frame(void) // we receive a RX frame from receiver
 {
-  uint16_t err = check_rx_frame(&rxFrame);
+  uint8_t err = check_rx_frame(&rxFrame);
 
   if (err) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
 uartc_puts("fail "); uartc_puts(u16toHEX_s(err));uartc_putc('\n');
-    return 0;
   }
 
-  return 1;
+  return err;
 }
 
 
@@ -202,19 +201,21 @@ bool do_receive(void)
 {
 bool ok = false;
 
-  bool res = check_received_frame();
+  uint8_t res = check_received_frame(); // returns CHECK enum
 
-  if (res > 0) {
+  if (res == CHECK_OK) {
     process_received_frame();
-	txstats.SetValidFrameReceived();
-	ok = true;
+	  txstats.SetValidFrameReceived();
+	  ok = true;
   }
 
-  // read it here, we want to have it even if it's a bad packet
-  sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+  if (res != CHECK_ERROR_NOT_FOR_US) {
+    // read it here, we want to have it even if it's a bad packet, but it should be for us
+    sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
-  // we count all received frames
-  txstats.SetFrameReceived();
+    // we count all received frames, which are at least for us
+    txstats.SetFrameReceived();
+  }
 
   return ok;
 }

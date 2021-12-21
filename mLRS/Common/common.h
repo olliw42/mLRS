@@ -46,6 +46,15 @@ STATIC_ASSERT(sizeof(tTxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch TxFrame"
 STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch RxFrame")
 
 
+typedef enum {
+    CHECK_OK = 0,
+    CHECK_ERROR_NOT_FOR_US,
+    CHECK_ERROR_HEADER,
+    CHECK_ERROR_CRC1,
+    CHECK_ERROR_CRC,
+} CHECK_ENUM;
+
+
 void pack_tx_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;
@@ -98,26 +107,23 @@ uint16_t crc;
 
 
 // returns 0 if OK !!
-uint16_t check_tx_frame(tTxFrame* frame)
+uint8_t check_tx_frame(tTxFrame* frame)
 {
-uint16_t err_flags = 0;
 uint16_t crc;
 
-  if (frame->sync_word != FRAME_SYNCWORD) err_flags |= 0x0001;
-  if (frame->status.frame_type != FRAME_TYPE_TX) err_flags |= 0x0002;
-  if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) err_flags |= 0x0004;
-
-  if (err_flags) return err_flags; // avoid the expensive crc calculation
+  if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_NOT_FOR_US;
+  if (frame->status.frame_type != FRAME_TYPE_TX) return CHECK_ERROR_HEADER;
+  if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
   fmav_crc_init(&crc);
   fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-  if ((uint8_t)crc != frame->crc1) err_flags |= 0x0008;
+  if ((uint8_t)crc != frame->crc1)  return CHECK_ERROR_CRC1;
 
   fmav_crc_init(&crc);
   fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
-  if (crc != frame->crc) err_flags |= 0x0010;
+  if (crc != frame->crc)  return CHECK_ERROR_CRC;
 
-  return err_flags;
+  return CHECK_OK;
 }
 
 
@@ -173,22 +179,20 @@ uint16_t crc;
 
 
 // returns 0 if OK !!
-uint16_t check_rx_frame(tRxFrame* frame)
+uint8_t check_rx_frame(tRxFrame* frame)
 {
-uint16_t err_flags = 0;
 uint16_t crc;
 
-  if (frame->sync_word != FRAME_SYNCWORD) err_flags |= 0x0001;
-  if (frame->status.frame_type != FRAME_TYPE_RX) err_flags |= 0x0002;
-  if (frame->status.payload_len > FRAME_RX_PAYLOAD_LEN) err_flags |= 0x0004;
+  if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_NOT_FOR_US;
 
-  if (err_flags) return err_flags; // avoid the expensive crc calculation
+  if (frame->status.frame_type != FRAME_TYPE_RX) return CHECK_ERROR_HEADER;
+  if (frame->status.payload_len > FRAME_RX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
   fmav_crc_init(&crc);
   fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
-  if (crc != frame->crc) err_flags |= 0x0008;
+  if (crc != frame->crc) return CHECK_ERROR_CRC;
 
-  return err_flags;
+  return CHECK_OK;
 }
 
 

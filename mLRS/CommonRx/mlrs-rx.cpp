@@ -217,20 +217,16 @@ void do_transmit(bool set_ack) // we send a RX frame to transmitter
 }
 
 
-uint8_t check_received_frame(void) // we received a TX frame from transmitter, 0: fail, 1: crc1 ok, 2: full ok
+uint8_t check_received_frame(void) // we received a TX frame from transmitter, return 0 if OK !
 {
-  uint16_t err = check_tx_frame(&txFrame);
+  uint8_t err = check_tx_frame(&txFrame);
 
   if (err) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
 uartc_puts("fail "); uartc_puts(u16toHEX_s(err));uartc_putc('\n');
-
-    if (err == 0x0010) { // everything except full crc is ok
-      return 1;
-    }
-    return 0;
   }
-  return 2;
+
+  return err;
 }
 
 
@@ -248,9 +244,11 @@ void process_received_frame(bool full)
 
   // copy rc data
   if (!full) {
+    // copy only channels 1-4, and jump out
     rcdata_ch0to3_from_txframe(&rcData, &txFrame);
     return;
   }
+
   rcdata_from_txframe(&rcData, &txFrame);
 
   // forward data to serial
@@ -267,11 +265,12 @@ bool do_receive(void)
 {
 bool ok = false;
 
-  uint8_t res = check_received_frame(); // returns 0, 1, 2
+  uint8_t res = check_received_frame(); // returns CHECK enum
 
-  if (res > 0) {
-    pll.rx_done(); // we need to check correctness of packed before accepting this
-    bool full = (res > 1);
+  if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
+    pll.rx_done(); // we only accept valid frames for this
+
+    bool full = (res == CHECK_OK);
 
     process_received_frame(full);
 
@@ -281,11 +280,13 @@ bool ok = false;
     ok = true;
   }
 
-  // read it here, we want to have it even if it's a bad packet, but we want to do it after pll.rx_done();
-  sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+  if (res != CHECK_ERROR_NOT_FOR_US) {
+    // read it here, we want to have it even if it's a bad packet, but it should be for us
+    sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
-  // we count all received frames
-  rxstats.doFrameReceived();
+    // we count all received frames, which are at least for us
+    rxstats.doFrameReceived();
+  }
 
   return ok;
 }
@@ -316,7 +317,6 @@ uint8_t link_state;
 uint16_t connected_tmo_cnt;
 
 uint32_t link_rescue_cnt; // rescue in state transmit
-
 
 // receiving means:
 //   we are receiving valid frames, but we may miss some occasionally
