@@ -87,6 +87,7 @@ uint8_t TxStatsBase::GetNormalizedLQ(void)
 uint8_t TxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
+    if (stats.rx_LQ == 0) return 1;
     return stats.rx_LQ;
 }
 

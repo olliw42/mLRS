@@ -48,10 +48,10 @@ STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch RxFrame"
 
 typedef enum {
     CHECK_OK = 0,
-    CHECK_ERROR_NOT_FOR_US,
-    CHECK_ERROR_HEADER,
-    CHECK_ERROR_CRC1,
-    CHECK_ERROR_CRC,
+    CHECK_ERROR_NOT_FOR_US, // 1
+    CHECK_ERROR_HEADER,     // 2
+    CHECK_ERROR_CRC1,       // 3
+    CHECK_ERROR_CRC,        // 4
 } CHECK_ENUM;
 
 
@@ -244,6 +244,16 @@ class Stats {
       received_LQ = 0; //UINT8_MAX;
     }
 
+    void Clear(void)
+    {
+      last_rx_rssi = INT8_MAX;
+      last_rx_snr = INT8_MAX;
+      rx_LQ = 0; //UINT8_MAX;
+
+      received_rssi = INT8_MAX;
+      received_LQ = 0; //UINT8_MAX;
+    }
+
     void Update1Hz(void)
     {
     uint32_t diff;
@@ -263,7 +273,6 @@ class Stats {
 
 #ifdef DEVICE_IS_TRANSMITTER
       rx_LQ = LQ_valid_received; // this should always be <= valid_received !
-      if (rx_LQ == 0) rx_LQ = 1;
 #endif
 #ifdef DEVICE_IS_RECEIVER
       // same logic as for rxstats
@@ -275,7 +284,6 @@ class Stats {
       } else {
     	rx_LQ = LQ_valid_crc1_received;
       }
-      if (rx_LQ == 0) rx_LQ = 1;
 #endif
     }
 };

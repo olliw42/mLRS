@@ -223,7 +223,7 @@ uint8_t check_received_frame(void) // we received a TX frame from transmitter, r
 
   if (err) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
-uartc_puts("fail "); uartc_puts(u16toHEX_s(err));uartc_putc('\n');
+uartc_puts("fail "); uartc_puts(u8toHEX_s(err));uartc_putc('\n');
   }
 
   return err;
@@ -395,6 +395,8 @@ int main_main(void)
         if (connected()) LED_GREEN_TOGGLE; else LED_RED_TOGGLE;
       }
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
+
+      if (!connected()) stats.Clear();
 
       if (!tick_1hz) {
         rxstats.Update1Hz();

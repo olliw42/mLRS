@@ -153,7 +153,7 @@ uint8_t check_received_frame(void) // we receive a RX frame from receiver
 
   if (err) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
-uartc_puts("fail "); uartc_puts(u16toHEX_s(err));uartc_putc('\n');
+uartc_puts("fail "); uartc_puts(u8toHEX_s(err));uartc_putc('\n');
   }
 
   return err;
@@ -306,6 +306,7 @@ int main_main(void)
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
       if (!connected()) {
+        stats.Clear();
         f_init();
       }
 
@@ -416,7 +417,7 @@ int main_main(void)
       lstats.receiver_ant_no = 0;
       lstats.LQ_received_ma = txstats.GetNormalizedLQ();
       lstats.LQ_received = stats.LQ_received;
-      lstats.LQ_valid_received = stats.LQ_valid_received;
+      lstats.LQ_valid_received = stats.LQ_valid_received; // is the same as LQ, except 0,1
       bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels
