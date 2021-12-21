@@ -13,7 +13,7 @@
 
 //-------------------------------------------------------
 
-class TxStats
+class TxStatsBase
 {
   public:
     void Init(uint8_t _period);
@@ -26,16 +26,17 @@ class TxStats
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
-    uint8_t GetLQ(bool is_connected = true);
-    uint8_t GetFramesReceivedLQ(void);
+    uint8_t GetLQ(void);
 
   private:
     LqCounterBase valid_lq;
     LqCounterBase received_lq;
+
+    virtual bool is_connected(void);
 };
 
 
-void TxStats::Init(uint8_t _period)
+void TxStatsBase::Init(uint8_t _period)
 {
     stats.Init();
 
@@ -44,62 +45,50 @@ void TxStats::Init(uint8_t _period)
 }
 
 
-void TxStats::Update1Hz(void)
+void TxStatsBase::Update1Hz(void)
 {
     stats.Update1Hz();
 }
 
 
-void TxStats::Next(void)
+void TxStatsBase::Next(void)
 {
     valid_lq.Next();
     received_lq.Next();
 }
 
 
-void TxStats::SetFrameReceived(void)
+void TxStatsBase::SetFrameReceived(void)
 {
     received_lq.Set();
     stats.frames_received++;
 }
 
 
-void TxStats::SetValidFrameReceived(void)
+void TxStatsBase::SetValidFrameReceived(void)
 {
     valid_lq.Set();
     stats.valid_frames_received++;
 }
 
 
-uint8_t TxStats::GetRawLQ(void)
+uint8_t TxStatsBase::GetRawLQ(void)
 {
     return valid_lq.GetRaw();
 }
 
 
-uint8_t TxStats::GetNormalizedLQ(void)
+uint8_t TxStatsBase::GetNormalizedLQ(void)
 {
     return valid_lq.GetNormalized();
 }
 
 
-uint8_t TxStats::GetLQ(bool is_connected)
+uint8_t TxStatsBase::GetLQ(void)
 {
-    if (!is_connected) return 0;
-
-    return stats.rx_LQ; //XX
-
-    uint8_t valid_LQ = valid_lq.GetNormalized();
-    if (valid_LQ == 0) return 1; // when connected LQ should always be > 0, as it means that we receive "something"
-    return valid_LQ;
+    if (!is_connected()) return 0;
+    return stats.rx_LQ;
 }
-
-
-uint8_t TxStats::GetFramesReceivedLQ(void)
-{
-    return received_lq.GetNormalized();
-}
-
 
 
 #endif // TXSTATS_H

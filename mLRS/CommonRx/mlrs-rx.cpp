@@ -114,14 +114,14 @@ public:
     uart_init_isroff();
   }
 
-  virtual void config_sbus(void) override
+  void config_sbus(void) override
   {
     uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
     out_set_inverted();
     uart_rx_enableisr(ENABLE);
   }
 
-  virtual void putc(char c) override { uart_putc(c); }
+  void putc(char c) override { uart_putc(c); }
 };
 
 Out out;
@@ -149,7 +149,13 @@ void init(void)
 //-------------------------------------------------------
 // Statistics for Receiver
 //-------------------------------------------------------
-// we also handle the stats field with this class, this is somewhat dirty
+
+static inline bool connected(void);
+
+class RxStats : public RxStatsBase
+{
+  bool is_connected(void) override { return connected(); }
+};
 
 RxStats rxstats;
 
@@ -187,8 +193,6 @@ typedef enum {
 #define IS_RECEIVE_STATE   (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
 #define IS_TRANSMIT_STATE  (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
 
-static inline bool connected(void);
-
 
 void do_transmit(bool set_ack) // we send a RX frame to transmitter
 {
@@ -206,7 +210,7 @@ void do_transmit(bool set_ack) // we send a RX frame to transmitter
   frame_stats.ack = (set_ack) ? 1 : 0;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
-  frame_stats.LQ = rxstats.GetLQ(connected());
+  frame_stats.LQ = rxstats.GetLQ();
 
   pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
   sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo

@@ -73,6 +73,13 @@ void init(void)
 // Statistics for Transmitter
 //-------------------------------------------------------
 
+static inline bool connected(void);
+
+class TxStats : public TxStatsBase
+{
+  bool is_connected(void) override { return connected(); }
+};
+
 TxStats txstats;
 
 
@@ -406,7 +413,7 @@ int main_main(void)
       lstats.receiver_snr = INT8_MAX;
       lstats.receiver_rssi2 = INT8_MAX;
       lstats.receiver_ant_no = 0;
-      lstats.LQ_frames_received = txstats.GetFramesReceivedLQ();
+      lstats.LQ_received_ma = txstats.GetNormalizedLQ();
       lstats.LQ_received = stats.LQ_received;
       lstats.LQ_valid_received = stats.LQ_valid_received;
       bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));

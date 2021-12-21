@@ -258,7 +258,6 @@ class Stats {
       valid_frames_received_last = valid_frames_received;
 
 #ifdef DEVICE_IS_TRANSMITTER
-      // same logic as for txstats
       rx_LQ = LQ_valid_received; // this should always be <= valid_received !
       if (rx_LQ == 0) rx_LQ = 1;
 #endif

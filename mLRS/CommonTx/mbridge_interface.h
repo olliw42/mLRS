@@ -68,7 +68,7 @@ typedef struct
   uint8_t receiver_ant_no : 1; // 0: antenna 1, 1: antenna 2
   uint8_t spare_bits : 6;
 
-  uint8_t LQ_frames_received;
+  uint8_t LQ_received_ma;
   uint8_t LQ_received;
   uint8_t LQ_valid_received;
 }) tMBridgeLinkStats;

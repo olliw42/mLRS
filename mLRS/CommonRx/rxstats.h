@@ -14,7 +14,7 @@
 //-------------------------------------------------------
 // we also handle the stats field with this class, this is somewhat dirty
 
-class RxStats
+class RxStatsBase
 {
   public:
 
@@ -39,13 +39,13 @@ class RxStats
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
-    // since we have full and crc1 LQ, this uses a more sophisticated algorithm to provide an LQ
-    uint8_t GetLQ(bool is_connected);
+    uint8_t GetLQ(void);
+
+    virtual bool is_connected(void);
 };
 
 
-
-void RxStats::Init(uint8_t _period)
+void RxStatsBase::Init(uint8_t _period)
 {
     stats.Init();
 
@@ -57,13 +57,13 @@ void RxStats::Init(uint8_t _period)
 }
 
 
-void RxStats::Update1Hz(void)
+void RxStatsBase::Update1Hz(void)
 {
     stats.Update1Hz();
 }
 
 
-void RxStats::Clear(void)
+void RxStatsBase::Clear(void)
 {
     valid_crc1_frame_received = false;
     valid_frame_received = false;
@@ -71,7 +71,7 @@ void RxStats::Clear(void)
 }
 
 
-void RxStats::Next(void)
+void RxStatsBase::Next(void)
 {
     valid_crc1_lq.Next();
     valid_lq.Next();
@@ -79,7 +79,7 @@ void RxStats::Next(void)
 }
 
 
-void RxStats::Set(void)
+void RxStatsBase::Set(void)
 {
     if (frame_received) received_lq.Set();
     if (valid_crc1_frame_received) valid_crc1_lq.Set();
@@ -87,56 +87,43 @@ void RxStats::Set(void)
 }
 
 
-void RxStats::doFrameReceived(void)
+void RxStatsBase::doFrameReceived(void)
 {
     frame_received = true;
     stats.frames_received++;
 }
 
 
-void RxStats::doValidCrc1FrameReceived(void)
+void RxStatsBase::doValidCrc1FrameReceived(void)
 {
     valid_crc1_frame_received = true;
     stats.valid_crc1_frames_received++;
 }
 
 
-void RxStats::doValidFrameReceived(void)
+void RxStatsBase::doValidFrameReceived(void)
 {
     valid_frame_received = true;
     stats.valid_frames_received++;
 }
 
 
-uint8_t RxStats::GetRawLQ(void)
+uint8_t RxStatsBase::GetRawLQ(void)
 {
     return valid_lq.GetRaw();
 }
 
 
-uint8_t RxStats::GetNormalizedLQ(void)
+uint8_t RxStatsBase::GetNormalizedLQ(void)
 {
     return valid_lq.GetNormalized();
 }
 
 
-// since we have full and crc1 LQ, this uses a more sophisticated algorithm to provide an LQ
-uint8_t RxStats::GetLQ(bool is_connected)
+uint8_t RxStatsBase::GetLQ(void)
 {
-    if (!is_connected) return 0;
-
-return stats.rx_LQ; //XX
-
-
-    uint8_t valid_LQ = valid_lq.GetNormalized();
-
-    if (valid_LQ >= 25) return valid_LQ;
-
-    uint8_t valid_crc1_LQ = valid_crc1_lq.GetNormalized(); // we can expect that always valid_crc1_LQ >= valid_LQ
-
-    if (valid_crc1_LQ >= 25) return 25;
-    if (valid_crc1_LQ == 0) return 1; // when connected LQ should always be > 0, as it means that we receive "something"
-    return valid_crc1_LQ;
+    if (!is_connected()) return 0;
+    return stats.rx_LQ;
 }
 
 
