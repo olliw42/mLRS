@@ -226,6 +226,12 @@ uint16_t link_state;
 uint16_t connected_tmo_cnt;
 
 
+static inline bool connected(void)
+{
+  return (connected_tmo_cnt > 0);
+}
+
+
 int main_main(void)
 {
   init();
@@ -287,17 +293,17 @@ int main_main(void)
       }
 
       if (!led_blink) {
-        if (connected_tmo_cnt) LED_GREEN_TOGGLE; else LED_RED_TOGGLE;
+        if (connected()) LED_GREEN_TOGGLE; else LED_RED_TOGGLE;
       }
-      if (connected_tmo_cnt) { LED_RED_OFF; } else { LED_GREEN_OFF; }
+      if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
-      if (!connected_tmo_cnt) {
+      if (!connected()) {
         f_init();
       }
 
       if (!tick_1hz) {
         txstats.Update1Hz();
-        if (connected_tmo_cnt) inject_radio_status = true;
+        if (connected()) inject_radio_status = true;
         //uartc_puts(".");
 
         uartc_puts("TX: ");

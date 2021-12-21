@@ -31,6 +31,7 @@ technically yes, but it seems no need to be done explicitly
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
 #define DBG_MAIN_FULL(x)
+#define DBG_STATUS(x)
 
 
 // we set the priorities here to have an overview
@@ -265,15 +266,15 @@ bool ok = false;
   uint8_t res = check_received_frame(); // returns 0, 1, 2
 
   if (res > 0) {
-	  pll.rx_done(); // we need to check correctness of packed before accepting this
-      bool full = (res > 1);
+    pll.rx_done(); // we need to check correctness of packed before accepting this
+    bool full = (res > 1);
 
-	  process_received_frame(full);
+    process_received_frame(full);
 
-	  rxstats.doValidCrc1FrameReceived();
-	  if (full) rxstats.doValidFrameReceived();
+    rxstats.doValidCrc1FrameReceived();
+    if (full) rxstats.doValidFrameReceived();
 
-	  ok = true;
+    ok = true;
   }
 
   // read it here, we want to have it even if it's a bad packet, but we want to do it after pll.rx_done();
@@ -413,37 +414,36 @@ int main_main(void)
       }
     }
 
-    uint8_t status = 0;
     switch (link_state) {
     case LINK_STATE_CONNECT:
     case LINK_STATE_RECEIVE: {
-      //if (link_state == LINK_STATE_RECEIVE) fhss.HopToNext();
-      fhss.HopToNext();
-      sx.SetRfFrequency(fhss.GetCurr());
-      status = sx.GetStatus();
+DBG_STATUS(uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
         uartc_puts("$$"); uartc_puts(u8toHEX_s(status>>5));
         break;
-      }
+      })
+      //if (link_state == LINK_STATE_RECEIVE) fhss.HopToNext();
+      fhss.HopToNext();
+      sx.SetRfFrequency(fhss.GetCurr());
       rxstats.Clear();
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
-      status = sx.GetStatus();
+DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_RX) {
         uartc_puts("$"); uartc_puts(u8toHEX_s(status>>5));
-      }
+      })
       DBG_MAIN_FULL(uartc_puts("RX: rx\n");)
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
     case LINK_STATE_TRANSMIT: {
-/*      uint8_t status = sx.GetStatus();
+DBG_STATUS(uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
         uartc_puts("!!"); uartc_puts(u8toHEX_s(status>>5));
         break;
-      } */
+      })
       do_transmit(false);
-      status = sx.GetStatus();
+DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
         uartc_puts("!"); uartc_puts(u8toHEX_s(status>>5));
         rescue(4);
@@ -452,7 +452,7 @@ int main_main(void)
         link_state = LINK_STATE_RECEIVE;
         link_rescue_cnt++;
         break;
-      }
+      })
       link_state = LINK_STATE_TRANSMIT_WAIT;
       DBG_MAIN_FULL(uartc_puts("RX: tx\n");)
       }break;
