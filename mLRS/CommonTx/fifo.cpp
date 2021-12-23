@@ -62,3 +62,9 @@ char FifoBase::getc(void)
   }
   return 0;
 }
+
+
+void FifoBase::flush(void)
+{
+  writepos = readpos = 0;
+}

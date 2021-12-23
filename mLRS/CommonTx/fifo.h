@@ -29,6 +29,8 @@ class FifoBase
     bool available(void);
     char getc(void);
 
+    void flush(void);
+
   private:
     uint16_t writepos; // pos at which the next byte will be stored
     uint16_t readpos; // pos at which the oldest byte is fetched

@@ -19,15 +19,8 @@ TODOs:
 - sync & configure at first connect
 - OTA
 - frame loss, resend last one time to make it more robust
-- FHSS
-- LQ: we have seq_no, connect
-- OTX & LQ: stats feed back to otx
-- RADIO_STATUS
-- crc
-- DOI isr handling
 - RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
 - TX side sport, to get rc channel data
-- TX side jrbay bidirectional mavlink
 - configuration settings
 - bind phrase
 - transform mavlink data into more robust & slim format, introduce cmpr_msg
@@ -72,6 +65,13 @@ SBus output
 Rx/Tx serial, possibly with RTS/CTS
 Rssi output
 
+
+-------------------------------------------------------
+failsafe modes
+1) no out signal
+2) always out signal, but with values set to pre-defined failsafe values
+3) always out signal, but with values set to defaults (such as thr = 800, r,p,y = center, ...)
+4) always out signal, but with values which makes the vehicle to hover
 
 -------------------------------------------------------
 some experimental results

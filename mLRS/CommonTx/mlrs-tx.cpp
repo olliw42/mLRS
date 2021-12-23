@@ -110,12 +110,18 @@ void SX_DIO1_EXTI_IRQHandler(void)
 
 
 typedef enum {
-    LINK_STATE_IDLE = 0,
+    CONNECT_STATE_LISTEN = 0,
+    CONNECT_STATE_SYNC,
+    CONNECT_STATE_CONNECTED,
+} CONNECT_STATE_ENUM;
 
+typedef enum {
+    LINK_STATE_IDLE = 0,
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
     LINK_STATE_RECEIVE,
     LINK_STATE_RECEIVE_WAIT,
+    LINK_STATE_RECEIVE_DONE,
 } LINK_STATE_ENUM;
 
 
@@ -124,16 +130,26 @@ void do_transmit(bool set_ack) // we send a TX frame to receiver
   uint8_t payload[FRAME_TX_PAYLOAD_LEN] = {0};
   uint8_t payload_len = 0;
 
-  for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+  if (connected()) {
+    for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
 #if (SETUP_TX_USE_MBRIDGE == 1)
-    if (!bridge.available()) break;
-    payload[payload_len] = bridge.getc();
+      if (!bridge.available()) break;
+      payload[payload_len] = bridge.getc();
 #else
-    if (!serial.available()) break;
-    payload[payload_len] = serial.getc();
+      if (!serial.available()) break;
+      payload[payload_len] = serial.getc();
 #endif
-    payload_len++;
+      payload_len++;
+    }
+  } else {
+#if (SETUP_TX_USE_MBRIDGE == 1)
+    bridge.flush();
+#else
+      serial.flush();
+#endif
   }
+
+  stats.AddBytesTransmitted(payload_len);
 
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
@@ -178,7 +194,6 @@ void process_received_frame(void)
 
     uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
     if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
-//      uartc_puts("m");
       if (inject_radio_status) {
         inject_radio_status = false;
 #if (SETUP_TX_SEND_RADIO_STATUS == 1)
@@ -189,6 +204,8 @@ void process_received_frame(void)
       }
     }
   }
+
+  stats.AddBytesReceived(rxFrame.status.payload_len);
 
   DBG_MAIN(char s[16];
   uartc_puts("got "); uartc_puts(s); uartc_puts(": ");
@@ -209,7 +226,7 @@ bool ok = false;
 	  ok = true;
   }
 
-  if (res != CHECK_ERROR_NOT_FOR_US) {
+  if (res != CHECK_ERROR_SYNCWORD) {
     // read it here, we want to have it even if it's a bad packet, but it should be for us
     sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
@@ -231,12 +248,14 @@ uint16_t tick_1hz;
 
 uint16_t tx_tick;
 uint16_t link_state;
-uint16_t connected_tmo_cnt;
+uint8_t connect_state;
+uint16_t connect_tmo_cnt;
+uint8_t connect_sync_cnt;
 
 
 static inline bool connected(void)
 {
-  return (connected_tmo_cnt > 0);
+  return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 
@@ -266,13 +285,15 @@ int main_main(void)
   fhss.StartTx();
   sx.SetRfFrequency(fhss.GetCurr());
 
-//  for (uint8_t n = 0; n < FHSS_MAX_NUM; n++) {
+//  for (uint8_t n = 0; n < fhss.Cnt(); n++) {
 //    uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[n])); uartc_puts("\n");
 //  }
 
-  link_state = LINK_STATE_IDLE;
   tx_tick = 0;
-  connected_tmo_cnt = 0;
+  link_state = LINK_STATE_IDLE;
+  connect_state = CONNECT_STATE_LISTEN;
+  connect_tmo_cnt = 0;
+  connect_sync_cnt = 0;
 
   txstats.Init(LQ_AVERAGING_PERIOD);
 
@@ -288,13 +309,13 @@ int main_main(void)
     if (doSysTask) {
       doSysTask = 0;
 
-      if (connected_tmo_cnt) {
-        connected_tmo_cnt--;
+      if (connect_tmo_cnt) {
+        connect_tmo_cnt--;
       }
 
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
       DECc(tx_tick, SYSTICK_DELAY_MS(FRAME_RATE_MS));
-      if (connected_tmo_cnt) {
+      if (connected()) {
         DECc(led_blink, SYSTICK_DELAY_MS(500));
       } else {
         DECc(led_blink, SYSTICK_DELAY_MS(200));
@@ -326,12 +347,46 @@ int main_main(void)
 
         uartc_puts(s8toBCD_s(stats.last_rx_rssi)); uartc_putc(',');
         uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_rx_snr));
+        uartc_puts(s8toBCD_s(stats.last_rx_snr)); uartc_puts("; ");
+
+        uartc_puts(u16toBCD_s(stats.bytes_per_sec_transmitted)); uartc_puts(", ");
+        uartc_puts(u16toBCD_s(stats.bytes_per_sec_received)); uartc_puts("; ");
         uartc_putc('\n');
       }
 
       if (!tx_tick) {
         // trigger next cycle
+        if (connected() && !connect_tmo_cnt) {
+          connect_state = CONNECT_STATE_LISTEN;
+        }
+        if (connected() && (link_state != LINK_STATE_RECEIVE_DONE)) {
+          // frame missed
+          connect_sync_cnt = 0;
+        }
+/*
+        static uint16_t tlast_us = 0;
+        uint16_t tnow_us = micros();
+        uint16_t dt = tnow_us - tlast_us;
+        tlast_us = tnow_us;
+
+        uartc_puts(" ");
+        uartc_puts(u16toBCD_s(tnow_us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
+        switch (link_state) {
+        case LINK_STATE_IDLE: uartc_puts("i  "); break;
+        case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
+        case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
+        case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
+        case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
+        case LINK_STATE_RECEIVE_DONE: uartc_puts("rd "); break;
+        }
+        switch (connect_state) {
+        case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
+        case CONNECT_STATE_SYNC: uartc_puts("S "); break;
+        case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
+        }
+        uartc_puts(connected() ? "c " : "d ");
+        uartc_puts("\n");
+*/
         txstats.Next();
         link_state = LINK_STATE_TRANSMIT;
       }
@@ -341,6 +396,7 @@ int main_main(void)
 
     switch (link_state) {
     case LINK_STATE_IDLE:
+    case LINK_STATE_RECEIVE_DONE:
       break;
 
     case LINK_STATE_TRANSMIT:
@@ -375,9 +431,21 @@ int main_main(void)
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
           if (do_receive()) {
-            connected_tmo_cnt = CONNECT_TMO_SYSTICKS;
+            if (connect_state == CONNECT_STATE_LISTEN) {
+              connect_state = CONNECT_STATE_SYNC;
+              connect_sync_cnt = 0;
+            } else
+            if (connect_state == CONNECT_STATE_SYNC) {
+              connect_sync_cnt++;
+              if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+            } else {
+              connect_state = CONNECT_STATE_CONNECTED;
+            }
+            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+            link_state = LINK_STATE_RECEIVE_DONE; // ready for next frame
+          } else {
+            link_state = LINK_STATE_IDLE; // ready for next frame
           }
-          link_state = LINK_STATE_IDLE; // ready for next frame
           DBG_MAIN_FULL(uartc_puts("TX: rx done\n");)
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
@@ -403,7 +471,7 @@ int main_main(void)
 #if (SETUP_TX_USE_MBRIDGE == 1)
     if (bridge.channels_updated) {
       bridge.channels_updated = 0;
-      // when we received channels packet from the transmitter, we send link stats to transmitter
+      // when we receive channels packet from transmitter, we send link stats to transmitter
       tMBridgeLinkStats lstats = {0};
       lstats.rssi = stats.last_rx_rssi;
       lstats.LQ = txstats.GetLQ();
@@ -415,9 +483,9 @@ int main_main(void)
       lstats.receiver_snr = INT8_MAX;
       lstats.receiver_rssi2 = INT8_MAX;
       lstats.receiver_ant_no = 0;
-      lstats.LQ_received_ma = txstats.GetNormalizedLQ();
+      lstats.LQ_received_ma = stats.GetTransmitBandwidthUsage();
       lstats.LQ_received = stats.LQ_received;
-      lstats.LQ_valid_received = stats.LQ_valid_received; // is the same as LQ, except 0,1
+      lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
       bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels

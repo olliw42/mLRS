@@ -10,22 +10,18 @@
 v0.0.00:
 
 TODO:
-we need multiple "connected" time scales
-- for deciding to output sbus
-- for deciding when pll locks and unlocks, so it re-locks
-- for deciding when to stay in RX, i.e, we shouldn't send TX if we want to reconnect
-- for deciding when to try a "fast" reconnect
-- for deciding when to go back to "full" connect
-- for deciding if it got a signal
-- for deciding when/how to calculate LQ
-??
-
 effect of USE_DCDC? where to place it??
 
 can one put now ReadfRame out of isr? would allow using one spi for two sx
 
 should we do a delay between rxdone and transmitting?
-technically yes, but it seems no need to be done explicitly
+technically yes, but it seems no need to explicitly do it
+
+in sync, allow some few missed frames, currently no miss allowed
+
+in sync, cycle frequency slowly
+
+do retransmissions
 */
 
 #define DBG_MAIN(x)
@@ -57,45 +53,21 @@ technically yes, but it seems no need to be done explicitly
 #include "..\Common\common.h"
 
 #include "clock.h"
-#include "pll.h"
 #include "out.h"
 #include "rxstats.h"
 
 
-class Pll : public PllBase
-{
-public:
-  uint16_t tim_10us(void) override { return CLOCK_TIMx->CNT; }
-  void tim_set_period_10us(uint16_t period_10us) override { clock_oc_period = period_10us; }
-};
-
-
-Pll pll;
-volatile bool do_post_receive;
 ClockBase clock;
-
-// PLL:
-// we lock on RxDone
-// that is, the events pll.tick() and pll.rxdone() are brought into sync
-// pll.update() is called in middle of cycle and does the pll update
-// do_post_receive is triggered 1 ms after pll.tick(), which is ca 1 ms
-// after a packet was or was supposed to be received
+volatile bool do_post_receive;
 
 IRQHANDLER(
 void CLOCK_IRQHandler(void)
 {
   if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
     LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
-    CLOCK_TIMx->CCR2 = CLOCK_TIMx->CCR1 + (clock_oc_period/2);
-    CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_OC3_SHIFT_10US;
-    CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + clock_oc_period;
-    pll.tick();
+    CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
+    CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
     //LED_GREEN_ON;
-  }
-  if (LL_TIM_IsActiveFlag_CC2(CLOCK_TIMx)) { // pll update must be in the middle of the cycle
-    LL_TIM_ClearFlag_CC2(CLOCK_TIMx);
-    pll.update();
-    //LED_GREEN_OFF;
   }
   if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
     LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
@@ -137,9 +109,7 @@ void init(void)
 
   uartc_init();
 
-  clock.InitIsrOff(FRAME_RATE_MS*1000);
-  pll.Init(FRAME_RATE_MS*1000);
-  clock.EnableIsr();
+  clock.Init();
   do_post_receive = false;
 
   sx.Init();
@@ -176,22 +146,24 @@ void SX_DIO1_EXTI_IRQHandler(void)
   if (irq_status & SX1280_IRQ_RX_DONE) {
     sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
   }
-  //pll.rx_done1(); // we need to check correctness of packed before accepting it
 })
 
 
 typedef enum {
-    LINK_STATE_CONNECT = 0,
+    CONNECT_STATE_LISTEN = 0,
+    CONNECT_STATE_SYNC,
+    CONNECT_STATE_CONNECTED,
+} CONNECT_STATE_ENUM;
 
-    LINK_STATE_RECEIVE,
+typedef enum {
+    LINK_STATE_RECEIVE = 0,
     LINK_STATE_RECEIVE_WAIT,
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
 } LINK_STATE_ENUM;
 
-#define IS_CONNECT_STATE   (link_state == LINK_STATE_CONNECT)
-#define IS_RECEIVE_STATE   (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
-#define IS_TRANSMIT_STATE  (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
+#define IS_RECEIVE_STATE    (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
+#define IS_TRANSMIT_STATE   (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
 
 
 void do_transmit(bool set_ack) // we send a RX frame to transmitter
@@ -199,11 +171,17 @@ void do_transmit(bool set_ack) // we send a RX frame to transmitter
   uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
   uint8_t payload_len = 0;
 
-  for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-    if (!serial.available()) break;
-    payload[payload_len] = serial.getc();
-    payload_len++;
+  if (connected()) {
+    for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+      if (!serial.available()) break;
+      payload[payload_len] = serial.getc();
+      payload_len++;
+    }
+  } else {
+    serial.flush();
   }
+
+  stats.AddBytesTransmitted(payload_len);
 
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
@@ -251,10 +229,14 @@ void process_received_frame(bool full)
 
   rcdata_from_txframe(&rcData, &txFrame);
 
-  // forward data to serial
-  for (uint8_t i = 0; i < txFrame.status.payload_len; i++) {
-    serial.putc(txFrame.payload[i]);
-    DBG_MAIN(uartc_putc(txFrame.payload[i]);)
+  // forward data to serial, but only if connected
+  if (connected()) {
+    for (uint8_t i = 0; i < txFrame.status.payload_len; i++) {
+      serial.putc(txFrame.payload[i]);
+      DBG_MAIN(uartc_putc(txFrame.payload[i]);)
+    }
+
+    stats.AddBytesReceived(txFrame.status.payload_len);
   }
 
   DBG_MAIN(uartc_putc('\n');)
@@ -268,7 +250,7 @@ bool ok = false;
   uint8_t res = check_received_frame(); // returns CHECK enum
 
   if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
-    pll.rx_done(); // we only accept valid frames for this
+    clock.Reset();
 
     bool full = (res == CHECK_OK);
 
@@ -280,7 +262,7 @@ bool ok = false;
     ok = true;
   }
 
-  if (res != CHECK_ERROR_NOT_FOR_US) {
+  if (res != CHECK_ERROR_SYNCWORD) {
     // read it here, we want to have it even if it's a bad packet, but it should be for us
     sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
@@ -300,8 +282,6 @@ void rescue(uint8_t t_ms)
   delay_ms(t_ms); // 2ms works, 1ms doesn't, play it safe and give it 5ms
 
   sx.Configure();
-
-  //sx.SetRfFrequency(...) do in main
 }
 
 
@@ -314,25 +294,16 @@ uint16_t led_blink;
 uint16_t tick_1hz;
 
 uint8_t link_state;
-uint16_t connected_tmo_cnt;
+uint8_t connect_state;
+uint16_t connect_tmo_cnt;
+uint8_t connect_sync_cnt;
 
 uint32_t link_rescue_cnt; // rescue in state transmit
 
-// receiving means:
-//   we are receiving valid frames, but we may miss some occasionally
-//   the receiving flag is lost when too many (by whatever criterion) frames are missed
-// connected means:
-//   we are receiving, but in addition further health conditions are met
-//   only when connected we send out e.g. pulses on the sbus pin, etc
-
-static inline bool receiving(void)
-{
-  return (connected_tmo_cnt > 0);
-}
 
 static inline bool connected(void)
 {
-  return (connected_tmo_cnt > 0) && (pll.locked);
+  return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 
@@ -356,15 +327,19 @@ int main_main(void)
   sx.StartUp();
   fhss.Init(SEEDDBLWORD);
   fhss.StartRx();
+  fhss.HopToConnect();
   sx.SetRfFrequency(fhss.GetCurr());
 
-//  for (uint8_t n = 0; n < FHSS_MAX_NUM; n++) {
+//  for (uint8_t n = 0; n < fhss.Cnt(); n++) {
 //    uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[n])); uartc_puts("\n");
 //  }
 
-  link_state = LINK_STATE_CONNECT; //RECEIVE;
-  connected_tmo_cnt = 0;
+  link_state = LINK_STATE_RECEIVE;
+  connect_state = CONNECT_STATE_LISTEN;
+  connect_tmo_cnt = 0;
+  connect_sync_cnt = 0;
   link_rescue_cnt = 0;
+
   rxstats.Init(LQ_AVERAGING_PERIOD);
 
   out.Configure(OUT_CONFIG_SBUS);
@@ -377,8 +352,8 @@ int main_main(void)
     if (doSysTask) {
       doSysTask = 0;
 
-      if (connected_tmo_cnt) {
-        connected_tmo_cnt--;
+      if (connect_tmo_cnt) {
+        connect_tmo_cnt--;
       }
 
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
@@ -414,27 +389,31 @@ int main_main(void)
 
         uartc_puts(s8toBCD_s(stats.last_rx_rssi)); uartc_putc(',');
         uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_rx_snr));
-        uartc_putc('\n');
+        uartc_puts(s8toBCD_s(stats.last_rx_snr)); uartc_puts("; ");
 
+        uartc_puts(u16toBCD_s(stats.bytes_per_sec_transmitted)); uartc_puts(", ");
+        uartc_puts(u16toBCD_s(stats.bytes_per_sec_received)); uartc_puts("; ");
+        uartc_putc('\n');
       }
     }
 
     switch (link_state) {
-    case LINK_STATE_CONNECT:
     case LINK_STATE_RECEIVE: {
-DBG_STATUS(uint8_t status = sx.GetStatus();
+      DBG_STATUS(uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
         uartc_puts("$$"); uartc_puts(u8toHEX_s(status>>5));
         break;
       })
-      //if (link_state == LINK_STATE_RECEIVE) fhss.HopToNext();
-      fhss.HopToNext();
+      if (connect_state == CONNECT_STATE_LISTEN) {
+        fhss.HopToConnect();
+      } else {
+        fhss.HopToNext();
+      }
       sx.SetRfFrequency(fhss.GetCurr());
       rxstats.Clear();
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
-DBG_STATUS(status = sx.GetStatus();
+      DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_RX) {
         uartc_puts("$"); uartc_puts(u8toHEX_s(status>>5));
       })
@@ -443,13 +422,13 @@ DBG_STATUS(status = sx.GetStatus();
       }break;
 
     case LINK_STATE_TRANSMIT: {
-DBG_STATUS(uint8_t status = sx.GetStatus();
+      DBG_STATUS(uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
         uartc_puts("!!"); uartc_puts(u8toHEX_s(status>>5));
         break;
       })
       do_transmit(false);
-DBG_STATUS(status = sx.GetStatus();
+      DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
         uartc_puts("!"); uartc_puts(u8toHEX_s(status>>5));
         rescue(4);
@@ -469,7 +448,17 @@ DBG_STATUS(status = sx.GetStatus();
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
           if (do_receive()) {
-            connected_tmo_cnt = CONNECT_TMO_SYSTICKS;
+            if (connect_state == CONNECT_STATE_LISTEN) {
+              connect_state = CONNECT_STATE_SYNC;
+              connect_sync_cnt = 0;
+            } else
+            if (connect_state == CONNECT_STATE_SYNC) {
+              connect_sync_cnt++;
+              if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+            } else {
+              connect_state = CONNECT_STATE_CONNECTED;
+            }
+            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
             link_state = LINK_STATE_TRANSMIT; // switch to TX
           }
           DBG_MAIN_FULL(uartc_puts("RX: rx done\n");)
@@ -502,13 +491,29 @@ DBG_STATUS(status = sx.GetStatus();
     if (do_post_receive) {
       do_post_receive = false;
 
-      if (!IS_CONNECT_STATE) {
+      if (connected() && !connect_tmo_cnt) {
+        // switch to listen state
+        // only do it if connected, since otherwise it never could reach receive wait and hence never could connect
+        connect_state = CONNECT_STATE_LISTEN;
+        link_state = LINK_STATE_RECEIVE; // switch back to RX
+      }
+
+      if (connect_state != CONNECT_STATE_CONNECTED) {
         rxstats.Next();
         rxstats.Set();
       }
       rxstats.Clear();
 
-      if (connected() && !IS_TRANSMIT_STATE) { // only do this if connected, else keep it in RX mode, otherwise chances to connect are dim
+      bool missed = false;
+      if ((connect_state != CONNECT_STATE_LISTEN) && !IS_TRANSMIT_STATE) {
+        missed = true;
+
+        // reset sync counter, relevant if in sync
+        connect_sync_cnt = 0;
+
+        // switch to transmit state
+        // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
+        // we are on the correct frequency, so no need to hop
         sx.SetFs();
         link_state = LINK_STATE_TRANSMIT;
       }
@@ -516,27 +521,30 @@ DBG_STATUS(status = sx.GetStatus();
       if (connected()) {
         out.send_rcdata(&rcData);
       }
-    }
-
 /*
-    if (pll.is_updated()) {
+      static uint16_t tlast_10us = 0;
+      uint16_t tnow_10us = clock.tim_10us();
+      uint16_t dt = tnow_10us - tlast_10us;
+      tlast_10us = tnow_10us;
+
       uartc_puts(" ");
-      uartc_puts(u8toBCD_s(pll.snap_idx)); uartc_puts(": ");
-      uartc_puts(u16toBCD_s(pll.snap_tlast_rx_done)); uartc_puts(", ");
-      uartc_puts(u16toBCD_s(pll.snap_tlast_tick)); uartc_puts(", ");
-      uartc_puts(u16toBCD_s(pll.snap_period)); uartc_puts(", ");
-      uartc_puts(s16toBCD_s(pll.snap_phase)); uartc_puts("; ");
-      //uartc_puts(u16toBCD_s(pll.expected_period)); uartc_puts("; ");
-      uartc_puts(u16toBCD_s(pll.phase_abs_filt_n/pll.phase_abs_filt_fact)); uartc_puts("; ");
-      uartc_puts(u8toBCD_s(pll.obtained)); uartc_puts(", ");
-      uartc_puts(u8toBCD_s(pll.missed)); uartc_puts("; ");
-//      uartc_puts(pll.locked ? "l " : "u ");
-//      uartc_puts(connected() ? "c " : "d ");
-//      uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_puts("; ");
-      if (pll.snap_phase == INT16_MAX)  uartc_puts(" !!");
+      uartc_puts(u16toBCD_s(tnow_10us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
+      uartc_puts(missed ? "m " : "o ");
+      switch (link_state) {
+      case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
+      case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
+      case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
+      case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
+      }
+      switch (connect_state) {
+      case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
+      case CONNECT_STATE_SYNC: uartc_puts("S "); break;
+      case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
+      }
+      uartc_puts(connected() ? "c " : "d ");
       uartc_puts("\n");
-    }
 */
+    }
 
   }//end of while(1) loop
 

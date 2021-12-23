@@ -17,6 +17,12 @@
 #include "common_conf.h"
 
 
+#define FHSS_MAX_NUM    32
+
+#if FHSS_NUM > FHSS_MAX_NUM
+#error FHSS_NUM too large !
+#endif
+
 //-------------------------------------------------------
 // Frequency list
 //-------------------------------------------------------
@@ -118,70 +124,52 @@ class FhssBase
   void StartRx(void) {}
   void StartTx(void) {}
   uint32_t GetCurr(void) { return fhss_list[0]; }
-  void Enable(void) {}
   void HopToNext(void) {}
+  void HopToConnect(void) {}
 #else
 
     void Init(uint32_t seed)
     {
+      cnt = FHSS_NUM;
+
       generate(seed);
-
-      enabled = false;
     }
-
-    // for Rx
 
     void StartRx(void)
     {
       curr_i = 0;
-      enabled = true;
     }
-
-    // for Tx
 
     void StartTx(void)
     {
       curr_i = 0;
-      enabled = true;
     }
 
-    // for both
+    uint8_t Cnt(void)
+    {
+      return cnt;
+    }
 
     uint32_t GetCurr(void)
     {
-      if (!enabled) return fhss_list[0];
-
       return fhss_list[curr_i];
-    }
-
-    void Enable(void)
-    {
-      enabled = true;
     }
 
     void HopToNext(void)
     {
-      if (!enabled) return;
-
       curr_i++;
-      if (curr_i >= FHSS_MAX_NUM) curr_i = 0;
+      if (curr_i >= cnt) curr_i = 0;
     }
 
-
-    uint32_t GetNextX(void)
+    void HopToConnect(void) // we could (should?) implement a more sophisticated procedure
     {
-      if (!enabled) return fhss_list[0];
-
-      curr_i++;
-      if (curr_i >= FHSS_MAX_NUM) curr_i = 0;
-      return fhss_list[curr_i];
+      curr_i = 0;
     }
-
 
     uint32_t bestX(void)
     {
       uint8_t i_best = 0;
-      for (uint8_t i = 0; i < FHSS_MAX_NUM; i++) {
+      for (uint8_t i = 0; i < cnt; i++) {
         if (fhss_last_rssi[i] > fhss_last_rssi[i_best]) i_best = i;
       }
 
@@ -191,11 +179,10 @@ class FhssBase
 #endif
 
 //  private:
-    bool enabled = false;
-
     uint32_t _seed;
 
     uint8_t curr_i;
+    uint8_t cnt;
     uint32_t fhss_list[FHSS_MAX_NUM]; // that's our list of randomly selected frequencies
     int8_t fhss_last_rssi[FHSS_MAX_NUM];
 

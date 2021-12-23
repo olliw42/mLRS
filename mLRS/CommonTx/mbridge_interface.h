@@ -134,6 +134,7 @@ class tMBridge : public tMBridgeBase, tSerialBase
     void putbuf(void* buf, uint16_t len) { sx_rx_fifo.putbuf(buf, len); }
     bool available(void) { return sx_tx_fifo.available(); }
     char getc(void) { return sx_tx_fifo.getc(); }
+    void flush(void) { sx_tx_fifo.flush(); }
 
     // backend
     FifoBase sx_tx_fifo;

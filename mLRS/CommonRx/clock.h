@@ -12,8 +12,7 @@
 
 // we use a 10us time base, so that overrun is 655 ms
 // 65 ms would only be 3 packets
-// I have also tested it with 1us time base, and it also works fine
-// however, with 1us I just couldn't get the PLL to converge as fast as with 10us !?!?
+// I have tested it with 1us time base, and it also works fine, but hey
 
 
 #define CLOCK_TIMx                TIM3
@@ -21,33 +20,30 @@
 #define CLOCK_IRQHandler          TIM3_IRQHandler
 //#define CLOCK_IRQ_PRIORITY        10
 
-
-#define CLOCK_OC3_SHIFT_10US      100 // 1 ms
-
-
-volatile uint16_t clock_oc_period;
+#define CLOCK_PERIOD_10US         (FRAME_RATE_MS*100)
+#define CLOCK_SHIFT_10US          100 // 1 ms
 
 
 class ClockBase
 {
   public:
-    void InitIsrOff(uint16_t oc_period_us);
+    void Init(void);
+    void InitIsrOff(void);
     void EnableIsr(void);
+
+    uint16_t tim_10us(void);
+
+    void Reset(void);
 };
 
 
-void ClockBase::InitIsrOff(uint16_t oc_period_us)
+void ClockBase::InitIsrOff(void)
 {
     tim_init_up(CLOCK_TIMx, 0xFFFF, TIMER_BASE_10US);
 
-    clock_oc_period = oc_period_us / 10;
-
     LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
-    TIM_OC_InitStruct.CompareValue = 100;  // start in 1 ms;
+    TIM_OC_InitStruct.CompareValue = 100; // start in 1 ms;
     LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct); // pll.tick()
-
-    TIM_OC_InitStruct.CompareValue = 200; // only needs to be later than OC1
-    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH2, &TIM_OC_InitStruct); // pll.update()
 
     TIM_OC_InitStruct.CompareValue = 200; // only needs to be later than OC1
     LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct); // do_post_receive
@@ -59,8 +55,32 @@ void ClockBase::InitIsrOff(uint16_t oc_period_us)
 void ClockBase::EnableIsr(void)
 {
     LL_TIM_EnableIT_CC1(CLOCK_TIMx);
-    LL_TIM_EnableIT_CC2(CLOCK_TIMx);
     LL_TIM_EnableIT_CC3(CLOCK_TIMx);
+}
+
+
+void ClockBase::Init(void)
+{
+  InitIsrOff();
+  EnableIsr();
+}
+
+
+void ClockBase::Reset(void)
+{
+    __disable_irq();
+    uint16_t CNT = CLOCK_TIMx->CNT;
+    CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
+    CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
+    LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
+    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
+    __enable_irq();
+}
+
+
+uint16_t ClockBase::tim_10us(void)
+{
+    return CLOCK_TIMx->CNT;
 }
 
 

@@ -32,7 +32,7 @@ void HAL_IncTick(void)
 }
 
 
-uint32_t millis(void)
+uint32_t millis32(void)
 {
     return uwTick;
 }
@@ -48,10 +48,10 @@ STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch RxFrame"
 
 typedef enum {
     CHECK_OK = 0,
-    CHECK_ERROR_NOT_FOR_US, // 1
-    CHECK_ERROR_HEADER,     // 2
-    CHECK_ERROR_CRC1,       // 3
-    CHECK_ERROR_CRC,        // 4
+    CHECK_ERROR_SYNCWORD, // 1
+    CHECK_ERROR_HEADER,   // 2
+    CHECK_ERROR_CRC1,     // 3
+    CHECK_ERROR_CRC,      // 4
 } CHECK_ENUM;
 
 
@@ -111,44 +111,44 @@ uint8_t check_tx_frame(tTxFrame* frame)
 {
 uint16_t crc;
 
-  if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_NOT_FOR_US;
-  if (frame->status.frame_type != FRAME_TYPE_TX) return CHECK_ERROR_HEADER;
-  if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
+    if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_SYNCWORD;
+    if (frame->status.frame_type != FRAME_TYPE_TX) return CHECK_ERROR_HEADER;
+    if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
-  fmav_crc_init(&crc);
-  fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-  if ((uint8_t)crc != frame->crc1)  return CHECK_ERROR_CRC1;
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+    if ((uint8_t)crc != frame->crc1)  return CHECK_ERROR_CRC1;
 
-  fmav_crc_init(&crc);
-  fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
-  if (crc != frame->crc)  return CHECK_ERROR_CRC;
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
+    if (crc != frame->crc)  return CHECK_ERROR_CRC;
 
-  return CHECK_OK;
+    return CHECK_OK;
 }
 
 
 void rcdata_ch0to3_from_txframe(tRcData* rc, tTxFrame* frame)
 {
-  rc->ch[0] = frame->rc1.ch0;
-  rc->ch[1] = frame->rc1.ch1;
-  rc->ch[2] = frame->rc1.ch2;
-  rc->ch[3] = frame->rc1.ch3;
+    rc->ch[0] = frame->rc1.ch0;
+    rc->ch[1] = frame->rc1.ch1;
+    rc->ch[2] = frame->rc1.ch2;
+    rc->ch[3] = frame->rc1.ch3;
 }
 
 
 void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 {
-  rc->ch[0] = frame->rc1.ch0;
-  rc->ch[1] = frame->rc1.ch1;
-  rc->ch[2] = frame->rc1.ch2;
-  rc->ch[3] = frame->rc1.ch3;
-  for (uint8_t i = 0; i < FRAME_TX_RCDATA2_LEN; i++) {
-    rc->ch[4+i] = frame->rc2.ch[i] * 8;
-  }
-  rc->ch[14] = (frame->rc1.ch14) ? 2047 : 0;
-  rc->ch[15] = (frame->rc1.ch15) ? 2047 : 0;
-  rc->ch[16] = (frame->rc1.ch16) ? 2047 : 0;
-  rc->ch[17] = (frame->rc1.ch17) ? 2047 : 0;
+    rc->ch[0] = frame->rc1.ch0;
+    rc->ch[1] = frame->rc1.ch1;
+    rc->ch[2] = frame->rc1.ch2;
+    rc->ch[3] = frame->rc1.ch3;
+    for (uint8_t i = 0; i < FRAME_TX_RCDATA2_LEN; i++) {
+        rc->ch[4+i] = frame->rc2.ch[i] * 8;
+    }
+    rc->ch[14] = (frame->rc1.ch14) ? 2047 : 0;
+    rc->ch[15] = (frame->rc1.ch15) ? 2047 : 0;
+    rc->ch[16] = (frame->rc1.ch16) ? 2047 : 0;
+    rc->ch[17] = (frame->rc1.ch17) ? 2047 : 0;
 }
 
 
@@ -183,16 +183,16 @@ uint8_t check_rx_frame(tRxFrame* frame)
 {
 uint16_t crc;
 
-  if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_NOT_FOR_US;
+    if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_SYNCWORD;
 
-  if (frame->status.frame_type != FRAME_TYPE_RX) return CHECK_ERROR_HEADER;
-  if (frame->status.payload_len > FRAME_RX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
+    if (frame->status.frame_type != FRAME_TYPE_RX) return CHECK_ERROR_HEADER;
+    if (frame->status.payload_len > FRAME_RX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
-  fmav_crc_init(&crc);
-  fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
-  if (crc != frame->crc) return CHECK_ERROR_CRC;
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
+    if (crc != frame->crc) return CHECK_ERROR_CRC;
 
-  return CHECK_OK;
+    return CHECK_OK;
 }
 
 
@@ -202,7 +202,7 @@ uint16_t crc;
 
 class Stats {
   public:
-	// this is one of the ways to calculate stats
+	  // this is one of the ways to calculate LQ stats
     uint32_t frames_received;
     uint32_t valid_crc1_frames_received; // received frames which passed check_rx_frame() up to crc1, but not crc
     uint32_t valid_frames_received; // received frames which also pass check_rx_frame()
@@ -214,6 +214,16 @@ class Stats {
     uint32_t frames_received_last;
     uint32_t valid_crc1_frames_received_last;
     uint32_t valid_frames_received_last;
+
+    // bytes stats
+    uint32_t bytes_transmitted; // 50 * 64 = 3200 bytes/s or 50 * 82 = 4100 bytes/s => good for 12 days
+    uint32_t bytes_received;
+
+    uint32_t bytes_transmitted_last;
+    uint32_t bytes_received_last;
+
+    uint16_t bytes_per_sec_transmitted;
+    uint16_t bytes_per_sec_received;
 
     // statistics for our device
     int8_t last_rx_rssi; // note: is negative!
@@ -232,58 +242,110 @@ class Stats {
 
     void Init(void)
     {
-      frames_received = valid_crc1_frames_received = valid_frames_received = 0;
-      LQ_received = LQ_valid_crc1_received = LQ_valid_received = 0; //UINT8_MAX;
-      frames_received_last = valid_crc1_frames_received_last = valid_frames_received_last = 0;
+        frames_received = valid_crc1_frames_received = valid_frames_received = 0;
+        LQ_received = LQ_valid_crc1_received = LQ_valid_received = 0; //UINT8_MAX;
+        frames_received_last = valid_crc1_frames_received_last = valid_frames_received_last = 0;
 
-      last_rx_rssi = INT8_MAX;
-      last_rx_snr = INT8_MAX;
-      rx_LQ = 0; //UINT8_MAX;
+        bytes_transmitted = bytes_received = 0;
+        bytes_transmitted_last = bytes_received_last = 0;
 
-      received_rssi = INT8_MAX;
-      received_LQ = 0; //UINT8_MAX;
+        last_rx_rssi = INT8_MAX;
+        last_rx_snr = INT8_MAX;
+        rx_LQ = 0; //UINT8_MAX;
+
+        received_rssi = INT8_MAX;
+        received_LQ = 0; //UINT8_MAX;
     }
 
     void Clear(void)
     {
-      last_rx_rssi = INT8_MAX;
-      last_rx_snr = INT8_MAX;
-      rx_LQ = 0; //UINT8_MAX;
+        last_rx_rssi = INT8_MAX;
+        last_rx_snr = INT8_MAX;
+        rx_LQ = 0; //UINT8_MAX;
 
-      received_rssi = INT8_MAX;
-      received_LQ = 0; //UINT8_MAX;
+        received_rssi = INT8_MAX;
+        received_LQ = 0; //UINT8_MAX;
+    }
+
+    void AddBytesTransmitted(uint16_t len)
+    {
+        bytes_transmitted += len;
+    }
+
+    void AddBytesReceived(uint16_t len)
+    {
+        bytes_received += len;
     }
 
     void Update1Hz(void)
     {
     uint32_t diff;
 
-      diff = frames_received - frames_received_last;
-      LQ_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+        diff = frames_received - frames_received_last;
+        LQ_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
-      diff = valid_crc1_frames_received - valid_crc1_frames_received_last;
-      LQ_valid_crc1_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+        diff = valid_crc1_frames_received - valid_crc1_frames_received_last;
+        LQ_valid_crc1_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
-      diff = valid_frames_received - valid_frames_received_last;
-      LQ_valid_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+        diff = valid_frames_received - valid_frames_received_last;
+        LQ_valid_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
-      frames_received_last = frames_received;
-      valid_crc1_frames_received_last = valid_crc1_frames_received;
-      valid_frames_received_last = valid_frames_received;
+        frames_received_last = frames_received;
+        valid_crc1_frames_received_last = valid_crc1_frames_received;
+        valid_frames_received_last = valid_frames_received;
+
+        diff = bytes_transmitted - bytes_transmitted_last;
+        bytes_per_sec_transmitted = diff;
+
+        diff = bytes_received - bytes_received_last;
+        bytes_per_sec_received = diff;
+
+        bytes_transmitted_last = bytes_transmitted;
+        bytes_received_last = bytes_received;
 
 #ifdef DEVICE_IS_TRANSMITTER
-      rx_LQ = LQ_valid_received; // this should always be <= valid_received !
+        rx_LQ = LQ_valid_received; // this should always be <= valid_received !
 #endif
 #ifdef DEVICE_IS_RECEIVER
-      // same logic as for rxstats
-      if (LQ_valid_received >= 25) {
-    	rx_LQ = LQ_valid_received;
-      } else
-      if (LQ_valid_crc1_received >= 25) {
-  	    rx_LQ = 25;
-      } else {
-    	rx_LQ = LQ_valid_crc1_received;
-      }
+        // same logic as for rxstats
+        if (LQ_valid_received >= 25) {
+            rx_LQ = LQ_valid_received;
+        } else
+        if (LQ_valid_crc1_received >= 25) {
+            rx_LQ = 25;
+        } else {
+            rx_LQ = LQ_valid_crc1_received;
+        }
+#endif
+    }
+
+    uint16_t GetTransmitBytesPerSec(void)
+    {
+        return bytes_per_sec_transmitted;
+    }
+
+    uint16_t GetReceiveBytesPerSec(void)
+    {
+        return bytes_per_sec_received;
+    }
+
+    uint8_t GetTransmitBandwidthUsage(void)
+    {
+#ifdef DEVICE_IS_TRANSMITTER
+        return (bytes_per_sec_transmitted + 15) / 32; // 3200 bytes/s max
+#endif
+#ifdef DEVICE_IS_RECEIVER
+        return (bytes_per_sec_transmitted + 20) / 41; // 4100 bytes/s max
+#endif
+    }
+
+    uint8_t GetReceiveBandwidthUsage(void)
+    {
+#ifdef DEVICE_IS_TRANSMITTER
+        return (bytes_per_sec_received + 20) / 41; // 4100 bytes/s max
+#endif
+#ifdef DEVICE_IS_RECEIVER
+        return (bytes_per_sec_received + 15) / 32; // 3200 bytes/s max
 #endif
     }
 };
@@ -301,6 +363,7 @@ class tSerialBase
     void putbuf(void* buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) putc(((char*)buf)[i]); }
     bool available(void) { return 0; }
     char getc(void) { return '\0'; }
+    void flush(void) {};
 };
 
 // this is the serial port
@@ -312,6 +375,7 @@ class tSerialPort : public tSerialBase
     void putc(char c) override { uartb_putc(c); }
     bool available(void) { return uartb_rx_available(); }
     char getc(void) { return uartb_getc(); }
+    void flush(void) { uartb_rx_flush(); uartb_tx_flush(); }
 };
 
 

@@ -92,8 +92,11 @@ void send_radio_status_v2(void)
       MAV_COMP_ID_TELEMETRY_RADIO,
       stats.last_rx_rssi, (128 + stats.last_rx_rssi), txstats.GetLQ(), stats.last_rx_snr,
       stats.received_rssi, (128 + stats.received_rssi), stats.received_LQ, INT8_MAX,
+      stats.GetTransmitBytesPerSec(), stats.GetReceiveBytesPerSec(),
+      stats.GetTransmitBandwidthUsage(), stats.GetReceiveBandwidthUsage(),
       //int8_t rssi_dbm, uint8_t rssi_au, uint8_t LQ, int8_t snr_dbm,
       //int8_t rem_rssi_dbm, uint8_t rem_rssi_au, uint8_t rem_LQ, int8_t rem_snr_dbm,
+      //uint16_t tx_bps, uint16_t rx_bps, uint8_t tx_used_bandwidth, uint8_t rx_used_bandwidth,
       &f_status);
   f_send();
 }

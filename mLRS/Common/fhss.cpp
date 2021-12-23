@@ -34,7 +34,7 @@ void FhssBase::generate(uint32_t seed)
 
 //  uartc_puts("fhss generate\n");
 
-  for (uint8_t k = 0; k < FHSS_MAX_NUM; k++) {
+  for (uint8_t k = 0; k < cnt; k++) {
 
      uint8_t fi = prng() % (FREQ_LIST_LEN - k); // get a new frequency index
 
@@ -62,7 +62,7 @@ void FhssBase::generate(uint32_t seed)
 
   curr_i = 0;
   // mark all channels as equally bad
-  for (uint8_t k = 0; k < FHSS_MAX_NUM; k++) {
+  for (uint8_t k = 0; k < cnt; k++) {
     fhss_last_rssi[k] = INT8_MIN;
   }
 }

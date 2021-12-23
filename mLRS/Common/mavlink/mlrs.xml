@@ -14,6 +14,10 @@
       <field type="uint8_t" name="rem_rssi_au" invalid="UINT8_MAX">Remote signal strength indication in device-dependent units/scale. Values: [0-254], UINT8_MAX: invalid/unknown.</field>
       <field type="uint8_t" name="rem_LQ" invalid="UINT8_MAX">Remote link quality (LQ) in percent. Values: [0-100], UINT8_MAX: invalid/unknown.</field>
       <field type="int8_t" name="rem_snr_dbm" invalid="INT16_MAX">Remote SNR in dBm, INT16_MAX: invalid/unknown.</field>
+      <field type="uint16_t" name="tx_bps" invalid="UINT16_MAX">Transmitted bytes per second, UINT16_MAX: invalid/unknown.</field>
+      <field type="uint16_t" name="rx_bps" invalid="UINT16_MAX">Recieved bytes per second, UINT16_MAX: invalid/unknown.</field>
+      <field type="uint8_t" name="tx_used_bandwidth" invalid="UINT8_MAX">Transmit bandwidth consumption. Values: [0-100], UINT8_MAX: invalid/unknown.</field>
+      <field type="uint8_t" name="rx_used_bandwidth" invalid="UINT8_MAX">Receive bandwidth consumption. Values: [0-100], UINT8_MAX: invalid/unknown.</field>
     </message>
   </messages>
 </mavlink>

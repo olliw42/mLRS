@@ -42,7 +42,7 @@ typedef enum {
 #define FRAME_HEADER_LEN        6
 #define FRAME_TX_RCDATA1_LEN    6
 #define FRAME_TX_RCDATA2_LEN    10
-#define FRAME_TX_PAYLOAD_LEN    64
+#define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN    82
 
 
@@ -110,8 +110,8 @@ typedef struct
 PACKED(
 typedef struct
 {
-  uint16_t sync_word;
-  tStatus status;
+  uint16_t sync_word; // 2 bytes
+  tStatus status; // 4 bytes
   uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
   uint16_t crc;
 }) tRxFrame;

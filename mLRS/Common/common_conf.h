@@ -64,8 +64,8 @@
 #define LQ_AVERAGING_MS                 1000
 
 
-#define FHSS_MAX_NUM                    4 // 16 // 1 // 4 // 16
-#define FHSS_DISABLED
+#define FHSS_NUM                        16 // 16 // 1 // 4 // 16
+//#define FHSS_DISABLED
 
 
 //-------------------------------------------------------
@@ -73,6 +73,8 @@
 //-------------------------------------------------------
 
 #define CONNECT_TMO_SYSTICKS            SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f*FRAME_RATE_MS ));
+
+#define CONNECT_SYNC_CNT                (uint8_t)(1.5f * FHSS_NUM)
 
 #define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
 
