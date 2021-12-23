@@ -32,6 +32,7 @@
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           512
+
 #define UARTB_CTS                 IO_PA0
 #define UARTB_RTS                 IO_PA1
 
@@ -52,7 +53,7 @@
 //#define UART_RXBUFSIZE            512
 
 
-//-- SX12xx & SPI
+//-- SX1: SX12xx & SPI
 
 #define SPI_USE_SPI1              // PB3, PB4, PB5
 #define SPI_CS_IO                 IO_PA4
@@ -69,8 +70,8 @@
 
 //#define SX_POWER_MAX
 
-#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
-#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE0
+#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
+#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE0
 #define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_0
 #define SX_DIO1_EXTI_IRQn             EXTI0_IRQn
 #define SX_DIO1_EXTI_IRQHandler       EXTI0_IRQHandler
@@ -79,7 +80,6 @@
 void sx_init_gpio(void)
 {
   gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 #ifdef SX_BUSY
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
@@ -108,8 +108,7 @@ void sx_amp_receive(void)
 
 void sx_dio1_init_exti_isroff(void)
 {
-  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
-  LL_SYSCFG_SetEXTISource(SX_DIO1_SYSCFG_EXTI_PORTx, SX_DIO1_SYSCFG_EXTI_LINEx);
+  LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
 
   // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
   LL_EXTI_DisableEvent_0_31(SX_DIO1_EXTI_LINE_x);
@@ -121,14 +120,14 @@ void sx_dio1_init_exti_isroff(void)
   NVIC_EnableIRQ(SX_DIO1_EXTI_IRQn);
 }
 
-void sx_dio1_enable_isr(void)
+void sx_dio1_enable_exti_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);
 }
 
 
-//-- SX12xx II & SPIB
+//-- SX2: SX12xxB & SPIB
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
@@ -145,24 +144,33 @@ void sx_dio1_enable_isr(void)
 
 //#define SX2_POWER_MAX
 
-#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTA
-#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE8
+#define SX2_DIO1_GPIO_AF_EXTI_PORTx   LL_GPIO_AF_EXTI_PORTA
+#define SX2_DIO1_GPIO_AF_EXTI_LINEx   LL_GPIO_AF_EXTI_LINE8
 #define SX2_DIO1_EXTI_LINE_x          LL_EXTI_LINE_8
-#define SX2_DIO1_EXTI_IRQn            EXTI5_9_IRQn
-#define SX2_DIO1_EXTI_IRQHandler      EXTI5_9_IRQHandler
+#define SX2_DIO1_EXTI_IRQn            EXTI9_5_IRQn
+#define SX2_DIO1_EXTI_IRQHandler      EXTI9_5_IRQHandler
 //#define SX2_DIO1_EXTI_IRQ_PRIORITY   11
 
 
 //-- SBus output pin
 
 #define OUT                       IO_PA9 // UART1 TX
-//#define OUT_XOR
-//#define OUT_SET_NORMAL            gpio_low(OUT_XOR)
-//#define OUT_SET_INVERTED          gpio_high(OUT_XOR)
-#define OUT_INVERT_INTERNAL
+#define OUT_XOR                   IO_PA15
 
 void out_init_gpio(void)
 {
+  gpio_init(OUT_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+  gpio_low(OUT_XOR);
+}
+
+void out_set_normal(void)
+{
+  gpio_low(OUT_XOR);
+}
+
+void out_set_inverted(void)
+{
+  gpio_high(OUT_XOR);
 }
 
 

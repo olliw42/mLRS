@@ -10,7 +10,6 @@
 //-------------------------------------------------------
 // TX DIY MOADULE01v014 STM32G491RE
 //-------------------------------------------------------
-
 #define DEVICE_IS_TRANSMITTER
 
 
@@ -126,7 +125,7 @@ void sx_dio1_init_exti_isroff(void)
   NVIC_EnableIRQ(SX_DIO1_EXTI_IRQn);
 }
 
-void sx_dio1_enable_isr(void)
+void sx_dio1_enable_exti_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO1_EXTI_LINE_x);
