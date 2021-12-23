@@ -64,7 +64,7 @@
 #define LQ_AVERAGING_MS                 1000
 
 
-#define FHSS_NUM                        16 // 16 // 1 // 4 // 16
+#define FHSS_NUM                        8 // 16 // 1 // 4 // 16
 //#define FHSS_DISABLED
 
 
