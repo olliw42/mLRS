@@ -19,9 +19,9 @@ technically yes, but it seems no need to explicitly do it
 
 in sync, allow some few missed frames, currently no miss allowed
 
-in sync, cycle frequency slowly
+in listen, cycle frequency slowly
 
-do retransmissions
+retransmissions
 */
 
 #define DBG_MAIN(x)
@@ -491,6 +491,7 @@ int main_main(void)
     if (do_post_receive) {
       do_post_receive = false;
 
+      // we just disconnected
       if (connected() && !connect_tmo_cnt) {
         // switch to listen state
         // only do it if connected, since otherwise it never could reach receive wait and hence never could connect
@@ -504,6 +505,7 @@ int main_main(void)
       }
       rxstats.Clear();
 
+      // we missed the receive frame
       bool missed = false;
       if ((connect_state != CONNECT_STATE_LISTEN) && !IS_TRANSMIT_STATE) {
         missed = true;
