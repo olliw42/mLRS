@@ -16,7 +16,11 @@ However, while all these systems are truely excellent and achieve their goals, a
 - open source
 - rich features for Mavlink systems
 
-Hence this project. In addition it integrates perfectly with MAVLink for OpenTx, which will yield the most fluid user experience.
+Hence this project. In addition, as another main feature, we want it to 
+
+- integrate with MAVLink for OpenTx
+
+which will yield the most fluid user experience.
 
 ## Disclaimer ##
 
@@ -42,6 +46,6 @@ Not very convennient yet, but this will improve with time :)
 
 ## Hardware ##
 
-Hardware is quite a problem currently. One might be tempted to think that all the recent ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The EPS's simply do not offer the peripherals which are desired for mLRS TX modules.
+Hardware is quite a problem currently. One might be tempted to think that all the recent ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 please join.
 
-The code so far is for the Siyi FM30 system (early version only, i.e., the version with the STM32 chips); the TX module needs few small hardware modifications. However, I'm in the process of designing hardware, which should ease the situation.
+The code so far is for the Siyi FM30 system (early version only, i.e., the version with the STM32 chips); the TX module needs few small hardware modifications. However, I am in the process of designing hardware, which should ease the situation.
