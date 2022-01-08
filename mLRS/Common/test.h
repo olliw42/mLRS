@@ -6,6 +6,9 @@
 //*******************************************************
 // test
 //********************************************************
+#ifndef BOARD_TEST_H
+#define BOARD_TEST_H
+#pragma once
 
 
 void init_test(void)
@@ -109,3 +112,5 @@ uint32_t n, nr, bitpos;
   }
 }
 
+
+#endif // BOARD_TEST_H
