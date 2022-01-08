@@ -51,6 +51,7 @@ retransmissions
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\storm32\storm32.h"
 #include "..\Common\common.h"
+#include "..\Common\test.h"
 
 #include "clock.h"
 #include "out.h"
@@ -309,6 +310,7 @@ static inline bool connected(void)
 
 int main_main(void)
 {
+//main_test();
   init();
 
   DBG_MAIN(uartc_puts("\n\n\nHello\n\n");)
