@@ -75,7 +75,7 @@
 
 #define CONNECT_TMO_SYSTICKS            SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f*FRAME_RATE_MS ));
 
-#define CONNECT_SYNC_CNT                (uint8_t)(1.5f * FHSS_NUM)
+#define CONNECT_SYNC_CNT                5 //(uint8_t)(1.5f * FHSS_NUM)
 
 #define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
 
