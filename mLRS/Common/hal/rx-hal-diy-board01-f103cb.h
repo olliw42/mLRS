@@ -226,6 +226,19 @@ void leds_init(void)
 }
 
 
+//-- POWER
+
+#define POWER_NUM                 3
+
+const uint8_t power_list[POWER_NUM][2] = { // Sx128x setting, value in mW
+     { SX1280_POWER_0_DBM, 1 },
+     { SX1280_POWER_10_DBM, 10 },
+     { SX1280_POWER_12p5_DBM, 18 },
+ };
+
+#define POWER_RANGE_TEST          SX1280_POWER_m18_DBM
+
+
 //-- TEST
 
 #define PORTA_N  13

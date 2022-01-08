@@ -194,6 +194,21 @@ void leds_init(void)
 }
 
 
+//-- POWER
+// gain is ca 27 dBm
+
+#define POWER_NUM                 4
+
+const uint8_t power_list[POWER_NUM][2] = { // Sx128x setting, value in mW
+     { 1, 10 }, // 1 = -17 dBm + 27 dBm = 10 dBm = 10 mW
+     { 11, 100 }, // 11 = -7 dBm + 27 dBm = 20 dBm = 100 mW
+     { 15, 250 }, // 15 = -3 dBm + 27 dBm = 24 dBm = 250 mW
+     { SX1280_POWER_0_DBM, 500 }, // 18 = 0 dBm + 27 dBm = 27 dBm = 500 mW
+ };
+
+#define POWER_RANGE_TEST          SX1280_POWER_m18_DBM
+
+
 //-- TEST
 
 #define PORTA_N  9
