@@ -20,8 +20,9 @@
 // Setup
 //-------------------------------------------------------
 
-#define POWER                          SX1280_POWER_m18_DBM
-//#define POWER                          SX1280_POWER_1_DBM
+//#define POWER                          SX1280_POWER_m18_DBM
+#define POWER                          SX1280_POWER_0_DBM
+//#define POWER                          SX1280_POWER_12p5_DBM
 
 
 #define SETUP_TX_USE_MBRIDGE            1 // 0: use UART2, 1: use MBridge
