@@ -8,7 +8,7 @@
 //********************************************************
 
 //-------------------------------------------------------
-// RX DIY BOARD01 v014 STM32F103CB
+// RX DIY E28 BOARD01 v004 STM32F103CB
 //-------------------------------------------------------
 #define DEVICE_IS_RECEIVER
 
@@ -57,10 +57,11 @@
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
 #define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
 
-#define SX_RESET                  IO_PB11
-#define SX_DIO1                   IO_PB0
+#define SX_RESET                  IO_PB12
+#define SX_DIO1                   IO_PB11
 #define SX_BUSY                   IO_PB1
-//#define SX_AMP_CTX
+#define SX_RX_EN                  IO_PB0
+#define SX_TX_EN                  IO_PB13
 //#define SX_ANT_SELECT
 
 //#define SX_USE_DCDC
@@ -68,28 +69,11 @@
 //#define SX_POWER_MAX
 
 #define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
-#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE0
-#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_0
-#define SX_DIO1_EXTI_IRQn             EXTI0_IRQn
-#define SX_DIO1_EXTI_IRQHandler       EXTI0_IRQHandler
+#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE11
+#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_11
+#define SX_DIO1_EXTI_IRQn             EXTI15_10_IRQn
+#define SX_DIO1_EXTI_IRQHandler       EXTI15_10_IRQHandler
 //#define SX_DIO1_EXTI_IRQ_PRIORITY   11
-
-/*
-#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 IO_PB12
-#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_4500KHZ
-
-#define SX_RESET                  IO_PA10
-#define SX_DIO1                   IO_PA8
-#define SX_BUSY                   IO_PA9
-
-#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
-#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE8
-#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_8
-#define SX_DIO1_EXTI_IRQn             EXTI9_5_IRQn
-#define SX_DIO1_EXTI_IRQHandler       EXTI9_5_IRQHandler
-*/
 
 void sx_init_gpio(void)
 {
@@ -98,6 +82,8 @@ void sx_init_gpio(void)
 #ifdef SX_BUSY
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
 #endif
+  gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+  gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_dio1_read(void)
@@ -114,10 +100,14 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
+  gpio_low(SX_RX_EN);
+  gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
+  gpio_low(SX_TX_EN);
+  gpio_high(SX_RX_EN);
 }
 
 void sx_dio1_init_exti_isroff(void)
@@ -142,28 +132,6 @@ void sx_dio1_enable_exti_isr(void)
 
 
 //-- SX2: SX12xxB & SPIB
-
-#define SPIB_USE_SPI2             // PB13, PB14, PB15
-#define SPIB_CS_IO                IO_PB12
-#define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-#define SPIB_USE_CLOCKSPEED_4500KHZ
-
-#define SX2_RESET                 IO_PA10
-#define SX2_DIO1                  IO_PA8
-#define SX2_BUSY                  IO_PA9
-//#define SX2_AMP_CTX
-//#define SX2_ANT_SELECT
-
-//#define SX2_USE_DCDC
-
-//#define SX2_POWER_MAX
-
-#define SX2_DIO1_GPIO_AF_EXTI_PORTx   LL_GPIO_AF_EXTI_PORTA
-#define SX2_DIO1_GPIO_AF_EXTI_LINEx   LL_GPIO_AF_EXTI_LINE8
-#define SX2_DIO1_EXTI_LINE_x          LL_EXTI_LINE_8
-#define SX2_DIO1_EXTI_IRQn            EXTI9_5_IRQn
-#define SX2_DIO1_EXTI_IRQHandler      EXTI9_5_IRQHandler
-//#define SX2_DIO1_EXTI_IRQ_PRIORITY   11
 
 
 //-- SBus output pin
@@ -205,8 +173,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN 		            IO_PB4
-#define LED_RED		                IO_PB3
+#define LED_GREEN 		            IO_PB5
+#define LED_RED		                IO_PB4
 
 #define LED_GREEN_ON              gpio_high(LED_GREEN)
 #define LED_RED_ON                gpio_high(LED_RED)
@@ -228,23 +196,21 @@ void leds_init(void)
 
 //-- TEST
 
-#define PORTA_N  13
+#define PORTA_N  9
 
 uint32_t porta[PORTA_N] = {
     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3,
     LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
     LL_GPIO_PIN_15,
 };
 
 #define PORTB_N  12
 
 uint32_t portb[PORTB_N] = {
-    LL_GPIO_PIN_0, LL_GPIO_PIN_1,
-    LL_GPIO_PIN_3, LL_GPIO_PIN_4,
-    LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_10, LL_GPIO_PIN_11,
-    LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3,
+    LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13,
+    LL_GPIO_PIN_15,
 };
 
 #define PORTC_N  1
