@@ -500,10 +500,10 @@ int main_main(void)
     if (do_post_receive) {
       do_post_receive = false;
 
-      // we just disconnected
-      if (connected() && !connect_tmo_cnt) {
+      // we just disconnected, or are in sync but don't receive anything
+      if ((connect_state >= CONNECT_STATE_SYNC) && !connect_tmo_cnt) {
         // switch to listen state
-        // only do it if connected, since otherwise it never could reach receive wait and hence never could connect
+        // only do it if not in listen, since otherwise it never could reach receive wait and hence never could connect
         connect_state = CONNECT_STATE_LISTEN;
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
