@@ -464,6 +464,11 @@ int main_main(void)
             }
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
             link_state = LINK_STATE_TRANSMIT; // switch to TX
+          } else {
+            // we received something, but something wrong, so we need go back to RX
+            if (connect_state == CONNECT_STATE_LISTEN) {
+              link_state = LINK_STATE_RECEIVE;
+            }
           }
           DBG_MAIN_FULL(uartc_puts("RX: rx done\n");)
           DBG_MAIN_SLIM(uartc_puts("!");)
