@@ -30,34 +30,26 @@ void FhssBase::generate(uint32_t seed)
   _seed = seed;
 
   bool used_flag[FREQ_LIST_LEN];
-  for (uint8_t n =  0; n < FREQ_LIST_LEN; n++) used_flag[n] = false;
-
-//  uartc_puts("fhss generate\n");
+  for (uint8_t ch = 0; ch < FREQ_LIST_LEN; ch++) used_flag[ch] = false;
 
   for (uint8_t k = 0; k < cnt; k++) {
 
      uint8_t fi = prng() % (FREQ_LIST_LEN - k); // get a new frequency index
 
      uint8_t i = 0;
-     uint8_t n;
-     for (n = 0; n < FREQ_LIST_LEN; n++) {
-       if (used_flag[n]) continue;
-       if (fi == i) break; // n is our next index
+     uint8_t ch;
+     for (ch = 0; ch < FREQ_LIST_LEN; ch++) {
+       if (used_flag[ch]) continue;
+       if (fi == i) break; // ch is our next index
        i++;
      }
 
-     if (n >= FREQ_LIST_LEN) { // argh, must not happen !
-       n = 0;
+     if (ch >= FREQ_LIST_LEN) { // argh, must not happen !
+       ch = 0;
      }
 
-     fhss_list[k] = freq_list[n];
-     used_flag[n] = true;
-/*
-     uartc_puts("k = "); uartc_puts(u8toBCD_s(k)); uartc_puts(", "); delay_ms(25);
-     uartc_puts("fi = "); uartc_puts(u8toBCD_s(fi)); uartc_puts(", "); delay_ms(25);
-     uartc_puts("n = "); uartc_puts(u8toBCD_s(n)); uartc_puts(", "); delay_ms(25);
-     uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss_list[k])); uartc_puts("\n"); delay_ms(25);
-*/
+     fhss_list[k] = freq_list[ch];
+     used_flag[ch] = true;
   }
 
   curr_i = 0;

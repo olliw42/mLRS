@@ -285,8 +285,8 @@ int main_main(void)
   fhss.StartTx();
   sx.SetRfFrequency(fhss.GetCurr());
 
-//  for (uint8_t n = 0; n < fhss.Cnt(); n++) {
-//    uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[n])); uartc_puts("\n");
+//  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
+//    uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n");
 //  }
 
   tx_tick = 0;
