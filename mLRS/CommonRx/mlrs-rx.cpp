@@ -451,15 +451,17 @@ int main_main(void)
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-          if (do_receive()) {
-            if (connect_state == CONNECT_STATE_LISTEN) {
+          if (do_receive()) { // also calls clock.Reset() if valid packet
+            switch (connect_state) {
+            case CONNECT_STATE_LISTEN:
               connect_state = CONNECT_STATE_SYNC;
               connect_sync_cnt = 0;
-            } else
-            if (connect_state == CONNECT_STATE_SYNC) {
+              break;
+            case CONNECT_STATE_SYNC:
               connect_sync_cnt++;
               if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-            } else {
+              break;
+            default:
               connect_state = CONNECT_STATE_CONNECTED;
             }
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
@@ -508,7 +510,7 @@ int main_main(void)
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
 
-      if (connect_state != CONNECT_STATE_CONNECTED) {
+      if (!connected()) {
         rxstats.Next();
         rxstats.Set();
       }
