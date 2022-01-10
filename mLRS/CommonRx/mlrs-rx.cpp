@@ -26,7 +26,6 @@ retransmissions
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
-#define DBG_MAIN_FULL(x)
 #define DBG_STATUS(x)
 
 
@@ -323,10 +322,7 @@ int main_main(void)
 
   // start up sx
   if (!sx.isOk()) {
-    DBG_MAIN(uartc_puts("fail\n");)
     while (1) { LED_RED_TOGGLE; delay_ms(50); } // fail!
-  } else {
-    DBG_MAIN(uartc_puts("ok\n");)
   }
   sx.StartUp();
   fhss.Init(SEEDDBLWORD);
@@ -379,7 +375,6 @@ int main_main(void)
 
       if (!tick_1hz) {
         rxstats.Update1Hz();
-        //uartc_puts(" . ");
 
         uartc_puts("RX: ");
         uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_putc(',');
@@ -421,20 +416,19 @@ int main_main(void)
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_RX) {
         uartc_puts("$"); uartc_puts(u8toHEX_s(status>>5));
       })
-      DBG_MAIN_FULL(uartc_puts("RX: rx\n");)
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
     case LINK_STATE_TRANSMIT: {
       DBG_STATUS(uint8_t status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
-        uartc_puts("!!"); uartc_puts(u8toHEX_s(status>>5));
+        uartc_puts("§§"); uartc_puts(u8toHEX_s(status>>5));
         break;
       })
       do_transmit(false);
       DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
-        uartc_puts("!"); uartc_puts(u8toHEX_s(status>>5));
+        uartc_puts("§"); uartc_puts(u8toHEX_s(status>>5));
         rescue(4);
         uartc_puts(u8toHEX_s(sx.GetStatus()>>5));
         // rescue takes a couple of ms, so we miss sending this packet
@@ -443,7 +437,6 @@ int main_main(void)
         break;
       })
       link_state = LINK_STATE_TRANSMIT_WAIT;
-      DBG_MAIN_FULL(uartc_puts("RX: tx\n");)
       }break;
     }
 
@@ -472,7 +465,6 @@ int main_main(void)
               link_state = LINK_STATE_RECEIVE;
             }
           }
-          DBG_MAIN_FULL(uartc_puts("RX: rx done\n");)
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
       } else
@@ -480,7 +472,6 @@ int main_main(void)
         if (irq_status & SX1280_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE; // switch back to RX
-          DBG_MAIN_FULL(uartc_puts("RX: tx done\n");)
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }

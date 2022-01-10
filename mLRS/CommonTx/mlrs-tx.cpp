@@ -12,7 +12,6 @@ v0.0.00:
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
-#define DBG_MAIN_FULL(x)
 
 
 // we set the priorities here to have an overview
@@ -267,7 +266,6 @@ int main_main(void)
 #endif
 
   DBG_MAIN(uartc_puts("\n\n\nHello\n\n");)
-  uartc_puts("\n\n\nHello\n\n");
 
   // startup sign of life
   LED_RED_OFF;
@@ -275,10 +273,7 @@ int main_main(void)
 
   // start up sx
   if (!sx.isOk()) {
-    DBG_MAIN(uartc_puts("fail\n");)
     while (1) { LED_RED_TOGGLE; delay_ms(50); } // fail!
-  } else {
-    DBG_MAIN(uartc_puts("ok\n");)
   }
   sx.StartUp();
   fhss.Init(SEEDDBLWORD);
@@ -334,7 +329,6 @@ int main_main(void)
       if (!tick_1hz) {
         txstats.Update1Hz();
         if (connected()) inject_radio_status = true;
-        //uartc_puts(".");
 
         uartc_puts("TX: ");
         uartc_puts(u8toBCD_s(txstats.GetRawLQ())); uartc_putc(',');
@@ -404,7 +398,6 @@ int main_main(void)
       sx.SetRfFrequency(fhss.GetCurr());
       do_transmit(false);
       link_state = LINK_STATE_TRANSMIT_WAIT;
-      DBG_MAIN_FULL(uartc_puts("TX: tx\n");)
       DBG_MAIN_SLIM(uartc_puts(">");)
       break;
 
@@ -413,7 +406,6 @@ int main_main(void)
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
       sx.SetToRx(10); // we wait 10 ms for the start for the frame, 5 ms does not work ??
       link_state = LINK_STATE_RECEIVE_WAIT;
-      DBG_MAIN_FULL(uartc_puts("TX: rx\n");)
       break;
     }
 
@@ -422,7 +414,6 @@ int main_main(void)
         if (irq_status & SX1280_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_FULL(uartc_puts("TX: tx done\n");)
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
       }
@@ -446,7 +437,6 @@ int main_main(void)
           } else {
             link_state = LINK_STATE_IDLE; // ready for next frame
           }
-          DBG_MAIN_FULL(uartc_puts("TX: rx done\n");)
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }
@@ -454,7 +444,6 @@ int main_main(void)
       if (irq_status & SX1280_IRQ_RX_TX_TIMEOUT) {
         irq_status = 0;
         link_state = LINK_STATE_IDLE;
-        DBG_MAIN_FULL(uartc_puts("TX: tmo\n");)
       }
 
       if (irq_status & SX1280_IRQ_RX_DONE) {
