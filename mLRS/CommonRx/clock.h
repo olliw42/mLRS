@@ -24,6 +24,13 @@
 #define CLOCK_SHIFT_10US          100 // 1 ms
 
 
+volatile bool doPostReceive;
+
+
+//-------------------------------------------------------
+// Clock Class
+//-------------------------------------------------------
+
 class ClockBase
 {
   public:
@@ -46,7 +53,7 @@ void ClockBase::InitIsrOff(void)
     LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct); // pll.tick()
 
     TIM_OC_InitStruct.CompareValue = 200; // only needs to be later than OC1
-    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct); // do_post_receive
+    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct); // doPostReceive
 
     nvic_irq_enable_w_priority(CLOCK_IRQn, CLOCK_IRQ_PRIORITY);
 }
@@ -83,6 +90,25 @@ uint16_t ClockBase::tim_10us(void)
     return CLOCK_TIMx->CNT;
 }
 
+
+//-------------------------------------------------------
+// Clock ISR
+//-------------------------------------------------------
+
+IRQHANDLER(
+void CLOCK_IRQHandler(void)
+{
+  if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
+    LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
+    CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
+    CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
+    //LED_GREEN_ON;
+  }
+  if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
+    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
+    doPostReceive = true;
+  }
+})
 
 
 #endif // CLOCK_H

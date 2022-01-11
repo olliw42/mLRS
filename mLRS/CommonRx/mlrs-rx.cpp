@@ -58,22 +58,6 @@ retransmissions
 
 
 ClockBase clock;
-volatile bool do_post_receive;
-
-IRQHANDLER(
-void CLOCK_IRQHandler(void)
-{
-  if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
-    LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
-    CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
-    CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
-    //LED_GREEN_ON;
-  }
-  if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
-    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
-    do_post_receive = true;
-  }
-})
 
 
 class Out : public OutBase
@@ -110,7 +94,7 @@ void init(void)
   uartc_init();
 
   clock.Init();
-  do_post_receive = false;
+  doPostReceive = false;
 
   sx.Init();
 }
@@ -492,8 +476,8 @@ int main_main(void)
     }
 
     // this happens ca 1 ms after a frame was or should have been received
-    if (do_post_receive) {
-      do_post_receive = false;
+    if (doPostReceive) {
+      doPostReceive = false;
 
       // we just disconnected, or are in sync but don't receive anything
       if ((connect_state >= CONNECT_STATE_SYNC) && !connect_tmo_cnt) {
