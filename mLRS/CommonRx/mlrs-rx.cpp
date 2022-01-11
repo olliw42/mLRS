@@ -186,6 +186,7 @@ void do_transmit(bool set_ack) // we send a RX frame to transmitter
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
   frame_stats.ack = (set_ack) ? 1 : 0;
+  frame_stats.antenna = ANTENNA_1;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = rxstats.GetLQ();
@@ -214,7 +215,8 @@ void process_received_frame(bool full)
   DBG_MAIN(char s[16];
   uartc_puts("got "); uartc_puts(s); uartc_puts(": ");)
 
-  stats.received_rssi = -(txFrame.status.rssi_u8);
+  stats.received_antenna = txFrame.status.antenna;
+  stats.received_rssi = -(txFrame.status.rssi_u7);
   stats.received_LQ = txFrame.status.LQ;
 
   stats.received_seq_no = txFrame.status.seq_no;

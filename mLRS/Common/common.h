@@ -68,7 +68,8 @@ uint16_t crc;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_TX;
-    frame->status.rssi_u8 = -(frame_stats->rssi);
+    frame->status.antenna = frame_stats->antenna;
+    frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
     frame->status.payload_len = payload_len;
 
@@ -164,7 +165,8 @@ uint16_t crc;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_RX;
-    frame->status.rssi_u8 = -(frame_stats->rssi);
+    frame->status.antenna = frame_stats->antenna;
+    frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
     frame->status.payload_len = payload_len;
 
@@ -231,6 +233,7 @@ class Stats {
     uint8_t rx_LQ;
 
     // statistics received from the other end
+    uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
     uint8_t received_LQ;
 
@@ -253,6 +256,7 @@ class Stats {
         last_rx_snr = INT8_MAX;
         rx_LQ = 0; //UINT8_MAX;
 
+        received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
     }

@@ -153,6 +153,7 @@ void do_transmit(bool set_ack) // we send a TX frame to receiver
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
   frame_stats.ack = (set_ack) ? 1 : 0;
+  frame_stats.antenna = ANTENNA_1;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = txstats.GetLQ();
@@ -177,7 +178,8 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(err));uartc_putc('\n');
 
 void process_received_frame(void)
 {
-  stats.received_rssi = -(rxFrame.status.rssi_u8);
+  stats.received_antenna = rxFrame.status.antenna;
+  stats.received_rssi = -(rxFrame.status.rssi_u7);
   stats.received_LQ = rxFrame.status.LQ;
 
   stats.received_seq_no = rxFrame.status.seq_no;
