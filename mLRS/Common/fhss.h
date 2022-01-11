@@ -29,7 +29,7 @@
 // 2406.0 ... 2473.0  in 1 MHz steps
 // = 68 channels
 
-const uint32_t freq_list[] = {
+const uint32_t fhss_freq_list[] = {
     SX1280_FREQ_GHZ_TO_REG(2.406), // channel 0
     SX1280_FREQ_GHZ_TO_REG(2.407),
     SX1280_FREQ_GHZ_TO_REG(2.408),
@@ -107,7 +107,14 @@ const uint32_t freq_list[] = {
     SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
 };
 
-const uint8_t FREQ_LIST_LEN = (uint16_t)(sizeof(freq_list)/sizeof(uint32_t)); // = 68
+const uint8_t FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list)/sizeof(uint32_t)); // = 68
+
+
+const uint8_t fhss_bind_channel_list[] = {
+    14, 33, 46, 61 // just pick some
+};
+
+const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list)/sizeof(uint8_t)); // = 4
 
 
 //-------------------------------------------------------
@@ -150,7 +157,7 @@ class FhssBase
       return cnt;
     }
 
-    uint32_t GetCurr(void)
+    uint32_t GetCurrFreq(void)
     {
       return fhss_list[curr_i];
     }
@@ -183,6 +190,7 @@ class FhssBase
 
     uint8_t curr_i;
     uint8_t cnt;
+    uint8_t ch_list[FHSS_MAX_NUM]; // that's our list of randomly selected channels
     uint32_t fhss_list[FHSS_MAX_NUM]; // that's our list of randomly selected frequencies
     int8_t fhss_last_rssi[FHSS_MAX_NUM];
 

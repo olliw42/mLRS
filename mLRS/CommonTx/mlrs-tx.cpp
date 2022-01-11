@@ -280,10 +280,10 @@ int main_main(void)
   sx.StartUp();
   fhss.Init(FHSS_SEED);
   fhss.StartTx();
-  sx.SetRfFrequency(fhss.GetCurr());
+  sx.SetRfFrequency(fhss.GetCurrFreq());
 
 //  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-//    uartc_puts("f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n");
+//    uartc_puts("c = "); uartc_puts(u8toBCD_s(fhss.ch_list[i])); uartc_puts(" f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n"); delay_ms(50);
 //  }
 
   tx_tick = 0;
@@ -397,7 +397,7 @@ int main_main(void)
 
     case LINK_STATE_TRANSMIT:
       fhss.HopToNext();
-      sx.SetRfFrequency(fhss.GetCurr());
+      sx.SetRfFrequency(fhss.GetCurrFreq());
       do_transmit(false);
       link_state = LINK_STATE_TRANSMIT_WAIT;
       DBG_MAIN_SLIM(uartc_puts(">");)
