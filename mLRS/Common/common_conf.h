@@ -45,9 +45,11 @@
 
 
 
+#define BIND_DBLWORD                    0x12344281
+
 //#define LORA_SYNCWORD                   0x56 // 0x12 // seems to have no effect !?
-#define FRAME_SYNCWORD                  0x4281
-#define SEEDDBLWORD                     0x12345678
+//#define FRAME_SYNCWORD                  0x4281
+//#define SEED_DBLWORD                    0x12345678
 
 
 //-------------------------------------------------------
@@ -73,9 +75,13 @@
 // Derived Defines
 //-------------------------------------------------------
 
+#define FRAME_SYNCWORD                  ((uint16_t)(BIND_DBLWORD & 0x0000FFFF))
+#define FHSS_SEED                       BIND_DBLWORD
+
+
 #define CONNECT_TMO_SYSTICKS            SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f*FRAME_RATE_MS ));
 
-#define CONNECT_SYNC_CNT                5 //(uint8_t)(1.5f * FHSS_NUM)
+#define CONNECT_SYNC_CNT                5 // (uint8_t)(1.5f * FHSS_NUM)
 
 #define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
 

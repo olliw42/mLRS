@@ -327,7 +327,7 @@ int main_main(void)
     while (1) { LED_RED_TOGGLE; delay_ms(50); } // fail!
   }
   sx.StartUp();
-  fhss.Init(SEEDDBLWORD);
+  fhss.Init(FHSS_SEED);
   fhss.StartRx();
   fhss.HopToConnect();
   sx.SetRfFrequency(fhss.GetCurr());
