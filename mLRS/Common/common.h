@@ -335,22 +335,20 @@ class Stats {
 
     uint8_t GetTransmitBandwidthUsage(void)
     {
-#ifdef DEVICE_IS_TRANSMITTER
-        return (bytes_per_sec_transmitted + 15) / 32; // 3200 bytes/s max
-#endif
-#ifdef DEVICE_IS_RECEIVER
-        return (bytes_per_sec_transmitted + 20) / 41; // 4100 bytes/s max
-#endif
+      // just simply scale it always to the largest theoretical bandwidth
+      // is 4100 bytes/s max
+      uint8_t bw =  (bytes_per_sec_transmitted + 20) / 41;
+      if ((bw == 0) && (bytes_per_sec_transmitted > 0)) bw = 1; // ensure it's always at least 1% if some bytes are transmitted
+      return bw;
     }
 
     uint8_t GetReceiveBandwidthUsage(void)
     {
-#ifdef DEVICE_IS_TRANSMITTER
-        return (bytes_per_sec_received + 20) / 41; // 4100 bytes/s max
-#endif
-#ifdef DEVICE_IS_RECEIVER
-        return (bytes_per_sec_received + 15) / 32; // 3200 bytes/s max
-#endif
+      // just simply scale it always to the largest theoretical bandwidth
+      // is 4100 bytes/s max
+      uint8_t bw =  (bytes_per_sec_received + 20) / 41;
+      if ((bw == 0) && (bytes_per_sec_received > 0)) bw = 1; // ensure it's always at least 1% if some bytes are received
+      return bw;
     }
 };
 
