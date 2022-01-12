@@ -525,14 +525,14 @@ int main_main(void)
 
       out.SetChannelOrder(SETUP_TX_CHANNE_ORDER, SETUP_RX_CHANNE_ORDER);
       if (connected()) {
-        out.SendRcData(&rcData);
+        out.SendRcData(&rcData, missed, false);
       } else {
 #if SETUP_RX_FAILSAFE_MODE == 1
         if (connect_occured_once) {
           tRcData rc;
           memcpy(&rc, &rcData, sizeof(tRcData));
           for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
-          out.SendRcData(&rc);
+          out.SendRcData(&rc, true, true);
         }
 #else
         // no signal, so do nothing

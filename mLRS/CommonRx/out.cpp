@@ -56,7 +56,7 @@ void OutBase::SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order
 }
 
 
-void OutBase::SendRcData(tRcData* rc)
+void OutBase::SendRcData(tRcData* rc, bool frame_lost, bool failsafe)
 {
     uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
     for (uint8_t n = 0; n < 4; n++) {
@@ -74,7 +74,7 @@ void OutBase::SendRcData(tRcData* rc)
 
     switch (_config) {
     case OUT_CONFIG_SBUS:
-        send_sbus_rcdata(rc);
+        send_sbus_rcdata(rc, frame_lost, failsafe);
         break;
     }
 }
@@ -192,7 +192,7 @@ tSBusFrameBuffer sbus_buf;
 }
 */
 
-void OutBase::send_sbus_rcdata(tRcData* rc)
+void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusFrameBuffer sbus_buf;
 
@@ -216,6 +216,8 @@ tSBusFrameBuffer sbus_buf;
   uint8_t flags = 0;
   if (rc->ch[16] >= 1536) flags |= SBUS_FLAG_CH17;
   if (rc->ch[16] >= 1536) flags |= SBUS_FLAG_CH18;
+  if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
+  if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
   putc(0x0F);
   putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);

@@ -31,12 +31,12 @@ class OutBase
 
     void Configure(uint8_t new_config);
 
-    void SendRcData(tRcData* rc);
+    void SendRcData(tRcData* rc, bool frame_lost = false, bool failsafe = false);
 
     void SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order);
 
   private:
-    void send_sbus_rcdata(tRcData* rc);
+    void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
     void putbuf(uint8_t* buf, uint16_t len);
 
     virtual void putc(char c);
