@@ -510,7 +510,7 @@ int main_main(void)
 
       // we missed the receive frame
       bool missed = false;
-      if ((connect_state != CONNECT_STATE_LISTEN) && !IS_TRANSMIT_STATE) {
+      if ((connect_state >= CONNECT_STATE_SYNC) && !IS_TRANSMIT_STATE) {
         missed = true;
 
         // reset sync counter, relevant if in sync
