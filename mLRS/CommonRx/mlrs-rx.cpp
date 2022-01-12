@@ -283,6 +283,7 @@ uint8_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
+uint8_t connect_listen_cnt;
 bool connect_occured_once;
 
 uint32_t link_rescue_cnt; // rescue in state transmit
@@ -323,6 +324,7 @@ int main_main(void)
 
   link_state = LINK_STATE_RECEIVE;
   connect_state = CONNECT_STATE_LISTEN;
+  connect_listen_cnt = 0;
   connect_tmo_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
@@ -482,11 +484,21 @@ int main_main(void)
     if (doPostReceive) {
       doPostReceive = false;
 
+      if (connect_state == CONNECT_STATE_LISTEN) {
+        connect_listen_cnt++;
+        if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
+          fhss.HopToNext();
+          connect_listen_cnt = 0;
+          link_state = LINK_STATE_RECEIVE; // switch back to RX
+        }
+      }
+
       // we just disconnected, or are in sync but don't receive anything
       if ((connect_state >= CONNECT_STATE_SYNC) && !connect_tmo_cnt) {
         // switch to listen state
         // only do it if not in listen, since otherwise it never could reach receive wait and hence never could connect
         connect_state = CONNECT_STATE_LISTEN;
+        connect_listen_cnt = 0;
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
 

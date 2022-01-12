@@ -168,9 +168,9 @@ class FhssBase
       if (curr_i >= cnt) curr_i = 0;
     }
 
-    void HopToConnect(void) // we could (should?) implement a more sophisticated procedure
+    void HopToConnect(void)
     {
-      curr_i = 0;
+      //curr_i = 0;
     }
 
     uint32_t bestX(void)
