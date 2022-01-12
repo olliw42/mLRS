@@ -14,7 +14,10 @@
 
 void OutBase::Init(void)
 {
-    _config = UINT8_MAX;;
+    _config = UINT8_MAX;
+    _tx_channel_order = UINT8_MAX;
+    _rx_channel_order = UINT8_MAX;
+    for (uint8_t n = 0; n < 4; n++) _channel_map[n] = n;
 }
 
 
@@ -31,8 +34,44 @@ void OutBase::Configure(uint8_t new_config)
 }
 
 
-void OutBase::send_rcdata(tRcData* rc)
+void OutBase::SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order)
 {
+  _tx_channel_order = tx_channel_order;
+  _rx_channel_order = rx_channel_order;
+
+  switch (_tx_channel_order) {
+    case CHANNEL_ORDER_AETR:
+      // nothing to do
+      break;
+    case CHANNEL_ORDER_TAER:
+      // TODO
+      break;
+    case CHANNEL_ORDER_ETAR:
+      _channel_map[0] = 2;
+      _channel_map[1] = 0;
+      _channel_map[2] = 1;
+      _channel_map[3] = 3;
+      break;
+  }
+}
+
+
+void OutBase::SendRcData(tRcData* rc)
+{
+    uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
+    for (uint8_t n = 0; n < 4; n++) {
+      rc->ch[n] = ch[_channel_map[n]];
+    }
+
+    // mimic spektrum
+    // 1090 ... 1515  ... 1940
+    // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
+    uint32_t t = 90*2048;
+    for (uint8_t n = 0; n < RC_DATE_LEN; n++) {
+      uint32_t xs = 850 * rc->ch[n];
+      rc->ch[n] = (xs + t) / 1000;
+    }
+
     switch (_config) {
     case OUT_CONFIG_SBUS:
         send_sbus_rcdata(rc);

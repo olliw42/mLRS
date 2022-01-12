@@ -33,6 +33,7 @@
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: SPort Pin1, 1: mBridge
 
+#define SETUP_TX_CHANNE_ORDER           CHANNEL_ORDER_ETAR
 
 
 #define SETUP_RX_POWER                  POWER
@@ -44,6 +45,8 @@
 #define SETUP_RX_ANTENNA                0 // 0: left/default, 1: right
 
 #define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
+
+#define SETUP_RX_CHANNE_ORDER           CHANNEL_ORDER_AETR
 
 
 #define BIND_DBLWORD                    0x12344281

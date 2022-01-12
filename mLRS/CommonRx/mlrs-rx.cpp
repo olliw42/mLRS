@@ -523,15 +523,16 @@ int main_main(void)
         link_state = LINK_STATE_TRANSMIT;
       }
 
+      out.SetChannelOrder(SETUP_TX_CHANNE_ORDER, SETUP_RX_CHANNE_ORDER);
       if (connected()) {
-        out.send_rcdata(&rcData);
+        out.SendRcData(&rcData);
       } else {
 #if SETUP_RX_FAILSAFE_MODE == 1
         if (connect_occured_once) {
           tRcData rc;
           memcpy(&rc, &rcData, sizeof(tRcData));
           for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
-          out.send_rcdata(&rc);
+          out.SendRcData(&rc);
         }
 #else
         // no signal, so do nothing

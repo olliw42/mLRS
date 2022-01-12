@@ -31,7 +31,9 @@ class OutBase
 
     void Configure(uint8_t new_config);
 
-    void send_rcdata(tRcData* rc);
+    void SendRcData(tRcData* rc);
+
+    void SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order);
 
   private:
     void send_sbus_rcdata(tRcData* rc);
@@ -41,6 +43,9 @@ class OutBase
     virtual void config_sbus(void) = 0;
 
     uint8_t _config;
+    uint8_t _rx_channel_order;
+    uint8_t _tx_channel_order;
+    uint8_t _channel_map[4];
 };
 
 

@@ -20,14 +20,25 @@
 
 
 //-------------------------------------------------------
-// frames types only
+// common types
 //-------------------------------------------------------
+
+typedef enum {
+  CHANNEL_ORDER_AETR = 0, // most common
+  CHANNEL_ORDER_TAER, // spektrum/graupner/jr
+  CHANNEL_ORDER_ETAR,
+} CHANNEL_ORDER_ENUM;
+
 
 typedef enum {
   ANTENNA_1 = 0x00,
   ANTENNA_2 = 0x01,
 } ANTENNA_ENUM;
 
+
+//-------------------------------------------------------
+// frames types only
+//-------------------------------------------------------
 
 typedef struct
 {
