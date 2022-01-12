@@ -43,6 +43,7 @@
 
 #define SETUP_RX_ANTENNA                0 // 0: left/default, 1: right
 
+#define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
 
 #define BIND_DBLWORD                    0x12344281

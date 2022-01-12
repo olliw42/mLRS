@@ -283,6 +283,7 @@ uint8_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
+bool connect_occured_once;
 
 uint32_t link_rescue_cnt; // rescue in state transmit
 
@@ -324,6 +325,7 @@ int main_main(void)
   connect_state = CONNECT_STATE_LISTEN;
   connect_tmo_cnt = 0;
   connect_sync_cnt = 0;
+  connect_occured_once = false;
   link_rescue_cnt = 0;
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
@@ -444,6 +446,7 @@ int main_main(void)
               connect_state = CONNECT_STATE_CONNECTED;
             }
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+            connect_occured_once = true;
             link_state = LINK_STATE_TRANSMIT; // switch to TX
           } else {
             // we received something, but something wrong, so we need go back to RX
@@ -510,6 +513,17 @@ int main_main(void)
 
       if (connected()) {
         out.send_rcdata(&rcData);
+      } else {
+#if SETUP_RX_FAILSAFE_MODE == 1
+        if (connect_occured_once) {
+          tRcData rc;
+          memcpy(&rc, &rcData, sizeof(tRcData));
+          for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
+          out.send_rcdata(&rc);
+        }
+#else
+        // no signal, so do nothing
+#endif
       }
 /*
       static uint16_t tlast_10us = 0;
