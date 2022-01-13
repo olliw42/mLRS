@@ -272,14 +272,16 @@ channels idea 3:
                  -----------
                   128 bits = 16 bytes
 
+the "nice" thing of idea 2 is that it fits a crc1 idea
+
 
 auxiliary:
+- sync word
 - sequence no (few bits are sufficient to check for lost packets), e.g. 4 = 16 frames = 0.8 sec
 - receive confirmation flag (to resend if missed), 1 bit
 - packet type, e.g. 4 bits
 - rssi (doesn't have to be 8 bit, 7 or 6 would be also ok)
 - LQ (doesn't have to be 8 bit, 7 or 6 would be also ok)
-- sync word
 - payload len (doesn't have to be 8 bit, 7 bit should be OK)
 
 example 1:
@@ -293,16 +295,16 @@ example 1:
 7:-
 |     6 bytes of RC data  (4 ch @ 11 bits & 4 ch @ bit)
 12:-
-13:   crc1
-14:-
+13:   crc1a
+14:   crc1b
+16:-
 |     10 bytes of remaining RC data (10 ch @ 8 bits)
-23:-
-24:   crc2
+24:-
 25:-
 |     64 bytes of payload
 88:-
-89:   crc3
-90:   crc4
+89:   crca
+90:   crcb
 
 => 90 bytes/frame = 7.81 ms air time
 => 3200 B/s @ 50 Hz
@@ -316,8 +318,8 @@ example 1:
 7:-
 |     82 bytes of payload
 88:-
-89:   crc3
-90:   crc4
+89:   crca
+90:   crcb
 
 => 4100 B/s @ 50 Hz
 
@@ -333,8 +335,8 @@ e.g.
 7:-
 |     100 bytes of payload
 106:-
-107:   crc3
-108:   crc4
+107:   crca
+108:   crcb
 
 => 108 bytes/frame = 9.23 ms air time
 => 5000 B/s @ 50 Hz

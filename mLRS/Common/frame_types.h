@@ -100,7 +100,7 @@ typedef struct
   uint16_t ch15 :  1;
   uint16_t ch16 :  1;
   uint16_t ch17 :  1;
-}) tFrameRcData1;
+}) tFrameRcData1; // 6 bytes
 
 
 PACKED(
@@ -116,12 +116,11 @@ typedef struct
   uint16_t sync_word; // 2 bytes
   tFrameStatus status; // 4 bytes
   tFrameRcData1 rc1; // 6 bytes
-  uint8_t crc1;
+  uint16_t crc1;
   tFrameRcData2 rc2; // 10 bytes
-  uint8_t crc2;
   uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
   uint16_t crc;
-}) tTxFrame;
+}) tTxFrame; // 90 bytes
 
 
 //-- Rx Frames ----------
@@ -133,7 +132,7 @@ typedef struct
   tFrameStatus status; // 4 bytes
   uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
   uint16_t crc;
-}) tRxFrame;
+}) tRxFrame; // 90 bytes
 
 
 

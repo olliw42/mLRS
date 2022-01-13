@@ -95,12 +95,8 @@ uint16_t crc;
     // finalize, crc
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    frame->crc1 = (uint8_t)crc;
+    frame->crc1 = crc;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)&(frame->crc1), FRAME_TX_RCDATA1_LEN + 1);
-    frame->crc2 = (uint8_t)crc;
-
-// ???    fmav_crc_accumulate_buf(&crc, (uint8_t*)&(frame->crc2), FRAME_TX_PAYLOAD_LEN + 1);
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
     frame->crc = crc;
@@ -118,11 +114,11 @@ uint16_t crc;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    if ((uint8_t)crc != frame->crc1)  return CHECK_ERROR_CRC1;
+    if (crc != frame->crc1) return CHECK_ERROR_CRC1;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
-    if (crc != frame->crc)  return CHECK_ERROR_CRC;
+    if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
 }
