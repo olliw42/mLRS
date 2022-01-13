@@ -63,7 +63,7 @@
 #define FRAME_RATE_MS                   20 // 500 // 20 // 50 Hz
 
 
-#define FRAME_TX_RX_LEN                 90 // we currently only support equal len
+#define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
 
 #define CONNECT_TMO_MS                  500

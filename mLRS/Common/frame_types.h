@@ -48,6 +48,7 @@ typedef struct
   int8_t rssi;
   int8_t snr;
   uint8_t LQ;
+  uint8_t LQ_rc_data;
 } tFrameStats;
 
 
@@ -57,7 +58,7 @@ typedef enum {
 } FRAME_TYPE_ENUM;
 
 
-#define FRAME_HEADER_LEN        6
+#define FRAME_HEADER_LEN        7
 #define FRAME_TX_RCDATA1_LEN    6
 #define FRAME_TX_RCDATA2_LEN    10
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
@@ -67,14 +68,15 @@ typedef enum {
 PACKED(
 typedef struct
 {
-  uint32_t seq_no:3;
-  uint32_t ack:1;
-  uint32_t frame_type:4;
+  uint8_t seq_no:3;
+  uint8_t ack:1;
+  uint8_t frame_type:4;
   uint32_t antenna:1;
   uint32_t rssi_u7:7;
   uint32_t LQ:7;
+  uint32_t LQ_rc_data:7; // not used in TX frame, 127 = invalid
+  uint32_t spare:3;
   uint32_t payload_len:7;
-  uint32_t spare:2;
 }) tFrameStatus;
 
 
@@ -114,13 +116,13 @@ PACKED(
 typedef struct
 {
   uint16_t sync_word; // 2 bytes
-  tFrameStatus status; // 4 bytes
+  tFrameStatus status; // 5 bytes
   tFrameRcData1 rc1; // 6 bytes
   uint16_t crc1;
   tFrameRcData2 rc2; // 10 bytes
   uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
   uint16_t crc;
-}) tTxFrame; // 90 bytes
+}) tTxFrame; // 91 bytes
 
 
 //-- Rx Frames ----------
@@ -129,10 +131,10 @@ PACKED(
 typedef struct
 {
   uint16_t sync_word; // 2 bytes
-  tFrameStatus status; // 4 bytes
+  tFrameStatus status; // 5 bytes
   uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
   uint16_t crc;
-}) tRxFrame; // 90 bytes
+}) tRxFrame; // 91 bytes
 
 
 

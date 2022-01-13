@@ -42,6 +42,7 @@ uint32_t millis32(void)
 // frames
 //-------------------------------------------------------
 
+STATIC_ASSERT(sizeof(tFrameStatus) == FRAME_HEADER_LEN - 2, "Frame header len missmatch")
 STATIC_ASSERT(sizeof(tTxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch TxFrame")
 STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "Frame len missmatch RxFrame")
 
@@ -71,6 +72,7 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
+    frame->status.LQ_rc_data = 0x7F;
     frame->status.payload_len = payload_len;
 
     // pack rc data
@@ -164,6 +166,7 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
+    frame->status.LQ_rc_data = frame_stats->LQ_rc_data;
     frame->status.payload_len = payload_len;
 
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -227,11 +230,13 @@ class Stats {
     int8_t last_rx_rssi; // note: is negative!
     int8_t last_rx_snr; // note: can be negative!
     uint8_t rx_LQ;
+    uint8_t rx_LQ_trc_data; // only used in RX frame
 
     // statistics received from the other end
     uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
     uint8_t received_LQ;
+    uint8_t received_LQ_rc_data;
 
     uint8_t tx_seq_no;
     uint8_t received_seq_no;

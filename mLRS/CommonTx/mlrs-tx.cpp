@@ -151,12 +151,15 @@ void do_transmit(bool set_ack) // we send a TX frame to receiver
   stats.AddBytesTransmitted(payload_len);
 
   tFrameStats frame_stats;
-  frame_stats.seq_no = stats.tx_seq_no; stats.tx_seq_no++;
+  frame_stats.seq_no = stats.tx_seq_no;
   frame_stats.ack = (set_ack) ? 1 : 0;
   frame_stats.antenna = ANTENNA_1;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = txstats.GetLQ();
+  frame_stats.LQ_rc_data = 0x7F; // not used, set to invalid
+
+  stats.tx_seq_no++;
 
   pack_tx_frame(&txFrame, &frame_stats, &rcData, payload, payload_len);
   sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, 10); // 10 ms tmo
@@ -181,6 +184,7 @@ void process_received_frame(void)
   stats.received_antenna = rxFrame.status.antenna;
   stats.received_rssi = -(rxFrame.status.rssi_u7);
   stats.received_LQ = rxFrame.status.LQ;
+  stats.received_LQ_rc_data = rxFrame.status.LQ_rc_data;
 
   stats.received_seq_no = rxFrame.status.seq_no;
   stats.received_ack = rxFrame.status.ack;

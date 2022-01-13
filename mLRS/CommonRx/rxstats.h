@@ -41,6 +41,8 @@ class RxStatsBase
     uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void);
 
+    uint8_t GetLQ_rc_data(void) { return 0x7F; }
+
     virtual bool is_connected(void);
 };
 
