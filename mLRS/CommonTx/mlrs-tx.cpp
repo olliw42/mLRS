@@ -21,6 +21,7 @@ v0.0.00:
 #define UARTC_IRQ_PRIORITY          14
 
 #include "..\Common\common_conf.h"
+#include "..\Common\common_types.h"
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"

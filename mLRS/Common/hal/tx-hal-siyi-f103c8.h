@@ -209,6 +209,12 @@ uint8_t pos_switch_read(void)
 }
 
 
+//-- POWER
+
+#define POWER_GAIN_DBM            22
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM
+
+
 
 
 

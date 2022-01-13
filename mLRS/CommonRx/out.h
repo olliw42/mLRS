@@ -12,6 +12,7 @@
 
 
 #include <inttypes.h>
+#include "..\Common\common_types.h"
 #include "..\Common\frame_types.h"
 
 

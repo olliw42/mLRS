@@ -37,6 +37,7 @@ retransmissions
 #define UART_IRQ_PRIORITY           14 // SBus out pin
 
 #include "..\Common\common_conf.h"
+#include "..\Common\common_types.h"
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"

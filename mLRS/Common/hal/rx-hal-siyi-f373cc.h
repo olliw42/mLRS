@@ -206,6 +206,13 @@ void leds_init(void)
 }
 
 
+//-- POWER
+
+#define POWER_GAIN_DBM            22
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM
+
+
+
 //-------------------------------------------------------
 // there are more pins/pads which are accessible
 //-------------------------------------------------------

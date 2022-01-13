@@ -179,10 +179,10 @@ class SxDriver : public SxDriverBase
 #endif
 
 #ifdef DEVICE_IS_TRANSMITTER
-        SetTxParams(SETUP_TX_POWER, SX1280_RAMPTIME_04_US);
+        SetTxParams(calc_sx_power(SETUP_TX_POWER), SX1280_RAMPTIME_04_US);
 #endif
 #ifdef DEVICE_IS_RECEIVER
-        SetTxParams(SETUP_RX_POWER, SX1280_RAMPTIME_04_US);
+        SetTxParams(calc_sx_power(SETUP_RX_POWER), SX1280_RAMPTIME_04_US);
 #endif
 
         SetDioIrqParams(SX1280_IRQ_ALL,
@@ -256,8 +256,28 @@ class SxDriver : public SxDriverBase
         return 0;
     }
 
+    int8_t GetActualPower(void)
+    {
+        return (int8_t)sx_power + POWER_GAIN_DBM - 18;
+    }
+
+    uint8_t GetActualSxPower(void)
+    {
+        return sx_power;
+    }
+
   private:
     const tSxLoraConfiguration* lora_configuration;
+
+    int8_t sx_power;
+
+    uint8_t calc_sx_power(int8_t power)
+    {
+        sx_power = power - POWER_GAIN_DBM + 18;
+        if (sx_power < SX1280_POWER_m18_DBM) sx_power = SX1280_POWER_m18_DBM;
+        if (sx_power > SX1280_POWER_12p5_DBM) sx_power = SX1280_POWER_12p5_DBM;
+        return sx_power;
+    }
 };
 
 

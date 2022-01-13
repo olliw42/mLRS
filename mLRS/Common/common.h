@@ -39,7 +39,7 @@ uint32_t millis32(void)
 
 
 //-------------------------------------------------------
-// frames
+// Frames
 //-------------------------------------------------------
 
 STATIC_ASSERT(sizeof(tFrameStatus) == FRAME_HEADER_LEN - 2, "Frame header len missmatch")
@@ -381,7 +381,7 @@ class tSerialPort : public tSerialBase
 
 
 //-------------------------------------------------------
-// common variables
+// Common Variables
 //-------------------------------------------------------
 
 tSerialPort serial;
