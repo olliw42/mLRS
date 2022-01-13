@@ -25,13 +25,13 @@
 //#define POWER                          SX1280_POWER_12p5_DBM
 
 
-#define SETUP_TX_USE_MBRIDGE            1 // 0: use UART2, 1: use MBridge
+#define SETUP_TX_USE_MBRIDGE            1 // 0: use UART2, 1: use mBridge
 
 #define SETUP_TX_POWER                  POWER
 
 #define SETUP_TX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: SPort Pin1, 1: mBridge
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In
 
 #define SETUP_TX_CHANNE_ORDER           CHANNEL_ORDER_ETAR
 
