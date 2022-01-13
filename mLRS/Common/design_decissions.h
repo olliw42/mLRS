@@ -229,6 +229,8 @@ slim frames my also allow us to detected more quickly if the connection is lost
 => reconnection in case of connection loss might be much faster
 DO not confuse with micro failsafes
 
+slim frames will however not allow sufficiently large serial data rates, because of the overhead
+
 experimentally I find:
 on rx many packets are received, a good fraction of them pass crc1 test,
 ergo, it seems that in long packets it is more likely that the early bytes are ok than the latter
@@ -343,6 +345,11 @@ e.g.
 
 
 =< let's start with 90 bytes/frame
+
+13.01.2022
+the crc1 technique seems to really give an advantage
+so for rx->tx we want two LQ's to distinguish
+hence frame stats changed, and packets are now 91 bytes
 
 
 */
