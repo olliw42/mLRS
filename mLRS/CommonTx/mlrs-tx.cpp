@@ -31,12 +31,14 @@ v0.0.00:
 #include "..\modules\sx12xx-lib\src\sx128x.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
+#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
 #include "..\Common\fhss.h"
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
 #include "..\Common\common.h"
 
 #include "mbridge_interface.h"
+#include "in.h"
 #include "txstats.h"
 
 
@@ -53,6 +55,35 @@ uint16_t micros(void)
 }
 
 
+class In : public InBase
+{
+public:
+  void Init(void)
+  {
+    InBase::Init();
+    in_init_gpio();
+    uart_init_isroff();
+  }
+
+  void config_sbus(void) override
+  {
+    uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+    in_set_inverted();
+    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+    uart_rx_enableisr(ENABLE);
+  }
+
+  bool available(void) override { return uart_rx_available(); }
+  char getc(void) override { return uart_getc(); }
+  uint16_t tim_1us(void) override { return micros(); }
+
+  void puts(const char* s) override { uartc_puts(s); }
+
+};
+
+In in;
+
+
 void init(void)
 {
   leds_init();
@@ -62,6 +93,8 @@ void init(void)
   delay_init();
   clock_init();
   serial.Init();
+
+  in.Init();
 
   uartc_init();
 
@@ -299,6 +332,8 @@ int main_main(void)
 
   txstats.Init(LQ_AVERAGING_PERIOD);
 
+  in.Configure(IN_CONFIG_SBUS);
+
   f_init();
 
   led_blink = 0;
@@ -494,6 +529,11 @@ int main_main(void)
       uint8_t payload[MBRIDGE_COMMANDPACKET_RX_SIZE];
       bridge.cmd_from_transmitter(&cmd, payload);
     }
+#else
+#  if (SETUP_TX_CHANNELS_SOURCE == 1)
+      // update channels
+      in.Update(&rcData);
+#  endif
 #endif
 
   }//end of while(1) loop
