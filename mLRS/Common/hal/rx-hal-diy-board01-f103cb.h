@@ -168,7 +168,7 @@ void sx_dio1_enable_exti_isr(void)
 
 //-- SBus output pin
 
-#define OUT                       IO_PA9 // UART1 TX
+#define OUT                       IO_PA9 // UART1 TX // PB6 !!!!!!!!!!
 #define OUT_XOR                   IO_PA15
 
 void out_init_gpio(void)
@@ -233,7 +233,7 @@ void leds_init(void)
 
 #define POWER_NUM                 3
 
-const uint8_t power_list[POWER_NUM][2] = {
+const uint16_t power_list[POWER_NUM][2] = {
     { POWER_0_DBM, 1 },
     { POWER_10_DBM, 10 },
     { POWER_12p5_DBM, 18 },
