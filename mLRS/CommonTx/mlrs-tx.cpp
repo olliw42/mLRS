@@ -4,7 +4,7 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-//
+// mLRS TX
 /********************************************************
 
 v0.0.00:
@@ -180,7 +180,7 @@ void do_transmit(bool set_ack) // we send a TX frame to receiver
 #if (SETUP_TX_USE_MBRIDGE == 1)
     bridge.flush();
 #else
-      serial.flush();
+    serial.flush();
 #endif
   }
 
