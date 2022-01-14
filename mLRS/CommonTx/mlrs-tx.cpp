@@ -38,7 +38,7 @@ v0.0.00:
 
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks
 #ifdef DEVICE_HAS_IN
-#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
 #endif
 #include "in.h"
 #include "txstats.h"
@@ -65,19 +65,19 @@ public:
   {
     InBase::Init();
     in_init_gpio();
-    uart_init_isroff();
+    uarte_init_isroff();
   }
 
   void config_sbus(void) override
   {
-    uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+    uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
     in_set_inverted();
-    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
-    uart_rx_enableisr(ENABLE);
+    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    uarte_rx_enableisr(ENABLE);
   }
 
-  bool available(void) override { return uart_rx_available(); }
-  char getc(void) override { return uart_getc(); }
+  bool available(void) override { return uarte_rx_available(); }
+  char getc(void) override { return uarte_getc(); }
   uint16_t tim_1us(void) override { return micros(); }
 #endif
 };

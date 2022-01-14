@@ -22,8 +22,11 @@
 
 
 //-- UARTS
-// UARTB = serial port, UARTC = USB (debug port), UARTD = BT/ESP port
+// UARTB = serial port
+// UARTC = USB (debug port)
+// UARTD = BT/ESP port
 // UART = SPORT (pin5) on JR bay
+// UARTE = in port, SBus or whatever
 
 #define UARTB_USE_UART5 // serial
 #define UARTB_BAUD                57600 // 115200
