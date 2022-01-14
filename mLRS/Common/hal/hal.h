@@ -27,6 +27,9 @@
 #endif
 
 
+#ifdef TX_DIY_E28_BOARD01_F103CB
+#include "tx-hal-diy-e28-board01-f103cb.h"
+#endif
 #ifdef TX_DIY_MODULE01_G491RE
 #include "tx-hal-diy-module01-g491re.h"
 #endif
