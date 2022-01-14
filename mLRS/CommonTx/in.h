@@ -35,13 +35,11 @@ class InBase
     void Update(tRcData* rc);
 
   private:
-    virtual bool available(void);
-    virtual char getc(void);
-    virtual uint16_t tim_1us(void);
+    virtual bool available(void) { return false; }
+    virtual char getc(void) { return 0; }
+    virtual uint16_t tim_1us(void) { return 0; }
 
-    virtual void puts(const char* s);
-
-    virtual void config_sbus(void) = 0;
+    virtual void config_sbus(void) {}
     void parse_sbus(tRcData* rc);
     void get_sbus_data(tRcData* rc);
 

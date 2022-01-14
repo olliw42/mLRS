@@ -57,6 +57,7 @@ uint16_t micros(void)
 
 class In : public InBase
 {
+#ifdef DEVICE_HAS_IN
 public:
   void Init(void)
   {
@@ -76,9 +77,7 @@ public:
   bool available(void) override { return uart_rx_available(); }
   char getc(void) override { return uart_getc(); }
   uint16_t tim_1us(void) override { return micros(); }
-
-  void puts(const char* s) override { uartc_puts(s); }
-
+#endif
 };
 
 In in;
@@ -530,7 +529,7 @@ int main_main(void)
       bridge.cmd_from_transmitter(&cmd, payload);
     }
 #else
-#  if (SETUP_TX_CHANNELS_SOURCE == 1)
+#  if (SETUP_TX_CHANNELS_SOURCE == 1) && (defined DEVICE_HAS_IN)
       // update channels
       in.Update(&rcData);
 #  endif

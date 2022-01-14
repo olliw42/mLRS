@@ -12,6 +12,8 @@
 //-------------------------------------------------------
 #define DEVICE_IS_TRANSMITTER
 
+#define DEVICE_HAS_IN
+
 
 //-- Timers, Timing and such stuff
 
