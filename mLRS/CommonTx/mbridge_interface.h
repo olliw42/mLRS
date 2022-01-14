@@ -10,7 +10,14 @@
 #define MBRIDGE_INTERFACE_H
 #pragma once
 
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#ifndef DEVICE_ALLOWS_MBRIDGE
+  #if SETUP_TX_USE_MBRIDGE == 1
+    #undef SETUP_TX_USE_MBRIDGE
+    #define SETUP_TX_USE_MBRIDGE  0
+  #endif
+#endif
+
+#if (SETUP_TX_USE_MBRIDGE == 1) && (defined DEVICE_ALLOWS_MBRIDGE)
 
 #include "mbridge.h"
 

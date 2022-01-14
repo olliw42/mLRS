@@ -21,6 +21,9 @@
 
 #define DEVICE_IS_TRANSMITTER
 
+#define DEVICE_ALLOWS_MBRIDGE
+
+
 
 //-- Timers, Timing and such stuff
 
