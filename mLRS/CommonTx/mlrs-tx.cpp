@@ -35,6 +35,7 @@ v0.0.00:
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
 #include "..\Common\common.h"
+//#include "..\Common\test.h" // un-comment if you want to compile for board test
 
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks
 #ifdef DEVICE_HAS_IN
@@ -301,6 +302,9 @@ static inline bool connected(void)
 
 int main_main(void)
 {
+#ifdef BOARD_TEST_H
+  main_test();
+#endif
   init();
 #if (SETUP_TX_USE_MBRIDGE == 1)
   bridge.Init();
