@@ -31,13 +31,15 @@ v0.0.00:
 #include "..\modules\sx12xx-lib\src\sx128x.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
 #include "..\Common\fhss.h"
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
 #include "..\Common\common.h"
 
-#include "mbridge_interface.h"
+#include "mbridge_interface.h" // this includes uart.h as it needs callbacks
+#ifdef DEVICE_HAS_IN
+#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#endif
 #include "in.h"
 #include "txstats.h"
 
