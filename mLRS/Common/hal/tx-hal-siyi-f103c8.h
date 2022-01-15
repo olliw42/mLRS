@@ -86,8 +86,6 @@
 
 #define SX_USE_DCDC
 
-#define SX_POWER_MAX              SX1280_POWER_DBM_TO_REG(0) // don't blast all at it
-
 #define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
 #define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE8
 #define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_8
