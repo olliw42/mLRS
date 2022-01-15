@@ -56,11 +56,18 @@ void OutBase::SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order
 }
 
 
-void OutBase::SendRcData(tRcData* rc, bool frame_lost, bool failsafe)
+void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 {
-    uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
+    tRcData rc; // copy rc data, to not modify it !!
+    memcpy(&rc, rc_orig, sizeof(tRcData));
+
+//    uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
+//    for (uint8_t n = 0; n < 4; n++) {
+//      rc->ch[n] = ch[_channel_map[n]];
+//    }
+
     for (uint8_t n = 0; n < 4; n++) {
-      rc->ch[n] = ch[_channel_map[n]];
+      rc.ch[n] = rc_orig->ch[_channel_map[n]];
     }
 
     // mimic spektrum
@@ -68,13 +75,13 @@ void OutBase::SendRcData(tRcData* rc, bool frame_lost, bool failsafe)
     // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
     uint32_t t = 90*2048;
     for (uint8_t n = 0; n < RC_DATE_LEN; n++) {
-      uint32_t xs = 850 * rc->ch[n];
-      rc->ch[n] = (xs + t) / 1000;
+      uint32_t xs = 850 * rc.ch[n];
+      rc.ch[n] = (xs + t) / 1000;
     }
 
     switch (_config) {
     case OUT_CONFIG_SBUS:
-        send_sbus_rcdata(rc, frame_lost, failsafe);
+        send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;
     }
 }
