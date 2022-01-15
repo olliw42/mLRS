@@ -329,8 +329,8 @@ int main_main(void)
 
   link_state = LINK_STATE_RECEIVE;
   connect_state = CONNECT_STATE_LISTEN;
-  connect_listen_cnt = 0;
   connect_tmo_cnt = 0;
+  connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
   link_rescue_cnt = 0;
@@ -372,7 +372,7 @@ int main_main(void)
         rxstats.Update1Hz();
 
         uartc_puts("RX: ");
-        uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_putc(',');
+//broken        uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.rx_LQ));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_received)); uartc_putc(',');
