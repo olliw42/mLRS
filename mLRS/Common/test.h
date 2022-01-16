@@ -80,23 +80,28 @@ uint32_t n, nr, bitpos;
 
       delay_us(40);
 
+#if defined STM32F1 || defined STM32F3
+#define PP(pn,gpiox)  uint32_t port_nr = pn & 0x000000FF; \
+                      if (pn & 0x04000000) port_nr <<= 8; \
+                      if (port_nr > bitpos) LL_GPIO_SetOutputPin(gpiox, pn);
+#elif defined STM32G4
+#define PP(pn,gpiox)  if (pn > bitpos) LL_GPIO_SetOutputPin(gpiox, pn);
+#endif
+
       //pin marker
       for (nr = 0; nr < 16; nr++) {
         bitpos = 1 << nr;
         for (n = 0; n < PORTA_N; n++) {
-          uint32_t port_nr = porta[n] & 0x000000FF;
-          if (porta[n] & 0x04000000) port_nr <<= 8;
-          if (port_nr > bitpos) LL_GPIO_SetOutputPin(GPIOA, porta[n]);
+//          uint32_t port_nr = porta[n] & 0x000000FF;
+//          if (porta[n] & 0x04000000) port_nr <<= 8;
+//          if (port_nr > bitpos) LL_GPIO_SetOutputPin(GPIOA, porta[n]);
+          PP(porta[n],GPIOA);
         }
         for (n = 0; n < PORTB_N; n++) {
-          uint32_t port_nr = portb[n] & 0x000000FF;
-          if (portb[n] & 0x04000000) port_nr <<= 8;
-          if (port_nr > bitpos) LL_GPIO_SetOutputPin(GPIOB, portb[n]);
+          PP(portb[n],GPIOB);
         }
         for (n = 0; n < PORTC_N; n++) {
-          uint32_t port_nr = portc[n] & 0x000000FF;
-          if (portc[n] & 0x04000000) port_nr <<= 8;
-          if (port_nr > bitpos) LL_GPIO_SetOutputPin(GPIOC, portc[n]);
+          PP(portc[n],GPIOC);
         }
         LL_GPIO_ResetOutputPin(GPIOA, porta_all);
         delay_us(3);

@@ -12,6 +12,8 @@
 //-------------------------------------------------------
 #define DEVICE_IS_TRANSMITTER
 
+#define DEVICE_HAS_MBRIDGE
+
 
 //-- Timers, Timing and such stuff
 
@@ -39,7 +41,8 @@
 #define UARTB_RTS                 IO_PB4
 #define UARTB_CTS                 IO_PB5
 
-#define UARTC_USE_UART1 // USB, debug
+//#define UARTC_USE_UART1 // USB, debug
+#define UARTC_USE_UART1_REMAPPED // PB6,PB7, debug only
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           512
@@ -55,8 +58,8 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define TX_INVERT_INTERNAL
-#define RX_INVERT_INTERNAL
+#define MBRIDGE_UARTx             UART_UARTx
+#define MBRIDGE_RX_TX_INVERT_INTERNAL
 
 #define UARTD_USE_UART4 // BT/ESP
 #define UARTD_BAUD                115200
@@ -67,7 +70,7 @@
 #define UARTD_RXBUFSIZE           512
 
 #define ESP_RESET                 IO_PA11
-#define ESP_GPIO                  IO_PA12
+#define ESP_GPIO0                 IO_PA12
 
 
 //-- SX12xx & SPI
@@ -85,26 +88,50 @@
 
 //#define SX_USE_DCDC
 
-//#define SX_POWER_MAX              SX1280_POWER_DBM_TO_REG(0) // don't blast all at it
-
-#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTC
-#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE4
+#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
+#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
 #define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_4
 #define SX_DIO1_EXTI_IRQn             EXTI4_IRQn
 #define SX_DIO1_EXTI_IRQHandler       EXTI4_IRQHandler
 //#define SX_DIO1_EXTI_IRQ_PRIORITY   11
 
+/*
+#define SPI_USE_SPI2              // PB13, PB14, PB15
+#define SPI_CS_IO                 IO_PB12
+#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ // 9 MHz seems to be too fast! got Tx lockups
+
+#define SX_RESET                  IO_PC8
+#define SX_DIO1                   IO_PC6
+#define SX_BUSY                   IO_PC7
+
+#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
+#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE6
+#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_6
+#define SX_DIO1_EXTI_IRQn             EXTI9_5_IRQn
+#define SX_DIO1_EXTI_IRQHandler       EXTI9_5_IRQHandler
+*/
+
 void sx_init_gpio(void)
 {
   gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+#ifdef SX_BUSY
+  gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+#endif
 }
 
 bool sx_dio1_read(void)
 {
   return (gpio_read_activehigh(SX_DIO1)) ? true : false;
 }
+
+#ifdef SX_BUSY
+bool sx_busy_read(void)
+{
+  return (gpio_read_activehigh(SX_BUSY)) ? true : false;
+}
+#endif
 
 void sx_amp_transmit(void)
 {
@@ -116,7 +143,7 @@ void sx_amp_receive(void)
 
 void sx_dio1_init_exti_isroff(void)
 {
-  LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
+  LL_SYSCFG_SetEXTISource(SX_DIO1_SYSCFG_EXTI_PORTx, SX_DIO1_SYSCFG_EXTI_LINEx);
 
   // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
   LL_EXTI_DisableEvent_0_31(SX_DIO1_EXTI_LINE_x);
@@ -137,7 +164,7 @@ void sx_dio1_enable_exti_isr(void)
 
 //-- SX12xx II & SPIB
 
-#define SPIB_USE_SPI1             // PB12, PB13, PB14
+#define SPIB_USE_SPI1             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
 #define SPIB_USE_CLOCKSPEED_2250KHZ
@@ -152,8 +179,8 @@ void sx_dio1_enable_exti_isr(void)
 
 //#define SX2_POWER_MAX             SX1280_POWER_DBM_TO_REG(0) // don't blast all at it
 
-#define SX2_DIO1_GPIO_AF_EXTI_PORTx   LL_GPIO_AF_EXTI_PORTC
-#define SX2_DIO1_GPIO_AF_EXTI_LINEx   LL_GPIO_AF_EXTI_LINE6
+#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
+#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE6
 #define SX2_DIO1_EXTI_LINE_x          LL_EXTI_LINE_6
 #define SX2_DIO1_EXTI_IRQn            EXTI9_5_IRQn
 #define SX2_DIO1_EXTI_IRQHandler      EXTI9_5_IRQHandler
@@ -177,32 +204,32 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_LEFT_GREEN            IO_PC3
-#define LED_LEFT_RED              IO_PC25
+#define LED_LEFT_GREEN            IO_PC2
+#define LED_LEFT_RED              IO_PC3
 #define LED_RIGHT_GREEN           IO_PC0
-#define LED_RIGHT_RED             IO_PC13 // ???????
+//#define LED_RIGHT_RED             IO_PC13 // ???????
 
-#define LED_GREEN_ON              gpio_low(LED_LEFT_GREEN)
-#define LED_RED_ON                gpio_low(LED_LEFT_RED)
-#define LED_RIGHT_RED_ON          gpio_low(LED_RIGHT_RED)
-#define LED_RIGHT_GREEN_ON        gpio_low(LED_RIGHT_GREEN)
+#define LED_GREEN_ON              gpio_high(LED_LEFT_GREEN)
+#define LED_RED_ON                gpio_high(LED_LEFT_RED)
+#define LED_RIGHT_RED_ON          //gpio_high(LED_RIGHT_RED)
+#define LED_RIGHT_GREEN_ON        gpio_high(LED_RIGHT_GREEN)
 
-#define LED_GREEN_OFF             gpio_high(LED_LEFT_GREEN)
-#define LED_RED_OFF               gpio_high(LED_LEFT_RED)
-#define LED_RIGHT_RED_OFF         gpio_high(LED_RIGHT_RED)
-#define LED_RIGHT_GREEN_OFF       gpio_high(LED_RIGHT_GREEN)
+#define LED_GREEN_OFF             gpio_low(LED_LEFT_GREEN)
+#define LED_RED_OFF               gpio_low(LED_LEFT_RED)
+#define LED_RIGHT_RED_OFF         //gpio_low(LED_RIGHT_RED)
+#define LED_RIGHT_GREEN_OFF       gpio_low(LED_RIGHT_GREEN)
 
 #define LED_GREEN_TOGGLE          gpio_toggle(LED_LEFT_GREEN)
 #define LED_RED_TOGGLE            gpio_toggle(LED_LEFT_RED)
-#define LED_RIGHT_RED_TOGGLE      gpio_toggle(LED_RIGHT_RED)
+#define LED_RIGHT_RED_TOGGLE      //gpio_toggle(LED_RIGHT_RED)
 #define LED_RIGHT_GREEN_TOGGLE    gpio_toggle(LED_RIGHT_GREEN)
 
 void leds_init(void)
 {
-  gpio_init(LED_LEFT_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
-  gpio_init(LED_LEFT_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
-  gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
-  gpio_init(LED_RIGHT_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+  gpio_init(LED_LEFT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  gpio_init(LED_LEFT_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  //gpio_init(LED_RIGHT_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
   LED_GREEN_OFF;
   LED_RED_OFF;
   LED_RIGHT_RED_OFF;
@@ -267,6 +294,54 @@ uint8_t fiveway_read(void)
 void oled_init_gpio(void)
 {
 }
+
+
+//-- POWER
+
+#define POWER_GAIN_DBM            0
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM
+
+#define POWER_NUM                 3
+
+const uint16_t power_list[POWER_NUM][2] = {
+    { POWER_0_DBM, 1 },
+    { POWER_10_DBM, 10 },
+    { POWER_12p5_DBM, 18 },
+};
+
+
+//-- TEST
+
+#define PORTA_N  13
+
+uint32_t porta[PORTA_N] = {
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3,
+    LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
+    LL_GPIO_PIN_12,
+};
+
+#define PORTB_N  11
+
+uint32_t portb[PORTB_N] = {
+    LL_GPIO_PIN_0,
+    LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_9, LL_GPIO_PIN_11,
+    LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
+};
+
+#define PORTC_N  15
+
+uint32_t portc[PORTC_N] = {
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3,
+    LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
+    LL_GPIO_PIN_12, LL_GPIO_PIN_14, LL_GPIO_PIN_15
+};
+
+
+
+
 
 
 

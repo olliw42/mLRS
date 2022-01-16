@@ -126,11 +126,19 @@ class tMBridge : public tMBridgeBase, tSerialBase
         tMBridgeBase::Init();
         tSerialBase::Init();
         transmit_enable(false);
-        gpio_init(TX1_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-        gpio_init(RX1_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-        TX1_SET_INVERTED;
-        RX1_SET_INVERTED;
+#if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
+        gpio_init(MBRIDGE_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+        gpio_init(MBRIDGE_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+        MBRIDGE_TX_SET_INVERTED;
+        MBRIDGE_RX_SET_INVERTED;
+#endif
         uart_init_isroff();
+#if defined MBRIDGE_RX_TX_INVERT_INTERNAL
+        LL_USART_Disable(UART_UARTx);
+        LL_USART_SetTXPinLevel(MBRIDGE_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+        LL_USART_SetRXPinLevel(MBRIDGE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+        LL_USART_Enable(UART_UARTx);
+#endif
         sx_tx_fifo.Init();
         sx_rx_fifo.Init();
     }
