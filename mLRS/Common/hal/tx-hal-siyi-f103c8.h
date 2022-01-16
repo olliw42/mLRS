@@ -63,15 +63,15 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define TX1_XOR                   IO_PB7
-#define TX1_SET_NORMAL            gpio_low(TX1_XOR)
-#define TX1_SET_INVERTED          gpio_high(TX1_XOR)
+#define MBRIDGE_TX_XOR            IO_PB7
+#define MBRIDGE_TX_SET_NORMAL     gpio_low(MBRIDGE_TX_XOR)
+#define MBRIDGE_TX_SET_INVERTED   gpio_high(MBRIDGE_TX_XOR)
 
-#define RX1_XOR                   IO_PB6
-#define RX1_SET_NORMAL            gpio_low(RX1_XOR) //TODO: test
-#define RX1_SET_INVERTED          gpio_high(RX1_XOR)
+#define MBRIDGE_RX_XOR            IO_PB6
+#define MBRIDGE_RX_SET_NORMAL     gpio_low(MBRIDGE_RX_XOR)
+#define MBRIDGE_RX_SET_INVERTED   gpio_high(MBRIDGE_RX_XOR)
 
-//-- SPI & SX12xx
+//-- SX1: SX12xx & SPI
 
 #define SPI_USE_SPI2
 #define SPI_CS_IO                 IO_PB12
