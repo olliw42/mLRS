@@ -14,19 +14,18 @@
 
 void OutBase::Init(void)
 {
-    _config = UINT8_MAX;
-    _tx_channel_order = UINT8_MAX;
-    _rx_channel_order = UINT8_MAX;
-    for (uint8_t n = 0; n < 4; n++) _channel_map[n] = n;
+    config = UINT8_MAX;
+    channel_order = UINT8_MAX;
+    for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
 }
 
 
 void OutBase::Configure(uint8_t new_config)
 {
-    if (new_config == _config) return;
-    _config = new_config;
+    if (new_config == config) return;
+    config = new_config;
 
-    switch (_config) {
+    switch (config) {
     case OUT_CONFIG_SBUS:
         config_sbus();
         break;
@@ -34,12 +33,12 @@ void OutBase::Configure(uint8_t new_config)
 }
 
 
-void OutBase::SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order)
+void OutBase::SetChannelOrder(uint8_t new_channel_order)
 {
-  _tx_channel_order = tx_channel_order;
-  _rx_channel_order = rx_channel_order;
+  if (new_channel_order == channel_order) return;
+  channel_order = new_channel_order;
 
-  switch (_tx_channel_order) {
+  switch (channel_order) {
     case CHANNEL_ORDER_AETR:
       // nothing to do
       break;
@@ -47,10 +46,7 @@ void OutBase::SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order
       // TODO
       break;
     case CHANNEL_ORDER_ETAR:
-      _channel_map[0] = 2;
-      _channel_map[1] = 0;
-      _channel_map[2] = 1;
-      _channel_map[3] = 3;
+      // TODO
       break;
   }
 }
@@ -67,7 +63,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 //    }
 
     for (uint8_t n = 0; n < 4; n++) {
-      rc.ch[n] = rc_orig->ch[_channel_map[n]];
+      rc.ch[n] = rc_orig->ch[channel_map[n]];
     }
 
     // mimic spektrum
@@ -79,7 +75,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
       rc.ch[n] = (xs + t) / 1000;
     }
 
-    switch (_config) {
+    switch (config) {
     case OUT_CONFIG_SBUS:
         send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;

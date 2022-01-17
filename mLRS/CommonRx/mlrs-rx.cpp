@@ -528,7 +528,7 @@ int main_main(void)
         link_state = LINK_STATE_TRANSMIT;
       }
 
-      out.SetChannelOrder(SETUP_TX_CHANNE_ORDER, SETUP_RX_CHANNE_ORDER);
+      out.SetChannelOrder(SETUP_RX_CHANNE_ORDER);
       if (connected()) {
         out.SendRcData(&rcData, missed, false);
       } else {

@@ -86,6 +86,52 @@ public:
 In in;
 
 
+class ChannelOrder
+{
+public:
+  ChannelOrder(void)
+  {
+    channel_order = UINT8_MAX;
+    for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
+  }
+
+  void Set(uint8_t new_channel_order)
+  {
+    if (new_channel_order == channel_order) return;
+    channel_order = new_channel_order;
+
+    switch (channel_order) {
+      case CHANNEL_ORDER_AETR:
+        // nothing to do
+        break;
+      case CHANNEL_ORDER_TAER:
+        // TODO
+        break;
+      case CHANNEL_ORDER_ETAR:
+        channel_map[0] = 2;
+        channel_map[1] = 0;
+        channel_map[2] = 1;
+        channel_map[3] = 3;
+        break;
+    }
+  }
+
+  void Apply(tRcData* rc)
+  {
+    uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
+    for (uint8_t n = 0; n < 4; n++) {
+      rc->ch[n] = ch[channel_map[n]];
+    }
+  }
+
+private:
+  uint8_t channel_order;
+  uint8_t channel_map[4];
+};
+
+ChannelOrder channelOrder;
+
+
 void init(void)
 {
   leds_init();
@@ -503,6 +549,9 @@ int main_main(void)
       }
     }
 
+
+    // update channels
+    channelOrder.Set(SETUP_TX_CHANNE_ORDER);
     //-- MBridge handling
 #if (SETUP_TX_USE_MBRIDGE == 1)
     if (bridge.channels_updated) {
@@ -526,6 +575,7 @@ int main_main(void)
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels
       fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
+      channelOrder.Apply(&rcData);
 #  endif
     }
 
@@ -538,6 +588,7 @@ int main_main(void)
 #  if (SETUP_TX_CHANNELS_SOURCE == 1) && (defined DEVICE_HAS_IN)
       // update channels
       in.Update(&rcData);
+      channelOrder.Apply(&rcData);
 #  endif
 #endif
 

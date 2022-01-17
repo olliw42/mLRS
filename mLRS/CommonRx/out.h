@@ -34,7 +34,7 @@ class OutBase
 
     void SendRcData(tRcData* rc, bool frame_lost = false, bool failsafe = false);
 
-    void SetChannelOrder(uint8_t tx_channel_order, uint8_t rx_channel_order);
+    void SetChannelOrder(uint8_t new_channel_order);
 
   private:
     void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
@@ -43,10 +43,9 @@ class OutBase
     virtual void putc(char c);
     virtual void config_sbus(void) = 0;
 
-    uint8_t _config;
-    uint8_t _rx_channel_order;
-    uint8_t _tx_channel_order;
-    uint8_t _channel_map[4];
+    uint8_t config;
+    uint8_t channel_order;
+    uint8_t channel_map[4];
 };
 
 
