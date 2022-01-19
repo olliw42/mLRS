@@ -352,6 +352,27 @@ so for rx->tx we want two LQ's to distinguish
 hence frame stats changed, and packets are now 91 bytes
 
 
+
+-------------------------------------------------------
+Crossfire
+https://www.g3gg0.de/wordpress/fpv/fpv-analysis-of-tbs-crossfire/
+thx to V-22
+
+tx->rx  23 bytes payload
+8 x 10 bit channels = 10 bytes
+9 bytes telemetry
+2 bytes crc
+
+rx->tx  13 bytes payload
+9 bytes telemetry
+1 byte crc
+
+150 Hz = 6.66 ms
+returned packet after 2.6 ms
+
+=> 9 bytes @ 150 Hz = 1350 bytes/sec max
+
+
 */
 #endif // BLABLA_H
 
