@@ -57,7 +57,7 @@ For cloning you of course can use any other tool you like, but ensure that the s
 - in Launcher select Workspace by hitting [Browse...] button, and browse to C:/Me/Documents/Github/mlrstest/mLRS. Hit [Launch] button.
 - in the IDE's top bar go to File->Open Projects from File System
 - in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select C:/Me/Documents/Github/mlrstest/mLRS/rx-diy-board01-f103cb. Hit [Finish] button.
-- change from Debug to Release configuration: Go tothe 4th icon in the top icon bar, click on the down arrow right to it, and select Release (if you don't do that there will be a compile error telling that main_main() is missing).
+- change from Debug to Release configuration: Go to the 4th icon in the top icon bar, click on the down arrow right to it, and select Release (if you don't do that there will be a compile error telling that main_main() is missing).
 - compiling should work now: Go to the 5th icon in the top icon bar and click it
 
 Repeat the last four steps for each board you are interested in. The STM32CubeIDE has its weirdness, so you may have to get used to it. 
