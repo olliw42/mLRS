@@ -1,6 +1,6 @@
 # mLRS #
 
-This is the mLRS project. Its goal is an open source 2.4 GHz LORA-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+This is the mLRS project. Its goal is an open source 2.4 GHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 50 km or so, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -11,7 +11,7 @@ Many LRS or radio links with telemetry exist, among them open source projects su
 However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them check all points, like 
 - relatively cheap
 - 2.4 GHz
-- Lora
+- LoRa
 - full-duplex with sufficient data rate
 - open source
 - rich features for Mavlink systems
@@ -38,16 +38,16 @@ Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?40
 
 ## Installation Bits and Bops ##
 
-This is a STM32CubeIde project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This proecudere should work:
+This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrstest.
  
 1. Clone and setup the project files
 - open a command line processor
-- cd into C:/Me/Documents/Github (not C:/Me/Documents/Github/mlrstest!)
+- cd into C:/Me/Documents/Github (not C:/Me/Documents/Github/mlrstest !)
 - git clone https://github.com/olliw42/mLRS.git mlrstest
-- cd into mlrstest
-- run run_setup.py. This does three steps: initializes the submodules, corrects folder names in project files, and generated mavlink library files.
+- cd mlrstest
+- run run_setup.py. This does two steps: initializes submodules, and generates mavlink library files.
 
 For cloning you of course can use any other tool you like, but ensure that the submodules are also retrieved (git submodule --init --recursive).
 
@@ -57,7 +57,7 @@ For cloning you of course can use any other tool you like, but ensure that the s
 - in Launcher select Workspace by hitting [Browse...] button, and browse to C:/Me/Documents/Github/mlrstest/mLRS. Hit [Launch] button.
 - in the IDE's top bar go to File->Open Projects from File System
 - in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select C:/Me/Documents/Github/mlrstest/mLRS/rx-diy-board01-f103cb. Hit [Finish] button.
-- change from Debug to Release configuration: Go to 4th icon in the top icon bar, click on the down arrow right to it, and select Release (if you don't do that there will be a compile error telling that main_main() is missing).
+- change from Debug to Release configuration: Go tothe 4th icon in the top icon bar, click on the down arrow right to it, and select Release (if you don't do that there will be a compile error telling that main_main() is missing).
 - compiling should work now: Go to the 5th icon in the top icon bar and click it
 
 Repeat the last four steps for each board you are interested in. The STM32CubeIDE has its weirdness, so you may have to get used to it. 
@@ -66,6 +66,6 @@ If this procedure doesn't work, please raise an issue, or even better work it ou
 
 ## Hardware ##
 
-Hardware is quite a problem currently. One might be tempted to think that all the recent ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 please join.
+Hardware is quite a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
 
 The code so far can work on the Siyi FM30 system (early version only, those with STM32 chips)(the TX module needs few small hardware modifications) and some DIY boards you can find in https://github.com/olliw42/mLRS-hardware. Don't hesitate to join the discussion thread at rcgroups for more details.

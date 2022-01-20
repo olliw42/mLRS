@@ -9,8 +9,7 @@
  run_setup.py
 
  1. run git submodule update --init --recursive
- 2. goes through STM32CubeIDE configuration files and adapts them as needed to work
- 3. calls fmav_generate_c_library.py to generated mavlink library files  
+ 2. calls fmav_generate_c_library.py to generated mavlink library files  
 ********************************************************
 '''
 import os
@@ -31,51 +30,6 @@ def git_submodules_update():
     print('# DONE #')
 
 
-def call_replace(filename):
-    F = open(filename, mode='r')
-    content = F.read()
-    F.close()
-
-    print(os.path.join(filename+'-orig'))
-
-    F = open(os.path.join(filename+'-orig'), mode='w')
-    F.write(content)
-    F.close()
-
-    # d = mLRSProjectdirectory.replace('\\','/')
-    # content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs',d) #TODO: use a regex
-    
-    # TODO: comment the replace after run first
-    # U can use STM32CUBEIDE's PATH Variables(like: WORKSPACE_LOC, PROJECT_LOC ....) in the path
-    # So after first replace you don't really need a replace anymore
-    content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs/mLRS',"WORKSPACE_LOC") #TODO: use a regex
-
-    F = open(filename, mode='w')
-    F.write(content1)
-    F.close()
-
-def correct_folders_in_project_files():
-    print('----------------------------------------')
-    print(' correct .project and .mxproject files for folders')
-    print('----------------------------------------')
-    dirlist = os.listdir(mLRSdirectory)
-    for f in dirlist:
-        print('*', f)
-        pf = os.path.join(mLRSdirectory,f,'.project')
-        print('  ',pf)
-
-        if os.path.isfile(pf):
-            call_replace(pf)
-
-        mxpf = os.path.join(mLRSdirectory,f,'.mxproject')
-        print('  ',mxpf)
-
-        if os.path.isfile(mxpf):
-            print('    .mxproject exists')
-            call_replace(mxpf)
-    print('# DONE #')
-
-
 def generate_mavlink_c_library():
     print('----------------------------------------')
     print(' run fmav_generate_c_library.py')
@@ -85,8 +39,5 @@ def generate_mavlink_c_library():
     print('# DONE #')
 
 
-
-
 git_submodules_update()
-correct_folders_in_project_files()
 generate_mavlink_c_library()
