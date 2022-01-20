@@ -28,24 +28,44 @@ You of course use the project fully at your own risk.
 
 ## Project Status ##
 
-The project is work in progress, and there is still a long mile to go before it could be called mature or reliable.
+The project is work in progress, and there is still a long mile to go before it could be called mature or stable.
 
-It is "working" in the sense that it offers a bidirectional serial link with RC data, and as such provides the basic framework. It also integrates with the MAVLink for OpenTx project. But as said, it is far from really usable.
+It is working in the sense that it offers a bidirectional serial link with RC data, and as such provides the basic framework. It also integrates with the MAVLink for OpenTx project.
+
+## Community ##
+
+Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?4037943-mLRS-Lora-based-Mavlink-oriented-open-source-radio-link
 
 ## Installation Bits and Bops ##
 
-This is a STM32CubeIde project. I don't have yet much experience with this framework, so I can't say much reliable, but this may work:
-- download and install latest STM32CubeIde
-- clone this repository; ensure that the submodules are also retrieved (if not run git submodule --init --recursive)
-- open Stm32CubeIde and go to 'File'->'New'->'STM32 Project from existing .ioc' and browse to one of the .ioc files. IMPORTANT: before hitting 'Finish' check the 'C++' box.
-- repeat this for all .ioc you want to open
-- copy from the 'st-hal' folder the content of the respective 'STM32FXxx_HAL_Driver' folder to the equally named folder in the 'Driver' folder
-- run 'fmav_generate_c_library.py' in 'mLRS/Common/mavlink'
+This is a STM32CubeIde project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This proecudere should work:
 
-Not very convennient yet, but this will improve with time :)
+Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrstest.
+ 
+1. Clone and setup the project files
+- open a command line processor
+- cd into C:/Me/Documents/Github (not C:/Me/Documents/Github/mlrstest!)
+- git clone https://github.com/olliw42/mLRS.git mlrstest
+- cd into mlrstest
+- run run_setup.py. This does three steps: initializes the submodules, corrects folder names in project files, and generated mavlink library files.
+
+For cloning you of course can use any other tool you like, but ensure that the submodules are also retrieved (git submodule --init --recursive).
+
+2. STM32CubeIDE
+- download and install STM32CubeIDE
+- start STM32CubeIDE
+- in Launcher select Workspace by hitting [Browse...] button, and browse to C:/Me/Documents/Github/mlrstest/mLRS. Hit [Launch] button.
+- in the IDE's top bar go to File->Open Projects from File System
+- in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select C:/Me/Documents/Github/mlrstest/mLRS/rx-diy-board01-f103cb. Hit [Finish] button.
+- change from Debug to Release configuration: Go to 4th icon in the top icon bar, click on the down arrow right to it, and select Release (if you don't do that there will be a compile error telling that main_main() is missing).
+- compiling should work now: Go to the 5th icon in the top icon bar and click it
+
+Repeat the last four steps for each board you are interested in. The STM32CubeIDE has its weirdness, so you may have to get used to it. 
+
+If this procedure doesn't work, please raise an issue, or even better work it out and suggest a solution.
 
 ## Hardware ##
 
 Hardware is quite a problem currently. One might be tempted to think that all the recent ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 please join.
 
-The code so far is for the Siyi FM30 system (early version only, i.e., the version with the STM32 chips); the TX module needs few small hardware modifications. However, I am in the process of designing hardware, which should ease the situation. Please see https://github.com/olliw42/mLRS-hardware for these designs.
+The code so far can work on the Siyi FM30 system (early version only, those with STM32 chips)(the TX module needs few small hardware modifications) and some DIY boards you can find in https://github.com/olliw42/mLRS-hardware. Don't hesitate to join the discussion thread at rcgroups for more details.
