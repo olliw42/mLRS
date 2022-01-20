@@ -42,8 +42,13 @@ def call_replace(filename):
     F.write(content)
     F.close()
 
-    d = mLRSProjectdirectory.replace('\\','/')
-    content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs',d) #TODO: use a regex
+    # d = mLRSProjectdirectory.replace('\\','/')
+    # content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs',d) #TODO: use a regex
+    
+    # TODO: comment the replace after run first
+    # U can use STM32CUBEIDE's PATH Variables(like: WORKSPACE_LOC, PROJECT_LOC ....) in the path
+    # So after first replace you don't really need a replace anymore
+    content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs/mLRS',"WORKSPACE_LOC") #TODO: use a regex
 
     F = open(filename, mode='w')
     F.write(content1)
