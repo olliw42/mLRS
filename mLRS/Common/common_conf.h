@@ -20,8 +20,8 @@
 // Setup
 //-------------------------------------------------------
 
-//#define POWER                           POWER_m18_DBM
-#define POWER                           POWER_0_DBM
+#define POWER                           POWER_m18_DBM
+//#define POWER                           POWER_0_DBM
 //#define POWER                           POWER_12p5_DBM
 
 
