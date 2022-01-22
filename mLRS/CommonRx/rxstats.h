@@ -17,18 +17,9 @@
 class RxStatsBase
 {
   public:
-
-    bool valid_crc1_frame_received;
-    bool valid_frame_received;
-    bool frame_received;
-
-    LqCounterBase valid_crc1_lq;
-    LqCounterBase valid_lq;
-    LqCounterBase received_lq;
-
     void Init(uint8_t _period);
-    void Update1Hz(void);
 
+    void Update1Hz(void);
     void Clear(void);
     void Next(void);
     void Set(void);
@@ -42,6 +33,15 @@ class RxStatsBase
     uint8_t GetLQ(void);
 
     uint8_t GetLQ_rc_data(void) { return 0x7F; }
+
+private:
+    bool valid_crc1_frame_received;
+    bool valid_frame_received;
+    bool frame_received;
+
+    LqCounterBase valid_crc1_lq;
+    LqCounterBase valid_lq;
+    LqCounterBase received_lq;
 
     virtual bool is_connected(void);
 };
