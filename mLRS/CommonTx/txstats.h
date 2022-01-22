@@ -92,8 +92,9 @@ uint8_t TxStatsBase::GetNormalizedLQ(void)
 uint8_t TxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
-    if (stats.LQ == 0) return 1;
-    return stats.LQ;
+    uint8_t LQ = stats.GetLQ();
+    if (LQ == 0) return 1;
+    return LQ;
 }
 
 

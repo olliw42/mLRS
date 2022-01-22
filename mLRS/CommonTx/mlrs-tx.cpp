@@ -442,7 +442,7 @@ int main_main(void)
 
         uartc_puts("TX: ");
         uartc_puts(u8toBCD_s(txstats.GetRawLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ));
+        uartc_puts(u8toBCD_s(stats.GetLQ()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_frames_received));

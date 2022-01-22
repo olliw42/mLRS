@@ -379,7 +379,7 @@ int main_main(void)
 
         uartc_puts("RX: ");
 //broken        uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ));
+        uartc_puts(u8toBCD_s(stats.GetLQ()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_crc1_received)); uartc_putc(',');

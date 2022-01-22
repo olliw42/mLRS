@@ -313,6 +313,11 @@ class Stats {
 #endif
     }
 
+    uint8_t GetLQ(void)
+    {
+        return LQ;
+    }
+
     // data rate handling
 
     void AddBytesTransmitted(uint16_t len)
