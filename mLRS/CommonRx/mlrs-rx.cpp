@@ -182,7 +182,7 @@ void process_transmit_frame(uint8_t ack)
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = rxstats.GetLQ();
-  frame_stats.LQ_rc_data = rxstats.GetLQ_rc_data();
+  frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
   pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
   sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
@@ -194,7 +194,7 @@ void process_received_frame(bool do_payload)
   stats.received_antenna = txFrame.status.antenna;
   stats.received_rssi = -(txFrame.status.rssi_u7);
   stats.received_LQ = txFrame.status.LQ;
-  stats.received_LQ_rc_data = txFrame.status.LQ_rc_data; // not used, should be 0x7F;
+  stats.received_LQ_serial_data = txFrame.status.LQ_serial_data;
 
   // copy rc data
   if (!do_payload) {

@@ -29,7 +29,7 @@ class RxStatsBase
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
-    uint8_t GetLQ_rc_data(void) { return 0x7F; }
+    uint8_t GetLQ_serial_data(void);
 
   private:
     LqCounterBase LQma_received;
@@ -109,6 +109,12 @@ uint8_t RxStatsBase::GetLQ(void)
     uint8_t LQ = stats.GetLQ();
     if (LQ == 0) return 1;
     return LQ;
+}
+
+
+uint8_t RxStatsBase::GetLQ_serial_data(void)
+{
+    return 0;
 }
 
 

@@ -27,6 +27,7 @@ class TxStatsBase
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void);
+    uint8_t GetLQ_serial_data(void);
 
   private:
     LqCounterBase LQma_received;
@@ -95,6 +96,12 @@ uint8_t TxStatsBase::GetLQ(void)
     uint8_t LQ = stats.GetLQ();
     if (LQ == 0) return 1;
     return LQ;
+}
+
+
+uint8_t TxStatsBase::GetLQ_serial_data(void)
+{
+    return 0;
 }
 
 

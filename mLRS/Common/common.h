@@ -72,7 +72,7 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
-    frame->status.LQ_rc_data = 0x7F;
+    frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
     frame->status.payload_len = payload_len;
 
     // pack rc data
@@ -164,7 +164,7 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
-    frame->status.LQ_rc_data = frame_stats->LQ_rc_data;
+    frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
     frame->status.payload_len = payload_len;
 
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -232,7 +232,7 @@ class Stats {
     uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
     uint8_t received_LQ;
-    uint8_t received_LQ_rc_data;
+    uint8_t received_LQ_serial_data;
 
     // handshaking
     uint8_t transmit_seq_no;
