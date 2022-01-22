@@ -29,8 +29,8 @@ class TxStatsBase
     uint8_t GetLQ(void);
 
   private:
-    LqCounterBase valid_lq;
-    LqCounterBase received_lq;
+    LqCounterBase LQma_received;
+    LqCounterBase LQma_valid;
 
     virtual bool is_connected(void);
 };
@@ -40,8 +40,8 @@ void TxStatsBase::Init(uint8_t _period)
 {
     stats.Init();
 
-    valid_lq.Init(_period);
-    received_lq.Init(_period);
+    LQma_received.Init(_period);
+    LQma_valid.Init(_period);
 }
 
 
@@ -51,36 +51,41 @@ void TxStatsBase::Update1Hz(void)
 }
 
 
-void TxStatsBase::Next(void)
+void TxStatsBase::Next(void) // this is called when transmit starts, or shortly after
 {
-    valid_lq.Next();
-    received_lq.Next();
+    LQma_valid.Next();
+    LQma_received.Next();
+
+    if (!is_connected()) { // start with 100% if not connected
+      LQma_valid.Reset();
+      LQma_received.Reset();
+    }
 }
 
 
 void TxStatsBase::doFrameReceived(void)
 {
-    received_lq.Set();
+    LQma_received.Set();
     stats.frames_received++;
 }
 
 
 void TxStatsBase::doValidFrameReceived(void)
 {
-    valid_lq.Set();
+    LQma_valid.Set();
     stats.valid_frames_received++;
 }
 
 
 uint8_t TxStatsBase::GetRawLQ(void)
 {
-    return valid_lq.GetRaw();
+    return LQma_valid.GetRaw();
 }
 
 
 uint8_t TxStatsBase::GetNormalizedLQ(void)
 {
-    return valid_lq.GetNormalized();
+    return LQma_valid.GetNormalized();
 }
 
 

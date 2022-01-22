@@ -410,7 +410,6 @@ int main_main(void)
         fhss.HopToNext();
       }
       sx.SetRfFrequency(fhss.GetCurrFreq());
-      rxstats.Clear();
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
       DBG_STATUS(status = sx.GetStatus();
@@ -513,11 +512,7 @@ int main_main(void)
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
 
-      if (!connected()) {
-        rxstats.Next();
-        rxstats.Set();
-      }
-      rxstats.Clear();
+      rxstats.Next();
 
       // we missed the receive frame
       bool missed = false;

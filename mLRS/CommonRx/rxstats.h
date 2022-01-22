@@ -20,9 +20,7 @@ class RxStatsBase
     void Init(uint8_t _period);
 
     void Update1Hz(void);
-    void Clear(void);
     void Next(void);
-    void Set(void);
 
     void doFrameReceived(void);
     void doValidCrc1FrameReceived(void);
@@ -30,18 +28,13 @@ class RxStatsBase
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
-    uint8_t GetLQ(void);
-
+    uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
     uint8_t GetLQ_rc_data(void) { return 0x7F; }
 
-private:
-    bool valid_crc1_frame_received;
-    bool valid_frame_received;
-    bool frame_received;
-
-    LqCounterBase valid_crc1_lq;
-    LqCounterBase valid_lq;
-    LqCounterBase received_lq;
+  private:
+    LqCounterBase LQma_received;
+    LqCounterBase LQma_valid_crc1;
+    LqCounterBase LQma_valid;
 
     virtual bool is_connected(void);
 };
@@ -51,11 +44,9 @@ void RxStatsBase::Init(uint8_t _period)
 {
     stats.Init();
 
-    valid_crc1_lq.Init(_period);
-    valid_lq.Init(_period);
-    received_lq.Init(_period);
-
-    Clear();
+    LQma_valid_crc1.Init(_period);
+    LQma_valid.Init(_period);
+    LQma_received.Init(_period);
 }
 
 
@@ -65,60 +56,50 @@ void RxStatsBase::Update1Hz(void)
 }
 
 
-void RxStatsBase::Clear(void)
+void RxStatsBase::Next(void) // this is called when transmit starts, or shortly after
 {
-    valid_crc1_frame_received = false;
-    valid_frame_received = false;
-    frame_received = false;
-}
+    LQma_valid_crc1.Next();
+    LQma_valid.Next();
+    LQma_received.Next();
 
-
-void RxStatsBase::Next(void)
-{
-    valid_crc1_lq.Next();
-    valid_lq.Next();
-    received_lq.Next();
-}
-
-
-void RxStatsBase::Set(void)
-{
-    if (frame_received) received_lq.Set();
-    if (valid_crc1_frame_received) valid_crc1_lq.Set();
-    if (valid_frame_received) valid_lq.Set();
+    if (!is_connected()) { // start with 100% if not connected
+      LQma_valid_crc1.Reset();
+      LQma_valid.Reset();
+      LQma_received.Reset();
+    }
 }
 
 
 void RxStatsBase::doFrameReceived(void)
 {
-    frame_received = true;
+    LQma_received.Set();
     stats.frames_received++;
 }
 
 
 void RxStatsBase::doValidCrc1FrameReceived(void)
 {
-    valid_crc1_frame_received = true;
+    LQma_valid_crc1.Set();
     stats.valid_crc1_received++;
 }
 
 
 void RxStatsBase::doValidFrameReceived(void)
 {
-    valid_frame_received = true;
+    LQma_valid.Set();
     stats.valid_frames_received++;
 }
 
 
 uint8_t RxStatsBase::GetRawLQ(void)
 {
-    return valid_lq.GetRaw();
+    return LQma_valid.GetRaw();
 }
 
 
 uint8_t RxStatsBase::GetNormalizedLQ(void)
 {
-    return valid_lq.GetNormalized();
+    return LQma_valid.GetNormalized();
 }
 
 
