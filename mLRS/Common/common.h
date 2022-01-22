@@ -203,32 +203,30 @@ class Stats {
   public:
 	  // this is one of the ways to calculate LQ stats
     uint32_t frames_received;
-    uint32_t valid_crc1_frames_received; // received frames which passed check_rx_frame() up to crc1, but not crc
-    uint32_t valid_frames_received; // received frames which also pass check_rx_frame()
-
-    uint8_t LQ_received;
-    uint8_t LQ_valid_crc1_received;
-    uint8_t LQ_valid_received;
-
+    uint8_t LQ_frames_received;
     uint32_t frames_received_last;
-    uint32_t valid_crc1_frames_received_last;
+
+    uint32_t valid_crc1_received; // received frames which passed check_rx_frame() up to crc1, but not crc
+    uint8_t LQ_valid_crc1_received;
+    uint32_t valid_crc1_received_last;
+
+    uint32_t valid_frames_received; // received frames which also pass check_rx_frame()
+    uint8_t LQ_valid_frames_received;
     uint32_t valid_frames_received_last;
 
     // bytes stats
     uint32_t bytes_transmitted; // 50 * 64 = 3200 bytes/s or 50 * 82 = 4100 bytes/s => good for 12 days
-    uint32_t bytes_received;
-
-    uint32_t bytes_transmitted_last;
-    uint32_t bytes_received_last;
-
     uint16_t bytes_per_sec_transmitted;
+    uint32_t bytes_transmitted_last;
+
+    uint32_t bytes_received;
     uint16_t bytes_per_sec_received;
+    uint32_t bytes_received_last;
 
     // statistics for our device
     int8_t last_rx_rssi; // note: is negative!
     int8_t last_rx_snr; // note: can be negative!
-    uint8_t rx_LQ;
-    uint8_t rx_LQ_trc_data; // only used in RX frame
+    uint8_t LQ;
 
     // statistics received from the other end
     uint8_t received_antenna;
@@ -236,48 +234,41 @@ class Stats {
     uint8_t received_LQ;
     uint8_t received_LQ_rc_data;
 
-    uint8_t tx_seq_no;
-    uint8_t received_seq_no;
-
-    uint8_t tx_ack;
-    uint8_t received_ack;
+    // handshaking
+    uint8_t transmit_seq_no;
+    uint8_t last_received_ack;
+    uint8_t last_received_seq_no;
 
     void Init(void)
     {
-        frames_received = valid_crc1_frames_received = valid_frames_received = 0;
-        LQ_received = LQ_valid_crc1_received = LQ_valid_received = 0; //UINT8_MAX;
-        frames_received_last = valid_crc1_frames_received_last = valid_frames_received_last = 0;
+        frames_received = valid_crc1_received = valid_frames_received = 0;
+        LQ_frames_received = LQ_valid_crc1_received = LQ_valid_frames_received = 0; //UINT8_MAX;
+        frames_received_last = valid_crc1_received_last = valid_frames_received_last = 0;
 
         bytes_transmitted = bytes_received = 0;
         bytes_transmitted_last = bytes_received_last = 0;
 
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
-        rx_LQ = 0; //UINT8_MAX;
+        LQ = 0; //UINT8_MAX;
 
         received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
+
+        transmit_seq_no = 0;
+        last_received_ack = 0;
+        last_received_seq_no = UINT8_MAX;
     }
 
     void Clear(void)
     {
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
-        rx_LQ = 0; //UINT8_MAX;
+        LQ = 0; //UINT8_MAX;
 
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
-    }
-
-    void AddBytesTransmitted(uint16_t len)
-    {
-        bytes_transmitted += len;
-    }
-
-    void AddBytesReceived(uint16_t len)
-    {
-        bytes_received += len;
     }
 
     void Update1Hz(void)
@@ -285,16 +276,16 @@ class Stats {
     uint32_t diff;
 
         diff = frames_received - frames_received_last;
-        LQ_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+        LQ_frames_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
-        diff = valid_crc1_frames_received - valid_crc1_frames_received_last;
+        diff = valid_crc1_received - valid_crc1_received_last;
         LQ_valid_crc1_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
         diff = valid_frames_received - valid_frames_received_last;
-        LQ_valid_received = (diff * 100 * FRAME_RATE_MS) / 1000;
+        LQ_valid_frames_received = (diff * 100 * FRAME_RATE_MS) / 1000;
 
         frames_received_last = frames_received;
-        valid_crc1_frames_received_last = valid_crc1_frames_received;
+        valid_crc1_received_last = valid_crc1_received;
         valid_frames_received_last = valid_frames_received;
 
         diff = bytes_transmitted - bytes_transmitted_last;
@@ -307,19 +298,31 @@ class Stats {
         bytes_received_last = bytes_received;
 
 #ifdef DEVICE_IS_TRANSMITTER
-        rx_LQ = LQ_valid_received; // this should always be <= valid_received !
+        LQ = LQ_valid_frames_received; // this should always be <= valid_received !
 #endif
 #ifdef DEVICE_IS_RECEIVER
         // same logic as for rxstats
-        if (LQ_valid_received >= 25) {
-            rx_LQ = LQ_valid_received;
+        if (LQ_valid_frames_received >= 25) {
+            LQ = LQ_valid_frames_received;
         } else
         if (LQ_valid_crc1_received >= 25) {
-            rx_LQ = 25;
+            LQ = 25;
         } else {
-            rx_LQ = LQ_valid_crc1_received;
+            LQ = LQ_valid_crc1_received;
         }
 #endif
+    }
+
+    // data rate handling
+
+    void AddBytesTransmitted(uint16_t len)
+    {
+        bytes_transmitted += len;
+    }
+
+    void AddBytesReceived(uint16_t len)
+    {
+        bytes_received += len;
     }
 
     uint16_t GetTransmitBytesPerSec(void)
@@ -334,20 +337,20 @@ class Stats {
 
     uint8_t GetTransmitBandwidthUsage(void)
     {
-      // just simply scale it always to the largest theoretical bandwidth
-      // is 4100 bytes/s max
-      uint8_t bw =  (bytes_per_sec_transmitted + 20) / 41;
-      if ((bw == 0) && (bytes_per_sec_transmitted > 0)) bw = 1; // ensure it's always at least 1% if some bytes are transmitted
-      return bw;
+        // just simply scale it always to the largest theoretical bandwidth
+        // is 4100 bytes/s max
+        uint8_t bw =  (bytes_per_sec_transmitted + 20) / 41;
+        if ((bw == 0) && (bytes_per_sec_transmitted > 0)) bw = 1; // ensure it's always at least 1% if some bytes are transmitted
+        return bw;
     }
 
     uint8_t GetReceiveBandwidthUsage(void)
     {
-      // just simply scale it always to the largest theoretical bandwidth
-      // is 4100 bytes/s max
-      uint8_t bw =  (bytes_per_sec_received + 20) / 41;
-      if ((bw == 0) && (bytes_per_sec_received > 0)) bw = 1; // ensure it's always at least 1% if some bytes are received
-      return bw;
+        // just simply scale it always to the largest theoretical bandwidth
+        // is 4100 bytes/s max
+        uint8_t bw =  (bytes_per_sec_received + 20) / 41;
+        if ((bw == 0) && (bytes_per_sec_received > 0)) bw = 1; // ensure it's always at least 1% if some bytes are received
+        return bw;
     }
 };
 

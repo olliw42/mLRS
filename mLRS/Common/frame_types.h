@@ -30,7 +30,7 @@ typedef struct
   uint8_t antenna;
   int8_t rssi;
   int8_t snr;
-  uint8_t LQ;
+  uint8_t LQ; // that's the LQ we want to report to the world
   uint8_t LQ_rc_data;
 } tFrameStats;
 
@@ -56,8 +56,8 @@ typedef struct
   uint8_t frame_type:4;
   uint32_t antenna:1;
   uint32_t rssi_u7:7;
-  uint32_t LQ:7;
-  uint32_t LQ_rc_data:7; // not used in TX frame, 127 = invalid
+  uint32_t LQ:7; // only Tx->Rx frame, not Rx->Tx frame
+  uint32_t LQ_rc_data:7;
   uint32_t spare:3;
   uint32_t payload_len:7;
 }) tFrameStatus;

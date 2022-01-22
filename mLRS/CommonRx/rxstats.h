@@ -99,7 +99,7 @@ void RxStatsBase::doFrameReceived(void)
 void RxStatsBase::doValidCrc1FrameReceived(void)
 {
     valid_crc1_frame_received = true;
-    stats.valid_crc1_frames_received++;
+    stats.valid_crc1_received++;
 }
 
 
@@ -125,8 +125,8 @@ uint8_t RxStatsBase::GetNormalizedLQ(void)
 uint8_t RxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
-    if (stats.rx_LQ == 0) return 1;
-    return stats.rx_LQ;
+    if (stats.LQ == 0) return 1;
+    return stats.LQ;
 }
 
 

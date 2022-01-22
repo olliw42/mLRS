@@ -151,68 +151,53 @@ typedef enum {
 #define IS_TRANSMIT_STATE   (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
 
 
-void do_transmit(bool set_ack) // we send a RX frame to transmitter
-{
-  uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
-  uint8_t payload_len = 0;
+uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
+uint8_t payload_len = 0;
 
+
+void process_transmit_frame(uint8_t ack)
+{
+  // read data from serial
   if (connected()) {
+    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+    payload_len = 0;
+
     for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
       if (!serial.available()) break;
       payload[payload_len] = serial.getc();
       payload_len++;
     }
+
+    stats.AddBytesTransmitted(payload_len);
   } else {
     serial.flush();
+    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+    payload_len = 0;
   }
 
-  stats.AddBytesTransmitted(payload_len);
-
   tFrameStats frame_stats;
-  frame_stats.seq_no = stats.tx_seq_no;
-  frame_stats.ack = (set_ack) ? 1 : 0;
+  frame_stats.seq_no = stats.transmit_seq_no;
+  frame_stats.ack = ack;
   frame_stats.antenna = ANTENNA_1;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_rc_data = rxstats.GetLQ_rc_data();
 
-  stats.tx_seq_no++;
-
   pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
   sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
 }
 
 
-uint8_t check_received_frame(void) // we received a TX frame from transmitter, return 0 if OK !
+void process_received_frame(bool do_payload)
 {
-  uint8_t err = check_tx_frame(&txFrame);
-
-  if (err) {
-    DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
-uartc_puts("fail "); uartc_puts(u8toHEX_s(err));uartc_putc('\n');
-  }
-
-  return err;
-}
-
-
-// process what we have received
-void process_received_frame(bool full)
-{
-  DBG_MAIN(char s[16];
-  uartc_puts("got "); uartc_puts(s); uartc_puts(": ");)
-
   stats.received_antenna = txFrame.status.antenna;
   stats.received_rssi = -(txFrame.status.rssi_u7);
   stats.received_LQ = txFrame.status.LQ;
   stats.received_LQ_rc_data = txFrame.status.LQ_rc_data; // not used, should be 0x7F;
 
-  stats.received_seq_no = txFrame.status.seq_no;
-  stats.received_ack = txFrame.status.ack;
-
   // copy rc data
-  if (!full) {
+  if (!do_payload) {
     // copy only channels 1-4, and jump out
     rcdata_ch0to3_from_txframe(&rcData, &txFrame);
     return;
@@ -220,37 +205,58 @@ void process_received_frame(bool full)
 
   rcdata_from_txframe(&rcData, &txFrame);
 
-  // forward data to serial, but only if connected
+  // output data on serial, but only if connected
   if (connected()) {
     for (uint8_t i = 0; i < txFrame.status.payload_len; i++) {
-      serial.putc(txFrame.payload[i]);
-      DBG_MAIN(uartc_putc(txFrame.payload[i]);)
+      uint8_t c = txFrame.payload[i];
+      serial.putc(c); // send to serial
+      DBG_MAIN(uartc_putc(c);)
     }
 
     stats.AddBytesReceived(txFrame.status.payload_len);
   }
 
-  DBG_MAIN(uartc_putc('\n');)
+  DBG_MAIN(uartc_puts("got "); uartc_puts(": ");
+  uartc_putc('\n');)
 }
 
 
-bool do_receive(void)
+void do_transmit(void) // we send a RX frame to transmitter
+{
+  uint8_t ack = 0;
+
+  stats.transmit_seq_no++;
+
+  process_transmit_frame(ack);
+}
+
+
+bool do_receive(void) // we receive a TX frame from receiver
 {
 bool ok = false;
 
-  uint8_t res = check_received_frame(); // returns CHECK enum
+  uint8_t res = check_tx_frame(&txFrame);
+  if (res) {
+    DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
+uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
+  }
 
   if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
     clock.Reset();
 
-    bool full = (res == CHECK_OK);
+    bool do_payload = (res == CHECK_OK);
 
-    process_received_frame(full);
+    process_received_frame(do_payload);
 
     rxstats.doValidCrc1FrameReceived();
-    if (full) rxstats.doValidFrameReceived();
+    if (res == CHECK_OK) rxstats.doValidFrameReceived();
+
+    stats.last_received_seq_no = txFrame.status.seq_no;
+    stats.last_received_ack = txFrame.status.ack;
 
     ok = true;
+  } else {
+    stats.last_received_seq_no = UINT8_MAX;
   }
 
   if (res != CHECK_ERROR_SYNCWORD) {
@@ -373,11 +379,11 @@ int main_main(void)
 
         uartc_puts("RX: ");
 //broken        uartc_puts(u8toBCD_s(rxstats.GetRawLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.rx_LQ));
+        uartc_puts(u8toBCD_s(stats.LQ));
         uartc_puts(" (");
-        uartc_puts(u8toBCD_s(stats.LQ_received)); uartc_putc(',');
+        uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_crc1_received)); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ_valid_received));
+        uartc_puts(u8toBCD_s(stats.LQ_valid_frames_received));
         uartc_puts("),");
         uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
 
@@ -420,7 +426,7 @@ int main_main(void)
         uartc_puts("§§"); uartc_puts(u8toHEX_s(status>>5));
         break;
       })
-      do_transmit(false);
+      do_transmit();
       DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
         uartc_puts("§"); uartc_puts(u8toHEX_s(status>>5));
