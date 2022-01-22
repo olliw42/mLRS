@@ -243,7 +243,7 @@ void process_transmit_frame(uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = ANTENNA_1;
-  frame_stats.rssi = stats.last_rx_rssi;
+  frame_stats.rssi = txstats.GetRssi();
   frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
@@ -575,7 +575,7 @@ int main_main(void)
       bridge.channels_updated = 0;
       // when we receive channels packet from transmitter, we send link stats to transmitter
       tMBridgeLinkStats lstats = {0};
-      lstats.rssi = stats.last_rx_rssi;
+      lstats.rssi = txstats.GetRssi();
       lstats.LQ = txstats.GetLQ();
       lstats.snr = stats.last_rx_snr;
       lstats.rssi2 = INT8_MAX;

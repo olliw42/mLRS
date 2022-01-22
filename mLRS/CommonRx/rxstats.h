@@ -31,6 +31,8 @@ class RxStatsBase
     uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
     uint8_t GetLQ_serial_data(void);
 
+    int8_t GetRssi(void);
+
   private:
     LqCounterBase LQma_received;
     LqCounterBase LQma_valid_crc1;
@@ -117,6 +119,11 @@ uint8_t RxStatsBase::GetLQ_serial_data(void)
     return 0;
 }
 
+
+int8_t RxStatsBase::GetRssi(void)
+{
+    return stats.last_rx_rssi;
+}
 
 
 #endif // RXSTATS_H

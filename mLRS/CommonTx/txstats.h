@@ -29,6 +29,8 @@ class TxStatsBase
     uint8_t GetLQ(void);
     uint8_t GetLQ_serial_data(void);
 
+    int8_t GetRssi(void);
+
   private:
     LqCounterBase LQma_received;
     LqCounterBase LQma_valid;
@@ -102,6 +104,12 @@ uint8_t TxStatsBase::GetLQ(void)
 uint8_t TxStatsBase::GetLQ_serial_data(void)
 {
     return 0;
+}
+
+
+int8_t TxStatsBase::GetRssi(void)
+{
+    return stats.last_rx_rssi;
 }
 
 
