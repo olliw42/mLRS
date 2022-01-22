@@ -14,15 +14,15 @@
 class LqCounterBase
 {
   public:
-    void Init(uint8_t _period)
+    void Init(uint8_t new_period)
     {
-        SetPeriod(_period);
+        SetPeriod(new_period);
         Reset();
     }
 
-    void SetPeriod(uint8_t _period)
+    void SetPeriod(uint8_t new_period)
     {
-        period = _period;
+        period = new_period;
         periodbit = (uint64_t)1 << (period - 1);
     }
 
@@ -40,7 +40,7 @@ class LqCounterBase
 
     void Next(void)
     {
-        last_LQraw = _calc_raw(); // buffer it, required since Next() and Set() do not coincide
+        last_LQraw = calc_raw(); // buffer it, required since Next() and Set() do not coincide
 
         curbit <<= 1;
         if (curbit > periodbit) curbit = 1;
@@ -64,7 +64,7 @@ class LqCounterBase
     uint64_t curbit;
     uint8_t last_LQraw;
 
-    uint8_t _calc_raw(void)
+    uint8_t calc_raw(void)
     {
         uint16_t LQraw = 0;
         uint64_t bit = 1;
