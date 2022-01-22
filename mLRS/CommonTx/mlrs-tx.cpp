@@ -309,7 +309,7 @@ bool ok = false;
 
   if (res == CHECK_OK) {
     process_received_frame();
-	  txstats.SetValidFrameReceived();
+	  txstats.doValidFrameReceived();
 	  ok = true;
   }
 
@@ -318,7 +318,7 @@ bool ok = false;
     sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
     // we count all received frames, which are at least for us
-    txstats.SetFrameReceived();
+    txstats.doFrameReceived();
   }
 
   return ok;

@@ -21,8 +21,8 @@ class TxStatsBase
     void Update1Hz(void);
     void Next(void);
 
-    void SetFrameReceived(void);
-    void SetValidFrameReceived(void);
+    void doFrameReceived(void);
+    void doValidFrameReceived(void);
 
     uint8_t GetRawLQ(void);
     uint8_t GetNormalizedLQ(void);
@@ -58,14 +58,14 @@ void TxStatsBase::Next(void)
 }
 
 
-void TxStatsBase::SetFrameReceived(void)
+void TxStatsBase::doFrameReceived(void)
 {
     received_lq.Set();
     stats.frames_received++;
 }
 
 
-void TxStatsBase::SetValidFrameReceived(void)
+void TxStatsBase::doValidFrameReceived(void)
 {
     valid_lq.Set();
     stats.valid_frames_received++;
