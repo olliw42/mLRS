@@ -8,17 +8,24 @@
 //*******************************************************
 /*
 
+ISSUES:
+- sometimes the debug screen in lua slows down massively, can be seen by slow rssi update
+  is this mavotx, or mbridge, or?
+
+- the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
+
+TODO:
+
+- option to select serial or serial with mavlink parsing, allow e.g. radio_status only in latter mode
+
+- rate management by radio_status txbuf
+  note: rts/cts is not a substitute as this wouldn't help in router situations
 
 - get a clean HAL concept
 
 - get a clear mbridge and in concept, currently quite ugly as uart.h conflicts
 
 - handle allowed and not possible parameter combinations properly
-
-- do channel order handling on transmitter side, not receiver side !?
-  or do channel order on transmitter such that it is AETR on the air, and on receiver to what is desired
-  1 has an advantage if all params are known on transmitter side
-  2 is more canonical has also advantage with failsafe, as T is known !!!
 
 - when we eventually do OTA update of the rx, the rx firmware must be universal in the sense that it supports all possible
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
