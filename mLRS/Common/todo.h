@@ -14,6 +14,12 @@ ISSUES:
 
 - the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
 
+- why is otx not getting the tx & rx link stats telemetry?
+- what do the crsf values exactly mean? should rssi be in -db or +db??
+- convert power
+- redo crsf & mbridge such that they can use the very same interface
+
+
 TODO:
 
 - option to select serial or serial with mavlink parsing, allow e.g. radio_status only in latter mode
