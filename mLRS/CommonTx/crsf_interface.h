@@ -60,14 +60,13 @@ class tTxCrsfBase : public tSerialBase
     bool IsEmpty(void);
 
     // interface to the timer and uart hardware peripheral used for the bridge
-    uint16_t tim_us(void) { return micros(); }
     void transmit_enable(bool flag) { uart_rx_enableisr((flag) ? DISABLE : ENABLE); }
     bool mb_rx_available(void) { return uart_rx_available(); }
     char mb_getc(void) { return uart_getc(); }
     void mb_putc(char c) { uart_putc_tobuf(c); }
 
     // for in-isr processing
-    //void parse_nextchar(uint8_t c);
+    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us) {}
     bool transmit_start(void); // returns true if transmission should be started
 
     typedef enum {
@@ -92,9 +91,6 @@ class tTxCrsfBase : public tSerialBase
 
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
     uint8_t tx_frame[128];
-
-    // for CRSF
-    virtual void crsf_parse_nextchar(uint8_t c) {};
 };
 
 
@@ -108,7 +104,7 @@ class tTxCrsf : public tTxCrsfBase
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
 
-    void crsf_parse_nextchar(uint8_t c) override;
+    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
 };
 
 tTxCrsf crsf;
@@ -125,7 +121,8 @@ void uart_rx_callback(uint8_t c)
       crsf.state = tTxCrsf::STATE_IDLE;
   }
 
-  crsf.crsf_parse_nextchar(c);
+  uint16_t tnow_us = micros();
+  crsf.parse_nextchar(c, tnow_us);
 
   if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
       uart_tx_start();
@@ -188,9 +185,10 @@ void tTxCrsfBase::Init(void)
 
   transmit_enable(false);
 
-  frame_received = false;
   state = STATE_IDLE;
   tlast_us = 0;
+  
+  frame_received = false;
   tx_available = 0;
 }
 
@@ -214,10 +212,8 @@ bool tTxCrsfBase::IsEmpty(void)
 // adress len type payload crc
 // len is the length including type, payload, crc
 
-void tTxCrsf::crsf_parse_nextchar(uint8_t c)
+void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
-  uint16_t tnow_us = tim_us();
-
   if (state != STATE_IDLE) {
       uint16_t dt = tnow_us - tlast_us;
       if (dt > CRSF_TMO_US) state = STATE_IDLE;

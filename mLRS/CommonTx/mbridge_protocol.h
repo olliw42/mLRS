@@ -53,6 +53,11 @@ typedef enum {
 } MBRIDGE_TYPE_ENUM;;
 
 
+typedef enum {
+  MBRIDGE_TX_CMD_LINK_STATS = 0x02,
+} MBRIDGE_TX_CMD_ENUM;
+
+
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
 typedef union {
   uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 154 + 20 + 2 = 176 bits = 22 bytes
@@ -78,6 +83,29 @@ typedef union {
       uint16_t ch17 : 1;
   });
 } tMBridgeChannelBuffer;
+
+
+MBRDIGE_PACKED(
+typedef struct
+{
+  int8_t rssi;
+  uint8_t LQ;
+  int8_t snr; // invalid = INT8_MAX
+  int8_t rssi2; // in case of 2nd antenna, invalid = INT8_MAX
+
+  int8_t receiver_rssi;
+  uint8_t receiver_LQ;
+  int8_t receiver_snr; // invalid = INT8_MAX
+  int8_t receiver_rssi2; // in case of 2nd antenna, invalid = INT8_MAX
+
+  uint8_t ant_no : 1; // 0: antenna 1, 1: antenna 2
+  uint8_t receiver_ant_no : 1; // 0: antenna 1, 1: antenna 2
+  uint8_t spare_bits : 6;
+
+  uint8_t LQ_received_ma;
+  uint8_t LQ_received;
+  uint8_t LQ_valid_received;
+}) tMBridgeLinkStats;
 
 
 
