@@ -25,7 +25,7 @@
 //#define POWER                           POWER_12p5_DBM
 
 
-#define SETUP_TX_SERIAL_DESTINATION     0 // 0: UART2, 1: mBridge
+#define SETUP_TX_SERIAL_DESTINATION     1 // 0: UART2, 1: mBridge
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In, 3: Crsf
 
@@ -68,6 +68,8 @@
 
 #define CONNECT_TMO_MS                  500
 
+#define CONNECT_SYNC_CNT                5
+
 #define LQ_AVERAGING_MS                 1000
 
 
@@ -86,8 +88,6 @@
 #define CONNECT_TMO_SYSTICKS            SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f*FRAME_RATE_MS ));
 
 #define CONNECT_LISTEN_HOP_CNT          (uint8_t)(1.5f*FHSS_NUM)
-
-#define CONNECT_SYNC_CNT                5 // (uint8_t)(1.5f * FHSS_NUM)
 
 #define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
 
