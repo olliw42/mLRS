@@ -71,28 +71,28 @@ class tMBridgeBase
   public:
 
     typedef enum {
-      TXSTATE_IDLE = 0,
-      TXSTATE_RECEIVE_STX2,
-      TXSTATE_RECEIVE_LEN,
-      TXSTATE_RECEIVE_SERIALPACKET,
-      TXSTATE_RECEIVE_CHANNELPACKET,
-      TXSTATE_RECEIVE_COMMANDPACKET,
-      TXSTATE_TRANSMIT_START,
-      TXSTATE_TRANSMIT_PUTCHARS, // used only in polling mode
-      TXSTATE_TRANSMIT_CLOSE, // used only in polling mode
-    } TXSTATE_ENUM;
+      STATE_IDLE = 0,
+      STATE_RECEIVE_STX2,
+      STATE_RECEIVE_LEN,
+      STATE_RECEIVE_SERIALPACKET,
+      STATE_RECEIVE_CHANNELPACKET,
+      STATE_RECEIVE_COMMANDPACKET,
+      STATE_TRANSMIT_START,
+      STATE_TRANSMIT_PUTCHARS, // used only in polling mode
+      STATE_TRANSMIT_CLOSE, // used only in polling mode
+    } STATE_ENUM;
 
     typedef enum {
-      TXTYPE_NONE = 0,
-      TXTYPE_SERIALPACKET,
-      TXTYPE_CHANNELPACKET,
-      TXTYPE_COMMANDPACKET,
-    } TXTYPE_ENUM;;
+      TYPE_NONE = 0,
+      TYPE_SERIALPACKET,
+      TYPE_CHANNELPACKET,
+      TYPE_COMMANDPACKET,
+    } TYPE_ENUM;;
 
-    uint8_t tx_state;
-    uint8_t tx_type;
-    uint8_t tx_len;
-    uint8_t tx_cnt;
+    uint8_t state;
+    uint8_t type;
+    uint8_t len;
+    uint8_t cnt;
     uint16_t tlast_us;
 
     tMBridgeChannelBuffer channels;

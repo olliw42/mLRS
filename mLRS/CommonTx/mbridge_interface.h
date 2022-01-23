@@ -176,13 +176,13 @@ tMBridge bridge;
 void uart_rx_callback(uint8_t c)
 {
   LED_RIGHT_GREEN_ON;
-  if (bridge.tx_state >= tMBridgeBase::TXSTATE_TRANSMIT_START) { // recover in case something went wrong
-      bridge.tx_state = tMBridgeBase::TXSTATE_IDLE;
+  if (bridge.state >= tMBridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+      bridge.state = tMBridgeBase::STATE_IDLE;
   }
 
   bridge.parse_nextchar(c);
 
-  if (bridge.tx_state == tMBridgeBase::TXSTATE_TRANSMIT_START) {
+  if (bridge.state == tMBridgeBase::STATE_TRANSMIT_START) {
       bridge.transmit_start();
       uart_tx_start();
   }
@@ -193,7 +193,7 @@ void uart_rx_callback(uint8_t c)
 void uart_tc_callback(void)
 {
   bridge.transmit_enable(DISABLE);
-  bridge.tx_state = tMBridge::TXSTATE_IDLE;
+  bridge.state = tMBridgeBase::STATE_IDLE;
 }
 
 
