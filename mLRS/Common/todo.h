@@ -9,9 +9,6 @@
 /*
 
 ISSUES:
-- sometimes the debug screen in lua slows down massively, can be seen by slow rssi update
-  is this mavotx, or mbridge, or?
-
 - the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
 
 - why is otx not getting the tx & rx link stats telemetry?
