@@ -37,7 +37,6 @@ v0.0.00:
 #include "..\Common\common.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
 
-#include "mbridge_interface.h" // this includes uart.h as it needs callbacks
 #ifdef DEVICE_HAS_IN
 #include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
 #endif
@@ -162,6 +161,14 @@ class TxStats : public TxStatsBase
 };
 
 TxStats txstats;
+
+
+//-------------------------------------------------------
+// mbridge
+//-------------------------------------------------------
+
+#include "mbridge_interface.h" // this includes uart.h as it needs callbacks
+#include "crsf_interface.h" // this includes uart.h as it needs callbacks
 
 
 //-------------------------------------------------------
@@ -356,6 +363,10 @@ uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 
+bool crsf_telemetry_tick_start; // called at 50Hz, in sync with transmit
+bool crsf_telemetry_tick_next; // called at 1 ms
+uint16_t crsf_telemetry_state;
+
 
 static inline bool connected(void)
 {
@@ -371,6 +382,9 @@ int main_main(void)
   init();
 #if (SETUP_TX_USE_MBRIDGE == 1)
   bridge.Init();
+#endif
+#if (SETUP_TX_CHANNELS_SOURCE == 3)
+  crsf.Init();
 #endif
 
   DBG_MAIN(uartc_puts("\n\n\nHello\n\n");)
@@ -403,6 +417,10 @@ int main_main(void)
   in.Configure(IN_CONFIG_SBUS);
 
   f_init();
+
+  crsf_telemetry_tick_start = false;
+  crsf_telemetry_tick_next = false;
+  crsf_telemetry_state = 0;
 
   led_blink = 0;
   tick_1hz = 0;
@@ -493,7 +511,10 @@ int main_main(void)
 */
         txstats.Next();
         link_state = LINK_STATE_TRANSMIT;
+        crsf_telemetry_tick_start = true;
       }
+
+      crsf_telemetry_tick_next = true;
     }
 
     //-- SX handling
@@ -601,12 +622,33 @@ int main_main(void)
       uint8_t payload[MBRIDGE_COMMANDPACKET_RX_SIZE];
       bridge.cmd_from_transmitter(&cmd, payload);
     }
-#else
-#  if (SETUP_TX_CHANNELS_SOURCE == 1) && (defined DEVICE_HAS_IN)
+#elif (SETUP_TX_CHANNELS_SOURCE == 2) && (defined DEVICE_HAS_IN)
+    // update channels
+    in.Update(&rcData);
+    channelOrder.Apply(&rcData);
+#elif (SETUP_TX_CHANNELS_SOURCE == 3)
+    if (crsf_telemetry_tick_start) {
+      crsf_telemetry_tick_start = false;
+      crsf_telemetry_state = 1;
+    }
+    if (crsf_telemetry_state && crsf_telemetry_tick_next && crsf.IsEmpty()) {
+      crsf_telemetry_tick_next = false;
+      switch (crsf_telemetry_state) {
+      case 1: crsf_send_LinkStatistics(); break;
+      case 2: crsf_send_LinkStatisticsTx(); break;
+      case 3: crsf_send_LinkStatisticsRx(); break;
+      }
+      crsf_telemetry_state++;
+    }
+
+    if (crsf.frame_received) {
+      crsf.frame_received = false;
       // update channels
-      in.Update(&rcData);
-      channelOrder.Apply(&rcData);
-#  endif
+      if (crsf.IsChannelData()) {
+        fill_rcdata_from_crsf(&rcData, crsf.frame);
+        channelOrder.Apply(&rcData);
+      }
+    }
 #endif
 
   }//end of while(1) loop
