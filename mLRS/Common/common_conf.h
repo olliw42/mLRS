@@ -25,7 +25,7 @@
 //#define POWER                           POWER_12p5_DBM
 
 
-#define SETUP_TX_SERIAL_DESTINATION     0 // 0: UART2, 1: mBridge
+#define SETUP_TX_SERIAL_DESTINATION     1 // 0: UART2, 1: mBridge
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In, 3: Crsf
 
