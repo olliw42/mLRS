@@ -589,24 +589,25 @@ int main_main(void)
 
 
     // update channels
-    channelOrder.Set(SETUP_TX_CHANNEL_ORDER);
+    channelOrder.Set(SETUP_TX_CHANNEL_ORDER); //TODO: find proper place
     //-- MBridge handling
 #if (defined USE_MBRIDGE)
-    if (bridge.channels_updated) {
-      bridge.channels_updated = 0;
-      // when we receive channels packet from transmitter, we send link stats to transmitter
-      mbridge_send_LinkStats();
+    if (bridge.channels_received) {
+      bridge.channels_received = false;
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels
       fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
       channelOrder.Apply(&rcData);
 #  endif
+      // when we receive channels packet from transmitter, we send link stats to transmitter
+      mbridge_send_LinkStats();
     }
 
     if (bridge.cmd_received) {
+      bridge.cmd_received = false;
       uint8_t cmd;
-      uint8_t payload[MBRIDGE_COMMANDPACKET_RX_SIZE];
-      bridge.cmd_from_transmitter(&cmd, payload);
+      uint8_t payload[MBRIDGE_RX_COMMAND_PAYLOAD_LEN];
+      bridge.GetCommand(&cmd, payload);
     }
 #elif (SETUP_TX_CHANNELS_SOURCE == 2) && (defined DEVICE_HAS_IN)
     // update channels

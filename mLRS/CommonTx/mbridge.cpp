@@ -11,120 +11,135 @@
 #include <string.h>
 
 
+#define MBRIDGE_TMO_US  250
+
+
 // method implementations
 
 void tMBridgeBase::Init(void)
 {
   state = STATE_IDLE;
-  type = TYPE_NONE;
   len = 0;
   cnt = 0;
   tlast_us = 0;
-  channels_updated = 0;
-  cmd_received = 0;
-  cmd_send_available = 0;
+
+  type = MBRIDGE_TYPE_NONE;
+  channels_received = false;
+  cmd_received = false;
+  cmd_tx_available = 0;
 }
 
 
-void tMBridgeBase::parse_nextchar(uint8_t c)
+void tMBridgeBase::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
+  if (state != STATE_IDLE) {
+    uint16_t dt = tnow_us - tlast_us;
+    if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
+  }
+
+  tlast_us = tnow_us;
+
   switch (state) {
   case STATE_IDLE:
-      tlast_us = tim_us();
-      if (c == MBRIDGE_STX1) state = STATE_RECEIVE_STX2;
+      if (c == MBRIDGE_STX1) state = STATE_MBRIDGE_RECEIVE_STX2;
       break;
-  case STATE_RECEIVE_STX2: {
-      tlast_us = tim_us();
-      if (c == MBRIDGE_STX2) state = STATE_RECEIVE_LEN; else state = STATE_IDLE; // error
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-      }break;
-  case STATE_RECEIVE_LEN: {
-      tlast_us = tim_us();
+
+  case STATE_MBRIDGE_RECEIVE_STX2:
+      if (c == MBRIDGE_STX2) state = STATE_MBRIDGE_RECEIVE_LEN; else state = STATE_IDLE; // error
+      break;
+
+  case STATE_MBRIDGE_RECEIVE_LEN:
       cnt = 0;
       if (c == MBRIDGE_CHANNELPACKET_STX) {
           len = MBRIDGE_CHANNELPACKET_SIZE;
-          type = TYPE_CHANNELPACKET;
-          state = STATE_RECEIVE_CHANNELPACKET;
-      } else if (c >= MBRIDGE_COMMANDPACKET_STX) {
-          cmd_receive_cmd = (c & ~MBRIDGE_COMMANDPACKET_STX_MASK);
-          len = MBRIDGE_COMMANDPACKET_RX_SIZE;
-          type = TYPE_COMMANDPACKET;
-          state = STATE_RECEIVE_COMMANDPACKET;
-      } else if (c > MBRIDGE_SERIALPACKET_RX_SIZE_MAX) {
+          type = MBRIDGE_TYPE_CHANNELPACKET;
+          state = STATE_MBRIDGE_RECEIVE_CHANNELPACKET;
+      } else
+      if (c >= MBRIDGE_COMMANDPACKET_STX) {
+          cmd_rx_frame[cnt++] = (c & ~MBRIDGE_COMMANDPACKET_MASK);
+          len = MBRIDGE_RX_COMMAND_PAYLOAD_LEN;
+          type = MBRIDGE_TYPE_COMMANDPACKET;
+          state = STATE_MBRIDGE_RECEIVE_COMMANDPACKET;
+      } else
+      if (c > MBRIDGE_RX_SERIAL_PAYLOAD_LEN_MAX) {
           state = STATE_IDLE; // error
-      } else if (c > 0) {
+      } else
+      if (c > 0) {
           len = c;
-          type = TYPE_SERIALPACKET;
-          state = STATE_RECEIVE_SERIALPACKET;
+          type = MBRIDGE_TYPE_SERIALPACKET;
+          state = STATE_MBRIDGE_RECEIVE_SERIALPACKET;
       } else {
-          type = TYPE_NONE;
+          type = MBRIDGE_TYPE_NONE;
           state = STATE_TRANSMIT_START; // tx_len = 0, no payload
       }
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-      }break;
+      break;
 
-  case STATE_RECEIVE_SERIALPACKET: {
-      tlast_us = tim_us();
+  case STATE_MBRIDGE_RECEIVE_SERIALPACKET:
       serial_putc(c);
       cnt++;
       if (cnt >= len) state = STATE_TRANSMIT_START;
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-      }break;
+      break;
 
-  case STATE_RECEIVE_CHANNELPACKET: {
-      tlast_us = tim_us();
-      channels.c[cnt] = c;
-      cnt++;
+  case STATE_MBRIDGE_RECEIVE_CHANNELPACKET:
+      channels.c[cnt++] = c;
       if (cnt >= len) {
-          channels_updated = 1;
+          channels_received = true;
           state = STATE_TRANSMIT_START;
       }
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-      }break;
+      break;
 
-  case STATE_RECEIVE_COMMANDPACKET: {
-      tlast_us = tim_us();
-      cmd_receive_buf[cnt] = c;
-      cnt++;
-      if (cnt >= len) {
-          cmd_received = 1;
+  case STATE_MBRIDGE_RECEIVE_COMMANDPACKET:
+      cmd_rx_frame[cnt++] = c;
+      if (cnt >= len + 1) {
+          cmd_received = true;
           state = STATE_TRANSMIT_START;
       }
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-      }break;
+      break;
   }
 }
 
 
-void tMBridgeBase::transmit_start(void)
+//-- in-isr processing:
+// in uart rx isr
+//   parse_nextchar(c)
+//   if tx_state == TXSTATE_TRANSMIT_START:
+//       transmit_start()
+//       uart tx start
+// in uart tc isr
+//   transmit_enable(DISABLE)
+//   tx_state = TXSTATE_IDLE
+
+bool tMBridgeBase::transmit_start(void)
 {
-uint8_t count = 0;
+uint8_t tx_available = 0;
 
-  transmit_enable(true);
-  if (cmd_send_available) {
-      count = transmit_cmd();
+  if (state < STATE_TRANSMIT_START) return false; // we are in receiving
+
+  if (cmd_tx_available) {
+      tx_available = cmd_tx_available;
+      cmd_tx_available = 0;
+      send_command();
   } else {
-      count = transmit_serial();
+      tx_available = send_serial();
   }
-  if (count) {
-      state = STATE_TRANSMIT_CLOSE;
-  } else {
-      transmit_enable(false);
-      state = STATE_IDLE;
+
+  if (!tx_available) {
+    state = STATE_IDLE;
+    return false;
   }
+
+  transmit_enable(false);
+
+  state = STATE_TRANSMITING;
+  return true;
 }
 
 
-uint8_t tMBridgeBase::transmit_serial(void)
+uint8_t tMBridgeBase::send_serial(void)
 {
   // send up to 16 bytes
   // if we received a channel or command packet we only do 11
-  uint8_t count = (type >= TYPE_CHANNELPACKET) ? MBRIDGE_SERIALPACKET_TX_SIZE_LIM : MBRIDGE_SERIALPACKET_TX_SIZE_MAX;
+  uint8_t count = (type >= MBRIDGE_TYPE_CHANNELPACKET) ? MBRIDGE_TX_SERIAL_PAYLOAD_LEN_LIM : MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX;
   uint8_t actual_count = 0;
   for (uint8_t i = 0; i < count; i++) {
       if (!serial_rx_available()) break;
@@ -139,95 +154,31 @@ uint8_t tMBridgeBase::transmit_serial(void)
 }
 
 
-uint8_t tMBridgeBase::transmit_cmd(void)
+void tMBridgeBase::send_command(void)
 {
-  cmd_send_available = 0;
-  // send type byte
-  mb_putc(MBRIDGE_COMMANDPACKET_STX + (cmd_send_cmd &~ MBRIDGE_COMMANDPACKET_STX_MASK));
-  // send 12 bytes
-  for (uint8_t i = 0; i < MBRIDGE_COMMANDPACKET_TX_SIZE; i++) {
-      uint8_t c = cmd_send_buf[i];
+  for (uint8_t i = 0; i < MBRIDGE_TX_COMMAND_FRAME_LEN; i++) {
+      uint8_t c = cmd_tx_frame[i];
       mb_putc(c);
   }
-  return MBRIDGE_COMMANDPACKET_TX_SIZE;
 }
 
 
-void tMBridgeBase::transmit_close(void)
+void tMBridgeBase::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
-  transmit_enable(true);
-  state = STATE_IDLE;
+  *cmd = cmd_rx_frame[0];
+  memcpy(payload, &(cmd_rx_frame[1]), MBRIDGE_RX_COMMAND_PAYLOAD_LEN);
 }
 
 
-//-- in-isr processing:
-// in uart rx isr
-//   parse_nextchar(c)
-//   if tx_state == TXSTATE_TRANSMIT_START:
-//       transmit_start()
-//       uart tx start
-// in uart tc isr
-//   transmit_enable(DISABLE)
-//   tx_state = TXSTATE_IDLE
-
-
-//-- in-loop processing:
-// call SpinOnce() repeatedly
-
-void tMBridgeBase::SpinOnce(void)
+void tMBridgeBase::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
 {
-  switch (state) {
-  case STATE_IDLE:
-  case STATE_RECEIVE_STX2:
-  case STATE_RECEIVE_LEN:
-  case STATE_RECEIVE_SERIALPACKET:
-  case STATE_RECEIVE_CHANNELPACKET:
-      if (mb_rx_available()) {
-          uint8_t c = mb_getc();
-          parse_nextchar(c);
-      }
-      break;
+  memset(cmd_tx_frame, 0, MBRIDGE_TX_COMMAND_FRAME_LEN);
+  if (payload_len > MBRIDGE_TX_COMMAND_PAYLOAD_LEN) payload_len = MBRIDGE_TX_COMMAND_PAYLOAD_LEN;
 
-  case STATE_TRANSMIT_START: {
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > MBRIDGE_RX2TX_DELAY_US) state = STATE_TRANSMIT_PUTCHARS;
-      }break;
+  cmd_tx_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd &~ MBRIDGE_COMMANDPACKET_MASK);
+  memcpy(&(cmd_tx_frame[1]), payload, payload_len);
 
-  case STATE_TRANSMIT_PUTCHARS:
-      transmit_start();
-      break;
-
-  case STATE_TRANSMIT_CLOSE: {
-      // wait for bytes to be transmitted
-      uint16_t dt = tim_us() - tlast_us;
-      if (dt > 500) { // 16 bytes @ 400000 bps = 400 us
-          transmit_close();
-      }
-      }break;
-  }
-}
-
-
-bool tMBridgeBase::cmd_from_transmitter(uint8_t* cmd, uint8_t* payload)
-{
-  if (cmd_received) {
-      *cmd = cmd_receive_cmd;
-      memcpy(payload, cmd_receive_buf, MBRIDGE_COMMANDPACKET_RX_SIZE);
-      cmd_received = 0;
-      return true;
-  }
-  *cmd = 0;
-  return false;
-}
-
-
-void tMBridgeBase::cmd_to_transmitter(uint8_t cmd, uint8_t* payload, uint8_t len)
-{
-  cmd_send_cmd = cmd;
-  memset(cmd_send_buf, 0, MBRIDGE_COMMANDPACKET_TX_SIZE);
-  if (len > MBRIDGE_COMMANDPACKET_TX_SIZE) len = MBRIDGE_COMMANDPACKET_TX_SIZE;
-  memcpy(cmd_send_buf, payload, len);
-  cmd_send_available = 1;
+  cmd_tx_available = MBRIDGE_TX_COMMAND_FRAME_LEN;
 }
 
 

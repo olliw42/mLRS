@@ -62,8 +62,6 @@ class tMBridgeBase2 : public tMBridgeBase, tSerialBase
   public:
     void Init(void);
 
-    uint16_t tim_us(void) override { return micros(); }
-
     void transmit_enable(bool flag) override { uart_rx_enableisr((flag) ? DISABLE : ENABLE); }
     bool mb_rx_available(void) override { return uart_rx_available(); }
     char mb_getc(void) override { return uart_getc(); }
@@ -105,7 +103,8 @@ void uart_rx_callback(uint8_t c)
       bridge.state = tMBridgeBase::STATE_IDLE;
   }
 
-  bridge.parse_nextchar(c);
+  uint16_t tnow_us = micros();
+  bridge.parse_nextchar(c, tnow_us);
 
   if (bridge.state == tMBridgeBase::STATE_TRANSMIT_START) {
       bridge.transmit_start();
@@ -214,7 +213,7 @@ typedef struct
 }) tMBridgeLinkStats;
 
 
-STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_COMMANDPACKET_TX_SIZE, "tMBridgeLinkStats len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_TX_COMMAND_PAYLOAD_LEN, "tMBridgeLinkStats len missmatch")
 
 
 void mbridge_send_LinkStats(void)
@@ -235,7 +234,7 @@ tMBridgeLinkStats lstats = {0};
   lstats.LQ_received = stats.LQ_frames_received;
   lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
 
-  bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+  bridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
 
 
