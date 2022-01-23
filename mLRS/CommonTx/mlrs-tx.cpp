@@ -595,21 +595,7 @@ int main_main(void)
     if (bridge.channels_updated) {
       bridge.channels_updated = 0;
       // when we receive channels packet from transmitter, we send link stats to transmitter
-      tMBridgeLinkStats lstats = {0};
-      lstats.rssi = txstats.GetRssi();
-      lstats.LQ = txstats.GetLQ();
-      lstats.snr = stats.last_rx_snr;
-      lstats.rssi2 = INT8_MAX;
-      lstats.ant_no = 0;
-      lstats.receiver_rssi = stats.received_rssi;
-      lstats.receiver_LQ = stats.received_LQ;
-      lstats.receiver_snr = INT8_MAX;
-      lstats.receiver_rssi2 = INT8_MAX;
-      lstats.receiver_ant_no = 0;
-      lstats.LQ_received_ma = stats.GetTransmitBandwidthUsage();
-      lstats.LQ_received = stats.LQ_frames_received;
-      lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
-      bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+      mbridge_send_LinkStats();
 #  if (SETUP_TX_CHANNELS_SOURCE == 1)
       // update channels
       fill_rcdata_from_mbridge(&rcData, &(bridge.channels));

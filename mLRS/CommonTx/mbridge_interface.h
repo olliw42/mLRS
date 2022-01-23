@@ -23,8 +23,139 @@
 
 
 //-------------------------------------------------------
-// some helper definitions
+// Interface Implementation
 
+uint16_t micros(void);
+
+void uart_rx_callback(uint8_t c);
+void uart_tc_callback(void);
+
+#define UART_RX_CALLBACK_FULL(c)    uart_rx_callback(c)
+#define UART_TC_CALLBACK()          uart_tc_callback()
+
+#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#include "fifo.h"
+
+
+uint16_t uart_putc_tobuf(char c)
+{
+  uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
+  if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
+    uart_txbuf[next] = c;
+    uart_txwritepos = next;
+    return 1;
+  }
+  return 0;
+}
+
+
+void uart_tx_start(void)
+{
+  LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
+}
+
+
+class tMBridgeBase2 : public tMBridgeBase, tSerialBase
+{
+  public:
+    void Init(void);
+
+    uint16_t tim_us(void) override { return micros(); }
+
+    void transmit_enable(bool flag) override { uart_rx_enableisr((flag) ? DISABLE : ENABLE); }
+    bool mb_rx_available(void) override { return uart_rx_available(); }
+    char mb_getc(void) override { return uart_getc(); }
+    void mb_putc(char c) override { uart_putc_tobuf(c); }
+};
+
+
+class tMBridge : public tMBridgeBase2
+{
+  public:
+    void Init(void);
+
+    // front end to communicate with mbridge
+    void putc(char c) { sx_rx_fifo.putc(c); }
+    void putbuf(void* buf, uint16_t len) { sx_rx_fifo.putbuf(buf, len); }
+    bool available(void) { return sx_tx_fifo.available(); }
+    char getc(void) { return sx_tx_fifo.getc(); }
+    void flush(void) { sx_tx_fifo.flush(); }
+
+    // backend
+    void serial_putc(char c) override { sx_tx_fifo.putc(c); }
+    bool serial_rx_available(void) override { return sx_rx_fifo.available(); }
+    char serial_getc(void) override { return sx_rx_fifo.getc(); }
+
+    FifoBase sx_tx_fifo;
+    FifoBase sx_rx_fifo;
+};
+
+tMBridge bridge;
+
+
+// we do not add a delay here as with SpinOnce()
+// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+
+void uart_rx_callback(uint8_t c)
+{
+  LED_RIGHT_GREEN_ON;
+  if (bridge.state >= tMBridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+      bridge.state = tMBridgeBase::STATE_IDLE;
+  }
+
+  bridge.parse_nextchar(c);
+
+  if (bridge.state == tMBridgeBase::STATE_TRANSMIT_START) {
+      bridge.transmit_start();
+      uart_tx_start();
+  }
+  LED_RIGHT_GREEN_OFF;
+}
+
+
+void uart_tc_callback(void)
+{
+  bridge.transmit_enable(false);
+  bridge.state = tMBridgeBase::STATE_IDLE;
+}
+
+
+void tMBridgeBase2::Init(void)
+{
+    tMBridgeBase::Init();
+    tSerialBase::Init();
+
+    transmit_enable(false);
+
+#if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
+    gpio_init(MBRIDGE_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(MBRIDGE_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    MBRIDGE_TX_SET_INVERTED;
+    MBRIDGE_RX_SET_INVERTED;
+#endif
+
+    uart_init_isroff();
+
+#if defined MBRIDGE_RX_TX_INVERT_INTERNAL
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(MBRIDGE_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetRXPinLevel(MBRIDGE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UART_UARTx);
+#endif
+}
+
+
+void tMBridge::Init(void)
+{
+    tMBridgeBase2::Init();
+
+    sx_tx_fifo.Init();
+    sx_rx_fifo.Init();
+}
+
+
+//-------------------------------------------------------
+// convenience helper
 
 // mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
 //          ch14-15:  0 .. 512 .. 1023, 10 bits
@@ -84,119 +215,29 @@ typedef struct
 STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_COMMANDPACKET_TX_SIZE, "tMBridgeLinkStats len missmatch")
 
 
-//-------------------------------------------------------
-// Interface Implementation
-
-uint16_t micros(void);
-
-void uart_rx_callback(uint8_t c);
-void uart_tc_callback(void);
-
-#define UART_RX_CALLBACK_FULL(c)    uart_rx_callback(c)
-#define UART_TC_CALLBACK()          uart_tc_callback()
-
-#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
-#include "fifo.h"
-
-
-uint16_t uart_putc_tobuf(char c)
+void mbridge_send_LinkStats(void)
 {
-  uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
-  if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
-    uart_txbuf[next] = c;
-    uart_txwritepos = next;
-    return 1;
-  }
-  return 0;
+tMBridgeLinkStats lstats = {0};
+
+  lstats.rssi = txstats.GetRssi();
+  lstats.LQ = txstats.GetLQ();
+  lstats.snr = stats.last_rx_snr;
+  lstats.rssi2 = INT8_MAX;
+  lstats.ant_no = 0;
+  lstats.receiver_rssi = stats.received_rssi;
+  lstats.receiver_LQ = stats.received_LQ;
+  lstats.receiver_snr = INT8_MAX;
+  lstats.receiver_rssi2 = INT8_MAX;
+  lstats.receiver_ant_no = 0;
+  lstats.LQ_received_ma = stats.GetTransmitBandwidthUsage();
+  lstats.LQ_received = stats.LQ_frames_received;
+  lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
+
+  bridge.cmd_to_transmitter(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
 
 
-void uart_tx_start(void)
-{
-  LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
-}
 
-
-class tMBridge : public tMBridgeBase, tSerialBase
-{
-  public:
-
-    void Init(void)
-    {
-        tMBridgeBase::Init();
-        tSerialBase::Init();
-        transmit_enable(false);
-#if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
-        gpio_init(MBRIDGE_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-        gpio_init(MBRIDGE_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-        MBRIDGE_TX_SET_INVERTED;
-        MBRIDGE_RX_SET_INVERTED;
-#endif
-        uart_init_isroff();
-#if defined MBRIDGE_RX_TX_INVERT_INTERNAL
-        LL_USART_Disable(UART_UARTx);
-        LL_USART_SetTXPinLevel(MBRIDGE_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-        LL_USART_SetRXPinLevel(MBRIDGE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-        LL_USART_Enable(UART_UARTx);
-#endif
-        sx_tx_fifo.Init();
-        sx_rx_fifo.Init();
-    }
-
-    // front end to communicate with mbridge
-
-    void putc(char c) { sx_rx_fifo.putc(c); }
-    void putbuf(void* buf, uint16_t len) { sx_rx_fifo.putbuf(buf, len); }
-    bool available(void) { return sx_tx_fifo.available(); }
-    char getc(void) { return sx_tx_fifo.getc(); }
-    void flush(void) { sx_tx_fifo.flush(); }
-
-    // backend
-    FifoBase sx_tx_fifo;
-    FifoBase sx_rx_fifo;
-
-    uint16_t tim_us(void) override { return micros(); }
-
-    void transmit_enable(bool flag) override { uart_rx_enableisr((flag) ? DISABLE : ENABLE); }
-    bool mb_rx_available(void) override { return uart_rx_available(); }
-    char mb_getc(void) override { return uart_getc(); }
-    void mb_putc(char c) override { uart_putc_tobuf(c); }
-
-    void serial_putc(char c) override { sx_tx_fifo.putc(c); }
-    bool serial_rx_available(void) override { return sx_rx_fifo.available(); }
-    char serial_getc(void) override { return sx_rx_fifo.getc(); }
-};
-
-tMBridge bridge;
-
-
-// we do not add a delay here as with SpinOnce()
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
-
-void uart_rx_callback(uint8_t c)
-{
-  LED_RIGHT_GREEN_ON;
-  if (bridge.state >= tMBridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-      bridge.state = tMBridgeBase::STATE_IDLE;
-  }
-
-  bridge.parse_nextchar(c);
-
-  if (bridge.state == tMBridgeBase::STATE_TRANSMIT_START) {
-      bridge.transmit_start();
-      uart_tx_start();
-  }
-  LED_RIGHT_GREEN_OFF;
-}
-
-
-void uart_tc_callback(void)
-{
-  bridge.transmit_enable(DISABLE);
-  bridge.state = tMBridgeBase::STATE_IDLE;
-}
-
-
-#endif // if (SETUP_TX_USE_MBRIDGE == 1)
+#endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_MBRIDGE)
 
 #endif // MBRIDGE_INTERFACE_H
