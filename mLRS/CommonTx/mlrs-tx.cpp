@@ -568,7 +568,7 @@ int main_main(void)
 
 
     // update channels
-    channelOrder.Set(SETUP_TX_CHANNE_ORDER);
+    channelOrder.Set(SETUP_TX_CHANNEL_ORDER);
     //-- MBridge handling
 #if (SETUP_TX_USE_MBRIDGE == 1)
     if (bridge.channels_updated) {

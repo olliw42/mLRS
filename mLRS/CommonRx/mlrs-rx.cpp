@@ -529,7 +529,7 @@ int main_main(void)
         link_state = LINK_STATE_TRANSMIT;
       }
 
-      out.SetChannelOrder(SETUP_RX_CHANNE_ORDER);
+      out.SetChannelOrder(SETUP_RX_CHANNEL_ORDER);
       if (connected()) {
         out.SendRcData(&rcData, missed, false);
       } else {
