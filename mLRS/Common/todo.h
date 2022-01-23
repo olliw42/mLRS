@@ -9,6 +9,8 @@
 /*
 
 ISSUES:
+- mbridge stats in lua sometimes hangs
+
 - the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
 
 - why is otx not getting the tx & rx link stats telemetry?

@@ -39,15 +39,13 @@ void uart_tc_callback(void);
 #include "fifo.h"
 
 
-uint16_t uart_putc_tobuf(char c)
+void uart_putc_tobuf(char c)
 {
   uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
   if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
-    uart_txbuf[next] = c;
-    uart_txwritepos = next;
-    return 1;
+      uart_txbuf[next] = c;
+      uart_txwritepos = next;
   }
-  return 0;
 }
 
 
@@ -57,7 +55,7 @@ void uart_tx_start(void)
 }
 
 
-class tMBridgeBase : public tSerialBase
+class tPin5BridgeBase
 {
   public:
     void Init(void);
@@ -68,11 +66,8 @@ class tMBridgeBase : public tSerialBase
     char mb_getc(void) { return uart_getc(); }
     void mb_putc(char c) { uart_putc_tobuf(c); }
 
-    // for in-isr processing
-    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us) {};
-    bool transmit_start(void); // returns true if transmission should be started
-    uint8_t send_serial(void);
-    void send_command(void);
+    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us);
+    virtual bool transmit_start(void); // returns true if transmission should be started
 
     typedef enum {
       STATE_IDLE = 0,
@@ -91,6 +86,48 @@ class tMBridgeBase : public tSerialBase
     uint8_t len;
     uint8_t cnt;
     uint16_t tlast_us;
+};
+
+
+void tPin5BridgeBase::Init(void)
+{
+  transmit_enable(false);
+
+#if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
+  gpio_init(MBRIDGE_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+  gpio_init(MBRIDGE_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+  MBRIDGE_TX_SET_INVERTED;
+  MBRIDGE_RX_SET_INVERTED;
+#endif
+
+  uart_init_isroff();
+
+#if defined MBRIDGE_RX_TX_INVERT_INTERNAL
+  LL_USART_Disable(UART_UARTx);
+  LL_USART_SetTXPinLevel(MBRIDGE_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+  LL_USART_SetRXPinLevel(MBRIDGE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+  LL_USART_Enable(UART_UARTx);
+#endif
+
+  state = STATE_IDLE;
+  len = 0;
+  cnt = 0;
+  tlast_us = 0;
+};
+
+
+class tMBridge : public tPin5BridgeBase, public tSerialBase
+{
+  public:
+    void Init(void);
+    void GetCommand(uint8_t* cmd, uint8_t* payload);
+    void SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len);
+
+    // for in-isr processing
+    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
+    bool transmit_start(void) override; // returns true if transmission should be started
+    uint8_t send_serial(void);
+    void send_command(void);
 
     uint8_t type;
 
@@ -120,16 +157,6 @@ class tMBridgeBase : public tSerialBase
     FifoBase sx_rx_fifo;
 };
 
-
-class tMBridge : public tMBridgeBase
-{
-  public:
-    void GetCommand(uint8_t* cmd, uint8_t* payload);
-    void SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len);
-
-    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
-};
-
 tMBridge bridge;
 
 
@@ -140,8 +167,8 @@ void uart_rx_callback(uint8_t c)
 {
   LED_RIGHT_GREEN_ON;
 
-  if (bridge.state >= tMBridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-      bridge.state = tMBridgeBase::STATE_IDLE;
+  if (bridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+      bridge.state = tPin5BridgeBase::STATE_IDLE;
   }
 
   uint16_t tnow_us = micros();
@@ -158,19 +185,19 @@ void uart_rx_callback(uint8_t c)
 void uart_tc_callback(void)
 {
   bridge.transmit_enable(false);
-  bridge.state = tMBridgeBase::STATE_IDLE;
+  bridge.state = tPin5BridgeBase::STATE_IDLE;
 }
 
 
-bool tMBridgeBase::transmit_start(void)
+bool tMBridge::transmit_start(void)
 {
 uint8_t tx_available = 0;
 
   if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
   if (state != STATE_TRANSMIT_START) {
-    state = STATE_IDLE;
-    return false;
+      state = STATE_IDLE;
+      return false;
   }
 
   if (cmd_tx_available) {
@@ -182,8 +209,8 @@ uint8_t tx_available = 0;
   }
 
   if (!tx_available) {
-    state = STATE_IDLE;
-    return false;
+      state = STATE_IDLE;
+      return false;
   }
 
   transmit_enable(false);
@@ -193,7 +220,7 @@ uint8_t tx_available = 0;
 }
 
 
-uint8_t tMBridgeBase::send_serial(void)
+uint8_t tMBridge::send_serial(void)
 {
   // send up to 16 bytes
   // if we received a channel or command packet we only do 11
@@ -212,7 +239,7 @@ uint8_t tMBridgeBase::send_serial(void)
 }
 
 
-void tMBridgeBase::send_command(void)
+void tMBridge::send_command(void)
 {
   for (uint8_t i = 0; i < MBRIDGE_TX_COMMAND_FRAME_LEN; i++) {
       uint8_t c = cmd_tx_frame[i];
@@ -221,40 +248,18 @@ void tMBridgeBase::send_command(void)
 }
 
 
-void tMBridgeBase::Init(void)
+void tMBridge::Init(void)
 {
-    tSerialBase::Init();
+  tSerialBase::Init();
+  tPin5BridgeBase::Init();
 
-    transmit_enable(false);
+  type = MBRIDGE_TYPE_NONE;
+  channels_received = false;
+  cmd_received = false;
+  cmd_tx_available = 0;
 
-#if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
-    gpio_init(MBRIDGE_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(MBRIDGE_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    MBRIDGE_TX_SET_INVERTED;
-    MBRIDGE_RX_SET_INVERTED;
-#endif
-
-    uart_init_isroff();
-
-#if defined MBRIDGE_RX_TX_INVERT_INTERNAL
-    LL_USART_Disable(UART_UARTx);
-    LL_USART_SetTXPinLevel(MBRIDGE_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_SetRXPinLevel(MBRIDGE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(UART_UARTx);
-#endif
-
-    state = STATE_IDLE;
-    len = 0;
-    cnt = 0;
-    tlast_us = 0;
-
-    type = MBRIDGE_TYPE_NONE;
-    channels_received = false;
-    cmd_received = false;
-    cmd_tx_available = 0;
-
-    sx_tx_fifo.Init();
-    sx_rx_fifo.Init();
+  sx_tx_fifo.Init();
+  sx_rx_fifo.Init();
 }
 
 
@@ -267,8 +272,8 @@ void tMBridgeBase::Init(void)
 void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
   if (state != STATE_IDLE) {
-    uint16_t dt = tnow_us - tlast_us;
-    if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
+      uint16_t dt = tnow_us - tlast_us;
+      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
   }
 
   tlast_us = tnow_us;

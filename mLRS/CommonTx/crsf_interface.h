@@ -40,8 +40,8 @@ void uart_putc_tobuf(char c)
 {
   uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
   if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
-    uart_txbuf[next] = c;
-    uart_txwritepos = next;
+      uart_txbuf[next] = c;
+      uart_txwritepos = next;
   }
 }
 
@@ -52,12 +52,10 @@ void uart_tx_start(void)
 }
 
 
-class tTxCrsfBase : public tSerialBase
+class tPin5BridgeBase
 {
   public:
-
     void Init(void);
-    bool IsEmpty(void);
 
     // interface to the timer and uart hardware peripheral used for the bridge
     void transmit_enable(bool flag) { uart_rx_enableisr((flag) ? DISABLE : ENABLE); }
@@ -66,8 +64,8 @@ class tTxCrsfBase : public tSerialBase
     void mb_putc(char c) { uart_putc_tobuf(c); }
 
     // for in-isr processing
-    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us) {}
-    bool transmit_start(void); // returns true if transmission should be started
+    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us);
+    virtual bool transmit_start(void); // returns true if transmission should be started
 
     typedef enum {
       STATE_IDLE = 0,
@@ -84,87 +82,11 @@ class tTxCrsfBase : public tSerialBase
     uint8_t len;
     uint8_t cnt;
     uint16_t tlast_us;
-
-    uint8_t frame[128];
-
-    volatile bool frame_received;
-
-    volatile uint8_t tx_available; // this signals if something needs to be send to radio
-    uint8_t tx_frame[128];
 };
 
 
-class tTxCrsf : public tTxCrsfBase
+void tPin5BridgeBase::Init(void)
 {
-  public:
-    uint8_t crc8(const uint8_t* buf);
-
-    bool IsChannelData(void);
-    void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
-    void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
-    void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
-
-    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
-};
-
-tTxCrsf crsf;
-
-
-// we do not add a delay here before we transmit
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
-
-void uart_rx_callback(uint8_t c)
-{
-  LED_RIGHT_GREEN_ON;
-
-  if (crsf.state >= tTxCrsf::STATE_TRANSMIT_START) { // recover in case something went wrong
-      crsf.state = tTxCrsf::STATE_IDLE;
-  }
-
-  uint16_t tnow_us = micros();
-  crsf.parse_nextchar(c, tnow_us);
-
-  if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-      uart_tx_start();
-  }
-
-  LED_RIGHT_GREEN_OFF;
-}
-
-
-void uart_tc_callback(void)
-{
-  crsf.transmit_enable(false); // switches on rx
-  crsf.state = tTxCrsf::STATE_IDLE;
-}
-
-
-bool tTxCrsfBase::transmit_start(void)
-{
-  if (state < STATE_TRANSMIT_START) return false; // we are in receiving
-
-  if (!tx_available || (state != STATE_TRANSMIT_START)) {
-    state = STATE_IDLE;
-    return false;
-  }
-
-  transmit_enable(true); // switches of rx
-
-  for (uint8_t i = 0; i < tx_available; i++) {
-      uint8_t c = tx_frame[i];
-      mb_putc(c);
-  }
-
-  tx_available = 0;
-  state = STATE_TRANSMITING;
-  return true;
-}
-
-
-void tTxCrsfBase::Init(void)
-{
-  tSerialBase::Init();
-
   transmit_enable(false);
 
 #if defined MBRIDGE_TX_XOR || defined MBRIDGE_RX_XOR
@@ -187,15 +109,93 @@ void tTxCrsfBase::Init(void)
 
   state = STATE_IDLE;
   tlast_us = 0;
-  
-  frame_received = false;
-  tx_available = 0;
+};
+
+
+class tTxCrsf : public tPin5BridgeBase
+{
+  public:
+    void Init(void);
+    bool IsEmpty(void);
+    bool IsChannelData(void);
+    void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
+    void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
+    void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
+
+    // for in-isr processing
+    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
+    bool transmit_start(void) override; // returns true if transmission should be started
+
+    uint8_t frame[128];
+
+    volatile bool frame_received;
+
+    volatile uint8_t tx_available; // this signals if something needs to be send to radio
+    uint8_t tx_frame[128];
+
+    uint8_t crc8(const uint8_t* buf);
+};
+
+tTxCrsf crsf;
+
+
+// we do not add a delay here before we transmit
+// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+
+void uart_rx_callback(uint8_t c)
+{
+  LED_RIGHT_GREEN_ON;
+
+  if (crsf.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+      crsf.state = tPin5BridgeBase::STATE_IDLE;
+  }
+
+  uint16_t tnow_us = micros();
+  crsf.parse_nextchar(c, tnow_us);
+
+  if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
+      uart_tx_start();
+  }
+
+  LED_RIGHT_GREEN_OFF;
 }
 
 
-bool tTxCrsfBase::IsEmpty(void)
+void uart_tc_callback(void)
 {
-    return (tx_available == 0);
+  crsf.transmit_enable(false); // switches on rx
+  crsf.state = tPin5BridgeBase::STATE_IDLE;
+}
+
+
+bool tTxCrsf::transmit_start(void)
+{
+  if (state < STATE_TRANSMIT_START) return false; // we are in receiving
+
+  if (!tx_available || (state != STATE_TRANSMIT_START)) {
+    state = STATE_IDLE;
+    return false;
+  }
+
+  transmit_enable(true); // switches of rx
+
+  for (uint8_t i = 0; i < tx_available; i++) {
+      uint8_t c = tx_frame[i];
+      mb_putc(c);
+  }
+
+  tx_available = 0;
+  state = STATE_TRANSMITING;
+  return true;
+}
+
+
+void tTxCrsf::Init(void)
+{
+  tPin5BridgeBase::Init();
+
+  frame_received = false;
+  tx_available = 0;
 }
 
 
@@ -254,6 +254,12 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 uint8_t tTxCrsf::crc8(const uint8_t* buf)
 {
   return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
+}
+
+
+bool tTxCrsf::IsEmpty(void)
+{
+  return (tx_available == 0);
 }
 
 
