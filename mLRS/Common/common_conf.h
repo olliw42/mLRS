@@ -25,17 +25,20 @@
 //#define POWER                           POWER_12p5_DBM
 
 
-#define SETUP_TX_USE_MBRIDGE            1 // 0: use UART2, 1: use mBridge
+#define SETUP_TX_SERIAL_DESTINATION     0 // 0: UART2, 1: mBridge
+
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In, 3: Crsf
+
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
 
 #define SETUP_TX_POWER                  POWER
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
+#define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
 #define SETUP_RX_POWER                  POWER
 
@@ -44,8 +47,6 @@
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
 #define SETUP_RX_ANTENNA                0 // 0: left/default, 1: right
-
-#define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
 
 #define BIND_DBLWORD                    0x12344281
@@ -90,6 +91,14 @@
 
 #define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
 
+
+#if (SETUP_TX_SERIAL_DESTINATION == 1) && (SETUP_TX_CHANNELS_SOURCE == 3)
+#error Device cannot use mBridge and CRSF at the same time !
+#endif
+
+#if (SETUP_TX_SERIAL_DESTINATION == 1) || (SETUP_TX_CHANNELS_SOURCE == 1)
+#define USE_MBRIDGE
+#endif
 
 
 #endif // COMMON_CONFIG_H

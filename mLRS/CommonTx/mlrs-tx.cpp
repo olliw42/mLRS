@@ -225,7 +225,7 @@ void process_transmit_frame(uint8_t ack)
     payload_len = 0;
 
     for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#if (SETUP_TX_SERIAL_DESTINATION == 1)
       if (!bridge.available()) break;
       payload[payload_len] = bridge.getc();
 #else
@@ -237,7 +237,7 @@ void process_transmit_frame(uint8_t ack)
 
     stats.AddBytesTransmitted(payload_len);
   } else {
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#if (SETUP_TX_SERIAL_DESTINATION == 1)
     bridge.flush();
 #else
     serial.flush();
@@ -272,7 +272,7 @@ void process_received_frame(bool do_payload)
   // output data on serial
   for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) {
     uint8_t c = rxFrame.payload[i];
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#if (SETUP_TX_SERIAL_DESTINATION == 1)
     bridge.putc(c); // send to radio
 #else
     serial.putc(c); // send to serial
@@ -380,7 +380,7 @@ int main_main(void)
   main_test();
 #endif
   init();
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#if (defined USE_MBRIDGE)
   bridge.Init();
 #endif
 #if (SETUP_TX_CHANNELS_SOURCE == 3)
@@ -591,7 +591,7 @@ int main_main(void)
     // update channels
     channelOrder.Set(SETUP_TX_CHANNEL_ORDER);
     //-- MBridge handling
-#if (SETUP_TX_USE_MBRIDGE == 1)
+#if (defined USE_MBRIDGE)
     if (bridge.channels_updated) {
       bridge.channels_updated = 0;
       // when we receive channels packet from transmitter, we send link stats to transmitter

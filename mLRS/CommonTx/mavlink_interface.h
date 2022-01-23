@@ -35,7 +35,7 @@ void f_init(void)
 void f_send(void)
 {
   uint16_t len = fmav_msg_to_frame_buf(f_buf, &f_msg);
-#if SETUP_TX_USE_MBRIDGE==1
+#if (SETUP_TX_SERIAL_DESTINATION == 1)
   bridge.putbuf(f_buf, len);
 #else
   serial.putbuf(f_buf, len);
