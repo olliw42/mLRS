@@ -222,20 +222,21 @@ uint8_t tx_available = 0;
 
 uint8_t tMBridge::send_serial(void)
 {
-  // send up to 16 bytes
-  // if we received a channel or command packet we only do 11
-  uint8_t count = (type >= MBRIDGE_TYPE_CHANNELPACKET) ? MBRIDGE_TX_SERIAL_PAYLOAD_LEN_LIM : MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX;
-  uint8_t actual_count = 0;
-  for (uint8_t i = 0; i < count; i++) {
+  uint8_t max_count = (type >= MBRIDGE_TYPE_CHANNELPACKET) ? MBRIDGE_TX_SERIAL_PAYLOAD_LEN_LIM : MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX;
+  uint8_t count = 0;
+  uint8_t payload[MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX];
+  for (uint8_t i = 0; i < max_count; i++) {
       if (!serial_rx_available()) break;
-      if (i == 0) {
-          mb_putc(MBRIDGE_SERIALPACKET_STX); // send type byte
-      }
-      uint8_t c = serial_getc();
-      mb_putc(c);
-      actual_count++;
+      payload[count++] = serial_getc();
   }
-  return actual_count;
+  if (count > 0) {
+      mb_putc(MBRIDGE_SERIALPACKET_STX); // send type byte
+      for (uint8_t i = 0; i < count; i++) {
+          uint8_t c = payload[i];
+          mb_putc(c);
+      }
+  }
+  return count;
 }
 
 
