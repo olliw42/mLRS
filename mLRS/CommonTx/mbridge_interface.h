@@ -365,8 +365,7 @@ void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
 STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
 
 
-// mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
-//          ch14-15:  0 .. 512 .. 1023, 10 bits
+// mBridge: ch0-15    0 .. 1024 .. 2047, 11 bits
 //          ch16-17:  0 .. 1, 1 bit
 // rcData:            0 .. 1024 .. 2047, 11 bits
 void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
@@ -385,8 +384,8 @@ void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
   rc->ch[11] = mbuf->ch11;
   rc->ch[12] = mbuf->ch12;
   rc->ch[13] = mbuf->ch13;
-  rc->ch[14] = mbuf->ch14 * 2;
-  rc->ch[15] = mbuf->ch15 * 2;
+  rc->ch[14] = mbuf->ch14;
+  rc->ch[15] = mbuf->ch15;
   rc->ch[16] = (mbuf->ch16) ? 2047 : 0;
   rc->ch[17] = (mbuf->ch17) ? 2047 : 0;
 }

@@ -40,7 +40,7 @@
 #define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when received from transmitter
 #define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when send from module to transmitter
 
-#define MBRIDGE_CHANNELPACKET_SIZE          22 // 22 bytes payload, only received from transmitter
+#define MBRIDGE_CHANNELPACKET_SIZE            23 // 23 bytes payload, only received from transmitter
 
 #define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
 #define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
@@ -82,7 +82,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
 typedef union {
-  uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 154 + 20 + 2 = 176 bits = 22 bytes
+  uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 176 + 8 = 184 bits = 23 bytes
   MBRDIGE_PACKED(
   struct {
       uint16_t ch0  : 11; // 14 channels a 11 bits per channel = 154 bits, 0 .. 1024 .. 2047
@@ -99,10 +99,10 @@ typedef union {
       uint16_t ch11 : 11;
       uint16_t ch12 : 11;
       uint16_t ch13 : 11;
-      uint16_t ch14 : 10; // 2 channels a 10 bits per channel = 20 bits, 0 .. 512 .. 1023
-      uint16_t ch15 : 10;
-      uint16_t ch16 : 1; // 2 channels a 1 bits per channel = 2 bits, 0..1
-      uint16_t ch17 : 1;
+      uint16_t ch14 : 11;
+      uint16_t ch15 : 11;
+      uint8_t ch16 : 1; // 2 channels a 1 bits per channel = 2 bits, 0..1
+      uint8_t ch17 : 1;
   });
 } tMBridgeChannelBuffer;
 
