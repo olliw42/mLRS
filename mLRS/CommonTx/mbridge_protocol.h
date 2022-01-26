@@ -27,30 +27,31 @@
 // radio->module:  stx1 stx2 len/cmd payload
 // module->radio:  cmd payload
 //
+// radio is the master, module can transmit only after it got a radio frame
+//
 // r->m: the len/cmd byte is dual use: <= max payload size = serial data, else = command
 // m->r: no len, will determine len based on timing
 // m->r: no stx, will sync only based on timing
 // has no crc, this should be a most reliable connection, so superfluous
 
-#define MBRIDGE_STX1                        'O'
-#define MBRIDGE_STX2                        'W'
+#define MBRIDGE_STX1                          'O'
+#define MBRIDGE_STX2                          'W'
 
-#define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX  17 // up to 17 bytes payload when received from transmitter
-#define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX  16 // up to 16 bytes payload when send from module to transmitter
+#define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when received from transmitter
+#define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when send from module to transmitter
 
 #define MBRIDGE_CHANNELPACKET_SIZE          22 // 22 bytes payload, only received from transmitter
 
-#define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN     22 // 22 bytes payload when received from transmitter
-#define MBRIDGE_R2M_COMMAND_FRAME_LEN       23 // cmd byte + payload
+#define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
+#define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
 
-#define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN     12 // 12 bytes payload when send to transmitter
-#define MBRIDGE_M2R_COMMAND_FRAME_LEN       13 // cmd byte + payload
+#define MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 26 bytes payload
+#define MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 26 bytes payload
 
 
 typedef enum {
-  MBRIDGE_SERIALPACKET_STX    = 0x00,
-  MBRIDGE_CHANNELPACKET_STX   = 0xFF,
-  MBRIDGE_COMMANDPACKET_STX   = 0xA0, // 0b101x
+  MBRIDGE_CHANNELPACKET_STX   = 0xFF, // marker which indicates a channel packet
+  MBRIDGE_COMMANDPACKET_STX   = 0xA0, // 0b101x marker which indicates a command packet
   MBRIDGE_COMMANDPACKET_MASK  = 0xE0, // 0b111x
 } MBRIDGE_PACKET_STX_ENUM;
 
@@ -64,8 +65,19 @@ typedef enum {
 
 
 typedef enum {
-  MBRIDGE_TX_CMD_LINK_STATS = 0x02,
-} MBRIDGE_TX_CMD_ENUM;
+  MBRIDGE_CMD_TX_LINK_STATS = 0x02,
+} MBRIDGE_CMD_ENUM;
+
+#define MBRIDGE_CMD_TX_LINK_STATS_LEN         12
+
+
+uint8_t mbridge_cmd_payload_len(uint8_t cmd)
+{
+  switch (cmd) {
+  case MBRIDGE_CMD_TX_LINK_STATS: return MBRIDGE_CMD_TX_LINK_STATS_LEN;
+  }
+  return 0;
+}
 
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values

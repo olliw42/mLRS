@@ -135,10 +135,10 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     tMBridgeChannelBuffer channels;
 
     volatile bool cmd_received;
-    uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN];
+    uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
 
     volatile uint8_t cmd_m2r_available;
-    uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN];
+    uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
 
     // front end to communicate with mbridge
     void putc(char c) { sx_rx_fifo.putc(c); }
@@ -201,9 +201,9 @@ uint8_t available = 0;
   }
 
   if (cmd_m2r_available) {
+      send_command(); // uses cmd_m2r_available
       available = cmd_m2r_available;
       cmd_m2r_available = 0;
-      send_command();
   } else {
       available = send_serial();
   }
@@ -229,7 +229,7 @@ uint8_t tMBridge::send_serial(void)
       payload[count++] = serial_getc();
   }
   if (count > 0) {
-      mb_putc(MBRIDGE_SERIALPACKET_STX); // send type byte
+      mb_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
       for (uint8_t i = 0; i < count; i++) {
           uint8_t c = payload[i];
           mb_putc(c);
@@ -241,7 +241,7 @@ uint8_t tMBridge::send_serial(void)
 
 void tMBridge::send_command(void)
 {
-  for (uint8_t i = 0; i < MBRIDGE_M2R_COMMAND_FRAME_LEN; i++) {
+  for (uint8_t i = 0; i < cmd_m2r_available; i++) {
       uint8_t c = cmd_m2r_frame[i];
       mb_putc(c);
   }
@@ -294,8 +294,9 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
           state = STATE_MBRIDGE_RECEIVE_CHANNELPACKET;
       } else
       if (c >= MBRIDGE_COMMANDPACKET_STX) {
-          cmd_r2m_frame[cnt++] = (c & ~MBRIDGE_COMMANDPACKET_MASK);
-          len = MBRIDGE_R2M_COMMAND_PAYLOAD_LEN;
+          uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
+          cmd_r2m_frame[cnt++] = cmd;
+          len = mbridge_cmd_payload_len(cmd);
           type = MBRIDGE_TYPE_COMMANDPACKET;
           state = STATE_MBRIDGE_RECEIVE_COMMANDPACKET;
       } else
@@ -336,28 +337,32 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 
 void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
-  *cmd = cmd_r2m_frame[0];
-  memcpy(payload, &(cmd_r2m_frame[1]), MBRIDGE_R2M_COMMAND_PAYLOAD_LEN);
+  if ((cmd_r2m_frame[0] & MBRIDGE_COMMANDPACKET_MASK) != MBRIDGE_COMMANDPACKET_STX) return; // not a command, should not happen, but play it safe
+
+  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK) ;
+
+  uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
+  memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
 }
 
 
 void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
 {
-  memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN);
+  memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
 
-  if (payload_len > MBRIDGE_M2R_COMMAND_PAYLOAD_LEN) payload_len = MBRIDGE_M2R_COMMAND_PAYLOAD_LEN; // should never happen, but play it safe
+  if (payload_len != mbridge_cmd_payload_len(cmd)) return; // should never happen but play it safe
 
-  cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd &~ MBRIDGE_COMMANDPACKET_MASK);
+  cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
   memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
 
-  cmd_m2r_available = MBRIDGE_M2R_COMMAND_FRAME_LEN;
+  cmd_m2r_available = payload_len + 1;
 }
 
 
 //-------------------------------------------------------
 // convenience helper
 
-STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_M2R_COMMAND_PAYLOAD_LEN, "tMBridgeLinkStats len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
 
 
 // mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
@@ -406,7 +411,7 @@ tMBridgeLinkStats lstats = {0};
   lstats.LQ_received = stats.LQ_frames_received;
   lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
 
-  bridge.SendCommand(MBRIDGE_TX_CMD_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+  bridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
 
 
