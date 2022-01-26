@@ -20,21 +20,31 @@
 #endif
 
 
+// R: radio
+// M: jr module
+//
+// format:
+// radio->module:  stx1 stx2 len/cmd payload
+// module->radio:  cmd payload
+//
+// r->m: the len/cmd byte is dual use: <= max payload size = serial data, else = command
+// m->r: no len, will determine len based on timing
+// m->r: no stx, will sync only based on timing
+// has no crc, this should be a most reliable connection, so superfluous
+
 #define MBRIDGE_STX1                        'O'
 #define MBRIDGE_STX2                        'W'
 
-#define MBRIDGE_RX_SERIAL_PAYLOAD_LEN_MAX   17 // up to 17 bytes payload when received from transmitter
-
-#define MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX   16 // up to 16 bytes payload when send to transmitter
-#define MBRIDGE_TX_SERIAL_PAYLOAD_LEN_LIM   11 // only up to 11 bytes if a channel or command packet was received
+#define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX  17 // up to 17 bytes payload when received from transmitter
+#define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX  16 // up to 16 bytes payload when send from module to transmitter
 
 #define MBRIDGE_CHANNELPACKET_SIZE          22 // 22 bytes payload, only received from transmitter
 
-#define MBRIDGE_RX_COMMAND_PAYLOAD_LEN      22 // 22 bytes payload when received from transmitter
-#define MBRIDGE_RX_COMMAND_FRAME_LEN        23 // cmd byte + payload
+#define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN     22 // 22 bytes payload when received from transmitter
+#define MBRIDGE_R2M_COMMAND_FRAME_LEN       23 // cmd byte + payload
 
-#define MBRIDGE_TX_COMMAND_PAYLOAD_LEN      12 // 12 bytes payload when send to transmitter
-#define MBRIDGE_TX_COMMAND_FRAME_LEN        13 // cmd byte + payload
+#define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN     12 // 12 bytes payload when send to transmitter
+#define MBRIDGE_M2R_COMMAND_FRAME_LEN       13 // cmd byte + payload
 
 
 typedef enum {

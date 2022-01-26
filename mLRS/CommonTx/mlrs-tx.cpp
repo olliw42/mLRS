@@ -606,7 +606,7 @@ int main_main(void)
     if (bridge.cmd_received) {
       bridge.cmd_received = false;
       uint8_t cmd;
-      uint8_t payload[MBRIDGE_RX_COMMAND_PAYLOAD_LEN];
+      uint8_t payload[MBRIDGE_R2M_COMMAND_PAYLOAD_LEN];
       bridge.GetCommand(&cmd, payload);
     }
 #elif (SETUP_TX_CHANNELS_SOURCE == 2) && (defined DEVICE_HAS_IN)
