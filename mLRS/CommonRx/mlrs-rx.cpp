@@ -180,7 +180,6 @@ void process_transmit_frame(uint8_t ack)
   frame_stats.ack = ack;
   frame_stats.antenna = ANTENNA_1;
   frame_stats.rssi = rxstats.GetRssi();
-  frame_stats.snr = stats.last_rx_snr;
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
