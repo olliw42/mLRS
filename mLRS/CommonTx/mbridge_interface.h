@@ -423,11 +423,11 @@ tMBridgeLinkStats lstats = {0};
   lstats.LQ_fresh_serial_packets_transmitted = 100;
   lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
 
-  lstats.LQ_valid_received = stats.LQ_valid_frames_received; // number of completely valid packets received per sec
-  lstats.LQ_fresh_serial_packets_received = stats.LQ_valid_frames_received;
+  lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
+  lstats.LQ_fresh_serial_packets_received = stats.valid_frames_received.GetLQ();
   lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
 
-  lstats.LQ_received = stats.LQ_frames_received; // number of packets received per sec, not practically relevant
+  lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
   bridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
