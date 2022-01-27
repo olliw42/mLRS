@@ -6,10 +6,87 @@
 //*******************************************************
 // LQ
 //*******************************************************
-#ifndef LQ_H
-#define LQ_H
+#ifndef LQ_COUNTER_H
+#define LQ_COUNTER_H
 #pragma once
 
+
+//-------------------------------------------------------
+// 1 Hz count statistics
+//-------------------------------------------------------
+// that's one way to get stats
+
+class StatsCount {
+  public:
+    uint32_t count;
+    uint32_t count_last;
+    uint32_t counts_per_sec;
+    uint8_t LQ;
+
+    void Init(void)
+    {
+        count = count_last = counts_per_sec = 0;
+        LQ = 0;
+    }
+
+    void Update1Hz(void)
+    {
+        counts_per_sec = count - count_last;
+        LQ = (counts_per_sec * 100 * FRAME_RATE_MS) / 1000;
+
+        count_last = count;
+        count = 0;
+    }
+
+    void inc(void)
+    {
+        count++;
+    }
+
+    void add(uint16_t num)
+    {
+        count += num;
+    }
+};
+
+
+// targeted at LQ
+class StatsLQ : public StatsCount
+{
+  public:
+    void Inc(void)
+    {
+        count++;
+    }
+
+    uint8_t GetLQ(void)
+    {
+        return LQ;
+    }
+};
+
+
+// targeted at bytes/sec
+class StatsBytes : public StatsCount
+{
+  public:
+    void Add(uint16_t num)
+    {
+        count += num;
+    }
+
+    uint32_t GetBytesPerSec(void) // this make a presumption about its usage :)
+    {
+        return counts_per_sec;
+    }
+};
+
+
+
+//-------------------------------------------------------
+// moving window statistics
+//-------------------------------------------------------
+// that's another way to get stats
 
 class LqCounterBase
 {
@@ -77,4 +154,4 @@ class LqCounterBase
 };
 
 
-#endif // LQ_H
+#endif // LQ_COUNTER_H
