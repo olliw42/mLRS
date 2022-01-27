@@ -92,7 +92,7 @@ void RxStatsBase::doValidFrameReceived(void)
 uint8_t RxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
-    uint8_t LQ = stats.GetLQ();
+    uint8_t LQ = stats.LQ_valid_crc1_received;
     if (LQ == 0) return 1;
     return LQ;
 }
@@ -100,7 +100,10 @@ uint8_t RxStatsBase::GetLQ(void)
 
 uint8_t RxStatsBase::GetLQ_serial_data(void)
 {
-    return 0;
+    if (!is_connected()) return 0;
+    uint8_t LQser = stats.LQ_valid_frames_received;
+    if (LQser == 0) return 1;
+    return LQser;
 }
 
 

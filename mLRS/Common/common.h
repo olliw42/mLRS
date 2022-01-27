@@ -226,7 +226,6 @@ class Stats {
     // statistics for our device
     int8_t last_rx_rssi; // note: is negative!
     int8_t last_rx_snr; // note: can be negative!
-    uint8_t LQ;
 
     // statistics received from the other end
     uint8_t received_antenna;
@@ -234,7 +233,7 @@ class Stats {
     uint8_t received_LQ;
     uint8_t received_LQ_serial_data;
 
-    // handshaking
+    // retransmission handling
     uint8_t transmit_seq_no;
     uint8_t last_received_ack;
     uint8_t last_received_seq_no;
@@ -250,7 +249,6 @@ class Stats {
 
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
-        LQ = 0; //UINT8_MAX;
 
         received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
@@ -265,7 +263,6 @@ class Stats {
     {
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
-        LQ = 0; //UINT8_MAX;
 
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
@@ -296,26 +293,6 @@ class Stats {
 
         bytes_transmitted_last = bytes_transmitted;
         bytes_received_last = bytes_received;
-
-#ifdef DEVICE_IS_TRANSMITTER
-        LQ = LQ_valid_frames_received; // this should always be <= valid_received !
-#endif
-#ifdef DEVICE_IS_RECEIVER
-        // same logic as for rxstats
-        if (LQ_valid_frames_received >= 25) {
-            LQ = LQ_valid_frames_received;
-        } else
-        if (LQ_valid_crc1_received >= 25) {
-            LQ = 25;
-        } else {
-            LQ = LQ_valid_crc1_received;
-        }
-#endif
-    }
-
-    uint8_t GetLQ(void)
-    {
-        return LQ;
     }
 
     // data rate handling

@@ -377,7 +377,7 @@ int main_main(void)
         rxstats.Update1Hz();
 
         uartc_puts("RX: ");
-        uartc_puts(u8toBCD_s(stats.GetLQ()));
+        uartc_puts(u8toBCD_s(rxstats.GetLQ()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_crc1_received)); uartc_putc(',');

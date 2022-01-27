@@ -78,16 +78,16 @@ void TxStatsBase::doValidFrameReceived(void)
 
 uint8_t TxStatsBase::GetLQ(void)
 {
-    if (!is_connected()) return 0;
-    uint8_t LQ = stats.GetLQ();
-    if (LQ == 0) return 1;
-    return LQ;
+    return GetLQ_serial_data();
 }
 
 
 uint8_t TxStatsBase::GetLQ_serial_data(void)
 {
-    return 0;
+    if (!is_connected()) return 0;
+    uint8_t LQser = stats.LQ_valid_frames_received;
+    if (LQser == 0) return 1;
+    return LQser;
 }
 
 

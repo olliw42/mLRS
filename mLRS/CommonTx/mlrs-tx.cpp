@@ -458,7 +458,7 @@ int main_main(void)
         if (connected()) inject_radio_status = true;
 
         uartc_puts("TX: ");
-        uartc_puts(u8toBCD_s(stats.GetLQ()));
+        uartc_puts(u8toBCD_s(txstats.GetLQ()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.LQ_valid_frames_received));
