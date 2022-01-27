@@ -35,7 +35,6 @@ class StatsCount {
         LQ = (counts_per_sec * 100 * FRAME_RATE_MS) / 1000;
 
         count_last = count;
-        count = 0;
     }
 
     void inc(void)
