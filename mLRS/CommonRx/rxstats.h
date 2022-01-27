@@ -26,12 +26,8 @@ class RxStatsBase
     void doValidCrc1FrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetRawLQ(void);
-    uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
     uint8_t GetLQ_serial_data(void);
-
-    int8_t GetRssi(void);
 
   private:
     LqCounterBase LQma_received;
@@ -93,18 +89,6 @@ void RxStatsBase::doValidFrameReceived(void)
 }
 
 
-uint8_t RxStatsBase::GetRawLQ(void)
-{
-    return LQma_valid.GetRaw();
-}
-
-
-uint8_t RxStatsBase::GetNormalizedLQ(void)
-{
-    return LQma_valid.GetNormalized();
-}
-
-
 uint8_t RxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
@@ -117,12 +101,6 @@ uint8_t RxStatsBase::GetLQ(void)
 uint8_t RxStatsBase::GetLQ_serial_data(void)
 {
     return 0;
-}
-
-
-int8_t RxStatsBase::GetRssi(void)
-{
-    return stats.last_rx_rssi;
 }
 
 

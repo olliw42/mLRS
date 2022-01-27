@@ -24,12 +24,8 @@ class TxStatsBase
     void doFrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetRawLQ(void);
-    uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void);
     uint8_t GetLQ_serial_data(void);
-
-    int8_t GetRssi(void);
 
   private:
     LqCounterBase LQma_received;
@@ -80,18 +76,6 @@ void TxStatsBase::doValidFrameReceived(void)
 }
 
 
-uint8_t TxStatsBase::GetRawLQ(void)
-{
-    return LQma_valid.GetRaw();
-}
-
-
-uint8_t TxStatsBase::GetNormalizedLQ(void)
-{
-    return LQma_valid.GetNormalized();
-}
-
-
 uint8_t TxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
@@ -104,12 +88,6 @@ uint8_t TxStatsBase::GetLQ(void)
 uint8_t TxStatsBase::GetLQ_serial_data(void)
 {
     return 0;
-}
-
-
-int8_t TxStatsBase::GetRssi(void)
-{
-    return stats.last_rx_rssi;
 }
 
 

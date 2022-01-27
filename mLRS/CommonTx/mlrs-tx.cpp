@@ -250,7 +250,7 @@ void process_transmit_frame(uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = ANTENNA_1;
-  frame_stats.rssi = txstats.GetRssi();
+  frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
@@ -458,7 +458,6 @@ int main_main(void)
         if (connected()) inject_radio_status = true;
 
         uartc_puts("TX: ");
-        uartc_puts(u8toBCD_s(txstats.GetRawLQ())); uartc_putc(',');
         uartc_puts(u8toBCD_s(stats.GetLQ()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
