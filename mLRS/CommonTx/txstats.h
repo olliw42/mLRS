@@ -78,7 +78,7 @@ void TxStatsBase::doValidFrameReceived(void)
 
 uint8_t TxStatsBase::GetLQ(void)
 {
-    return GetLQ_serial_data(); // it's the same for Tx, we also could set it to invalid INT8_MAX
+    return GetLQ_serial_data(); // it is the same for Tx, we also could set it to invalid INT8_MAX
 }
 
 
