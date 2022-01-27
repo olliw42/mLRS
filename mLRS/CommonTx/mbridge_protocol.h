@@ -68,7 +68,7 @@ typedef enum {
   MBRIDGE_CMD_TX_LINK_STATS = 0x02,
 } MBRIDGE_CMD_ENUM;
 
-#define MBRIDGE_CMD_TX_LINK_STATS_LEN         12
+#define MBRIDGE_CMD_TX_LINK_STATS_LEN         22
 
 
 uint8_t mbridge_cmd_payload_len(uint8_t cmd)
@@ -110,24 +110,54 @@ typedef union {
 MBRDIGE_PACKED(
 typedef struct
 {
-  int8_t rssi;
-  uint8_t LQ;
-  int8_t snr; // invalid = INT8_MAX
-  int8_t rssi2; // in case of 2nd antenna, invalid = INT8_MAX
+  // transmitter side of things
 
-  int8_t receiver_rssi;
-  uint8_t receiver_LQ;
-  int8_t receiver_snr; // invalid = INT8_MAX
-  int8_t receiver_rssi2; // in case of 2nd antenna, invalid = INT8_MAX
+  uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
+  int8_t rssi_instantaneous;
+  int8_t snr_instantaneous; // invalid = INT8_MAX
+  int8_t rssi2_instantaneous; // in case of 2nd antenna, invalid = INT8_MAX
 
-  uint8_t ant_no : 1; // 0: antenna 1, 1: antenna 2
-  uint8_t receiver_ant_no : 1; // 0: antenna 1, 1: antenna 2
+  int8_t rssi_filtered;
+  int8_t snr_filtered;
+  int8_t rssi2_filtered;
+
+  // receiver side of things
+
+  uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
+  uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
+  int8_t receiver_rssi_instantaneous;
+  int8_t receiver_snr_instantaneous; // invalid = INT8_MAX
+  int8_t receiver_rssi2_instantaneous; // in case of 2nd antenna, invalid = INT8_MAX
+
+  int8_t receiver_rssi_filtered;
+  int8_t receiver_snr_filtered;
+  int8_t receiver_rssi2_filtered;
+
+  // both
+
+  uint8_t ant_no : 1; // 0: antenna1, 1: antenna2, instantaneous value
+  uint8_t receiver_ant_no : 1; // 0: antenna1, 1: antenna2, instantaneous value
   uint8_t spare_bits : 6;
 
-  uint8_t LQ_received_ma;
-  uint8_t LQ_received;
-  uint8_t LQ_valid_received;
-}) tMBridgeLinkStats;
+  // further stats acquired on transmitter side
+
+  // number of transmitted packets per sec is always 50  => max transmit data rate = 50 * 64
+  // so we only need to count transmitted packets with new serial data => current max transmit data rate = Nnew * 64
+  // 50 - Nnew is the number of retransmissions
+  // in addition we count the bytes transmitted
+  uint8_t LQ_fresh_serial_packets_transmitted;
+  uint8_t bytes_per_sec_transmitted;
+
+  // number of received serial data packets per sec is LQ_valid_received => max receive data rate = N * 82
+  // we further count received packets with new serial data => current max transmit data rate = Nnew * 64
+  // N - Nnew is the number of retransmissions
+  // in addition we count the bytes received
+  uint8_t LQ_valid_received;  // number of completely valid packets received per sec
+  uint8_t LQ_fresh_serial_packets_received;
+  uint8_t bytes_per_sec_received;
+
+  uint8_t LQ_received; // number of packets received per sec, not practically relevant
+}) tMBridgeLinkStats; // 22 bytes
 
 
 
