@@ -24,12 +24,8 @@ class TxStatsBase
     void doFrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetRawLQ(void);
-    uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void);
     uint8_t GetLQ_serial_data(void);
-
-    int8_t GetRssi(void);
 
   private:
     LqCounterBase LQma_received;
@@ -69,47 +65,29 @@ void TxStatsBase::Next(void) // this is called when transmit starts, or shortly 
 void TxStatsBase::doFrameReceived(void)
 {
     LQma_received.Set();
-    stats.frames_received++;
+    stats.frames_received.Inc();
 }
 
 
 void TxStatsBase::doValidFrameReceived(void)
 {
     LQma_valid.Set();
-    stats.valid_frames_received++;
-}
-
-
-uint8_t TxStatsBase::GetRawLQ(void)
-{
-    return LQma_valid.GetRaw();
-}
-
-
-uint8_t TxStatsBase::GetNormalizedLQ(void)
-{
-    return LQma_valid.GetNormalized();
+    stats.valid_frames_received.Inc();
 }
 
 
 uint8_t TxStatsBase::GetLQ(void)
 {
-    if (!is_connected()) return 0;
-    uint8_t LQ = stats.GetLQ();
-    if (LQ == 0) return 1;
-    return LQ;
+    return GetLQ_serial_data(); // it's the same for Tx, we also could set it to invalid INT8_MAX
 }
 
 
 uint8_t TxStatsBase::GetLQ_serial_data(void)
 {
-    return 0;
-}
-
-
-int8_t TxStatsBase::GetRssi(void)
-{
-    return stats.last_rx_rssi;
+    if (!is_connected()) return 0;
+    uint8_t LQser = stats.fresh_serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
+    if (LQser == 0) return 1;
+    return LQser;
 }
 
 

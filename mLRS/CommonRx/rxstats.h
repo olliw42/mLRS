@@ -26,12 +26,8 @@ class RxStatsBase
     void doValidCrc1FrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetRawLQ(void);
-    uint8_t GetNormalizedLQ(void);
     uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
     uint8_t GetLQ_serial_data(void);
-
-    int8_t GetRssi(void);
 
   private:
     LqCounterBase LQma_received;
@@ -75,40 +71,28 @@ void RxStatsBase::Next(void) // this is called when transmit starts, or shortly 
 void RxStatsBase::doFrameReceived(void)
 {
     LQma_received.Set();
-    stats.frames_received++;
+    stats.frames_received.Inc();
 }
 
 
 void RxStatsBase::doValidCrc1FrameReceived(void)
 {
     LQma_valid_crc1.Set();
-    stats.valid_crc1_received++;
+    stats.valid_crc1_received.Inc();
 }
 
 
 void RxStatsBase::doValidFrameReceived(void)
 {
     LQma_valid.Set();
-    stats.valid_frames_received++;
-}
-
-
-uint8_t RxStatsBase::GetRawLQ(void)
-{
-    return LQma_valid.GetRaw();
-}
-
-
-uint8_t RxStatsBase::GetNormalizedLQ(void)
-{
-    return LQma_valid.GetNormalized();
+    stats.valid_frames_received.Inc();
 }
 
 
 uint8_t RxStatsBase::GetLQ(void)
 {
     if (!is_connected()) return 0;
-    uint8_t LQ = stats.GetLQ();
+    uint8_t LQ = stats.valid_crc1_received.GetLQ();
     if (LQ == 0) return 1;
     return LQ;
 }
@@ -116,13 +100,10 @@ uint8_t RxStatsBase::GetLQ(void)
 
 uint8_t RxStatsBase::GetLQ_serial_data(void)
 {
-    return 0;
-}
-
-
-int8_t RxStatsBase::GetRssi(void)
-{
-    return stats.last_rx_rssi;
+    if (!is_connected()) return 0;
+    uint8_t LQser = stats.fresh_serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
+    if (LQser == 0) return 1;
+    return LQser;
 }
 
 

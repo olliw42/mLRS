@@ -29,7 +29,6 @@ typedef struct
   uint8_t ack;
   uint8_t antenna;
   int8_t rssi;
-  int8_t snr;
   uint8_t LQ; // that's the LQ we want to report to the world
   uint8_t LQ_serial_data;
 } tFrameStats;

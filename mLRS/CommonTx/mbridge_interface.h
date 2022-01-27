@@ -135,10 +135,10 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     tMBridgeChannelBuffer channels;
 
     volatile bool cmd_received;
-    uint8_t cmd_rx_frame[MBRIDGE_RX_COMMAND_FRAME_LEN];
+    uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
 
-    volatile uint8_t cmd_tx_available;
-    uint8_t cmd_tx_frame[MBRIDGE_TX_COMMAND_FRAME_LEN];
+    volatile uint8_t cmd_m2r_available;
+    uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
 
     // front end to communicate with mbridge
     void putc(char c) { sx_rx_fifo.putc(c); }
@@ -191,7 +191,7 @@ void uart_tc_callback(void)
 
 bool tMBridge::transmit_start(void)
 {
-uint8_t tx_available = 0;
+uint8_t available = 0;
 
   if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
@@ -200,15 +200,15 @@ uint8_t tx_available = 0;
       return false;
   }
 
-  if (cmd_tx_available) {
-      tx_available = cmd_tx_available;
-      cmd_tx_available = 0;
-      send_command();
+  if (cmd_m2r_available) {
+      send_command(); // uses cmd_m2r_available
+      available = cmd_m2r_available;
+      cmd_m2r_available = 0;
   } else {
-      tx_available = send_serial();
+      available = send_serial();
   }
 
-  if (!tx_available) {
+  if (!available) {
       state = STATE_IDLE;
       return false;
   }
@@ -222,15 +222,14 @@ uint8_t tx_available = 0;
 
 uint8_t tMBridge::send_serial(void)
 {
-  uint8_t max_count = (type >= MBRIDGE_TYPE_CHANNELPACKET) ? MBRIDGE_TX_SERIAL_PAYLOAD_LEN_LIM : MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX;
   uint8_t count = 0;
-  uint8_t payload[MBRIDGE_TX_SERIAL_PAYLOAD_LEN_MAX];
-  for (uint8_t i = 0; i < max_count; i++) {
+  uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
+  for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
       if (!serial_rx_available()) break;
       payload[count++] = serial_getc();
   }
   if (count > 0) {
-      mb_putc(MBRIDGE_SERIALPACKET_STX); // send type byte
+      mb_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
       for (uint8_t i = 0; i < count; i++) {
           uint8_t c = payload[i];
           mb_putc(c);
@@ -242,8 +241,8 @@ uint8_t tMBridge::send_serial(void)
 
 void tMBridge::send_command(void)
 {
-  for (uint8_t i = 0; i < MBRIDGE_TX_COMMAND_FRAME_LEN; i++) {
-      uint8_t c = cmd_tx_frame[i];
+  for (uint8_t i = 0; i < cmd_m2r_available; i++) {
+      uint8_t c = cmd_m2r_frame[i];
       mb_putc(c);
   }
 }
@@ -257,7 +256,7 @@ void tMBridge::Init(void)
   type = MBRIDGE_TYPE_NONE;
   channels_received = false;
   cmd_received = false;
-  cmd_tx_available = 0;
+  cmd_m2r_available = 0;
 
   sx_tx_fifo.Init();
   sx_rx_fifo.Init();
@@ -295,12 +294,13 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
           state = STATE_MBRIDGE_RECEIVE_CHANNELPACKET;
       } else
       if (c >= MBRIDGE_COMMANDPACKET_STX) {
-          cmd_rx_frame[cnt++] = (c & ~MBRIDGE_COMMANDPACKET_MASK);
-          len = MBRIDGE_RX_COMMAND_PAYLOAD_LEN;
+          uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
+          cmd_r2m_frame[cnt++] = cmd;
+          len = mbridge_cmd_payload_len(cmd);
           type = MBRIDGE_TYPE_COMMANDPACKET;
           state = STATE_MBRIDGE_RECEIVE_COMMANDPACKET;
       } else
-      if (c > MBRIDGE_RX_SERIAL_PAYLOAD_LEN_MAX) {
+      if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
           state = STATE_IDLE; // error
       } else
       if (c > 0) {
@@ -325,7 +325,7 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
       }
       break;
   case STATE_MBRIDGE_RECEIVE_COMMANDPACKET:
-      cmd_rx_frame[cnt++] = c;
+      cmd_r2m_frame[cnt++] = c;
       if (cnt >= len + 1) {
           cmd_received = true;
           state = STATE_TRANSMIT_START;
@@ -337,31 +337,35 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 
 void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
-  *cmd = cmd_rx_frame[0];
-  memcpy(payload, &(cmd_rx_frame[1]), MBRIDGE_RX_COMMAND_PAYLOAD_LEN);
+  if ((cmd_r2m_frame[0] & MBRIDGE_COMMANDPACKET_MASK) != MBRIDGE_COMMANDPACKET_STX) return; // not a command, should not happen, but play it safe
+
+  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK) ;
+
+  uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
+  memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
 }
 
 
 void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
 {
-  memset(cmd_tx_frame, 0, MBRIDGE_TX_COMMAND_FRAME_LEN);
-  if (payload_len > MBRIDGE_TX_COMMAND_PAYLOAD_LEN) payload_len = MBRIDGE_TX_COMMAND_PAYLOAD_LEN;
+  memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
 
-  cmd_tx_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd &~ MBRIDGE_COMMANDPACKET_MASK);
-  memcpy(&(cmd_tx_frame[1]), payload, payload_len);
+  if (payload_len != mbridge_cmd_payload_len(cmd)) return; // should never happen but play it safe
 
-  cmd_tx_available = MBRIDGE_TX_COMMAND_FRAME_LEN;
+  cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
+  memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
+
+  cmd_m2r_available = payload_len + 1;
 }
 
 
 //-------------------------------------------------------
 // convenience helper
 
-STATIC_ASSERT(sizeof(tMBridgeLinkStats) <= MBRIDGE_TX_COMMAND_PAYLOAD_LEN, "tMBridgeLinkStats len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
 
 
-// mBridge: ch0-13    0 .. 1024 .. 2047, 11 bits
-//          ch14-15:  0 .. 512 .. 1023, 10 bits
+// mBridge: ch0-15    0 .. 1024 .. 2047, 11 bits
 //          ch16-17:  0 .. 1, 1 bit
 // rcData:            0 .. 1024 .. 2047, 11 bits
 void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
@@ -380,33 +384,52 @@ void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
   rc->ch[11] = mbuf->ch11;
   rc->ch[12] = mbuf->ch12;
   rc->ch[13] = mbuf->ch13;
-  rc->ch[14] = mbuf->ch14 * 2;
-  rc->ch[15] = mbuf->ch15 * 2;
+  rc->ch[14] = mbuf->ch14;
+  rc->ch[15] = mbuf->ch15;
   rc->ch[16] = (mbuf->ch16) ? 2047 : 0;
   rc->ch[17] = (mbuf->ch17) ? 2047 : 0;
 }
-
 
 
 void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {0};
 
-  lstats.rssi = txstats.GetRssi();
-  lstats.LQ = txstats.GetLQ();
-  lstats.snr = stats.last_rx_snr;
-  lstats.rssi2 = INT8_MAX;
+  lstats.LQ = txstats.GetLQ(); // = LQ_valid_received; // number of valid packets received on transmitter side
+  lstats.rssi_instantaneous = stats.last_rx_rssi; // txstats.GetRssi();
+  lstats.snr_instantaneous = stats.last_rx_snr;
+  lstats.rssi2_instantaneous = INT8_MAX;
   lstats.ant_no = 0;
-  lstats.receiver_rssi = stats.received_rssi;
-  lstats.receiver_LQ = stats.received_LQ;
-  lstats.receiver_snr = INT8_MAX;
-  lstats.receiver_rssi2 = INT8_MAX;
-  lstats.receiver_ant_no = 0;
-  lstats.LQ_received_ma = stats.GetTransmitBandwidthUsage();
-  lstats.LQ_received = stats.LQ_frames_received;
-  lstats.LQ_valid_received = stats.GetReceiveBandwidthUsage();
 
-  bridge.SendCommand(MBRIDGE_TX_CMD_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+  lstats.rssi_filtered = INT8_MAX;
+  lstats.snr_filtered = INT8_MAX;
+  lstats.rssi2_filtered = INT8_MAX;
+
+  // receiver side of things
+
+  lstats.receiver_LQ = stats.received_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
+  lstats.receiver_LQ_serial = stats.received_LQ_serial_data; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
+  lstats.receiver_rssi_instantaneous = stats.received_rssi;
+  lstats.receiver_snr_instantaneous = INT8_MAX;
+  lstats.receiver_rssi2_instantaneous = INT8_MAX;
+  lstats.receiver_ant_no = 0;
+
+  lstats.receiver_rssi_filtered = INT8_MAX;
+  lstats.receiver_snr_filtered = INT8_MAX;
+  lstats.receiver_rssi2_filtered = INT8_MAX;
+
+  // further stats acquired on transmitter side
+
+  lstats.LQ_fresh_serial_packets_transmitted = 100;
+  lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
+
+  lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
+  lstats.LQ_fresh_serial_packets_received = stats.valid_frames_received.GetLQ();
+  lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
+
+  lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
+
+  bridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
 
 

@@ -235,7 +235,9 @@ void process_transmit_frame(uint8_t ack)
       payload_len++;
     }
 
-    stats.AddBytesTransmitted(payload_len);
+    stats.bytes_transmitted.Add(payload_len);
+    stats.fresh_serial_data_transmitted.Inc();
+
   } else {
 #if (SETUP_TX_SERIAL_DESTINATION == 1)
     bridge.flush();
@@ -250,8 +252,7 @@ void process_transmit_frame(uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = ANTENNA_1;
-  frame_stats.rssi = txstats.GetRssi();
-  frame_stats.snr = stats.last_rx_snr;
+  frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
@@ -294,7 +295,8 @@ void process_received_frame(bool do_payload)
 #endif
   }
 
-  stats.AddBytesReceived(rxFrame.status.payload_len);
+  stats.bytes_received.Add(rxFrame.status.payload_len);
+  stats.fresh_serial_data_received.Inc();
 
   DBG_MAIN(uartc_puts("got "); uartc_puts(": ");
   for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) uartc_putc(rxFrame.payload[i]);
@@ -459,11 +461,10 @@ int main_main(void)
         if (connected()) inject_radio_status = true;
 
         uartc_puts("TX: ");
-        uartc_puts(u8toBCD_s(txstats.GetRawLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.GetLQ()));
+        uartc_puts(u8toBCD_s(txstats.GetLQ()));
         uartc_puts(" (");
-        uartc_puts(u8toBCD_s(stats.LQ_frames_received)); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.LQ_valid_frames_received));
+        uartc_puts(u8toBCD_s(stats.frames_received.GetLQ())); uartc_putc(',');
+        uartc_puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
         uartc_puts("),");
         uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
 
@@ -471,8 +472,8 @@ int main_main(void)
         uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
         uartc_puts(s8toBCD_s(stats.last_rx_snr)); uartc_puts("; ");
 
-        uartc_puts(u16toBCD_s(stats.bytes_per_sec_transmitted)); uartc_puts(", ");
-        uartc_puts(u16toBCD_s(stats.bytes_per_sec_received)); uartc_puts("; ");
+        uartc_puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); uartc_puts(", ");
+        uartc_puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); uartc_puts("; ");
         uartc_putc('\n');
       }
 
@@ -606,7 +607,7 @@ int main_main(void)
     if (bridge.cmd_received) {
       bridge.cmd_received = false;
       uint8_t cmd;
-      uint8_t payload[MBRIDGE_RX_COMMAND_PAYLOAD_LEN];
+      uint8_t payload[MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX];
       bridge.GetCommand(&cmd, payload);
     }
 #elif (SETUP_TX_CHANNELS_SOURCE == 2) && (defined DEVICE_HAS_IN)
