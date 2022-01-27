@@ -26,6 +26,8 @@ TODO:
 - rate management by radio_status txbuf
   note: rts/cts is not a substitute as this wouldn't help in router situations
 
+- support high_latency2
+
 - get a clean HAL concept
 
 - get a clear mbridge and in concept, currently quite ugly as uart.h conflicts
@@ -36,6 +38,8 @@ TODO:
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
+
+- idea: switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
 */
 
 

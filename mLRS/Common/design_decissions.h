@@ -373,6 +373,44 @@ returned packet after 2.6 ms
 => 9 bytes @ 150 Hz = 1350 bytes/sec max
 
 
+-------------------------------------------------------
+long range mode, sx1276
+go from 50 Hz to 20 Hz
+
+50 Hz:
+800kHz, SF5, LI4/5 -105dBm  91 bytes payload => 7.9 ms  => 2.1 ms headroom
+
+800kHz, SF7, LI4/5 -112dBm  91 bytes payload => 23.5 ms
+=> 20 Hz with 1.5 ms headroom  but we could shave some bytes payload to get to 1/3 serial byte rate
+                               -> 88 bytes payload => 22.7 ms => 2.1 ms headroom
+=> 19 Hz with 2.8 ms headroom
+=> 17 Hz with 5.9 ms headroom
+
+sx1276
+500kHz, SF6, CR4/5  -112dBm  91 payload => 22.2 ms
+=> 20 Hz with 2.8 ms headroom
+
+
+50 Hz & 91 bytes payload
+=> byte rates  tx->rx: 50 * 64 = 3200 bytes/sec
+               rx->tx: 50 * 82 = 4100 bytes/sec
+
+20 Hz & 91 bytes payload
+=> byte rates  tx->rx: 20 * 64 = 1280 bytes/sec
+               rx->tx: 20 * 82 = 1640 bytes/sec
+
+
+-------------------------------------------------------
+FrSky
+https://openrcforums.com/forum/viewtopic.php?t=7080
+says 140- 160 bytes/sec max in single direction
+     90 bytes/sec max in dual direction
+https://www.frsky-rc.com/wp-content/uploads/2017/07/Manual/FRSKY%20TELEMETRY%20PROTOCOL.PDF
+120 bytes/2 max
+what's the truth??
+
+
+https://interrupt.memfault.com/blog/cortex-m-fault-debug
 */
 #endif // BLABLA_H
 
