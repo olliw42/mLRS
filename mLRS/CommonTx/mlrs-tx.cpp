@@ -530,6 +530,7 @@ int main_main(void)
       sx.SetRfFrequency(fhss.GetCurrFreq());
       do_transmit();
       link_state = LINK_STATE_TRANSMIT_WAIT;
+      irq_status = 0;
       DBG_MAIN_SLIM(uartc_puts(">");)
       break;
 
@@ -538,6 +539,7 @@ int main_main(void)
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
       sx.SetToRx(10); // we wait 10 ms for the start for the frame, 5 ms does not work ??
       link_state = LINK_STATE_RECEIVE_WAIT;
+      irq_status = 0;
       break;
     }
 

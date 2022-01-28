@@ -414,6 +414,7 @@ int main_main(void)
       sx.SetRfFrequency(fhss.GetCurrFreq());
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
+      irq_status = 0;
       DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_RX) {
         uartc_puts("$"); uartc_puts(u8toHEX_s(status>>5));
@@ -428,6 +429,8 @@ int main_main(void)
         break;
       })
       do_transmit();
+      link_state = LINK_STATE_TRANSMIT_WAIT;
+      irq_status = 0; // important, in low connection condition, RxDone isr could trigger
       DBG_STATUS(status = sx.GetStatus();
       if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
         uartc_puts("§"); uartc_puts(u8toHEX_s(status>>5));
@@ -438,7 +441,6 @@ int main_main(void)
         link_rescue_cnt++;
         break;
       })
-      link_state = LINK_STATE_TRANSMIT_WAIT;
       }break;
     }
 
