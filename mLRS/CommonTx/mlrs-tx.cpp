@@ -582,11 +582,11 @@ int main_main(void)
 
       if (irq_status & SX1280_IRQ_RX_DONE) {
         LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(5); LED_RED_OFF; delay_ms(5); }
+        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
       if (irq_status & SX1280_IRQ_TX_DONE) {
         LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(5); LED_GREEN_OFF; delay_ms(5); }
+        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
     }
 
