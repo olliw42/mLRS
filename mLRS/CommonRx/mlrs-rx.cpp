@@ -218,8 +218,7 @@ void process_received_frame(bool do_payload)
     stats.fresh_serial_data_received.Inc();
   }
 
-  DBG_MAIN(uartc_puts("got "); uartc_puts(": ");
-  uartc_putc('\n');)
+  DBG_MAIN(uartc_puts("got ");uartc_puts(": ");uartc_putc('\n');)
 }
 
 
@@ -380,7 +379,7 @@ int main_main(void)
         rxstats.Update1Hz();
 
         uartc_puts("RX: ");
-        uartc_puts(u8toBCD_s(rxstats.GetLQ()));
+        uartc_puts(u8toBCD_s(rxstats.GetLQ())); uartc_putc(',');
         uartc_puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
         uartc_puts(" (");
         uartc_puts(u8toBCD_s(stats.frames_received.GetLQ())); uartc_putc(',');
@@ -481,7 +480,7 @@ int main_main(void)
         }
       }
 
-      if (irq_status & SX1280_IRQ_RX_DONE) {
+      if (irq_status & SX1280_IRQ_RX_DONE) { // R, T, TW
         LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
