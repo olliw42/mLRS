@@ -274,6 +274,7 @@ class SxDriver : public SxDriverBase
     uint8_t calc_sx_power(int8_t power)
     {
         sx_power = power - POWER_GAIN_DBM + 18;
+        if (sx_power > POWER_SX1280_MAX_DBM) sx_power = POWER_SX1280_MAX_DBM;
         if (sx_power < SX1280_POWER_m18_DBM) sx_power = SX1280_POWER_m18_DBM;
         if (sx_power > SX1280_POWER_12p5_DBM) sx_power = SX1280_POWER_12p5_DBM;
         return sx_power;
