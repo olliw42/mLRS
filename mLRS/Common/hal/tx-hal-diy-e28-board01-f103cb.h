@@ -12,7 +12,8 @@
 //-------------------------------------------------------
 #define DEVICE_IS_TRANSMITTER
 
-#define DEVICE_HAS_IN
+//#define DEVICE_HAS_IN
+#define DEVICE_HAS_MBRIDGE // requires external diode-R network connected to OUT,IN,GND
 
 
 //-- Timers, Timing and such stuff
@@ -26,6 +27,7 @@
 //-- UARTS
 // UARTB = serial port
 // UARTC = debug port
+// UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
 
 #define UARTB_USE_UART2 // serial
@@ -44,6 +46,7 @@
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
 
+#ifdef DEVICE_HAS_IN
 #define UARTE_USE_UART1_REMAPPED // SBus
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
@@ -51,6 +54,24 @@
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
+#endif
+#ifdef DEVICE_HAS_MBRIDGE
+#define UART_USE_UART1_REMAPPED // MBridge
+#define UART_BAUD                 400000 // 115200
+#define UART_USE_TX
+#define UART_TXBUFSIZE            512
+#define UART_USE_TX_ISR
+#define UART_USE_RX
+#define UART_RXBUFSIZE            512
+
+#define MBRIDGE_TX_XOR            IO_PB3
+#define MBRIDGE_TX_SET_NORMAL     gpio_low(MBRIDGE_TX_XOR)
+#define MBRIDGE_TX_SET_INVERTED   gpio_high(MBRIDGE_TX_XOR)
+
+#define MBRIDGE_RX_XOR            IO_PA15
+#define MBRIDGE_RX_SET_NORMAL     gpio_low(MBRIDGE_RX_XOR)
+#define MBRIDGE_RX_SET_INVERTED   gpio_high(MBRIDGE_RX_XOR)
+#endif
 
 
 //-- SX1: SX12xx & SPI
@@ -182,6 +203,9 @@ bool button_pressed(void)
 
 #define LED_GREEN_TOGGLE          gpio_toggle(LED_GREEN)
 #define LED_RED_TOGGLE            gpio_toggle(LED_RED)
+
+#define LED_RIGHT_GREEN_ON        // not available
+#define LED_RIGHT_GREEN_OFF       // not available
 
 void leds_init(void)
 {
