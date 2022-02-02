@@ -374,6 +374,26 @@ returned packet after 2.6 ms
 
 
 -------------------------------------------------------
+Qczek LRS
+https://qczek.beyondrc.com/qczek-lrs-433mhz-1w-lora-rc-link/qczek-lrs-technical-specyfication/
+
+LORA SX1278 433MHz
+250 kHz SF7 CR4/8  -121 dBm  24ms   hmm I calculate 30 ms ??
+500 kHz race mode
+
+fhss with 8 frequencies
+
+tx->rx:
+20 bytes
+9 x 11 bit channels
+4 bytes telemetry
+16bit crc
+
+rx->tx
+11 bytes telemetry
+
+
+-------------------------------------------------------
 long range mode, sx1276
 go from 50 Hz to 20 Hz
 
@@ -387,7 +407,7 @@ go from 50 Hz to 20 Hz
 => 17 Hz with 5.9 ms headroom
 
 sx1276
-500kHz, SF6, CR4/5  -112dBm  91 payload => 22.2 ms
+500kHz, SF6, CR4/5  -112dBm  91 payload => 21.6 ms  @ 865MHz and 433 MHz
 => 20 Hz with 2.8 ms headroom
 
 
@@ -399,6 +419,8 @@ sx1276
 => byte rates  tx->rx: 20 * 64 = 1280 bytes/sec
                rx->tx: 20 * 82 = 1640 bytes/sec
 
+
+full channels & telemetry only mode ??
 
 -------------------------------------------------------
 FrSky

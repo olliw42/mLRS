@@ -9,8 +9,6 @@
 /*
 
 ISSUES:
-- mbridge stats in lua sometimes hangs
-
 - the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
 
 - why is otx not getting the tx & rx link stats telemetry?
@@ -18,6 +16,7 @@ ISSUES:
 - convert power
 - redo crsf & mbridge such that they can use the very same interface
 
+- time for enabling/disabling PA??
 
 TODO:
 
