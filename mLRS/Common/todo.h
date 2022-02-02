@@ -9,8 +9,6 @@
 /*
 
 ISSUES:
-- the telemetry data (e.g HUD) is very non-smooth, even with good connection => we need to robustify data stream
-
 - why is otx not getting the tx & rx link stats telemetry?
 - what do the crsf values exactly mean? should rssi be in -db or +db??
 - convert power
