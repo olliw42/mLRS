@@ -15,10 +15,10 @@ v0.0.00:
 
 
 // we set the priorities here to have an overview
-#define SX_DIO1_EXTI_IRQ_PRIORITY   11
 #define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
-#define UARTB_IRQ_PRIORITY          14 // serial
-#define UARTC_IRQ_PRIORITY          14
+#define UARTB_IRQ_PRIORITY          11 // serial
+#define UARTC_IRQ_PRIORITY          11 // debug
+#define SX_DIO1_EXTI_IRQ_PRIORITY   13
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"

@@ -31,10 +31,10 @@ retransmissions
 
 // we set the priorities here to have an overview
 #define CLOCK_IRQ_PRIORITY          10
-#define SX_DIO1_EXTI_IRQ_PRIORITY   11
-#define UARTB_IRQ_PRIORITY          15 // serial
-#define UARTC_IRQ_PRIORITY          15
-#define UART_IRQ_PRIORITY           14 // SBus out pin
+#define UARTB_IRQ_PRIORITY          11 // serial
+#define UARTC_IRQ_PRIORITY          11 // debug
+#define UART_IRQ_PRIORITY           12 // SBus out pin
+#define SX_DIO1_EXTI_IRQ_PRIORITY   13
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"
