@@ -9,12 +9,16 @@
 /*
 
 ISSUES:
-- why is otx not getting the tx & rx link stats telemetry?
+- why is otx not getting the crsf tx & rx link stats telemetry?
 - what do the crsf values exactly mean? should rssi be in -db or +db??
 - convert power
 - redo crsf & mbridge such that they can use the very same interface
 
 - time for enabling/disabling PA??
+
+- LQ 98 in receiver
+- rx crsf out to ardupilot, possible??
+
 
 TODO:
 
