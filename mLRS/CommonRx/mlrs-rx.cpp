@@ -19,8 +19,6 @@ can one put now ReadfRame out of isr? would allow using one spi for two sx
 should we do a delay between rxdone and transmitting?
 technically yes, but it seems no need to explicitly do it
 
-in listen, cycle frequency slowly
-
 retransmissions
 */
 
