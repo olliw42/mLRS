@@ -331,12 +331,13 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
 
     txstats.doValidFrameReceived();
 
-    stats.last_received_seq_no = rxFrame.status.seq_no;
-    stats.last_received_ack = rxFrame.status.ack;
+    stats.received_seq_no_last = rxFrame.status.seq_no;
+    stats.received_ack_last = rxFrame.status.ack;
 
 	  ok = true;
   } else {
-    stats.last_received_seq_no = UINT8_MAX;
+    stats.received_seq_no_last = UINT8_MAX;
+    stats.received_ack_last = 0;
   }
 
   if (res != CHECK_ERROR_SYNCWORD) {

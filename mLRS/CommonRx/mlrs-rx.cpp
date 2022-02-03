@@ -250,12 +250,13 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
     rxstats.doValidCrc1FrameReceived();
     if (res == CHECK_OK) rxstats.doValidFrameReceived();
 
-    stats.last_received_seq_no = txFrame.status.seq_no;
-    stats.last_received_ack = txFrame.status.ack;
+    stats.received_seq_no_last = txFrame.status.seq_no;
+    stats.received_ack_last = txFrame.status.ack;
 
     ok = true;
   } else {
-    stats.last_received_seq_no = UINT8_MAX;
+    stats.received_seq_no_last = UINT8_MAX;
+    stats.received_ack_last = 0;
   }
 
   if (res != CHECK_ERROR_SYNCWORD) {
