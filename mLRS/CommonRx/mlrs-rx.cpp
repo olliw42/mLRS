@@ -222,7 +222,7 @@ void process_received_frame(bool do_payload)
 
 void do_transmit(void) // we send a RX frame to transmitter
 {
-  uint8_t ack = 0;
+  uint8_t ack = 1;
 
   stats.transmit_seq_no++;
 
