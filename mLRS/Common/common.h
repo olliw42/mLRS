@@ -223,10 +223,12 @@ class Stats {
     uint8_t received_LQ;
     uint8_t received_LQ_serial_data;
 
-    // retransmission handling
+    // transmission/retransmission handling
     uint8_t transmit_seq_no;
-    uint8_t last_received_ack;
-    uint8_t last_received_seq_no;
+    bool serial_data_received;
+    uint8_t received_seq_no_last;
+    uint8_t received_ack_last;
+    uint8_t retransmit_cnt;
 
     void Init(void)
     {
@@ -248,8 +250,10 @@ class Stats {
         received_LQ = 0; //UINT8_MAX;
 
         transmit_seq_no = 0;
-        last_received_ack = 0;
-        last_received_seq_no = UINT8_MAX;
+        serial_data_received = false;
+        received_seq_no_last = UINT8_MAX;
+        received_ack_last = 0;
+        retransmit_cnt = 0;
     }
 
     void Clear(void)
