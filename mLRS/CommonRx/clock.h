@@ -15,9 +15,9 @@
 // I have tested it with 1us time base, and it also works fine, but hey
 
 
-#define CLOCK_TIMx                TIM3
-#define CLOCK_IRQn                TIM3_IRQn
-#define CLOCK_IRQHandler          TIM3_IRQHandler
+#define CLOCK_TIMx                TIM4
+#define CLOCK_IRQn                TIM4_IRQn
+#define CLOCK_IRQHandler          TIM4_IRQHandler
 //#define CLOCK_IRQ_PRIORITY        10
 
 #define CLOCK_PERIOD_10US         (FRAME_RATE_MS*100)

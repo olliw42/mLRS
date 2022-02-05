@@ -49,6 +49,7 @@ retransmissions
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\storm32\storm32.h"
 #include "..\Common\common.h"
+#include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
 
 #include "clock.h"
@@ -87,6 +88,7 @@ void init(void)
   leds_init();
 
   delay_init();
+  micros_init();
   serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
   out.Init();
 

@@ -35,6 +35,7 @@ v0.0.00:
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
 #include "..\Common\common.h"
+#include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
 
 #ifdef DEVICE_HAS_IN
@@ -42,19 +43,6 @@ v0.0.00:
 #endif
 #include "in.h"
 #include "txstats.h"
-
-
-#define CLOCK_TIMx                  TIM3
-
-void clock_init(void)
-{
-  tim_init_1us_freerunning(CLOCK_TIMx);
-}
-
-uint16_t micros(void)
-{
-  return CLOCK_TIMx->CNT;
-}
 
 
 class In : public InBase
@@ -138,7 +126,7 @@ void init(void)
   pos_switch_init();
 
   delay_init();
-  clock_init();
+  micros_init();
   serial.Init();
 
   in.Init();
