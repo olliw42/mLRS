@@ -9,6 +9,11 @@
 // So, this info is openly available.
 // See e.g.
 // betaflight: https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
+//
+// CRSF frame format:
+// address len type payload crc
+// len is the length including type, payload, crc
+// crc includes type, payload
 //********************************************************
 #ifndef CRSF_PROTOCOL_H
 #define CRSF_PROTOCOL_H

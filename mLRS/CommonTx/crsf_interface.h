@@ -19,7 +19,7 @@
 #if (SETUP_TX_CHANNELS_SOURCE == 3) && (defined DEVICE_HAS_MBRIDGE)
 
 #include "..\Common\thirdparty.h"
-#include "crsf_protocol.h"
+#include "..\Common\crsf_protocol.h"
 
 
 //-------------------------------------------------------
@@ -315,12 +315,12 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics lstats;
 
-  lstats.uplink_rssi1 = stats.last_rx_snr;
+  lstats.uplink_rssi1 = stats.last_rx_rssi;
   lstats.uplink_rssi2 = -128;
   lstats.uplink_LQ = txstats.GetLQ();
   lstats.uplink_snr = stats.last_rx_snr;
   lstats.active_antenna = 0;
-  lstats.mode = 1; // 50 Hz
+  lstats.mode = 4; // unknown
   lstats.uplink_transmit_power = CRSF_POWER_0_mW;
   lstats.downlink_rssi = stats.received_rssi;
   lstats.downlink_LQ = stats.received_LQ;
