@@ -10,6 +10,8 @@
 
 #include <string.h>
 #include "out.h"
+#include "..\Common\thirdparty.h"
+#include "..\Common\crsf_protocol.h"
 
 
 void OutBase::Init(void)
@@ -17,17 +19,52 @@ void OutBase::Init(void)
     config = UINT8_MAX;
     channel_order = UINT8_MAX;
     for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
+    initialized = false;
+
+    link_stats_available = false;
+    link_stats_set_tstart = false;
+    link_stats_tstart_us = 0;
 }
 
 
 void OutBase::Configure(uint8_t new_config)
 {
     if (new_config == config) return;
+
+    // first disable the previous setting
+    switch (config) {
+    case OUT_CONFIG_SBUS:
+        config_sbus(false);
+        break;
+    case OUT_CONFIG_CRSF:
+        config_crsf(false);
+        break;
+    }
+
+    initialized = false;
+
     config = new_config;
 
     switch (config) {
     case OUT_CONFIG_SBUS:
-        config_sbus();
+        initialized = config_sbus(true);
+        break;
+    case OUT_CONFIG_CRSF:
+        initialized = config_crsf(true);
+        break;
+    }
+}
+
+
+void OutBase::Do(uint16_t tnow_us)
+{
+    if (!initialized) return;
+
+    switch (config) {
+    case OUT_CONFIG_SBUS: // nothing to spin
+        break;
+    case OUT_CONFIG_CRSF:
+        do_crsf(tnow_us);
         break;
     }
 }
@@ -54,6 +91,8 @@ void OutBase::SetChannelOrder(uint8_t new_channel_order)
 
 void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 {
+    if (!initialized) return;
+
     tRcData rc; // copy rc data, to not modify it !!
     memcpy(&rc, rc_orig, sizeof(tRcData));
 
@@ -79,13 +118,53 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
     case OUT_CONFIG_SBUS:
         send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;
+    case OUT_CONFIG_CRSF:
+        send_crsf_rcdata(&rc);
+        break;
+    }
+}
+
+
+void OutBase::SendLinkStatistics(tOutLinkStats* stats)
+{
+    switch (config) {
+    case OUT_CONFIG_SBUS: // nothing to spin
+        break;
+    case OUT_CONFIG_CRSF:
+        memcpy(&link_stats, stats, sizeof(tOutLinkStats));
+        link_stats_available = true;
+        link_stats_set_tstart = true;
+        break;
+    }
+}
+
+
+void OutBase::SendLinkStatisticsDisconnected(void)
+{
+    switch (config) {
+    case OUT_CONFIG_SBUS: // nothing to spin
+        break;
+    case OUT_CONFIG_CRSF:
+        link_stats.receiver_rssi1 = -128;
+        link_stats.receiver_rssi2 = -128;
+        link_stats.receiver_LQ = 0;
+        link_stats.receiver_snr = 0;
+        link_stats.receiver_antenna = 0;
+        link_stats.receiver_power = 0;
+        link_stats.transmitter_rssi = -128;
+        link_stats.transmitter_LQ = 0;
+        link_stats.transmitter_snr = 0;
+
+        link_stats_available = true;
+        link_stats_set_tstart = true;
+        break;
     }
 }
 
 
 void OutBase::putbuf(uint8_t* buf, uint16_t len)
 {
-  for (uint16_t i = 0; i < len; i++) putc(buf[i]);
+    for (uint16_t i = 0; i < len; i++) putc(buf[i]);
 }
 
 
@@ -226,6 +305,95 @@ tSBusFrameBuffer sbus_buf;
   putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);
   putc(flags);
   putc(0x00);
+}
+
+
+//-------------------------------------------------------
+// Crsf
+//-------------------------------------------------------
+
+void OutBase::send_crsf_rcdata(tRcData* rc)
+{
+tCrsfChannelBuffer crsf_buf;
+
+    crsf_buf.ch0 = ((uint32_t)(rc->ch[0]) * 1600) / 2047 + 200;
+    crsf_buf.ch1 = ((uint32_t)(rc->ch[1]) * 1600) / 2047 + 200;
+    crsf_buf.ch2 = ((uint32_t)(rc->ch[2]) * 1600) / 2047 + 200;
+    crsf_buf.ch3 = ((uint32_t)(rc->ch[3]) * 1600) / 2047 + 200;
+    crsf_buf.ch4 = ((uint32_t)(rc->ch[4]) * 1600) / 2047 + 200;
+    crsf_buf.ch5 = ((uint32_t)(rc->ch[5]) * 1600) / 2047 + 200;
+    crsf_buf.ch6 = ((uint32_t)(rc->ch[6]) * 1600) / 2047 + 200;
+    crsf_buf.ch7 = ((uint32_t)(rc->ch[7]) * 1600) / 2047 + 200;
+    crsf_buf.ch8 = ((uint32_t)(rc->ch[8]) * 1600) / 2047 + 200;
+    crsf_buf.ch9 = ((uint32_t)(rc->ch[9]) * 1600) / 2047 + 200;
+    crsf_buf.ch10 = ((uint32_t)(rc->ch[10]) * 1600) / 2047 + 200;
+    crsf_buf.ch11 = ((uint32_t)(rc->ch[11]) * 1600) / 2047 + 200;
+    crsf_buf.ch12 = ((uint32_t)(rc->ch[12]) * 1600) / 2047 + 200;
+    crsf_buf.ch13 = ((uint32_t)(rc->ch[13]) * 1600) / 2047 + 200;
+    crsf_buf.ch14 = ((uint32_t)(rc->ch[14]) * 1600) / 2047 + 200;
+    crsf_buf.ch15 = ((uint32_t)(rc->ch[15]) * 1600) / 2047 + 200;
+
+    uint8_t crc = 0;
+
+    putc(CRSF_ADDRESS_BROADCAST);
+    //putc(CRSF_ADDRESS_RECEIVER);
+    //putc(CRSF_ADDRESS_FLIGHT_CONTROLLER);
+    putc(CRSF_CHANNELPACKET_SIZE + 2);
+
+    putc(CRSF_FRAME_ID_CHANNELS);
+    crc = crc8_calc(crc, CRSF_FRAME_ID_CHANNELS, 0xD5);
+
+    putbuf(crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
+    crc = crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE, 0xD5);
+
+    putc(crc);
+}
+
+
+void OutBase::send_crsf_linkstatistics(tOutLinkStats* stats)
+{
+tCrsfLinkStatistics lstats;
+
+    lstats.uplink_rssi1 = -stats->receiver_rssi1;
+    lstats.uplink_rssi2 = -stats->receiver_rssi2;
+    lstats.uplink_LQ = stats->receiver_LQ;
+    lstats.uplink_snr = stats->receiver_snr;
+    lstats.active_antenna = stats->receiver_antenna;
+    lstats.mode = 4; // unknown
+    lstats.uplink_transmit_power = CRSF_POWER_0_mW;
+    lstats.downlink_rssi = -stats->transmitter_rssi;
+    lstats.downlink_LQ = stats->transmitter_LQ;
+    lstats.downlink_snr = stats->transmitter_snr;
+
+    uint8_t crc = 0;
+
+    putc(CRSF_ADDRESS_BROADCAST);
+    putc(CRSF_LINK_STATISTICS_LEN + 2);
+
+    putc(CRSF_FRAME_ID_LINK_STATISTICS);
+    crc = crc8_calc(crc, CRSF_FRAME_ID_LINK_STATISTICS, 0xD5);
+
+    putbuf((uint8_t*)&lstats, CRSF_LINK_STATISTICS_LEN);
+    crc = crc8_update(crc, &lstats, CRSF_LINK_STATISTICS_LEN, 0xD5);
+
+    putc(crc);
+}
+
+
+void OutBase::do_crsf(uint16_t tnow_us)
+{
+    if (!link_stats_available) return;
+
+    if (link_stats_set_tstart) {
+        link_stats_tstart_us = tnow_us;
+        link_stats_set_tstart = false;
+    }
+
+    uint16_t dt = tnow_us - link_stats_tstart_us;
+    if (dt > 4000) {
+        link_stats_available = false;
+        send_crsf_linkstatistics(&link_stats);
+    }
 }
 
 

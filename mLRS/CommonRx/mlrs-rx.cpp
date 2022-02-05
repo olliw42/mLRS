@@ -58,14 +58,27 @@ public:
     uart_init_isroff();
   }
 
-  void config_sbus(void) override
+  bool config_sbus(bool enable_flag) override
   {
-    uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-    out_set_inverted();
-    uart_rx_enableisr(ENABLE);
+    if (enable_flag) {
+      uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+      out_set_inverted();
+    }
+    return true;
+  }
+
+  bool config_crsf(bool enable_flag) override
+  {
+    if (enable_flag) {
+      uart_setprotocol(416666, XUART_PARITY_EVEN, UART_STOPBIT_1);
+      out_set_normal();
+    }
+    return true;
   }
 
   void putc(char c) override { uart_putc(c); }
+
+  void SendLinkStatistics(void);
 };
 
 Out out;
@@ -101,6 +114,23 @@ class RxStats : public RxStatsBase
 };
 
 RxStats rxstats;
+
+
+void Out::SendLinkStatistics(void)
+{
+  tOutLinkStats lstats = {
+    .receiver_rssi1 = stats.last_rx_rssi,
+    .receiver_rssi2 = -128,
+    .receiver_LQ = rxstats.GetLQ(),
+    .receiver_snr = stats.last_rx_snr,
+    .receiver_antenna = 0,
+    .receiver_power = 0,
+    .transmitter_rssi = stats.received_rssi,
+    .transmitter_LQ = stats.received_LQ,
+    .transmitter_snr = 0,
+  };
+  OutBase::SendLinkStatistics(&lstats);
+}
 
 
 //-------------------------------------------------------
@@ -339,7 +369,7 @@ int main_main(void)
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
 
-  out.Configure(OUT_CONFIG_SBUS);
+  out.Configure(SETUP_RX_OUT_MODE);
 
   led_blink = 0;
   tick_1hz = 0;
@@ -530,6 +560,7 @@ int main_main(void)
       out.SetChannelOrder(SETUP_RX_CHANNEL_ORDER);
       if (connected()) {
         out.SendRcData(&rcData, missed, false);
+        out.SendLinkStatistics();
       } else {
 #if SETUP_RX_FAILSAFE_MODE == 1
         if (connect_occured_once) {
@@ -541,6 +572,9 @@ int main_main(void)
 #else
         // no signal, so do nothing
 #endif
+        if (connect_occured_once) {
+          out.SendLinkStatisticsDisconnected();
+        }
       }
 /*
       static uint16_t tlast_10us = 0;
@@ -565,7 +599,10 @@ int main_main(void)
       uartc_puts(connected() ? "c " : "d ");
       uartc_puts("\n");
 */
-    }
+    } // end of if(doPostReceive)
+
+    out.Do(micros());
+
 
   }//end of while(1) loop
 

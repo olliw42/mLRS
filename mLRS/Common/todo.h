@@ -17,7 +17,6 @@ ISSUES:
 - time for enabling/disabling PA??
 
 - LQ 98 in receiver
-- rx crsf out to ardupilot, possible??
 
 
 TODO:

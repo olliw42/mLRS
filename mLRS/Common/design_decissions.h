@@ -373,6 +373,13 @@ returned packet after 2.6 ms
 => 9 bytes @ 150 Hz = 1350 bytes/sec max
 
 
+for configuring ArduPilot to use CRSF rc input, see e.g.
+http://www.mateksys.com/?portfolio=h743-slim#tab-id-5
+it's for the MatekH743, but I think it makes it clear how things work
+also see https://ardupilot.org/copter/docs/common-tbs-rc.html#common-tbs-rc
+e.g set RSSI_TYPE = 3
+
+
 -------------------------------------------------------
 Qczek LRS
 https://qczek.beyondrc.com/qczek-lrs-433mhz-1w-lora-rc-link/qczek-lrs-technical-specyfication/
