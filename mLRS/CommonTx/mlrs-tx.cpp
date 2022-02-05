@@ -539,8 +539,7 @@ int main_main(void)
           link_state = LINK_STATE_RECEIVE;
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
-      }
-      else
+      } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;

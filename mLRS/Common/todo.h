@@ -11,7 +11,7 @@
 ISSUES:
 - why is otx not getting the crsf tx & rx link stats telemetry?
 - what do the crsf values exactly mean? should rssi be in -db or +db??
-- convert power
+- convert crsf power
 - redo crsf & mbridge such that they can use the very same interface
 
 - time for enabling/disabling PA??
@@ -21,6 +21,15 @@ ISSUES:
 
 
 TODO:
+effect of USE_DCDC? where to place it??
+
+should we do a delay between rxdone and transmitting?
+technically yes, but it seems no need to explicitly do it
+
+retransmissions
+
+
+Longterm TODO:
 
 - option to select serial or serial with mavlink parsing, allow e.g. radio_status only in latter mode
 

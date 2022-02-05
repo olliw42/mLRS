@@ -8,18 +8,6 @@
 /********************************************************
 
 v0.0.00:
-- in sync do not try to catch 1.5 fhss sequence, we rely entirely on syncword and crc to identify valid packet
-  we now just expect 5 consequent packets, should we be happy with just one, as it was before?
-
-TODO:
-effect of USE_DCDC? where to place it??
-
-can one put now ReadfRame out of isr? would allow using one spi for two sx
-
-should we do a delay between rxdone and transmitting?
-technically yes, but it seems no need to explicitly do it
-
-retransmissions
 */
 
 #define DBG_MAIN(x)
@@ -445,10 +433,17 @@ int main_main(void)
     }
 
     if (irq_status) {
+      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+        if (irq_status & SX1280_IRQ_TX_DONE) {
+          irq_status = 0;
+          link_state = LINK_STATE_RECEIVE;
+          DBG_MAIN_SLIM(uartc_puts("<\n");)
+        }
+      } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-          if (do_receive()) { // also calls clock.Reset() if valid packet
+          if (do_receive()) { // also calls clock.Reset() if valid packet received
             switch (connect_state) {
             case CONNECT_STATE_LISTEN:
               connect_state = CONNECT_STATE_SYNC;
@@ -471,13 +466,6 @@ int main_main(void)
             }
           }
           DBG_MAIN_SLIM(uartc_puts("!");)
-        }
-      } else
-      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq_status & SX1280_IRQ_TX_DONE) {
-          irq_status = 0;
-          link_state = LINK_STATE_RECEIVE; // switch back to RX
-          DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }
 
@@ -516,8 +504,6 @@ int main_main(void)
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
 
-      rxstats.Next();
-
       // we missed the receive frame
       bool missed = false;
       if ((connect_state >= CONNECT_STATE_SYNC) && !IS_TRANSMIT_STATE) {
@@ -532,6 +518,8 @@ int main_main(void)
         sx.SetFs();
         link_state = LINK_STATE_TRANSMIT;
       }
+
+      rxstats.Next();
 
       out.SetChannelOrder(SETUP_RX_CHANNEL_ORDER);
       if (connected()) {
