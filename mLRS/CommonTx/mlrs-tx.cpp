@@ -180,7 +180,9 @@ void SX_DIO1_EXTI_IRQHandler(void)
   irq_status = sx.GetIrqStatus();
   sx.ClearIrqStatus(SX1280_IRQ_ALL);
   if (irq_status & SX1280_IRQ_RX_DONE) {
-    sx.ReadFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN);
+    uint16_t sync_word;
+    sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+    if (sync_word != FRAME_SYNCWORD) irq_status = 0; // not for us, so ignore it
   }
 })
 
@@ -306,11 +308,17 @@ bool do_receive(void) // we receive a RX frame from receiver
 {
 bool ok = false;
 
+  // we don't need to read sx.GetRxBufferStatus(), but hey
+  // we could save 2 byte's time by not reading sync_word again, but hey
+  sx.ReadFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN);
+
   uint8_t res = check_rx_frame(&rxFrame);
   if (res) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
 uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   }
+
+  if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
 
   if (res == CHECK_OK) {
     bool do_payload = true;
@@ -328,13 +336,11 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
     stats.received_ack_last = 0;
   }
 
-  if (res != CHECK_ERROR_SYNCWORD) {
-    // read it here, we want to have it even if it's a bad packet, but it should be for us
-    sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+  // we want to have it even if it's a bad packet
+  sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
-    // we count all received frames, which are at least for us
-    txstats.doFrameReceived();
-  }
+  // we count all received frames which are for us
+  txstats.doFrameReceived();
 
   return ok;
 }
