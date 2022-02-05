@@ -315,7 +315,7 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics lstats;
 
-  lstats.uplink_rssi1 = txstats.GetRssi();
+  lstats.uplink_rssi1 = stats.last_rx_snr;
   lstats.uplink_rssi2 = -128;
   lstats.uplink_LQ = txstats.GetLQ();
   lstats.uplink_snr = stats.last_rx_snr;
@@ -333,7 +333,7 @@ void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx lstats;
 
-  lstats.uplink_rssi = txstats.GetRssi(); // ignored by OpenTx
+  lstats.uplink_rssi = stats.last_rx_rssi; // ignored by OpenTx
   lstats.uplink_rssi_percent = 12;
   lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
   lstats.uplink_snr = stats.last_rx_snr; // ignored by OpenTx
