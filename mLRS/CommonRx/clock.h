@@ -21,7 +21,7 @@
 //#define CLOCK_IRQ_PRIORITY        10
 
 #define CLOCK_PERIOD_10US         (FRAME_RATE_MS*100)
-#define CLOCK_SHIFT_10US          100 // 1 ms
+#define CLOCK_SHIFT_10US          75 // 100 // 1 ms
 
 
 volatile bool doPostReceive;

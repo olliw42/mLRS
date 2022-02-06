@@ -340,14 +340,12 @@ class tSerialPort : public tSerialBase
 tSerialPort serial;
 
 tRcData rcData;
+
 tTxFrame txFrame;
 tRxFrame rxFrame;
 
-#ifdef DEVICE_HAS_DIVERSITY
-tRcData rcData2;
 tTxFrame txFrame2;
 tRxFrame rxFrame2;
-#endif
 
 SxDriver sx;
 SxDriver2 sx2;

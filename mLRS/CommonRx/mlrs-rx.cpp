@@ -9,6 +9,12 @@
 
 v0.0.00:
 */
+//ATTENTION: for diversity 4.5MHz SPI was too slow, gave issues with Tx receiving in time !!
+//#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
+// TODO: can we pl check the real clock speed !?!?!!?
+// strangely: going to CLOCK_SHIFT_10US 150 made it to fail totally, do
+//            going to CLOCK_SHIFT_10US 50 did not help
+// TODO: test on other boards !!
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
@@ -46,17 +52,6 @@ v0.0.00:
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
-
-
-//ATTENTION: for diversity 4.5MHz SPI was too slow, gave issues with Tx receiving in time !!
-//#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
-#if !(defined SPI_USE_CLOCKSPEED_9MHZ) || !(defined SPIB_USE_CLOCKSPEED_9MHZ)
-#error SPI clock speed too slow
-#endif
-// TODO: can we pl check the real clock speed !?!?!!?
-// strangely: going to CLOCK_SHIFT_10US 150 made it to fail totally, do
-//            going to CLOCK_SHIFT_10US 50 did not help
-// TODO: test on other boards !!
 
 
 ClockBase clock;
@@ -155,6 +150,7 @@ void Out::SendLinkStatistics(void)
 volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
+#ifdef USE_ANTENNA1
 IRQHANDLER(
 void SX_DIO1_EXTI_IRQHandler(void)
 {
@@ -168,8 +164,8 @@ void SX_DIO1_EXTI_IRQHandler(void)
     if (sync_word != FRAME_SYNCWORD) irq_status = 0; // not for us, so ignore it
   }
 })
-
-#ifdef DEVICE_HAS_DIVERSITY
+#endif
+#ifdef USE_ANTENNA2
 IRQHANDLER(
 void SX2_DIO1_EXTI_IRQHandler(void)
 {
@@ -363,7 +359,11 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   if (antenna == ANTENNA_1) {
     sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
   } else {
+#if !(defined USE_ANTENNA2 && !defined USE_DIVERSITY)
     sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
+#else
+    sx2.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+#endif
   }
 
   return rx_status;
@@ -412,8 +412,12 @@ int main_main(void)
   if (!sx2.isOk()) {
     while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
   }
+#ifdef USE_ANTENNA1
   sx.StartUp();
+#endif
+#ifdef USE_ANTENNA2
   sx2.StartUp();
+#endif
   fhss.Init(FHSS_SEED);
   fhss.StartRx();
   fhss.HopToConnect();
@@ -509,14 +513,16 @@ int main_main(void)
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(uartc_puts(">");)
-//uartc_puts("\n> ");
 stats.last_rx_rssi = 0;
 stats.last_rx_rssi2 = 0;
-
       }break;
 
     case LINK_STATE_TRANSMIT: {
+#if !(defined USE_ANTENNA2 && !defined USE_DIVERSITY)
       do_transmit(ANTENNA_1);
+#else
+      do_transmit(ANTENNA_2);
+#endif
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0; // important, in low connection condition, RxDone isr could trigger
       irq2_status = 0;
@@ -524,7 +530,7 @@ stats.last_rx_rssi2 = 0;
 
     }//end of switch(link_state)
 
-
+#ifdef USE_ANTENNA1
     if (irq_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
         if (irq_status & SX1280_IRQ_TX_DONE) {
@@ -536,12 +542,9 @@ stats.last_rx_rssi2 = 0;
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-//uartc_puts(" 1: ");
           bool do_clock_reset = true;
           link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
           DBG_MAIN_SLIM(uartc_puts("!");)
-
-//uartc_puts(s8toBCD_s(stats.last_rx_rssi));uartc_puts(", ");
         }
       }
 
@@ -557,8 +560,8 @@ stats.last_rx_rssi2 = 0;
         while (1) { LED_RED_ON; LED_GREEN_ON; delay_ms(50); LED_RED_OFF; LED_GREEN_OFF; delay_ms(50); }
       }
     }//end of if(irq_status)
-
-
+#endif
+#ifdef USE_ANTENNA2
     if (irq2_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
         if (irq2_status & SX1280_IRQ_TX_DONE) {
@@ -569,10 +572,10 @@ stats.last_rx_rssi2 = 0;
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq2_status & SX1280_IRQ_RX_DONE) {
           irq2_status = 0;
-//uartc_puts(" 2: ");
-          bool do_clock_reset = false;
+
+//          bool do_clock_reset = false;
+bool do_clock_reset = true;
           link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
-//uartc_puts(s8toBCD_s(stats.last_rx_rssi2));uartc_puts(", ");
         }
       }
 
@@ -588,28 +591,34 @@ stats.last_rx_rssi2 = 0;
         while (1) { LED_RED_ON; LED_GREEN_OFF; delay_ms(50); LED_RED_OFF; LED_GREEN_ON; delay_ms(50); }
       }
     }//end of if(irq2_status)
-
+#endif
 
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
       doPostReceive = false;
 
+#ifdef USE_DIVERSITY
       bool frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
       bool valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
       bool invalid_frame_received = frame_received && !valid_frame_received;
+      uint8_t antenna = ANTENNA_1;
+#elif defined USE_ANTENNA1
+      bool frame_received = (link_rx1_status > RX_STATUS_NONE);
+      bool valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+      bool invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); //frame_received && !valid_frame_received;
+      uint8_t antenna = ANTENNA_1;
+#elif defined USE_ANTENNA2
+      bool frame_received = (link_rx2_status > RX_STATUS_NONE);
+      bool valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
+      bool invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
+      uint8_t antenna = ANTENNA_2;
+#endif
 
 uartc_puts("\n> 1: ");
 uartc_puts(s8toBCD_s(stats.last_rx_rssi));
 uartc_puts(" 2: ");
 uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
 
-/*
-      if (link_rx1_status != RX_STATUS_NONE) { // we received a frame
-        // handle the received frame, do it for either invalid or valid
-        //handle_receive(link_rx1_status, &txFrame);
-        handle_receive(ANTENNA_1);
-      }
-*/
       if (frame_received) { // we received a frame
         // work out which antenna we choose
         //            |   NONE   |  INVALID  | CRC1_VALID | VALID
@@ -618,8 +627,7 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
         // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
         // CRC1_VALID |    2     |     2     |   1 or 2   |  1
         // VALID      |    2     |     2     |     2      |  1 or 2
-
-        uint8_t antenna = ANTENNA_1;
+#ifdef USE_DIVERSITY
         if (link_rx1_status == RX_STATUS_VALID) {
           antenna = ANTENNA_1;
         } else
@@ -629,10 +637,10 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
         if (link_rx1_status == RX_STATUS_CRC1_VALID) {
           antenna = ANTENNA_1;
         } else
-        if (link_rx1_status == RX_STATUS_CRC1_VALID) {
+        if (link_rx2_status == RX_STATUS_CRC1_VALID) {
           antenna = ANTENNA_2;
         }
-
+#endif
         handle_receive(antenna);
 
 uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");

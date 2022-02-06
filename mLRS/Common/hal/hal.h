@@ -33,3 +33,28 @@
 #ifdef TX_DIY_MODULE01_G491RE
 #include "tx-hal-diy-module01-g491re.h"
 #endif
+
+
+//-------------------------------------------------------
+// Derived Defines
+//-------------------------------------------------------
+// should go somewhere else !?
+
+#ifdef DEVICE_IS_RECEIVER
+
+#ifdef DEVICE_HAS_DIVERSITY
+  #if SETUP_RX_DIVERSITY == 1
+    #define USE_ANTENNA1
+  #elif SETUP_RX_DIVERSITY == 2
+    #define USE_ANTENNA2
+  #else
+    #define USE_DIVERSITY
+    #define USE_ANTENNA1
+    #define USE_ANTENNA2
+  #endif
+#else
+  #define USE_ANTENNA1
+#endif
+
+#endif
+

@@ -419,6 +419,7 @@ class SxDriver2
     void Init(void) {}
     void StartUp(void) {}
     void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100) {}
+    void ReadFrame(uint8_t* data, uint8_t len) {}
     void SetToRx(uint16_t tmo_us = 10) {}
 };
 
