@@ -209,30 +209,30 @@ void process_transmit_frame(uint8_t ack)
 }
 
 
-void process_received_frame(bool do_payload)
+void process_received_frame(bool do_payload, tTxFrame* frame)
 {
-  stats.received_antenna = txFrame.status.antenna;
-  stats.received_rssi = -(txFrame.status.rssi_u7);
-  stats.received_LQ = txFrame.status.LQ;
-  stats.received_LQ_serial_data = txFrame.status.LQ_serial_data;
+  stats.received_antenna = frame->status.antenna;
+  stats.received_rssi = -(frame->status.rssi_u7);
+  stats.received_LQ = frame->status.LQ;
+  stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
   // copy rc data
   if (!do_payload) {
     // copy only channels 1-4, and jump out
-    rcdata_ch0to3_from_txframe(&rcData, &txFrame);
+    rcdata_ch0to3_from_txframe(&rcData, frame);
     return;
   }
 
-  rcdata_from_txframe(&rcData, &txFrame);
+  rcdata_from_txframe(&rcData, frame);
 
   // output data on serial, but only if connected
   if (connected()) {
-    for (uint8_t i = 0; i < txFrame.status.payload_len; i++) {
-      uint8_t c = txFrame.payload[i];
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+      uint8_t c = frame->payload[i];
       serial.putc(c); // send to serial
     }
 
-    stats.bytes_received.Add(txFrame.status.payload_len);
+    stats.bytes_received.Add(frame->status.payload_len);
     stats.fresh_serial_data_received.Inc();
   }
 }
@@ -248,9 +248,41 @@ void do_transmit(void) // we send a RX frame to transmitter
 }
 
 
-bool do_receive(void) // we receive a TX frame from receiver
+typedef enum {
+    RX_STATUS_NONE = 0,
+    RX_STATUS_INVALID,
+    RX_STATUS_CRC1_VALID,
+    RX_STATUS_VALID,
+} RX_STATUS_ENUM;
+
+
+void handle_receive(uint8_t rx_status, tTxFrame* frame)
 {
-bool ok = false;
+  if (rx_status != RX_STATUS_INVALID) {
+
+    bool do_payload = (rx_status == RX_STATUS_VALID);
+
+    process_received_frame(do_payload, frame);
+
+    rxstats.doValidCrc1FrameReceived();
+    if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived();
+
+    stats.received_seq_no_last = frame->status.seq_no;
+    stats.received_ack_last = frame->status.ack;
+
+  } else {
+    stats.received_seq_no_last = UINT8_MAX;
+    stats.received_ack_last = 0;
+  }
+
+  // we count all received frames which are for us
+  rxstats.doFrameReceived();
+}
+
+
+uint8_t do_receive(bool do_clock_reset) // we receive a TX frame from receiver
+{
+uint8_t rx_status = RX_STATUS_INVALID; // also signals that a frame was received !!
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey
@@ -265,31 +297,18 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
 
   if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
-    clock.Reset();
 
-    bool do_payload = (res == CHECK_OK);
+    if (do_clock_reset) clock.Reset();
 
-    process_received_frame(do_payload);
+    rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
 
-    rxstats.doValidCrc1FrameReceived();
-    if (res == CHECK_OK) rxstats.doValidFrameReceived();
-
-    stats.received_seq_no_last = txFrame.status.seq_no;
-    stats.received_ack_last = txFrame.status.ack;
-
-    ok = true;
-  } else {
-    stats.received_seq_no_last = UINT8_MAX;
-    stats.received_ack_last = 0;
+//    handle_receive(rx_status, &txFrame);
   }
 
   // we want to have it even if it's a bad packet
   sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
-  // we count all received frames which are for us
-  rxstats.doFrameReceived();
-
-  return ok;
+  return rx_status;
 }
 
 
@@ -308,6 +327,8 @@ uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
+
+uint8_t link_rx_status;
 
 
 static inline bool connected(void)
@@ -349,6 +370,8 @@ int main_main(void)
   connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
+
+  link_rx_status = RX_STATUS_NONE;
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
 
@@ -417,6 +440,9 @@ int main_main(void)
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
+
+link_rx_status = RX_STATUS_NONE;
+
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
@@ -438,28 +464,8 @@ int main_main(void)
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-          if (do_receive()) { // also calls clock.Reset() if valid packet received
-            switch (connect_state) {
-            case CONNECT_STATE_LISTEN:
-              connect_state = CONNECT_STATE_SYNC;
-              connect_sync_cnt = 0;
-              break;
-            case CONNECT_STATE_SYNC:
-              connect_sync_cnt++;
-              if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-              break;
-            default:
-              connect_state = CONNECT_STATE_CONNECTED;
-            }
-            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-            connect_occured_once = true;
-            link_state = LINK_STATE_TRANSMIT; // switch to TX
-          } else {
-            // we received something, but something wrong, so we need go back to RX
-            if (connect_state == CONNECT_STATE_LISTEN) {
-              link_state = LINK_STATE_RECEIVE;
-            }
-          }
+          bool do_clock_reset = true;
+          link_rx_status = do_receive(do_clock_reset);
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
       }
@@ -480,6 +486,37 @@ int main_main(void)
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
       doPostReceive = false;
+
+      if (link_rx_status != RX_STATUS_NONE) { // we did receive a frame
+
+        // handle the received frame, do it for either invalid or valid
+        handle_receive(link_rx_status, &txFrame);
+
+        if (link_rx_status != RX_STATUS_INVALID) { // the frame is valid
+
+          switch (connect_state) {
+          case CONNECT_STATE_LISTEN:
+            connect_state = CONNECT_STATE_SYNC;
+            connect_sync_cnt = 0;
+            break;
+          case CONNECT_STATE_SYNC:
+            connect_sync_cnt++;
+            if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+            break;
+          default:
+            connect_state = CONNECT_STATE_CONNECTED;
+          }
+          connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+          connect_occured_once = true;
+
+          link_state = LINK_STATE_TRANSMIT; // switch to TX
+        } else {
+          // we received something, but something wrong, so we need go back to RX
+          if (connect_state == CONNECT_STATE_LISTEN) {
+            link_state = LINK_STATE_RECEIVE;
+          }
+        }
+      }
 
       if (connect_state == CONNECT_STATE_LISTEN) {
         connect_listen_cnt++;
