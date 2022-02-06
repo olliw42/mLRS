@@ -202,6 +202,12 @@ typedef enum {
     LINK_STATE_RECEIVE_DONE,
 } LINK_STATE_ENUM;
 
+typedef enum {
+    RX_STATUS_NONE = 0, // no frame received
+    RX_STATUS_INVALID,
+    RX_STATUS_VALID,
+} RX_STATUS_ENUM;
+
 
 uint8_t payload[FRAME_TX_PAYLOAD_LEN] = {0};
 uint8_t payload_len = 0;
@@ -251,18 +257,18 @@ void process_transmit_frame(uint8_t ack)
 }
 
 
-void process_received_frame(bool do_payload)
+void process_received_frame(bool do_payload, tRxFrame* frame)
 {
-  stats.received_antenna = rxFrame.status.antenna;
-  stats.received_rssi = -(rxFrame.status.rssi_u7);
-  stats.received_LQ = rxFrame.status.LQ;
-  stats.received_LQ_serial_data = rxFrame.status.LQ_serial_data;
+  stats.received_antenna = frame->status.antenna;
+  stats.received_rssi = -(frame->status.rssi_u7);
+  stats.received_LQ = frame->status.LQ;
+  stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
   if (!do_payload) return;
 
   // output data on serial
-  for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) {
-    uint8_t c = rxFrame.payload[i];
+  for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+    uint8_t c = frame->payload[i];
 #if (SETUP_TX_SERIAL_DESTINATION == 1)
     bridge.putc(c); // send to radio
 #else
@@ -285,8 +291,30 @@ void process_received_frame(bool do_payload)
 #endif
   }
 
-  stats.bytes_received.Add(rxFrame.status.payload_len);
+  stats.bytes_received.Add(frame->status.payload_len);
   stats.fresh_serial_data_received.Inc();
+}
+
+
+void handle_receive(uint8_t rx_status, tRxFrame* frame)
+{
+  if (rx_status != RX_STATUS_INVALID) {
+    bool do_payload = true;
+
+    process_received_frame(do_payload, frame);
+
+    txstats.doValidFrameReceived();
+
+    stats.received_seq_no_last = frame->status.seq_no;
+    stats.received_ack_last = frame->status.ack;
+
+  } else {
+    stats.received_seq_no_last = UINT8_MAX;
+    stats.received_ack_last = 0;
+  }
+
+  // we count all received frames which are for us
+  txstats.doFrameReceived();
 }
 
 
@@ -300,9 +328,9 @@ void do_transmit(void) // we send a TX frame to receiver
 }
 
 
-bool do_receive(void) // we receive a RX frame from receiver
+uint8_t do_receive(void) // we receive a RX frame from receiver
 {
-bool ok = false;
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received !!
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey
@@ -317,28 +345,13 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
 
   if (res == CHECK_OK) {
-    bool do_payload = true;
-
-    process_received_frame(do_payload);
-
-    txstats.doValidFrameReceived();
-
-    stats.received_seq_no_last = rxFrame.status.seq_no;
-    stats.received_ack_last = rxFrame.status.ack;
-
-	  ok = true;
-  } else {
-    stats.received_seq_no_last = UINT8_MAX;
-    stats.received_ack_last = 0;
+    rx_status = RX_STATUS_VALID;
   }
 
   // we want to have it even if it's a bad packet
   sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
 
-  // we count all received frames which are for us
-  txstats.doFrameReceived();
-
-  return ok;
+  return rx_status;
 }
 
 
@@ -355,6 +368,10 @@ uint16_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
+
+uint8_t link_rx_status;
+
+bool doPreTransmit;
 
 bool crsf_telemetry_tick_start; // called at 50Hz, in sync with transmit
 bool crsf_telemetry_tick_next; // called at 1 ms
@@ -400,10 +417,12 @@ int main_main(void)
 //  }
 
   tx_tick = 0;
+  doPreTransmit = false;
   link_state = LINK_STATE_IDLE;
   connect_state = CONNECT_STATE_LISTEN;
   connect_tmo_cnt = 0;
   connect_sync_cnt = 0;
+  link_rx_status = RX_STATUS_NONE;
 
   txstats.Init(LQ_AVERAGING_PERIOD);
 
@@ -470,39 +489,7 @@ int main_main(void)
 
       if (!tx_tick) {
         // trigger next cycle
-        if (connected() && !connect_tmo_cnt) {
-          connect_state = CONNECT_STATE_LISTEN;
-        }
-        if (connected() && (link_state != LINK_STATE_RECEIVE_DONE)) {
-          // frame missed
-          connect_sync_cnt = 0;
-        }
-/*
-        static uint16_t tlast_us = 0;
-        uint16_t tnow_us = micros();
-        uint16_t dt = tnow_us - tlast_us;
-        tlast_us = tnow_us;
-
-        uartc_puts(" ");
-        uartc_puts(u16toBCD_s(tnow_us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
-        switch (link_state) {
-        case LINK_STATE_IDLE: uartc_puts("i  "); break;
-        case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
-        case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
-        case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
-        case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
-        case LINK_STATE_RECEIVE_DONE: uartc_puts("rd "); break;
-        }
-        switch (connect_state) {
-        case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
-        case CONNECT_STATE_SYNC: uartc_puts("S "); break;
-        case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
-        }
-        uartc_puts(connected() ? "c " : "d ");
-        uartc_puts("\n");
-*/
-        txstats.Next();
-        link_state = LINK_STATE_TRANSMIT;
+        doPreTransmit = true;
         crsf_telemetry_tick_start = true;
       }
 
@@ -545,22 +532,7 @@ int main_main(void)
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-          if (do_receive()) {
-            if (connect_state == CONNECT_STATE_LISTEN) {
-              connect_state = CONNECT_STATE_SYNC;
-              connect_sync_cnt = 0;
-            } else
-            if (connect_state == CONNECT_STATE_SYNC) {
-              connect_sync_cnt++;
-              if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-            } else {
-              connect_state = CONNECT_STATE_CONNECTED;
-            }
-            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-            link_state = LINK_STATE_RECEIVE_DONE; // ready for next frame
-          } else {
-            link_state = LINK_STATE_IDLE; // ready for next frame
-          }
+          link_rx_status = do_receive();
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }
@@ -568,6 +540,7 @@ int main_main(void)
       if (irq_status & SX1280_IRQ_RX_TX_TIMEOUT) {
         irq_status = 0;
         link_state = LINK_STATE_IDLE;
+        link_rx_status = RX_STATUS_NONE;
       }
 
       if (irq_status & SX1280_IRQ_RX_DONE) {
@@ -580,6 +553,72 @@ int main_main(void)
       }
     }
 
+    // this happens before switching to transmit, i.e. after a frame was or should have been received
+    if (doPreTransmit) {
+      doPreTransmit = false;
+
+      if (link_rx_status != RX_STATUS_NONE) { // we received a frame
+        // handle the received frame, do it for either invalid or valid
+        handle_receive(link_rx_status, &rxFrame);
+
+        if (link_rx_status != RX_STATUS_INVALID) { // the frame is valid
+
+          switch (connect_state) {
+          case CONNECT_STATE_LISTEN:
+            connect_state = CONNECT_STATE_SYNC;
+            connect_sync_cnt = 0;
+            break;
+          case CONNECT_STATE_SYNC:
+            connect_sync_cnt++;
+            if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+            break;
+          default:
+            connect_state = CONNECT_STATE_CONNECTED;
+          }
+          connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+
+        }
+      }
+
+      if (connected() && !connect_tmo_cnt) {
+        connect_state = CONNECT_STATE_LISTEN;
+      }
+
+      // frame missed
+      if (connected() && (link_rx_status <= RX_STATUS_INVALID)) {
+        // reset sync counter, relevant if in sync
+        connect_sync_cnt = 0;
+      }
+
+      link_state = LINK_STATE_TRANSMIT;
+      link_rx_status = RX_STATUS_NONE;
+
+      txstats.Next();
+/*
+      static uint16_t tlast_us = 0;
+      uint16_t tnow_us = micros();
+      uint16_t dt = tnow_us - tlast_us;
+      tlast_us = tnow_us;
+
+      uartc_puts(" ");
+      uartc_puts(u16toBCD_s(tnow_us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
+      switch (link_state) {
+      case LINK_STATE_IDLE: uartc_puts("i  "); break;
+      case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
+      case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
+      case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
+      case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
+      case LINK_STATE_RECEIVE_DONE: uartc_puts("rd "); break;
+      }
+      switch (connect_state) {
+      case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
+      case CONNECT_STATE_SYNC: uartc_puts("S "); break;
+      case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
+      }
+      uartc_puts(connected() ? "c " : "d ");
+      uartc_puts("\n");
+*/
+    } // end of if(doPreTransmit)
 
     // update channels
     channelOrder.Set(SETUP_TX_CHANNEL_ORDER); //TODO: find proper place
