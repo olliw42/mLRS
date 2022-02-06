@@ -20,12 +20,21 @@ ISSUES:
 
 
 TODO:
-effect of USE_DCDC? where to place it??
+- effect of USE_DCDC? where to place it??
 
-should we do a delay between rxdone and transmitting?
-technically yes, but it seems no need to explicitly do it
+- should we do a delay between rxdone and transmitting?
+  technically yes, but it seems no need to explicitly do it
 
-retransmissions
+- retransmissions, frame loss, resend last one time to make it more robust
+- sync & configure at first connect
+- RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
+- RX side rssi output
+- RX side failsafe behaviors
+- OTA
+- configuration settings
+- bind phrase
+- transform mavlink data into more robust & slim format, introduce cmpr_msg
+- USB on TX side
 
 
 Longterm TODO:

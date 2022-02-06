@@ -15,21 +15,6 @@
 //-------------------------------------------------------
 /*
 
-TODOs:
-- sync & configure at first connect
-- OTA
-- frame loss, resend last one time to make it more robust
-- RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
-- TX side sport, to get rc channel data
-- configuration settings
-- bind phrase
-- transform mavlink data into more robust & slim format, introduce cmpr_msg
-- USB on TX side
-- RX side rssi output
-- RX side failsafe behaviors
-- RX side antenna diversity ????? really? I guess I rather like a atto duo
-
-
 -------------------------------------------------------
 desired configurations
 
@@ -352,7 +337,6 @@ so for rx->tx we want two LQ's to distinguish
 hence frame stats changed, and packets are now 91 bytes
 
 
-
 -------------------------------------------------------
 Crossfire
 https://www.g3gg0.de/wordpress/fpv/fpv-analysis-of-tbs-crossfire/
@@ -429,6 +413,7 @@ sx1276
 
 full channels & telemetry only mode ??
 
+
 -------------------------------------------------------
 FrSky
 https://openrcforums.com/forum/viewtopic.php?t=7080
@@ -439,7 +424,25 @@ https://www.frsky-rc.com/wp-content/uploads/2017/07/Manual/FRSKY%20TELEMETRY%20P
 what's the truth??
 
 
+-------------------------------------------------------
+ArduPilot
+
+rssi goes from 0 - 255
+
+crsf rssi handling:
+AP converts it as follows into its own rssi value
+LINK_STATISTICS:
+50 - 120 -> 255 - 0
+https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
+Note: in 4.2 it also will handle LINK_STATISTICS_RX and LINK_STATISTICS_TX,
+and each will overwrite any previous rssi, so be careful with what one really wants to do
+
+
+-------------------------------------------------------
+stuff
+
 https://interrupt.memfault.com/blog/cortex-m-fault-debug
+
 */
 #endif // BLABLA_H
 

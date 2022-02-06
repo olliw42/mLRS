@@ -14,6 +14,11 @@
 // address len type payload crc
 // len is the length including type, payload, crc
 // crc includes type, payload
+//
+// baudrate:
+// is reported inconsistently across the various resources
+// Ardupilot: seems to use 416666 for receiver -> autopilot
+// OpenTx: seems to use 400000 for radio -> tx module
 //********************************************************
 #ifndef CRSF_PROTOCOL_H
 #define CRSF_PROTOCOL_H
