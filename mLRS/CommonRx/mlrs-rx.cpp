@@ -169,6 +169,13 @@ typedef enum {
 #define IS_RECEIVE_STATE    (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
 #define IS_TRANSMIT_STATE   (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
 
+typedef enum {
+    RX_STATUS_NONE = 0, // no frame received
+    RX_STATUS_INVALID,
+    RX_STATUS_CRC1_VALID,
+    RX_STATUS_VALID,
+} RX_STATUS_ENUM;
+
 
 uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
 uint8_t payload_len = 0;
@@ -238,24 +245,6 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 }
 
 
-void do_transmit(void) // we send a RX frame to transmitter
-{
-  uint8_t ack = 1;
-
-  stats.transmit_seq_no++;
-
-  process_transmit_frame(ack);
-}
-
-
-typedef enum {
-    RX_STATUS_NONE = 0,
-    RX_STATUS_INVALID,
-    RX_STATUS_CRC1_VALID,
-    RX_STATUS_VALID,
-} RX_STATUS_ENUM;
-
-
 void handle_receive(uint8_t rx_status, tTxFrame* frame)
 {
   if (rx_status != RX_STATUS_INVALID) {
@@ -280,9 +269,19 @@ void handle_receive(uint8_t rx_status, tTxFrame* frame)
 }
 
 
+void do_transmit(void) // we send a RX frame to transmitter
+{
+  uint8_t ack = 1;
+
+  stats.transmit_seq_no++;
+
+  process_transmit_frame(ack);
+}
+
+
 uint8_t do_receive(bool do_clock_reset) // we receive a TX frame from receiver
 {
-uint8_t rx_status = RX_STATUS_INVALID; // also signals that a frame was received !!
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received !!
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey
@@ -301,8 +300,6 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
     if (do_clock_reset) clock.Reset();
 
     rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
-
-//    handle_receive(rx_status, &txFrame);
   }
 
   // we want to have it even if it's a bad packet
@@ -370,7 +367,6 @@ int main_main(void)
   connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
-
   link_rx_status = RX_STATUS_NONE;
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
@@ -439,10 +435,8 @@ int main_main(void)
       sx.SetRfFrequency(fhss.GetCurrFreq());
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
+      link_rx_status = RX_STATUS_NONE;
       irq_status = 0;
-
-link_rx_status = RX_STATUS_NONE;
-
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
