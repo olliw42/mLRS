@@ -287,10 +287,6 @@ void process_received_frame(bool do_payload)
 
   stats.bytes_received.Add(rxFrame.status.payload_len);
   stats.fresh_serial_data_received.Inc();
-
-  DBG_MAIN(uartc_puts("got "); uartc_puts(": ");
-  for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) uartc_putc(rxFrame.payload[i]);
-  uartc_putc('\n');)
 }
 
 
