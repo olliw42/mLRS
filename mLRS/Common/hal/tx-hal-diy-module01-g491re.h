@@ -79,7 +79,9 @@
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ // 9 MHz seems to be too fast! got Tx lockups
+//#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ
+//#define SPI_USE_CLOCKSPEED_4500KHZ
+#define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB0
 #define SX_DIO1                   IO_PC4
@@ -100,7 +102,8 @@
 #define SPI_USE_SPI2              // PB13, PB14, PB15
 #define SPI_CS_IO                 IO_PB12
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ // 9 MHz seems to be too fast! got Tx lockups
+//#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ
+#define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PC8
 #define SX_DIO1                   IO_PC6
@@ -168,7 +171,7 @@ void sx_dio1_enable_exti_isr(void)
 #define SPIB_USE_SPI1             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-#define SPIB_USE_CLOCKSPEED_2250KHZ
+#define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PC8
 #define SX2_DIO1                  IO_PC6
