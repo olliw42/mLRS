@@ -35,6 +35,8 @@
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
+#define SETUP_TX_DIVERSITY              0 // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
+
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
@@ -48,7 +50,7 @@
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
-#define SETUP_RX_ANTENNA                0 // 0: left/default, 1: right
+#define SETUP_RX_DIVERSITY              0 // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 
 #define BIND_DBLWORD                    0x12344281

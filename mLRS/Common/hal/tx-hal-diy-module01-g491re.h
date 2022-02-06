@@ -12,6 +12,7 @@
 //-------------------------------------------------------
 #define DEVICE_IS_TRANSMITTER
 
+//#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_MBRIDGE
 
 
@@ -185,6 +186,56 @@ void sx_dio1_enable_exti_isr(void)
 #define SX2_DIO1_EXTI_IRQn            EXTI9_5_IRQn
 #define SX2_DIO1_EXTI_IRQHandler      EXTI9_5_IRQHandler
 //#define SX2_DIO1_EXTI_IRQ_PRIORITY   11
+
+
+void sx2_init_gpio(void)
+{
+  gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+  gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+#ifdef SX2_BUSY
+  gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+#endif
+}
+
+bool sx2_dio1_read(void)
+{
+  return (gpio_read_activehigh(SX2_DIO1)) ? true : false;
+}
+
+#ifdef SX2_BUSY
+bool sx2_busy_read(void)
+{
+  return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
+}
+#endif
+
+void sx2_amp_transmit(void)
+{
+}
+
+void sx2_amp_receive(void)
+{
+}
+
+void sx2_dio1_init_exti_isroff(void)
+{
+  LL_SYSCFG_SetEXTISource(SX2_DIO1_SYSCFG_EXTI_PORTx, SX2_DIO1_SYSCFG_EXTI_LINEx);
+
+  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+  LL_EXTI_DisableEvent_0_31(SX2_DIO1_EXTI_LINE_x);
+  LL_EXTI_DisableIT_0_31(SX2_DIO1_EXTI_LINE_x);
+  LL_EXTI_DisableFallingTrig_0_31(SX2_DIO1_EXTI_LINE_x);
+  LL_EXTI_EnableRisingTrig_0_31(SX2_DIO1_EXTI_LINE_x);
+
+  NVIC_SetPriority(SX2_DIO1_EXTI_IRQn, SX2_DIO1_EXTI_IRQ_PRIORITY);
+  NVIC_EnableIRQ(SX2_DIO1_EXTI_IRQn);
+}
+
+void sx2_dio1_enable_exti_isr(void)
+{
+  LL_EXTI_ClearFlag_0_31(SX2_DIO1_EXTI_LINE_x);
+  LL_EXTI_EnableIT_0_31(SX2_DIO1_EXTI_LINE_x);
+}
 
 
 //-- Button

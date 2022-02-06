@@ -58,82 +58,12 @@ const tSxLoraConfiguration SxLoraConfiguration[] = {
 };
 
 
-class SxDriver : public SxDriverBase
+class SxDriverBoth : public SxDriverBase
 {
   public:
-
-    //-- interface to SPI peripheral
-
-#ifdef SX_BUSY
-    void WaitOnBusy(void) override
-    {
-      while (sx_busy_read()) { __NOP(); };
-    }
-#else
-    uint32_t timer_us_tmo = 0;
-    uint32_t timer_us_start_tick = 0;
-
-    void WaitOnBusy(void) override
-    {
-      if (timer_us_tmo) {
-        while ((DWT->CYCCNT - timer_us_start_tick) < timer_us_tmo) { __NOP(); };
-        timer_us_tmo = 0;
-      }
-    }
-
-    void SetDelay(uint16_t tmo_us) override
-    {
-      timer_us_tmo = (uint32_t)tmo_us * (SystemCoreClock/1000000);
-      timer_us_start_tick = DWT->CYCCNT;
-    }
-#endif
-
-    void SpiSelect(void) override
-    {
-#ifndef SX_BUSY
-        delay_ns(150); // datasheet says t9 = 100 ns, semtech driver doesn't do it, helps so do it
-#endif
-        spi_select();
-        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
-    }
-
-    void SpiDeselect(void) override
-    {
-        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
-        spi_deselect();
-#ifndef SX_BUSY
-        delay_ns(100); // well...
-#endif
-    }
-
-    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
-    {
-        spi_transfer(dataout, datain, len);
-    }
-
-    //-- init API functions
-
-    void _reset(void)
-    {
-        gpio_low(SX_RESET);
-        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
-        gpio_high(SX_RESET);
-        delay_ms(50); // semtech driver says "typically 2ms observed"
-        WaitOnBusy();
-    }
-
     void Init(void)
     {
         lora_configuration = nullptr;
-
-        spi_init();
-        sx_init_gpio();
-        sx_dio1_init_exti_isroff();
-
-        // no idea how long the SX1280 takes to boot up, so give it some good time
-        // we could probably speed up by using WaitOnBusy()
-        delay_ms(300);
-        _reset(); // this is super crucial !
     }
 
     //-- high level API functions
@@ -195,38 +125,8 @@ class SxDriver : public SxDriverBase
         delay_us(125); // may not be needed if busy available
     }
 
-    void StartUp(void)
-    {
-        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-        delay_us(1000); // this is important, 500 us ok
-
-#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
-        SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
-#endif
-
-        Configure();
-
-        sx_dio1_enable_exti_isr();
-    }
 
     //-- this are the API functions used in the loop
-
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100)
-    {
-        sx_amp_transmit();
-        WriteBuffer(0, data, len);
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetTx(SX1280_PERIODBASE_62p5_US, tmo_us*16); // if a Tx timeout occurs we have a serious problem
-        delay_us(125); // may not be needed if busy available
-    }
-
-    void SetToRx(uint16_t tmo_us = 10)
-    {
-        sx_amp_receive();
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetRx(SX1280_PERIODBASE_62p5_US, tmo_us*16);
-        delay_us(125); // may not be needed if busy available
-    }
 
     void ReadFrame(uint8_t* data, uint8_t len)
     {
@@ -281,6 +181,249 @@ class SxDriver : public SxDriverBase
     }
 };
 
+
+//-------------------------------------------------------
+// Driver for SX1
+//-------------------------------------------------------
+
+class SxDriver : public SxDriverBoth
+{
+  public:
+
+    //-- interface to SPI peripheral
+
+#ifdef SX_BUSY
+    void WaitOnBusy(void) override
+    {
+        while (sx_busy_read()) { __NOP(); };
+    }
+#else
+    uint32_t timer_us_tmo = 0;
+    uint32_t timer_us_start_tick = 0;
+
+    void WaitOnBusy(void) override
+    {
+        if (timer_us_tmo) {
+          while ((DWT->CYCCNT - timer_us_start_tick) < timer_us_tmo) { __NOP(); };
+          timer_us_tmo = 0;
+        }
+    }
+
+    void SetDelay(uint16_t tmo_us) override
+    {
+        timer_us_tmo = (uint32_t)tmo_us * (SystemCoreClock/1000000);
+        timer_us_start_tick = DWT->CYCCNT;
+    }
+#endif
+
+    void SpiSelect(void) override
+    {
+#ifndef SX_BUSY
+        delay_ns(150); // datasheet says t9 = 100 ns, semtech driver doesn't do it, helps so do it
+#endif
+        spi_select();
+        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        spi_deselect();
+#ifndef SX_BUSY
+        delay_ns(100); // well...
+#endif
+    }
+
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX_RESET);
+        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        gpio_high(SX_RESET);
+        delay_ms(50); // semtech driver says "typically 2ms observed"
+        WaitOnBusy();
+    }
+
+    void Init(void)
+    {
+        SxDriverBoth::Init();
+
+        spi_init();
+        sx_init_gpio();
+        sx_dio1_init_exti_isroff();
+
+        // no idea how long the SX1280 takes to boot up, so give it some good time
+        // we could probably speed up by using WaitOnBusy()
+        delay_ms(300);
+        _reset(); // this is super crucial !
+    }
+
+    //-- high level API functions
+
+    //bool isOk(void)
+    //void SetLoraConfiguration(const tSxLoraConfiguration* config)
+    //void SetLoraConfigurationByIndex(uint8_t index)
+    //void Configure(void)
+
+    void StartUp(void)
+    {
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // this is important, 500 us ok
+
+#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
+        SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
+#endif
+
+        Configure();
+
+        sx_dio1_enable_exti_isr();
+    }
+
+    //-- this are the API functions used in the loop
+
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100)
+    {
+        sx_amp_transmit();
+        WriteBuffer(0, data, len);
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetTx(SX1280_PERIODBASE_62p5_US, tmo_us*16); // if a Tx timeout occurs we have a serious problem
+        delay_us(125); // may not be needed if busy available
+    }
+
+    void SetToRx(uint16_t tmo_us = 10)
+    {
+        sx_amp_receive();
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetRx(SX1280_PERIODBASE_62p5_US, tmo_us*16);
+        delay_us(125); // may not be needed if busy available
+    }
+
+    //void ReadFrame(uint8_t* data, uint8_t len)
+};
+
+
+//-------------------------------------------------------
+// Driver for SX2
+//-------------------------------------------------------
+#ifdef DEVICE_HAS_DIVERSITY
+
+#ifndef SX2_BUSY
+    #error SX2 must have a BUSY pin !!
+#endif
+
+class SxDriver2 : public SxDriverBoth
+{
+  public:
+
+    void WaitOnBusy(void) override
+    {
+        while (sx2_busy_read()) { __NOP(); };
+    }
+
+    void SpiSelect(void) override
+    {
+        spib_select();
+        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        spib_deselect();
+    }
+
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spib_transfer(dataout, datain, len);
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX2_RESET);
+        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        gpio_high(SX2_RESET);
+        delay_ms(50); // semtech driver says "typically 2ms observed"
+        WaitOnBusy();
+    }
+
+    void Init(void)
+    {
+        SxDriverBoth::Init();
+
+        spib_init();
+        sx2_init_gpio();
+        sx2_dio1_init_exti_isroff();
+
+        // no idea how long the SX1280 takes to boot up, so give it some good time
+        // we could probably speed up by using WaitOnBusy()
+        delay_ms(300);
+        _reset(); // this is super crucial !
+    }
+
+    //-- high level API functions
+
+    void StartUp(void)
+    {
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // this is important, 500 us ok
+
+#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+        SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
+#endif
+
+        Configure();
+
+        sx2_dio1_enable_exti_isr();
+    }
+
+    //-- this are the API functions used in the loop
+
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100)
+    {
+        sx2_amp_transmit();
+        WriteBuffer(0, data, len);
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetTx(SX1280_PERIODBASE_62p5_US, tmo_us*16); // if a Tx timeout occurs we have a serious problem
+        delay_us(125); // may not be needed if busy available
+    }
+
+    void SetToRx(uint16_t tmo_us = 10)
+    {
+        sx2_amp_receive();
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetRx(SX1280_PERIODBASE_62p5_US, tmo_us*16);
+        delay_us(125); // may not be needed if busy available
+    }
+};
+
+#else
+// if we don't have diversity, we declare a dummy class to make code simpler
+
+class SxDriver2
+{
+  public:
+    void SetRfFrequency(uint32_t RfFrequency) {}
+    void SetFs(void) {}
+
+    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) { *RssiSync = -128; *Snr = 0; }
+
+    bool isOk(void) { return true; }
+    void Init(void) {}
+    void StartUp(void) {}
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100) {}
+    void SetToRx(uint16_t tmo_us = 10) {}
+};
+
+
+#endif
 
 
 #endif // SX1280_DRIVER_H

@@ -217,6 +217,9 @@ class Stats {
     int8_t last_rx_rssi; // note: is negative!
     int8_t last_rx_snr; // note: can be negative!
 
+    int8_t last_rx_rssi2;
+    int8_t last_rx_snr2;
+
     // statistics received from the other end
     uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
@@ -244,6 +247,8 @@ class Stats {
 
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
+        last_rx_rssi2 = INT8_MAX;
+        last_rx_snr2 = INT8_MAX;
 
         received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
@@ -338,7 +343,15 @@ tRcData rcData;
 tTxFrame txFrame;
 tRxFrame rxFrame;
 
+#ifdef DEVICE_HAS_DIVERSITY
+tRcData rcData2;
+tTxFrame txFrame2;
+tRxFrame rxFrame2;
+#endif
+
 SxDriver sx;
+SxDriver2 sx2;
+
 Stats stats;
 
 FhssBase fhss;

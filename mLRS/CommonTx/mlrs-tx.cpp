@@ -19,6 +19,7 @@ v0.0.00:
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // debug
 #define SX_DIO1_EXTI_IRQ_PRIORITY   13
+#define SX2_DIO1_EXTI_IRQ_PRIORITY  13
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"
