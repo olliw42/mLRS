@@ -31,6 +31,9 @@ v0.0.00:
 #include "..\Common\hal\hal.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
+#ifdef DEVICE_HAS_DIVERSITY
+#include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
+#endif
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
@@ -43,6 +46,17 @@ v0.0.00:
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
+
+
+//ATTENTION: for diversity 4.5MHz SPI was too slow, gave issues with Tx receiving in time !!
+//#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
+#if !(defined SPI_USE_CLOCKSPEED_9MHZ) || !(defined SPIB_USE_CLOCKSPEED_9MHZ)
+#error SPI clock speed too slow
+#endif
+// TODO: can we pl check the real clock speed !?!?!!?
+// strangely: going to CLOCK_SHIFT_10US 150 made it to fail totally, do
+//            going to CLOCK_SHIFT_10US 50 did not help
+// TODO: test on other boards !!
 
 
 ClockBase clock;
@@ -99,6 +113,7 @@ void init(void)
   doPostReceive = false;
 
   sx.Init();
+  sx2.Init();
 }
 
 
@@ -138,6 +153,7 @@ void Out::SendLinkStatistics(void)
 //-------------------------------------------------------
 
 volatile uint16_t irq_status;
+volatile uint16_t irq2_status;
 
 IRQHANDLER(
 void SX_DIO1_EXTI_IRQHandler(void)
@@ -152,6 +168,22 @@ void SX_DIO1_EXTI_IRQHandler(void)
     if (sync_word != FRAME_SYNCWORD) irq_status = 0; // not for us, so ignore it
   }
 })
+
+#ifdef DEVICE_HAS_DIVERSITY
+IRQHANDLER(
+void SX2_DIO1_EXTI_IRQHandler(void)
+{
+  LL_EXTI_ClearFlag_0_31(SX2_DIO1_EXTI_LINE_x);
+  //LED_RED_TOGGLE;
+  irq2_status = sx2.GetIrqStatus();
+  sx2.ClearIrqStatus(SX1280_IRQ_ALL);
+  if (irq2_status & SX1280_IRQ_RX_DONE) {
+    uint16_t sync_word;
+    sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+    if (sync_word != FRAME_SYNCWORD) irq2_status = 0;
+  }
+})
+#endif
 
 
 typedef enum {
@@ -176,12 +208,15 @@ typedef enum {
     RX_STATUS_VALID,
 } RX_STATUS_ENUM;
 
+uint8_t link_rx1_status;
+uint8_t link_rx2_status;
+
 
 uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
 uint8_t payload_len = 0;
 
 
-void process_transmit_frame(uint8_t ack)
+void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
   // read data from serial
   if (connected()) {
@@ -206,13 +241,18 @@ void process_transmit_frame(uint8_t ack)
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
-  frame_stats.antenna = ANTENNA_1;
+  frame_stats.antenna = antenna;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
   pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
-  sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
+
+  if (antenna == ANTENNA_1) {
+    sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
+  } else {
+    sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
+  }
 }
 
 
@@ -223,7 +263,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   stats.received_LQ = frame->status.LQ;
   stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
-  // get rc data
+  // copy rc data
   if (!do_payload) {
     // copy only channels 1-4, and jump out
     rcdata_ch0to3_from_txframe(&rcData, frame);
@@ -245,8 +285,19 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 }
 
 
-void handle_receive(uint8_t rx_status, tTxFrame* frame)
+void handle_receive(uint8_t antenna)
 {
+uint8_t rx_status;
+tTxFrame* frame;
+
+  if (antenna == ANTENNA_1) {
+    rx_status = link_rx1_status;
+    frame = &txFrame;
+  } else {
+    rx_status = link_rx2_status;
+    frame = &txFrame2;
+  }
+
   if (rx_status != RX_STATUS_INVALID) {
 
     bool do_payload = (rx_status == RX_STATUS_VALID);
@@ -269,25 +320,31 @@ void handle_receive(uint8_t rx_status, tTxFrame* frame)
 }
 
 
-void do_transmit(void) // we send a RX frame to transmitter
+void do_transmit(uint8_t antenna) // we send a RX frame to transmitter
 {
   uint8_t ack = 1;
 
   stats.transmit_seq_no++;
 
-  process_transmit_frame(ack);
+  process_transmit_frame(antenna, ack);
 }
 
 
-uint8_t do_receive(bool do_clock_reset) // we receive a TX frame from receiver
+uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a TX frame from receiver
 {
+uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey
-  sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
+  if (antenna == ANTENNA_1) {
+    sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
+    res = check_tx_frame(&txFrame);
+  } else {
+    sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
+    res = check_tx_frame(&txFrame2);
+  }
 
-  uint8_t res = check_tx_frame(&txFrame);
   if (res) {
     DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
 uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
@@ -303,11 +360,14 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   }
 
   // we want to have it even if it's a bad packet
-  sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+  if (antenna == ANTENNA_1) {
+    sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+  } else {
+    sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
+  }
 
   return rx_status;
 }
-
 
 
 //##############################################################################################################
@@ -324,8 +384,6 @@ uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
-
-uint8_t link_rx_status;
 
 
 static inline bool connected(void)
@@ -349,13 +407,19 @@ int main_main(void)
 
   // start up sx
   if (!sx.isOk()) {
-    while (1) { LED_RED_TOGGLE; delay_ms(50); } // fail!
+    while (1) { LED_RED_TOGGLE; delay_ms(25); } // fail!
+  }
+  if (!sx2.isOk()) {
+    while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
   }
   sx.StartUp();
+  sx2.StartUp();
   fhss.Init(FHSS_SEED);
   fhss.StartRx();
   fhss.HopToConnect();
+
   sx.SetRfFrequency(fhss.GetCurrFreq());
+  sx2.SetRfFrequency(fhss.GetCurrFreq());
 
 //  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
 //    uartc_puts("c = "); uartc_puts(u8toBCD_s(fhss.ch_list[i])); uartc_puts(" f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n"); delay_ms(50);
@@ -367,7 +431,8 @@ int main_main(void)
   connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
-  link_rx_status = RX_STATUS_NONE;
+  link_rx1_status = RX_STATUS_NONE;
+  link_rx2_status = RX_STATUS_NONE;
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
 
@@ -425,6 +490,8 @@ int main_main(void)
       }
     }
 
+    //-- SX handling
+
     switch (link_state) {
     case LINK_STATE_RECEIVE: {
       if (connect_state == CONNECT_STATE_LISTEN) {
@@ -433,19 +500,30 @@ int main_main(void)
         fhss.HopToNext();
       }
       sx.SetRfFrequency(fhss.GetCurrFreq());
+      sx2.SetRfFrequency(fhss.GetCurrFreq());
       sx.SetToRx(0); // single without tmo
+      sx2.SetToRx(0);
       link_state = LINK_STATE_RECEIVE_WAIT;
-      link_rx_status = RX_STATUS_NONE;
+      link_rx1_status = RX_STATUS_NONE;
+      link_rx2_status = RX_STATUS_NONE;
       irq_status = 0;
+      irq2_status = 0;
       DBG_MAIN_SLIM(uartc_puts(">");)
+//uartc_puts("\n> ");
+stats.last_rx_rssi = 0;
+stats.last_rx_rssi2 = 0;
+
       }break;
 
     case LINK_STATE_TRANSMIT: {
-      do_transmit();
+      do_transmit(ANTENNA_1);
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0; // important, in low connection condition, RxDone isr could trigger
+      irq2_status = 0;
       }break;
-    }
+
+    }//end of switch(link_state)
+
 
     if (irq_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
@@ -458,9 +536,12 @@ int main_main(void)
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
+//uartc_puts(" 1: ");
           bool do_clock_reset = true;
-          link_rx_status = do_receive(do_clock_reset);
+          link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
           DBG_MAIN_SLIM(uartc_puts("!");)
+
+//uartc_puts(s8toBCD_s(stats.last_rx_rssi));uartc_puts(", ");
         }
       }
 
@@ -475,39 +556,109 @@ int main_main(void)
       if (irq_status & SX1280_IRQ_RX_TX_TIMEOUT) {
         while (1) { LED_RED_ON; LED_GREEN_ON; delay_ms(50); LED_RED_OFF; LED_GREEN_OFF; delay_ms(50); }
       }
-    }
+    }//end of if(irq_status)
+
+
+    if (irq2_status) {
+      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+        if (irq2_status & SX1280_IRQ_TX_DONE) {
+          irq2_status = 0;
+          link_state = LINK_STATE_RECEIVE;
+        }
+      } else
+      if (link_state == LINK_STATE_RECEIVE_WAIT) {
+        if (irq2_status & SX1280_IRQ_RX_DONE) {
+          irq2_status = 0;
+//uartc_puts(" 2: ");
+          bool do_clock_reset = false;
+          link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
+//uartc_puts(s8toBCD_s(stats.last_rx_rssi2));uartc_puts(", ");
+        }
+      }
+
+      if (irq2_status & SX1280_IRQ_RX_DONE) { // R, T, TW
+        LED_GREEN_ON; //LED_GREEN_OFF;
+        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
+      }
+      if (irq2_status & SX1280_IRQ_TX_DONE) {
+        LED_RED_ON; //LED_RED_OFF;
+        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
+      }
+      if (irq2_status & SX1280_IRQ_RX_TX_TIMEOUT) {
+        while (1) { LED_RED_ON; LED_GREEN_OFF; delay_ms(50); LED_RED_OFF; LED_GREEN_ON; delay_ms(50); }
+      }
+    }//end of if(irq2_status)
+
 
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
       doPostReceive = false;
 
-      if (link_rx_status != RX_STATUS_NONE) { // we received a frame
+      bool frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
+      bool valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
+      bool invalid_frame_received = frame_received && !valid_frame_received;
+
+uartc_puts("\n> 1: ");
+uartc_puts(s8toBCD_s(stats.last_rx_rssi));
+uartc_puts(" 2: ");
+uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
+
+/*
+      if (link_rx1_status != RX_STATUS_NONE) { // we received a frame
         // handle the received frame, do it for either invalid or valid
-        handle_receive(link_rx_status, &txFrame);
+        //handle_receive(link_rx1_status, &txFrame);
+        handle_receive(ANTENNA_1);
+      }
+*/
+      if (frame_received) { // we received a frame
+        // work out which antenna we choose
+        //            |   NONE   |  INVALID  | CRC1_VALID | VALID
+        // --------------------------------------------------------
+        // NONE       |          |   1 or 2  |     1      |  1
+        // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
+        // CRC1_VALID |    2     |     2     |   1 or 2   |  1
+        // VALID      |    2     |     2     |     2      |  1 or 2
 
-        if (link_rx_status != RX_STATUS_INVALID) { // the frame is valid
-
-          switch (connect_state) {
-          case CONNECT_STATE_LISTEN:
-            connect_state = CONNECT_STATE_SYNC;
-            connect_sync_cnt = 0;
-            break;
-          case CONNECT_STATE_SYNC:
-            connect_sync_cnt++;
-            if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-            break;
-          default:
-            connect_state = CONNECT_STATE_CONNECTED;
-          }
-          connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-          connect_occured_once = true;
-
-          link_state = LINK_STATE_TRANSMIT; // switch to TX
+        uint8_t antenna = ANTENNA_1;
+        if (link_rx1_status == RX_STATUS_VALID) {
+          antenna = ANTENNA_1;
+        } else
+        if (link_rx2_status == RX_STATUS_VALID) {
+          antenna = ANTENNA_2;
+        } else
+        if (link_rx1_status == RX_STATUS_CRC1_VALID) {
+          antenna = ANTENNA_1;
+        } else
+        if (link_rx1_status == RX_STATUS_CRC1_VALID) {
+          antenna = ANTENNA_2;
         }
+
+        handle_receive(antenna);
+
+uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       }
 
-      // we received something, but something wrong, so we need go back to RX
-      if ((connect_state == CONNECT_STATE_LISTEN) && (link_rx_status == RX_STATUS_INVALID)) {
+      if (valid_frame_received) { // valid frame received
+        switch (connect_state) {
+        case CONNECT_STATE_LISTEN:
+          connect_state = CONNECT_STATE_SYNC;
+          connect_sync_cnt = 0;
+          break;
+        case CONNECT_STATE_SYNC:
+          connect_sync_cnt++;
+          if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+          break;
+        default:
+          connect_state = CONNECT_STATE_CONNECTED;
+        }
+        connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+        connect_occured_once = true;
+
+        link_state = LINK_STATE_TRANSMIT; // switch to TX
+      }
+
+      // when in listen: we received something, but something wrong, so we need go back to RX
+      if ((connect_state == CONNECT_STATE_LISTEN) && invalid_frame_received) {
         link_state = LINK_STATE_RECEIVE;
       }
 
@@ -532,15 +683,19 @@ int main_main(void)
 
       // we didn't receive a valid frame
       bool missed;
-      if ((connect_state >= CONNECT_STATE_SYNC) && (link_rx_status <= RX_STATUS_INVALID)) {
+      if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
         missed = true;
         // reset sync counter, relevant if in sync
         connect_sync_cnt = 0;
         // switch to transmit state
         // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
         // we are on the correct frequency, so no need to hop
-        sx.SetFs();
         link_state = LINK_STATE_TRANSMIT;
+      }
+
+      if (connect_state >= CONNECT_STATE_SYNC) {
+        sx.SetFs();
+        sx2.SetFs();
       }
 
       rxstats.Next();
@@ -587,10 +742,10 @@ int main_main(void)
       uartc_puts(connected() ? "c " : "d ");
       uartc_puts("\n");
 */
-    } // end of if(doPostReceive)
+    }//end of if(doPostReceive)
+
 
     out.Do(micros());
-
 
   }//end of while(1) loop
 
