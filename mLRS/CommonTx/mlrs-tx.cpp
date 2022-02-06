@@ -520,7 +520,8 @@ int main_main(void)
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
       break;
-    }
+    }//end of switch(link_state)
+
 
     if (irq_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
@@ -552,7 +553,8 @@ int main_main(void)
         LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
-    }
+    }//end of if(irq_status)
+
 
     // this happens before switching to transmit, i.e. after a frame was or should have been received
     if (doPreTransmit) {
@@ -619,11 +621,13 @@ int main_main(void)
       uartc_puts(connected() ? "c " : "d ");
       uartc_puts("\n");
 */
-    } // end of if(doPreTransmit)
+    }//end of if(doPreTransmit)
 
-    // update channels
+
+    //-- Update channels, MBridge handling, Crsf handling, In handling
+
     channelOrder.Set(SETUP_TX_CHANNEL_ORDER); //TODO: find proper place
-    //-- MBridge handling
+
 #if (defined USE_MBRIDGE)
     if (bridge.channels_received) {
       bridge.channels_received = false;
