@@ -167,7 +167,6 @@ typedef enum {
 } LINK_STATE_ENUM;
 
 #define IS_RECEIVE_STATE    (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
-#define IS_TRANSMIT_STATE   (link_state == LINK_STATE_TRANSMIT || link_state == LINK_STATE_TRANSMIT_WAIT)
 
 typedef enum {
     RX_STATUS_NONE = 0, // no frame received
@@ -405,7 +404,7 @@ int main_main(void)
       if (!tick_1hz) {
         rxstats.Update1Hz();
 
-        uartc_puts("RX: ");
+        uartc_puts("\nRX: ");
         uartc_puts(u8toBCD_s(rxstats.GetLQ())); uartc_putc(',');
         uartc_puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
         uartc_puts(" (");
@@ -421,7 +420,7 @@ int main_main(void)
 
         uartc_puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); uartc_puts(", ");
         uartc_puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); uartc_puts("; ");
-        uartc_putc('\n');
+        //uartc_putc('\n');
       }
     }
 
@@ -481,8 +480,7 @@ int main_main(void)
     if (doPostReceive) {
       doPostReceive = false;
 
-      if (link_rx_status != RX_STATUS_NONE) { // we did receive a frame
-
+      if (link_rx_status != RX_STATUS_NONE) { // we received a frame
         // handle the received frame, do it for either invalid or valid
         handle_receive(link_rx_status, &txFrame);
 
@@ -504,14 +502,15 @@ int main_main(void)
           connect_occured_once = true;
 
           link_state = LINK_STATE_TRANSMIT; // switch to TX
-        } else {
-          // we received something, but something wrong, so we need go back to RX
-          if (connect_state == CONNECT_STATE_LISTEN) {
-            link_state = LINK_STATE_RECEIVE;
-          }
         }
       }
 
+      // we received something, but something wrong, so we need go back to RX
+      if ((connect_state == CONNECT_STATE_LISTEN) && (link_rx_status == RX_STATUS_INVALID)) {
+        link_state = LINK_STATE_RECEIVE;
+      }
+
+      // when in listen, slowly loop trough frequencies
       if (connect_state == CONNECT_STATE_LISTEN) {
         connect_listen_cnt++;
         if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
@@ -530,14 +529,12 @@ int main_main(void)
         link_state = LINK_STATE_RECEIVE; // switch back to RX
       }
 
-      // we missed the receive frame
-      bool missed = false;
-      if ((connect_state >= CONNECT_STATE_SYNC) && !IS_TRANSMIT_STATE) {
+      // we didn't receive a valid frame
+      bool missed;
+      if ((connect_state >= CONNECT_STATE_SYNC) && (link_rx_status <= RX_STATUS_INVALID)) {
         missed = true;
-
         // reset sync counter, relevant if in sync
         connect_sync_cnt = 0;
-
         // switch to transmit state
         // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
         // we are on the correct frequency, so no need to hop
