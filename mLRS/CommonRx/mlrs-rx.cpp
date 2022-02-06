@@ -222,7 +222,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   stats.received_LQ = frame->status.LQ;
   stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
-  // copy rc data
+  // get rc data
   if (!do_payload) {
     // copy only channels 1-4, and jump out
     rcdata_ch0to3_from_txframe(&rcData, frame);
@@ -280,7 +280,7 @@ void do_transmit(void) // we send a RX frame to transmitter
 
 uint8_t do_receive(bool do_clock_reset) // we receive a TX frame from receiver
 {
-uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received !!
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey

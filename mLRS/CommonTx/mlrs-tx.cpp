@@ -330,7 +330,7 @@ void do_transmit(void) // we send a TX frame to receiver
 
 uint8_t do_receive(void) // we receive a RX frame from receiver
 {
-uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received !!
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
   // we don't need to read sx.GetRxBufferStatus(), but hey
   // we could save 2 byte's time by not reading sync_word again, but hey
