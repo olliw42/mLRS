@@ -12,7 +12,6 @@ v0.0.00:
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
-#define DBG_STATUS(x)
 
 
 // we set the priorities here to have an overview
@@ -231,14 +230,11 @@ void process_received_frame(bool do_payload)
     for (uint8_t i = 0; i < txFrame.status.payload_len; i++) {
       uint8_t c = txFrame.payload[i];
       serial.putc(c); // send to serial
-      DBG_MAIN(uartc_putc(c);)
     }
 
     stats.bytes_received.Add(txFrame.status.payload_len);
     stats.fresh_serial_data_received.Inc();
   }
-
-  DBG_MAIN(uartc_puts("got ");uartc_puts(": ");uartc_putc('\n');)
 }
 
 
@@ -297,16 +293,6 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
 }
 
 
-void rescue(uint8_t t_ms)
-{
-  gpio_low(SX_RESET);
-  delay_us(50); // 10 us works, play it safe
-  gpio_high(SX_RESET);
-  delay_ms(t_ms); // 2ms works, 1ms doesn't, play it safe and give it 5ms
-
-  sx.Configure();
-}
-
 
 //##############################################################################################################
 //*******************************************************
@@ -322,8 +308,6 @@ uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
-
-uint32_t link_rescue_cnt; // rescue in state transmit
 
 
 static inline bool connected(void)
@@ -365,7 +349,6 @@ int main_main(void)
   connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
-  link_rescue_cnt = 0;
 
   rxstats.Init(LQ_AVERAGING_PERIOD);
 
@@ -425,11 +408,6 @@ int main_main(void)
 
     switch (link_state) {
     case LINK_STATE_RECEIVE: {
-      DBG_STATUS(uint8_t status = sx.GetStatus();
-      if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
-        uartc_puts("$$"); uartc_puts(u8toHEX_s(status>>5));
-        break;
-      })
       if (connect_state == CONNECT_STATE_LISTEN) {
         fhss.HopToConnect();
       } else {
@@ -439,32 +417,13 @@ int main_main(void)
       sx.SetToRx(0); // single without tmo
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
-      DBG_STATUS(status = sx.GetStatus();
-      if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_RX) {
-        uartc_puts("$"); uartc_puts(u8toHEX_s(status>>5));
-      })
       DBG_MAIN_SLIM(uartc_puts(">");)
       }break;
 
     case LINK_STATE_TRANSMIT: {
-      DBG_STATUS(uint8_t status = sx.GetStatus();
-      if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_FS) {
-        uartc_puts("§§"); uartc_puts(u8toHEX_s(status>>5));
-        break;
-      })
       do_transmit();
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0; // important, in low connection condition, RxDone isr could trigger
-      DBG_STATUS(status = sx.GetStatus();
-      if ((status & SX1280_STATUS_MODE_MASK) != SX1280_STATUS_MODE_TX) {
-        uartc_puts("§"); uartc_puts(u8toHEX_s(status>>5));
-        rescue(4);
-        uartc_puts(u8toHEX_s(sx.GetStatus()>>5));
-        // rescue takes a couple of ms, so we miss sending this packet
-        link_state = LINK_STATE_RECEIVE;
-        link_rescue_cnt++;
-        break;
-      })
       }break;
     }
 
