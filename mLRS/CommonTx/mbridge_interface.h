@@ -397,9 +397,9 @@ tMBridgeLinkStats lstats = {0};
 
   lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
   lstats.rssi_instantaneous = stats.last_rx_rssi;
-  lstats.snr_instantaneous = stats.last_rx_snr;
-  lstats.rssi2_instantaneous = INT8_MAX;
-  lstats.ant_no = 0;
+  lstats.snr_instantaneous = (stats.last_rx_antenna) ? stats.last_rx_snr : stats.last_rx_snr2;
+  lstats.rssi2_instantaneous = stats.last_rx_rssi2;
+  lstats.ant_no = stats.last_rx_antenna;
 
   lstats.rssi_filtered = INT8_MAX;
   lstats.snr_filtered = INT8_MAX;
@@ -412,7 +412,7 @@ tMBridgeLinkStats lstats = {0};
   lstats.receiver_rssi_instantaneous = stats.received_rssi;
   lstats.receiver_snr_instantaneous = INT8_MAX;
   lstats.receiver_rssi2_instantaneous = INT8_MAX;
-  lstats.receiver_ant_no = 0;
+  lstats.receiver_ant_no = stats.received_antenna;
 
   lstats.receiver_rssi_filtered = INT8_MAX;
   lstats.receiver_snr_filtered = INT8_MAX;

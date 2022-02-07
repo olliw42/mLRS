@@ -273,7 +273,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   tFrameStats frame_stats;
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
-  frame_stats.antenna = ANTENNA_1;
+  frame_stats.antenna = stats.last_rx_antenna; // we want also a antenna field for tx!! antenna;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
@@ -355,7 +355,10 @@ tRxFrame* frame;
     stats.received_ack_last = 0;
   }
 
-  // we count all received frames which are for us
+  // we set it for all received frames
+  stats.last_rx_antenna = antenna;
+
+  // we count all received frames
   txstats.doFrameReceived();
 }
 

@@ -220,6 +220,8 @@ class Stats {
     int8_t last_rx_rssi2;
     int8_t last_rx_snr2;
 
+    uint8_t last_rx_antenna;
+
     // statistics received from the other end
     uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
@@ -249,6 +251,7 @@ class Stats {
         last_rx_snr = INT8_MAX;
         last_rx_rssi2 = INT8_MAX;
         last_rx_snr2 = INT8_MAX;
+        last_rx_antenna = UINT8_MAX;
 
         received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
@@ -267,7 +270,9 @@ class Stats {
         last_rx_snr = INT8_MAX;
         last_rx_rssi2 = INT8_MAX;
         last_rx_snr2 = INT8_MAX;
+        last_rx_antenna = UINT8_MAX;
 
+        received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
     }
