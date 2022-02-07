@@ -623,6 +623,7 @@ uartc_puts(" 2: ");
 uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
 
       if (frame_received) { // we received a frame
+#ifdef USE_DIVERSITY
         // work out which antenna we choose
         //            |   NONE   |  INVALID  | CRC1_VALID | VALID
         // --------------------------------------------------------
@@ -630,7 +631,11 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
         // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
         // CRC1_VALID |    2     |     2     |   1 or 2   |  1
         // VALID      |    2     |     2     |     2      |  1 or 2
-#ifdef USE_DIVERSITY
+
+        if (link_rx1_status == link_rx2_status) {
+          // we can choose either antenna, so select the one with the better rssi
+          antenna = (stats.last_rx_rssi > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+        } else
         if (link_rx1_status == RX_STATUS_VALID) {
           antenna = ANTENNA_1;
         } else
@@ -642,6 +647,9 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
         } else
         if (link_rx2_status == RX_STATUS_CRC1_VALID) {
           antenna = ANTENNA_2;
+        } else {
+          // we can choose either antenna, so select the one with the better rssi
+          antenna = (stats.last_rx_rssi > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
         }
 #endif
         handle_receive(antenna);
