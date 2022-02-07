@@ -12,7 +12,7 @@
 //-------------------------------------------------------
 #define DEVICE_IS_TRANSMITTER
 
-//#define DEVICE_HAS_DIVERSITY
+#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_MBRIDGE
 
 
@@ -168,7 +168,7 @@ void sx_dio1_enable_exti_isr(void)
 
 //-- SX12xx II & SPIB
 
-#define SPIB_USE_SPI1             // PB13, PB14, PB15
+#define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
 #define SPIB_USE_CLOCKSPEED_9MHZ
@@ -180,8 +180,6 @@ void sx_dio1_enable_exti_isr(void)
 //#define SX2_ANT_SELECT
 
 //#define SX2_USE_DCDC
-
-//#define SX2_POWER_MAX             SX1280_POWER_DBM_TO_REG(0) // don't blast all at it
 
 #define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
 #define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE6
@@ -195,9 +193,7 @@ void sx2_init_gpio(void)
 {
   gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-#ifdef SX2_BUSY
   gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-#endif
 }
 
 bool sx2_dio1_read(void)
@@ -205,12 +201,10 @@ bool sx2_dio1_read(void)
   return (gpio_read_activehigh(SX2_DIO1)) ? true : false;
 }
 
-#ifdef SX2_BUSY
 bool sx2_busy_read(void)
 {
   return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
 }
-#endif
 
 void sx2_amp_transmit(void)
 {

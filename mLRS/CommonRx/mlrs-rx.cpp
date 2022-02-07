@@ -505,16 +505,18 @@ int main_main(void)
       }
       sx.SetRfFrequency(fhss.GetCurrFreq());
       sx2.SetRfFrequency(fhss.GetCurrFreq());
+#ifdef USE_ANTENNA1
       sx.SetToRx(0); // single without tmo
+#endif
+#ifdef USE_ANTENNA2
       sx2.SetToRx(0);
+#endif
       link_state = LINK_STATE_RECEIVE_WAIT;
       link_rx1_status = RX_STATUS_NONE;
       link_rx2_status = RX_STATUS_NONE;
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(uartc_puts(">");)
-stats.last_rx_rssi = 0;
-stats.last_rx_rssi2 = 0;
       }break;
 
     case LINK_STATE_TRANSMIT: {
@@ -542,7 +544,7 @@ stats.last_rx_rssi2 = 0;
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX1280_IRQ_RX_DONE) {
           irq_status = 0;
-          bool do_clock_reset = true;
+          bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
           link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
@@ -572,9 +574,7 @@ stats.last_rx_rssi2 = 0;
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq2_status & SX1280_IRQ_RX_DONE) {
           irq2_status = 0;
-
-//          bool do_clock_reset = false;
-bool do_clock_reset = true;
+          bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
           link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
         }
       }

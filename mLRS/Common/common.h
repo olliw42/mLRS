@@ -265,6 +265,8 @@ class Stats {
     {
         last_rx_rssi = INT8_MAX;
         last_rx_snr = INT8_MAX;
+        last_rx_rssi2 = INT8_MAX;
+        last_rx_snr2 = INT8_MAX;
 
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
