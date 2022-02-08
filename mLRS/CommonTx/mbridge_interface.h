@@ -396,29 +396,27 @@ void mbridge_send_LinkStats(void)
 tMBridgeLinkStats lstats = {0};
 
   lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
-  lstats.rssi_instantaneous = stats.last_rx_rssi;
-  lstats.rssi2_instantaneous = stats.last_rx_rssi2;
-  lstats.snr_instantaneous = (stats.last_rx_antenna) ? stats.last_rx_snr : stats.last_rx_snr2;
+  lstats.rssi1_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : INT8_MAX;
+  lstats.rssi2_instantaneous = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : INT8_MAX;
+  lstats.snr_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
   lstats.receive_antenna = stats.last_rx_antenna;
   lstats.transmit_antenna = stats.last_tx_antenna;
+  lstats.diversity = 0; // TODO
 
-  lstats.rssi_filtered = INT8_MAX;
-  lstats.snr_filtered = INT8_MAX;
+  lstats.rssi1_filtered = INT8_MAX;
   lstats.rssi2_filtered = INT8_MAX;
+  lstats.snr_filtered = INT8_MAX;
 
   // receiver side of things
 
   lstats.receiver_LQ = stats.received_LQ; // valid_crc1_received, number of rc data packets received on receiver side
   lstats.receiver_LQ_serial = stats.received_LQ_serial_data; // valid_frames_received, number of completely valid packets received on receiver side
   lstats.receiver_rssi_instantaneous = stats.received_rssi;
-  lstats.receiver_rssi2_instantaneous = INT8_MAX;
-  lstats.receiver_snr_instantaneous = INT8_MAX;
   lstats.receiver_receive_antenna = stats.received_antenna;
   lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
+  lstats.receiver_diversity = 0; // TODO
 
   lstats.receiver_rssi_filtered = INT8_MAX;
-  lstats.receiver_snr_filtered = INT8_MAX;
-  lstats.receiver_rssi2_filtered = INT8_MAX;
 
   // further stats acquired on transmitter side
 

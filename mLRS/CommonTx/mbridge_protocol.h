@@ -113,11 +113,11 @@ typedef struct
   // transmitter side of things
 
   uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
-  int8_t rssi_instantaneous;
-  int8_t rssi2_instantaneous;
-  int8_t snr_instantaneous; // invalid = INT8_MAX
+  int8_t rssi1_instantaneous; // invalid = INT8_MAX
+  int8_t rssi2_instantaneous; // invalid = INT8_MAX
+  int8_t snr_instantaneous;
 
-  int8_t rssi_filtered;
+  int8_t rssi1_filtered;
   int8_t rssi2_filtered;
   int8_t snr_filtered;
 
@@ -126,12 +126,8 @@ typedef struct
   uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
   uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
   int8_t receiver_rssi_instantaneous;
-  int8_t receiver_rssi2_instantaneous;
-  int8_t receiver_snr_instantaneous; // invalid = INT8_MAX
 
   int8_t receiver_rssi_filtered;
-  int8_t receiver_rssi2_filtered;
-  int8_t receiver_snr_filtered;
 
   // both
 
@@ -140,7 +136,9 @@ typedef struct
   uint8_t transmit_antenna : 1;
   uint8_t receiver_receive_antenna : 1;
   uint8_t receiver_transmit_antenna : 1;
-  uint8_t spare : 4;
+  uint8_t diversity : 1;
+  uint8_t receiver_diversity : 1;
+  uint8_t spare : 2;
 
   // further stats acquired on transmitter side
 
@@ -160,6 +158,8 @@ typedef struct
   uint8_t bytes_per_sec_received;
 
   uint8_t LQ_received; // number of packets received per sec, not practically relevant
+
+  uint8_t spare2[4];
 }) tMBridgeLinkStats; // 22 bytes
 
 

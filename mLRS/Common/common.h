@@ -216,9 +216,9 @@ class Stats {
     StatsBytes bytes_received;
 
     // statistics for our device
-    int8_t last_rx_rssi; // note: is negative!
-    int8_t last_rx_snr; // note: can be negative!
+    int8_t last_rx_rssi1; // note: is negative!
     int8_t last_rx_rssi2;
+    int8_t last_rx_snr1; // note: can be negative!
     int8_t last_rx_snr2;
 
     uint8_t last_rx_antenna;
@@ -250,9 +250,9 @@ class Stats {
         bytes_transmitted.Init();
         bytes_received.Init();
 
-        last_rx_rssi = INT8_MAX;
-        last_rx_snr = INT8_MAX;
+        last_rx_rssi1 = INT8_MAX;
         last_rx_rssi2 = INT8_MAX;
+        last_rx_snr1 = INT8_MAX;
         last_rx_snr2 = INT8_MAX;
         last_rx_antenna = UINT8_MAX;
         last_tx_antenna = UINT8_MAX;
@@ -271,9 +271,9 @@ class Stats {
 
     void Clear(void)
     {
-        last_rx_rssi = INT8_MAX;
-        last_rx_snr = INT8_MAX;
+        last_rx_rssi1 = INT8_MAX;
         last_rx_rssi2 = INT8_MAX;
+        last_rx_snr1 = INT8_MAX;
         last_rx_snr2 = INT8_MAX;
         last_rx_antenna = UINT8_MAX;
         last_tx_antenna = UINT8_MAX;

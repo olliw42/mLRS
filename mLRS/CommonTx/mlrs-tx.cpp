@@ -276,8 +276,8 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = stats.last_rx_antenna;
-  frame_stats.transmit_antenna = stats.last_tx_antenna;
-  frame_stats.rssi = stats.last_rx_rssi;
+  frame_stats.transmit_antenna = antenna;
+  frame_stats.rssi = (antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
@@ -405,13 +405,9 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
 
   // we want to have it even if it's a bad packet
   if (antenna == ANTENNA_1) {
-    sx.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
+    sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
   } else {
-#if !(defined USE_ANTENNA2 && !defined USE_DIVERSITY)
     sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
-#else
-    sx2.GetPacketStatus(&stats.last_rx_rssi, &stats.last_rx_snr);
-#endif
   }
 
   return rx_status;
@@ -549,9 +545,9 @@ int main_main(void)
         uartc_puts("),");
         uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
 
-        uartc_puts(s8toBCD_s(stats.last_rx_rssi)); uartc_putc(',');
+        uartc_puts(s8toBCD_s(stats.last_rx_rssi1)); uartc_putc(',');
         uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_rx_snr)); uartc_puts("; ");
+        uartc_puts(s8toBCD_s(stats.last_rx_snr1)); uartc_puts("; ");
 
         uartc_puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); uartc_puts(", ");
         uartc_puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); uartc_puts("; ");
@@ -702,7 +698,7 @@ int main_main(void)
 
         if (link_rx1_status == link_rx2_status) {
           // we can choose either antenna, so select the one with the better rssi
-          antenna = (stats.last_rx_rssi > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+          antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
         } else
         if (link_rx1_status == RX_STATUS_VALID) {
           antenna = ANTENNA_1;
@@ -711,7 +707,7 @@ int main_main(void)
           antenna = ANTENNA_2;
         } else {
           // we can choose either antenna, so select the one with the better rssi
-          antenna = (stats.last_rx_rssi > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+          antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
         }
 #endif
         handle_receive(antenna);

@@ -315,10 +315,10 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics lstats;
 
-  lstats.uplink_rssi1 = stats.last_rx_rssi;
-  lstats.uplink_rssi2 = stats.last_rx_rssi2;
+  lstats.uplink_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : -127;
+  lstats.uplink_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : -127;
   lstats.uplink_LQ = txstats.GetLQ();
-  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr : stats.last_rx_snr2;
+  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
   lstats.active_antenna = stats.last_rx_antenna;
   lstats.mode = 4; // unknown
   lstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
@@ -333,10 +333,10 @@ void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx lstats;
 
-  lstats.uplink_rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi : stats.last_rx_rssi2; // ignored by OpenTx
+  lstats.uplink_rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2; // ignored by OpenTx
   lstats.uplink_rssi_percent = 12; // TODO
   lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
-  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr : stats.last_rx_snr2; // ignored by OpenTx
+  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2; // ignored by OpenTx
   lstats.downlink_transmit_power = CRSF_POWER_0_mW; // TODO
   lstats.uplink_fps = 5; // TODO
   crsf.SendLinkStatisticsTx(&lstats);
