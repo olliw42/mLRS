@@ -18,6 +18,9 @@ ISSUES:
 
 - LQ 98 in receiver
 
+ - do we want also antenna field for transmit antenna?
+   in some way yes, since we have it for receive antenna, but in some way no, is it useful in any way??
+
 
 TODO:
 - effect of USE_DCDC? where to place it??
