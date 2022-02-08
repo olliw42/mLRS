@@ -86,11 +86,14 @@ uint8_t rssi, remrssi;
 
 void send_radio_status_v2(void)
 {
+int8_t rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
+int8_t snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
+
   fmav_msg_radio_status_v2_pack(
       &f_msg,
       51, // sysid, SiK uses 51, 68
       MAV_COMP_ID_TELEMETRY_RADIO,
-      stats.last_rx_rssi, (128 + stats.last_rx_rssi), txstats.GetLQ(), stats.last_rx_snr,
+      rssi, (128 + rssi), txstats.GetLQ(), snr,
       stats.received_rssi, (128 + stats.received_rssi), stats.received_LQ, INT8_MAX,
       stats.bytes_transmitted.GetBytesPerSec(), stats.bytes_received.GetBytesPerSec(),
       stats.GetTransmitBandwidthUsage(), stats.GetReceiveBandwidthUsage(),
