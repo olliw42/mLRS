@@ -129,8 +129,8 @@ RxStats rxstats;
 void Out::SendLinkStatistics(void)
 {
   tOutLinkStats lstats = {
-    .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : -127,
-    .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : -127,
+    .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)(-127),
+    .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)(-127),
     .receiver_LQ = rxstats.GetLQ(),
     .receiver_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2,
     .receiver_antenna = stats.last_rx_antenna,
