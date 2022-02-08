@@ -70,6 +70,7 @@ uint16_t crc;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_TX;
     frame->status.antenna = frame_stats->antenna;
+    frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
     frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
@@ -162,6 +163,7 @@ uint16_t crc;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_RX;
     frame->status.antenna = frame_stats->antenna;
+    frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = -(frame_stats->rssi);
     frame->status.LQ = frame_stats->LQ;
     frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
@@ -223,10 +225,11 @@ class Stats {
     uint8_t last_tx_antenna;
 
     // statistics received from the other end
-    uint8_t received_antenna;
     int8_t received_rssi; // note: is negative!
     uint8_t received_LQ;
     uint8_t received_LQ_serial_data;
+    uint8_t received_antenna;
+    uint8_t received_transmit_antenna;
 
     // transmission/retransmission handling
     uint8_t transmit_seq_no;
@@ -254,9 +257,10 @@ class Stats {
         last_rx_antenna = UINT8_MAX;
         last_tx_antenna = UINT8_MAX;
 
-        received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
+        received_antenna = UINT8_MAX;
+        received_transmit_antenna = UINT8_MAX;
 
         transmit_seq_no = 0;
         serial_data_received = false;
@@ -274,9 +278,10 @@ class Stats {
         last_rx_antenna = UINT8_MAX;
         last_tx_antenna = UINT8_MAX;
 
-        received_antenna = UINT8_MAX;
         received_rssi = INT8_MAX;
         received_LQ = 0; //UINT8_MAX;
+        received_antenna = UINT8_MAX;
+        received_transmit_antenna = UINT8_MAX;
     }
 
     void Update1Hz(void)

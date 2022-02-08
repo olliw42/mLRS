@@ -63,8 +63,8 @@ typedef enum {
 
 
 typedef enum {
-  ANTENNA_1 = 0x00,
-  ANTENNA_2 = 0x01,
+  ANTENNA_1 = 0,
+  ANTENNA_2 = 1,
 } ANTENNA_ENUM;
 
 

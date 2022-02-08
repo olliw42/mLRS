@@ -114,30 +114,33 @@ typedef struct
 
   uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
   int8_t rssi_instantaneous;
+  int8_t rssi2_instantaneous;
   int8_t snr_instantaneous; // invalid = INT8_MAX
-  int8_t rssi2_instantaneous; // in case of 2nd antenna, invalid = INT8_MAX
 
   int8_t rssi_filtered;
-  int8_t snr_filtered;
   int8_t rssi2_filtered;
+  int8_t snr_filtered;
 
   // receiver side of things
 
   uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
   uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
   int8_t receiver_rssi_instantaneous;
+  int8_t receiver_rssi2_instantaneous;
   int8_t receiver_snr_instantaneous; // invalid = INT8_MAX
-  int8_t receiver_rssi2_instantaneous; // in case of 2nd antenna, invalid = INT8_MAX
 
   int8_t receiver_rssi_filtered;
-  int8_t receiver_snr_filtered;
   int8_t receiver_rssi2_filtered;
+  int8_t receiver_snr_filtered;
 
   // both
 
-  uint8_t ant_no : 1; // 0: antenna1, 1: antenna2, instantaneous value
-  uint8_t receiver_ant_no : 1; // 0: antenna1, 1: antenna2, instantaneous value
-  uint8_t spare_bits : 6;
+  // 0: antenna1, 1: antenna2, instantaneous value
+  uint8_t transmitter_receive_antenna : 1;
+  uint8_t transmitter_transmit_antenna : 1;
+  uint8_t receiver_receive_antenna : 1;
+  uint8_t receiver_transmit_antenna : 1;
+  uint8_t spare : 4;
 
   // further stats acquired on transmitter side
 

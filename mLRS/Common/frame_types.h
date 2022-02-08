@@ -27,10 +27,11 @@ typedef struct
 {
   uint8_t seq_no;
   uint8_t ack;
-  uint8_t antenna;
   int8_t rssi;
   uint8_t LQ; // that's the LQ we want to report to the world
   uint8_t LQ_serial_data;
+  uint8_t antenna;
+  uint8_t transmit_antenna;
 } tFrameStats;
 
 
@@ -57,7 +58,8 @@ typedef struct
   uint32_t rssi_u7:7;
   uint32_t LQ:7; // only Tx->Rx frame, not Rx->Tx frame
   uint32_t LQ_serial_data:7;
-  uint32_t spare:3;
+  uint32_t transmit_antenna:1;
+  uint32_t spare:2;
   uint32_t payload_len:7;
 }) tFrameStatus;
 

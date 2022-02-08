@@ -276,6 +276,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = stats.last_rx_antenna;
+  frame_stats.transmit_antenna = stats.last_tx_antenna;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
@@ -293,6 +294,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 void process_received_frame(bool do_payload, tRxFrame* frame)
 {
   stats.received_antenna = frame->status.antenna;
+  stats.received_transmit_antenna = frame->status.transmit_antenna;
   stats.received_rssi = -(frame->status.rssi_u7);
   stats.received_LQ = frame->status.LQ;
   stats.received_LQ_serial_data = frame->status.LQ_serial_data;

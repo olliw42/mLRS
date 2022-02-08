@@ -142,7 +142,7 @@ void OutBase::SendLinkStatistics(tOutLinkStats* stats)
 void OutBase::SendLinkStatisticsDisconnected(void)
 {
     switch (config) {
-    case OUT_CONFIG_SBUS: // nothing to spin
+    case OUT_CONFIG_SBUS:
         break;
     case OUT_CONFIG_CRSF:
         link_stats.receiver_rssi1 = -128;
@@ -150,10 +150,13 @@ void OutBase::SendLinkStatisticsDisconnected(void)
         link_stats.receiver_LQ = 0;
         link_stats.receiver_snr = 0;
         link_stats.receiver_antenna = 0;
+        link_stats.receiver_transmit_antenna = 0;
         link_stats.receiver_power = 0;
         link_stats.transmitter_rssi = -128;
         link_stats.transmitter_LQ = 0;
         link_stats.transmitter_snr = 0;
+        link_stats.transmitter_antenna = 0;
+        link_stats.transmitter_transmit_antenna = 0;
 
         link_stats_available = true;
         link_stats_set_tstart = true;

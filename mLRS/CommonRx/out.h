@@ -33,10 +33,13 @@ typedef struct
   uint8_t receiver_LQ;
   int8_t receiver_snr;
   uint8_t receiver_antenna;
+  uint8_t receiver_transmit_antenna;
   uint8_t receiver_power;
   int8_t transmitter_rssi;
   uint8_t transmitter_LQ;
   int8_t transmitter_snr;
+  uint8_t transmitter_antenna;
+  uint8_t transmitter_transmit_antenna;
 } tOutLinkStats;
 
 

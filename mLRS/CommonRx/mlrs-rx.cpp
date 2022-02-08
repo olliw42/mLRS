@@ -134,10 +134,13 @@ void Out::SendLinkStatistics(void)
     .receiver_LQ = rxstats.GetLQ(),
     .receiver_snr = stats.last_rx_snr,
     .receiver_antenna = stats.last_rx_antenna,
+    .receiver_transmit_antenna = stats.last_tx_antenna,
     .receiver_power = 0, // TODO
     .transmitter_rssi = stats.received_rssi,
     .transmitter_LQ = stats.received_LQ,
     .transmitter_snr = 0,
+    .transmitter_antenna = stats.received_antenna,
+    .transmitter_transmit_antenna = stats.received_transmit_antenna,
   };
   OutBase::SendLinkStatistics(&lstats);
 }
@@ -240,6 +243,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.seq_no = stats.transmit_seq_no;
   frame_stats.ack = ack;
   frame_stats.antenna = stats.last_rx_antenna;
+  frame_stats.transmit_antenna = stats.last_tx_antenna;
   frame_stats.rssi = stats.last_rx_rssi;
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
@@ -257,6 +261,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 void process_received_frame(bool do_payload, tTxFrame* frame)
 {
   stats.received_antenna = frame->status.antenna;
+  stats.received_transmit_antenna = frame->status.transmit_antenna;
   stats.received_rssi = -(frame->status.rssi_u7);
   stats.received_LQ = frame->status.LQ;
   stats.received_LQ_serial_data = frame->status.LQ_serial_data;
@@ -622,7 +627,7 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi));
 uartc_puts(" 2: ");
 uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
 
-      if (frame_received) { // we received a frame
+      if (frame_received) { // frame received
 #ifdef USE_DIVERSITY
         // work out which antenna we choose
         //            |   NONE   |  INVALID  | CRC1_VALID | VALID
