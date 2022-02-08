@@ -401,7 +401,11 @@ tMBridgeLinkStats lstats = {0};
   lstats.snr_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
   lstats.receive_antenna = stats.last_rx_antenna;
   lstats.transmit_antenna = stats.last_tx_antenna;
-  lstats.diversity = 0; // TODO
+#ifdef USE_DIVERSITY
+  lstats.diversity = 1;
+#else
+  lstats.diversity = 0;
+#endif
 
   lstats.rssi1_filtered = INT8_MAX;
   lstats.rssi2_filtered = INT8_MAX;
@@ -414,7 +418,7 @@ tMBridgeLinkStats lstats = {0};
   lstats.receiver_rssi_instantaneous = stats.received_rssi;
   lstats.receiver_receive_antenna = stats.received_antenna;
   lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-  lstats.receiver_diversity = 0; // TODO
+  lstats.receiver_diversity = 0; // TODO: this we do not know currently
 
   lstats.receiver_rssi_filtered = INT8_MAX;
 
