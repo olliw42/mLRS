@@ -134,7 +134,7 @@ void Out::SendLinkStatistics(void)
     .receiver_LQ = rxstats.GetLQ(),
     .receiver_snr = stats.last_rx_snr,
     .receiver_antenna = stats.last_rx_antenna,
-    .receiver_power = 0,
+    .receiver_power = 0, // TODO
     .transmitter_rssi = stats.received_rssi,
     .transmitter_LQ = stats.received_LQ,
     .transmitter_snr = 0,
@@ -474,8 +474,6 @@ int main_main(void)
       }
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
-      if (!connected()) stats.Clear();
-
       if (!tick_1hz) {
         rxstats.Update1Hz();
 
@@ -719,6 +717,7 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         sx2.SetFs();
       }
 
+      if (!connected()) stats.Clear();
       rxstats.Next();
 
       out.SetChannelOrder(SETUP_RX_CHANNEL_ORDER);

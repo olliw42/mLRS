@@ -532,7 +532,6 @@ int main_main(void)
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
       if (!connected()) {
-        stats.Clear();
         f_init();
       }
 
@@ -746,6 +745,7 @@ int main_main(void)
       link_rx1_status = RX_STATUS_NONE;
       link_rx2_status = RX_STATUS_NONE;
 
+      if (!connected()) stats.Clear();
       txstats.Next();
 /*
       static uint16_t tlast_us = 0;

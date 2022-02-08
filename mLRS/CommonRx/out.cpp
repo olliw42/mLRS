@@ -360,7 +360,7 @@ tCrsfLinkStatistics lstats;
     lstats.uplink_snr = stats->receiver_snr;
     lstats.active_antenna = stats->receiver_antenna;
     lstats.mode = 4; // unknown
-    lstats.uplink_transmit_power = CRSF_POWER_0_mW;
+    lstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
     lstats.downlink_rssi = -stats->transmitter_rssi;
     lstats.downlink_LQ = stats->transmitter_LQ;
     lstats.downlink_snr = stats->transmitter_snr;
