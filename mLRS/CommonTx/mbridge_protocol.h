@@ -136,8 +136,8 @@ typedef struct
   // both
 
   // 0: antenna1, 1: antenna2, instantaneous value
-  uint8_t transmitter_receive_antenna : 1;
-  uint8_t transmitter_transmit_antenna : 1;
+  uint8_t receive_antenna : 1;
+  uint8_t transmit_antenna : 1;
   uint8_t receiver_receive_antenna : 1;
   uint8_t receiver_transmit_antenna : 1;
   uint8_t spare : 4;

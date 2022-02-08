@@ -399,9 +399,8 @@ tMBridgeLinkStats lstats = {0};
   lstats.rssi_instantaneous = stats.last_rx_rssi;
   lstats.rssi2_instantaneous = stats.last_rx_rssi2;
   lstats.snr_instantaneous = (stats.last_rx_antenna) ? stats.last_rx_snr : stats.last_rx_snr2;
-
-  lstats.transmitter_receive_antenna = stats.last_rx_antenna;
-  lstats.transmitter_transmit_antenna = stats.last_tx_antenna;
+  lstats.receive_antenna = stats.last_rx_antenna;
+  lstats.transmit_antenna = stats.last_tx_antenna;
 
   lstats.rssi_filtered = INT8_MAX;
   lstats.snr_filtered = INT8_MAX;
@@ -414,7 +413,6 @@ tMBridgeLinkStats lstats = {0};
   lstats.receiver_rssi_instantaneous = stats.received_rssi;
   lstats.receiver_rssi2_instantaneous = INT8_MAX;
   lstats.receiver_snr_instantaneous = INT8_MAX;
-
   lstats.receiver_receive_antenna = stats.received_antenna;
   lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
 
