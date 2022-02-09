@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             0023
-#define VERSIONONLYSTR      "v0.0.23"
+#define VERSION             0024
+#define VERSIONONLYSTR      "v0.0.24"
 #define SETUPLAYOUT         001       // this should be changed then Setup struct and/or serial changes
 
 
