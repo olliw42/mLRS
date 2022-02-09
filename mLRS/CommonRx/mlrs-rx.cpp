@@ -369,11 +369,7 @@ uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
   if (antenna == ANTENNA_1) {
     sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
   } else {
-#if !(defined USE_ANTENNA2 && !defined USE_DIVERSITY)
     sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
-#else
-    sx2.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
-#endif
   }
 
   return rx_status;
