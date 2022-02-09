@@ -24,8 +24,6 @@ ISSUES:
 
 - add enable flag to sx driver, to make it easier and less need for compile flags
 
-- pass connected() as param in rxstats,txstats
-
 
 TODO:
 - effect of USE_DCDC? where to place it??
