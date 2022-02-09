@@ -24,6 +24,8 @@
 //#define POWER                           POWER_0_DBM
 //#define POWER                           POWER_12p5_DBM
 
+#define DIVERSITY                       0
+
 
 #define SETUP_TX_SERIAL_DESTINATION     1 // 0: UART2, 1: mBridge
 
@@ -35,7 +37,7 @@
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
-#define SETUP_TX_DIVERSITY              0 // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
+#define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
@@ -50,7 +52,7 @@
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
-#define SETUP_RX_DIVERSITY              0 // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
+#define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 
 #define BIND_DBLWORD                    0x12344281
