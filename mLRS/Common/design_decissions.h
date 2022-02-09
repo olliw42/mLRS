@@ -336,6 +336,46 @@ the crc1 technique seems to really give an advantage
 so for rx->tx we want two LQ's to distinguish
 hence frame stats changed, and packets are now 91 bytes
 
+-------------------------------------------------------
+channel ideas, which fit the 6 bytes + crc1 + 10 bytes structure
+
+6 bytes section is always
+ 4 ch @ 11 bits =  44 bits
+ 4 ch @  1 bits =   4 bits
+
+10 bytes section:
+
+A)
+10 ch @  8 bits =  80 bits
+
+B1)
+4 ch @  11 bits =  44 bits
+6 ch @   6 bits =  36 bits
+
+B2)
+4 ch @  11 bits =  44 bits
+4 ch @   7 bits =  28 bits
+2 ch @   4 bits =   8 bits
+
+B3)
+4 ch @  11 bits =  44 bits
+4 ch @   8 bits =  32 bits
+2 ch @   2 bits =   4 bits
+
+C1)
+2 ch @  11 bits =  22 bits
+8 ch @   7 bits =  56 bits
+                   => 2 bits left over
+
+C2)
+2 ch @  11 bits =  22 bits
+6 ch @   8 bits =  48 bits
+2 ch @   5 bits =  10 bits
+
+D1)
+4 ch @  11 bits =  44 bits
+4 ch @   9 bits =  36 bits half-rate, use a bit from 6 byte section to indicate which it is
+
 
 -------------------------------------------------------
 Crossfire
