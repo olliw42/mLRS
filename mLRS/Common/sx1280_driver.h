@@ -182,6 +182,21 @@ class SxDriverBoth : public SxDriverBase
 };
 
 
+class SxDriverDummy
+{
+  public:
+    void Init(void) {}
+    bool isOk(void) { return true; }
+    void StartUp(void) {}
+    void SetRfFrequency(uint32_t RfFrequency) {}
+    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us) {}
+    void ReadFrame(uint8_t* data, uint8_t len) {}
+    void SetToRx(uint16_t tmo_us) {}
+    void SetFs(void) {}
+};
+
+
 //-------------------------------------------------------
 // Driver for SX1
 //-------------------------------------------------------
@@ -403,26 +418,6 @@ class SxDriver2 : public SxDriverBoth
         delay_us(125); // may not be needed if busy available
     }
 };
-
-#else
-// if we don't have diversity, we declare a dummy class to make code simpler
-
-class SxDriver2
-{
-  public:
-    void SetRfFrequency(uint32_t RfFrequency) {}
-    void SetFs(void) {}
-
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) { *RssiSync = -128; *Snr = 0; }
-
-    bool isOk(void) { return true; }
-    void Init(void) {}
-    void StartUp(void) {}
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100) {}
-    void ReadFrame(uint8_t* data, uint8_t len) {}
-    void SetToRx(uint16_t tmo_us = 10) {}
-};
-
 
 #endif
 

@@ -362,7 +362,11 @@ tTxFrame txFrame2;
 tRxFrame rxFrame2;
 
 SxDriver sx;
+#ifdef DEVICE_HAS_DIVERSITY
 SxDriver2 sx2;
+#else
+SxDriverDummy sx2;
+#endif
 
 Stats stats;
 
