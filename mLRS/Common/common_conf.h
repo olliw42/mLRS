@@ -80,9 +80,5 @@
 // Derived Defines
 //-------------------------------------------------------
 
-#if (SETUP_TX_SERIAL_DESTINATION == 1) || (SETUP_TX_CHANNELS_SOURCE == 1)
-#define USE_MBRIDGE
-#endif
-
 
 #endif // COMMON_CONFIG_H
