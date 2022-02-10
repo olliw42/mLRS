@@ -10,13 +10,8 @@
 #define CRSF_INTERFACE_H
 #pragma once
 
-#if (!defined DEVICE_HAS_MBRIDGE) && (SETUP_TX_CHANNELS_SOURCE == 3)
-  #undef SETUP_TX_CHANNELS_SOURCE
-  #define SETUP_TX_CHANNELS_SOURCE  0
-  #warning Device does not support mBridge, so CRSF has been disabled !
-#endif
 
-#if (SETUP_TX_CHANNELS_SOURCE == 3) && (defined DEVICE_HAS_MBRIDGE)
+#if (defined USE_CRSF) && (defined DEVICE_HAS_MBRIDGE)
 
 #include "..\Common\thirdparty.h"
 #include "..\Common\crsf_protocol.h"

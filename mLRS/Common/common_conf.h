@@ -27,9 +27,9 @@
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_DESTINATION     1 // 0: UART2, 1: mBridge
+#define SETUP_TX_SERIAL_DESTINATION     1 // 0: serial port, 1: mBridge
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge, 2: SPort In, 3: Crsf
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge (pin5), 2: SPort In (pin1), 3: Crsf (pin5)
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
 

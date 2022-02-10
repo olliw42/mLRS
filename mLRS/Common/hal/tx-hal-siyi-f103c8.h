@@ -24,7 +24,6 @@
 #define DEVICE_HAS_MBRIDGE
 
 
-
 //-- Timers, Timing and such stuff
 
 #define DELAY_USE_DWT

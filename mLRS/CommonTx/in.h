@@ -14,16 +14,12 @@
 #include <inttypes.h>
 #include "..\Common\common_types.h"
 #include "..\Common\frame_types.h"
+#include "..\Common\setup_types.h"
 
 
 //-------------------------------------------------------
 // Generic In Class
 //-------------------------------------------------------
-
-typedef enum {
-  IN_CONFIG_SBUS = 0,
-} IN_CONFIG_ENUM;
-
 
 class InBase
 {

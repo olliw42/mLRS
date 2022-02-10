@@ -248,13 +248,18 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     payload_len = 0;
 
     for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-#if (SETUP_TX_SERIAL_DESTINATION == 1)
-      if (!bridge.available()) break;
-      payload[payload_len] = bridge.getc();
-#else
-      if (!serial.available()) break;
-      payload[payload_len] = serial.getc();
+      switch (Setup.Tx.SerialDestination) {
+      case SERIAL_DESTINATION_SERIAL_PORT:
+        if (!serial.available()) break;
+        payload[payload_len] = serial.getc();
+        break;
+      case SERIAL_DESTINATION_MBRDIGE:
+#ifdef USE_MBRIDGE
+        if (!bridge.available()) break;
+        payload[payload_len] = bridge.getc();
 #endif
+        break;
+      }
       payload_len++;
     }
 
@@ -262,11 +267,16 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     stats.fresh_serial_data_transmitted.Inc();
 
   } else {
-#if (SETUP_TX_SERIAL_DESTINATION == 1)
-    bridge.flush();
-#else
-    serial.flush();
+    switch (Setup.Tx.SerialDestination) {
+      case SERIAL_DESTINATION_SERIAL_PORT:
+        serial.flush();
+        break;
+      case SERIAL_DESTINATION_MBRDIGE:
+#ifdef USE_MBRIDGE
+        bridge.flush();
 #endif
+        break;
+    }
     memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
     payload_len = 0;
   }
@@ -305,26 +315,26 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
   // output data on serial
   for (uint8_t i = 0; i < frame->status.payload_len; i++) {
     uint8_t c = frame->payload[i];
-#if (SETUP_TX_SERIAL_DESTINATION == 1)
-    bridge.putc(c); // send to radio
-#else
-    serial.putc(c); // send to serial
+    switch (Setup.Tx.SerialDestination) {
+      case SERIAL_DESTINATION_SERIAL_PORT: serial.putc(c); break; // send to serial
+      case SERIAL_DESTINATION_MBRDIGE:
+#ifdef USE_MBRIDGE
+        bridge.putc(c); // send to radio
 #endif
-
+        break;
+    }
     // parse stream, and inject radio status
-#if (SETUP_TX_SEND_RADIO_STATUS > 0)
-    uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
-    if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
-      if (inject_radio_status) {
+    if (Setup.Tx.SendRadioStatus) {
+      uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
+      if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
         inject_radio_status = false;
-#  if (SETUP_TX_SEND_RADIO_STATUS == 1)
-        send_radio_status();
-#  elif (SETUP_TX_SEND_RADIO_STATUS == 2)
-        send_radio_status_v2();
-#  endif
+        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON) {
+          send_radio_status();
+        } else if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) {
+          send_radio_status_v2();
+        }
       }
     }
-#endif
   }
 
   stats.bytes_received.Add(frame->status.payload_len);
@@ -448,10 +458,10 @@ int main_main(void)
   main_test();
 #endif
   init();
-#if (defined USE_MBRIDGE)
+#ifdef USE_MBRIDGE
   bridge.Init();
 #endif
-#if (SETUP_TX_CHANNELS_SOURCE == 3)
+#ifdef USE_CRSF
   crsf.Init();
 #endif
 
@@ -775,16 +785,17 @@ IF_ANTENNA2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling
 
-    channelOrder.Set(SETUP_TX_CHANNEL_ORDER); //TODO: find proper place
+    channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: find proper place
 
 #if (defined USE_MBRIDGE)
+    // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can used as sync
     if (bridge.channels_received) {
       bridge.channels_received = false;
-#  if (SETUP_TX_CHANNELS_SOURCE == 1)
-      // update channels
-      fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
-      channelOrder.Apply(&rcData);
-#  endif
+      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
+        // update channels
+        fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
+        channelOrder.Apply(&rcData);
+      }
       // when we receive channels packet from transmitter, we send link stats to transmitter
       mbridge_send_LinkStats();
     }
@@ -795,11 +806,15 @@ IF_ANTENNA2(
       uint8_t payload[MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX];
       bridge.GetCommand(&cmd, payload);
     }
-#elif (SETUP_TX_CHANNELS_SOURCE == 2) && (defined DEVICE_HAS_IN)
-    // update channels
-    in.Update(&rcData);
-    channelOrder.Apply(&rcData);
-#elif (SETUP_TX_CHANNELS_SOURCE == 3)
+#endif
+#if (defined DEVICE_HAS_IN)
+    if (Setup.Tx.ChannelSoure == CHANNEL_SOURCE_SPORT) {
+      // update channels
+      in.Update(&rcData);
+      channelOrder.Apply(&rcData);
+    }
+#endif
+#ifdef USE_CRSF
     if (crsf_telemetry_tick_start) {
       crsf_telemetry_tick_start = false;
       crsf_telemetry_state = 1;
@@ -817,12 +832,13 @@ IF_ANTENNA2(
     if (crsf.frame_received) {
       crsf.frame_received = false;
       // update channels
-      if (crsf.IsChannelData()) {
+      if (crsf.IsChannelData() && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
         fill_rcdata_from_crsf(&rcData, crsf.frame);
         channelOrder.Apply(&rcData);
       }
     }
 #endif
+
 
   }//end of while(1) loop
 

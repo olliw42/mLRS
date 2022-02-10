@@ -19,7 +19,7 @@
 //-------------------------------------------------------
 
 typedef enum {
-  SERIAL_DESTINATION_UART2 = 0,
+  SERIAL_DESTINATION_SERIAL_PORT = 0,
   SERIAL_DESTINATION_MBRDIGE,
   SERIAL_DESTINATION_NUM,
 } TX_SERIAL_DESTINATION_ENUM;
@@ -27,9 +27,9 @@ typedef enum {
 
 typedef enum {
   CHANNEL_SOURCE_NONE = 0,
-  CHANNEL_SOURCE_MBRIDGE,
-  CHANNEL_SOURCE_SPORT,
-  CHANNEL_SOURCE_CRSF,
+  CHANNEL_SOURCE_MBRIDGE, // pin5
+  CHANNEL_SOURCE_SPORT, // pin1
+  CHANNEL_SOURCE_CRSF, // pin5
   CHANNEL_SOURCE_NUM,
 } TX_CHANNELS_SOURCE_ENUM;
 
@@ -56,6 +56,11 @@ typedef enum {
   DIVERSITY_ANTENNA2, // antenna 2 if diversity available
   DIVERSITY_NUM,
 } DIVERSITY_ENUM;
+
+
+typedef enum {
+  IN_CONFIG_SBUS = 0,
+} TX_IN_CONFIG_ENUM;
 
 
 typedef enum {

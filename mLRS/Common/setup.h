@@ -41,10 +41,28 @@ void setup_default(void)
 
 void setup_sanitize(void)
 {
-  // device cannot use mBridge and CRSF at the same time !
+  // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
   if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
     Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
   }
+
+#ifdef DEVICE_IS_TRANSMITTER
+#ifndef DEVICE_HAS_MBRIDGE
+  // device doesn't support half-duplex pin 5
+  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL_PORT;
+  if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+  if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+#else
+  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) {
+    // mBridge & CRSF cannot be used simultaneously
+    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+  }
+#endif
+
+#ifndef DEVICE_HAS_IN
+  if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_SPORT) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+#endif
+#endif
 
 #ifndef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_IS_TRANSMITTER

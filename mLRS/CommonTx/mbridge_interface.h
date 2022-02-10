@@ -10,14 +10,6 @@
 #define MBRIDGE_INTERFACE_H
 #pragma once
 
-#if (!defined DEVICE_HAS_MBRIDGE) && (defined USE_MBRIDGE)
-  #undef SETUP_TX_SERIAL_DESTINATION
-  #define SETUP_TX_SERIAL_DESTINATION  0
-  #undef SETUP_TX_CHANNELS_SOURCE
-  #define SETUP_TX_CHANNELS_SOURCE  0
-  #undef USE_MBRIDGE
-  #warning Device does not support mBridge, so mBridge has been disabled !
-#endif
 
 #if (defined USE_MBRIDGE) && (defined DEVICE_HAS_MBRIDGE)
 
