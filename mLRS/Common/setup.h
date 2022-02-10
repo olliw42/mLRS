@@ -45,6 +45,15 @@ void setup_sanitize(void)
   if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
     Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
   }
+
+#ifndef DEVICE_HAS_DIVERSITY
+#ifdef DEVICE_IS_TRANSMITTER
+  if (Setup.Tx.Diversity >= DIVERSITY_ANTENNA2) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
+#endif
+#ifdef DEVICE_IS_RECEIVER
+  if (Setup.Rx.Diversity >= DIVERSITY_ANTENNA2) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
+#endif
+#endif
 }
 
 
@@ -76,23 +85,19 @@ void setup_configure(void)
   switch (Setup.Rx.Diversity) {
 #endif
   case DIVERSITY_DEFAULT:
-    Config.UseDiversity = true;
     Config.UseAntenna1 = true;
     Config.UseAntenna2 = true;
     break;
   case DIVERSITY_ANTENNA1:
-    Config.UseDiversity = false;
     Config.UseAntenna1 = true;
     Config.UseAntenna2 = false;
     break;
   case DIVERSITY_ANTENNA2:
-    Config.UseDiversity = false;
     Config.UseAntenna1 = false;
     Config.UseAntenna2 = true;
     break;
   }
 #else
-  Config.UseDiversity = false;
   Config.UseAntenna1 = true;
   Config.UseAntenna2 = false;
 #endif

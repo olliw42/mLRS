@@ -121,7 +121,6 @@ typedef struct
   uint16_t connect_tmo_systicks;
   uint16_t connect_listen_hop_cnt;
 
-  bool UseDiversity;
   bool UseAntenna1;
   bool UseAntenna2;
 } tGlobalConfig;
