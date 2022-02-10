@@ -478,12 +478,8 @@ int main_main(void)
   if (!sx2.isOk()) {
     while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
   }
-IF_ANTENNA1(
-  sx.StartUp();
-);
-IF_ANTENNA2(
-  sx2.StartUp();
-);
+  IF_ANTENNA1(sx.StartUp());
+  IF_ANTENNA2(sx2.StartUp());
   fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartTx();
 
@@ -595,12 +591,8 @@ IF_ANTENNA2(
     case LINK_STATE_RECEIVE:
       // datasheet says "As soon as a packet is detected, the timer is automatically
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
-IF_ANTENNA1(
-      sx.SetToRx(10); // we wait 10 ms for the start for the frame, 5 ms does not work ??
-);
-IF_ANTENNA2(
-      sx2.SetToRx(10);
-);
+      IF_ANTENNA1(sx.SetToRx(10)); // we wait 10 ms for the start for the frame, 5 ms does not work ??
+      IF_ANTENNA2(sx2.SetToRx(10));
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
       irq2_status = 0;
@@ -682,7 +674,7 @@ IF_ANTENNA2(
 
       bool frame_received = false;
       bool valid_frame_received = false;
-      if (USE_ANTENNA1 && USE_ANTENNA1 ) {
+      if (USE_ANTENNA1 && USE_ANTENNA1) {
         frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
       } else if (USE_ANTENNA1) {
@@ -696,7 +688,7 @@ IF_ANTENNA2(
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
 
-        if (USE_ANTENNA1 && USE_ANTENNA1 ) {
+        if (USE_ANTENNA1 && USE_ANTENNA1) {
           // work out which antenna we choose
           //            |   NONE   |  INVALID  | VALID
           // --------------------------------------------------------

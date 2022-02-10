@@ -419,12 +419,8 @@ int main_main(void)
   if (!sx2.isOk()) {
     while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
   }
-IF_ANTENNA1(
-  sx.StartUp();
-);
-IF_ANTENNA2(
-  sx2.StartUp();
-);
+  IF_ANTENNA1(sx.StartUp());
+  IF_ANTENNA2(sx2.StartUp());
   fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartRx();
   fhss.HopToConnect();
@@ -510,12 +506,8 @@ IF_ANTENNA2(
       }
       sx.SetRfFrequency(fhss.GetCurrFreq());
       sx2.SetRfFrequency(fhss.GetCurrFreq());
-IF_ANTENNA1(
-      sx.SetToRx(0); // single without tmo
-);
-IF_ANTENNA2(
-      sx2.SetToRx(0);
-);
+      IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
+      IF_ANTENNA2(sx2.SetToRx(0));
       link_state = LINK_STATE_RECEIVE_WAIT;
       link_rx1_status = RX_STATUS_NONE;
       link_rx2_status = RX_STATUS_NONE;
