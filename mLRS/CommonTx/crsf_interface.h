@@ -380,7 +380,7 @@ tCrsfChannelBuffer buf;
 
 
 
-#endif // if (SETUP_TX_CHANNELS_SOURCE == 3)
+#endif // if (defined USE_CRSF) && (defined DEVICE_HAS_MBRIDGE)
 
 #endif // CRSF_INTERFACE_H
 
