@@ -429,6 +429,20 @@ tMBridgeLinkStats lstats = {0};
 }
 
 
+#else
+
+class tMBridgeDummy
+{
+  public:
+    void Init(void) {}
+    void putc(char c) {}
+    bool available(void) { return false; }
+    char getc(void) { return '\0'; }
+    void flush(void) {}
+};
+
+tMBridgeDummy bridge;
+
 
 #endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_MBRIDGE)
 

@@ -248,17 +248,13 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     payload_len = 0;
 
     for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-      switch (Setup.Tx.SerialDestination) {
-      case SERIAL_DESTINATION_SERIAL_PORT:
+      if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) { // don't use a switch, since we want to break out of the for loop
         if (!serial.available()) break;
         payload[payload_len] = serial.getc();
-        break;
-      case SERIAL_DESTINATION_MBRDIGE:
-#ifdef USE_MBRIDGE
+      } else
+      if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) {
         if (!bridge.available()) break;
         payload[payload_len] = bridge.getc();
-#endif
-        break;
       }
       payload_len++;
     }
@@ -267,16 +263,8 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     stats.fresh_serial_data_transmitted.Inc();
 
   } else {
-    switch (Setup.Tx.SerialDestination) {
-      case SERIAL_DESTINATION_SERIAL_PORT:
-        serial.flush();
-        break;
-      case SERIAL_DESTINATION_MBRDIGE:
-#ifdef USE_MBRIDGE
-        bridge.flush();
-#endif
-        break;
-    }
+    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serial.flush();
+    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) bridge.flush();
     memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
     payload_len = 0;
   }
@@ -315,24 +303,15 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
   // output data on serial
   for (uint8_t i = 0; i < frame->status.payload_len; i++) {
     uint8_t c = frame->payload[i];
-    switch (Setup.Tx.SerialDestination) {
-      case SERIAL_DESTINATION_SERIAL_PORT: serial.putc(c); break; // send to serial
-      case SERIAL_DESTINATION_MBRDIGE:
-#ifdef USE_MBRIDGE
-        bridge.putc(c); // send to radio
-#endif
-        break;
-    }
+    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serial.putc(c); // send to serial
+    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) bridge.putc(c); // send to radio
     // parse stream, and inject radio status
     if (Setup.Tx.SendRadioStatus) {
       uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
       if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
         inject_radio_status = false;
-        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON) {
-          send_radio_status();
-        } else if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) {
-          send_radio_status_v2();
-        }
+        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON) send_radio_status();
+        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) send_radio_status_v2();
       }
     }
   }
@@ -458,9 +437,7 @@ int main_main(void)
   main_test();
 #endif
   init();
-#ifdef USE_MBRIDGE
   bridge.Init();
-#endif
 #ifdef USE_CRSF
   crsf.Init();
 #endif
