@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             0024
-#define VERSIONONLYSTR      "v0.0.24"
+#define VERSION             0025
+#define VERSIONONLYSTR      "v0.0.25"
 #define SETUPLAYOUT         001       // this should be changed then Setup struct and/or serial changes
 
 
@@ -57,20 +57,16 @@
 
 #define BIND_DBLWORD                    0x12344281
 
-//#define LORA_SYNCWORD                   0x56 // 0x12 // seems to have no effect !?
-//#define FRAME_SYNCWORD                  0x4281
-//#define SEED_DBLWORD                    0x12345678
-
 
 //-------------------------------------------------------
 // System Configs
 //-------------------------------------------------------
 
 #define FRAME_RATE_MS                   20 // 500 // 20 // 50 Hz
+#define FHSS_NUM                        24
 
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
-
 
 #define CONNECT_TMO_MS                  500
 
@@ -79,28 +75,10 @@
 #define LQ_AVERAGING_MS                 1000
 
 
-#define FHSS_NUM                        24
-//#define FHSS_DISABLED
-
 
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
-
-#define FRAME_SYNCWORD                  ((uint16_t)(BIND_DBLWORD & 0x0000FFFF))
-#define FHSS_SEED                       BIND_DBLWORD
-
-
-#define CONNECT_TMO_SYSTICKS            SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f*FRAME_RATE_MS ));
-
-#define CONNECT_LISTEN_HOP_CNT          (uint8_t)(1.5f*FHSS_NUM)
-
-#define LQ_AVERAGING_PERIOD             (LQ_AVERAGING_MS/FRAME_RATE_MS)
-
-
-#if (SETUP_TX_SERIAL_DESTINATION == 1) && (SETUP_TX_CHANNELS_SOURCE == 3)
-#error Device cannot use mBridge and CRSF at the same time !
-#endif
 
 #if (SETUP_TX_SERIAL_DESTINATION == 1) || (SETUP_TX_CHANNELS_SOURCE == 1)
 #define USE_MBRIDGE

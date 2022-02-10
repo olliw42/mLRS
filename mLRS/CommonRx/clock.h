@@ -20,11 +20,12 @@
 #define CLOCK_IRQHandler          TIM4_IRQHandler
 //#define CLOCK_IRQ_PRIORITY        10
 
-#define CLOCK_PERIOD_10US         (FRAME_RATE_MS*100)
 #define CLOCK_SHIFT_10US          75 // 100 // 1 ms
 
 
 volatile bool doPostReceive;
+
+uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
 
 
 //-------------------------------------------------------
@@ -68,13 +69,18 @@ void ClockBase::EnableIsr(void)
 
 void ClockBase::Init(void)
 {
-  InitIsrOff();
-  EnableIsr();
+    CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
+    doPostReceive = false;
+
+    InitIsrOff();
+    EnableIsr();
 }
 
 
 void ClockBase::Reset(void)
 {
+    if (!CLOCK_PERIOD_10US) while (1) {}
+
     __disable_irq();
     uint16_t CNT = CLOCK_TIMx->CNT;
     CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
@@ -98,16 +104,16 @@ uint16_t ClockBase::tim_10us(void)
 IRQHANDLER(
 void CLOCK_IRQHandler(void)
 {
-  if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
-    LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
-    CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
-    CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
-    //LED_GREEN_ON;
-  }
-  if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
-    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
-    doPostReceive = true;
-  }
+    if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
+      LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
+      CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
+      CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
+      //LED_GREEN_ON;
+    }
+    if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
+      LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
+      doPostReceive = true;
+    }
 })
 
 

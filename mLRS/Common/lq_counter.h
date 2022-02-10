@@ -32,7 +32,7 @@ class StatsCount {
     void Update1Hz(void)
     {
         counts_per_sec = count - count_last;
-        LQ = (counts_per_sec * 100 * FRAME_RATE_MS) / 1000;
+        LQ = (counts_per_sec * 100 * Config.frame_rate_ms) / 1000;
 
         count_last = count;
     }

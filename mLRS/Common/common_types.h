@@ -19,13 +19,6 @@
 #endif
 
 
-typedef enum {
-  CHANNEL_ORDER_AETR = 0, // most common
-  CHANNEL_ORDER_TAER, // spektrum/graupner/jr
-  CHANNEL_ORDER_ETAR,
-} CHANNEL_ORDER_ENUM;
-
-
 // the sx power is calculated as
 // sx_power = LIMIT(SX1280_POWER_m18_DBM, power - POWER_GAIN_DBM + 18, POWER_SX1280_MAX_DBM)
 //

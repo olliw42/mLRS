@@ -19,9 +19,6 @@
 
 #define FHSS_MAX_NUM    32
 
-#if FHSS_NUM > FHSS_MAX_NUM
-#error FHSS_NUM too large !
-#endif
 
 //-------------------------------------------------------
 // Frequency list
@@ -126,62 +123,64 @@ class FhssBase
   public:
 
 #ifdef FHSS_DISABLED
-  // dummy class
-  void Init(uint32_t seed) { generate(seed); }
-  void StartRx(void) {}
-  void StartTx(void) {}
-  uint32_t GetCurr(void) { return fhss_list[0]; }
-  void HopToNext(void) {}
-  void HopToConnect(void) {}
+    // dummy class
+    void Init(uint32_t seed) { generate(seed); }
+    void StartRx(void) {}
+    void StartTx(void) {}
+    uint32_t GetCurr(void) { return fhss_list[0]; }
+    void HopToNext(void) {}
+    void HopToConnect(void) {}
 #else
 
-    void Init(uint32_t seed)
+    void Init(uint8_t fhss_num, uint32_t seed)
     {
-      cnt = FHSS_NUM;
+        if (fhss_num > FHSS_MAX_NUM) while (1) {}
 
-      generate(seed);
+        cnt = fhss_num;
+
+        generate(seed);
     }
 
     void StartRx(void)
     {
-      curr_i = 0;
+        curr_i = 0;
     }
 
     void StartTx(void)
     {
-      curr_i = 0;
+        curr_i = 0;
     }
 
     uint8_t Cnt(void)
     {
-      return cnt;
+        return cnt;
     }
 
     uint32_t GetCurrFreq(void)
     {
-      return fhss_list[curr_i];
+        return fhss_list[curr_i];
     }
 
     void HopToNext(void)
     {
-      curr_i++;
-      if (curr_i >= cnt) curr_i = 0;
+        curr_i++;
+        if (curr_i >= cnt) curr_i = 0;
     }
 
     void HopToConnect(void)
     {
-      //curr_i = 0;
+        //curr_i = 0;
     }
 
     uint32_t bestX(void)
     {
-      uint8_t i_best = 0;
-      for (uint8_t i = 0; i < cnt; i++) {
-        if (fhss_last_rssi[i] > fhss_last_rssi[i_best]) i_best = i;
-      }
+        uint8_t i_best = 0;
+        for (uint8_t i = 0; i < cnt; i++) {
+          if (fhss_last_rssi[i] > fhss_last_rssi[i_best]) i_best = i;
+        }
 
-      curr_i = i_best;
-      return fhss_list[curr_i];
+        curr_i = i_best;
+        return fhss_list[curr_i];
     }
 #endif
 
@@ -197,7 +196,6 @@ class FhssBase
     uint16_t prng(void);
     void generate(uint32_t seed);
 };
-
 
 
 

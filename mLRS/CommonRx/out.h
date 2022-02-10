@@ -14,17 +14,12 @@
 #include <inttypes.h>
 #include "..\Common\common_types.h"
 #include "..\Common\frame_types.h"
+#include "..\Common\setup_types.h"
 
 
 //-------------------------------------------------------
 // Generic Out Class
 //-------------------------------------------------------
-
-typedef enum {
-  OUT_CONFIG_SBUS = 0,
-  OUT_CONFIG_CRSF,
-} OUT_CONFIG_ENUM;
-
 
 typedef struct
 {

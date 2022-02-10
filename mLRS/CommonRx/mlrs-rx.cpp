@@ -45,6 +45,7 @@ v0.0.00:
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\storm32\storm32.h"
+#include "..\Common\setup.h"
 #include "..\Common\common.h"
 #include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
@@ -99,13 +100,15 @@ void init(void)
 
   delay_init();
   micros_init();
+
   serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
   out.Init();
 
   uartc_init();
 
+  setup_init(); // clock needs Config
+
   clock.Init();
-  doPostReceive = false;
 
   sx.Init();
   sx2.Init();
@@ -164,7 +167,7 @@ void SX_DIO1_EXTI_IRQHandler(void)
   if (irq_status & SX1280_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-    if (sync_word != FRAME_SYNCWORD) irq_status = 0; // not for us, so ignore it
+    if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
   }
 })
 #endif
@@ -179,7 +182,7 @@ void SX2_DIO1_EXTI_IRQHandler(void)
   if (irq2_status & SX1280_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-    if (sync_word != FRAME_SYNCWORD) irq2_status = 0;
+    if (sync_word != Config.FrameSyncWord) irq2_status = 0;
   }
 })
 #endif
@@ -424,7 +427,7 @@ int main_main(void)
 #ifdef USE_ANTENNA2
   sx2.StartUp();
 #endif
-  fhss.Init(FHSS_SEED);
+  fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartRx();
   fhss.HopToConnect();
 
@@ -444,9 +447,9 @@ int main_main(void)
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
 
-  rxstats.Init(LQ_AVERAGING_PERIOD);
+  rxstats.Init(Config.LQAveragingPeriod);
 
-  out.Configure(SETUP_RX_OUT_MODE);
+  out.Configure(Setup.Rx.OutMode);
 
   led_blink = 0;
   tick_1hz = 0;
@@ -721,21 +724,23 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       if (!connected()) stats.Clear();
       rxstats.Next();
 
-      out.SetChannelOrder(SETUP_RX_CHANNEL_ORDER);
+      out.SetChannelOrder(Setup.Rx.ChannelOrder);
       if (connected()) {
         out.SendRcData(&rcData, missed, false);
         out.SendLinkStatistics();
       } else {
-#if SETUP_RX_FAILSAFE_MODE == 1
-        if (connect_occured_once) {
-          tRcData rc;
-          memcpy(&rc, &rcData, sizeof(tRcData));
-          for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
-          out.SendRcData(&rc, true, true);
-        }
-#else
-        // no signal, so do nothing
-#endif
+        switch (Setup.Rx.FailsafeMode) {
+        case FAILSAFE_MODE_CH1CH4_CENTER_SIGNAL:
+          if (connect_occured_once) {
+            tRcData rc;
+            memcpy(&rc, &rcData, sizeof(tRcData));
+            for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
+            out.SendRcData(&rc, true, true);
+          }
+          break;
+        //default:
+          // no signal, so do nothing
+        };
         if (connect_occured_once) {
           out.SendLinkStatisticsDisconnected();
         }

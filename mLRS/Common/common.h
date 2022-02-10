@@ -65,7 +65,7 @@ uint16_t crc;
     memset(frame, 0, sizeof(tTxFrame));
 
     // generate header
-    frame->sync_word = FRAME_SYNCWORD;
+    frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_TX;
@@ -110,7 +110,7 @@ uint8_t check_tx_frame(tTxFrame* frame)
 {
 uint16_t crc;
 
-    if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_SYNCWORD;
+    if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
     if (frame->status.frame_type != FRAME_TYPE_TX) return CHECK_ERROR_HEADER;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
@@ -158,7 +158,7 @@ uint16_t crc;
 
     memset(frame, 0, sizeof(tRxFrame));
 
-    frame->sync_word = FRAME_SYNCWORD;
+    frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
     frame->status.frame_type = FRAME_TYPE_RX;
@@ -184,7 +184,7 @@ uint8_t check_rx_frame(tRxFrame* frame)
 {
 uint16_t crc;
 
-    if (frame->sync_word != FRAME_SYNCWORD) return CHECK_ERROR_SYNCWORD;
+    if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
     if (frame->status.frame_type != FRAME_TYPE_RX) return CHECK_ERROR_HEADER;
     if (frame->status.payload_len > FRAME_RX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
