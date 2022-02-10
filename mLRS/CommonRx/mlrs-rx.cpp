@@ -526,7 +526,7 @@ IF_ANTENNA2(
 
     case LINK_STATE_TRANSMIT: {
       // TODO: transmit antenna diversity
-      do_transmit((Config.UseAntenna1) ? ANTENNA_1 : ANTENNA_2);
+      do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0; // important, in low connection condition, RxDone isr could trigger
       irq2_status = 0;
@@ -601,15 +601,15 @@ IF_ANTENNA2(
 
       bool frame_received, valid_frame_received, invalid_frame_received;
       frame_received = valid_frame_received = invalid_frame_received = false; // to make compiler happy
-      if (Config.UseAntenna1 && Config.UseAntenna2) {
+      if (USE_ANTENNA1 && USE_ANTENNA2) {
         frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
         invalid_frame_received = frame_received && !valid_frame_received;
-      } else if (Config.UseAntenna1) {
+      } else if (USE_ANTENNA1) {
         frame_received = (link_rx1_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); //frame_received && !valid_frame_received;
-      } else if (Config.UseAntenna2) {
+      } else if (USE_ANTENNA2) {
         frame_received = (link_rx2_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
@@ -623,7 +623,7 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
 
-        if (Config.UseAntenna1 && Config.UseAntenna2) {
+        if (USE_ANTENNA1 && USE_ANTENNA1) {
           // work out which antenna we choose
           //            |   NONE   |  INVALID  | CRC1_VALID | VALID
           // --------------------------------------------------------
@@ -650,7 +650,7 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
             // we can choose either antenna, so select the one with the better rssi
             antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
           }
-        } else if (Config.UseAntenna2) {
+        } else if (USE_ANTENNA2) {
           antenna = ANTENNA_2;
         }
 
