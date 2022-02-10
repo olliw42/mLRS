@@ -24,7 +24,7 @@
 //#define POWER                           POWER_0_DBM
 //#define POWER                           POWER_12p5_DBM
 
-#define DIVERSITY                      0
+#define DIVERSITY                       0
 
 
 #define SETUP_TX_SERIAL_DESTINATION     1 // 0: UART2, 1: mBridge

@@ -38,6 +38,7 @@ v0.0.00:
 #include "..\Common\fhss.h"
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
+#include "..\Common\setup.h"
 #include "..\Common\common.h"
 #include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
@@ -137,6 +138,8 @@ void init(void)
 
   uartc_init();
 
+  setup_init();
+
   sx.Init();
   sx2.Init();
 }
@@ -178,7 +181,6 @@ TxStats txstats;
 volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
-#ifdef USE_ANTENNA1
 IRQHANDLER(
 void SX_DIO1_EXTI_IRQHandler(void)
 {
@@ -189,11 +191,10 @@ void SX_DIO1_EXTI_IRQHandler(void)
   if (irq_status & SX1280_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-    if (sync_word != FRAME_SYNCWORD) irq_status = 0; // not for us, so ignore it
+    if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
   }
 })
-#endif
-#ifdef USE_ANTENNA2
+#ifdef DEVICE_HAS_DIVERSITY
 IRQHANDLER(
 void SX2_DIO1_EXTI_IRQHandler(void)
 {
@@ -204,7 +205,7 @@ void SX2_DIO1_EXTI_IRQHandler(void)
   if (irq2_status & SX1280_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-    if (sync_word != FRAME_SYNCWORD) irq2_status = 0; // not for us, so ignore it
+    if (sync_word != Config.FrameSyncWord) irq2_status = 0; // not for us, so ignore it
   }
 })
 #endif
@@ -467,13 +468,13 @@ int main_main(void)
   if (!sx2.isOk()) {
     while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
   }
-#ifdef USE_ANTENNA1
+IF_ANTENNA1(
   sx.StartUp();
-#endif
-#ifdef USE_ANTENNA2
+);
+IF_ANTENNA2(
   sx2.StartUp();
-#endif
-  fhss.Init(FHSS_SEED);
+);
+  fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartTx();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -492,7 +493,7 @@ int main_main(void)
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
 
-  txstats.Init(LQ_AVERAGING_PERIOD);
+  txstats.Init(Config.LQAveragingPeriod);
 
   in.Configure(IN_CONFIG_SBUS);
 
@@ -574,11 +575,7 @@ int main_main(void)
       fhss.HopToNext();
       sx.SetRfFrequency(fhss.GetCurrFreq());
       sx2.SetRfFrequency(fhss.GetCurrFreq());
-#if !(defined USE_ANTENNA2 && !defined USE_DIVERSITY)
-      do_transmit(ANTENNA_1);
-#else
-      do_transmit(ANTENNA_2);
-#endif
+      do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0;
       irq2_status = 0;
@@ -588,19 +585,19 @@ int main_main(void)
     case LINK_STATE_RECEIVE:
       // datasheet says "As soon as a packet is detected, the timer is automatically
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
-#ifdef USE_ANTENNA1
+IF_ANTENNA1(
       sx.SetToRx(10); // we wait 10 ms for the start for the frame, 5 ms does not work ??
-#endif
-#ifdef USE_ANTENNA2
+);
+IF_ANTENNA2(
       sx2.SetToRx(10);
-#endif
+);
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
       irq2_status = 0;
       break;
     }//end of switch(link_state)
 
-#ifdef USE_ANTENNA1
+IF_ANTENNA1(
     if (irq_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
         if (irq_status & SX1280_IRQ_TX_DONE) {
@@ -633,8 +630,8 @@ int main_main(void)
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
     }//end of if(irq_status)
-#endif
-#ifdef USE_ANTENNA2
+);
+IF_ANTENNA2(
     if (irq2_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
         if (irq2_status & SX1280_IRQ_TX_DONE) {
@@ -667,49 +664,53 @@ int main_main(void)
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
     }//end of if(irq2_status)
-#endif
+);
 
     // this happens before switching to transmit, i.e. after a frame was or should have been received
     if (doPreTransmit) {
       doPreTransmit = false;
 
-#ifdef USE_DIVERSITY
-      bool frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
-      bool valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
-      uint8_t antenna = ANTENNA_1;
-#elif defined USE_ANTENNA1
-      bool frame_received = (link_rx1_status > RX_STATUS_NONE);
-      bool valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-      uint8_t antenna = ANTENNA_1;
-#elif defined USE_ANTENNA2
-      bool frame_received = (link_rx2_status > RX_STATUS_NONE);
-      bool valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
-      uint8_t antenna = ANTENNA_2;
-#endif
+      bool frame_received = false;
+      bool valid_frame_received = false;
+      if (USE_ANTENNA1 && USE_ANTENNA1 ) {
+        frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
+        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
+      } else if (USE_ANTENNA1) {
+        frame_received = (link_rx1_status > RX_STATUS_NONE);
+        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+      } else if (USE_ANTENNA2) {
+        frame_received = (link_rx2_status > RX_STATUS_NONE);
+        valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
+      }
 
       if (frame_received) { // frame received
-#ifdef USE_DIVERSITY
-        // work out which antenna we choose
-        //            |   NONE   |  INVALID  | VALID
-        // --------------------------------------------------------
-        // NONE       |          |   1 or 2  |  1
-        // INVALID    |  1 or 2  |   1 or 2  |  1
-        // VALID      |    2     |     2     |  1 or 2
+        uint8_t antenna = ANTENNA_1;
 
-        if (link_rx1_status == link_rx2_status) {
-          // we can choose either antenna, so select the one with the better rssi
-          antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
-        } else
-        if (link_rx1_status == RX_STATUS_VALID) {
-          antenna = ANTENNA_1;
-        } else
-        if (link_rx2_status == RX_STATUS_VALID) {
+        if (USE_ANTENNA1 && USE_ANTENNA1 ) {
+          // work out which antenna we choose
+          //            |   NONE   |  INVALID  | VALID
+          // --------------------------------------------------------
+          // NONE       |          |   1 or 2  |  1
+          // INVALID    |  1 or 2  |   1 or 2  |  1
+          // VALID      |    2     |     2     |  1 or 2
+
+          if (link_rx1_status == link_rx2_status) {
+            // we can choose either antenna, so select the one with the better rssi
+            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+          } else
+          if (link_rx1_status == RX_STATUS_VALID) {
+            antenna = ANTENNA_1;
+          } else
+          if (link_rx2_status == RX_STATUS_VALID) {
+            antenna = ANTENNA_2;
+          } else {
+            // we can choose either antenna, so select the one with the better rssi
+            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+          }
+        } else if (USE_ANTENNA2) {
           antenna = ANTENNA_2;
-        } else {
-          // we can choose either antenna, so select the one with the better rssi
-          antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
         }
-#endif
+
         handle_receive(antenna);
       }
 
