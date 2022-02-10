@@ -121,7 +121,8 @@ typedef struct
   uint32_t FhssSeed;
   uint16_t LQAveragingPeriod;
 
-  uint8_t power;
+  uint8_t Power;
+
   uint16_t frame_rate_ms;
   uint16_t connect_tmo_systicks;
   uint16_t connect_listen_hop_cnt;

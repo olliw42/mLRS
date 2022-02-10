@@ -108,12 +108,7 @@ class SxDriverBoth : public SxDriverBase
         SetSyncWord(LORA_SYNCWORD);
 #endif
 
-#ifdef DEVICE_IS_TRANSMITTER
-        SetTxParams(calc_sx_power(SETUP_TX_POWER), SX1280_RAMPTIME_04_US);
-#endif
-#ifdef DEVICE_IS_RECEIVER
-        SetTxParams(calc_sx_power(SETUP_RX_POWER), SX1280_RAMPTIME_04_US);
-#endif
+        SetTxParams(calc_sx_power(Config.Power), SX1280_RAMPTIME_04_US);
 
         SetDioIrqParams(SX1280_IRQ_ALL,
                         SX1280_IRQ_RX_DONE|SX1280_IRQ_TX_DONE|SX1280_IRQ_RX_TX_TIMEOUT,

@@ -79,10 +79,10 @@ void setup_configure(void)
 {
   // TODO: we momentarily use the POWER values, but eventually we need to use the power_list[] array and setup Rx/Tx power
 #ifdef DEVICE_IS_TRANSMITTER
-  Config.power = SETUP_TX_POWER;
+  Config.Power = SETUP_TX_POWER;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-  Config.power = SETUP_RX_POWER;
+  Config.Power = SETUP_RX_POWER;
 #endif
 
   Config.frame_rate_ms = FRAME_RATE_MS;
