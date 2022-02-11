@@ -283,9 +283,9 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   pack_tx_frame(&txFrame, &frame_stats, &rcData, payload, payload_len);
 
   if (antenna == ANTENNA_1) {
-    sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, 10); // 10 ms tmo
+    sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10 ms tmo
   } else {
-    sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, 10); // 10 ms tmo
+    sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10 ms tmo
   }
 }
 
@@ -568,8 +568,8 @@ int main_main(void)
     case LINK_STATE_RECEIVE:
       // datasheet says "As soon as a packet is detected, the timer is automatically
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
-      IF_ANTENNA1(sx.SetToRx(10)); // we wait 10 ms for the start for the frame, 5 ms does not work ??
-      IF_ANTENNA2(sx2.SetToRx(10));
+      IF_ANTENNA1(sx.SetToRx(TX_SET_RX_TMO)); // we wait 10 ms for the start for the frame, 5 ms does not work ??
+      IF_ANTENNA2(sx2.SetToRx(TX_SET_RX_TMO));
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
       irq2_status = 0;

@@ -58,40 +58,6 @@ failsafe modes
 3) always out signal, but with values set to defaults (such as thr = 800, r,p,y = center, ...)
 4) always out signal, but with values which makes the vehicle to hover
 
--------------------------------------------------------
-some experimental results
-
-25 ms
-rx = 16,1 ms  tx = 7.80 ms
-20 ms
-rx = 11.1 ms, tx = 7.80 ms
-estimated time over air is 7.8128 ms
-
-a 2nd timing check for pll:
-
-treceive_done - treceive    = ca 11.6 ms
-ttransmit - treceive        = ca 11.7 ms
-ttransmit_done - treceive   = ca 19.9 ms
-tplltick - treceive         = ca 11.6 ms
-tdopostreceive - treceive   = ca 12.6 ms with 100 shift
-tpllupdate - treceive       = ca 16.6 ms with 500 shift
-
-
-experimental finding
-on receiver:
-amptx   amprx     rssi on transmitter   rx_rssi on transmitter
-high    low       -22                   -18
-high    high      -22                   -54     => bad reception of receiver
-low     low       -83                   -19     => bad transmission of receiver
-low     high      -83                   -54     => both
-
-on transmitter:
-amptx   amprx     rssi on transmitter   rx_rssi on transmitter
-high    low       -21                   -17
-high    high      -63                   -18
-low     low       -22                   -78
-low     high      -63                   -78
-
 
 -------------------------------------------------------
 2.4 GHz band
@@ -482,6 +448,136 @@ and each will overwrite any previous rssi, so be careful with what one really wa
 stuff
 
 https://interrupt.memfault.com/blog/cortex-m-fault-debug
+
+
+-------------------------------------------------------
+some experimental results
+-------------------------------------------------------
+
+25 ms
+rx = 16,1 ms  tx = 7.80 ms
+20 ms
+rx = 11.1 ms, tx = 7.80 ms
+estimated time over air is 7.8128 ms
+
+a 2nd timing check for pll:
+
+treceive_done - treceive    = ca 11.6 ms
+ttransmit - treceive        = ca 11.7 ms
+ttransmit_done - treceive   = ca 19.9 ms
+tplltick - treceive         = ca 11.6 ms
+tdopostreceive - treceive   = ca 12.6 ms with 100 shift
+tpllupdate - treceive       = ca 16.6 ms with 500 shift
+
+
+experimental finding
+on receiver:
+amptx   amprx     rssi on transmitter   rx_rssi on transmitter
+high    low       -22                   -18
+high    high      -22                   -54     => bad reception of receiver
+low     low       -83                   -19     => bad transmission of receiver
+low     high      -83                   -54     => both
+
+on transmitter:
+amptx   amprx     rssi on transmitter   rx_rssi on transmitter
+high    low       -21                   -17
+high    high      -63                   -18
+low     low       -22                   -78
+low     high      -63                   -78
+
+
+timing measures 11.02.2022
+rx diy-f103, times in 10us, on tx side RX tmo is 10
+CLOCK_SHIFT_10US 75 = 750us, 9MHz spi, diversity 1
+
+: 25952, 02010; 00007, 00016, t 00028, 00067, 00857, r 00857, 00893, 01914,
+: 27956, 02004; 00007, 00016, t 00028, 00067, 00857, r 00857, 00893, 01908,
+
+: 41841, 02007; 00007, 00016, t 00029, 00067, 00857, r 00857, 00877, 01910, d 00163,
+: 43848, 02007; 00007, 00016, t 00029, 00070, 00860, r 00860, 00879, 01911, d 00167,
+: 45856, 02008; 00007, 00016, t 00029, 00075, 00864, r 00864, 00884, 01912, d 00171,
+: 47861, 02005; 00007, 00016, t 00029, 00068, 00857, r 00857, 00877, 01908, d 00164,
+dopostreceive is 0 point
+02008 = 20208 us -> cycle time
+00007 = 70 us  -> time to set TX
+00016 = 160 us -> time to finish  -> could make sense to have a 2nd time trigger
+t
+00029 = 290 us -> tx entered
+00070 = 700 us -> tx2 finished  => ca 400 us to get data, transfer frame to SX, and start transmitting
+00860 = 8600 us -> txdone  => 7.9 ms for frame, consistent with toa
+r
+00860 = 8600 us -> rx entered
+00879 = 8790 us -> rx2 finished  => 200 us to start receiving
+01911 = 19110 us -> rxdone  => 10.2 ms until it has received frame   => THIS IS TIGHT, just 0.9 ms ROOM!
+d
+00167 = 1670 us -> = tx2 - rxdone, time between rxdone and tx2
+
+CLOCK_SHIFT_10US 75 = 750us, 2p25MHz spi, diversity 1
+=> doesn't work, no connection !! => TX locks up, green on, red blink = SX1280_IRQ_RX_DONE in wrong state !!!
+without uart debug it is just at the edge, tx locks up somewhat later
+
+=> if time from end of receive to begin of transmit becomes too large, tx locks up, makes sense
+=> time between rxdone and tx2 needs to be short enough
+
+CLOCK_SHIFT_10US 75 = 750us, 4p5MHz spi, diversity 1
+: 45780, 02007; 00007, 00016, t 00029, 00075, 00865, r 00865, 00886, 01903, d 00179,
+: 47788, 02008; 00007, 00016, t 00030, 00081, 00871, r 00871, 00891, 01903, d 00185,
+CLOCK_SHIFT_10US 75 = 750us, 9MHz spi, diversity 1
+: 24677, 02007; 00007, 00016, t 00029, 00071, 00860, r 00861, 00880, 01911, d 00168,
+: 26683, 02006; 00007, 00016, t 00029, 00069, 00858, r 00858, 00878, 01910, d 00165,
+CLOCK_SHIFT_10US 75 = 750us, 18MHz spi, diversity 1
+: 08261, 02007; 00007, 00016, t 00029, 00063, 00852, r 00852, 00871, 01914, d 00155,
+: 10267, 02006; 00007, 00016, t 00029, 00065, 00854, r 00854, 00873, 01914, d 00158,
+
+=> time between rxdone and tx2 gets shorter with larger SPI rate
+
+CLOCK_SHIFT_10US 50 = 500us, 2p25MHz spi, diversity 1
+: 59169, 02004; 00007, 00016, t 00030, 00093, 00884, r 00884, 00907, 01908, d 00188,
+: 61175, 02006; 00007, 00016, t 00029, 00093, 00884, r 00884, 00906, 01911, d 00189,
+CLOCK_SHIFT_10US 50 = 500us, 4p5MHz spi, diversity 1
+: 63101, 02007; 00007, 00016, t 00029, 00086, 00876, r 00876, 00897, 01928, d 00165,
+: 65106, 02005; 00007, 00016, t 00029, 00078, 00868, r 00868, 00889, 01925, d 00157,
+CLOCK_SHIFT_10US 50 = 500us, 9MHz spi, diversity 1
+: 20744, 02006; 00007, 00016, t 00029, 00075, 00864, r 00864, 00884, 01935, d 00146,
+: 22749, 02005; 00007, 00016, t 00029, 00067, 00857, r 00857, 00877, 01934, d 00138,
+CLOCK_SHIFT_10US 50 = 500us, 18MHz spi, diversity 1
+: 43739, 02010; 00007, 00016, t 00029, 00073, 00862, r 00862, 00881, 01943, d 00140,
+: 45743, 02004; 00007, 00016, t 00030, 00064, 00852, r 00853, 00872, 01937, d 00131,
+=> ca. 500us gain for tx2-rxdone with higher SPI
+
+=> time between rxdone and tx2 gets shorter with shorter CLOCK_SHIFT
+
+CLOCK_SHIFT_10US 75 = 750us, 2p25MHz spi, diversity 1
+tx side RX tmo is 10 => tx locks up, SX1280_IRQ_RX_DONE in wrong state
+tx side RX tmo is 11 => works
+CLOCK_SHIFT_10US 100 = 1000us, 2p25MHz spi, diversity 1
+tx side RX tmo is 11 => works
+CLOCK_SHIFT_10US 150 = 1500us, 2p25MHz spi, diversity 1
+tx side RX tmo is 11 => works
+CLOCK_SHIFT_10US 200 = 2000us, 2p25MHz spi, diversity 1
+tx side RX tmo is 11 => no tx lock up, rec connects but tx does not connect
+
+=> settle on CLOCK_SHIFT_10US 100 (as before), 9MHz spi, and tx side RX tmo 11
+
+=> it could be useful to add 2nd doPostPostReceive or other means to split doPostReceives
+
+with it:
+& tx side RX tmo 11
+CLOCK_SHIFT_10US 100 = 1000us, 9MHz spi, diversity 1
+: 15695, 02006; 00007, 00007, t 00020, 00057, 00846, r 00846, 00866, 01885, d 00178,
+: 17705, 02010; 00007, 00007, t 00020, 00061, 00851, r 00851, 00871, 01889, d 00182,
+: 19709, 02004; 00007, 00007, t 00020, 00057, 00846, r 00846, 00866, 01883, d 00178,
+& tx side RX tmo 10
+CLOCK_SHIFT_10US 75 = 750us, 2p25MHz spi, diversity 1
+: 33745, 02007; 00007, 00007, t 00019, 00056, 00846, r 00846, 00865, 01911, d 00152,
+: 35754, 02009; 00007, 00007, t 00020, 00063, 00852, r 00853, 00872, 01913, d 00159,
+: 37764, 02010; 00007, 00007, t 00020, 00067, 00856, r 00856, 00876, 01914, d 00163,
+=> works!
+CLOCK_SHIFT_10US 100 = 1000us, 2p25MHz spi, diversity 1
+=> tx does not lock up, receiver connects, but tx does not connect
+
+=> it's a good idea, timing also looks a bit more regular => do it!
+
 
 */
 #endif // BLABLA_H

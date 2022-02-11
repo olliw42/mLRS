@@ -252,9 +252,9 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
 
   if (antenna == ANTENNA_1) {
-    sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
+    sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
   } else {
-    sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, 10); // 10ms tmo
+    sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
   }
 }
 
@@ -392,6 +392,10 @@ uint8_t connect_sync_cnt;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
 
+uint8_t doPostReceive2_cnt;
+bool doPostReceive2;
+bool frame_missed;
+
 
 static inline bool connected(void)
 {
@@ -447,6 +451,9 @@ int main_main(void)
 
   led_blink = 0;
   tick_1hz = 0;
+  doPostReceive2_cnt = 0;
+  doPostReceive2 = false;
+  frame_missed = false;
   doSysTask = 0; // helps in avoiding too short first loop
   while (1) {
 
@@ -695,9 +702,8 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       }
 
       // we didn't receive a valid frame
-      bool missed;
       if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
-        missed = true;
+        frame_missed = true;
         // reset sync counter, relevant if in sync
         connect_sync_cnt = 0;
         // switch to transmit state
@@ -714,9 +720,19 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       if (!connected()) stats.Clear();
       rxstats.Next();
 
+      doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
+    }//end of if(doPostReceive)
+
+    if (doPostReceive2_cnt) {
+      doPostReceive2_cnt--;
+      if (!doPostReceive2_cnt) doPostReceive2 = true;
+    }
+    if (doPostReceive2) {
+      doPostReceive2 = false;
+
       out.SetChannelOrder(Setup.Rx.ChannelOrder);
       if (connected()) {
-        out.SendRcData(&rcData, missed, false);
+        out.SendRcData(&rcData, frame_missed, false);
         out.SendLinkStatistics();
       } else {
         switch (Setup.Rx.FailsafeMode) {
@@ -758,8 +774,7 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       uartc_puts(connected() ? "c " : "d ");
       uartc_puts("\n");
 */
-    }//end of if(doPostReceive)
-
+    }//end of if(doPostReceive2)
 
     out.Do(micros());
 

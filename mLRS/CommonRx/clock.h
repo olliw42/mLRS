@@ -20,7 +20,7 @@
 #define CLOCK_IRQHandler          TIM4_IRQHandler
 //#define CLOCK_IRQ_PRIORITY        10
 
-#define CLOCK_SHIFT_10US          75 // 100 // 1 ms
+#define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 
 
 volatile bool doPostReceive;
@@ -106,8 +106,8 @@ void CLOCK_IRQHandler(void)
 {
     if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
       LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
-      CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US;
-      CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US;
+      CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US; // next doPostReceive
+      CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US; // next tick
       //LED_GREEN_ON;
     }
     if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received

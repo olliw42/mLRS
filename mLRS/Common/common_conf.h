@@ -63,8 +63,10 @@
 //-------------------------------------------------------
 
 #define FRAME_RATE_MS                   20 // 500 // 20 // 50 Hz
-#define FHSS_NUM                        24
+#define SEND_FRAME_TMO                  10 // just needs to be larger than toa, not critical
+#define TX_SET_RX_TMO                   11 // is "critical" see timing tests, was 10 before
 
+#define FHSS_NUM                        24
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
