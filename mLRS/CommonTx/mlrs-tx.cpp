@@ -501,7 +501,7 @@ int main_main(void)
       }
 
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
-      DECc(tx_tick, SYSTICK_DELAY_MS(FRAME_RATE_MS));
+      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
       if (connected()) {
         DECc(led_blink, SYSTICK_DELAY_MS(500));
       } else {
