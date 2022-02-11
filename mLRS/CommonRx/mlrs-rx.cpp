@@ -9,12 +9,6 @@
 
 v0.0.00:
 */
-//ATTENTION: for diversity 4.5MHz SPI was too slow, gave issues with Tx receiving in time !!
-//#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
-// TODO: can we pl check the real clock speed !?!?!!?
-// strangely: going to CLOCK_SHIFT_10US 150 made it to fail totally, do
-//            going to CLOCK_SHIFT_10US 50 did not help
-// TODO: test on other boards !!
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)

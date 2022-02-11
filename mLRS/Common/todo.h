@@ -14,24 +14,23 @@ ISSUES:
 - convert crsf power
 - redo crsf & mbridge such that they can use the very same interface
 
-- time for enabling/disabling PA??
-
 - LQ 98 in receiver
+
+- rssi -1
 
 - do we want also antenna field for transmit antenna?
   in some way yes, since we have it for receive antenna, but in some way no, is it useful in any way??
   we have the spare bit, so just add it, can be remove later anytime
 
-- add enable flag to sx driver, to make it easier and less need for compile flags
-
 
 TODO:
+- retransmissions, frame loss, resend last one time to make it more robust
+- diversity for transmit
+
+- can we pl check the real spi clock speed !?!?!!?
+
 - effect of USE_DCDC? where to place it??
 
-- should we do a delay between rxdone and transmitting?
-  technically yes, but it seems no need to explicitly do it
-
-- retransmissions, frame loss, resend last one time to make it more robust
 - sync & configure at first connect
 - RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
 - RX side rssi output
@@ -49,14 +48,13 @@ Longterm TODO:
 
 - rate management by radio_status txbuf
   note: rts/cts is not a substitute as this wouldn't help in router situations
+  idea: use crsf, add new frame type
 
 - support high_latency2
 
 - get a clean HAL concept
 
 - get a clear mbridge and in concept, currently quite ugly as uart.h conflicts
-
-- handle allowed and not possible parameter combinations properly
 
 - when we eventually do OTA update of the rx, the rx firmware must be universal in the sense that it supports all possible
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
