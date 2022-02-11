@@ -58,7 +58,6 @@
 #define SPI_USE_SPI1              // PA65, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-//#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
 #define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB11
@@ -75,23 +74,6 @@
 #define SX_DIO1_EXTI_IRQn             EXTI0_IRQn
 #define SX_DIO1_EXTI_IRQHandler       EXTI0_IRQHandler
 //#define SX_DIO1_EXTI_IRQ_PRIORITY   11
-
-/*
-#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 IO_PB12
-#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_4500KHZ
-
-#define SX_RESET                  IO_PA10
-#define SX_DIO1                   IO_PA8
-#define SX_BUSY                   IO_PA9
-
-#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
-#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE8
-#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_8
-#define SX_DIO1_EXTI_IRQn             EXTI9_5_IRQn
-#define SX_DIO1_EXTI_IRQHandler       EXTI9_5_IRQHandler
-*/
 
 void sx_init_gpio(void)
 {
@@ -148,7 +130,6 @@ void sx_dio1_enable_exti_isr(void)
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-//#define SPIB_USE_CLOCKSPEED_4500KHZ
 #define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PA10

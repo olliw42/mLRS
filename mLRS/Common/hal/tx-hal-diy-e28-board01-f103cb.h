@@ -79,7 +79,7 @@
 #define SPI_USE_SPI1              // PA65, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_4500KHZ //SPI_USE_CLOCKSPEED_9MHZ
+#define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB12
 #define SX_DIO1                   IO_PB11

@@ -75,7 +75,7 @@
 #define SPI_USE_SPI2
 #define SPI_CS_IO                 IO_PB12
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_2250KHZ // SPI_USE_CLOCKSPEED_4500KHZ // SPI_USE_CLOCKSPEED_9MHZ // 9 MHz seems to be too fast! got Tx lockups
+#define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB3
 #define SX_DIO1                   IO_PB8
