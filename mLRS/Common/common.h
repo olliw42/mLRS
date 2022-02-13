@@ -338,12 +338,14 @@ class tSerialBase
 // we have setup the hals such that it is always uartb
 class tSerialPort : public tSerialBase
 {
+#ifndef DEVICE_HAS_NO_SERIAL
   public:
     void Init(void) { uartb_init(); }
     void putc(char c) override { uartb_putc(c); }
     bool available(void) { return uartb_rx_available(); }
     char getc(void) { return uartb_getc(); }
     void flush(void) { uartb_rx_flush(); uartb_tx_flush(); }
+#endif
 };
 
 
@@ -361,9 +363,9 @@ tRxFrame rxFrame;
 tTxFrame txFrame2;
 tRxFrame rxFrame2;
 
-SxDriver sx;
+Sx128xDriver sx;
 #ifdef DEVICE_HAS_DIVERSITY
-SxDriver2 sx2;
+Sx128xDriver2 sx2;
 #else
 SxDriverDummy sx2;
 #endif

@@ -13,6 +13,7 @@
 
 
 #include <stdint.h>
+#include "hal\device_conf.h"
 #include "..\modules\sx12xx-lib\src\sx128x.h"
 #include "common_conf.h"
 
@@ -104,14 +105,15 @@ const uint32_t fhss_freq_list[] = {
     SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
 };
 
-const uint8_t FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list)/sizeof(uint32_t)); // = 68
-
 
 const uint8_t fhss_bind_channel_list[] = {
     14, 33, 46, 61 // just pick some
 };
 
-const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list)/sizeof(uint8_t)); // = 4
+
+const uint8_t FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list)/sizeof(uint32_t)); // 2.4 GHz = 68
+
+const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list)/sizeof(uint8_t));
 
 
 //-------------------------------------------------------
@@ -134,9 +136,10 @@ class FhssBase
 
     void Init(uint8_t fhss_num, uint32_t seed)
     {
-        if (fhss_num > FHSS_MAX_NUM) while (1) {}
+        if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
 
         cnt = fhss_num;
+        if (cnt > (FREQ_LIST_LEN - FHSS_BIND_CHANNEL_LIST_LEN)) cnt = (FREQ_LIST_LEN - FHSS_BIND_CHANNEL_LIST_LEN);
 
         generate(seed);
     }

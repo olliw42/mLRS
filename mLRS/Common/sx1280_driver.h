@@ -41,6 +41,7 @@ typedef struct {
     uint8_t CrcEnabled;
     uint8_t InvertIQ;
     uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
 } tSxLoraConfiguration;
 
 
@@ -53,12 +54,22 @@ const tSxLoraConfiguration SxLoraConfiguration[] = {
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcEnabled = SX1280_LORA_CRC_DISABLE,
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
-      .TimeOverAir = 7800,
+      .TimeOverAir = 7892,
+      .ReceiverSensitivity = -105,
     }
 };
 
 
-class SxDriverBoth : public SxDriverBase
+// map the irq bits on some common
+typedef enum {
+    SX12xx_IRQ_TX_DONE = SX1280_IRQ_TX_DONE,
+    SX12xx_IRQ_RX_DONE = SX1280_IRQ_RX_DONE,
+    SX12xx_IRQ_TIMEOUT = SX1280_IRQ_RX_TX_TIMEOUT,
+    SX12xx_IRQ_ALL     = SX1280_IRQ_ALL,
+} SX12xx_IRQ_ENUM;
+
+
+class Sx128xDriverCommon : public Sx128xDriverBase
 {
   public:
     void Init(void)
@@ -111,13 +122,12 @@ class SxDriverBoth : public SxDriverBase
         SetTxParams(calc_sx_power(Config.Power), SX1280_RAMPTIME_04_US);
 
         SetDioIrqParams(SX1280_IRQ_ALL,
-                        SX1280_IRQ_RX_DONE|SX1280_IRQ_TX_DONE|SX1280_IRQ_RX_TX_TIMEOUT,
+                        SX1280_IRQ_RX_DONE | SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_TX_TIMEOUT,
                         SX1280_IRQ_NONE,
                         SX1280_IRQ_NONE);
         ClearIrqStatus(SX1280_IRQ_ALL);
 
         SetFs();
-        delay_us(125); // may not be needed if busy available
     }
 
 
@@ -135,6 +145,24 @@ class SxDriverBoth : public SxDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    {
+        WriteBuffer(0, data, len);
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetTx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // if a Tx timeout occurs we have a serious problem
+    }
+
+    void SetToRx(uint16_t tmo_ms = 10)
+    {
+        ClearIrqStatus(SX1280_IRQ_ALL);
+        SetRx(SX1280_PERIODBASE_62p5_US, tmo_ms*16);
+    }
+
+    void SetToIdle(void)
+    {
+        SetFs();
+    }
+
     //-- helper
 
     void SetRfPower(uint8_t power)
@@ -145,10 +173,16 @@ class SxDriverBoth : public SxDriverBase
     uint32_t TimeOverAir_us(void)
     {
         // cumbersome to calculate in general, so use hardcoded for a specific settings
-        if (lora_configuration != nullptr) {
-            return lora_configuration->TimeOverAir;
-        }
-        return 0;
+        if (lora_configuration == nullptr) return 0;
+
+        return lora_configuration->TimeOverAir;
+    }
+
+    int16_t ReceiverSensitivity_dbm(void)
+    {
+        if (lora_configuration == nullptr) return 0;
+
+        return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t GetActualPower(void)
@@ -185,10 +219,10 @@ class SxDriverDummy
     void StartUp(void) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us) {}
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) {}
     void ReadFrame(uint8_t* data, uint8_t len) {}
     void SetToRx(uint16_t tmo_us) {}
-    void SetFs(void) {}
+    void SetToIdle(void) {}
 };
 
 
@@ -196,7 +230,7 @@ class SxDriverDummy
 // Driver for SX1
 //-------------------------------------------------------
 
-class SxDriver : public SxDriverBoth
+class Sx128xDriver : public Sx128xDriverCommon
 {
   public:
 
@@ -262,7 +296,7 @@ class SxDriver : public SxDriverBoth
 
     void Init(void)
     {
-        SxDriverBoth::Init();
+        Sx128xDriverCommon::Init();
 
         spi_init();
         sx_init_gpio();
@@ -291,26 +325,24 @@ class SxDriver : public SxDriverBoth
 #endif
 
         Configure();
+        delay_us(125); // may not be needed if busy available
 
         sx_dio1_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
     {
         sx_amp_transmit();
-        WriteBuffer(0, data, len);
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetTx(SX1280_PERIODBASE_62p5_US, tmo_us*16); // if a Tx timeout occurs we have a serious problem
+        Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_us = 10)
+    void SetToRx(uint16_t tmo_ms = 10)
     {
         sx_amp_receive();
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetRx(SX1280_PERIODBASE_62p5_US, tmo_us*16);
+        Sx128xDriverCommon::SetToRx(tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
@@ -327,7 +359,7 @@ class SxDriver : public SxDriverBoth
     #error SX2 must have a BUSY pin !!
 #endif
 
-class SxDriver2 : public SxDriverBoth
+class Sx128xDriver2 : public Sx128xDriverCommon
 {
   public:
 
@@ -366,7 +398,7 @@ class SxDriver2 : public SxDriverBoth
 
     void Init(void)
     {
-        SxDriverBoth::Init();
+      Sx128xDriverCommon::Init();
 
         spib_init();
         sx2_init_gpio();
@@ -390,26 +422,24 @@ class SxDriver2 : public SxDriverBoth
 #endif
 
         Configure();
+        delay_us(125); // may not be needed if busy available
 
         sx2_dio1_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_us = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
     {
         sx2_amp_transmit();
-        WriteBuffer(0, data, len);
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetTx(SX1280_PERIODBASE_62p5_US, tmo_us*16); // if a Tx timeout occurs we have a serious problem
+        Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_us = 10)
+    void SetToRx(uint16_t tmo_ms = 10)
     {
         sx2_amp_receive();
-        ClearIrqStatus(SX1280_IRQ_ALL);
-        SetRx(SX1280_PERIODBASE_62p5_US, tmo_us*16);
+        Sx128xDriverCommon::SetToRx(tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 };

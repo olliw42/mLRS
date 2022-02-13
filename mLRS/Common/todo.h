@@ -22,6 +22,8 @@ ISSUES:
   in some way yes, since we have it for receive antenna, but in some way no, is it useful in any way??
   we have the spare bit, so just add it, can be remove later anytime
 
+- do we really want to use RX with timeout in transmitter? couldn't we just use no timeout?
+
 
 TODO:
 - retransmissions, frame loss, resend last one time to make it more robust

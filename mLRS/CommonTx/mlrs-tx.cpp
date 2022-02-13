@@ -18,16 +18,16 @@ v0.0.00:
 #define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // debug
-#define SX_DIO1_EXTI_IRQ_PRIORITY   13
-#define SX2_DIO1_EXTI_IRQ_PRIORITY  13
+#define SX_DIO_EXTI_IRQ_PRIORITY    13
+#define SX2_DIO_EXTI_IRQ_PRIORITY   13
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\modules\sx12xx-lib\src\sx128x.h"
 #include "..\Common\hal\hal.h"
+#include "..\modules\sx12xx-lib\src\sx128x.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
@@ -182,13 +182,13 @@ volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
 IRQHANDLER(
-void SX_DIO1_EXTI_IRQHandler(void)
+void SX_DIO_EXTI_IRQHandler(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO1_EXTI_LINE_x);
+  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
   //LED_RIGHT_RED_TOGGLE;
   irq_status = sx.GetIrqStatus();
-  sx.ClearIrqStatus(SX1280_IRQ_ALL);
-  if (irq_status & SX1280_IRQ_RX_DONE) {
+  sx.ClearIrqStatus(SX12xx_IRQ_ALL);
+  if (irq_status & SX12xx_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
     if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
@@ -196,13 +196,13 @@ void SX_DIO1_EXTI_IRQHandler(void)
 })
 #ifdef DEVICE_HAS_DIVERSITY
 IRQHANDLER(
-void SX2_DIO1_EXTI_IRQHandler(void)
+void SX2_DIO_EXTI_IRQHandler(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX2_DIO1_EXTI_LINE_x);
+  LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
   //LED_RIGHT_RED_TOGGLE;
   irq2_status = sx2.GetIrqStatus();
-  sx2.ClearIrqStatus(SX1280_IRQ_ALL);
-  if (irq2_status & SX1280_IRQ_RX_DONE) {
+  sx2.ClearIrqStatus(SX12xx_IRQ_ALL);
+  if (irq2_status & SX12xx_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
     if (sync_word != Config.FrameSyncWord) irq2_status = 0; // not for us, so ignore it
@@ -579,32 +579,32 @@ int main_main(void)
 IF_ANTENNA1(
     if (irq_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq_status & SX1280_IRQ_TX_DONE) {
+        if (irq_status & SX12xx_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE;
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
-        if (irq_status & SX1280_IRQ_RX_DONE) {
+        if (irq_status & SX12xx_IRQ_RX_DONE) {
           irq_status = 0;
           link_rx1_status = do_receive(ANTENNA_1);
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }
 
-      if (irq_status & SX1280_IRQ_RX_TX_TIMEOUT) {
+      if (irq_status & SX12xx_IRQ_TIMEOUT) {
         irq_status = 0;
         link_state = LINK_STATE_IDLE;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
       }
 
-      if (irq_status & SX1280_IRQ_RX_DONE) {
+      if (irq_status & SX12xx_IRQ_RX_DONE) {
         LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
-      if (irq_status & SX1280_IRQ_TX_DONE) {
+      if (irq_status & SX12xx_IRQ_TX_DONE) {
         LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
@@ -613,32 +613,32 @@ IF_ANTENNA1(
 IF_ANTENNA2(
     if (irq2_status) {
       if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq2_status & SX1280_IRQ_TX_DONE) {
+        if (irq2_status & SX12xx_IRQ_TX_DONE) {
           irq2_status = 0;
           link_state = LINK_STATE_RECEIVE;
           DBG_MAIN_SLIM(uartc_puts("!");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
-        if (irq2_status & SX1280_IRQ_RX_DONE) {
+        if (irq2_status & SX12xx_IRQ_RX_DONE) {
           irq2_status = 0;
           link_rx2_status = do_receive(ANTENNA_2);
           DBG_MAIN_SLIM(uartc_puts("<\n");)
         }
       }
 
-      if (irq2_status & SX1280_IRQ_RX_TX_TIMEOUT) { // ??????????????????
+      if (irq2_status & SX12xx_IRQ_TIMEOUT) { // ??????????????????
         irq2_status = 0;
         link_state = LINK_STATE_IDLE;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
       }
 
-      if (irq2_status & SX1280_IRQ_RX_DONE) {
+      if (irq2_status & SX12xx_IRQ_RX_DONE) {
         LED_GREEN_ON; //LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
-      if (irq2_status & SX1280_IRQ_TX_DONE) {
+      if (irq2_status & SX12xx_IRQ_TX_DONE) {
         LED_RED_ON; //LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }

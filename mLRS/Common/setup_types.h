@@ -132,19 +132,23 @@ typedef struct
 } tGlobalConfig;
 
 
+//-------------------------------------------------------
+// Defines
+//-------------------------------------------------------
+
 #define CONNECT_TMO_SYSTICKS    Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT  Config.connect_listen_hop_cnt
 
 #ifdef DEVICE_HAS_DIVERSITY
-#define IF_ANTENNA1(x)         if (Config.UseAntenna1) { x; }
-#define IF_ANTENNA2(x)         if (Config.UseAntenna2) { x; }
-#define USE_ANTENNA1           (Config.UseAntenna1)
-#define USE_ANTENNA2           (Config.UseAntenna2)
+#define IF_ANTENNA1(x)          if (Config.UseAntenna1) { x; }
+#define IF_ANTENNA2(x)          if (Config.UseAntenna2) { x; }
+#define USE_ANTENNA1            (Config.UseAntenna1)
+#define USE_ANTENNA2            (Config.UseAntenna2)
 #else
-#define IF_ANTENNA1(x)         x;
+#define IF_ANTENNA1(x)          x;
 #define IF_ANTENNA2(x)
-#define USE_ANTENNA1           true
-#define USE_ANTENNA2           false
+#define USE_ANTENNA1            true
+#define USE_ANTENNA2            false
 #endif
 
 

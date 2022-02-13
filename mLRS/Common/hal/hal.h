@@ -10,6 +10,9 @@
 // enter define into "MCU G++ Compiler"->"Preprocessor" !!!
 
 
+#include "device_conf.h"
+
+
 #ifdef RX_SIYI_F373CC
 #include "rx-hal-siyi-f373cc.h"
 #endif
