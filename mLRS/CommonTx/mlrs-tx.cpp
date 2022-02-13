@@ -12,6 +12,7 @@ v0.0.00:
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
+#define DEBUG_ENABLED
 
 
 // we set the priorities here to have an overview
@@ -136,7 +137,7 @@ void init(void)
 
   in.Init();
 
-  uartc_init();
+  dbg.Init();
 
   setup_init();
 
@@ -383,8 +384,8 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
   }
 
   if (res) {
-    DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
-uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
+    DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
+dbg.puts("fail ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
   }
 
   if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
@@ -464,7 +465,7 @@ int main_main(void)
   sx2.SetRfFrequency(fhss.GetCurrFreq());
 
 //  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-//    uartc_puts("c = "); uartc_puts(u8toBCD_s(fhss.ch_list[i])); uartc_puts(" f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n"); delay_ms(50);
+//    dbg.puts("c = ");dbg.puts(u8toBCD_s(fhss.ch_list[i]));dbg.puts(" f = ");dbg.puts(u32toBCD_s(fhss.fhss_list[i]));dbg.puts("\n"); delay_ms(50);
 //  }
 
   tx_tick = 0;
@@ -521,21 +522,21 @@ int main_main(void)
         txstats.Update1Hz();
         if (connected()) inject_radio_status = true;
 
-        uartc_puts("\nTX: ");
-        uartc_puts(u8toBCD_s(txstats.GetLQ_serial_data()));
-        uartc_puts(" (");
-        uartc_puts(u8toBCD_s(stats.frames_received.GetLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-        uartc_puts("),");
-        uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
+        dbg.puts("\nTX: ");
+        dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));
+        dbg.puts(" (");
+        dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
+        dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+        dbg.puts("),");
+        dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
 
-        uartc_puts(s8toBCD_s(stats.last_rx_rssi1)); uartc_putc(',');
-        uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_rx_snr1)); uartc_puts("; ");
+        dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
+        dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
+        dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
-        uartc_puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); uartc_puts(", ");
-        uartc_puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); uartc_puts("; ");
-        //uartc_putc('\n');
+        dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+        //dbg.putc('\n');
       }
 
       if (!tx_tick) {
@@ -562,7 +563,7 @@ int main_main(void)
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0;
       irq2_status = 0;
-      DBG_MAIN_SLIM(uartc_puts(">");)
+      DBG_MAIN_SLIM(dbg.puts(">");)
       break;
 
     case LINK_STATE_RECEIVE:
@@ -582,14 +583,14 @@ IF_ANTENNA1(
         if (irq_status & SX12xx_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(uartc_puts("!");)
+          DBG_MAIN_SLIM(dbg.puts("!");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq_status & SX12xx_IRQ_RX_DONE) {
           irq_status = 0;
           link_rx1_status = do_receive(ANTENNA_1);
-          DBG_MAIN_SLIM(uartc_puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<\n");)
         }
       }
 
@@ -616,14 +617,14 @@ IF_ANTENNA2(
         if (irq2_status & SX12xx_IRQ_TX_DONE) {
           irq2_status = 0;
           link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(uartc_puts("!");)
+          DBG_MAIN_SLIM(dbg.puts("!");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
         if (irq2_status & SX12xx_IRQ_RX_DONE) {
           irq2_status = 0;
           link_rx2_status = do_receive(ANTENNA_2);
-          DBG_MAIN_SLIM(uartc_puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<\n");)
         }
       }
 
@@ -731,23 +732,23 @@ IF_ANTENNA2(
       uint16_t dt = tnow_us - tlast_us;
       tlast_us = tnow_us;
 
-      uartc_puts(" ");
-      uartc_puts(u16toBCD_s(tnow_us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
+      dbg.puts(" ");
+      dbg.puts(u16toBCD_s(tnow_us)); dbg.puts(", "); dbg.puts(u16toBCD_s(dt)); dbg.puts("; ");
       switch (link_state) {
-      case LINK_STATE_IDLE: uartc_puts("i  "); break;
-      case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
-      case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
-      case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
-      case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
-      case LINK_STATE_RECEIVE_DONE: uartc_puts("rd "); break;
+      case LINK_STATE_IDLE: dbg.puts("i  "); break;
+      case LINK_STATE_TRANSMIT: dbg.puts("t  "); break;
+      case LINK_STATE_TRANSMIT_WAIT: dbg.puts("tw "); break;
+      case LINK_STATE_RECEIVE: dbg.puts("r  "); break;
+      case LINK_STATE_RECEIVE_WAIT: dbg.puts("rw "); break;
+      case LINK_STATE_RECEIVE_DONE: dbg.puts("rd "); break;
       }
       switch (connect_state) {
-      case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
-      case CONNECT_STATE_SYNC: uartc_puts("S "); break;
-      case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
+      case CONNECT_STATE_LISTEN: dbg.puts("L "); break;
+      case CONNECT_STATE_SYNC: dbg.puts("S "); break;
+      case CONNECT_STATE_CONNECTED: dbg.puts("C "); break;
       }
-      uartc_puts(connected() ? "c " : "d ");
-      uartc_puts("\n");
+      dbg.puts(connected() ? "c " : "d ");
+      dbg.puts("\n");
 */
     }//end of if(doPreTransmit)
 

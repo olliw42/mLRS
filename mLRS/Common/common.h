@@ -329,13 +329,13 @@ class tSerialBase
     void Init(void) {};
     virtual void putc(char c) {}
     void putbuf(void* buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) putc(((char*)buf)[i]); }
+    void puts(const char* s) { while (*s) { putc(*s); s++; }; }
     bool available(void) { return 0; }
     char getc(void) { return '\0'; }
     void flush(void) {};
 };
 
-// this is the serial port
-// we have setup the hals such that it is always uartb
+// this is the serial port, is always uartb
 class tSerialPort : public tSerialBase
 {
 #ifndef DEVICE_HAS_NO_SERIAL
@@ -349,11 +349,23 @@ class tSerialPort : public tSerialBase
 };
 
 
+// is always uartc
+class tDebugPort : public tSerialBase
+{
+#if (!defined DEVICE_HAS_NO_DEBUG && defined DEBUG_ENABLED)
+  public:
+    void Init(void) { uartc_init(); }
+    void putc(char c) override { uartc_putc(c); }
+#endif
+};
+
+
 //-------------------------------------------------------
 // Common Variables
 //-------------------------------------------------------
 
 tSerialPort serial;
+tDebugPort dbg;
 
 tRcData rcData;
 

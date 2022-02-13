@@ -12,6 +12,7 @@ v0.0.00:
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
+#define DEBUG_ENABLED
 
 
 // we set the priorities here to have an overview
@@ -98,7 +99,7 @@ void init(void)
   serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
   out.Init();
 
-  uartc_init();
+  dbg.Init();
 
   setup_init(); // clock needs Config
 
@@ -347,8 +348,8 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
   }
 
   if (res) {
-    DBG_MAIN(uartc_puts("fail "); uartc_putc('\n');)
-uartc_puts("fail "); uartc_puts(u8toHEX_s(res));uartc_putc('\n');
+    DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
+dbg.puts("fail ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
   }
 
   if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
@@ -404,7 +405,7 @@ int main_main(void)
 #endif
   init();
 
-  DBG_MAIN(uartc_puts("\n\n\nHello\n\n");)
+  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   // startup sign of life
   LED_RED_OFF;
@@ -427,7 +428,7 @@ int main_main(void)
   sx2.SetRfFrequency(fhss.GetCurrFreq());
 
 //  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-//    uartc_puts("c = "); uartc_puts(u8toBCD_s(fhss.ch_list[i])); uartc_puts(" f = "); uartc_puts(u32toBCD_s(fhss.fhss_list[i])); uartc_puts("\n"); delay_ms(50);
+//    dbg.puts("c = ");dbg.puts(u8toBCD_s(fhss.ch_list[i]));dbg.puts(" f = ");dbg.puts(u32toBCD_s(fhss.fhss_list[i]));dbg.puts("\n"); delay_ms(50);
 //  }
 
   link_state = LINK_STATE_RECEIVE;
@@ -476,23 +477,23 @@ int main_main(void)
       if (!tick_1hz) {
         rxstats.Update1Hz();
 
-        uartc_puts("\nRX: ");
-        uartc_puts(u8toBCD_s(rxstats.GetLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
-        uartc_puts(" (");
-        uartc_puts(u8toBCD_s(stats.frames_received.GetLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); uartc_putc(',');
-        uartc_puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-        uartc_puts("),");
-        uartc_puts(u8toBCD_s(stats.received_LQ)); uartc_puts(", ");
+        dbg.puts("\nRX: ");
+        dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
+        dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
+        dbg.puts(" (");
+        dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
+        dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
+        dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+        dbg.puts("),");
+        dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
 
-        uartc_puts(s8toBCD_s(stats.last_rx_rssi1)); uartc_putc(',');
-        uartc_puts(s8toBCD_s(stats.received_rssi)); uartc_puts(", ");
-        uartc_puts(s8toBCD_s(stats.last_rx_snr1)); uartc_puts("; ");
+        dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
+        dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
+        dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
-        uartc_puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); uartc_puts(", ");
-        uartc_puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); uartc_puts("; ");
-        //uartc_putc('\n');
+        dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+        //dbg.putc('\n');
       }
     }
 
@@ -514,7 +515,7 @@ int main_main(void)
       link_rx2_status = RX_STATUS_NONE;
       irq_status = 0;
       irq2_status = 0;
-      DBG_MAIN_SLIM(uartc_puts(">");)
+      DBG_MAIN_SLIM(dbg.puts(">");)
       }break;
 
     case LINK_STATE_TRANSMIT: {
@@ -533,7 +534,7 @@ IF_ANTENNA1(
         if (irq_status & SX12xx_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(uartc_puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<\n");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -541,7 +542,7 @@ IF_ANTENNA1(
           irq_status = 0;
           bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
           link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
-          DBG_MAIN_SLIM(uartc_puts("!");)
+          DBG_MAIN_SLIM(dbg.puts("!");)
         }
       }
 
@@ -608,10 +609,10 @@ IF_ANTENNA2(
         invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
       }
 
-uartc_puts("\n> 1: ");
-uartc_puts(s8toBCD_s(stats.last_rx_rssi1));
-uartc_puts(" 2: ");
-uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
+dbg.puts("\n> 1: ");
+dbg.puts(s8toBCD_s(stats.last_rx_rssi1));
+dbg.puts(" 2: ");
+dbg.puts(s8toBCD_s(stats.last_rx_rssi2));
 
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
@@ -649,7 +650,7 @@ uartc_puts(s8toBCD_s(stats.last_rx_rssi2));
 
         handle_receive(antenna);
 
-uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
+dbg.puts(" a"); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       }
 
       if (valid_frame_received) { // valid frame received
@@ -751,22 +752,22 @@ uartc_puts(" a"); uartc_puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       uint16_t dt = tnow_10us - tlast_10us;
       tlast_10us = tnow_10us;
 
-      uartc_puts(" ");
-      uartc_puts(u16toBCD_s(tnow_10us)); uartc_puts(", "); uartc_puts(u16toBCD_s(dt)); uartc_puts("; ");
-      uartc_puts(missed ? "m " : "o ");
+      dbg.puts(" ");
+      dbg.puts(u16toBCD_s(tnow_10us)); dbg.puts(", "); dbg.puts(u16toBCD_s(dt)); dbg.puts("; ");
+      dbg.puts(missed ? "m " : "o ");
       switch (link_state) {
-      case LINK_STATE_TRANSMIT: uartc_puts("t  "); break;
-      case LINK_STATE_TRANSMIT_WAIT: uartc_puts("tw "); break;
-      case LINK_STATE_RECEIVE: uartc_puts("r  "); break;
-      case LINK_STATE_RECEIVE_WAIT: uartc_puts("rw "); break;
+      case LINK_STATE_TRANSMIT: dbg.puts("t  "); break;
+      case LINK_STATE_TRANSMIT_WAIT: dbg.puts("tw "); break;
+      case LINK_STATE_RECEIVE: dbg.puts("r  "); break;
+      case LINK_STATE_RECEIVE_WAIT: dbg.puts("rw "); break;
       }
       switch (connect_state) {
-      case CONNECT_STATE_LISTEN: uartc_puts("L "); break;
-      case CONNECT_STATE_SYNC: uartc_puts("S "); break;
-      case CONNECT_STATE_CONNECTED: uartc_puts("C "); break;
+      case CONNECT_STATE_LISTEN: dbg.puts("L "); break;
+      case CONNECT_STATE_SYNC: dbg.puts("S "); break;
+      case CONNECT_STATE_CONNECTED: dbg.puts("C "); break;
       }
-      uartc_puts(connected() ? "c " : "d ");
-      uartc_puts("\n");
+      dbg.puts(connected() ? "c " : "d ");
+      dbg.puts("\n");
 */
     }//end of if(doPostReceive2)
 

@@ -85,7 +85,6 @@ uint8_t rssi, remrssi;
       //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
       &f_status);
   f_send();
-//  uartc_puts("R");
 }
 
 
