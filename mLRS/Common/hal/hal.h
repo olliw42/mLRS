@@ -38,6 +38,15 @@
 #endif
 
 
+#ifdef RX_R9MM_868_F103RB
+#include "rx-hal-R9MM-868-f103rb.h"
+#endif
+
+#ifdef TX_R9M_868_F103C8
+#include "tx-hal-R9M-868-f103c8.h"
+#endif
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
