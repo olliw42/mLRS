@@ -19,6 +19,12 @@
 //-------------------------------------------------------
 
 typedef enum {
+  MODE_50HZ = 0,
+  MODE_19HZ,
+} MODE_ENUM;
+
+
+typedef enum {
   SERIAL_DESTINATION_SERIAL_PORT = 0,
   SERIAL_DESTINATION_MBRDIGE,
   SERIAL_DESTINATION_NUM,
@@ -107,6 +113,8 @@ typedef struct
 typedef struct
 {
   uint32_t BindDblWord;
+  uint16_t Mode;
+
   tTxSetup Tx;
   tRxSetup Rx;
 } tSetup;
@@ -116,6 +124,10 @@ typedef struct
 // can be derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+  uint8_t LoraConfigIndex;
+  uint8_t lora_send_frame_tmo;
+  uint8_t lora_set_to_rx_tmo;
+
   uint16_t FrameSyncWord;
   uint16_t FhssNum;
   uint32_t FhssSeed;
@@ -135,6 +147,9 @@ typedef struct
 //-------------------------------------------------------
 // Defines
 //-------------------------------------------------------
+
+#define SEND_FRAME_TMO          Config.lora_send_frame_tmo //25 // 10
+#define TX_SET_RX_TMO           Config.lora_set_to_rx_tmo // 30 // 10
 
 #define CONNECT_TMO_SYSTICKS    Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT  Config.connect_listen_hop_cnt

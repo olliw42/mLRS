@@ -58,13 +58,19 @@
 #define BIND_DBLWORD                    0x12344281
 
 
+#define SETUP_MODE                      MODE_50HZ
+//#define SETUP_MODE                      MODE_19HZ // !!! ATTENTION: HIGHLY EXPERIMENTAL !!!
+
+
 //-------------------------------------------------------
 // System Configs
 //-------------------------------------------------------
 
-#define FRAME_RATE_MS                   20 // 500 // 20 // 50 Hz
-#define SEND_FRAME_TMO                  10 // just needs to be larger than toa, not critical
-#define TX_SET_RX_TMO                   11 // is "critical" see timing tests, was 10 before
+#define MODE_50HZ_SEND_FRAME_TMO        10 // just needs to be larger than toa, not critical
+#define MODE_50HZ_TX_SET_RX_TMO         11 // is "critical" see timing tests, was 10 before
+
+#define MODE_19HZ_SEND_FRAME_TMO        25 // EXPERIMENTAL!
+#define MODE_19HZ_TX_SET_RX_TMO         30 // EXPERIMENTAL!
 
 #define FHSS_NUM                        24
 

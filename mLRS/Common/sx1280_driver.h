@@ -56,6 +56,17 @@ const tSxLoraConfiguration SxLoraConfiguration[] = {
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
       .ReceiverSensitivity = -105,
+    },
+    { .SpreadingFactor = SX1280_LORA_SF7,
+      .Bandwidth = SX1280_LORA_BW_800,
+      .CodingRate = SX1280_LORA_CR_LI_4_5,
+      .PreambleLength = 12,
+      .HeaderType = SX1280_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = SX1280_LORA_CRC_DISABLE,
+      .InvertIQ = SX1280_LORA_IQ_NORMAL,
+      .TimeOverAir = 23527,
+      .ReceiverSensitivity = -112,
     }
 };
 
@@ -113,7 +124,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
         SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
 
-        SetLoraConfigurationByIndex(0);
+        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
 #ifdef LORA_SYNCWORD
         SetSyncWord(LORA_SYNCWORD);
