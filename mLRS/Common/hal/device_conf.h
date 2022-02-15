@@ -31,8 +31,8 @@
 
 #ifdef RX_DIY_E28_BOARD01_F103CB
   #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2p4_GHZ
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 
@@ -60,5 +60,3 @@
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
 #endif
-
-

@@ -4,10 +4,10 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// SX1276 Driver
+// SX127X Driver
 //*******************************************************
-#ifndef SX1276_DRIVER_H
-#define SX1276_DRIVER_H
+#ifndef SX127X_DRIVER_H
+#define SX127X_DRIVER_H
 #pragma once
 
 
@@ -23,7 +23,6 @@ https://www.thethingsnetwork.org/forum/t/should-private-lorawan-networks-use-a-d
 //-------------------------------------------------------
 // SX Driver
 //-------------------------------------------------------
-
 
 typedef struct {
     uint8_t SpreadingFactor;
@@ -140,7 +139,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
-        SetSyncWord(0x12); //LORA_SYNCWORD);
+        SetSyncWord(0x12);
 
         SetBufferBaseAddress(0, 0);
 
@@ -246,7 +245,7 @@ class Sx127xDriver : public Sx127xDriverCommon
     {
         delay_ns(30); // datasheet says tnhigh = 20 ns, NSS high time between SPI accesses
         spi_select();
-        delay_ns(40); // datasheet says tnsetup = 30 ns, NSS setup time, From NSS falling edge to SCK rising  edge
+        delay_ns(40); // datasheet says tnsetup = 30 ns, NSS setup time, From NSS falling edge to SCK rising edge
     }
 
     void SpiDeselect(void) override
@@ -277,7 +276,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         spi_init();
         sx_init_gpio();
-        sx_dio0_init_exti_isroff();
+        sx_dio_init_exti_isroff();
 
         // no idea how long the SX1276 takes to boot up, so give it some good time
         delay_ms(300);
@@ -294,7 +293,7 @@ class Sx127xDriver : public Sx127xDriverCommon
         Configure();
         delay_us(125); // may not be needed
 
-        //sx_dio0_enable_exti_isr();
+        //sx_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
@@ -323,4 +322,4 @@ class Sx127xDriver : public Sx127xDriverCommon
 #endif
 
 
-#endif // SX1276_DRIVER_H
+#endif // SX127X_DRIVER_H

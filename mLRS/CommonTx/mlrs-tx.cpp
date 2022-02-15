@@ -28,11 +28,7 @@ v0.0.00:
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
 #include "..\Common\hal\hal.h"
-#ifdef DEVICE_HAS_SX127x
-#include "..\Common\sx127x.h"
-#else
-#include "..\modules\sx12xx-lib\src\sx128x.h"
-#endif
+#include "..\Common\sx-drivers\sx12xx.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY

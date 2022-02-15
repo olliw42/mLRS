@@ -74,6 +74,10 @@ void setup_sanitize(void)
   if (Setup.Rx.Diversity >= DIVERSITY_ANTENNA2) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
 #endif
 #endif
+
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
+  Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
+#endif
 }
 
 

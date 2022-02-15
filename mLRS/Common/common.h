@@ -12,11 +12,7 @@
 
 
 #include "common_conf.h"
-#ifdef DEVICE_HAS_SX127x
-#include "sx1276_driver.h"
-#else
-#include "sx1280_driver.h"
-#endif
+#include "sx-drivers\sx12xx_driver.h"
 #include "lq_counter.h"
 #include "fhss.h"
 #include "frame_types.h"
@@ -379,13 +375,17 @@ tRxFrame rxFrame;
 tTxFrame txFrame2;
 tRxFrame rxFrame2;
 
-#ifdef DEVICE_HAS_SX127x
+#ifdef DEVICE_HAS_SX126x
+Sx126xDriver sx;
+#elif defined DEVICE_HAS_SX127x
 Sx127xDriver sx;
 #else
 Sx128xDriver sx;
 #endif
 #ifdef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_HAS_SX127x
+#ifdef DEVICE_HAS_SX126x
+Sx126xDriver sx;
+#elif defined DEVICE_HAS_SX127x
 Sx127xDriver2 sx2;
 #else
 Sx128xDriver sx2;

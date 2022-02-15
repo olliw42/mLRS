@@ -82,20 +82,20 @@ typedef enum {
 } RX_FAILSAFE_MODE_ENUM;
 
 
-typedef struct
-{
-  uint16_t SerialDestination;
-  uint16_t ChannelsSource;
-  uint16_t ChannelOrder;
-  uint16_t Power;
-  uint16_t SendRadioStatus;
-  uint16_t Diversity;
-} tTxSetup;
-
-
 //-------------------------------------------------------
 // Types
 //-------------------------------------------------------
+
+typedef struct
+{
+  uint16_t ChannelsSource;
+  uint16_t ChannelOrder;
+  uint16_t Power;
+  uint16_t Diversity;
+  uint16_t SerialDestination;
+  uint16_t SendRadioStatus;
+} tTxSetup;
+
 
 typedef struct
 {
@@ -103,20 +103,25 @@ typedef struct
   uint16_t OutMode;
   uint16_t FailsafeMode;
   uint16_t Power;
+  uint16_t Diversity;
   uint16_t SerialBaudrate;
   uint16_t SendRadioStatus;
-  uint16_t Diversity;
 } tRxSetup;
 
 
 // user setable parameter values, stored in EEPROM
 typedef struct
 {
+  // parameters common to both Tx and Rx
+  // cannot be changed on the fly, loss of connection will happen, need restart/reconnect
   uint32_t BindDblWord;
   uint16_t Mode;
 
-  tTxSetup Tx;
+  // parameters specific to Rx, can be changed on the fly
   tRxSetup Rx;
+
+  // parameters specific to Tx, can be changed on the fly
+  tTxSetup Tx;
 } tSetup;
 
 
@@ -148,8 +153,8 @@ typedef struct
 // Defines
 //-------------------------------------------------------
 
-#define SEND_FRAME_TMO          Config.lora_send_frame_tmo //25 // 10
-#define TX_SET_RX_TMO           Config.lora_set_to_rx_tmo // 30 // 10
+#define SEND_FRAME_TMO          Config.lora_send_frame_tmo
+#define TX_SET_RX_TMO           Config.lora_set_to_rx_tmo
 
 #define CONNECT_TMO_SYSTICKS    Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT  Config.connect_listen_hop_cnt

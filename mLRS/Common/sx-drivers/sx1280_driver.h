@@ -311,7 +311,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
         spi_init();
         sx_init_gpio();
-        sx_dio1_init_exti_isroff();
+        sx_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
@@ -338,7 +338,7 @@ class Sx128xDriver : public Sx128xDriverCommon
         Configure();
         delay_us(125); // may not be needed if busy available
 
-        sx_dio1_enable_exti_isr();
+        sx_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
@@ -413,7 +413,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
         spib_init();
         sx2_init_gpio();
-        sx2_dio1_init_exti_isroff();
+        sx2_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
@@ -435,7 +435,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         Configure();
         delay_us(125); // may not be needed if busy available
 
-        sx2_dio1_enable_exti_isr();
+        sx2_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
