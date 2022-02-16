@@ -103,6 +103,7 @@ uint8_t out_buf[SX126X_SPI_BUF_SIZE];
     SpiTransfer(out_buf, data, len);
     SpiDeselect();
     // no delay according to semtech driver
+    ClearRxEvent();
 }
 
 
@@ -300,17 +301,6 @@ uint8_t buf[3];
     buf[2] = (uint8_t) (tmo_periodbase & 0x0000FF);
     WriteCommand(SX126X_CMD_SET_RX, buf, 3);
 
-    // 15.3 Implicit Header Mode Timeout Behavior   p. 103
-    // 15.3.1 Description
-    // When receiving LoRa® packets in Rx mode with Timeout active, and no header (Implicit Mode), the timer responsible for
-    // generating the Timeout (based on the RTC timer) is not stopped on RxDone event. Therefore, it may trigger an unexpected
-    // timeout in any subsequent mode where the RTC isn’t re-invoked, and therefore reset and re-programmed.
-    if (_header_type == SX126X_LORA_HEADER_IMPLICIT) {
-        WriteRegister(SX126X_REG_RTC_STOP, 0x00);
-        buf[0] = ReadRegister(SX126X_REG_RTC_EVENT);
-        buf[0] |= 0x02;
-        WriteRegister(SX126X_REG_RTC_EVENT, buf[0]);
-    }
     SetDelay(100); // semtech driver says 100 us
 }
 
@@ -336,6 +326,23 @@ uint8_t status[2];
     *rxStartBufferPointer = status[1];
 }
 
+
+void Sx126xDriverBase::ClearRxEvent(void)
+{
+	// 15.3 Implicit Header Mode Timeout Behavior   p. 103
+	// 15.3.1 Description
+	// When receiving LoRa® packets in Rx mode with Timeout active, and no header (Implicit Mode), the timer responsible for
+	// generating the Timeout (based on the RTC timer) is not stopped on RxDone event. Therefore, it may trigger an unexpected
+	// timeout in any subsequent mode where the RTC isn’t re-invoked, and therefore reset and re-programmed.
+	if (_header_type == SX126X_LORA_HEADER_IMPLICIT) {
+		uint8_t buf = ReadRegister(SX126X_REG_RTC_STOP);
+	    WriteRegister(SX126X_REG_RTC_STOP, 0x00); // stop the timer
+	    uint8_t data = ReadRegister(SX126X_REG_RTC_EVENT);
+	    data |= 0x02;
+	    WriteRegister(SX126X_REG_RTC_EVENT, data);
+	    WriteRegister(SX126X_REG_RTC_STOP, buf);  // restart the timer
+	}
+}
 
 // auxiliary
 
