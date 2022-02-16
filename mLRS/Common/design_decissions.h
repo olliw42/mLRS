@@ -362,10 +362,20 @@ returned packet after 2.6 ms
 
 => 9 bytes @ 150 Hz = 1350 bytes/sec max
 
+HOW does that fit into LoRa?
+sx1262, SF5, 500kHz, CR4/5, 12 bytes preamble, no crc:
+23 bytes -> 4.56 ms
+13 bytes -> 3.28 ms
+---
+= 7.84 ms
+=> 127 Hz max => no way it fits into 150 Hz !!!!
+indeed, g3gg0 link says it uses FSK
+
+cannot be done with sx1276, since it only has SF6 min
 
 for configuring ArduPilot to use CRSF rc input, see e.g.
 http://www.mateksys.com/?portfolio=h743-slim#tab-id-5
-it's for the MatekH743, but I think it makes it clear how things work
+it's for the MatekH743, but it nicely makes clear how things work
 also see https://ardupilot.org/copter/docs/common-tbs-rc.html#common-tbs-rc
 e.g set RSSI_TYPE = 3
 
