@@ -204,7 +204,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     int8_t calc_sx_power(int8_t power)
     {
-        sx_power = power - POWER_GAIN_DBM;
+        sx_power = power + POWER_SX126X_MAX_DBM - POWER_GAIN_DBM;
         if (sx_power > POWER_SX126X_MAX_DBM) sx_power = POWER_SX126X_MAX_DBM;
         if (sx_power < SX126X_POWER_m9_DBM) sx_power = SX126X_POWER_m9_DBM;
         return sx_power;

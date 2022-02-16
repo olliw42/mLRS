@@ -89,6 +89,7 @@ class Sx126xDriverBase
 
     uint16_t GetIrqStatus(void);
     void ClearIrqStatus(uint16_t IrqMask);
+    uint16_t GetAndClearIrqStatus(uint16_t IrqMask);
 
     // Tx methods
     void SetTxParams(uint8_t Power, uint8_t RampTime);

@@ -103,7 +103,6 @@ uint8_t out_buf[SX126X_SPI_BUF_SIZE];
     SpiTransfer(out_buf, data, len);
     SpiDeselect();
     // no delay according to semtech driver
-    ClearRxEvent();
 }
 
 
@@ -238,6 +237,16 @@ uint8_t buf[2];
     buf[1] = (uint8_t)(IrqMask & 0x00FF);
 
     WriteCommand(SX126X_CMD_CLR_IRQ_STATUS, buf, 2);
+}
+
+
+uint16_t Sx126xDriverBase::GetAndClearIrqStatus(uint16_t IrqMask)
+{
+	uint16_t IrqStatus = GetIrqStatus();
+	ClearIrqStatus(IrqMask);
+	if(IrqStatus & SX126X_IRQ_RX_DONE)
+		ClearRxEvent();
+	return IrqStatus;
 }
 
 
