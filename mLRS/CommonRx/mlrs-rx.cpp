@@ -493,7 +493,6 @@ int main_main(void)
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
         dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
-        //dbg.putc('\n');
       }
     }
 
@@ -515,7 +514,7 @@ int main_main(void)
       link_rx2_status = RX_STATUS_NONE;
       irq_status = 0;
       irq2_status = 0;
-      DBG_MAIN_SLIM(dbg.puts(">");)
+      DBG_MAIN_SLIM(dbg.puts("\n>");)
       }break;
 
     case LINK_STATE_TRANSMIT: {
@@ -534,7 +533,7 @@ IF_ANTENNA1(
         if (irq_status & SX12xx_IRQ_TX_DONE) {
           irq_status = 0;
           link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(dbg.puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<");)
         }
       } else
       if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -746,29 +745,6 @@ dbg.puts(" a"); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
           out.SendLinkStatisticsDisconnected();
         }
       }
-/*
-      static uint16_t tlast_10us = 0;
-      uint16_t tnow_10us = clock.tim_10us();
-      uint16_t dt = tnow_10us - tlast_10us;
-      tlast_10us = tnow_10us;
-
-      dbg.puts(" ");
-      dbg.puts(u16toBCD_s(tnow_10us)); dbg.puts(", "); dbg.puts(u16toBCD_s(dt)); dbg.puts("; ");
-      dbg.puts(missed ? "m " : "o ");
-      switch (link_state) {
-      case LINK_STATE_TRANSMIT: dbg.puts("t  "); break;
-      case LINK_STATE_TRANSMIT_WAIT: dbg.puts("tw "); break;
-      case LINK_STATE_RECEIVE: dbg.puts("r  "); break;
-      case LINK_STATE_RECEIVE_WAIT: dbg.puts("rw "); break;
-      }
-      switch (connect_state) {
-      case CONNECT_STATE_LISTEN: dbg.puts("L "); break;
-      case CONNECT_STATE_SYNC: dbg.puts("S "); break;
-      case CONNECT_STATE_CONNECTED: dbg.puts("C "); break;
-      }
-      dbg.puts(connected() ? "c " : "d ");
-      dbg.puts("\n");
-*/
     }//end of if(doPostReceive2)
 
     out.Do(micros());

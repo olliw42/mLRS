@@ -65,7 +65,6 @@
 #define SX_BUSY                   IO_PB1
 //#define SX_AMP_CTX
 //#define SX_ANT_SELECT
-
 //#define SX_USE_DCDC
 
 #define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB

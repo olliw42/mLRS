@@ -536,7 +536,6 @@ int main_main(void)
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
         dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
-        //dbg.putc('\n');
       }
 
       if (!tx_tick) {
@@ -563,7 +562,7 @@ int main_main(void)
       link_state = LINK_STATE_TRANSMIT_WAIT;
       irq_status = 0;
       irq2_status = 0;
-      DBG_MAIN_SLIM(dbg.puts(">");)
+      DBG_MAIN_SLIM(dbg.puts("\n>");)
       break;
 
     case LINK_STATE_RECEIVE:
@@ -590,7 +589,7 @@ IF_ANTENNA1(
         if (irq_status & SX12xx_IRQ_RX_DONE) {
           irq_status = 0;
           link_rx1_status = do_receive(ANTENNA_1);
-          DBG_MAIN_SLIM(dbg.puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<");)
         }
       }
 
@@ -624,7 +623,7 @@ IF_ANTENNA2(
         if (irq2_status & SX12xx_IRQ_RX_DONE) {
           irq2_status = 0;
           link_rx2_status = do_receive(ANTENNA_2);
-          DBG_MAIN_SLIM(dbg.puts("<\n");)
+          DBG_MAIN_SLIM(dbg.puts("<");)
         }
       }
 
@@ -726,30 +725,6 @@ IF_ANTENNA2(
 
       if (!connected()) stats.Clear();
       txstats.Next();
-/*
-      static uint16_t tlast_us = 0;
-      uint16_t tnow_us = micros();
-      uint16_t dt = tnow_us - tlast_us;
-      tlast_us = tnow_us;
-
-      dbg.puts(" ");
-      dbg.puts(u16toBCD_s(tnow_us)); dbg.puts(", "); dbg.puts(u16toBCD_s(dt)); dbg.puts("; ");
-      switch (link_state) {
-      case LINK_STATE_IDLE: dbg.puts("i  "); break;
-      case LINK_STATE_TRANSMIT: dbg.puts("t  "); break;
-      case LINK_STATE_TRANSMIT_WAIT: dbg.puts("tw "); break;
-      case LINK_STATE_RECEIVE: dbg.puts("r  "); break;
-      case LINK_STATE_RECEIVE_WAIT: dbg.puts("rw "); break;
-      case LINK_STATE_RECEIVE_DONE: dbg.puts("rd "); break;
-      }
-      switch (connect_state) {
-      case CONNECT_STATE_LISTEN: dbg.puts("L "); break;
-      case CONNECT_STATE_SYNC: dbg.puts("S "); break;
-      case CONNECT_STATE_CONNECTED: dbg.puts("C "); break;
-      }
-      dbg.puts(connected() ? "c " : "d ");
-      dbg.puts("\n");
-*/
     }//end of if(doPreTransmit)
 
 
