@@ -39,10 +39,10 @@ The RC channels layout is as follows:
 - 4 channels with three steps (CH13 - CH16), with 2 of them with a higher reliability margin (CH15, CH16)
 
 It currently provides this operation mode:
-- 50 Hz Mode
-  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step
-  uplink serial rate: 3200 Bytes/sec
-  downlink serial rate: 4100 Bytes/sec
+- 50 Hz Mode<br>
+  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
+  uplink serial rate: 3200 Bytes/sec<br>
+  downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 
 ## Community ##
