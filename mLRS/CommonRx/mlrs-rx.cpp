@@ -265,7 +265,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   // copy rc data
   if (!do_payload) {
     // copy only channels 1-4, and jump out
-    rcdata_ch0to3_from_txframe(&rcData, frame);
+    rcdata_rc1_from_txframe(&rcData, frame);
     return;
   }
 

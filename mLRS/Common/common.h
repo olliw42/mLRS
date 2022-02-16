@@ -82,13 +82,21 @@ uint16_t crc;
     frame->rc1.ch1  = rc->ch[1];
     frame->rc1.ch2  = rc->ch[2];
     frame->rc1.ch3  = rc->ch[3];
-    for (uint8_t i = 0; i < FRAME_TX_RCDATA2_LEN; i++) {
-      frame->rc2.ch[i] = (rc->ch[4+i] / 8); // 0 .. 128 .. 255, 8 bits
-    }
-    frame->rc1.ch14 = (rc->ch[14] >= 1536) ? 1 : 0; // 0 ... 1
-    frame->rc1.ch15 = (rc->ch[15] >= 1536) ? 1 : 0;
-    frame->rc1.ch16 = (rc->ch[16] >= 1536) ? 1 : 0;
-    frame->rc1.ch17 = (rc->ch[17] >= 1536) ? 1 : 0;
+
+    frame->rc2.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
+    frame->rc2.ch5  = rc->ch[5];
+    frame->rc2.ch6  = rc->ch[6];
+    frame->rc2.ch7  = rc->ch[7];
+
+    frame->rc2.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
+    frame->rc2.ch9  = rc->ch[9] / 8;
+    frame->rc2.ch10 = rc->ch[10] / 8;
+    frame->rc2.ch11 = rc->ch[11] / 8;
+
+    frame->rc2.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+    frame->rc2.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
+    frame->rc1.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
+    frame->rc1.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -125,12 +133,15 @@ uint16_t crc;
 }
 
 
-void rcdata_ch0to3_from_txframe(tRcData* rc, tTxFrame* frame)
+void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
 {
     rc->ch[0] = frame->rc1.ch0;
     rc->ch[1] = frame->rc1.ch1;
     rc->ch[2] = frame->rc1.ch2;
     rc->ch[3] = frame->rc1.ch3;
+
+    rc->ch[14] = (frame->rc1.ch14 > 1) ? 2047 : ((frame->rc1.ch14 < 1) ? 0 : 1024);
+    rc->ch[15] = (frame->rc1.ch15 > 1) ? 2047 : ((frame->rc1.ch15 < 1) ? 0 : 1024);
 }
 
 
@@ -140,13 +151,24 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
     rc->ch[1] = frame->rc1.ch1;
     rc->ch[2] = frame->rc1.ch2;
     rc->ch[3] = frame->rc1.ch3;
-    for (uint8_t i = 0; i < FRAME_TX_RCDATA2_LEN; i++) {
-        rc->ch[4+i] = frame->rc2.ch[i] * 8;
-    }
-    rc->ch[14] = (frame->rc1.ch14) ? 2047 : 0;
-    rc->ch[15] = (frame->rc1.ch15) ? 2047 : 0;
-    rc->ch[16] = (frame->rc1.ch16) ? 2047 : 0;
-    rc->ch[17] = (frame->rc1.ch17) ? 2047 : 0;
+
+    rc->ch[4] = frame->rc2.ch4;
+    rc->ch[5] = frame->rc2.ch5;
+    rc->ch[6] = frame->rc2.ch6;
+    rc->ch[7] = frame->rc2.ch7;
+
+    rc->ch[8] = frame->rc2.ch8 * 8;
+    rc->ch[9] = frame->rc2.ch9 * 8;
+    rc->ch[10] = frame->rc2.ch10 * 8;
+    rc->ch[11] = frame->rc2.ch11 * 8;
+
+    rc->ch[12] = (frame->rc2.ch12 > 1) ? 2047 : ((frame->rc2.ch12 < 1) ? 0 : 1024);
+    rc->ch[13] = (frame->rc2.ch13 > 1) ? 2047 : ((frame->rc2.ch13 < 1) ? 0 : 1024);
+    rc->ch[14] = (frame->rc1.ch14 > 1) ? 2047 : ((frame->rc1.ch14 < 1) ? 0 : 1024);
+    rc->ch[15] = (frame->rc1.ch15 > 1) ? 2047 : ((frame->rc1.ch15 < 1) ? 0 : 1024);
+
+    rc->ch[16] = 1024;
+    rc->ch[17] = 1024;
 }
 
 

@@ -82,18 +82,25 @@ typedef struct
   uint16_t ch1  : 11;
   uint16_t ch2  : 11;
   uint16_t ch3  : 11;
-  uint16_t ch14 :  1; // 0..1, 1 bit
-  uint16_t ch15 :  1;
-  uint16_t ch16 :  1;
-  uint16_t ch17 :  1;
+  uint16_t ch14 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
+  uint16_t ch15 :  2;
 }) tFrameRcData1; // 6 bytes
 
 
 PACKED(
 typedef struct
 {
-  uint8_t ch[FRAME_TX_RCDATA2_LEN]; // 0 .. 128 .. 255, 8 bits
-}) tFrameRcData2;
+  uint16_t ch4  : 11; // 0 .. 1024 .. 2047, 11 bits
+  uint16_t ch5  : 11;
+  uint16_t ch6  : 11;
+  uint16_t ch7  : 11;
+  uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
+  uint16_t ch13 :  2;
+  uint8_t ch8;        // 0 .. 128 .. 255, 8 bits
+  uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
+  uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
+  uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
+}) tFrameRcData2; // 10 bytes
 
 
 PACKED(

@@ -300,7 +300,7 @@ tSBusFrameBuffer sbus_buf;
 
   uint8_t flags = 0;
   if (rc->ch[16] >= 1536) flags |= SBUS_FLAG_CH17;
-  if (rc->ch[16] >= 1536) flags |= SBUS_FLAG_CH18;
+  if (rc->ch[17] >= 1536) flags |= SBUS_FLAG_CH18;
   if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
   if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
