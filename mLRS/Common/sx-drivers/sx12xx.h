@@ -15,7 +15,7 @@
 #include "..\hal\device_conf.h"
 
 #ifdef DEVICE_HAS_SX126x
-#include "sx126x.h"
+#include "..\..\modules\sx12xx-lib\src\sx126x.h"
 #else
 #include "..\..\modules\sx12xx-lib\src\sx128x.h"
 #endif
