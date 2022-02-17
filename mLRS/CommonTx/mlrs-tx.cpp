@@ -28,7 +28,7 @@ v0.0.00:
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
 #include "..\Common\hal\hal.h"
-#include "..\modules\sx12xx-lib\src\sx128x.h"
+#include "..\Common\sx-drivers\sx12xx.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
@@ -187,8 +187,7 @@ void SX_DIO_EXTI_IRQHandler(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
   //LED_RIGHT_RED_TOGGLE;
-  irq_status = sx.GetIrqStatus();
-  sx.ClearIrqStatus(SX12xx_IRQ_ALL);
+  irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
   if (irq_status & SX12xx_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
@@ -201,8 +200,7 @@ void SX2_DIO_EXTI_IRQHandler(void)
 {
   LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
   //LED_RIGHT_RED_TOGGLE;
-  irq2_status = sx2.GetIrqStatus();
-  sx2.ClearIrqStatus(SX12xx_IRQ_ALL);
+  irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
   if (irq2_status & SX12xx_IRQ_RX_DONE) {
     uint16_t sync_word;
     sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()

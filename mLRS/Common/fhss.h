@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 #include "hal\device_conf.h"
-#include "..\modules\sx12xx-lib\src\sx128x.h"
+#include "sx-drivers\sx12xx.h"
 #include "common_conf.h"
 
 

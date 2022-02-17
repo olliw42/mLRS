@@ -48,17 +48,3 @@
   #define FREQUENCY_BAND_2p4_GHZ
 #endif
 
-
-#ifdef RX_R9MM_868_F103RB
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_MHZ
-#endif
-
-#ifdef TX_R9M_868_F103C8
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_MHZ
-#endif
-
-

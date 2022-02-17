@@ -56,6 +56,17 @@ const tSxLoraConfiguration SxLoraConfiguration[] = {
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
       .ReceiverSensitivity = -105,
+    },
+    { .SpreadingFactor = SX1280_LORA_SF7,
+      .Bandwidth = SX1280_LORA_BW_800,
+      .CodingRate = SX1280_LORA_CR_LI_4_5,
+      .PreambleLength = 12,
+      .HeaderType = SX1280_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = SX1280_LORA_CRC_DISABLE,
+      .InvertIQ = SX1280_LORA_IQ_NORMAL,
+      .TimeOverAir = 23527,
+      .ReceiverSensitivity = -112,
     }
 };
 
@@ -113,7 +124,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
         SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
 
-        SetLoraConfigurationByIndex(0);
+        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
 #ifdef LORA_SYNCWORD
         SetSyncWord(LORA_SYNCWORD);
@@ -300,7 +311,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
         spi_init();
         sx_init_gpio();
-        sx_dio1_init_exti_isroff();
+        sx_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
@@ -327,7 +338,7 @@ class Sx128xDriver : public Sx128xDriverCommon
         Configure();
         delay_us(125); // may not be needed if busy available
 
-        sx_dio1_enable_exti_isr();
+        sx_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
@@ -402,7 +413,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
         spib_init();
         sx2_init_gpio();
-        sx2_dio1_init_exti_isroff();
+        sx2_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
@@ -424,7 +435,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         Configure();
         delay_us(125); // may not be needed if busy available
 
-        sx2_dio1_enable_exti_isr();
+        sx2_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop

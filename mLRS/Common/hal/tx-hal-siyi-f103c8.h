@@ -101,7 +101,7 @@ void sx_init_gpio(void)
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 }
 
-bool sx_dio1_read(void)
+bool sx_dio_read(void)
 {
   return (gpio_read_activehigh(SX_DIO1)) ? true : false;
 }
@@ -116,7 +116,7 @@ void sx_amp_receive(void)
   gpio_low(SX_AMP_CTX);
 }
 
-void sx_dio1_init_exti_isroff(void)
+void sx_dio_init_exti_isroff(void)
 {
   LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
 
@@ -130,7 +130,7 @@ void sx_dio1_init_exti_isroff(void)
   NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
-void sx_dio1_enable_exti_isr(void)
+void sx_dio_enable_exti_isr(void)
 {
   LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
   LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
