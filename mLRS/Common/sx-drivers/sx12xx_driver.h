@@ -19,7 +19,7 @@
 #elif defined DEVICE_HAS_SX127x
 #include "sx127x_driver.h"
 #else
-#include "sx1280_driver.h"
+#include "sx128x_driver.h"
 #endif
 
 

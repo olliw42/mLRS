@@ -4,10 +4,10 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// SX1280 Driver
+// SX128x Driver
 //*******************************************************
-#ifndef SX1280_DRIVER_H
-#define SX1280_DRIVER_H
+#ifndef SX128X_DRIVER_H
+#define SX128X_DRIVER_H
 #pragma once
 
 
@@ -458,4 +458,4 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 #endif
 
 
-#endif // SX1280_DRIVER_H
+#endif // SX128X_DRIVER_H
