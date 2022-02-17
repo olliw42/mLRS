@@ -24,6 +24,92 @@
 //-------------------------------------------------------
 // Frequency list
 //-------------------------------------------------------
+#ifdef DEVICE_HAS_SX126x
+#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
+#elif defined DEVICE_HAS_SX127x
+#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX1276_FREQ_MHZ_TO_REG(f_mhz)
+#endif
+
+#ifdef FREQUENCY_BAND_868_MHZ
+// 863.275 ... 869.575  in 0.525 MHz steps
+// https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/FunkanlagenGeringerReichweite/2018_05_SRD_pdf.pdf?__blob=publicationFile&v=7
+// 862 - 870,
+// 863 - 870 is called SRD band
+// this is not an ISM in EU
+// we are not going to be legal anyhow
+
+const uint32_t fhss_freq_list[] = {
+    SX12XX_FREQ_MHZ_TO_REG(863.275),
+    SX12XX_FREQ_MHZ_TO_REG(863.800),
+    SX12XX_FREQ_MHZ_TO_REG(864.325),
+    SX12XX_FREQ_MHZ_TO_REG(864.850),
+    SX12XX_FREQ_MHZ_TO_REG(865.375),
+    SX12XX_FREQ_MHZ_TO_REG(865.900),
+    SX12XX_FREQ_MHZ_TO_REG(866.425),
+    SX12XX_FREQ_MHZ_TO_REG(866.950),
+    SX12XX_FREQ_MHZ_TO_REG(867.475),
+    SX12XX_FREQ_MHZ_TO_REG(868.000),
+    // SX12XX_FREQ_MHZ_TO_REG(868.525), // overlap with Alarmanlagen
+    // SX12XX_FREQ_MHZ_TO_REG(869.050), // overlap with Alarmanlagen
+    // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
+};
+
+
+const uint8_t fhss_bind_channel_list[] = {
+    0, // just pick some
+};
+
+#endif
+#ifdef FREQUENCY_BAND_915_MHZ_FCC
+// based on express LRS
+
+const uint32_t fhss_freq_list[] = {
+    SX12XX_FREQ_MHZ_TO_REG(903.5),
+    SX12XX_FREQ_MHZ_TO_REG(904.1),
+    SX12XX_FREQ_MHZ_TO_REG(904.7),
+    SX12XX_FREQ_MHZ_TO_REG(905.3),
+    SX12XX_FREQ_MHZ_TO_REG(905.9),
+    SX12XX_FREQ_MHZ_TO_REG(906.5),
+    SX12XX_FREQ_MHZ_TO_REG(907.1),
+    SX12XX_FREQ_MHZ_TO_REG(907.7),
+    SX12XX_FREQ_MHZ_TO_REG(908.3),
+    SX12XX_FREQ_MHZ_TO_REG(908.9),
+    SX12XX_FREQ_MHZ_TO_REG(909.5),
+    SX12XX_FREQ_MHZ_TO_REG(910.1),
+    SX12XX_FREQ_MHZ_TO_REG(910.7),
+    SX12XX_FREQ_MHZ_TO_REG(911.3),
+    SX12XX_FREQ_MHZ_TO_REG(911.9),
+    SX12XX_FREQ_MHZ_TO_REG(912.5),
+    SX12XX_FREQ_MHZ_TO_REG(913.1),
+    SX12XX_FREQ_MHZ_TO_REG(913.7),
+    SX12XX_FREQ_MHZ_TO_REG(914.3),
+    SX12XX_FREQ_MHZ_TO_REG(914.9),
+    SX12XX_FREQ_MHZ_TO_REG(916.1),
+    SX12XX_FREQ_MHZ_TO_REG(916.7),
+    SX12XX_FREQ_MHZ_TO_REG(917.3),
+    SX12XX_FREQ_MHZ_TO_REG(917.9),
+    SX12XX_FREQ_MHZ_TO_REG(918.5),
+    SX12XX_FREQ_MHZ_TO_REG(919.1),
+    SX12XX_FREQ_MHZ_TO_REG(919.7),
+    SX12XX_FREQ_MHZ_TO_REG(920.3),
+    SX12XX_FREQ_MHZ_TO_REG(920.9),
+    SX12XX_FREQ_MHZ_TO_REG(921.5),
+    SX12XX_FREQ_MHZ_TO_REG(922.1),
+    SX12XX_FREQ_MHZ_TO_REG(922.7),
+    SX12XX_FREQ_MHZ_TO_REG(923.3),
+    SX12XX_FREQ_MHZ_TO_REG(923.9),
+    SX12XX_FREQ_MHZ_TO_REG(924.5),
+    SX12XX_FREQ_MHZ_TO_REG(925.1),
+    SX12XX_FREQ_MHZ_TO_REG(925.7),
+    SX12XX_FREQ_MHZ_TO_REG(926.3),
+};
+
+const uint8_t fhss_bind_channel_list[] = {
+    19 // just pick some
+};
+
+#endif
+#ifdef FREQUENCY_BAND_2p4_GHZ
 // 2406.0 ... 2473.0  in 1 MHz steps
 // = 68 channels
 
@@ -109,6 +195,7 @@ const uint32_t fhss_freq_list[] = {
 const uint8_t fhss_bind_channel_list[] = {
     14, 33, 46, 61 // just pick some
 };
+#endif
 
 
 const uint8_t FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list)/sizeof(uint32_t)); // 2.4 GHz = 68

@@ -397,9 +397,17 @@ tRxFrame rxFrame;
 tTxFrame txFrame2;
 tRxFrame rxFrame2;
 
+#ifdef DEVICE_HAS_SX126x
+Sx126xDriver sx;
+#else
 Sx128xDriver sx;
+#endif
 #ifdef DEVICE_HAS_DIVERSITY
-Sx128xDriver2 sx2;
+#ifdef DEVICE_HAS_SX126x
+Sx126xDriver sx;
+#else
+Sx128xDriver sx2;
+#endif
 #else
 SxDriverDummy sx2;
 #endif
