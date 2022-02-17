@@ -1,16 +1,16 @@
 # mLRS #
 
-This is the mLRS project. Its goal is an open source 2.4 GHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+This is the mLRS project. Its goal is an open source 2.4 GHz / 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 50 km or so, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
-Typical specs could be 'plenty' of full-resolution RC channels with 50 Hz update rate, and serial data rates of about 3-5 kBytes/s.
+Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate, and serial data rates of about 3-5 kBytes/s.
 
 Many LRS or radio links with telemetry exist, among them open source projects such as SiK radios, OpenLRS, ExpressLRS, but also befinitiv wifibroadcast based projects like OpenHD or Ruby, closed source hobbyist projects such as UltimateLRS, QczekLRS, as well as commercial systems such as DragonLink, RFD900, Dronee Zoon, Siyi, but also TBS Crossfire and alike.
 
-However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them check all points, like 
+However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them checks all points, like 
 - relatively cheap
-- 2.4 GHz
+- 2.4 GHz and 915/868 MHz
 - LoRa
 - full-duplex with sufficient data rate
 - plenty full-size RC channels
@@ -38,12 +38,19 @@ The RC channels layout is as follows:
 - 4 channels with 8 bit resolution (CH9 - CH12)
 - 4 channels with three steps (CH13 - CH16), with 2 of them with a higher reliability margin (CH15, CH16)
 
-It currently provides this operation mode:
+It currently provides these operation modes:
 - 50 Hz Mode<br>
+  frequencies: 2.4 GHz
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
+- 19 Hz Mode<br>
+  frequencies: 2.4 GHz, 915/868 MHz
+  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
+  uplink serial rate: 1216 Bytes/sec<br>
+  downlink serial rate: 1558 Bytes/sec<br>
+  receiver sensitivity: -112 dBm
 
 ## Community ##
 
