@@ -101,7 +101,11 @@ void setup_configure(void)
     break;
   case MODE_19HZ:
     Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
+    Config.LoraConfigIndex = 0;
+#else
     Config.LoraConfigIndex = 1;
+#endif
     Config.lora_send_frame_tmo = MODE_19HZ_SEND_FRAME_TMO; // 25;
     Config.lora_set_to_rx_tmo = MODE_19HZ_TX_SET_RX_TMO; // 30;
     break;
