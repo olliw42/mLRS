@@ -40,11 +40,11 @@ void InBase::Configure(uint8_t new_config)
 }
 
 
-void InBase::Update(tRcData* rc)
+bool InBase::Update(tRcData* rc)
 {
   switch (_config) {
   case IN_CONFIG_SBUS:
-      parse_sbus(rc);
+      return parse_sbus(rc);
       break;
   }
 }
@@ -81,7 +81,7 @@ typedef union {
 } tSBusFrameBuffer;
 
 
-void InBase::parse_sbus(tRcData* rc)
+bool InBase::parse_sbus(tRcData* rc)
 {
   uint16_t t_now_us = tim_1us();
 
@@ -101,6 +101,7 @@ void InBase::parse_sbus(tRcData* rc)
       if (_buf_pos >= 25) {
         get_sbus_data(rc);
         _state = IN_STATE_IDLE;
+        return true;
         break;
       }
     }
@@ -111,6 +112,7 @@ void InBase::parse_sbus(tRcData* rc)
   if (_state == IN_STATE_RECEIVING) {
     if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
   }
+  return false;
 }
 
 
