@@ -28,18 +28,23 @@ v0.0.00:
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\hal\hal.h"
 #include "..\Common\sx-drivers\sx12xx.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
+#include "..\Common\hal\hal.h"
+#include "..\modules\stm32ll-lib\src\stdstm32-delay.h" // these are dependent on hal
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
 #include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
 #endif
+#ifndef DEVICE_HAS_NO_SERIAL
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
+#endif
+#ifndef DEVICE_HAS_NO_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
+#endif
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
-#include "..\Common\mavlink\out\storm32\storm32.h"
+#include "..\Common\mavlink\out\mlrs\mlrs.h"
+#include "..\Common\fhss.h"
 #include "..\Common\setup.h"
 #include "..\Common\common.h"
 #include "..\Common\micros.h"

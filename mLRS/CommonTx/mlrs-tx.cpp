@@ -27,18 +27,25 @@ v0.0.00:
 #include "..\Common\hal\glue.h"
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\hal\hal.h"
 #include "..\Common\sx-drivers\sx12xx.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-delay.h"
+#include "..\Common\hal\hal.h"
+#include "..\modules\stm32ll-lib\src\stdstm32-delay.h" // these are dependent on hal
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
 #include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
 #endif
+#ifndef DEVICE_HAS_NO_SERIAL
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
+#endif
+#ifndef DEVICE_HAS_NO_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
-#include "..\Common\fhss.h"
+#endif
+#ifdef DEVICE_HAS_I2C
+#include "..\Common\stdstm32-i2c.h"
+#endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
+#include "..\Common\fhss.h"
 #include "..\Common\setup.h"
 #include "..\Common\common.h"
 #include "..\Common\micros.h"
@@ -441,7 +448,7 @@ int main_main(void)
   crsf.Init();
 #endif
 
-  DBG_MAIN(uartc_puts("\n\n\nHello\n\n");)
+  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   // startup sign of life
   LED_RED_OFF;
@@ -564,7 +571,7 @@ int main_main(void)
       break;
 
     case LINK_STATE_RECEIVE:
-      // datasheet says "As soon as a packet is detected, the timer is automatically
+      // for sx1280: datasheet says "As soon as a packet is detected, the timer is automatically
       // disabled to allow complete reception of the packet." Why does then 5 ms not work??
       IF_ANTENNA1(sx.SetToRx(TX_SET_RX_TMO)); // we wait 10 ms for the start for the frame, 5 ms does not work ??
       IF_ANTENNA2(sx2.SetToRx(TX_SET_RX_TMO));
