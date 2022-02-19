@@ -1,6 +1,6 @@
 # mLRS #
 
-This is the mLRS project. Its goal is an open source 2.4 GHz / 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+This is the mLRS project. Its goal is an open source 2.4 GHz & 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 50 km or so, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -88,4 +88,4 @@ If this procedure doesn't work, please raise an issue, or even better work it ou
 
 Hardware is quite a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
 
-The code so far can work on the Siyi FM30 system (early version only, those with STM32 chips)(the TX module needs few small hardware modifications) and some DIY boards you can find in https://github.com/olliw42/mLRS-hardware. Don't hesitate to join the discussion thread at rcgroups for more details.
+The code so far can work on the '''''Siyi FM30''''' system (early version only, those with STM32 chips; the TX module needs few small hardware modifications), the '''''Frsky R9M''''' transmitter and '''''R9MM''''' receiver modules, and some DIY boards you can find in https://github.com/olliw42/mLRS-hardware. Don't hesitate to join the discussion thread at rcgroups for more details.
