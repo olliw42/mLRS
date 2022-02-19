@@ -27,7 +27,7 @@
 #ifdef DEVICE_HAS_SX126x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
-#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX1276_FREQ_MHZ_TO_REG(f_mhz)
+#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #endif
 
 #ifdef FREQUENCY_BAND_868_MHZ
@@ -49,6 +49,7 @@ const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(866.950),
     SX12XX_FREQ_MHZ_TO_REG(867.475),
     SX12XX_FREQ_MHZ_TO_REG(868.000),
+
     // SX12XX_FREQ_MHZ_TO_REG(868.525), // overlap with Alarmanlagen
     // SX12XX_FREQ_MHZ_TO_REG(869.050), // overlap with Alarmanlagen
     // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
@@ -74,6 +75,7 @@ const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(907.7),
     SX12XX_FREQ_MHZ_TO_REG(908.3),
     SX12XX_FREQ_MHZ_TO_REG(908.9),
+
     SX12XX_FREQ_MHZ_TO_REG(909.5),
     SX12XX_FREQ_MHZ_TO_REG(910.1),
     SX12XX_FREQ_MHZ_TO_REG(910.7),
@@ -84,6 +86,7 @@ const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(913.7),
     SX12XX_FREQ_MHZ_TO_REG(914.3),
     SX12XX_FREQ_MHZ_TO_REG(914.9),
+
     SX12XX_FREQ_MHZ_TO_REG(916.1),
     SX12XX_FREQ_MHZ_TO_REG(916.7),
     SX12XX_FREQ_MHZ_TO_REG(917.3),
@@ -95,6 +98,7 @@ const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(920.9),
     SX12XX_FREQ_MHZ_TO_REG(921.5),
     SX12XX_FREQ_MHZ_TO_REG(922.1),
+
     SX12XX_FREQ_MHZ_TO_REG(922.7),
     SX12XX_FREQ_MHZ_TO_REG(923.3),
     SX12XX_FREQ_MHZ_TO_REG(923.9),
@@ -109,7 +113,7 @@ const uint8_t fhss_bind_channel_list[] = {
 };
 
 #endif
-#ifdef FREQUENCY_BAND_2p4_GHZ
+#ifdef FREQUENCY_BAND_2P4_GHZ
 // 2406.0 ... 2473.0  in 1 MHz steps
 // = 68 channels
 
@@ -226,7 +230,9 @@ class FhssBase
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
 
         cnt = fhss_num;
-        if (cnt > (FREQ_LIST_LEN - FHSS_BIND_CHANNEL_LIST_LEN)) cnt = (FREQ_LIST_LEN - FHSS_BIND_CHANNEL_LIST_LEN);
+
+        uint8_t cnt_max = (FREQ_LIST_LEN - FHSS_BIND_CHANNEL_LIST_LEN);
+        if (cnt > cnt_max) cnt = cnt_max;
 
         generate(seed);
     }
