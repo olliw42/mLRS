@@ -15,6 +15,8 @@
 
 #ifdef DEVICE_HAS_SX126x
 #include "..\..\modules\sx12xx-lib\src\sx126x.h"
+#elif defined DEVICE_HAS_SX127x
+#include "..\..\modules\sx12xx-lib\src\sx127x.h"
 #else
 #include "..\..\modules\sx12xx-lib\src\sx128x.h"
 #endif

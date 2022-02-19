@@ -114,8 +114,14 @@ void setup_configure(void)
   Config.FrameSyncWord = (uint16_t)(Setup.BindDblWord & 0x0000FFFF);
 
   Config.FhssSeed = Setup.BindDblWord;
-  Config.FhssNum = FHSS_NUM;
- 
+#if defined FREQUENCY_BAND_868_MHZ
+  Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC
+  Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
+#else
+  Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
+#endif
+
   Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
   Config.connect_tmo_systicks = SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f * Config.frame_rate_ms));

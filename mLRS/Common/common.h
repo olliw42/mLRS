@@ -387,12 +387,16 @@ tRxFrame rxFrame2;
 
 #ifdef DEVICE_HAS_SX126x
 Sx126xDriver sx;
+#elif defined DEVICE_HAS_SX127x
+Sx127xDriver sx;
 #else
 Sx128xDriver sx;
 #endif
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_HAS_SX126x
 Sx126xDriver sx2;
+#elif defined DEVICE_HAS_SX127x
+Sx127xDriver sx2;
 #else
 Sx128xDriver sx2;
 #endif

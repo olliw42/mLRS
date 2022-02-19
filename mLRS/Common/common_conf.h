@@ -72,7 +72,9 @@
 #define MODE_19HZ_SEND_FRAME_TMO        25 // EXPERIMENTAL!
 #define MODE_19HZ_TX_SET_RX_TMO         30 // EXPERIMENTAL!
 
-#define FHSS_NUM                        24
+#define FHSS_NUM_BAND_868_MHZ           6 // 24
+#define FHSS_NUM_BAND_915_MHZ_FCC       24
+#define FHSS_NUM_BAND_2P4_GHZ           24
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
