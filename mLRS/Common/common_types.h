@@ -74,4 +74,14 @@ class tSerialBase
 };
 
 
+class tI2cBase
+{
+  public:
+    virtual void Init(void) { initialized = false; }
+    virtual uint8_t put_buf_blocking(uint8_t device_adr, uint8_t* buf, uint16_t len) { return 0; }
+
+    bool initialized;
+};
+
+
 #endif // COMMON_TYPES_H
