@@ -84,6 +84,10 @@ Repeat the last four steps for each board you are interested in. The STM32CubeID
 
 If this procedure doesn't work, please raise an issue, or even better work it out and suggest a solution.
 
+#### Dependencies ####
+
+You need to have git and python3 installed.
+
 ## Hardware ##
 
 Hardware is quite a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
