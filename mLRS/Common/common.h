@@ -404,7 +404,7 @@ Sx128xDriver sx;
 #endif
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_HAS_SX126x
-Sx126xDriver sx;
+Sx126xDriver sx2;
 #else
 Sx128xDriver sx2;
 #endif
