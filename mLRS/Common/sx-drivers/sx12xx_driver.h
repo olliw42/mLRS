@@ -11,7 +11,6 @@
 #pragma once
 
 
-
 #include "..\hal\device_conf.h"
 
 #ifdef DEVICE_HAS_SX126x
@@ -21,6 +20,21 @@
 #else
 #include "sx128x_driver.h"
 #endif
+
+
+class SxDriverDummy
+{
+  public:
+    void Init(void) {}
+    bool isOk(void) { return true; }
+    void StartUp(void) {}
+    void SetRfFrequency(uint32_t RfFrequency) {}
+    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) {}
+    void ReadFrame(uint8_t* data, uint8_t len) {}
+    void SetToRx(uint16_t tmo_ms) {}
+    void SetToIdle(void) {}
+};
 
 
 #endif // SX12XX_DRIVER_H

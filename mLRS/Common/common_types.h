@@ -61,4 +61,17 @@ typedef enum {
 } ANTENNA_ENUM;
 
 
+class tSerialBase
+{
+  public:
+    void Init(void) {};
+    virtual void putc(char c) {}
+    void putbuf(void* buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) putc(((char*)buf)[i]); }
+    void puts(const char* s) { while (*s) { putc(*s); s++; }; }
+    bool available(void) { return 0; }
+    char getc(void) { return '\0'; }
+    void flush(void) {};
+};
+
+
 #endif // COMMON_TYPES_H

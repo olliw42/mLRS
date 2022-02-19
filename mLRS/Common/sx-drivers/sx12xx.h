@@ -11,7 +11,6 @@
 #pragma once
 
 
-
 #include "..\hal\device_conf.h"
 
 #ifdef DEVICE_HAS_SX126x
