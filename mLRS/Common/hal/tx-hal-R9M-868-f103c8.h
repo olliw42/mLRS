@@ -85,12 +85,12 @@
 
 // R9M power management:
 // the Sky65111 (S111) PA has two pins, Vapc1, Vapc2, to control the gains of its two amplifier stages
-// Vapc2 seems to be connected to the DAC081C081 (X86C) DAC
+// Vapc2 is connected to the DAC081C081 (X86C) DAC
 // the DAC in turn is connected to I2C1, PB6(SCL), PB7(SDA), and PB5(ADR0) (PB5 floating means adr 0x0C)
 // Vapc1 seems to be controllable by two gpios, PB0, PA6, which appear to go to the two ends of R38
 // I would think the two gpios allow to set Vapc1 to zero or to a fixed voltage value
-// ELRS handles only PA6, not PB3, so it seems that that PA6 sets Vapc1 to zero
-// the Sky13330 (SKY3330) switch's CNTRL pin 7 appears to be connected to PB3, ENABLE pin 8 seems to be high
+// ELRS handles only PA6, not PB0, so it seems that that PA6 sets Vapc1 to zero
+// the Sky13330 (SKY3330) switch's CNTRL pin 7 is connected to PB3, ENABLE pin 8 is high
 // PB3 low = TX, high = RX
 
 #define SX_DIO0_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
@@ -159,30 +159,25 @@ void sx_dio_enable_exti_isr(void)
 
 
 //-- SBus input pin
-/*
-#define IN                        IO_PB7 // UART1 RX
-#define IN_XOR                    IO_PA15
+
+#define IN                        IO_PA2 // UART2 RX, inverted
 
 void in_init_gpio(void)
 {
-  gpio_init(IN_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_low(IN_XOR);
 }
 
 void in_set_normal(void)
 {
-  gpio_low(IN_XOR);
 }
 
 void in_set_inverted(void)
 {
-  gpio_high(IN_XOR);
 }
-*/
+
 
 //-- Button
 
-#define BUTTON                    IO_PA8
+#define BUTTON                    IO_PA8 // active low
 
 void button_init(void)
 {
