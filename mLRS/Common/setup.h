@@ -112,8 +112,10 @@ void setup_configure(void)
   }
 
   Config.FrameSyncWord = (uint16_t)(Setup.BindDblWord & 0x0000FFFF);
+
   Config.FhssSeed = Setup.BindDblWord;
   Config.FhssNum = FHSS_NUM;
+ 
   Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
   Config.connect_tmo_systicks = SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f * Config.frame_rate_ms));

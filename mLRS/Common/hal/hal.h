@@ -6,6 +6,9 @@
 //*******************************************************
 // rx hal splicer
 //*******************************************************
+#ifndef HAL_H
+#define HAL_H
+#pragma once
 
 // enter define into "MCU G++ Compiler"->"Preprocessor" !!!
 
@@ -59,3 +62,7 @@
 
 #endif
 #endif
+
+
+
+#endif // HAL_H
