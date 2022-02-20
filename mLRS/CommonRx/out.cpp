@@ -240,43 +240,6 @@ typedef enum {
 // opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024...1023
 // => sbus values = 173..992..1811
 
-/*
-void OutBase::send_sbus_frame(tTxFrame* frame)
-{
-tSBusFrameBuffer sbus_buf;
-
-  memset(&sbus_buf, 0, sizeof(tSBusFrameBuffer));
-
-  sbus_buf.ch0 = ((uint32_t)(frame->rc1.ch0) * 1600) / 2047 + 200;
-  sbus_buf.ch1 = ((uint32_t)(frame->rc1.ch1) * 1600) / 2047 + 200;
-  sbus_buf.ch2 = ((uint32_t)(frame->rc1.ch2) * 1600) / 2047 + 200;
-  sbus_buf.ch3 = ((uint32_t)(frame->rc1.ch3) * 1600) / 2047 + 200;
-
-  sbus_buf.ch4 = ((uint32_t)(frame->rc2.ch[0]) * 1600) / 255 + 200;
-  sbus_buf.ch5 = ((uint32_t)(frame->rc2.ch[1]) * 1600) / 255 + 200;
-  sbus_buf.ch6 = ((uint32_t)(frame->rc2.ch[2]) * 1600) / 255 + 200;
-  sbus_buf.ch7 = ((uint32_t)(frame->rc2.ch[3]) * 1600) / 255 + 200;
-  sbus_buf.ch8 = ((uint32_t)(frame->rc2.ch[4]) * 1600) / 255 + 200;
-  sbus_buf.ch9 = ((uint32_t)(frame->rc2.ch[5]) * 1600) / 255 + 200;
-  sbus_buf.ch10 = ((uint32_t)(frame->rc2.ch[6]) * 1600) / 255 + 200;
-  sbus_buf.ch11 = ((uint32_t)(frame->rc2.ch[7]) * 1600) / 255 + 200;
-  sbus_buf.ch12 = ((uint32_t)(frame->rc2.ch[8]) * 1600) / 255 + 200;
-  sbus_buf.ch13 = ((uint32_t)(frame->rc2.ch[9]) * 1600) / 255 + 200;
-
-  sbus_buf.ch14 = (frame->rc1.ch14) ? 1800 : 200;
-  sbus_buf.ch15 = (frame->rc1.ch15) ? 1800 : 200;
-
-  uint8_t flags = 0;
-  if (frame->rc1.ch16) flags |= SBUS_FLAG_CH17;
-  if (frame->rc1.ch17) flags |= SBUS_FLAG_CH18;
-
-  putc(0x0F);
-  putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);
-  putc(flags);
-  putc(0x00);
-}
-*/
-
 void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusFrameBuffer sbus_buf;

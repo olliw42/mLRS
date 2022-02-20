@@ -23,6 +23,8 @@ ISSUES:
 
 - do we really want to use RX with timeout in transmitter? couldn't we just use no timeout?
 
+- rc Data: how to handle over-sized values? simply clip to +.100% /currently done), rescale to allow +-120% ?
+
 
 TODO:
 - retransmissions, frame loss, resend last one time to make it more robust

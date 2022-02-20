@@ -61,6 +61,8 @@ typedef enum {
 } ANTENNA_ENUM;
 
 
+//-- common hardware abstraction classes
+
 class tSerialBase
 {
   public:
@@ -82,6 +84,13 @@ class tI2cBase
 
     bool initialized;
 };
+
+
+//-- auxiliary functions
+
+// clip a value for rcData to range
+
+uint16_t clip_rc(int32_t x);
 
 
 #endif // COMMON_TYPES_H

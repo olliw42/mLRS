@@ -131,23 +131,23 @@ tSBusFrameBuffer sbus_buf;
 
   // OpenTx produces 173 ... 992 ... 1811 for -100% ... 100%
 
-  rc->ch[0] = (((int32_t)(sbus_buf.ch0) - 992) * 2047) / 1638 + 1024;
-  rc->ch[1] = (((int32_t)(sbus_buf.ch1) - 992) * 2047) / 1638 + 1024;
-  rc->ch[2] = (((int32_t)(sbus_buf.ch2) - 992) * 2047) / 1638 + 1024;
-  rc->ch[3] = (((int32_t)(sbus_buf.ch3) - 992) * 2047) / 1638 + 1024;
-  rc->ch[4] = (((int32_t)(sbus_buf.ch4) - 992) * 2047) / 1638 + 1024;
-  rc->ch[5] = (((int32_t)(sbus_buf.ch5) - 992) * 2047) / 1638 + 1024;
-  rc->ch[6] = (((int32_t)(sbus_buf.ch6) - 992) * 2047) / 1638 + 1024;
-  rc->ch[7] = (((int32_t)(sbus_buf.ch7) - 992) * 2047) / 1638 + 1024;
-  rc->ch[8] = (((int32_t)(sbus_buf.ch8) - 992) * 2047) / 1638 + 1024;
-  rc->ch[9] = (((int32_t)(sbus_buf.ch9) - 992) * 2047) / 1638 + 1024;
+  rc->ch[0] = clip_rc( (((int32_t)(sbus_buf.ch0) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[1] = clip_rc( (((int32_t)(sbus_buf.ch1) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[2] = clip_rc( (((int32_t)(sbus_buf.ch2) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[3] = clip_rc( (((int32_t)(sbus_buf.ch3) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[4] = clip_rc( (((int32_t)(sbus_buf.ch4) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[5] = clip_rc( (((int32_t)(sbus_buf.ch5) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[6] = clip_rc( (((int32_t)(sbus_buf.ch6) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[7] = clip_rc( (((int32_t)(sbus_buf.ch7) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[8] = clip_rc( (((int32_t)(sbus_buf.ch8) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[9] = clip_rc( (((int32_t)(sbus_buf.ch9) - 992) * 2047) / 1638 + 1024 );
 
-  rc->ch[10] = (((int32_t)(sbus_buf.ch10) - 992) * 2047) / 1638 + 1024;
-  rc->ch[11] = (((int32_t)(sbus_buf.ch11) - 992) * 2047) / 1638 + 1024;
-  rc->ch[12] = (((int32_t)(sbus_buf.ch12) - 992) * 2047) / 1638 + 1024;
-  rc->ch[13] = (((int32_t)(sbus_buf.ch13) - 992) * 2047) / 1638 + 1024;
-  rc->ch[14] = (((int32_t)(sbus_buf.ch14) - 992) * 2047) / 1638 + 1024;
-  rc->ch[15] = (((int32_t)(sbus_buf.ch15) - 992) * 2047) / 1638 + 1024;
+  rc->ch[10] = clip_rc( (((int32_t)(sbus_buf.ch10) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[11] = clip_rc( (((int32_t)(sbus_buf.ch11) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[12] = clip_rc( (((int32_t)(sbus_buf.ch12) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[13] = clip_rc( (((int32_t)(sbus_buf.ch13) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[14] = clip_rc( (((int32_t)(sbus_buf.ch14) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[15] = clip_rc( (((int32_t)(sbus_buf.ch15) - 992) * 2047) / 1638 + 1024 );
 
   rc->ch[16] = 1024;
   rc->ch[17] = 1024;
