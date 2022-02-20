@@ -35,7 +35,7 @@ class InBase
     virtual char getc(void) { return 0; }
     virtual uint16_t tim_1us(void) { return 0; }
 
-    virtual void config_sbus(void) {}
+    virtual void config_sbus(bool inverted) {}
     bool parse_sbus(tRcData* rc);
     void get_sbus_data(tRcData* rc);
 

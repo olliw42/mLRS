@@ -23,6 +23,7 @@ void setup_default(void)
   Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
   Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
   Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
+  Setup.Tx.InMode = SETUP_TX_IN_MODE;
   Setup.Tx.Power = 0;
   Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
   Setup.Tx.Diversity = SETUP_TX_DIVERSITY;

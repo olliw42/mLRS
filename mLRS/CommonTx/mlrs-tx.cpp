@@ -69,11 +69,16 @@ public:
     uarte_init_isroff();
   }
 
-  void config_sbus(void) override
+  void config_sbus(bool inverted) override
   {
     uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-    in_set_inverted();
-    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    if (!inverted) {
+      in_set_inverted();
+      gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    } else {
+      in_set_normal();
+      gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    }
     uarte_rx_enableisr(ENABLE);
   }
 
@@ -484,7 +489,7 @@ int main_main(void)
 
   txstats.Init(Config.LQAveragingPeriod);
 
-  in.Configure(IN_CONFIG_SBUS);
+  in.Configure(Setup.Tx.InMode);
 
   f_init();
 

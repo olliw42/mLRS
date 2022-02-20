@@ -66,6 +66,7 @@ typedef enum {
 
 typedef enum {
   IN_CONFIG_SBUS = 0,
+  IN_CONFIG_SBUS_INVERTED,
 } TX_IN_CONFIG_ENUM;
 
 
@@ -90,6 +91,7 @@ typedef struct
 {
   uint16_t ChannelsSource;
   uint16_t ChannelOrder;
+  uint16_t InMode;
   uint16_t Power;
   uint16_t Diversity;
   uint16_t SerialDestination;

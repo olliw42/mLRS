@@ -33,6 +33,8 @@
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
 
+#define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
+
 #define SETUP_TX_POWER                  POWER
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2

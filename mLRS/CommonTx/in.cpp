@@ -34,7 +34,10 @@ void InBase::Configure(uint8_t new_config)
 
   switch (_config) {
   case IN_CONFIG_SBUS:
-      config_sbus();
+      config_sbus(false);
+      break;
+  case IN_CONFIG_SBUS_INVERTED:
+      config_sbus(true);
       break;
   }
 }
@@ -44,6 +47,7 @@ bool InBase::Update(tRcData* rc)
 {
   switch (_config) {
   case IN_CONFIG_SBUS:
+  case IN_CONFIG_SBUS_INVERTED:
       return parse_sbus(rc);
   }
 
