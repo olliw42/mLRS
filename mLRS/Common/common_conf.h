@@ -20,39 +20,40 @@
 // Setup
 //-------------------------------------------------------
 
-#define POWER                           POWER_m18_DBM
+//#define POWER                           POWER_m18_DBM
 //#define POWER                           POWER_0_DBM
 //#define POWER                           POWER_12p5_DBM
+#define POWER                             POWER_30_DBM
 
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_DESTINATION     1 // 0: serial port, 1: mBridge
+#define SETUP_TX_SERIAL_DESTINATION     0 // 0: serial port, 1: mBridge
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge (pin5), 2: In (In or pin1), 3: Crsf (pin5)
+#define SETUP_TX_CHANNELS_SOURCE        2 // 0: none, 1: mBridge (pin5), 2: In (In or pin1), 3: Crsf (pin5)
 
-#define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
+#define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
 #define SETUP_TX_POWER                  POWER
 
-#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
+#define SETUP_TX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
-#define SETUP_RX_OUT_MODE               1 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF
+#define SETUP_RX_OUT_MODE               0 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF
 
-#define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
+#define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: CH1-CH4 center signal
 
 #define SETUP_RX_POWER                  POWER
 
 #define SETUP_RX_SERIAL_BAUDRATE        57600
 
-#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
+#define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
