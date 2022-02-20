@@ -18,10 +18,6 @@
 // https://github.com/ExpressLRS/ExpressLRS/issues/308
 // MANY thx to CapnBry !
 
-
-#define DEVICE_IS_RECEIVER
-
-
 //-- Timers, Timing and such stuff
 
 #define DELAY_USE_DWT

@@ -10,10 +10,9 @@
 //-------------------------------------------------------
 // TX DIY E28 BOARD01 v004 STM32F103CB
 //-------------------------------------------------------
-#define DEVICE_IS_TRANSMITTER
 
 //#define DEVICE_HAS_IN
-#define DEVICE_HAS_MBRIDGE // requires external diode-R network connected to OUT,IN,GND
+#define DEVICE_HAS_JRPIN5 // requires external diode-R network connected to OUT,IN,GND
 
 
 //-- Timers, Timing and such stuff
@@ -55,8 +54,8 @@
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
 #endif
-#ifdef DEVICE_HAS_MBRIDGE
-#define UART_USE_UART1_REMAPPED // MBridge
+#ifdef DEVICE_HAS_JRPIN5
+#define UART_USE_UART1_REMAPPED // JR pin5, MBridge
 #define UART_BAUD                 400000 // 115200
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -64,13 +63,12 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define MBRIDGE_TX_XOR            IO_PB3
-#define MBRIDGE_TX_SET_NORMAL     gpio_low(MBRIDGE_TX_XOR)
-#define MBRIDGE_TX_SET_INVERTED   gpio_high(MBRIDGE_TX_XOR)
-
-#define MBRIDGE_RX_XOR            IO_PA15
-#define MBRIDGE_RX_SET_NORMAL     gpio_low(MBRIDGE_RX_XOR)
-#define MBRIDGE_RX_SET_INVERTED   gpio_high(MBRIDGE_RX_XOR)
+#define JRPIN5_TX_XOR             IO_PB3
+#define JRPIN5_TX_SET_NORMAL      gpio_low(JRPIN5_TX_XOR)
+#define JRPIN5_TX_SET_INVERTED    gpio_high(JRPIN5_TX_XOR)
+#define JRPIN5_RX_XOR             IO_PA15
+#define JRPIN5_RX_SET_NORMAL      gpio_low(JRPIN5_RX_XOR)
+#define JRPIN5_RX_SET_INVERTED    gpio_high(JRPIN5_RX_XOR)
 #endif
 
 

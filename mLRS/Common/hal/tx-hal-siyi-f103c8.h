@@ -18,10 +18,7 @@
 // https://github.com/ExpressLRS/ExpressLRS/issues/308
 // MANY thx to CapnBry !
 
-
-#define DEVICE_IS_TRANSMITTER
-
-#define DEVICE_HAS_MBRIDGE
+#define DEVICE_HAS_JRPIN5
 
 
 //-- Timers, Timing and such stuff
@@ -54,7 +51,7 @@
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
 
-#define UART_USE_UART1 // MBridge
+#define UART_USE_UART1 // JR pin5, MBridge
 #define UART_BAUD                 400000 // 115200
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -62,13 +59,13 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define MBRIDGE_TX_XOR            IO_PB7
-#define MBRIDGE_TX_SET_NORMAL     gpio_low(MBRIDGE_TX_XOR)
-#define MBRIDGE_TX_SET_INVERTED   gpio_high(MBRIDGE_TX_XOR)
+#define JRPIN5_TX_XOR             IO_PB7
+#define JRPIN5_TX_SET_NORMAL      gpio_low(JRPIN5_TX_XOR)
+#define JRPIN5_TX_SET_INVERTED    gpio_high(JRPIN5_TX_XOR)
+#define JRPIN5_RX_XOR             IO_PB6
+#define JRPIN5_RX_SET_NORMAL      gpio_low(JRPIN5_RX_XOR)
+#define JRPIN5_RX_SET_INVERTED    gpio_high(JRPIN5_RX_XOR)
 
-#define MBRIDGE_RX_XOR            IO_PB6
-#define MBRIDGE_RX_SET_NORMAL     gpio_low(MBRIDGE_RX_XOR)
-#define MBRIDGE_RX_SET_INVERTED   gpio_high(MBRIDGE_RX_XOR)
 
 //-- SX1: SX12xx & SPI
 

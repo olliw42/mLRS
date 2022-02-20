@@ -11,7 +11,7 @@
 #pragma once
 
 
-#if (defined USE_MBRIDGE) && (defined DEVICE_HAS_MBRIDGE)
+#if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
 
 #include "jr_pin5_interface.h"
 #include "mbridge_protocol.h"
@@ -188,25 +188,25 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 
   switch (state) {
   case STATE_IDLE:
-      if (c == MBRIDGE_STX1) state = STATE_MBRIDGE_RECEIVE_STX2;
+      if (c == MBRIDGE_STX1) state = STATE_RECEIVE_MBRIDGE_STX2;
       break;
 
-  case STATE_MBRIDGE_RECEIVE_STX2:
-      if (c == MBRIDGE_STX2) state = STATE_MBRIDGE_RECEIVE_LEN; else state = STATE_IDLE; // error
+  case STATE_RECEIVE_MBRIDGE_STX2:
+      if (c == MBRIDGE_STX2) state = STATE_RECEIVE_MBRIDGE_LEN; else state = STATE_IDLE; // error
       break;
-  case STATE_MBRIDGE_RECEIVE_LEN:
+  case STATE_RECEIVE_MBRIDGE_LEN:
       cnt = 0;
       if (c == MBRIDGE_CHANNELPACKET_STX) {
           len = MBRIDGE_CHANNELPACKET_SIZE;
           type = MBRIDGE_TYPE_CHANNELPACKET;
-          state = STATE_MBRIDGE_RECEIVE_CHANNELPACKET;
+          state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
       } else
       if (c >= MBRIDGE_COMMANDPACKET_STX) {
           uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
           cmd_r2m_frame[cnt++] = cmd;
           len = mbridge_cmd_payload_len(cmd);
           type = MBRIDGE_TYPE_COMMANDPACKET;
-          state = STATE_MBRIDGE_RECEIVE_COMMANDPACKET;
+          state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
       } else
       if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
           state = STATE_IDLE; // error
@@ -214,25 +214,25 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
       if (c > 0) {
           len = c;
           type = MBRIDGE_TYPE_SERIALPACKET;
-          state = STATE_MBRIDGE_RECEIVE_SERIALPACKET;
+          state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
       } else {
           type = MBRIDGE_TYPE_NONE;
           state = STATE_TRANSMIT_START; // tx_len = 0, no payload
       }
       break;
-  case STATE_MBRIDGE_RECEIVE_SERIALPACKET:
+  case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
       serial_putc(c);
       cnt++;
       if (cnt >= len) state = STATE_TRANSMIT_START;
       break;
-  case STATE_MBRIDGE_RECEIVE_CHANNELPACKET:
+  case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
       channels.c[cnt++] = c;
       if (cnt >= len) {
           channels_received = true;
           state = STATE_TRANSMIT_START;
       }
       break;
-  case STATE_MBRIDGE_RECEIVE_COMMANDPACKET:
+  case STATE_RECEIVE_MBRIDGE_COMMANDPACKET:
       cmd_r2m_frame[cnt++] = c;
       if (cnt >= len + 1) {
           cmd_received = true;
@@ -360,6 +360,6 @@ class tMBridgeDummy
 tMBridgeDummy bridge;
 
 
-#endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_MBRIDGE)
+#endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
 
 #endif // MBRIDGE_INTERFACE_H

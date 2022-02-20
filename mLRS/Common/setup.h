@@ -49,8 +49,8 @@ void setup_sanitize(void)
   }
 
 #ifdef DEVICE_IS_TRANSMITTER
-#ifndef DEVICE_HAS_MBRIDGE
-  // device doesn't support half-duplex pin 5
+#ifndef DEVICE_HAS_JRPIN5
+  // device doesn't support half-duplex JR pin5
   if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL_PORT;
   if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
   if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;

@@ -56,7 +56,7 @@
 // should go somewhere else !?
 
 #ifdef DEVICE_IS_TRANSMITTER
-#ifdef DEVICE_HAS_MBRIDGE
+#ifdef DEVICE_HAS_JRPIN5
 
   #if (SETUP_TX_SERIAL_DESTINATION == 1) || (SETUP_TX_CHANNELS_SOURCE == 1) // we use MBridge for serial
     #define USE_MBRIDGE
@@ -66,7 +66,7 @@
   #endif
 
   #if (SETUP_TX_SERIAL_DESTINATION == 1) && (SETUP_TX_CHANNELS_SOURCE == 3)
-    #warning mBridge and CRSF cannot be used simukltaneoulsy, CRSF ignored!
+    #warning mBridge and CRSF cannot be used simultaneoulsy, CRSF ignored!
   #endif
 
 #endif

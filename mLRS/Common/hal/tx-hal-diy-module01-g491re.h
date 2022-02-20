@@ -10,10 +10,9 @@
 //-------------------------------------------------------
 // TX DIY MODULE01v014 STM32G491RE
 //-------------------------------------------------------
-#define DEVICE_IS_TRANSMITTER
 
 #define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_MBRIDGE
+#define DEVICE_HAS_JRPIN5
 
 
 //-- Timers, Timing and such stuff
@@ -51,7 +50,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           512
 
-#define UART_USE_UART2 // MBridge
+#define UART_USE_UART2 // JR pin5, MBridge
 #define UART_BAUD                 400000 // 115200
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -59,8 +58,8 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define MBRIDGE_UARTx             UART_UARTx
-#define MBRIDGE_RX_TX_INVERT_INTERNAL
+#define JRPIN5_UARTx              UART_UARTx
+#define JRPIN5_RX_TX_INVERT_INTERNAL
 
 #define UARTD_USE_UART4 // BT/ESP
 #define UARTD_BAUD                115200

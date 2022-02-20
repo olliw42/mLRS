@@ -11,7 +11,7 @@
 #pragma once
 
 
-#if (defined USE_CRSF) && (defined DEVICE_HAS_MBRIDGE)
+#if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
 
 #include "..\Common\thirdparty.h"
 #include "jr_pin5_interface.h"
@@ -297,7 +297,7 @@ tCrsfChannelBuffer buf;
 
 
 
-#endif // if (defined USE_CRSF) && (defined DEVICE_HAS_MBRIDGE)
+#endif // if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
 
 #endif // CRSF_INTERFACE_H
 

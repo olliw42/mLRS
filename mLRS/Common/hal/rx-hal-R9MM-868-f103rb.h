@@ -13,9 +13,6 @@
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_RX_R9M.h
 // many THX to the ExpressLRS project !
 
-
-#define DEVICE_IS_RECIVER
-
 //#define DEVICE_HAS_NO_SERIAL
 #define DEVICE_HAS_NO_DEBUG
 

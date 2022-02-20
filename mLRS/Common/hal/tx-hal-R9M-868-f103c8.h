@@ -14,11 +14,8 @@
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_TX_R9M.h
 // many THX to the ExpressLRS project !
 
-
-#define DEVICE_IS_TRANSMITTER
-
 //#define DEVICE_HAS_IN
-#define DEVICE_HAS_MBRIDGE
+#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_NO_DEBUG
 
 
@@ -59,11 +56,13 @@
 #define UART_USE_TX_ISR
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
-#define MBRIDGE_TX_OE             IO_PA5 // high = enabled
-#define MBRIDGE_TX_OE_DISABLED    gpio_low(MBRIDGE_TX_OE)
-#define MBRIDGE_TX_OE_ENABLED     gpio_high(MBRIDGE_TX_OE)
+
+#define JRPIN5_TX_OE              IO_PA5 // high = enabled
+#define JRPIN5_TX_OE_DISABLED     gpio_low(JRPIN5_TX_OE)
+#define JRPIN5_TX_OE_ENABLED      gpio_high(JRPIN5_TX_OE)
 
 #define U2_DIR                    IO_PA0 // ??? seems to go to inverter, which goes to JR Pin1, is on R12
+
 
 //-- SX1: SX12xx & SPI
 

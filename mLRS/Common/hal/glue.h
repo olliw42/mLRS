@@ -65,12 +65,6 @@
 //-------------------------------------------------------
 // some useful defines
 //-------------------------------------------------------
-/*
-#ifdef __cplusplus
-#  define IRQHANDLER(__Declaration__)  extern "C" {__Declaration__}
-#else
-#  define IRQHANDLER(__Declaration__)  __Declaration__
-#endif
-*/
+
 
 

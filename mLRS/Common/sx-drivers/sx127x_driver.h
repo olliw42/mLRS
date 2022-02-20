@@ -78,13 +78,6 @@ const tSx127xLoraConfiguration Sx127xLoraConfiguration[] = {
 };
 
 
-typedef enum {
-  SX127X_CONFIGURATION_INDEX_MODE_50HZ = UINT8_MAX, // disable
-  SX127X_CONFIGURATION_INDEX_MODE_19HZ = 0,
-  SX127X_CONFIGURATION_INDEX_MAX = 0,
-} SX127X_CONFIGURATION_INDEX_ENUM;
-
-
 // map the irq bits on some common
 typedef enum {
     SX12xx_IRQ_TX_DONE = SX1276_IRQ_TX_DONE,
