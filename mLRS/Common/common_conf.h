@@ -29,7 +29,7 @@
 
 #define SETUP_TX_SERIAL_DESTINATION     1 // 0: serial port, 1: mBridge
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge (pin5), 2: SPort In (pin1), 3: Crsf (pin5)
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge (pin5), 2: In (In or pin1), 3: Crsf (pin5)
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
 
@@ -44,7 +44,7 @@
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
-#define SETUP_RX_OUT_MODE               0 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF
+#define SETUP_RX_OUT_MODE               1 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF
 
 #define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
