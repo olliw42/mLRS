@@ -28,7 +28,7 @@ class InBase
 
     void Configure(uint8_t new_config);
 
-    void Update(tRcData* rc);
+    bool Update(tRcData* rc);
 
   private:
     virtual bool available(void) { return false; }
@@ -36,7 +36,7 @@ class InBase
     virtual uint16_t tim_1us(void) { return 0; }
 
     virtual void config_sbus(void) {}
-    void parse_sbus(tRcData* rc);
+    bool parse_sbus(tRcData* rc);
     void get_sbus_data(tRcData* rc);
 
     uint8_t _config;

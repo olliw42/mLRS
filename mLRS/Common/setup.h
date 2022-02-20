@@ -62,7 +62,7 @@ void setup_sanitize(void)
 #endif
 
 #ifndef DEVICE_HAS_IN
-  if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_SPORT) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+  if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
 #endif
 #endif
 

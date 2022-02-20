@@ -20,33 +20,34 @@ typedef enum {
 
 void InBase::Init(void)
 {
-    _config = UINT8_MAX;
+  _config = UINT8_MAX;
 
-    _t_last_us = 0;
-    _state = IN_STATE_IDLE;
+  _t_last_us = 0;
+  _state = IN_STATE_IDLE;
 }
 
 
 void InBase::Configure(uint8_t new_config)
 {
-    if (new_config == _config) return;
-    _config = new_config;
+  if (new_config == _config) return;
+  _config = new_config;
 
-    switch (_config) {
-    case IN_CONFIG_SBUS:
-        config_sbus();
-        break;
-    }
+  switch (_config) {
+  case IN_CONFIG_SBUS:
+      config_sbus();
+      break;
+  }
 }
 
 
-void InBase::Update(tRcData* rc)
+bool InBase::Update(tRcData* rc)
 {
   switch (_config) {
   case IN_CONFIG_SBUS:
-      parse_sbus(rc);
-      break;
+      return parse_sbus(rc);
   }
+
+  return false;
 }
 
 
@@ -81,9 +82,10 @@ typedef union {
 } tSBusFrameBuffer;
 
 
-void InBase::parse_sbus(tRcData* rc)
+bool InBase::parse_sbus(tRcData* rc)
 {
   uint16_t t_now_us = tim_1us();
+  bool updated = false;
 
   while (available()) {
     char c = getc();
@@ -100,8 +102,9 @@ void InBase::parse_sbus(tRcData* rc)
       _buf_pos++;
       if (_buf_pos >= 25) {
         get_sbus_data(rc);
+        updated = true;
         _state = IN_STATE_IDLE;
-        break;
+        break; // is this what we want, or shouldn't we catch all?
       }
     }
 
@@ -111,6 +114,8 @@ void InBase::parse_sbus(tRcData* rc)
   if (_state == IN_STATE_RECEIVING) {
     if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
   }
+
+  return updated;
 }
 
 

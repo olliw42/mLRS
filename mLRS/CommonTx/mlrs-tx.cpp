@@ -758,10 +758,11 @@ IF_ANTENNA2(
     }
 #endif
 #if (defined DEVICE_HAS_IN)
-    if (Setup.Tx.ChannelSoure == CHANNEL_SOURCE_SPORT) {
+    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
       // update channels
-      in.Update(&rcData);
-      channelOrder.Apply(&rcData);
+      if (in.Update(&rcData)) {
+        channelOrder.Apply(&rcData);
+      }
     }
 #endif
 #ifdef USE_CRSF
