@@ -12,6 +12,7 @@ ISSUES:
 - why is otx not getting the crsf tx & rx link stats telemetry?
 - what do the crsf values exactly mean? should rssi be in -db or +db??
 - convert crsf power
+- why is CRSF telemetry nboit working in 19 Hz mode
 
 - LQ 98 in receiver
 
@@ -23,30 +24,42 @@ ISSUES:
 
 - do we really want to use RX with timeout in transmitter? couldn't we just use no timeout?
 
-- rc Data: how to handle over-sized values? simply clip to +.100% /currently done), rescale to allow +-120% ?
+- rc Data: how to handle over-sized values? simply clip to +-100% (as currently done), rescale to allow +-120% ?
 
+- SetPower consitent method for all devices/ferquency bands
+
+
+The 3 MAIN topics TODO:
+
+1) Link
+- retransmissions, resend last one time to make it more robust
+- diversity for transmitting
+- reconnect by choosing frequency based on rssi map
+
+2) Parameters, usability
+- parameters instead of compile defines wherever possible
+- parameter syncronization between tx and rx upon first connection
+- some way for users to adjust parameters (cli? lua?)
+- bind phase
+- firmware update: via connection to USB on tx module, for receiver ota-passthrough
+
+3) Mavlink
+- parser on both ends
+- router on Tx side
+- mavlinkX (transform mavlink data into more robust & slim format, introduce cmpr_msg)
+- rate management
 
 TODO:
-- retransmissions, frame loss, resend last one time to make it more robust
-- diversity for transmit
-
 - can we pl check the real spi clock speed !?!?!!?
 
 - effect of USE_DCDC? where to place it??
 
-- sync & configure at first connect
 - RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
 - RX side rssi output
 - RX side failsafe behaviors
-- OTA
-- configuration settings
-- bind phrase
-- transform mavlink data into more robust & slim format, introduce cmpr_msg
 - USB on TX side
 
-
 Longterm TODO:
-
 - option to select serial or serial with mavlink parsing, allow e.g. radio_status only in latter mode
 
 - rate management by radio_status txbuf
@@ -64,7 +77,7 @@ Longterm TODO:
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
 
-- idea: switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
+- idea: long raneg mode with rx only, switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
 */
 
 
