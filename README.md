@@ -40,13 +40,13 @@ The RC channels layout is as follows:
 
 It currently provides these operation modes:
 - 50 Hz Mode<br>
-  frequencies: 2.4 GHz
+  frequencies: 2.4 GHz<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 - 19 Hz Mode<br>
-  frequencies: 2.4 GHz, 915/868 MHz
+  frequencies: 2.4 GHz, 915/868 MHz<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1216 Bytes/sec<br>
   downlink serial rate: 1558 Bytes/sec<br>
