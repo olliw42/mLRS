@@ -36,7 +36,7 @@ Concerning its basic features (RC link, serial link) it appears to be quite stab
 The RC channels layout is as follows:
 - 8 channels with 11 bit resolution (CH1 - CH8), with 4 of them with a higher reliability margin (CH1 - CH4)
 - 4 channels with 8 bit resolution (CH9 - CH12)
-- 4 channels with three steps (CH13 - CH16), with 2 of them with a higher reliability margin (CH15, CH16)
+- 4 channels with three steps (CH13 - CH16), with 2 of them with a higher reliability margin (CH13, CH14)
 
 It currently provides these operation modes:
 - 50 Hz Mode<br>

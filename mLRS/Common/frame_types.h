@@ -82,8 +82,8 @@ typedef struct
   uint16_t ch1  : 11;
   uint16_t ch2  : 11;
   uint16_t ch3  : 11;
-  uint16_t ch14 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
-  uint16_t ch15 :  2;
+  uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
+  uint16_t ch13 :  2;
 }) tFrameRcData1; // 6 bytes
 
 
@@ -94,8 +94,8 @@ typedef struct
   uint16_t ch5  : 11;
   uint16_t ch6  : 11;
   uint16_t ch7  : 11;
-  uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
-  uint16_t ch13 :  2;
+  uint16_t ch14 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
+  uint16_t ch15 :  2;
   uint8_t ch8;        // 0 .. 128 .. 255, 8 bits
   uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
   uint8_t ch10;       // 0 .. 128 .. 255, 8 bits

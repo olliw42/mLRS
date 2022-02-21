@@ -93,10 +93,10 @@ uint16_t crc;
     frame->rc2.ch10 = rc->ch[10] / 8;
     frame->rc2.ch11 = rc->ch[11] / 8;
 
-    frame->rc2.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-    frame->rc2.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
-    frame->rc1.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
-    frame->rc1.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+    frame->rc1.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+    frame->rc1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
+    frame->rc2.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
+    frame->rc2.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -140,8 +140,8 @@ void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
     rc->ch[2] = frame->rc1.ch2;
     rc->ch[3] = frame->rc1.ch3;
 
-    rc->ch[14] = (frame->rc1.ch14 > 1) ? 2047 : ((frame->rc1.ch14 < 1) ? 0 : 1024);
-    rc->ch[15] = (frame->rc1.ch15 > 1) ? 2047 : ((frame->rc1.ch15 < 1) ? 0 : 1024);
+    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
+    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
 }
 
 
@@ -162,10 +162,10 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
     rc->ch[10] = frame->rc2.ch10 * 8;
     rc->ch[11] = frame->rc2.ch11 * 8;
 
-    rc->ch[12] = (frame->rc2.ch12 > 1) ? 2047 : ((frame->rc2.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc2.ch13 > 1) ? 2047 : ((frame->rc2.ch13 < 1) ? 0 : 1024);
-    rc->ch[14] = (frame->rc1.ch14 > 1) ? 2047 : ((frame->rc1.ch14 < 1) ? 0 : 1024);
-    rc->ch[15] = (frame->rc1.ch15 > 1) ? 2047 : ((frame->rc1.ch15 < 1) ? 0 : 1024);
+    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
+    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
+    rc->ch[14] = (frame->rc2.ch14 > 1) ? 2047 : ((frame->rc2.ch14 < 1) ? 0 : 1024);
+    rc->ch[15] = (frame->rc2.ch15 > 1) ? 2047 : ((frame->rc2.ch15 < 1) ? 0 : 1024);
 
     rc->ch[16] = 1024;
     rc->ch[17] = 1024;
