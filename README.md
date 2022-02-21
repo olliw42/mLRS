@@ -78,8 +78,9 @@ For cloning you of course can use any other tool you like, but ensure that the s
 - in the IDE's top bar go to `File->Open Projects from File System`
 - in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
 - change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`. ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
+- open the file `mlrs-rx.cpp` or `mlrs-tx.cpp` into the editor
 - compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
-- Repeat the last four steps for each board you are interested in
+- Repeat the last five steps for each board you are interested in
 
 <img src="https://user-images.githubusercontent.com/6089567/154903396-25f62bf6-573a-4b80-9720-a0ad4a21f291.jpg" width="480">
 
