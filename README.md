@@ -64,22 +64,22 @@ Let's assume that the project should be located in the folder C:/Me/Documents/Gi
  
 1. Clone and setup the project files
 - open a command line processor
-- cd into C:/Me/Documents/Github (not C:/Me/Documents/Github/mlrstest !)
-- git clone https://github.com/olliw42/mLRS.git mlrs
-- cd mlrs
-- run run_setup.py. This does two steps: initializes submodules, and generates mavlink library files.
+- cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
+- `git clone https://github.com/olliw42/mLRS.git mlrs`
+- `cd mlrs`
+- run `run_setup.py`. This does two steps: initializes submodules, and generates mavlink library files.
 
 For cloning you of course can use any other tool you like, but ensure that the submodules are also retrieved (git submodule --init --recursive).
 
 2. STM32CubeIDE
 - download and install STM32CubeIDE
 - start STM32CubeIDE
-- in Launcher select Workspace by hitting [Browse...] button, and browse to C:/Me/Documents/Github/mlrs/mLRS. Hit [Launch] button.
-- in the IDE's top bar go to File->Open Projects from File System
-- in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb. Hit [Finish] button.
-- change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select Release. ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
+- in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button.
+- in the IDE's top bar go to `File->Open Projects from File System`
+- in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
+- change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`. ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
 - compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
-- Repeat the last four steps for each board you are interested in. 
+- Repeat the last four steps for each board you are interested in
 
 <img src="https://user-images.githubusercontent.com/6089567/154903396-25f62bf6-573a-4b80-9720-a0ad4a21f291.jpg" width="480">
 
