@@ -48,8 +48,8 @@ It currently provides these operation modes:
 - 19 Hz Mode<br>
   frequencies: 2.4 GHz, 915/868 MHz<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
-  uplink serial rate: 1216 Bytes/sec<br>
-  downlink serial rate: 1558 Bytes/sec<br>
+  uplink serial rate: 1207 Bytes/sec<br>
+  downlink serial rate: 1547 Bytes/sec<br>
   receiver sensitivity: -112 dBm
 
 ## Community ##
