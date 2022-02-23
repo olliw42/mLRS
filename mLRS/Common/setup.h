@@ -120,7 +120,15 @@ void setup_configure(void)
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
   Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
 #else
-  Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
+  switch (Setup.Mode) {
+  case MODE_50HZ:
+  default:
+    Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
+    break;
+  case MODE_19HZ:
+    Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE;
+    break;
+  }
 #endif
 
   Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
