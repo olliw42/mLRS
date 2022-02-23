@@ -12,7 +12,6 @@ ISSUES:
 - why is otx not getting the crsf tx & rx link stats telemetry?
 - what do the crsf values exactly mean? should rssi be in -db or +db??
 - convert crsf power
-- why is CRSF telemetry nboit working in 19 Hz mode
 
 - LQ 98 in receiver
 
@@ -26,7 +25,7 @@ ISSUES:
 
 - rc Data: how to handle over-sized values? simply clip to +-100% (as currently done), rescale to allow +-120% ?
 
-- SetPower consitent method for all devices/ferquency bands
+- SetPower consistent method for all devices/ferquency bands
 
 
 The 3 MAIN topics TODO:
