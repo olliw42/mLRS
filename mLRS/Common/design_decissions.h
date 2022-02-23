@@ -507,14 +507,14 @@ CLOCK_SHIFT_10US 75 = 750us, 9MHz spi, diversity 1
 : 43848, 02007; 00007, 00016, t 00029, 00070, 00860, r 00860, 00879, 01911, d 00167,
 : 45856, 02008; 00007, 00016, t 00029, 00075, 00864, r 00864, 00884, 01912, d 00171,
 : 47861, 02005; 00007, 00016, t 00029, 00068, 00857, r 00857, 00877, 01908, d 00164,
-dopostreceive is 0 point
+dopostreceive is t0 point
 02008 = 20208 us -> cycle time
 00007 = 70 us  -> time to set TX
 00016 = 160 us -> time to finish  -> could make sense to have a 2nd time trigger
 t
 00029 = 290 us -> tx entered
 00070 = 700 us -> tx2 finished  => ca 400 us to get data, transfer frame to SX, and start transmitting
-00860 = 8600 us -> txdone  => 7.9 ms for frame, consistent with toa
+00860 = 8600 us -> txdone  => 7.9 ms for frame, consistent with toa 7.892 ms
 r
 00860 = 8600 us -> rx entered
 00879 = 8790 us -> rx2 finished  => 200 us to start receiving
@@ -588,6 +588,35 @@ CLOCK_SHIFT_10US 100 = 1000us, 2p25MHz spi, diversity 1
 
 => it's a good idea, timing also looks a bit more regular => do it!
 
+our headroom is time_in_receive - toa = (19.1-8.7) ms - 7.9 ms = 2.5 ms
+
+
+timing measures 23.02.2022 2.4GHz 19Hz mode
+rx diy-f103, times in 10us, on tx side RX tmo is 10
+CLOCK_SHIFT_10US 100 = 1000us, 9MHz spi, diversity 1
+
+: 32795, 05321; 00009, t 00016, 00064, 02424, r 02424, 02445, 05199, d 00185,
+: 38110, 05315; 00005, t 00021, 00070, 02429, r 02429, 02451, 05194, d 00192,
+: 43429, 05319; 00004, t 00016, 00064, 02424, r 02424, 02446, 05198, d 00185,
+: 48748, 05319; 00007, t 00016, 00064, 02423, r 02424, 02445, 05198, d 00185,
+: 54065, 05317; 00004, t 00019, 00067, 02427, r 02427, 02448, 05196, d 00188,
+dopostreceive is t0 point
+05321 = 53210 us -> cycle time
+00009 = 90 us  -> time to set TX
+t
+00016 = 160 us -> tx entered
+00064 = 640 us -> tx2 finished  => ca 400-500 us to get data, transfer frame to SX, and start transmitting
+02424 = 24240 us -> txdone  => 24.2 ms for frame, consistent with toa 23.527ms  one should subtract 0.64 ms as t0 is not beginning of frame tx
+r
+02424 = 24240 us -> rx entered
+02445 = 24450 us -> rx2 finished  => 200 us to start receiving
+05199 = 51990 us -> rxdone  => 27.5 ms until it has received frame   => 1.0 ms, this is our CLOCK_SHIFT
+d
+00185 = 1850 us -> = tx2 - rxdone, time between tx2 and rxdone, matches ca. CLOCK_SHIFT + (tx2-tx)
+
+our headroom is time_in_receive - toa = (52.0-24.5) ms - 23.6 ms = 3.9 ms
+
+=> 53 ms is plenty, we could use 52 ms ...
 
 */
 #endif // BLABLA_H
