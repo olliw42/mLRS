@@ -740,8 +740,6 @@ IF_ANTENNA2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling
 
-    channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: find proper place
-
 #if (defined USE_MBRIDGE)
     // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can used as sync
     if (bridge.channels_received) {
@@ -749,6 +747,7 @@ IF_ANTENNA2(
       if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
         // update channels
         fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
+        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
       // when we receive channels packet from transmitter, we send link stats to transmitter
@@ -766,6 +765,7 @@ IF_ANTENNA2(
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
       // update channels
       if (in.Update(&rcData)) {
+        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
     }
@@ -790,6 +790,7 @@ IF_ANTENNA2(
       // update channels
       if (crsf.IsChannelData() && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
         fill_rcdata_from_crsf(&rcData, crsf.frame);
+        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
     }
