@@ -67,12 +67,12 @@ const tSx127xLoraConfiguration Sx127xLoraConfiguration[] = {
     { .SpreadingFactor = SX1276_LORA_SF6,
       .Bandwidth = SX1276_LORA_BW_500,
       .CodingRate = SX1276_LORA_CR_4_5,
-      .PreambleLength = 8, // we could afford longer preamble since still some room in 19Hz mode
+      .PreambleLength = 12,
       .HeaderType = SX1276_LORA_HEADER_DISABLE,
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcEnabled = SX1276_LORA_CRC_DISABLE,
       .InvertIQ = SX1276_LORA_IQ_NORMAL,
-      .TimeOverAir = 21790,
+      .TimeOverAir = 22300,
       .ReceiverSensitivity = -112,
     }
 };
