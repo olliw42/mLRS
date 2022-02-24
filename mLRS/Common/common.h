@@ -392,13 +392,14 @@ Sx127xDriver sx;
 #else
 Sx128xDriver sx;
 #endif
+
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_HAS_SX126x
-Sx126xDriver sx2;
+Sx126xDriver2 sx2;
 #elif defined DEVICE_HAS_SX127x
-Sx127xDriver sx2;
+Sx127xDriver2 sx2;
 #else
-Sx128xDriver sx2;
+Sx128xDriver2 sx2;
 #endif
 #else
 SxDriverDummy sx2;

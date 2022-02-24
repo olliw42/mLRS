@@ -394,7 +394,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void Init(void)
     {
-      Sx128xDriverCommon::Init();
+        Sx128xDriverCommon::Init();
 
         spib_init();
         sx2_init_gpio();
