@@ -576,10 +576,8 @@ int main_main(void)
       break;
 
     case LINK_STATE_RECEIVE:
-      // for sx1280: datasheet says "As soon as a packet is detected, the timer is automatically
-      // disabled to allow complete reception of the packet." Why does then 5 ms not work??
-      IF_ANTENNA1(sx.SetToRx(TX_SET_RX_TMO)); // we wait 10 ms for the start for the frame, 5 ms does not work ??
-      IF_ANTENNA2(sx2.SetToRx(TX_SET_RX_TMO));
+      IF_ANTENNA1(sx.SetToRx(0));
+      IF_ANTENNA2(sx2.SetToRx(0));
       link_state = LINK_STATE_RECEIVE_WAIT;
       irq_status = 0;
       irq2_status = 0;

@@ -98,7 +98,6 @@ void setup_configure(void)
     Config.frame_rate_ms = 20; // 20 ms = 50 Hz
     Config.LoraConfigIndex = 0;
     Config.lora_send_frame_tmo = MODE_50HZ_SEND_FRAME_TMO; // 10;
-    Config.lora_set_to_rx_tmo = MODE_50HZ_TX_SET_RX_TMO; // 11;
     break;
   case MODE_19HZ:
     Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
@@ -108,7 +107,6 @@ void setup_configure(void)
     Config.LoraConfigIndex = 1;
 #endif
     Config.lora_send_frame_tmo = MODE_19HZ_SEND_FRAME_TMO; // 25;
-    Config.lora_set_to_rx_tmo = MODE_19HZ_TX_SET_RX_TMO; // 30;
     break;
   }
 

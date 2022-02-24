@@ -133,7 +133,6 @@ typedef struct
 {
   uint8_t LoraConfigIndex;
   uint8_t lora_send_frame_tmo;
-  uint8_t lora_set_to_rx_tmo;
 
   uint16_t FrameSyncWord;
   uint16_t FhssNum;
