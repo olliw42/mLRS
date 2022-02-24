@@ -155,7 +155,6 @@ typedef struct
 //-------------------------------------------------------
 
 #define SEND_FRAME_TMO          Config.lora_send_frame_tmo
-#define TX_SET_RX_TMO           Config.lora_set_to_rx_tmo
 
 #define CONNECT_TMO_SYSTICKS    Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT  Config.connect_listen_hop_cnt
