@@ -661,7 +661,7 @@ IF_ANTENNA2(
 
       bool frame_received = false;
       bool valid_frame_received = false;
-      if (USE_ANTENNA1 && USE_ANTENNA1) {
+      if (USE_ANTENNA1 && USE_ANTENNA2) {
         frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
       } else if (USE_ANTENNA1) {
@@ -675,7 +675,7 @@ IF_ANTENNA2(
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
 
-        if (USE_ANTENNA1 && USE_ANTENNA1) {
+        if (USE_ANTENNA1 && USE_ANTENNA2) {
           // work out which antenna we choose
           //            |   NONE   |  INVALID  | VALID
           // --------------------------------------------------------

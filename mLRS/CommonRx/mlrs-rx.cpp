@@ -619,7 +619,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
 
-        if (USE_ANTENNA1 && USE_ANTENNA1) {
+        if (USE_ANTENNA1 && USE_ANTENNA2) {
           // work out which antenna we choose
           //            |   NONE   |  INVALID  | CRC1_VALID | VALID
           // --------------------------------------------------------
