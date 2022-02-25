@@ -352,7 +352,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
   if (res) {
     DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
-dbg.puts("fail ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
+dbg.puts("fail ");dbg.puts(u8toHEX_s(res)); dbg.puts(" ");
   }
 
   if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
@@ -652,7 +652,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));
 
         handle_receive(antenna);
 
-dbg.puts(" a"); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
+dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       }
 
       if (valid_frame_received) { // valid frame received

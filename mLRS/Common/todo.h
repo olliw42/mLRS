@@ -23,19 +23,19 @@ ISSUES:
 
 - rc Data: how to handle over-sized values? simply clip to +-100% (as currently done), rescale to allow +-120% ?
 
-- SetPower consistent method for all devices/ferquency bands
+- SetPower consistent method for all devices/frequency bands
 
 
 The 3 MAIN topics TODO:
 
 1) Link
 - retransmissions, resend last one time to make it more robust
-- diversity for transmitting
+- diversity for transmitting (should also work for omni + directional)
 - reconnect by choosing frequency based on rssi map
 
 2) Parameters, usability
 - parameters instead of compile defines wherever possible
-- parameter syncronization between tx and rx upon first connection
+- parameter synchronization between tx and rx upon first connection
 - some way for users to adjust parameters (cli? lua?)
 - bind phase
 - firmware update: via connection to USB on tx module, for receiver ota-passthrough
@@ -74,7 +74,7 @@ Longterm TODO:
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
 
-- idea: long raneg mode with rx only, switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
+- long range mode with rx only, switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
 */
 
 

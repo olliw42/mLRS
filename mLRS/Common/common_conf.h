@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             0028
-#define VERSIONONLYSTR      "v0.0.28"
+#define VERSION             0029
+#define VERSIONONLYSTR      "v0.0.29"
 #define SETUPLAYOUT         001       // this should be changed then Setup struct and/or serial changes
 
 
@@ -50,7 +50,7 @@
 
 #define SETUP_RX_POWER                  POWER
 
-#define SETUP_RX_SERIAL_BAUDRATE        57600
+#define SETUP_RX_SERIAL_BAUDRATE        57600 // 9600: makes MissionPlanner 'work' in 19Hz mode, keeps traffic below 1000 bytes/sec, obviously with high latency
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
 
