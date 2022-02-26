@@ -13,12 +13,28 @@
 
 #include "..\hal\device_conf.h"
 
-#ifdef DEVICE_HAS_SX126x
-#include "sx126x_driver.h"
-#elif defined DEVICE_HAS_SX127x
-#include "sx127x_driver.h"
-#else
-#include "sx128x_driver.h"
+#ifdef DEVICE_HAS_I2C_DAC
+class tI2cDac : public tI2cBase
+{
+  public:
+    void Init(void) override
+    {
+        i2c_init();
+        i2c_setdeviceadr(SX_PA_DAC_I2C_DEVICE_ADR);
+        HAL_StatusTypeDef res = i2c_device_ready();
+        initialized = (res == HAL_OK);
+    }
+
+    bool put_buf_blocking(uint8_t device_adr, uint8_t* buf, uint16_t len) override
+    {
+        if (!initialized) return false;
+        i2c_setdeviceadr(device_adr);
+        HAL_StatusTypeDef res = i2c_put_buf_blocked(buf, len);
+        return (res == HAL_OK);
+    }
+};
+
+tI2cDac dac;
 #endif
 
 
@@ -35,6 +51,15 @@ class SxDriverDummy
     void SetToRx(uint16_t tmo_ms) {}
     void SetToIdle(void) {}
 };
+
+
+#ifdef DEVICE_HAS_SX126x
+#include "sx126x_driver.h"
+#elif defined DEVICE_HAS_SX127x
+#include "sx127x_driver.h"
+#else
+#include "sx128x_driver.h"
+#endif
 
 
 #endif // SX12XX_DRIVER_H

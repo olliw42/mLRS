@@ -55,6 +55,20 @@ typedef enum {
 } SX12xx_IRQ_ENUM;
 
 
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+{
+    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM;
+
+    if (power_sx < SX126X_POWER_m9_DBM) power_sx = SX126X_POWER_m9_DBM;
+    if (power_sx > POWER_SX126X_MAX_DBM) power_sx = POWER_SX126X_MAX_DBM;
+
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx + POWER_GAIN_DBM;
+}
+#endif
+
+
 class Sx126xDriverCommon : public Sx126xDriverBase
 {
   public:
@@ -120,11 +134,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         SetPaConfig_22dbm();
 
+        //SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
+        SetRfPower_dbm(Config.Power);
+
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
         // SetSyncWord(0x1424); // public network, no need to call as it defaults to 0x1424
-
-        SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
 
         SetBufferBaseAddress(0, 0);
 
@@ -135,6 +150,23 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ClearIrqStatus(SX126X_IRQ_ALL);
 
         SetFs();
+    }
+
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power;
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(power_list[index].dbm);
     }
 
     void ReadFrame(uint8_t* data, uint8_t len)
@@ -166,11 +198,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetFs();
     }
 
-    void SetRfPower(uint8_t Power)
-    {
-        SetTxParams(Power, SX126X_RAMPTIME_10_US);
-    }
-
     uint32_t TimeOverAir_us(void)
     {
         // cumbersome to calculate in general, so use hardcoded for a specific settings
@@ -187,28 +214,14 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return lora_configuration->ReceiverSensitivity;
     }
 
-    int8_t GetActualPower(void)
+    int8_t RfPower_dbm(void)
     {
-        return sx_power + POWER_GAIN_DBM;
-    }
-
-    int8_t GetActualSxPower(void)
-    {
-        return sx_power;
+        return actual_power_dbm;
     }
 
   private:
     const tSxLoraConfiguration* lora_configuration;
-
-    int8_t sx_power;
-
-    int8_t calc_sx_power(int8_t power)
-    {
-        sx_power = power - POWER_GAIN_DBM;
-        if (sx_power > POWER_SX126X_MAX_DBM) sx_power = POWER_SX126X_MAX_DBM;
-        if (sx_power < SX126X_POWER_m9_DBM) sx_power = SX126X_POWER_m9_DBM;
-        return sx_power;
-    }
+    int8_t actual_power_dbm;
 };
 
 

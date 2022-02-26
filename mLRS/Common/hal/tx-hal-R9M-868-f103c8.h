@@ -107,18 +107,6 @@ void sx_init_gpio(void)
   gpio_init(SX_PA_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
-void sx_i2c_dac_set_voltage(tI2cBase* i2c, uint32_t voltage_mV)
-{
-  if (!i2c->initialized) return;
-  // convert voltage to 0 .. 255
-  uint16_t value = (voltage_mV >= 3300) ? 255 : (voltage_mV * 255) / 3300; // don't bother with rounding
-  // construct data word
-  uint8_t buf[2];
-  buf[0] = (value & 0x00F0) >> 4;
-  buf[1] = (value & 0x000F) << 4;
-  i2c->put_buf_blocking(SX_PA_DAC_I2C_DEVICE_ADR, buf, 2);
-}
-
 bool sx_dio_read(void)
 {
   return (gpio_read_activehigh(SX_DIO0)) ? true : false;
@@ -239,18 +227,36 @@ void pos_switch_init(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            27
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM
+#define DEVICE_HAS_I2C_DAC
 
-#define POWER_NUM                 5
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power_max, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
+{
+  //TODO: work out what we want here, we currently just set "something"
 
-const uint16_t power_list[POWER_NUM][2] = {
-    { POWER_0_DBM, 1 },
-    { POWER_10_DBM, 10 },
-    { POWER_20_DBM, 100 },
-    { POWER_23_DBM, 200 },
-    { POWER_27_DBM, 500 },
- };
+  uint32_t voltage_mV = 1500; // 2500 was too high
+
+  //if (!dac->initialized) return;
+  // convert voltage to 0 .. 255
+  uint16_t value = (voltage_mV >= 3300) ? 255 : (voltage_mV * 255) / 3300; // don't bother with rounding
+  // construct data word
+  uint8_t buf[2];
+  buf[0] = (value & 0x00F0) >> 4;
+  buf[1] = (value & 0x000F) << 4;
+  dac->put_buf_blocking(SX_PA_DAC_I2C_DEVICE_ADR, buf, 2);
+
+  *sx_power_max = SX1276_MAX_POWER_15_DBM;
+  *sx_power = 0;
+}
+
+#define RFPOWER_LIST_NUM             5
+
+const rfpower_t rfpower_list[RFPOWER_LIST_NUM] = {
+    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_23_DBM, .mW = 200 },
+    { .dbm = POWER_27_DBM, .mW = 500 },
+};
 
 
 //-- TEST

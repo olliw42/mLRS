@@ -174,20 +174,16 @@ void leds_init(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            27
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM
+#define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define POWER_NUM                 5
+#define RFPOWER_LIST_NUM           5
 
-const uint16_t power_list[POWER_NUM][2] = {
-    { POWER_0_DBM, 1 },
-    { POWER_10_DBM, 10 },
-    { POWER_20_DBM, 100 },
-    { POWER_23_DBM, 200 },
-    { POWER_27_DBM, 500 },
- };
-
-#define POWER_RANGE_TEST          SX1280_POWER_m18_DBM
+const rfpower_t rfpower_list[RFPOWER_LIST_NUM] = {
+    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_22_DBM, .mW = 200 },
+};
 
 
 //-- TEST

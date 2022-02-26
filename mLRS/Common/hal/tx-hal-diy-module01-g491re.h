@@ -324,15 +324,16 @@ void oled_init_gpio(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM
+#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
+#define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define POWER_NUM                 3
+#define RFPOWER_LIST_NUM          3
 
-const uint16_t power_list[POWER_NUM][2] = {
-    { POWER_0_DBM, 1 },
-    { POWER_10_DBM, 10 },
-    { POWER_12p5_DBM, 18 },
+const rfpower_t power_list[RFPOWER_LIST_NUM] = {
+    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_12p5_DBM, .mW = 18 },
 };
 
 

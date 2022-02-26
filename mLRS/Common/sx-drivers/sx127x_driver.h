@@ -20,31 +20,6 @@ https://www.thethingsnetwork.org/forum/t/should-private-lorawan-networks-use-a-d
 */
 
 
-// this is not nice, figure out where to place
-#ifdef TX_R9M_868_F103C8
-class tI2cDac : public tI2cBase
-{
-  public:
-    void Init(void)
-    {
-      i2c_init();
-      i2c_setdeviceadr(SX_PA_DAC_I2C_DEVICE_ADR);
-      HAL_StatusTypeDef res = i2c_device_ready();
-      initialized = (res == HAL_OK);
-    }
-
-    uint8_t put_buf_blocking(uint8_t device_adr, uint8_t* buf, uint16_t len)
-    {
-      i2c_setdeviceadr(device_adr);
-      HAL_StatusTypeDef res = i2c_put_buf_blocked(buf, len);
-      return (res == HAL_OK) ? 1 : 0;
-    }
-};
-
-tI2cDac dac;
-#endif
-
-
 //-------------------------------------------------------
 // SX Driver
 //-------------------------------------------------------
@@ -85,6 +60,17 @@ typedef enum {
     SX12xx_IRQ_TIMEOUT = SX1276_IRQ_RX_TIMEOUT,
     SX12xx_IRQ_ALL     = SX1276_IRQ_ALL,
 } SX12xx_IRQ_ENUM;
+
+
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power_max, uint8_t* sx_power, int8_t* actual_power_dbm)
+{
+    //TODO: work out what we want here, we currently just set "something"
+
+    *sx_power_max = SX1276_MAX_POWER_15_DBM;
+    *sx_power = 0;
+}
+#endif
 
 
 class Sx127xDriverCommon : public Sx127xDriverBase
@@ -144,8 +130,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         // 5 OcpOn, 4-0 OcpTrim
         ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
 
-        //calc_sx_power(Config.Power)
-        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, 0, SX1276_PA_RAMP_40_US);
+        //SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, 0, SX1276_PA_RAMP_40_US);
+        SetRfPower_dbm(Config.Power);
 
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
@@ -157,6 +143,27 @@ class Sx127xDriverCommon : public Sx127xDriverBase
                         SX1276_DIO0_MAPPING_RX_TX_DONE,
                         SX1276_DIO1_MAPPING_RX_TIMEOUT);
         ClearIrqStatus(SX1276_IRQ_ALL);
+    }
+
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power_max, sx_power;
+#ifdef DEVICE_HAS_I2C_DAC
+        rfpower_calc(power_dbm, &sx_power_max, &sx_power, &actual_power_dbm, &dac);
+#else
+        rfpower_calc(power_dbm, &sx_power_max, &sx_power, &actual_power_dbm);
+#endif
+        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, sx_power_max, sx_power, SX1276_PA_RAMP_40_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(rfpower_list[index].dbm);
     }
 
     //-- this are the API functions used in the loop
@@ -196,9 +203,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
     {
-      Sx127xDriverBase::GetPacketStatus(RssiSync, Snr);
+        Sx127xDriverBase::GetPacketStatus(RssiSync, Snr);
 
-      if (*RssiSync < -127) *RssiSync = -127; // we do not support values lower than this
+        if (*RssiSync < -127) *RssiSync = -127; // we do not support values lower than this
     }
 
     //-- helper
@@ -218,9 +225,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return lora_configuration->ReceiverSensitivity;
     }
 
+    int8_t RfPower_dbm(void)
+    {
+        return actual_power_dbm;
+    }
+
   private:
     const tSx127xLoraConfiguration* lora_configuration;
-
+    int8_t actual_power_dbm;
     uint32_t symbol_time_us;
 
     uint32_t calc_symbol_time_us(uint8_t SpreadingFactor, uint8_t Bandwidth)
@@ -304,9 +316,8 @@ class Sx127xDriver : public Sx127xDriverCommon
     void StartUp(void)
     {
         // this is not nice, figure out where to place
-#ifdef TX_R9M_868_F103C8
+#ifdef DEVICE_HAS_I2C_DAC
         dac.Init();
-        sx_i2c_dac_set_voltage(&dac, 1500); // 2500 was too high
 #endif
 
         SetStandby(); // should be in STDBY after reset

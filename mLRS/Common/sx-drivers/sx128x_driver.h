@@ -80,6 +80,21 @@ typedef enum {
 } SX12xx_IRQ_ENUM;
 
 
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+{
+    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM + 18;
+
+    if (power_sx < SX1280_POWER_m18_DBM) power_sx = SX1280_POWER_m18_DBM;
+    if (power_sx > SX1280_POWER_12p5_DBM) power_sx = SX1280_POWER_12p5_DBM;
+    if (power_sx > POWER_SX1280_MAX_DBM) power_sx = POWER_SX1280_MAX_DBM;
+
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx + POWER_GAIN_DBM - 18;
+}
+#endif
+
+
 class Sx128xDriverCommon : public Sx128xDriverBase
 {
   public:
@@ -118,11 +133,13 @@ class Sx128xDriverCommon : public Sx128xDriverBase
     void Configure(void)
     {
         SetPacketType(SX1280_PACKET_TYPE_LORA);
-        SetBufferBaseAddress(0, 0);
 
         SetAutoFs(true);
 
         SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
+
+        //SetTxParams(calc_sx_power(Config.Power), SX1280_RAMPTIME_04_US);
+        SetRfPower_dbm(Config.Power);
 
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 
@@ -130,7 +147,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetSyncWord(LORA_SYNCWORD);
 #endif
 
-        SetTxParams(calc_sx_power(Config.Power), SX1280_RAMPTIME_04_US);
+        SetBufferBaseAddress(0, 0);
 
         SetDioIrqParams(SX1280_IRQ_ALL,
                         SX1280_IRQ_RX_DONE | SX1280_IRQ_TX_DONE | SX1280_IRQ_RX_TX_TIMEOUT,
@@ -141,6 +158,22 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetFs();
     }
 
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power;
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(power_list[index].dbm);
+    }
 
     //-- this are the API functions used in the loop
 
@@ -176,11 +209,6 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     //-- helper
 
-    void SetRfPower(uint8_t power)
-    {
-        SetTxParams(power, SX1280_RAMPTIME_04_US);
-    }
-
     uint32_t TimeOverAir_us(void)
     {
         // cumbersome to calculate in general, so use hardcoded for a specific settings
@@ -196,29 +224,14 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return lora_configuration->ReceiverSensitivity;
     }
 
-    int8_t GetActualPower(void)
+    int8_t RfPower_dbm(void)
     {
-        return (int8_t)sx_power + POWER_GAIN_DBM - 18;
-    }
-
-    uint8_t GetActualSxPower(void)
-    {
-        return sx_power;
+        return actual_power_dbm;
     }
 
   private:
     const tSxLoraConfiguration* lora_configuration;
-
-    int8_t sx_power;
-
-    uint8_t calc_sx_power(int8_t power)
-    {
-        sx_power = power - POWER_GAIN_DBM + 18;
-        if (sx_power > POWER_SX1280_MAX_DBM) sx_power = POWER_SX1280_MAX_DBM;
-        if (sx_power < SX1280_POWER_m18_DBM) sx_power = SX1280_POWER_m18_DBM;
-        if (sx_power > SX1280_POWER_12p5_DBM) sx_power = SX1280_POWER_12p5_DBM;
-        return sx_power;
-    }
+    int8_t actual_power_dbm;
 };
 
 
@@ -306,11 +319,6 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- high level API functions
 
-    //bool isOk(void)
-    //void SetLoraConfiguration(const tSxLoraConfiguration* config)
-    //void SetLoraConfigurationByIndex(uint8_t index)
-    //void Configure(void)
-
     void StartUp(void)
     {
         SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
@@ -341,8 +349,6 @@ class Sx128xDriver : public Sx128xDriverCommon
         Sx128xDriverCommon::SetToRx(tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
-
-    //void ReadFrame(uint8_t* data, uint8_t len)
 };
 
 

@@ -20,6 +20,7 @@
 
 
 typedef enum {
+  POWER_MIN       = INT8_MIN,
   POWER_m18_DBM   = -18, // 16 uW
   POWER_m10_DBM   = -10, // 100 uW
   POWER_0_DBM     = 0, // 1 mW
@@ -27,11 +28,19 @@ typedef enum {
   POWER_12_DBM    = 12, // 16 mW
   POWER_12p5_DBM  = 13, // 18 mW
   POWER_20_DBM    = 20, // 100 mW
+  POWER_22_DBM    = 22, // 159 mW
   POWER_23_DBM    = 24, // 200 mW
   POWER_24_DBM    = 24, // 251 mW
   POWER_27_DBM    = 27, // 501 mW
   POWER_30_DBM    = 30, // 1000 mW
+  POWER_MAX       = INT8_MAX,
 } POWER_ENUM;
+
+
+typedef struct {
+  int8_t dbm;
+  int16_t mW;
+} rfpower_t;
 
 
 typedef enum {
@@ -59,7 +68,7 @@ class tI2cBase
 {
   public:
     virtual void Init(void) { initialized = false; }
-    virtual uint8_t put_buf_blocking(uint8_t device_adr, uint8_t* buf, uint16_t len) { return 0; }
+    virtual bool put_buf_blocking(uint8_t device_adr, uint8_t* buf, uint16_t len) { return false; }
 
     bool initialized;
 };
