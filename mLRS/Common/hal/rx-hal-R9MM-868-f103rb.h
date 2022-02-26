@@ -174,6 +174,8 @@ void leds_init(void)
 
 //-- POWER
 
+#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_LIST_NUM           5
@@ -181,8 +183,7 @@ void leds_init(void)
 const rfpower_t rfpower_list[RFPOWER_LIST_NUM] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 200 },
+    { .dbm = POWER_17_DBM, .mW = 50 },
 };
 
 

@@ -63,12 +63,17 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power_max, uint8_t* sx_power, int8_t* actual_power_dbm)
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
-    //TODO: work out what we want here, we currently just set "something"
+    // Pout = 17 - (15 - OutputPower) if PaSelect = 1 (PA_BOOST pin)
+    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM + 2;
 
-    *sx_power_max = SX1276_MAX_POWER_15_DBM;
-    *sx_power = 0;
+    if (power_sx < SX1276_OUTPUT_POWER_MIN) power_sx = SX1276_OUTPUT_POWER_MIN;
+    if (power_sx > SX1276_OUTPUT_POWER_MAX) power_sx = SX1276_OUTPUT_POWER_MAX;
+    if (power_sx > POWER_SX1276_MAX_DBM) power_sx = POWER_SX1276_MAX_DBM;
+
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx + POWER_GAIN_DBM - 2;
 }
 #endif
 
@@ -127,9 +132,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
         // 3 LowDataRateOptimize, 2 AgcAutoOn
         ReadWriteRegister(SX1276_REG_ModemConfig3, 0x0C, SX1276_LORA_LOW_DATA_RATE_OPTIMIZE_OFF | SX1276_LORA_AGC_AUTO_ON);
-        // 5 OcpOn, 4-0 OcpTrim
-        ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
 
+        // 5 OcpOn, 4-0 OcpTrim
+        //ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
         //SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, 0, SX1276_PA_RAMP_40_US);
         SetRfPower_dbm(Config.Power);
 
@@ -147,13 +152,17 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        uint8_t sx_power_max, sx_power;
+        uint8_t sx_power;
 #ifdef DEVICE_HAS_I2C_DAC
-        rfpower_calc(power_dbm, &sx_power_max, &sx_power, &actual_power_dbm, &dac);
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
 #else
-        rfpower_calc(power_dbm, &sx_power_max, &sx_power, &actual_power_dbm);
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 #endif
-        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, sx_power_max, sx_power, SX1276_PA_RAMP_40_US);
+        // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
+        // there would be special setting for +20dBm mode, don't do it
+        // 5 OcpOn, 4-0 OcpTrim
+        ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
+        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
     }
 
     void SetRfPowerByList(uint8_t index)
