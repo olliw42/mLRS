@@ -212,9 +212,13 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
     {
-        Sx127xDriverBase::GetPacketStatus(RssiSync, Snr);
+        int16_t rssi;
+        Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
 
-        if (*RssiSync < -127) *RssiSync = -127; // we do not support values lower than this
+        if (rssi > -1) rssi = -1; // we do not support values larger than this
+        if (rssi < -127) rssi = -127; // we do not support values lower than this
+
+        *RssiSync = rssi;
     }
 
     //-- helper
