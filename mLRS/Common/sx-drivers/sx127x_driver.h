@@ -115,6 +115,31 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power;
+#ifdef DEVICE_HAS_I2C_DAC
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
+#else
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+#endif
+        // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
+        // there would be special setting for +20dBm mode, don't do it
+        // 5 OcpOn, 4-0 OcpTrim
+        ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
+        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(rfpower_list[index].dbm);
+    }
+
     void Configure(void)
     {
         SetSleep(); // must be in sleep to switch to LoRa mode
@@ -148,31 +173,6 @@ class Sx127xDriverCommon : public Sx127xDriverBase
                         SX1276_DIO0_MAPPING_RX_TX_DONE,
                         SX1276_DIO1_MAPPING_RX_TIMEOUT);
         ClearIrqStatus(SX1276_IRQ_ALL);
-    }
-
-    void SetRfPower_dbm(int8_t power_dbm)
-    {
-        uint8_t sx_power;
-#ifdef DEVICE_HAS_I2C_DAC
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
-#else
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-#endif
-        // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
-        // there would be special setting for +20dBm mode, don't do it
-        // 5 OcpOn, 4-0 OcpTrim
-        ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
-        SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
-    }
-
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(rfpower_list[index].dbm);
     }
 
     //-- this are the API functions used in the loop

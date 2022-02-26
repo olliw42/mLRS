@@ -130,6 +130,23 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power;
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(power_list[index].dbm);
+    }
+
     void Configure(void)
     {
         SetPacketType(SX1280_PACKET_TYPE_LORA);
@@ -156,23 +173,6 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         ClearIrqStatus(SX1280_IRQ_ALL);
 
         SetFs();
-    }
-
-    void SetRfPower_dbm(int8_t power_dbm)
-    {
-        uint8_t sx_power;
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
-    }
-
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(power_list[index].dbm);
     }
 
     //-- this are the API functions used in the loop

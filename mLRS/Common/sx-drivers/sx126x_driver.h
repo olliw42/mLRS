@@ -108,6 +108,23 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void SetRfPower_dbm(int8_t power_dbm)
+    {
+        uint8_t sx_power;
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
+    }
+
+    void SetRfPowerByList(uint8_t index)
+    {
+        if (index >= RFPOWER_LIST_NUM) {
+          SetRfPower_dbm(POWER_MIN); // set to smallest possible
+          return;
+        }
+
+        SetRfPower_dbm(power_list[index].dbm);
+    }
+
     void Configure(void)
     {
         SetPacketType(SX126X_PACKET_TYPE_LORA);
@@ -150,23 +167,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ClearIrqStatus(SX126X_IRQ_ALL);
 
         SetFs();
-    }
-
-    void SetRfPower_dbm(int8_t power_dbm)
-    {
-        uint8_t sx_power;
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
-    }
-
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(power_list[index].dbm);
     }
 
     void ReadFrame(uint8_t* data, uint8_t len)
