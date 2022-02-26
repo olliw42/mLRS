@@ -241,6 +241,20 @@ tCrsfLinkStatistics lstats;
 }
 
 
+uint8_t crsf_cvt_power(int8_t power_dbm)
+{
+  if (power_dbm <= 3) return CRSF_POWER_0_mW; // 0 dBm
+  if (power_dbm <= 12) return CRSF_POWER_10_mW; // 10 dBm
+  if (power_dbm <= 15) return CRSF_POWER_25_mW; // 14 dBm
+  if (power_dbm <= 18) return CRSF_POWER_50_mW; // 17 dBm
+  if (power_dbm <= 22) return CRSF_POWER_100_mW; // 20 dBm
+  if (power_dbm <= 25) return CRSF_POWER_250_mW; // 24 dBm
+  if (power_dbm <= 28) return CRSF_POWER_500_mW; // 27 dBm
+  if (power_dbm <= 31) return CRSF_POWER_1000_mW; // 30 dBm
+  return CRSF_POWER_2000_mW; // 33 dBm
+}
+
+
 void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx lstats;
@@ -249,7 +263,7 @@ tCrsfLinkStatisticsTx lstats;
   lstats.uplink_rssi_percent = 12; // TODO
   lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
   lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2; // ignored by OpenTx
-  lstats.downlink_transmit_power = CRSF_POWER_0_mW; // TODO
+  lstats.downlink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
   lstats.uplink_fps = 5; // TODO
   crsf.SendLinkStatisticsTx(&lstats);
 }
@@ -263,7 +277,7 @@ tCrsfLinkStatisticsRx lstats;
   lstats.downlink_rssi_percent = 13; // TODO
   lstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
   lstats.downlink_snr = 0; // ignored by OpenTx
-  lstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
+  lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
   crsf.SendLinkStatisticsRx(&lstats);
 }
 
