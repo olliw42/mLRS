@@ -229,11 +229,43 @@ void pos_switch_init(void)
 
 #define DEVICE_HAS_I2C_DAC
 
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power_max, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
+void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
 {
-  //TODO: work out what we want here, we currently just set "something"
-
-  uint32_t voltage_mV = 1500; // 2500 was too high
+  // these values are taken from ELRS
+  // 10mW   10dbm   720
+  // 25mW   14dbm   875
+  // 50mW   17dBm   1000
+  // 100mW  20dBm   1140
+  // 250mW  24dBm   1390
+  // 500mW  27dBm   1730
+  // 1000mW 30dBm   2100
+  // my estimated 1mW 0dBm 200
+  uint32_t voltage_mV; // 2500 was too high
+  if (power_dbm > 28) {
+    voltage_mV = 2100;
+    *actual_power_dbm = 30;
+  } else if (power_dbm > 25) {
+    voltage_mV = 1730;
+    *actual_power_dbm = 27;
+  } else if (power_dbm > 22) {
+    voltage_mV = 1390;
+    *actual_power_dbm = 24;
+  } else if (power_dbm > 18) {
+    voltage_mV = 1140;
+    *actual_power_dbm = 20;
+  } else if (power_dbm > 15) {
+    voltage_mV = 1000;
+    *actual_power_dbm = 17;
+  } else if (power_dbm > 12) {
+    voltage_mV = 875;
+    *actual_power_dbm = 14;
+  } else if (power_dbm > 5) {
+    voltage_mV = 720;
+    *actual_power_dbm = 10;
+  } else {
+    voltage_mV = 200;
+    *actual_power_dbm = 0;
+  }
 
   //if (!dac->initialized) return;
   // convert voltage to 0 .. 255
@@ -244,7 +276,6 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power_max, uint8_t* sx_power, in
   buf[1] = (value & 0x000F) << 4;
   dac->put_buf_blocking(SX_PA_DAC_I2C_DEVICE_ADR, buf, 2);
 
-  *sx_power_max = SX1276_MAX_POWER_15_DBM;
   *sx_power = 0;
 }
 
