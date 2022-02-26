@@ -455,6 +455,30 @@ and each will overwrite any previous rssi, so be careful with what one really wa
 
 
 -------------------------------------------------------
+SX1280 power
+the sx power is calculated as
+  sx_power = LIMIT(SX1280_POWER_m18_DBM, power - POWER_GAIN_DBM + 18, POWER_SX1280_MAX_DBM)
+
+ example 1: no PA
+  POWER_GAIN_DBM = 0
+  POWER_SX1280_MAX_DBM = SX1280_POWER_12p5_DBM
+  => power = -18 ... 13
+  => sx_power = 0 ... 31 = SX1280_POWER_m18_DBM ... SX1280_POWER_12p5_DBM
+
+ example 2: E28 PA 27 dBm gain
+  POWER_GAIN_DBM = 27
+  POWER_SX1280_MAX_DBM = SX1280_POWER_0_DBM
+  => power = 9 ... 27
+  => sx_power = 0 ... 18 = SX1280_POWER_m18_DBM ... SX1280_POWER_0_DBM
+
+ example 2: siyi PA 22 dBm gain
+  POWER_GAIN_DBM = 22
+  POWER_SX1280_MAX_DBM = SX1280_POWER_3_DBM
+  => power = 4 ... 25
+  => sx_power = 0 ... 21 = SX1280_POWER_m18_DBM ... SX1280_POWER_3_DBM
+
+
+-------------------------------------------------------
 stuff
 
 https://interrupt.memfault.com/blog/cortex-m-fault-debug
