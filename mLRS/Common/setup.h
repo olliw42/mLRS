@@ -116,7 +116,7 @@ void setup_configure(void)
 #if defined FREQUENCY_BAND_868_MHZ
   Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-  Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
+  Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
 #else
   switch (Setup.Mode) {
   case MODE_50HZ:
