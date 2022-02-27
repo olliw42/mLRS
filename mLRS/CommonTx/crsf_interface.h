@@ -223,24 +223,6 @@ void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 //-------------------------------------------------------
 // convenience helper
 
-void crsf_send_LinkStatistics(void)
-{
-tCrsfLinkStatistics lstats;
-
-  lstats.uplink_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : -127;
-  lstats.uplink_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : -127;
-  lstats.uplink_LQ = txstats.GetLQ();
-  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
-  lstats.active_antenna = stats.last_rx_antenna;
-  lstats.mode = 4; // unknown
-  lstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
-  lstats.downlink_rssi = stats.received_rssi;
-  lstats.downlink_LQ = stats.received_LQ;
-  lstats.downlink_snr = 0;
-  crsf.SendLinkStatistics(&lstats);
-}
-
-
 uint8_t crsf_cvt_power(int8_t power_dbm)
 {
   if (power_dbm <= 3) return CRSF_POWER_0_mW; // 0 dBm
@@ -251,7 +233,34 @@ uint8_t crsf_cvt_power(int8_t power_dbm)
   if (power_dbm <= 25) return CRSF_POWER_250_mW; // 24 dBm
   if (power_dbm <= 28) return CRSF_POWER_500_mW; // 27 dBm
   if (power_dbm <= 31) return CRSF_POWER_1000_mW; // 30 dBm
-  return CRSF_POWER_2000_mW; // 33 dBm
+  if (power_dbm <= 33) return CRSF_POWER_2000_mW; // 33 dBm
+  return UINT8_MAX; // makes it red in otx
+}
+
+// on crsf rssi
+// rssi = 255 -> red in otx
+//      = 130 -> -126 dB
+//      = 129 -> -127 dB
+//      = 128 -> -128 dB
+//      = 127 ->  127dB
+//      = 126 ->  126dB
+// hmhm ...
+
+void crsf_send_LinkStatistics(void)
+{
+tCrsfLinkStatistics lstats;
+
+  lstats.uplink_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? ((stats.last_rx_rssi1 == -1) ? -2 : stats.last_rx_rssi1) : 255;
+  lstats.uplink_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? ((stats.last_rx_rssi2 == -1) ? -2 : stats.last_rx_rssi2) : 255;
+  lstats.uplink_LQ = txstats.GetLQ();
+  lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
+  lstats.active_antenna = stats.last_rx_antenna;
+  lstats.mode = (Setup.Mode == MODE_19HZ) ? 19 : 1;
+  lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
+  lstats.downlink_rssi = (stats.received_rssi == -1) ? -2 : stats.received_rssi;
+  lstats.downlink_LQ = stats.received_LQ;
+  lstats.downlink_snr = 0;
+  crsf.SendLinkStatistics(&lstats);
 }
 
 
@@ -263,8 +272,8 @@ tCrsfLinkStatisticsTx lstats;
   lstats.uplink_rssi_percent = 12; // TODO
   lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
   lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2; // ignored by OpenTx
-  lstats.downlink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
-  lstats.uplink_fps = 5; // TODO
+  lstats.downlink_transmit_power = UINT8_MAX; // we only can guess it // crsf_cvt_power(sx.RfPower_dbm());
+  lstats.uplink_fps = (Setup.Mode == MODE_19HZ) ? 19 : 50;
   crsf.SendLinkStatisticsTx(&lstats);
 }
 

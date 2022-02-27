@@ -8,7 +8,11 @@
 // The CRSF protocol details have been thankfully released by TBS
 // So, this info is openly available.
 // See e.g.
-// betaflight: https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
+// betaflight:
+// https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf_protocol.h
+// https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
+// ardupilot:
+// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.h
 //
 // CRSF frame format:
 // address len type payload crc

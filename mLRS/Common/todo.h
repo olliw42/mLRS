@@ -10,7 +10,6 @@
 
 ISSUES:
 - why is otx not getting the crsf tx & rx link stats telemetry?
-- what do the crsf values exactly mean? should rssi be in -db or +db??
 
 - LQ 98 in receiver
 
