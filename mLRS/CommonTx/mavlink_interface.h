@@ -4,7 +4,7 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// Mavlink Interface
+// Mavlink Interface TX Side
 //*******************************************************
 #ifndef MAVLINK_INTERFACE_H
 #define MAVLINK_INTERFACE_H
@@ -35,6 +35,7 @@ void f_init(void)
 void f_send(void)
 {
   uint16_t len = fmav_msg_to_frame_buf(f_buf, &f_msg);
+
   switch (Setup.Tx.SerialDestination) {
     case SERIAL_DESTINATION_SERIAL_PORT:
       serial.putbuf(f_buf, len);
@@ -50,7 +51,7 @@ void f_send(void)
 
 void send_radio_status(void)
 {
-uint8_t rssi, remrssi;
+uint8_t rssi, remrssi, txbuf;
 /*
   // this would be the naive thing
   // scale is "inverted" to make it that it is higher the better
@@ -77,17 +78,28 @@ uint8_t rssi, remrssi;
   rssi = txstats.GetLQ();
   remrssi = stats.received_LQ;
 
+  txbuf = 100;
+  switch (Setup.Tx.SerialDestination) {
+    case SERIAL_DESTINATION_SERIAL_PORT:
+      txbuf = serial.rx_free_percent();
+      break;
+    case SERIAL_DESTINATION_MBRDIGE:
+      // don't do anything
+      break;
+  }
+
   fmav_msg_radio_status_pack(
       &f_msg,
       51, // sysid, SiK uses 51, 68
       MAV_COMP_ID_TELEMETRY_RADIO,
-      rssi, remrssi, 0, UINT8_MAX, UINT8_MAX, 0, 0,
+      rssi, remrssi, txbuf, UINT8_MAX, UINT8_MAX, 0, 0,
       //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
       &f_status);
   f_send();
 }
 
 
+// not used
 void send_radio_status_v2(void)
 {
 int8_t rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
@@ -107,7 +119,6 @@ int8_t snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.l
       &f_status);
   f_send();
 }
-
 
 
 #endif // MAVLINK_INTERFACE_H

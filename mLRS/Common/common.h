@@ -350,12 +350,13 @@ class tSerialPort : public tSerialBase
 {
 #ifndef DEVICE_HAS_NO_SERIAL
   public:
-    void Init(void) { uartb_init(); }
+    void Init(void) override { uartb_init(); }
     void putc(char c) override { uartb_putc(c); }
-    bool available(void) { return uartb_rx_available(); }
-    char getc(void) { return uartb_getc(); }
-    void flush(void) { uartb_rx_flush(); uartb_tx_flush(); }
-    uint16_t bytesAvailable(void) { return uartb_rx_bytesavailable();}
+    bool available(void) override { return uartb_rx_available(); }
+    char getc(void) override { return uartb_getc(); }
+    void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); }
+    uint16_t bytes_available(void) override { return uartb_rx_bytesavailable(); }
+    const uint16_t rx_buf_size(void) override { return UARTB_RXBUFSIZE; }
 #endif
 };
 

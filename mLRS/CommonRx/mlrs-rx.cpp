@@ -286,12 +286,12 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     for (uint8_t i = 0; i < frame->status.payload_len; i++) {
       uint8_t c = frame->payload[i];
       serial.putc(c); // send to serial
+      // parse stream, and inject radio status
       if (Setup.Rx.SendRadioStatus) {
         uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
         if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
           inject_radio_status = false;
-          if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON) send_radio_status();
-          if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) send_radio_status_v2();
+          send_radio_status();
           LED_RED_TOGGLE;	// indicate we send the radio status
         }
       }

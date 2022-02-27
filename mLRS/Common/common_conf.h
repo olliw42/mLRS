@@ -37,7 +37,7 @@
 
 #define SETUP_TX_POWER                  POWER
 
-#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
+#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
@@ -52,7 +52,7 @@
 
 #define SETUP_RX_SERIAL_BAUDRATE        57600 // 9600: makes MissionPlanner 'work' in 19Hz mode, keeps traffic below 1000 bytes/sec, obviously with high latency
 
-#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS_V2
+#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 

@@ -321,8 +321,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
       uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
       if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
         inject_radio_status = false;
-        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON) send_radio_status();
-        if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) send_radio_status_v2();
+        send_radio_status();
       }
     }
   }
