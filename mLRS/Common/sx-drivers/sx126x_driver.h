@@ -98,7 +98,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
                         config->CrcEnabled,
                         config->InvertIQ);
 
-        // set LoRaSymbNumTimeout   for false detection of preamble
+        // set LoRaSymbNumTimeout for false detection of preamble
         SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
@@ -122,7 +122,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
           return;
         }
 
-        SetRfPower_dbm(power_list[index].dbm);
+        SetRfPower_dbm(rfpower_list[index].dbm);
     }
 
     void Configure(void)
