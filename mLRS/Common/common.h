@@ -355,6 +355,7 @@ class tSerialPort : public tSerialBase
     bool available(void) { return uartb_rx_available(); }
     char getc(void) { return uartb_getc(); }
     void flush(void) { uartb_rx_flush(); uartb_tx_flush(); }
+    uint16_t bytesAvailable(void) { return uartb_rx_bytesavailable();}
 #endif
 };
 
