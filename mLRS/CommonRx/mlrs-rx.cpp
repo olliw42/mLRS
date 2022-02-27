@@ -679,7 +679,7 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         link_state = LINK_STATE_RECEIVE;
       }
 
-      // when in listen, slowly loop trough frequencies
+      // when in listen, slowly loop through frequencies
       if (connect_state == CONNECT_STATE_LISTEN) {
         connect_listen_cnt++;
         if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
@@ -709,7 +709,11 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         link_state = LINK_STATE_TRANSMIT;
       }
 
-      if (connect_state >= CONNECT_STATE_SYNC) {
+#ifdef DEVICE_HAS_SX127x
+      if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
+#else
+        if (connect_state >= CONNECT_STATE_SYNC) {
+#endif
         sx.SetToIdle();
         sx2.SetToIdle();
       }
