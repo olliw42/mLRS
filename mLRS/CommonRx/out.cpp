@@ -145,14 +145,14 @@ void OutBase::SendLinkStatisticsDisconnected(void)
     case OUT_CONFIG_SBUS:
         break;
     case OUT_CONFIG_CRSF:
-        link_stats.receiver_rssi1 = -127;
-        link_stats.receiver_rssi2 = -127;
+        link_stats.receiver_rssi1 = RSSI_MIN;
+        link_stats.receiver_rssi2 = RSSI_MIN;
         link_stats.receiver_LQ = 0;
         link_stats.receiver_snr = 0;
         link_stats.receiver_antenna = 0;
         link_stats.receiver_transmit_antenna = 0;
         link_stats.receiver_power = 0;
-        link_stats.transmitter_rssi = -127;
+        link_stats.transmitter_rssi = RSSI_MIN;
         link_stats.transmitter_LQ = 0;
         link_stats.transmitter_snr = 0;
         link_stats.transmitter_antenna = 0;

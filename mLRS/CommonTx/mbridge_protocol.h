@@ -113,8 +113,8 @@ typedef struct
   // transmitter side of things
 
   uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
-  int8_t rssi1_instantaneous; // invalid = INT8_MAX
-  int8_t rssi2_instantaneous; // invalid = INT8_MAX
+  int8_t rssi1_instantaneous;
+  int8_t rssi2_instantaneous;
   int8_t snr_instantaneous;
 
   int8_t rssi1_filtered;

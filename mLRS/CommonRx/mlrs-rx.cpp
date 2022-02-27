@@ -132,8 +132,8 @@ RxStats rxstats;
 void Out::SendLinkStatistics(void)
 {
   tOutLinkStats lstats = {
-    .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)(-127),
-    .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)(-127),
+    .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)RSSI_MIN,
+    .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)RSSI_MIN,
     .receiver_LQ = rxstats.GetLQ(),
     .receiver_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2,
     .receiver_antenna = stats.last_rx_antenna,
@@ -261,7 +261,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 {
   stats.received_antenna = frame->status.antenna;
   stats.received_transmit_antenna = frame->status.transmit_antenna;
-  stats.received_rssi = -(frame->status.rssi_u7);
+  stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
   stats.received_LQ = frame->status.LQ;
   stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 

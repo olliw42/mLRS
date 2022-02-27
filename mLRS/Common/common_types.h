@@ -75,6 +75,31 @@ class tI2cBase
 };
 
 
+//-- rssi & snr
+
+typedef enum : int8_t {
+    RSSI_INVALID      = 127,
+    RSSI_MAX          = -1,
+    RSSI_MIN          = -127,
+} RSSI_ENUM;
+
+
+typedef enum : uint8_t {
+    RSSI_U7_INVALID   = 0,
+    RSSI_U7_MAX       = 1, // -1
+    RSSI_U7_MIN       = 127, // -127
+} RSSI_U7_ENUM;
+
+
+typedef enum : int8_t {
+    SNR_INVALID       = 127,
+} SNR_ENUM;
+
+
+uint8_t rssi_u7_from_i8(int8_t rssi_i8);
+int8_t rssi_i8_from_u7(uint8_t rssi_u7);
+
+
 //-- auxiliary functions
 
 // clip a value for rcData to range
