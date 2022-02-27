@@ -9,8 +9,6 @@
 /*
 
 ISSUES:
-- why is otx not getting the crsf tx & rx link stats telemetry?
-
 - LQ 98 in receiver
 
 - do we want also antenna field for transmit antenna?
