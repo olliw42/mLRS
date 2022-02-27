@@ -22,8 +22,6 @@ ISSUES:
 
 - rc Data: how to handle over-sized values? simply clip to +-100% (as currently done), rescale to allow +-120% ?
 
-- SetPower consistent method for all devices/frequency bands
-
 
 The 3 MAIN topics TODO:
 
