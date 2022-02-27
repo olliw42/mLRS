@@ -771,16 +771,17 @@ IF_ANTENNA2(
 #ifdef USE_CRSF
     if (crsf_telemetry_tick_start) {
       crsf_telemetry_tick_start = false;
-      crsf_telemetry_state = 1;
+      crsf_telemetry_state = 1; // start
     }
     if (crsf_telemetry_state && crsf_telemetry_tick_next && crsf.IsEmpty()) {
       crsf_telemetry_tick_next = false;
       switch (crsf_telemetry_state) {
       case 1: crsf_send_LinkStatistics(); break;
-      case 2: crsf_send_LinkStatisticsTx(); break;
-      case 3: crsf_send_LinkStatisticsRx(); break;
+      case 5: crsf_send_LinkStatisticsTx(); break;
+      case 9: crsf_send_LinkStatisticsRx(); break;
       }
       crsf_telemetry_state++;
+      if (crsf_telemetry_state > 10) crsf_telemetry_state = 0; // stop
     }
 
     if (crsf.frame_received) {
