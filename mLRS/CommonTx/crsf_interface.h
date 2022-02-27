@@ -237,6 +237,20 @@ uint8_t crsf_cvt_power(int8_t power_dbm)
   return UINT8_MAX; // makes it red in otx
 }
 
+
+uint8_t crsf_cvt_rssi(int8_t rssi)
+{
+  if (rssi == RSSI_INVALID) return 255;
+  if (rssi >= -50) return 100;
+  if (rssi <= sx.ReceiverSensitivity_dbm()) return 0;
+
+  int32_t r = (int32_t)rssi - sx.ReceiverSensitivity_dbm();
+  int32_t m = (int32_t)(-50) - sx.ReceiverSensitivity_dbm();
+
+  return (100 * r + 49)/m;
+}
+
+
 // on crsf rssi
 // rssi = 255 -> red in otx
 //      = 130 -> -126 dB
@@ -269,11 +283,11 @@ void crsf_send_LinkStatisticsTx(void)
 tCrsfLinkStatisticsTx lstats;
 
   lstats.uplink_rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2; // ignored by OpenTx
-  lstats.uplink_rssi_percent = 12; // TODO
+  lstats.uplink_rssi_percent = crsf_cvt_rssi(lstats.uplink_rssi);
   lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
   lstats.uplink_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2; // ignored by OpenTx
-  lstats.downlink_transmit_power = UINT8_MAX; // we only can guess it // crsf_cvt_power(sx.RfPower_dbm());
-  lstats.uplink_fps = (Setup.Mode == MODE_19HZ) ? 19 : 50;
+  lstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
+  lstats.uplink_fps = (Setup.Mode == MODE_19HZ) ? 2 : 5; // *10 in OpenTx
   crsf.SendLinkStatisticsTx(&lstats);
 }
 
@@ -283,7 +297,7 @@ void crsf_send_LinkStatisticsRx(void)
 tCrsfLinkStatisticsRx lstats;
 
   lstats.downlink_rssi = stats.received_rssi; // ignored by OpenTx
-  lstats.downlink_rssi_percent = 13; // TODO
+  lstats.downlink_rssi_percent = crsf_cvt_rssi(lstats.downlink_rssi);
   lstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
   lstats.downlink_snr = 0; // ignored by OpenTx
   lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
