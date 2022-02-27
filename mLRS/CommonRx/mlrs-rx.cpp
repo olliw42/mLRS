@@ -150,6 +150,13 @@ void Out::SendLinkStatistics(void)
 
 
 //-------------------------------------------------------
+// mavlink
+//-------------------------------------------------------
+
+#include "mavlink_interface.h"
+
+
+//-------------------------------------------------------
 // SX1280
 //-------------------------------------------------------
 
@@ -279,6 +286,15 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     for (uint8_t i = 0; i < frame->status.payload_len; i++) {
       uint8_t c = frame->payload[i];
       serial.putc(c); // send to serial
+      if (Setup.Rx.SendRadioStatus) {
+        uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
+        if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
+          inject_radio_status = false;
+          if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON) send_radio_status();
+          if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_V2_ON) send_radio_status_v2();
+          LED_RED_TOGGLE;	// indicate we send the radio status
+        }
+      }
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -479,6 +495,7 @@ int main_main(void)
 
       if (!tick_1hz) {
         rxstats.Update1Hz();
+        if (connected()) inject_radio_status = true;
 
         dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
