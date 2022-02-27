@@ -169,7 +169,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         SetBufferBaseAddress(0, 0);
 
-        SetDioIrqParams(SX1276_IRQ_ALL,
+        SetDioIrqParams(SX1276_IRQ_TX_DONE | SX1276_IRQ_RX_DONE | SX1276_IRQ_RX_TIMEOUT, // this helps for RX!! //  SX1276_IRQ_ALL,
                         SX1276_DIO0_MAPPING_RX_TX_DONE,
                         SX1276_DIO1_MAPPING_RX_TIMEOUT);
         ClearIrqStatus(SX1276_IRQ_ALL);
