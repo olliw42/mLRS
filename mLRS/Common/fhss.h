@@ -222,7 +222,6 @@ class FhssBase
     void StartTx(void) {}
     uint32_t GetCurr(void) { return fhss_list[0]; }
     void HopToNext(void) {}
-    void HopToConnect(void) {}
 #else
 
     void Init(uint8_t fhss_num, uint32_t seed)
@@ -261,11 +260,6 @@ class FhssBase
     {
         curr_i++;
         if (curr_i >= cnt) curr_i = 0;
-    }
-
-    void HopToConnect(void)
-    {
-        //curr_i = 0;
     }
 
     uint32_t bestX(void)

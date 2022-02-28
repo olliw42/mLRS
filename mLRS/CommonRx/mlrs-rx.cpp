@@ -441,7 +441,6 @@ int main_main(void)
   IF_ANTENNA2(sx2.StartUp());
   fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartRx();
-  fhss.HopToConnect();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
   sx2.SetRfFrequency(fhss.GetCurrFreq());
@@ -520,9 +519,7 @@ int main_main(void)
 
     switch (link_state) {
     case LINK_STATE_RECEIVE: {
-      if (connect_state == CONNECT_STATE_LISTEN) {
-        fhss.HopToConnect();
-      } else {
+      if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
         fhss.HopToNext();
       }
       sx.SetRfFrequency(fhss.GetCurrFreq());
