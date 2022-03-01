@@ -35,11 +35,13 @@
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
+#define SETUP_TX_SERIAL_BAUDRATE        57600
+
 #define SETUP_TX_POWER                  POWER
 
-#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
-
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
+
+#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
@@ -48,13 +50,13 @@
 
 #define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
-#define SETUP_RX_POWER                  POWER
-
 #define SETUP_RX_SERIAL_BAUDRATE        57600 // 9600: makes MissionPlanner 'work' in 19Hz mode, keeps traffic below 1000 bytes/sec, obviously with high latency
 
-#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
+#define SETUP_RX_POWER                  POWER
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
+
+#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
 
 
 #define BIND_DBLWORD                    0x12344281

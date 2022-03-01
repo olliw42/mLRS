@@ -34,7 +34,7 @@
 // UARTE = in port, SBus or whatever
 
 #define UARTB_USE_UART1 // serial // via inverter to RX/TX of RS232 port
-#define UARTB_BAUD                57600
+#define UARTB_BAUD                SETUP_TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           512
 #define UARTB_USE_TX_ISR
