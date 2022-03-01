@@ -57,7 +57,7 @@ class tSerialBase
   public:
     virtual void Init(void) {};
     virtual void putc(char c) {}
-    virtual bool available(void) { return 0; }
+    virtual bool available(void) { return false; }
     virtual char getc(void) { return '\0'; }
     virtual void flush(void) {};
     virtual uint16_t bytes_available(void) { return 0; }
