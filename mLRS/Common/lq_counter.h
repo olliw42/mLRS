@@ -90,9 +90,9 @@ class StatsBytes : public StatsCount
 class LqCounterBase
 {
   public:
-    void Init(uint8_t new_period)
+    void Init(uint8_t _period)
     {
-        SetPeriod(new_period);
+        SetPeriod(_period);
         Reset();
     }
 
