@@ -338,6 +338,16 @@ class Stats {
         if ((bw == 0) && (bps > 0)) bw = 1; // ensure it is always at least 1% if some bytes are received
         return bw;
     }
+
+    int8_t GetLastRxRssi(void)
+    {
+        return (last_rx_antenna == ANTENNA_1) ? last_rx_rssi1 : last_rx_rssi2;
+    }
+
+    int8_t GetLastRxSnr(void)
+    {
+        return (last_rx_antenna == ANTENNA_1) ? last_rx_snr1 : last_rx_snr2;
+    }
 };
 
 

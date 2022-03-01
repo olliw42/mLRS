@@ -102,8 +102,8 @@ uint8_t rssi, remrssi, txbuf;
 // not used
 void send_radio_status_v2(void)
 {
-int8_t rssi = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
-int8_t snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
+int8_t rssi = stats.GetLastRxRssi();
+int8_t snr = stats.GetLastRxSnr();
 
   fmav_msg_radio_status_v2_pack(
       &f_msg,

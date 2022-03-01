@@ -306,7 +306,7 @@ tMBridgeLinkStats lstats = {0};
   lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
   lstats.rssi1_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : RSSI_INVALID;
   lstats.rssi2_instantaneous = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : RSSI_INVALID;
-  lstats.snr_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2;
+  lstats.snr_instantaneous = stats.GetLastRxSnr();
   lstats.receive_antenna = stats.last_rx_antenna;
   lstats.transmit_antenna = stats.last_tx_antenna;
 #ifdef USE_DIVERSITY

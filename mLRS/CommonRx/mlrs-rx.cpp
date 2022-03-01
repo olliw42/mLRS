@@ -135,7 +135,7 @@ void Out::SendLinkStatistics(void)
     .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)RSSI_MIN,
     .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)RSSI_MIN,
     .receiver_LQ = rxstats.GetLQ(),
-    .receiver_snr = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_snr1 : stats.last_rx_snr2,
+    .receiver_snr = stats.GetLastRxSnr(),
     .receiver_antenna = stats.last_rx_antenna,
     .receiver_transmit_antenna = stats.last_tx_antenna,
     .receiver_power = 0, // TODO
@@ -250,7 +250,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.ack = ack;
   frame_stats.antenna = stats.last_rx_antenna;
   frame_stats.transmit_antenna = antenna;
-  frame_stats.rssi = (antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
+  frame_stats.rssi = stats.GetLastRxRssi();
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 

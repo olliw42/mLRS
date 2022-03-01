@@ -287,7 +287,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.ack = ack;
   frame_stats.antenna = stats.last_rx_antenna;
   frame_stats.transmit_antenna = antenna;
-  frame_stats.rssi = (antenna == ANTENNA_1) ? stats.last_rx_rssi1 : stats.last_rx_rssi2;
+  frame_stats.rssi = stats.GetLastRxRssi();
   frame_stats.LQ = txstats.GetLQ();
   frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
