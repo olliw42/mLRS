@@ -128,8 +128,7 @@ void sx_dio_enable_exti_isr(void)
 
 //-- SBus output pin
 
-#define OUT                       IO_PA2 // UART2 TX
-#define OUT_XOR                   //
+#define OUT                       IO_PA2 // UART2 TX, the pin is inverted in hardware
 
 void out_init_gpio(void)
 {
@@ -137,10 +136,16 @@ void out_init_gpio(void)
 
 void out_set_normal(void)
 {
+  LL_USART_Disable(USART2);
+  LL_USART_SetTXPinLevel(USART2, LL_USART_TXPIN_LEVEL_INVERTED);
+  LL_USART_Enable(USART2);
 }
 
 void out_set_inverted(void)
 {
+  LL_USART_Disable(USART2);
+  LL_USART_SetTXPinLevel(USART2, LL_USART_TXPIN_LEVEL_STANDARD);
+  LL_USART_Enable(USART2);
 }
 
 
