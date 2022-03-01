@@ -15,9 +15,15 @@
 // I have tested it with 1us time base, and it also works fine, but hey
 
 
+#ifdef STM32L4
+#define CLOCK_TIMx                TIM1
+#define CLOCK_IRQn                TIM1_CC_IRQn
+#define CLOCK_IRQHandler          TIM1_CC_IRQHandler
+#else
 #define CLOCK_TIMx                TIM4
 #define CLOCK_IRQn                TIM4_IRQn
 #define CLOCK_IRQHandler          TIM4_IRQHandler
+#endif
 //#define CLOCK_IRQ_PRIORITY        10
 
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms

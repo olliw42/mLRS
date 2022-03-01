@@ -97,8 +97,8 @@ You need to have git and python3 installed.
 Hardware is quite a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
 
 The code so far supports:
+- Frsky R9M transmitter and R9MX and R9MM receiver modules
 - Siyi FM30 system (early version only, those with STM32 chips; the TX module needs few small hardware modifications, see https://github.com/olliw42/mLRS/issues/4#issuecomment-1030601900)
-- Frsky R9M transmitter and R9MM receiver modules
 - some DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 Don't hesitate to join the discussion thread at rcgroups for more details.

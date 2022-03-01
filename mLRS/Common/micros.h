@@ -11,7 +11,11 @@
 #pragma once
 
 
+#ifdef STM32L4
+#define MICROS_TIMx               TIM15
+#else
 #define MICROS_TIMx               TIM3
+#endif
 
 
 //-------------------------------------------------------

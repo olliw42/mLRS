@@ -50,6 +50,12 @@
 #endif
 
 
+#ifdef RX_R9MX_868_L433CB
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+#endif
+
 #ifdef RX_R9MM_868_F103RB
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
