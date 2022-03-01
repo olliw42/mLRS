@@ -6,8 +6,8 @@
 //*******************************************************
 // Mavlink Interface TX Side
 //*******************************************************
-#ifndef MAVLINK_INTERFACE_H
-#define MAVLINK_INTERFACE_H
+#ifndef MAVLINK_INTERFACE_TX_H
+#define MAVLINK_INTERFACE_TX_H
 #pragma once
 
 
@@ -18,7 +18,7 @@ fmav_message_t f_msg;
 fmav_result_t f_result;
 fmav_status_t f_status;
 
-bool inject_radio_status;
+bool f_inject_radio_status;
 
 
 void f_init(void)
@@ -28,7 +28,7 @@ void f_init(void)
   f_result = {0};
   f_status = {0};
 
-  inject_radio_status = false;
+  f_inject_radio_status = false;
 }
 
 
@@ -121,4 +121,28 @@ int8_t snr = stats.GetLastRxSnr();
 }
 
 
-#endif // MAVLINK_INTERFACE_H
+// call at 1 Hz
+void f_update_1hz(bool connected)
+{
+  if (connected) f_inject_radio_status = true;
+}
+
+
+void f_handle_link_receive(char c, tSerialBase* serialport)
+{
+  if (!serialport) return;
+
+  // send to serial or mbridge
+  serialport->putc(c);
+
+  // parse stream, and inject radio status
+  uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
+
+  if (res == FASTMAVLINK_PARSE_RESULT_OK && f_inject_radio_status) { // we have a complete mavlink frame
+    f_inject_radio_status = false;
+    send_radio_status();
+  }
+}
+
+
+#endif // MAVLINK_INTERFACE_TX_H

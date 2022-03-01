@@ -184,7 +184,7 @@ TxStats txstats;
 // mavlink
 //-------------------------------------------------------
 
-#include "mavlink_interface.h"
+#include "mavlink_interface_tx.h"
 
 
 //-------------------------------------------------------
@@ -312,17 +312,16 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
   if (!do_payload) return;
 
   // output data on serial
+  tSerialBase* serialport = nullptr;
+  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) serialport = &bridge; // send to radio via mbridge
+  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serialport = &serial; // send to serial
+
   for (uint8_t i = 0; i < frame->status.payload_len; i++) {
     uint8_t c = frame->payload[i];
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serial.putc(c); // send to serial
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) bridge.putc(c); // send to radio
-    // parse stream, and inject radio status
     if (Setup.Tx.SendRadioStatus) {
-      uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
-      if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
-        inject_radio_status = false;
-        send_radio_status();
-      }
+      f_handle_link_receive(c, serialport);
+    } else {
+      if (serialport) serialport->putc(c);
     }
   }
 
@@ -529,7 +528,7 @@ int main_main(void)
 
       if (!tick_1hz) {
         txstats.Update1Hz();
-        if (connected()) inject_radio_status = true;
+        f_update_1hz(connected());
 
         dbg.puts("\nTX: ");
         dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));

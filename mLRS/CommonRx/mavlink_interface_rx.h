@@ -6,8 +6,8 @@
 //*******************************************************
 // Mavlink Interface RX Side
 //*******************************************************
-#ifndef MAVLINK_INTERFACE_H
-#define MAVLINK_INTERFACE_H
+#ifndef MAVLINK_INTERFACE_RX_H
+#define MAVLINK_INTERFACE_RX_H
 #pragma once
 
 
@@ -18,7 +18,7 @@ fmav_message_t f_msg;
 fmav_result_t f_result;
 fmav_status_t f_status;
 
-bool inject_radio_status;
+bool f_inject_radio_status;
 
 
 void f_init(void)
@@ -28,7 +28,7 @@ void f_init(void)
   f_result = {0};
   f_status = {0};
 
-  inject_radio_status = false;
+  f_inject_radio_status = false;
 }
 
 
@@ -40,12 +40,29 @@ void f_send(void)
 }
 
 
+// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
+uint8_t f_convert_rssi_to_ap(int8_t rssi)
+{
+  if (rssi == RSSI_INVALID) return UINT8_MAX;
+  if (rssi > -50) return 254; // max value
+  if (rssi < -120) return 0;
+
+  int32_t r = (int32_t)rssi - (-120);
+  int32_t m = (int32_t)(-50) - (-120);
+
+  return (100 * r + 49) / m;
+}
+
+
 void send_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf;
 
   rssi = rxstats.GetLQ();
   remrssi = stats.received_LQ;
+
+  rssi = f_convert_rssi_to_ap(stats.GetLastRxRssi());
+  remrssi = f_convert_rssi_to_ap(stats.received_rssi);
 
   txbuf = serial.rx_free_percent();
 
@@ -60,4 +77,27 @@ uint8_t rssi, remrssi, txbuf;
 }
 
 
-#endif // MAVLINK_INTERFACE_H
+// call at 1 Hz
+void f_update_1hz(bool connected)
+{
+  if (connected) f_inject_radio_status = true;
+}
+
+
+void f_handle_link_receive(char c)
+{
+  // send to serial
+  serial.putc(c);
+
+  // parse stream, and inject radio status
+  uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
+
+  if (res == FASTMAVLINK_PARSE_RESULT_OK && f_inject_radio_status) { // we have a complete mavlink frame
+    f_inject_radio_status = false;
+    send_radio_status();
+    LED_RED_TOGGLE; // indicate we send the radio status
+  }
+}
+
+
+#endif // MAVLINK_INTERFACE_RX_H

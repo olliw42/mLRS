@@ -153,7 +153,7 @@ void Out::SendLinkStatistics(void)
 // mavlink
 //-------------------------------------------------------
 
-#include "mavlink_interface.h"
+#include "mavlink_interface_rx.h"
 
 
 //-------------------------------------------------------
@@ -285,15 +285,10 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   if (connected()) {
     for (uint8_t i = 0; i < frame->status.payload_len; i++) {
       uint8_t c = frame->payload[i];
-      serial.putc(c); // send to serial
-      // parse stream, and inject radio status
       if (Setup.Rx.SendRadioStatus) {
-        uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
-        if (res == FASTMAVLINK_PARSE_RESULT_OK && inject_radio_status) { // we have a complete mavlink frame
-          inject_radio_status = false;
-          send_radio_status();
-          LED_RED_TOGGLE;	// indicate we send the radio status
-        }
+        f_handle_link_receive(c);
+      } else {
+        serial.putc(c); // send to serial
       }
     }
 
@@ -494,7 +489,7 @@ int main_main(void)
 
       if (!tick_1hz) {
         rxstats.Update1Hz();
-        if (connected()) inject_radio_status = true;
+        f_update_1hz(connected());
 
         dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
