@@ -38,7 +38,7 @@
 #define UARTC_USE_UART3 // debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           4096 //512
+#define UARTC_TXBUFSIZE           512
 #define UARTC_USE_TX_ISR
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
