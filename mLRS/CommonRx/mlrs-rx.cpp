@@ -489,7 +489,6 @@ int main_main(void)
 
       if (!tick_1hz) {
         rxstats.Update1Hz();
-        f_update_1hz(connected());
 
         dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
@@ -764,6 +763,8 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
     }//end of if(doPostReceive2)
 
     out.Do(micros());
+
+    f_do();
 
   }//end of while(1) loop
 
