@@ -781,18 +781,14 @@ IF_ANTENNA2(
       crsf_telemetry_state++;
       if (crsf_telemetry_state > 10) crsf_telemetry_state = 0; // stop
     }
-
-    if (crsf.frame_received) {
-      crsf.frame_received = false;
+    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
       // update channels
-      if (crsf.IsChannelData() && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
-        fill_rcdata_from_crsf(&rcData, crsf.frame);
+      if (crsf.Update(&rcData)) {
         channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
     }
 #endif
-
 
   }//end of while(1) loop
 

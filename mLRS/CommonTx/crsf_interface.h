@@ -28,6 +28,8 @@ class tTxCrsf : public tPin5BridgeBase
 {
   public:
     void Init(void);
+    bool Update(tRcData* rc);
+    void Clear(void);
     bool IsEmpty(void);
     bool IsChannelData(void);
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
@@ -46,6 +48,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t tx_frame[128];
 
     uint8_t crc8(const uint8_t* buf);
+    void fill_rcdata(tRcData* rc);
 };
 
 tTxCrsf crsf;
@@ -108,6 +111,28 @@ void tTxCrsf::Init(void)
 
   frame_received = false;
   tx_available = 0;
+}
+
+
+void tTxCrsf::Clear(void)
+{
+  frame_received = false;
+  tx_available = 0;
+}
+
+
+bool tTxCrsf::Update(tRcData* rc)
+{
+  if (!frame_received) return false;
+  frame_received = false;
+
+  // update channels
+  if (crsf.IsChannelData()) {
+      fill_rcdata(&rcData);
+      return true;
+  }
+
+  return false;
 }
 
 
@@ -178,6 +203,34 @@ bool tTxCrsf::IsEmpty(void)
 bool tTxCrsf::IsChannelData(void)
 {
   return (frame[2] == CRSF_FRAME_ID_CHANNELS);
+}
+
+
+// CRSF:    172 .. 992 .. 1811, 11 bits
+// rcData:  0 .. 1024 .. 2047, 11 bits
+void tTxCrsf::fill_rcdata(tRcData* rc)
+{
+tCrsfChannelBuffer buf;
+
+  memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
+
+  rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1638 + 1024 );
+
+  rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1638 + 1024 );
 }
 
 
@@ -303,35 +356,6 @@ tCrsfLinkStatisticsRx lstats;
   lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
   crsf.SendLinkStatisticsRx(&lstats);
 }
-
-
-// CRSF:    172 .. 992 .. 1811, 11 bits
-// rcData:  0 .. 1024 .. 2047, 11 bits
-void fill_rcdata_from_crsf(tRcData* rc, uint8_t* frame)
-{
-tCrsfChannelBuffer buf;
-
-  memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
-
-  rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1638 + 1024 );
-
-  rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1638 + 1024 );
-}
-
 
 
 #endif // if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
