@@ -318,7 +318,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 
   for (uint8_t i = 0; i < frame->status.payload_len; i++) {
     uint8_t c = frame->payload[i];
-    if (Setup.Tx.SendRadioStatus) {
+    if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
       f_handle_link_receive(c, serialport);
     } else {
       if (serialport) serialport->putc(c);

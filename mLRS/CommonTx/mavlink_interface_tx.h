@@ -135,6 +135,8 @@ void f_handle_link_receive(char c, tSerialBase* serialport)
   // send to serial or mbridge
   serialport->putc(c);
 
+  if (!Setup.Tx.SendRadioStatus) return;
+
   // parse stream, and inject radio status
   uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
 

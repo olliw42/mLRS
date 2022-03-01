@@ -21,6 +21,7 @@
 typedef enum {
   MODE_50HZ = 0,
   MODE_19HZ,
+  MODE_NUM,
 } MODE_ENUM;
 
 
@@ -49,10 +50,17 @@ typedef enum {
 
 
 typedef enum {
+  SERIAL_LINK_MODE_TRANSPARENT = 0,
+  SERIAL_LINK_MODE_MAVLINK,
+  SERIAL_LINK_MODE_NUM,
+} SERIAL_LINK_MODE_TRANSPARENT_ENUM;
+
+
+typedef enum {
   SEND_RADIO_STATUS_OFF = 0,
   SEND_RADIO_STATUS_ON,
   SEND_RADIO_STATUS_NUM,
-} END_RADIO_STATUS_ENUM;
+} SEND_RADIO_STATUS_ENUM;
 
 
 typedef enum {
@@ -66,6 +74,7 @@ typedef enum {
 typedef enum {
   IN_CONFIG_SBUS = 0,
   IN_CONFIG_SBUS_INVERTED,
+  IN_CONFIG_NUM,
 } TX_IN_CONFIG_ENUM;
 
 
@@ -79,6 +88,7 @@ typedef enum {
 typedef enum {
   FAILSAFE_MODE_NO_SIGNAL = 0,
   FAILSAFE_MODE_CH1CH4_CENTER_SIGNAL,
+  FAILSAFE_MODE_NUM,
 } RX_FAILSAFE_MODE_ENUM;
 
 
@@ -88,24 +98,26 @@ typedef enum {
 
 typedef struct
 {
+  uint16_t Power;
+  uint16_t Diversity;
   uint16_t ChannelsSource;
   uint16_t ChannelOrder;
   uint16_t InMode;
-  uint16_t Power;
-  uint16_t Diversity;
   uint16_t SerialDestination;
+  uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tTxSetup;
 
 
 typedef struct
 {
+  uint16_t Power;
+  uint16_t Diversity;
   uint16_t ChannelOrder;
   uint16_t OutMode;
   uint16_t FailsafeMode;
-  uint16_t Power;
-  uint16_t Diversity;
   uint16_t SerialBaudrate;
+  uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tRxSetup;
 

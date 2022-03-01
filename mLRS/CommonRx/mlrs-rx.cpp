@@ -285,7 +285,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   if (connected()) {
     for (uint8_t i = 0; i < frame->status.payload_len; i++) {
       uint8_t c = frame->payload[i];
-      if (Setup.Rx.SendRadioStatus) {
+      if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
         f_handle_link_receive(c);
       } else {
         serial.putc(c); // send to serial
