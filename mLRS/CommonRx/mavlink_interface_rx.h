@@ -103,7 +103,6 @@ void f_do(void)
 
 void f_handle_link_receive(char c)
 {
-
   if (fmav_parse_and_check_to_frame_buf(&f_result, f_buf_in, &f_status, c)) {
     fmav_frame_buf_to_msg(&f_msg, &f_result, f_buf_in);
     f_send();

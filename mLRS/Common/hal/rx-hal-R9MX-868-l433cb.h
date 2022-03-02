@@ -44,10 +44,10 @@
 #define UARTB_USE_UART1 // serial
 #define UARTB_BAUD                SETUP_RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           512
+#define UARTB_TXBUFSIZE           1024 // 512
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           512
+#define UARTB_RXBUFSIZE           1024 // 512
 
 #define UARTC_USE_UART1 //3 // debug
 #define UARTC_BAUD                115200
@@ -60,7 +60,7 @@
 #define UART_USE_UART2 // SBus
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
-#define UART_TXBUFSIZE            512
+#define UART_TXBUFSIZE            256 // 512
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
