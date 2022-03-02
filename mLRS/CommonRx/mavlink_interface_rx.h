@@ -103,45 +103,11 @@ void f_do(void)
 
 void f_handle_link_receive(char c)
 {
-/*
-    // send to serial
-    serial.putc(c);
-
-    // parse stream, and inject radio status
-    uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
-
-    if (res == FASTMAVLINK_PARSE_RESULT_OK && f_inject_radio_status) { // we have a complete mavlink frame
-      f_inject_radio_status = false;
-      f_generate_radio_status();
-      f_send();
-    }
-*/
-
-/*
-  uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
-  if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
-    res = fmav_check_frame_buf(&f_result, f_buf);
-    // result can be MSGID_UNKNOWN, LENGTH_ERROR, CRC_ERROR, SIGNATURE_ERROR, or OK
-    if (res == FASTMAVLINK_PARSE_RESULT_MSGID_UNKNOWN || res == FASTMAVLINK_PARSE_RESULT_OK) {
-      fmav_frame_buf_to_msg(&f_msg, &f_result, f_buf);
-      f_msg_available = true;
-    }
-  }
-*/
-
 
   if (fmav_parse_and_check_to_frame_buf(&f_result, f_buf_in, &f_status, c)) {
     fmav_frame_buf_to_msg(&f_msg, &f_result, f_buf_in);
     f_send();
   }
-
-/*
-  uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf_in, &f_status, c);
-  if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
-    fmav_frame_buf_to_msg(&f_msg_in, &f_result, f_buf_in);
-    f_send(&f_msg_in);
-  }
-*/
 }
 
 
