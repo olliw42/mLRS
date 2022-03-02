@@ -720,7 +720,7 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
 #ifdef DEVICE_HAS_SX127x
       if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
 #else
-        if (connect_state >= CONNECT_STATE_SYNC) {
+      if (connect_state >= CONNECT_STATE_SYNC) {
 #endif
         sx.SetToIdle();
         sx2.SetToIdle();

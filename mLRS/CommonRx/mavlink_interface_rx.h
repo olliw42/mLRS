@@ -16,11 +16,12 @@ static inline bool connected(void);
 
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
 
-uint8_t f_buf[MAVLINK_BUF_SIZE];
+uint8_t f_buf_in[MAVLINK_BUF_SIZE];
 fmav_result_t f_result;
 fmav_status_t f_status;
+
 fmav_message_t f_msg;
-bool f_msg_available;
+uint8_t f_buf[MAVLINK_BUF_SIZE];
 
 bool f_inject_radio_status;
 uint32_t f_radio_status_tlast_ms;
@@ -32,7 +33,6 @@ void f_init(void)
 
   f_result = {0};
   f_status = {0};
-  f_msg_available = false;
 
   f_inject_radio_status = false;
   f_radio_status_tlast_ms = millis32() + 1000;
@@ -92,16 +92,9 @@ void f_do(void)
     if (connected() && Setup.Rx.SendRadioStatus) f_inject_radio_status = true;
   }
 
-  // we give this a high priority, so it has a chance to control the flow
-  if (f_inject_radio_status && serial.tx_is_empty()) {
+  if (f_inject_radio_status) { // && serial.tx_is_empty()) {
     f_inject_radio_status = false;
     f_generate_radio_status();
-    f_send();
-    return;
-  }
-
-  if (f_msg_available && serial.tx_is_empty()) {
-    f_msg_available = false;
     f_send();
     return;
   }
@@ -110,6 +103,20 @@ void f_do(void)
 
 void f_handle_link_receive(char c)
 {
+/*
+    // send to serial
+    serial.putc(c);
+
+    // parse stream, and inject radio status
+    uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
+
+    if (res == FASTMAVLINK_PARSE_RESULT_OK && f_inject_radio_status) { // we have a complete mavlink frame
+      f_inject_radio_status = false;
+      f_generate_radio_status();
+      f_send();
+    }
+*/
+
 /*
   uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf, &f_status, c);
   if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
@@ -121,10 +128,20 @@ void f_handle_link_receive(char c)
     }
   }
 */
-  if (fmav_parse_and_check_to_frame_buf(&f_result, f_buf, &f_status, c)) {
-    fmav_frame_buf_to_msg(&f_msg, &f_result, f_buf);
-    f_msg_available = true;
+
+
+  if (fmav_parse_and_check_to_frame_buf(&f_result, f_buf_in, &f_status, c)) {
+    fmav_frame_buf_to_msg(&f_msg, &f_result, f_buf_in);
+    f_send();
   }
+
+/*
+  uint8_t res = fmav_parse_to_frame_buf(&f_result, f_buf_in, &f_status, c);
+  if (res == FASTMAVLINK_PARSE_RESULT_OK) { // we have a complete mavlink frame
+    fmav_frame_buf_to_msg(&f_msg_in, &f_result, f_buf_in);
+    f_send(&f_msg_in);
+  }
+*/
 }
 
 
