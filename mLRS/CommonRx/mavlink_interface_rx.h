@@ -14,6 +14,8 @@
 static inline bool connected(void);
 
 
+#define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
+
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
 
 uint8_t f_buf_in[MAVLINK_BUF_SIZE];
@@ -71,11 +73,27 @@ uint8_t rssi, remrssi, txbuf;
   rssi = f_convert_rssi_to_ap(stats.GetLastRxRssi());
   remrssi = f_convert_rssi_to_ap(stats.received_rssi);
 
-  txbuf = serial.rx_free_percent();
+  // txbuf = serial.rx_free_percent();
+  // instead of the true buffer size, we use a smaller virtual buffer size
+  // on which we base the estimate
+  // the values are purely phenomenological so far, may need more adaption
+  // works quite well for me, parameters by mavftp or conventional, and missions
+  uint32_t buf_size = serial.rx_buf_size();
+  switch (Setup.Mode) {
+  case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
+  case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
+  }
+
+  uint32_t bytes = serial.bytes_available();
+  if (bytes >= buf_size) {
+    txbuf = 0;
+  } else {
+    txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
+  }
 
   fmav_msg_radio_status_pack(
       &f_msg,
-      51, // sysid, SiK uses 51, 68
+      RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
       MAV_COMP_ID_TELEMETRY_RADIO,
       rssi, remrssi, txbuf, UINT8_MAX, UINT8_MAX, 0, 0,
       //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
