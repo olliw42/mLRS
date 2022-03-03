@@ -741,7 +741,6 @@ IF_ANTENNA2(
       txstats.Next();
     }//end of if(doPreTransmit)
 
-
     //-- Update channels, MBridge handling, Crsf handling, In handling
 
 #if (defined USE_MBRIDGE)

@@ -467,6 +467,8 @@ int main_main(void)
   doSysTask = 0; // helps in avoiding too short first loop
   while (1) {
 
+    //-- SysTask handling
+
     if (doSysTask) {
       doSysTask = 0;
 
@@ -737,6 +739,8 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
 
       doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
     }//end of if(doPostReceive)
+
+    //-- Update channels, Out handling, etc
 
     if (doPostReceive2_cnt) {
       doPostReceive2_cnt--;
