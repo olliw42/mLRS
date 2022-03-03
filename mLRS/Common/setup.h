@@ -81,7 +81,7 @@ void setup_sanitize(void)
 
   if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
 #ifdef DEVICE_HAS_SX126x
-  if (Setup.Mode != MODE_19HZ) { // only 19 Hz mode allowed
+  if ((Setup.Mode != MODE_19HZ) && (Setup.Mode != MODE_31HZ)) { // only 19 Hz and 31 hz modes allowed
     Setup.Mode = MODE_19HZ;
   }
 #endif
@@ -107,6 +107,16 @@ void setup_configure(void)
     Config.frame_rate_hz = 50;
     Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
     Config.lora_send_frame_tmo = MODE_50HZ_SEND_FRAME_TMO; // 10;
+    break;
+  case MODE_31HZ:
+    Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
+    Config.frame_rate_hz = 31;
+#ifdef DEVICE_HAS_SX128x
+    Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
+#else
+    Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
+#endif
+    Config.lora_send_frame_tmo = MODE_31HZ_SEND_FRAME_TMO; // 15
     break;
   case MODE_19HZ:
     Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
@@ -135,6 +145,9 @@ void setup_configure(void)
   switch (Setup.Mode) {
   case MODE_50HZ:
     Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
+    break;
+  case MODE_31HZ:
+    Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE;
     break;
   case MODE_19HZ:
     Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE;

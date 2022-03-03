@@ -40,15 +40,21 @@ The RC channels layout is as follows:
 - 4 channels with 8 bit resolution (CH9 - CH12)
 - 4 channels with three steps (CH13 - CH16), 2 of them with a higher reliability margin (CH13, CH14)
 
-It currently provides these operation modes:
+It provides these operation modes:
 - 50 Hz Mode<br>
-  frequencies: 2.4 GHz (SX1280 chip)<br>
+  frequency bands: 2.4 GHz (SX1280 chip)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
+- 31 Hz Mode<br>
+  frequency bands: 2.4 GHz, 915/868 MHz (SX1280 and SX1262 chips)<br>
+  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
+  uplink serial rate: 2000 Bytes/sec<br>
+  downlink serial rate: 2562 Bytes/sec<br>
+  receiver sensitivity: -108 dBm
 - 19 Hz Mode<br>
-  frequencies: 2.4 GHz, 915/868 MHz (SX1280, SX1276, SX1262 chips)<br>
+  frequency bands: 2.4 GHz, 915/868 MHz (SX1280, SX1276, SX1262 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>

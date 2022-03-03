@@ -67,6 +67,7 @@
 
 
 #define SETUP_MODE                      MODE_50HZ
+//#define SETUP_MODE                      MODE_31HZ
 //#define SETUP_MODE                      MODE_19HZ
 
 
@@ -75,11 +76,13 @@
 //-------------------------------------------------------
 
 #define MODE_50HZ_SEND_FRAME_TMO        10 // just needs to be larger than toa, not critical
+#define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
 
 #define FHSS_NUM_BAND_868_MHZ           6 // it's a very narrow band
 #define FHSS_NUM_BAND_915_MHZ_FCC       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
 #define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE 12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
+#define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE 18
 #define FHSS_NUM_BAND_2P4_GHZ           24
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len

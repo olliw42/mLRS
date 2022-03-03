@@ -83,6 +83,7 @@ uint8_t rssi, remrssi, txbuf;
   uint32_t buf_size = serial.rx_buf_size();
   switch (Setup.Mode) {
   case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
+  case MODE_31HZ: if (buf_size > 512) buf_size = 512; break;
   case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
   }
 

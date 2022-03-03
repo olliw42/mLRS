@@ -32,6 +32,17 @@ typedef struct {
 
 
 const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
+    { .SpreadingFactor = SX126X_LORA_SF5,
+      .Bandwidth = SX126X_LORA_BW_500,
+      .CodingRate = SX126X_LORA_CR_4_5,
+      .PreambleLength = 12,
+      .HeaderType = SX126X_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = SX126X_LORA_CRC_DISABLE,
+      .InvertIQ = SX126X_LORA_IQ_NORMAL,
+      .TimeOverAir = 13200,
+      .ReceiverSensitivity = -111,
+    },
     { .SpreadingFactor = SX126X_LORA_SF6,
       .Bandwidth = SX126X_LORA_BW_500,
       .CodingRate = SX126X_LORA_CR_4_5,
