@@ -42,13 +42,13 @@ The RC channels layout is as follows:
 
 It currently provides these operation modes:
 - 50 Hz Mode<br>
-  frequencies: 2.4 GHz<br>
+  frequencies: 2.4 GHz (SX1280 chip)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 - 19 Hz Mode<br>
-  frequencies: 2.4 GHz, 915/868 MHz<br>
+  frequencies: 2.4 GHz, 915/868 MHz (SX1280, SX1276, SX1262 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>
@@ -58,7 +58,7 @@ It currently provides these operation modes:
 
 Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?4037943-mLRS-Lora-based-Mavlink-oriented-open-source-radio-link
 
-## Installation Bits and Bops ##
+## Software: Installation Bits and Bops ##
 
 This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
 

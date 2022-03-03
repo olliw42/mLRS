@@ -431,6 +431,19 @@ full channels & telemetry only mode ??
 
 
 -------------------------------------------------------
+sx1280, sx1276, sx1262
+
+sx1280:  800kHz, SF5, LI4/5, 12: -105 dBm, 91 bytes payload =>  7.9 ms    -> 20 ms (50 Hz)
+sx1280:  800kHz, SF6, LI4/5, 12: -108 dBm, 91 bytes payload => 13.4 ms    -> 32 ms (31 Hz)
+sx1280:  800kHz, SF7, LI4/5, 12: -112 dBm, 91 bytes payload => 23.5 ms    -> 53 ms (19 Hz)
+
+sx1276:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.3 ms    -> 53 ms (19 Hz)
+
+sx1262:  500kHz, SF5, CR4/5, 12: -111 dBm, 91 bytes payload => 13.2 ms    -> 32 ms (31 Hz)
+sx1262:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.6 ms    -> 53 ms (19 Hz)
+
+
+-------------------------------------------------------
 FrSky
 https://openrcforums.com/forum/viewtopic.php?t=7080
 says 140- 160 bytes/sec max in single direction
