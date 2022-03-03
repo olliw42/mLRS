@@ -29,14 +29,16 @@ You of course use the project fully at your own risk.
 
 ## Project Status ##
 
-The project is work in progress, and there is still a long mile to go before it could be called mature.
+The project is work in progress, and there is still a mile to go before one would call it mature.
 
-Concerning its basic features (RC link, serial link) it appears to be quite stable however. It also provides already several options for input/output, and integrates with the MAVLink for OpenTx project.
+Concerning its basic features however, i.e. RC link and serial link, it is quite stable. It also provides already several options for input/output, and integrates with the MAVLink for OpenTx project.
+
+It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz and 915/868 MHz frequency bands.
 
 The RC channels layout is as follows:
-- 8 channels with 11 bit resolution (CH1 - CH8), with 4 of them with a higher reliability margin (CH1 - CH4)
+- 8 channels with 11 bit resolution (CH1 - CH8), 4 of them with a higher reliability margin (CH1 - CH4)
 - 4 channels with 8 bit resolution (CH9 - CH12)
-- 4 channels with three steps (CH13 - CH16), with 2 of them with a higher reliability margin (CH13, CH14)
+- 4 channels with three steps (CH13 - CH16), 2 of them with a higher reliability margin (CH13, CH14)
 
 It currently provides these operation modes:
 - 50 Hz Mode<br>
@@ -86,7 +88,7 @@ For cloning you of course can use any other tool you like, but ensure that the s
 
 The STM32CubeIDE has its weirdness, so you may have to get used to it. 
 
-If this procedure doesn't work, please raise an issue, or even better work it out and suggest a (correct) solution.
+In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups, or submit an issue in the github repository.
 
 #### Dependencies ####
 
@@ -94,11 +96,13 @@ You need to have git and python3 installed.
 
 ## Hardware ##
 
-Hardware is quite a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
+Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
 
 The code so far supports:
 - Frsky R9M transmitter and R9MX and R9MM receiver modules
 - Siyi FM30 system (early version only, those with STM32 chips; the TX module needs few small hardware modifications, see https://github.com/olliw42/mLRS/issues/4#issuecomment-1030601900)
-- some DIY boards you can find in https://github.com/olliw42/mLRS-hardware
+- several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
+
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. In the 2.4 GHz range, the DIY options are currently the way to go.
 
 Don't hesitate to join the discussion thread at rcgroups for more details.

@@ -21,6 +21,7 @@ ISSUES:
 The 3 MAIN topics TODO:
 
 1) Link
+- AFC
 - retransmissions, resend last one time to make it more robust
 - diversity for transmitting (should also work for omni + directional)
 - reconnect by choosing frequency based on rssi map
