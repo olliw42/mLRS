@@ -45,7 +45,7 @@ typedef struct {
 } tSxLoraConfiguration;
 
 
-const tSxLoraConfiguration SxLoraConfiguration[] = {
+const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
     { .SpreadingFactor = SX1280_LORA_SF5,
       .Bandwidth = SX1280_LORA_BW_800,
       .CodingRate = SX1280_LORA_CR_LI_4_5,
@@ -126,7 +126,9 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
-        lora_configuration = &(SxLoraConfiguration[index]);
+        if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while (1) {} // must not happen
+
+        lora_configuration = &(Sx128xLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
     }
 

@@ -35,10 +35,10 @@ typedef struct {
     uint8_t InvertIQ;
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
-} tSx127xLoraConfiguration;
+} tSxLoraConfiguration;
 
 
-const tSx127xLoraConfiguration Sx127xLoraConfiguration[] = {
+const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
     { .SpreadingFactor = SX1276_LORA_SF6,
       .Bandwidth = SX1276_LORA_BW_500,
       .CodingRate = SX1276_LORA_CR_4_5,
@@ -94,7 +94,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return (firmwareRev == 0x12);
     }
 
-    void SetLoraConfiguration(const tSx127xLoraConfiguration* config)
+    void SetLoraConfiguration(const tSxLoraConfiguration* config)
     {
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
@@ -111,6 +111,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
+        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
+
         lora_configuration = &(Sx127xLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
     }
@@ -244,7 +246,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     }
 
   private:
-    const tSx127xLoraConfiguration* lora_configuration;
+    const tSxLoraConfiguration* lora_configuration;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
 

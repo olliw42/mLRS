@@ -93,7 +93,31 @@ typedef enum {
 
 
 //-------------------------------------------------------
-// Types
+// Config Enums
+//-------------------------------------------------------
+// numbers must match config arrays in sx drivers !!
+
+typedef enum {
+    SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5 = 0,
+    SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5,
+    SX128x_LORA_CONFIG_NUM,
+} SX128x_LORA_CONFIG_ENUM;
+
+
+typedef enum {
+    SX127x_LORA_CONFIG_BW500_SF6_CR4_5 = 0,
+    SX127x_LORA_CONFIG_NUM,
+} SX127x_LORA_CONFIG_ENUM;
+
+
+typedef enum {
+    SX126x_LORA_CONFIG_BW500_SF6_CR4_5 = 0,
+    SX126x_LORA_CONFIG_NUM,
+} SX126x_LORA_CONFIG_ENUM;
+
+
+//-------------------------------------------------------
+// Setup and Config Types
 //-------------------------------------------------------
 
 typedef struct
@@ -149,6 +173,7 @@ typedef struct
   uint16_t FrameSyncWord;
   uint16_t FhssNum;
   uint32_t FhssSeed;
+
   uint16_t LQAveragingPeriod;
 
   uint8_t Power;

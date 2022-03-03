@@ -79,7 +79,13 @@ void setup_sanitize(void)
 #endif
 #endif
 
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
+  if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
+#ifdef DEVICE_HAS_SX126x
+  if (Setup.Mode != MODE_19HZ) { // only 19 Hz mode allowed
+    Setup.Mode = MODE_19HZ;
+  }
+#endif
+#ifdef DEVICE_HAS_SX127x
   Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
 #endif
 }
@@ -97,20 +103,23 @@ void setup_configure(void)
 
   switch (Setup.Mode) {
   case MODE_50HZ:
-  default:
     Config.frame_rate_ms = 20; // 20 ms = 50 Hz
-    Config.LoraConfigIndex = 0;
+    Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
     Config.lora_send_frame_tmo = MODE_50HZ_SEND_FRAME_TMO; // 10;
     break;
   case MODE_19HZ:
     Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
-    Config.LoraConfigIndex = 0;
+#ifdef DEVICE_HAS_SX128x
+    Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
+#elif defined DEVICE_HAS_SX126x
+    Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
 #else
-    Config.LoraConfigIndex = 1;
+    Config.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
 #endif
     Config.lora_send_frame_tmo = MODE_19HZ_SEND_FRAME_TMO; // 25;
     break;
+  default:
+    while (1) {} // must not happen
   }
 
   Config.FrameSyncWord = (uint16_t)(Setup.BindDblWord & 0x0000FFFF);
@@ -123,7 +132,6 @@ void setup_configure(void)
 #else
   switch (Setup.Mode) {
   case MODE_50HZ:
-  default:
     Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
     break;
   case MODE_19HZ:
