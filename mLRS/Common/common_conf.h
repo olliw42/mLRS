@@ -58,9 +58,9 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
+#define SETUP_RX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
-#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
+#define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS w txbuf flow control
 
 
 #define BIND_DBLWORD                    0x12344281
