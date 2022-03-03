@@ -104,6 +104,7 @@ typedef struct
   uint16_t ChannelOrder;
   uint16_t InMode;
   uint16_t SerialDestination;
+  uint16_t SerialBaudrate_bytespersec; // baudrate / 10
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tTxSetup;
@@ -116,7 +117,7 @@ typedef struct
   uint16_t ChannelOrder;
   uint16_t OutMode;
   uint16_t FailsafeMode;
-  uint16_t SerialBaudrate;
+  uint16_t SerialBaudrate_bytespersec; // baudrate / 10
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tRxSetup;

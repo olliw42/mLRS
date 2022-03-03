@@ -26,6 +26,7 @@ void setup_default(void)
   Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
   Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
   Setup.Tx.InMode = SETUP_TX_IN_MODE;
+  Setup.Tx.SerialBaudrate_bytespersec = (SETUP_TX_SERIAL_BAUDRATE / 10);
   Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
   Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
@@ -34,7 +35,7 @@ void setup_default(void)
   Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
   Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
   Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
-  Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
+  Setup.Rx.SerialBaudrate_bytespersec = (SETUP_RX_SERIAL_BAUDRATE / 10);
   Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
   Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
 

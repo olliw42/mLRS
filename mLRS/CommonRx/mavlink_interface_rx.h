@@ -77,7 +77,9 @@ uint8_t rssi, remrssi, txbuf;
   // instead of the true buffer size, we use a smaller virtual buffer size
   // on which we base the estimate
   // the values are purely phenomenological so far, may need more adaption
-  // works quite well for me, parameters by mavftp or conventional, and missions
+  // works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
+  // this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
+  // indeed txbuf goes up and down wildly
   uint32_t buf_size = serial.rx_buf_size();
   switch (Setup.Mode) {
   case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
@@ -90,6 +92,17 @@ uint8_t rssi, remrssi, txbuf;
   } else {
     txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
   }
+
+/*
+  // that's how fast bytes can be transported on the link
+  // 82 bytes / 20 ms = 4100, 82 bytes / 53 ms = 1547
+  uint32_t rx_rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
+
+  // that's how fast bytes come in from the serial
+  uint32_t serial_max = Setup.Rx.SerialBaudrate_bytespersec;
+
+  rx_rate_max = (rx_rate_max * 80) / 100; // leave an overhead of 20%
+*/
 
   fmav_msg_radio_status_pack(
       &f_msg,
