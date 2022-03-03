@@ -67,7 +67,7 @@
 
 
 #define SETUP_MODE                      MODE_50HZ
-//#define SETUP_MODE                      MODE_19HZ // !!! ATTENTION: HIGHLY EXPERIMENTAL !!!
+//#define SETUP_MODE                      MODE_19HZ
 
 
 //-------------------------------------------------------
