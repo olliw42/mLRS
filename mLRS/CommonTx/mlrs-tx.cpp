@@ -180,6 +180,16 @@ TxStats txstats;
 #include "crsf_interface.h" // this includes uart.h as it needs callbacks
 
 
+tSerialBase* get_serialport(void)
+{
+  switch (Setup.Tx.SerialDestination) {
+    case SERIAL_DESTINATION_MBRDIGE: return &mbridge; // send to radio via mbridge
+    case SERIAL_DESTINATION_SERIAL_PORT: return &serial; // send to serial
+  }
+  return nullptr;
+}
+
+
 //-------------------------------------------------------
 // mavlink
 //-------------------------------------------------------
@@ -188,7 +198,7 @@ TxStats txstats;
 
 
 //-------------------------------------------------------
-// SX1280
+// SX12xx
 //-------------------------------------------------------
 
 volatile uint16_t irq_status;
@@ -253,19 +263,17 @@ uint8_t payload_len = 0;
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
+  tSerialBase* serialport = get_serialport();
+
   // read data from serial
   if (connected()) {
     memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
     payload_len = 0;
 
     for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-      if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) { // don't use a switch, since we want to break out of the for loop
-        if (!serial.available()) break;
-        payload[payload_len] = serial.getc();
-      } else
-      if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) {
-        if (!bridge.available()) break;
-        payload[payload_len] = bridge.getc();
+      if (serialport) {
+        if (!serialport->available()) break;
+        payload[payload_len] = serialport->getc();
       }
       payload_len++;
     }
@@ -274,8 +282,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     stats.fresh_serial_data_transmitted.Inc();
 
   } else {
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serial.flush();
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) bridge.flush();
+    if (serialport) serialport->flush();
     memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
     payload_len = 0;
   }
@@ -312,14 +319,12 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
   if (!do_payload) return;
 
   // output data on serial
-  tSerialBase* serialport = nullptr;
-  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) serialport = &bridge; // send to radio via mbridge
-  if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) serialport = &serial; // send to serial
+  tSerialBase* serialport = get_serialport();
 
   for (uint8_t i = 0; i < frame->status.payload_len; i++) {
     uint8_t c = frame->payload[i];
     if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-      f_handle_link_receive(c, serialport);
+      f_handle_link_receive(c);
     } else {
       if (serialport) serialport->putc(c);
     }
@@ -447,7 +452,7 @@ int main_main(void)
   main_test();
 #endif
   init();
-  bridge.Init();
+  mbridge.Init();
 #ifdef USE_CRSF
   crsf.Init();
 #endif
@@ -745,11 +750,11 @@ IF_ANTENNA2(
 
 #if (defined USE_MBRIDGE)
     // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can used as sync
-    if (bridge.channels_received) {
-      bridge.channels_received = false;
+    if (mbridge.channels_received) {
+      mbridge.channels_received = false;
       if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
         // update channels
-        fill_rcdata_from_mbridge(&rcData, &(bridge.channels));
+        fill_rcdata_from_mbridge(&rcData, &(mbridge.channels));
         channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
@@ -757,11 +762,11 @@ IF_ANTENNA2(
       mbridge_send_LinkStats();
     }
 
-    if (bridge.cmd_received) {
-      bridge.cmd_received = false;
+    if (mbridge.cmd_received) {
+      mbridge.cmd_received = false;
       uint8_t cmd;
       uint8_t payload[MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX];
-      bridge.GetCommand(&cmd, payload);
+      mbridge.GetCommand(&cmd, payload);
     }
 #endif
 #if (defined DEVICE_HAS_IN)

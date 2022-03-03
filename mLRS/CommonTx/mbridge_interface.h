@@ -65,7 +65,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     FifoBase sx_rx_fifo;
 };
 
-tMBridge bridge;
+tMBridge mbridge;
 
 
 // we do not add a delay here as with SpinOnce()
@@ -75,14 +75,14 @@ void uart_rx_callback(uint8_t c)
 {
   LED_RIGHT_GREEN_ON;
 
-  if (bridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-      bridge.state = tPin5BridgeBase::STATE_IDLE;
+  if (mbridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+      mbridge.state = tPin5BridgeBase::STATE_IDLE;
   }
 
   uint16_t tnow_us = micros();
-  bridge.parse_nextchar(c, tnow_us);
+  mbridge.parse_nextchar(c, tnow_us);
 
-  if (bridge.transmit_start()) {
+  if (mbridge.transmit_start()) {
       uart_tx_start();
   }
 
@@ -92,8 +92,8 @@ void uart_rx_callback(uint8_t c)
 
 void uart_tc_callback(void)
 {
-  bridge.transmit_enable(false);
-  bridge.state = tPin5BridgeBase::STATE_IDLE;
+  mbridge.transmit_enable(false);
+  mbridge.state = tPin5BridgeBase::STATE_IDLE;
 }
 
 
@@ -341,13 +341,13 @@ tMBridgeLinkStats lstats = {0};
 
   lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
-  bridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+  mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }
 
 
 #else
 
-tSerialBase bridge;
+tSerialBase mbridge;
 
 #endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
 

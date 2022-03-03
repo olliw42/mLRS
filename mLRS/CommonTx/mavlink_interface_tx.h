@@ -36,16 +36,8 @@ void f_send(void)
 {
   uint16_t len = fmav_msg_to_frame_buf(f_buf, &f_msg);
 
-  switch (Setup.Tx.SerialDestination) {
-    case SERIAL_DESTINATION_SERIAL_PORT:
-      serial.putbuf(f_buf, len);
-      break;
-    case SERIAL_DESTINATION_MBRDIGE:
-#ifdef USE_MBRIDGE
-      bridge.putbuf(f_buf, len);
-#endif
-      break;
-  }
+  tSerialBase* serialport = get_serialport();
+  if (serialport) serialport->putbuf(f_buf, len);
 }
 
 
@@ -79,14 +71,11 @@ uint8_t rssi, remrssi, txbuf;
   remrssi = stats.received_LQ;
 
   txbuf = 100;
-  switch (Setup.Tx.SerialDestination) {
-    case SERIAL_DESTINATION_SERIAL_PORT:
-      txbuf = serial.rx_free_percent();
-      break;
-    case SERIAL_DESTINATION_MBRDIGE:
-      // don't do anything
-      break;
+  tSerialBase* serialport = get_serialport();
+  if (serialport && Setup.Tx.SerialDestination == SERIAL_DESTINATION_SERIAL_PORT) {
+    txbuf = serial.rx_free_percent();
   }
+  // use 100% for SERIAL_DESTINATION_MBRDIGE
 
   fmav_msg_radio_status_pack(
       &f_msg,
@@ -128,8 +117,9 @@ void f_update_1hz(bool connected)
 }
 
 
-void f_handle_link_receive(char c, tSerialBase* serialport)
+void f_handle_link_receive(char c)
 {
+  tSerialBase* serialport = get_serialport();
   if (!serialport) return;
 
   // send to serial or mbridge
