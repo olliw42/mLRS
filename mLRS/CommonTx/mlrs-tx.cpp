@@ -744,7 +744,7 @@ IF_ANTENNA2(
       txstats.Next();
     }//end of if(doPreTransmit)
 
-    //-- Update channels, MBridge handling, Crsf handling, In handling
+    //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
 #if (defined USE_MBRIDGE)
     // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can used as sync
@@ -799,6 +799,8 @@ IF_ANTENNA2(
       }
     }
 #endif
+
+    f_do();
 
   }//end of while(1) loop
 
