@@ -534,8 +534,6 @@ int main_main(void)
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
-        f_update_1hz(connected());
-
         dbg.puts("\nTX: ");
         dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));
         dbg.puts(" (");
@@ -555,17 +553,12 @@ int main_main(void)
       DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
 
       if (!tx_tick) {
-        DECc(tick_1hz_commensurate, Config.frame_rate_hz);
-
         // trigger next cycle
         doPreTransmit = true;
         crsf_telemetry_tick_start = true;
       }
-      crsf_telemetry_tick_next = true;
 
-      if (!tx_tick && !tick_1hz_commensurate) {
-        txstats.Update1Hz();
-      }
+      crsf_telemetry_tick_next = true;
     }
 
     //-- SX handling
@@ -741,6 +734,11 @@ IF_ANTENNA2(
       link_state = LINK_STATE_TRANSMIT;
       link_rx1_status = RX_STATUS_NONE;
       link_rx2_status = RX_STATUS_NONE;
+
+      DECc(tick_1hz_commensurate, Config.frame_rate_hz);
+      if (!tick_1hz_commensurate) {
+        txstats.Update1Hz();
+      }
 
       if (!connected()) stats.Clear();
       txstats.Next();
