@@ -104,11 +104,13 @@ void setup_configure(void)
   switch (Setup.Mode) {
   case MODE_50HZ:
     Config.frame_rate_ms = 20; // 20 ms = 50 Hz
+    Config.frame_rate_hz = 50;
     Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
     Config.lora_send_frame_tmo = MODE_50HZ_SEND_FRAME_TMO; // 10;
     break;
   case MODE_19HZ:
     Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
+    Config.frame_rate_hz = 19;
 #ifdef DEVICE_HAS_SX128x
     Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
 #elif defined DEVICE_HAS_SX126x
@@ -140,10 +142,10 @@ void setup_configure(void)
   }
 #endif
 
-  Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
-
   Config.connect_tmo_systicks = SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f * Config.frame_rate_ms));
   Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.FhssNum);
+
+  Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_IS_TRANSMITTER

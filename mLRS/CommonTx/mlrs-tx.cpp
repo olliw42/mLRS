@@ -422,6 +422,7 @@ uint16_t led_blink;
 uint16_t tick_1hz;
 
 uint16_t tx_tick;
+uint16_t tick_1hz_commensurate;
 bool doPreTransmit;
 
 uint16_t link_state;
@@ -497,6 +498,7 @@ int main_main(void)
 
   led_blink = 0;
   tick_1hz = 0;
+  tick_1hz_commensurate = 0;
   doSysTask = 0; // helps in avoiding too short first loop
   while (1) {
 
@@ -509,8 +511,6 @@ int main_main(void)
         connect_tmo_cnt--;
       }
 
-      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
-      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
       if (connected()) {
         DECc(led_blink, SYSTICK_DELAY_MS(500));
       } else {
@@ -526,8 +526,9 @@ int main_main(void)
         f_init();
       }
 
+      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
+
       if (!tick_1hz) {
-        txstats.Update1Hz();
         f_update_1hz(connected());
 
         dbg.puts("\nTX: ");
@@ -546,13 +547,20 @@ int main_main(void)
         dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
       }
 
+      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
+
       if (!tx_tick) {
+        DECc(tick_1hz_commensurate, Config.frame_rate_hz);
+
         // trigger next cycle
         doPreTransmit = true;
         crsf_telemetry_tick_start = true;
       }
-
       crsf_telemetry_tick_next = true;
+
+      if (!tx_tick && !tick_1hz_commensurate) {
+        txstats.Update1Hz();
+      }
     }
 
     //-- SX handling

@@ -18,34 +18,18 @@
 
 class StatsCount {
   public:
-    uint32_t count;
-    uint32_t count_last;
-    uint32_t counts_per_sec;
-    uint8_t LQ;
-
     void Init(void)
     {
         count = count_last = counts_per_sec = 0;
         LQ = 0;
     }
 
-    void Update1Hz(void)
-    {
-        counts_per_sec = count - count_last;
-        LQ = (counts_per_sec * 100 * Config.frame_rate_ms) / 1000;
+    virtual void Update1Hz(void);
 
-        count_last = count;
-    }
-
-    void inc(void)
-    {
-        count++;
-    }
-
-    void add(uint16_t num)
-    {
-        count += num;
-    }
+    uint32_t count;
+    uint32_t count_last;
+    uint32_t counts_per_sec;
+    uint8_t LQ;
 };
 
 
@@ -53,6 +37,16 @@ class StatsCount {
 class StatsLQ : public StatsCount
 {
   public:
+    void Update1Hz(void) override
+    {
+        // the period is Config.frame_rate_ms * Config.frame_rate_hz, and may not be exactly 1000
+
+        counts_per_sec = count - count_last;
+        LQ = (counts_per_sec * 100) / Config.frame_rate_hz;
+
+        count_last = count;
+    }
+
     void Inc(void)
     {
         count++;
@@ -69,6 +63,12 @@ class StatsLQ : public StatsCount
 class StatsBytes : public StatsCount
 {
   public:
+    void Update1Hz(void) override
+    {
+        counts_per_sec = count - count_last; // are not exactly the bytes per sec, but the difference is 0.8% at most
+        count_last = count;
+    }
+
     void Add(uint16_t num)
     {
         count += num;
@@ -79,7 +79,6 @@ class StatsBytes : public StatsCount
         return counts_per_sec;
     }
 };
-
 
 
 //-------------------------------------------------------

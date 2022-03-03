@@ -393,6 +393,7 @@ dbg.puts("fail ");dbg.puts(u8toHEX_s(res)); dbg.puts(" ");
 
 uint16_t led_blink;
 uint16_t tick_1hz;
+uint16_t tick_1hz_commensurate;
 
 uint8_t link_state;
 uint8_t connect_state;
@@ -459,6 +460,7 @@ int main_main(void)
 
   led_blink = 0;
   tick_1hz = 0;
+  tick_1hz_commensurate = 0;
   doPostReceive2_cnt = 0;
   doPostReceive2 = false;
   frame_missed = false;
@@ -472,7 +474,6 @@ int main_main(void)
         connect_tmo_cnt--;
       }
 
-      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
       if (connected()) {
         DECc(led_blink, SYSTICK_DELAY_MS(500));
       } else
@@ -487,9 +488,9 @@ int main_main(void)
       }
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
-      if (!tick_1hz) {
-        rxstats.Update1Hz();
+      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
+      if (!tick_1hz) {
         dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
         dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
@@ -728,6 +729,11 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
 
       if (!connected()) stats.Clear();
       rxstats.Next();
+
+      DECc(tick_1hz_commensurate, Config.frame_rate_hz);
+      if (!tick_1hz_commensurate) {
+        rxstats.Update1Hz();
+      }
 
       doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
     }//end of if(doPostReceive)
