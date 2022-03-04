@@ -225,7 +225,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
   // read data from serial
   if (connected()) {
-    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
     payload_len = 0;
 
     for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
@@ -239,7 +239,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 
   } else {
     serial.flush();
-    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
     payload_len = 0;
   }
 
