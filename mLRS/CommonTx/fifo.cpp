@@ -19,7 +19,7 @@ FifoBase::FifoBase() // constructor
 void FifoBase::Init(void)
 {
   writepos = readpos = 0;
-  SIZEMASK = SX_FIFO_SIZE - 1;
+  SIZEMASK = FIFO_SIZE - 1;
 }
 
 

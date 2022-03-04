@@ -16,7 +16,7 @@
 
 class FifoBase
 {
-  #define SX_FIFO_SIZE  512
+  #define FIFO_SIZE  512
 
   public:
     FifoBase(); // constructor
@@ -35,7 +35,7 @@ class FifoBase
     uint16_t writepos; // pos at which the next byte will be stored
     uint16_t readpos; // pos at which the oldest byte is fetched
     uint16_t SIZEMASK;
-    uint8_t buf[SX_FIFO_SIZE];
+    uint8_t buf[FIFO_SIZE];
 };
 
 
