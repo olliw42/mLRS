@@ -72,20 +72,20 @@ void OutBase::Do(uint16_t tnow_us)
 
 void OutBase::SetChannelOrder(uint8_t new_channel_order)
 {
-  if (new_channel_order == channel_order) return;
-  channel_order = new_channel_order;
+    if (new_channel_order == channel_order) return;
+    channel_order = new_channel_order;
 
-  switch (channel_order) {
+    switch (channel_order) {
     case CHANNEL_ORDER_AETR:
-      // nothing to do
-      break;
+        // nothing to do
+        break;
     case CHANNEL_ORDER_TAER:
-      // TODO
-      break;
+        // TODO
+        break;
     case CHANNEL_ORDER_ETAR:
-      // TODO
-      break;
-  }
+        // TODO
+        break;
+    }
 }
 
 
@@ -96,22 +96,17 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
     tRcData rc; // copy rc data, to not modify it !!
     memcpy(&rc, rc_orig, sizeof(tRcData));
 
-//    uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
-//    for (uint8_t n = 0; n < 4; n++) {
-//      rc->ch[n] = ch[_channel_map[n]];
-//    }
-
     for (uint8_t n = 0; n < 4; n++) {
-      rc.ch[n] = rc_orig->ch[channel_map[n]];
+        rc.ch[n] = rc_orig->ch[channel_map[n]];
     }
 
     // mimic spektrum
     // 1090 ... 1515  ... 1940
     // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
-    uint32_t t = 90*2048;
+    uint32_t t = 85*2048;
     for (uint8_t n = 0; n < RC_DATE_LEN; n++) {
-      uint32_t xs = 850 * rc.ch[n];
-      rc.ch[n] = (xs + t) / 1000;
+        uint32_t xs = 850 * rc.ch[n];
+        rc.ch[n] = (xs + t) / 1000;
     }
 
     switch (config) {
@@ -174,11 +169,9 @@ void OutBase::putbuf(uint8_t* buf, uint16_t len)
 //-------------------------------------------------------
 // SBus
 //-------------------------------------------------------
-
 // SBus frame: 0x0F , 22 bytes channel data , flags byte, 0x00
 // 100000 bps, 8E2
 // send every 14 ms (normal) or 7 ms (high speed), 10ms or 20ms
-// 92 - 1792 => 1000 - 2000
 
 #define SBUS_CHANNELPACKET_SIZE      22
 
@@ -207,70 +200,44 @@ typedef union {
 
 
 typedef enum {
-  SBUS_FLAG_CH17 = 0x01,
-  SBUS_FLAG_CH18 = 0x02,
-  SBUS_FLAG_FRAME_LOST = 0x04,
-  SBUS_FLAG_FAILSAFE = 0x08,
+    SBUS_FLAG_CH17 = 0x01,
+    SBUS_FLAG_CH18 = 0x02,
+    SBUS_FLAG_FRAME_LOST = 0x04,
+    SBUS_FLAG_FAILSAFE = 0x08,
 } SBUS_FLAG_ENUM;
 
-
-// rc data in TxFrame is centered such to cover 0..2047, 0..255, 0..1
-// ardupilot: sbus 200 -> 1000us, sbus 1800 -> 2000us
-// txFrame:   ch0-ch3:    0 .. 1024 .. 2047, 11 bits
-//            ch4-ch13:   0 .. 128 .. 255, 8 bits
-//            ch14-ch17:  0..1, 1 bit
-
-// let's convert the full range to +-100% or 200..1000..1800:
-// sbus =  ch * 1600 / 2048 + 200 for 11 bits
-//         ch * 1600 / 256 + 200 for 8 bits
-
-// we also could convert to OpenTx range +-100% = 988us ... 2012 us
-// sbus =  ch * 1600 / 2048 + 200 for 11 bits
-//         ch * 1600 / 256 + 200 for 8 bits
-
-// Ardupilot:
-// translates sbus values 200..1000..1800 into pwm values 1000..1500..2000 us
-// => pwm = sbus * 500 / 800 + 875
-//    sbus = (pwm - 875) * 800 / 500 = pwm * 800 / 500 - 1400
-// thus, if we scale sbus to 200..1800 we get 1000..2000 us on ardupilot
-//
-// when selecting SBUS external module and connecting JRpin1 to ArduPilot, we get
-// 983 ... 1495 .. 2006
-
-// opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024...1023
-// => sbus values = 173..992..1811
 
 void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusFrameBuffer sbus_buf;
 
-  sbus_buf.ch0 = ((uint32_t)(rc->ch[0]) * 1600) / 2047 + 200;
-  sbus_buf.ch1 = ((uint32_t)(rc->ch[1]) * 1600) / 2047 + 200;
-  sbus_buf.ch2 = ((uint32_t)(rc->ch[2]) * 1600) / 2047 + 200;
-  sbus_buf.ch3 = ((uint32_t)(rc->ch[3]) * 1600) / 2047 + 200;
-  sbus_buf.ch4 = ((uint32_t)(rc->ch[4]) * 1600) / 2047 + 200;
-  sbus_buf.ch5 = ((uint32_t)(rc->ch[5]) * 1600) / 2047 + 200;
-  sbus_buf.ch6 = ((uint32_t)(rc->ch[6]) * 1600) / 2047 + 200;
-  sbus_buf.ch7 = ((uint32_t)(rc->ch[7]) * 1600) / 2047 + 200;
-  sbus_buf.ch8 = ((uint32_t)(rc->ch[8]) * 1600) / 2047 + 200;
-  sbus_buf.ch9 = ((uint32_t)(rc->ch[9]) * 1600) / 2047 + 200;
-  sbus_buf.ch10 = ((uint32_t)(rc->ch[10]) * 1600) / 2047 + 200;
-  sbus_buf.ch11 = ((uint32_t)(rc->ch[11]) * 1600) / 2047 + 200;
-  sbus_buf.ch12 = ((uint32_t)(rc->ch[12]) * 1600) / 2047 + 200;
-  sbus_buf.ch13 = ((uint32_t)(rc->ch[13]) * 1600) / 2047 + 200;
-  sbus_buf.ch14 = ((uint32_t)(rc->ch[14]) * 1600) / 2047 + 200;
-  sbus_buf.ch15 = ((uint32_t)(rc->ch[15]) * 1600) / 2047 + 200;
+    sbus_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch3 = (((int32_t)(rc->ch[3]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch4 = (((int32_t)(rc->ch[4]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch5 = (((int32_t)(rc->ch[5]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch6 = (((int32_t)(rc->ch[6]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch7 = (((int32_t)(rc->ch[7]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch8 = (((int32_t)(rc->ch[8]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch9 = (((int32_t)(rc->ch[9]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch10 = (((int32_t)(rc->ch[10]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch11 = (((int32_t)(rc->ch[11]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch12 = (((int32_t)(rc->ch[12]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
+    sbus_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
 
-  uint8_t flags = 0;
-  if (rc->ch[16] >= 1536) flags |= SBUS_FLAG_CH17;
-  if (rc->ch[17] >= 1536) flags |= SBUS_FLAG_CH18;
-  if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
-  if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
+    uint8_t flags = 0;
+    if (rc->ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
+    if (rc->ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
+    if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
+    if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
-  putc(0x0F);
-  putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);
-  putc(flags);
-  putc(0x00);
+    putc(0x0F);
+    putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);
+    putc(flags);
+    putc(0x00);
 }
 
 
@@ -282,28 +249,26 @@ void OutBase::send_crsf_rcdata(tRcData* rc)
 {
 tCrsfChannelBuffer crsf_buf;
 
-    crsf_buf.ch0 = ((uint32_t)(rc->ch[0]) * 1600) / 2047 + 200;
-    crsf_buf.ch1 = ((uint32_t)(rc->ch[1]) * 1600) / 2047 + 200;
-    crsf_buf.ch2 = ((uint32_t)(rc->ch[2]) * 1600) / 2047 + 200;
-    crsf_buf.ch3 = ((uint32_t)(rc->ch[3]) * 1600) / 2047 + 200;
-    crsf_buf.ch4 = ((uint32_t)(rc->ch[4]) * 1600) / 2047 + 200;
-    crsf_buf.ch5 = ((uint32_t)(rc->ch[5]) * 1600) / 2047 + 200;
-    crsf_buf.ch6 = ((uint32_t)(rc->ch[6]) * 1600) / 2047 + 200;
-    crsf_buf.ch7 = ((uint32_t)(rc->ch[7]) * 1600) / 2047 + 200;
-    crsf_buf.ch8 = ((uint32_t)(rc->ch[8]) * 1600) / 2047 + 200;
-    crsf_buf.ch9 = ((uint32_t)(rc->ch[9]) * 1600) / 2047 + 200;
-    crsf_buf.ch10 = ((uint32_t)(rc->ch[10]) * 1600) / 2047 + 200;
-    crsf_buf.ch11 = ((uint32_t)(rc->ch[11]) * 1600) / 2047 + 200;
-    crsf_buf.ch12 = ((uint32_t)(rc->ch[12]) * 1600) / 2047 + 200;
-    crsf_buf.ch13 = ((uint32_t)(rc->ch[13]) * 1600) / 2047 + 200;
-    crsf_buf.ch14 = ((uint32_t)(rc->ch[14]) * 1600) / 2047 + 200;
-    crsf_buf.ch15 = ((uint32_t)(rc->ch[15]) * 1600) / 2047 + 200;
+    crsf_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch3 = (((int32_t)(rc->ch[3]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch4 = (((int32_t)(rc->ch[4]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch5 = (((int32_t)(rc->ch[5]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch6 = (((int32_t)(rc->ch[6]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch7 = (((int32_t)(rc->ch[7]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch8 = (((int32_t)(rc->ch[8]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch9 = (((int32_t)(rc->ch[9]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch10 = (((int32_t)(rc->ch[10]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch11 = (((int32_t)(rc->ch[11]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch12 = (((int32_t)(rc->ch[12]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
+    crsf_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
 
     uint8_t crc = 0;
 
     putc(CRSF_ADDRESS_BROADCAST);
-    //putc(CRSF_ADDRESS_RECEIVER);
-    //putc(CRSF_ADDRESS_FLIGHT_CONTROLLER);
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);

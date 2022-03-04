@@ -9,11 +9,6 @@
 /*
 
 ISSUES:
-- do we want also antenna field for transmit antenna?
-  in some way yes, since we have it for receive antenna, but in some way no, is it useful in any way??
-  we have the spare bit, so just add it, can be remove later anytime
-
-- rc Data: how to handle over-sized values? simply clip to +-100% (as currently done), rescale to allow +-120% ?
 
 
 The 3 MAIN topics TODO:

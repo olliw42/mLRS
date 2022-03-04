@@ -227,9 +227,9 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 }
 
 
-// mBridge: ch0-15    0 .. 1024 .. 2047, 11 bits
-//          ch16-17:  0 .. 1, 1 bit
-// rcData:            0 .. 1024 .. 2047, 11 bits
+// mBridge: ch0-15    11 bits, 1 .. 1024 .. 2047 for +-120%
+//          ch16-17:  1 bit, 0 .. 1
+// rcData:            11 bit, 1 .. 1024 .. 2047 for +-120%
 void tMBridge::fill_rcdata(tRcData* rc)
 {
   rc->ch[0] = channels.ch0;
@@ -248,8 +248,8 @@ void tMBridge::fill_rcdata(tRcData* rc)
   rc->ch[13] = channels.ch13;
   rc->ch[14] = channels.ch14;
   rc->ch[15] = channels.ch15;
-  rc->ch[16] = (channels.ch16) ? 2047 : 0;
-  rc->ch[17] = (channels.ch17) ? 2047 : 0;
+  rc->ch[16] = (channels.ch16) ? 1876 : 172; // +-100%
+  rc->ch[17] = (channels.ch17) ? 1876 : 172; // +-100%
 }
 
 

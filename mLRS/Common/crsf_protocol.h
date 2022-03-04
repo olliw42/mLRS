@@ -85,7 +85,7 @@ typedef union {
   uint8_t c[CRSF_CHANNELPACKET_SIZE];
   CRSF_PACKED(
   struct {
-      uint16_t ch0  : 11; // 16 channels a 11 bits per channel = 176 bits, 0 .. 1024 .. 2047
+      uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
       uint16_t ch1  : 11;
       uint16_t ch2  : 11;
       uint16_t ch3  : 11;

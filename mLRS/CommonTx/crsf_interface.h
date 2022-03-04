@@ -206,31 +206,37 @@ bool tTxCrsf::IsChannelData(void)
 }
 
 
-// CRSF:    172 .. 992 .. 1811, 11 bits
-// rcData:  0 .. 1024 .. 2047, 11 bits
+// CRSF:
+// 11 bit, 173 ... 992 .. 1811 for +-100%
+// so: 9 ... 173 ... 992 .. 1811 ... 1965  for -120%  -100%    0%    +100%    +120%
+// 100% = 819 span
+// 120% = 983 span
+// rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
+// see design_decissions.h
+
 void tTxCrsf::fill_rcdata(tRcData* rc)
 {
 tCrsfChannelBuffer buf;
 
   memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
 
-  rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
+  rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1966 + 1024 );
 
-  rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1638 + 1024 );
-  rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1638 + 1024 );
+  rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1966 + 1024 );
+  rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1966 + 1024 );
 }
 
 

@@ -468,6 +468,64 @@ and each will overwrite any previous rssi, so be careful with what one really wa
 
 
 -------------------------------------------------------
+RC ranges
+
+mLRS:
+11 bit
+1 ... 1024 ... 2047 for range +-120%
+
+so:   1 ... 172 ... 1024 .. 1876 ... 2047
+    -120%  -100%     0%    +100%    +120%
+
+100% = 852 span
+120% = 1023 span
+
+sbus/crsf:
+11 bit
++-100% = 173 ... 992 .. 1811
+
+so:   9 ... 173 ... 992 .. 1811 ... 1965
+    -120%  -100%    0%    +100%    +120%
+
+100% = 819 span
+120% = 983 span
+
+OpenTx produces 173 ... 992 ... 1811 for -100% ... 100%
+
+=> mlrs = (sbus - 992) * 1023 / 983 * 1024
+let's use
+   mlrs = (sbus - 992) * 2047 / 1966 * 1024
+
+
+old 0..2047 = +-100% scaling:
+ rc data in TxFrame is centered such to cover 0..2047, 0..255, 0..1
+ ardupilot: sbus 200 -> 1000us, sbus 1800 -> 2000us
+ txFrame:   ch0-ch3:    0 .. 1024 .. 2047, 11 bits
+            ch4-ch13:   0 .. 128 .. 255, 8 bits
+            ch14-ch17:  0..1, 1 bit
+
+ let's convert the full range to +-100% or 200..1000..1800:
+ sbus =  ch * 1600 / 2048 + 200 for 11 bits
+         ch * 1600 / 256 + 200 for 8 bits
+
+ we also could convert to OpenTx range +-100% = 988us ... 2012 us
+ sbus =  ch * 1600 / 2048 + 200 for 11 bits
+         ch * 1600 / 256 + 200 for 8 bits
+
+ Ardupilot:
+ translates sbus values 200..1000..1800 into pwm values 1000..1500..2000 us
+ => pwm = sbus * 500 / 800 + 875
+    sbus = (pwm - 875) * 800 / 500 = pwm * 800 / 500 - 1400
+ thus, if we scale sbus to 200..1800 we get 1000..2000 us on ardupilot
+
+ when selecting SBUS external module and connecting JRpin1 to ArduPilot, we get
+ 983 ... 1495 .. 2006
+
+ opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024...1023
+ => sbus values = 173..992..1811
+
+
+-------------------------------------------------------
 SX1280 power
 the sx power is calculated as
   sx_power = LIMIT(SX1280_POWER_m18_DBM, power - POWER_GAIN_DBM + 18, POWER_SX1280_MAX_DBM)

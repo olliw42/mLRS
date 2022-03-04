@@ -85,7 +85,7 @@ typedef union {
   uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 176 + 8 = 184 bits = 23 bytes
   MBRDIGE_PACKED(
   struct {
-      uint16_t ch0  : 11; // 14 channels a 11 bits per channel = 154 bits, 0 .. 1024 .. 2047
+      uint16_t ch0  : 11; // 14 channels a 11 bits per channel = 154 bits, 1 .. 1024 .. 2047 for +-120%
       uint16_t ch1  : 11;
       uint16_t ch2  : 11;
       uint16_t ch3  : 11;
