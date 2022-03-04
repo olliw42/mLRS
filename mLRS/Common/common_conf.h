@@ -43,7 +43,7 @@
 
 #define SETUP_TX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
 
-#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS
+#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS w txbuf flow control
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR

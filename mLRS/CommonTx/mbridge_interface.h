@@ -28,6 +28,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 {
   public:
     void Init(void);
+    bool ChannelsUpdated(tRcData* rc);
     void GetCommand(uint8_t* cmd, uint8_t* payload);
     void SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len);
 
@@ -41,6 +42,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 
     volatile bool channels_received;
     tMBridgeChannelBuffer channels;
+    void fill_rcdata(tRcData* rc);
 
     volatile bool cmd_received;
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
@@ -156,24 +158,6 @@ void tMBridge::send_command(void)
 }
 
 
-void tMBridge::Init(void)
-{
-  tSerialBase::Init();
-  tPin5BridgeBase::Init();
-
-  type = MBRIDGE_TYPE_NONE;
-  channels_received = false;
-  cmd_received = false;
-  cmd_m2r_available = 0;
-
-  sx_tx_fifo.Init();
-  sx_rx_fifo.Init();
-}
-
-
-//-------------------------------------------------------
-// MBridge
-
 #define MBRIDGE_TMO_US  250
 
 
@@ -243,6 +227,64 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 }
 
 
+// mBridge: ch0-15    0 .. 1024 .. 2047, 11 bits
+//          ch16-17:  0 .. 1, 1 bit
+// rcData:            0 .. 1024 .. 2047, 11 bits
+void tMBridge::fill_rcdata(tRcData* rc)
+{
+  rc->ch[0] = channels.ch0;
+  rc->ch[1] = channels.ch1;
+  rc->ch[2] = channels.ch2;
+  rc->ch[3] = channels.ch3;
+  rc->ch[4] = channels.ch4;
+  rc->ch[5] = channels.ch5;
+  rc->ch[6] = channels.ch6;
+  rc->ch[7] = channels.ch7;
+  rc->ch[8] = channels.ch8;
+  rc->ch[9] = channels.ch9;
+  rc->ch[10] = channels.ch10;
+  rc->ch[11] = channels.ch11;
+  rc->ch[12] = channels.ch12;
+  rc->ch[13] = channels.ch13;
+  rc->ch[14] = channels.ch14;
+  rc->ch[15] = channels.ch15;
+  rc->ch[16] = (channels.ch16) ? 2047 : 0;
+  rc->ch[17] = (channels.ch17) ? 2047 : 0;
+}
+
+
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
+
+
+//-------------------------------------------------------
+// MBridge user interface
+
+void tMBridge::Init(void)
+{
+  tSerialBase::Init();
+  tPin5BridgeBase::Init();
+
+  type = MBRIDGE_TYPE_NONE;
+  channels_received = false;
+  cmd_received = false;
+  cmd_m2r_available = 0;
+
+  sx_tx_fifo.Init();
+  sx_rx_fifo.Init();
+}
+
+
+bool tMBridge::ChannelsUpdated(tRcData* rc)
+{
+  if (!channels_received) return false;
+
+  channels_received = false;
+
+  fill_rcdata(rc);
+  return true;
+}
+
+
 void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
   if ((cmd_r2m_frame[0] & MBRIDGE_COMMANDPACKET_MASK) != MBRIDGE_COMMANDPACKET_STX) return; // not a command, should not happen, but play it safe
@@ -269,35 +311,6 @@ void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
 
 //-------------------------------------------------------
 // convenience helper
-
-STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
-
-
-// mBridge: ch0-15    0 .. 1024 .. 2047, 11 bits
-//          ch16-17:  0 .. 1, 1 bit
-// rcData:            0 .. 1024 .. 2047, 11 bits
-void fill_rcdata_from_mbridge(tRcData* rc, tMBridgeChannelBuffer* mbuf)
-{
-  rc->ch[0] = mbuf->ch0;
-  rc->ch[1] = mbuf->ch1;
-  rc->ch[2] = mbuf->ch2;
-  rc->ch[3] = mbuf->ch3;
-  rc->ch[4] = mbuf->ch4;
-  rc->ch[5] = mbuf->ch5;
-  rc->ch[6] = mbuf->ch6;
-  rc->ch[7] = mbuf->ch7;
-  rc->ch[8] = mbuf->ch8;
-  rc->ch[9] = mbuf->ch9;
-  rc->ch[10] = mbuf->ch10;
-  rc->ch[11] = mbuf->ch11;
-  rc->ch[12] = mbuf->ch12;
-  rc->ch[13] = mbuf->ch13;
-  rc->ch[14] = mbuf->ch14;
-  rc->ch[15] = mbuf->ch15;
-  rc->ch[16] = (mbuf->ch16) ? 2047 : 0;
-  rc->ch[17] = (mbuf->ch17) ? 2047 : 0;
-}
-
 
 void mbridge_send_LinkStats(void)
 {

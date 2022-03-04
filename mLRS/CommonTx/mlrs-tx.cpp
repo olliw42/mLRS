@@ -747,12 +747,10 @@ IF_ANTENNA2(
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
 #if (defined USE_MBRIDGE)
-    // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can used as sync
-    if (mbridge.channels_received) {
-      mbridge.channels_received = false;
+    // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can use as sync
+    if (mbridge.ChannelsUpdated(&rcData)) {
+      // update channels
       if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-        // update channels
-        fill_rcdata_from_mbridge(&rcData, &(mbridge.channels));
         channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }
