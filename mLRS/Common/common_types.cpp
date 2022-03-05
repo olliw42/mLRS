@@ -36,3 +36,32 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 
   return -rssi_u7;
 }
+
+
+// this would be the naive thing
+// scale is "inverted" to make it that it is higher the better
+//   rssi = (127 + stats.last_rx_rssi);
+//   remrssi = (127 + stats.received_rssi);
+//
+// https://ardupilot.org/copter/docs/common-3dr-radio-advanced-configuration-and-technical-information.html#monitoring-the-link-quality
+// for Sik radios holds signal_dBm approx rssi_SiK/1.9 - 127  => 150 approx -48dBm, 70 approx -90dBm
+// so we could here a SiK scale
+//   rssi_SiK = ( signal_dBm + 127 ) * 1.9
+//
+//   int32_t rssi_SiK = ( ((int32_t)stats.last_rx_rssi + 127) * 19000 ) / 10000;
+//   if (rssi_SiK < 0) rssi_SiK = 0;
+//   if (rssi_SiK > 250) rssi_SiK = 250;
+//   rssi = rssi_SiK;
+//
+// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
+uint8_t rssi_i8_to_ap(int8_t rssi_i8)
+{
+  if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
+  if (rssi_i8 > -50) return 254; // max value
+  if (rssi_i8 < -120) return 0;
+
+  int32_t r = (int32_t)rssi_i8 - (-120);
+  int32_t m = (int32_t)(-50) - (-120);
+
+  return (100 * r + 49) / m;
+}
