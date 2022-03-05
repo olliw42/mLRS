@@ -140,6 +140,9 @@ private:
 ChannelOrder channelOrder;
 
 
+tSerialBase* serialport;
+
+
 void init(void)
 {
   leds_init();
@@ -169,21 +172,28 @@ void init(void)
 #include "crsf_interface.h" // this includes uart.h as it needs callbacks
 
 
-tSerialBase* get_serialport(void)
-{
-  switch (Setup.Tx.SerialDestination) {
-    case SERIAL_DESTINATION_MBRDIGE: return &mbridge; // send to radio via mbridge
-    case SERIAL_DESTINATION_SERIAL_PORT: return &serial; // send to serial
-  }
-  return nullptr;
-}
-
-
 //-------------------------------------------------------
 // mavlink
 //-------------------------------------------------------
 
 #include "mavlink_interface_tx.h"
+
+MavlinkBase mavlink;
+
+
+void init_serialport(void)
+{
+  switch (Setup.Tx.SerialDestination) {
+    case SERIAL_DESTINATION_MBRDIGE:
+      serialport = &mbridge;
+      break;
+    case SERIAL_DESTINATION_SERIAL_PORT:
+      serialport = &serial;
+      break;
+    default:
+      serialport = nullptr;
+  }
+}
 
 
 //-------------------------------------------------------
@@ -252,26 +262,29 @@ uint8_t payload_len = 0;
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
-  tSerialBase* serialport = get_serialport();
-
   memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
   payload_len = 0;
 
   // read data from serial port
   if (connected()) {
-    for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-      if (serialport) {
-        if (!serialport->available()) break;
-        payload[payload_len] = serialport->getc();
+    if (serialport) {
+      for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+          if (!mavlink.available()) break; // get from serial port via mavlink parser
+          payload[payload_len] = mavlink.getc();
+        } else {
+          if (!serialport->available()) break; // get from serial port
+          payload[payload_len] = serialport->getc();
+        }
+        payload_len++;
       }
-      payload_len++;
     }
 
     stats.bytes_transmitted.Add(payload_len);
     stats.fresh_serial_data_transmitted.Inc();
 
   } else {
-    if (serialport) serialport->flush();
+    if (serialport) mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
   }
 
   stats.last_tx_antenna = antenna;
@@ -306,14 +319,14 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
   if (!do_payload) return;
 
   // output data on serial
-  tSerialBase* serialport = get_serialport();
-
-  for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-    uint8_t c = frame->payload[i];
-    if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-      f_handle_link_receive(c);
-    } else {
-      if (serialport) serialport->putc(c);
+  if (serialport) {
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+      uint8_t c = frame->payload[i];
+      if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+        mavlink.putc(c);
+      } else {
+        serialport->putc(c);
+      }
     }
   }
 
@@ -443,6 +456,7 @@ int main_main(void)
 #ifdef USE_CRSF
   crsf.Init();
 #endif
+  init_serialport();
 
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
@@ -481,7 +495,7 @@ int main_main(void)
   txstats.Init(Config.LQAveragingPeriod);
 
   in.Configure(Setup.Tx.InMode);
-  f_init();
+  mavlink.Init();
 
   crsf_telemetry_tick_start = false;
   crsf_telemetry_tick_next = false;
@@ -780,7 +794,7 @@ IF_ANTENNA2(
     }
 #endif
 
-    f_do();
+    mavlink.Do();
 
   }//end of while(1) loop
 

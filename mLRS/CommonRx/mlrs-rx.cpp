@@ -139,6 +139,8 @@ void init(void)
 
 #include "mavlink_interface_rx.h"
 
+MavlinkBase mavlink;
+
 
 //-------------------------------------------------------
 // SX12xx
@@ -213,8 +215,13 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   // read data from serial
   if (connected()) {
     for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-      if (!serial.available()) break;
-      payload[payload_len] = serial.getc();
+      if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+        if (!mavlink.available()) break; // get from serial via mavlink parser
+        payload[payload_len] = mavlink.getc();
+      } else {
+        if (!serial.available()) break; // get from serial
+        payload[payload_len] = serial.getc();
+      }
       payload_len++;
     }
 
@@ -222,7 +229,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     stats.fresh_serial_data_transmitted.Inc();
 
   } else {
-    serial.flush();
+    mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
   }
 
   stats.last_tx_antenna = antenna;
@@ -268,7 +275,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     for (uint8_t i = 0; i < frame->status.payload_len; i++) {
       uint8_t c = frame->payload[i];
       if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-        f_handle_link_receive(c);
+        mavlink.putc(c); // send to serial via mavlink parser
       } else {
         serial.putc(c); // send to serial
       }
@@ -439,7 +446,7 @@ int main_main(void)
   rxstats.Init(Config.LQAveragingPeriod);
 
   out.Configure(Setup.Rx.OutMode);
-  f_init();
+  mavlink.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -757,7 +764,7 @@ dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
 
     out.Do(micros());
 
-    f_do();
+    mavlink.Do();
 
   }//end of while(1) loop
 
