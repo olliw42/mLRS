@@ -11,6 +11,9 @@
 #pragma once
 
 
+static inline bool connected(void);
+
+
 //-------------------------------------------------------
 // we also handle the stats field with this class, this is somewhat dirty
 
@@ -33,8 +36,6 @@ class RxStatsBase
     LqCounterBase LQma_received;
     LqCounterBase LQma_valid_crc1;
     LqCounterBase LQma_valid;
-
-    virtual bool is_connected(void);
 };
 
 
@@ -60,7 +61,7 @@ void RxStatsBase::Next(void) // this is called when transmit starts, or shortly 
     LQma_valid.Next();
     LQma_received.Next();
 
-    if (!is_connected()) { // start with 100% if not connected
+    if (!connected()) { // start with 100% if not connected
       LQma_valid_crc1.Reset();
       LQma_valid.Reset();
       LQma_received.Reset();
@@ -91,7 +92,7 @@ void RxStatsBase::doValidFrameReceived(void)
 
 uint8_t RxStatsBase::GetLQ(void)
 {
-    if (!is_connected()) return 0;
+    if (!connected()) return 0;
     uint8_t LQ = stats.valid_crc1_received.GetLQ();
     if (LQ == 0) return 1;
     return LQ;
@@ -100,7 +101,7 @@ uint8_t RxStatsBase::GetLQ(void)
 
 uint8_t RxStatsBase::GetLQ_serial_data(void)
 {
-    if (!is_connected()) return 0;
+    if (!connected()) return 0;
     uint8_t LQser = stats.fresh_serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;

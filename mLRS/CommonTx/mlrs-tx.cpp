@@ -58,6 +58,9 @@ v0.0.00:
 #include "txstats.h"
 
 
+TxStatsBase txstats;
+
+
 class In : public InBase
 {
 #ifdef DEVICE_HAS_IN
@@ -156,20 +159,6 @@ void init(void)
   sx.Init();
   sx2.Init();
 }
-
-
-//-------------------------------------------------------
-// Statistics for Transmitter
-//-------------------------------------------------------
-
-static inline bool connected(void);
-
-class TxStats : public TxStatsBase
-{
-  bool is_connected(void) override { return connected(); }
-};
-
-TxStats txstats;
 
 
 //-------------------------------------------------------
@@ -494,7 +483,6 @@ int main_main(void)
   txstats.Init(Config.LQAveragingPeriod);
 
   in.Configure(Setup.Tx.InMode);
-
   f_init();
 
   crsf_telemetry_tick_start = false;

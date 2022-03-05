@@ -56,6 +56,7 @@ v0.0.00:
 
 
 ClockBase clock;
+RxStatsBase rxstats;
 
 
 class Out : public OutBase
@@ -88,7 +89,24 @@ public:
 
   void putc(char c) override { uart_putc(c); }
 
-  void SendLinkStatistics(void);
+  void SendLinkStatistics(void)
+  {
+    tOutLinkStats lstats = {
+      .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)RSSI_MIN,
+      .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)RSSI_MIN,
+      .receiver_LQ = rxstats.GetLQ(),
+      .receiver_snr = stats.GetLastRxSnr(),
+      .receiver_antenna = stats.last_rx_antenna,
+      .receiver_transmit_antenna = stats.last_tx_antenna,
+      .receiver_power = 0, // TODO
+      .transmitter_rssi = stats.received_rssi,
+      .transmitter_LQ = stats.received_LQ,
+      .transmitter_snr = 0,
+      .transmitter_antenna = stats.received_antenna,
+      .transmitter_transmit_antenna = stats.received_transmit_antenna,
+    };
+    OutBase::SendLinkStatistics(&lstats);
+  }
 };
 
 Out out;
@@ -106,46 +124,12 @@ void init(void)
 
   dbg.Init();
 
-  setup_init(); // clock needs Config
+  setup_init(); // clock needs Config, so call before clock init
 
   clock.Init();
 
   sx.Init();
   sx2.Init();
-}
-
-
-//-------------------------------------------------------
-// Statistics for Receiver
-//-------------------------------------------------------
-
-static inline bool connected(void);
-
-class RxStats : public RxStatsBase
-{
-  bool is_connected(void) override { return connected(); }
-};
-
-RxStats rxstats;
-
-
-void Out::SendLinkStatistics(void)
-{
-  tOutLinkStats lstats = {
-    .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)RSSI_MIN,
-    .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)RSSI_MIN,
-    .receiver_LQ = rxstats.GetLQ(),
-    .receiver_snr = stats.GetLastRxSnr(),
-    .receiver_antenna = stats.last_rx_antenna,
-    .receiver_transmit_antenna = stats.last_tx_antenna,
-    .receiver_power = 0, // TODO
-    .transmitter_rssi = stats.received_rssi,
-    .transmitter_LQ = stats.received_LQ,
-    .transmitter_snr = 0,
-    .transmitter_antenna = stats.received_antenna,
-    .transmitter_transmit_antenna = stats.received_transmit_antenna,
-  };
-  OutBase::SendLinkStatistics(&lstats);
 }
 
 
@@ -366,7 +350,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 dbg.puts("fail ");dbg.puts(u8toHEX_s(res)); dbg.puts(" ");
   }
 
-  if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
+  if (res == CHECK_ERROR_SYNCWORD) while(1) {}; // must not happen !
 
   if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 

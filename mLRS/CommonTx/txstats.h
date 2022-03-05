@@ -11,6 +11,9 @@
 #pragma once
 
 
+static inline bool connected(void);
+
+
 //-------------------------------------------------------
 
 class TxStatsBase
@@ -30,8 +33,6 @@ class TxStatsBase
   private:
     LqCounterBase LQma_received;
     LqCounterBase LQma_valid;
-
-    virtual bool is_connected(void);
 };
 
 
@@ -55,7 +56,7 @@ void TxStatsBase::Next(void) // this is called when transmit starts, or shortly 
     LQma_valid.Next();
     LQma_received.Next();
 
-    if (!is_connected()) { // start with 100% if not connected
+    if (!connected()) { // start with 100% if not connected
       LQma_valid.Reset();
       LQma_received.Reset();
     }
@@ -84,7 +85,7 @@ uint8_t TxStatsBase::GetLQ(void)
 
 uint8_t TxStatsBase::GetLQ_serial_data(void)
 {
-    if (!is_connected()) return 0;
+    if (!connected()) return 0;
     uint8_t LQser = stats.fresh_serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;
