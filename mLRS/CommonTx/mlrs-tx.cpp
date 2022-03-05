@@ -515,10 +515,6 @@ int main_main(void)
       }
       if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
-      if (!connected()) {
-        f_init();
-      }
-
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {

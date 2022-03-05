@@ -121,6 +121,10 @@ void f_do(void)
 {
   uint32_t tnow_ms = millis32();
 
+  if (!connected()) {
+    f_init();
+  }
+
   if ((tnow_ms - f_radio_status_tlast_ms) >= 1000) {
     f_radio_status_tlast_ms = tnow_ms;
     if (connected() && Setup.Rx.SendRadioStatus) f_inject_radio_status = true;

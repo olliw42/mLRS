@@ -441,6 +441,7 @@ int main_main(void)
   rxstats.Init(Config.LQAveragingPeriod);
 
   out.Configure(Setup.Rx.OutMode);
+  f_init();
 
   led_blink = 0;
   tick_1hz = 0;
