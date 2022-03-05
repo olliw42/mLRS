@@ -254,11 +254,11 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
   tSerialBase* serialport = get_serialport();
 
-  // read data from serial
-  if (connected()) {
-    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
-    payload_len = 0;
+  memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+  payload_len = 0;
 
+  // read data from serial port
+  if (connected()) {
     for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
       if (serialport) {
         if (!serialport->available()) break;
@@ -272,8 +272,6 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 
   } else {
     if (serialport) serialport->flush();
-    memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
-    payload_len = 0;
   }
 
   stats.last_tx_antenna = antenna;

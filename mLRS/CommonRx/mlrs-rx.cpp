@@ -201,17 +201,17 @@ uint8_t link_rx1_status;
 uint8_t link_rx2_status;
 
 
-uint8_t payload[FRAME_RX_PAYLOAD_LEN] = {0};
-uint8_t payload_len = 0;
+uint8_t payload[FRAME_RX_PAYLOAD_LEN];
+uint8_t payload_len;
 
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
+  memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
+  payload_len = 0;
+
   // read data from serial
   if (connected()) {
-    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-    payload_len = 0;
-
     for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
       if (!serial.available()) break;
       payload[payload_len] = serial.getc();
@@ -223,8 +223,6 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
 
   } else {
     serial.flush();
-    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-    payload_len = 0;
   }
 
   stats.last_tx_antenna = antenna;
