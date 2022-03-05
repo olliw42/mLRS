@@ -15,7 +15,7 @@
 
 #include "jr_pin5_interface.h"
 #include "mbridge_protocol.h"
-#include "fifo.h"
+#include "..\Common\fifo.h"
 
 
 uint16_t micros(void);
@@ -51,20 +51,20 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
 
     // front end to communicate with mbridge
-    void putc(char c) { sx_rx_fifo.putc(c); }
-    void putbuf(void* buf, uint16_t len) { sx_rx_fifo.putbuf(buf, len); }
-    bool available(void) { return sx_tx_fifo.available(); }
-    char getc(void) { return sx_tx_fifo.getc(); }
-    void flush(void) { sx_tx_fifo.flush(); }
+    void putc(char c) { sx_rx_fifo.Put(c); }
+    void putbuf(void* buf, uint16_t len) { sx_rx_fifo.PutBuf(buf, len); }
+    bool available(void) { return sx_tx_fifo.Available(); }
+    char getc(void) { return sx_tx_fifo.Get(); }
+    void flush(void) { sx_tx_fifo.Flush(); }
 
     // backend
     // mimics a serial interface to the main code, usually two fifo
-    void serial_putc(char c) { sx_tx_fifo.putc(c); }
-    bool serial_rx_available(void) { return sx_rx_fifo.available(); }
-    char serial_getc(void) { return sx_rx_fifo.getc(); }
+    void serial_putc(char c) { sx_tx_fifo.Put(c); }
+    bool serial_rx_available(void) { return sx_rx_fifo.Available(); }
+    char serial_getc(void) { return sx_rx_fifo.Get(); }
 
-    FifoBase sx_tx_fifo;
-    FifoBase sx_rx_fifo;
+    FifoBase<char,256> sx_tx_fifo;
+    FifoBase<char,256> sx_rx_fifo;
 };
 
 tMBridge mbridge;
