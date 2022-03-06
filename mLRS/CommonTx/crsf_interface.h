@@ -32,6 +32,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
+    void SendFrame(const uint8_t len, const uint8_t frame_id, void* payload);
 
     // helper
     void Clear(void);
@@ -294,42 +295,35 @@ tCrsfChannelBuffer buf;
 }
 
 
-void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
+void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload)
 {
-  constexpr uint8_t len = CRSF_LINK_STATISTICS_LEN;
   tx_frame[0] = CRSF_ADDRESS_RADIO;
   tx_frame[1] = (4-2) + len;
-  tx_frame[2] = CRSF_FRAME_ID_LINK_STATISTICS;
+  tx_frame[2] = frame_id;
   memcpy(&(tx_frame[3]), payload, len);
   tx_frame[3 + len] = crc8(tx_frame);
 
   tx_available = 4 + len;
+}
+
+
+void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
+{
+  SendFrame(CRSF_LINK_STATISTICS_LEN, CRSF_FRAME_ID_LINK_STATISTICS, payload);
 }
 
 
 void tTxCrsf::SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload)
 {
-  constexpr uint8_t len = CRSF_LINK_STATISTICS_TX_LEN;
-  tx_frame[0] = CRSF_ADDRESS_RADIO;
-  tx_frame[1] = (4-2) + len;
-  tx_frame[2] = CRSF_FRAME_ID_LINK_STATISTICS_TX;
-  memcpy(&(tx_frame[3]), payload, len);
-  tx_frame[3 + len] = crc8(tx_frame);
-
-  tx_available = 4 + len;
+  SendFrame(CRSF_LINK_STATISTICS_TX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_TX, payload);
 }
 
 
 void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 {
-  constexpr uint8_t len = CRSF_LINK_STATISTICS_RX_LEN;
-  tx_frame[0] = CRSF_ADDRESS_RADIO;
-  tx_frame[1] = (4-2) + len;
-  tx_frame[2] = CRSF_FRAME_ID_LINK_STATISTICS_RX;
-  memcpy(&(tx_frame[3]), payload, len);
-  tx_frame[3 + len] = crc8(tx_frame);
+  SendFrame(CRSF_LINK_STATISTICS_RX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_RX, payload);
+}
 
-  tx_available = 4 + len;
 }
 
 
