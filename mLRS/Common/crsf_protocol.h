@@ -13,7 +13,8 @@
 // https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
 // ardupilot:
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.h
-//
+// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCTelemetry/AP_CRSF_Telem.h
+
 // CRSF frame format:
 // address len type payload crc
 // len is the length including type, payload, crc
@@ -78,6 +79,8 @@ typedef enum {
 } CRSF_POWER_ENUM;
 
 
+//-- Channel frame
+
 #define CRSF_CHANNELPACKET_SIZE  22
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
@@ -104,6 +107,8 @@ typedef union {
   });
 } tCrsfChannelBuffer;
 
+
+//-- Link statistics frames
 
 /* 0x14 Link Statistics
 
@@ -171,6 +176,62 @@ typedef struct
 
 #define CRSF_LINK_STATISTICS_RX_LEN  5
 
+
+//-- Telemetry data frames
+
+CRSF_PACKED(
+typedef struct
+{
+  int32_t latitude; // degree / 1e7
+  int32_t longitude; // degree / 1e7
+  uint16_t groundspeed; // km/h / 100
+  uint16_t gps_heading; // degree / 100
+  uint16_t altitude; // meter - 1000m offset
+  uint8_t satellites;
+}) tCrsfGps;
+
+#define CRSF_GPS_LEN  15
+
+
+CRSF_PACKED(
+typedef struct
+{
+  int16_t climb_rate; // units ??????? m/s / 100 indirectly concluded from otx
+}) tCrsfVario;
+
+#define CRSF_VARIO_LEN  2
+
+
+CRSF_PACKED(
+typedef struct
+{
+  uint16_t voltage; // mV * 100
+  uint16_t current; // mA * 100
+  uint8_t capacity[3]; // mAh
+  uint8_t remaining; // percent
+}) tCrsfBattery;
+
+#define CRSF_BATTERY_LEN  8
+
+
+CRSF_PACKED(
+typedef struct
+{
+  int16_t pitch; // rad * 1e4
+  int16_t roll; // rad * 1e4
+  int16_t yaw; // rad * 1e4
+}) tCrsfAttitude;
+
+#define CRSF_ATTITUDE_LEN  6
+
+
+CRSF_PACKED(
+typedef struct
+{
+  char flight_mode[16]; // null-terminated string
+}) tCrsfFlightMode;
+
+#define CRSF_FLIGHTMODE_LEN  16
 
 
 #endif // CRSF_PROTOCOL_H

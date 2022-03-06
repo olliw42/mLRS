@@ -131,6 +131,9 @@ void MavlinkBase::putc(char c)
     status_link_in_serial_out.tx_seq++;
 
     send_msg_serial_out();
+
+    // allow crsf to capture it
+    crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
   }
 }
 

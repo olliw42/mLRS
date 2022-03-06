@@ -767,6 +767,9 @@ IF_ANTENNA2(
         case 1: crsf_send_LinkStatistics(); break;
         case 2: crsf_send_LinkStatisticsTx(); break;
         case 3: crsf_send_LinkStatisticsRx(); break;
+        case 4:
+          if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) crsf.SendTelemetryFrame();
+          break;
       }
     }
 
