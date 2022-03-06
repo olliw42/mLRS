@@ -9,7 +9,8 @@
 /*
 
 ISSUES:
-
+- mavlink parser, missing packets calculation:
+  we need to keep the seq for each component, as it is component specific
 
 The 3 MAIN topics TODO:
 
