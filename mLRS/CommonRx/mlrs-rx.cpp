@@ -612,10 +612,10 @@ IF_ANTENNA2(
         invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
       }
 
-dbg.puts("\n> 1: ");
+/*dbg.puts("\n> 1: ");
 dbg.puts(s8toBCD_s(stats.last_rx_rssi1));
 dbg.puts(" 2: ");
-dbg.puts(s8toBCD_s(stats.last_rx_rssi2));
+dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
       if (frame_received) { // frame received
         uint8_t antenna = ANTENNA_1;
@@ -653,7 +653,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));
 
         handle_receive(antenna);
 
-dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
+//dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
       }
 
       if (valid_frame_received) { // valid frame received

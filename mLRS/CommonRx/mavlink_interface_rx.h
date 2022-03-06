@@ -50,6 +50,8 @@ class MavlinkBase
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
     uint32_t radio_status_tlast_ms;
+
+    uint32_t bytes_serial_in;
 };
 
 
@@ -66,6 +68,8 @@ void MavlinkBase::Init(void)
 
   link_in_first_packet_received = false;
   link_in_missed_packets = 0;
+
+  bytes_serial_in = 0;
 }
 
 
@@ -117,6 +121,8 @@ bool MavlinkBase::available(void)
 
 uint8_t MavlinkBase::getc(void)
 {
+  bytes_serial_in++;
+
   return serial.getc();
 }
 
@@ -167,37 +173,66 @@ uint8_t rssi, remrssi, txbuf, noise;
 
   txbuf = 100;
   if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF) {
-    // txbuf = serial.rx_free_percent();
-    // instead of the true buffer size, we use a smaller virtual buffer size
-    // on which we base the estimate
-    // the values are purely phenomenological so far, may need more adaption
-    // works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
-    // this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
-    // indeed txbuf goes up and down wildly
+    // primitive method:
+    //  txbuf = serial.rx_free_percent();
+
+    // method B:
+    //  instead of the true buffer size, we use a smaller virtual buffer size
+    //  on which we base the estimate
+    //  the values are purely phenomenological so far, may need more adaption
+    //  works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
+    //  this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
+    //  indeed txbuf goes up and down wildly
+    /*
     uint32_t buf_size = serial.rx_buf_size();
     switch (Setup.Mode) {
       case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
       case MODE_31HZ: if (buf_size > 512) buf_size = 512; break;
       case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
     }
-
     uint32_t bytes = serial.bytes_available();
     if (bytes >= buf_size) {
       txbuf = 0;
     } else {
       txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
+    } */
+
+    // method C:
+    //  knowing what ArduPilot does, one can use txbuf to slow down, speed up
+    //  we measure the actual rate, and speed up, slow down such as to bring it into
+    //  a range of 55..70 % of the maximum link bandwidth
+    //  if the serial rx buf becomes to large, we also force a slow down
+    // we could speed up adaption by increasing radio_status rate by two when +60ms or -40ms
+    // but it works very well for me as is
+    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
+    uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
+    if (rate_percentage > 80) {
+      txbuf = 0; // +60 ms
+    } else if (rate_percentage > 70) {
+      txbuf = 30; // +20 ms
+    } else if (rate_percentage < 45) {
+      txbuf = 100; // -40 ms
+    } else if (rate_percentage < 55) {
+      txbuf = 91; // -20 ms
+    } else {
+      txbuf = 51; // no change
     }
-/*
-    // that's how fast bytes can be transported on the link
-    // 82 bytes / 20 ms = 4100, 82 bytes / 53 ms = 1547
-    uint32_t rx_rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
 
-    // that's how fast bytes come in from the serial
-    uint32_t serial_max = Setup.Rx.SerialBaudrate_bytespersec;
+    if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
 
-    rx_rate_max = (rx_rate_max * 80) / 100; // leave an overhead of 20%
-*/
+/*dbg.puts("\nM: ");
+dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
+dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
+dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
+dbg.puts(u8toBCD_s(rate_percentage));dbg.puts(", ");
+dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
+if(txbuf<20) dbg.puts("+60 "); else
+if(txbuf<40) dbg.puts("+20 "); else
+if(txbuf>95) dbg.puts("-40 "); else
+if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
   }
+
+  bytes_serial_in = 0; // reset, to restart measurement
 
   fmav_msg_radio_status_pack(
       &msg_serial_out,
