@@ -43,8 +43,6 @@ TODO:
 - USB on TX side
 
 Longterm TODO:
-- option to select serial or serial with mavlink parsing, allow e.g. radio_status only in latter mode
-
 - rate management by radio_status txbuf
   note: rts/cts is not a substitute as this wouldn't help in router situations
   idea: use crsf, add new frame type
