@@ -435,10 +435,6 @@ uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 
-bool crsf_telemetry_tick_start; // called at 50Hz, in sync with transmit
-bool crsf_telemetry_tick_next; // called at 1 ms
-uint16_t crsf_telemetry_state;
-
 
 static inline bool connected(void)
 {
@@ -453,9 +449,7 @@ int main_main(void)
 #endif
   init();
   mbridge.Init();
-#ifdef USE_CRSF
   crsf.Init();
-#endif
   init_serialport();
 
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
@@ -496,10 +490,6 @@ int main_main(void)
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
-
-  crsf_telemetry_tick_start = false;
-  crsf_telemetry_tick_next = false;
-  crsf_telemetry_state = 0;
 
   led_blink = 0;
   tick_1hz = 0;
@@ -551,10 +541,10 @@ int main_main(void)
       if (!tx_tick) {
         // trigger next cycle
         doPreTransmit = true;
-        crsf_telemetry_tick_start = true;
+        crsf.TelemetryStart();
       }
 
-      crsf_telemetry_tick_next = true;
+      crsf.TelemetryTick_ms();
     }
 
     //-- SX handling
@@ -770,21 +760,16 @@ IF_ANTENNA2(
       }
     }
 #endif
-#ifdef USE_CRSF
-    if (crsf_telemetry_tick_start) {
-      crsf_telemetry_tick_start = false;
-      crsf_telemetry_state = 1; // start
-    }
-    if (crsf_telemetry_state && crsf_telemetry_tick_next && crsf.IsEmpty()) {
-      crsf_telemetry_tick_next = false;
-      switch (crsf_telemetry_state) {
-      case 1: crsf_send_LinkStatistics(); break;
-      case 5: crsf_send_LinkStatisticsTx(); break;
-      case 9: crsf_send_LinkStatisticsRx(); break;
+#if (defined USE_CRSF)
+    uint8_t packet_idx;
+    if (crsf.TelemetryUpdate(&packet_idx)) {
+      switch (packet_idx) {
+        case 1: crsf_send_LinkStatistics(); break;
+        case 2: crsf_send_LinkStatisticsTx(); break;
+        case 3: crsf_send_LinkStatisticsRx(); break;
       }
-      crsf_telemetry_state++;
-      if (crsf_telemetry_state > 10) crsf_telemetry_state = 0; // stop
     }
+
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
       // update channels
       if (crsf.Update(&rcData)) {

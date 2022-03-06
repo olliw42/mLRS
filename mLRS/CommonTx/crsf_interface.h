@@ -29,12 +29,14 @@ class tTxCrsf : public tPin5BridgeBase
   public:
     void Init(void);
     bool Update(tRcData* rc);
-    void Clear(void);
-    bool IsEmpty(void);
-    bool IsChannelData(void);
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
+
+    // helper
+    void Clear(void);
+    bool IsEmpty(void);
+    bool IsChannelData(void);
 
     // for in-isr processing
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
@@ -49,6 +51,15 @@ class tTxCrsf : public tPin5BridgeBase
 
     uint8_t crc8(const uint8_t* buf);
     void fill_rcdata(tRcData* rc);
+
+    // telemetry handling
+    bool telemetry_tick_start; // called at 50Hz, in sync with transmit
+    bool telemetry_tick_next; // called at 1 ms
+    uint16_t telemetry_state;
+
+    void TelemetryStart(void);
+    void TelemetryTick_ms(void);
+    bool TelemetryUpdate(uint8_t* packet_idx);
 };
 
 tTxCrsf crsf;
@@ -59,80 +70,120 @@ tTxCrsf crsf;
 
 void uart_rx_callback(uint8_t c)
 {
-  LED_RIGHT_GREEN_ON;
+    LED_RIGHT_GREEN_ON;
 
-  if (crsf.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-      crsf.state = tPin5BridgeBase::STATE_IDLE;
-  }
+    if (crsf.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+        crsf.state = tPin5BridgeBase::STATE_IDLE;
+    }
 
-  uint16_t tnow_us = micros();
-  crsf.parse_nextchar(c, tnow_us);
+    uint16_t tnow_us = micros();
+    crsf.parse_nextchar(c, tnow_us);
 
-  if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-      uart_tx_start();
-  }
+    if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
+        uart_tx_start();
+    }
 
-  LED_RIGHT_GREEN_OFF;
+    LED_RIGHT_GREEN_OFF;
 }
 
 
 void uart_tc_callback(void)
 {
-  crsf.transmit_enable(false); // switches on rx
-  crsf.state = tPin5BridgeBase::STATE_IDLE;
+    crsf.transmit_enable(false); // switches on rx
+    crsf.state = tPin5BridgeBase::STATE_IDLE;
 }
 
 
 bool tTxCrsf::transmit_start(void)
 {
-  if (state < STATE_TRANSMIT_START) return false; // we are in receiving
+    if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
-  if (!tx_available || (state != STATE_TRANSMIT_START)) {
-    state = STATE_IDLE;
-    return false;
-  }
+    if (!tx_available || (state != STATE_TRANSMIT_START)) {
+        state = STATE_IDLE;
+        return false;
+    }
 
-  transmit_enable(true); // switches of rx
+    transmit_enable(true); // switches of rx
 
-  for (uint8_t i = 0; i < tx_available; i++) {
-      uint8_t c = tx_frame[i];
-      mb_putc(c);
-  }
+    for (uint8_t i = 0; i < tx_available; i++) {
+        uint8_t c = tx_frame[i];
+        mb_putc(c);
+    }
 
-  tx_available = 0;
-  state = STATE_TRANSMITING;
-  return true;
+    tx_available = 0;
+    state = STATE_TRANSMITING;
+    return true;
 }
 
 
 void tTxCrsf::Init(void)
 {
-  tPin5BridgeBase::Init();
+    tPin5BridgeBase::Init();
 
-  frame_received = false;
-  tx_available = 0;
+    frame_received = false;
+    tx_available = 0;
+
+    telemetry_tick_start = false;
+    telemetry_tick_next = false;
+    telemetry_state = 0;
 }
 
 
 void tTxCrsf::Clear(void)
 {
-  frame_received = false;
-  tx_available = 0;
+    frame_received = false;
+    tx_available = 0;
 }
 
 
 bool tTxCrsf::Update(tRcData* rc)
 {
-  if (!frame_received) return false;
-  frame_received = false;
+    if (!frame_received) return false;
+    frame_received = false;
 
-  // update channels
-  if (crsf.IsChannelData()) {
-      fill_rcdata(&rcData);
-      return true;
-  }
+    // update channels
+    if (crsf.IsChannelData()) {
+        fill_rcdata(&rcData);
+        return true;
+    }
 
-  return false;
+    return false;
+}
+
+
+void tTxCrsf::TelemetryStart(void)
+{
+    telemetry_tick_start = true;
+}
+
+
+void tTxCrsf::TelemetryTick_ms(void)
+{
+    telemetry_tick_next = true;
+}
+
+
+bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
+{
+    if (telemetry_tick_start) {
+      telemetry_tick_start = false;
+      telemetry_state = 1; // start
+    }
+
+    bool ret = false;
+
+    if (telemetry_state && telemetry_tick_next && IsEmpty()) {
+        telemetry_tick_next = false;
+        switch (telemetry_state) {
+            case 1: *packet_idx = 1; ret = true; break;
+            case 5: *packet_idx = 2; ret = true; break;
+            case 9: *packet_idx = 3; ret = true; break;
+        }
+        telemetry_state++;
+        if (telemetry_state > 10) telemetry_state = 0; // stop
+    }
+
+    return ret;
 }
 
 
@@ -363,6 +414,24 @@ tCrsfLinkStatisticsRx lstats;
   crsf.SendLinkStatisticsRx(&lstats);
 }
 
+
+#else
+
+class tTxCrsfDummy
+{
+  public:
+    void Init(void) {}
+    bool Update(tRcData* rc) { return false;}
+    void TelemetryStart(void) {}
+    void TelemetryTick_ms(void) {}
+    bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
+};
+
+tTxCrsfDummy crsf;
+
+void crsf_send_LinkStatistics(void) {}
+void crsf_send_LinkStatisticsTx(void) {}
+void crsf_send_LinkStatisticsRx(void) {}
 
 #endif // if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
 
