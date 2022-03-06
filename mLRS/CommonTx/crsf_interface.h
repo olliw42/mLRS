@@ -550,7 +550,7 @@ void crsf_send_LinkStatisticsTx(void)
 tCrsfLinkStatisticsTx lstats;
 
     lstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi()); // ignored by OpenTx
-    lstats.uplink_rssi_percent = crsf_cvt_rssi_percent(lstats.uplink_rssi);
+    lstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());
     lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
     lstats.uplink_snr = stats.GetLastRxSnr(); // ignored by OpenTx
     lstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
@@ -564,7 +564,7 @@ void crsf_send_LinkStatisticsRx(void)
 tCrsfLinkStatisticsRx lstats;
 
     lstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi); // ignored by OpenTx
-    lstats.downlink_rssi_percent = crsf_cvt_rssi_percent(lstats.downlink_rssi);
+    lstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);
     lstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
     lstats.downlink_snr = 0; // ignored by OpenTx
     lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
