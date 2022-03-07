@@ -348,7 +348,7 @@ tRxFrame* frame;
     frame = &rxFrame2;
   }
 
-  if (rx_status != RX_STATUS_INVALID) {
+  if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
     bool do_payload = true;
 
     process_received_frame(do_payload, frame);
@@ -358,7 +358,7 @@ tRxFrame* frame;
     stats.received_seq_no_last = frame->status.seq_no;
     stats.received_ack_last = frame->status.ack;
 
-  } else {
+  } else { // RX_STATUS_INVALID
     stats.received_seq_no_last = UINT8_MAX;
     stats.received_ack_last = 0;
   }
@@ -368,6 +368,13 @@ tRxFrame* frame;
 
   // we count all received frames
   txstats.doFrameReceived();
+}
+
+
+void handle_receive_none(void) // RX_STATUS_NONE
+{
+  stats.received_seq_no_last = UINT8_MAX;
+  stats.received_ack_last = 0;
 }
 
 
@@ -689,6 +696,8 @@ IF_ANTENNA2(
         }
 
         handle_receive(antenna);
+      } else {
+        handle_receive_none();
       }
 
       if (valid_frame_received) { // valid frame received
