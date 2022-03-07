@@ -79,6 +79,14 @@ typedef enum {
 } CRSF_POWER_ENUM;
 
 
+typedef enum {
+  CRSF_RFMODE_4HZ = 0,
+  CRSF_RFMODE_50HZ,
+  CRSF_RFMODE_150HZ,
+  CRSF_RFMODE_250HZ,
+} CRSF_RFMODE_ENUM;
+
+
 //-- Channel frame
 
 #define CRSF_CHANNELPACKET_SIZE  22
