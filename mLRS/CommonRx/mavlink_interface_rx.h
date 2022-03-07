@@ -11,7 +11,7 @@
 #pragma once
 
 
-//#include "..\Common\mavlink\fmav_extension.h"
+#include "..\Common\mavlink\fmav_extension.h"
 
 static inline bool connected(void);
 
@@ -43,9 +43,8 @@ class MavlinkBase
     uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
 
     // to count the number of missed mavlink packets received from link
-    bool link_in_first_packet_received;
-    uint8_t msg_serial_out_seq_last;
     uint32_t link_in_missed_packets;
+    ComponentList<64> component_list;
 
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
@@ -57,96 +56,100 @@ class MavlinkBase
 
 void MavlinkBase::Init(void)
 {
-  fmav_init();
+    fmav_init();
 
-  result_link_in = {0};
-  status_link_in = {0};
-  status_serial_out = {0};
+    result_link_in = {0};
+    status_link_in = {0};
+    status_serial_out = {0};
 
-  inject_radio_status = false;
-  radio_status_tlast_ms = millis32() + 1000;
+    inject_radio_status = false;
+    radio_status_tlast_ms = millis32() + 1000;
 
-  link_in_first_packet_received = false;
-  link_in_missed_packets = 0;
+    link_in_missed_packets = 0;
+    component_list.Init();
 
-  bytes_serial_in = 0;
+    bytes_serial_in = 0;
 }
 
 
 void MavlinkBase::Do(void)
 {
-  uint32_t tnow_ms = millis32();
+    uint32_t tnow_ms = millis32();
 
-  if (!connected()) {
-    //Init();
-    inject_radio_status = false;
-    radio_status_tlast_ms = millis32() + 1000;
-    link_in_first_packet_received = false;
-  }
+    if (!connected()) {
+        //Init();
+        inject_radio_status = false;
+        radio_status_tlast_ms = millis32() + 1000;
+    }
 
-  if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-  if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-    radio_status_tlast_ms = tnow_ms;
-    if (connected() && Setup.Rx.SendRadioStatus) inject_radio_status = true;
-  }
+    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+        radio_status_tlast_ms = tnow_ms;
+        if (connected() && Setup.Rx.SendRadioStatus) inject_radio_status = true;
+    }
 
-  if (inject_radio_status) { // && serial.tx_is_empty()) {
-    inject_radio_status = false;
-    generate_radio_status();
-    send_msg_serial_out();
-  }
+    if (inject_radio_status) { // && serial.tx_is_empty()) {
+        inject_radio_status = false;
+        generate_radio_status();
+        send_msg_serial_out();
+    }
 }
 
 
 void MavlinkBase::putc(char c)
 {
-  if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
-    fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
+    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+        fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
-    // TODO:
-    // we can use seq no to detect missed mavlink packets
-    // but we need to track the seq no for each component to do this
+        send_msg_serial_out();
 
-    send_msg_serial_out();
-  }
+        // we can use seq no. to detect missed mavlink packets
+        // but we need to track the seq no. for each component to do this
+        uint8_t idx = component_list.FindAndAdd(msg_serial_out.sysid, msg_serial_out.compid, (msg_serial_out.seq - 1));
+        uint8_t msg_serial_out_seq_last = component_list.GetSeq(idx);
+        component_list.SetSeq(idx, msg_serial_out.seq);
+        uint8_t lost_packets_since_last = msg_serial_out.seq - (msg_serial_out_seq_last + 1);
+        link_in_missed_packets += lost_packets_since_last;
+
+    }
 }
 
 
 bool MavlinkBase::available(void)
 {
-  return serial.available();
+    return serial.available();
 }
 
 
 uint8_t MavlinkBase::getc(void)
 {
-  bytes_serial_in++;
+    bytes_serial_in++;
 
-  return serial.getc();
+    return serial.getc();
 }
 
 
 void MavlinkBase::flush(void)
 {
-  serial.flush();
+    serial.flush();
 }
 
 
 void MavlinkBase::send_msg_serial_out(void)
 {
-  uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
-  serial.putbuf(_buf, len);
+    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+    serial.putbuf(_buf, len);
 }
 
 
-// ArduPilot's txbuf mechanism
+// ArduPilot's txbuf mechanism:
 // a variable stream_slowdown_ms is set
 // txbuf < 20: stream_slowdown_ms is increased in steps of 60 ms until 2000 ms
 // txbuf < 50: stream_slowdown_ms is increased in steps of 20 ms until 2000 ms
 // txbuf > 90: stream_slowdown_ms is decreased in steps of 20 ms until 0 ms
 // txbuf > 95 && stream_slowdown_ms > 200: stream_slowdown_ms is decreased in steps of 40 ms until 200 ms
-// => for txbuf in range [50,89] stream_slowdown_ms is not changed
+// => for txbuf in range [50,90] stream_slowdown_ms is not changed
 //
 // when params, missions, or mavftp are send, the stream interval are panelized further
 // params are send only if txbuf > 50, also baudrate is considered (wrongly)
@@ -163,62 +166,62 @@ void MavlinkBase::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
-  rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
-  remrssi = rssi_i8_to_ap(stats.received_rssi);
+    rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
+    remrssi = rssi_i8_to_ap(stats.received_rssi);
 
-  // we don't have a reasonable noise measurement, but can use this field to report on the snr
-  // the snr can be positive and negative however, so we artificially set snr = 10 to zero
-  int16_t snr = -stats.GetLastRxSnr() + 10;
-  noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
+    // we don't have a reasonable noise measurement, but can use this field to report on the snr
+    // the snr can be positive and negative however, so we artificially set snr = 10 to zero
+    int16_t snr = -stats.GetLastRxSnr() + 10;
+    noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
-  txbuf = 100;
-  if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF) {
-    // primitive method:
-    //  txbuf = serial.rx_free_percent();
+    txbuf = 100;
+    if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF) {
+        // primitive method:
+        //  txbuf = serial.rx_free_percent();
+        //
+        // method B:
+        //  instead of the true buffer size, we use a smaller virtual buffer size
+        //  on which we base the estimate
+        //  the values are purely phenomenological so far, may need more adaption
+        //  works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
+        //  this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
+        //  indeed txbuf goes up and down wildly
+        /*
+        uint32_t buf_size = serial.rx_buf_size();
+        switch (Setup.Mode) {
+          case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
+          case MODE_31HZ: if (buf_size > 512) buf_size = 512; break;
+          case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
+        }
+        uint32_t bytes = serial.bytes_available();
+        if (bytes >= buf_size) {
+          txbuf = 0;
+        } else {
+          txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
+        } */
+        //
+        // method C:
+        //  knowing what ArduPilot does, one can use txbuf to slow down, speed up
+        //  we measure the actual rate, and speed up, slow down such as to bring it into
+        //  a range of 55..70 % of the maximum link bandwidth
+        //  if the serial rx buf becomes to large, we also force a slow down
+        // we could speed up adaption by increasing radio_status rate by two when +60ms or -40ms
+        // but it works very well for me as is
+        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
+        uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
+        if (rate_percentage > 80) {
+            txbuf = 0; // +60 ms
+        } else if (rate_percentage > 70) {
+            txbuf = 30; // +20 ms
+        } else if (rate_percentage < 45) {
+            txbuf = 100; // -40 ms
+        } else if (rate_percentage < 55) {
+            txbuf = 91; // -20 ms
+        } else {
+            txbuf = 60; // no change
+        }
 
-    // method B:
-    //  instead of the true buffer size, we use a smaller virtual buffer size
-    //  on which we base the estimate
-    //  the values are purely phenomenological so far, may need more adaption
-    //  works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
-    //  this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
-    //  indeed txbuf goes up and down wildly
-    /*
-    uint32_t buf_size = serial.rx_buf_size();
-    switch (Setup.Mode) {
-      case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
-      case MODE_31HZ: if (buf_size > 512) buf_size = 512; break;
-      case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
-    }
-    uint32_t bytes = serial.bytes_available();
-    if (bytes >= buf_size) {
-      txbuf = 0;
-    } else {
-      txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
-    } */
-
-    // method C:
-    //  knowing what ArduPilot does, one can use txbuf to slow down, speed up
-    //  we measure the actual rate, and speed up, slow down such as to bring it into
-    //  a range of 55..70 % of the maximum link bandwidth
-    //  if the serial rx buf becomes to large, we also force a slow down
-    // we could speed up adaption by increasing radio_status rate by two when +60ms or -40ms
-    // but it works very well for me as is
-    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
-    uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
-    if (rate_percentage > 80) {
-      txbuf = 0; // +60 ms
-    } else if (rate_percentage > 70) {
-      txbuf = 30; // +20 ms
-    } else if (rate_percentage < 45) {
-      txbuf = 100; // -40 ms
-    } else if (rate_percentage < 55) {
-      txbuf = 91; // -20 ms
-    } else {
-      txbuf = 51; // no change
-    }
-
-    if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
+        if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
 
 /*dbg.puts("\nM: ");
 dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
@@ -230,17 +233,17 @@ if(txbuf<20) dbg.puts("+60 "); else
 if(txbuf<40) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
-  }
+    }
 
-  bytes_serial_in = 0; // reset, to restart measurement
+    bytes_serial_in = 0; // reset, to restart measurement
 
-  fmav_msg_radio_status_pack(
-      &msg_serial_out,
-      RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
-      MAV_COMP_ID_TELEMETRY_RADIO,
-      rssi, remrssi, txbuf, noise, UINT8_MAX, (uint16_t)link_in_missed_packets, 0,
-      //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
-      &status_serial_out);
+    fmav_msg_radio_status_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
+        MAV_COMP_ID_TELEMETRY_RADIO,
+        rssi, remrssi, txbuf, noise, UINT8_MAX, (uint16_t)link_in_missed_packets, 0,
+        //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
+        &status_serial_out);
 }
 
 

@@ -9,8 +9,9 @@
 /*
 
 ISSUES:
-- mavlink parser, missing packets calculation:
-  we need to keep the seq for each component, as it is component specific
+- mavlink parser should probably be reset when packets are missed
+- align mavlink messages only with respect to header, i.e., such that header is never split up
+
 
 The 3 MAIN topics TODO:
 

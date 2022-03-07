@@ -11,7 +11,7 @@
 #pragma once
 
 
-//#include "..\Common\mavlink\fmav_extension.h"
+#include "..\Common\mavlink\fmav_extension.h"
 
 static inline bool connected(void);
 
@@ -43,9 +43,8 @@ class MavlinkBase
     uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
 
     // to count the number of missed mavlink packets received from link
-    bool link_in_first_packet_received;
-    uint8_t msg_serial_out_seq_last;
     uint32_t link_in_missed_packets;
+    ComponentList<64> component_list;
 
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
@@ -55,94 +54,97 @@ class MavlinkBase
 
 void MavlinkBase::Init(void)
 {
-  fmav_init();
+    fmav_init();
 
-  result_link_in = {0};
-  status_link_in = {0};
-  status_serial_out = {0};
+    result_link_in = {0};
+    status_link_in = {0};
+    status_serial_out = {0};
 
-  inject_radio_status = false;
-  radio_status_tlast_ms = millis32() + 1000;
+    inject_radio_status = false;
+    radio_status_tlast_ms = millis32() + 1000;
 
-  link_in_first_packet_received = false;
-  link_in_missed_packets = 0;
+    link_in_missed_packets = 0;
+    component_list.Init();
 }
 
 
 void MavlinkBase::Do(void)
 {
-  uint32_t tnow_ms = millis32();
+    uint32_t tnow_ms = millis32();
 
-  if (!connected()) {
-    //Init();
-    inject_radio_status = false;
-    radio_status_tlast_ms = millis32() + 1000;
-    link_in_first_packet_received = false;
-  }
+    if (!connected()) {
+        //Init();
+        inject_radio_status = false;
+          radio_status_tlast_ms = millis32() + 1000;
+    }
 
-  if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-  if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-    radio_status_tlast_ms = tnow_ms;
-    if (connected() && Setup.Tx.SendRadioStatus) inject_radio_status = true;
-  }
+    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+        radio_status_tlast_ms = tnow_ms;
+        if (connected() && Setup.Tx.SendRadioStatus) inject_radio_status = true;
+    }
 
-  if (inject_radio_status) { // && serial.tx_is_empty()) {
-    inject_radio_status = false;
-    generate_radio_status();
-    send_msg_serial_out();
-  }
+    if (inject_radio_status) { // && serial.tx_is_empty()) {
+        inject_radio_status = false;
+        generate_radio_status();
+        send_msg_serial_out();
+    }
 }
 
 
 void MavlinkBase::putc(char c)
 {
-  if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
-    fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
+    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+        fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
-    // TODO:
-    // we can use seq no to detect missed mavlink packets
-    // but we need to track the seq no for each component to do this
+        send_msg_serial_out();
 
-    send_msg_serial_out();
+        // we can use seq no. to detect missed mavlink packets
+        // but we need to track the seq no. for each component to do this
+        uint8_t idx = component_list.FindAndAdd(msg_serial_out.sysid, msg_serial_out.compid, (msg_serial_out.seq - 1));
+        uint8_t msg_serial_out_seq_last = component_list.GetSeq(idx);
+        component_list.SetSeq(idx, msg_serial_out.seq);
+        uint8_t lost_packets_since_last = msg_serial_out.seq - (msg_serial_out_seq_last + 1);
+        link_in_missed_packets += lost_packets_since_last;
 
-    // allow crsf to capture it
-    crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
-  }
+        // allow crsf to capture it
+        crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
+    }
 }
 
 
 bool MavlinkBase::available(void)
 {
-  if (!serialport) return false;
+    if (!serialport) return false;
 
-  return serialport->available();
+    return serialport->available();
 }
 
 
 uint8_t MavlinkBase::getc(void)
 {
-  if (!serialport) return 0;
+    if (!serialport) return 0;
 
-  return serialport->getc();
+    return serialport->getc();
 }
 
 
 void MavlinkBase::flush(void)
 {
-  if (!serialport) return;
+    if (!serialport) return;
 
-  serialport->flush();
+    serialport->flush();
 }
 
 
 void MavlinkBase::send_msg_serial_out(void)
 {
-  if (!serialport) return;
+    if (!serialport) return;
 
-  uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
 
-  serialport->putbuf(_buf, len);
+    serialport->putbuf(_buf, len);
 }
 
 
@@ -150,27 +152,27 @@ void MavlinkBase::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
-  rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
-  remrssi = rssi_i8_to_ap(stats.received_rssi);
+    rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
+    remrssi = rssi_i8_to_ap(stats.received_rssi);
 
-  // we don't have a reasonable noise measurement, but can use this field to report on the snr
-  // the snr can be positive and negative however, so we artificially set snr = 10 to zero
-  int16_t snr = -stats.GetLastRxSnr() + 10;
-  noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
+    // we don't have a reasonable noise measurement, but can use this field to report on the snr
+    // the snr can be positive and negative however, so we artificially set snr = 10 to zero
+    int16_t snr = -stats.GetLastRxSnr() + 10;
+    noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
-  txbuf = 100;
+    txbuf = 100;
 // we do nothing, I'm not aware that GCSes respect this, and if so, it needs detailed investigation
 //  if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF && serialport) {
 //    txbuf = serial.rx_free_percent();
 //  }
 
-  fmav_msg_radio_status_pack(
-      &msg_serial_out,
-      RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
-      MAV_COMP_ID_TELEMETRY_RADIO,
-      rssi, remrssi, txbuf, noise, UINT8_MAX, (uint16_t)link_in_missed_packets, 0,
-      //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
-      &status_serial_out);
+    fmav_msg_radio_status_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
+        MAV_COMP_ID_TELEMETRY_RADIO,
+        rssi, remrssi, txbuf, noise, UINT8_MAX, (uint16_t)link_in_missed_packets, 0,
+        //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
+        &status_serial_out);
 }
 
 
