@@ -13,7 +13,7 @@
 
 #if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
 
-#include "..\Common\thirdparty.h"
+#include "..\Common\thirdparty\thirdparty.h"
 #include "jr_pin5_interface.h"
 #include "..\Common\crsf_protocol.h"
 #include "math.h"

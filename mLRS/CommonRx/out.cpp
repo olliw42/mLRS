@@ -10,7 +10,7 @@
 
 #include <string.h>
 #include "out.h"
-#include "..\Common\thirdparty.h"
+#include "..\Common\thirdparty\thirdparty.h"
 #include "..\Common\crsf_protocol.h"
 
 
