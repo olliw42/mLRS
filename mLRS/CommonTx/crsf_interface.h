@@ -242,7 +242,7 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 
   switch (state) {
   case STATE_IDLE:
-      if (c == CRSF_ADDRESS_MODULE) {
+      if (c == CRSF_ADDRESS_TRANSMITTER_MODULE) {
         cnt = 0;
         frame[cnt++] = c;
         state = STATE_RECEIVE_CRSF_LEN;
@@ -490,7 +490,7 @@ uint8_t crsf_cvt_power(int8_t power_dbm)
 }
 
 
-uint8_t crsf_cvt_mode(unt8_t mode)
+uint8_t crsf_cvt_mode(uint8_t mode)
 {
     if (mode == MODE_19HZ) return 19;
     if (mode == MODE_31HZ) return 31;
@@ -499,7 +499,7 @@ uint8_t crsf_cvt_mode(unt8_t mode)
 }
 
 
-uint8_t crsf_cvt_fps(unt8_t mode)
+uint8_t crsf_cvt_fps(uint8_t mode)
 {
     if (mode == MODE_19HZ) return 2; // *10 in OpenTx !
     if (mode == MODE_31HZ) return 3;

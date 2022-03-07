@@ -42,7 +42,7 @@ typedef enum {
   CRSF_ADDRESS_FLIGHT_CONTROLLER    = 0xC8,
   CRSF_ADDRESS_RADIO                = 0xEA, // radio module -> radio transmitter
   CRSF_ADDRESS_RECEIVER             = 0xEC,
-  CRSF_ADDRESS_MODULE               = 0xEE, // radio transmitter -> radio module
+  CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
 
   CRSF_SYNC_BYTE                    = 0xC8,
 } CRSF_ADDRESS_ENUM;
