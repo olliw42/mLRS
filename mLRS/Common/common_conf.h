@@ -94,6 +94,10 @@
 #define LQ_AVERAGING_MS                 1000
 
 
+#define RX_SERIAL_TXBUFSIZE             1024
+#define RX_SERIAL_RXBUFSIZE             1024
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
