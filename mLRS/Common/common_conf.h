@@ -95,7 +95,7 @@
 
 
 #define TX_SERIAL_TXBUFSIZE             512
-#define TX_SERIAL_RXBUFSIZE             512
+#define TX_SERIAL_RXBUFSIZE             2048 // MissionPlanner is really rude
 
 #define RX_SERIAL_TXBUFSIZE             1024
 #define RX_SERIAL_RXBUFSIZE             1024
