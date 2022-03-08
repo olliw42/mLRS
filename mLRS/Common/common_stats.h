@@ -68,6 +68,11 @@ class Stats {
         bytes_transmitted.Init();
         bytes_received.Init();
 
+        Clear();
+    }
+
+    void Clear(void) // called then not connected
+    {
         last_rx_rssi1 = RSSI_INVALID;
         last_rx_rssi2 = RSSI_INVALID;
         last_rx_snr1 = SNR_INVALID;
@@ -85,21 +90,6 @@ class Stats {
         received_seq_no_last = UINT8_MAX;
         received_ack_last = 0;
         retransmit_cnt = 0;
-    }
-
-    void Clear(void)
-    {
-        last_rx_rssi1 = RSSI_INVALID;
-        last_rx_rssi2 = RSSI_INVALID;
-        last_rx_snr1 = SNR_INVALID;
-        last_rx_snr2 = SNR_INVALID;
-        last_rx_antenna = UINT8_MAX;
-        last_tx_antenna = UINT8_MAX;
-
-        received_rssi = RSSI_INVALID;
-        received_LQ = 0; //UINT8_MAX;
-        received_antenna = UINT8_MAX;
-        received_transmit_antenna = UINT8_MAX;
     }
 
     void Update1Hz(void)
