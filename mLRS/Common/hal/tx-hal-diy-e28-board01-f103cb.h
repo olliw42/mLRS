@@ -32,10 +32,10 @@
 #define UARTB_USE_UART2 // serial
 #define UARTB_BAUD                SETUP_TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           512
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           512
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
 
 #define UARTC_USE_UART3 // debug
 #define UARTC_BAUD                115200

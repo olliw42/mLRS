@@ -94,6 +94,9 @@
 #define LQ_AVERAGING_MS                 1000
 
 
+#define TX_SERIAL_TXBUFSIZE             512
+#define TX_SERIAL_RXBUFSIZE             512
+
 #define RX_SERIAL_TXBUFSIZE             1024
 #define RX_SERIAL_RXBUFSIZE             1024
 
