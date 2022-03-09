@@ -107,7 +107,7 @@ void uart_rx_callback(uint8_t c)
 
 void uart_tc_callback(void)
 {
-    crsf.pin5_transmit_enable(false); // switches on rx
+    crsf.pin5_tx_enable(false); // switches on rx
     crsf.state = tPin5BridgeBase::STATE_IDLE;
 }
 
@@ -121,7 +121,7 @@ bool tTxCrsf::transmit_start(void)
         return false;
     }
 
-    pin5_transmit_enable(true); // switches of rx
+    pin5_tx_enable(true); // switches of rx
 
     for (uint8_t i = 0; i < tx_available; i++) {
         uint8_t c = tx_frame[i];

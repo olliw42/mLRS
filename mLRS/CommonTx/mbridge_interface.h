@@ -95,7 +95,7 @@ void uart_rx_callback(uint8_t c)
 
 void uart_tc_callback(void)
 {
-  mbridge.pin5_transmit_enable(false);
+  mbridge.pin5_tx_enable(false);
   mbridge.state = tPin5BridgeBase::STATE_IDLE;
 }
 
@@ -124,7 +124,7 @@ uint8_t available = 0;
       return false;
   }
 
-  pin5_transmit_enable(true);
+  pin5_tx_enable(true);
 
   state = STATE_TRANSMITING;
   return true;
