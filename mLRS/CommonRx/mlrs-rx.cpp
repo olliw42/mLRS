@@ -359,7 +359,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
   if (res) {
     DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
-dbg.puts("fail ");dbg.puts(u8toHEX_s(res)); dbg.puts(" ");
+dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
   }
 
   if (res == CHECK_ERROR_SYNCWORD) while(1) {}; // must not happen !
