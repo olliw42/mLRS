@@ -75,6 +75,26 @@ https://www.bundesnetzagentur.de Allgemeinzuteilungen/MobilfunkDectWlanCBFunk/20
 
 so use 2406.0 ... 2473.0  in 1MHz steps
 
+-------------------------------------------------------
+868 MHz band
+
+863.275 ... 869.575  in 0.525 MHz steps
+https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/FunkanlagenGeringerReichweite/2018_05_SRD_pdf.pdf?__blob=publicationFile&v=7
+862 - 870,
+863 - 870 is called SRD band
+this is not an ISM in EU
+we are not going to be legal anyhow
+
+-------------------------------------------------------
+433 MHz band
+
+ELRS
+AU: 433.420, 433.920, 434.420
+EU: 433.100, 433.925, 434.450
+
+wikipedia ISM EU: 433.050 ... 434.790 => whatever we do, we get at most 3 500kHz bands into it
+equal coverage => 433.36, 433.92, 434.48 (have a gap of 0.06 to each edge)
+
 
 -------------------------------------------------------
 Modules

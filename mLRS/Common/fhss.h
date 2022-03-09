@@ -30,13 +30,22 @@
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #endif
 
+#ifdef FREQUENCY_BAND_433_MHZ
+// 433.050 ... 434.790 in 0.506 MH steps
+
+const uint32_t fhss_freq_list[] = {
+    SX12XX_FREQ_MHZ_TO_REG(433.360),
+    SX12XX_FREQ_MHZ_TO_REG(433.920),
+    SX12XX_FREQ_MHZ_TO_REG(433.480),
+};
+
+const uint8_t fhss_bind_channel_list[] = {
+    0, // just pick some
+};
+
+#endif
 #ifdef FREQUENCY_BAND_868_MHZ
 // 863.275 ... 869.575  in 0.525 MHz steps
-// https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/FunkanlagenGeringerReichweite/2018_05_SRD_pdf.pdf?__blob=publicationFile&v=7
-// 862 - 870,
-// 863 - 870 is called SRD band
-// this is not an ISM in EU
-// we are not going to be legal anyhow
 
 const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(863.275),
@@ -55,14 +64,13 @@ const uint32_t fhss_freq_list[] = {
     // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
 };
 
-
 const uint8_t fhss_bind_channel_list[] = {
     0, // just pick some
 };
 
 #endif
 #ifdef FREQUENCY_BAND_915_MHZ_FCC
-// based on express LRS
+// based on ExpressLRS
 
 const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(903.5),
@@ -286,7 +294,6 @@ class FhssBase
     uint16_t prng(void);
     void generate(uint32_t seed);
 };
-
 
 
 #endif // FHSS_H
