@@ -13,7 +13,7 @@
 
 #include <inttypes.h>
 
-template <class T, int FIFO_SIZE>
+template <class T, uint16_t FIFO_SIZE>
 class FifoBase
 {
   public:

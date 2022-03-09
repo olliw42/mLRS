@@ -42,10 +42,6 @@ class MavlinkBase
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
 
-    // to count the number of missed mavlink packets received from link
-    uint32_t link_in_missed_packets;
-    ComponentList<64> component_list;
-
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
     uint32_t radio_status_tlast_ms;
@@ -62,9 +58,6 @@ void MavlinkBase::Init(void)
 
     inject_radio_status = false;
     radio_status_tlast_ms = millis32() + 1000;
-
-    link_in_missed_packets = 0;
-    component_list.Init();
 }
 
 
@@ -99,14 +92,6 @@ void MavlinkBase::putc(char c)
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
         send_msg_serial_out();
-
-        // we can use seq no. to detect missed mavlink packets
-        // but we need to track the seq no. for each component to do this
-        uint8_t idx = component_list.FindAndAdd(msg_serial_out.sysid, msg_serial_out.compid, (msg_serial_out.seq - 1));
-        uint8_t msg_serial_out_seq_last = component_list.GetSeq(idx);
-        component_list.SetSeq(idx, msg_serial_out.seq);
-        uint8_t lost_packets_since_last = msg_serial_out.seq - (msg_serial_out_seq_last + 1);
-        link_in_missed_packets += lost_packets_since_last;
 
         // allow crsf to capture it
         crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
@@ -170,7 +155,7 @@ uint8_t rssi, remrssi, txbuf, noise;
         &msg_serial_out,
         RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
         MAV_COMP_ID_TELEMETRY_RADIO,
-        rssi, remrssi, txbuf, noise, UINT8_MAX, (uint16_t)link_in_missed_packets, 0,
+        rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
 }
