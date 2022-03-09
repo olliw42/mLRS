@@ -51,20 +51,21 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
 
     // front end to communicate with mbridge
-    void putc(char c) { sx_rx_fifo.Put(c); }
-    void putbuf(void* buf, uint16_t len) { sx_rx_fifo.PutBuf(buf, len); }
-    bool available(void) { return sx_tx_fifo.Available(); }
-    char getc(void) { return sx_tx_fifo.Get(); }
-    void flush(void) { sx_tx_fifo.Flush(); }
+    // mimics a serial interface to the main code
+    void putc(char c) { tx_fifo.Put(c); }
+    void putbuf(void* buf, uint16_t len) { tx_fifo.PutBuf(buf, len); }
+    bool available(void) { return rx_fifo.Available(); }
+    char getc(void) { return rx_fifo.Get(); }
+    void flush(void) { rx_fifo.Flush(); }
 
     // backend
-    // mimics a serial interface to the main code, usually two fifo
-    void serial_putc(char c) { sx_tx_fifo.Put(c); }
-    bool serial_rx_available(void) { return sx_rx_fifo.Available(); }
-    char serial_getc(void) { return sx_rx_fifo.Get(); }
+    // fills/reads the fifo's with the mBridge uart
+    void serial_putc(char c) { rx_fifo.Put(c); }
+    bool serial_rx_available(void) { return tx_fifo.Available(); }
+    char serial_getc(void) { return tx_fifo.Get(); }
 
-    FifoBase<char,256> sx_tx_fifo;
-    FifoBase<char,256> sx_rx_fifo;
+    FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo;
+    FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo; // MissionPlanner is rude
 };
 
 tMBridge mbridge;
@@ -269,8 +270,8 @@ void tMBridge::Init(void)
   cmd_received = false;
   cmd_m2r_available = 0;
 
-  sx_tx_fifo.Init();
-  sx_rx_fifo.Init();
+  tx_fifo.Init();
+  rx_fifo.Init();
 }
 
 
