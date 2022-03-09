@@ -48,10 +48,11 @@ class tPin5BridgeBase
     void Init(void);
 
     // interface to the uart hardware peripheral used for the bridge
-    void transmit_enable(bool enable_flag);
-    bool mb_rx_available(void) { return uart_rx_available(); }
-    char mb_getc(void) { return uart_getc(); }
-    void mb_putc(char c) { uart_putc_tobuf(c); }
+    void pin5_transmit_enable(bool enable_flag);
+    //bool pin5_rx_available(void) { return uart_rx_available(); }
+    //char pin5_getc(void) { return uart_getc(); }
+    void pin5_tx_start(void) { uart_tx_start(); }
+    void pin5_putc(char c) { uart_putc_tobuf(c); }
 
     // for in-isr processing
     virtual void parse_nextchar(uint8_t c, uint16_t tnow_us);
@@ -107,7 +108,7 @@ void tPin5BridgeBase::Init(void)
   LL_USART_Enable(JRPIN5_UARTx);
 #endif
 
-  transmit_enable(false);
+  pin5_transmit_enable(false);
 
   state = STATE_IDLE;
   len = 0;
@@ -116,7 +117,7 @@ void tPin5BridgeBase::Init(void)
 };
 
 
-void tPin5BridgeBase::transmit_enable(bool enable_flag)
+void tPin5BridgeBase::pin5_transmit_enable(bool enable_flag)
 {
   if (enable_flag) {
       uart_rx_enableisr(DISABLE);

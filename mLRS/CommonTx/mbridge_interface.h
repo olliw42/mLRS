@@ -86,7 +86,7 @@ void uart_rx_callback(uint8_t c)
   mbridge.parse_nextchar(c, tnow_us);
 
   if (mbridge.transmit_start()) {
-      uart_tx_start();
+      mbridge.pin5_tx_start();
   }
 
   LED_RIGHT_GREEN_OFF;
@@ -95,7 +95,7 @@ void uart_rx_callback(uint8_t c)
 
 void uart_tc_callback(void)
 {
-  mbridge.transmit_enable(false);
+  mbridge.pin5_transmit_enable(false);
   mbridge.state = tPin5BridgeBase::STATE_IDLE;
 }
 
@@ -124,7 +124,7 @@ uint8_t available = 0;
       return false;
   }
 
-  transmit_enable(true);
+  pin5_transmit_enable(true);
 
   state = STATE_TRANSMITING;
   return true;
@@ -140,10 +140,10 @@ uint8_t tMBridge::send_serial(void)
       payload[count++] = serial_getc();
   }
   if (count > 0) {
-      mb_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
+      pin5_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
       for (uint8_t i = 0; i < count; i++) {
           uint8_t c = payload[i];
-          mb_putc(c);
+          pin5_putc(c);
       }
   }
   return count;
@@ -154,7 +154,7 @@ void tMBridge::send_command(void)
 {
   for (uint8_t i = 0; i < cmd_m2r_available; i++) {
       uint8_t c = cmd_m2r_frame[i];
-      mb_putc(c);
+      pin5_putc(c);
   }
 }
 

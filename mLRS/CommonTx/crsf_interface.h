@@ -98,7 +98,7 @@ void uart_rx_callback(uint8_t c)
     crsf.parse_nextchar(c, tnow_us);
 
     if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        uart_tx_start();
+        crsf.pin5_tx_start();
     }
 
     LED_RIGHT_GREEN_OFF;
@@ -107,7 +107,7 @@ void uart_rx_callback(uint8_t c)
 
 void uart_tc_callback(void)
 {
-    crsf.transmit_enable(false); // switches on rx
+    crsf.pin5_transmit_enable(false); // switches on rx
     crsf.state = tPin5BridgeBase::STATE_IDLE;
 }
 
@@ -121,11 +121,11 @@ bool tTxCrsf::transmit_start(void)
         return false;
     }
 
-    transmit_enable(true); // switches of rx
+    pin5_transmit_enable(true); // switches of rx
 
     for (uint8_t i = 0; i < tx_available; i++) {
         uint8_t c = tx_frame[i];
-        mb_putc(c);
+        pin5_putc(c);
     }
 
     tx_available = 0;
