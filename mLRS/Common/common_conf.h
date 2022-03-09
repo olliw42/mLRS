@@ -52,7 +52,7 @@
 
 #define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
 
-#define SETUP_RX_SERIAL_BAUDRATE        57600 // 9600: makes MissionPlanner 'work' in 19Hz mode, keeps traffic below 1000 bytes/sec, obviously with high latency
+#define SETUP_RX_SERIAL_BAUDRATE        57600
 
 #define SETUP_RX_POWER                  POWER
 
