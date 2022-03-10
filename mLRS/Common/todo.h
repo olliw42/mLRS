@@ -24,7 +24,7 @@ The 3 MAIN topics TODO:
 2) Parameters, usability
 - parameters instead of compile defines wherever possible
 - parameter synchronization between tx and rx upon first connection
-- some way for users to adjust parameters (cli? lua?)
+- some way for users to adjust parameters (cli? lua? mavlink?)
 - bind phase
 - firmware update: via connection to USB on tx module, for receiver ota-passthrough
 

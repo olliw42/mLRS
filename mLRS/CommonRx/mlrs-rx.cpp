@@ -222,6 +222,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
         if (!serial.available()) break; // get from serial
         payload[payload_len] = serial.getc();
       }
+//dbg.putc(payload[payload_len]);
       payload_len++;
     }
 
@@ -279,6 +280,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
       } else {
         serial.putc(c); // send to serial
       }
+//dbg.putc(c);
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -436,10 +438,6 @@ int main_main(void)
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
   sx2.SetRfFrequency(fhss.GetCurrFreq());
-
-//  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-//    dbg.puts("c = ");dbg.puts(u8toBCD_s(fhss.ch_list[i]));dbg.puts(" f = ");dbg.puts(u32toBCD_s(fhss.fhss_list[i]));dbg.puts("\n"); delay_ms(50);
-//  }
 
   link_state = LINK_STATE_RECEIVE;
   connect_state = CONNECT_STATE_LISTEN;

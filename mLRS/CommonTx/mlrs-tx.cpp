@@ -276,6 +276,7 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
           if (!serialport->available()) break; // get from serial port
           payload[payload_len] = serialport->getc();
         }
+//dbg.putc(payload[payload_len]);
         payload_len++;
       }
     }
@@ -327,6 +328,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
       } else {
         serialport->putc(c);
       }
+//dbg.putc(c);
     }
   }
 
@@ -479,10 +481,6 @@ int main_main(void)
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
   sx2.SetRfFrequency(fhss.GetCurrFreq());
-
-//  for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-//    dbg.puts("c = ");dbg.puts(u8toBCD_s(fhss.ch_list[i]));dbg.puts(" f = ");dbg.puts(u32toBCD_s(fhss.fhss_list[i]));dbg.puts("\n"); delay_ms(50);
-//  }
 
   tx_tick = 0;
   doPreTransmit = false;
