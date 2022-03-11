@@ -219,7 +219,7 @@ if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
     }
 
-    bytes_serial_in = 0; // reset, to restart measurement
+    bytes_serial_in = 0; // reset, to restart rate measurement
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,

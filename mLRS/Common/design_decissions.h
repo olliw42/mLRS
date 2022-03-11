@@ -524,7 +524,7 @@ old 0..2047 = +-100% scaling:
             ch4-ch13:   0 .. 128 .. 255, 8 bits
             ch14-ch17:  0..1, 1 bit
 
- let's convert the full range to +-100% or 200..1000..1800:
+ let's convert the full range to +-100% or 200 ... 1000 ... 1800:
  sbus =  ch * 1600 / 2048 + 200 for 11 bits
          ch * 1600 / 256 + 200 for 8 bits
 
@@ -533,16 +533,17 @@ old 0..2047 = +-100% scaling:
          ch * 1600 / 256 + 200 for 8 bits
 
  Ardupilot:
- translates sbus values 200..1000..1800 into pwm values 1000..1500..2000 us
+ https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_SBUS.cpp#L118-L119
+ translates sbus values 200 ... 1000 ... 1800 into pwm values 1000 ... 1500 ... 2000 us
  => pwm = sbus * 500 / 800 + 875
     sbus = (pwm - 875) * 800 / 500 = pwm * 800 / 500 - 1400
- thus, if we scale sbus to 200..1800 we get 1000..2000 us on ardupilot
+ thus, if we scale sbus to 200 ... 1800 we get 1000 ... 2000 us on ardupilot
 
  when selecting SBUS external module and connecting JRpin1 to ArduPilot, we get
- 983 ... 1495 .. 2006
+ 983 ... 1495 ... 2006
 
- opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024...1023
- => sbus values = 173..992..1811
+ opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024 ... 1023
+ => sbus values = 173 ... 992 ... 1811
 
 
 -------------------------------------------------------

@@ -37,16 +37,16 @@
 #define MBRIDGE_STX1                          'O'
 #define MBRIDGE_STX2                          'W'
 
-#define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when received from transmitter
-#define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX    24 // up to 26 bytes payload when send from module to transmitter
+#define MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX    24 // up to 24 bytes payload when received from transmitter
+#define MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX    24 // up to 24 bytes payload when send from module to transmitter
 
 #define MBRIDGE_CHANNELPACKET_SIZE            23 // 23 bytes payload, only received from transmitter
 
-#define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
-#define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN_MAX   24 // 26 bytes payload
+#define MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX   24 // 24 bytes payload
+#define MBRIDGE_M2R_COMMAND_PAYLOAD_LEN_MAX   24 // 24 bytes payload
 
-#define MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 26 bytes payload
-#define MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 26 bytes payload
+#define MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 24 bytes payload
+#define MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX     25 // cmd byte + 24 bytes payload
 
 
 typedef enum {

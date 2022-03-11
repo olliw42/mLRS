@@ -68,7 +68,7 @@ void MavlinkBase::Do(void)
     if (!connected()) {
         //Init();
         inject_radio_status = false;
-          radio_status_tlast_ms = millis32() + 1000;
+        radio_status_tlast_ms = millis32() + 1000;
     }
 
     if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
