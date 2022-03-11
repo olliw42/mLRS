@@ -144,6 +144,7 @@ typedef struct
   uint16_t Diversity;
   uint16_t ChannelOrder;
   uint16_t OutMode;
+  uint16_t OutRssiChannel;
   uint16_t FailsafeMode;
   uint16_t SerialBaudrate_bytespersec; // baudrate / 10
   uint16_t SerialLinkMode;

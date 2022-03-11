@@ -34,6 +34,7 @@ void setup_default(void)
   Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
   Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
   Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
+  Setup.Rx.OutRssiChannel = SETUP_RX_OUT_RSSI_CHANNEL;
   Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
   Setup.Rx.SerialBaudrate_bytespersec = (SETUP_RX_SERIAL_BAUDRATE / 10);
   Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
@@ -88,6 +89,9 @@ void setup_sanitize(void)
 #ifdef DEVICE_HAS_SX127x
   Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
 #endif
+
+  if ((Setup.Rx.OutRssiChannel > 0) && (Setup.Rx.OutRssiChannel < 5)) Setup.Rx.OutRssiChannel = 0;
+  if (Setup.Rx.OutRssiChannel > 16) Setup.Rx.OutRssiChannel = 0;
 }
 
 

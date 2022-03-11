@@ -43,7 +43,7 @@ class OutBase
   public:
     void Init(void);
 
-    void Configure(uint8_t new_config);
+    void Configure(uint8_t new_config, uint8_t new_rssi_channel);
 
     void Do(uint16_t tnow_us);
 
@@ -74,6 +74,9 @@ class OutBase
     bool link_stats_set_tstart;
     uint16_t link_stats_tstart_us;
     tOutLinkStats link_stats;
+
+    uint8_t rssi_channel;
+    int8_t receiver_rssi;
 };
 
 

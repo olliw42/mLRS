@@ -24,11 +24,17 @@ void OutBase::Init(void)
     link_stats_available = false;
     link_stats_set_tstart = false;
     link_stats_tstart_us = 0;
+
+    rssi_channel = 0;
+    receiver_rssi = RSSI_MIN;
 }
 
 
-void OutBase::Configure(uint8_t new_config)
+void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel)
 {
+    rssi_channel = new_rssi_channel;
+    if (rssi_channel <= RC_DATE_LEN) rssi_channel = 0;
+
     if (new_config == config) return;
 
     // first disable the previous setting
@@ -111,6 +117,9 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 
     switch (config) {
     case OUT_CONFIG_SBUS:
+        if (rssi_channel) {
+          rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(receiver_rssi);
+        }
         send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;
     case OUT_CONFIG_CRSF:
@@ -120,13 +129,16 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 }
 
 
-void OutBase::SendLinkStatistics(tOutLinkStats* stats)
+void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
 {
+    receiver_rssi = (lstats->receiver_antenna == ANTENNA_1) ? lstats->receiver_rssi1 : lstats->receiver_rssi2;
+
     switch (config) {
-    case OUT_CONFIG_SBUS: // nothing to spin
+    case OUT_CONFIG_SBUS:
+        // nothing to send
         break;
     case OUT_CONFIG_CRSF:
-        memcpy(&link_stats, stats, sizeof(tOutLinkStats));
+        memcpy(&link_stats, lstats, sizeof(tOutLinkStats));
         link_stats_available = true;
         link_stats_set_tstart = true;
         break;
@@ -283,18 +295,18 @@ tCrsfChannelBuffer crsf_buf;
 
 void OutBase::send_crsf_linkstatistics(tOutLinkStats* stats)
 {
-tCrsfLinkStatistics lstats;
+tCrsfLinkStatistics clstats;
 
-    lstats.uplink_rssi1 = -stats->receiver_rssi1;
-    lstats.uplink_rssi2 = -stats->receiver_rssi2;
-    lstats.uplink_LQ = stats->receiver_LQ;
-    lstats.uplink_snr = stats->receiver_snr;
-    lstats.active_antenna = stats->receiver_antenna;
-    lstats.mode = 4; // unknown
-    lstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
-    lstats.downlink_rssi = -stats->transmitter_rssi;
-    lstats.downlink_LQ = stats->transmitter_LQ;
-    lstats.downlink_snr = stats->transmitter_snr;
+    clstats.uplink_rssi1 = -stats->receiver_rssi1;
+    clstats.uplink_rssi2 = -stats->receiver_rssi2;
+    clstats.uplink_LQ = stats->receiver_LQ;
+    clstats.uplink_snr = stats->receiver_snr;
+    clstats.active_antenna = stats->receiver_antenna;
+    clstats.mode = 4; // unknown
+    clstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
+    clstats.downlink_rssi = -stats->transmitter_rssi;
+    clstats.downlink_LQ = stats->transmitter_LQ;
+    clstats.downlink_snr = stats->transmitter_snr;
 
     uint8_t crc = 0;
 
@@ -304,8 +316,8 @@ tCrsfLinkStatistics lstats;
     putc(CRSF_FRAME_ID_LINK_STATISTICS);
     crc = crc8_calc(crc, CRSF_FRAME_ID_LINK_STATISTICS, 0xD5);
 
-    putbuf((uint8_t*)&lstats, CRSF_LINK_STATISTICS_LEN);
-    crc = crc8_update(crc, &lstats, CRSF_LINK_STATISTICS_LEN, 0xD5);
+    putbuf((uint8_t*)&clstats, CRSF_LINK_STATISTICS_LEN);
+    crc = crc8_update(crc, &clstats, CRSF_LINK_STATISTICS_LEN, 0xD5);
 
     putc(crc);
 }

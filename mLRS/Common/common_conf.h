@@ -62,6 +62,8 @@
 
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS, 2: RADIO_STATUS w txbuf flow control
 
+#define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 12: CH12, note: CH13 - CH16 are 3-way and not suitable
+
 
 #define BIND_DBLWORD                    0x12344281
 

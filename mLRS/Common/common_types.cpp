@@ -66,3 +66,18 @@ uint8_t rssi_i8_to_ap(int8_t rssi_i8)
 
   return (r * 254 + m/2) / m;
 }
+
+
+//   -120 ... -50 -> 172 .. 1877
+uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
+{
+  if (rssi_i8 == RSSI_INVALID) return 0;
+  if (rssi_i8 > -50) return 1877; // max value
+  if (rssi_i8 < -120) return 172; // min value
+
+  int32_t r = (int32_t)rssi_i8 - (-120);
+  constexpr int32_t m = (int32_t)(-50) - (-120);
+
+  return (r * 1705 + m/2) / m + 172;
+}
+

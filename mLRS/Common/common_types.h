@@ -106,6 +106,7 @@ typedef enum : int8_t {
 uint8_t rssi_u7_from_i8(int8_t rssi_i8);
 int8_t rssi_i8_from_u7(uint8_t rssi_u7);
 uint8_t rssi_i8_to_ap(int8_t rssi_i8);
+uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
 
 
 //-- auxiliary functions
