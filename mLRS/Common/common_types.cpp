@@ -54,6 +54,7 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 //   rssi = rssi_SiK;
 //
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
+//   -120 ... -50 -> 0 .. 254
 uint8_t rssi_i8_to_ap(int8_t rssi_i8)
 {
   if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
@@ -61,7 +62,7 @@ uint8_t rssi_i8_to_ap(int8_t rssi_i8)
   if (rssi_i8 < -120) return 0;
 
   int32_t r = (int32_t)rssi_i8 - (-120);
-  int32_t m = (int32_t)(-50) - (-120);
+  constexpr int32_t m = (int32_t)(-50) - (-120);
 
-  return (100 * r + 49) / m;
+  return (r * 254 + m/2) / m;
 }
