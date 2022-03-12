@@ -39,7 +39,6 @@ TODO:
 - effect of USE_DCDC? where to place it??
 
 - RX side sbus/sbus-fast/sbus-inverted ppm?  (diversity possible on ArduPilot?)
-- RX side failsafe behaviors
 - USB on TX side
 
 Longterm TODO:

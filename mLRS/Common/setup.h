@@ -36,6 +36,7 @@ void setup_default(void)
   Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
   Setup.Rx.OutRssiChannel = SETUP_RX_OUT_RSSI_CHANNEL;
   Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
+  for (uint8_t ch = 0; ch < 16; ch++) { Setup.Rx.FailsafeOutChannelValues[ch] = 1024; }
   Setup.Rx.SerialBaudrate_bytespersec = (SETUP_RX_SERIAL_BAUDRATE / 10);
   Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
   Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
@@ -90,8 +91,14 @@ void setup_sanitize(void)
   Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
 #endif
 
+  if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
+
   if ((Setup.Rx.OutRssiChannel > 0) && (Setup.Rx.OutRssiChannel < 5)) Setup.Rx.OutRssiChannel = 0;
   if (Setup.Rx.OutRssiChannel > 16) Setup.Rx.OutRssiChannel = 0;
+
+  for (uint8_t ch = 0; ch < 16; ch++) {
+    if (Setup.Rx.FailsafeOutChannelValues[ch] > 2047) Setup.Rx.FailsafeOutChannelValues[ch] = 1024;
+  }
 }
 
 

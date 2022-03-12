@@ -89,7 +89,10 @@ typedef enum {
 
 typedef enum {
   FAILSAFE_MODE_NO_SIGNAL = 0,
-  FAILSAFE_MODE_CH1CH4_CENTER_SIGNAL,
+  FAILSAFE_MODE_LOW_THROTTLE,
+  FAILSAFE_MODE_AS_CONFIGURED,
+  FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER,
+  FAILSAFE_MODE_CH1CH4_CENTER,
   FAILSAFE_MODE_NUM,
 } RX_FAILSAFE_MODE_ENUM;
 
@@ -146,6 +149,7 @@ typedef struct
   uint16_t OutMode;
   uint16_t OutRssiChannel;
   uint16_t FailsafeMode;
+  uint16_t FailsafeOutChannelValues[16];
   uint16_t SerialBaudrate_bytespersec; // baudrate / 10
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;

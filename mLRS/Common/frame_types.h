@@ -66,12 +66,12 @@ typedef struct
 
 //-- Tx Frames ----------
 
-#define RC_DATE_LEN  18
+#define RC_DATA_LEN  18
 
 
 typedef struct
 {
-  uint16_t ch[RC_DATE_LEN]; // 0 .. 1024 .. 2047, 11 bits
+  uint16_t ch[RC_DATA_LEN]; // 0 .. 1024 .. 2047, 11 bits
 } tRcData;
 
 

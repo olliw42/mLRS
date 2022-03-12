@@ -64,7 +64,7 @@ class Out : public OutBase
 public:
   void Init(void)
   {
-    OutBase::Init();
+    OutBase::Init(&Setup.Rx);
     out_init_gpio();
     uart_init_isroff();
   }
@@ -450,7 +450,7 @@ int main_main(void)
 
   rxstats.Init(Config.LQAveragingPeriod);
 
-  out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannel);
+  out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannel, Setup.Rx.FailsafeMode);
   mavlink.Init();
 
   led_blink = 0;
@@ -751,18 +751,10 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         out.SendRcData(&rcData, frame_missed, false);
         out.SendLinkStatistics();
       } else {
-        switch (Setup.Rx.FailsafeMode) {
-        case FAILSAFE_MODE_CH1CH4_CENTER_SIGNAL:
-          if (connect_occured_once) {
-            tRcData rc;
-            memcpy(&rc, &rcData, sizeof(tRcData));
-            for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024;
-            out.SendRcData(&rc, true, true);
-          }
-          break;
-        //default:
-          // no signal, so do nothing
-        };
+        if (connect_occured_once) {
+          // generally output a signal only if we had a connection at least once
+          out.SendRcData(&rcData, true, true);
+        }
         if (connect_occured_once) {
           out.SendLinkStatisticsDisconnected();
         }

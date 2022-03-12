@@ -54,9 +54,10 @@ Rssi output
 -------------------------------------------------------
 failsafe modes
 1) no out signal
-2) always out signal, but with values set to pre-defined failsafe values
-3) always out signal, but with values set to defaults (such as thr = 800, r,p,y = center, ...)
-4) always out signal, but with values which makes the vehicle to hover
+2) always out signal, but low throttle
+3) always out signal, but with values set to pre-defined failsafe values
+4) always out signal, but with values set to defaults (such as thr = 800, r,p,y = center, ...)
+5) always out signal, but with values which makes the vehicle to hover !?!?
 
 
 -------------------------------------------------------
@@ -485,6 +486,17 @@ LINK_STATISTICS:
 https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
 Note: in 4.2 it also will handle LINK_STATISTICS_RX and LINK_STATISTICS_TX,
 and each will overwrite any previous rssi, so be careful with what one really wants to do
+
+
+-------------------------------------------------------
+Channel ordering
+
+the order of the channels on the air is always AETR
+comment: this is required since otherwise there is no chance to figure out easily what throttle is
+
+thus:
+on the transmitter the signals are ordered on input such that they are AETR on the air
+on the receiver the air channels reorder to the desired order upon output
 
 
 -------------------------------------------------------

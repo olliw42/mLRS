@@ -14,7 +14,7 @@
 #include "..\Common\crsf_protocol.h"
 
 
-void OutBase::Init(void)
+void OutBase::Init(tRxSetup* _setup)
 {
     config = UINT8_MAX;
     channel_order = UINT8_MAX;
@@ -27,13 +27,18 @@ void OutBase::Init(void)
 
     rssi_channel = 0;
     receiver_rssi = RSSI_MIN;
+
+    setup = _setup;
 }
 
 
-void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel)
+void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t new_failsafe_mode)
 {
     rssi_channel = new_rssi_channel;
-    if (rssi_channel <= RC_DATE_LEN) rssi_channel = 0;
+    if (rssi_channel <= RC_DATA_LEN) rssi_channel = 0;
+
+    failsafe_mode = new_failsafe_mode;
+    if (failsafe_mode >= FAILSAFE_MODE_NUM) failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
 
     if (new_config == config) return;
 
@@ -106,13 +111,47 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
         rc.ch[n] = rc_orig->ch[channel_map[n]];
     }
 
+    if (failsafe) {
+        switch (failsafe_mode) {
+        case FAILSAFE_MODE_NO_SIGNAL:
+            // we do not output anything, so jump out
+            return;
+        case FAILSAFE_MODE_LOW_THROTTLE:
+            // do below
+            break;
+        case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
+            // do the centering here, throttle is set below
+            for (uint8_t n = 0; n < RC_DATA_LEN; n++) rc.ch[n] = 1024;
+            break;
+        case FAILSAFE_MODE_AS_CONFIGURED:
+            for (uint8_t n = 0; n < 16; n++) rc.ch[n] = setup->FailsafeOutChannelValues[n];
+            break;
+
+        case FAILSAFE_MODE_CH1CH4_CENTER:
+            for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024; // center all four
+            break;
+        default:
+            // should not happen, but play it safe, do not output anything, so jump out
+            return;
+        }
+    }
+
     // mimic spektrum
     // 1090 ... 1515  ... 1940
     // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
     uint32_t t = 85*2048;
-    for (uint8_t n = 0; n < RC_DATE_LEN; n++) {
+    for (uint8_t n = 0; n < RC_DATA_LEN; n++) {
         uint32_t xs = 850 * rc.ch[n];
         rc.ch[n] = (xs + t) / 1000;
+    }
+
+    if (failsafe) {
+        switch (failsafe_mode) {
+        case FAILSAFE_MODE_LOW_THROTTLE:
+        case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
+            rc.ch[channel_map[2]] = 0; // that's the minimum we can send, gives 905 on ArduPilot
+            break;
+        }
     }
 
     switch (config) {

@@ -50,7 +50,7 @@
 
 #define SETUP_RX_OUT_MODE               1 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF
 
-#define SETUP_RX_FAILSAFE_MODE          1 // 0: no signal 1: CH1-CH4 center signal
+#define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: low throttle, 4: CH1-CH4 center signal
 
 #define SETUP_RX_SERIAL_BAUDRATE        57600
 
@@ -104,11 +104,6 @@
 
 #define RX_SERIAL_TXBUFSIZE             1024
 #define RX_SERIAL_RXBUFSIZE             1024
-
-
-//-------------------------------------------------------
-// Derived Defines
-//-------------------------------------------------------
 
 
 #endif // COMMON_CONFIG_H

@@ -41,9 +41,9 @@ typedef struct
 class OutBase
 {
   public:
-    void Init(void);
+    void Init(tRxSetup* _setup);
 
-    void Configure(uint8_t new_config, uint8_t new_rssi_channel);
+    void Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t new_failsafe_mode);
 
     void Do(uint16_t tnow_us);
 
@@ -65,6 +65,7 @@ class OutBase
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_crsf(bool enable_flag) { return false; }
 
+    tRxSetup* setup;
     uint8_t config;
     uint8_t channel_order;
     uint8_t channel_map[4];
@@ -77,6 +78,8 @@ class OutBase
 
     uint8_t rssi_channel;
     int8_t receiver_rssi;
+
+    uint8_t failsafe_mode;
 };
 
 
