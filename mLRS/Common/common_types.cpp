@@ -8,6 +8,8 @@
 //*******************************************************
 
 #include "common_types.h"
+#include "setup_types.h"
+#include "crsf_protocol.h"
 
 
 uint16_t clip_rc(int32_t x)
@@ -80,4 +82,44 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 
   return (r * 1705 + m/2) / m + 172;
 }
+
+
+uint8_t crsf_cvt_power(int8_t power_dbm)
+{
+    if (power_dbm <= 3) return CRSF_POWER_0_mW; // 0 dBm
+    if (power_dbm <= 12) return CRSF_POWER_10_mW; // 10 dBm
+    if (power_dbm <= 15) return CRSF_POWER_25_mW; // 14 dBm
+    if (power_dbm <= 18) return CRSF_POWER_50_mW; // 17 dBm
+    if (power_dbm <= 22) return CRSF_POWER_100_mW; // 20 dBm
+    if (power_dbm <= 25) return CRSF_POWER_250_mW; // 24 dBm
+    if (power_dbm <= 28) return CRSF_POWER_500_mW; // 27 dBm
+    if (power_dbm <= 31) return CRSF_POWER_1000_mW; // 30 dBm
+    if (power_dbm <= 33) return CRSF_POWER_2000_mW; // 33 dBm
+    return UINT8_MAX; // makes it red in otx
+}
+
+
+uint8_t crsf_cvt_mode(uint8_t mode)
+{
+    if (mode == MODE_19HZ) return 19;
+    if (mode == MODE_31HZ) return 31;
+    if (mode == MODE_50HZ) return CRSF_RFMODE_50HZ;
+    return UINT8_MAX;
+}
+
+uint8_t crsf_cvt_fps(uint8_t mode)
+{
+    if (mode == MODE_19HZ) return 2; // *10 in OpenTx !
+    if (mode == MODE_31HZ) return 3;
+    if (mode == MODE_50HZ) return 5;
+    return UINT8_MAX;
+}
+
+
+uint8_t crsf_cvt_rssi(int8_t rssi_i8)
+{
+    if (rssi_i8 == RSSI_INVALID) return 0;
+    return -rssi_i8;
+}
+
 

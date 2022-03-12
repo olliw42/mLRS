@@ -109,6 +109,14 @@ uint8_t rssi_i8_to_ap(int8_t rssi_i8);
 uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
 
 
+//-- crsf
+
+uint8_t crsf_cvt_power(int8_t power_dbm);
+uint8_t crsf_cvt_mode(uint8_t mode);
+uint8_t crsf_cvt_fps(uint8_t mode);
+uint8_t crsf_cvt_rssi(int8_t rssi_i8);
+
+
 //-- auxiliary functions
 
 // clip a value for rcData to range
