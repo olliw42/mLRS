@@ -119,14 +119,13 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
         case FAILSAFE_MODE_LOW_THROTTLE:
             // do below
             break;
+        case FAILSAFE_MODE_AS_CONFIGURED:
+            for (uint8_t n = 0; n < 16; n++) rc.ch[n] = setup->FailsafeOutChannelValues[n];
+            break;
         case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
             // do the centering here, throttle is set below
             for (uint8_t n = 0; n < RC_DATA_LEN; n++) rc.ch[n] = 1024;
             break;
-        case FAILSAFE_MODE_AS_CONFIGURED:
-            for (uint8_t n = 0; n < 16; n++) rc.ch[n] = setup->FailsafeOutChannelValues[n];
-            break;
-
         case FAILSAFE_MODE_CH1CH4_CENTER:
             for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024; // center all four
             break;
@@ -150,6 +149,12 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
         case FAILSAFE_MODE_LOW_THROTTLE:
         case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
             rc.ch[channel_map[2]] = 0; // that's the minimum we can send, gives 905 on ArduPilot
+            break;
+        case FAILSAFE_MODE_CH1CH4_CENTER:
+            // in this mode do not let sbus report bad signal
+            // it's a bit an ArduPilot thing, could be achieved by setting RC_OPTIONS 4
+            frame_lost = false;
+            failsafe = false;
             break;
         }
     }

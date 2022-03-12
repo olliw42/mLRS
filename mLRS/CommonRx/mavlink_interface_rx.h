@@ -174,8 +174,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,
-        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
-        MAV_COMP_ID_TELEMETRY_RADIO,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, SiK uses 51, 68
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
