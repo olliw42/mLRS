@@ -47,6 +47,9 @@ void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t ne
     case OUT_CONFIG_SBUS:
         config_sbus(false);
         break;
+    case OUT_CONFIG_SBUS_INVERTED:
+        config_sbus_inverted(false);
+        break;
     case OUT_CONFIG_CRSF:
         config_crsf(false);
         break;
@@ -60,6 +63,9 @@ void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t ne
     case OUT_CONFIG_SBUS:
         initialized = config_sbus(true);
         break;
+    case OUT_CONFIG_SBUS_INVERTED:
+        initialized = config_sbus_inverted(true);
+        break;
     case OUT_CONFIG_CRSF:
         initialized = config_crsf(true);
         break;
@@ -72,7 +78,9 @@ void OutBase::Do(uint16_t tnow_us)
     if (!initialized) return;
 
     switch (config) {
-    case OUT_CONFIG_SBUS: // nothing to spin
+    case OUT_CONFIG_SBUS:
+    case OUT_CONFIG_SBUS_INVERTED:
+        // nothing to do
         break;
     case OUT_CONFIG_CRSF:
         do_crsf(tnow_us);
@@ -161,6 +169,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 
     switch (config) {
     case OUT_CONFIG_SBUS:
+    case OUT_CONFIG_SBUS_INVERTED:
         if (rssi_channel) {
           rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(receiver_rssi);
         }
@@ -179,6 +188,7 @@ void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
 
     switch (config) {
     case OUT_CONFIG_SBUS:
+    case OUT_CONFIG_SBUS_INVERTED:
         // nothing to send
         break;
     case OUT_CONFIG_CRSF:
@@ -194,6 +204,7 @@ void OutBase::SendLinkStatisticsDisconnected(void)
 {
     switch (config) {
     case OUT_CONFIG_SBUS:
+    case OUT_CONFIG_SBUS_INVERTED:
         break;
     case OUT_CONFIG_CRSF:
         link_stats.receiver_rssi1 = RSSI_MIN;

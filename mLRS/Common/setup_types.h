@@ -83,6 +83,7 @@ typedef enum {
 typedef enum {
   OUT_CONFIG_SBUS = 0,
   OUT_CONFIG_CRSF,
+  OUT_CONFIG_SBUS_INVERTED,
   OUT_CONFIG_NUM,
 } RX_OUT_CONFIG_ENUM;
 

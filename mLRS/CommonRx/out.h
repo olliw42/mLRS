@@ -66,6 +66,7 @@ class OutBase
     virtual void putc(char c);
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_crsf(bool enable_flag) { return false; }
+    virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
     tRxSetup* setup;
     uint8_t config;

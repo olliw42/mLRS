@@ -78,6 +78,15 @@ public:
     return true;
   }
 
+  bool config_sbus_inverted(bool enable_flag) override
+  {
+    if (enable_flag) {
+      uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+      out_set_normal();
+    }
+    return true;
+  }
+
   bool config_crsf(bool enable_flag) override
   {
     if (enable_flag) {
