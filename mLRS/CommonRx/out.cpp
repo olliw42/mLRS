@@ -197,7 +197,7 @@ void OutBase::SendLinkStatisticsDisconnected(void)
         link_stats.receiver_snr = 0;
         link_stats.receiver_antenna = 0;
         link_stats.receiver_transmit_antenna = 0;
-        link_stats.receiver_power = 0;
+        link_stats.receiver_power_dbm = 0;
         link_stats.transmitter_rssi = RSSI_MIN;
         link_stats.transmitter_LQ = 0;
         link_stats.transmitter_snr = 0;
@@ -332,20 +332,28 @@ tCrsfChannelBuffer crsf_buf;
 }
 
 
-void OutBase::send_crsf_linkstatistics(tOutLinkStats* stats)
+void OutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
 {
 tCrsfLinkStatistics clstats;
 
-    clstats.uplink_rssi1 = -stats->receiver_rssi1;
-    clstats.uplink_rssi2 = -stats->receiver_rssi2;
-    clstats.uplink_LQ = stats->receiver_LQ;
-    clstats.uplink_snr = stats->receiver_snr;
-    clstats.active_antenna = stats->receiver_antenna;
-    clstats.mode = 4; // unknown
-    clstats.uplink_transmit_power = CRSF_POWER_0_mW; // TODO
-    clstats.downlink_rssi = -stats->transmitter_rssi;
-    clstats.downlink_LQ = stats->transmitter_LQ;
-    clstats.downlink_snr = stats->transmitter_snr;
+    if (lstats->antenna_config == 3) {
+        clstats.uplink_rssi1 = crsf_cvt_rssi(lstats->receiver_rssi1);
+        clstats.uplink_rssi2 = crsf_cvt_rssi(lstats->receiver_rssi2);
+    } else  if (lstats->antenna_config == 2) {
+        clstats.uplink_rssi1 = 255;
+        clstats.uplink_rssi2 = crsf_cvt_rssi(lstats->receiver_rssi2);
+    } else {
+        clstats.uplink_rssi1 = crsf_cvt_rssi(lstats->receiver_rssi1);
+        clstats.uplink_rssi2 = 255;
+    }
+    clstats.uplink_LQ = lstats->receiver_LQ;
+    clstats.uplink_snr = lstats->receiver_snr;
+    clstats.active_antenna = lstats->receiver_antenna;
+    clstats.mode = crsf_cvt_mode(lstats->mode);
+    clstats.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm);
+    clstats.downlink_rssi = crsf_cvt_rssi(lstats->transmitter_rssi);
+    clstats.downlink_LQ = lstats->transmitter_LQ;
+    clstats.downlink_snr = lstats->transmitter_snr;
 
     uint8_t crc = 0;
 

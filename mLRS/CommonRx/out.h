@@ -29,12 +29,14 @@ typedef struct
   int8_t receiver_snr;
   uint8_t receiver_antenna;
   uint8_t receiver_transmit_antenna;
-  uint8_t receiver_power;
+  int8_t receiver_power_dbm;
   int8_t transmitter_rssi;
   uint8_t transmitter_LQ;
   int8_t transmitter_snr;
   uint8_t transmitter_antenna;
   uint8_t transmitter_transmit_antenna;
+  uint8_t mode;
+  uint8_t antenna_config;
 } tOutLinkStats;
 
 
@@ -48,7 +50,7 @@ class OutBase
     void Do(uint16_t tnow_us);
 
     void SendRcData(tRcData* rc, bool frame_lost = false, bool failsafe = false);
-    void SendLinkStatistics(tOutLinkStats* stats);
+    void SendLinkStatistics(tOutLinkStats* lstats);
     void SendLinkStatisticsDisconnected(void);
 
     void SetChannelOrder(uint8_t new_channel_order);
@@ -56,7 +58,7 @@ class OutBase
   private:
     void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
     void send_crsf_rcdata(tRcData* rc);
-    void send_crsf_linkstatistics(tOutLinkStats* stats);
+    void send_crsf_linkstatistics(tOutLinkStats* lstats);
     void do_crsf(uint16_t tnow_us);
 
     void putbuf(uint8_t* buf, uint16_t len);

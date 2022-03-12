@@ -499,54 +499,54 @@ uint8_t crsf_cvt_rssi_percent(int8_t rssi)
 
 void crsf_send_LinkStatistics(void)
 {
-tCrsfLinkStatistics lstats;
+tCrsfLinkStatistics clstats;
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        lstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
-        lstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
+        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
+        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
     } else if (USE_ANTENNA2) {
-        lstats.uplink_rssi1 = 255;
-        lstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
+        clstats.uplink_rssi1 = 255;
+        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
     } else {
-        lstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
-        lstats.uplink_rssi2 = 255;
+        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
+        clstats.uplink_rssi2 = 255;
     }
-    lstats.uplink_LQ = txstats.GetLQ();
-    lstats.uplink_snr = stats.GetLastRxSnr();
-    lstats.active_antenna = stats.last_rx_antenna;
-    lstats.mode = crsf_cvt_mode(Setup.Mode);
-    lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
-    lstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);
-    lstats.downlink_LQ = stats.received_LQ;
-    lstats.downlink_snr = 0;
-    crsf.SendLinkStatistics(&lstats);
+    clstats.uplink_LQ = txstats.GetLQ();
+    clstats.uplink_snr = stats.GetLastRxSnr();
+    clstats.active_antenna = stats.last_rx_antenna;
+    clstats.mode = crsf_cvt_mode(Setup.Mode);
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);
+    clstats.downlink_LQ = stats.received_LQ;
+    clstats.downlink_snr = 0;
+    crsf.SendLinkStatistics(&clstats);
 }
 
 
 void crsf_send_LinkStatisticsTx(void)
 {
-tCrsfLinkStatisticsTx lstats;
+tCrsfLinkStatisticsTx clstats;
 
-    lstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi()); // ignored by OpenTx
-    lstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());
-    lstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
-    lstats.uplink_snr = stats.GetLastRxSnr(); // ignored by OpenTx
-    lstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
-    lstats.uplink_fps = crsf_cvt_fps(Setup.Mode); // *10 in OpenTx
-    crsf.SendLinkStatisticsTx(&lstats);
+    clstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi()); // ignored by OpenTx
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());
+    clstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
+    clstats.uplink_snr = stats.GetLastRxSnr(); // ignored by OpenTx
+    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
+    clstats.uplink_fps = crsf_cvt_fps(Setup.Mode); // *10 in OpenTx
+    crsf.SendLinkStatisticsTx(&clstats);
 }
 
 
 void crsf_send_LinkStatisticsRx(void)
 {
-tCrsfLinkStatisticsRx lstats;
+tCrsfLinkStatisticsRx clstats;
 
-    lstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi); // ignored by OpenTx
-    lstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);
-    lstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
-    lstats.downlink_snr = 0; // ignored by OpenTx
-    lstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
-    crsf.SendLinkStatisticsRx(&lstats);
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi); // ignored by OpenTx
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);
+    clstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
+    clstats.downlink_snr = 0; // ignored by OpenTx
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
+    crsf.SendLinkStatisticsRx(&clstats);
 }
 
 

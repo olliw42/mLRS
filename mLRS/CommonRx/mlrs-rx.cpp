@@ -92,19 +92,27 @@ public:
   void SendLinkStatistics(void)
   {
     tOutLinkStats lstats = {
-      .receiver_rssi1 = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : (int8_t)RSSI_MIN,
-      .receiver_rssi2 = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : (int8_t)RSSI_MIN,
+      .receiver_rssi1 = stats.last_rx_rssi1,
+      .receiver_rssi2 = stats.last_rx_rssi2,
       .receiver_LQ = rxstats.GetLQ(),
       .receiver_snr = stats.GetLastRxSnr(),
       .receiver_antenna = stats.last_rx_antenna,
       .receiver_transmit_antenna = stats.last_tx_antenna,
-      .receiver_power = 0, // TODO
+      .receiver_power_dbm = sx.RfPower_dbm(),
       .transmitter_rssi = stats.received_rssi,
       .transmitter_LQ = stats.received_LQ,
       .transmitter_snr = 0,
       .transmitter_antenna = stats.received_antenna,
       .transmitter_transmit_antenna = stats.received_transmit_antenna,
+      .mode = (uint8_t)Setup.Mode,
     };
+    if (USE_ANTENNA1 && USE_ANTENNA2) {
+      lstats.antenna_config = 3;
+    } else if (USE_ANTENNA2) {
+      lstats.antenna_config = 2;
+    } else {
+      lstats.antenna_config = 1;
+    }
     OutBase::SendLinkStatistics(&lstats);
   }
 };
@@ -754,8 +762,6 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         if (connect_occured_once) {
           // generally output a signal only if we had a connection at least once
           out.SendRcData(&rcData, true, true);
-        }
-        if (connect_occured_once) {
           out.SendLinkStatisticsDisconnected();
         }
       }
