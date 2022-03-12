@@ -32,7 +32,6 @@ The 3 MAIN topics TODO:
 - parser on both ends
 - router on Tx side
 - mavlinkX (transform mavlink data into more robust & slim format, introduce cmpr_msg)
-- rate management
 
 TODO:
 - can we pl check the real spi clock speed !?!?!!?
@@ -44,10 +43,6 @@ TODO:
 - USB on TX side
 
 Longterm TODO:
-- rate management by radio_status txbuf
-  note: rts/cts is not a substitute as this wouldn't help in router situations
-  idea: use crsf, add new frame type
-
 - support high_latency2
 
 - get a clean HAL concept

@@ -127,25 +127,7 @@ void MavlinkBase::send_msg_serial_out(void)
 }
 
 
-// ArduPilot's txbuf mechanism:
-// a variable stream_slowdown_ms is set
-// txbuf < 20: stream_slowdown_ms is increased in steps of 60 ms until 2000 ms
-// txbuf < 50: stream_slowdown_ms is increased in steps of 20 ms until 2000 ms
-// txbuf > 90: stream_slowdown_ms is decreased in steps of 20 ms until 0 ms
-// txbuf > 95 && stream_slowdown_ms > 200: stream_slowdown_ms is decreased in steps of 40 ms until 200 ms
-// => for txbuf in range [50,90] stream_slowdown_ms is not changed
-//
-// when params, missions, or mavftp are send, the stream interval are panelized further
-// params are send only if txbuf > 50, also baudrate is considered (wrongly)
-//
-// ArduPilot sends the stream in bursts
-// => the current rx buffer filling is not a good indicator, one needs some average
-//
-// ArduPilot does not route/forward RADIO and RADIO_STATUS messages
-//
-// messages send by ArduPilot stream, which carries rssi etc
-//   RC_CHANNELS_RAW (34), RC_CHANNELS (65)
-
+// see design_decissions.h for details
 void MavlinkBase::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
@@ -160,37 +142,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
     txbuf = 100;
     if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF) {
-        // primitive method:
-        //  txbuf = serial.rx_free_percent();
-        //
-        // method B:
-        //  instead of the true buffer size, we use a smaller virtual buffer size
-        //  on which we base the estimate
-        //  the values are purely phenomenological so far, may need more adaption
-        //  works quite well for me in avoiding stuck, parameters by mavftp or conventional, and missions
-        //  this mechanism does NOT work well for the constant stream, in as far as the byte rate fluctuates wildly
-        //  indeed txbuf goes up and down wildly
-        /*
-        uint32_t buf_size = serial.rx_buf_size();
-        switch (Setup.Mode) {
-          case MODE_50HZ: if (buf_size > 768) buf_size = 768; break; // ca 4100 bytes/s / 5760 bytes/s
-          case MODE_31HZ: if (buf_size > 512) buf_size = 512; break;
-          case MODE_19HZ: if (buf_size > 256) buf_size = 256; break;
-        }
-        uint32_t bytes = serial.bytes_available();
-        if (bytes >= buf_size) {
-          txbuf = 0;
-        } else {
-          txbuf = (100 * (buf_size - bytes) + buf_size/2) / buf_size;
-        } */
-        //
-        // method C:
-        //  knowing what ArduPilot does, one can use txbuf to slow down, speed up
-        //  we measure the actual rate, and speed up, slow down such as to bring it into
-        //  a range of 55..70 % of the maximum link bandwidth
-        //  if the serial rx buf becomes to large, we also force a slow down
-        // we could speed up adaption by increasing radio_status rate by two when +60ms or -40ms
-        // but it works very well for me as is
+        // method C
         uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
         uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
         if (rate_percentage > 80) {
@@ -218,7 +170,6 @@ if(txbuf<40) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
     }
-
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     fmav_msg_radio_status_pack(
