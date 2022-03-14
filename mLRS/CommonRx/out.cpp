@@ -26,7 +26,7 @@ void OutBase::Init(tRxSetup* _setup)
     link_stats_tstart_us = 0;
 
     rssi_channel = 0;
-    receiver_rssi = RSSI_MIN;
+    failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
 
     setup = _setup;
 }
@@ -108,7 +108,7 @@ void OutBase::SetChannelOrder(uint8_t new_channel_order)
 }
 
 
-void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
+void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi)
 {
     if (!initialized) return;
 
@@ -171,7 +171,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
         if (rssi_channel) {
-          rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(receiver_rssi);
+          rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(rssi);
         }
         send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;
@@ -184,8 +184,6 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe)
 
 void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
 {
-    receiver_rssi = (lstats->receiver_antenna == ANTENNA_1) ? lstats->receiver_rssi1 : lstats->receiver_rssi2;
-
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:

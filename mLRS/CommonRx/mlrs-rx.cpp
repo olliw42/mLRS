@@ -765,12 +765,12 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
       out.SetChannelOrder(Setup.Rx.ChannelOrder);
       if (connected()) {
-        out.SendRcData(&rcData, frame_missed, false);
+        out.SendRcData(&rcData, frame_missed, false, stats.GetLastRxRssi());
         out.SendLinkStatistics();
       } else {
         if (connect_occured_once) {
           // generally output a signal only if we had a connection at least once
-          out.SendRcData(&rcData, true, true);
+          out.SendRcData(&rcData, true, true, RSSI_MIN);
           out.SendLinkStatisticsDisconnected();
         }
       }

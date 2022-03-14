@@ -49,7 +49,7 @@ class OutBase
 
     void Do(uint16_t tnow_us);
 
-    void SendRcData(tRcData* rc, bool frame_lost = false, bool failsafe = false);
+    void SendRcData(tRcData* rc, bool frame_lost = false, bool failsafe = false, int8_t rssi = RSSI_MIN);
     void SendLinkStatistics(tOutLinkStats* lstats);
     void SendLinkStatisticsDisconnected(void);
 
@@ -80,8 +80,6 @@ class OutBase
     tOutLinkStats link_stats;
 
     uint8_t rssi_channel;
-    int8_t receiver_rssi;
-
     uint8_t failsafe_mode;
 };
 
