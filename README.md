@@ -64,6 +64,17 @@ It provides these operation modes:
 
 Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?4037943-mLRS-Lora-based-Mavlink-oriented-open-source-radio-link
 
+## Range ##
+
+The range which one may expect can be estimated from the standard math; the [ImmersionRc RF Link Range](https://www.immersionrc.com/rf-calculators/) calculator comes in very handy here. Let's assume: power = 20 dBm (100 mW), antenna gain = 2 dBi, link margin = 12 dB (note: 12 dB link margin is conservative). Then:
+
+| | 50 Hz | 31 Hz | 19 Hz
+| --- | --- | --- | ---        
+| 2.4 GHz | 7 km | 10 km | 15 km
+| 868/915 MHz | - | 26 km | 42 km
+
+Only very few range testes were reported so far (and only for 2.4 GHz/50 Hz). They are however consistent with the estimated ranges. Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at even larger ranges.
+
 ## Software: Installation Bits and Bops ##
 
 This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
