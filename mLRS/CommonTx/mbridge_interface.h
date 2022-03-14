@@ -318,8 +318,8 @@ void mbridge_send_LinkStats(void)
 tMBridgeLinkStats lstats = {0};
 
   lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
-  lstats.rssi1_instantaneous = (stats.last_rx_antenna == ANTENNA_1) ? stats.last_rx_rssi1 : RSSI_INVALID;
-  lstats.rssi2_instantaneous = (stats.last_rx_antenna == ANTENNA_2) ? stats.last_rx_rssi2 : RSSI_INVALID;
+  lstats.rssi1_instantaneous = stats.last_rx_rssi1;
+  lstats.rssi2_instantaneous = stats.last_rx_rssi2;
   lstats.snr_instantaneous = stats.GetLastRxSnr();
   lstats.receive_antenna = stats.last_rx_antenna;
   lstats.transmit_antenna = stats.last_tx_antenna;
@@ -328,6 +328,8 @@ tMBridgeLinkStats lstats = {0};
 #else
   lstats.diversity = 0;
 #endif
+  lstats.rx1_valid = txstats.rx1_valid;
+  lstats.rx2_valid = txstats.rx2_valid;
 
   lstats.rssi1_filtered = RSSI_INVALID;
   lstats.rssi2_filtered = RSSI_INVALID;
@@ -354,6 +356,9 @@ tMBridgeLinkStats lstats = {0};
   lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
 
   lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
+
+  lstats.fhss_curr_i = txstats.fhss_curr_i;
+  lstats.fhss_cnt = fhss.cnt;
 
   mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
 }

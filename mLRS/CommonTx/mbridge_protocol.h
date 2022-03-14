@@ -138,7 +138,8 @@ typedef struct
   uint8_t receiver_transmit_antenna : 1;
   uint8_t diversity : 1;
   uint8_t receiver_diversity : 1;
-  uint8_t spare : 2;
+  uint8_t rx1_valid : 1;
+  uint8_t rx2_valid : 1;
 
   // further stats acquired on transmitter side
 
@@ -159,7 +160,10 @@ typedef struct
 
   uint8_t LQ_received; // number of packets received per sec, not practically relevant
 
-  uint8_t spare2[4];
+  uint8_t fhss_curr_i;
+  uint8_t fhss_cnt;
+
+  uint8_t spare2[2];
 }) tMBridgeLinkStats; // 22 bytes
 
 

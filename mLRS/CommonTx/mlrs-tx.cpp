@@ -698,6 +698,10 @@ IF_ANTENNA2(
         handle_receive_none();
       }
 
+      txstats.fhss_curr_i = fhss.curr_i;
+      txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
+      txstats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
+
       if (valid_frame_received) { // valid frame received
         switch (connect_state) {
         case CONNECT_STATE_LISTEN:

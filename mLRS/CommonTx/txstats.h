@@ -30,6 +30,10 @@ class TxStatsBase
     uint8_t GetLQ(void);
     uint8_t GetLQ_serial_data(void);
 
+    bool rx1_valid;
+    bool rx2_valid;
+    uint8_t fhss_curr_i;
+
   private:
     LqCounterBase LQma_received;
     LqCounterBase LQma_valid;
@@ -42,6 +46,10 @@ void TxStatsBase::Init(uint8_t _period)
 
     LQma_received.Init(_period);
     LQma_valid.Init(_period);
+
+    rx1_valid = false;
+    rx2_valid = false;
+    fhss_curr_i = UINT8_MAX;
 }
 
 
