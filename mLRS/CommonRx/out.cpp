@@ -35,7 +35,7 @@ void OutBase::Init(tRxSetup* _setup)
 void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t new_failsafe_mode)
 {
     rssi_channel = new_rssi_channel;
-    if (rssi_channel <= RC_DATA_LEN) rssi_channel = 0;
+    if (rssi_channel > RC_DATA_LEN) rssi_channel = 0;
 
     failsafe_mode = new_failsafe_mode;
     if (failsafe_mode >= FAILSAFE_MODE_NUM) failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
