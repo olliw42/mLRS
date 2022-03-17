@@ -44,13 +44,13 @@
 // this must EXACTLY match MAV_PARAM_TYPE !! Otherwise Mavlink will be broken !!
 typedef enum SETUP_PARAM_TYPE
 {
-  SETUP_PARAM_TYPE_UINT8  = 1, // 8-bit unsigned integer
-  SETUP_PARAM_TYPE_INT8   = 2, // 8-bit signed integer
-  SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer
-  SETUP_PARAM_TYPE_INT16  = 4, // 16-bit signed integer
+    SETUP_PARAM_TYPE_UINT8  = 1, // 8-bit unsigned integer
+    SETUP_PARAM_TYPE_INT8   = 2, // 8-bit signed integer
+    SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer
+    SETUP_PARAM_TYPE_INT16  = 4, // 16-bit signed integer
 
-  // our extensions, cannot be handled with mavlink!
-  SETUP_PARAM_TYPE_STR6   = 255,
+    // our extensions, cannot be handled with mavlink!
+    SETUP_PARAM_TYPE_STR6   = 255,
 } SETUP_PARAM_TYPE;
 
 
@@ -61,31 +61,31 @@ typedef enum SETUP_PARAM_TYPE
 #define STR6    char
 
 typedef union {
-  uint8_t UINT8_value;
-  int8_t INT8_value;
-  uint16_t UINT16_value;
-  int16_t INT16_value;
-  char* STR6_value;
+    uint8_t UINT8_value;
+    int8_t INT8_value;
+    uint16_t UINT16_value;
+    int16_t INT16_value;
+    char* STR6_value;
 } tSetupParameterValue;
 
 
 typedef struct {
-  void* ptr; // pointer to the field in the Setup structure
-  uint8_t type;
-  const char* name;
-  const char* m_name;
-  const char* unit;
-  tSetupParameterValue dflt;
-  tSetupParameterValue min;
-  tSetupParameterValue max;
-  const char* optstr;
+    void* ptr; // pointer to the field in the Setup structure
+    uint8_t type;
+    const char* name;
+    const char* m_name;
+    const char* unit;
+    tSetupParameterValue dflt;
+    tSetupParameterValue min;
+    tSetupParameterValue max;
+    const char* optstr;
 } tSetupParameterItem;
 
 
 const tSetupParameterItem SetupParameter[] = {
-  #define X(p,t, n,mn, d,mi,ma,u, s) {.ptr=(t*)&(p), .type=SETUP_PARAM_TYPE_##t, .name=n, .m_name=mn, .unit=u, .dflt={.t##_value=d}, .min={.t##_value=mi}, .max={.t##_value=ma}, .optstr = s },
-  SETUP_PARAMETER_LIST
-  #undef X
+    #define X(p,t, n,mn, d,mi,ma,u, s) {.ptr=(t*)&(p), .type=SETUP_PARAM_TYPE_##t, .name=n, .m_name=mn, .unit=u, .dflt={.t##_value=d}, .min={.t##_value=mi}, .max={.t##_value=ma}, .optstr = s },
+    SETUP_PARAMETER_LIST
+    #undef X
 };
 
 
@@ -94,7 +94,7 @@ const tSetupParameterItem SetupParameter[] = {
 
 bool setup_paramitem_is_list(uint16_t param_idx)
 {
-  return (SetupParameter[param_idx].optstr[0] != '\0');
+    return (SetupParameter[param_idx].optstr[0] != '\0');
 }
 
 

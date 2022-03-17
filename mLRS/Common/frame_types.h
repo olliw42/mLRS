@@ -51,16 +51,16 @@ typedef enum {
 PACKED(
 typedef struct
 {
-  uint8_t seq_no:3;
-  uint8_t ack:1;
-  uint8_t frame_type:4;
-  uint32_t antenna:1;
-  uint32_t rssi_u7:7;
-  uint32_t LQ:7; // only Tx->Rx frame, not Rx->Tx frame
-  uint32_t LQ_serial_data:7;
-  uint32_t transmit_antenna:1;
-  uint32_t spare:2;
-  uint32_t payload_len:7;
+  uint8_t seq_no : 3;
+  uint8_t ack : 1;
+  uint8_t frame_type : 4;
+  uint32_t antenna : 1;
+  uint32_t rssi_u7 : 7;
+  uint32_t LQ : 7; // only Rx->Tx frame, not Tx->Rx
+  uint32_t LQ_serial_data : 7;
+  uint32_t transmit_antenna : 1;
+  uint32_t spare : 2;
+  uint32_t payload_len : 7;
 }) tFrameStatus;
 
 

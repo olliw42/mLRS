@@ -11,6 +11,7 @@
 ISSUES:
 - mavlink parser should probably be reset when packets are missed
 - align mavlink messages only with respect to header, i.e., such that header is never split up
+- led blink to signal serial traffic
 
 
 The 3 MAIN topics TODO:
