@@ -12,12 +12,14 @@
 
 
 #ifdef RX_SIYI_F373CC
+  #define DEVICE_NAME "Siyi FM30 RX"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef TX_SIYI_F103C8
+  #define DEVICE_NAME "Siyi FM30 TX"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
@@ -25,12 +27,14 @@
 
 
 #ifdef RX_DIY_BOARD01_F103CB
+  #define DEVICE_NAME "DIY DualSX F103CB"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef RX_DIY_E28_BOARD01_F103CB
+  #define DEVICE_NAME "DIY E28 F103CB"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
@@ -38,12 +42,14 @@
 
 
 #ifdef TX_DIY_E28_BOARD01_F103CB
+  #define DEVICE_NAME "DIY E28 F103CB"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef TX_DIY_MODULE01_G491RE
+  #define DEVICE_NAME "DIY DualSX G491RE"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
@@ -51,18 +57,21 @@
 
 
 #ifdef RX_R9MX_868_L433CB
+  #define DEVICE_NAME "Frsky R9MX"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
 #endif
 
 #ifdef RX_R9MM_868_F103RB
+  #define DEVICE_NAME "Frsky R9MM"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
 #endif
 
 #ifdef TX_R9M_868_F103C8
+  #define DEVICE_NAME "Frsky R9"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ

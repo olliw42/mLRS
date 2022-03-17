@@ -549,6 +549,7 @@ int main_main(void)
         crsf.TelemetryStart();
       }
 
+      mbridge.TelemetryTick_ms();
       crsf.TelemetryTick_ms();
     }
 
@@ -744,7 +745,7 @@ IF_ANTENNA2(
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
 #if (defined USE_MBRIDGE)
-    // when mBridge is enabled on Tx, it sends channels in regular intervals, this we can use as sync
+    // mBridge sends channels in regular intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
       // update channels
       if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
@@ -752,14 +753,38 @@ IF_ANTENNA2(
         channelOrder.Apply(&rcData);
       }
       // when we receive channels packet from transmitter, we send link stats to transmitter
-      mbridge_send_LinkStats();
+      mbridge.TelemetryStart();
     }
+    //
+    uint8_t state;
+    if (mbridge.TelemetryUpdateState(&state)) {
+      switch (state) {
+      case 1: mbridge_send_LinkStats(); break;
+      case 6:
+        if (mbridge.cmd_task_fifo.Available()) {
+          switch (mbridge.cmd_task_fifo.Get()) {
+          case MBRIDGE_CMD_DEVICE_ITEM_TX: mbridge_send_DeviceItemTx(); break;
+          case MBRIDGE_CMD_DEVICE_ITEM_RX: mbridge_send_DeviceItemRx(); break;
+          case MBRIDGE_CMD_PARAM_ITEM: mbridge_send_ParamItem(); break;
+          }
+        }
+        break;
+      }
+    }
+    //
+    uint8_t cmd;
+    if (mbridge.CommandReceived(&cmd)) {
+      if (cmd == MBRIDGE_CMD_DEVICE_REQUEST_ITEM) {
+        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+      }
+      if (cmd == MBRIDGE_CMD_PARAM_REQUEST_LIST) {
+        mbridge_start_ParamRequestList();
+      }
 
-    if (mbridge.cmd_received) {
-      mbridge.cmd_received = false;
-      uint8_t cmd;
-      uint8_t payload[MBRIDGE_R2M_COMMAND_PAYLOAD_LEN_MAX];
-      mbridge.GetCommand(&cmd, payload);
+dbg.puts("\nX: ");
+dbg.puts(u8toHEX_s(cmd));dbg.puts(", ");
+for (uint8_t i = 0; i < 10; i++) { dbg.puts("x");dbg.puts(u8toHEX_s(payload[i])); }
     }
 #endif
 #if (defined DEVICE_HAS_IN)

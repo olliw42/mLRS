@@ -16,6 +16,7 @@
 #include "jr_pin5_interface.h"
 #include "mbridge_protocol.h"
 #include "..\Common\fifo.h"
+#include "setup_tx.h"
 
 
 uint16_t micros(void);
@@ -29,8 +30,9 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
   public:
     void Init(void);
     bool ChannelsUpdated(tRcData* rc);
+    bool CommandReceived(uint8_t* cmd);
     void GetCommand(uint8_t* cmd, uint8_t* payload);
-    void SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len);
+    void SendCommand(uint8_t cmd, uint8_t* payload);
 
     // for in-isr processing
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
@@ -38,6 +40,12 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t send_serial(void);
     void send_command(void);
 
+    typedef enum {
+      PARSE_TYPE_NONE = 0,
+      PARSE_TYPE_SERIALPACKET,
+      PARSE_TYPE_CHANNELPACKET,
+      PARSE_TYPE_COMMANDPACKET,
+    } PARSE_TYPE_ENUM;;
     uint8_t type;
 
     volatile bool channels_received;
@@ -66,6 +74,9 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 
     FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo;
     FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo; // MissionPlanner is rude
+
+    // for communication
+    FifoBase<uint8_t,128> cmd_task_fifo;
 };
 
 tMBridge mbridge;
@@ -183,25 +194,30 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
       cnt = 0;
       if (c == MBRIDGE_CHANNELPACKET_STX) {
           len = MBRIDGE_CHANNELPACKET_SIZE;
-          type = MBRIDGE_TYPE_CHANNELPACKET;
+          type = PARSE_TYPE_CHANNELPACKET;
           state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
       } else
       if (c >= MBRIDGE_COMMANDPACKET_STX) {
           uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
           cmd_r2m_frame[cnt++] = cmd;
           len = mbridge_cmd_payload_len(cmd);
-          type = MBRIDGE_TYPE_COMMANDPACKET;
-          state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
+          type = PARSE_TYPE_COMMANDPACKET;
+          if (len == 0) {
+              cmd_received = true;
+              state = STATE_TRANSMIT_START;
+          } else {
+              state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
+          }
       } else
       if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
           state = STATE_IDLE; // error
       } else
       if (c > 0) {
           len = c;
-          type = MBRIDGE_TYPE_SERIALPACKET;
+          type = PARSE_TYPE_SERIALPACKET;
           state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
       } else {
-          type = MBRIDGE_TYPE_NONE;
+          type = PARSE_TYPE_NONE;
           state = STATE_TRANSMIT_START; // tx_len = 0, no payload
       }
       break;
@@ -265,13 +281,15 @@ void tMBridge::Init(void)
   tSerialBase::Init();
   tPin5BridgeBase::Init();
 
-  type = MBRIDGE_TYPE_NONE;
+  type = PARSE_TYPE_NONE;
   channels_received = false;
   cmd_received = false;
   cmd_m2r_available = 0;
 
   tx_fifo.Init();
   rx_fifo.Init();
+
+  cmd_task_fifo.Init();
 }
 
 
@@ -286,22 +304,31 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 }
 
 
+bool tMBridge::CommandReceived(uint8_t* cmd)
+{
+  if (!cmd_received) return false;
+
+  cmd_received = false;
+
+  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
+
+  return true;
+}
+
 void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
-  if ((cmd_r2m_frame[0] & MBRIDGE_COMMANDPACKET_MASK) != MBRIDGE_COMMANDPACKET_STX) return; // not a command, should not happen, but play it safe
-
-  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK) ;
+  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
 
   uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
   memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
 }
 
 
-void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload, uint8_t payload_len)
+void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
 {
   memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
 
-  if (payload_len != mbridge_cmd_payload_len(cmd)) return; // should never happen but play it safe
+  uint8_t payload_len = mbridge_cmd_payload_len(cmd);
 
   cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
   memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
@@ -360,13 +387,165 @@ tMBridgeLinkStats lstats = {0};
   lstats.fhss_curr_i = txstats.fhss_curr_i;
   lstats.fhss_cnt = fhss.cnt;
 
-  mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats, sizeof(tMBridgeLinkStats));
+  mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats); //, sizeof(tMBridgeLinkStats));
+}
+
+
+void mbridge_send_DeviceItemTx(void)
+{
+tMBridgeDeviceItem item = {0};
+
+  item.firmware_version = VERSION;
+  strncpy(item.device_name, DEVICE_NAME, sizeof(item.device_name));
+  mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
+}
+
+
+void mbridge_send_DeviceItemRx(void)
+{
+tMBridgeDeviceItem item = {0};
+
+  // we can send it only if we are connected and did got the RX information
+  // else we send a zero array, this allows a configurator to determine if RX can be edited etc.
+  if (connected()) {
+    item.firmware_version = VERSION;
+    strncpy(item.device_name, "RX RX", sizeof(item.device_name));
+  }
+
+  mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
+}
+
+
+uint8_t param_idx;
+uint8_t param_itemtype_cnt;
+uint8_t param_cnt;
+
+
+void mbridge_start_ParamRequestList(void)
+{
+  param_idx = 0;
+  param_cnt = SETUP_PARAMETER_NUM;
+  param_itemtype_cnt = 0;
+
+  mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
+}
+
+void mbridge_send_ParamItem(void)
+{
+  if (param_idx >= param_cnt) {
+    tMBridgeParamItem item = {0};
+    item.index = UINT8_MAX; // indicates end of list
+    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+    return;
+  }
+
+  bool item3_needed = false;
+
+  if (param_itemtype_cnt == 0) {
+    tMBridgeParamItem item = {0};
+    item.index = param_idx;
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+      item.type = setup_paramitem_is_list(param_idx) ? MBRIDGE_PARAM_TYPE_LIST : MBRIDGE_PARAM_TYPE_UINT8;
+      item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+      break;
+    case SETUP_PARAM_TYPE_INT8:
+      item.type = MBRIDGE_PARAM_TYPE_INT8;
+      item.value.i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+      break;
+    case SETUP_PARAM_TYPE_UINT16:
+      item.type = MBRIDGE_PARAM_TYPE_UINT16;
+      item.value.u16 = *(uint16_t*)(SetupParameter[param_idx].ptr);
+      break;
+    case SETUP_PARAM_TYPE_INT16:
+      item.type = MBRIDGE_PARAM_TYPE_INT16;
+      item.value.i16 = *(int16_t*)(SetupParameter[param_idx].ptr);
+      break;
+    case SETUP_PARAM_TYPE_STR6:
+      item.type = MBRIDGE_PARAM_TYPE_STR6;
+      strncpy(item.str6, (char*)(SetupParameter[param_idx].ptr), 6);
+      break;
+    }
+    strncpy(item.name, SetupParameter[param_idx].name, sizeof(item.name));
+
+    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+
+    param_itemtype_cnt = 1;
+
+  } else
+  if (param_itemtype_cnt == 1) {
+    tMBridgeParamItem2 item2 = {0};
+    item2.index = param_idx;
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+      if (setup_paramitem_is_list(param_idx)) {
+        item2.not_allowed_mask = 0;
+        strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
+        if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
+      } else {
+        item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
+        item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
+        item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
+        strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+      }
+      break;
+    case SETUP_PARAM_TYPE_INT8:
+      item2.dflt.i8 = SetupParameter[param_idx].dflt.INT8_value;
+      item2.min.i8 = SetupParameter[param_idx].min.INT8_value;
+      item2.max.i8 = SetupParameter[param_idx].max.INT8_value;
+      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+      break;
+    case SETUP_PARAM_TYPE_UINT16:
+      item2.dflt.u16 = SetupParameter[param_idx].dflt.UINT16_value;
+      item2.min.u16 = SetupParameter[param_idx].min.UINT16_value;
+      item2.max.u16 = SetupParameter[param_idx].max.UINT16_value;
+      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+      break;
+    case SETUP_PARAM_TYPE_INT16:
+      item2.dflt.i16 = SetupParameter[param_idx].dflt.INT16_value;
+      item2.min.i16 = SetupParameter[param_idx].min.INT16_value;
+      item2.max.i16 = SetupParameter[param_idx].max.INT16_value;
+      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+      break;
+    }
+
+    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
+
+    if (item3_needed) {
+      param_itemtype_cnt = 2;
+    } else {
+      // next param item
+      param_itemtype_cnt = 0;
+      param_idx++;
+    }
+  } else
+  if (param_itemtype_cnt >= 2) {
+    tMBridgeParamItem3 item3 = {0};
+    item3.index = param_idx;
+    item3.not_allowed_mask2 = 0;
+    strncpy(item3.options2, SetupParameter[param_idx].optstr + 22, sizeof(item3.options2));
+
+    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
+
+    // next param item
+    param_itemtype_cnt = 0;
+    param_idx++;
+  }
+
+  mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
 }
 
 
 #else
 
-tSerialBase mbridge;
+class tMBridge : public tSerialBase
+{
+  public:
+    void TelemetryStart(void) {}
+    void TelemetryTick_ms(void) {}
+};
+
+tMBridge mbridge;
 
 #endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
 

@@ -14,9 +14,9 @@
 
 
 #ifndef PACKED
-  #define MBRDIGE_PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) // that's for __GNUC__
+  #define MBRIDGE_PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) // that's for __GNUC__
 #else
-  #define MBRDIGE_PACKED  PACKED
+  #define MBRIDGE_PACKED  PACKED
 #endif
 
 
@@ -25,7 +25,7 @@
 //
 // format:
 // radio->module:  stx1 stx2 len/cmd payload
-// module->radio:  cmd payload
+// module->radio:  0/cmd payload
 //
 // radio is the master, module can transmit only after it got a radio frame
 //
@@ -57,33 +57,44 @@ typedef enum {
 
 
 typedef enum {
-  MBRIDGE_TYPE_NONE = 0,
-  MBRIDGE_TYPE_SERIALPACKET,
-  MBRIDGE_TYPE_CHANNELPACKET,
-  MBRIDGE_TYPE_COMMANDPACKET,
-} MBRIDGE_TYPE_ENUM;;
-
-
-typedef enum {
-  MBRIDGE_CMD_TX_LINK_STATS = 0x02,
+  MBRIDGE_CMD_TX_LINK_STATS       = 0x02,
+  MBRIDGE_CMD_DEVICE_REQUEST_ITEM = 0x03, // len = 0
+  MBRIDGE_CMD_DEVICE_ITEM_TX      = 0x04,
+  MBRIDGE_CMD_DEVICE_ITEM_RX      = 0x05,
+  MBRIDGE_CMD_PARAM_REQUEST_LIST  = 0x06, // len = 0
+  MBRIDGE_CMD_PARAM_ITEM          = 0x07,
+  MBRIDGE_CMD_PARAM_ITEM2         = 0x08,
+  MBRIDGE_CMD_PARAM_ITEM3         = 0x09,
 } MBRIDGE_CMD_ENUM;
 
+
 #define MBRIDGE_CMD_TX_LINK_STATS_LEN         22
+#define MBRIDGE_CMD_DEVICE_ITEM_LEN           24
+#define MBRIDGE_CMD_PARAM_ITEM_LEN            24
 
 
 uint8_t mbridge_cmd_payload_len(uint8_t cmd)
 {
   switch (cmd) {
   case MBRIDGE_CMD_TX_LINK_STATS: return MBRIDGE_CMD_TX_LINK_STATS_LEN;
+  case MBRIDGE_CMD_DEVICE_REQUEST_ITEM: return 0;
+  case MBRIDGE_CMD_DEVICE_ITEM_TX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
+  case MBRIDGE_CMD_DEVICE_ITEM_RX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
+  case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;
+  case MBRIDGE_CMD_PARAM_ITEM: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+  case MBRIDGE_CMD_PARAM_ITEM2: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+  case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
   }
   return 0;
 }
 
 
+//-- MBridge Channel Packet
+
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
 typedef union {
   uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 176 + 8 = 184 bits = 23 bytes
-  MBRDIGE_PACKED(
+  MBRIDGE_PACKED(
   struct {
       uint16_t ch0  : 11; // 14 channels a 11 bits per channel = 154 bits, 1 .. 1024 .. 2047 for +-120%
       uint16_t ch1  : 11;
@@ -107,7 +118,9 @@ typedef union {
 } tMBridgeChannelBuffer;
 
 
-MBRDIGE_PACKED(
+//-- MBridge LinkStats Command
+
+MBRIDGE_PACKED(
 typedef struct
 {
   // transmitter side of things
@@ -166,6 +179,92 @@ typedef struct
   uint8_t spare2[2];
 }) tMBridgeLinkStats; // 22 bytes
 
+
+//-- MBridge DeviceItem Commands
+
+MBRIDGE_PACKED(
+typedef struct
+{
+  uint32_t firmware_version;
+  char device_name[20];
+}) tMBridgeDeviceItem; // 24 bytes
+
+
+//-- MBridge ParamItem Commands
+
+typedef enum {
+  MBRIDGE_PARAM_TYPE_UINT8 = 0,
+  MBRIDGE_PARAM_TYPE_INT8,
+  MBRIDGE_PARAM_TYPE_UINT16,
+  MBRIDGE_PARAM_TYPE_INT16,
+  MBRIDGE_PARAM_TYPE_LIST,
+  MBRIDGE_PARAM_TYPE_STR6,
+//  MBRIDGE_PARAM_TYPE_TEXT,
+//  MBRIDGE_PARAM_TYPE_ACTION,
+} MBRIDGE_PARAM_TYPE_ENUM;
+
+
+typedef union
+{
+  uint8_t u8;
+  int8_t i8;
+  uint16_t u16;
+  int16_t i16;
+} tMBridgeParamValue;
+
+
+MBRIDGE_PACKED(
+typedef struct
+{
+  uint8_t index;
+  uint8_t type;
+  char name[16];
+  MBRIDGE_PACKED(union {
+    tMBridgeParamValue value;
+    uint32_t value_u32;
+    char str6[6];
+  });
+}) tMBridgeParamItem; // 24 bytes
+
+
+MBRIDGE_PACKED(
+typedef struct
+{
+  uint8_t index;
+  uint8_t not_allowed_mask;
+  MBRIDGE_PACKED(union {
+    struct {
+      tMBridgeParamValue min;
+      tMBridgeParamValue max;
+      tMBridgeParamValue dflt;
+      char unit[6];
+    };
+    char options[22];
+    char s[22];
+  });
+}) tMBridgeParamItem2; // 24 bytes
+
+
+MBRIDGE_PACKED(
+typedef struct
+{
+  uint8_t index;
+  uint8_t not_allowed_mask2;
+  MBRIDGE_PACKED(union {
+    char options2[22];
+    char s2[22];
+  });
+}) tMBridgeParamItem3; // 24 bytes
+
+
+//-- check some sizes
+
+STATIC_ASSERT(sizeof(tMBridgeChannelBuffer) == MBRIDGE_CHANNELPACKET_SIZE, "tMBridgeChannelBuffer len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBridgeDeviceItem len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
 
 
 #endif // MBRIDGE_PROTOCOL_H

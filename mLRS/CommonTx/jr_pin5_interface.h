@@ -47,6 +47,15 @@ class tPin5BridgeBase
   public:
     void Init(void);
 
+    // telemetry handling
+    bool telemetry_tick_start; // called at 50Hz, in sync with transmit
+    bool telemetry_tick_next; // called at 1 ms
+    uint16_t telemetry_state;
+
+    void TelemetryStart(void);
+    void TelemetryTick_ms(void);
+    bool TelemetryUpdateState(uint8_t* state);
+
     // interface to the uart hardware peripheral used for the bridge
     void pin5_tx_enable(bool enable_flag);
     //bool pin5_rx_available(void) { return uart_rx_available(); }
@@ -114,7 +123,43 @@ void tPin5BridgeBase::Init(void)
   len = 0;
   cnt = 0;
   tlast_us = 0;
+
+  telemetry_tick_start = false;
+  telemetry_tick_next = false;
+  telemetry_state = 0;
 };
+
+
+void tPin5BridgeBase::TelemetryStart(void)
+{
+    telemetry_tick_start = true;
+}
+
+
+void tPin5BridgeBase::TelemetryTick_ms(void)
+{
+    telemetry_tick_next = true;
+}
+
+
+bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* state)
+{
+    if (telemetry_tick_start) {
+      telemetry_tick_start = false;
+      telemetry_state = 1; // start
+    }
+
+   *state = telemetry_state;
+
+    if (telemetry_state && telemetry_tick_next) {
+        telemetry_tick_next = false;
+        telemetry_state++;
+        if (telemetry_state > 15) telemetry_state = 0; // stop
+        return true;
+    }
+
+    return false;
+}
 
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)

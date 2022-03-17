@@ -55,12 +55,6 @@ class tTxCrsf : public tPin5BridgeBase
     void fill_rcdata(tRcData* rc);
 
     // telemetry handling
-    bool telemetry_tick_start; // called at 50Hz, in sync with transmit
-    bool telemetry_tick_next; // called at 1 ms
-    uint16_t telemetry_state;
-
-    void TelemetryStart(void);
-    void TelemetryTick_ms(void);
     bool TelemetryUpdate(uint8_t* packet_idx);
 
     tCrsfBattery battery;
@@ -141,10 +135,6 @@ void tTxCrsf::Init(void)
     frame_received = false;
     tx_available = 0;
 
-    telemetry_tick_start = false;
-    telemetry_tick_next = false;
-    telemetry_state = 0;
-
     battery_updated = false;
     attitude_updated = false;
     gps1_sat = UINT8_MAX; // unknown
@@ -180,18 +170,6 @@ bool tTxCrsf::Update(tRcData* rc)
 
 //-------------------------------------------------------
 // CRSF Telemetry
-
-void tTxCrsf::TelemetryStart(void)
-{
-    telemetry_tick_start = true;
-}
-
-
-void tTxCrsf::TelemetryTick_ms(void)
-{
-    telemetry_tick_next = true;
-}
-
 
 bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 {
