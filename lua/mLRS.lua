@@ -346,7 +346,7 @@ local function drawPageMain()
     end
  
     y = 90
-    lcd.drawText(10, y, "Sync Word", TEXT_COLOR)
+    lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
         lcd.drawText(140, y, DEVICE_PARAM_LIST[0].value, cur_attr(0))  
     end    
