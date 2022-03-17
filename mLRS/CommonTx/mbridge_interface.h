@@ -270,9 +270,6 @@ void tMBridge::fill_rcdata(tRcData* rc)
 }
 
 
-STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
-
-
 //-------------------------------------------------------
 // MBridge user interface
 
