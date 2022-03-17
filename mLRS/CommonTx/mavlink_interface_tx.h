@@ -25,6 +25,7 @@ class MavlinkBase
   public:
     void Init(void);
     void Do(void);
+    uint8_t VehicleState(void);
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
@@ -32,6 +33,7 @@ class MavlinkBase
 
   private:
     void send_msg_serial_out(void);
+    void handle_msg_serial_out(void);
     void generate_radio_status(void);
 
     fmav_status_t status_link_in;
@@ -45,6 +47,10 @@ class MavlinkBase
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
     uint32_t radio_status_tlast_ms;
+
+    uint8_t vehicle_sysid; // 0 indicates data is invalid
+    uint8_t vehicle_is_armed;
+    uint8_t vehicle_is_flying;
 };
 
 
@@ -58,6 +64,10 @@ void MavlinkBase::Init(void)
 
     inject_radio_status = false;
     radio_status_tlast_ms = millis32() + 1000;
+
+    vehicle_sysid = 0;
+    vehicle_is_armed = UINT8_MAX;
+    vehicle_is_flying = UINT8_MAX;
 }
 
 
@@ -86,6 +96,14 @@ void MavlinkBase::Do(void)
 }
 
 
+uint8_t MavlinkBase::VehicleState(void)
+{
+    if (vehicle_is_armed == UINT8_MAX) return UINT8_MAX;
+    if (vehicle_is_armed == 1 && vehicle_is_flying == 1) return 2;
+    return vehicle_is_armed;
+}
+
+
 void MavlinkBase::putc(char c)
 {
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
@@ -95,6 +113,9 @@ void MavlinkBase::putc(char c)
 
         // allow crsf to capture it
         crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
+
+        // we also want to capture it to extract some info
+        handle_msg_serial_out();
     }
 }
 
@@ -130,6 +151,30 @@ void MavlinkBase::send_msg_serial_out(void)
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
 
     serialport->putbuf(_buf, len);
+}
+
+
+void MavlinkBase::handle_msg_serial_out(void)
+{
+    if ((msg_serial_out.msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) && (msg_serial_out.compid == MAV_COMP_ID_AUTOPILOT1)) {
+        fmav_heartbeat_t payload;
+        fmav_msg_heartbeat_decode(&payload, &msg_serial_out);
+        if (payload.autopilot != MAV_AUTOPILOT_INVALID) {
+            // this is an autopilot
+            vehicle_sysid = msg_serial_out.sysid;
+            vehicle_is_armed = (payload.base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
+        }
+    }
+
+    if (!vehicle_sysid) return;
+
+    switch (msg_serial_out.msgid) {
+    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
+        fmav_extended_sys_state_t payload;
+        fmav_msg_extended_sys_state_decode(&payload, &msg_serial_out);
+        vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
+        }break;
+    }
 }
 
 
