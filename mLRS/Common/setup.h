@@ -29,7 +29,7 @@ void setup_default(void)
   Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
   Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
   Setup.Tx.InMode = SETUP_TX_IN_MODE;
-  Setup.Tx.SerialBaudrate_bytespersec = (SETUP_TX_SERIAL_BAUDRATE / 10);
+  Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_57600;
   Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
   Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
@@ -40,7 +40,7 @@ void setup_default(void)
   Setup.Rx.OutRssiChannel = SETUP_RX_OUT_RSSI_CHANNEL;
   Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
   for (uint8_t ch = 0; ch < 16; ch++) { Setup.Rx.FailsafeOutChannelValues[ch] = 1024; }
-  Setup.Rx.SerialBaudrate_bytespersec = (SETUP_RX_SERIAL_BAUDRATE / 10);
+  Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
   Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
   Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
 }
@@ -50,12 +50,31 @@ void setup_sanitize(void)
 {
   sanitize_bind_phrase(Setup.BindPhrase);
 
+  if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
+#ifdef DEVICE_HAS_SX126x
+  if ((Setup.Mode != MODE_19HZ) && (Setup.Mode != MODE_31HZ)) { // only 19 Hz and 31 hz modes allowed
+    Setup.Mode = MODE_19HZ;
+  }
+#endif
+#ifdef DEVICE_HAS_SX127x
+  Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
+#endif
+
+#ifndef DEVICE_HAS_DIVERSITY
+#ifdef DEVICE_IS_TRANSMITTER
+  if (Setup.Tx.Diversity >= DIVERSITY_ANTENNA2) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
+#endif
+#ifdef DEVICE_IS_RECEIVER
+  if (Setup.Rx.Diversity >= DIVERSITY_ANTENNA2) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
+#endif
+#endif
+
+#ifdef DEVICE_IS_TRANSMITTER
   // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
   if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
     Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
   }
 
-#ifdef DEVICE_IS_TRANSMITTER
 #ifndef DEVICE_HAS_JRPIN5
   // device doesn't support half-duplex JR pin5
   if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL_PORT;
@@ -71,25 +90,6 @@ void setup_sanitize(void)
 #ifndef DEVICE_HAS_IN
   if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
 #endif
-#endif
-
-#ifndef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_IS_TRANSMITTER
-  if (Setup.Tx.Diversity >= DIVERSITY_ANTENNA2) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
-#endif
-#ifdef DEVICE_IS_RECEIVER
-  if (Setup.Rx.Diversity >= DIVERSITY_ANTENNA2) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
-#endif
-#endif
-
-  if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
-#ifdef DEVICE_HAS_SX126x
-  if ((Setup.Mode != MODE_19HZ) && (Setup.Mode != MODE_31HZ)) { // only 19 Hz and 31 hz modes allowed
-    Setup.Mode = MODE_19HZ;
-  }
-#endif
-#ifdef DEVICE_HAS_SX127x
-  Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
 #endif
 
   if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
@@ -110,13 +110,45 @@ void setup_configure(void)
 
   Config.FrameSyncWord = (uint16_t)(bind_dblword & 0x0000FFFF);
 
+  //-- Power
+
   // TODO: we momentarily use the POWER values, but eventually we need to use the power_list[] array and setup Rx/Tx power
+  // note: the actually used power will be determined later when the SX are set up
 #ifdef DEVICE_IS_TRANSMITTER
-  Config.Power = SETUP_TX_POWER;
+  Config.Power = SETUP_TX_POWER; //Setup.Tx.Power;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-  Config.Power = SETUP_RX_POWER;
+  Config.Power = SETUP_RX_POWER; //Setup.Rx.Power;
 #endif
+
+  //-- Diversity
+
+#ifdef DEVICE_HAS_DIVERSITY
+#ifdef DEVICE_IS_TRANSMITTER
+  switch (Setup.Tx.Diversity) {
+#endif
+#ifdef DEVICE_IS_RECEIVER
+  switch (Setup.Rx.Diversity) {
+#endif
+  case DIVERSITY_DEFAULT:
+    Config.UseAntenna1 = true;
+    Config.UseAntenna2 = true;
+    break;
+  case DIVERSITY_ANTENNA1:
+    Config.UseAntenna1 = true;
+    Config.UseAntenna2 = false;
+    break;
+  case DIVERSITY_ANTENNA2:
+    Config.UseAntenna1 = false;
+    Config.UseAntenna2 = true;
+    break;
+  }
+#else
+  Config.UseAntenna1 = true;
+  Config.UseAntenna2 = false;
+#endif
+
+  //-- Mode dependent setting, LoRa configuration
 
   switch (Setup.Mode) {
   case MODE_50HZ:
@@ -173,35 +205,12 @@ void setup_configure(void)
   }
 #endif
 
+  //-- More Config, may depend on above config settings
+
   Config.connect_tmo_systicks = SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f * Config.frame_rate_ms));
   Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.FhssNum);
 
   Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
-
-#ifdef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_IS_TRANSMITTER
-  switch (Setup.Tx.Diversity) {
-#endif
-#ifdef DEVICE_IS_RECEIVER
-  switch (Setup.Rx.Diversity) {
-#endif
-  case DIVERSITY_DEFAULT:
-    Config.UseAntenna1 = true;
-    Config.UseAntenna2 = true;
-    break;
-  case DIVERSITY_ANTENNA1:
-    Config.UseAntenna1 = true;
-    Config.UseAntenna2 = false;
-    break;
-  case DIVERSITY_ANTENNA2:
-    Config.UseAntenna1 = false;
-    Config.UseAntenna2 = true;
-    break;
-  }
-#else
-  Config.UseAntenna1 = true;
-  Config.UseAntenna2 = false;
-#endif
 }
 
 

@@ -27,19 +27,34 @@ typedef enum {
 
 
 typedef enum {
-  SERIAL_DESTINATION_SERIAL_PORT = 0,
-  SERIAL_DESTINATION_MBRDIGE,
-  SERIAL_DESTINATION_NUM,
-} TX_SERIAL_DESTINATION_ENUM;
+  SETUP_POWER_MIN       = 0,
+  SETUP_POWER_10_DBM, // 10 mW
+  SETUP_POWER_17_DBM, // 50 mW
+  SETUP_POWER_20_DBM, // 100 mW
+  SETUP_POWER_23_DBM, // 200 mW
+  SETUP_POWER_27_DBM, // 500 mW
+  SETUP_POWER_30_DBM, // 1000 mW
+  SETUP_POWER_MAX,
+  SETUP_POWER_NUM,
+} SETUP_POWER_ENUM;
 
 
 typedef enum {
-  CHANNEL_SOURCE_NONE = 0,
-  CHANNEL_SOURCE_MBRIDGE, // JR pin5
-  CHANNEL_SOURCE_INPORT, // In port
-  CHANNEL_SOURCE_CRSF, // JR pin5
-  CHANNEL_SOURCE_NUM,
-} TX_CHANNELS_SOURCE_ENUM;
+  DIVERSITY_DEFAULT = 0,
+  DIVERSITY_ANTENNA1, // antenna 1 if diversity available
+  DIVERSITY_ANTENNA2, // antenna 2 if diversity available
+  DIVERSITY_NUM,
+} DIVERSITY_ENUM;
+
+
+typedef enum {
+  SERIAL_BAUDRATE_9600 = 0,
+  SERIAL_BAUDRATE_19200,
+  SERIAL_BAUDRATE_38400,
+  SERIAL_BAUDRATE_57600,
+  SERIAL_BAUDRATE_115200,
+  SERIAL_BAUDRATE_NUM,
+} SERIAL_BAUDRATE_ENUM;
 
 
 typedef enum {
@@ -54,7 +69,7 @@ typedef enum {
   SERIAL_LINK_MODE_TRANSPARENT = 0,
   SERIAL_LINK_MODE_MAVLINK,
   SERIAL_LINK_MODE_NUM,
-} SERIAL_LINK_MODE_TRANSPARENT_ENUM;
+} SERIAL_LINK_MODE_ENUM;
 
 
 typedef enum {
@@ -66,11 +81,19 @@ typedef enum {
 
 
 typedef enum {
-  DIVERSITY_DEFAULT = 0,
-  DIVERSITY_ANTENNA1, // antenna 1 if diversity available
-  DIVERSITY_ANTENNA2, // antenna 2 if diversity available
-  DIVERSITY_NUM,
-} DIVERSITY_ENUM;
+  SERIAL_DESTINATION_SERIAL_PORT = 0,
+  SERIAL_DESTINATION_MBRDIGE,
+  SERIAL_DESTINATION_NUM,
+} TX_SERIAL_DESTINATION_ENUM;
+
+
+typedef enum {
+  CHANNEL_SOURCE_NONE = 0,
+  CHANNEL_SOURCE_MBRIDGE, // JR pin5
+  CHANNEL_SOURCE_INPORT, // In port
+  CHANNEL_SOURCE_CRSF, // JR pin5
+  CHANNEL_SOURCE_NUM,
+} TX_CHANNELS_SOURCE_ENUM;
 
 
 typedef enum {
@@ -130,13 +153,13 @@ typedef enum {
 
 typedef struct
 {
-  uint16_t Power;
+  int16_t Power;
   uint16_t Diversity;
   uint16_t ChannelsSource;
   uint16_t ChannelOrder;
   uint16_t InMode;
   uint16_t SerialDestination;
-  uint16_t SerialBaudrate_bytespersec; // baudrate / 10
+  uint16_t SerialBaudrate;
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tTxSetup;
@@ -144,14 +167,14 @@ typedef struct
 
 typedef struct
 {
-  uint16_t Power;
+  int16_t Power;
   uint16_t Diversity;
   uint16_t ChannelOrder;
   uint16_t OutMode;
   uint16_t OutRssiChannel;
   uint16_t FailsafeMode;
   uint16_t FailsafeOutChannelValues[16];
-  uint16_t SerialBaudrate_bytespersec; // baudrate / 10
+  uint16_t SerialBaudrate;
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
 } tRxSetup;
