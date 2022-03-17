@@ -168,6 +168,8 @@ void init(void)
 // mbridge
 //-------------------------------------------------------
 
+uint8_t mavlink_vehicle_state(void);
+
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks
 #include "crsf_interface.h" // this includes uart.h as it needs callbacks
 
@@ -179,6 +181,12 @@ void init(void)
 #include "mavlink_interface_tx.h"
 
 MavlinkBase mavlink;
+
+
+uint8_t mavlink_vehicle_state(void)
+{
+  return mavlink.VehicleState();
+}
 
 
 void init_serialport(void)
@@ -766,6 +774,7 @@ IF_ANTENNA2(
           case MBRIDGE_CMD_DEVICE_ITEM_TX: mbridge_send_DeviceItemTx(); break;
           case MBRIDGE_CMD_DEVICE_ITEM_RX: mbridge_send_DeviceItemRx(); break;
           case MBRIDGE_CMD_PARAM_ITEM: mbridge_send_ParamItem(); break;
+          case MBRIDGE_CMD_INFO: mbridge_send_Info(); break;
           }
         }
         break;
@@ -774,12 +783,13 @@ IF_ANTENNA2(
     //
     uint8_t cmd;
     if (mbridge.CommandReceived(&cmd)) {
-      if (cmd == MBRIDGE_CMD_DEVICE_REQUEST_ITEM) {
+      switch (cmd) {
+      case MBRIDGE_CMD_DEVICE_REQUEST_ITEM:
         mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
-      }
-      if (cmd == MBRIDGE_CMD_PARAM_REQUEST_LIST) {
-        mbridge_start_ParamRequestList();
+        break;
+      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
+      case MBRIDGE_CMD_REQUEST_CMD: mbridge_request_cmd(mbridge.GetPayloadPtr()); break;
       }
 
 dbg.puts("\nX: ");

@@ -32,6 +32,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool ChannelsUpdated(tRcData* rc);
     bool CommandReceived(uint8_t* cmd);
     void GetCommand(uint8_t* cmd, uint8_t* payload);
+    uint8_t* GetPayloadPtr(void);
     void SendCommand(uint8_t cmd, uint8_t* payload);
 
     // for in-isr processing
@@ -41,10 +42,10 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void send_command(void);
 
     typedef enum {
-      PARSE_TYPE_NONE = 0,
-      PARSE_TYPE_SERIALPACKET,
-      PARSE_TYPE_CHANNELPACKET,
-      PARSE_TYPE_COMMANDPACKET,
+        PARSE_TYPE_NONE = 0,
+        PARSE_TYPE_SERIALPACKET,
+        PARSE_TYPE_CHANNELPACKET,
+        PARSE_TYPE_COMMANDPACKET,
     } PARSE_TYPE_ENUM;;
     uint8_t type;
 
@@ -87,27 +88,27 @@ tMBridge mbridge;
 
 void uart_rx_callback(uint8_t c)
 {
-  LED_RIGHT_GREEN_ON;
+    LED_RIGHT_GREEN_ON;
 
-  if (mbridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-      mbridge.state = tPin5BridgeBase::STATE_IDLE;
-  }
+    if (mbridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
+        mbridge.state = tPin5BridgeBase::STATE_IDLE;
+    }
 
-  uint16_t tnow_us = micros();
-  mbridge.parse_nextchar(c, tnow_us);
+    uint16_t tnow_us = micros();
+    mbridge.parse_nextchar(c, tnow_us);
 
-  if (mbridge.transmit_start()) {
-      mbridge.pin5_tx_start();
-  }
+    if (mbridge.transmit_start()) {
+        mbridge.pin5_tx_start();
+    }
 
-  LED_RIGHT_GREEN_OFF;
+    LED_RIGHT_GREEN_OFF;
 }
 
 
 void uart_tc_callback(void)
 {
-  mbridge.pin5_tx_enable(false);
-  mbridge.state = tPin5BridgeBase::STATE_IDLE;
+    mbridge.pin5_tx_enable(false);
+    mbridge.state = tPin5BridgeBase::STATE_IDLE;
 }
 
 
@@ -115,58 +116,58 @@ bool tMBridge::transmit_start(void)
 {
 uint8_t available = 0;
 
-  if (state < STATE_TRANSMIT_START) return false; // we are in receiving
+    if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
-  if (state != STATE_TRANSMIT_START) {
-      state = STATE_IDLE;
-      return false;
-  }
+    if (state != STATE_TRANSMIT_START) {
+        state = STATE_IDLE;
+        return false;
+    }
 
-  if (cmd_m2r_available) {
-      send_command(); // uses cmd_m2r_available
-      available = cmd_m2r_available;
-      cmd_m2r_available = 0;
-  } else {
-      available = send_serial();
-  }
+    if (cmd_m2r_available) {
+        send_command(); // uses cmd_m2r_available
+        available = cmd_m2r_available;
+        cmd_m2r_available = 0;
+    } else {
+        available = send_serial();
+    }
 
-  if (!available) {
-      state = STATE_IDLE;
-      return false;
-  }
+    if (!available) {
+        state = STATE_IDLE;
+        return false;
+    }
 
-  pin5_tx_enable(true);
+    pin5_tx_enable(true);
 
-  state = STATE_TRANSMITING;
-  return true;
+    state = STATE_TRANSMITING;
+    return true;
 }
 
 
 uint8_t tMBridge::send_serial(void)
 {
-  uint8_t count = 0;
-  uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
-  for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
-      if (!serial_rx_available()) break;
-      payload[count++] = serial_getc();
-  }
-  if (count > 0) {
-      pin5_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
-      for (uint8_t i = 0; i < count; i++) {
-          uint8_t c = payload[i];
-          pin5_putc(c);
-      }
-  }
-  return count;
+    uint8_t count = 0;
+    uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
+    for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
+        if (!serial_rx_available()) break;
+        payload[count++] = serial_getc();
+    }
+    if (count > 0) {
+        pin5_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
+        for (uint8_t i = 0; i < count; i++) {
+            uint8_t c = payload[i];
+            pin5_putc(c);
+        }
+    }
+    return count;
 }
 
 
 void tMBridge::send_command(void)
 {
-  for (uint8_t i = 0; i < cmd_m2r_available; i++) {
-      uint8_t c = cmd_m2r_frame[i];
-      pin5_putc(c);
-  }
+    for (uint8_t i = 0; i < cmd_m2r_available; i++) {
+        uint8_t c = cmd_m2r_frame[i];
+        pin5_putc(c);
+    }
 }
 
 
@@ -175,72 +176,72 @@ void tMBridge::send_command(void)
 
 void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
-  if (state != STATE_IDLE) {
-      uint16_t dt = tnow_us - tlast_us;
-      if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-  }
+    if (state != STATE_IDLE) {
+        uint16_t dt = tnow_us - tlast_us;
+        if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
+    }
 
-  tlast_us = tnow_us;
+    tlast_us = tnow_us;
 
-  switch (state) {
-  case STATE_IDLE:
-      if (c == MBRIDGE_STX1) state = STATE_RECEIVE_MBRIDGE_STX2;
-      break;
+    switch (state) {
+    case STATE_IDLE:
+        if (c == MBRIDGE_STX1) state = STATE_RECEIVE_MBRIDGE_STX2;
+        break;
 
-  case STATE_RECEIVE_MBRIDGE_STX2:
-      if (c == MBRIDGE_STX2) state = STATE_RECEIVE_MBRIDGE_LEN; else state = STATE_IDLE; // error
-      break;
-  case STATE_RECEIVE_MBRIDGE_LEN:
-      cnt = 0;
-      if (c == MBRIDGE_CHANNELPACKET_STX) {
-          len = MBRIDGE_CHANNELPACKET_SIZE;
-          type = PARSE_TYPE_CHANNELPACKET;
-          state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
-      } else
-      if (c >= MBRIDGE_COMMANDPACKET_STX) {
-          uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
-          cmd_r2m_frame[cnt++] = cmd;
-          len = mbridge_cmd_payload_len(cmd);
-          type = PARSE_TYPE_COMMANDPACKET;
-          if (len == 0) {
-              cmd_received = true;
-              state = STATE_TRANSMIT_START;
-          } else {
-              state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
-          }
-      } else
-      if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
-          state = STATE_IDLE; // error
-      } else
-      if (c > 0) {
-          len = c;
-          type = PARSE_TYPE_SERIALPACKET;
-          state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
-      } else {
-          type = PARSE_TYPE_NONE;
-          state = STATE_TRANSMIT_START; // tx_len = 0, no payload
-      }
-      break;
-  case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
-      serial_putc(c);
-      cnt++;
-      if (cnt >= len) state = STATE_TRANSMIT_START;
-      break;
-  case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
-      channels.c[cnt++] = c;
-      if (cnt >= len) {
-          channels_received = true;
-          state = STATE_TRANSMIT_START;
-      }
-      break;
-  case STATE_RECEIVE_MBRIDGE_COMMANDPACKET:
-      cmd_r2m_frame[cnt++] = c;
-      if (cnt >= len + 1) {
-          cmd_received = true;
-          state = STATE_TRANSMIT_START;
-      }
-      break;
-  }
+    case STATE_RECEIVE_MBRIDGE_STX2:
+        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_MBRIDGE_LEN; else state = STATE_IDLE; // error
+        break;
+    case STATE_RECEIVE_MBRIDGE_LEN:
+        cnt = 0;
+        if (c == MBRIDGE_CHANNELPACKET_STX) {
+            len = MBRIDGE_CHANNELPACKET_SIZE;
+            type = PARSE_TYPE_CHANNELPACKET;
+            state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
+        } else
+        if (c >= MBRIDGE_COMMANDPACKET_STX) {
+            uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
+            cmd_r2m_frame[cnt++] = cmd;
+            len = mbridge_cmd_payload_len(cmd);
+            type = PARSE_TYPE_COMMANDPACKET;
+            if (len == 0) {
+                cmd_received = true;
+                state = STATE_TRANSMIT_START;
+            } else {
+                state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
+            }
+        } else
+        if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
+            state = STATE_IDLE; // error
+        } else
+        if (c > 0) {
+            len = c;
+            type = PARSE_TYPE_SERIALPACKET;
+            state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
+        } else {
+            type = PARSE_TYPE_NONE;
+            state = STATE_TRANSMIT_START; // tx_len = 0, no payload
+        }
+        break;
+    case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
+        serial_putc(c);
+        cnt++;
+        if (cnt >= len) state = STATE_TRANSMIT_START;
+        break;
+    case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
+        channels.c[cnt++] = c;
+        if (cnt >= len) {
+            channels_received = true;
+            state = STATE_TRANSMIT_START;
+        }
+        break;
+    case STATE_RECEIVE_MBRIDGE_COMMANDPACKET:
+        cmd_r2m_frame[cnt++] = c;
+        if (cnt >= len + 1) {
+            cmd_received = true;
+            state = STATE_TRANSMIT_START;
+        }
+        break;
+    }
 }
 
 
@@ -249,24 +250,24 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
 // rcData:            11 bit, 1 .. 1024 .. 2047 for +-120%
 void tMBridge::fill_rcdata(tRcData* rc)
 {
-  rc->ch[0] = channels.ch0;
-  rc->ch[1] = channels.ch1;
-  rc->ch[2] = channels.ch2;
-  rc->ch[3] = channels.ch3;
-  rc->ch[4] = channels.ch4;
-  rc->ch[5] = channels.ch5;
-  rc->ch[6] = channels.ch6;
-  rc->ch[7] = channels.ch7;
-  rc->ch[8] = channels.ch8;
-  rc->ch[9] = channels.ch9;
-  rc->ch[10] = channels.ch10;
-  rc->ch[11] = channels.ch11;
-  rc->ch[12] = channels.ch12;
-  rc->ch[13] = channels.ch13;
-  rc->ch[14] = channels.ch14;
-  rc->ch[15] = channels.ch15;
-  rc->ch[16] = (channels.ch16) ? 1876 : 172; // +-100%
-  rc->ch[17] = (channels.ch17) ? 1876 : 172; // +-100%
+    rc->ch[0] = channels.ch0;
+    rc->ch[1] = channels.ch1;
+    rc->ch[2] = channels.ch2;
+    rc->ch[3] = channels.ch3;
+    rc->ch[4] = channels.ch4;
+    rc->ch[5] = channels.ch5;
+    rc->ch[6] = channels.ch6;
+    rc->ch[7] = channels.ch7;
+    rc->ch[8] = channels.ch8;
+    rc->ch[9] = channels.ch9;
+    rc->ch[10] = channels.ch10;
+    rc->ch[11] = channels.ch11;
+    rc->ch[12] = channels.ch12;
+    rc->ch[13] = channels.ch13;
+    rc->ch[14] = channels.ch14;
+    rc->ch[15] = channels.ch15;
+    rc->ch[16] = (channels.ch16) ? 1876 : 172; // +-100%
+    rc->ch[17] = (channels.ch17) ? 1876 : 172; // +-100%
 }
 
 
@@ -275,62 +276,69 @@ void tMBridge::fill_rcdata(tRcData* rc)
 
 void tMBridge::Init(void)
 {
-  tSerialBase::Init();
-  tPin5BridgeBase::Init();
+    tSerialBase::Init();
+    tPin5BridgeBase::Init();
 
-  type = PARSE_TYPE_NONE;
-  channels_received = false;
-  cmd_received = false;
-  cmd_m2r_available = 0;
+    type = PARSE_TYPE_NONE;
+    channels_received = false;
+    cmd_received = false;
+    cmd_m2r_available = 0;
 
-  tx_fifo.Init();
-  rx_fifo.Init();
+    tx_fifo.Init();
+    rx_fifo.Init();
 
-  cmd_task_fifo.Init();
+    cmd_task_fifo.Init();
 }
 
 
 bool tMBridge::ChannelsUpdated(tRcData* rc)
 {
-  if (!channels_received) return false;
+    if (!channels_received) return false;
 
-  channels_received = false;
+    channels_received = false;
 
-  fill_rcdata(rc);
-  return true;
+    fill_rcdata(rc);
+    return true;
 }
 
 
 bool tMBridge::CommandReceived(uint8_t* cmd)
 {
-  if (!cmd_received) return false;
+    if (!cmd_received) return false;
 
-  cmd_received = false;
+    cmd_received = false;
 
-  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
+    *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
 
-  return true;
+    return true;
 }
+
+
+uint8_t* tMBridge::GetPayloadPtr(void)
+{
+    return &(cmd_r2m_frame[1]);
+}
+
 
 void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
-  *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
+    *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
 
-  uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
-  memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
+    uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
+    memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
 }
 
 
 void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
 {
-  memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
+    memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
 
-  uint8_t payload_len = mbridge_cmd_payload_len(cmd);
+    uint8_t payload_len = mbridge_cmd_payload_len(cmd);
 
-  cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
-  memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
+    cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
+    memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
 
-  cmd_m2r_available = payload_len + 1;
+    cmd_m2r_available = payload_len + 1;
 }
 
 
@@ -341,50 +349,94 @@ void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {0};
 
-  lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
-  lstats.rssi1_instantaneous = stats.last_rx_rssi1;
-  lstats.rssi2_instantaneous = stats.last_rx_rssi2;
-  lstats.snr_instantaneous = stats.GetLastRxSnr();
-  lstats.receive_antenna = stats.last_rx_antenna;
-  lstats.transmit_antenna = stats.last_tx_antenna;
+    lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
+    lstats.rssi1_instantaneous = stats.last_rx_rssi1;
+    lstats.rssi2_instantaneous = stats.last_rx_rssi2;
+    lstats.snr_instantaneous = stats.GetLastRxSnr();
+    lstats.receive_antenna = stats.last_rx_antenna;
+    lstats.transmit_antenna = stats.last_tx_antenna;
 #ifdef USE_DIVERSITY
-  lstats.diversity = 1;
+    lstats.diversity = 1;
 #else
-  lstats.diversity = 0;
+    lstats.diversity = 0;
 #endif
-  lstats.rx1_valid = txstats.rx1_valid;
-  lstats.rx2_valid = txstats.rx2_valid;
+    lstats.rx1_valid = txstats.rx1_valid;
+    lstats.rx2_valid = txstats.rx2_valid;
 
-  lstats.rssi1_filtered = RSSI_INVALID;
-  lstats.rssi2_filtered = RSSI_INVALID;
-  lstats.snr_filtered = SNR_INVALID;
+    lstats.rssi1_filtered = RSSI_INVALID;
+    lstats.rssi2_filtered = RSSI_INVALID;
+    lstats.snr_filtered = SNR_INVALID;
 
-  // receiver side of things
+    // receiver side of things
 
-  lstats.receiver_LQ = stats.received_LQ; // valid_crc1_received, number of rc data packets received on receiver side
-  lstats.receiver_LQ_serial = stats.received_LQ_serial_data; // valid_frames_received, number of completely valid packets received on receiver side
-  lstats.receiver_rssi_instantaneous = stats.received_rssi;
-  lstats.receiver_receive_antenna = stats.received_antenna;
-  lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-  lstats.receiver_diversity = 0; // TODO: this we do not know currently
+    lstats.receiver_LQ = stats.received_LQ; // valid_crc1_received, number of rc data packets received on receiver side
+    lstats.receiver_LQ_serial = stats.received_LQ_serial_data; // valid_frames_received, number of completely valid packets received on receiver side
+    lstats.receiver_rssi_instantaneous = stats.received_rssi;
+    lstats.receiver_receive_antenna = stats.received_antenna;
+    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
+    lstats.receiver_diversity = 0; // TODO: this we do not know currently
 
-  lstats.receiver_rssi_filtered = RSSI_INVALID;
+    lstats.receiver_rssi_filtered = RSSI_INVALID;
 
-  // further stats acquired on transmitter side
+    // further stats acquired on transmitter side
 
-  lstats.LQ_fresh_serial_packets_transmitted = stats.fresh_serial_data_transmitted.GetLQ();
-  lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
+    lstats.LQ_fresh_serial_packets_transmitted = stats.fresh_serial_data_transmitted.GetLQ();
+    lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
 
-  lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
-  lstats.LQ_fresh_serial_packets_received = stats.fresh_serial_data_received.GetLQ();
-  lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
+    lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
+    lstats.LQ_fresh_serial_packets_received = stats.fresh_serial_data_received.GetLQ();
+    lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
 
-  lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
+    lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
-  lstats.fhss_curr_i = txstats.fhss_curr_i;
-  lstats.fhss_cnt = fhss.cnt;
+    lstats.fhss_curr_i = txstats.fhss_curr_i;
+    lstats.fhss_cnt = fhss.cnt;
 
-  mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats); //, sizeof(tMBridgeLinkStats));
+    lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
+
+    mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
+}
+
+
+void mbridge_request_cmd(uint8_t* payload)
+{
+    tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
+
+    switch (request->requested_cmd) {
+    case MBRIDGE_CMD_PARAM_ITEM:
+        break;
+    case MBRIDGE_CMD_INFO:
+        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_INFO);
+        break;
+    }
+}
+
+
+void mbridge_send_Info(void)
+{
+tMBridgeInfo info = {0};
+
+    info.frequency_band = Config.FrequencyBand;
+    info.receiver_sensitivity = sx.ReceiverSensitivity_dbm();
+
+    info.tx_actual_power_dbm = sx.RfPower_dbm();
+
+    info.tx_diversity = 3; // 3 = invalid
+    if (USE_ANTENNA1 && USE_ANTENNA2) {
+        info.tx_diversity = 0;
+    } else
+    if (USE_ANTENNA1) {
+        info.tx_diversity = 1;
+    } else
+    if (USE_ANTENNA2) {
+        info.tx_diversity = 2;
+    }
+
+    info.rx_available = 0;
+    info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
+    info.rx_diversity = 3; // 3 = invalid
+
+    mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }
 
 
@@ -392,9 +444,9 @@ void mbridge_send_DeviceItemTx(void)
 {
 tMBridgeDeviceItem item = {0};
 
-  item.firmware_version = VERSION;
-  strncpy(item.device_name, DEVICE_NAME, sizeof(item.device_name));
-  mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
+    item.firmware_version = VERSION;
+    strncpy(item.device_name, DEVICE_NAME, sizeof(item.device_name));
+    mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
 }
 
 
@@ -402,14 +454,14 @@ void mbridge_send_DeviceItemRx(void)
 {
 tMBridgeDeviceItem item = {0};
 
-  // we can send it only if we are connected and did got the RX information
-  // else we send a zero array, this allows a configurator to determine if RX can be edited etc.
-  if (connected()) {
-    item.firmware_version = VERSION;
-    strncpy(item.device_name, "RX RX", sizeof(item.device_name));
-  }
+    // we can send it only if we are connected and did got the RX information
+    // else we send a zero array, this allows a configurator to determine if RX can be edited etc.
+    if (connected()) {
+        item.firmware_version = VERSION;
+        strncpy(item.device_name, "RX RX", sizeof(item.device_name));
+    }
 
-  mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
+    mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
 }
 
 
@@ -420,116 +472,117 @@ uint8_t param_cnt;
 
 void mbridge_start_ParamRequestList(void)
 {
-  param_idx = 0;
-  param_cnt = SETUP_PARAMETER_NUM;
-  param_itemtype_cnt = 0;
+    param_idx = 0;
+    param_cnt = SETUP_PARAMETER_NUM;
+    param_itemtype_cnt = 0;
 
-  mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
+    mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
 }
+
 
 void mbridge_send_ParamItem(void)
 {
-  if (param_idx >= param_cnt) {
-    tMBridgeParamItem item = {0};
-    item.index = UINT8_MAX; // indicates end of list
-    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
-    return;
-  }
-
-  bool item3_needed = false;
-
-  if (param_itemtype_cnt == 0) {
-    tMBridgeParamItem item = {0};
-    item.index = param_idx;
-    switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-      item.type = setup_paramitem_is_list(param_idx) ? MBRIDGE_PARAM_TYPE_LIST : MBRIDGE_PARAM_TYPE_UINT8;
-      item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
-      break;
-    case SETUP_PARAM_TYPE_INT8:
-      item.type = MBRIDGE_PARAM_TYPE_INT8;
-      item.value.i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
-      break;
-    case SETUP_PARAM_TYPE_UINT16:
-      item.type = MBRIDGE_PARAM_TYPE_UINT16;
-      item.value.u16 = *(uint16_t*)(SetupParameter[param_idx].ptr);
-      break;
-    case SETUP_PARAM_TYPE_INT16:
-      item.type = MBRIDGE_PARAM_TYPE_INT16;
-      item.value.i16 = *(int16_t*)(SetupParameter[param_idx].ptr);
-      break;
-    case SETUP_PARAM_TYPE_STR6:
-      item.type = MBRIDGE_PARAM_TYPE_STR6;
-      strncpy(item.str6, (char*)(SetupParameter[param_idx].ptr), 6);
-      break;
-    }
-    strncpy(item.name, SetupParameter[param_idx].name, sizeof(item.name));
-
-    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
-
-    param_itemtype_cnt = 1;
-
-  } else
-  if (param_itemtype_cnt == 1) {
-    tMBridgeParamItem2 item2 = {0};
-    item2.index = param_idx;
-    switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-      if (setup_paramitem_is_list(param_idx)) {
-        item2.not_allowed_mask = 0;
-        strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
-        if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
-      } else {
-        item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
-        item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
-        item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
-        strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
-      }
-      break;
-    case SETUP_PARAM_TYPE_INT8:
-      item2.dflt.i8 = SetupParameter[param_idx].dflt.INT8_value;
-      item2.min.i8 = SetupParameter[param_idx].min.INT8_value;
-      item2.max.i8 = SetupParameter[param_idx].max.INT8_value;
-      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
-      break;
-    case SETUP_PARAM_TYPE_UINT16:
-      item2.dflt.u16 = SetupParameter[param_idx].dflt.UINT16_value;
-      item2.min.u16 = SetupParameter[param_idx].min.UINT16_value;
-      item2.max.u16 = SetupParameter[param_idx].max.UINT16_value;
-      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
-      break;
-    case SETUP_PARAM_TYPE_INT16:
-      item2.dflt.i16 = SetupParameter[param_idx].dflt.INT16_value;
-      item2.min.i16 = SetupParameter[param_idx].min.INT16_value;
-      item2.max.i16 = SetupParameter[param_idx].max.INT16_value;
-      strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
-      break;
+    if (param_idx >= param_cnt) {
+        tMBridgeParamItem item = {0};
+        item.index = UINT8_MAX; // indicates end of list
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+        return;
     }
 
-    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
+    bool item3_needed = false;
 
-    if (item3_needed) {
-      param_itemtype_cnt = 2;
-    } else {
-      // next param item
-      param_itemtype_cnt = 0;
-      param_idx++;
+    if (param_itemtype_cnt == 0) {
+        tMBridgeParamItem item = {0};
+        item.index = param_idx;
+        switch (SetupParameter[param_idx].type) {
+        case SETUP_PARAM_TYPE_UINT8:
+            item.type = setup_paramitem_is_list(param_idx) ? MBRIDGE_PARAM_TYPE_LIST : MBRIDGE_PARAM_TYPE_UINT8;
+            item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            break;
+        case SETUP_PARAM_TYPE_INT8:
+            item.type = MBRIDGE_PARAM_TYPE_INT8;
+            item.value.i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+            break;
+        case SETUP_PARAM_TYPE_UINT16:
+            item.type = MBRIDGE_PARAM_TYPE_UINT16;
+            item.value.u16 = *(uint16_t*)(SetupParameter[param_idx].ptr);
+            break;
+        case SETUP_PARAM_TYPE_INT16:
+            item.type = MBRIDGE_PARAM_TYPE_INT16;
+            item.value.i16 = *(int16_t*)(SetupParameter[param_idx].ptr);
+            break;
+        case SETUP_PARAM_TYPE_STR6:
+            item.type = MBRIDGE_PARAM_TYPE_STR6;
+            strncpy(item.str6, (char*)(SetupParameter[param_idx].ptr), 6);
+            break;
+        }
+        strncpy(item.name, SetupParameter[param_idx].name, sizeof(item.name));
+
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+
+        param_itemtype_cnt = 1;
+
+    } else
+    if (param_itemtype_cnt == 1) {
+        tMBridgeParamItem2 item2 = {0};
+        item2.index = param_idx;
+        switch (SetupParameter[param_idx].type) {
+        case SETUP_PARAM_TYPE_UINT8:
+            if (setup_paramitem_is_list(param_idx)) {
+                item2.not_allowed_mask = 0;
+                strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
+                if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
+            } else {
+                item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
+                item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
+                item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
+                strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+            }
+            break;
+        case SETUP_PARAM_TYPE_INT8:
+            item2.dflt.i8 = SetupParameter[param_idx].dflt.INT8_value;
+            item2.min.i8 = SetupParameter[param_idx].min.INT8_value;
+            item2.max.i8 = SetupParameter[param_idx].max.INT8_value;
+            strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+            break;
+        case SETUP_PARAM_TYPE_UINT16:
+            item2.dflt.u16 = SetupParameter[param_idx].dflt.UINT16_value;
+            item2.min.u16 = SetupParameter[param_idx].min.UINT16_value;
+            item2.max.u16 = SetupParameter[param_idx].max.UINT16_value;
+            strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+            break;
+        case SETUP_PARAM_TYPE_INT16:
+            item2.dflt.i16 = SetupParameter[param_idx].dflt.INT16_value;
+            item2.min.i16 = SetupParameter[param_idx].min.INT16_value;
+            item2.max.i16 = SetupParameter[param_idx].max.INT16_value;
+            strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+            break;
+        }
+
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
+
+        if (item3_needed) {
+            param_itemtype_cnt = 2;
+        } else {
+            // next param item
+            param_itemtype_cnt = 0;
+            param_idx++;
+        }
+    } else
+    if (param_itemtype_cnt >= 2) {
+        tMBridgeParamItem3 item3 = {0};
+        item3.index = param_idx;
+        item3.not_allowed_mask2 = 0;
+        strncpy(item3.options2, SetupParameter[param_idx].optstr + 22, sizeof(item3.options2));
+
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
+
+        // next param item
+        param_itemtype_cnt = 0;
+        param_idx++;
     }
-  } else
-  if (param_itemtype_cnt >= 2) {
-    tMBridgeParamItem3 item3 = {0};
-    item3.index = param_idx;
-    item3.not_allowed_mask2 = 0;
-    strncpy(item3.options2, SetupParameter[param_idx].optstr + 22, sizeof(item3.options2));
 
-    mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
-
-    // next param item
-    param_itemtype_cnt = 0;
-    param_idx++;
-  }
-
-  mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
+    mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
 }
 
 

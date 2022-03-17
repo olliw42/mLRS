@@ -50,42 +50,48 @@
 
 
 typedef enum {
-  MBRIDGE_CHANNELPACKET_STX   = 0xFF, // marker which indicates a channel packet
-  MBRIDGE_COMMANDPACKET_STX   = 0xA0, // 0b101x marker which indicates a command packet
-  MBRIDGE_COMMANDPACKET_MASK  = 0xE0, // 0b111x
+    MBRIDGE_CHANNELPACKET_STX   = 0xFF, // marker which indicates a channel packet
+    MBRIDGE_COMMANDPACKET_STX   = 0xA0, // 0b101x marker which indicates a command packet
+    MBRIDGE_COMMANDPACKET_MASK  = 0xE0, // 0b111x
 } MBRIDGE_PACKET_STX_ENUM;
 
 
 typedef enum {
-  MBRIDGE_CMD_TX_LINK_STATS       = 0x02,
-  MBRIDGE_CMD_DEVICE_REQUEST_ITEM = 0x03, // len = 0
-  MBRIDGE_CMD_DEVICE_ITEM_TX      = 0x04,
-  MBRIDGE_CMD_DEVICE_ITEM_RX      = 0x05,
-  MBRIDGE_CMD_PARAM_REQUEST_LIST  = 0x06, // len = 0
-  MBRIDGE_CMD_PARAM_ITEM          = 0x07,
-  MBRIDGE_CMD_PARAM_ITEM2         = 0x08,
-  MBRIDGE_CMD_PARAM_ITEM3         = 0x09,
+    MBRIDGE_CMD_TX_LINK_STATS       = 0x02,
+    MBRIDGE_CMD_DEVICE_REQUEST_ITEM = 0x03, // len = 0
+    MBRIDGE_CMD_DEVICE_ITEM_TX      = 0x04,
+    MBRIDGE_CMD_DEVICE_ITEM_RX      = 0x05,
+    MBRIDGE_CMD_PARAM_REQUEST_LIST  = 0x06, // len = 0
+    MBRIDGE_CMD_PARAM_ITEM          = 0x07,
+    MBRIDGE_CMD_PARAM_ITEM2         = 0x08,
+    MBRIDGE_CMD_PARAM_ITEM3         = 0x09,
+    MBRIDGE_CMD_REQUEST_CMD         = 0x0A,
+    MBRIDGE_CMD_INFO                = 0x0B,
 } MBRIDGE_CMD_ENUM;
 
 
 #define MBRIDGE_CMD_TX_LINK_STATS_LEN         22
 #define MBRIDGE_CMD_DEVICE_ITEM_LEN           24
 #define MBRIDGE_CMD_PARAM_ITEM_LEN            24
+#define MBRIDGE_CMD_REQUEST_CMD_LEN           18
+#define MBRIDGE_CMD_INFO_LEN                  24
 
 
 uint8_t mbridge_cmd_payload_len(uint8_t cmd)
 {
-  switch (cmd) {
-  case MBRIDGE_CMD_TX_LINK_STATS: return MBRIDGE_CMD_TX_LINK_STATS_LEN;
-  case MBRIDGE_CMD_DEVICE_REQUEST_ITEM: return 0;
-  case MBRIDGE_CMD_DEVICE_ITEM_TX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
-  case MBRIDGE_CMD_DEVICE_ITEM_RX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
-  case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;
-  case MBRIDGE_CMD_PARAM_ITEM: return MBRIDGE_CMD_PARAM_ITEM_LEN;
-  case MBRIDGE_CMD_PARAM_ITEM2: return MBRIDGE_CMD_PARAM_ITEM_LEN;
-  case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
-  }
-  return 0;
+    switch (cmd) {
+    case MBRIDGE_CMD_TX_LINK_STATS: return MBRIDGE_CMD_TX_LINK_STATS_LEN;
+    case MBRIDGE_CMD_DEVICE_REQUEST_ITEM: return 0;
+    case MBRIDGE_CMD_DEVICE_ITEM_TX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
+    case MBRIDGE_CMD_DEVICE_ITEM_RX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
+    case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;
+    case MBRIDGE_CMD_PARAM_ITEM: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+    case MBRIDGE_CMD_PARAM_ITEM2: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+    case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+    case MBRIDGE_CMD_REQUEST_CMD: return MBRIDGE_CMD_REQUEST_CMD_LEN;
+    case MBRIDGE_CMD_INFO: return MBRIDGE_CMD_INFO_LEN;
+    }
+    return 0;
 }
 
 
@@ -123,60 +129,62 @@ typedef union {
 MBRIDGE_PACKED(
 typedef struct
 {
-  // transmitter side of things
+    // transmitter side of things
 
-  uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
-  int8_t rssi1_instantaneous;
-  int8_t rssi2_instantaneous;
-  int8_t snr_instantaneous;
+    uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
+    int8_t rssi1_instantaneous;
+    int8_t rssi2_instantaneous;
+    int8_t snr_instantaneous;
 
-  int8_t rssi1_filtered;
-  int8_t rssi2_filtered;
-  int8_t snr_filtered;
+    int8_t rssi1_filtered;
+    int8_t rssi2_filtered;
+    int8_t snr_filtered;
 
-  // receiver side of things
+    // receiver side of things
 
-  uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
-  uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
-  int8_t receiver_rssi_instantaneous;
+    uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
+    uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
+    int8_t receiver_rssi_instantaneous;
 
-  int8_t receiver_rssi_filtered;
+    int8_t receiver_rssi_filtered;
 
-  // both
+    // both
 
-  // 0: antenna1, 1: antenna2, instantaneous value
-  uint8_t receive_antenna : 1;
-  uint8_t transmit_antenna : 1;
-  uint8_t receiver_receive_antenna : 1;
-  uint8_t receiver_transmit_antenna : 1;
-  uint8_t diversity : 1;
-  uint8_t receiver_diversity : 1;
-  uint8_t rx1_valid : 1;
-  uint8_t rx2_valid : 1;
+    // 0: antenna1, 1: antenna2, instantaneous value
+    uint8_t receive_antenna : 1;
+    uint8_t transmit_antenna : 1;
+    uint8_t receiver_receive_antenna : 1;
+    uint8_t receiver_transmit_antenna : 1;
+    uint8_t diversity : 1;
+    uint8_t receiver_diversity : 1;
+    uint8_t rx1_valid : 1;
+    uint8_t rx2_valid : 1;
 
-  // further stats acquired on transmitter side
+    // further stats acquired on transmitter side
 
-  // number of transmitted packets per sec is always 50  => max transmit data rate = 50 * 64
-  // so we only need to count transmitted packets with new serial data => current max transmit data rate = Nnew * 64
-  // 50 - Nnew is the number of retransmissions
-  // in addition we count the bytes transmitted
-  uint8_t LQ_fresh_serial_packets_transmitted;
-  uint8_t bytes_per_sec_transmitted;
+    // number of transmitted packets per sec is always 50  => max transmit data rate = 50 * 64
+    // so we only need to count transmitted packets with new serial data => current max transmit data rate = Nnew * 64
+    // 50 - Nnew is the number of retransmissions
+    // in addition we count the bytes transmitted
+    uint8_t LQ_fresh_serial_packets_transmitted;
+    uint8_t bytes_per_sec_transmitted;
 
-  // number of received serial data packets per sec is LQ_valid_received => max receive data rate = N * 82
-  // we further count received packets with new serial data => current max transmit data rate = Nnew * 64
-  // N - Nnew is the number of retransmissions
-  // in addition we count the bytes received
-  uint8_t LQ_valid_received;  // number of completely valid packets received per sec
-  uint8_t LQ_fresh_serial_packets_received;
-  uint8_t bytes_per_sec_received;
+    // number of received serial data packets per sec is LQ_valid_received => max receive data rate = N * 82
+    // we further count received packets with new serial data => current max transmit data rate = Nnew * 64
+    // N - Nnew is the number of retransmissions
+    // in addition we count the bytes received
+    uint8_t LQ_valid_received;  // number of completely valid packets received per sec
+    uint8_t LQ_fresh_serial_packets_received;
+    uint8_t bytes_per_sec_received;
 
-  uint8_t LQ_received; // number of packets received per sec, not practically relevant
+    uint8_t LQ_received; // number of packets received per sec, not practically relevant
 
-  uint8_t fhss_curr_i;
-  uint8_t fhss_cnt;
+    uint8_t fhss_curr_i;
+    uint8_t fhss_cnt;
 
-  uint8_t spare2[2];
+    uint8_t vehicle_state : 2; // 0 = disarmed, 1 = armed 2 = flying, 3 = invalid/unknown
+
+    uint8_t spare;
 }) tMBridgeLinkStats; // 22 bytes
 
 
@@ -185,75 +193,104 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-  uint32_t firmware_version;
-  char device_name[20];
+    uint32_t firmware_version;
+    char device_name[20];
 }) tMBridgeDeviceItem; // 24 bytes
+
+
+//-- MBridge More Commands
+
+MBRIDGE_PACKED(
+typedef struct
+{
+    uint8_t requested_cmd;
+    MBRIDGE_PACKED(union {
+        struct {
+            uint8_t index;
+            char name[16];
+        };
+    });
+}) tMBridgeRequestCmd; // 18 bytes
+
+
+MBRIDGE_PACKED(
+typedef struct
+{
+    int16_t receiver_sensitivity;
+    uint8_t frequency_band;
+    int8_t tx_actual_power_dbm;
+    int8_t rx_actual_power_dbm;
+    uint8_t rx_available : 1;
+    uint8_t tx_diversity : 2;
+    uint8_t rx_diversity : 2;
+    uint8_t spare[18];
+}) tMBridgeInfo; // 24 bytes
 
 
 //-- MBridge ParamItem Commands
 
 typedef enum {
-  MBRIDGE_PARAM_TYPE_UINT8 = 0,
-  MBRIDGE_PARAM_TYPE_INT8,
-  MBRIDGE_PARAM_TYPE_UINT16,
-  MBRIDGE_PARAM_TYPE_INT16,
-  MBRIDGE_PARAM_TYPE_LIST,
-  MBRIDGE_PARAM_TYPE_STR6,
-//  MBRIDGE_PARAM_TYPE_TEXT,
-//  MBRIDGE_PARAM_TYPE_ACTION,
+    MBRIDGE_PARAM_TYPE_UINT8 = 0,
+    MBRIDGE_PARAM_TYPE_INT8,
+    MBRIDGE_PARAM_TYPE_UINT16,
+    MBRIDGE_PARAM_TYPE_INT16,
+    MBRIDGE_PARAM_TYPE_LIST,
+    MBRIDGE_PARAM_TYPE_STR6,
+//    MBRIDGE_PARAM_TYPE_TEXT,
+//    MBRIDGE_PARAM_TYPE_ACTION,
 } MBRIDGE_PARAM_TYPE_ENUM;
 
 
 typedef union
 {
-  uint8_t u8;
-  int8_t i8;
-  uint16_t u16;
-  int16_t i16;
+    uint8_t u8;
+    int8_t i8;
+    uint16_t u16;
+    int16_t i16;
 } tMBridgeParamValue;
 
 
 MBRIDGE_PACKED(
 typedef struct
 {
-  uint8_t index;
-  uint8_t type;
-  char name[16];
-  MBRIDGE_PACKED(union {
-    tMBridgeParamValue value;
-    uint32_t value_u32;
-    char str6[6];
-  });
+    uint8_t index;
+    uint8_t type;
+    char name[16];
+    MBRIDGE_PACKED(union {
+        tMBridgeParamValue value;
+        uint32_t value_u32;
+        char str6[6];
+    });
 }) tMBridgeParamItem; // 24 bytes
 
 
 MBRIDGE_PACKED(
 typedef struct
 {
-  uint8_t index;
-  uint8_t not_allowed_mask;
-  MBRIDGE_PACKED(union {
-    struct {
-      tMBridgeParamValue min;
-      tMBridgeParamValue max;
-      tMBridgeParamValue dflt;
-      char unit[6];
-    };
-    char options[22];
-    char s[22];
-  });
+    uint8_t index;
+    uint8_t not_allowed_mask;
+    MBRIDGE_PACKED(union {
+        struct {
+            tMBridgeParamValue min;
+            tMBridgeParamValue max;
+            tMBridgeParamValue dflt;
+            char unit[6];
+        };
+        char options[22];
+        char s[22];
+    });
 }) tMBridgeParamItem2; // 24 bytes
 
 
 MBRIDGE_PACKED(
 typedef struct
 {
-  uint8_t index;
-  uint8_t not_allowed_mask2;
-  MBRIDGE_PACKED(union {
-    char options2[22];
-    char s2[22];
-  });
+    uint8_t index;
+    uint8_t not_allowed_mask2;
+    MBRIDGE_PACKED(union {
+        char options2[22];
+        char s2[22];
+    });
 }) tMBridgeParamItem3; // 24 bytes
 
 
@@ -265,6 +302,8 @@ STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBrid
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeRequestCmd) == MBRIDGE_CMD_REQUEST_CMD_LEN, "tMBridgeRequestCmd len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeInfo) == MBRIDGE_CMD_INFO_LEN, "tMBridgeInfo len missmatch")
 
 
 #endif // MBRIDGE_PROTOCOL_H

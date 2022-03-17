@@ -147,6 +147,14 @@ typedef enum {
 } SX126x_LORA_CONFIG_ENUM;
 
 
+typedef enum {
+    CONFIG_FREQUENCY_BAND_2P4_GHZ = 0,
+    CONFIG_FREQUENCY_BAND_915_MHZ_FCC,
+    CONFIG_FREQUENCY_BAND_868_MHZ,
+    CONFIG_FREQUENCY_BAND_NUM,
+} CONFIG_FREQUENCY_BAND_ENUM;
+
+
 //-------------------------------------------------------
 // Setup and Config Types
 //-------------------------------------------------------
@@ -200,6 +208,8 @@ typedef struct
 // can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+  uint8_t FrequencyBand;
+
   uint8_t LoraConfigIndex;
   uint8_t lora_send_frame_tmo;
 
