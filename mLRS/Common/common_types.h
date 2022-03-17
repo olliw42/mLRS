@@ -117,11 +117,19 @@ uint8_t crsf_cvt_fps(uint8_t mode);
 uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 
+//-- bind phrase & sync word
+
+void sanitize_bind_phrase(char* bindphrase);
+uint32_t u32_from_bind_phrase(char* bindphrase);
+
+
 //-- auxiliary functions
 
 // clip a value for rcData to range
 
 uint16_t clip_rc(int32_t x);
+
+void strncpy_x(char* res, const char* src, uint16_t len);
 
 
 #endif // COMMON_TYPES_H

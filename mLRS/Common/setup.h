@@ -20,7 +20,10 @@ tGlobalConfig Config;
 
 void setup_default(void)
 {
-  Setup.Tx.Power = 0;
+  strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
+  Setup.Mode = SETUP_MODE;
+
+  Setup.Tx.Power = SETUP_POWER_MIN;
   Setup.Tx.Diversity = SETUP_TX_DIVERSITY;
   Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
   Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -30,7 +33,7 @@ void setup_default(void)
   Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
   Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
-  Setup.Rx.Power = 0;
+  Setup.Rx.Power = SETUP_POWER_MIN;
   Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
   Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
   Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
@@ -40,15 +43,13 @@ void setup_default(void)
   Setup.Rx.SerialBaudrate_bytespersec = (SETUP_RX_SERIAL_BAUDRATE / 10);
   Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
   Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
-
-  Setup.BindDblWord = BIND_DBLWORD;
-
-  Setup.Mode = SETUP_MODE;
 }
 
 
 void setup_sanitize(void)
 {
+  sanitize_bind_phrase(Setup.BindPhrase);
+
   // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
   if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
     Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
@@ -104,6 +105,11 @@ void setup_sanitize(void)
 
 void setup_configure(void)
 {
+  //-- SyncWord
+  uint32_t bind_dblword = u32_from_bind_phrase(Setup.BindPhrase);
+
+  Config.FrameSyncWord = (uint16_t)(bind_dblword & 0x0000FFFF);
+
   // TODO: we momentarily use the POWER values, but eventually we need to use the power_list[] array and setup Rx/Tx power
 #ifdef DEVICE_IS_TRANSMITTER
   Config.Power = SETUP_TX_POWER;
@@ -145,9 +151,10 @@ void setup_configure(void)
     while (1) {} // must not happen
   }
 
-  Config.FrameSyncWord = (uint16_t)(Setup.BindDblWord & 0x0000FFFF);
+  //-- Fhss
 
-  Config.FhssSeed = Setup.BindDblWord;
+  Config.FhssSeed = bind_dblword;
+
 #if defined FREQUENCY_BAND_868_MHZ
   Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
@@ -206,7 +213,6 @@ void setup_init(void)
 
   setup_configure();
 }
-
 
 
 #endif // SETUP_H

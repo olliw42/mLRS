@@ -65,7 +65,7 @@
 #define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 12: CH12, note: CH13 - CH16 are 3-way and not suitable
 
 
-#define BIND_DBLWORD                    0x12344281
+#define BIND_PHRASE                     "zjem.c" // string of 6 characters, allowed are 'a'-'z', '0'-'9', ' ', '-','#','.'
 
 
 #define SETUP_MODE                      MODE_50HZ

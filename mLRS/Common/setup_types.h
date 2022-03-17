@@ -162,7 +162,7 @@ typedef struct
 {
   // parameters common to both Tx and Rx
   // cannot be changed on the fly, loss of connection will happen, need restart/reconnect
-  uint32_t BindDblWord;
+  char BindPhrase[6+2];
   uint16_t Mode;
 
   // parameters specific to Rx, can be changed on the fly
@@ -174,7 +174,7 @@ typedef struct
 
 
 // global configuration values, not stored in EEPROM
-// can be derived from setup parameters, from defines, or otherwise
+// can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
   uint8_t LoraConfigIndex;

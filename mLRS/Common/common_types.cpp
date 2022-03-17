@@ -7,17 +7,11 @@
 // COMMON TYPES
 //*******************************************************
 
+#include <string.h>
+#include "common_types.h"
 #include "common_types.h"
 #include "setup_types.h"
 #include "crsf_protocol.h"
-
-
-uint16_t clip_rc(int32_t x)
-{
-  if (x <= 1) return 1;
-  if (x >= 2047) return 2047;
-  return x;
-}
 
 
 uint8_t rssi_u7_from_i8(int8_t rssi_i8)
@@ -122,4 +116,82 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8)
     return -rssi_i8;
 }
 
+
+//-- bind phrase
+
+void sanitize_bind_phrase(char* bindphrase)
+{
+    for (uint8_t i = 0; i < 6; i++) {
+
+        if (bindphrase[i] >= 'a' && bindphrase[i] <= 'z' ) {
+        } else
+        if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
+        } else
+        if (bindphrase[i] == ' ') {
+        } else
+        if (bindphrase[i] == '#') {
+        } else
+        if (bindphrase[i] == '-') {
+        } else
+        if (bindphrase[i] == '.') {
+        } else {
+          bindphrase[i] = ' ';
+        }
+    }
+
+    bindphrase[6] = '\0';
+}
+
+
+uint32_t u32_from_bind_phrase(char* bindphrase)
+{
+    uint64_t v = 0;
+    uint64_t base = 1;
+
+    for (uint8_t i = 0; i < 6; i++) {
+        uint8_t n = 0;
+
+        if (bindphrase[i] >= 'a' && bindphrase[i] <= 'z' ) {
+            n = bindphrase[i] - 'a';
+        } else
+        if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
+            n = 26 + bindphrase[i] - '0';
+        } else
+        if (bindphrase[i] == ' ') {
+            n = 36;
+        } else
+        if (bindphrase[i] == '#') {
+            n = 37;
+        } else
+        if (bindphrase[i] == '-') {
+            n = 38;
+        } else
+        if (bindphrase[i] == '.') {
+            n = 39;
+        }
+
+        v += n * base;
+        base *= 40;
+    }
+
+    return  (uint32_t)v;
+}
+
+
+//-- auxiliary
+
+uint16_t clip_rc(int32_t x)
+{
+  if (x <= 1) return 1;
+  if (x >= 2047) return 2047;
+  return x;
+}
+
+
+void strncpy_x(char* res, const char* src, uint16_t len)
+{
+    uint16_t len2 = strlen(src);
+    if (len > len2) len = len2;
+    for (uint8_t i = 0; i < len; i++) res[i] = src[i];
+}
 
