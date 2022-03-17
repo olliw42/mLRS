@@ -14,6 +14,7 @@ local DEVICE_ITEM_RX = nil
 local DEVICE_PARAM_LIST = nil
 local DEVICE_PARAM_LIST_complete = false
 local DEVICE_RX_connected = false
+local DEVICE_INFO = nil
 
 
 local function clearParams()
@@ -22,6 +23,7 @@ local function clearParams()
     DEVICE_PARAM_LIST = nil
     DEVICE_PARAM_LIST_complete = false
     DEVICE_RX_connected = false
+    DEVICE_INFO = nil
 end
 
 
@@ -111,6 +113,23 @@ local function mb_to_firmwareversions_string(u32)
     return string.format("v%d.%02d.%02d", v2, v3, v4)
 end
 
+local function mb_to_u8_bits(payload,pos,bitpos,bitmask)
+    local v = payload[pos]
+    v = bit32.rshift(v, bitpos)
+    v = bit32.band(v, bitmask)
+    return v    
+end    
+
+local diversity_list = {}
+diversity_list[0] = "enabled"
+diversity_list[1] = "antenna1"
+diversity_list[2] = "antenna2"
+
+local freq_band_list = {}
+freq_band_list[0] = "2.4 GHz"
+freq_band_list[1] = "915 MHz FCC"
+freq_band_list[2] = "868 MHz"
+
 
 ----------------------------------------------------------------------
 -- looper to send and read command frames
@@ -122,11 +141,16 @@ local function doParamLoop()
     if t_10ms - t_last > 10 then
       t_last = t_10ms
       if DEVICE_ITEM_TX == nil then
-          mbridge.cmdPush(0x03, {})
-      elseif DEVICE_PARAM_LIST == nil then
+          mbridge.cmdPush(mbridge.CMD_DEVICE_REQUEST_ITEM, {})
+      elseif DEVICE_INFO == nil then    
           if DEVICE_ITEM_RX ~= nil then
+              DEVICE_INFO_LIST = {}
+              mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_INFO})
+          end    
+      elseif DEVICE_PARAM_LIST == nil then
+          if DEVICE_INFO ~= nil then
               DEVICE_PARAM_LIST = {}
-              mbridge.cmdPush(0x06, {})
+              mbridge.cmdPush(mbridge.CMD_PARAM_REQUEST_LIST, {})
           end    
       end  
     end    
@@ -149,6 +173,16 @@ local function doParamLoop()
           if cmd.payload[4] > 0 and cmd.payload[5] > 0 then -- checking c[4] would be sufficient, but hey
               DEVICE_RX_connected = true
           end    
+      elseif cmd.cmd == mbridge.CMD_INFO then 
+          -- MBRIDGE_CMD_INFO
+          DEVICE_INFO = cmd
+          DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
+          DEVICE_INFO.frequency_band = mb_to_u8(cmd.payload,2)
+          DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
+          DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
+          DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
+          DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
+          DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
       elseif cmd.cmd == mbridge.CMD_PARAM_ITEM then 
           -- MBRIDGE_CMD_PARAM_ITEM
           local index = cmd.payload[0]
@@ -332,7 +366,7 @@ local function drawPageMain()
       lcd.drawText(35, y, "---", TEXT_COLOR)  
     else
       lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR)  
-      lcd.drawText(35, y+21, DEVICE_ITEM_TX.version_str, TEXT_COLOR)  
+      lcd.drawText(35, y+20, DEVICE_ITEM_TX.version_str, TEXT_COLOR)  
     end
     lcd.drawText(240, y, "Rx:", TEXT_COLOR)
     if not DEVICE_PARAM_LIST_complete then
@@ -342,7 +376,7 @@ local function drawPageMain()
       lcd.drawText(270, y, "---", TEXT_COLOR)  
     else
       lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR)  
-      lcd.drawText(270, y+21, DEVICE_ITEM_RX.version_str, TEXT_COLOR)  
+      lcd.drawText(270, y+20, DEVICE_ITEM_RX.version_str, TEXT_COLOR)  
     end
  
     y = 90
@@ -366,11 +400,49 @@ local function drawPageMain()
     lcd.drawText(10 + 240, y, "Reload", cur_attr(5))  
      
     -- show overview of some selected parameters
-    y = 180
+    y = 190
+    lcd.setColor(CUSTOM_COLOR, GREY)
+    lcd.drawFilledRectangle(0, y-6, LCD_W, 1, CUSTOM_COLOR)
+    
     if not DEVICE_PARAM_LIST_complete then
-        lcd.drawText(10, y+20, "parameters loading ...", TEXT_COLOR+BLINK+INVERS)  
+        lcd.drawText(130, y+20, "parameters loading ...", TEXT_COLOR+BLINK+INVERS)  
         return
     end
+    
+    lcd.drawText(10, y, "Tx Power", TEXT_COLOR)  
+    lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", TEXT_COLOR)  
+    lcd.drawText(10, y+20, "Tx Diversity", TEXT_COLOR) 
+    
+    if DEVICE_INFO.tx_diversity <= #diversity_list then
+        lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], TEXT_COLOR)  
+    else
+        lcd.drawText(140, y+20, "?", TEXT_COLOR)  
+    end    
+    
+    lcd.drawText(10+240, y, "Rx Power", TEXT_COLOR)
+    lcd.drawText(10+240, y+20, "Rx Diversity", TEXT_COLOR)  
+    if DEVICE_INFO.rx_power_dbm < 127 then
+        lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", TEXT_COLOR)  
+        if DEVICE_INFO.rx_diversity <= #diversity_list then
+          lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_diversity], TEXT_COLOR)  
+        else  
+          lcd.drawText(140+240, y+20, "?", TEXT_COLOR)  
+        end  
+    else  
+        lcd.drawText(140+240, y, "?", TEXT_COLOR)  
+        lcd.drawText(140+240, y+20, "?", TEXT_COLOR)  
+    end    
+    
+    y = y + 2*20
+    lcd.drawText(10, y, "Sensitivity", TEXT_COLOR)  
+    lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", TEXT_COLOR)  
+    
+    lcd.drawText(10, y+20, "Freq. Band", TEXT_COLOR)
+    if DEVICE_INFO.frequency_band <= #freq_band_list then
+        lcd.drawText(140, y+20, freq_band_list[DEVICE_INFO.frequency_band], TEXT_COLOR)  
+    else    
+        lcd.drawText(140, y+20, "?", TEXT_COLOR)  
+    end   
 end    
 
 
