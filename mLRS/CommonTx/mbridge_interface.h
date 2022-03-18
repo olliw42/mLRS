@@ -496,7 +496,7 @@ void mbridge_send_ParamItem(void)
         item.index = param_idx;
         switch (SetupParameter[param_idx].type) {
         case SETUP_PARAM_TYPE_UINT8:
-            item.type = setup_paramitem_is_list(param_idx) ? MBRIDGE_PARAM_TYPE_LIST : MBRIDGE_PARAM_TYPE_UINT8;
+            item.type = MBRIDGE_PARAM_TYPE_UINT8;
             item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
             break;
         case SETUP_PARAM_TYPE_INT8:
@@ -510,6 +510,10 @@ void mbridge_send_ParamItem(void)
         case SETUP_PARAM_TYPE_INT16:
             item.type = MBRIDGE_PARAM_TYPE_INT16;
             item.value.i16 = *(int16_t*)(SetupParameter[param_idx].ptr);
+            break;
+        case SETUP_PARAM_TYPE_LIST:
+            item.type = MBRIDGE_PARAM_TYPE_LIST;
+            item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
             break;
         case SETUP_PARAM_TYPE_STR6:
             item.type = MBRIDGE_PARAM_TYPE_STR6;
@@ -528,16 +532,10 @@ void mbridge_send_ParamItem(void)
         item2.index = param_idx;
         switch (SetupParameter[param_idx].type) {
         case SETUP_PARAM_TYPE_UINT8:
-            if (setup_paramitem_is_list(param_idx)) {
-                item2.not_allowed_mask = 0;
-                strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
-                if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
-            } else {
-                item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
-                item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
-                item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
-                strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
-            }
+            item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
+            item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
+            item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
+            strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
             break;
         case SETUP_PARAM_TYPE_INT8:
             item2.dflt.i8 = SetupParameter[param_idx].dflt.INT8_value;
@@ -556,6 +554,11 @@ void mbridge_send_ParamItem(void)
             item2.min.i16 = SetupParameter[param_idx].min.INT16_value;
             item2.max.i16 = SetupParameter[param_idx].max.INT16_value;
             strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
+            break;
+        case SETUP_PARAM_TYPE_LIST:
+            item2.not_allowed_mask = 0;
+            strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
+            if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
             break;
         }
 
