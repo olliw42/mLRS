@@ -127,7 +127,7 @@ void sanitize_bind_phrase(char* bindphrase)
         } else
         if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
         } else
-        if (bindphrase[i] == ' ') {
+        if (bindphrase[i] == '_') {
         } else
         if (bindphrase[i] == '#') {
         } else
@@ -135,7 +135,7 @@ void sanitize_bind_phrase(char* bindphrase)
         } else
         if (bindphrase[i] == '.') {
         } else {
-          bindphrase[i] = ' ';
+          bindphrase[i] = '_';
         }
     }
 
@@ -157,7 +157,7 @@ uint32_t u32_from_bind_phrase(char* bindphrase)
         if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
             n = 26 + bindphrase[i] - '0';
         } else
-        if (bindphrase[i] == ' ') {
+        if (bindphrase[i] == '_') {
             n = 36;
         } else
         if (bindphrase[i] == '#') {
