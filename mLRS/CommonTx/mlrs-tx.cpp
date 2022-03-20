@@ -791,10 +791,6 @@ IF_ANTENNA2(
       case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
       case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
       }
-
-dbg.puts("\nX: ");
-dbg.puts(u8toHEX_s(cmd));dbg.puts(", ");
-for (uint8_t i = 0; i < 10; i++) { dbg.puts("x");dbg.puts(u8toHEX_s(payload[i])); }
     }
 #endif
 #if (defined DEVICE_HAS_IN)
