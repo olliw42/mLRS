@@ -245,6 +245,9 @@ local option_value = 0
 local cursor_pidx = 0 -- parameter idx which corresponds to the current cursor_idx
 local p_cnt = 0
     
+local cursor_x_idx = 0 -- index into string for string edits
+local bindphrase_chars = "abcdefghijklmnopqrstuvwxyz0123456789_#-."
+
     
 local function cur_attr(idx)
     local attr = TEXT_COLOR
@@ -290,6 +293,58 @@ local function param_value_dec(idx)
 end
     
     
+local function cur_attr_x(idx, x_idx)
+    local attr = TEXT_COLOR
+    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
+        if edit then 
+            if cursor_x_idx == x_idx then attr = attr + BLINK + INVERS end    
+        else    
+            attr = attr + INVERS
+        end    
+    end    
+    return attr
+end    
+    
+    
+local function param_str6_inc(idx)
+    local p = DEVICE_PARAM_LIST[idx]
+    if p.typ == mbridge.PARAM_TYPE_STR6 then 
+        local c = string.sub(p.value, cursor_x_idx+1, cursor_x_idx+1)
+        local i = string.find(bindphrase_chars, c, 1, true) -- true for plain search
+        i = i + 1 
+        if i > string.len(bindphrase_chars) then i = 1 end
+        c = string.sub(bindphrase_chars, i,i)
+        p.value = string.sub(p.value, 1, cursor_x_idx) .. c .. string.sub(p.value, cursor_x_idx+2, string.len(p.value))
+    end
+    DEVICE_PARAM_LIST[idx].value = p.value
+end    
+
+
+local function param_str6_dec(idx)
+    local p = DEVICE_PARAM_LIST[idx]
+    if p.typ == mbridge.PARAM_TYPE_STR6 then 
+        local c = string.sub(p.value, cursor_x_idx+1, cursor_x_idx+1)
+        local i = string.find(bindphrase_chars, c, 1, true) -- true for plain search
+        i = i - 1 
+        if i < 1 then i = string.len(bindphrase_chars) end
+        c = string.sub(bindphrase_chars, i,i)
+        p.value = string.sub(p.value, 1, cursor_x_idx) .. c .. string.sub(p.value, cursor_x_idx+2, string.len(p.value))
+    end
+    DEVICE_PARAM_LIST[idx].value = p.value
+end
+    
+    
+local function param_str6_next(idx)
+    local p = DEVICE_PARAM_LIST[idx]
+    if p.typ == mbridge.PARAM_TYPE_STR6 then 
+        cursor_x_idx = cursor_x_idx + 1
+        if cursor_x_idx >= string.len(p.value) then
+            edit = false
+        end  
+    end
+end
+
+
 ----------------------------------------------------------------------
 -- Page Edit Tx/Rx
 ----------------------------------------------------------------------
@@ -422,7 +477,14 @@ local function drawPageMain()
     y = 90
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
-        lcd.drawText(140, y, DEVICE_PARAM_LIST[0].value, cur_attr(0))  
+--        lcd.drawText(140, y, DEVICE_PARAM_LIST[0].value, cur_attr(0))  
+      local x = 140  
+      for i = 1,6 do
+          local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
+          local attr = cur_attr_x(0, i-1)
+          lcd.drawText(x, y, c, attr)
+          x = x + lcd.getTextWidth(c,1,attr)+1
+      end
     end    
     
     lcd.drawText(10, y + 21, "Mode", TEXT_COLOR)  
@@ -506,6 +568,7 @@ local function doPageMain(event)
             elseif cursor_idx == 5 then -- Reload pressed
               clearParams()
             else      
+              cursor_x_idx = 0
               edit = true
             end  
         elseif event == EVT_VIRTUAL_NEXT and DEVICE_PARAM_LIST_complete then
@@ -527,13 +590,21 @@ local function doPageMain(event)
         if event == EVT_VIRTUAL_EXIT then
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
-            edit = false
+            if cursor_idx == 0 then 
+                param_str6_next(0)
+            else          
+                edit = false
+            end  
         elseif event == EVT_VIRTUAL_NEXT then
-            if cursor_idx == 1 then 
+            if cursor_idx == 0 then 
+                param_str6_inc(0)
+            elseif cursor_idx == 1 then 
                 param_value_inc(1)
             end    
         elseif event == EVT_VIRTUAL_PREV then
-            if cursor_idx == 1 then 
+            if cursor_idx == 0 then 
+                param_str6_dec(0)
+            elseif cursor_idx == 1 then 
                 param_value_dec(1)
             end    
         end
