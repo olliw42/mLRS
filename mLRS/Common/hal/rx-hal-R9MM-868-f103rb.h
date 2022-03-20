@@ -178,13 +178,13 @@ void leds_init(void)
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_LIST_NUM           5
-
-const rfpower_t rfpower_list[RFPOWER_LIST_NUM] = {
+const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_17_DBM, .mW = 50 },
 };
+
+#define RFPOWER_OPTSTR  "1 mW,10 mW,50 mW"
 
 
 //-- TEST

@@ -259,13 +259,14 @@ void leds_init(void)
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_LIST_NUM          3
-
-const rfpower_t power_list[RFPOWER_LIST_NUM] = {
+const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_12p5_DBM, .mW = 18 },
 };
+
+#define RFPOWER_OPTSTR  "min,1 mW,10 mW,18 mW"
 
 
 //-- TEST

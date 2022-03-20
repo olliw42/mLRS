@@ -789,7 +789,7 @@ IF_ANTENNA2(
         mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
         break;
       case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
-      case MBRIDGE_CMD_REQUEST_CMD: mbridge_request_cmd(mbridge.GetPayloadPtr()); break;
+      case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
       }
 
 dbg.puts("\nX: ");

@@ -467,7 +467,7 @@ int main_main(void)
 
   rxstats.Init(Config.LQAveragingPeriod);
 
-  out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannel, Setup.Rx.FailsafeMode);
+  out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannelMode, Setup.Rx.FailsafeMode);
   mavlink.Init();
 
   led_blink = 0;

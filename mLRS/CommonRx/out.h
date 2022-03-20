@@ -45,7 +45,7 @@ class OutBase
   public:
     void Init(tRxSetup* _setup);
 
-    void Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t new_failsafe_mode);
+    void Configure(uint8_t new_config, uint8_t new_rssi_channel_mode, uint8_t new_failsafe_mode);
 
     void Do(uint16_t tnow_us);
 

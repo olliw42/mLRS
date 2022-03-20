@@ -398,7 +398,7 @@ tMBridgeLinkStats lstats = {0};
 }
 
 
-void mbridge_request_cmd(uint8_t* payload)
+void mbridge_send_RequestCmd(uint8_t* payload)
 {
     tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
@@ -416,25 +416,31 @@ void mbridge_send_Info(void)
 {
 tMBridgeInfo info = {0};
 
-    info.frequency_band = Config.FrequencyBand;
-    info.receiver_sensitivity = sx.ReceiverSensitivity_dbm();
+    info.frequency_band = Config.FrequencyBand; // is equal for Tx and Rx
+    info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
 
     info.tx_actual_power_dbm = sx.RfPower_dbm();
-
-    info.tx_diversity = 3; // 3 = invalid
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        info.tx_diversity = 0;
+        info.tx_actual_diversity = 0;
     } else
     if (USE_ANTENNA1) {
-        info.tx_diversity = 1;
+        info.tx_actual_diversity = 1;
     } else
     if (USE_ANTENNA2) {
-        info.tx_diversity = 2;
+        info.tx_actual_diversity = 2;
+    } else {
+        info.tx_actual_diversity = 3; // 3 = invalid
     }
 
-    info.rx_available = 0;
-    info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
-    info.rx_diversity = 3; // 3 = invalid
+    if (SetupMetaData.rx_available) {
+        info.rx_available = 1;
+        info.rx_actual_power_dbm = SetupMetaData.rx_actual_power_dbm;
+        info.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
+    } else {
+        info.rx_available = 0;
+        info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
+        info.rx_actual_diversity = 3; // 3 = invalid
+    }
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }
@@ -454,13 +460,13 @@ void mbridge_send_DeviceItemRx(void)
 {
 tMBridgeDeviceItem item = {0};
 
-    // we can send it only if we are connected and did got the RX information
-    // else we send a zero array, this allows a configurator to determine if RX can be edited etc.
-    if (connected()) {
-        item.firmware_version = VERSION;
-        strncpy(item.device_name, "RX RX", sizeof(item.device_name));
+    if (SetupMetaData.rx_available) {
+        item.firmware_version = SetupMetaData.rx_firmware_version;
+        strncpy(item.device_name, SetupMetaData.rx_device_name, sizeof(item.device_name));
+    } else {
+        item.firmware_version = 0;
+        strncpy(item.device_name, "", sizeof(item.device_name));
     }
-
     mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
 }
 
@@ -556,8 +562,12 @@ void mbridge_send_ParamItem(void)
             strncpy(item2.unit, SetupParameter[param_idx].unit, sizeof(item2.unit));
             break;
         case SETUP_PARAM_TYPE_LIST:
-            item2.not_allowed_mask = 0;
-            strncpy(item2.options, SetupParameter[param_idx].optstr, sizeof(item2.options));
+            if (SetupParameter[param_idx].allowed_mask_ptr != nullptr) {
+                item2.allowed_mask = *SetupParameter[param_idx].allowed_mask_ptr;
+            } else {
+                item2.allowed_mask = UINT16_MAX;
+            }
+            strncpy(item2.options, SetupParameter[param_idx].optstr, 21); //sizeof(item2.options));
             if (strlen(SetupParameter[param_idx].optstr) >= sizeof(item2.options)) item3_needed = true;
             break;
         }
@@ -575,8 +585,7 @@ void mbridge_send_ParamItem(void)
     if (param_itemtype_cnt >= 2) {
         tMBridgeParamItem3 item3 = {0};
         item3.index = param_idx;
-        item3.not_allowed_mask2 = 0;
-        strncpy(item3.options2, SetupParameter[param_idx].optstr + 22, sizeof(item3.options2));
+        strncpy(item3.options2, SetupParameter[param_idx].optstr + 21, sizeof(item3.options2));
 
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
 

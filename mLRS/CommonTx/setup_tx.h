@@ -15,34 +15,78 @@
 #include "..\Common\setup.h"
 
 
+#define SETUP_MSK_MODE              &SetupMetaData.Mode_allowed_mask // this we get from the hal
+
+#define SETUP_OPT_TX_POWER          SetupMetaData.Tx_Power_optstr // this we get from the hal
+#define SETUP_OPT_RX_POWER          SetupMetaData.Rx_Power_optstr // this we get from the receiver
+
+// common to Tx,Rx, all options limited dependent on hardware, implementation
+#define SETUP_OPT_DIVERSITY         "enabled,antenna1,antenna2"
+#define SETUP_MSK_TX_DIVERSITY      &SetupMetaData.Tx_Diversity_allowed_mask // this we get from the hal
+#define SETUP_MSK_RX_DIVERSITY      &SetupMetaData.Rx_Diversity_allowed_mask // this we get from the receiver
+
+// Tx only
+#define SETUP_MSK_TX_SER_DEST       &SetupMetaData.Tx_SerialDestination_allowed_mask // this we get from the hal
+#define SETUP_MSK_TX_CH_SOURCE      &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we get from the hal
+#define SETUP_MSK_TX_IN_MODE        &SetupMetaData.Tx_InMode_allowed_mask // this we get from the hal
+
+// Rx only
+#define SETUP_MSK_RX_OUT_MODE       &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
+
+// common to Tx,Rx, all options always allowed
+#define SETUP_OPT_CH_ORDER          "AETR,TAER,ETAR"
+#define SETUP_OPT_SERIAL_BAUDRATE   "9600,19200,38400,57600,115200"
+#define SETUP_OPT_SERIAL_LINK_MODE  "transp.,mavlink"
+#define SETUP_OPT_SEND_RADIOSTATUS  "off,on,on w txbuf"
+
+#define MSK_ALL                     nullptr // is converted to UINT16_MAX
+
+// TODO: dummies to account for current deficiencies, should be replaced by MSK_ALL
+uint16_t tx_channelorder_allowed_mask = 0b0101;
+uint16_t rx_channelorder_allowed_mask = 0b0001;
+
+// Tx parameters must begin with "Tx "
+// Rx parameters must begin with "Rx "
 #define SETUP_PARAMETER_LIST \
-  X( Setup.BindPhrase[0],        STR6,  "Bind Phrase",  "BIND_PHRASE",  0,0,0, "", "" )\
-  X( Setup.Mode,                 LIST,  "Mode",         "MODE",         0,0,0, "", "50 Hz,31 Hz,19 Hz" )\
+  X( Setup.BindPhrase[0],         STR6,  "Bind Phrase",  "BIND_PHRASE",  0,0,0,"", "", 0)\
+  X( Setup.Mode,                  LIST,  "Mode",         "MODE",         0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
   \
-  X( Setup.Tx.Power,             LIST,  "Tx Power",     "TX_POWER",     0,0,0, "", "min,10 mW,50 mW,100 mW,200 mW,500 mW,1 W,max" )\
-  X( Setup.Tx.Diversity,         LIST,  "Tx Diversity", "TX_DIVERSITY", 0,0,0, "", "default,antenna1,antenna2" )\
-  X( Setup.Tx.SerialDestination, LIST,  "Tx Ser Dest",  "TX_SER_DEST",  0,0,0, "", "serial,mbridge" )\
-  X( Setup.Tx.ChannelsSource,    LIST,  "Tx Ch Source", "TX_CH_SOURCE", 0,0,0, "", "none,mbridge,in,crsf" )\
-  X( Setup.Tx.ChannelOrder,      LIST,  "Tx Ch Order",  "TX_CH_ORDER",  0,0,0, "", "AETR,TAER,ETAR" )\
-  X( Setup.Tx.InMode,            LIST,  "Tx In Mode",   "TX_IN_MODE",   0,0,0, "", "sbus,sbus inv" )\
-  X( Setup.Tx.SerialBaudrate,    LIST,  "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0, "", "9600,19200,38400,57600,115200" )\
-  X( Setup.Tx.SerialLinkMode,    LIST,  "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0, "", "transp.,mavlink" )\
-  X( Setup.Tx.SendRadioStatus,   LIST,  "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0, "", "off,on,on w txbuf" )\
+  X( Setup.Tx.Power,              LIST,  "Tx Power",     "TX_POWER",     0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
+  X( Setup.Tx.Diversity,          LIST,  "Tx Diversity", "TX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_TX_DIVERSITY )\
+  X( Setup.Tx.ChannelsSource,     LIST,  "Tx Ch Source", "TX_CH_SOURCE", 0,0,0,"", "none,mbridge,in,crsf", SETUP_MSK_TX_CH_SOURCE )\
+  X( Setup.Tx.ChannelOrder,       LIST,  "Tx Ch Order",  "TX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, &tx_channelorder_allowed_mask )\
+  X( Setup.Tx.InMode,             LIST,  "Tx In Mode",   "TX_IN_MODE",   0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
+  X( Setup.Tx.SerialDestination,  LIST,  "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge", SETUP_MSK_TX_SER_DEST )\
+  X( Setup.Tx.SerialBaudrate,     LIST,  "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Tx.SerialLinkMode,     LIST,  "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Tx.SendRadioStatus,    LIST,  "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
   \
-  X( Setup.Rx.Power,             LIST,  "Rx Power",     "RX_POWER",     0,0,0, "", "min,10 mW,50 mW,100 mW,200 mW,500 mW,1 W,max" )\
-  X( Setup.Rx.Diversity,         LIST,  "Rx Diversity", "RX_DIVERSITY", 0,0,0, "", "default,antenna1,antenna2" )\
-  X( Setup.Rx.ChannelOrder,      LIST,  "Rx Ch Order",  "RX_CH_ORDER",  0,0,0, "", "AETR,TAER,ETAR" )\
-  X( Setup.Rx.OutMode,           LIST,  "Rx Out Mode",  "RX_OUT_MODE",  0,0,0, "", "sbus,crsf,sbus inv" )\
-  X( Setup.Rx.OutRssiChannel,    UINT8, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,12, "", "" )\
-  X( Setup.Rx.FailsafeMode,      LIST,  "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0, "", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt" )\
-  X( Setup.Rx.SerialBaudrate,    LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0, "", "9600,19200,38400,57600,115200" )\
-  X( Setup.Rx.SerialLinkMode,    LIST,  "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0, "", "transp.,mavlink" )\
-  X( Setup.Rx.SendRadioStatus,   LIST,  "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0, "", "off,on,on w txbuf" )
+  X( Setup.Rx.Power,              LIST,  "Rx Power",     "RX_POWER",     0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
+  X( Setup.Rx.Diversity,          LIST,  "Rx Diversity", "RX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
+  X( Setup.Rx.ChannelOrder,       LIST,  "Rx Ch Order",  "RX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, &rx_channelorder_allowed_mask )\
+  X( Setup.Rx.OutMode,            LIST,  "Rx Out Mode",  "RX_OUT_MODE",  0,0,0,"", "sbus,crsf,sbus inv", MSK_ALL )\
+  X( Setup.Rx.OutRssiChannelMode, LIST,  "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,4,5,6,7,8,9,10,11,12", MSK_ALL )\
+  X( Setup.Rx.FailsafeMode,       LIST,  "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
+  X( Setup.Rx.SerialBaudrate,     LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Rx.SerialLinkMode,     LIST,  "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Rx.SendRadioStatus,    LIST,  "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
+  \
+  X( Setup.Rx.FailsafeOutChannelValues[0],  INT8, "Rx FS Ch1", "RX_FS_CH1", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[1],  INT8, "Rx FS Ch2", "RX_FS_CH2", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[2],  INT8, "Rx FS Ch3", "RX_FS_CH3", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[3],  INT8, "Rx FS Ch4", "RX_FS_CH4", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[4],  INT8, "Rx FS Ch5", "RX_FS_CH5", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[5],  INT8, "Rx FS Ch6", "RX_FS_CH6", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[6],  INT8, "Rx FS Ch7", "RX_FS_CH7", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[7],  INT8, "Rx FS Ch8", "RX_FS_CH8", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[8],  INT8, "Rx FS Ch9", "RX_FS_CH9", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[9],  INT8, "Rx FS Ch10", "RX_FS_CH10", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[10], INT8, "Rx FS Ch11", "RX_FS_CH11", 0, -120, 120, "%", "",0 )\
+  X( Setup.Rx.FailsafeOutChannelValues[11], INT8, "Rx FS Ch12", "RX_FS_CH12", 0, -120, 120, "%", "",0 )\
 
 
 // this must EXACTLY match MAV_PARAM_TYPE !! Otherwise Mavlink will be broken !!
-typedef enum SETUP_PARAM_TYPE
-{
+typedef enum {
     SETUP_PARAM_TYPE_UINT8  = 1, // 8-bit unsigned integer
     SETUP_PARAM_TYPE_INT8   = 2, // 8-bit signed integer
     SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer
@@ -82,11 +126,12 @@ typedef struct {
     tSetupParameterValue min;
     tSetupParameterValue max;
     const char* optstr;
+    uint16_t* allowed_mask_ptr;
 } tSetupParameterItem;
 
 
 const tSetupParameterItem SetupParameter[] = {
-    #define X(p,t, n,mn, d,mi,ma,u, s) {.ptr=(t*)&(p), .type=SETUP_PARAM_TYPE_##t, .name=n, .m_name=mn, .unit=u, .dflt={.t##_value=d}, .min={.t##_value=mi}, .max={.t##_value=ma}, .optstr = s },
+    #define X(p,t, n,mn, d,mi,ma,u, s, amp) {.ptr=(t*)&(p), .type=SETUP_PARAM_TYPE_##t, .name=n, .m_name=mn, .unit=u, .dflt={.t##_value=d}, .min={.t##_value=mi}, .max={.t##_value=ma}, .optstr = s, .allowed_mask_ptr = amp },
     SETUP_PARAMETER_LIST
     #undef X
 };

@@ -32,10 +32,16 @@ void OutBase::Init(tRxSetup* _setup)
 }
 
 
-void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel, uint8_t new_failsafe_mode)
+void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel_mode, uint8_t new_failsafe_mode)
 {
-    rssi_channel = new_rssi_channel;
-    if (rssi_channel > RC_DATA_LEN) rssi_channel = 0;
+    if (new_rssi_channel_mode == OUT_RSSI_CHANNEL_OFF) {
+        rssi_channel = 0;
+    } else
+    if (new_rssi_channel_mode <= OUT_RSSI_CHANNEL_CH12) {
+        rssi_channel = new_rssi_channel_mode + 4;
+    } else {
+        rssi_channel = 0;
+    }
 
     failsafe_mode = new_failsafe_mode;
     if (failsafe_mode >= FAILSAFE_MODE_NUM) failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
@@ -128,7 +134,10 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
             // do below
             break;
         case FAILSAFE_MODE_AS_CONFIGURED:
-            for (uint8_t n = 0; n < 16; n++) rc.ch[n] = setup->FailsafeOutChannelValues[n];
+            for (uint8_t n = 0; n < 16; n++) {
+              int32_t v = setup->FailsafeOutChannelValues[n]; // -120 ... +120
+              rc.ch[n] = 1024 + (v * 1023) / 120;
+            }
             break;
         case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
             // do the centering here, throttle is set below

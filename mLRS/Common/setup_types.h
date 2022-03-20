@@ -27,19 +27,6 @@ typedef enum {
 
 
 typedef enum {
-  SETUP_POWER_MIN       = 0,
-  SETUP_POWER_10_DBM, // 10 mW
-  SETUP_POWER_17_DBM, // 50 mW
-  SETUP_POWER_20_DBM, // 100 mW
-  SETUP_POWER_23_DBM, // 200 mW
-  SETUP_POWER_27_DBM, // 500 mW
-  SETUP_POWER_30_DBM, // 1000 mW
-  SETUP_POWER_MAX,
-  SETUP_POWER_NUM,
-} SETUP_POWER_ENUM;
-
-
-typedef enum {
   DIVERSITY_DEFAULT = 0,
   DIVERSITY_ANTENNA1, // antenna 1 if diversity available
   DIVERSITY_ANTENNA2, // antenna 2 if diversity available
@@ -80,6 +67,8 @@ typedef enum {
 } SEND_RADIO_STATUS_ENUM;
 
 
+//-- Tx
+
 typedef enum {
   SERIAL_DESTINATION_SERIAL_PORT = 0,
   SERIAL_DESTINATION_MBRDIGE,
@@ -103,12 +92,28 @@ typedef enum {
 } TX_IN_CONFIG_ENUM;
 
 
+//-- Rx
+
 typedef enum {
   OUT_CONFIG_SBUS = 0,
   OUT_CONFIG_CRSF,
   OUT_CONFIG_SBUS_INVERTED,
   OUT_CONFIG_NUM,
 } RX_OUT_CONFIG_ENUM;
+
+
+typedef enum {
+  OUT_RSSI_CHANNEL_OFF = 0,
+  OUT_RSSI_CHANNEL_CH5,
+  OUT_RSSI_CHANNEL_CH6,
+  OUT_RSSI_CHANNEL_CH7,
+  OUT_RSSI_CHANNEL_CH8,
+  OUT_RSSI_CHANNEL_CH9,
+  OUT_RSSI_CHANNEL_CH10,
+  OUT_RSSI_CHANNEL_CH11,
+  OUT_RSSI_CHANNEL_CH12,
+  OUT_RSSI_CHANNEL_NUM,
+} RX_OUT_RSSI_CHANNEL_ENUM;
 
 
 typedef enum {
@@ -161,7 +166,7 @@ typedef enum {
 
 typedef struct
 {
-  int16_t Power;
+  uint16_t Power;
   uint16_t Diversity;
   uint16_t ChannelsSource;
   uint16_t ChannelOrder;
@@ -175,13 +180,13 @@ typedef struct
 
 typedef struct
 {
-  int16_t Power;
+  uint16_t Power;
   uint16_t Diversity;
   uint16_t ChannelOrder;
   uint16_t OutMode;
-  uint16_t OutRssiChannel;
+  uint16_t OutRssiChannelMode;
   uint16_t FailsafeMode;
-  uint16_t FailsafeOutChannelValues[16];
+  int16_t FailsafeOutChannelValues[16];
   uint16_t SerialBaudrate;
   uint16_t SerialLinkMode;
   uint16_t SendRadioStatus;
@@ -202,6 +207,27 @@ typedef struct
   // parameters specific to Tx, can be changed on the fly
   tTxSetup Tx;
 } tSetup;
+
+
+typedef struct
+{
+  uint16_t Mode_allowed_mask;
+
+  char Tx_Power_optstr[32];
+  uint16_t Tx_Diversity_allowed_mask;
+  uint16_t Tx_ChannelsSource_allowed_mask;
+  uint16_t Tx_InMode_allowed_mask;
+  uint16_t Tx_SerialDestination_allowed_mask;
+
+  char Rx_Power_optstr[32];
+  uint16_t Rx_Diversity_allowed_mask;
+
+  bool rx_available;
+  uint32_t rx_firmware_version;
+  char rx_device_name[20];
+  int8_t rx_actual_power_dbm;
+  uint8_t rx_actual_diversity;
+} tSetupMetaData;
 
 
 // global configuration values, not stored in EEPROM

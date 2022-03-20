@@ -214,13 +214,13 @@ uint8_t pos_switch_read(void)
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_LIST_NUM          3
-
-const rfpower_t power_list[RFPOWER_LIST_NUM] = {
+const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_23_DBM, .mW = 200 },
 };
+
+#define RFPOWER_OPTSTR  "1 mW,10 mW,200 mW"
 
 
 

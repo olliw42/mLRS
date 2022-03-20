@@ -14,8 +14,88 @@
 #include "setup_types.h"
 
 
+tSetupMetaData SetupMetaData;
+
 tSetup Setup;
 tGlobalConfig Config;
+
+
+void setup_configure_metadata(void)
+{
+    SetupMetaData = {0};
+
+    // "50 Hz,31 Hz,19 Hz"
+#ifdef DEVICE_HAS_SX128x
+    SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
+#elif defined DEVICE_HAS_SX126x
+    SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
+#elif defined DEVICE_HAS_SX127x
+    SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz
+#endif
+
+    //-- Tx:
+
+#ifdef DEVICE_IS_TRANSMITTER
+    strcpy(SetupMetaData.Tx_Power_optstr, RFPOWER_OPTSTR);
+#else
+    strcpy(SetupMetaData.Tx_Power_optstr, "min");
+#endif
+
+    // "on,antenna1,antenna2"
+#ifdef DEVICE_HAS_DIVERSITY
+    SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b0010; // only antenna1
+#endif
+
+    // "none,mbridge,in,crsf"
+#if defined DEVICE_HAS_JRPIN5 && defined DEVICE_HAS_IN
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
+#elif defined DEVICE_HAS_JRPIN5
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, mbridge, crsf
+#elif defined DEVICE_HAS_IN
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
+#else
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none
+#endif
+
+    // "sbus,sbus inv"
+#ifdef DEVICE_HAS_IN
+    SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // default to sbus
+#endif
+
+    // "serial,mbridge"
+#ifdef DEVICE_HAS_JRPIN5
+    SetupMetaData.Tx_SerialDestination_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial
+#endif
+
+    //-- Rx:
+
+#ifdef DEVICE_IS_RECEIVER
+    strcpy(SetupMetaData.Rx_Power_optstr, RFPOWER_OPTSTR);
+#else
+    strcpy(SetupMetaData.Rx_Power_optstr, "min");
+#endif
+
+    // "on,antenna1,antenna2"
+#ifdef DEVICE_HAS_DIVERSITY
+    SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1
+#endif
+
+    SetupMetaData.rx_available = true; //false;
+    SetupMetaData.rx_firmware_version = 211;
+    SetupMetaData.rx_device_name[0] = 'a';
+    SetupMetaData.rx_device_name[1] = 'b';
+    SetupMetaData.rx_device_name[2] = '\0';
+    SetupMetaData.rx_actual_power_dbm = INT8_MAX;
+    SetupMetaData.rx_actual_diversity = 3;
+}
 
 
 void setup_default(void)
@@ -23,7 +103,7 @@ void setup_default(void)
     strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
     Setup.Mode = SETUP_MODE;
 
-    Setup.Tx.Power = SETUP_POWER_MIN;
+    Setup.Tx.Power = 0;
     Setup.Tx.Diversity = SETUP_TX_DIVERSITY;
     Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
     Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -33,13 +113,13 @@ void setup_default(void)
     Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
     Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
-    Setup.Rx.Power = SETUP_POWER_MIN;
+    Setup.Rx.Power = 0;
     Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
     Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
-    Setup.Rx.OutRssiChannel = SETUP_RX_OUT_RSSI_CHANNEL;
+    Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
     Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
-    for (uint8_t ch = 0; ch < 16; ch++) { Setup.Rx.FailsafeOutChannelValues[ch] = 1024; }
+    for (uint8_t ch = 0; ch < 16; ch++) { Setup.Rx.FailsafeOutChannelValues[ch] = 0; }
     Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
@@ -48,58 +128,65 @@ void setup_default(void)
 
 void setup_sanitize(void)
 {
+#define SETUP_TST_ALLOWED(x,y) (SetupMetaData.x & (1 << Setup.y))
+
     sanitize_bind_phrase(Setup.BindPhrase);
 
     if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
-#ifdef DEVICE_HAS_SX126x
-    if ((Setup.Mode != MODE_19HZ) && (Setup.Mode != MODE_31HZ)) { // only 19 Hz and 31 hz modes allowed
-        Setup.Mode = MODE_19HZ;
-    }
-#endif
-#ifdef DEVICE_HAS_SX127x
-    Setup.Mode = MODE_19HZ; // only 19 Hz mode allowed
-#endif
+    if (SETUP_TST_ALLOWED(Mode_allowed_mask,Mode) == 0) Setup.Mode = MODE_19HZ;
 
-#ifndef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_IS_TRANSMITTER
-    if (Setup.Tx.Diversity >= DIVERSITY_ANTENNA2) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
-#endif
-#ifdef DEVICE_IS_RECEIVER
-    if (Setup.Rx.Diversity >= DIVERSITY_ANTENNA2) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
-#endif
-#endif
+    //-- Tx:
 
 #ifdef DEVICE_IS_TRANSMITTER
+    if (Setup.Tx.Power >= RFPOWER_LIST_NUM) Setup.Tx.Power = 0;
+#else
+    Setup.Tx.Power = 0;
+#endif
+
+    if (Setup.Tx.Diversity >= DIVERSITY_NUM) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_ALLOWED(Tx_Diversity_allowed_mask,Tx.Diversity) == 0) Setup.Tx.Diversity = DIVERSITY_ANTENNA1;
+
+    if (Setup.Tx.ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+    if (SETUP_TST_ALLOWED(Tx_ChannelsSource_allowed_mask,Tx.ChannelsSource) == 0) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+
+    if (Setup.Tx.InMode >= IN_CONFIG_NUM) Setup.Tx.InMode = IN_CONFIG_SBUS;
+    if (SETUP_TST_ALLOWED(Tx_InMode_allowed_mask,Tx.InMode) == 0) Setup.Tx.InMode = IN_CONFIG_SBUS;
+
+    if (Setup.Tx.SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL_PORT;
+    if (SETUP_TST_ALLOWED(Tx_SerialDestination_allowed_mask,Tx.SerialDestination) == 0) Setup.Tx.Diversity = DIVERSITY_ANTENNA1;
+
+    if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = CHANNEL_ORDER_AETR;
+    if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    if (Setup.Tx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Tx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
+    if (Setup.Tx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
+
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
         Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
     }
 
-#ifndef DEVICE_HAS_JRPIN5
-    // device doesn't support half-duplex JR pin5
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL_PORT;
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+    //-- Rx:
+
+#ifdef DEVICE_IS_RECEIVER
+    if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = 0;
 #else
-    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) {
-        // mBridge & CRSF cannot be used simultaneously
-        if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
-    }
+    Setup.Rx.Power = 0;
 #endif
 
-#ifndef DEVICE_HAS_IN
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
-#endif
-#endif
+    if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_ALLOWED(Rx_Diversity_allowed_mask,Rx.Diversity) == 0) Setup.Rx.Diversity = DIVERSITY_ANTENNA1;
 
+    if (Setup.Rx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Rx.ChannelOrder = CHANNEL_ORDER_AETR;
+    if (Setup.Rx.OutMode >= OUT_CONFIG_NUM) Setup.Rx.OutMode = OUT_CONFIG_SBUS;
+    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
-
-    if ((Setup.Rx.OutRssiChannel > 0) && (Setup.Rx.OutRssiChannel < 5)) Setup.Rx.OutRssiChannel = 0;
-    if (Setup.Rx.OutRssiChannel > 16) Setup.Rx.OutRssiChannel = 0;
-
     for (uint8_t ch = 0; ch < 16; ch++) {
-        if (Setup.Rx.FailsafeOutChannelValues[ch] > 2047) Setup.Rx.FailsafeOutChannelValues[ch] = 1024;
+        if (Setup.Rx.FailsafeOutChannelValues[ch] < -120) Setup.Rx.FailsafeOutChannelValues[ch] = 0;
+        if (Setup.Rx.FailsafeOutChannelValues[ch] > 120) Setup.Rx.FailsafeOutChannelValues[ch] = 0;
     }
+    if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
+    if (Setup.Rx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
 }
 
 
@@ -119,7 +206,7 @@ void setup_configure(void)
 #elif defined FREQUENCY_BAND_868_MHZ
     Config.FrequencyBand = CONFIG_FREQUENCY_BAND_868_MHZ;
 #else
-    #error Unkown Frequencyband !
+    #error Unknown Frequencyband !
 #endif
 
     //-- Power
@@ -127,10 +214,10 @@ void setup_configure(void)
     // TODO: we momentarily use the POWER values, but eventually we need to use the power_list[] array and setup Rx/Tx power
     // note: the actually used power will be determined later when the SX are set up
 #ifdef DEVICE_IS_TRANSMITTER
-    Config.Power = SETUP_TX_POWER; //Setup.Tx.Power;
+    Config.Power = SETUP_TX_POWER; //power_list[Setup.Tx.Power];
 #endif
 #ifdef DEVICE_IS_RECEIVER
-    Config.Power = SETUP_RX_POWER; //Setup.Rx.Power;
+    Config.Power = SETUP_RX_POWER; //power_list[Setup.Rx.Power];
 #endif
 
   //-- Diversity
@@ -172,7 +259,7 @@ void setup_configure(void)
     case MODE_31HZ:
         Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
         Config.frame_rate_hz = 31;
- #ifdef DEVICE_HAS_SX128x
+#ifdef DEVICE_HAS_SX128x
         Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
 #else
         Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
@@ -228,6 +315,8 @@ void setup_configure(void)
 
 void setup_init(void)
 {
+    setup_configure_metadata();
+
     setup_default();
 
     setup_sanitize();

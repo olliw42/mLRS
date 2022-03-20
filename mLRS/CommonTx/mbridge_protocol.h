@@ -188,16 +188,6 @@ typedef struct
 }) tMBridgeLinkStats; // 22 bytes
 
 
-//-- MBridge DeviceItem Commands
-
-MBRIDGE_PACKED(
-typedef struct
-{
-    uint32_t firmware_version;
-    char device_name[20];
-}) tMBridgeDeviceItem; // 24 bytes
-
-
 //-- MBridge More Commands
 
 MBRIDGE_PACKED(
@@ -206,8 +196,8 @@ typedef struct
     uint8_t requested_cmd;
     MBRIDGE_PACKED(union {
         struct {
-            uint8_t index;
-            char name[16];
+            uint8_t param_index;
+            char param_name[16];
         };
     });
 }) tMBridgeRequestCmd; // 18 bytes
@@ -221,10 +211,20 @@ typedef struct
     int8_t tx_actual_power_dbm;
     int8_t rx_actual_power_dbm;
     uint8_t rx_available : 1;
-    uint8_t tx_diversity : 2;
-    uint8_t rx_diversity : 2;
+    uint8_t tx_actual_diversity : 2;
+    uint8_t rx_actual_diversity : 2;
     uint8_t spare[18];
 }) tMBridgeInfo; // 24 bytes
+
+
+//-- MBridge DeviceItem Commands
+
+MBRIDGE_PACKED(
+typedef struct
+{
+    uint32_t firmware_version;
+    char device_name[20];
+}) tMBridgeDeviceItem; // 24 bytes
 
 
 //-- MBridge ParamItem Commands
@@ -268,16 +268,18 @@ MBRIDGE_PACKED(
 typedef struct
 {
     uint8_t index;
-    uint8_t not_allowed_mask;
     MBRIDGE_PACKED(union {
-        struct {
+        MBRIDGE_PACKED(struct {
             tMBridgeParamValue min;
             tMBridgeParamValue max;
             tMBridgeParamValue dflt;
             char unit[6];
-        };
-        char options[22];
-        char s[22];
+        });
+        MBRIDGE_PACKED(struct {
+            uint16_t allowed_mask;
+            char options[21];
+        });
+        char s[23];
     });
 }) tMBridgeParamItem2; // 24 bytes
 
@@ -286,10 +288,9 @@ MBRIDGE_PACKED(
 typedef struct
 {
     uint8_t index;
-    uint8_t not_allowed_mask2;
     MBRIDGE_PACKED(union {
-        char options2[22];
-        char s2[22];
+        char options2[23];
+        char s2[23];
     });
 }) tMBridgeParamItem3; // 24 bytes
 
@@ -298,12 +299,12 @@ typedef struct
 
 STATIC_ASSERT(sizeof(tMBridgeChannelBuffer) == MBRIDGE_CHANNELPACKET_SIZE, "tMBridgeChannelBuffer len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeLinkStats) == MBRIDGE_CMD_TX_LINK_STATS_LEN, "tMBridgeLinkStats len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeRequestCmd) == MBRIDGE_CMD_REQUEST_CMD_LEN, "tMBridgeRequestCmd len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeInfo) == MBRIDGE_CMD_INFO_LEN, "tMBridgeInfo len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBridgeDeviceItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeRequestCmd) == MBRIDGE_CMD_REQUEST_CMD_LEN, "tMBridgeRequestCmd len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeInfo) == MBRIDGE_CMD_INFO_LEN, "tMBridgeInfo len missmatch")
 
 
 #endif // MBRIDGE_PROTOCOL_H

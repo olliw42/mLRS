@@ -279,15 +279,15 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
   *sx_power = 0;
 }
 
-#define RFPOWER_LIST_NUM             5
-
-const rfpower_t rfpower_list[RFPOWER_LIST_NUM] = {
+const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_23_DBM, .mW = 200 },
     { .dbm = POWER_27_DBM, .mW = 500 },
 };
+
+#define RFPOWER_OPTSTR  "1 mW,10 mW,100 mW,200 mW,500 mW"
 
 
 //-- TEST

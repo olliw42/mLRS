@@ -20,8 +20,7 @@
 // Setup
 //-------------------------------------------------------
 
-#define POWER                           POWER_MIN //POWER_m18_DBM
-//#define POWER                           POWER_0_DBM
+#define POWER                           POWER_MIN
 //#define POWER                           POWER_MAX
 
 #define DIVERSITY                       0

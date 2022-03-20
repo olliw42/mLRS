@@ -157,7 +157,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
           return;
         }
 
-        SetRfPower_dbm(power_list[index].dbm);
+        SetRfPower_dbm(rfpower_list[index].dbm);
     }
 
     void Configure(void)

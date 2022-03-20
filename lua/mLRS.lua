@@ -196,6 +196,7 @@ local function doParamLoop()
               DEVICE_PARAM_LIST[index].max = 0
               DEVICE_PARAM_LIST[index].unit = ""
               DEVICE_PARAM_LIST[index].options = {}
+              DEVICE_PARAM_LIST[index].allowed_mask = 65536
           elseif index == 255 then
             DEVICE_PARAM_LIST_complete = true
           end  
@@ -203,13 +204,13 @@ local function doParamLoop()
           -- MBRIDGE_CMD_PARAM_ITEM2
           local index = cmd.payload[0]
           if DEVICE_PARAM_LIST[index] ~= nil then
---              if DEVICE_PARAM_LIST[index].typ >= 0 and DEVICE_PARAM_LIST[index].typ <= 3 then
               if DEVICE_PARAM_LIST[index].typ < mbridge.PARAM_TYPE_LIST then
-                  DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 2, DEVICE_PARAM_LIST[index].typ)
-                  DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 4, DEVICE_PARAM_LIST[index].typ)
-                  DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 8, 6)
+                  DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
+                  DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
+                  DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 7, 6)
               elseif DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
-                  DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 2, 22)
+                  DEVICE_PARAM_LIST[index].allowed_mask = mb_to_u16(cmd.payload, 1)
+                  DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 3, 21)
                   DEVICE_PARAM_LIST[index].item2payload = cmd.payload
                   DEVICE_PARAM_LIST[index].min = 0
                   DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
@@ -221,8 +222,8 @@ local function doParamLoop()
           if DEVICE_PARAM_LIST[index] ~= nil then
               if DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
                   local s = DEVICE_PARAM_LIST[index].item2payload
-                  for i=2,24 do s[22+i] = cmd.payload[i] end  
-                  DEVICE_PARAM_LIST[index].options = mb_to_options(s, 2, 22+22)
+                  for i=1,23 do s[23+i] = cmd.payload[i] end  
+                  DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
                   DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
               end  
           end -- anything else should not happen, but ???
@@ -241,13 +242,13 @@ local cursor_idx = 2
 local edit = false
 local option_value = 0
     
-local cursor_pidx = 0
+local cursor_pidx = 0 -- parameter idx which corresponds to the current cursor_idx
 local p_cnt = 0
     
     
 local function cur_attr(idx)
     local attr = TEXT_COLOR
-    if cursor_idx == idx  and DEVICE_PARAM_LIST_complete then
+    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
         attr = attr + INVERS
         if edit then attr = attr + BLINK end    
     end    
@@ -257,7 +258,16 @@ end
     
 local function param_value_inc(idx)
     local p = DEVICE_PARAM_LIST[idx]
-    p.value = p.value + 1
+    if p.typ < mbridge.PARAM_TYPE_LIST then
+        p.value = p.value + 1
+    elseif p.typ == mbridge.PARAM_TYPE_LIST then 
+        local value = p.value
+        while value <= p.max do 
+            value = value + 1
+            local m = bit32.lshift(1,value)
+            if bit32.btest(m, p.allowed_mask) then p.value = value; break end
+        end
+    end
     if p.value > p.max then p.value = p.max end
     DEVICE_PARAM_LIST[idx].value = p.value
 end    
@@ -265,7 +275,16 @@ end
 
 local function param_value_dec(idx)
     local p = DEVICE_PARAM_LIST[idx]
-    p.value = p.value - 1
+    if p.typ < mbridge.PARAM_TYPE_LIST then
+        p.value = p.value - 1
+    elseif p.typ == mbridge.PARAM_TYPE_LIST then 
+        local value = p.value
+        while value >= p.min do 
+            value = value - 1
+            local m = bit32.lshift(1,value)
+            if bit32.btest(m, p.allowed_mask) then p.value = value; break end
+        end
+    end
     if p.value < p.min then p.value = p.min end
     DEVICE_PARAM_LIST[idx].value = p.value
 end
@@ -275,6 +294,10 @@ end
 -- Page Edit Tx/Rx
 ----------------------------------------------------------------------
     
+local top_idx = 0
+local page_N1 = 9
+local page_N = 18
+    
 local function drawPageEdit(page_str)
     local x, y;
     
@@ -283,8 +306,10 @@ local function drawPageEdit(page_str)
     
     y = 60
     local dy = 21
-    local ytx = y - dy
-    local yrx = y - dy
+    local y0 = y
+    
+    if cursor_idx < top_idx then top_idx = cursor_idx end
+    if cursor_idx >= top_idx + page_N then top_idx = cursor_idx - page_N + 1 end
     
     local idx = 0
     for pidx = 2, #DEVICE_PARAM_LIST do      
@@ -292,25 +317,39 @@ local function drawPageEdit(page_str)
         local p = DEVICE_PARAM_LIST[pidx]
         local name = string.sub(p.name, 4)
            
-        local xofs = 0
-        ytx = ytx + dy
-        y = ytx
-        if idx >= 9 then y = y - 9*dy; xofs = 230 end
+        if idx >= top_idx and idx < top_idx + page_N then
+            local shifted_idx = idx - top_idx 
+
+            y = y0 + shifted_idx * dy
+        
+            local xofs = 0
+            if shifted_idx >= page_N1 then y = y - page_N1*dy; xofs = 230 end
             
-        lcd.drawText(10+xofs, y, name, TEXT_COLOR)
-        if p.typ < mbridge.PARAM_TYPE_LIST then
-            lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr(idx))  
-        elseif p.typ == mbridge.PARAM_TYPE_LIST then
-            lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr(idx))  
+            lcd.drawText(10+xofs, y, name, TEXT_COLOR)
+            if p.typ < mbridge.PARAM_TYPE_LIST then
+                lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr(idx))  
+            elseif p.typ == mbridge.PARAM_TYPE_LIST then
+                lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr(idx))  
+            end
         end
         
         if cursor_idx == idx then cursor_pidx = pidx end
-        
+           
         idx = idx + 1
       end  
     end
     
     p_cnt = idx
+    
+    local x_mid = LCD_W/2 - 5 
+    if top_idx > 0 then
+        local y_base = y0 - 4
+        lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
+    end
+    if p_cnt > top_idx + page_N then
+        local y_base = y0 + page_N1*dy + 4
+        lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
+    end      
 end    
 
 
@@ -390,7 +429,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[1] ~= nil then
         local p = DEVICE_PARAM_LIST[1]
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y+20, p.options[p.value+1], cur_attr(1))  
+            lcd.drawText(140, y+20, p.options[p.value+1], cur_attr(1)) 
         end  
     end
   
@@ -443,7 +482,7 @@ local function drawPageMain()
         lcd.drawText(140, y+20, freq_band_list[DEVICE_INFO.frequency_band], TEXT_COLOR)  
     else    
         lcd.drawText(140, y+20, "?", TEXT_COLOR)  
-    end   
+    end
 end    
 
 
@@ -457,10 +496,12 @@ local function doPageMain(event)
             if cursor_idx == 2 then -- EditTX pressed
               page_nr = 1
               cursor_idx = 0
+              top_idx = 0
               return
             elseif cursor_idx == 3 then -- EditRX pressed
               page_nr = 2
               cursor_idx = 0
+              top_idx = 0
               return
             elseif cursor_idx == 5 then -- Reload pressed
               clearParams()

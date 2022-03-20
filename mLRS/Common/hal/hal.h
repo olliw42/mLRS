@@ -77,5 +77,7 @@
 #endif
 
 
+#define RFPOWER_LIST_NUM  sizeof(rfpower_list)/sizeof(rfpower_t)
+
 
 #endif // HAL_H
