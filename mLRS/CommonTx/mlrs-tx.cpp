@@ -848,6 +848,7 @@ IF_ANTENNA2(
         break;
       case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
       case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
+      case MBRIDGE_CMD_SET_PARAM: mbridge_do_SetParam(mbridge.GetPayloadPtr()); break;
       }
     }
 #endif

@@ -403,8 +403,18 @@ void mbridge_send_RequestCmd(uint8_t* payload)
     tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
     switch (request->requested_cmd) {
-    case MBRIDGE_CMD_PARAM_ITEM:
+    case MBRIDGE_CMD_DEVICE_ITEM_TX:
+        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         break;
+    case MBRIDGE_CMD_DEVICE_ITEM_RX:
+        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        break;
+    case MBRIDGE_CMD_PARAM_ITEM:{
+        //uint8_t idx = request->index;
+        //if (request->name[0] != 0) { // name is specified, so search for index of parameter
+        //}
+        // TODO mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM);
+        }break;
     case MBRIDGE_CMD_INFO:
         mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_INFO);
         break;
@@ -425,6 +435,8 @@ tMBridgeInfo info = {0};
         info.tx_actual_diversity = 1;
     } else
     if (USE_ANTENNA2) {
+        info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
+        info.tx_actual_power_dbm = sx2.RfPower_dbm();
         info.tx_actual_diversity = 2;
     } else {
         info.tx_actual_diversity = 3; // 3 = invalid
@@ -449,6 +461,7 @@ void mbridge_send_DeviceItemTx(void)
 tMBridgeDeviceItem item = {0};
 
     item.firmware_version = VERSION;
+    item.setup_layout = SETUPLAYOUT;
     strncpy(item.device_name, DEVICE_NAME, sizeof(item.device_name));
     mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
 }
@@ -460,9 +473,11 @@ tMBridgeDeviceItem item = {0};
 
     if (SetupMetaData.rx_available) {
         item.firmware_version = SetupMetaData.rx_firmware_version;
+        item.setup_layout = SetupMetaData.rx_setup_layout;
         strncpy(item.device_name, SetupMetaData.rx_device_name, sizeof(item.device_name));
     } else {
         item.firmware_version = 0;
+        item.setup_layout = 0;
         strncpy(item.device_name, "", sizeof(item.device_name));
     }
     mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
@@ -521,7 +536,7 @@ void mbridge_send_ParamItem(void)
             break;
         case SETUP_PARAM_TYPE_STR6:
             item.type = MBRIDGE_PARAM_TYPE_STR6;
-            strncpy(item.str6, (char*)(SetupParameter[param_idx].ptr), 6);
+            strncpy_x(item.str6, (char*)(SetupParameter[param_idx].ptr), 6);
             break;
         }
         strncpy(item.name, SetupParameter[param_idx].name, sizeof(item.name));
@@ -593,6 +608,113 @@ void mbridge_send_ParamItem(void)
     }
 
     mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
+}
+
+
+bool param_rx_param_changed;
+
+
+void _mbridge_set_param(uint8_t param_idx, tMBridgeParamValue value)
+{
+    bool param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+    case SETUP_PARAM_TYPE_LIST:
+        if (*(uint8_t*)(SetupParameter[param_idx].ptr) != value.u8) {
+            param_changed = true;
+            *(uint8_t*)(SetupParameter[param_idx].ptr) = value.u8;
+        }
+        break;
+    case SETUP_PARAM_TYPE_INT8:
+        if (*(int8_t*)(SetupParameter[param_idx].ptr) != value.i8) {
+            param_changed = true;
+            *(int8_t*)(SetupParameter[param_idx].ptr) = value.i8;
+        }
+        break;
+    case SETUP_PARAM_TYPE_UINT16:
+        if (*(uint16_t*)(SetupParameter[param_idx].ptr) != value.u16) {
+            param_changed = true;
+            *(uint16_t*)(SetupParameter[param_idx].ptr) = value.u16;
+        }
+        break;
+    case SETUP_PARAM_TYPE_INT16:
+        if (*(int16_t*)(SetupParameter[param_idx].ptr) != value.i16) {
+            param_changed = true;
+            *(int16_t*)(SetupParameter[param_idx].ptr) = value.i16;
+        }
+        break;
+    }
+
+    if (param_changed) {
+        if (param_idx == 1) {  // Mode
+          param_rx_param_changed = true;
+        }
+        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') {
+            param_rx_param_changed = true;
+        }
+    }
+}
+
+
+void _mbridge_set_param_str6(uint8_t param_idx, char* str6)
+{
+    bool param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_STR6:
+        if (!strncmp((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
+            param_changed = true;
+            strncpy_x((char*)(SetupParameter[param_idx].ptr), str6, 6);
+        }
+        break;
+    }
+
+    if (param_changed) {
+        if (param_idx == 0) { // BindPhrase
+            param_rx_param_changed = true;
+        }
+    }
+}
+
+
+void mbridge_do_SetParam(uint8_t* payload)
+{
+    tMBridgeSetParam* param = (tMBridgeSetParam*)payload;
+
+    if (param->index >= param_cnt) return;
+
+    if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
+        _mbridge_set_param(param->index, param->value);
+    } else
+    if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
+        _mbridge_set_param_str6(param->index, param->str6);
+    }
+}
+
+
+void mbridge_do_SetParams(uint8_t* payload)
+{
+    tMBridgeSetParams* params = (tMBridgeSetParams*)payload;
+
+    if (params->index1 < param_cnt) _mbridge_set_param(params->index1, params->value1);
+    if (params->index2 < param_cnt) _mbridge_set_param(params->index2, params->value2);
+    if (params->index3 < param_cnt) _mbridge_set_param(params->index3, params->value3);
+    if (params->index4 < param_cnt) _mbridge_set_param(params->index4, params->value4);
+    if (params->index5 < param_cnt) _mbridge_set_param(params->index5, params->value5);
+    if (params->index6 < param_cnt) _mbridge_set_param(params->index6, params->value6);
+    if (params->index7 < param_cnt) _mbridge_set_param(params->index7, params->value7);
+    if (params->index8 < param_cnt) _mbridge_set_param(params->index8, params->value8);
+}
+
+
+void mbridge_do_SetParamsStr6(uint8_t* payload)
+{
+    tMBridgeSetParamsStr6* params = (tMBridgeSetParamsStr6*)payload;
+
+    if (params->index1 < param_cnt) _mbridge_set_param_str6(params->index1, params->str6_1);
+    if (params->index2 < param_cnt) _mbridge_set_param_str6(params->index2, params->str6_2);
+    if (params->index3 < param_cnt) _mbridge_set_param_str6(params->index3, params->str6_3);
 }
 
 
