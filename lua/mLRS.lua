@@ -61,6 +61,10 @@ local function mb_to_i16(payload,pos)
     return v
 end    
 
+local function mb_to_u24(payload,pos)
+    return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256
+end    
+
 local function mb_to_u32(payload,pos)
     return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256 + payload[pos+2]*256*256*256
 end    
@@ -162,27 +166,30 @@ local function doParamLoop()
       if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
           -- MBRIDGE_CMD_DEVICE_ITEM_TX
           DEVICE_ITEM_TX = cmd
-          DEVICE_ITEM_TX.version = mb_to_u32(cmd.payload, 0)
-          DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+          DEVICE_ITEM_TX.version = mb_to_u24(cmd.payload, 0)
+          DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 3)
+          DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 5, 19)
           DEVICE_ITEM_TX.version_str = mb_to_firmwareversions_string(DEVICE_ITEM_TX.version)
+          DEVICE_ITEM_TX.setuplayout_str = mb_to_firmwareversions_string(DEVICE_ITEM_TX.setuplayout*100)
       elseif cmd.cmd == mbridge.CMD_DEVICE_ITEM_RX then 
           -- MBRIDGE_CMD_DEVICE_ITEM_RX
           DEVICE_ITEM_RX = cmd
-          DEVICE_ITEM_RX.version = mb_to_u32(cmd.payload, 0)
-          DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+          DEVICE_ITEM_RX.version = mb_to_u24(cmd.payload, 0)
+          DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 3)
+          DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 5, 19)
           DEVICE_ITEM_RX.version_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.version)
-          if cmd.payload[4] > 0 and cmd.payload[5] > 0 then -- checking c[4] would be sufficient, but hey
+          DEVICE_ITEM_RX.setuplayout_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.setuplayout*100)
+          if cmd.payload[5] > 0 and cmd.payload[6] > 0 then -- checking c[4] would be sufficient, but hey
               DEVICE_RX_connected = true
           end    
       elseif cmd.cmd == mbridge.CMD_INFO then 
           -- MBRIDGE_CMD_INFO
           DEVICE_INFO = cmd
           DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
-          DEVICE_INFO.frequency_band = mb_to_u8(cmd.payload,2)
           DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
-          DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
           DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
           DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
+          DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
           DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
       elseif cmd.cmd == mbridge.CMD_PARAM_ITEM then 
           -- MBRIDGE_CMD_PARAM_ITEM
@@ -230,6 +237,17 @@ local function doParamLoop()
       end
     end  
 end    
+   
+   
+local function sendSetParam(idx)
+    local p = DEVICE_PARAM_LIST[idx]
+    if p.typ < mbridge.PARAM_TYPE_LIST then
+    elseif p.typ == mbridge.PARAM_TYPE_LIST then
+        mbridge.cmdPush(mbridge.CMD_SET_PARAM, {idx, p.value})
+    elseif p.typ == mbridge.PARAM_TYPE_STR6 then
+    end  
+end  
+    
     
     
 ----------------------------------------------------------------------
@@ -433,8 +451,10 @@ local function doPageEdit(event, page_str)
         end
     else
         if event == EVT_VIRTUAL_EXIT then
+            sendSetParam(cursor_pidx)
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
+            sendSetParam(cursor_pidx)
             edit = false
         elseif event == EVT_VIRTUAL_NEXT then
             param_value_inc(cursor_pidx)
@@ -538,13 +558,6 @@ local function drawPageMain()
     y = y + 2*20
     lcd.drawText(10, y, "Sensitivity", TEXT_COLOR)  
     lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", TEXT_COLOR)  
-    
-    lcd.drawText(10, y+20, "Freq. Band", TEXT_COLOR)
-    if DEVICE_INFO.frequency_band <= #freq_band_list then
-        lcd.drawText(140, y+20, freq_band_list[DEVICE_INFO.frequency_band], TEXT_COLOR)  
-    else    
-        lcd.drawText(140, y+20, "?", TEXT_COLOR)  
-    end
 end    
 
 
