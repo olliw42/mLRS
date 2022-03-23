@@ -416,9 +416,7 @@ void mbridge_send_Info(void)
 {
 tMBridgeInfo info = {0};
 
-    info.frequency_band = Config.FrequencyBand; // is equal for Tx and Rx
     info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
-
     info.tx_actual_power_dbm = sx.RfPower_dbm();
     if (USE_ANTENNA1 && USE_ANTENNA2) {
         info.tx_actual_diversity = 0;

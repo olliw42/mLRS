@@ -8,6 +8,7 @@
 //*******************************************************
 
 #include <string.h>
+#include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "common_types.h"
 #include "common_types.h"
 #include "setup_types.h"
@@ -16,21 +17,21 @@
 
 uint8_t rssi_u7_from_i8(int8_t rssi_i8)
 {
-  if (rssi_i8 == RSSI_INVALID) return RSSI_U7_INVALID;
+    if (rssi_i8 == RSSI_INVALID) return RSSI_U7_INVALID;
 
-  // constrain to -1...-127
-  if (rssi_i8 > RSSI_MAX) return RSSI_U7_MAX;
-  if (rssi_i8 < RSSI_MIN) return RSSI_U7_MIN;
+    // constrain to -1...-127
+    if (rssi_i8 > RSSI_MAX) return RSSI_U7_MAX;
+    if (rssi_i8 < RSSI_MIN) return RSSI_U7_MIN;
 
-  return -rssi_i8;
+    return -rssi_i8;
 }
 
 
 int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 {
-  if (rssi_u7 == RSSI_U7_INVALID) return RSSI_INVALID;
+    if (rssi_u7 == RSSI_U7_INVALID) return RSSI_INVALID;
 
-  return -rssi_u7;
+    return -rssi_u7;
 }
 
 
@@ -53,28 +54,28 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 //   -120 ... -50 -> 0 .. 254
 uint8_t rssi_i8_to_ap(int8_t rssi_i8)
 {
-  if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
-  if (rssi_i8 > -50) return 254; // max value
-  if (rssi_i8 < -120) return 0;
+    if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
+    if (rssi_i8 > -50) return 254; // max value
+    if (rssi_i8 < -120) return 0;
 
-  int32_t r = (int32_t)rssi_i8 - (-120);
-  constexpr int32_t m = (int32_t)(-50) - (-120);
+    int32_t r = (int32_t)rssi_i8 - (-120);
+    constexpr int32_t m = (int32_t)(-50) - (-120);
 
-  return (r * 254 + m/2) / m;
+    return (r * 254 + m/2) / m;
 }
 
 
 //   -120 ... -50 -> 172 .. 1877
 uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 {
-  if (rssi_i8 == RSSI_INVALID) return 0;
-  if (rssi_i8 > -50) return 1877; // max value
-  if (rssi_i8 < -120) return 172; // min value
+    if (rssi_i8 == RSSI_INVALID) return 0;
+    if (rssi_i8 > -50) return 1877; // max value
+    if (rssi_i8 < -120) return 172; // min value
 
-  int32_t r = (int32_t)rssi_i8 - (-120);
-  constexpr int32_t m = (int32_t)(-50) - (-120);
+    int32_t r = (int32_t)rssi_i8 - (-120);
+    constexpr int32_t m = (int32_t)(-50) - (-120);
 
-  return (r * 1705 + m/2) / m + 172;
+    return (r * 1705 + m/2) / m + 172;
 }
 
 
@@ -182,9 +183,9 @@ uint32_t u32_from_bind_phrase(char* bindphrase)
 
 uint16_t clip_rc(int32_t x)
 {
-  if (x <= 1) return 1;
-  if (x >= 2047) return 2047;
-  return x;
+    if (x <= 1) return 1;
+    if (x >= 2047) return 2047;
+    return x;
 }
 
 
@@ -195,3 +196,50 @@ void strncpy_x(char* res, const char* src, uint16_t len)
     for (uint8_t i = 0; i < len; i++) res[i] = src[i];
 }
 
+
+void remove_leading_zeros(char* s)
+{
+uint16_t i, len;
+
+    len = strlen(s);
+    for (i = 0; i < len - 1; i++) {
+        if (s[i] != '0') break;
+    }
+    memmove(&s[0], &s[i], len - i + 1);
+}
+
+
+void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen)
+{
+    memset(Power_optstr, 0, slen);
+
+    for (uint8_t i = 0; i < num; i++) {
+        char s[32];
+        if (power_list[i] == INT8_MAX) break;
+
+        if (power_list[i] <= 0) {
+            strcpy(s, "min,");
+        } else{
+            u16toBCDstr(power_list[i], s);
+            remove_leading_zeros(s);
+            strcat(s, " mW,");
+        }
+        if (strlen(Power_optstr) + strlen(s) < slen) {
+            strcat(Power_optstr, s);
+        }
+    }
+
+    if (strlen(Power_optstr) > 0) {
+        Power_optstr[strlen(Power_optstr)-1] = '\0'; // cut off last ','
+    }
+}
+
+
+void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t num, uint8_t slen)
+{
+int16_t power_list[16];
+
+    for (uint8_t i = 0; i < num; i++) power_list[i] = rfpower_list[i].mW;
+
+    power_optstr_from_power_list(Power_optstr, power_list, num, slen);
+}

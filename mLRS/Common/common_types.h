@@ -14,6 +14,8 @@
 #include <inttypes.h>
 
 
+#define ARRAY_LEN(x)  sizeof(x)/sizeof(x[0])
+
 #ifndef PACKED
 #  define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) //that's for __GNUC__
 #endif
@@ -121,6 +123,9 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 void sanitize_bind_phrase(char* bindphrase);
 uint32_t u32_from_bind_phrase(char* bindphrase);
+
+void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen);
+void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t len, uint8_t slen);
 
 
 //-- auxiliary functions

@@ -220,10 +220,6 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_23_DBM, .mW = 200 },
 };
 
-#define RFPOWER_OPTSTR  "1 mW,10 mW,200 mW"
-
-
-
 
 
 

@@ -134,9 +134,13 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
             // do below
             break;
         case FAILSAFE_MODE_AS_CONFIGURED:
-            for (uint8_t n = 0; n < 16; n++) {
-              int32_t v = setup->FailsafeOutChannelValues[n]; // -120 ... +120
+            for (uint8_t n = 0; n < 12; n++) {
+              int32_t v = setup->FailsafeOutChannelValues_Ch1_Ch12[n]; // -120 ... +120
               rc.ch[n] = 1024 + (v * 1023) / 120;
+            }
+            for (uint8_t n = 12; n < 16; n++) {
+              int32_t v = setup->FailsafeOutChannelValues_Ch13_Ch16[n-12]; // -120, 0, +120
+              rc.ch[n] = (v == 0) ? 1 : (v == 2) ? 2047 : 1024;
             }
             break;
         case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:

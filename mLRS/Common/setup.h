@@ -24,6 +24,15 @@ void setup_configure_metadata(void)
 {
     SetupMetaData = {0};
 
+    // "2.4 GHz,915 MHz FCC,868 MHz"
+#ifdef FREQUENCY_BAND_2P4_GHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0001;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0010;
+#elif defined FREQUENCY_BAND_868_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0100;
+#endif
+
     // "50 Hz,31 Hz,19 Hz"
 #ifdef DEVICE_HAS_SX128x
     SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
@@ -35,11 +44,7 @@ void setup_configure_metadata(void)
 
     //-- Tx:
 
-#ifdef DEVICE_IS_TRANSMITTER
-    strcpy(SetupMetaData.Tx_Power_optstr, RFPOWER_OPTSTR);
-#else
-    strcpy(SetupMetaData.Tx_Power_optstr, "min");
-#endif
+    power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
 
     // "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
@@ -75,11 +80,7 @@ void setup_configure_metadata(void)
 
     //-- Rx:
 
-#ifdef DEVICE_IS_RECEIVER
-    strcpy(SetupMetaData.Rx_Power_optstr, RFPOWER_OPTSTR);
-#else
-    strcpy(SetupMetaData.Rx_Power_optstr, "min");
-#endif
+    power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
 
     // "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
@@ -88,11 +89,15 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1
 #endif
 
-    SetupMetaData.rx_available = true; //false;
-    SetupMetaData.rx_firmware_version = 211;
-    SetupMetaData.rx_device_name[0] = 'a';
-    SetupMetaData.rx_device_name[1] = 'b';
-    SetupMetaData.rx_device_name[2] = '\0';
+    // "sbus,crsf,sbus inv"
+    SetupMetaData.Rx_OutMode_allowed_mask = UINT16_MAX; // all
+
+    //-- Tx: receiver setup meta data
+
+    SetupMetaData.rx_available = false;
+    SetupMetaData.rx_firmware_version = 0;
+    SetupMetaData.rx_setup_layout = 0;
+    strcpy(SetupMetaData.rx_device_name, "");
     SetupMetaData.rx_actual_power_dbm = INT8_MAX;
     SetupMetaData.rx_actual_diversity = 3;
 }
@@ -101,6 +106,7 @@ void setup_configure_metadata(void)
 void setup_default(void)
 {
     strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
+    Setup.FrequencyBand = 0;
     Setup.Mode = SETUP_MODE;
 
     Setup.Tx.Power = 0;
@@ -119,10 +125,12 @@ void setup_default(void)
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
     Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
     Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
-    for (uint8_t ch = 0; ch < 16; ch++) { Setup.Rx.FailsafeOutChannelValues[ch] = 0; }
     Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
+
+    for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
+    for (uint8_t ch = 0; ch < 4; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1; }
 }
 
 
@@ -131,6 +139,16 @@ void setup_sanitize(void)
 #define SETUP_TST_ALLOWED(x,y) (SetupMetaData.x & (1 << Setup.y))
 
     sanitize_bind_phrase(Setup.BindPhrase);
+
+#ifdef FREQUENCY_BAND_2P4_GHZ
+    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC
+    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
+#elif defined FREQUENCY_BAND_868_MHZ
+    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_868_MHZ;
+#else
+    #error Unknown Frequencyband !
+#endif
 
     if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
     if (SETUP_TST_ALLOWED(Mode_allowed_mask,Mode) == 0) Setup.Mode = MODE_19HZ;
@@ -180,9 +198,12 @@ void setup_sanitize(void)
     if (Setup.Rx.OutMode >= OUT_CONFIG_NUM) Setup.Rx.OutMode = OUT_CONFIG_SBUS;
     if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
-    for (uint8_t ch = 0; ch < 16; ch++) {
-        if (Setup.Rx.FailsafeOutChannelValues[ch] < -120) Setup.Rx.FailsafeOutChannelValues[ch] = 0;
-        if (Setup.Rx.FailsafeOutChannelValues[ch] > 120) Setup.Rx.FailsafeOutChannelValues[ch] = 0;
+    for (uint8_t ch = 0; ch < 12; ch++) {
+        if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] < -120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
+        if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] > 120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
+    }
+    for (uint8_t ch = 0; ch < 4; ch++) {
+        if (Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] > 2) Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1;
     }
     if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
@@ -196,18 +217,6 @@ void setup_configure(void)
     uint32_t bind_dblword = u32_from_bind_phrase(Setup.BindPhrase);
 
     Config.FrameSyncWord = (uint16_t)(bind_dblword & 0x0000FFFF);
-
-    //-- Frequency band
-
-#ifdef FREQUENCY_BAND_2P4_GHZ
-    Config.FrequencyBand = CONFIG_FREQUENCY_BAND_2P4_GHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC
-    Config.FrequencyBand = CONFIG_FREQUENCY_BAND_915_MHZ_FCC;
-#elif defined FREQUENCY_BAND_868_MHZ
-    Config.FrequencyBand = CONFIG_FREQUENCY_BAND_868_MHZ;
-#else
-    #error Unknown Frequencyband !
-#endif
 
     //-- Power
 

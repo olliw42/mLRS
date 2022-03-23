@@ -199,8 +199,6 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_17_DBM, .mW = 50 },
 };
 
-#define RFPOWER_OPTSTR  "1 mW,10 mW,50 mW"
-
 
 //-- TEST
 

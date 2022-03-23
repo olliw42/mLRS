@@ -220,34 +220,84 @@ uint8_t link_rx1_status;
 uint8_t link_rx2_status;
 
 
+// - Tx/Rx cmd frame handling
+
+typedef enum {
+    FRAME_STATE_SEND_NORMAL = 0,
+    FRAME_STATE_SEND_CMD_RX_SETUPDATA,
+    FRAME_STATE_SEND_CMD_RX_ACK,
+} FRAME_STATE_ENUM;
+
+uint8_t frame_state;
+
+
+void process_received_cmd_tx_frame(tTxFrame* frame)
+{
+  switch (frame->payload[0]) {
+  case FRAME_CMD_GET_RX_SETUPDATA:
+      // request to send setup data
+      // nothing to digest
+      // trigger sending rx setup data in next transmission
+      frame_state = FRAME_STATE_SEND_CMD_RX_SETUPDATA;
+      break;
+  case FRAME_CMD_SET_RX_PARAMS:
+      // got rx params
+      unpack_txcmd_rxsetparams_frame(frame);
+      // trigger sending rx ack in next transmission
+      frame_state = FRAME_STATE_SEND_CMD_RX_ACK;
+      break;
+  }
+}
+
+
+void pack_rx_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats)
+{
+  switch (frame_state) {
+  case FRAME_STATE_SEND_CMD_RX_SETUPDATA:
+      // send rx setup data
+      pack_rxcmd_rxsetupdata_frame(frame, frame_stats);
+      frame_state = FRAME_STATE_SEND_NORMAL; // we got it, so we can go back to normal
+      break;
+  case FRAME_STATE_SEND_CMD_RX_ACK:
+      // send rx ack
+      pack_rxcmd_cmd_frame(frame, frame_stats, FRAME_CMD_RX_ACK);
+      frame_state = FRAME_STATE_SEND_NORMAL; // we got it, so we can go back to normal
+      break;
+  }
+}
+
+
+//- normal Tx, Rx frames handling
+
 uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len;
 
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
-  memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-  payload_len = 0;
+  if (frame_state == FRAME_STATE_SEND_NORMAL) {
+    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
+    payload_len = 0;
 
-  // read data from serial
-  if (connected()) {
-    for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-      if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-        if (!mavlink.available()) break; // get from serial via mavlink parser
-        payload[payload_len] = mavlink.getc();
-      } else {
-        if (!serial.available()) break; // get from serial
-        payload[payload_len] = serial.getc();
-      }
+    // read data from serial
+    if (connected()) {
+      for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+          if (!mavlink.available()) break; // get from serial via mavlink parser
+          payload[payload_len] = mavlink.getc();
+        } else {
+          if (!serial.available()) break; // get from serial
+          payload[payload_len] = serial.getc();
+        }
 //dbg.putc(payload[payload_len]);
-      payload_len++;
+        payload_len++;
+      }
+
+      stats.bytes_transmitted.Add(payload_len);
+      stats.fresh_serial_data_transmitted.Inc();
+    } else {
+      mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
     }
-
-    stats.bytes_transmitted.Add(payload_len);
-    stats.fresh_serial_data_transmitted.Inc();
-
-  } else {
-    mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
   }
 
   stats.last_tx_antenna = antenna;
@@ -261,7 +311,11 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
   frame_stats.LQ = rxstats.GetLQ();
   frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
-  pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
+  if (frame_state == FRAME_STATE_SEND_NORMAL) {
+    pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
+  } else {
+    pack_rx_cmd_frame(&rxFrame, &frame_stats);
+  }
 
   if (antenna == ANTENNA_1) {
     sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
@@ -287,6 +341,11 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
   }
 
   rcdata_from_txframe(&rcData, frame);
+
+  if (frame->status.frame_type != FRAME_TYPE_TX) {
+    process_received_cmd_tx_frame(frame);
+    return;
+  }
 
   // output data on serial, but only if connected
   if (connected()) {
@@ -326,7 +385,8 @@ tTxFrame* frame;
     process_received_frame(do_payload, frame);
 
     rxstats.doValidCrc1FrameReceived();
-    if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived();
+
+    if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
 
     stats.received_seq_no_last = frame->status.seq_no;
     stats.received_ack_last = frame->status.ack;
@@ -351,7 +411,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 }
 
 
-void do_transmit(uint8_t antenna) // we send a RX frame to transmitter
+void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
   uint8_t ack = 1;
 
@@ -361,7 +421,7 @@ void do_transmit(uint8_t antenna) // we send a RX frame to transmitter
 }
 
 
-uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a TX frame from receiver
+uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
 {
 uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
@@ -464,6 +524,7 @@ int main_main(void)
   connect_occured_once = false;
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
+  frame_state = FRAME_STATE_SEND_NORMAL;
 
   rxstats.Init(Config.LQAveragingPeriod);
 
