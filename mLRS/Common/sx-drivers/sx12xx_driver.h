@@ -50,6 +50,9 @@ class SxDriverDummy
     void ReadFrame(uint8_t* data, uint8_t len) {}
     void SetToRx(uint16_t tmo_ms) {}
     void SetToIdle(void) {}
+
+    int16_t ReceiverSensitivity_dbm(void) { return 0; }
+    int8_t RfPower_dbm(void) { return INT8_MIN; }
 };
 
 
