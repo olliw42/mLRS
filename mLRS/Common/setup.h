@@ -19,6 +19,9 @@ tSetupMetaData SetupMetaData;
 tSetup Setup;
 tGlobalConfig Config;
 
+bool setup_rx_param_changed;
+
+
 
 void setup_configure_metadata(void)
 {
@@ -331,6 +334,8 @@ void setup_init(void)
     setup_sanitize();
 
     setup_configure();
+
+    setup_rx_param_changed = false;
 }
 
 

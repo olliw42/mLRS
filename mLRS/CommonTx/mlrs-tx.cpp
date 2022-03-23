@@ -312,8 +312,8 @@ uint8_t payload_len = 0;
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
-  if (param_rx_param_changed && (frame_state == FRAME_STATE_SEND_NORMAL)) {
-    param_rx_param_changed = false;
+  if (setup_rx_param_changed && (frame_state == FRAME_STATE_SEND_NORMAL)) {
+    setup_rx_param_changed = false;
     frame_state = FRAME_STATE_SEND_CMD_SET_RX_PARAMS;
   }
 

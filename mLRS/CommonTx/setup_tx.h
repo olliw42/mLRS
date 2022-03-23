@@ -15,6 +15,10 @@
 #include "..\Common\setup.h"
 
 
+//-------------------------------------------------------
+// Setup parameter list
+//-------------------------------------------------------
+
 #define SETUP_MSK_MODE              &SetupMetaData.Mode_allowed_mask // this we get from the hal
 
 #define SETUP_OPT_TX_POWER          SetupMetaData.Tx_Power_optstr // this we get from the hal
@@ -142,6 +146,74 @@ const tSetupParameterItem SetupParameter[] = {
 
 
 #define SETUP_PARAMETER_NUM  sizeof(SetupParameter)/sizeof(tSetupParameterItem)
+
+
+//-------------------------------------------------------
+// handler
+//-------------------------------------------------------
+
+void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
+{
+    bool param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+    case SETUP_PARAM_TYPE_LIST:
+        if (*(uint8_t*)(SetupParameter[param_idx].ptr) != value.u8) {
+            param_changed = true;
+            *(uint8_t*)(SetupParameter[param_idx].ptr) = value.u8;
+        }
+        break;
+    case SETUP_PARAM_TYPE_INT8:
+        if (*(int8_t*)(SetupParameter[param_idx].ptr) != value.i8) {
+            param_changed = true;
+            *(int8_t*)(SetupParameter[param_idx].ptr) = value.i8;
+        }
+        break;
+    case SETUP_PARAM_TYPE_UINT16:
+        if (*(uint16_t*)(SetupParameter[param_idx].ptr) != value.u16) {
+            param_changed = true;
+            *(uint16_t*)(SetupParameter[param_idx].ptr) = value.u16;
+        }
+        break;
+    case SETUP_PARAM_TYPE_INT16:
+        if (*(int16_t*)(SetupParameter[param_idx].ptr) != value.i16) {
+            param_changed = true;
+            *(int16_t*)(SetupParameter[param_idx].ptr) = value.i16;
+        }
+        break;
+    }
+
+    if (param_changed) {
+        if (param_idx == 1) {  // Mode
+          setup_rx_param_changed = true;
+        }
+        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') {
+          setup_rx_param_changed = true;
+        }
+    }
+}
+
+
+void setup_set_param_str6(uint8_t param_idx, char* str6)
+{
+    bool param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_STR6:
+        if (!strncmp((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
+            param_changed = true;
+            strncpy_x((char*)(SetupParameter[param_idx].ptr), str6, 6);
+        }
+        break;
+    }
+
+    if (param_changed) {
+        if (param_idx == 0) { // BindPhrase
+            setup_rx_param_changed = true;
+        }
+    }
+}
 
 
 

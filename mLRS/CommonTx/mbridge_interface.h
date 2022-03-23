@@ -611,73 +611,6 @@ void mbridge_send_ParamItem(void)
 }
 
 
-bool param_rx_param_changed;
-
-
-void _mbridge_set_param(uint8_t param_idx, tMBridgeParamValue value)
-{
-    bool param_changed = false;
-
-    switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-    case SETUP_PARAM_TYPE_LIST:
-        if (*(uint8_t*)(SetupParameter[param_idx].ptr) != value.u8) {
-            param_changed = true;
-            *(uint8_t*)(SetupParameter[param_idx].ptr) = value.u8;
-        }
-        break;
-    case SETUP_PARAM_TYPE_INT8:
-        if (*(int8_t*)(SetupParameter[param_idx].ptr) != value.i8) {
-            param_changed = true;
-            *(int8_t*)(SetupParameter[param_idx].ptr) = value.i8;
-        }
-        break;
-    case SETUP_PARAM_TYPE_UINT16:
-        if (*(uint16_t*)(SetupParameter[param_idx].ptr) != value.u16) {
-            param_changed = true;
-            *(uint16_t*)(SetupParameter[param_idx].ptr) = value.u16;
-        }
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        if (*(int16_t*)(SetupParameter[param_idx].ptr) != value.i16) {
-            param_changed = true;
-            *(int16_t*)(SetupParameter[param_idx].ptr) = value.i16;
-        }
-        break;
-    }
-
-    if (param_changed) {
-        if (param_idx == 1) {  // Mode
-          param_rx_param_changed = true;
-        }
-        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') {
-            param_rx_param_changed = true;
-        }
-    }
-}
-
-
-void _mbridge_set_param_str6(uint8_t param_idx, char* str6)
-{
-    bool param_changed = false;
-
-    switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_STR6:
-        if (!strncmp((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
-            param_changed = true;
-            strncpy_x((char*)(SetupParameter[param_idx].ptr), str6, 6);
-        }
-        break;
-    }
-
-    if (param_changed) {
-        if (param_idx == 0) { // BindPhrase
-            param_rx_param_changed = true;
-        }
-    }
-}
-
-
 void mbridge_do_SetParam(uint8_t* payload)
 {
     tMBridgeSetParam* param = (tMBridgeSetParam*)payload;
@@ -685,10 +618,10 @@ void mbridge_do_SetParam(uint8_t* payload)
     if (param->index >= param_cnt) return;
 
     if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
-        _mbridge_set_param(param->index, param->value);
+        setup_set_param(param->index, param->value);
     } else
     if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
-        _mbridge_set_param_str6(param->index, param->str6);
+        setup_set_param_str6(param->index, param->str6);
     }
 }
 
