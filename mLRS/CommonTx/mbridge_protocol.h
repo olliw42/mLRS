@@ -311,42 +311,6 @@ typedef struct
 }) tMBridgeSetParam; // 7 bytes
 
 
-MBRIDGE_PACKED(
-typedef struct
-{
-    uint8_t index1;
-    tMBridgeParamValue value1;
-    uint8_t index2;
-    tMBridgeParamValue value2;
-    uint8_t index3;
-    tMBridgeParamValue value3;
-    uint8_t index4;
-    tMBridgeParamValue value4;
-    uint8_t index5;
-    tMBridgeParamValue value5;
-    uint8_t index6;
-    tMBridgeParamValue value6;
-    uint8_t index7;
-    tMBridgeParamValue value7;
-    uint8_t index8;
-    tMBridgeParamValue value8;
-}) tMBridgeSetParams; // 24 bytes
-
-
-MBRIDGE_PACKED(
-typedef struct
-{
-    uint8_t index1;
-    char str6_1[6];
-    uint8_t index2;
-    char str6_2[6];
-    uint8_t index3;
-    char str6_3[6];
-
-    uint8_t spare[3];
-}) tMBridgeSetParamsStr6; // 24 bytes
-
-
 //-- check some sizes
 
 STATIC_ASSERT(sizeof(tMBridgeChannelBuffer) == MBRIDGE_CHANNELPACKET_SIZE, "tMBridgeChannelBuffer len missmatch")
@@ -357,11 +321,7 @@ STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBrid
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
-
 STATIC_ASSERT(sizeof(tMBridgeSetParam) == MBRIDGE_CMD_SET_PARAM_LEN, "tMBridgeSetParam len missmatch")
-
-STATIC_ASSERT(sizeof(tMBridgeSetParams) == MBRIDGE_CMD_SET_PARAMS_LEN, "tMBridgeSetParams len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeSetParamsStr6) == MBRIDGE_CMD_SET_PARAMS_LEN, "tMBridgeSetParamsStr6 len missmatch")
 
 
 #endif // MBRIDGE_PROTOCOL_H

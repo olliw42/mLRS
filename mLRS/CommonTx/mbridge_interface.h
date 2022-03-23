@@ -626,31 +626,6 @@ void mbridge_do_SetParam(uint8_t* payload)
 }
 
 
-void mbridge_do_SetParams(uint8_t* payload)
-{
-    tMBridgeSetParams* params = (tMBridgeSetParams*)payload;
-
-    if (params->index1 < param_cnt) _mbridge_set_param(params->index1, params->value1);
-    if (params->index2 < param_cnt) _mbridge_set_param(params->index2, params->value2);
-    if (params->index3 < param_cnt) _mbridge_set_param(params->index3, params->value3);
-    if (params->index4 < param_cnt) _mbridge_set_param(params->index4, params->value4);
-    if (params->index5 < param_cnt) _mbridge_set_param(params->index5, params->value5);
-    if (params->index6 < param_cnt) _mbridge_set_param(params->index6, params->value6);
-    if (params->index7 < param_cnt) _mbridge_set_param(params->index7, params->value7);
-    if (params->index8 < param_cnt) _mbridge_set_param(params->index8, params->value8);
-}
-
-
-void mbridge_do_SetParamsStr6(uint8_t* payload)
-{
-    tMBridgeSetParamsStr6* params = (tMBridgeSetParamsStr6*)payload;
-
-    if (params->index1 < param_cnt) _mbridge_set_param_str6(params->index1, params->str6_1);
-    if (params->index2 < param_cnt) _mbridge_set_param_str6(params->index2, params->str6_2);
-    if (params->index3 < param_cnt) _mbridge_set_param_str6(params->index3, params->str6_3);
-}
-
-
 #else
 
 class tMBridge : public tSerialBase
