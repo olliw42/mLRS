@@ -496,6 +496,78 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 }
 
 
+//-------------------------------------------------------
+// While transmit/receive tasks
+//-------------------------------------------------------
+// we may want to add some timer to do more than one task in the transmit/receive period
+// this would help a lot with the different available periods depending on the mode
+
+typedef enum {
+    WHILE_TASK_NONE = 0,
+    WHILE_TASK_STORE_PARAMS = 0x0001,
+} WHILE_TASK_ENUM;
+
+
+class WhileTransmit
+{
+  public:
+    void Init(void);
+    void Trigger(void);
+    void Do(void);
+    void SetTask(uint16_t task);
+    void handle_tasks(void);
+
+    uint8_t tasks;
+    uint16_t do_cnt;
+};
+
+WhileTransmit whileTransmit;
+
+
+void WhileTransmit::Init(void)
+{
+    do_cnt = 0;
+    tasks = WHILE_TASK_NONE;
+}
+
+
+void WhileTransmit::Trigger(void)
+{
+    do_cnt = 5; // postpone the action by few loops
+}
+
+
+void WhileTransmit::Do(void)
+{
+    if (!do_cnt) return; // 0 = not triggered -> jump out
+    do_cnt--; // count down
+    if (do_cnt) return; // !0 = we still postpone -> jump out
+
+    if (!tasks) return; // no task to do -> jump out
+    handle_tasks();
+}
+
+
+void WhileTransmit::SetTask(uint16_t task)
+{
+    tasks |= task;
+}
+
+
+void WhileTransmit::handle_tasks(void)
+{
+dbg.puts("\npost transmit task");
+
+    if (tasks & WHILE_TASK_STORE_PARAMS) {
+        tasks &=~ WHILE_TASK_STORE_PARAMS;
+
+dbg.puts(" store");
+
+        return; // do just one task per cycle
+    }
+}
+
+
 //##############################################################################################################
 //*******************************************************
 // MAIN routine
@@ -566,6 +638,8 @@ int main_main(void)
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
 
+  whileTransmit.Init();
+
   led_blink = 0;
   tick_1hz = 0;
   tick_1hz_commensurate = 0;
@@ -595,7 +669,7 @@ int main_main(void)
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
-        dbg.puts("\nTX: ");
+/*        dbg.puts("\nTX: ");
         dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));
         dbg.puts(" (");
         dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
@@ -608,7 +682,7 @@ int main_main(void)
         dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
       }
 
       DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
@@ -638,6 +712,7 @@ int main_main(void)
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(dbg.puts("\n>");)
+      whileTransmit.Trigger();
       break;
 
     case LINK_STATE_RECEIVE:
@@ -853,6 +928,10 @@ IF_ANTENNA2(
       case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
       case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
       case MBRIDGE_CMD_PARAM_SET: mbridge_do_ParamSet(mbridge.GetPayloadPtr()); break;
+      case MBRIDGE_CMD_PARAM_STORE:
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS;
+        whileTransmit.SetTask(WHILE_TASK_STORE_PARAMS);
+        break;
       }
     }
 #endif
@@ -890,6 +969,10 @@ IF_ANTENNA2(
     //-- do mavlink
 
     mavlink.Do();
+
+    //-- do WhileTransmit stuff
+
+    whileTransmit.Do();
 
   }//end of while(1) loop
 
