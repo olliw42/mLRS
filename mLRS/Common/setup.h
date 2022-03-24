@@ -331,7 +331,7 @@ void setup_configure(void)
 
     //-- More Config, may depend on above config settings
 
-    Config.connect_tmo_systicks = SYSTICK_DELAY_MS((uint16_t)( (float)CONNECT_TMO_MS + 0.75f * Config.frame_rate_ms));
+    Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
     Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.FhssNum);
 
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
