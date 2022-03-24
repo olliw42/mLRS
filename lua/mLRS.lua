@@ -239,16 +239,26 @@ local function doParamLoop()
 end    
    
    
-local function sendSetParam(idx)
+local function sendParamSet(idx)
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < mbridge.PARAM_TYPE_LIST then
+        mbridge.cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == mbridge.PARAM_TYPE_LIST then
-        mbridge.cmdPush(mbridge.CMD_SET_PARAM, {idx, p.value})
+        mbridge.cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == mbridge.PARAM_TYPE_STR6 then
+        local cmd = {idx}
+        for i = 1,6 do
+            cmd[i+1] = string.byte(string.sub(p.value, i,i))
+        end    
+        mbridge.cmdPush(mbridge.CMD_PARAM_SET, cmd)
     end  
 end  
     
     
+local function sendParamStore()
+    mbridge.cmdPush(mbridge.CMD_PARAM_STORE, {})
+end  
+
     
 ----------------------------------------------------------------------
 -- Edit stuff
@@ -357,9 +367,10 @@ local function param_str6_next(idx)
     if p.typ == mbridge.PARAM_TYPE_STR6 then 
         cursor_x_idx = cursor_x_idx + 1
         if cursor_x_idx >= string.len(p.value) then
-            edit = false
+            return true -- last char
         end  
     end
+    return false
 end
 
 
@@ -451,10 +462,10 @@ local function doPageEdit(event, page_str)
         end
     else
         if event == EVT_VIRTUAL_EXIT then
-            sendSetParam(cursor_pidx)
+            sendParamSet(cursor_pidx)
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
-            sendSetParam(cursor_pidx)
+            sendParamSet(cursor_pidx)
             edit = false
         elseif event == EVT_VIRTUAL_NEXT then
             param_value_inc(cursor_pidx)
@@ -578,6 +589,8 @@ local function doPageMain(event)
               cursor_idx = 0
               top_idx = 0
               return
+            elseif cursor_idx == 4 then -- Save pressed
+              sendParamStore()
             elseif cursor_idx == 5 then -- Reload pressed
               clearParams()
             else      
@@ -589,22 +602,31 @@ local function doPageMain(event)
             if cursor_idx > 5 then cursor_idx = 5 end
           
             if cursor_idx == 3 and not DEVICE_RX_connected then cursor_idx = 4 end
-            if cursor_idx == 4 then cursor_idx = 5 end --currently not allowed
-          
+            if cursor_idx == 2 and not DEVICE_RX_connected then cursor_idx = 5 end
+            --if cursor_idx == 4 then cursor_idx = 5 end --currently not allowed
         elseif event == EVT_VIRTUAL_PREV and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end
           
-            if cursor_idx == 4 then cursor_idx = 3 end --currently not allowed
+            --if cursor_idx == 4 then cursor_idx = 3 end --currently not allowed
+            if cursor_idx == 4 and not DEVICE_RX_connected then cursor_idx = 3 end
             if cursor_idx == 3 and not DEVICE_RX_connected then cursor_idx = 2 end
-          
         end
     else
         if event == EVT_VIRTUAL_EXIT then
+            if cursor_idx <= 1 then -- BindPhrase, Mode
+                sendParamSet(cursor_idx)
+            end  
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
-            if cursor_idx == 0 then 
-                param_str6_next(0)
+            if cursor_idx == 0 then -- BindPhrase
+                if param_str6_next(0) then 
+                    sendParamSet(0)
+                    edit = false
+                end    
+            elseif cursor_idx == 1 then -- Mode
+                sendParamSet(1)
+                edit = false
             else          
                 edit = false
             end  
