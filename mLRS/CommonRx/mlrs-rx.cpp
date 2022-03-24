@@ -160,6 +160,33 @@ MavlinkBase mavlink;
 
 
 //-------------------------------------------------------
+// While transmit/receive tasks
+//-------------------------------------------------------
+// we may want to add some timer to do more than one task in the transmit/receive period
+// this would help a lot with the different available periods depending on the mode
+
+#include "..\Common\while.h"
+
+class WhileReceive : public WhileBase
+{
+  public:
+    void handle_tasks(void) override;
+};
+
+WhileReceive whileReceive;
+
+
+void WhileReceive::handle_tasks(void)
+{
+    if (tasks & WHILE_TASK_STORE_PARAMS) {
+        tasks &=~ WHILE_TASK_STORE_PARAMS;
+dbg.puts("/n store");
+        return; // do just one task per cycle
+    }
+}
+
+
+//-------------------------------------------------------
 // SX12xx
 //-------------------------------------------------------
 
@@ -236,21 +263,21 @@ void process_received_cmd_tx_frame(tTxFrame* frame)
     switch (frame->payload[0]) {
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data
-        // trigger sending rx setup data in next transmission
+        // trigger sending RX_SETUPDATA in next transmission
         transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA;
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // got rx params
         unpack_txcmd_rxsetparams_frame(frame);
-        // trigger sending rx ack in next transmission
+        // trigger sending RX_ACK in next transmission
         transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
-        // TODO: set whiletransmit task to store setup
-dbg.puts("\nreceived STORE PARAMS");
-        // trigger sending rx ack in next transmission
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
+        whileReceive.SetTask(WHILE_TASK_STORE_PARAMS);
+        // trigger sending RX_ACK in next transmission
+        //transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
         break;
     }
 }
@@ -262,12 +289,12 @@ void pack_rx_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats)
     case TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA:
         // send rx setup data
         pack_rxcmd_rxsetupdata_frame(frame, frame_stats);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we did it, so we can go back to normal
         break;
     case TRANSMIT_FRAME_TYPE_CMD_RX_ACK:
         // send rx ack
         pack_rxcmd_cmd_frame(frame, frame_stats, FRAME_CMD_RX_ACK);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we did it, so we can go back to normal
         break;
     }
 }
@@ -538,6 +565,7 @@ int main_main(void)
 
   out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannelMode, Setup.Rx.FailsafeMode);
   mavlink.Init();
+  whileReceive.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -607,6 +635,7 @@ int main_main(void)
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(dbg.puts("\n>");)
+      whileReceive.Trigger();
       }break;
 
     case LINK_STATE_TRANSMIT: {
@@ -848,6 +877,10 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
     //-- do mavlink
 
     mavlink.Do();
+
+    //-- do WhileReceive stuff
+
+    whileReceive.Do();
 
   }//end of while(1) loop
 

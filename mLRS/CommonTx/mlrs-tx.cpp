@@ -205,6 +205,33 @@ void init_serialport(void)
 
 
 //-------------------------------------------------------
+// While transmit/receive tasks
+//-------------------------------------------------------
+// we may want to add some timer to do more than one task in the transmit/receive period
+// this would help a lot with the different available periods depending on the mode
+
+#include "..\Common\while.h"
+
+class WhileTransmit : public WhileBase
+{
+  public:
+    void handle_tasks(void) override;
+};
+
+WhileTransmit whileTransmit;
+
+
+void WhileTransmit::handle_tasks(void)
+{
+    if (tasks & WHILE_TASK_STORE_PARAMS) {
+        tasks &=~ WHILE_TASK_STORE_PARAMS;
+dbg.puts("/n store");
+        return; // do just one task per cycle
+    }
+}
+
+
+//-------------------------------------------------------
 // SX12xx
 //-------------------------------------------------------
 
@@ -496,78 +523,6 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 }
 
 
-//-------------------------------------------------------
-// While transmit/receive tasks
-//-------------------------------------------------------
-// we may want to add some timer to do more than one task in the transmit/receive period
-// this would help a lot with the different available periods depending on the mode
-
-typedef enum {
-    WHILE_TASK_NONE = 0,
-    WHILE_TASK_STORE_PARAMS = 0x0001,
-} WHILE_TASK_ENUM;
-
-
-class WhileTransmit
-{
-  public:
-    void Init(void);
-    void Trigger(void);
-    void Do(void);
-    void SetTask(uint16_t task);
-    void handle_tasks(void);
-
-    uint8_t tasks;
-    uint16_t do_cnt;
-};
-
-WhileTransmit whileTransmit;
-
-
-void WhileTransmit::Init(void)
-{
-    do_cnt = 0;
-    tasks = WHILE_TASK_NONE;
-}
-
-
-void WhileTransmit::Trigger(void)
-{
-    do_cnt = 5; // postpone the action by few loops
-}
-
-
-void WhileTransmit::Do(void)
-{
-    if (!do_cnt) return; // 0 = not triggered -> jump out
-    do_cnt--; // count down
-    if (do_cnt) return; // !0 = we still postpone -> jump out
-
-    if (!tasks) return; // no task to do -> jump out
-    handle_tasks();
-}
-
-
-void WhileTransmit::SetTask(uint16_t task)
-{
-    tasks |= task;
-}
-
-
-void WhileTransmit::handle_tasks(void)
-{
-dbg.puts("\npost transmit task");
-
-    if (tasks & WHILE_TASK_STORE_PARAMS) {
-        tasks &=~ WHILE_TASK_STORE_PARAMS;
-
-dbg.puts(" store");
-
-        return; // do just one task per cycle
-    }
-}
-
-
 //##############################################################################################################
 //*******************************************************
 // MAIN routine
@@ -637,7 +592,6 @@ int main_main(void)
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
-
   whileTransmit.Init();
 
   led_blink = 0;
