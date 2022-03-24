@@ -486,13 +486,11 @@ tMBridgeDeviceItem item = {0};
 
 uint8_t param_idx;
 uint8_t param_itemtype_cnt;
-uint8_t param_cnt;
 
 
 void mbridge_start_ParamRequestList(void)
 {
     param_idx = 0;
-    param_cnt = SETUP_PARAMETER_NUM;
     param_itemtype_cnt = 0;
 
     mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
@@ -501,7 +499,7 @@ void mbridge_start_ParamRequestList(void)
 
 void mbridge_send_ParamItem(void)
 {
-    if (param_idx >= param_cnt) {
+    if (param_idx >= SETUP_PARAMETER_NUM) {
         tMBridgeParamItem item = {0};
         item.index = UINT8_MAX; // indicates end of list
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
@@ -615,7 +613,7 @@ void mbridge_do_SetParam(uint8_t* payload)
 {
     tMBridgeSetParam* param = (tMBridgeSetParam*)payload;
 
-    if (param->index >= param_cnt) return;
+    if (param->index >= SETUP_PARAMETER_NUM) return;
 
     if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
         setup_set_param(param->index, param->value);

@@ -106,12 +106,12 @@ typedef enum {
 } SETUP_PARAM_TYPE;
 
 
-#define UINT8   uint8_t  // u8 fields are type case into uint16_t
-#define INT8    uint8_t  // s8 fields are type case into uint16_t
-#define UINT16  uint16_t // u16 fields are type case into uint16_t
-#define INT16   uint16_t // s16 fields are type case into uint16_t
+#define UINT8   uint8_t
+#define INT8    int8_t
+#define UINT16  uint16_t
+#define INT16   int16_t
 #define STR6    char
-#define LIST    uint8_t  // list fields are type case into uint16_t
+#define LIST    uint8_t
 
 
 typedef union {
@@ -154,6 +154,8 @@ const tSetupParameterItem SetupParameter[] = {
 
 void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
 {
+    if (param_idx >= SETUP_PARAMETER_NUM) return;
+
     bool param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
@@ -184,11 +186,12 @@ void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
         break;
     }
 
+    // if a RX parameter has changed, tell it to main
     if (param_changed) {
-        if (param_idx == 1) {  // Mode
+        if (param_idx == 1) { // Mode
           setup_rx_param_changed = true;
         }
-        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') {
+        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') { // "Rx" name
           setup_rx_param_changed = true;
         }
     }
@@ -197,17 +200,20 @@ void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
 
 void setup_set_param_str6(uint8_t param_idx, char* str6)
 {
+    if (param_idx >= SETUP_PARAMETER_NUM) return;
+
     bool param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_STR6:
-        if (!strncmp((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
+        if (!strneq_x((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
             param_changed = true;
             strncpy_x((char*)(SetupParameter[param_idx].ptr), str6, 6);
         }
         break;
     }
 
+    // if a RX parameter has changed, tell it to main
     if (param_changed) {
         if (param_idx == 0) { // BindPhrase
             setup_rx_param_changed = true;

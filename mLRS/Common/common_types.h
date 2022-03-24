@@ -135,6 +135,7 @@ void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower
 uint16_t clip_rc(int32_t x);
 
 void strncpy_x(char* res, const char* src, uint16_t len);
+bool strneq_x(char* s1, const char* s2, uint16_t len);
 
 
 #endif // COMMON_TYPES_H

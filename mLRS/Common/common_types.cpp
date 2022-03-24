@@ -197,6 +197,21 @@ void strncpy_x(char* res, const char* src, uint16_t len)
 }
 
 
+bool strneq_x(char* s1, const char* s2, uint16_t len)
+{
+uint16_t i;
+
+    for (i = 0; i < len; i++) {
+        if (s1[i] == '\0') return false;
+        if (s2[i] == '\0') return false;
+        if (s1[i] != s2[i]) return false;
+    }
+    if (s1[i] != '\0') return false;
+    if (s2[i] != '\0') return false;
+    return true;
+}
+
+
 void remove_leading_zeros(char* s)
 {
 uint16_t i, len;
