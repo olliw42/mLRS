@@ -67,7 +67,7 @@ typedef enum {
     MBRIDGE_CMD_PARAM_ITEM3           = 9,
     MBRIDGE_CMD_REQUEST_CMD           = 10,
     MBRIDGE_CMD_INFO                  = 11,
-    MBRIDGE_CMD_SET_PARAM             = 12,
+    MBRIDGE_CMD_PARAM_SET             = 12,
 
 } MBRIDGE_CMD_ENUM;
 
@@ -77,8 +77,7 @@ typedef enum {
 #define MBRIDGE_CMD_PARAM_ITEM_LEN            24
 #define MBRIDGE_CMD_REQUEST_CMD_LEN           18
 #define MBRIDGE_CMD_INFO_LEN                  24
-#define MBRIDGE_CMD_SET_PARAM_LEN             7
-#define MBRIDGE_CMD_SET_PARAMS_LEN            24
+#define MBRIDGE_CMD_PARAM_SET_LEN             7
 
 
 uint8_t mbridge_cmd_payload_len(uint8_t cmd)
@@ -94,7 +93,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     case MBRIDGE_CMD_REQUEST_CMD: return MBRIDGE_CMD_REQUEST_CMD_LEN;
     case MBRIDGE_CMD_INFO: return MBRIDGE_CMD_INFO_LEN;
-    case MBRIDGE_CMD_SET_PARAM: return MBRIDGE_CMD_SET_PARAM_LEN; break;
+    case MBRIDGE_CMD_PARAM_SET: return MBRIDGE_CMD_PARAM_SET_LEN; break;
     }
     return 0;
 }
@@ -308,7 +307,7 @@ typedef struct
         tMBridgeParamValue value;
         char str6[6];
     });
-}) tMBridgeSetParam; // 7 bytes
+}) tMBridgeParamSet; // 7 bytes
 
 
 //-- check some sizes
@@ -321,7 +320,7 @@ STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBrid
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeSetParam) == MBRIDGE_CMD_SET_PARAM_LEN, "tMBridgeSetParam len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamSet) == MBRIDGE_CMD_PARAM_SET_LEN, "tMBridgeParamSet len missmatch")
 
 
 #endif // MBRIDGE_PROTOCOL_H

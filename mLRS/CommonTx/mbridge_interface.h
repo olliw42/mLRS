@@ -609,9 +609,9 @@ void mbridge_send_ParamItem(void)
 }
 
 
-void mbridge_do_SetParam(uint8_t* payload)
+void mbridge_do_ParamSet(uint8_t* payload)
 {
-    tMBridgeSetParam* param = (tMBridgeSetParam*)payload;
+    tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
 
     if (param->index >= SETUP_PARAMETER_NUM) return;
 
