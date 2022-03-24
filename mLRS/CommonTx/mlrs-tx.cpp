@@ -330,6 +330,7 @@ void pack_tx_cmd_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
         break;
     case TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS:
         pack_txcmd_cmd_frame(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
         break;
     }
 }
