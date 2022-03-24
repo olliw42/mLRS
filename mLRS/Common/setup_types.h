@@ -241,6 +241,8 @@ typedef struct
 // can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+    uint8_t Mode;
+
     uint8_t LoraConfigIndex;
     uint8_t lora_send_frame_tmo;
 

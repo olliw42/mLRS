@@ -492,7 +492,7 @@ tCrsfLinkStatistics clstats;
     clstats.uplink_LQ = txstats.GetLQ();
     clstats.uplink_snr = stats.GetLastRxSnr();
     clstats.active_antenna = stats.last_rx_antenna;
-    clstats.mode = crsf_cvt_mode(Setup.Mode);
+    clstats.mode = crsf_cvt_mode(Config.Mode);
     clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
     clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);
     clstats.downlink_LQ = stats.received_LQ;
@@ -510,7 +510,7 @@ tCrsfLinkStatisticsTx clstats;
     clstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
     clstats.uplink_snr = stats.GetLastRxSnr(); // ignored by OpenTx
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
-    clstats.uplink_fps = crsf_cvt_fps(Setup.Mode); // *10 in OpenTx
+    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx
     crsf.SendLinkStatisticsTx(&clstats);
 }
 

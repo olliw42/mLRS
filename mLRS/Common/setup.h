@@ -259,9 +259,11 @@ void setup_configure(void)
     Config.UseAntenna2 = false;
 #endif
 
-    //-- Mode dependent setting, LoRa configuration
+    //-- Mode, Mode dependent settings, LoRa configuration
 
-    switch (Setup.Mode) {
+    Config.Mode = Setup.Mode;
+
+    switch (Config.Mode) {
     case MODE_50HZ:
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
@@ -303,7 +305,7 @@ void setup_configure(void)
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
 #else
-    switch (Setup.Mode) {
+    switch (Config.Mode) {
     case MODE_50HZ:
         Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
         break;

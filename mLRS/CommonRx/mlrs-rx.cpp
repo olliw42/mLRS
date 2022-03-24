@@ -113,7 +113,7 @@ class Out : public OutBase
           .transmitter_snr = 0,
           .transmitter_antenna = stats.received_antenna,
           .transmitter_transmit_antenna = stats.received_transmit_antenna,
-          .mode = (uint8_t)Setup.Mode,
+          .mode = (uint8_t)Config.Mode,
         };
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             lstats.antenna_config = 3;
