@@ -9,6 +9,9 @@
 /*
 
 ISSUES:
+- implement all AETR,TAER,ETAR, just do it !!!!
+- allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
+
 - mavlink parser should probably be reset when packets are missed
 - align mavlink messages only with respect to header, i.e., such that header is never split up
 - led blink to signal serial traffic
@@ -25,7 +28,7 @@ The 3 MAIN topics TODO:
 2) Parameters, usability
 - parameters instead of compile defines wherever possible
 - parameter synchronization between tx and rx upon first connection
-- some way for users to adjust parameters (cli? lua? mavlink?)
+- some way for users to adjust parameters (mbridge/lua, mavlink, oled, usb/cli/gui)
 - bind phase
 - firmware update: via connection to USB on tx module, for receiver ota-passthrough
 

@@ -61,69 +61,69 @@ RxStatsBase rxstats;
 
 class Out : public OutBase
 {
-public:
-  void Init(void)
-  {
-    OutBase::Init(&Setup.Rx);
-    out_init_gpio();
-    uart_init_isroff();
-  }
-
-  bool config_sbus(bool enable_flag) override
-  {
-    if (enable_flag) {
-      uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-      out_set_inverted();
+  public:
+    void Init(void)
+    {
+        OutBase::Init(&Setup.Rx);
+        out_init_gpio();
+        uart_init_isroff();
     }
-    return true;
-  }
 
-  bool config_sbus_inverted(bool enable_flag) override
-  {
-    if (enable_flag) {
-      uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-      out_set_normal();
+    bool config_sbus(bool enable_flag) override
+    {
+        if (enable_flag) {
+            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+            out_set_inverted();
+        }
+        return true;
     }
-    return true;
-  }
 
-  bool config_crsf(bool enable_flag) override
-  {
-    if (enable_flag) {
-      uart_setprotocol(416666, XUART_PARITY_EVEN, UART_STOPBIT_1);
-      out_set_normal();
+    bool config_sbus_inverted(bool enable_flag) override
+    {
+        if (enable_flag) {
+            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+            out_set_normal();
+        }
+        return true;
     }
-    return true;
-  }
 
-  void putc(char c) override { uart_putc(c); }
-
-  void SendLinkStatistics(void)
-  {
-    tOutLinkStats lstats = {
-      .receiver_rssi1 = stats.last_rx_rssi1,
-      .receiver_rssi2 = stats.last_rx_rssi2,
-      .receiver_LQ = rxstats.GetLQ(),
-      .receiver_snr = stats.GetLastRxSnr(),
-      .receiver_antenna = stats.last_rx_antenna,
-      .receiver_transmit_antenna = stats.last_tx_antenna,
-      .receiver_power_dbm = sx.RfPower_dbm(),
-      .transmitter_rssi = stats.received_rssi,
-      .transmitter_LQ = stats.received_LQ,
-      .transmitter_snr = 0,
-      .transmitter_antenna = stats.received_antenna,
-      .transmitter_transmit_antenna = stats.received_transmit_antenna,
-      .mode = (uint8_t)Setup.Mode,
-    };
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-      lstats.antenna_config = 3;
-    } else if (USE_ANTENNA2) {
-      lstats.antenna_config = 2;
-    } else {
-      lstats.antenna_config = 1;
+    bool config_crsf(bool enable_flag) override
+    {
+        if (enable_flag) {
+            uart_setprotocol(416666, XUART_PARITY_EVEN, UART_STOPBIT_1);
+            out_set_normal();
+        }
+        return true;
     }
-    OutBase::SendLinkStatistics(&lstats);
-  }
+
+    void putc(char c) override { uart_putc(c); }
+
+    void SendLinkStatistics(void)
+    {
+        tOutLinkStats lstats = {
+          .receiver_rssi1 = stats.last_rx_rssi1,
+          .receiver_rssi2 = stats.last_rx_rssi2,
+          .receiver_LQ = rxstats.GetLQ(),
+          .receiver_snr = stats.GetLastRxSnr(),
+          .receiver_antenna = stats.last_rx_antenna,
+          .receiver_transmit_antenna = stats.last_tx_antenna,
+          .receiver_power_dbm = sx.RfPower_dbm(),
+          .transmitter_rssi = stats.received_rssi,
+          .transmitter_LQ = stats.received_LQ,
+          .transmitter_snr = 0,
+          .transmitter_antenna = stats.received_antenna,
+          .transmitter_transmit_antenna = stats.received_transmit_antenna,
+          .mode = (uint8_t)Setup.Mode,
+        };
+        if (USE_ANTENNA1 && USE_ANTENNA2) {
+            lstats.antenna_config = 3;
+        } else if (USE_ANTENNA2) {
+            lstats.antenna_config = 2;
+        } else {
+            lstats.antenna_config = 1;
+        }
+        OutBase::SendLinkStatistics(&lstats);
+    }
 };
 
 Out out;
@@ -131,22 +131,22 @@ Out out;
 
 void init(void)
 {
-  leds_init();
+    leds_init();
 
-  delay_init();
-  micros_init();
+    delay_init();
+    micros_init();
 
-  serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
-  out.Init();
+    serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
+    out.Init();
 
-  dbg.Init();
+    dbg.Init();
 
-  setup_init(); // clock needs Config, so call before clock init
+    setup_init(); // clock needs Config, so call before clock init
 
-  clock.Init();
+    clock.Init();
 
-  sx.Init();
-  sx2.Init();
+    sx.Init();
+    sx2.Init();
 }
 
 
@@ -169,27 +169,27 @@ volatile uint16_t irq2_status;
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-  //LED_RED_TOGGLE;
-  irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
-  if (irq_status & SX12xx_IRQ_RX_DONE) {
-    uint16_t sync_word;
-    sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-    if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-  }
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    //LED_RED_TOGGLE;
+    irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
+    if (irq_status & SX12xx_IRQ_RX_DONE) {
+        uint16_t sync_word;
+        sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+        if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+    }
 })
 #ifdef DEVICE_HAS_DIVERSITY
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-  //LED_RED_TOGGLE;
-  irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
-  if (irq2_status & SX12xx_IRQ_RX_DONE) {
-    uint16_t sync_word;
-    sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-    if (sync_word != Config.FrameSyncWord) irq2_status = 0;
-  }
+    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    //LED_RED_TOGGLE;
+    irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
+    if (irq2_status & SX12xx_IRQ_RX_DONE) {
+        uint16_t sync_word;
+        sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+        if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+    }
 })
 #endif
 
@@ -223,47 +223,53 @@ uint8_t link_rx2_status;
 // - Tx/Rx cmd frame handling
 
 typedef enum {
-    FRAME_STATE_SEND_NORMAL = 0,
-    FRAME_STATE_SEND_CMD_RX_SETUPDATA,
-    FRAME_STATE_SEND_CMD_RX_ACK,
-} FRAME_STATE_ENUM;
+    TRANSMIT_FRAME_TYPE_NORMAL = 0,
+    TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA,
+    TRANSMIT_FRAME_TYPE_CMD_RX_ACK,
+} TRANSMIT_FRAME_TYPE_ENUM;
 
-uint8_t frame_state;
+uint8_t transmit_frame_type;
 
 
 void process_received_cmd_tx_frame(tTxFrame* frame)
 {
-  switch (frame->payload[0]) {
-  case FRAME_CMD_GET_RX_SETUPDATA:
-      // request to send setup data
-      // nothing to digest
-      // trigger sending rx setup data in next transmission
-      frame_state = FRAME_STATE_SEND_CMD_RX_SETUPDATA;
-      break;
-  case FRAME_CMD_SET_RX_PARAMS:
-      // got rx params
-      unpack_txcmd_rxsetparams_frame(frame);
-      // trigger sending rx ack in next transmission
-      frame_state = FRAME_STATE_SEND_CMD_RX_ACK;
-      break;
-  }
+    switch (frame->payload[0]) {
+    case FRAME_CMD_GET_RX_SETUPDATA:
+        // request to send setup data
+        // trigger sending rx setup data in next transmission
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA;
+        break;
+    case FRAME_CMD_SET_RX_PARAMS:
+        // got rx params
+        unpack_txcmd_rxsetparams_frame(frame);
+        // trigger sending rx ack in next transmission
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
+        break;
+    case FRAME_CMD_STORE_RX_PARAMS:
+        // got request to store rx params
+        // TODO: set whiletransmit task to store setup
+dbg.puts("\nreceived STORE PARAMS");
+        // trigger sending rx ack in next transmission
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
+        break;
+    }
 }
 
 
 void pack_rx_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats)
 {
-  switch (frame_state) {
-  case FRAME_STATE_SEND_CMD_RX_SETUPDATA:
-      // send rx setup data
-      pack_rxcmd_rxsetupdata_frame(frame, frame_stats);
-      frame_state = FRAME_STATE_SEND_NORMAL; // we got it, so we can go back to normal
-      break;
-  case FRAME_STATE_SEND_CMD_RX_ACK:
-      // send rx ack
-      pack_rxcmd_cmd_frame(frame, frame_stats, FRAME_CMD_RX_ACK);
-      frame_state = FRAME_STATE_SEND_NORMAL; // we got it, so we can go back to normal
-      break;
-  }
+    switch (transmit_frame_type) {
+    case TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA:
+        // send rx setup data
+        pack_rxcmd_rxsetupdata_frame(frame, frame_stats);
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
+        break;
+    case TRANSMIT_FRAME_TYPE_CMD_RX_ACK:
+        // send rx ack
+        pack_rxcmd_cmd_frame(frame, frame_stats, FRAME_CMD_RX_ACK);
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
+        break;
+    }
 }
 
 
@@ -275,93 +281,93 @@ uint8_t payload_len;
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
-  if (frame_state == FRAME_STATE_SEND_NORMAL) {
-    memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-    payload_len = 0;
+    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+      memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
+      payload_len = 0;
 
-    // read data from serial
-    if (connected()) {
-      for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-          if (!mavlink.available()) break; // get from serial via mavlink parser
-          payload[payload_len] = mavlink.getc();
-        } else {
-          if (!serial.available()) break; // get from serial
-          payload[payload_len] = serial.getc();
-        }
+      // read data from serial
+      if (connected()) {
+        for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+            if (!mavlink.available()) break; // get from serial via mavlink parser
+            payload[payload_len] = mavlink.getc();
+          } else {
+            if (!serial.available()) break; // get from serial
+            payload[payload_len] = serial.getc();
+          }
 //dbg.putc(payload[payload_len]);
-        payload_len++;
+          payload_len++;
+        }
+
+        stats.bytes_transmitted.Add(payload_len);
+        stats.fresh_serial_data_transmitted.Inc();
+      } else {
+        mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
       }
-
-      stats.bytes_transmitted.Add(payload_len);
-      stats.fresh_serial_data_transmitted.Inc();
-    } else {
-      mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
     }
-  }
 
-  stats.last_tx_antenna = antenna;
+    stats.last_tx_antenna = antenna;
 
-  tFrameStats frame_stats;
-  frame_stats.seq_no = stats.transmit_seq_no;
-  frame_stats.ack = ack;
-  frame_stats.antenna = stats.last_rx_antenna;
-  frame_stats.transmit_antenna = antenna;
-  frame_stats.rssi = stats.GetLastRxRssi();
-  frame_stats.LQ = rxstats.GetLQ();
-  frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
+    tFrameStats frame_stats;
+    frame_stats.seq_no = stats.transmit_seq_no;
+    frame_stats.ack = ack;
+    frame_stats.antenna = stats.last_rx_antenna;
+    frame_stats.transmit_antenna = antenna;
+    frame_stats.rssi = stats.GetLastRxRssi();
+    frame_stats.LQ = rxstats.GetLQ();
+    frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
-  if (frame_state == FRAME_STATE_SEND_NORMAL) {
-    pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
-  } else {
-    pack_rx_cmd_frame(&rxFrame, &frame_stats);
-  }
+    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+        pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
+    } else {
+        pack_rx_cmd_frame(&rxFrame, &frame_stats);
+    }
 
-  if (antenna == ANTENNA_1) {
-    sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-  } else {
-    sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-  }
+    if (antenna == ANTENNA_1) {
+        sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+    } else {
+        sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+    }
 }
 
 
 void process_received_frame(bool do_payload, tTxFrame* frame)
 {
-  stats.received_antenna = frame->status.antenna;
-  stats.received_transmit_antenna = frame->status.transmit_antenna;
-  stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-  stats.received_LQ = frame->status.LQ;
-  stats.received_LQ_serial_data = frame->status.LQ_serial_data;
+    stats.received_antenna = frame->status.antenna;
+    stats.received_transmit_antenna = frame->status.transmit_antenna;
+    stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
+    stats.received_LQ = frame->status.LQ;
+    stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
-  // copy rc data
-  if (!do_payload) {
-    // copy only channels 1-4, and jump out
-    rcdata_rc1_from_txframe(&rcData, frame);
-    return;
-  }
-
-  rcdata_from_txframe(&rcData, frame);
-
-  if (frame->status.frame_type != FRAME_TYPE_TX) {
-    process_received_cmd_tx_frame(frame);
-    return;
-  }
-
-  // output data on serial, but only if connected
-  if (connected()) {
-    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-      uint8_t c = frame->payload[i];
-      if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-        mavlink.putc(c); // send to serial via mavlink parser
-      } else {
-        serial.putc(c); // send to serial
-      }
-//dbg.putc(c);
+    // copy rc data
+    if (!do_payload) {
+        // copy only channels 1-4, and jump out
+        rcdata_rc1_from_txframe(&rcData, frame);
+        return;
     }
 
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.fresh_serial_data_received.Inc();
-  }
+    rcdata_from_txframe(&rcData, frame);
+
+    if (frame->status.frame_type != FRAME_TYPE_TX) {
+        process_received_cmd_tx_frame(frame);
+        return;
+    }
+
+    // output data on serial, but only if connected
+    if (connected()) {
+        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+            uint8_t c = frame->payload[i];
+            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+                mavlink.putc(c); // send to serial via mavlink parser
+            } else {
+                serial.putc(c); // send to serial
+            }
+//dbg.putc(c);
+        }
+
+        stats.bytes_received.Add(frame->status.payload_len);
+        stats.fresh_serial_data_received.Inc();
+    }
 }
 
 
@@ -370,54 +376,53 @@ void handle_receive(uint8_t antenna)
 uint8_t rx_status;
 tTxFrame* frame;
 
-  if (antenna == ANTENNA_1) {
-    rx_status = link_rx1_status;
-    frame = &txFrame;
-  } else {
-    rx_status = link_rx2_status;
-    frame = &txFrame2;
-  }
+    if (antenna == ANTENNA_1) {
+        rx_status = link_rx1_status;
+        frame = &txFrame;
+    } else {
+        rx_status = link_rx2_status;
+        frame = &txFrame2;
+    }
 
-  if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
-    bool do_payload = (rx_status == RX_STATUS_VALID);
+        bool do_payload = (rx_status == RX_STATUS_VALID);
 
-    process_received_frame(do_payload, frame);
+        process_received_frame(do_payload, frame);
 
-    rxstats.doValidCrc1FrameReceived();
+        rxstats.doValidCrc1FrameReceived();
+        if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
 
-    if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
+        stats.received_seq_no_last = frame->status.seq_no;
+        stats.received_ack_last = frame->status.ack;
 
-    stats.received_seq_no_last = frame->status.seq_no;
-    stats.received_ack_last = frame->status.ack;
+    } else { // RX_STATUS_INVALID
+        stats.received_seq_no_last = UINT8_MAX;
+        stats.received_ack_last = 0;
+    }
 
-  } else { // RX_STATUS_INVALID
-    stats.received_seq_no_last = UINT8_MAX;
-    stats.received_ack_last = 0;
-  }
+    // we set it for all received frames
+    stats.last_rx_antenna = antenna;
 
-  // we set it for all received frames
-  stats.last_rx_antenna = antenna;
-
-  // we count all received frames
-  rxstats.doFrameReceived();
+    // we count all received frames
+    rxstats.doFrameReceived();
 }
 
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-  stats.received_seq_no_last = UINT8_MAX;
-  stats.received_ack_last = 0;
+    stats.received_seq_no_last = UINT8_MAX;
+    stats.received_ack_last = 0;
 }
 
 
 void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
-  uint8_t ack = 1;
+    uint8_t ack = 1;
 
-  stats.transmit_seq_no++;
+    stats.transmit_seq_no++;
 
-  process_transmit_frame(antenna, ack);
+    process_transmit_frame(antenna, ack);
 }
 
 
@@ -426,38 +431,38 @@ uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame f
 uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
-  // we don't need to read sx.GetRxBufferStatus(), but hey
-  // we could save 2 byte's time by not reading sync_word again, but hey
-  if (antenna == ANTENNA_1) {
-    sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
-    res = check_tx_frame(&txFrame);
-  } else {
-    sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
-    res = check_tx_frame(&txFrame2);
-  }
+    // we don't need to read sx.GetRxBufferStatus(), but hey
+    // we could save 2 byte's time by not reading sync_word again, but hey
+    if (antenna == ANTENNA_1) {
+        sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
+        res = check_tx_frame(&txFrame);
+    } else {
+        sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
+        res = check_tx_frame(&txFrame2);
+    }
 
-  if (res) {
-    DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
+    if (res) {
+        DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
 dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
-  }
+    }
 
-  if (res == CHECK_ERROR_SYNCWORD) while(1) {}; // must not happen !
+    if (res == CHECK_ERROR_SYNCWORD) while(1) {}; // must not happen !
 
-  if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
+    if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 
-    if (do_clock_reset) clock.Reset();
+        if (do_clock_reset) clock.Reset();
 
-    rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
-  }
+        rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
+    }
 
-  // we want to have it even if it's a bad packet
-  if (antenna == ANTENNA_1) {
-    sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
-  } else {
-    sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
-  }
+    // we want to have it even if it's a bad packet
+    if (antenna == ANTENNA_1) {
+        sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
+    } else {
+        sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
+    }
 
-  return rx_status;
+    return rx_status;
 }
 
 
@@ -524,7 +529,10 @@ int main_main(void)
   connect_occured_once = false;
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
-  frame_state = FRAME_STATE_SEND_NORMAL;
+  transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+  doPostReceive2_cnt = 0;
+  doPostReceive2 = false;
+  frame_missed = false;
 
   rxstats.Init(Config.LQAveragingPeriod);
 
@@ -534,9 +542,6 @@ int main_main(void)
   led_blink = 0;
   tick_1hz = 0;
   tick_1hz_commensurate = 0;
-  doPostReceive2_cnt = 0;
-  doPostReceive2 = false;
-  frame_missed = false;
   doSysTask = 0; // helps in avoiding too short first loop
   while (1) {
 
@@ -839,6 +844,8 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
     }//end of if(doPostReceive2)
 
     out.Do(micros());
+
+    //-- do mavlink
 
     mavlink.Do();
 
