@@ -22,6 +22,9 @@ tGlobalConfig Config;
 bool setup_rx_param_changed;
 
 
+//-------------------------------------------------------
+// Configure Setup MetaData
+//-------------------------------------------------------
 
 void setup_configure_metadata(void)
 {
@@ -105,6 +108,10 @@ void setup_configure_metadata(void)
     SetupMetaData.rx_actual_diversity = 3;
 }
 
+
+//-------------------------------------------------------
+// Setup
+//-------------------------------------------------------
 
 void setup_default(void)
 {
@@ -213,6 +220,10 @@ void setup_sanitize(void)
     if (Setup.Rx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
 }
 
+
+//-------------------------------------------------------
+// Configure
+//-------------------------------------------------------
 
 void setup_configure(void)
 {
@@ -327,11 +338,21 @@ void setup_configure(void)
 }
 
 
+
+//-------------------------------------------------------
+// Init
+//-------------------------------------------------------
+
 void setup_init(void)
 {
-    setup_configure_metadata();
 
     setup_default();
+
+    setup_configure_metadata();
+
+    // TODO: we currently force BindPhrase, Mode to the compile defaults
+    strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
+    Setup.Mode = SETUP_MODE;
 
     setup_sanitize();
 

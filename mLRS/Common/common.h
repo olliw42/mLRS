@@ -310,19 +310,101 @@ FhssBase fhss;
 // Tx/Rx Cmd Frames
 //-------------------------------------------------------
 
+#ifdef DEVICE_IS_TRANSMITTER
+
+// Tx: send cmd to Rx
 void pack_txcmd_cmd_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t cmd)
 {
     _pack_tx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, &cmd, 1);
 }
 
 
+// Tx: handle FRAME_CMD_RX_SETUPDATA from Rx
+void unpack_rxcmd_rxsetupdata_frame(tRxFrame* frame)
+{
+tCmdRxSetupData* rx_setupdata = (tCmdRxSetupData*)frame->payload;
+
+    SetupMetaData.rx_available = true;
+
+    SetupMetaData.rx_firmware_version = rx_setupdata->firmware_version;
+    SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
+    strncpy_x(SetupMetaData.rx_device_name, rx_setupdata->device_name, 20);
+    SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
+    SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
+
+    Setup.Rx.Power = rx_setupdata->Power;
+    Setup.Rx.Diversity = rx_setupdata->Diversity;
+    Setup.Rx.ChannelOrder = rx_setupdata->ChannelOrder;
+    Setup.Rx.OutMode = rx_setupdata->OutMode;
+    Setup.Rx.OutRssiChannelMode = rx_setupdata->OutRssiChannelMode;
+    Setup.Rx.FailsafeMode = rx_setupdata->FailsafeMode;
+    Setup.Rx.SerialBaudrate = rx_setupdata->SerialBaudrate;
+    Setup.Rx.SerialLinkMode = rx_setupdata->SerialLinkMode;
+    Setup.Rx.SendRadioStatus = rx_setupdata->SendRadioStatus;
+
+    for (uint8_t i = 0; i < 12; i++) {
+        Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_setupdata->FailsafeOutChannelValues_Ch1_Ch12[i];
+    }
+    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[0] = rx_setupdata->FailsafeOutChannelValue_Ch13;
+    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[1] = rx_setupdata->FailsafeOutChannelValue_Ch14;
+    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2] = rx_setupdata->FailsafeOutChannelValue_Ch15;
+    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3] = rx_setupdata->FailsafeOutChannelValue_Ch16;
+
+    SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
+    SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
+    int16_t power_list[8];
+    for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
+    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 32);
+    SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
+    SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
+}
+
+
+// Tx: send new receiver parameters with FRAME_CMD_RX_PARAMS to Rx
+// we take the values from Tx' Setup.Rx structure
+void pack_txcmd_set_rxparams_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+{
+tCmdRxParams rx_params = {0};
+
+    rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
+
+// TODO
+    strncpy_x(rx_params.BindPhrase, Setup.BindPhrase, 6);
+    rx_params.FrequencyBand = Setup.FrequencyBand;
+    rx_params.Mode = Setup.Mode;
+
+    rx_params.Power = Setup.Rx.Power;
+    rx_params.Diversity = Setup.Rx.Diversity;
+    rx_params.ChannelOrder = Setup.Rx.ChannelOrder;
+    rx_params.OutMode = Setup.Rx.OutMode;
+    rx_params.OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
+    rx_params.FailsafeMode = Setup.Rx.FailsafeMode;
+    rx_params.SerialBaudrate = Setup.Rx.SerialBaudrate;
+    rx_params.SerialLinkMode = Setup.Rx.SerialLinkMode;
+    rx_params.SendRadioStatus = Setup.Rx.SendRadioStatus;
+
+    for (uint8_t i = 0; i < 12; i++) {
+        rx_params.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
+    }
+    rx_params.FailsafeOutChannelValue_Ch13 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[0];
+    rx_params.FailsafeOutChannelValue_Ch14 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[1];
+    rx_params.FailsafeOutChannelValue_Ch15 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2];
+    rx_params.FailsafeOutChannelValue_Ch16 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3];
+
+    _pack_tx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
+}
+
+#endif
+#ifdef DEVICE_IS_RECEIVER
+
+// Rx: send cmd to Tx
 void pack_rxcmd_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats, uint8_t cmd)
 {
     _pack_rx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, &cmd, 1);
 }
 
 
-// used by Rx to send FRAME_CMD_RX_SETUPDATA
+// Rx: send FRAME_CMD_RX_SETUPDATA to Tx
 void pack_rxcmd_rxsetupdata_frame(tRxFrame* frame, tFrameStats* frame_stats)
 {
 tCmdRxSetupData rx_setupdata = {0};
@@ -376,90 +458,16 @@ tCmdRxSetupData rx_setupdata = {0};
 }
 
 
-// used by Tx to handle FRAME_CMD_RX_SETUPDATA
-void unpack_rxcmd_rxsetupdata_frame(tRxFrame* frame)
-{
-tCmdRxSetupData* rx_setupdata = (tCmdRxSetupData*)frame->payload;
-
-    SetupMetaData.rx_available = true;
-
-    SetupMetaData.rx_firmware_version = rx_setupdata->firmware_version;
-    SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
-    strncpy_x(SetupMetaData.rx_device_name, rx_setupdata->device_name, 20);
-    SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
-    SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
-
-    Setup.Rx.Power = rx_setupdata->Power;
-    Setup.Rx.Diversity = rx_setupdata->Diversity;
-    Setup.Rx.ChannelOrder = rx_setupdata->ChannelOrder;
-    Setup.Rx.OutMode = rx_setupdata->OutMode;
-    Setup.Rx.OutRssiChannelMode = rx_setupdata->OutRssiChannelMode;
-    Setup.Rx.FailsafeMode = rx_setupdata->FailsafeMode;
-    Setup.Rx.SerialBaudrate = rx_setupdata->SerialBaudrate;
-    Setup.Rx.SerialLinkMode = rx_setupdata->SerialLinkMode;
-    Setup.Rx.SendRadioStatus = rx_setupdata->SendRadioStatus;
-
-    for (uint8_t i = 0; i < 12; i++) {
-        Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_setupdata->FailsafeOutChannelValues_Ch1_Ch12[i];
-    }
-    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[0] = rx_setupdata->FailsafeOutChannelValue_Ch13;
-    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[1] = rx_setupdata->FailsafeOutChannelValue_Ch14;
-    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2] = rx_setupdata->FailsafeOutChannelValue_Ch15;
-    Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3] = rx_setupdata->FailsafeOutChannelValue_Ch16;
-
-    SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
-    SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
-    int16_t power_list[8];
-    for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
-    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 32);
-    SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
-    SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
-}
-
-
-// used by Tx to send new RX parameters
-// we take the values from Tx' Setup.Rx structure
-void pack_txcmd_set_rxparams_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
-{
-tCmdRxParams rx_params = {0};
-
-    rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
-
-//    strncpy_x(rx_params.BindPhrase, Setup.BindPhrase, 6);
-//    rx_params.FrequencyBand = Setup.FrequencyBand;
-//    rx_params.Mode = Setup.Mode;
-
-    rx_params.Power = Setup.Rx.Power;
-    rx_params.Diversity = Setup.Rx.Diversity;
-    rx_params.ChannelOrder = Setup.Rx.ChannelOrder;
-    rx_params.OutMode = Setup.Rx.OutMode;
-    rx_params.OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
-    rx_params.FailsafeMode = Setup.Rx.FailsafeMode;
-    rx_params.SerialBaudrate = Setup.Rx.SerialBaudrate;
-    rx_params.SerialLinkMode = Setup.Rx.SerialLinkMode;
-    rx_params.SendRadioStatus = Setup.Rx.SendRadioStatus;
-
-    for (uint8_t i = 0; i < 12; i++) {
-        rx_params.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
-    }
-    rx_params.FailsafeOutChannelValue_Ch13 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[0];
-    rx_params.FailsafeOutChannelValue_Ch14 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[1];
-    rx_params.FailsafeOutChannelValue_Ch15 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2];
-    rx_params.FailsafeOutChannelValue_Ch16 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3];
-
-    _pack_tx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
-}
-
-
-// used by Rx to update its params
+// Rx: handle FRAME_CMD_RX_SET_PARAMS
+// new parameter values are stored in Rx' Setup.Rx fields
 void unpack_txcmd_rxsetparams_frame(tTxFrame* frame)
 {
 tCmdRxParams* rx_params = (tCmdRxParams*)frame->payload;
 
 // TODO
-//    strncpy_x( Setup.BindPhrase,rx_params.BindPhrase, 6);
-//    Setup.FrequencyBand = rx_params.FrequencyBand;
-//    Setup.Mode = rx_params.Mode;
+    strncpy_x(Setup.BindPhrase, rx_params->BindPhrase, 6);
+    Setup.FrequencyBand = rx_params->FrequencyBand;
+    Setup.Mode = rx_params->Mode;
 
     Setup.Rx.Power = rx_params->Power;
     Setup.Rx.Diversity = rx_params->Diversity;
@@ -479,6 +487,7 @@ tCmdRxParams* rx_params = (tCmdRxParams*)frame->payload;
     Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2] = rx_params->FailsafeOutChannelValue_Ch15;
     Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3] = rx_params->FailsafeOutChannelValue_Ch16;
 }
+#endif
 
 
 //-------------------------------------------------------

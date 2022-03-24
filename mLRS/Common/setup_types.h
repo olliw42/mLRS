@@ -195,9 +195,15 @@ typedef struct
 } tRxSetup;
 
 
+#define SETUP_MARKER_STR  "SetupStartMarker"
+
 // user setable parameter values, stored in EEPROM
 typedef struct
 {
+    char MarkerStr[16];
+    uint32_t Version;
+    uint16_t Layout;
+
     // parameters common to both Tx and Rx
     // cannot be changed on the fly, loss of connection will happen, need restart/reconnect
     char BindPhrase[6+1];
@@ -209,6 +215,8 @@ typedef struct
 
     // parameters specific to Tx, can be changed on the fly
     tTxSetup Tx;
+
+    char dummy[8];
 } tSetup;
 
 
