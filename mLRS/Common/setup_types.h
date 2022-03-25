@@ -261,6 +261,7 @@ typedef struct
     uint16_t LQAveragingPeriod;
 
     int8_t Power_dbm;
+    uint32_t SerialBaudrate;
 
     uint16_t frame_rate_ms;
     uint16_t frame_rate_hz;

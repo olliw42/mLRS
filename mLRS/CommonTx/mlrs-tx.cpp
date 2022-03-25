@@ -558,6 +558,7 @@ int main_main(void)
   init();
   mbridge.Init();
   crsf.Init();
+  serial.SetBaudRate(Config.SerialBaudrate);
   init_serialport();
 
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)

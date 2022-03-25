@@ -125,7 +125,7 @@ void setup_default(void)
     Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
     Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
     Setup.Tx.InMode = SETUP_TX_IN_MODE;
-    Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    Setup.Tx.SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
     Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
@@ -135,7 +135,7 @@ void setup_default(void)
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
     Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
     Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
-    Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
 
@@ -327,6 +327,22 @@ void setup_configure(void)
     Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.FhssNum);
 
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
+
+    //-- Serial
+#ifdef DEVICE_IS_TRANSMITTER
+    switch (Setup.Tx.SerialBaudrate) {
+#endif
+#ifdef DEVICE_IS_RECEIVER
+    switch (Setup.Rx.SerialBaudrate) {
+#endif
+    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate = 9600; break;
+    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate = 19200; break;
+    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate = 38400; break;
+    case SERIAL_BAUDRATE_57600: Config.SerialBaudrate = 57600; break;
+    case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
+    default:
+        Config.SerialBaudrate = 57600;
+    }
 }
 
 

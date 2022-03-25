@@ -33,7 +33,7 @@
 // UARTE = in port, SBus or whatever
 
 #define UARTB_USE_UART5 // serial
-#define UARTB_BAUD                SETUP_TX_SERIAL_BAUDRATE
+#define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
 #define UARTB_USE_TX_ISR

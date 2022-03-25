@@ -137,7 +137,7 @@ void init(void)
     delay_init();
     micros_init();
 
-    serial.Init(); //uartb_setprotocol(SETUP_RX_SERIAL_BAUDRATE, XUART_PARITY_NO, UART_STOPBIT_1);
+    serial.Init();
     out.Init();
 
     dbg.Init();
@@ -528,6 +528,7 @@ int main_main(void)
   main_test();
 #endif
   init();
+  serial.SetBaudRate(Config.SerialBaudrate);
 
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 

@@ -30,7 +30,7 @@
 // UART = output port, SBus or whatever
 
 #define UARTB_USE_UART2 // serial
-#define UARTB_BAUD                SETUP_RX_SERIAL_BAUDRATE
+#define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
 #define UARTB_USE_TX_ISR

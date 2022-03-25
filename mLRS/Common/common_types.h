@@ -58,6 +58,7 @@ class tSerialBase
 {
   public:
     virtual void Init(void) {};
+    virtual void SetBaudRate(uint32_t baud) {}
     virtual void putc(char c) {}
     virtual bool available(void) { return false; }
     virtual char getc(void) { return '\0'; }

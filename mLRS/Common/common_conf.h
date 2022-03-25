@@ -37,7 +37,7 @@
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
-#define SETUP_TX_SERIAL_BAUDRATE        57600
+#define SETUP_TX_SERIAL_BAUDRATE        3 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200
 
 #define SETUP_TX_POWER                  CPOWER
 
@@ -54,7 +54,7 @@
 
 #define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: low throttle, 4: CH1-CH4 center signal
 
-#define SETUP_RX_SERIAL_BAUDRATE        57600
+#define SETUP_RX_SERIAL_BAUDRATE        3 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200
 
 #define SETUP_RX_POWER                  CPOWER
 
@@ -106,6 +106,9 @@
 
 #define RX_SERIAL_TXBUFSIZE             1024
 #define RX_SERIAL_RXBUFSIZE             1024
+
+#define TX_SERIAL_BAUDRATE              19200 //57600
+#define RX_SERIAL_BAUDRATE              19200 //57600
 
 
 #endif // COMMON_CONFIG_H

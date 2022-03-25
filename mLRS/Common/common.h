@@ -243,6 +243,7 @@ class tSerialPort : public tSerialBase
 #ifndef DEVICE_HAS_NO_SERIAL
   public:
     void Init(void) override { uartb_init(); }
+    void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
     void putc(char c) override { uartb_putc(c); }
     bool available(void) override { return uartb_rx_available(); }
     char getc(void) override { return uartb_getc(); }
