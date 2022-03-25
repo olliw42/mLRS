@@ -30,6 +30,7 @@ v0.0.00:
 #include "..\Common\sx-drivers\sx12xx.h"
 #include "..\Common\hal\hal.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-delay.h" // these are dependent on hal
+#include "..\Common\stdstm32-eeprom.h"
 #include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
 #include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
@@ -226,6 +227,7 @@ void WhileTransmit::handle_tasks(void)
     if (tasks & WHILE_TASK_STORE_PARAMS) {
         tasks &=~ WHILE_TASK_STORE_PARAMS;
 dbg.puts("/n store");
+        setup_store_to_EEPROM();
         return; // do just one task per cycle
     }
 }

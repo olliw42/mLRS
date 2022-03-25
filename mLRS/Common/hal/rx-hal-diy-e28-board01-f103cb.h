@@ -11,12 +11,14 @@
 // RX DIY E28 BOARD01 v004 STM32F103CB
 //-------------------------------------------------------
 
-//-- Timers, Timing and such stuff
+//-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
 
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
+
+#define EE_START_PAGE             124 // 128 kB flash, 1 kB page
 
 
 //-- UARTS

@@ -31,6 +31,8 @@
 #include "stm32f1xx_ll_spi.h"
 #include "stm32f1xx_ll_exti.h"
 #include "stm32f1xx_hal.h"
+#include "stm32f1xx_hal_flash.h"
+#include "stm32f1xx_hal_flash_ex.h"
 
 #endif
 #ifdef STM32F373xC
@@ -44,6 +46,8 @@
 #include "stm32f3xx_ll_system.h"
 #include "stm32f3xx_ll_exti.h"
 #include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_flash.h"
+#include "stm32f3xx_hal_flash_ex.h"
 
 #endif
 #ifdef STM32G491xx
@@ -57,6 +61,8 @@
 #include "stm32g4xx_ll_system.h"
 #include "stm32g4xx_ll_exti.h"
 #include "stm32g4xx_hal.h"
+#include "stm32g4xx_hal_flash.h"
+#include "stm32g4xx_hal_flash_ex.h"
 
 #endif
 #ifdef STM32L433xx
@@ -70,6 +76,8 @@
 #include "stm32l4xx_ll_system.h"
 #include "stm32l4xx_ll_exti.h"
 #include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal_flash.h"
+#include "stm32l4xx_hal_flash_ex.h"
 
 #endif
 

@@ -338,6 +338,26 @@ void setup_configure(void)
 }
 
 
+//-------------------------------------------------------
+// helper
+//-------------------------------------------------------
+
+void setup_clear(void)
+{
+    memset(&Setup, 0xff, sizeof(tSetup));
+}
+
+EE_STATUS_ENUM setup_store_to_EEPROM(void)
+{
+    return ee_writedata(&Setup, sizeof(tSetup));
+}
+
+
+EE_STATUS_ENUM setup_retrieve_from_EEPROM(void)
+{
+    return ee_readdata(&Setup, sizeof(tSetup));
+}
+
 
 //-------------------------------------------------------
 // Init
@@ -345,14 +365,48 @@ void setup_configure(void)
 
 void setup_init(void)
 {
+EE_STATUS_ENUM ee_status;
+uint8_t doEEPROMwrite;
 
-    setup_default();
+    setup_clear();
+    ee_status = ee_init();
+    if (ee_status == EE_STATUS_OK) { ee_status = setup_retrieve_from_EEPROM(); }
+    if (ee_status != EE_STATUS_OK) { // try it a 2nd time
+        setup_clear();
+        ee_status = ee_init();
+        if (ee_status == EE_STATUS_OK) { ee_status = setup_retrieve_from_EEPROM(); }
+    }
+    if (ee_status != EE_STATUS_OK) setup_clear();
+
+    doEEPROMwrite = 0;
+    if (Setup.Layout != SETUPLAYOUT) {
+        setup_default();
+        Setup.Layout = SETUPLAYOUT;
+        doEEPROMwrite = 1;
+    }
+    if (Setup.Version != VERSION) { //do after Layout, ensures that these flags are correct irrespective of Layout handling
+        Setup.Version = VERSION;
+        doEEPROMwrite = 1;
+    }
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) {
+        for (uint8_t n = 0; n < 16; n++) Setup.MarkerStr[n] = 0;
+        strncpy_x((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
+        strcpy((char*)Setup.dummy, "!end!");
+        doEEPROMwrite = 1;
+    }
+    if (doEEPROMwrite) {
+       setup_store_to_EEPROM();
+    }
 
     setup_configure_metadata();
 
     // TODO: we currently force BindPhrase, Mode to the compile defaults
     strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
     Setup.Mode = SETUP_MODE;
+
+#ifdef SETUP_FORCE_COMMON_CONF
+setup_default();
+#endif
 
     setup_sanitize();
 
