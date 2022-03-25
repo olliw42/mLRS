@@ -9,6 +9,12 @@
 /*
 
 ISSUES:
+- make crsf/mbridge configurable via setup
+- add allowed_mask defines for in/out inverted/noninverted
+- setup: which are effective only on restart? which on-the-fly?
+
+- test EEPROM for F3, L4
+
 - implement all AETR,TAER,ETAR, just do it !!!!
 - allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 
@@ -16,6 +22,7 @@ ISSUES:
 - align mavlink messages only with respect to header, i.e., such that header is never split up
 - led blink to signal serial traffic
 
+- allow a missing 2nd sx for diversity boards
 
 The 3 MAIN topics TODO:
 

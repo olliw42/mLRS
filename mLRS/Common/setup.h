@@ -30,7 +30,7 @@ void setup_configure_metadata(void)
 {
     SetupMetaData = {0};
 
-    // "2.4 GHz,915 MHz FCC,868 MHz"
+    //-- FrequencyBand: "2.4 GHz,915 MHz FCC,868 MHz"
 #ifdef FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b0001;
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
@@ -39,7 +39,7 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b0100;
 #endif
 
-    // "50 Hz,31 Hz,19 Hz"
+    //-- Mode: "50 Hz,31 Hz,19 Hz"
 #ifdef DEVICE_HAS_SX128x
     SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_SX126x
@@ -52,14 +52,14 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
 
-    // "on,antenna1,antenna2"
+    // Diversity: "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
     SetupMetaData.Tx_Diversity_allowed_mask = 0b0010; // only antenna1
 #endif
 
-    // "none,mbridge,in,crsf"
+    // Tx ChannelSource: "none,mbridge,in,crsf"
 #if defined DEVICE_HAS_JRPIN5 && defined DEVICE_HAS_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_JRPIN5
@@ -70,14 +70,14 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none
 #endif
 
-    // "sbus,sbus inv"
+    // Tx InMode: "sbus,sbus inv"
 #ifdef DEVICE_HAS_IN
     SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
 #else
     SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // default to sbus
 #endif
 
-    // "serial,mbridge"
+    // Tx SerialDestination: "serial,mbridge"
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask = UINT16_MAX; // all
 #else
@@ -88,19 +88,20 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
 
-    // "on,antenna1,antenna2"
+    // Rx Diversity: "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
     SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1
 #endif
 
-    // "sbus,crsf,sbus inv"
+    // Rx OutMode: "sbus,crsf,sbus inv"
     SetupMetaData.Rx_OutMode_allowed_mask = UINT16_MAX; // all
 
-    //-- Tx: receiver setup meta data
+    //-- Tx: Receiver setup meta data
 
     SetupMetaData.rx_available = false;
+
     SetupMetaData.rx_firmware_version = 0;
     SetupMetaData.rx_setup_layout = 0;
     strcpy(SetupMetaData.rx_device_name, "");
@@ -148,6 +149,7 @@ void setup_sanitize(void)
 {
 #define SETUP_TST_ALLOWED(x,y) (SetupMetaData.x & (1 << Setup.y))
 
+    //-- BindPhrase, FrequencyBand, Mode
     sanitize_bind_phrase(Setup.BindPhrase);
 
 #ifdef FREQUENCY_BAND_2P4_GHZ

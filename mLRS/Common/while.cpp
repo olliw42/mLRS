@@ -15,7 +15,7 @@
 void WhileBase::Init(void)
 {
     do_cnt = 0;
-    tasks = WHILE_TASK_NONE;
+    tasks = 0;
 }
 
 
