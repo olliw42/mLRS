@@ -119,7 +119,7 @@ void setup_default(void)
     Setup.FrequencyBand = 0;
     Setup.Mode = SETUP_MODE;
 
-    Setup.Tx.Power = 0;
+    Setup.Tx.Power = SETUP_TX_POWER;
     Setup.Tx.Diversity = SETUP_TX_DIVERSITY;
     Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
     Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -129,7 +129,7 @@ void setup_default(void)
     Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
     Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
 
-    Setup.Rx.Power = 0;
+    Setup.Rx.Power = SETUP_RX_POWER;
     Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
     Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
@@ -165,11 +165,7 @@ void setup_sanitize(void)
 
     //-- Tx:
 
-#ifdef DEVICE_IS_TRANSMITTER
-    if (Setup.Tx.Power >= RFPOWER_LIST_NUM) Setup.Tx.Power = 0;
-#else
-    Setup.Tx.Power = 0;
-#endif
+    if (Setup.Tx.Power >= RFPOWER_LIST_NUM) Setup.Tx.Power = RFPOWER_LIST_NUM - 1;
 
     if (Setup.Tx.Diversity >= DIVERSITY_NUM) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
     if (SETUP_TST_ALLOWED(Tx_Diversity_allowed_mask,Tx.Diversity) == 0) Setup.Tx.Diversity = DIVERSITY_ANTENNA1;
@@ -195,11 +191,7 @@ void setup_sanitize(void)
 
     //-- Rx:
 
-#ifdef DEVICE_IS_RECEIVER
-    if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = 0;
-#else
-    Setup.Rx.Power = 0;
-#endif
+    if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = RFPOWER_LIST_NUM - 1;
 
     if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
     if (SETUP_TST_ALLOWED(Rx_Diversity_allowed_mask,Rx.Diversity) == 0) Setup.Rx.Diversity = DIVERSITY_ANTENNA1;
@@ -228,19 +220,19 @@ void setup_sanitize(void)
 void setup_configure(void)
 {
     //-- SyncWord
+
     uint32_t bind_dblword = u32_from_bind_phrase(Setup.BindPhrase);
 
     Config.FrameSyncWord = (uint16_t)(bind_dblword & 0x0000FFFF);
 
     //-- Power
 
-    // TODO: we momentarily use the POWER values, but eventually we need to use the power_list[] array and setup Rx/Tx power
     // note: the actually used power will be determined later when the SX are set up
 #ifdef DEVICE_IS_TRANSMITTER
-    Config.Power = SETUP_TX_POWER; //power_list[Setup.Tx.Power];
+    Config.Power_dbm = rfpower_list[Setup.Tx.Power].dbm;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-    Config.Power = SETUP_RX_POWER; //power_list[Setup.Rx.Power];
+    Config.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
 #endif
 
   //-- Diversity

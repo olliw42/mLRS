@@ -165,7 +165,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetPaConfig_22dbm();
 
         //SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
-        SetRfPower_dbm(Config.Power);
+        SetRfPower_dbm(Config.Power_dbm);
 
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 

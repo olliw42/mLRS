@@ -169,7 +169,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
 
         //SetTxParams(calc_sx_power(Config.Power), SX1280_RAMPTIME_04_US);
-        SetRfPower_dbm(Config.Power);
+        SetRfPower_dbm(Config.Power_dbm);
 
         SetLoraConfigurationByIndex(Config.LoraConfigIndex);
 

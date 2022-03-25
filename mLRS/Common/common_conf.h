@@ -20,8 +20,11 @@
 // Setup
 //-------------------------------------------------------
 
-#define POWER                           POWER_MIN
-//#define POWER                           POWER_MAX
+#define SETUP_FORCE_COMMON_CONF // un-comment to force setup to below defines, else setup is taken from EEPROM
+
+
+#define CPOWER                          0 // 0: minimum power, 255: maximum power
+//#define CPOWER                          255 // 0: minimum power, 255: maximum power
 
 #define DIVERSITY                       0
 
@@ -36,7 +39,7 @@
 
 #define SETUP_TX_SERIAL_BAUDRATE        57600
 
-#define SETUP_TX_POWER                  POWER
+#define SETUP_TX_POWER                  CPOWER
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
@@ -53,7 +56,7 @@
 
 #define SETUP_RX_SERIAL_BAUDRATE        57600
 
-#define SETUP_RX_POWER                  POWER
+#define SETUP_RX_POWER                  CPOWER
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 

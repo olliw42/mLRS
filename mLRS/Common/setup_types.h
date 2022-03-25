@@ -260,7 +260,7 @@ typedef struct
 
     uint16_t LQAveragingPeriod;
 
-    uint8_t Power;
+    int8_t Power_dbm;
 
     uint16_t frame_rate_ms;
     uint16_t frame_rate_hz;
