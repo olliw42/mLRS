@@ -10,6 +10,7 @@
 
 ISSUES:
 - make crsf/mbridge configurable via setup
+- store bindphrase -> first do bind
 - add allowed_mask defines for in/out inverted/noninverted
 - setup: which are effective only on restart? which on-the-fly?
 

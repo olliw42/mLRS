@@ -408,9 +408,8 @@ uint8_t doEEPROMwrite;
 
     setup_configure_metadata();
 
-    // TODO: we currently force BindPhrase, Mode to the compile defaults
+// TODO: we currently force BindPhrase to the compile defaults, we first want to have bind
     strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
-    Setup.Mode = SETUP_MODE;
 
 #ifdef SETUP_FORCE_COMMON_CONF
 setup_default();
