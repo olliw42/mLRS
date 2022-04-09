@@ -206,34 +206,6 @@ void init_serialport(void)
 
 
 //-------------------------------------------------------
-// While transmit/receive tasks
-//-------------------------------------------------------
-// we may want to add some timer to do more than one task in the transmit/receive period
-// this would help a lot with the different available periods depending on the mode
-
-#include "..\Common\while.h"
-
-class WhileTransmit : public WhileBase
-{
-  public:
-    void handle_tasks(void) override;
-};
-
-WhileTransmit whileTransmit;
-
-
-void WhileTransmit::handle_tasks(void)
-{
-    if (tasks & WHILE_TASK_STORE_PARAMS) {
-        tasks &=~ WHILE_TASK_STORE_PARAMS;
-dbg.puts("/n store");
-        setup_store_to_EEPROM();
-        return; // do just one task per cycle
-    }
-}
-
-
-//-------------------------------------------------------
 // SX12xx
 //-------------------------------------------------------
 
@@ -596,7 +568,6 @@ int main_main(void)
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
-  whileTransmit.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -670,7 +641,6 @@ int main_main(void)
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(dbg.puts("\n>");)
-      whileTransmit.Trigger();
       break;
 
     case LINK_STATE_RECEIVE:
@@ -888,7 +858,6 @@ IF_ANTENNA2(
       case MBRIDGE_CMD_PARAM_SET: mbridge_do_ParamSet(mbridge.GetPayloadPtr()); break;
       case MBRIDGE_CMD_PARAM_STORE:
         transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS;
-        whileTransmit.SetTask(WHILE_TASK_STORE_PARAMS);
         break;
       }
     }
@@ -927,10 +896,6 @@ IF_ANTENNA2(
     //-- do mavlink
 
     mavlink.Do();
-
-    //-- do WhileTransmit stuff
-
-    whileTransmit.Do();
 
   }//end of while(1) loop
 
