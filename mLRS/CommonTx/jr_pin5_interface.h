@@ -48,7 +48,7 @@ class tPin5BridgeBase
     void Init(void);
 
     // telemetry handling
-    bool telemetry_tick_start; // called at 50Hz, in sync with transmit
+    bool telemetry_start_next_tick;
     bool telemetry_tick_next; // called at 1 ms
     uint16_t telemetry_state;
 
@@ -124,7 +124,7 @@ void tPin5BridgeBase::Init(void)
   cnt = 0;
   tlast_us = 0;
 
-  telemetry_tick_start = false;
+  telemetry_start_next_tick = false;
   telemetry_tick_next = false;
   telemetry_state = 0;
 };
@@ -132,7 +132,7 @@ void tPin5BridgeBase::Init(void)
 
 void tPin5BridgeBase::TelemetryStart(void)
 {
-    telemetry_tick_start = true;
+    telemetry_start_next_tick = true;
 }
 
 
@@ -144,8 +144,8 @@ void tPin5BridgeBase::TelemetryTick_ms(void)
 
 bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* state)
 {
-    if (telemetry_tick_start) {
-      telemetry_tick_start = false;
+    if (telemetry_start_next_tick) {
+      telemetry_start_next_tick = false;
       telemetry_state = 1; // start
     }
 
