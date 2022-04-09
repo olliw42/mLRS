@@ -7,14 +7,99 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
+-- works with mLRS v0.01.03
 
+
+----------------------------------------------------------------------
+-- Info/Warning box
+----------------------------------------------------------------------
+
+local popup = false   
+local popup_text = ""
+local popup_t_end_10ms = 0    
+
+
+local function setPopup(txt)
+    popup = true
+    popup_text = txt
+    popup_t_end_10ms = getTime() + 100
+end
+
+local function setPopupWTmo(txt,tmo_10ms)
+    popup = true
+    popup_text = txt
+    popup_t_end_10ms = getTime() + tmo_10ms
+end
+
+
+local function clearPopup()
+    popup = false
+end
+
+
+local function drawPopup()
+    lcd.drawFilledRectangle(LCD_W/2-160-2, 74, 320+4, 84, TEXT_COLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_W/2-160, 76, 320, 80, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    
+    local i = string.find(popup_text, "\n")
+    local attr = MENU_TITLE_COLOR+MIDSIZE+CENTER
+    if i == nil then
+        lcd.drawText(LCD_W/2, 99, popup_text, attr)
+    else
+        local t1 = string.sub(popup_text, 1,i-1)
+        local t2 = string.sub(popup_text, i+1)
+        lcd.drawText(LCD_W/2, 85, t1, attr)
+        lcd.drawText(LCD_W/2, 85+30, t2, attr)
+    end  
+end
+
+
+local function doPopup()
+    if popup then
+        drawPopup()
+        local t_10ms = getTime()
+        if t_10ms > popup_t_end_10ms then clearPopup() end
+    end  
+end
+
+
+----------------------------------------------------------------------
+-- helper to handle connect
+----------------------------------------------------------------------
+
+local connected = false
+local connected_has_changed = false
+local has_connected = false
+local has_disconnected = false
+
+local function doConnected()
+    local LStats = mbridge.getLinkStats()
+    
+    local is_connected = false
+    if LStats.LQ > 0 then is_connected = true end
+    
+    connected_has_changed = false
+    if is_connected ~= connected then connected_has_changed = true end
+    
+    has_connected = false
+    if connected_has_changed and is_connected then has_connected = true end
+    
+    has_disconnected = false
+    if connected_has_changed and not is_connected then has_disconnected = true end
+    
+    connected = is_connected
+end    
+    
+
+----------------------------------------------------------------------
+-- variables for mBridge traffic
+----------------------------------------------------------------------
 
 local t_last = 0
 local DEVICE_ITEM_TX = nil
 local DEVICE_ITEM_RX = nil
 local DEVICE_PARAM_LIST = nil
 local DEVICE_PARAM_LIST_complete = false
-local DEVICE_RX_connected = false
 local DEVICE_INFO = nil
 
 
@@ -23,7 +108,6 @@ local function clearParams()
     DEVICE_ITEM_RX = nil
     DEVICE_PARAM_LIST = nil
     DEVICE_PARAM_LIST_complete = false
-    DEVICE_RX_connected = false
     DEVICE_INFO = nil
 end
 
@@ -161,7 +245,9 @@ local function doParamLoop()
     end    
   
     -- handle received commands
+for ijk = 1,6 do -- handle only 6 at most per lua cycle
     local cmd = mbridge.cmdPop()
+    if cmd == nil then break end
     if cmd ~= nil then
       if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
           -- MBRIDGE_CMD_DEVICE_ITEM_TX
@@ -179,9 +265,6 @@ local function doParamLoop()
           DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 5, 19)
           DEVICE_ITEM_RX.version_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.version)
           DEVICE_ITEM_RX.setuplayout_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.setuplayout*100)
-          if cmd.payload[5] > 0 and cmd.payload[6] > 0 then -- checking c[4] would be sufficient, but hey
-              DEVICE_RX_connected = true
-          end    
       elseif cmd.cmd == mbridge.CMD_INFO then 
           -- MBRIDGE_CMD_INFO
           DEVICE_INFO = cmd
@@ -236,6 +319,7 @@ local function doParamLoop()
           end -- anything else should not happen, but ???
       end
     end  
+end--for    
 end    
    
    
@@ -257,6 +341,7 @@ end
     
 local function sendParamStore()
     mbridge.cmdPush(mbridge.CMD_PARAM_STORE, {})
+    setPopupWTmo("Save Parameters",250)
 end  
 
     
@@ -279,7 +364,7 @@ local bindphrase_chars = "abcdefghijklmnopqrstuvwxyz0123456789_#-."
     
 local function cur_attr(idx)
     local attr = TEXT_COLOR
-    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
+    if cursor_idx == idx then --and DEVICE_PARAM_LIST_complete then
         attr = attr + INVERS
         if edit then attr = attr + BLINK end    
     end    
@@ -496,7 +581,7 @@ local function drawPageMain()
     end
     lcd.drawText(240, y, "Rx:", TEXT_COLOR)
     if not DEVICE_PARAM_LIST_complete then
-    elseif not DEVICE_RX_connected then
+    elseif not connected then
       lcd.drawText(270, y, "not connected", TEXT_COLOR)  
     elseif DEVICE_ITEM_RX == nil then
       lcd.drawText(270, y, "---", TEXT_COLOR)  
@@ -528,9 +613,13 @@ local function drawPageMain()
   
     y = 145
     lcd.drawText(10, y, "Edit Tx", cur_attr(2))  
-    lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(3))  
+    if not connected then 
+        lcd.drawText(10 + 80, y, "Edit Rx", TEXT_DISABLE_COLOR)
+    else  
+        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(3))
+    end  
     lcd.drawText(10 + 160, y, "Save", cur_attr(4))  
-    lcd.drawText(10 + 240, y, "Reload", cur_attr(5))  
+    lcd.drawText(10 + 225, y, "Reload", cur_attr(5))  
      
     -- show overview of some selected parameters
     y = 190
@@ -550,20 +639,25 @@ local function drawPageMain()
         lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], TEXT_COLOR)  
     else
         lcd.drawText(140, y+20, "?", TEXT_COLOR)  
-    end    
+    end
     
-    lcd.drawText(10+240, y, "Rx Power", TEXT_COLOR)
-    lcd.drawText(10+240, y+20, "Rx Diversity", TEXT_COLOR)  
-    if DEVICE_INFO.rx_power_dbm < 127 then
-        lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", TEXT_COLOR)  
+    local rx_attr = TEXT_COLOR
+    if not connected then 
+        rx_attr = TEXT_DISABLE_COLOR
+    end
+    lcd.drawText(10+240, y, "Rx Power", rx_attr)
+    lcd.drawText(10+240, y+20, "Rx Diversity", rx_attr)  
+    --if DEVICE_INFO.rx_power_dbm < 127 then
+    if connected then
+        lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)  
         if DEVICE_INFO.rx_diversity <= #diversity_list then
-          lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_diversity], TEXT_COLOR)  
+          lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)  
         else  
-          lcd.drawText(140+240, y+20, "?", TEXT_COLOR)  
+          lcd.drawText(140+240, y+20, "?", rx_attr)  
         end  
     else  
-        lcd.drawText(140+240, y, "?", TEXT_COLOR)  
-        lcd.drawText(140+240, y+20, "?", TEXT_COLOR)  
+        lcd.drawText(140+240, y, "---", rx_attr)  
+        lcd.drawText(140+240, y+20, "---", rx_attr)  
     end    
     
     y = y + 2*20
@@ -601,16 +695,14 @@ local function doPageMain(event)
             cursor_idx = cursor_idx + 1
             if cursor_idx > 5 then cursor_idx = 5 end
           
-            if cursor_idx == 3 and not DEVICE_RX_connected then cursor_idx = 4 end
-            if cursor_idx == 2 and not DEVICE_RX_connected then cursor_idx = 5 end
-            --if cursor_idx == 4 then cursor_idx = 5 end --currently not allowed
+            if cursor_idx == 3 and not connected then cursor_idx = 4 end
+            --if cursor_idx == 2 and not connected then cursor_idx = 5 end
         elseif event == EVT_VIRTUAL_PREV and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end
           
-            --if cursor_idx == 4 then cursor_idx = 3 end --currently not allowed
-            if cursor_idx == 4 and not DEVICE_RX_connected then cursor_idx = 3 end
-            if cursor_idx == 3 and not DEVICE_RX_connected then cursor_idx = 2 end
+            --if cursor_idx == 4 and not connected then cursor_idx = 3 end
+            if cursor_idx == 3 and not connected then cursor_idx = 2 end
         end
     else
         if event == EVT_VIRTUAL_EXIT then
@@ -655,6 +747,20 @@ end
 local function Do(event)
     lcd.clear()
 
+    doConnected()
+    
+    if has_connected then
+        clearParams()
+        if not popup then setPopup("Receiver connected!") end
+    end
+    if has_disconnected then
+        if not popup then setPopup("Receiver\nhas disconnected!") end
+    end
+    if not connected and page_nr == 2 then
+        page_nr = 0
+        cursor_idx = 2
+    end  
+
     doParamLoop()
     
     if page_nr == 1 then
@@ -664,11 +770,13 @@ local function Do(event)
     else
         doPageMain(event)
     end
+    
+    doPopup()
 end
 
 
 ----------------------------------------------------------------------
--- Interface
+-- Script OTX Interface
 ----------------------------------------------------------------------
 
 local function scriptInit()
