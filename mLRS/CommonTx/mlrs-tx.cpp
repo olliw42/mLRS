@@ -152,15 +152,15 @@ void init(void)
 
     delay_init();
     micros_init();
-    serial.Init();
 
+    serial.Init();
     in.Init();
 
     dbg.Init();
 
     setup_init();
 
-    sx.Init();
+    sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
 }
 
@@ -265,7 +265,7 @@ uint8_t link_rx1_status;
 uint8_t link_rx2_status;
 
 
-// - Tx/Rx cmd frame handling
+//-- Tx/Rx cmd frame handling
 
 typedef enum {
     TRANSMIT_FRAME_TYPE_NORMAL = 0,
@@ -310,7 +310,7 @@ void pack_tx_cmd_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 }
 
 
-//- normal Tx, Rx frames handling
+//-- normal Tx, Rx frames handling
 
 uint8_t payload[FRAME_TX_PAYLOAD_LEN] = {0};
 uint8_t payload_len = 0;
@@ -523,12 +523,12 @@ int main_main(void)
   main_test();
 #endif
   init();
+  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+
   mbridge.Init();
   crsf.Init();
   serial.SetBaudRate(Config.SerialBaudrate);
   init_serialport();
-
-  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   // startup sign of life
   LED_RED_OFF;
@@ -786,11 +786,13 @@ IF_ANTENNA2(
         connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
       }
 
+      // we are connected but tmo ran out
       if (connected() && !connect_tmo_cnt) {
+        // so disconnect
         connect_state = CONNECT_STATE_LISTEN;
       }
 
-      // we didn't receive a valid frame
+      // we are connected but didn't receive a valid frame
       if (connected() && !valid_frame_received) {
         // reset sync counter, relevant if in sync
         connect_sync_cnt = 0;
@@ -813,7 +815,7 @@ IF_ANTENNA2(
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
 #if (defined USE_MBRIDGE)
-    // mBridge sends channels in regular intervals, this we can use as sync
+    // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
       // update channels
       if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {

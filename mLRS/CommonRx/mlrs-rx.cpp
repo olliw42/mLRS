@@ -142,11 +142,11 @@ void init(void)
 
     dbg.Init();
 
-    setup_init(); // clock needs Config, so call before clock init
+    setup_init();
 
-    clock.Init();
+    clock.Init(); // clock needs Config, so call after setup_init()
 
-    sx.Init();
+    sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
 }
 
@@ -221,7 +221,7 @@ uint8_t link_rx1_status;
 uint8_t link_rx2_status;
 
 
-// - Tx/Rx cmd frame handling
+//-- Tx/Rx cmd frame handling
 
 typedef enum {
     TRANSMIT_FRAME_TYPE_NORMAL = 0,
@@ -273,7 +273,7 @@ void pack_rx_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats)
 }
 
 
-//- normal Tx, Rx frames handling
+//-- normal Tx, Rx frames handling
 
 uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len;
@@ -499,9 +499,9 @@ int main_main(void)
   main_test();
 #endif
   init();
-  serial.SetBaudRate(Config.SerialBaudrate);
-
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+
+  serial.SetBaudRate(Config.SerialBaudrate);
 
   // startup sign of life
   LED_RED_OFF;
