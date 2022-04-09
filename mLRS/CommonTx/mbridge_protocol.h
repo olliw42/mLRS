@@ -57,6 +57,7 @@ typedef enum {
 
 
 typedef enum {
+   // zero cannot be used
     MBRIDGE_CMD_TX_LINK_STATS         = 2,
     MBRIDGE_CMD_DEVICE_REQUEST_ITEMS  = 3, // len = 0
     MBRIDGE_CMD_DEVICE_ITEM_TX        = 4,
