@@ -102,6 +102,7 @@ uint8_t crsf_cvt_mode(uint8_t mode)
     return UINT8_MAX;
 }
 
+
 uint8_t crsf_cvt_fps(uint8_t mode)
 {
     if (mode == MODE_19HZ) return 2; // *10 in OpenTx !
@@ -179,39 +180,6 @@ uint32_t u32_from_bind_phrase(char* bindphrase)
 }
 
 
-//-- auxiliary
-
-uint16_t clip_rc(int32_t x)
-{
-    if (x <= 1) return 1;
-    if (x >= 2047) return 2047;
-    return x;
-}
-
-
-void strncpy_x(char* res, const char* src, uint16_t len)
-{
-    uint16_t len2 = strlen(src);
-    if (len > len2) len = len2;
-    for (uint8_t i = 0; i < len; i++) res[i] = src[i];
-}
-
-
-bool strneq_x(char* s1, const char* s2, uint16_t len)
-{
-uint16_t i;
-
-    for (i = 0; i < len; i++) {
-        if (s1[i] == '\0') return false;
-        if (s2[i] == '\0') return false;
-        if (s1[i] != s2[i]) return false;
-    }
-    if (s1[i] != '\0') return false;
-    if (s2[i] != '\0') return false;
-    return true;
-}
-
-
 void remove_leading_zeros(char* s)
 {
 uint16_t i, len;
@@ -258,3 +226,38 @@ int16_t power_list[16];
 
     power_optstr_from_power_list(Power_optstr, power_list, num, slen);
 }
+
+
+//-- auxiliary
+
+uint16_t clip_rc(int32_t x)
+{
+    if (x <= 1) return 1;
+    if (x >= 2047) return 2047;
+    return x;
+}
+
+
+void strncpy_x(char* res, const char* src, uint16_t len)
+{
+    uint16_t len2 = strlen(src);
+    if (len > len2) len = len2;
+    for (uint8_t i = 0; i < len; i++) res[i] = src[i];
+}
+
+
+bool strneq_x(char* s1, const char* s2, uint16_t len)
+{
+uint16_t i;
+
+    for (i = 0; i < len; i++) {
+        if (s1[i] == '\0') return false;
+        if (s2[i] == '\0') return false;
+        if (s1[i] != s2[i]) return false;
+    }
+    if (s1[i] != '\0') return false;
+    if (s2[i] != '\0') return false;
+    return true;
+}
+
+
