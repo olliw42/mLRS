@@ -161,34 +161,6 @@ MavlinkBase mavlink;
 
 
 //-------------------------------------------------------
-// While transmit/receive tasks
-//-------------------------------------------------------
-// we may want to add some timer to do more than one task in the transmit/receive period
-// this would help a lot with the different available periods depending on the mode
-
-#include "..\Common\while.h"
-
-class WhileReceive : public WhileBase
-{
-  public:
-    void handle_tasks(void) override;
-};
-
-WhileReceive whileReceive;
-
-
-void WhileReceive::handle_tasks(void)
-{
-    if (tasks & WHILE_TASK_STORE_PARAMS) {
-        tasks &=~ WHILE_TASK_STORE_PARAMS;
-dbg.puts("/n store");
-        setup_store_to_EEPROM();
-        return; // do just one task per cycle
-    }
-}
-
-
-//-------------------------------------------------------
 // SX12xx
 //-------------------------------------------------------
 
@@ -276,7 +248,6 @@ void process_received_cmd_tx_frame(tTxFrame* frame)
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
-        whileReceive.SetTask(WHILE_TASK_STORE_PARAMS);
         // trigger sending RX_ACK in next transmission
         //transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
         transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
@@ -568,7 +539,6 @@ int main_main(void)
 
   out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannelMode, Setup.Rx.FailsafeMode);
   mavlink.Init();
-  whileReceive.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -638,7 +608,6 @@ int main_main(void)
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(dbg.puts("\n>");)
-      whileReceive.Trigger();
       }break;
 
     case LINK_STATE_TRANSMIT: {
@@ -881,9 +850,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
     mavlink.Do();
 
-    //-- do WhileReceive stuff
 
-    whileReceive.Do();
 
   }//end of while(1) loop
 
