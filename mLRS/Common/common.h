@@ -52,7 +52,7 @@ typedef enum {
 } CHECK_ENUM;
 
 
-void _pack_tx_frame_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void _pack_txframe_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;
 
@@ -109,14 +109,14 @@ uint16_t crc;
 }
 
 
-void pack_tx_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void pack_txframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
 {
-    _pack_tx_frame_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
+    _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
 
 // returns 0 if OK !!
-uint8_t check_tx_frame(tTxFrame* frame)
+uint8_t check_txframe(tTxFrame* frame)
 {
 uint16_t crc;
 
@@ -178,7 +178,7 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
-void _pack_rx_frame_w_type(tRxFrame* frame, uint8_t type, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
+void _pack_rxframe_w_type(tRxFrame* frame, uint8_t type, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;
 
@@ -207,13 +207,13 @@ uint16_t crc;
 }
 
 
-void pack_rx_frame(tRxFrame* frame, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
+void pack_rxframe(tRxFrame* frame, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
 {
-    _pack_rx_frame_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
+    _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
 // returns 0 if OK !!
-uint8_t check_rx_frame(tRxFrame* frame)
+uint8_t check_rxframe(tRxFrame* frame)
 {
 uint16_t crc;
 
@@ -314,16 +314,20 @@ FhssBase fhss;
 #ifdef DEVICE_IS_TRANSMITTER
 
 // Tx: send cmd to Rx
-void pack_txcmd_cmd_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t cmd)
+void pack_txcmdframe_cmd(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t cmd)
 {
-    _pack_tx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, &cmd, 1);
+uint8_t payload[1];
+
+    payload[0] = cmd;
+
+    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, 1);
 }
 
 
 // Tx: handle FRAME_CMD_RX_SETUPDATA from Rx
-void unpack_rxcmd_rxsetupdata_frame(tRxFrame* frame)
+void unpack_rxcmdframe_rxsetupdata(tRxFrame* frame)
 {
-tCmdRxSetupData* rx_setupdata = (tCmdRxSetupData*)frame->payload;
+tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
     SetupMetaData.rx_available = true;
 
@@ -361,11 +365,11 @@ tCmdRxSetupData* rx_setupdata = (tCmdRxSetupData*)frame->payload;
 }
 
 
-// Tx: send new receiver parameters with FRAME_CMD_RX_PARAMS to Rx
+// Tx: send new receiver parameters with FRAME_CMD_SET_RX_PARAMS to Rx
 // we take the values from Tx' Setup.Rx structure
-void pack_txcmd_set_rxparams_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void pack_txcmdframe_setrxparams(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 {
-tCmdRxParams rx_params = {0};
+tTxCmdFrameRxParams rx_params = {0};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
@@ -392,23 +396,27 @@ tCmdRxParams rx_params = {0};
     rx_params.FailsafeOutChannelValue_Ch15 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2];
     rx_params.FailsafeOutChannelValue_Ch16 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3];
 
-    _pack_tx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
+    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
 }
 
 #endif
 #ifdef DEVICE_IS_RECEIVER
 
 // Rx: send cmd to Tx
-void pack_rxcmd_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats, uint8_t cmd)
+void pack_rxcmdframe_cmd(tRxFrame* frame, tFrameStats* frame_stats, uint8_t cmd)
 {
-    _pack_rx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, &cmd, 1);
+uint8_t payload[1];
+
+    payload[0] = cmd;
+
+    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, payload, 1);
 }
 
 
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
-void pack_rxcmd_rxsetupdata_frame(tRxFrame* frame, tFrameStats* frame_stats)
+void pack_rxcmdframe_rxsetupdata(tRxFrame* frame, tFrameStats* frame_stats)
 {
-tCmdRxSetupData rx_setupdata = {0};
+tRxCmdFrameRxSetupData rx_setupdata = {0};
 
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 
@@ -455,15 +463,15 @@ tCmdRxSetupData rx_setupdata = {0};
     rx_setupdata.Diversity_allowed_mask = SetupMetaData.Rx_Diversity_allowed_mask;
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
 
-    _pack_rx_frame_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
+    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
 
 
-// Rx: handle FRAME_CMD_RX_SET_PARAMS
+// Rx: handle FRAME_CMD_SET_RX_PARAMS
 // new parameter values are stored in Rx' Setup.Rx fields
-void unpack_txcmd_rxsetparams_frame(tTxFrame* frame)
+void unpack_txcmdframe_setrxparams(tTxFrame* frame)
 {
-tCmdRxParams* rx_params = (tCmdRxParams*)frame->payload;
+tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
 // TODO
     strncpy_x(Setup.BindPhrase, rx_params->BindPhrase, 6);
@@ -499,8 +507,8 @@ STATIC_ASSERT(sizeof(tFrameStatus) == FRAME_TX_RX_HEADER_LEN - 2, "tFrameStatus 
 STATIC_ASSERT(sizeof(tTxFrame) == FRAME_TX_RX_LEN, "tTxFrame len missmatch")
 STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "tRxFrame len missmatch")
 
-STATIC_ASSERT(sizeof(tCmdRxParams) == FRAME_TX_PAYLOAD_LEN, "tCmdRxParams len missmatch")
-STATIC_ASSERT(sizeof(tCmdRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tCmdRxSetupData len missmatch")
+STATIC_ASSERT(sizeof(tTxCmdFrameRxParams) == FRAME_TX_PAYLOAD_LEN, "tTxCmdFrameRxParams len missmatch")
+STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFrameRxSetupData len missmatch")
 
 
 #endif // COMMON_H

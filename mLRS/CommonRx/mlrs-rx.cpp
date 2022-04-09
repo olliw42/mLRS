@@ -224,50 +224,76 @@ uint8_t link_rx2_status;
 //-- Tx/Rx cmd frame handling
 
 typedef enum {
+    LINK_TASK_NONE = 0,
+    LINK_TASK_TX_GET_RX_SETUPDATA,
+    LINK_TASK_TX_SET_RX_PARAMS,
+    LINK_TASK_TX_STORE_RX_PARAMS,
+    LINK_TASK_RX_ACK,
+} LINK_TASK_ENUM;
+
+typedef enum {
     TRANSMIT_FRAME_TYPE_NORMAL = 0,
-    TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA,
-    TRANSMIT_FRAME_TYPE_CMD_RX_ACK,
+    TRANSMIT_FRAME_TYPE_CMD,
 } TRANSMIT_FRAME_TYPE_ENUM;
 
+uint8_t link_task;
 uint8_t transmit_frame_type;
+bool doParamsStore;
 
 
-void process_received_cmd_tx_frame(tTxFrame* frame)
+void link_task_init(void)
 {
-    switch (frame->payload[0]) {
+    link_task = LINK_TASK_NONE;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+
+    doParamsStore = false;
+}
+
+
+void link_task_set(uint8_t task)
+{
+    link_task = task;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD;
+}
+
+
+// we clear then we receive a non-cmd frame, as this indicates that the tx has gotten the response
+// we also should clear then disconnected
+void link_task_reset(void)
+{
+    link_task = LINK_TASK_NONE;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+}
+
+
+void process_received_txcmdframe(tTxFrame* frame)
+{
+tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
+
+    switch (head->cmd) {
     case FRAME_CMD_GET_RX_SETUPDATA:
-        // request to send setup data
-        // trigger sending RX_SETUPDATA in next transmission
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA;
+        // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         break;
     case FRAME_CMD_SET_RX_PARAMS:
-        // got rx params
-        unpack_txcmd_rxsetparams_frame(frame);
-        // trigger sending RX_ACK in next transmission
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
+        // received rx params, trigger sending RX_SETUPDATA in next transmission
+        unpack_txcmdframe_setrxparams(frame);
+        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
-        // trigger sending RX_ACK in next transmission
-        //transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_RX_ACK;
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+        doParamsStore = true;
         break;
     }
 }
 
 
-void pack_rx_cmd_frame(tRxFrame* frame, tFrameStats* frame_stats)
+void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 {
-    switch (transmit_frame_type) {
-    case TRANSMIT_FRAME_TYPE_CMD_RX_SETUPDATA:
+    switch (link_task) {
+    case LINK_TASK_TX_GET_RX_SETUPDATA:
         // send rx setup data
-        pack_rxcmd_rxsetupdata_frame(frame, frame_stats);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we did it, so we can go back to normal
-        break;
-    case TRANSMIT_FRAME_TYPE_CMD_RX_ACK:
-        // send rx ack
-        pack_rxcmd_cmd_frame(frame, frame_stats, FRAME_CMD_RX_ACK);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we did it, so we can go back to normal
+        pack_rxcmdframe_rxsetupdata(frame, frame_stats);
         break;
     }
 }
@@ -318,9 +344,9 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        pack_rx_frame(&rxFrame, &frame_stats, payload, payload_len);
+        pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
     } else {
-        pack_rx_cmd_frame(&rxFrame, &frame_stats);
+        pack_rxcmdframe(&rxFrame, &frame_stats);
     }
 
     if (antenna == ANTENNA_1) {
@@ -348,10 +374,11 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
     rcdata_from_txframe(&rcData, frame);
 
-    if (frame->status.frame_type != FRAME_TYPE_TX) {
-        process_received_cmd_tx_frame(frame);
+    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+        process_received_txcmdframe(frame);
         return;
     }
+    link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
     if (connected()) {
@@ -435,10 +462,10 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     // we could save 2 byte's time by not reading sync_word again, but hey
     if (antenna == ANTENNA_1) {
         sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
-        res = check_tx_frame(&txFrame);
+        res = check_txframe(&txFrame);
     } else {
         sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
-        res = check_tx_frame(&txFrame2);
+        res = check_txframe(&txFrame2);
     }
 
     if (res) {
@@ -498,6 +525,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
@@ -530,7 +558,7 @@ int main_main(void)
   connect_occured_once = false;
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
-  transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+  link_task_init();
   doPostReceive2_cnt = 0;
   doPostReceive2 = false;
   frame_missed = false;
@@ -819,6 +847,8 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         rxstats.Update1Hz();
       }
 
+      if (connect_state < CONNECT_STATE_SYNC) link_task_reset();
+
       doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
     }//end of if(doPostReceive)
 
@@ -850,7 +880,13 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
     mavlink.Do();
 
+    //-- store parameters
 
+    if (doParamsStore) {
+      LED_RED_ON; LED_GREEN_ON;
+      setup_store_to_EEPROM();
+      goto RESTARTCONTROLLER;
+    }
 
   }//end of while(1) loop
 

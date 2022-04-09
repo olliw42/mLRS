@@ -142,22 +142,69 @@ typedef enum {
   FRAME_CMD_RX_REBOOT,
   FRAME_CMD_RX_BIND,
 
-  // these commands use the normal Tx/Rx frames, with repurposed payload however
+  // these commands use the normal Tx/Rx frames, with re-purposed payload however
   FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
+  FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
   FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_ACK
   FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, ask to store parameters -> response with RX_SETUPDATA
-  FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-  FRAME_CMD_RX_ACK,                   // rx -> tx
 } FRAME_CMD_ENUM;
 
 
+// send from Rx as response to GET_RX_SETUPDATA
 PACKED(
 typedef struct
 {
     uint8_t cmd;
     uint8_t spare;
 
-    // parameter values
+    // rx setup meta data 1
+    uint32_t firmware_version : 24;
+    uint16_t setup_layout;
+    char device_name[20];
+    int8_t actual_power_dbm;
+    uint8_t actual_diversity;
+
+    // rx parameter values
+    // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
+    // limit to 4 bits, so 16 options per parameter max; is also the limit of allowed_mask_ptr in tSetupParameterItem
+    uint8_t Power : 4;
+    uint8_t Diversity : 4;
+    uint8_t ChannelOrder : 4;
+    uint8_t OutMode : 4;
+    uint8_t OutRssiChannelMode : 4;
+    uint8_t FailsafeMode : 4;
+    uint8_t SerialBaudrate : 4;
+    uint8_t SerialLinkMode : 4;
+    uint8_t SendRadioStatus : 4;
+
+    uint8_t spare1 : 4;
+    uint8_t spare2[6];
+
+    int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
+    uint8_t FailsafeOutChannelValue_Ch13 : 2;
+    uint8_t FailsafeOutChannelValue_Ch14 : 2;
+    uint8_t FailsafeOutChannelValue_Ch15 : 2;
+    uint8_t FailsafeOutChannelValue_Ch16 : 2;
+
+    // rx setup meta data 2, parameter metadata
+    uint16_t FrequencyBand_allowed_mask;
+    uint8_t Mode_allowed_mask;
+    int16_t Power_list[8];
+    uint8_t Diversity_allowed_mask;
+    uint8_t OutMode_allowed_mask;
+
+    uint8_t spare3[8];
+}) tRxCmdFrameRxSetupData; // 82
+
+
+// send from Tx to do SET_RX_PARAMS
+PACKED(
+typedef struct
+{
+    uint8_t cmd;
+    uint8_t spare;
+
+    // rx parameter values
     char BindPhrase[6];
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
@@ -182,52 +229,15 @@ typedef struct
     uint8_t FailsafeOutChannelValue_Ch16 : 2;
 
     uint8_t spare3[31];
-}) tCmdRxParams; // 64
+}) tTxCmdFrameRxParams; // 64
+
 
 
 PACKED(
 typedef struct
 {
     uint8_t cmd;
-    uint8_t spare;
-
-    // meta data 1
-    uint32_t firmware_version : 24;
-    uint16_t setup_layout;
-    char device_name[20];
-    int8_t actual_power_dbm;
-    uint8_t actual_diversity;
-
-    // parameter values
-    // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
-    uint8_t Power : 4;
-    uint8_t Diversity : 4;
-    uint8_t ChannelOrder : 4;
-    uint8_t OutMode : 4;
-    uint8_t OutRssiChannelMode : 4;
-    uint8_t FailsafeMode : 4;
-    uint8_t SerialBaudrate : 4;
-    uint8_t SerialLinkMode : 4;
-    uint8_t SendRadioStatus : 4;
-
-    uint8_t spare1 : 4;
-    uint8_t spare2[6];
-
-    int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
-    uint8_t FailsafeOutChannelValue_Ch13 : 2;
-    uint8_t FailsafeOutChannelValue_Ch14 : 2;
-    uint8_t FailsafeOutChannelValue_Ch15 : 2;
-    uint8_t FailsafeOutChannelValue_Ch16 : 2;
-
-    // meta data 2, parameter metadata
-    uint16_t FrequencyBand_allowed_mask;
-    uint8_t Mode_allowed_mask;
-    int16_t Power_list[8];
-    uint8_t Diversity_allowed_mask;
-    uint8_t OutMode_allowed_mask;
-
-    uint8_t spare3[8];
-}) tCmdRxSetupData; // 82
+}) tCmdFrameHeader; // 1
 
 
 

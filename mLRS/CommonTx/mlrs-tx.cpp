@@ -268,42 +268,104 @@ uint8_t link_rx2_status;
 //-- Tx/Rx cmd frame handling
 
 typedef enum {
+    LINK_TASK_NONE = 0,
+    LINK_TASK_TX_GET_RX_SETUPDATA,
+    LINK_TASK_TX_SET_RX_PARAMS,
+    LINK_TASK_TX_STORE_RX_PARAMS,
+} LINK_TASK_ENUM;
+
+typedef enum {
     TRANSMIT_FRAME_TYPE_NORMAL = 0,
-    TRANSMIT_FRAME_TYPE_CMD_GET_RX_SETUPDATA,
-    TRANSMIT_FRAME_TYPE_CMD_SET_RX_PARAMS,
-    TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS,
+    TRANSMIT_FRAME_TYPE_CMD,
 } TRANSMIT_FRAME_TYPE_ENUM;
 
+uint8_t link_task;
 uint8_t transmit_frame_type;
+uint16_t link_task_tmo;
+bool doParamsStore;
 
 
-void process_received_cmd_rx_frame(tRxFrame* frame)
+void link_task_init(void)
 {
-    switch (frame->payload[0]) {
-    case FRAME_CMD_RX_SETUPDATA:
-        // got rx setup data
-        unpack_rxcmd_rxsetupdata_frame(frame);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
+    link_task = LINK_TASK_NONE;
+    link_task_tmo = 0;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+
+    doParamsStore = false;
+}
+
+
+bool link_task_set(uint8_t task)
+{
+    if (link_task != LINK_TASK_NONE) return false; // a task is running
+
+    link_task = task;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD;
+
+    // set a timeout if relevant
+    link_task_tmo = 0;
+    switch (link_task) {
+    case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
+        link_task_tmo = 6 * Config.frame_rate_ms;
         break;
-    case FRAME_CMD_RX_ACK:
-        // got rx ack
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // we got it, so we can go back to normal
-        break;
+    }
+
+    return true;
+}
+
+
+void link_task_reset(void)
+{
+    link_task = LINK_TASK_NONE;
+    link_task_tmo = 0;
+    transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+}
+
+
+void link_task_tick_ms(void)
+{
+    // if a timeout has been set, count it down
+    if (link_task_tmo) {
+        link_task_tmo--;
+        if (!link_task_tmo) {
+            switch (mbridge.cmd_in_process) {
+            case MBRIDGE_CMD_PARAM_STORE: doParamsStore = true; break;
+            }
+            link_task_reset();
+            mbridge.cmd_in_process = 0;
+        }
     }
 }
 
 
-void pack_tx_cmd_frame(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void process_received_rxcmdframe(tRxFrame* frame)
 {
-    switch (transmit_frame_type) {
-    case TRANSMIT_FRAME_TYPE_CMD_GET_RX_SETUPDATA:
-        pack_txcmd_cmd_frame(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
+tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
+
+    switch (head->cmd) {
+    case FRAME_CMD_RX_SETUPDATA:
+        // received rx setup data
+        unpack_rxcmdframe_rxsetupdata(frame);
+        switch (mbridge.cmd_in_process) {
+        }
+        link_task_reset();
+        mbridge.cmd_in_process = 0;
         break;
-    case TRANSMIT_FRAME_TYPE_CMD_SET_RX_PARAMS:
-        pack_txcmd_set_rxparams_frame(frame, frame_stats, rc);
+  }
+}
+
+
+void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+{
+    switch (link_task) {
+    case LINK_TASK_TX_GET_RX_SETUPDATA:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
         break;
-    case TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS:
-        pack_txcmd_cmd_frame(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
+    case LINK_TASK_TX_SET_RX_PARAMS:
+        pack_txcmdframe_setrxparams(frame, frame_stats, rc);
+        break;
+    case LINK_TASK_TX_STORE_RX_PARAMS:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
         transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
         break;
     }
@@ -357,9 +419,9 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        pack_tx_frame(&txFrame, &frame_stats, &rcData, payload, payload_len);
+        pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
     } else {
-        pack_tx_cmd_frame(&txFrame, &frame_stats, &rcData);
+        pack_txcmdframe(&txFrame, &frame_stats, &rcData);
     }
 
     if (antenna == ANTENNA_1) {
@@ -380,8 +442,8 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 
     if (!do_payload) return;
 
-    if (frame->status.frame_type != FRAME_TYPE_RX) {
-        process_received_cmd_rx_frame(frame);
+    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) { //!= FRAME_TYPE_RX) {
+        process_received_rxcmdframe(frame);
         return;
     }
 
@@ -465,10 +527,10 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     // we could save 2 byte's time by not reading sync_word again, but hey
     if (antenna == ANTENNA_1) {
         sx.ReadFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN);
-        res = check_rx_frame(&rxFrame);
+        res = check_rxframe(&rxFrame);
     } else {
         sx2.ReadFrame((uint8_t*)&rxFrame2, FRAME_TX_RX_LEN);
-        res = check_rx_frame(&rxFrame2);
+        res = check_rxframe(&rxFrame2);
     }
 
     if (res) {
@@ -522,6 +584,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
@@ -557,7 +620,8 @@ int main_main(void)
   connect_sync_cnt = 0;
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
-  transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_GET_RX_SETUPDATA; // we start with wanting to get rx setup data
+  link_task_init();
+  link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
   txstats.Init(Config.LQAveragingPeriod);
 
@@ -618,6 +682,7 @@ int main_main(void)
 
       mbridge.TelemetryTick_ms();
       crsf.TelemetryTick_ms();
+      link_task_tick_ms();
     }
 
     //-- SX handling
@@ -790,6 +855,7 @@ IF_ANTENNA2(
       if (connected() && !connect_tmo_cnt) {
         // so disconnect
         connect_state = CONNECT_STATE_LISTEN;
+        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
       }
 
       // we are connected but didn't receive a valid frame
@@ -809,6 +875,12 @@ IF_ANTENNA2(
 
       if (!connected()) stats.Clear();
       txstats.Next();
+
+      // store parameters
+      if (doParamsStore) {
+        setup_store_to_EEPROM();
+        goto RESTARTCONTROLLER;
+      }
     }//end of if(doPreTransmit)
 
 
@@ -825,14 +897,14 @@ IF_ANTENNA2(
       // when we receive channels packet from transmitter, we send link stats to transmitter
       mbridge.TelemetryStart();
     }
-    //
-    uint8_t state;
-    if (mbridge.TelemetryUpdateState(&state)) {
-      switch (state) {
+    // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
+    uint8_t mbstate, mbcmd;
+    if (mbridge.TelemetryUpdateState(&mbstate)) {
+      switch (mbstate) {
       case 1: mbridge_send_LinkStats(); break;
-      case 6:
-        if (mbridge.cmd_task_fifo.Available()) {
-          switch (mbridge.cmd_task_fifo.Get()) {
+      case 6: case 9:
+        if (mbridge.CommandInFifo(&mbcmd)) {
+          switch (mbcmd) {
           case MBRIDGE_CMD_DEVICE_ITEM_TX: mbridge_send_DeviceItemTx(); break;
           case MBRIDGE_CMD_DEVICE_ITEM_RX: mbridge_send_DeviceItemRx(); break;
           case MBRIDGE_CMD_PARAM_ITEM: mbridge_send_ParamItem(); break;
@@ -842,19 +914,33 @@ IF_ANTENNA2(
         break;
       }
     }
-    //
-    uint8_t cmd;
-    if (mbridge.CommandReceived(&cmd)) {
-      switch (cmd) {
+    if (mbridge.CommandReceived(&mbcmd)) {
+      switch (mbcmd) {
       case MBRIDGE_CMD_DEVICE_REQUEST_ITEMS:
-        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
-        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
         break;
       case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
       case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
-      case MBRIDGE_CMD_PARAM_SET: mbridge_do_ParamSet(mbridge.GetPayloadPtr()); break;
+      case MBRIDGE_CMD_PARAM_SET: {
+        bool rx_param_changed;
+        if (mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed)) {
+            if (rx_param_changed) {
+                if (connected()) {
+                    // set parameter on Rx side
+                    link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+                    mbridge.cmd_in_process = MBRIDGE_CMD_PARAM_SET; // wait for response on link
+                }
+            }
+        }
+        }break;
       case MBRIDGE_CMD_PARAM_STORE:
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_STORE_RX_PARAMS;
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+            mbridge.cmd_in_process = MBRIDGE_CMD_PARAM_STORE; // wait for response on link
+        } else {
+            doParamsStore = true;
+        }
         break;
       }
     }

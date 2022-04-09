@@ -34,6 +34,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void GetCommand(uint8_t* cmd, uint8_t* payload);
     uint8_t* GetPayloadPtr(void);
     void SendCommand(uint8_t cmd, uint8_t* payload);
+    bool CommandInFifo(uint8_t* cmd);
 
     // for in-isr processing
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
@@ -77,7 +78,10 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo; // MissionPlanner is rude
 
     // for communication
-    FifoBase<uint8_t,128> cmd_task_fifo;
+    FifoBase<uint8_t,128> cmd_fifo;
+    uint8_t cmd_in_process;
+    uint8_t ack_cmd;
+    bool ack_ok;
 };
 
 tMBridge mbridge;
@@ -287,7 +291,8 @@ void tMBridge::Init(void)
     tx_fifo.Init();
     rx_fifo.Init();
 
-    cmd_task_fifo.Init();
+    cmd_fifo.Init();
+    cmd_in_process = 0;
 }
 
 
@@ -339,6 +344,20 @@ void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
     memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
 
     cmd_m2r_available = payload_len + 1;
+}
+
+
+bool tMBridge::CommandInFifo(uint8_t* cmd)
+{
+    if (cmd_in_process) return false;
+
+    if (!cmd_fifo.Available()) return false;
+
+    cmd_in_process = 0;
+
+    *cmd = cmd_fifo.Get();
+
+    return true;
 }
 
 
@@ -398,27 +417,43 @@ tMBridgeLinkStats lstats = {0};
 }
 
 
-void mbridge_send_RequestCmd(uint8_t* payload)
+uint8_t mbridge_send_RequestCmd(uint8_t* payload)
 {
     tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
     switch (request->requested_cmd) {
+    case MBRIDGE_CMD_INFO:
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_INFO);
+        break;
+
+    case MBRIDGE_CMD_TX_LINK_STATS:
+        //?? mbridge_send_LinkStats();
+        break;
+    case MBRIDGE_CMD_DEVICE_REQUEST_ITEMS:
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        break;
+    case MBRIDGE_CMD_PARAM_REQUEST_LIST:
+        //?? mbridge_start_ParamRequestList();
+        break;
+
     case MBRIDGE_CMD_DEVICE_ITEM_TX:
-        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         break;
     case MBRIDGE_CMD_DEVICE_ITEM_RX:
-        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
         break;
+
     case MBRIDGE_CMD_PARAM_ITEM:{
+        //??
         //uint8_t idx = request->index;
         //if (request->name[0] != 0) { // name is specified, so search for index of parameter
         //}
         // TODO mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM);
         }break;
-    case MBRIDGE_CMD_INFO:
-        mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_INFO);
-        break;
     }
+
+    return request->requested_cmd;
 }
 
 
@@ -487,19 +522,23 @@ tMBridgeDeviceItem item = {0};
 uint8_t param_idx;
 uint8_t param_itemtype_cnt;
 
+// we have to send (much) more than SETUP_PARAMETER_NUM PARAM_ITEM messages
+// since all parameters need 2 and some even 3 of them
+// currently it are about 80 for the 36 parameters => 80 x 20ms = 1600 ms
 
 void mbridge_start_ParamRequestList(void)
 {
     param_idx = 0;
     param_itemtype_cnt = 0;
 
-    mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
+    mbridge.cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
 }
 
 
 void mbridge_send_ParamItem(void)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) {
+        // we send a mbridge message, but don't put a MBRIDGE_CMD_PARAM_ITEM into the fifo, this stops it
         tMBridgeParamItem item = {0};
         item.index = UINT8_MAX; // indicates end of list
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
@@ -605,22 +644,29 @@ void mbridge_send_ParamItem(void)
         param_idx++;
     }
 
-    mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
+    mbridge.cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
 }
 
 
-void mbridge_do_ParamSet(uint8_t* payload)
+bool mbridge_do_ParamSet(uint8_t* payload, bool* rx_param_changed)
 {
     tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
 
-    if (param->index >= SETUP_PARAMETER_NUM) return;
+    *rx_param_changed = false;
+
+    if (param->index >= SETUP_PARAMETER_NUM) return false;
 
     if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
-        setup_set_param(param->index, param->value);
-    } else
-    if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
-        setup_set_param_str6(param->index, param->str6);
+        *rx_param_changed = setup_set_param(param->index, param->value);
+        return true;
     }
+
+    if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
+        *rx_param_changed = setup_set_param_str6(param->index, param->str6);
+        return true;
+    }
+
+    return false;
 }
 
 
