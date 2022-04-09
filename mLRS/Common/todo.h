@@ -15,6 +15,10 @@ ISSUES:
 
 - test EEPROM for F3, L4
 
+- restart: we do not want to go through waiting for sx and testing their presence
+
+- for dual sx avoid that both sx.Init wait 300ms
+
 - implement all AETR,TAER,ETAR, just do it !!!!
 - allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 
