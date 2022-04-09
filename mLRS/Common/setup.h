@@ -19,8 +19,6 @@ tSetupMetaData SetupMetaData;
 tSetup Setup;
 tGlobalConfig Config;
 
-bool setup_rx_param_changed;
-
 
 //-------------------------------------------------------
 // Configure Setup MetaData
@@ -421,8 +419,6 @@ setup_default();
     setup_sanitize();
 
     setup_configure();
-
-    setup_rx_param_changed = false;
 }
 
 

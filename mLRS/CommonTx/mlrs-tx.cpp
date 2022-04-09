@@ -318,11 +318,6 @@ uint8_t payload_len = 0;
 
 void process_transmit_frame(uint8_t antenna, uint8_t ack)
 {
-    if (setup_rx_param_changed && (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL)) {
-        setup_rx_param_changed = false;
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD_SET_RX_PARAMS;
-    }
-
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
       memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
       payload_len = 0;

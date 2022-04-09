@@ -152,9 +152,9 @@ const tSetupParameterItem SetupParameter[] = {
 // handler
 //-------------------------------------------------------
 
-void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
+bool setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
 {
-    if (param_idx >= SETUP_PARAMETER_NUM) return;
+    if (param_idx >= SETUP_PARAMETER_NUM) return false;
 
     bool param_changed = false;
 
@@ -189,18 +189,20 @@ void setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
     // if a RX parameter has changed, tell it to main
     if (param_changed) {
         if (param_idx == 1) { // Mode
-          setup_rx_param_changed = true;
+          return true;
         }
         if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') { // "Rx" name
-          setup_rx_param_changed = true;
+          return true;
         }
     }
+
+    return false;
 }
 
 
-void setup_set_param_str6(uint8_t param_idx, char* str6)
+bool setup_set_param_str6(uint8_t param_idx, char* str6)
 {
-    if (param_idx >= SETUP_PARAMETER_NUM) return;
+    if (param_idx >= SETUP_PARAMETER_NUM) return false;
 
     bool param_changed = false;
 
@@ -216,11 +218,12 @@ void setup_set_param_str6(uint8_t param_idx, char* str6)
     // if a RX parameter has changed, tell it to main
     if (param_changed) {
         if (param_idx == 0) { // BindPhrase
-            setup_rx_param_changed = true;
+          return true;
         }
     }
-}
 
+    return false;
+}
 
 
 #endif // SETUP_TX_H
