@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             102 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.1.2"
+#define VERSION             103 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.1.3"
 #define SETUPLAYOUT         1   // this should be changed then Setup struct and/or serial changes
 
 
@@ -20,7 +20,8 @@
 // Setup
 //-------------------------------------------------------
 
-#define SETUP_FORCE_COMMON_CONF // un-comment to force setup to below defines, else setup is taken from EEPROM
+// un-comment to force setup to the below defines, else setup is taken from EEPROM
+//#define SETUP_FORCE_COMMON_CONF
 
 
 #define CPOWER                          0 // 0: minimum power, 255: maximum power
