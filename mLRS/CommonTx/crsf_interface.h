@@ -173,8 +173,10 @@ bool tTxCrsf::Update(tRcData* rc)
 
 bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 {
-    if (telemetry_tick_start) {
-      telemetry_tick_start = false;
+    if (!enabled) return false;
+
+    if (telemetry_start_next_tick) {
+      telemetry_start_next_tick = false;
       telemetry_state = 1; // start
     }
 
