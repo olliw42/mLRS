@@ -13,7 +13,6 @@ ISSUES:
 - add allowed_mask defines for in/out inverted/noninverted
 - setup: which are effective only on restart? which on-the-fly?
 
-- test EEPROM for F3, L4
 
 - restart: we do not want to go through waiting for sx and testing their presence
 
