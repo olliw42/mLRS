@@ -198,7 +198,7 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
 
     for (uint8_t i = 0; i < num; i++) {
         char s[32];
-        if (power_list[i] == INT8_MAX) break;
+        if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {
             strcpy(s, "min,");
