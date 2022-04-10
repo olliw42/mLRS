@@ -343,6 +343,22 @@ void setup_configure(void)
     default:
         Config.SerialBaudrate = 57600;
     }
+
+    //-- Mbridge, Crsf
+
+    Config.UseMbridge = false;
+    Config.UseCrsf = false;
+#if (defined DEVICE_IS_TRANSMITTER) && (defined DEVICE_HAS_JRPIN5)
+    if (Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE || Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
+        Config.UseMbridge = true;
+    }
+    if (Setup.Tx.SerialDestination != SERIAL_DESTINATION_MBRDIGE && Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
+        Config.UseCrsf = true;
+    }
+    if (Config.UseMbridge && Config.UseCrsf) {
+      while(1){}; // mBridge and CRSF cannot be used simultaneously, should not happen, should be resolved in setup_sanitize()
+    }
+#endif
 }
 
 

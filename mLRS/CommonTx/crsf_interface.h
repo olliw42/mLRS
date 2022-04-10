@@ -11,7 +11,7 @@
 #pragma once
 
 
-#if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
+#if (defined DEVICE_HAS_JRPIN5)
 
 #include "..\Common\thirdparty\thirdparty.h"
 #include "jr_pin5_interface.h"
@@ -28,7 +28,7 @@ uint16_t micros(void);
 class tTxCrsf : public tPin5BridgeBase
 {
   public:
-    void Init(void);
+    void Init(bool enable_flag);
     bool Update(tRcData* rc);
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
@@ -41,8 +41,12 @@ class tTxCrsf : public tPin5BridgeBase
     bool IsChannelData(void);
 
     // for in-isr processing
+    void uart_rx_callback(uint8_t c);
+    void uart_tc_callback(void);
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
     bool transmit_start(void) override; // returns true if transmission should be started
+
+    bool enabled;
 
     uint8_t frame[128];
 
@@ -77,32 +81,37 @@ class tTxCrsf : public tPin5BridgeBase
 tTxCrsf crsf;
 
 
+// to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
+void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
+void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
+
+
 // we do not add a delay here before we transmit
 // the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
 
-void uart_rx_callback(uint8_t c)
+void tTxCrsf::uart_rx_callback(uint8_t c)
 {
     LED_RIGHT_GREEN_ON;
 
-    if (crsf.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-        crsf.state = tPin5BridgeBase::STATE_IDLE;
+    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
+        state = STATE_IDLE;
     }
 
     uint16_t tnow_us = micros();
-    crsf.parse_nextchar(c, tnow_us);
+    parse_nextchar(c, tnow_us);
 
-    if (crsf.transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        crsf.pin5_tx_start();
+    if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
+        pin5_tx_start();
     }
 
     LED_RIGHT_GREEN_OFF;
 }
 
 
-void uart_tc_callback(void)
+void tTxCrsf::uart_tc_callback(void)
 {
-    crsf.pin5_tx_enable(false); // switches on rx
-    crsf.state = tPin5BridgeBase::STATE_IDLE;
+    pin5_tx_enable(false); // switches on rx
+    state = STATE_IDLE;
 }
 
 
@@ -128,8 +137,18 @@ bool tTxCrsf::transmit_start(void)
 }
 
 
-void tTxCrsf::Init(void)
+//-------------------------------------------------------
+// Crsf user interface
+
+void tTxCrsf::Init(bool enable_flag)
 {
+    enabled = enable_flag;
+
+    if (!enabled) return;
+
+    uart_rx_callback_ptr = &crsf_uart_rx_callback;
+    uart_tc_callback_ptr = &crsf_uart_tc_callback;
+
     tPin5BridgeBase::Init();
 
     frame_received = false;
@@ -155,6 +174,7 @@ void tTxCrsf::Clear(void)
 
 bool tTxCrsf::Update(tRcData* rc)
 {
+    if (!enabled) return false;
     if (!frame_received) return false;
     frame_received = false;
 
@@ -535,7 +555,7 @@ tCrsfLinkStatisticsRx clstats;
 class tTxCrsfDummy
 {
   public:
-    void Init(void) {}
+    void Init(bool enable_flag) {}
     bool Update(tRcData* rc) { return false;}
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
@@ -549,7 +569,7 @@ void crsf_send_LinkStatistics(void) {}
 void crsf_send_LinkStatisticsTx(void) {}
 void crsf_send_LinkStatisticsRx(void) {}
 
-#endif // if (defined USE_CRSF) && (defined DEVICE_HAS_JRPIN5)
+#endif // if (defined DEVICE_HAS_JRPIN5)
 
 #endif // CRSF_INTERFACE_H
 

@@ -17,11 +17,14 @@
 //-------------------------------------------------------
 // Interface Implementation
 
-void uart_rx_callback(uint8_t c);
-void uart_tc_callback(void);
+void uart_rx_callback_dummy(uint8_t c) {};
+void uart_tc_callback_dummy(void) {};
 
-#define UART_RX_CALLBACK_FULL(c)    uart_rx_callback(c)
-#define UART_TC_CALLBACK()          uart_tc_callback()
+void (*uart_rx_callback_ptr)(uint8_t) = &uart_rx_callback_dummy;
+void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
+
+#define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
+#define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
 

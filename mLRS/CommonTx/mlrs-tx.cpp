@@ -328,11 +328,13 @@ void link_task_tick_ms(void)
     if (link_task_tmo) {
         link_task_tmo--;
         if (!link_task_tmo) {
+IF_MBRIDGE(
             switch (mbridge.cmd_in_process) {
             case MBRIDGE_CMD_PARAM_STORE: doParamsStore = true; break;
             }
-            link_task_reset();
             mbridge.cmd_in_process = 0;
+);
+            link_task_reset();
         }
     }
 }
@@ -346,10 +348,12 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_RX_SETUPDATA:
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
+IF_MBRIDGE(
         switch (mbridge.cmd_in_process) {
         }
-        link_task_reset();
         mbridge.cmd_in_process = 0;
+);
+        link_task_reset();
         break;
   }
 }
@@ -588,8 +592,8 @@ RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-  mbridge.Init();
-  crsf.Init();
+  mbridge.Init(Config.UseMbridge);
+  crsf.Init(Config.UseCrsf);
   serial.SetBaudRate(Config.SerialBaudrate);
   init_serialport();
 
@@ -886,7 +890,9 @@ IF_ANTENNA2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-#if (defined USE_MBRIDGE)
+#ifdef DEVICE_HAS_JRPIN5
+    uint8_t mbstate, mbcmd; // for some reason it gives an error when put inside IF_MBRIDGE()
+IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
       // update channels
@@ -898,7 +904,6 @@ IF_ANTENNA2(
       mbridge.TelemetryStart();
     }
     // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
-    uint8_t mbstate, mbcmd;
     if (mbridge.TelemetryUpdateState(&mbstate)) {
       switch (mbstate) {
       case 1: mbridge_send_LinkStats(); break;
@@ -944,17 +949,8 @@ IF_ANTENNA2(
         break;
       }
     }
-#endif
-#if (defined DEVICE_HAS_IN)
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
-      // update channels
-      if (in.Update(&rcData)) {
-        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-      }
-    }
-#endif
-#if (defined USE_CRSF)
+);
+IF_CRSF(
     uint8_t packet_idx;
     if (crsf.TelemetryUpdate(&packet_idx)) {
       switch (packet_idx) {
@@ -970,6 +966,16 @@ IF_ANTENNA2(
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
       // update channels
       if (crsf.Update(&rcData)) {
+        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+        channelOrder.Apply(&rcData);
+      }
+    }
+);
+#endif
+#if (defined DEVICE_HAS_IN)
+    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
+      // update channels
+      if (in.Update(&rcData)) {
         channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }

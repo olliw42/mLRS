@@ -11,7 +11,7 @@
 #pragma once
 
 
-#if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
+#if (defined DEVICE_HAS_JRPIN5)
 
 #include "jr_pin5_interface.h"
 #include "mbridge_protocol.h"
@@ -28,8 +28,10 @@ uint16_t micros(void);
 class tMBridge : public tPin5BridgeBase, public tSerialBase
 {
   public:
-    void Init(void);
+    void Init(bool enable_flag);
     bool ChannelsUpdated(tRcData* rc);
+    bool TelemetryUpdateState(uint8_t* state);
+
     bool CommandReceived(uint8_t* cmd);
     void GetCommand(uint8_t* cmd, uint8_t* payload);
     uint8_t* GetPayloadPtr(void);
@@ -37,10 +39,14 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool CommandInFifo(uint8_t* cmd);
 
     // for in-isr processing
+    void uart_rx_callback(uint8_t c);
+    void uart_tc_callback(void);
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
     bool transmit_start(void) override; // returns true if transmission should be started
     uint8_t send_serial(void);
     void send_command(void);
+
+    bool enabled;
 
     typedef enum {
         PARSE_TYPE_NONE = 0,
@@ -87,32 +93,37 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 tMBridge mbridge;
 
 
+// to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
+void mbridge_uart_rx_callback(uint8_t c) { mbridge.uart_rx_callback(c); }
+void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
+
+
 // we do not add a delay here as with SpinOnce()
 // the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
 
-void uart_rx_callback(uint8_t c)
+void tMBridge::uart_rx_callback(uint8_t c)
 {
     LED_RIGHT_GREEN_ON;
 
-    if (mbridge.state >= tPin5BridgeBase::STATE_TRANSMIT_START) { // recover in case something went wrong
-        mbridge.state = tPin5BridgeBase::STATE_IDLE;
+    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
+        state = STATE_IDLE;
     }
 
     uint16_t tnow_us = micros();
-    mbridge.parse_nextchar(c, tnow_us);
+    parse_nextchar(c, tnow_us);
 
-    if (mbridge.transmit_start()) {
-        mbridge.pin5_tx_start();
+    if (transmit_start()) {
+        pin5_tx_start();
     }
 
     LED_RIGHT_GREEN_OFF;
 }
 
 
-void uart_tc_callback(void)
+void tMBridge::uart_tc_callback(void)
 {
-    mbridge.pin5_tx_enable(false);
-    mbridge.state = tPin5BridgeBase::STATE_IDLE;
+    pin5_tx_enable(false);
+    state = STATE_IDLE;
 }
 
 
@@ -278,8 +289,15 @@ void tMBridge::fill_rcdata(tRcData* rc)
 //-------------------------------------------------------
 // MBridge user interface
 
-void tMBridge::Init(void)
+void tMBridge::Init(bool enable_flag)
 {
+    enabled = enable_flag;
+
+    if (!enabled) return;
+
+    uart_rx_callback_ptr = &mbridge_uart_rx_callback;
+    uart_tc_callback_ptr = &mbridge_uart_tc_callback;
+
     tSerialBase::Init();
     tPin5BridgeBase::Init();
 
@@ -298,6 +316,7 @@ void tMBridge::Init(void)
 
 bool tMBridge::ChannelsUpdated(tRcData* rc)
 {
+    if (!enabled) return false;
     if (!channels_received) return false;
 
     channels_received = false;
@@ -307,8 +326,16 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 }
 
 
+bool tMBridge::TelemetryUpdateState(uint8_t* state)
+{
+    if (!enabled) return false;
+    return tPin5BridgeBase::TelemetryUpdateState(state);
+}
+
+
 bool tMBridge::CommandReceived(uint8_t* cmd)
 {
+    if (!enabled) return false;
     if (!cmd_received) return false;
 
     cmd_received = false;
@@ -419,7 +446,7 @@ tMBridgeLinkStats lstats = {0};
 
 uint8_t mbridge_send_RequestCmd(uint8_t* payload)
 {
-    tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
+tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
     switch (request->requested_cmd) {
     case MBRIDGE_CMD_INFO:
@@ -650,7 +677,7 @@ void mbridge_send_ParamItem(void)
 
 bool mbridge_do_ParamSet(uint8_t* payload, bool* rx_param_changed)
 {
-    tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
+tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
 
     *rx_param_changed = false;
 
@@ -675,12 +702,13 @@ bool mbridge_do_ParamSet(uint8_t* payload, bool* rx_param_changed)
 class tMBridge : public tSerialBase
 {
   public:
+    void Init(bool enable_flag) {};
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
 };
 
 tMBridge mbridge;
 
-#endif // if (defined USE_MBRIDGE) && (defined DEVICE_HAS_JRPIN5)
+#endif // if (defined DEVICE_HAS_JRPIN5)
 
 #endif // MBRIDGE_INTERFACE_H

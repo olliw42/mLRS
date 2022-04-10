@@ -270,6 +270,9 @@ typedef struct
 
     bool UseAntenna1;
     bool UseAntenna2;
+
+    bool UseMbridge;
+    bool UseCrsf;
 } tGlobalConfig;
 
 
@@ -292,6 +295,14 @@ typedef struct
 #define IF_ANTENNA2(x)
 #define USE_ANTENNA1              true
 #define USE_ANTENNA2              false
+#endif
+
+#ifdef DEVICE_HAS_JRPIN5
+#define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
+#define IF_CRSF(x)                if (Config.UseCrsf) { x; }
+#else
+#define IF_MBRIDGE(x)
+#define IF_CRSF(x)
 #endif
 
 
