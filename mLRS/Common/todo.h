@@ -11,15 +11,17 @@
 ISSUES:
 - store bindphrase -> first do bind
 - add allowed_mask defines for in/out inverted/noninverted
+  allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 - setup: which are effective only on restart? which on-the-fly?
+- reserve bytes in Setup structure
 
+- EVERY tx module needs a means to set the parameters, via SWD?
 
 - restart: we do not want to go through waiting for sx and testing their presence
 
 - for dual sx avoid that both sx.Init wait 300ms
 
 - implement all AETR,TAER,ETAR, just do it !!!!
-- allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 
 - mavlink parser should probably be reset when packets are missed
 - align mavlink messages only with respect to header, i.e., such that header is never split up

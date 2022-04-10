@@ -1,6 +1,6 @@
 # mLRS #
 
-This is the mLRS project. Its goal is an open source 2.4 GHz & 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 50 km or so, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -12,7 +12,7 @@ However, while all these systems are truely excellent and achieve their goals, a
 - relatively cheap
 - 2.4 GHz and 915/868 MHz
 - LoRa
-- full-duplex with sufficient data rate
+- full-duplex serial link with sufficient data rate
 - plenty full-size RC channels
 - open source
 - rich features for Mavlink systems
@@ -31,7 +31,7 @@ You of course use the project fully at your own risk.
 
 The project is work in progress, and there is still a mile to go before one would call it mature.
 
-Concerning its basic features however, i.e. RC link and serial link, it is quite stable. It also provides already several options for input/output, and integrates with the MAVLink for OpenTx project.
+Its basic features however, i.e., the RC link and serial link, are quite stable. It also provides already several options for input/output, and integrates with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz and 915/868 MHz frequency bands.
 
@@ -59,6 +59,11 @@ It provides these operation modes:
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>
   receiver sensitivity: -112 dBm
+
+Further features:
+- full transmitter and receiver diversity: The Tx and Rx modules which provide two Semtech Lora chips provide full diversity. This really improves link quality in the far range.
+- all options selectable via parameters: There is no need to recompile the firmware for a given board in order to change an option or parameter setting.
+- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332).
 
 ## Community ##
 
