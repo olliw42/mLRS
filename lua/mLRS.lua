@@ -7,7 +7,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.03
+-- works with mLRS v0.01.04, mOTX v33-rc3
 
 
 ----------------------------------------------------------------------
@@ -788,8 +788,8 @@ local function scriptRun(event)
         error("Cannot be run as a model script!")
         return 2
     end  
-    if mbridge == nil then
-        error("mLRS not available!")
+    if mbridge == nil or not mbridge.enabled() then
+        error("mLRS not accessible: mBridge is not enabled!")
         return 2
     end
     if not edit and page_nr == 0 then
