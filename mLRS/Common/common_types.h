@@ -64,14 +64,14 @@ class tSerialBase
     virtual char getc(void) { return '\0'; }
     virtual void flush(void) {};
     virtual uint16_t bytes_available(void) { return 0; }
-    virtual const uint16_t rx_buf_size(void) { return 1; }
-    virtual bool tx_is_empty(void) { return false; }
+//XX    virtual const uint16_t rx_buf_size(void) { return 1; }
+//XX    virtual bool tx_is_empty(void) { return false; }
 
     void putbuf(void* buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) putc(((char*)buf)[i]); }
     void puts(const char* s) { while (*s) { putc(*s); s++; }; }
 
-    uint16_t rx_free(void) { return rx_buf_size() - bytes_available(); }
-    uint8_t rx_free_percent(void) { return (100 * rx_free() + rx_buf_size()/2) / rx_buf_size(); }
+//XX    uint16_t rx_free(void) { return rx_buf_size() - bytes_available(); }
+//XX    uint8_t rx_free_percent(void) { return (100 * rx_free() + rx_buf_size()/2) / rx_buf_size(); }
 };
 
 

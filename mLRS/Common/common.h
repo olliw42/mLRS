@@ -249,9 +249,8 @@ class tSerialPort : public tSerialBase
     char getc(void) override { return uartb_getc(); }
     void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); }
     uint16_t bytes_available(void) override { return uartb_rx_bytesavailable(); }
-    const uint16_t rx_buf_size(void) override { return UARTB_RXBUFSIZE; }
-    bool tx_is_empty(void) override { return uartb_tx_isempty(); }
-
+//XX    const uint16_t rx_buf_size(void) override { return UARTB_RXBUFSIZE; }
+//XX    bool tx_is_empty(void) override { IFNSER(0); return uartb_tx_isempty(); }
 #endif
 };
 
