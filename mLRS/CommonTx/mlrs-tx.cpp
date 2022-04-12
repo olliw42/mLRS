@@ -328,13 +328,11 @@ void link_task_tick_ms(void)
     if (link_task_tmo) {
         link_task_tmo--;
         if (!link_task_tmo) {
-IF_MBRIDGE(
-            switch (mbridge.cmd_in_process) {
-            case MBRIDGE_CMD_PARAM_STORE: doParamsStore = true; break;
+            switch (link_task) {
+            case LINK_TASK_TX_STORE_RX_PARAMS: doParamsStore = true; break;
             }
-            mbridge.cmd_in_process = 0;
-);
             link_task_reset();
+            mbridge.Unlock();
         }
     }
 }
@@ -348,12 +346,8 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_RX_SETUPDATA:
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
-IF_MBRIDGE(
-        switch (mbridge.cmd_in_process) {
-        }
-        mbridge.cmd_in_process = 0;
-);
         link_task_reset();
+        mbridge.Unlock();
         break;
   }
 }
@@ -934,17 +928,17 @@ IF_MBRIDGE(
                 if (connected()) {
                     // set parameter on Rx side
                     link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-                    mbridge.cmd_in_process = MBRIDGE_CMD_PARAM_SET; // wait for response on link
+                    mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
                 }
             }
         }
         }break;
       case MBRIDGE_CMD_PARAM_STORE:
         if (connected()) {
-            link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-            mbridge.cmd_in_process = MBRIDGE_CMD_PARAM_STORE; // wait for response on link
+          link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+          mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mbridge
         } else {
-            doParamsStore = true;
+          doParamsStore = true;
         }
         break;
       }
