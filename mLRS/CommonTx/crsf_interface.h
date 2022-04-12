@@ -13,10 +13,10 @@
 
 #if (defined DEVICE_HAS_JRPIN5)
 
-#include "..\Common\thirdparty\thirdparty.h"
-#include "jr_pin5_interface.h"
-#include "..\Common\crsf_protocol.h"
 #include "math.h"
+#include "..\Common\thirdparty\thirdparty.h"
+#include "..\Common\crsf_protocol.h"
+#include "jr_pin5_interface.h"
 
 
 uint16_t micros(void);

@@ -13,10 +13,10 @@
 
 #if (defined DEVICE_HAS_JRPIN5)
 
-#include "jr_pin5_interface.h"
-#include "mbridge_protocol.h"
 #include "..\Common\fifo.h"
 #include "setup_tx.h"
+#include "jr_pin5_interface.h"
+#include "mbridge_protocol.h"
 
 
 uint16_t micros(void);
@@ -37,6 +37,8 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t* GetPayloadPtr(void);
     void SendCommand(uint8_t cmd, uint8_t* payload);
     bool CommandInFifo(uint8_t* cmd);
+    void Lock(uint8_t cmd);
+    void Unlock(void);
 
     // for in-isr processing
     void uart_rx_callback(uint8_t c);
@@ -388,6 +390,18 @@ bool tMBridge::CommandInFifo(uint8_t* cmd)
 }
 
 
+void tMBridge::Lock(uint8_t cmd)
+{
+    cmd_in_process = cmd;
+}
+
+
+void tMBridge::Unlock(void)
+{
+    cmd_in_process = 0;
+}
+
+
 //-------------------------------------------------------
 // convenience helper
 
@@ -705,6 +719,7 @@ class tMBridge : public tSerialBase
     void Init(bool enable_flag) {};
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
+    void tMBridge::Unlock(void) {}
 };
 
 tMBridge mbridge;

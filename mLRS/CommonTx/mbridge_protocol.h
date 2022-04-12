@@ -247,15 +247,6 @@ typedef enum {
 } MBRIDGE_PARAM_TYPE_ENUM;
 
 
-typedef union
-{
-    uint8_t u8;
-    int8_t i8;
-    uint16_t u16;
-    int16_t i16;
-} tMBridgeParamValue;
-
-
 MBRIDGE_PACKED(
 typedef struct
 {
@@ -263,7 +254,7 @@ typedef struct
     uint8_t type;
     char name[16];
     MBRIDGE_PACKED(union {
-        tMBridgeParamValue value;
+        tParamValue value;
         char str6[6];
     });
 }) tMBridgeParamItem; // 24 bytes
@@ -275,9 +266,9 @@ typedef struct
     uint8_t index;
     MBRIDGE_PACKED(union {
         MBRIDGE_PACKED(struct {
-            tMBridgeParamValue min;
-            tMBridgeParamValue max;
-            tMBridgeParamValue dflt;
+            tParamValue min;
+            tParamValue max;
+            tParamValue dflt;
             char unit[6];
         });
         MBRIDGE_PACKED(struct {
@@ -305,7 +296,7 @@ typedef struct
 {
     uint8_t index;
     MBRIDGE_PACKED(union {
-        tMBridgeParamValue value;
+        tParamValue value;
         char str6[6];
     });
 }) tMBridgeParamSet; // 7 bytes

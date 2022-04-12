@@ -152,7 +152,16 @@ const tSetupParameterItem SetupParameter[] = {
 // handler
 //-------------------------------------------------------
 
-bool setup_set_param(uint8_t param_idx, tMBridgeParamValue value)
+typedef union
+{
+    uint8_t u8;
+    int8_t i8;
+    uint16_t u16;
+    int16_t i16;
+} tParamValue;
+
+
+bool setup_set_param(uint8_t param_idx, tParamValue value)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) return false;
 
