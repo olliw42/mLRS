@@ -31,6 +31,8 @@ void WhileBase::Do(void)
     do_cnt--; // count down
     if (do_cnt) return; // !0 = we still postpone -> jump out
 
+    handle();
+
     if (!tasks) return; // no task to do -> jump out
     handle_tasks();
 }

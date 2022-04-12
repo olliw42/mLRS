@@ -237,7 +237,7 @@ uint16_t crc;
 // Serial Classes
 //-------------------------------------------------------
 
-// this is the serial port, is always uartb
+// is always uartb
 class tSerialPort : public tSerialBase
 {
 #ifndef DEVICE_HAS_NO_SERIAL
@@ -262,6 +262,27 @@ class tDebugPort : public tSerialBase
   public:
     void Init(void) { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
+#endif
+};
+
+
+// is uartc or uartb
+class tComPort : public tSerialBase
+{
+#ifdef USE_COM_ON_SERIAL
+  public:
+    // we do not initialize it as it is initialized by serial
+    void putc(char c) override { IFNCOM(); uartb_putc(c); }
+    bool available(void) override { IFNCOM(0); return uartb_rx_available(); }
+    char getc(void) override { IFNCOM(0); return uartb_getc(); }
+    void flush(void) override { IFNCOM(); uartb_rx_flush(); uartb_tx_flush(); }
+#endif
+#ifdef USE_COM_ON_C
+  public:
+    void Init(void) override { uartc_init(); }
+    void putc(char c) override { uartc_putc(c); }
+    bool available(void) override { return uartc_rx_available(); }
+    char getc(void) override { return uartc_getc(); }
 #endif
 };
 

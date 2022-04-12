@@ -57,6 +57,7 @@ v0.0.00:
 #endif
 #include "in.h"
 #include "txstats.h"
+#include "cli.h"
 
 
 TxStatsBase txstats;
@@ -141,6 +142,10 @@ class ChannelOrder
 ChannelOrder channelOrder;
 
 
+tComPort com;
+
+tTxCli cli;
+
 tSerialBase* serialport;
 
 
@@ -156,6 +161,8 @@ void init(void)
     serial.Init();
     in.Init();
 
+    com.Init();
+    cli.Init(&com);
     dbg.Init();
 
     setup_init();
@@ -202,6 +209,28 @@ void init_serialport(void)
     default:
         serialport = nullptr;
     }
+}
+
+
+//-------------------------------------------------------
+// While transmit/receive tasks
+//-------------------------------------------------------
+// we may want to add some timer to do more than one task in the transmit/receive period
+// this would help a lot with the different available periods depending on the mode
+
+#include "..\Common\while.h"
+
+WhileTransmit whileTransmit;
+
+
+void WhileTransmit::handle(void)
+{
+    cli.Do();
+}
+
+
+void WhileTransmit::handle_tasks(void)
+{
 }
 
 
@@ -625,6 +654,7 @@ RESTARTCONTROLLER:
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
+  whileTransmit.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -699,6 +729,7 @@ RESTARTCONTROLLER:
       irq_status = 0;
       irq2_status = 0;
       DBG_MAIN_SLIM(dbg.puts("\n>");)
+      whileTransmit.Trigger();
       break;
 
     case LINK_STATE_RECEIVE:
@@ -979,6 +1010,28 @@ IF_CRSF(
     //-- do mavlink
 
     mavlink.Do();
+
+    //-- do WhileTransmit stuff
+
+    whileTransmit.Do();
+
+    //-- cli task
+    switch (cli.Task()) {
+    case CLI_TASK_RX_PARAM_SET:
+      if (connected()) {
+        link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+        mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
+      }
+      break;
+    case CLI_TASK_PARAM_STORE:
+      if (connected()) {
+        link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+        mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mbridge
+      } else {
+        doParamsStore = true;
+      }
+      break;
+    }
 
   }//end of while(1) loop
 
