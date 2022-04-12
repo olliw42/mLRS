@@ -29,6 +29,8 @@ ISSUES:
 
 - allow a missing 2nd sx for diversity boards
 
+- crsf baro alt item, can we add more of our own?
+
 The 3 MAIN topics TODO:
 
 1) Link
