@@ -111,5 +111,7 @@
 #define TX_SERIAL_BAUDRATE              19200 //57600
 #define RX_SERIAL_BAUDRATE              19200 //57600
 
+#define TX_COM_BAUDRATE                 115200
+
 
 #endif // COMMON_CONFIG_H

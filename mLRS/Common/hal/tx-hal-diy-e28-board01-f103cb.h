@@ -13,6 +13,7 @@
 
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_JRPIN5 // requires external diode-R network connected to OUT,IN,GND
+#define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define // ATTENTION: this board needs redesign, doesn't has Rx3 !!
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -27,7 +28,7 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = debug port
+// UARTC = USB (debug port)
 // UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
 
@@ -39,13 +40,15 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
 
-#define UARTC_USE_UART3 // debug
+#define UARTC_USE_UART3 // USB, cli or debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
+#define UARTC_TXBUFSIZE           1024 // cli needs it // 512
 #define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#ifndef DEBUG_ENABLED
+#define UARTC_USE_RX
+#define UARTC_RXBUFSIZE           512
+#endif
 
 #ifdef DEVICE_HAS_IN
 #define UARTE_USE_UART1_REMAPPED // SBus
@@ -58,7 +61,7 @@
 #endif
 #ifdef DEVICE_HAS_JRPIN5
 #define UART_USE_UART1_REMAPPED // JR pin5, MBridge
-#define UART_BAUD                 400000 // 115200
+#define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR

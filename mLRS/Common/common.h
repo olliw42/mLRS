@@ -237,18 +237,30 @@ uint16_t crc;
 // Serial Classes
 //-------------------------------------------------------
 
+#ifdef USE_COM_ON_SERIAL
+  // TODO: when we swap ser/com, we may want to flush, we need to change baudrate
+  #define SERORCOMINIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
+  #define IFNSER(x)  if (!ser_or_com_serial()) return x;
+  #define IFNCOM(x)  if (ser_or_com_serial()) return x;
+#else
+  #define SERORCOMINIT
+  #define IFNSER(x)
+  #define IFNCOM(x)
+#endif
+
+
 // is always uartb
 class tSerialPort : public tSerialBase
 {
-#ifndef DEVICE_HAS_NO_SERIAL
+#ifdef USE_SERIAL
   public:
-    void Init(void) override { uartb_init(); }
-    void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putc(char c) override { uartb_putc(c); }
-    bool available(void) override { return uartb_rx_available(); }
-    char getc(void) override { return uartb_getc(); }
-    void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); }
-    uint16_t bytes_available(void) override { return uartb_rx_bytesavailable(); }
+    void Init(void) override { uartb_init(); SERORCOMINIT; }
+    void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    void putc(char c) override { IFNSER(); uartb_putc(c); }
+    bool available(void) override { IFNSER(0); return uartb_rx_available(); }
+    char getc(void) override { IFNSER(0); return uartb_getc(); }
+    void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
+    uint16_t bytes_available(void) override { IFNSER(0); return uartb_rx_bytesavailable(); }
 //XX    const uint16_t rx_buf_size(void) override { return UARTB_RXBUFSIZE; }
 //XX    bool tx_is_empty(void) override { IFNSER(0); return uartb_tx_isempty(); }
 #endif
@@ -258,7 +270,7 @@ class tSerialPort : public tSerialBase
 // is always uartc
 class tDebugPort : public tSerialBase
 {
-#if (!defined DEVICE_HAS_NO_DEBUG && defined DEBUG_ENABLED)
+#ifdef USE_DEBUG
   public:
     void Init(void) { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }

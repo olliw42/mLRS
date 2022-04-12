@@ -13,6 +13,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -43,17 +44,22 @@
 #define UARTB_RTS                 IO_PB4
 #define UARTB_CTS                 IO_PB5
 
-//#define UARTC_USE_UART1 // USB, debug
+#ifndef DEBUG_ENABLED
+#define UARTC_USE_UART1 // USB, cli
+#else
 #define UARTC_USE_UART1_REMAPPED // PB6,PB7, debug only
+#endif
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
+#define UARTC_TXBUFSIZE           1024 // cli needs it //512
 #define UARTC_USE_TX_ISR
+#ifndef DEBUG_ENABLED
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           512
+#endif
 
 #define UART_USE_UART2 // JR pin5, MBridge
-#define UART_BAUD                 400000 // 115200
+#define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR

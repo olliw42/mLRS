@@ -13,10 +13,11 @@
 // F9RM Pro Lite https://github.com/ExpressLRS/ExpressLRS/issues/326
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_TX_R9M.h
 // many THX to the ExpressLRS project !
+// note: these sources are not always correct in features ELRS doesn't use and not complete for what we need
 
-//#define DEVICE_HAS_IN
+//#define DEVICE_HAS_IN // we use this uart for debug, technically we could use it for both In (=U2RX) and Debug (=U2TX)
 #define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -30,18 +31,18 @@
 
 
 //-- UARTS
-// UARTB = serial port
+// UARTB = serial port or USB
 // UARTC = debug port
 // UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
 
-#define UARTB_USE_UART1 // serial // via inverter to RX/TX of RS232 port
+#define UARTB_USE_UART1 // serial or USB // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTB_TXBUFSIZE           1024 // cli needs it // TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_UART2 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
 #define UARTC_BAUD                115200
@@ -52,7 +53,7 @@
 //#define UARTC_RXBUFSIZE           512
 
 #define UART_USE_UART3 // JR pin5, MBridge
-#define UART_BAUD                 400000 // 115200
+#define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR
@@ -205,6 +206,32 @@ void leds_init(void)
 }
 
 
+//-- Serial or Com Switch
+// the dips are on the same gpios as the LEDs ! so we need to play dirty tricks
+
+#define DIP1                      IO_PA12 // same a green
+#define DIP2                      IO_PA11 // same as red
+
+bool r9m_ser_or_com_serial = false;  // we use com as default
+
+void ser_or_com_init(void)
+{
+  gpio_init(DIP1, IO_MODE_INPUT_PU, IO_SPEED_SLOW);
+  uint8_t cnt = 0;
+  for (uint8_t i = 0; i < 16; i++) {
+    if (gpio_read_activelow(DIP1)) cnt++;
+  }
+  r9m_ser_or_com_serial = (cnt > 8);
+  gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  LED_GREEN_OFF;
+}
+
+bool ser_or_com_serial(void)
+{
+  return r9m_ser_or_com_serial;
+}
+
+
 //-- Position Switch
 
 void pos_switch_init(void)
@@ -215,15 +242,15 @@ void pos_switch_init(void)
 //-- Buzzer, Dip1, Dip2
 
 #define BUZZER                    IO_PB1
-#define DIP1                      IO_PA12
-#define DIP2                      IO_PA11
+#define DIP1                      IO_PA12 // same a green
+#define DIP2                      IO_PA11 // same as red
 
 
 //-- EEPROM, not used
 
 #define EEPROM_SDA                IO_PB7
 #define EEPROM_SCL                IO_PB6
-#define EEPROM_ADDR                0x51
+#define EEPROM_ADDR               0x51
 #define EEPROM_400K
 
 

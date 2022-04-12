@@ -19,6 +19,7 @@
 // MANY thx to CapnBry !
 
 #define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: encoder switch
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -54,7 +55,7 @@
 //#define UARTC_RXBUFSIZE           512
 
 #define UART_USE_UART1 // JR pin5, MBridge
-#define UART_BAUD                 400000 // 115200
+#define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR
@@ -183,6 +184,18 @@ void leds_init(void)
   LED_RED_OFF;
   LED_RIGHT_RED_OFF;
   LED_RIGHT_GREEN_OFF;
+}
+
+
+//-- Serial or Com Switch
+
+void ser_or_com_init(void)
+{
+}
+
+bool ser_or_com_serial(void)
+{
+  return true; // we use serial as default
 }
 
 
