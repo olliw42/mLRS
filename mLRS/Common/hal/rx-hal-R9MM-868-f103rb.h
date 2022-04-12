@@ -13,8 +13,10 @@
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_RX_R9M.h
 // many THX to the ExpressLRS project !
 
-//#define DEVICE_HAS_NO_SERIAL
-#define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
+#ifdef DEBUG_ENABLED
+#undef DEBUG_ENABLED
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff

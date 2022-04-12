@@ -24,8 +24,10 @@
 //   Ch3    PA9 / U1Tx
 //   Ch4    PA8
 
-//#define DEVICE_HAS_NO_SERIAL
-#define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
+#ifdef DEBUG_ENABLED
+#undef DEBUG_ENABLED
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff

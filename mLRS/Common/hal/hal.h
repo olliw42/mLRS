@@ -62,4 +62,24 @@
 #define RFPOWER_LIST_NUM  sizeof(rfpower_list)/sizeof(rfpower_t)
 
 
+#ifdef DEVICE_IS_RECEIVER
+#if defined DEVICE_HAS_SERIAL_OR_DEBUG
+  #if !defined DEBUG_ENABLED
+    #define USE_SERIAL
+  #else
+    #define USE_DEBUG
+  #endif
+#else
+  #define USE_SERIAL
+  #define USE_DEBUG
+#endif
+#endif
+
+#ifdef DEVICE_IS_TRANSMITTER
+  #define USE_SERIAL
+  //#define USE_COM // we do not have such a case yet, so this we will have to work out
+  #define USE_DEBUG
+#endif
+
+
 #endif // HAL_H

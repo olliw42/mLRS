@@ -35,10 +35,10 @@ v0.0.00:
 #ifdef DEVICE_HAS_DIVERSITY
 #include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
 #endif
-#ifndef DEVICE_HAS_NO_SERIAL
+#ifdef USE_SERIAL
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #endif
-#ifndef DEVICE_HAS_NO_DEBUG
+#if defined USE_COM_ON_C || defined USE_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #endif
 #ifdef DEVICE_HAS_I2C
