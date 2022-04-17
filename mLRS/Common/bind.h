@@ -87,8 +87,8 @@ void BindBase::ConfigForBind(void)
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
     sx.SetLoraConfigurationByIndex(Config.LoraConfigIndex);
     sx2.SetLoraConfigurationByIndex(Config.LoraConfigIndex);
-    sx.ClearIrqStatus(SX1280_IRQ_ALL);
-    sx2.ClearIrqStatus(SX1280_IRQ_ALL);
+    sx.ClearIrqStatus(SX12xx_IRQ_ALL);
+    sx2.ClearIrqStatus(SX12xx_IRQ_ALL);
     sx.SetToIdle();
     sx2.SetToIdle();
 }
