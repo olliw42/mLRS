@@ -150,16 +150,6 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
     }
 
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(rfpower_list[index].dbm);
-    }
-
     void Configure(void)
     {
         SetPacketType(SX1280_PACKET_TYPE_LORA);

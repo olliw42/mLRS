@@ -128,16 +128,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
     }
 
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(rfpower_list[index].dbm);
-    }
-
     void Configure(void)
     {
         SetPacketType(SX126X_PACKET_TYPE_LORA);

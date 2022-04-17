@@ -132,16 +132,6 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
     }
 
-    void SetRfPowerByList(uint8_t index)
-    {
-        if (index >= RFPOWER_LIST_NUM) {
-          SetRfPower_dbm(POWER_MIN); // set to smallest possible
-          return;
-        }
-
-        SetRfPower_dbm(rfpower_list[index].dbm);
-    }
-
     void Configure(void)
     {
         SetSleep(); // must be in sleep to switch to LoRa mode
