@@ -20,6 +20,7 @@ typedef enum {
     CLI_TASK_NONE = 0,
     CLI_TASK_RX_PARAM_SET,
     CLI_TASK_PARAM_STORE,
+    CLI_TASK_BIND,
 } CLI_TASK_ENUM;
 
 
@@ -436,6 +437,11 @@ bool rx_param_changed;
           } else {
               com->puts("  parameters stored\n");
           }
+      }
+
+      if (strcmp(buf, "bind") == 0) {
+          task_pending = CLI_TASK_BIND;
+          com->puts("  Tx entered bind mode\n");
       }
 
       clear();

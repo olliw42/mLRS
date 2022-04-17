@@ -41,12 +41,13 @@ class BindBase
   public:
     void Init(void);
     bool IsInBind(void) { return is_in_binding; }
+    void SetToBind(void) { binding_requested = true; }
     void ConfigForBind(void);
     void Do(void);
     uint8_t Task(void);
 
     bool is_in_binding;
-    bool is_button_pressed;
+    bool binding_requested;
     uint32_t button_tlast_ms;
     uint8_t task;
     bool is_connected;
@@ -62,8 +63,8 @@ class BindBase
 
 void BindBase::Init(void)
 {
-    is_button_pressed = false;
     is_in_binding = false;
+    binding_requested = false;
     task = BIND_TASK_NONE;
     is_connected = false;
 
@@ -99,7 +100,7 @@ void BindBase::Do(void)
 
     if (button_pressed()) {
         if (tnow - button_tlast_ms > BIND_BUTTON_TMO) {
-            is_button_pressed = true;
+          binding_requested = true;
         }
     } else {
         button_tlast_ms = tnow;
@@ -114,7 +115,7 @@ void BindBase::Do(void)
     }
 #endif
 
-   if (!is_in_binding && is_button_pressed) {
+   if (!is_in_binding && binding_requested) {
        is_in_binding = true;
        task = BIND_TASK_CHANGED_TO_BIND;
    }

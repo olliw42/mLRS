@@ -975,6 +975,7 @@ IF_MBRIDGE(
           doParamsStore = true;
         }
         break;
+      case MBRIDGE_CMD_BIND: bind.SetToBind(); break;
       }
     }
 );
@@ -1035,6 +1036,7 @@ IF_CRSF(
         doParamsStore = true;
       }
       break;
+    case CLI_TASK_BIND: bind.SetToBind(); break;
     }
 
   }//end of while(1) loop

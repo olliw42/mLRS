@@ -1,3 +1,4 @@
+--local toolName = "TNS|mLRS Configurator|TNE"
 ----------------------------------------------------------------------
 -- Copyright (c) MLRS project
 -- GPL3
@@ -7,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.04, mOTX v33-rc3
+-- works with mLRS v0.01.05, mOTX v33-rc4
 
 
 ----------------------------------------------------------------------
@@ -16,7 +17,7 @@
 
 local popup = false   
 local popup_text = ""
-local popup_t_end_10ms = 0    
+local popup_t_end_10ms = -1
 
 
 local function setPopup(txt)
@@ -25,12 +26,22 @@ local function setPopup(txt)
     popup_t_end_10ms = getTime() + 100
 end
 
-local function setPopupWTmo(txt,tmo_10ms)
+local function setPopupWTmo(txt, tmo_10ms)
     popup = true
     popup_text = txt
     popup_t_end_10ms = getTime() + tmo_10ms
 end
 
+local function setPopupBlocked(txt)
+    popup = true
+    popup_text = txt
+    popup_t_end_10ms = -1
+end
+
+local function isPopupBlocked()
+    if popup and popup_t_end_10ms < 0 then return true; end
+    return false;
+end    
 
 local function clearPopup()
     popup = false
@@ -57,8 +68,10 @@ end
 local function doPopup()
     if popup then
         drawPopup()
-        local t_10ms = getTime()
-        if t_10ms > popup_t_end_10ms then clearPopup() end
+        if popup_t_end_10ms > 0 then
+            local t_10ms = getTime()
+            if t_10ms > popup_t_end_10ms then clearPopup() end
+        end    
     end  
 end
 
@@ -344,6 +357,12 @@ local function sendParamStore()
     setPopupWTmo("Save Parameters",250)
 end  
 
+
+local function sendBind()
+    mbridge.cmdPush(mbridge.CMD_BIND, {})
+    setPopupBlocked("Binding")
+end  
+
     
 ----------------------------------------------------------------------
 -- Edit stuff
@@ -619,7 +638,8 @@ local function drawPageMain()
         lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(3))
     end  
     lcd.drawText(10 + 160, y, "Save", cur_attr(4))  
-    lcd.drawText(10 + 225, y, "Reload", cur_attr(5))  
+    lcd.drawText(10 + 225, y, "Reload", cur_attr(5))
+    lcd.drawText(10 + 305, y, "Bind", cur_attr(6))
      
     -- show overview of some selected parameters
     y = 190
@@ -687,21 +707,21 @@ local function doPageMain(event)
               sendParamStore()
             elseif cursor_idx == 5 then -- Reload pressed
               clearParams()
+            elseif cursor_idx == 6 then -- Bind pressed
+              sendBind()
             else      
               cursor_x_idx = 0
               edit = true
             end  
         elseif event == EVT_VIRTUAL_NEXT and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx + 1
-            if cursor_idx > 5 then cursor_idx = 5 end
+            if cursor_idx > 6 then cursor_idx = 6 end
           
             if cursor_idx == 3 and not connected then cursor_idx = 4 end
-            --if cursor_idx == 2 and not connected then cursor_idx = 5 end
         elseif event == EVT_VIRTUAL_PREV and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end
           
-            --if cursor_idx == 4 and not connected then cursor_idx = 3 end
             if cursor_idx == 3 and not connected then cursor_idx = 2 end
         end
     else
@@ -752,6 +772,7 @@ local function Do(event)
     if has_connected then
         clearParams()
         if not popup then setPopup("Receiver connected!") end
+        if isPopupBlocked() then clearPopup() end
     end
     if has_disconnected then
         if not popup then setPopup("Receiver\nhas disconnected!") end
