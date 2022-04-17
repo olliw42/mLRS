@@ -348,12 +348,6 @@ void process_transmit_frame(uint8_t antenna, uint8_t ack)
     } else {
         pack_rxcmdframe(&rxFrame, &frame_stats);
     }
-
-    if (antenna == ANTENNA_1) {
-        sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-    } else {
-        sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-    }
 }
 
 
@@ -397,6 +391,8 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     }
 }
 
+
+//-- receive/transmit handling api
 
 void handle_receive(uint8_t antenna)
 {
@@ -445,11 +441,18 @@ void handle_receive_none(void) // RX_STATUS_NONE
 
 void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
-    uint8_t ack = 1;
+uint8_t ack = 1;
 
     stats.transmit_seq_no++;
 
     process_transmit_frame(antenna, ack);
+
+//    if (antenna == ANTENNA_1) {
+//        sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+//    } else {
+//        sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+//    }
+    sxSendFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
 }
 
 
@@ -460,13 +463,15 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
     // we don't need to read sx.GetRxBufferStatus(), but hey
     // we could save 2 byte's time by not reading sync_word again, but hey
-    if (antenna == ANTENNA_1) {
-        sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
-        res = check_txframe(&txFrame);
-    } else {
-        sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
-        res = check_txframe(&txFrame2);
-    }
+//    if (antenna == ANTENNA_1) {
+//        sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
+//        res = check_txframe(&txFrame);
+//    } else {
+//        sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
+//        res = check_txframe(&txFrame2);
+//    }
+    sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
+    res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
 
     if (res) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
@@ -482,12 +487,13 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
         rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
     }
 
-    // we want to have it even if it's a bad packet
-    if (antenna == ANTENNA_1) {
-        sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
-    } else {
-        sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
-    }
+    // we want to have the rssi,snr stats even if it's a bad packet
+//    if (antenna == ANTENNA_1) {
+//        sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
+//    } else {
+//        sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
+//    }
+    sxGetPacketStatus(antenna, &stats);
 
     return rx_status;
 }

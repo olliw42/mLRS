@@ -300,6 +300,16 @@ class tComPort : public tSerialBase
 
 
 //-------------------------------------------------------
+// Sx/Sx2 convenience wrapper
+//-------------------------------------------------------
+// only declarations, implementations follow below
+
+void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
+void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms);
+void sxGetPacketStatus(uint8_t antenna, Stats* stats);
+
+
+//-------------------------------------------------------
 // Common Variables
 //-------------------------------------------------------
 
@@ -337,6 +347,40 @@ SxDriverDummy sx2;
 Stats stats;
 
 FhssBase fhss;
+
+
+//-------------------------------------------------------
+// Sx/Sx2 convenience wrapper
+//-------------------------------------------------------
+
+void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
+{
+    if (antenna == ANTENNA_1) {
+        sx.ReadFrame((uint8_t*)data, len);
+    } else {
+        sx2.ReadFrame((uint8_t*)data2, len);
+    }
+}
+
+
+void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms)
+{
+    if (antenna == ANTENNA_1) {
+        sx.SendFrame((uint8_t*)data, len, tmo_ms);
+    } else {
+        sx2.SendFrame((uint8_t*)data2, len, tmo_ms);
+    }
+}
+
+
+void sxGetPacketStatus(uint8_t antenna, Stats* stats)
+{
+    if (antenna == ANTENNA_1) {
+        sx.GetPacketStatus(&(stats->last_rx_rssi1), &(stats->last_rx_snr1)); //&stats.last_rx_rssi1, &stats.last_rx_snr1);
+    } else {
+        sx2.GetPacketStatus(&(stats->last_rx_rssi2), &(stats->last_rx_snr2));
+    }
+}
 
 
 //-------------------------------------------------------
