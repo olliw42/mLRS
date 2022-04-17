@@ -905,7 +905,7 @@ IF_ANTENNA2(
       case BIND_TASK_CHANGED_TO_BIND:
         bind.ConfigForBind();
         fhss.SetToBind();
-        LED_GREEN_OFF;
+        LED_GREEN_ON;
         LED_RED_OFF;
         connect_state = CONNECT_STATE_LISTEN;
         break;

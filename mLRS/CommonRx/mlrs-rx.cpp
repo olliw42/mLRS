@@ -852,7 +852,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
         clock.Reset();
         fhss.SetToBind();
-        LED_GREEN_OFF;
+        LED_GREEN_ON;
         LED_RED_OFF;
         connect_state = CONNECT_STATE_LISTEN;
         link_state = LINK_STATE_RECEIVE;
