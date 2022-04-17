@@ -144,12 +144,12 @@ void out_set_inverted(void)
 
 void button_init(void)
 {
-//  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-  return false; //gpio_read_activelow(BUTTON);
+  return gpio_read_activelow(BUTTON);
 }
 
 
