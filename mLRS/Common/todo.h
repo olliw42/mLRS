@@ -9,7 +9,6 @@
 /*
 
 ISSUES:
-- store bindphrase -> first do bind
 - add allowed_mask defines for in/out inverted/noninverted
   allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 - setup: which are effective only on restart? which on-the-fly?
@@ -31,6 +30,10 @@ ISSUES:
 
 - crsf baro alt item, can we add more of our own?
 
+- entering bind by power cycles
+- setup rx params, make it more robust
+- make sure bindphrases really make them to not operate, e.g. mix nibbles
+
 The 3 MAIN topics TODO:
 
 1) Link
@@ -40,10 +43,6 @@ The 3 MAIN topics TODO:
 - reconnect by choosing frequency based on rssi map
 
 2) Parameters, usability
-- parameters instead of compile defines wherever possible
-- parameter synchronization between tx and rx upon first connection
-- some way for users to adjust parameters (mbridge/lua, mavlink, oled, usb/cli/gui)
-- bind phase
 - firmware update: via connection to USB on tx module, for receiver ota-passthrough
 
 3) Mavlink
@@ -62,8 +61,6 @@ Longterm TODO:
 - support high_latency2
 
 - get a clean HAL concept
-
-- get a clear mbridge and in concept, currently quite ugly as uart.h conflicts
 
 - when we eventually do OTA update of the rx, the rx firmware must be universal in the sense that it supports all possible
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.

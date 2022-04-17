@@ -62,7 +62,10 @@ It provides these operation modes:
 
 Further features:
 - full transmitter and receiver diversity: The Tx and Rx modules which provide two Semtech Lora chips provide full diversity. This really improves link quality in the far range.
-- all options selectable via parameters: There is no need to recompile the firmware for a given board in order to change an option or parameter setting.
+- all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
+- the receiver parameters can be set from with the transmitter; no need to mess with the receiver in any ways.
+- the transmitter and receiver parameters can be set via a lua script or a CLI.
+- bind mode for binding "unknown" receivers to the transmitter.
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332).
 
 ## Community ##
