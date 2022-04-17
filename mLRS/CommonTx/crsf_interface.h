@@ -91,8 +91,6 @@ void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
 
 void tTxCrsf::uart_rx_callback(uint8_t c)
 {
-    LED_RIGHT_GREEN_ON;
-
     if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
         state = STATE_IDLE;
     }
@@ -103,8 +101,6 @@ void tTxCrsf::uart_rx_callback(uint8_t c)
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
         pin5_tx_start();
     }
-
-    LED_RIGHT_GREEN_OFF;
 }
 
 

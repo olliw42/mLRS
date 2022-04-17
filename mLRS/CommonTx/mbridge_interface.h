@@ -105,8 +105,6 @@ void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
 
 void tMBridge::uart_rx_callback(uint8_t c)
 {
-    LED_RIGHT_GREEN_ON;
-
     if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
         state = STATE_IDLE;
     }
@@ -117,8 +115,6 @@ void tMBridge::uart_rx_callback(uint8_t c)
     if (transmit_start()) {
         pin5_tx_start();
     }
-
-    LED_RIGHT_GREEN_OFF;
 }
 
 
