@@ -136,11 +136,11 @@ Out out;
 void init(void)
 {
     leds_init();
+    button_init();
 
     delay_init();
     micros_init();
 
-    bind.Init();
     serial.Init();
     out.Init();
 
@@ -175,7 +175,6 @@ IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-    //LED_RED_TOGGLE;
     irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
@@ -194,7 +193,6 @@ IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-    //LED_RED_TOGGLE;
     irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq2_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
@@ -528,6 +526,7 @@ RESTARTCONTROLLER:
   }
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
+  bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartRx();
 
@@ -590,7 +589,7 @@ RESTARTCONTROLLER:
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
-/*        dbg.puts("\nRX: ");
+        dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
         dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
         dbg.puts(" (");
@@ -605,7 +604,7 @@ RESTARTCONTROLLER:
         dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
       }
     }
 
@@ -635,7 +634,6 @@ RESTARTCONTROLLER:
       irq_status = 0; // important, in low connection condition, RxDone isr could trigger
       irq2_status = 0;
       }break;
-
     }//end of switch(link_state)
 
 IF_ANTENNA1(
@@ -689,17 +687,14 @@ IF_ANTENNA2(
       }
 
       if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
-dbg.puts("\nIRQ2 RX DONE FAIL");
         LED_GREEN_ON; //LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
       if (irq2_status & SX12xx_IRQ_TX_DONE) {
-dbg.puts("\nIRQ2 TX DONE FAIL");
         LED_RED_ON; //LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
       if (irq2_status & SX12xx_IRQ_TIMEOUT) {
-dbg.puts("\nIRQ2 TMO FAIL");
         while (1) { LED_RED_ON; LED_GREEN_OFF; delay_ms(50); LED_RED_OFF; LED_GREEN_ON; delay_ms(50); }
       }
     }//end of if(irq2_status)

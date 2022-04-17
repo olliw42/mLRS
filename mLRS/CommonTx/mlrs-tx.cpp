@@ -158,7 +158,6 @@ void init(void)
     delay_init();
     micros_init();
 
-    bind.Init();
     serial.Init();
     in.Init();
 
@@ -246,7 +245,6 @@ IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-    //LED_RIGHT_RED_TOGGLE;
     irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
@@ -265,7 +263,6 @@ IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-    //LED_RIGHT_RED_TOGGLE;
     irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq2_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
@@ -616,6 +613,7 @@ RESTARTCONTROLLER:
   }
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
+  bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed);
   fhss.StartTx();
 

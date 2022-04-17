@@ -11,7 +11,6 @@
 #pragma once
 
 
-
 #include <stdint.h>
 
 
@@ -25,7 +24,7 @@ static inline bool connected(void);
 
 #define BIND_SIGNATURE_TX_STR  "mLRS\x01\x02\x03\x04"
 #define BIND_SIGNATURE_RX_STR  "mLRS\x04\x03\x02\x01"
-#define BIND_BUTTON_TMO        2000
+#define BIND_BUTTON_TMO        4000
 
 
 typedef enum {
@@ -68,7 +67,6 @@ void BindBase::Init(void)
     task = BIND_TASK_NONE;
     is_connected = false;
 
-    button_init();
     button_tlast_ms = millis32();
 
     memcpy(&TxSignature, BIND_SIGNATURE_TX_STR, 8);
@@ -130,27 +128,22 @@ uint8_t BindBase::Task(void)
 }
 
 
-
 tTxBindFrame txBindFrame;
 tRxBindFrame rxBindFrame;
+
 
 #ifdef DEVICE_IS_TRANSMITTER
 
 void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
-dbg.puts("\ntx HANDLE REC");
-
     if (rx_status == RX_STATUS_INVALID) return;
 
     // do stuff
-dbg.puts(" DO");
-
 }
 
 
 void BindBase::do_transmit(uint8_t antenna)
 {
-//dbg.puts("\ntx do trns");
     memset(&txBindFrame, 0, sizeof(txBindFrame));
     txBindFrame.bind_signature = TxSignature;
 
@@ -167,14 +160,14 @@ void BindBase::do_transmit(uint8_t antenna)
 
 uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
-dbg.puts("\ntx do rec");
-
     sxReadFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN);
+
     bool ok = (rxBindFrame.bind_signature == RxSignature);
     if (ok) {
         uint16_t crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
         ok = (crc == rxBindFrame.crc);
     }
+
     sxGetPacketStatus(antenna, &stats);
     return (ok) ? RX_STATUS_VALID : RX_STATUS_INVALID;
 }
@@ -185,12 +178,7 @@ dbg.puts("\ntx do rec");
 
 void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
-dbg.puts("\nrx HANLDE REC");
-
     if (rx_status == RX_STATUS_INVALID) return;
-
-    // do stuff
-dbg.puts(" DO");
 
     strncpy_x(Setup.BindPhrase, txBindFrame.BindPhrase, 6);
     Setup.FrequencyBand = txBindFrame.FrequencyBand;
@@ -204,7 +192,6 @@ dbg.puts(" DO");
 
 void BindBase::do_transmit(uint8_t antenna)
 {
-dbg.puts("\nrx do trns");
     memset(&rxBindFrame, 0, sizeof(rxBindFrame));
     rxBindFrame.bind_signature = RxSignature;
 
@@ -223,9 +210,8 @@ void clock_reset(void);
 
 uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
-dbg.puts("\nrx do rec");
-
     sxReadFrame(antenna, &txBindFrame, &txBindFrame, FRAME_TX_RX_LEN);
+
     bool ok = (txBindFrame.bind_signature == TxSignature);
     if (ok) {
         uint16_t crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
