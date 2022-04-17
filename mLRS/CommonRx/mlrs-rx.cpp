@@ -60,6 +60,9 @@ ClockBase clock;
 RxStatsBase rxstats;
 
 
+void clock_reset(void) { clock.Reset(); }
+
+
 class Out : public OutBase
 {
   public:
@@ -137,6 +140,7 @@ void init(void)
     delay_init();
     micros_init();
 
+    bind.Init();
     serial.Init();
     out.Init();
 
@@ -174,9 +178,15 @@ void SX_DIO_EXTI_IRQHandler(void)
     //LED_RED_TOGGLE;
     irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq_status & SX12xx_IRQ_RX_DONE) {
-        uint16_t sync_word;
-        sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-        if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+        if (bind.IsInBind()) {
+            uint64_t bind_signature;
+            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+            if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
+        } else {
+            uint16_t sync_word;
+            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+        }
     }
 })
 #ifdef DEVICE_HAS_DIVERSITY
@@ -187,54 +197,25 @@ void SX2_DIO_EXTI_IRQHandler(void)
     //LED_RED_TOGGLE;
     irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq2_status & SX12xx_IRQ_RX_DONE) {
-        uint16_t sync_word;
-        sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-        if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+        if (bind.IsInBind()) {
+            uint64_t bind_signature;
+            sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+            if (bind_signature != bind.TxSignature) irq2_status = 0;
+        } else {
+            uint16_t sync_word;
+            sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+            if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+        }
     }
 })
 #endif
 
-
-typedef enum {
-    CONNECT_STATE_LISTEN = 0,
-    CONNECT_STATE_SYNC,
-    CONNECT_STATE_CONNECTED,
-} CONNECT_STATE_ENUM;
-
-typedef enum {
-    LINK_STATE_RECEIVE = 0,
-    LINK_STATE_RECEIVE_WAIT,
-    LINK_STATE_TRANSMIT,
-    LINK_STATE_TRANSMIT_WAIT,
-} LINK_STATE_ENUM;
-
-#define IS_RECEIVE_STATE    (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
-
-typedef enum {
-    RX_STATUS_NONE = 0, // no frame received
-    RX_STATUS_INVALID,
-    RX_STATUS_CRC1_VALID,
-    RX_STATUS_VALID,
-} RX_STATUS_ENUM;
 
 uint8_t link_rx1_status;
 uint8_t link_rx2_status;
 
 
 //-- Tx/Rx cmd frame handling
-
-typedef enum {
-    LINK_TASK_NONE = 0,
-    LINK_TASK_TX_GET_RX_SETUPDATA,
-    LINK_TASK_TX_SET_RX_PARAMS,
-    LINK_TASK_TX_STORE_RX_PARAMS,
-    LINK_TASK_RX_ACK,
-} LINK_TASK_ENUM;
-
-typedef enum {
-    TRANSMIT_FRAME_TYPE_NORMAL = 0,
-    TRANSMIT_FRAME_TYPE_CMD,
-} TRANSMIT_FRAME_TYPE_ENUM;
 
 uint8_t link_task;
 uint8_t transmit_frame_type;
@@ -399,6 +380,11 @@ void handle_receive(uint8_t antenna)
 uint8_t rx_status;
 tTxFrame* frame;
 
+    if (bind.IsInBind()) {
+        bind.handle_receive(antenna, (antenna == ANTENNA_1) ? link_rx1_status : link_rx2_status);
+        return;
+    }
+
     if (antenna == ANTENNA_1) {
         rx_status = link_rx1_status;
         frame = &txFrame;
@@ -443,15 +429,15 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
 uint8_t ack = 1;
 
+    if (bind.IsInBind()) {
+        bind.do_transmit(antenna);
+        return;
+    }
+
     stats.transmit_seq_no++;
 
     process_transmit_frame(antenna, ack);
 
-//    if (antenna == ANTENNA_1) {
-//        sx.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-//    } else {
-//        sx2.SendFrame((uint8_t*)&rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
-//    }
     sxSendFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
 }
 
@@ -461,15 +447,12 @@ uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame f
 uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
+    if (bind.IsInBind()) {
+        return bind.do_receive(antenna, do_clock_reset);
+    }
+
     // we don't need to read sx.GetRxBufferStatus(), but hey
     // we could save 2 byte's time by not reading sync_word again, but hey
-//    if (antenna == ANTENNA_1) {
-//        sx.ReadFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN);
-//        res = check_txframe(&txFrame);
-//    } else {
-//        sx2.ReadFrame((uint8_t*)&txFrame2, FRAME_TX_RX_LEN);
-//        res = check_txframe(&txFrame2);
-//    }
     sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
     res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
 
@@ -488,11 +471,6 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
     }
 
     // we want to have the rssi,snr stats even if it's a bad packet
-//    if (antenna == ANTENNA_1) {
-//        sx.GetPacketStatus(&stats.last_rx_rssi1, &stats.last_rx_snr1);
-//    } else {
-//        sx2.GetPacketStatus(&stats.last_rx_rssi2, &stats.last_rx_snr2);
-//    }
     sxGetPacketStatus(antenna, &stats);
 
     return rx_status;
@@ -598,15 +576,21 @@ RESTARTCONTROLLER:
         DECc(led_blink, SYSTICK_DELAY_MS(50));
       }
 
-      if (!led_blink) {
-        if (connected()) LED_GREEN_TOGGLE; else LED_RED_TOGGLE;
+      if (bind.IsInBind()) {
+        if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+      } else
+      if (connected()) {
+        if (!led_blink) LED_GREEN_TOGGLE;
+        LED_RED_OFF;
+      } else {
+        LED_GREEN_OFF;
+        if (!led_blink) LED_RED_TOGGLE;
       }
-      if (connected()) { LED_RED_OFF; } else { LED_GREEN_OFF; }
 
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
-        dbg.puts("\nRX: ");
+/*        dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
         dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
         dbg.puts(" (");
@@ -621,7 +605,7 @@ RESTARTCONTROLLER:
         dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
       }
     }
 
@@ -673,14 +657,17 @@ IF_ANTENNA1(
       }
 
       if (irq_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+dbg.puts("\nIRQ RX DONE FAIL");
         LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
       if (irq_status & SX12xx_IRQ_TX_DONE) {
+dbg.puts("\nIRQ TX DONE FAIL");
         LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
       if (irq_status & SX12xx_IRQ_TIMEOUT) {
+dbg.puts("\nIRQ TMO FAIL");
         while (1) { LED_RED_ON; LED_GREEN_ON; delay_ms(50); LED_RED_OFF; LED_GREEN_OFF; delay_ms(50); }
       }
     }//end of if(irq_status)
@@ -702,14 +689,17 @@ IF_ANTENNA2(
       }
 
       if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+dbg.puts("\nIRQ2 RX DONE FAIL");
         LED_GREEN_ON; //LED_GREEN_OFF;
         while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
       }
       if (irq2_status & SX12xx_IRQ_TX_DONE) {
+dbg.puts("\nIRQ2 TX DONE FAIL");
         LED_RED_ON; //LED_RED_OFF;
         while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
       }
       if (irq2_status & SX12xx_IRQ_TIMEOUT) {
+dbg.puts("\nIRQ2 TMO FAIL");
         while (1) { LED_RED_ON; LED_GREEN_OFF; delay_ms(50); LED_RED_OFF; LED_GREEN_ON; delay_ms(50); }
       }
     }//end of if(irq2_status)
@@ -854,6 +844,21 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
       }
 
       if (connect_state < CONNECT_STATE_SYNC) link_task_reset();
+
+      bind.Do();
+      switch (bind.Task()) {
+      case BIND_TASK_CHANGED_TO_BIND:
+        bind.ConfigForBind();
+        CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
+        clock.Reset();
+        fhss.SetToBind();
+        LED_GREEN_OFF;
+        LED_RED_OFF;
+        connect_state = CONNECT_STATE_LISTEN;
+        link_state = LINK_STATE_RECEIVE;
+        break;
+      case BIND_TASK_RX_STORE_PARAMS: doParamsStore = true; break;
+      }
 
       doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
     }//end of if(doPostReceive)

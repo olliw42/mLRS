@@ -242,6 +242,8 @@ class FhssBase
         if (cnt > cnt_max) cnt = cnt_max;
 
         generate(seed);
+
+        is_in_binding = false;
     }
 
     void StartRx(void)
@@ -261,6 +263,8 @@ class FhssBase
 
     uint32_t GetCurrFreq(void)
     {
+        if (is_in_binding) return fhss_freq_list[fhss_bind_channel_list[0]];
+
         return fhss_list[curr_i];
     }
 
@@ -268,6 +272,11 @@ class FhssBase
     {
         curr_i++;
         if (curr_i >= cnt) curr_i = 0;
+    }
+
+    void SetToBind(void)
+    {
+        is_in_binding = true;
     }
 
     uint32_t bestX(void)
@@ -290,6 +299,7 @@ class FhssBase
     uint8_t ch_list[FHSS_MAX_NUM]; // that's our list of randomly selected channels
     uint32_t fhss_list[FHSS_MAX_NUM]; // that's our list of randomly selected frequencies
     int8_t fhss_last_rssi[FHSS_MAX_NUM];
+    bool is_in_binding;
 
     uint16_t prng(void);
     void generate(uint32_t seed);

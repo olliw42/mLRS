@@ -134,7 +134,52 @@ typedef struct
 
 
 //-------------------------------------------------------
+// Bind frames
+// are send on bind frequency in 19 Hz mode
+//-------------------------------------------------------
+
+PACKED(
+typedef struct
+{
+    uint64_t bind_signature; // 8 bytes // different for Tx and Rx
+    uint8_t seq_no : 3;
+    uint8_t ack : 1;
+    uint8_t frame_type : 4; // 1 byte // not used currently
+
+    uint8_t connected : 1;
+
+    char BindPhrase[6];
+    uint8_t FrequencyBand : 4;
+    uint8_t Mode : 4;
+
+    uint8_t spare[72];
+
+    uint16_t crc; // 2bytes
+}) tTxBindFrame; // 91 bytes
+
+
+PACKED(
+typedef struct
+{
+    uint64_t bind_signature; // 8 bytes // different for Tx and Rx
+    uint8_t seq_no : 3;
+    uint8_t ack : 1;
+    uint8_t frame_type : 4; // 1 byte // not used currently
+
+    uint8_t connected : 1;
+
+    uint32_t firmware_version;
+    char device_name[20];
+
+    uint8_t spare[55];
+
+    uint16_t crc; // 2bytes
+}) tRxBindFrame; // 91 bytes
+
+
+//-------------------------------------------------------
 // Cmd & SetupData frames
+// these are just normal Tx and Rx frames, with special payloads though
 //-------------------------------------------------------
 
 typedef enum {

@@ -16,6 +16,7 @@
 #include "lq_counter.h"
 #include "fhss.h"
 #include "frame_types.h"
+#include "link_types.h"
 #include "common_stats.h"
 
 
@@ -348,6 +349,10 @@ Stats stats;
 
 FhssBase fhss;
 
+#include "bind.h" // bind needs sx,sx2 variables
+
+BindBase bind;
+
 
 //-------------------------------------------------------
 // Sx/Sx2 convenience wrapper
@@ -580,6 +585,9 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 STATIC_ASSERT(sizeof(tFrameStatus) == FRAME_TX_RX_HEADER_LEN - 2, "tFrameStatus len missmatch")
 STATIC_ASSERT(sizeof(tTxFrame) == FRAME_TX_RX_LEN, "tTxFrame len missmatch")
 STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "tRxFrame len missmatch")
+
+STATIC_ASSERT(sizeof(tTxBindFrame) == FRAME_TX_RX_LEN, "tTxBindFrame len missmatch")
+STATIC_ASSERT(sizeof(tRxBindFrame) == FRAME_TX_RX_LEN, "tRxBindFrame len missmatch")
 
 STATIC_ASSERT(sizeof(tTxCmdFrameRxParams) == FRAME_TX_PAYLOAD_LEN, "tTxCmdFrameRxParams len missmatch")
 STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFrameRxSetupData len missmatch")
