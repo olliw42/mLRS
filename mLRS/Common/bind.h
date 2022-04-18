@@ -122,6 +122,13 @@ void BindBase::Do(void)
 
 uint8_t BindBase::Task(void)
 {
+    switch (task) {
+    case BIND_TASK_TX_RESTART_CONTROLLER:
+    case BIND_TASK_RX_STORE_PARAMS: // postpone until button released
+        if (button_pressed()) return BIND_TASK_NONE;
+        break;
+    }
+
     uint8_t ret = task;
     task = BIND_TASK_NONE;
     return ret;
