@@ -45,10 +45,6 @@
 
 #define MSK_ALL                     nullptr // is converted to UINT16_MAX
 
-// TODO: dummies to account for current deficiencies, should be replaced by MSK_ALL
-uint16_t tx_channelorder_allowed_mask = 0b0101;
-uint16_t rx_channelorder_allowed_mask = 0b0001;
-
 // Tx parameters must begin with "Tx "
 // Rx parameters must begin with "Rx "
 #define SETUP_PARAMETER_LIST \
@@ -58,7 +54,7 @@ uint16_t rx_channelorder_allowed_mask = 0b0001;
   X( Setup.Tx.Power,              LIST,  "Tx Power",     "TX_POWER",     0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
   X( Setup.Tx.Diversity,          LIST,  "Tx Diversity", "TX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_TX_DIVERSITY )\
   X( Setup.Tx.ChannelsSource,     LIST,  "Tx Ch Source", "TX_CH_SOURCE", 0,0,0,"", "none,mbridge,in,crsf", SETUP_MSK_TX_CH_SOURCE )\
-  X( Setup.Tx.ChannelOrder,       LIST,  "Tx Ch Order",  "TX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, &tx_channelorder_allowed_mask )\
+  X( Setup.Tx.ChannelOrder,       LIST,  "Tx Ch Order",  "TX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Tx.InMode,             LIST,  "Tx In Mode",   "TX_IN_MODE",   0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
   X( Setup.Tx.SerialDestination,  LIST,  "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge", SETUP_MSK_TX_SER_DEST )\
   X( Setup.Tx.SerialBaudrate,     LIST,  "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
@@ -67,7 +63,7 @@ uint16_t rx_channelorder_allowed_mask = 0b0001;
   \
   X( Setup.Rx.Power,              LIST,  "Rx Power",     "RX_POWER",     0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
   X( Setup.Rx.Diversity,          LIST,  "Rx Diversity", "RX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
-  X( Setup.Rx.ChannelOrder,       LIST,  "Rx Ch Order",  "RX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, &rx_channelorder_allowed_mask )\
+  X( Setup.Rx.ChannelOrder,       LIST,  "Rx Ch Order",  "RX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Rx.OutMode,            LIST,  "Rx Out Mode",  "RX_OUT_MODE",  0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
   X( Setup.Rx.OutRssiChannelMode, LIST,  "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,4,5,6,7,8,9,10,11,12", MSK_ALL )\
   X( Setup.Rx.FailsafeMode,       LIST,  "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\

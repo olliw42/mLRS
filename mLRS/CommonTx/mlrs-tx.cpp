@@ -101,7 +101,7 @@ class ChannelOrder
   public:
     ChannelOrder(void)
     {
-        channel_order = UINT8_MAX;
+        channel_order = CHANNEL_ORDER_AETR;
         for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
     }
 
@@ -112,10 +112,13 @@ class ChannelOrder
 
         switch (channel_order) {
         case CHANNEL_ORDER_AETR:
-            // nothing to do
+            for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
             break;
         case CHANNEL_ORDER_TAER:
-            // TODO
+            channel_map[0] = 1;
+            channel_map[1] = 2;
+            channel_map[2] = 0;
+            channel_map[3] = 3;
             break;
         case CHANNEL_ORDER_ETAR:
             channel_map[0] = 2;
@@ -123,6 +126,8 @@ class ChannelOrder
             channel_map[2] = 1;
             channel_map[3] = 3;
             break;
+        default:
+            while (1) {} // must not happen
         }
     }
 

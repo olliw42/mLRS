@@ -20,8 +20,6 @@ ISSUES:
 
 - for dual sx avoid that both sx.Init wait 300ms
 
-- implement all AETR,TAER,ETAR, just do it !!!!
-
 - mavlink parser should probably be reset when packets are missed
 - align mavlink messages only with respect to header, i.e., such that header is never split up
 - led blink to signal serial traffic
@@ -33,6 +31,8 @@ ISSUES:
 - entering bind by power cycles
 - setup rx params, make it more robust
 - make sure bindphrases really make them to not operate, e.g. mix nibbles
+
+- setup per model
 
 The 3 MAIN topics TODO:
 
