@@ -262,7 +262,7 @@ void setup_configure(void)
 
     uint32_t bind_dblword = u32_from_bind_phrase(Setup.BindPhrase);
 
-    Config.FrameSyncWord = (uint16_t)(bind_dblword & 0x0000FFFF);
+    Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
     //-- Power
 

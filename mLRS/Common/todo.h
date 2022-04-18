@@ -30,8 +30,6 @@ ISSUES:
 
 - entering bind by power cycles
 - setup rx params, make it more robust
-- make sure bindphrases really make them to not operate, e.g. mix nibbles
-
 - setup per model
 
 The 3 MAIN topics TODO:
