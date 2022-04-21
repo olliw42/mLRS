@@ -14,6 +14,10 @@
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_JRPIN5 // requires external diode-R network connected to OUT,IN,GND
 #define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define // ATTENTION: this board needs redesign, doesn't has Rx3 !!
+#ifndef DEBUG_ENABLED
+#define DEBUG_ENABLED
+#warning Debug enabled! This board needs redesign, COM (CLI) cannot be used since PB11 overlaps!
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -46,6 +50,7 @@
 #define UARTC_TXBUFSIZE           1024 // cli needs it // 512
 #define UARTC_USE_TX_ISR
 #ifndef DEBUG_ENABLED
+#error This board needs redesign, COM (CLI) cannot be used since PB11 overlaps!
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           512
 #endif
