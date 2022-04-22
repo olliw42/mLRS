@@ -412,7 +412,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
     SetupMetaData.rx_available = true;
 
-    SetupMetaData.rx_firmware_version = rx_setupdata->firmware_version;
+    SetupMetaData.rx_firmware_version = version_from_u16(rx_setupdata->firmware_version_u16);
     SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
     strstrbufcpy(SetupMetaData.rx_device_name, rx_setupdata->device_name_20, 20);
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
@@ -500,7 +500,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {0};
 
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 
-    rx_setupdata.firmware_version = VERSION;
+    rx_setupdata.firmware_version_u16 = version_to_u16(VERSION);
     rx_setupdata.setup_layout = SETUPLAYOUT;
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();

@@ -203,7 +203,7 @@ typedef struct
     uint8_t spare;
 
     // rx setup meta data 1
-    uint32_t firmware_version : 24;
+    uint16_t firmware_version_u16;
     uint16_t setup_layout;
     char device_name_20[20];
     int8_t actual_power_dbm;
@@ -238,7 +238,7 @@ typedef struct
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
 
-    uint8_t spare3[8];
+    uint8_t spare3[9];
 }) tRxCmdFrameRxSetupData; // 82
 
 

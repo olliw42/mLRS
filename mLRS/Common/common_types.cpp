@@ -176,7 +176,7 @@ uint32_t u32_from_bindphrase(char* bindphrase)
         base *= 40;
     }
 
-    return  (uint32_t)v;
+    return (uint32_t)v;
 }
 
 
@@ -225,6 +225,30 @@ int16_t power_list[16];
     for (uint8_t i = 0; i < num; i++) power_list[i] = rfpower_list[i].mW;
 
     power_optstr_from_power_list(Power_optstr, power_list, num, slen);
+}
+
+
+// u16 firmware version format is: 4.6.6  = 16.64.64
+
+uint16_t version_to_u16(uint32_t version)
+{
+    uint32_t major = version / 10000;
+    version -= major * 10000;
+    uint32_t minor = version / 100;
+    version -= minor * 100;
+    uint32_t patch = version;
+
+    return (major << 12) + (minor << 6) + patch;
+}
+
+
+uint32_t version_from_u16(uint16_t version_u16)
+{
+    uint32_t major = (version_u16 & 0xF000) >> 12;
+    uint32_t minor = (version_u16 & 0x0FC0) >> 6;
+    uint32_t patch = (version_u16 & 0x003F);
+
+    return major * 10000 + minor * 100 + patch;
 }
 
 

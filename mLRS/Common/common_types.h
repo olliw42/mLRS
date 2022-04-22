@@ -128,6 +128,9 @@ uint32_t u32_from_bindphrase(char* bindphrase);
 void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen);
 void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t len, uint8_t slen);
 
+uint16_t version_to_u16(uint32_t version);
+uint32_t version_from_u16(uint16_t version_u16);
+
 
 //-- auxiliary functions
 
