@@ -121,7 +121,7 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8)
 
 //-- bind phrase
 
-void sanitize_bind_phrase(char* bindphrase)
+void sanitize_bindphrase(char* bindphrase)
 {
     for (uint8_t i = 0; i < 6; i++) {
 
@@ -145,7 +145,7 @@ void sanitize_bind_phrase(char* bindphrase)
 }
 
 
-uint32_t u32_from_bind_phrase(char* bindphrase)
+uint32_t u32_from_bindphrase(char* bindphrase)
 {
     uint64_t v = 0;
     uint64_t base = 1;
@@ -238,26 +238,33 @@ uint16_t clip_rc(int32_t x)
 }
 
 
-void strncpy_x(char* res, const char* src, uint16_t len)
+void strbufstrcpy(char* res, const char* src, uint16_t len)
 {
-    uint16_t len2 = strlen(src);
-    if (len > len2) len = len2;
-    for (uint8_t i = 0; i < len; i++) res[i] = src[i];
+    memset(res, '\0', len);
+    for (uint16_t i = 0; i < len; i++) {
+        if (src[i] == '\0') return;
+        res[i] = src[i];
+    }
 }
 
 
-bool strneq_x(char* s1, const char* s2, uint16_t len)
+void strstrbufcpy(char* res, const char* src, uint16_t len)
 {
-uint16_t i;
+    memset(res, '\0', len + 1); // this ensures that res is terminated with a '\0'
+    for (uint16_t i = 0; i < len; i++) {
+        if (src[i] == '\0') return;
+        res[i] = src[i];
+    }
+}
 
-    for (i = 0; i < len; i++) {
+
+bool strbufeq(char* s1, const char* s2, uint16_t len)
+{
+    for (uint16_t i = 0; i < len; i++) {
+        if (s1[i] == '\0' && s2[i] == '\0') return true;
         if (s1[i] == '\0') return false;
         if (s2[i] == '\0') return false;
         if (s1[i] != s2[i]) return false;
     }
-    if (s1[i] != '\0') return false;
-    if (s2[i] != '\0') return false;
     return true;
 }
-
-

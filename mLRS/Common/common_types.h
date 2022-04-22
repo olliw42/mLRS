@@ -122,8 +122,8 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 //-- bind phrase & sync word
 
-void sanitize_bind_phrase(char* bindphrase);
-uint32_t u32_from_bind_phrase(char* bindphrase);
+void sanitize_bindphrase(char* bindphrase);
+uint32_t u32_from_bindphrase(char* bindphrase);
 
 void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen);
 void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t len, uint8_t slen);
@@ -135,8 +135,9 @@ void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower
 
 uint16_t clip_rc(int32_t x);
 
-void strncpy_x(char* res, const char* src, uint16_t len);
-bool strneq_x(char* s1, const char* s2, uint16_t len);
+void strbufstrcpy(char* res, const char* src, uint16_t len);
+void strstrbufcpy(char* res, const char* src, uint16_t len);
+bool strbufeq(char* s1, const char* s2, uint16_t len);
 
 
 #endif // COMMON_TYPES_H

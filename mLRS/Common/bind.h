@@ -156,7 +156,7 @@ void BindBase::do_transmit(uint8_t antenna)
 
     txBindFrame.connected = connected();
 
-    strncpy_x(txBindFrame.BindPhrase, Setup.BindPhrase, 6);
+    strbufstrcpy(txBindFrame.BindPhrase_6, Setup.BindPhrase, 6);
     txBindFrame.FrequencyBand = Setup.FrequencyBand;
     txBindFrame.Mode = Setup.Mode;
 
@@ -187,7 +187,7 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
-    strncpy_x(Setup.BindPhrase, txBindFrame.BindPhrase, 6);
+    strstrbufcpy(Setup.BindPhrase, txBindFrame.BindPhrase_6, 6);
     Setup.FrequencyBand = txBindFrame.FrequencyBand;
     Setup.Mode = txBindFrame.Mode;
 
@@ -205,7 +205,7 @@ void BindBase::do_transmit(uint8_t antenna)
     rxBindFrame.connected = connected();
 
     rxBindFrame.firmware_version = VERSION;
-    strncpy_x(rxBindFrame.device_name, DEVICE_NAME, 20);
+    strbufstrcpy(rxBindFrame.device_name_20, DEVICE_NAME, 20);
 
     rxBindFrame.crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
     sxSendFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);

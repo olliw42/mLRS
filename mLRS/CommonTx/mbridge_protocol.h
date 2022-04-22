@@ -205,7 +205,7 @@ typedef struct
     MBRIDGE_PACKED(union {
         struct {
             uint8_t param_index;
-            char param_name[16];
+            char param_name_16[16];
         };
     });
 }) tMBridgeRequestCmd; // 18 bytes
@@ -232,7 +232,7 @@ typedef struct
 {
     uint32_t firmware_version : 24;
     uint16_t setup_layout;
-    char device_name[19];
+    char device_name_19[19];
 }) tMBridgeDeviceItem; // 24 bytes
 
 
@@ -253,10 +253,10 @@ typedef struct
 {
     uint8_t index;
     uint8_t type;
-    char name[16];
+    char name_16[16];
     MBRIDGE_PACKED(union {
         tParamValue value;
-        char str6[6];
+        char str6_6[6];
     });
 }) tMBridgeParamItem; // 24 bytes
 
@@ -270,13 +270,12 @@ typedef struct
             tParamValue min;
             tParamValue max;
             tParamValue dflt;
-            char unit[6];
+            char unit_6[6];
         });
         MBRIDGE_PACKED(struct {
             uint16_t allowed_mask;
-            char options[21];
+            char options_21[21];
         });
-        char s[23];
     });
 }) tMBridgeParamItem2; // 24 bytes
 
@@ -286,8 +285,7 @@ typedef struct
 {
     uint8_t index;
     MBRIDGE_PACKED(union {
-        char options2[23];
-        char s2[23];
+        char options2_23[23];
     });
 }) tMBridgeParamItem3; // 24 bytes
 
@@ -298,7 +296,7 @@ typedef struct
     uint8_t index;
     MBRIDGE_PACKED(union {
         tParamValue value;
-        char str6[6];
+        char str6_6[6];
     });
 }) tMBridgeParamSet; // 7 bytes
 

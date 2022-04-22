@@ -327,7 +327,7 @@ void tTxCli::print_param(uint8_t idx)
         com->puts(" ["); com->putc(u8 + '0'); com->puts("]");
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        strncpy_x(s, (char*)(SetupParameter[idx].ptr), 6); s[6] = '\0';
+        strstrbufcpy(s, (char*)(SetupParameter[idx].ptr), 6);
         com->puts(s);
         break;
     }

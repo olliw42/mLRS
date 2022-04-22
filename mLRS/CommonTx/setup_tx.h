@@ -205,7 +205,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
 }
 
 
-bool setup_set_param_str6(uint8_t param_idx, char* str6)
+bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) return false;
 
@@ -213,9 +213,9 @@ bool setup_set_param_str6(uint8_t param_idx, char* str6)
 
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_STR6:
-        if (!strneq_x((char*)(SetupParameter[param_idx].ptr), str6, 6)) {
+        if (!strbufeq((char*)(SetupParameter[param_idx].ptr), str6_6, 6)) {
             param_changed = true;
-            strncpy_x((char*)(SetupParameter[param_idx].ptr), str6, 6);
+            strstrbufcpy((char*)(SetupParameter[param_idx].ptr), str6_6, 6);
         }
         break;
     }

@@ -114,7 +114,7 @@ void setup_configure_metadata(void)
 
 void setup_default(void)
 {
-    strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
+    strcpy(Setup.BindPhrase, BIND_PHRASE);
     Setup.FrequencyBand = 0;
     Setup.Mode = SETUP_MODE;
 
@@ -148,7 +148,7 @@ void setup_sanitize(void)
 #define SETUP_TST_ALLOWED(x,y) (SetupMetaData.x & (1 << Setup.y))
 
     //-- BindPhrase, FrequencyBand, Mode
-    sanitize_bind_phrase(Setup.BindPhrase);
+    sanitize_bindphrase(Setup.BindPhrase);
 
 #ifdef FREQUENCY_BAND_2P4_GHZ
     Setup.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
@@ -260,7 +260,7 @@ void setup_configure(void)
 {
     //-- SyncWord
 
-    uint32_t bind_dblword = u32_from_bind_phrase(Setup.BindPhrase);
+    uint32_t bind_dblword = u32_from_bindphrase(Setup.BindPhrase);
 
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
@@ -419,9 +419,8 @@ uint8_t doEEPROMwrite;
         doEEPROMwrite = 1;
     }
     if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) {
-        for (uint8_t n = 0; n < 16; n++) Setup.MarkerStr[n] = 0;
-        strncpy_x((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
-        strcpy((char*)Setup.dummy, "!end!");
+        strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
+        strbufstrcpy((char*)Setup.dummy, "!end!", 8);
         doEEPROMwrite = 1;
     }
     if (doEEPROMwrite) {
@@ -431,7 +430,7 @@ uint8_t doEEPROMwrite;
     setup_configure_metadata();
 
 // TODO: we currently force BindPhrase to the compile defaults, we first want to have bind
-//    strncpy_x(Setup.BindPhrase, BIND_PHRASE, 6); // 6 chars
+//    strcpy(Setup.BindPhrase, BIND_PHRASE);
 
 #ifdef SETUP_FORCE_COMMON_CONF
 setup_default();

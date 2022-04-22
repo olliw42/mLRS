@@ -148,7 +148,7 @@ typedef struct
 
     uint8_t connected : 1;
 
-    char BindPhrase[6];
+    char BindPhrase_6[6];
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
 
@@ -169,7 +169,7 @@ typedef struct
     uint8_t connected : 1;
 
     uint32_t firmware_version;
-    char device_name[20];
+    char device_name_20[20];
 
     uint8_t spare[55];
 
@@ -183,15 +183,15 @@ typedef struct
 //-------------------------------------------------------
 
 typedef enum {
-  FRAME_CMD_NONE = 0,
-  FRAME_CMD_RX_REBOOT,
-  FRAME_CMD_RX_BIND,
+    FRAME_CMD_NONE = 0,
+    FRAME_CMD_RX_REBOOT,
+    FRAME_CMD_RX_BIND,
 
-  // these commands use the normal Tx/Rx frames, with re-purposed payload however
-  FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
-  FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-  FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_ACK
-  FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, ask to store parameters -> response with RX_SETUPDATA
+    // these commands use the normal Tx/Rx frames, with re-purposed payload however
+    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
+    FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
+    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_ACK
+    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, ask to store parameters -> response with RX_SETUPDATA
 } FRAME_CMD_ENUM;
 
 
@@ -205,7 +205,7 @@ typedef struct
     // rx setup meta data 1
     uint32_t firmware_version : 24;
     uint16_t setup_layout;
-    char device_name[20];
+    char device_name_20[20];
     int8_t actual_power_dbm;
     uint8_t actual_diversity;
 
@@ -250,7 +250,7 @@ typedef struct
     uint8_t spare;
 
     // rx parameter values
-    char BindPhrase[6];
+    char BindPhrase_6[6];
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
 
