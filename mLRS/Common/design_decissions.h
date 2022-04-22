@@ -405,6 +405,8 @@ e.g set RSSI_TYPE = 3
 Qczek LRS
 https://qczek.beyondrc.com/qczek-lrs-433mhz-1w-lora-rc-link/qczek-lrs-technical-specyfication/
 
+15 Hz (21 Hz in race mode)
+
 LORA SX1278 433MHz
 250 kHz SF7 CR4/8  -121 dBm  24ms   hmm I calculate 30 ms ??
 500 kHz race mode
@@ -412,7 +414,7 @@ LORA SX1278 433MHz
 fhss with 8 frequencies
 
 tx->rx:
-20 bytes
+21 bytes
 9 x 11 bit channels
 4 bytes telemetry
 16bit crc
