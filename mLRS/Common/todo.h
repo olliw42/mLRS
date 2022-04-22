@@ -12,7 +12,6 @@ ISSUES:
 - add allowed_mask defines for in/out inverted/noninverted
   allowed_mask for normal/inverted in, normal/inverted out, as allowed by hardware
 - setup: which are effective only on restart? which on-the-fly?
-- reserve bytes in Setup structure
 
 - EVERY tx module needs a means to set the parameters, via SWD?
 
@@ -31,6 +30,8 @@ ISSUES:
 - entering bind by power cycles
 - setup rx params, make it more robust
 - setup per model
+- reload should refetch also from rx
+- make rx name editable
 
 The 3 MAIN topics TODO:
 

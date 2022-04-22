@@ -120,7 +120,7 @@ uint8_t crsf_cvt_fps(uint8_t mode);
 uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 
-//-- bind phrase & sync word
+//-- bind phrase & version
 
 void sanitize_bindphrase(char* bindphrase);
 uint32_t u32_from_bindphrase(char* bindphrase);

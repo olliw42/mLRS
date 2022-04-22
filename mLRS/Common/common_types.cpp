@@ -119,7 +119,7 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8)
 }
 
 
-//-- bind phrase
+//-- bind phrase & version
 
 void sanitize_bindphrase(char* bindphrase)
 {
