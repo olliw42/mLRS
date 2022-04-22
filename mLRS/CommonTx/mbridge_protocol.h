@@ -230,9 +230,9 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    uint32_t firmware_version : 24;
+    uint16_t firmware_version_u16;
     uint16_t setup_layout;
-    char device_name_19[19];
+    char device_name_20[20];
 }) tMBridgeDeviceItem; // 24 bytes
 
 

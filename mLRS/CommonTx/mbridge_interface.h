@@ -532,9 +532,9 @@ void mbridge_send_DeviceItemTx(void)
 {
 tMBridgeDeviceItem item = {0};
 
-    item.firmware_version = VERSION;
+    item.firmware_version_u16 = version_to_u16(VERSION);
     item.setup_layout = SETUPLAYOUT;
-    strbufstrcpy(item.device_name_19, DEVICE_NAME, 19);
+    strbufstrcpy(item.device_name_20, DEVICE_NAME, 20);
     mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
 }
 
@@ -544,13 +544,13 @@ void mbridge_send_DeviceItemRx(void)
 tMBridgeDeviceItem item = {0};
 
     if (SetupMetaData.rx_available) {
-        item.firmware_version = SetupMetaData.rx_firmware_version;
+        item.firmware_version_u16 = version_to_u16(SetupMetaData.rx_firmware_version);
         item.setup_layout = SetupMetaData.rx_setup_layout;
-        strbufstrcpy(item.device_name_19, SetupMetaData.rx_device_name, 19);
+        strbufstrcpy(item.device_name_20, SetupMetaData.rx_device_name, 20);
     } else {
-        item.firmware_version = 0;
+        item.firmware_version_u16 = 0;
         item.setup_layout = 0;
-        strbufstrcpy(item.device_name_19, "", 19);
+        strbufstrcpy(item.device_name_20, "", 20);
     }
     mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
 }

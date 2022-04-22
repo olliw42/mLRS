@@ -8,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.05, mOTX v33-rc4
+-- works with mLRS v0.01.07, mOTX v33-rc4
 
 
 ----------------------------------------------------------------------
@@ -203,16 +203,12 @@ local function mb_to_options(payload,pos,len)
     return opt
 end    
 
-local function mb_to_firmwareversions_string(u32)
-    local v1,v2,v3,v4
-    v1 = math.floor(u32 / 1000000)
-    u32 = u32 - v1 * 1000000
-    v2 = math.floor(u32 / 10000)
-    u32 = u32 - v2 * 10000
-    v3 = math.floor(u32 / 100)
-    u32 = u32 - v3 * 100
-    v4 = u32
-    return string.format("v%d.%02d.%02d", v2, v3, v4)
+local function mb_to_firmware_u16_string(u16)
+    local major,minor,patch
+    major = bit32.rshift(bit32.band(u16, 0xF000), 12)
+    minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
+    patch = bit32.band(u16, 0x003F)
+    return string.format("v%d.%02d.%02d", major, minor, patch)
 end
 
 local function mb_to_u8_bits(payload,pos,bitpos,bitmask)
@@ -265,19 +261,17 @@ for ijk = 1,6 do -- handle only 6 at most per lua cycle
       if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
           -- MBRIDGE_CMD_DEVICE_ITEM_TX
           DEVICE_ITEM_TX = cmd
-          DEVICE_ITEM_TX.version = mb_to_u24(cmd.payload, 0)
-          DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 3)
-          DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 5, 19)
-          DEVICE_ITEM_TX.version_str = mb_to_firmwareversions_string(DEVICE_ITEM_TX.version)
-          DEVICE_ITEM_TX.setuplayout_str = mb_to_firmwareversions_string(DEVICE_ITEM_TX.setuplayout*100)
+          DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
+          DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
+          DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+          DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
       elseif cmd.cmd == mbridge.CMD_DEVICE_ITEM_RX then 
           -- MBRIDGE_CMD_DEVICE_ITEM_RX
           DEVICE_ITEM_RX = cmd
-          DEVICE_ITEM_RX.version = mb_to_u24(cmd.payload, 0)
-          DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 3)
-          DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 5, 19)
-          DEVICE_ITEM_RX.version_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.version)
-          DEVICE_ITEM_RX.setuplayout_str = mb_to_firmwareversions_string(DEVICE_ITEM_RX.setuplayout*100)
+          DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
+          DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
+          DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+          DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
       elseif cmd.cmd == mbridge.CMD_INFO then 
           -- MBRIDGE_CMD_INFO
           DEVICE_INFO = cmd
