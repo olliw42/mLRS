@@ -396,7 +396,7 @@ EE_STATUS_ENUM setup_retrieve_from_EEPROM(void)
 void setup_init(void)
 {
 EE_STATUS_ENUM ee_status;
-uint8_t doEEPROMwrite;
+bool doEEPROMwrite;
 
     setup_clear();
     ee_status = ee_init();
@@ -408,20 +408,20 @@ uint8_t doEEPROMwrite;
     }
     if (ee_status != EE_STATUS_OK) setup_clear();
 
-    doEEPROMwrite = 0;
+    doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         setup_default();
         Setup.Layout = SETUPLAYOUT;
-        doEEPROMwrite = 1;
+        doEEPROMwrite = true;
     }
     if (Setup.Version != VERSION) { //do after Layout, ensures that these flags are correct irrespective of Layout handling
         Setup.Version = VERSION;
-        doEEPROMwrite = 1;
+        doEEPROMwrite = true;
     }
     if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) {
         strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
-        strbufstrcpy((char*)Setup.dummy, "!end!", 8);
-        doEEPROMwrite = 1;
+        strbufstrcpy((char*)Setup.MarkerEnd, SETUP_MARKEREND_STR, 8);
+        doEEPROMwrite = true;
     }
     if (doEEPROMwrite) {
        setup_store_to_EEPROM();

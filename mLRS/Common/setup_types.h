@@ -195,7 +195,8 @@ typedef struct
 } tRxSetup;
 
 
-#define SETUP_MARKER_STR  "SetupStartMarker"
+#define SETUP_MARKER_STR      "SetupStartMarker"
+#define SETUP_MARKEREND_STR   "!end!"
 
 // user setable parameter values, stored in EEPROM
 typedef struct
@@ -216,7 +217,7 @@ typedef struct
     // parameters specific to Tx, can be changed on the fly
     tTxSetup Tx;
 
-    char dummy[8];
+    char MarkerEnd[8];
 } tSetup;
 
 
