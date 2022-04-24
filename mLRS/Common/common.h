@@ -19,6 +19,7 @@
 #include "frame_types.h"
 #include "link_types.h"
 #include "common_stats.h"
+#include "bind.h"
 
 
 //-------------------------------------------------------
@@ -108,16 +109,6 @@ class tComPort : public tSerialBase
 
 
 //-------------------------------------------------------
-// Sx/Sx2 convenience wrapper
-//-------------------------------------------------------
-// only declarations, implementations follow below
-
-void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
-void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms);
-void sxGetPacketStatus(uint8_t antenna, Stats* stats);
-
-
-//-------------------------------------------------------
 // Common Variables
 //-------------------------------------------------------
 
@@ -138,8 +129,6 @@ SX2_DRIVER sx2;
 Stats stats;
 
 FhssBase fhss;
-
-#include "bind.h" // bind needs sx,sx2 variables
 
 BindBase bind;
 

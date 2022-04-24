@@ -17,6 +17,15 @@
 uint32_t millis32(void);
 static inline bool connected(void);
 
+extern SX_DRIVER sx;
+extern SX2_DRIVER sx2;
+
+void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
+void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms);
+void sxGetPacketStatus(uint8_t antenna, Stats* stats);
+
+extern Stats stats;
+
 
 //-------------------------------------------------------
 // Bind Class
