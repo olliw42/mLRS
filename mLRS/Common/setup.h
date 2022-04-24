@@ -307,7 +307,10 @@ void setup_configure(void)
 
     //-- Fhss
 
-    Config.FhssSeed = bind_dblword;
+    //Config.FhssSeed = bind_dblword;
+    // this is much better for narrow bands, like 868 MHz
+    // we could make it dependable with a #ifdef, but what's the point
+    Config.FhssSeed = Config.FrameSyncWord;
 
 #if defined FREQUENCY_BAND_868_MHZ
     Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
