@@ -9,7 +9,10 @@
 /*
 
 ISSUES:
+- setup per model
+- make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
+- entering bind by power cycles
 
 - EVERY tx module needs a means to set the parameters, via SWD?
 
@@ -24,10 +27,6 @@ ISSUES:
 - allow a missing 2nd sx for diversity boards
 
 - crsf baro alt item, can we add more of our own?
-
-- entering bind by power cycles
-- setup per model
-- make rx name editable
 
 The 3 MAIN topics TODO:
 
