@@ -95,6 +95,16 @@
 #endif
 
 
+#if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)
+#define USE_IN
+#endif
+
+
+#if (defined DEVICE_HAS_OUT) || (defined DEVICE_HAS_OUT_NORMAL) || (defined DEVICE_HAS_OUT_INVERTED)
+#define USE_OUT
+#endif
+
+
 #ifdef DEVICE_HAS_SX126x
 #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x

@@ -24,6 +24,7 @@
 //   Ch3    PA9 / U1Tx
 //   Ch4    PA8
 
+#define DEVICE_HAS_OUT
 #define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 #ifdef DEBUG_ENABLED
 #undef DEBUG_ENABLED

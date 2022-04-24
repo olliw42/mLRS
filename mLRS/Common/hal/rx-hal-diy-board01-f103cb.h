@@ -12,6 +12,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_DIVERSITY
+#define DEVICE_HAS_OUT
 
 
 //-- Timers, Timing, EEPROM, and such stuff

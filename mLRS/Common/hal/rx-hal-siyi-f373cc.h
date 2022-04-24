@@ -18,6 +18,9 @@
 // https://github.com/ExpressLRS/ExpressLRS/issues/308
 // MANY thx to CapnBry !
 
+#define DEVICE_HAS_OUT
+
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT

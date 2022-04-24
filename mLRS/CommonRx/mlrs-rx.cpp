@@ -73,20 +73,12 @@ class Out : public OutBase
         uart_init_isroff();
     }
 
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL
     bool config_sbus(bool enable_flag) override
     {
         if (enable_flag) {
             uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
             out_set_inverted();
-        }
-        return true;
-    }
-
-    bool config_sbus_inverted(bool enable_flag) override
-    {
-        if (enable_flag) {
-            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-            out_set_normal();
         }
         return true;
     }
@@ -99,6 +91,18 @@ class Out : public OutBase
         }
         return true;
     }
+#endif
+
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_INVERTED
+    bool config_sbus_inverted(bool enable_flag) override
+    {
+        if (enable_flag) {
+            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+            out_set_normal();
+        }
+        return true;
+    }
+#endif
 
     void putc(char c) override { uart_putc(c); }
 

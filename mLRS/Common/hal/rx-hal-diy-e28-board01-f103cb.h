@@ -11,6 +11,9 @@
 // RX DIY E28 BOARD01 v004 STM32F103CB
 //-------------------------------------------------------
 
+#define DEVICE_HAS_OUT
+
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT

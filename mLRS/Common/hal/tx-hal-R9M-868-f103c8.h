@@ -15,7 +15,7 @@
 // many THX to the ExpressLRS project !
 // note: these sources are not always correct in features ELRS doesn't use and not complete for what we need
 
-//#define DEVICE_HAS_IN // we use this uart for debug, technically we could use it for both In (=U2RX) and Debug (=U2TX)
+//#define DEVICE_HAS_IN_INVERTED // we use this uart for debug, technically we could use it for both In (=U2RX) and Debug (=U2TX)
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
 

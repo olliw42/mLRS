@@ -52,7 +52,7 @@ v0.0.00:
 #include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
 
-#ifdef DEVICE_HAS_IN
+#ifdef USE_IN
 #include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
 #endif
 #include "in.h"
@@ -65,7 +65,7 @@ TxStatsBase txstats;
 
 class In : public InBase
 {
-#ifdef DEVICE_HAS_IN
+#ifdef USE_IN
   public:
     void Init(void)
     {

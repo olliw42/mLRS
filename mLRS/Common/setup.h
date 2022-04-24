@@ -58,11 +58,11 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx ChannelSource: "none,mbridge,in,crsf"
-#if defined DEVICE_HAS_JRPIN5 && defined DEVICE_HAS_IN
+#if defined DEVICE_HAS_JRPIN5 && (defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED)
     SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, mbridge, crsf
-#elif defined DEVICE_HAS_IN
+#elif (defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED)
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
 #else
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none
@@ -71,8 +71,12 @@ void setup_configure_metadata(void)
     // Tx InMode: "sbus,sbus inv"
 #ifdef DEVICE_HAS_IN
     SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
+#elif defined DEVICE_HAS_IN_NORMAL
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0010; // sbus inv
+#elif defined DEVICE_HAS_IN_INVERTED
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // sbus
 #else
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // default to sbus
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // default to sbus, there is no none
 #endif
 
     // Tx SerialDestination: "serial,mbridge"
@@ -94,7 +98,15 @@ void setup_configure_metadata(void)
 #endif
 
     // Rx OutMode: "sbus,crsf,sbus inv"
+#ifdef DEVICE_HAS_OUT
     SetupMetaData.Rx_OutMode_allowed_mask = UINT16_MAX; // all
+#elif defined DEVICE_HAS_OUT_NORMAL
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b0110; // crsf,sbus inv
+#elif defined DEVICE_HAS_OUT_INVERTED
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus
+#else
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b0001;  // default to sbus, there is no none
+#endif
 
     //-- Tx: Receiver setup meta data
 
@@ -197,7 +209,10 @@ void setup_sanitize(void)
     if (SETUP_TST_ALLOWED(Rx_Diversity_allowed_mask,Rx.Diversity) == 0) Setup.Rx.Diversity = DIVERSITY_ANTENNA1;
 
     if (Setup.Rx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Rx.ChannelOrder = CHANNEL_ORDER_AETR;
+
     if (Setup.Rx.OutMode >= OUT_CONFIG_NUM) Setup.Rx.OutMode = OUT_CONFIG_SBUS;
+    if (SETUP_TST_ALLOWED(Rx_OutMode_allowed_mask,Rx.OutMode) == 0) Setup.Rx.OutMode = OUT_CONFIG_SBUS;
+
     if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
     for (uint8_t ch = 0; ch < 12; ch++) {
