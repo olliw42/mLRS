@@ -73,6 +73,8 @@ class tTxCrsf : public tPin5BridgeBase
     bool gps_updated;
     tCrsfVario vario;
     bool vario_updated;
+    tCrsfBaroAltitude baro_altitude;
+    bool baro_altitude_updated;
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
@@ -158,6 +160,7 @@ void tTxCrsf::Init(bool enable_flag)
     vfr_alt_m = NAN; // unknown
     gps_updated = false;
     vario_updated = false;
+    baro_altitude_updated = false;
 }
 
 
@@ -465,6 +468,11 @@ void tTxCrsf::SendTelemetryFrame(void)
         SendFrame(CRSF_ATTITUDE_LEN, CRSF_FRAME_ID_ATTITUDE, &attitude);
         return; // only send one per slot
     }
+    if (baro_altitude_updated) {
+      baro_altitude_updated = false;
+      SendFrame(CRSF_BARO_ALTITUDE_LEN, CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude);
+      return; // only send one per slot
+  }
 }
 
 

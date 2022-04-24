@@ -38,52 +38,53 @@
 
 
 typedef enum {
-  CRSF_ADDRESS_BROADCAST            = 0x00,
-  CRSF_ADDRESS_FLIGHT_CONTROLLER    = 0xC8,
-  CRSF_ADDRESS_RADIO                = 0xEA, // radio module -> radio transmitter
-  CRSF_ADDRESS_RECEIVER             = 0xEC,
-  CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
+    CRSF_ADDRESS_BROADCAST            = 0x00,
+    CRSF_ADDRESS_FLIGHT_CONTROLLER    = 0xC8,
+    CRSF_ADDRESS_RADIO                = 0xEA, // radio module -> radio transmitter
+    CRSF_ADDRESS_RECEIVER             = 0xEC,
+    CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
 
-  CRSF_SYNC_BYTE                    = 0xC8,
+    CRSF_SYNC_BYTE                    = 0xC8,
 } CRSF_ADDRESS_ENUM;
 
 
 typedef enum {
-  CRSF_FRAME_ID_GPS                 = 0x02,
-  CRSF_FRAME_ID_VARIO               = 0x07,
-  CRSF_FRAME_ID_BATTERY             = 0x08,
-  CRSF_FRAME_ID_LINK_STATISTICS     = 0x14,
-  CRSF_FRAME_ID_CHANNELS            = 0x16,
-  CRSF_FRAME_ID_LINK_STATISTICS_RX  = 0x1C,
-  CRSF_FRAME_ID_LINK_STATISTICS_TX  = 0x1D,
-  CRSF_FRAME_ID_ATTITUDE            = 0x1E,
-  CRSF_FRAME_ID_FLIGHT_MODE         = 0x21,
-  CRSF_FRAME_ID_PING_DEVICES        = 0x28,
-  CRSF_FRAME_ID_DEVICE_INFO         = 0x29,
-  CRSF_FRAME_ID_REQUEST_SETTINGS    = 0x2A,
-  CRSF_FRAME_ID_COMMAND             = 0x32,
-  CRSF_FRAME_ID_RADIO               = 0x3A,
+    CRSF_FRAME_ID_GPS                 = 0x02,
+    CRSF_FRAME_ID_VARIO               = 0x07,
+    CRSF_FRAME_ID_BATTERY             = 0x08,
+    CRSF_FRAME_ID_BARO_ALTITUDE       = 0x09,
+    CRSF_FRAME_ID_LINK_STATISTICS     = 0x14,
+    CRSF_FRAME_ID_CHANNELS            = 0x16,
+    CRSF_FRAME_ID_LINK_STATISTICS_RX  = 0x1C,
+    CRSF_FRAME_ID_LINK_STATISTICS_TX  = 0x1D,
+    CRSF_FRAME_ID_ATTITUDE            = 0x1E,
+    CRSF_FRAME_ID_FLIGHT_MODE         = 0x21,
+    CRSF_FRAME_ID_PING_DEVICES        = 0x28,
+    CRSF_FRAME_ID_DEVICE_INFO         = 0x29,
+    CRSF_FRAME_ID_REQUEST_SETTINGS    = 0x2A,
+    CRSF_FRAME_ID_COMMAND             = 0x32,
+    CRSF_FRAME_ID_RADIO               = 0x3A,
 } CRSF_FRAME_ID_ENUM;
 
 
 typedef enum {
-  CRSF_POWER_0_mW = 0,
-  CRSF_POWER_10_mW,
-  CRSF_POWER_25_mW,
-  CRSF_POWER_100_mW,
-  CRSF_POWER_500_mW,
-  CRSF_POWER_1000_mW,
-  CRSF_POWER_2000_mW,
-  CRSF_POWER_250_mW,
-  CRSF_POWER_50_mW
+    CRSF_POWER_0_mW = 0,
+    CRSF_POWER_10_mW,
+    CRSF_POWER_25_mW,
+    CRSF_POWER_100_mW,
+    CRSF_POWER_500_mW,
+    CRSF_POWER_1000_mW,
+    CRSF_POWER_2000_mW,
+    CRSF_POWER_250_mW,
+    CRSF_POWER_50_mW
 } CRSF_POWER_ENUM;
 
 
 typedef enum {
-  CRSF_RFMODE_4HZ = 0,
-  CRSF_RFMODE_50HZ,
-  CRSF_RFMODE_150HZ,
-  CRSF_RFMODE_250HZ,
+    CRSF_RFMODE_4HZ = 0,
+    CRSF_RFMODE_50HZ,
+    CRSF_RFMODE_150HZ,
+    CRSF_RFMODE_250HZ,
 } CRSF_RFMODE_ENUM;
 
 
@@ -93,26 +94,26 @@ typedef enum {
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
 typedef union {
-  uint8_t c[CRSF_CHANNELPACKET_SIZE];
-  CRSF_PACKED(
-  struct {
-      uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-      uint16_t ch1  : 11;
-      uint16_t ch2  : 11;
-      uint16_t ch3  : 11;
-      uint16_t ch4  : 11;
-      uint16_t ch5  : 11;
-      uint16_t ch6  : 11;
-      uint16_t ch7  : 11;
-      uint16_t ch8  : 11;
-      uint16_t ch9  : 11;
-      uint16_t ch10 : 11;
-      uint16_t ch11 : 11;
-      uint16_t ch12 : 11;
-      uint16_t ch13 : 11;
-      uint16_t ch14 : 11;
-      uint16_t ch15 : 11;
-  });
+    uint8_t c[CRSF_CHANNELPACKET_SIZE];
+    CRSF_PACKED(
+    struct {
+        uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+        uint16_t ch1  : 11;
+        uint16_t ch2  : 11;
+        uint16_t ch3  : 11;
+        uint16_t ch4  : 11;
+        uint16_t ch5  : 11;
+        uint16_t ch6  : 11;
+        uint16_t ch7  : 11;
+        uint16_t ch8  : 11;
+        uint16_t ch9  : 11;
+        uint16_t ch10 : 11;
+        uint16_t ch11 : 11;
+        uint16_t ch12 : 11;
+        uint16_t ch13 : 11;
+        uint16_t ch14 : 11;
+        uint16_t ch15 : 11;
+    });
 } tCrsfChannelBuffer;
 
 
@@ -134,16 +135,16 @@ typedef union {
 CRSF_PACKED(
 typedef struct
 {
-  uint8_t uplink_rssi1;
-  uint8_t uplink_rssi2;
-  uint8_t uplink_LQ;
-  int8_t uplink_snr;
-  uint8_t active_antenna;
-  uint8_t mode;
-  uint8_t uplink_transmit_power;
-  uint8_t downlink_rssi;
-  uint8_t downlink_LQ;
-  int8_t downlink_snr;
+    uint8_t uplink_rssi1;
+    uint8_t uplink_rssi2;
+    uint8_t uplink_LQ;
+    int8_t uplink_snr;
+    uint8_t active_antenna;
+    uint8_t mode;
+    uint8_t uplink_transmit_power;
+    uint8_t downlink_rssi;
+    uint8_t downlink_LQ;
+    int8_t downlink_snr;
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
@@ -161,12 +162,12 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  uint8_t uplink_rssi;
-  uint8_t uplink_rssi_percent;
-  uint8_t uplink_LQ;
-  int8_t uplink_snr;
-  uint8_t downlink_transmit_power;
-  uint8_t uplink_fps;
+    uint8_t uplink_rssi;
+    uint8_t uplink_rssi_percent;
+    uint8_t uplink_LQ;
+    int8_t uplink_snr;
+    uint8_t downlink_transmit_power;
+    uint8_t uplink_fps;
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
@@ -175,11 +176,11 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  uint8_t downlink_rssi;
-  uint8_t downlink_rssi_percent;
-  uint8_t downlink_LQ;
-  int8_t downlink_snr;
-  uint8_t uplink_transmit_power;
+    uint8_t downlink_rssi;
+    uint8_t downlink_rssi_percent;
+    uint8_t downlink_LQ;
+    int8_t downlink_snr;
+    uint8_t uplink_transmit_power;
 }) tCrsfLinkStatisticsRx;
 
 #define CRSF_LINK_STATISTICS_RX_LEN  5
@@ -190,12 +191,12 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  int32_t latitude; // degree / 1e7
-  int32_t longitude; // degree / 1e7
-  uint16_t groundspeed; // km/h / 100
-  uint16_t gps_heading; // degree / 100
-  uint16_t altitude; // meter - 1000m offset
-  uint8_t satellites;
+    int32_t latitude; // degree / 1e7
+    int32_t longitude; // degree / 1e7
+    uint16_t groundspeed; // km/h / 100
+    uint16_t gps_heading; // degree / 100
+    uint16_t altitude; // meter - 1000m offset
+    uint8_t satellites;
 }) tCrsfGps;
 
 #define CRSF_GPS_LEN  15
@@ -204,7 +205,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  int16_t climb_rate; // units ??????? m/s / 100 indirectly concluded from otx
+    int16_t climb_rate; // units ??? m/s / 100 indirectly concluded from otx
 }) tCrsfVario;
 
 #define CRSF_VARIO_LEN  2
@@ -213,10 +214,10 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  uint16_t voltage; // mV * 100
-  uint16_t current; // mA * 100
-  uint8_t capacity[3]; // mAh
-  uint8_t remaining; // percent
+    uint16_t voltage; // mV * 100
+    uint16_t current; // mA * 100
+    uint8_t capacity[3]; // mAh
+    uint8_t remaining; // percent
 }) tCrsfBattery;
 
 #define CRSF_BATTERY_LEN  8
@@ -225,9 +226,9 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  int16_t pitch; // rad * 1e4
-  int16_t roll; // rad * 1e4
-  int16_t yaw; // rad * 1e4
+    int16_t pitch; // rad * 1e4
+    int16_t roll; // rad * 1e4
+    int16_t yaw; // rad * 1e4
 }) tCrsfAttitude;
 
 #define CRSF_ATTITUDE_LEN  6
@@ -236,10 +237,19 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-  char flight_mode[16]; // null-terminated string
+    char flight_mode[16]; // null-terminated string
 }) tCrsfFlightMode;
 
 #define CRSF_FLIGHTMODE_LEN  16
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint16_t altitude; // units ??? message ???
+}) tCrsfBaroAltitude;
+
+#define CRSF_BARO_ALTITUDE_LEN  2
 
 
 #endif // CRSF_PROTOCOL_H
