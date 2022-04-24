@@ -185,7 +185,10 @@ uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
     }
 
     sxGetPacketStatus(antenna, &stats);
-    return (ok) ? RX_STATUS_VALID : RX_STATUS_INVALID;
+
+    if (ok) return RX_STATUS_VALID;
+
+    return RX_STATUS_INVALID;
 }
 
 #endif
@@ -237,7 +240,10 @@ uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
     if (ok && do_clock_reset) clock_reset();
 
     sxGetPacketStatus(antenna, &stats);
-    return (ok) ? RX_STATUS_VALID : RX_STATUS_INVALID;
+
+    if (ok) return RX_STATUS_VALID;
+
+    return RX_STATUS_INVALID;
 }
 
 #endif

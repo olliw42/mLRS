@@ -47,7 +47,6 @@ v0.0.00:
 #endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
-#include "..\Common\fhss.h"
 #include "..\Common\setup.h"
 #include "..\Common\common.h"
 #include "..\Common\micros.h"
@@ -555,7 +554,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 //dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }
 
-    if (res == CHECK_ERROR_SYNCWORD) return false; // must not happen !
+    if (res == CHECK_ERROR_SYNCWORD) return RX_STATUS_INVALID; // must not happen !
 
     if (res == CHECK_OK) {
         rx_status = RX_STATUS_VALID;
