@@ -95,4 +95,25 @@
 #endif
 
 
+#ifdef DEVICE_HAS_SX126x
+#define SX_DRIVER Sx126xDriver
+#elif defined DEVICE_HAS_SX127x
+#define SX_DRIVER Sx127xDriver
+#else
+#define SX_DRIVER Sx128xDriver
+#endif
+
+#ifdef DEVICE_HAS_DIVERSITY
+#ifdef DEVICE_HAS_SX126x
+#define SX2_DRIVER Sx126xDriver2
+#elif defined DEVICE_HAS_SX127x
+#define SX2_DRIVER Sx127xDriver2
+#else
+#define SX2_DRIVER Sx128xDriver2
+#endif
+#else
+#define SX2_DRIVER SxDriverDummy
+#endif
+
+
 #endif // HAL_H
