@@ -386,7 +386,7 @@ bool tMBridge::CommandInFifo(uint8_t* cmd)
 }
 
 
-void tMBridge::Lock(uint8_t cmd)
+void tMBridge::Lock(uint8_t cmd = 0xFF)
 {
     cmd_in_process = cmd;
 }

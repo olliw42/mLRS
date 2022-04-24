@@ -21,6 +21,7 @@ typedef enum {
     CLI_TASK_RX_PARAM_SET,
     CLI_TASK_PARAM_STORE,
     CLI_TASK_BIND,
+    CLI_TASK_RX_RELOAD,
 } CLI_TASK_ENUM;
 
 
@@ -442,6 +443,15 @@ bool rx_param_changed;
       if (strcmp(buf, "bind") == 0) {
           task_pending = CLI_TASK_BIND;
           com->puts("  Tx entered bind mode\n");
+      }
+
+      if (strcmp(buf, "reload") == 0) {
+          if (!connected()) {
+              com->puts("warn: receiver not connected\n");
+          } else {
+              task_pending = CLI_TASK_RX_RELOAD;
+              com->puts("  Rx setupdata reloaded\n");
+          }
       }
 
       clear();

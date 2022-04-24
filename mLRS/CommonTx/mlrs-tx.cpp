@@ -313,15 +313,15 @@ bool link_task_set(uint8_t task)
     link_task = task;
     transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD;
 
-    // set a timeout if relevant, or do other things which are always needed
     link_task_tmo = 0;
 
+    // set a timeout if relevant, or do other things as needed
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
-        link_task_tmo = 6 * Config.frame_rate_ms;
+        link_task_tmo = 6 * Config.frame_rate_ms; // we set a timeout, the actual store is triggered when it expires
         break;
     }
 
@@ -1030,18 +1030,24 @@ IF_CRSF(
     case CLI_TASK_RX_PARAM_SET:
       if (connected()) {
         link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-        mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
+        mbridge.Lock(); // lock mbridge
       }
       break;
     case CLI_TASK_PARAM_STORE:
       if (connected()) {
         link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-        mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mbridge
+        mbridge.Lock(); // lock mbridge
       } else {
         doParamsStore = true;
       }
       break;
     case CLI_TASK_BIND: bind.SetToBind(); break;
+    case CLI_TASK_RX_RELOAD:
+      if (connected()) {
+        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        mbridge.Lock(); // lock mbridge
+      }
+      break;
     }
 
   }//end of while(1) loop
