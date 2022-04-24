@@ -454,31 +454,33 @@ tMBridgeLinkStats lstats = {0};
 }
 
 
+void mbridge_start_ParamRequestList(void);
+
 uint8_t mbridge_send_RequestCmd(uint8_t* payload)
 {
 tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
     switch (request->requested_cmd) {
+    case MBRIDGE_CMD_DEVICE_ITEM_TX:
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        break;
+
+    case MBRIDGE_CMD_DEVICE_ITEM_RX:
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        break;
+
     case MBRIDGE_CMD_INFO:
         mbridge.cmd_fifo.Put(MBRIDGE_CMD_INFO);
         break;
 
-    case MBRIDGE_CMD_TX_LINK_STATS:
-        //?? mbridge_send_LinkStats();
-        break;
-    case MBRIDGE_CMD_DEVICE_REQUEST_ITEMS:
+    case MBRIDGE_CMD_REQUEST_INFO:
         mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
-        break;
-    case MBRIDGE_CMD_PARAM_REQUEST_LIST:
-        //?? mbridge_start_ParamRequestList();
+        mbridge.cmd_fifo.Put(MBRIDGE_CMD_INFO);
         break;
 
-    case MBRIDGE_CMD_DEVICE_ITEM_TX:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
-        break;
-    case MBRIDGE_CMD_DEVICE_ITEM_RX:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+    case MBRIDGE_CMD_PARAM_REQUEST_LIST:
+        mbridge_start_ParamRequestList();
         break;
 
     case MBRIDGE_CMD_PARAM_ITEM:{
@@ -491,6 +493,12 @@ tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
     }
 
     return request->requested_cmd;
+}
+
+
+uint8_t mbridge_send_RequestCmd(uint8_t request_cmd)
+{
+    return mbridge_send_RequestCmd(&request_cmd); // this is somewhat dirty, but does the job :)
 }
 
 

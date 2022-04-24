@@ -8,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.07, mOTX v33-rc4
+-- works with mLRS v0.01.08, mOTX v33-rc5
 
 
 ----------------------------------------------------------------------
@@ -111,17 +111,17 @@ end
 local t_last = 0
 local DEVICE_ITEM_TX = nil
 local DEVICE_ITEM_RX = nil
+local DEVICE_INFO = nil
 local DEVICE_PARAM_LIST = nil
 local DEVICE_PARAM_LIST_complete = false
-local DEVICE_INFO = nil
 
 
 local function clearParams()
     DEVICE_ITEM_TX = nil
     DEVICE_ITEM_RX = nil
+    DEVICE_INFO = nil
     DEVICE_PARAM_LIST = nil
     DEVICE_PARAM_LIST_complete = false
-    DEVICE_INFO = nil
 end
 
 
@@ -239,16 +239,13 @@ local function doParamLoop()
     if t_10ms - t_last > 10 then
       t_last = t_10ms
       if DEVICE_ITEM_TX == nil then
-          mbridge.cmdPush(mbridge.CMD_DEVICE_REQUEST_ITEM, {})
-      elseif DEVICE_INFO == nil then    
-          if DEVICE_ITEM_RX ~= nil then
-              DEVICE_INFO_LIST = {}
-              mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_INFO})
-          end    
+          mbridge.cmdPush(mbridge.CMD_REQUEST_INFO, {})
+          --mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_REQUEST_INFO)
       elseif DEVICE_PARAM_LIST == nil then
-          if DEVICE_INFO ~= nil then
+          if DEVICE_INFO ~= nil then -- wait for it to be populated
               DEVICE_PARAM_LIST = {}
               mbridge.cmdPush(mbridge.CMD_PARAM_REQUEST_LIST, {})
+              --mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_PARAM_REQUEST_LIST})
           end    
       end  
     end    

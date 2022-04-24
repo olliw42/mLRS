@@ -59,7 +59,7 @@ typedef enum {
 typedef enum {
    // zero cannot be used
     MBRIDGE_CMD_TX_LINK_STATS         = 2,
-    MBRIDGE_CMD_DEVICE_REQUEST_ITEMS  = 3, // len = 0
+    MBRIDGE_CMD_REQUEST_INFO          = 3, // len = 0
     MBRIDGE_CMD_DEVICE_ITEM_TX        = 4,
     MBRIDGE_CMD_DEVICE_ITEM_RX        = 5,
     MBRIDGE_CMD_PARAM_REQUEST_LIST    = 6, // len = 0
@@ -69,8 +69,8 @@ typedef enum {
     MBRIDGE_CMD_REQUEST_CMD           = 10,
     MBRIDGE_CMD_INFO                  = 11,
     MBRIDGE_CMD_PARAM_SET             = 12,
-    MBRIDGE_CMD_PARAM_STORE           = 13,
-    MBRIDGE_CMD_BIND                  = 14,
+    MBRIDGE_CMD_PARAM_STORE           = 13, // len = 0
+    MBRIDGE_CMD_BIND                  = 14, // len = 0
 } MBRIDGE_CMD_ENUM;
 
 
@@ -86,7 +86,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
 {
     switch (cmd) {
     case MBRIDGE_CMD_TX_LINK_STATS: return MBRIDGE_CMD_TX_LINK_STATS_LEN;
-    case MBRIDGE_CMD_DEVICE_REQUEST_ITEMS: return 0;
+    case MBRIDGE_CMD_REQUEST_INFO: return 0;
     case MBRIDGE_CMD_DEVICE_ITEM_TX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
     case MBRIDGE_CMD_DEVICE_ITEM_RX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
     case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;

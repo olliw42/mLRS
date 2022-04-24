@@ -313,9 +313,13 @@ bool link_task_set(uint8_t task)
     link_task = task;
     transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD;
 
-    // set a timeout if relevant
+    // set a timeout if relevant, or do other things which are always needed
     link_task_tmo = 0;
+
     switch (link_task) {
+    case LINK_TASK_TX_GET_RX_SETUPDATA:
+        SetupMetaData.rx_available = false;
+        break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
         link_task_tmo = 6 * Config.frame_rate_ms;
         break;
@@ -358,6 +362,11 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
         link_task_reset();
+        switch (mbridge.cmd_in_process) {
+        case MBRIDGE_CMD_REQUEST_INFO:
+            mbridge_send_RequestCmd(MBRIDGE_CMD_REQUEST_INFO);
+            break;
+        }
         mbridge.Unlock();
         break;
   }
@@ -945,22 +954,22 @@ IF_MBRIDGE(
     }
     if (mbridge.CommandReceived(&mbcmd)) {
       switch (mbcmd) {
-      case MBRIDGE_CMD_DEVICE_REQUEST_ITEMS:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+      case MBRIDGE_CMD_REQUEST_INFO:
+        if (connected()) {
+          link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+          mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mbridge
+        } else {
+          mbridge_send_RequestCmd(MBRIDGE_CMD_REQUEST_INFO);
+        }
         break;
-      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_start_ParamRequestList(); break;
+      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_send_RequestCmd(mbcmd); break;
       case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
       case MBRIDGE_CMD_PARAM_SET: {
         bool rx_param_changed;
-        if (mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed)) {
-            if (rx_param_changed) {
-                if (connected()) {
-                    // set parameter on Rx side
-                    link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-                    mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
-                }
-            }
+        bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+        if (param_changed && rx_param_changed && connected()) {
+            link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
+            mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
         }
         }break;
       case MBRIDGE_CMD_PARAM_STORE:

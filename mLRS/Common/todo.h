@@ -29,7 +29,6 @@ ISSUES:
 
 - entering bind by power cycles
 - setup per model
-- reload should refetch also from rx
 - make rx name editable
 
 The 3 MAIN topics TODO:
