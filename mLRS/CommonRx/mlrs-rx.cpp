@@ -13,6 +13,7 @@ v0.0.00:
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
 #define DEBUG_ENABLED
+#define FAIL_ENABLED
 
 
 // we set the priorities here to have an overview
@@ -460,8 +461,8 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
     }
 
     // must not happen !
-    // it can happen though in LISTEN, if in the ca 1 ms after receive the sx starts receiving something
-    if (res == CHECK_ERROR_SYNCWORD) while(1) {};
+    // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
+    if (res == CHECK_ERROR_SYNCWORD) { FAIL("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
 
     if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 
@@ -520,12 +521,8 @@ RESTARTCONTROLLER:
   for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
 
   // start up sx
-  if (!sx.isOk()) {
-    while (1) { LED_RED_TOGGLE; delay_ms(25); } // fail!
-  }
-  if (!sx2.isOk()) {
-    while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
-  }
+  if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
+  if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
@@ -657,18 +654,13 @@ IF_ANTENNA1(
       }
 
       if (irq_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
-dbg.puts("\nIRQ RX DONE FAIL");
-        LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
+        FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
       }
       if (irq_status & SX12xx_IRQ_TX_DONE) {
-dbg.puts("\nIRQ TX DONE FAIL");
-        LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
+        FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
       }
       if (irq_status & SX12xx_IRQ_TIMEOUT) {
-dbg.puts("\nIRQ TMO FAIL");
-        while (1) { LED_RED_ON; LED_GREEN_ON; delay_ms(50); LED_RED_OFF; LED_GREEN_OFF; delay_ms(50); }
+        FAILALWAYS(BLINK_COMMON, "IRQ TMO FAIL");
       }
     }//end of if(irq_status)
 );
@@ -689,15 +681,13 @@ IF_ANTENNA2(
       }
 
       if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
-        LED_GREEN_ON; //LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
+        FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
       }
       if (irq2_status & SX12xx_IRQ_TX_DONE) {
-        LED_RED_ON; //LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
+        FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
       }
       if (irq2_status & SX12xx_IRQ_TIMEOUT) {
-        while (1) { LED_RED_ON; LED_GREEN_OFF; delay_ms(50); LED_RED_OFF; LED_GREEN_ON; delay_ms(50); }
+        FAILALWAYS(BLINK_ALTERNATE, "IRQ2 TMO FAIL");
       }
     }//end of if(irq2_status)
 )

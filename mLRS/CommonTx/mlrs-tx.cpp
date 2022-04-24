@@ -13,6 +13,7 @@ v0.0.00:
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
 #define DEBUG_ENABLED
+#define FAIL_ENABLED
 
 
 // we set the priorities here to have an overview
@@ -610,12 +611,8 @@ RESTARTCONTROLLER:
   for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
 
   // start up sx
-  if (!sx.isOk()) {
-    while (1) { LED_RED_TOGGLE; delay_ms(25); } // fail!
-  }
-  if (!sx2.isOk()) {
-    while (1) { LED_GREEN_TOGGLE; delay_ms(25); } // fail!
-  }
+  if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
+  if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
@@ -758,12 +755,10 @@ IF_ANTENNA1(
       }
 
       if (irq_status & SX12xx_IRQ_RX_DONE) {
-        LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
+        FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
       }
       if (irq_status & SX12xx_IRQ_TX_DONE) {
-        LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
+        FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
       }
     }//end of if(irq_status)
 );
@@ -792,12 +787,11 @@ IF_ANTENNA2(
       }
 
       if (irq2_status & SX12xx_IRQ_RX_DONE) {
-        LED_GREEN_ON; //LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); }
+        FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
+
       }
       if (irq2_status & SX12xx_IRQ_TX_DONE) {
-        LED_RED_ON; //LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); }
+        FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
       }
     }//end of if(irq2_status)
 );

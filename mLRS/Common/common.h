@@ -20,6 +20,7 @@
 #include "link_types.h"
 #include "common_stats.h"
 #include "bind.h"
+#include "fail.h"
 
 
 //-------------------------------------------------------
@@ -165,6 +166,42 @@ void sxGetPacketStatus(uint8_t antenna, Stats* stats)
         sx2.GetPacketStatus(&(stats->last_rx_rssi2), &(stats->last_rx_snr2));
     }
 }
+
+
+//-------------------------------------------------------
+//-- FAIL
+//-------------------------------------------------------
+
+
+typedef enum {
+    GR_OFF_RD_BLINK = FAIL_LED_PATTERN_GR_OFF_RD_BLINK,
+    RD_OFF_GR_BLINK = FAIL_LED_PATTERN_RD_OFF_GR_BLINK,
+    GR_ON_RD_BLINK = FAIL_LED_PATTERN_GR_ON_RD_BLINK,
+    RD_ON_GR_BLINK = FAIL_LED_PATTERN_RD_ON_GR_BLINK,
+    BLINK_COMMON = FAIL_LED_PATTERN_BLINK_COMMON,
+    BLINK_ALTERNATE = FAIL_LED_PATTERN_BLINK_ALTERNATE,
+} FAIL_ENUM;
+
+
+void FAIL(uint8_t led_pattern, const char* msg)
+{
+#ifdef FAIL_ENABLED
+    fail(&dbg, led_pattern, msg);
+#endif
+}
+
+
+void FAIL(const char* msg)
+{
+    fail(&dbg, 0, msg);
+}
+
+
+void FAILALWAYS(uint8_t led_pattern, const char* msg)
+{
+    fail(&dbg, led_pattern, msg);
+}
+
 
 
 //-------------------------------------------------------
