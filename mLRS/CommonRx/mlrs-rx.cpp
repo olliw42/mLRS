@@ -528,7 +528,7 @@ RESTARTCONTROLLER:
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed);
-  fhss.StartRx();
+  fhss.Start();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
   sx2.SetRfFrequency(fhss.GetCurrFreq());

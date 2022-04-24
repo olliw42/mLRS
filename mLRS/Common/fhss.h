@@ -222,16 +222,6 @@ const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_li
 class FhssBase
 {
   public:
-
-#ifdef FHSS_DISABLED
-    // dummy class
-    void Init(uint32_t seed) { generate(seed); }
-    void StartRx(void) {}
-    void StartTx(void) {}
-    uint32_t GetCurr(void) { return fhss_list[0]; }
-    void HopToNext(void) {}
-#else
-
     void Init(uint8_t fhss_num, uint32_t seed)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
@@ -244,14 +234,11 @@ class FhssBase
         generate(seed);
 
         is_in_binding = false;
-    }
 
-    void StartRx(void)
-    {
         curr_i = 0;
     }
 
-    void StartTx(void)
+    void Start(void)
     {
         curr_i = 0;
     }
@@ -289,7 +276,6 @@ class FhssBase
         curr_i = i_best;
         return fhss_list[curr_i];
     }
-#endif
 
 //  private:
     uint32_t _seed;
