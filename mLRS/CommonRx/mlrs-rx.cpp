@@ -459,7 +459,9 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }
 
-    if (res == CHECK_ERROR_SYNCWORD) while(1) {}; // must not happen !
+    // must not happen !
+    // it can happen though in LISTEN, if in the ca 1 ms after receive the sx starts receiving something
+    if (res == CHECK_ERROR_SYNCWORD) while(1) {};
 
     if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 

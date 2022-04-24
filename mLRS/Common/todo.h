@@ -28,7 +28,6 @@ ISSUES:
 - crsf baro alt item, can we add more of our own?
 
 - entering bind by power cycles
-- setup rx params, make it more robust
 - setup per model
 - reload should refetch also from rx
 - make rx name editable
