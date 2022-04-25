@@ -43,7 +43,9 @@ v0.0.00:
 #ifdef USE_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #endif
+#ifdef USE_OUT
 #include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
 #include "..\Common\setup.h"
@@ -66,6 +68,7 @@ void clock_reset(void) { clock.Reset(); }
 class Out : public OutBase
 {
   public:
+#ifdef USE_OUT
     void Init(void)
     {
         OutBase::Init(&Setup.Rx);
@@ -132,6 +135,7 @@ class Out : public OutBase
         }
         OutBase::SendLinkStatistics(&lstats);
     }
+#endif
 };
 
 Out out;
