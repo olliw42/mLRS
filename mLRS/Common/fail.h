@@ -48,38 +48,38 @@ void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
     fail_dbg_cnt = 0;;
 
     if (led_pattern == FAIL_LED_PATTERN_GR_OFF_RD_BLINK /*1*/) {
-        LED_GREEN_OFF;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); fail_do_dbg(dbg, msg); }
+        led_green_off();
+        while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
     }
     if (led_pattern == FAIL_LED_PATTERN_RD_OFF_GR_BLINK /*2*/) {
-        LED_RED_OFF;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); fail_do_dbg(dbg, msg); }
+        led_red_off();
+        while (1) { led_green_on(); delay_ms(25); led_green_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
     }
 
     if (led_pattern == FAIL_LED_PATTERN_GR_ON_RD_BLINK /*3*/) {
-        LED_GREEN_ON;
-        while (1) { LED_RED_ON; delay_ms(25); LED_RED_OFF; delay_ms(25); fail_do_dbg(dbg, msg); }
+        led_green_on();
+        while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
     }
     if (led_pattern == FAIL_LED_PATTERN_RD_ON_GR_BLINK /*4*/) {
-        LED_RED_ON;
-        while (1) { LED_GREEN_ON; delay_ms(25); LED_GREEN_OFF; delay_ms(25); fail_do_dbg(dbg, msg); }
+        led_red_on();
+        while (1) { led_green_on(); delay_ms(25); led_green_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
     }
 
     if (led_pattern == FAIL_LED_PATTERN_BLINK_COMMON /*5*/) {
         while (1) {
-            LED_RED_ON; LED_GREEN_ON; delay_ms(25); LED_RED_OFF; LED_GREEN_OFF; delay_ms(25);
+            led_red_on(); led_green_on(); delay_ms(25); led_red_off(); led_green_off(); delay_ms(25);
             fail_do_dbg(dbg, msg);
         }
     }
     if (led_pattern == FAIL_LED_PATTERN_BLINK_ALTERNATE /*6*/) {
         while (1) {
-            LED_RED_ON; LED_GREEN_OFF; delay_ms(25); LED_RED_OFF; LED_GREEN_ON; delay_ms(25);
+            led_red_on(); led_green_off(); delay_ms(25); led_red_off(); led_green_on(); delay_ms(25);
             fail_do_dbg(dbg, msg);
         }
     }
 
-    LED_RED_ON;
-    LED_GREEN_ON;
+    led_red_on();
+    led_green_on();
     while (1) { delay_ms(50); fail_do_dbg(dbg, msg); }
 }
 

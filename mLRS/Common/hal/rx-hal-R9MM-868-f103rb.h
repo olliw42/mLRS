@@ -159,22 +159,21 @@ bool button_pressed(void)
 #define LED_GREEN                 IO_PB3
 #define LED_RED                   IO_PC1
 
-#define LED_GREEN_ON              gpio_high(LED_GREEN)
-#define LED_RED_ON                gpio_high(LED_RED)
-
-#define LED_GREEN_OFF             gpio_low(LED_GREEN)
-#define LED_RED_OFF               gpio_low(LED_RED)
-
-#define LED_GREEN_TOGGLE          gpio_toggle(LED_GREEN)
-#define LED_RED_TOGGLE            gpio_toggle(LED_RED)
-
 void leds_init(void)
 {
   gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
   gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  LED_GREEN_OFF;
-  LED_RED_OFF;
+  gpio_low(LED_GREEN); // LED_GREEN_OFF
+  gpio_low(LED_RED); // LED_RED_OFF
 }
+
+void led_green_off(void) { gpio_low(LED_GREEN); }
+void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
+
+void led_red_off(void) { gpio_low(LED_RED); }
+void led_red_on(void) { gpio_high(LED_RED); }
+void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER

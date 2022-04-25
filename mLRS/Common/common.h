@@ -203,6 +203,19 @@ void FAILALWAYS(uint8_t led_pattern, const char* msg)
 }
 
 
+//-------------------------------------------------------
+//-- LED defines
+//-------------------------------------------------------
+
+#define LED_GREEN_ON              led_green_on()
+#define LED_RED_ON                led_red_on()
+
+#define LED_GREEN_OFF             led_green_off()
+#define LED_RED_OFF               led_red_off()
+
+#define LED_GREEN_TOGGLE          led_green_toggle()
+#define LED_RED_TOGGLE            led_red_toggle()
+
 
 //-------------------------------------------------------
 //-- check some sizes
