@@ -364,9 +364,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_reset();
 #if (defined DEVICE_HAS_JRPIN5)
         switch (mbridge.cmd_in_process) {
-        case MBRIDGE_CMD_REQUEST_INFO:
-            mbridge_send_RequestCmd(MBRIDGE_CMD_REQUEST_INFO);
-            break;
+        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
         mbridge.Unlock();
 #endif
@@ -961,11 +959,11 @@ IF_MBRIDGE(
           link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
           mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mbridge
         } else {
-          mbridge_send_RequestCmd(MBRIDGE_CMD_REQUEST_INFO);
+          mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
         }
         break;
-      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge_send_RequestCmd(mbcmd); break;
-      case MBRIDGE_CMD_REQUEST_CMD: mbridge_send_RequestCmd(mbridge.GetPayloadPtr()); break;
+      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge.HandleCmd(MBRIDGE_CMD_PARAM_REQUEST_LIST); break;
+      case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
       case MBRIDGE_CMD_PARAM_SET: {
         bool rx_param_changed;
         bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
@@ -982,7 +980,8 @@ IF_MBRIDGE(
           doParamsStore = true;
         }
         break;
-      case MBRIDGE_CMD_BIND: bind.SetToBind(); break;
+      case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
+      case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
       }
     }
 );
@@ -1043,7 +1042,7 @@ IF_CRSF(
         doParamsStore = true;
       }
       break;
-    case CLI_TASK_BIND: bind.SetToBind(); break;
+    case CLI_TASK_BIND: bind.StartBind(); break;
     case CLI_TASK_RX_RELOAD:
       if (connected()) {
         link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);

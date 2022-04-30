@@ -49,13 +49,15 @@ class BindBase
   public:
     void Init(void);
     bool IsInBind(void) { return is_in_binding; }
-    void SetToBind(void) { binding_requested = true; }
+    void StartBind(void) { binding_requested = true; }
+    void StopBind(void) { binding_stop_requested = true; }
     void ConfigForBind(void);
     void Do(void);
     uint8_t Task(void);
 
-    bool is_in_binding;
+    bool is_in_binding; // is in snyc with link loop
     bool binding_requested;
+    bool binding_stop_requested;
     uint32_t button_tlast_ms;
     uint8_t task;
     bool is_connected;
@@ -73,6 +75,7 @@ void BindBase::Init(void)
 {
     is_in_binding = false;
     binding_requested = false;
+    binding_stop_requested = false;
     task = BIND_TASK_NONE;
     is_connected = false;
 
@@ -119,6 +122,10 @@ void BindBase::Do(void)
         task = BIND_TASK_TX_RESTART_CONTROLLER;
       }
       is_connected = connected();
+
+      if (binding_stop_requested) {
+        task = BIND_TASK_TX_RESTART_CONTROLLER;
+      }
     }
 #endif
 

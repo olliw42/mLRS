@@ -52,7 +52,7 @@
 typedef enum {
     MBRIDGE_CHANNELPACKET_STX   = 0xFF, // marker which indicates a channel packet
     MBRIDGE_COMMANDPACKET_STX   = 0xA0, // 0b101x marker which indicates a command packet
-    MBRIDGE_COMMANDPACKET_MASK  = 0xE0, // 0b111x
+    MBRIDGE_COMMANDPACKET_MASK  = 0xE0, // 0b111x => 5 bit = 32 commands max
 } MBRIDGE_PACKET_STX_ENUM;
 
 
@@ -70,7 +70,8 @@ typedef enum {
     MBRIDGE_CMD_INFO                  = 11,
     MBRIDGE_CMD_PARAM_SET             = 12,
     MBRIDGE_CMD_PARAM_STORE           = 13, // len = 0
-    MBRIDGE_CMD_BIND                  = 14, // len = 0
+    MBRIDGE_CMD_BIND_START            = 14, // len = 0
+    MBRIDGE_CMD_BIND_STOP             = 15, // len = 0
 } MBRIDGE_CMD_ENUM;
 
 
@@ -97,7 +98,8 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_INFO: return MBRIDGE_CMD_INFO_LEN;
     case MBRIDGE_CMD_PARAM_SET: return MBRIDGE_CMD_PARAM_SET_LEN; break;
     case MBRIDGE_CMD_PARAM_STORE: return 0;
-    case MBRIDGE_CMD_BIND: return 0;
+    case MBRIDGE_CMD_BIND_START: return 0;
+    case MBRIDGE_CMD_BIND_STOP: return 0;
     }
     return 0;
 }
@@ -191,8 +193,11 @@ typedef struct
     uint8_t fhss_cnt;
 
     uint8_t vehicle_state : 2; // 0 = disarmed, 1 = armed 2 = flying, 3 = invalid/unknown
+    uint8_t spare : 6;
 
-    uint8_t spare;
+    uint8_t link_state_connected : 1;
+    uint8_t link_state_binding : 1;
+    uint8_t spare2 : 6;
 }) tMBridgeLinkStats; // 22 bytes
 
 
@@ -201,12 +206,9 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    uint8_t requested_cmd;
+    uint8_t cmd_requested;
     MBRIDGE_PACKED(union {
-        struct {
-            uint8_t param_index;
-            char param_name_16[16];
-        };
+        uint8_t cmd_request_data[17];
     });
 }) tMBridgeRequestCmd; // 18 bytes
 

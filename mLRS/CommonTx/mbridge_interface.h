@@ -39,6 +39,8 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool CommandInFifo(uint8_t* cmd);
     void Lock(uint8_t cmd);
     void Unlock(void);
+    uint8_t HandleRequestCmd(uint8_t* payload);
+    uint8_t HandleCmd(uint8_t cmd);
 
     // for in-isr processing
     void uart_rx_callback(uint8_t c);
@@ -399,6 +401,58 @@ void tMBridge::Unlock(void)
 
 
 //-------------------------------------------------------
+// handler
+
+void mbridge_start_ParamRequestList(void);
+
+uint8_t tMBridge::HandleRequestCmd(uint8_t* payload)
+{
+tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
+
+    switch (request->cmd_requested) {
+    case MBRIDGE_CMD_DEVICE_ITEM_TX:
+        cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        break;
+
+    case MBRIDGE_CMD_DEVICE_ITEM_RX:
+        cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        break;
+
+    case MBRIDGE_CMD_INFO:
+        cmd_fifo.Put(MBRIDGE_CMD_INFO);
+        break;
+
+    case MBRIDGE_CMD_REQUEST_INFO:
+        cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
+        cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
+        cmd_fifo.Put(MBRIDGE_CMD_INFO);
+        break;
+
+    case MBRIDGE_CMD_PARAM_REQUEST_LIST:
+        mbridge_start_ParamRequestList();
+        break;
+
+    case MBRIDGE_CMD_PARAM_ITEM:{
+        //??
+        //uint8_t idx = request->index;
+        //if (request->name[0] != 0) { // name is specified, so search for index of parameter
+        //}
+        // TODO mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM);
+        }break;
+    }
+
+    return request->cmd_requested;
+}
+
+
+uint8_t tMBridge::HandleCmd(uint8_t cmd)
+{
+    // this is somewhat dirty, but does the job :)
+    return HandleRequestCmd(&cmd);
+}
+
+
+//-------------------------------------------------------
 // convenience helper
 
 void mbridge_send_LinkStats(void)
@@ -450,55 +504,10 @@ tMBridgeLinkStats lstats = {0};
 
     lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
 
+    lstats.link_state_connected = connected();
+    lstats.link_state_binding = bind.IsInBind();
+
     mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
-}
-
-
-void mbridge_start_ParamRequestList(void);
-
-uint8_t mbridge_send_RequestCmd(uint8_t* payload)
-{
-tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
-
-    switch (request->requested_cmd) {
-    case MBRIDGE_CMD_DEVICE_ITEM_TX:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
-        break;
-
-    case MBRIDGE_CMD_DEVICE_ITEM_RX:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
-        break;
-
-    case MBRIDGE_CMD_INFO:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_INFO);
-        break;
-
-    case MBRIDGE_CMD_REQUEST_INFO:
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
-        mbridge.cmd_fifo.Put(MBRIDGE_CMD_INFO);
-        break;
-
-    case MBRIDGE_CMD_PARAM_REQUEST_LIST:
-        mbridge_start_ParamRequestList();
-        break;
-
-    case MBRIDGE_CMD_PARAM_ITEM:{
-        //??
-        //uint8_t idx = request->index;
-        //if (request->name[0] != 0) { // name is specified, so search for index of parameter
-        //}
-        // TODO mbridge.cmd_task_fifo.Put(MBRIDGE_CMD_PARAM_ITEM);
-        }break;
-    }
-
-    return request->requested_cmd;
-}
-
-
-uint8_t mbridge_send_RequestCmd(uint8_t request_cmd)
-{
-    return mbridge_send_RequestCmd(&request_cmd); // this is somewhat dirty, but does the job :)
 }
 
 
