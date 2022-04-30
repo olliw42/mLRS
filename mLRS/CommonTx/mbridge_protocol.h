@@ -72,6 +72,7 @@ typedef enum {
     MBRIDGE_CMD_PARAM_STORE           = 13, // len = 0
     MBRIDGE_CMD_BIND_START            = 14, // len = 0
     MBRIDGE_CMD_BIND_STOP             = 15, // len = 0
+    MBRIDGE_CMD_MODELID_SET           = 16,
 } MBRIDGE_CMD_ENUM;
 
 
@@ -81,6 +82,7 @@ typedef enum {
 #define MBRIDGE_CMD_REQUEST_CMD_LEN           18
 #define MBRIDGE_CMD_INFO_LEN                  24
 #define MBRIDGE_CMD_PARAM_SET_LEN             7
+#define MBRIDGE_CMD_MODELID_SET_LEN           3
 
 
 uint8_t mbridge_cmd_payload_len(uint8_t cmd)
@@ -100,6 +102,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_PARAM_STORE: return 0;
     case MBRIDGE_CMD_BIND_START: return 0;
     case MBRIDGE_CMD_BIND_STOP: return 0;
+    case MBRIDGE_CMD_MODELID_SET: return MBRIDGE_CMD_MODELID_SET_LEN; break;
     }
     return 0;
 }

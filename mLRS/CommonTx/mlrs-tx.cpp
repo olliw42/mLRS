@@ -982,6 +982,10 @@ IF_MBRIDGE(
         break;
       case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
       case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
+      case MBRIDGE_CMD_MODELID_SET: {
+        uint8_t* payload = mbridge.GetPayloadPtr();
+        dbg.puts("\nmbridge model id"); dbg.puts(u8toBCD_s(*payload));
+        }break;
       }
     }
 );
@@ -997,10 +1001,9 @@ IF_CRSF(
         break;
       }
     }
-
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
+    if (crsf.Update(&rcData)) {
       // update channels
-      if (crsf.Update(&rcData)) {
+      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
         channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
       }

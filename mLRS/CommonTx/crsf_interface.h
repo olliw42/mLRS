@@ -177,8 +177,20 @@ bool tTxCrsf::Update(tRcData* rc)
     if (!frame_received) return false;
     frame_received = false;
 
+    tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
+
+    // command model select id
+    if (header->address == CRSF_OPENTX_SYNC) {
+        dbg.puts("\ncrsf sync");
+        if (header->frame_id == CRSF_FRAME_ID_COMMAND && header->cmd_id == CRSF_SUBCOMMAND_ID &&
+            header->cmd == CRSF_COMMAND_MODEL_SELECT_ID) {
+            dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(header->cmd_data[0]));
+        }
+        return false;
+    }
+
     // update channels
-    if (crsf.IsChannelData()) {
+    if (header->frame_id == CRSF_FRAME_ID_CHANNELS) {
         fill_rcdata(&rcData);
         return true;
     }
@@ -241,7 +253,7 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 
   switch (state) {
   case STATE_IDLE:
-      if (c == CRSF_ADDRESS_TRANSMITTER_MODULE) {
+      if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
         cnt = 0;
         frame[cnt++] = c;
         state = STATE_RECEIVE_CRSF_LEN;

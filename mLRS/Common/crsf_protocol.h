@@ -16,14 +16,28 @@
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCTelemetry/AP_CRSF_Telem.h
 
 // CRSF frame format:
-// address len type payload crc
-// len is the length including type, payload, crc
-// crc includes type, payload
+//   address
+//   len
+//   type/frame_id
+//   payload
+//   crc8
+// len is the length including type, payload, crc8
+// crc8 includes type, payload
 //
 // baudrate:
 // is reported inconsistently across the various resources
 // Ardupilot: seems to use 416666 for receiver -> autopilot
 // OpenTx: seems to use 400000 for radio -> tx module
+//
+// depending on type/frame_id, the payload can have additional sub-struture
+// type/frame_id = CRSF_FRAME_ID_COMMAND (0x32):
+//   destination address
+//   source address
+//   sub command identifier (0x10)
+//   command
+//   data
+//   command_crc8
+//
 //********************************************************
 #ifndef CRSF_PROTOCOL_H
 #define CRSF_PROTOCOL_H
@@ -44,7 +58,7 @@ typedef enum {
     CRSF_ADDRESS_RECEIVER             = 0xEC,
     CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
 
-    CRSF_SYNC_BYTE                    = 0xC8,
+    CRSF_OPENTX_SYNC                  = 0xC8, // is this an otx specific thing?
 } CRSF_ADDRESS_ENUM;
 
 
@@ -68,6 +82,16 @@ typedef enum {
 
 
 typedef enum {
+    CRSF_SUBCOMMAND_ID                = 0x10,
+} CRSF_SUBCOMMAND_ENUM;
+
+
+typedef enum {
+    CRSF_COMMAND_MODEL_SELECT_ID      = 0x05,
+} CRSF_COMMAND_ENUM;
+
+
+typedef enum {
     CRSF_POWER_0_mW = 0,
     CRSF_POWER_10_mW,
     CRSF_POWER_25_mW,
@@ -86,6 +110,27 @@ typedef enum {
     CRSF_RFMODE_150HZ,
     CRSF_RFMODE_250HZ,
 } CRSF_RFMODE_ENUM;
+
+
+//-- Frame header
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    CRSF_PACKED(union {
+        uint8_t payload[64 - 3];
+        CRSF_PACKED(struct {
+            uint8_t cmd_dest_adress;
+            uint8_t cmd_src_adress;
+            uint8_t cmd_id;
+            uint8_t cmd;
+            uint8_t cmd_data[64 - 3 - 4];
+        });
+    });
+}) tCrsfFrameHeader;
 
 
 //-- Channel frame
@@ -250,6 +295,22 @@ typedef struct
 }) tCrsfBaroAltitude;
 
 #define CRSF_BARO_ALTITUDE_LEN  2
+
+
+//-- Command payload frames
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t dest_adress;
+    uint8_t src_adress;
+    uint8_t cmd_id;
+    uint8_t cmd;
+    uint8_t model_id;
+    uint8_t crc8b;
+}) tCrsfCmdModelSelectId;
+
+#define CRSF_COMMAND_MODEL_SELECT_ID_LEN  8
 
 
 #endif // CRSF_PROTOCOL_H
