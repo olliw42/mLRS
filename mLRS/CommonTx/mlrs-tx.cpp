@@ -362,12 +362,14 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
         link_task_reset();
+#if (defined DEVICE_HAS_JRPIN5)
         switch (mbridge.cmd_in_process) {
         case MBRIDGE_CMD_REQUEST_INFO:
             mbridge_send_RequestCmd(MBRIDGE_CMD_REQUEST_INFO);
             break;
         }
         mbridge.Unlock();
+#endif
         break;
   }
 }

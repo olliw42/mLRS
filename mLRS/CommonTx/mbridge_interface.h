@@ -723,7 +723,8 @@ class tMBridge : public tSerialBase
     void Init(bool enable_flag) {};
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
-    void tMBridge::Unlock(void) {}
+    void Lock(void) {}
+    void Unlock(void) {}
 };
 
 tMBridge mbridge;
