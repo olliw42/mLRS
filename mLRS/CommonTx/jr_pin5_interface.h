@@ -31,17 +31,17 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 
 void uart_putc_tobuf(char c)
 {
-  uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
-  if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
-      uart_txbuf[next] = c;
-      uart_txwritepos = next;
-  }
+    uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
+    if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
+        uart_txbuf[next] = c;
+        uart_txwritepos = next;
+    }
 }
 
 
 void uart_tx_start(void)
 {
-  LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
+    LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
 }
 
 
@@ -71,20 +71,20 @@ class tPin5BridgeBase
     virtual bool transmit_start(void); // returns true if transmission should be started
 
     typedef enum {
-      STATE_IDLE = 0,
+        STATE_IDLE = 0,
 
-      STATE_RECEIVE_MBRIDGE_STX2,
-      STATE_RECEIVE_MBRIDGE_LEN,
-      STATE_RECEIVE_MBRIDGE_SERIALPACKET,
-      STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
-      STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
+        STATE_RECEIVE_MBRIDGE_STX2,
+        STATE_RECEIVE_MBRIDGE_LEN,
+        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
+        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
+        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
 
-      STATE_RECEIVE_CRSF_LEN,
-      STATE_RECEIVE_CRSF_PAYLOAD,
-      STATE_RECEIVE_CRSF_CRC,
+        STATE_RECEIVE_CRSF_LEN,
+        STATE_RECEIVE_CRSF_PAYLOAD,
+        STATE_RECEIVE_CRSF_CRC,
 
-      STATE_TRANSMIT_START,
-      STATE_TRANSMITING,
+        STATE_TRANSMIT_START,
+        STATE_TRANSMITING,
     } STATE_ENUM;
 
     uint8_t state;
@@ -98,38 +98,38 @@ void tPin5BridgeBase::Init(void)
 {
 // TX & RX XOR method
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
-  gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  gpio_init(JRPIN5_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  JRPIN5_TX_SET_INVERTED;
-  JRPIN5_RX_SET_INVERTED;
+    gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(JRPIN5_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    JRPIN5_TX_SET_INVERTED;
+    JRPIN5_RX_SET_INVERTED;
 #endif
 
 // TX & RX inverter with TX buffer method
 #if defined JRPIN5_TX_OE
-  gpio_init(JRPIN5_TX_OE, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  JRPIN5_TX_OE_DISABLED;
+    gpio_init(JRPIN5_TX_OE, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    JRPIN5_TX_OE_DISABLED;
 #endif
 
-  uart_init_isroff();
+    uart_init_isroff();
 
 // internal peripheral inverter method
 #if defined JRPIN5_RX_TX_INVERT_INTERNAL
-  LL_USART_Disable(JRPIN5_UARTx);
-  LL_USART_SetTXPinLevel(JRPIN5_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-  LL_USART_SetRXPinLevel(JRPIN5_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-  LL_USART_Enable(JRPIN5_UARTx);
+    LL_USART_Disable(JRPIN5_UARTx);
+    LL_USART_SetTXPinLevel(JRPIN5_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetRXPinLevel(JRPIN5_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(JRPIN5_UARTx);
 #endif
 
-  pin5_tx_enable(false);
+    pin5_tx_enable(false);
 
-  state = STATE_IDLE;
-  len = 0;
-  cnt = 0;
-  tlast_us = 0;
+    state = STATE_IDLE;
+    len = 0;
+    cnt = 0;
+    tlast_us = 0;
 
-  telemetry_start_next_tick = false;
-  telemetry_tick_next = false;
-  telemetry_state = 0;
+    telemetry_start_next_tick = false;
+    telemetry_tick_next = false;
+    telemetry_state = 0;
 };
 
 
@@ -148,8 +148,8 @@ void tPin5BridgeBase::TelemetryTick_ms(void)
 bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* state)
 {
     if (telemetry_start_next_tick) {
-      telemetry_start_next_tick = false;
-      telemetry_state = 1; // start
+        telemetry_start_next_tick = false;
+        telemetry_state = 1; // start
     }
 
    *state = telemetry_state;
