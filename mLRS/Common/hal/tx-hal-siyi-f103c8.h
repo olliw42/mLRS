@@ -33,26 +33,19 @@
 
 
 //-- UARTS
-// UARTB = serial port
-// UARTC = debug port
+// UARTB = serial port or COM (CLI)
+// UARTC = --
 // UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
+// UARTF = debug port
 
-#define UARTB_USE_UART2 // serial
+#define UARTB_USE_UART2 // serial or COM (CLI)
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // cli needs it // TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
-
-#define UARTC_USE_UART3 // debug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_UART1 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -68,6 +61,14 @@
 #define JRPIN5_RX_XOR             IO_PB6
 #define JRPIN5_RX_SET_NORMAL      gpio_low(JRPIN5_RX_XOR)
 #define JRPIN5_RX_SET_INVERTED    gpio_high(JRPIN5_RX_XOR)
+
+#define UARTF_USE_UART3 // debug
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI

@@ -28,35 +28,27 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = USB (debug port)
+// UARTC = COM (CLI)
 // UARTD = BT/ESP port
 // UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
+// UARTF = debug port
 
 #define UARTB_USE_UART5 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTB_RTS                 IO_PB4
-#define UARTB_CTS                 IO_PB5
-
-#ifndef DEBUG_ENABLED
-#define UARTC_USE_UART1 // USB, cli
-#else
-#define UARTC_USE_UART1_REMAPPED // PB6,PB7, debug only
-#endif
-#define UARTC_BAUD                115200
+#define UARTC_USE_UART1 // COM (CLI)
+#define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           1024 // cli needs it //512
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
-#ifndef DEBUG_ENABLED
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           512
-#endif
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
 #define UART_USE_UART2 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -79,6 +71,14 @@
 
 #define ESP_RESET                 IO_PA11
 #define ESP_GPIO0                 IO_PA12
+
+#define UARTF_USE_UART1 // debug
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX12xx & SPI

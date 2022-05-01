@@ -19,7 +19,8 @@ v0.0.00:
 // we set the priorities here to have an overview
 #define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
 #define UARTB_IRQ_PRIORITY          11 // serial
-#define UARTC_IRQ_PRIORITY          11 // debug
+#define UARTC_IRQ_PRIORITY          11 // com
+#define UARTF_IRQ_PRIORITY          15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
 
@@ -39,8 +40,11 @@ v0.0.00:
 #ifdef USE_SERIAL
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #endif
-#if defined USE_COM_ON_C || defined USE_DEBUG
+#if defined USE_COM
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
+#endif
+#if defined USE_DEBUG
+#include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
 #endif
 #ifdef DEVICE_HAS_I2C
 #include "..\Common\stdstm32-i2c.h"
@@ -682,6 +686,7 @@ RESTARTCONTROLLER:
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
+        dbg.puts(".");
 /*        dbg.puts("\nTX: ");
         dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));
         dbg.puts(" (");

@@ -63,6 +63,7 @@
 #include "stm32g4xx_hal.h"
 #include "stm32g4xx_hal_flash.h"
 #include "stm32g4xx_hal_flash_ex.h"
+#include "stm32g4xx_ll_lpuart.h"
 
 #endif
 #ifdef STM32L433xx

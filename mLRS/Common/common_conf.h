@@ -99,19 +99,20 @@
 #define LQ_AVERAGING_MS                 1000
 
 
+#define TX_SERIAL_BAUDRATE              19200 // will be overwritten by setup
 #define TX_SERIAL_TXBUFSIZE             512
 #define TX_SERIAL_RXBUFSIZE             2048 // MissionPlanner is really rude
 
 #define TX_MBRIDGE_TXBUFSIZE            512
 #define TX_MBRIDGE_RXBUFSIZE            2048 // MissionPlanner is really rude
 
+#define RX_SERIAL_BAUDRATE              19200 // will be overwritten by setup
 #define RX_SERIAL_TXBUFSIZE             1024
 #define RX_SERIAL_RXBUFSIZE             1024
 
-#define TX_SERIAL_BAUDRATE              19200 //57600
-#define RX_SERIAL_BAUDRATE              19200 //57600
-
 #define TX_COM_BAUDRATE                 115200
+#define TX_COM_TXBUFSIZE                1024 // cli needs it
+#define TX_COM_RXBUFSIZE                512
 
 
 #endif // COMMON_CONFIG_H

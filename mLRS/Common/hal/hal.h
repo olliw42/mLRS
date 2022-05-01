@@ -76,20 +76,20 @@
 #endif
 
 #ifdef DEVICE_IS_TRANSMITTER
-#if defined DEVICE_HAS_COM_OR_DEBUG // g491re board
+#if defined DEVICE_HAS_COM_OR_DEBUG
   #define USE_SERIAL
   #if !defined DEBUG_ENABLED
-    #define USE_COM_ON_C
+    #define USE_COM
   #else
     #define USE_DEBUG
   #endif
-#elif defined DEVICE_HAS_SERIAL_OR_COM // R9M
+#elif defined DEVICE_HAS_SERIAL_OR_COM // R9M, Siyi, has device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
   #define USE_DEBUG
 #else
   #define USE_SERIAL
-  //#define USE_COM // we do not have such a case yet, so this we will have to work out
+  #define USE_COM
   #define USE_DEBUG
 #endif
 #endif

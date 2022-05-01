@@ -82,8 +82,14 @@ class tDebugPort : public tSerialBase
 {
 #ifdef USE_DEBUG
   public:
+#ifdef DEVICE_IS_RECEIVER
     void Init(void) { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
+#endif
+#ifdef DEVICE_IS_TRANSMITTER
+    void Init(void) { uartf_init(); }
+    void putc(char c) override { uartf_putc(c); }
+#endif
 #endif
 };
 
@@ -99,7 +105,7 @@ class tComPort : public tSerialBase
     char getc(void) override { IFNCOM(0); return uartb_getc(); }
     void flush(void) override { IFNCOM(); uartb_rx_flush(); uartb_tx_flush(); }
 #endif
-#ifdef USE_COM_ON_C
+#ifdef USE_COM
   public:
     void Init(void) override { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }

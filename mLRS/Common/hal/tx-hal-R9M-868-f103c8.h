@@ -31,26 +31,19 @@
 
 
 //-- UARTS
-// UARTB = serial port or USB
-// UARTC = debug port
+// UARTB = serial port or COM (CLI)
+// UARTC = --
 // UART = SPORT (pin5) on JR bay
 // UARTE = in port, SBus or whatever
+// UARTF = debug port
 
-#define UARTB_USE_UART1 // serial or USB // goes via inverter to RX/TX of RS232 port
+#define UARTB_USE_UART1 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           1024 // cli needs it // TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // cli needs it // TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
-
-#define UARTC_USE_UART2 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
 
 #define UART_USE_UART3 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -64,7 +57,13 @@
 #define JRPIN5_TX_OE_DISABLED     gpio_low(JRPIN5_TX_OE)
 #define JRPIN5_TX_OE_ENABLED      gpio_high(JRPIN5_TX_OE)
 
-#define U2_DIR                    IO_PA0 // ??? seems to go to inverter, which goes to JR Pin1, is on R12
+#define UARTF_USE_UART2 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
