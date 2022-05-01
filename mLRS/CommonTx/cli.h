@@ -124,26 +124,6 @@ uint8_t sep, n;
 }
 
 
-// po name
-bool tTxCli::cmd_param_opt(char* name)
-{
-uint8_t n;
-
-    if (buf[0] != 'p') return false;
-    if (buf[1] != 'o') return false;
-    if (buf[2] != ' ') return false;
-
-    // cleanify: remove p, remove blanks
-    n = 0;
-    for (uint8_t i = 2; i < strlen(buf); i++) {
-        if (buf[i] != ' ') name[n++] = toupper(buf[i]);
-    }
-    name[n] = '\0';
-
-    return true;
-}
-
-
 // "50 Hz,31 Hz,19 Hz"
 bool param_get_optstr(char* s, uint8_t param_idx, uint8_t value)
 {
@@ -361,11 +341,12 @@ void tTxCli::print_help(void)
     com->puts("  pl c        -> list common parameters\n");
     com->puts("  pl tx       -> list Tx parameters\n");
     com->puts("  pl rx       -> list Rx parameters\n");
-    com->puts("  po name     -> list of allowed parameter values\n");
     com->puts("  p name          -> get parameter value\n");
     com->puts("  p name = value  -> set parameter value\n");
     com->puts("  p name = ?      -> get parameter value and list of allowed values\n");
     com->puts("  pstore      -> store parameters\n");
+    com->puts("  bind        -> start binding\n");
+    com->puts("  reload      -> reload all parameter settings\n");
 }
 
 
@@ -401,18 +382,7 @@ bool rx_param_changed;
       if (strcmp(buf, "pl tx") == 0) print_param_list(2);
       if (strcmp(buf, "pl rx") == 0) print_param_list(3);
 
-      if (cmd_param_opt(sname)) { // po name
-        if (!param_get_idx(&param_idx, sname)) {
-            com->puts("err: invalid parameter name\n");
-        } else {
-            com->puts("  ");
-            com->puts(SetupParameter[param_idx].name);
-            com->puts(" options:\n");
-            print_param_opt_list(param_idx);
-        }
-      }
-
-      if (cmd_param_set(sname, svalue)) { // p name,  p name = value
+      if (cmd_param_set(sname, svalue)) { // p name, p name = value
           if (!param_get_idx(&param_idx, sname)) {
               com->puts("err: invalid parameter name\n");
           } else if (!connected() && sname[0] == 'R'){
