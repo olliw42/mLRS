@@ -574,11 +574,8 @@ RESTARTCONTROLLER:
 
       if (connected()) {
         DECc(led_blink, SYSTICK_DELAY_MS(500));
-      } else
-      if (IS_RECEIVE_STATE) {
-        DECc(led_blink, SYSTICK_DELAY_MS(200));
       } else {
-        DECc(led_blink, SYSTICK_DELAY_MS(50));
+        DECc(led_blink, SYSTICK_DELAY_MS(200));
       }
 
       if (bind.IsInBind()) {

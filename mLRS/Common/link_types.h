@@ -39,8 +39,6 @@ typedef enum {
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
 } LINK_STATE_ENUM;
-
-#define IS_RECEIVE_STATE    (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT)
 #endif
 
 typedef enum {
