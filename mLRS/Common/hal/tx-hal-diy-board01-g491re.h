@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY MODULE01v014 STM32G491RE
+// TX DIY MODULE01 v014 STM32G491RE  !LEGACY!
 //-------------------------------------------------------
 
 #define DEVICE_HAS_DIVERSITY
@@ -91,10 +91,6 @@
 #define SX_RESET                  IO_PB0
 #define SX_DIO1                   IO_PC4
 #define SX_BUSY                   IO_PC5
-//#define SX_AMP_CTX
-//#define SX_ANT_SELECT
-
-//#define SX_USE_DCDC
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
 #define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
@@ -107,9 +103,7 @@ void sx_init_gpio(void)
 {
   gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-#ifdef SX_BUSY
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-#endif
 }
 
 bool sx_dio_read(void)
@@ -117,12 +111,10 @@ bool sx_dio_read(void)
   return (gpio_read_activehigh(SX_DIO1)) ? true : false;
 }
 
-#ifdef SX_BUSY
 bool sx_busy_read(void)
 {
   return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
-#endif
 
 void sx_amp_transmit(void)
 {
@@ -307,17 +299,13 @@ void fiveway_init(void)
   gpio_init(FIVEWAY_SWITCH_RIGHT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
-bool fiveway_pressed(void)
-{
-  return gpio_read_activelow(FIVEWAY_SWITCH_CENTER);
-}
-
 uint8_t fiveway_read(void)
 {
-  return (uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_UP) +
-         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_DOWN) << 1) +
-         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_LEFT) << 2) +
-         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_RIGHT) << 3);
+  return ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_UP) << KEY_UP) +
+         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_DOWN) << KEY_DOWN) +
+         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_LEFT) << KEY_LEFT) +
+         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_RIGHT) << KEY_RIGHT) +
+         ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_CENTER) << KEY_CENTER);
 }
 
 
