@@ -8,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.08, mOTX v33-rc5
+-- works with mLRS v0.01.08, mOTX v33
 
 
 ----------------------------------------------------------------------
