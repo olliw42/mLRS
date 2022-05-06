@@ -400,11 +400,11 @@ bool rx_param_changed;
 
     //com->puts(".");
 
+    uint32_t t_now = millis32();
+    if (pos && (t_now - t_last_ms > 2000)) { putsn(">"); putsn("  timeout"); clear(); }
+
     while (com->available()) {
       char c = com->getc();
-
-      uint32_t t_now = millis32();
-      if (t_now - t_last_ms > 2000) clear();
       t_last_ms = t_now;
 
       if (c != '\n' && c != '\r' && c != ',' && c != ';') {
@@ -414,14 +414,15 @@ bool rx_param_changed;
       }
       putsn(">");
 
-      if (strcmp(buf, "h") == 0)     print_help();
-      if (strcmp(buf, "help") == 0)  print_help();
-      if (strcmp(buf, "?") == 0)     print_help();
-      if (strcmp(buf, "pl") == 0)    print_param_list(0);
-      if (strcmp(buf, "pl c") == 0)  print_param_list(1);
-      if (strcmp(buf, "pl tx") == 0) print_param_list(2);
-      if (strcmp(buf, "pl rx") == 0) print_param_list(3);
+      if (strcmp(buf, "h") == 0)     { print_help(); } else
+      if (strcmp(buf, "help") == 0)  { print_help(); } else
+      if (strcmp(buf, "?") == 0)     { print_help(); } else
+      if (strcmp(buf, "pl") == 0)    { print_param_list(0); } else
+      if (strcmp(buf, "pl c") == 0)  { print_param_list(1); } else
+      if (strcmp(buf, "pl tx") == 0) { print_param_list(2); } else
+      if (strcmp(buf, "pl rx") == 0) { print_param_list(3);
 
+      } else
       if (cmd_param_set(sname, svalue)) { // p name, p name = value
           if (!param_get_idx(&param_idx, sname)) {
               putsn("err: invalid parameter name");
@@ -438,8 +439,8 @@ bool rx_param_changed;
               print_param(param_idx);
               if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
           }
-      }
 
+      } else
       if (strcmp(buf, "pstore") == 0) {
           task_pending = CLI_TASK_PARAM_STORE;
           if (!connected()) {
@@ -448,13 +449,13 @@ bool rx_param_changed;
           } else {
               putsn("  parameters stored");
           }
-      }
 
+      } else
       if (strcmp(buf, "bind") == 0) {
           task_pending = CLI_TASK_BIND;
           putsn("  Tx entered bind mode");
-      }
 
+      } else
       if (strcmp(buf, "reload") == 0) {
           if (!connected()) {
               putsn("warn: receiver not connected");
@@ -462,6 +463,9 @@ bool rx_param_changed;
               task_pending = CLI_TASK_RX_RELOAD;
               putsn("  Rx setupdata reloaded");
           }
+
+      } else {
+          putsn((!pos) ? "  empty cmd" : "  invalid cmd");
       }
 
       clear();
