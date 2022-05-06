@@ -99,33 +99,54 @@
 
 
 #if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)
-#define USE_IN
+  #define USE_IN
 #endif
 
 
 #if (defined DEVICE_HAS_OUT) || (defined DEVICE_HAS_OUT_NORMAL) || (defined DEVICE_HAS_OUT_INVERTED)
-#define USE_OUT
+  #define USE_OUT
 #endif
 
 
 #ifdef DEVICE_HAS_SX126x
-#define SX_DRIVER Sx126xDriver
+  #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x
-#define SX_DRIVER Sx127xDriver
+  #define SX_DRIVER Sx127xDriver
 #else
-#define SX_DRIVER Sx128xDriver
+  #define SX_DRIVER Sx128xDriver
 #endif
 
 #ifdef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_HAS_SX126x
-#define SX2_DRIVER Sx126xDriver2
-#elif defined DEVICE_HAS_SX127x
-#define SX2_DRIVER Sx127xDriver2
+  #ifdef DEVICE_HAS_SX126x
+    #define SX2_DRIVER Sx126xDriver2
+  #elif defined DEVICE_HAS_SX127x
+    #define SX2_DRIVER Sx127xDriver2
+  #else
+    #define SX2_DRIVER Sx128xDriver2
+  #endif
 #else
-#define SX2_DRIVER Sx128xDriver2
+  #define SX2_DRIVER SxDriverDummy
 #endif
+
+
+#ifdef DEVICE_HAS_DIVERSITY
+#define IF_ANTENNA1(x)            if (Config.UseAntenna1) { x; }
+#define IF_ANTENNA2(x)            if (Config.UseAntenna2) { x; }
+#define USE_ANTENNA1              (Config.UseAntenna1)
+#define USE_ANTENNA2              (Config.UseAntenna2)
 #else
-#define SX2_DRIVER SxDriverDummy
+#define IF_ANTENNA1(x)            x;
+#define IF_ANTENNA2(x)
+#define USE_ANTENNA1              true
+#define USE_ANTENNA2              false
+#endif
+
+#ifdef DEVICE_HAS_JRPIN5
+#define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
+#define IF_CRSF(x)                if (Config.UseCrsf) { x; }
+#else
+#define IF_MBRIDGE(x)
+#define IF_CRSF(x)
 #endif
 
 
