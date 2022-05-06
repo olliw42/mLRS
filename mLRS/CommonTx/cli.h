@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "setup_tx.h"
+extern TxStatsBase txstats;
+
 
 
 typedef enum {
@@ -23,6 +25,12 @@ typedef enum {
     CLI_TASK_BIND,
     CLI_TASK_RX_RELOAD,
 } CLI_TASK_ENUM;
+
+
+typedef enum {
+    CLI_STATE_NORMAL = 0,
+    CLI_STATE_STATS,
+} CLI_STATE_ENUM;
 
 
 class tTxCli
@@ -39,6 +47,7 @@ class tTxCli
     void print_param(uint8_t idx);
     void print_param_list(uint8_t flag);
     void print_param_opt_list(uint8_t idx);
+    void stream(void);
 
     bool cmd_param_set(char* name, char* svalue);
     bool cmd_param_opt(char* name);
@@ -54,6 +63,8 @@ class tTxCli
     uint32_t t_last_ms;
 
     uint8_t task_pending;
+
+    uint8_t state;
 };
 
 
@@ -67,6 +78,8 @@ void tTxCli::Init(tSerialBase* _com)
     t_last_ms = 0;
 
     task_pending = CLI_TASK_NONE;
+
+    state = CLI_STATE_NORMAL;
 }
 
 
@@ -387,6 +400,38 @@ void tTxCli::print_help(void)
     putsn("  pstore      -> store parameters");
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
+    putsn("  stats       -> starts streaming statistics");
+}
+
+
+void tTxCli::stream(void)
+{
+    uint32_t t_now = millis32();
+
+    if (state == CLI_STATE_STATS) {
+        if (t_now - t_last_ms >= 500) {
+            t_last_ms = t_now;
+
+            puts(u8toBCD_s(txstats.GetLQ()));
+            puts("(");
+            puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+            puts("),");
+            puts(u8toBCD_s(stats.received_LQ));
+            puts(", ");
+
+            puts(s8toBCD_s(stats.last_rx_rssi1));
+            puts(",");
+            puts(s8toBCD_s(stats.received_rssi));
+            puts(", ");
+            puts(s8toBCD_s(stats.last_rx_snr1));
+            puts("; ");
+
+            puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
+            puts(", ");
+            puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec()));
+            putsn(";");
+        }
+    }
 }
 
 
@@ -402,6 +447,11 @@ bool rx_param_changed;
 
     uint32_t t_now = millis32();
     if (pos && (t_now - t_last_ms > 2000)) { putsn(">"); putsn("  timeout"); clear(); }
+
+    if (state != CLI_STATE_NORMAL) {
+      if (com->available()) { com->getc(); state = CLI_STATE_NORMAL; putsn("  streaming stats stopped"); return; }
+      stream();
+    }
 
     while (com->available()) {
       char c = com->getc();
@@ -463,6 +513,12 @@ bool rx_param_changed;
               task_pending = CLI_TASK_RX_RELOAD;
               putsn("  Rx setupdata reloaded");
           }
+
+      } else
+      if (strcmp(buf, "stats") == 0) {
+          state = CLI_STATE_STATS;
+          putsn("  starts streaming stats");
+          putsn("  send any character to stop");
 
       } else {
           putsn((!pos) ? "  empty cmd" : "  invalid cmd");

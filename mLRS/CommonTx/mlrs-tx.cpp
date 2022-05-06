@@ -688,8 +688,8 @@ RESTARTCONTROLLER:
       if (!tick_1hz) {
         dbg.puts(".");
 /*        dbg.puts("\nTX: ");
-        dbg.puts(u8toBCD_s(txstats.GetLQ_serial_data()));
-        dbg.puts(" (");
+        dbg.puts(u8toBCD_s(txstats.GetLQ()));
+        dbg.puts("(");
         dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
         dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
         dbg.puts("),");
