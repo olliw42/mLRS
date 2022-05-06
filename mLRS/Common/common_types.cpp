@@ -196,6 +196,8 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
 {
     memset(Power_optstr, 0, slen);
 
+    char optstr[32+2] = {0};
+
     for (uint8_t i = 0; i < num; i++) {
         char s[32];
         if (power_list[i] == INT16_MAX) break;
@@ -207,14 +209,17 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
             remove_leading_zeros(s);
             strcat(s, " mW,");
         }
-        if (strlen(Power_optstr) + strlen(s) < slen) {
-            strcat(Power_optstr, s);
+        if (strlen(optstr) + strlen(s) <= slen) { // we are going to cut off the last char, hence <=
+            strcat(optstr, s);
         }
     }
 
-    if (strlen(Power_optstr) > 0) {
-        Power_optstr[strlen(Power_optstr)-1] = '\0'; // cut off last ','
+    uint16_t len = strlen(optstr);
+    if (len > 0) {
+        optstr[len - 1] = '\0'; // cut off last ','
     }
+
+    strcpy(Power_optstr, optstr);
 }
 
 
