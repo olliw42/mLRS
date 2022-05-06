@@ -100,6 +100,13 @@ typedef enum {
 } TX_IN_CONFIG_ENUM;
 
 
+typedef enum {
+    CLI_LINE_END_CR = 0,
+    CLI_LINE_END_LF,
+    CLI_LINE_END_CRLF,
+} TX_CLI_LINE_END_ENUM;
+
+
 //-- Rx
 
 typedef enum {

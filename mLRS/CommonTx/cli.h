@@ -29,6 +29,7 @@ class tTxCli
 {
   public:
     void Init(tSerialBase* _com = nullptr);
+    void Set(uint8_t new_line_end = CLI_LINE_END_CR);
     void Do(void);
     uint8_t Task(void);
 
@@ -42,7 +43,12 @@ class tTxCli
     bool cmd_param_set(char* name, char* svalue);
     bool cmd_param_opt(char* name);
 
+    void puts(const char* s) { com->puts(s); }
+    void putsn(const char* s) { com->puts(s); com->puts(ret); }
+
     tSerialBase* com;
+    char ret[4];
+
     char buf[128];
     uint8_t pos;
     uint32_t t_last_ms;
@@ -54,11 +60,23 @@ class tTxCli
 void tTxCli::Init(tSerialBase* _com)
 {
     com = _com;
+    strcpy(ret, "\r");
+
     pos = 0;
     buf[pos] = '\0';
-    task_pending = CLI_TASK_NONE;
-
     t_last_ms = 0;
+
+    task_pending = CLI_TASK_NONE;
+}
+
+
+void tTxCli::Set(uint8_t new_line_end)
+{
+    switch (new_line_end) {
+    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
+    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
+    case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
+    }
 }
 
 
@@ -148,6 +166,37 @@ uint8_t nr, n;
     s[n] = '\0';
 
     return true;
+}
+
+
+bool param_get_setting_str(char* s, uint8_t param_idx)
+{
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+        break;
+    case SETUP_PARAM_TYPE_INT8:{
+        int8_t i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+        stoBCDstr(i8, s);
+        if (SetupParameter[param_idx].unit[0] != '\0') {
+          strcat(s, " ");
+          strcat(s, SetupParameter[param_idx].unit);
+        }
+        return true;
+        }break;
+    case SETUP_PARAM_TYPE_UINT16:
+        break;
+    case SETUP_PARAM_TYPE_INT16:
+        break;
+    case SETUP_PARAM_TYPE_LIST:{
+        uint8_t u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+        return param_get_optstr(s, param_idx, u8);
+        }break;
+    case SETUP_PARAM_TYPE_STR6:
+        strstrbufcpy(s, (char*)SetupParameter[param_idx].ptr, 6);
+        return true;
+    }
+    s[0] = '\0';
+    return false;
 }
 
 
@@ -252,13 +301,11 @@ char s[16];
         break;
     case SETUP_PARAM_TYPE_INT8:{
         int8_t i8 = SetupParameter[idx].min.INT8_value;
-        com->puts("  min: ");
-        if (i8 >= 0) { utoBCDstr(i8, s); com->puts(s); } else { utoBCDstr(-i8, s); com->putc('-'); com->puts(s); }
-        com->puts("\n");
+        puts("  min: ");
+        stoBCDstr(i8, s); putsn(s);
         i8 = SetupParameter[idx].max.INT8_value;
-        com->puts("  max: ");
-        if (i8 >= 0) { utoBCDstr(i8, s); com->puts(s); } else { utoBCDstr(-i8, s); com->putc('-'); com->puts(s); }
-        com->puts("\n");
+        puts("  max: ");
+        stoBCDstr(i8, s); putsn(s);
         }break;
     case SETUP_PARAM_TYPE_UINT16:
         break;
@@ -269,14 +316,13 @@ char s[16];
         uint16_t allowed_mask = param_get_allowed_mask(idx);
         while (param_get_optstr(s, idx, i)) {
             if (allowed_mask & (1 << i)) {
-                com->puts("  "); com->putc(i + '0'); com->puts(" = "); com->puts(s);
-                com->puts("\n");
+                com->puts("  "); com->putc(i + '0'); com->puts(" = "); putsn(s);
             }
             i++;
         }
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        com->puts("  [a-zA-Z0-9#-._]\n");
+        putsn("  [a-zA-Z0-9#-._]");
         break;
     }
 }
@@ -284,42 +330,36 @@ char s[16];
 
 void tTxCli::print_param(uint8_t idx)
 {
-    com->puts("  ");
-    com->puts(SetupParameter[idx].name);
-    com->puts(" = ");
-    char s[16];
+    puts("  ");
+    puts(SetupParameter[idx].name);
+    puts(" = ");
+    char s[32];
+    param_get_setting_str(s, idx);
+    puts(s);
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
         break;
-    case SETUP_PARAM_TYPE_INT8:{
-        int8_t i8 = *(int8_t*)(SetupParameter[idx].ptr);
-        if (i8 >= 0) { utoBCDstr(i8, s); com->puts(s); } else { utoBCDstr(-i8, s); com->putc('-'); com->puts(s); }
-        com->puts(" ");
-        com->puts(SetupParameter[idx].unit);
-        }break;
+    case SETUP_PARAM_TYPE_INT8:
+        break;
     case SETUP_PARAM_TYPE_UINT16:
         break;
     case SETUP_PARAM_TYPE_INT16:
         break;
     case SETUP_PARAM_TYPE_LIST:{
         uint8_t u8 = *(uint8_t*)(SetupParameter[idx].ptr);
-        param_get_optstr(s, idx, u8);
-        com->puts(s);
-        com->puts(" ["); com->putc(u8 + '0'); com->puts("]");
+        puts(" ["); com->putc(u8 + '0'); puts("]");
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        strstrbufcpy(s, (char*)(SetupParameter[idx].ptr), 6);
-        com->puts(s);
         break;
     }
-    com->puts("\n");
+    puts(ret);
 }
 
 
 void tTxCli::print_param_list(uint8_t flag)
 {
     if ((flag == 0 || flag == 1 || flag == 3) && !connected()) {
-        com->puts("warn: receiver not connected\n");
+        putsn("warn: receiver not connected");
     }
 
     for (uint8_t idx = 0; idx < SETUP_PARAMETER_NUM; idx++) {
@@ -336,17 +376,17 @@ void tTxCli::print_param_list(uint8_t flag)
 
 void tTxCli::print_help(void)
 {
-    com->puts("  help, h, ?  -> this help page\n");
-    com->puts("  pl          -> list all parameters\n");
-    com->puts("  pl c        -> list common parameters\n");
-    com->puts("  pl tx       -> list Tx parameters\n");
-    com->puts("  pl rx       -> list Rx parameters\n");
-    com->puts("  p name          -> get parameter value\n");
-    com->puts("  p name = value  -> set parameter value\n");
-    com->puts("  p name = ?      -> get parameter value and list of allowed values\n");
-    com->puts("  pstore      -> store parameters\n");
-    com->puts("  bind        -> start binding\n");
-    com->puts("  reload      -> reload all parameter settings\n");
+    putsn("  help, h, ?  -> this help page");
+    putsn("  pl          -> list all parameters");
+    putsn("  pl c        -> list common parameters");
+    putsn("  pl tx       -> list Tx parameters");
+    putsn("  pl rx       -> list Rx parameters");
+    putsn("  p name          -> get parameter value");
+    putsn("  p name = value  -> set parameter value");
+    putsn("  p name = ?      -> get parameter value and list of allowed values");
+    putsn("  pstore      -> store parameters");
+    putsn("  bind        -> start binding");
+    putsn("  reload      -> reload all parameter settings");
 }
 
 
@@ -367,12 +407,12 @@ bool rx_param_changed;
       if (t_now - t_last_ms > 2000) clear();
       t_last_ms = t_now;
 
-      if (c != '\n' && c != ',' && c != ';') {
+      if (c != '\n' && c != '\r' && c != ',' && c != ';') {
         com->putc(c);
         addc(c);
         continue;
       }
-      com->puts(">\n");
+      putsn(">");
 
       if (strcmp(buf, "h") == 0)     print_help();
       if (strcmp(buf, "help") == 0)  print_help();
@@ -384,16 +424,16 @@ bool rx_param_changed;
 
       if (cmd_param_set(sname, svalue)) { // p name, p name = value
           if (!param_get_idx(&param_idx, sname)) {
-              com->puts("err: invalid parameter name\n");
+              putsn("err: invalid parameter name");
           } else if (!connected() && sname[0] == 'R'){
-              com->puts("warn: receiver not connected\n");
+              putsn("warn: receiver not connected");
           } else if (svalue[0] == '?') {
               print_param(param_idx);
               print_param_opt_list(param_idx);
           } else if (svalue[0] == '\0') {
-              com->puts("err: no value specified\n");
+              putsn("err: no value specified");
           } else if (!param_set_val(&rx_param_changed, svalue, param_idx)) {
-              com->puts("err: invalid value\n");
+              putsn("err: invalid value");
           } else {
               print_param(param_idx);
               if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
@@ -403,24 +443,24 @@ bool rx_param_changed;
       if (strcmp(buf, "pstore") == 0) {
           task_pending = CLI_TASK_PARAM_STORE;
           if (!connected()) {
-              com->puts("warn: receiver not connected\n");
-              com->puts("  Tx parameters stored\n");
+              putsn("warn: receiver not connected");
+              putsn("  Tx parameters stored");
           } else {
-              com->puts("  parameters stored\n");
+              putsn("  parameters stored");
           }
       }
 
       if (strcmp(buf, "bind") == 0) {
           task_pending = CLI_TASK_BIND;
-          com->puts("  Tx entered bind mode\n");
+          putsn("  Tx entered bind mode");
       }
 
       if (strcmp(buf, "reload") == 0) {
           if (!connected()) {
-              com->puts("warn: receiver not connected\n");
+              putsn("warn: receiver not connected");
           } else {
               task_pending = CLI_TASK_RX_RELOAD;
-              com->puts("  Rx setupdata reloaded\n");
+              putsn("  Rx setupdata reloaded");
           }
       }
 
