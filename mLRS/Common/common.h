@@ -49,11 +49,11 @@ uint32_t millis32(void)
 
 #ifdef USE_COM_ON_SERIAL
   // TODO: when we swap ser/com, we may want to flush, we need to change baudrate
-  #define SERORCOMINIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
+  #define SERORCOM_INIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
   #define IFNSER(x)  if (!ser_or_com_serial()) return x;
   #define IFNCOM(x)  if (ser_or_com_serial()) return x;
 #else
-  #define SERORCOMINIT
+  #define SERORCOM_INIT
   #define IFNSER(x)
   #define IFNCOM(x)
 #endif
@@ -64,15 +64,13 @@ class tSerialPort : public tSerialBase
 {
 #ifdef USE_SERIAL
   public:
-    void Init(void) override { uartb_init(); SERORCOMINIT; }
+    void Init(void) override { uartb_init(); SERORCOM_INIT; }
     void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
     void putc(char c) override { IFNSER(); uartb_putc(c); }
     bool available(void) override { IFNSER(0); return uartb_rx_available(); }
     char getc(void) override { IFNSER(0); return uartb_getc(); }
     void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
     uint16_t bytes_available(void) override { IFNSER(0); return uartb_rx_bytesavailable(); }
-//XX    const uint16_t rx_buf_size(void) override { return UARTB_RXBUFSIZE; }
-//XX    bool tx_is_empty(void) override { IFNSER(0); return uartb_tx_isempty(); }
 #endif
 };
 
@@ -177,7 +175,6 @@ void sxGetPacketStatus(uint8_t antenna, Stats* stats)
 //-------------------------------------------------------
 //-- FAIL
 //-------------------------------------------------------
-
 
 typedef enum {
     GR_OFF_RD_BLINK = FAIL_LED_PATTERN_GR_OFF_RD_BLINK,
