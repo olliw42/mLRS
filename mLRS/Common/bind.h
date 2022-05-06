@@ -21,7 +21,7 @@ extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
 void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
-void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms);
+void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms);
 void sxGetPacketStatus(uint8_t antenna, Stats* stats);
 
 extern Stats stats;
@@ -177,7 +177,7 @@ void BindBase::do_transmit(uint8_t antenna)
     txBindFrame.Mode = Setup.Mode;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &txBindFrame, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
+    sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
 }
 
 
@@ -227,7 +227,7 @@ void BindBase::do_transmit(uint8_t antenna)
     strbufstrcpy(rxBindFrame.device_name_20, DEVICE_NAME, 20);
 
     rxBindFrame.crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
+    sxSendFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
 }
 
 

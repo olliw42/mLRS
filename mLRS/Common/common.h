@@ -122,11 +122,14 @@ tDebugPort dbg;
 
 tRcData rcData;
 
-tTxFrame txFrame;
+#ifdef DEVICE_IS_RECEIVER
+tTxFrame txFrame, txFrame2;
 tRxFrame rxFrame;
-
-tTxFrame txFrame2;
-tRxFrame rxFrame2;
+#endif
+#ifdef DEVICE_IS_TRANSMITTER
+tTxFrame txFrame;
+tRxFrame rxFrame, rxFrame2;
+#endif
 
 SX_DRIVER sx;
 SX2_DRIVER sx2;
@@ -152,12 +155,12 @@ void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
 }
 
 
-void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t tmo_ms)
+void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
 {
     if (antenna == ANTENNA_1) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms);
     } else {
-        sx2.SendFrame((uint8_t*)data2, len, tmo_ms);
+        sx2.SendFrame((uint8_t*)data, len, tmo_ms);
     }
 }
 
@@ -165,7 +168,7 @@ void sxSendFrame(uint8_t antenna, void* data, void* data2, uint8_t len, uint16_t
 void sxGetPacketStatus(uint8_t antenna, Stats* stats)
 {
     if (antenna == ANTENNA_1) {
-        sx.GetPacketStatus(&(stats->last_rx_rssi1), &(stats->last_rx_snr1)); //&stats.last_rx_rssi1, &stats.last_rx_snr1);
+        sx.GetPacketStatus(&(stats->last_rx_rssi1), &(stats->last_rx_snr1));
     } else {
         sx2.GetPacketStatus(&(stats->last_rx_rssi2), &(stats->last_rx_snr2));
     }

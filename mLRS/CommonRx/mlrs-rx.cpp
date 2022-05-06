@@ -292,7 +292,7 @@ uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len;
 
 
-void process_transmit_frame(uint8_t antenna, uint8_t ack)
+void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 {
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
       memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
@@ -442,9 +442,9 @@ uint8_t ack = 1;
 
     stats.transmit_seq_no++;
 
-    process_transmit_frame(antenna, ack);
+    prepare_transmit_frame(antenna, ack);
 
-    sxSendFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+    sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
 }
 
 
