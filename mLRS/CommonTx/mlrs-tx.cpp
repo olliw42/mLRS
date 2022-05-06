@@ -40,10 +40,10 @@ v0.0.00:
 #ifdef USE_SERIAL
 #include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
 #endif
-#if defined USE_COM
+#ifdef USE_COM
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #endif
-#if defined USE_DEBUG
+#ifdef USE_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
 #endif
 #ifdef DEVICE_HAS_I2C

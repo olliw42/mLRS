@@ -74,7 +74,9 @@
   #endif
 #else
   #define USE_SERIAL
-  #define USE_DEBUG
+  #ifdef DEBUG_ENABLED
+    #define USE_DEBUG
+  #endif
 #endif
 #endif
 
@@ -89,11 +91,15 @@
 #elif defined DEVICE_HAS_SERIAL_OR_COM // R9M, Siyi, has device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
-  #define USE_DEBUG
+  #ifdef DEBUG_ENABLED
+    #define USE_DEBUG
+  #endif
 #else
   #define USE_SERIAL
   #define USE_COM
-  #define USE_DEBUG
+  #ifdef DEBUG_ENABLED
+    #define USE_DEBUG
+  #endif
 #endif
 #endif
 
