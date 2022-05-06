@@ -71,7 +71,7 @@
 #define ESP_RESET                 IO_PA11
 #define ESP_GPIO0                 IO_PA12
 
-#define UARTF_USE_LPUART1 // debug
+#define UARTF_USE_LPUART1_REMAPPED // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
