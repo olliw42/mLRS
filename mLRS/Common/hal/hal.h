@@ -39,6 +39,9 @@
 #ifdef TX_DIY_BOARD01_G491RE
 #include "tx-hal-diy-board01-g491re.h"
 #endif
+#ifdef TX_DIY_E28DUAL_MODULE02_G491RE
+#include "tx-hal-diy-e28dual-module02-g491re.h"
+#endif
 
 
 #ifdef RX_R9MX_868_L433CB

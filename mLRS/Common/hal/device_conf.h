@@ -55,6 +55,13 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef TX_DIY_E28DUAL_MODULE02_G491RE
+  #define DEVICE_NAME "DIY DualE28 G491RE"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 #ifdef RX_R9MX_868_L433CB
   #define DEVICE_NAME "Frsky R9MX"

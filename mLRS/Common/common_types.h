@@ -127,6 +127,17 @@ uint16_t version_to_u16(uint32_t version);
 uint32_t version_from_u16(uint16_t version_u16);
 
 
+//-- display & keys
+
+typedef enum {
+    KEY_UP = 0,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_CENTER,
+} KEY_ENUM;
+
+
 //-- auxiliary functions
 
 // clip a value for rcData to range
