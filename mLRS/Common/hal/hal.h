@@ -28,13 +28,13 @@
 #ifdef RX_DIY_BOARD01_F103CB
 #include "rx-hal-diy-board01-f103cb.h"
 #endif
-#ifdef RX_DIY_E28_BOARD01_F103CB
-#include "rx-hal-diy-e28-board01-f103cb.h"
+#ifdef RX_DIY_E28DUAL_BOARD02_F103CB
+#include "rx-hal-diy-e28dual-board02-f103cb.h"
 #endif
 
 
-#ifdef TX_DIY_E28_BOARD01_F103CB
-#include "tx-hal-diy-e28-board01-f103cb.h"
+#ifdef TX_DIY_E28DUAL_BOARD02_F103CB
+#include "tx-hal-diy-e28dual-board02-f103cb.h"
 #endif
 #ifdef TX_DIY_BOARD01_G491RE
 #include "tx-hal-diy-board01-g491re.h"
