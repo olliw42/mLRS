@@ -266,7 +266,8 @@ void configure_mode(uint8_t mode)
         Config.lora_send_frame_tmo = MODE_19HZ_SEND_FRAME_TMO; // 25;
         break;
     default:
-        while (1) {} // must not happen
+        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+
     }
 }
 
@@ -310,6 +311,8 @@ void setup_configure(void)
         Config.UseAntenna1 = false;
         Config.UseAntenna2 = true;
         break;
+    default:
+        while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
     Config.UseAntenna1 = true;
@@ -342,6 +345,8 @@ void setup_configure(void)
     case MODE_19HZ:
         Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE;
         break;
+    default:
+        while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #endif
 
@@ -380,7 +385,7 @@ void setup_configure(void)
         Config.UseCrsf = true;
     }
     if (Config.UseMbridge && Config.UseCrsf) {
-      while(1){}; // mBridge and CRSF cannot be used simultaneously, should not happen, should be resolved in setup_sanitize()
+        while (1) {} // mBridge and CRSF cannot be used simultaneously, must not happen, should have been resolved in setup_sanitize()
     }
 #endif
 }
