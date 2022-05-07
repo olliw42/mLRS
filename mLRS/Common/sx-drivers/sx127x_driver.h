@@ -119,7 +119,6 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        uint8_t sx_power;
 #ifdef DEVICE_HAS_I2C_DAC
         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
 #else
@@ -215,28 +214,47 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     //-- helper
 
+    void config_calc(void)
+    {
+        int8_t power_dbm = Config.Power_dbm;
+#ifdef DEVICE_HAS_I2C_DAC
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
+#else
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+#endif
+
+        uint8_t index = Config.LoraConfigIndex;
+        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
+        lora_configuration = &(Sx127xLoraConfiguration[index]);
+
+        symbol_time_us = calc_symbol_time_us(lora_configuration->SpreadingFactor, lora_configuration->Bandwidth);
+    }
+
+    // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        // cumbersome to calculate in general, so use hardcoded for a specific settings
-        if (lora_configuration == nullptr) return 0;
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
         return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) return 0;
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
         return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
         return actual_power_dbm;
     }
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    uint8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
 

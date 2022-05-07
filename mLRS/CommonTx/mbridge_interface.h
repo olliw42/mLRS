@@ -524,8 +524,6 @@ tMBridgeInfo info = {0};
         info.tx_actual_diversity = 1;
     } else
     if (USE_ANTENNA2) {
-        info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
-        info.tx_actual_power_dbm = sx2.RfPower_dbm();
         info.tx_actual_diversity = 2;
     } else {
         info.tx_actual_diversity = 3; // 3 = invalid

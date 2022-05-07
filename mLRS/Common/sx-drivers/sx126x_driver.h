@@ -123,7 +123,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        uint8_t sx_power;
         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
     }
@@ -201,29 +200,41 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetFs();
     }
 
+    void config_calc(void)
+    {
+         int8_t power_dbm = Config.Power_dbm;
+         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+
+         uint8_t index = Config.LoraConfigIndex;
+         if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
+         lora_configuration = &(Sx126xLoraConfiguration[index]);
+    }
+
+    // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        // cumbersome to calculate in general, so use hardcoded for a specific settings
-        if (lora_configuration != nullptr) {
-            return lora_configuration->TimeOverAir;
-        }
-        return 0;
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
+        return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) return 0;
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
         return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
         return actual_power_dbm;
     }
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    uint8_t sx_power;
     int8_t actual_power_dbm;
 };
 
