@@ -27,13 +27,13 @@
 // SysTask
 //-------------------------------------------------------
 
-volatile uint8_t doSysTask = 0;
+volatile uint32_t doSysTask = 0;
 
 
 void HAL_IncTick(void)
 {
     uwTick += uwTickFreq;
-    doSysTask = 1;
+    doSysTask++;
 }
 
 

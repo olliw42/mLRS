@@ -664,7 +664,9 @@ RESTARTCONTROLLER:
     //-- SysTask handling
 
     if (doSysTask) {
-      doSysTask = 0;
+      // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
+      // the commands below must not be sensitive to strict ms timming
+      doSysTask--; // doSysTask = 0;
 
       if (connect_tmo_cnt) {
         connect_tmo_cnt--;
