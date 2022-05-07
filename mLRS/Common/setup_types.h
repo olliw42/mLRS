@@ -183,8 +183,10 @@ typedef struct
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
+    uint8_t Buzzer;
+    uint8_t CliLineEnd;
 
-    uint8_t spare[11];
+    uint8_t spare[9];
 } tTxSetup;
 
 
@@ -245,6 +247,7 @@ typedef struct
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
+    uint16_t Tx_Buzzer_allowed_mask;
 
     char Rx_Power_optstr[32+1];
     uint16_t Rx_Diversity_allowed_mask;

@@ -237,5 +237,8 @@ STATIC_ASSERT(sizeof(tRxBindFrame) == FRAME_TX_RX_LEN, "tRxBindFrame len missmat
 STATIC_ASSERT(sizeof(tTxCmdFrameRxParams) == FRAME_TX_PAYLOAD_LEN, "tTxCmdFrameRxParams len missmatch")
 STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFrameRxSetupData len missmatch")
 
+STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
+STATIC_ASSERT(sizeof(tRxSetup) == 36, "tRxSetup len missmatch")
+STATIC_ASSERT(sizeof(tSetup) == 38+20+36+8+2, "tSetup len missmatch")
 
 #endif // COMMON_H

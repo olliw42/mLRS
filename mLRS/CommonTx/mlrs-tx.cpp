@@ -243,7 +243,7 @@ WhileTransmit whileTransmit;
 
 void WhileTransmit::handle_once(void)
 {
-    cli.Set(CLI_LINE_END_CR);
+    cli.Set(Setup.Tx.CliLineEnd);
     cli.Do();
 }
 
