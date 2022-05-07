@@ -15,32 +15,32 @@
 void WhileBase::Init(void)
 {
     do_cnt = 0;
-    tasks = 0;
+    tstart_us = 0;
+    tremaining_us = 0;
 }
 
 
 void WhileBase::Trigger(void)
 {
-    do_cnt = 5; // postpone the action by few loops
+    do_cnt = 10; // postpone action by few loops
+    tstart_us = tnow_us();
+    tremaining_us = dtmax_us(); // this starts it
 }
 
 
 void WhileBase::Do(void)
 {
-    if (!do_cnt) return; // 0 = not triggered -> jump out
-    do_cnt--; // count down
-    if (do_cnt) return; // !0 = we still postpone -> jump out
+    if (tremaining_us <= 0) return;
+
+    if (do_cnt) { // count down
+        do_cnt--;
+        if (!do_cnt) { handle_once(); }
+        return;
+    }
+
+    tremaining_us = dtmax_us() - (int32_t)(tnow_us() - tstart_us);
+    if (tremaining_us <= 0) return;
 
     handle();
-
-    if (!tasks) return; // no task to do -> jump out
-    handle_tasks();
 }
-
-
-void WhileBase::SetTask(uint16_t task)
-{
-    tasks |= task;
-}
-
 

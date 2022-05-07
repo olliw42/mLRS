@@ -229,17 +229,21 @@ void init_serialport(void)
 
 #include "..\Common\while.h"
 
+
+class WhileTransmit : public WhileBase
+{
+  public:
+    uint16_t tnow_us(void) override { return micros(); }
+    int32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
+    void handle_once(void) override;
+};
+
 WhileTransmit whileTransmit;
 
 
-void WhileTransmit::handle(void)
+void WhileTransmit::handle_once(void)
 {
     cli.Do();
-}
-
-
-void WhileTransmit::handle_tasks(void)
-{
 }
 
 
