@@ -113,6 +113,12 @@ E28-2G4M20S
 20 dBm / 100 mW
 
 
+Comment:
+with the E28, when Tx and Rx are very close, connecting may be slow or may not happen
+rssi on Tx is then very low (-80 dBm or so)
+this disappears with distance
+I concluded it's overload of the LNA stage
+
 -------------------------------------------------------
 Amps
 
