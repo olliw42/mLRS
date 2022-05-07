@@ -56,6 +56,8 @@ class tTxCli
     void putsn(const char* s) { com->puts(s); com->puts(ret); }
 
     tSerialBase* com;
+
+    uint8_t line_end;
     char ret[4];
 
     char buf[128];
@@ -71,6 +73,8 @@ class tTxCli
 void tTxCli::Init(tSerialBase* _com)
 {
     com = _com;
+
+    line_end = CLI_LINE_END_CR;
     strcpy(ret, "\r");
 
     pos = 0;
@@ -85,7 +89,11 @@ void tTxCli::Init(tSerialBase* _com)
 
 void tTxCli::Set(uint8_t new_line_end)
 {
-    switch (new_line_end) {
+    if (new_line_end == line_end) return;
+
+    line_end = new_line_end;
+
+    switch (line_end) {
     case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
     case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
     case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;

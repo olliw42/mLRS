@@ -104,6 +104,7 @@ typedef enum {
     CLI_LINE_END_CR = 0,
     CLI_LINE_END_LF,
     CLI_LINE_END_CRLF,
+    CLI_LINE_END_UNDEFINED,
 } TX_CLI_LINE_END_ENUM;
 
 
