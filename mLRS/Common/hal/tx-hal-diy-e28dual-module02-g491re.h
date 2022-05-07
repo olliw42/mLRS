@@ -320,16 +320,11 @@ uint8_t fiveway_read(void)
 }
 
 
-//-- OLED I2C
+//-- Display I2C
 
 #define I2C_USE_I2C3              // PA8, PC9
-#define I2C_SPEED_1000KHZ
-#define I2C_SCL                   IO_PA8
-#define I2C_SDA                   IO_PC9
-
-void oled_init_gpio(void)
-{
-}
+#define I2C_CLOCKSPEED_1000KHZ
+#define I2C_USE_DMAMODE
 
 
 //-- POWER

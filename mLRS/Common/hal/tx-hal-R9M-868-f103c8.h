@@ -81,7 +81,7 @@
 
 #define DEVICE_HAS_I2C
 #define I2C_USE_I2C1
-#define I2C_USE_CLOCKSPEED_400KHZ
+#define I2C_CLOCKSPEED_400KHZ
 #define SX_PA_DAC_I2C_DEVICE_ADR  0x0C
 
 // R9M power management:

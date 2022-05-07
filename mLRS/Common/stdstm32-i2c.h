@@ -5,7 +5,7 @@
 //*******************************************************
 // STM32Cube HAL based I2C standard library
 //*******************************************************
-// very limited so far !!!
+// a bit limited so far !!!
 //
 // Interface:
 //
@@ -14,9 +14,9 @@
 // #define I2C_DMA_PRIORITY
 // #define I2C_DMA_IRQ_PRIORITY
 //
-// #defined I2C_USE_CLOCKSPEED_100KHZ
-// #defined I2C_USE_CLOCKSPEED_400KHZ
-// #defined I2C_USE_CLOCKSPEED_1000KHZ
+// #defined I2C_CLOCKSPEED_100KHZ
+// #defined I2C_CLOCKSPEED_400KHZ
+// #defined I2C_CLOCKSPEED_1000KHZ
 //
 //*******************************************************
 #ifndef STDSTM32_I2C_H
@@ -24,18 +24,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if !defined HAL_I2C_MODULE_ENABLED //&& !defined __STM32F1xx_HAL_I2C_H
-  #error HAL_I2C_MODULE_ENABLED is not defined!
+#ifndef HAL_I2C_MODULE_ENABLED
+  #error HAL_I2C_MODULE_ENABLED not defined, enable it in Core\Inc\stm32yyxx_hal_conf.h!
 #else
 
 
-#ifdef I2C_USE_DMAMODE
-  #ifndef I2C_DMA_PRIORITY
-    #define I2C_DMA_PRIORITY  DMA_PRIORITY_MEDIUM
-  #endif
-  #ifndef I2C_DMA_IRQ_PRIORITY
-    #define I2C_DMA_IRQ_PRIORITY  15
-  #endif
+#ifndef I2C_DMA_PRIORITY
+  #define I2C_DMA_PRIORITY  DMA_PRIORITY_MEDIUM
+#endif
+#ifndef I2C_DMA_IRQ_PRIORITY
+  #define I2C_DMA_IRQ_PRIORITY  15
 #endif
 
 #ifndef I2C_BLOCKING_TMO_MS
@@ -49,7 +47,7 @@ extern "C" {
 
 //#include "stdstm32-peripherals.h"
 
-#ifdef I2C_USE_I2C1
+#if defined I2C2 && defined I2C_USE_I2C1
   #define I2C_I2Cx               I2C1
   #define I2C_SCL_IO             IO_PB6
   #define I2C_SDA_IO             IO_PB7
@@ -88,7 +86,8 @@ DMA_HandleTypeDef hdma_i2c_tx;
 #endif
 
 
-// MspInit(), called by HAL
+// MspInit(), called in HAL_I2C_Init()
+// ST recommends to not mix HAL and LL for a peripheral, so let's use HAL for i2c & dma
 #ifndef STDSTM32_I2C_MSPINIT
 #define STDSTM32_I2C_MSPINIT
 
@@ -176,9 +175,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 #endif
 
 
-// peripherals
-
-void i2c_init_pheripherals(void)
+void MX_I2C_Init(void)
 {
   hi2c.Instance = I2C_I2Cx;
 
@@ -190,11 +187,12 @@ void i2c_init_pheripherals(void)
   hi2c.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
 #ifdef STM32F1
-#if defined I2C_USE_CLOCKSPEED_100KHZ
+#if defined I2C_CLOCKSPEED_100KHZ
   hi2c.Init.ClockSpeed = 100000;
-#elif defined I2C_USE_CLOCKSPEED_400KHZ
+#elif defined I2C_CLOCKSPEED_400KHZ
   hi2c.Init.ClockSpeed = 400000;
-#elif defined I2C_USE_CLOCKSPEED_1000KHZ
+#elif defined I2C_CLOCKSPEED_1000KHZ
+  #error I2C: 1000 kHz not supported!
 #else
   hi2c.Init.ClockSpeed = 100000;
   #warning I2C: no clock speed defined, set to 100 kHz!
@@ -202,12 +200,15 @@ void i2c_init_pheripherals(void)
   hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
 
 #elif defined STM32G4
-#if defined I2C_USE_CLOCKSPEED_100KHZ
+#if defined I2C_CLOCKSPEED_100KHZ
   hi2c.Init.Timing = 0x30A0A7FB; // StandardMode 100 kHz
-#elif defined I2C_USE_CLOCKSPEED_400KHZ
+#elif defined I2C_CLOCKSPEED_400KHZ
   hi2c.Init.Timing = 0x10802D9B; // FastdMode 400 kHz
-#elif defined I2C_USE_CLOCKSPEED_1000KHZ
+#elif defined I2C_CLOCKSPEED_1000KHZ
   hi2c.Init.Timing = 0x00802172; // FastdMode 1000 kHz
+#else
+  hi2c.Init.Timing = 0x30A0A7FB;
+  #warning I2C: no clock speed defined, set to 100 kHz!
 #endif
   hi2c.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
 #endif
@@ -235,7 +236,10 @@ void i2c_init_pheripherals(void)
 #endif
 }
 
-// DMA interrupt routines
+
+//-------------------------------------------------------
+// ISR routines
+//-------------------------------------------------------
 
 #ifdef I2C_USE_DMAMODE
 void I2C_TX_DMAx_Channely_IRQHandler(void)
@@ -312,7 +316,7 @@ HAL_StatusTypeDef res;
 
 void i2c_init(void)
 {
-  i2c_init_pheripherals();
+  MX_I2C_Init();
 
   i2c_dev_adr = 0;
 }
@@ -324,4 +328,4 @@ void i2c_init(void)
 #ifdef __cplusplus
 }
 #endif
-#endif //STDSTM32_I2C_H
+#endif // STDSTM32_I2C_H
