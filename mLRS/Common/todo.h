@@ -9,6 +9,7 @@
 /*
 
 ISSUES:
+- settings: allowed:mask = 0 to indicate not available/setable
 - setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
