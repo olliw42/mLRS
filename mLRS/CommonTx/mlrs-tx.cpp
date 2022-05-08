@@ -62,6 +62,7 @@ v0.0.00:
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
+#include "buzzer.h"
 
 
 TxStatsBase txstats;
@@ -154,6 +155,7 @@ ChannelOrder channelOrder;
 tComPort com;
 
 tTxCli cli;
+tBuzzer buzzer;
 
 tSerialBase* serialport;
 
@@ -172,6 +174,7 @@ void init(void)
 
     com.Init();
     cli.Init(&com);
+    buzzer.Init();
     dbg.Init();
 
     setup_init();
@@ -601,6 +604,7 @@ uint16_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
+bool connect_occured_once;
 
 
 static inline bool connected(void)
@@ -645,6 +649,7 @@ RESTARTCONTROLLER:
   connect_state = CONNECT_STATE_LISTEN;
   connect_tmo_cnt = 0;
   connect_sync_cnt = 0;
+  connect_occured_once = false;
   link_rx1_status = RX_STATUS_NONE;
   link_rx2_status = RX_STATUS_NONE;
   link_task_init();
@@ -693,6 +698,23 @@ RESTARTCONTROLLER:
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
       if (!tick_1hz) {
+        if (Setup.Tx.Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+          buzzer.BeepLQ(stats.received_LQ);
+        }
+      }
+
+      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
+
+      if (!tx_tick) {
+        doPreTransmit = true; // trigger next cycle
+        crsf.TelemetryStart();
+      }
+
+      mbridge.TelemetryTick_ms();
+      crsf.TelemetryTick_ms();
+      link_task_tick_ms();
+
+      if (!tick_1hz) {
         dbg.puts(".");
 /*        dbg.puts("\nTX: ");
         dbg.puts(u8toBCD_s(txstats.GetLQ()));
@@ -709,17 +731,6 @@ RESTARTCONTROLLER:
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
         dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
       }
-
-      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
-
-      if (!tx_tick) {
-        doPreTransmit = true; // trigger next cycle
-        crsf.TelemetryStart();
-      }
-
-      mbridge.TelemetryTick_ms();
-      crsf.TelemetryTick_ms();
-      link_task_tick_ms();
     }
 
     //-- SX handling
@@ -886,6 +897,8 @@ IF_ANTENNA2(
         connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
       }
 
+      if (connect_state == CONNECT_STATE_CONNECTED) connect_occured_once = true;
+
       // we are connected but tmo ran out
       if (connected() && !connect_tmo_cnt) {
         // so disconnect
@@ -910,6 +923,11 @@ IF_ANTENNA2(
 
       if (!connected()) stats.Clear();
       txstats.Next();
+
+      if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once) {
+      //if (connect_occured_once) {
+        if (!valid_frame_received) buzzer.BeepLP();
+      }
 
       // store parameters
       if (doParamsStore) {

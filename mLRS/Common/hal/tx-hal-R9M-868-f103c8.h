@@ -18,6 +18,7 @@
 //#define DEVICE_HAS_IN_INVERTED // we use this uart for debug, technically we could use it for both In (=U2RX) and Debug (=U2TX)
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
+#define DEVICE_HAS_BUZZER
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -234,11 +235,13 @@ void pos_switch_init(void)
 }
 
 
-//-- Buzzer, Dip1, Dip2
+//-- Buzzer
+// Buzzer is active high
 
 #define BUZZER                    IO_PB1
-#define DIP1                      IO_PA12 // same a green
-#define DIP2                      IO_PA11 // same as red
+#define BUZZER_TIMx               TIM1
+#define BUZZER_IRQn               TIM1_UP_IRQn
+#define BUZZER_IRQHandler         TIM1_UP_IRQHandler
 
 
 //-- EEPROM, not used

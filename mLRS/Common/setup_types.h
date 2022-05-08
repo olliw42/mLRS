@@ -108,6 +108,14 @@ typedef enum {
 } TX_CLI_LINE_END_ENUM;
 
 
+typedef enum {
+    BUZZER_OFF = 0,
+    BUZZER_LOST_PACKETS,
+    BUZZER_RX_LQ,
+    BUZZER_UNDEFINED,
+} TX_BUZZER_END_ENUM;
+
+
 //-- Rx
 
 typedef enum {

@@ -86,7 +86,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial
 #endif
 
-    // Tx Buzzer: "off,on"
+    // Tx Buzzer: ""off,lp,rxlq"
 #ifdef DEVICE_HAS_BUZZER
     SetupMetaData.Tx_Buzzer_allowed_mask = UINT16_MAX; // all
 #else
@@ -146,7 +146,7 @@ void setup_default(void)
     Setup.Tx.SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
     Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
-    Setup.Tx.Buzzer = 0;
+    Setup.Tx.Buzzer = BUZZER_OFF;
     Setup.Tx.CliLineEnd = CLI_LINE_END_CR;
 
     Setup.Rx.Power = SETUP_RX_POWER;
@@ -205,7 +205,7 @@ void setup_sanitize(void)
     if (Setup.Tx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Tx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
     if (Setup.Tx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
 
-    if (Setup.Tx.Buzzer > 1) Setup.Tx.Buzzer = 0;
+    if (Setup.Tx.Buzzer >= BUZZER_UNDEFINED) Setup.Tx.Buzzer = BUZZER_OFF;
     if (Setup.Tx.CliLineEnd >= CLI_LINE_END_UNDEFINED) Setup.Tx.CliLineEnd = CLI_LINE_END_CR;
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
