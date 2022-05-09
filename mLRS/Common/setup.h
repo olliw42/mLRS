@@ -206,6 +206,8 @@ void setup_sanitize(void)
     if (Setup.Tx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
 
     if (Setup.Tx.Buzzer >= BUZZER_UNDEFINED) Setup.Tx.Buzzer = BUZZER_OFF;
+    if (SETUP_TST_ALLOWED(Tx_Buzzer_allowed_mask,Tx.Buzzer) == 0) Setup.Tx.Buzzer = BUZZER_OFF;
+
     if (Setup.Tx.CliLineEnd >= CLI_LINE_END_UNDEFINED) Setup.Tx.CliLineEnd = CLI_LINE_END_CR;
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
