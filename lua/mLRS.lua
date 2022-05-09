@@ -216,7 +216,20 @@ local function mb_to_u8_bits(payload,pos,bitpos,bitmask)
     v = bit32.rshift(v, bitpos)
     v = bit32.band(v, bitmask)
     return v    
-end    
+end
+
+local function mb_allowed_mask_editable(allowed_mask)
+    if allowed_mask == 1 then return false end
+    if allowed_mask == 2 then return false end
+    if allowed_mask == 4 then return false end
+    if allowed_mask == 8 then return false end
+    if allowed_mask == 16 then return false end
+    if allowed_mask == 32 then return false end
+    if allowed_mask == 64 then return false end
+    if allowed_mask == 128 then return false end
+    if allowed_mask == 256 then return false end
+    return true
+end
 
 local diversity_list = {}
 diversity_list[0] = "enabled"
@@ -291,6 +304,7 @@ for ijk = 1,6 do -- handle only 6 at most per lua cycle
               DEVICE_PARAM_LIST[index].unit = ""
               DEVICE_PARAM_LIST[index].options = {}
               DEVICE_PARAM_LIST[index].allowed_mask = 65536
+              DEVICE_PARAM_LIST[index].editable = true
           elseif index == 255 then
             DEVICE_PARAM_LIST_complete = true
           end  
@@ -308,6 +322,7 @@ for ijk = 1,6 do -- handle only 6 at most per lua cycle
                   DEVICE_PARAM_LIST[index].item2payload = cmd.payload
                   DEVICE_PARAM_LIST[index].min = 0
                   DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                  DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
               end  
           end -- anything else should not happen, but ???
       elseif cmd.cmd == mbridge.CMD_PARAM_ITEM3 then 
@@ -366,15 +381,15 @@ local edit = false
 local option_value = 0
     
 local cursor_pidx = 0 -- parameter idx which corresponds to the current cursor_idx
-local p_cnt = 0
+local page_param_cnt = 0 -- number of parameters available on page
     
 local cursor_x_idx = 0 -- index into string for string edits
 local bindphrase_chars = "abcdefghijklmnopqrstuvwxyz0123456789_#-."
 
-    
-local function cur_attr(idx)
+
+local function cur_attr(idx) -- used in menu
     local attr = TEXT_COLOR
-    if cursor_idx == idx then --and DEVICE_PARAM_LIST_complete then
+    if cursor_idx == idx then
         attr = attr + INVERS
         if edit then attr = attr + BLINK end    
     end    
@@ -416,7 +431,7 @@ local function param_value_dec(idx)
 end
     
     
-local function cur_attr_x(idx, x_idx)
+local function cur_attr_x(idx, x_idx) -- for Bind Phrase character editing
     local attr = TEXT_COLOR
     if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
         if edit then 
@@ -473,9 +488,9 @@ end
 -- Page Edit Tx/Rx
 ----------------------------------------------------------------------
     
-local top_idx = 0
-local page_N1 = 9
-local page_N = 18
+local top_idx = 0 -- index of first displayed option
+local page_N1 = 9 -- number of options displayed in left colum
+local page_N = 18 -- number of options displayed on page
     
 local function drawPageEdit(page_str)
     local x, y;
@@ -491,8 +506,11 @@ local function drawPageEdit(page_str)
     if cursor_idx >= top_idx + page_N then top_idx = cursor_idx - page_N + 1 end
     
     local idx = 0
-    for pidx = 2, #DEVICE_PARAM_LIST do      
-      if DEVICE_PARAM_LIST[pidx] ~= nil and string.sub(DEVICE_PARAM_LIST[pidx].name,1,2) == page_str then
+    page_param_cnt = 0
+    for pidx = 2, #DEVICE_PARAM_LIST do
+      if DEVICE_PARAM_LIST[pidx] ~= nil and 
+           string.sub(DEVICE_PARAM_LIST[pidx].name,1,2) == page_str and
+           DEVICE_PARAM_LIST[pidx].allowed_mask > 0 then
         local p = DEVICE_PARAM_LIST[pidx]
         local name = string.sub(p.name, 4)
            
@@ -505,10 +523,15 @@ local function drawPageEdit(page_str)
             if shifted_idx >= page_N1 then y = y - page_N1*dy; xofs = 230 end
             
             lcd.drawText(10+xofs, y, name, TEXT_COLOR)
+            local attr = cur_attr(idx)
+            if not DEVICE_PARAM_LIST[pidx].editable then 
+                lcd.setColor(CUSTOM_COLOR, GREY)
+                attr = CUSTOM_COLOR
+            end
             if p.typ < mbridge.PARAM_TYPE_LIST then
-                lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr(idx))  
+                lcd.drawText(140+xofs, y, p.value.." "..p.unit, attr)  
             elseif p.typ == mbridge.PARAM_TYPE_LIST then
-                lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr(idx))  
+                lcd.drawText(140+xofs, y, p.options[p.value+1], attr)  
             end
         end
         
@@ -518,14 +541,14 @@ local function drawPageEdit(page_str)
       end  
     end
     
-    p_cnt = idx
+    page_param_cnt = idx
     
     local x_mid = LCD_W/2 - 5 
     if top_idx > 0 then
         local y_base = y0 - 4
         lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
     end
-    if p_cnt > top_idx + page_N then
+    if page_param_cnt > top_idx + page_N then
         local y_base = y0 + page_N1*dy + 4
         lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
     end      
@@ -542,7 +565,7 @@ local function doPageEdit(event, page_str)
         return
     end
      
-    drawPageEdit(page_str) -- call before event handling, ensures that p_cnt, cursor_pidx are set
+    drawPageEdit(page_str) -- call before event handling, ensures that page_param_cnt, cursor_pidx are set
 
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
@@ -550,7 +573,7 @@ local function doPageEdit(event, page_str)
             edit = true
         elseif event == EVT_VIRTUAL_NEXT then
             cursor_idx = cursor_idx + 1
-            if cursor_idx >= p_cnt then cursor_idx = p_cnt - 1 end
+            if cursor_idx >= page_param_cnt then cursor_idx = page_param_cnt - 1 end
         elseif event == EVT_VIRTUAL_PREV then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end

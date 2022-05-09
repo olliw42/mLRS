@@ -43,7 +43,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX127x
-    SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz
+    SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz, not editable
 #endif
 
     //-- Tx:
@@ -54,7 +54,7 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Tx_Diversity_allowed_mask = 0b0010; // only antenna1
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b0010; // only antenna1, not editable
 #endif
 
     // Tx ChannelSource: "none,mbridge,in,crsf"
@@ -65,32 +65,32 @@ void setup_configure_metadata(void)
 #elif (defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED)
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
 #else
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none, not editable
 #endif
 
     // Tx InMode: "sbus,sbus inv"
 #ifdef DEVICE_HAS_IN
     SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_IN_NORMAL
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0010; // sbus inv
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0010; // only sbus inv, not editable
 #elif defined DEVICE_HAS_IN_INVERTED
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // sbus
+    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // only sbus, not editable
 #else
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // default to sbus, there is no none
+    SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
     // Tx SerialDestination: "serial,mbridge"
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial, not editable
 #endif
 
-    // Tx Buzzer: ""off,lp,rxlq"
+    // Tx Buzzer: ""off,L,rxLQ"
 #ifdef DEVICE_HAS_BUZZER
     SetupMetaData.Tx_Buzzer_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Tx_Buzzer_allowed_mask = 0b0001; // only off
+    SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
     //-- Rx:
@@ -101,7 +101,7 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1, not editable
 #endif
 
     // Rx OutMode: "sbus,crsf,sbus inv"
@@ -110,9 +110,9 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_OUT_NORMAL
     SetupMetaData.Rx_OutMode_allowed_mask = 0b0110; // crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_INVERTED
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus, not editable
 #else
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b0001;  // default to sbus, there is no none
+    SetupMetaData.Rx_OutMode_allowed_mask = 0;  // not available, do not display
 #endif
 
     //-- Tx: Receiver setup meta data

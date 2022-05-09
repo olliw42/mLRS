@@ -18,6 +18,10 @@
 //-------------------------------------------------------
 // Setup parameter list
 //-------------------------------------------------------
+// allowed mask:
+// 0           = option not available (do not display)
+// one bit set = option not selectable (display, but maybe grayed out)
+// this is not totally satisfying, since non-LIST options cannot be hidden
 
 #define SETUP_MSK_MODE              &SetupMetaData.Mode_allowed_mask // this we get from the hal
 
