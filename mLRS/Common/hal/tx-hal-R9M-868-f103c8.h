@@ -100,7 +100,7 @@
 #define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
 #define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
 #define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY   11
+//#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 void sx_init_gpio(void)
 {
@@ -242,6 +242,8 @@ void pos_switch_init(void)
 #define BUZZER_TIMx               TIM1
 #define BUZZER_IRQn               TIM1_UP_IRQn
 #define BUZZER_IRQHandler         TIM1_UP_IRQHandler
+#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
+//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- EEPROM, not used

@@ -23,6 +23,7 @@ v0.0.00:
 #define UARTF_IRQ_PRIORITY          15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
+#define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"
