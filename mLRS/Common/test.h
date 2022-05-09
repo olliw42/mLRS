@@ -11,6 +11,11 @@
 #pragma once
 
 
+#define PORTA_N  (sizeof(porta)/sizeof(porta[0]))
+#define PORTB_N  (sizeof(portb)/sizeof(portb[0]))
+#define PORTC_N  (sizeof(portc)/sizeof(portc[0]))
+
+
 void init_test(void)
 {
 LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
