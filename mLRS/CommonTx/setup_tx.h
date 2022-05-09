@@ -61,8 +61,8 @@
   X( Setup.Tx.SerialBaudrate,     LIST,  "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx.SerialLinkMode,     LIST,  "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Tx.SendRadioStatus,    LIST,  "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
-  X( Setup.Tx.Buzzer,             LIST,  "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,lp,rxlq", SETUP_MSK_TX_BUZZER )\
-  X( Setup.Tx.CliLineEnd,         LIST,  "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "cr,lf,crlf", MSK_ALL )\
+  X( Setup.Tx.Buzzer,             LIST,  "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\
+  X( Setup.Tx.CliLineEnd,         LIST,  "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CR,LF,CRLF", MSK_ALL )\
   \
   X( Setup.Rx.Power,              LIST,  "Rx Power",     "RX_POWER",     0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
   X( Setup.Rx.Diversity,          LIST,  "Rx Diversity", "RX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
