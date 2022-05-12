@@ -128,7 +128,7 @@ The code so far supports:
 - Siyi FM30 system (early version only, those with STM32 chips; the TX module needs few small hardware modifications, see https://github.com/olliw42/mLRS/issues/4#issuecomment-1030601900)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
-In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. In the 2.4 GHz range, the DIY options are currently the way to go.
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. In the 2.4 GHz range, the DIY options are currently the way to go.
 
 Don't hesitate to join the discussion thread at rcgroups for more details.
 
