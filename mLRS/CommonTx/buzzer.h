@@ -92,6 +92,8 @@ void tBuzzer::beep_init(void)
 {
 uint32_t ll_tim_channel_ch;
 
+    beep_off();
+
     gpio_init(BUZZER, IO_MODE_OUTPUT_ALTERNATE_PP, IO_SPEED_SLOW);
 
     tim_config_up(BUZZER_TIMx, 1000, TIMER_BASE_1US);
