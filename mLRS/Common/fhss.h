@@ -18,8 +18,8 @@
 #include "common_conf.h"
 
 
-#define FHSS_MAX_NUM    32
-
+#define FHSS_MAX_NUM            32
+#define FHSS_FREQ_LIST_MAX_LEN  80 // 2.4 GHz is 68
 
 //-------------------------------------------------------
 // Frequency list

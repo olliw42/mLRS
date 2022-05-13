@@ -141,23 +141,34 @@
 
 
 #ifdef DEVICE_HAS_DIVERSITY
-#define IF_ANTENNA1(x)            if (Config.UseAntenna1) { x; }
-#define IF_ANTENNA2(x)            if (Config.UseAntenna2) { x; }
-#define USE_ANTENNA1              (Config.UseAntenna1)
-#define USE_ANTENNA2              (Config.UseAntenna2)
+  #define IF_ANTENNA1(x)            if (Config.UseAntenna1) { x; }
+  #define IF_ANTENNA2(x)            if (Config.UseAntenna2) { x; }
+  #define USE_ANTENNA1              (Config.UseAntenna1)
+  #define USE_ANTENNA2              (Config.UseAntenna2)
 #else
-#define IF_ANTENNA1(x)            x;
-#define IF_ANTENNA2(x)
-#define USE_ANTENNA1              true
-#define USE_ANTENNA2              false
+  #define IF_ANTENNA1(x)            x;
+  #define IF_ANTENNA2(x)
+  #define USE_ANTENNA1              true
+  #define USE_ANTENNA2              false
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5
-#define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
-#define IF_CRSF(x)                if (Config.UseCrsf) { x; }
+  #define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
+  #define IF_CRSF(x)                if (Config.UseCrsf) { x; }
 #else
-#define IF_MBRIDGE(x)
-#define IF_CRSF(x)
+  #define IF_MBRIDGE(x)
+  #define IF_CRSF(x)
+#endif
+
+
+//-- checks
+
+#if !defined DEVICE_IS_TRANSMITTER && !defined DEVICE_IS_RECEIVER
+  #error Must be either transmitter or receiver !
+#endif
+
+#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x
+  #error Must be either SX128x or SX127x or SX126x !
 #endif
 
 

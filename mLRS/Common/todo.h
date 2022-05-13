@@ -9,6 +9,13 @@
 /*
 
 ISSUES:
+- work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
+
+- ensure that it works with asymmetric connection, i.e., rx connects to tx, but not tx connects to rx !!!!!!!!!
+
+- sx Init implicitly uses Config, would be nicer to have this disentangled
+
+- entering bind after a timeout, make this setable?!
 - setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
@@ -17,14 +24,12 @@ ISSUES:
 - EVERY tx module needs a means to set the parameters, via SWD?
 
 - restart: we do not want to go through waiting for sx and testing their presence
-
 - for dual sx avoid that both sx.Init wait 300ms
+- allow a missing 2nd sx for diversity boards
 
 - mavlink parser should probably be reset when packets are missed
 - align mavlink messages only with respect to header, i.e., such that header is never split up
 - led blink to signal serial traffic
-
-- allow a missing 2nd sx for diversity boards
 
 - crsf baro alt item, can we add more of our own?
 

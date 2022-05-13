@@ -28,13 +28,13 @@ void setup_configure_metadata(void)
 {
     SetupMetaData = {0};
 
-    //-- FrequencyBand: "2.4 GHz,915 MHz FCC,868 MHz"
+    //-- FrequencyBand: "2.4,915 FCC,868"
 #ifdef FREQUENCY_BAND_2P4_GHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0001;
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0001; // only 2.4 GHz, not editable
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0010;
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0100;
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0100; // only 868 MHz, not editable
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"
@@ -451,7 +451,7 @@ bool doEEPROMwrite;
         Setup.Layout = SETUPLAYOUT;
         doEEPROMwrite = true;
     }
-    if (Setup.Version != VERSION) { //do after Layout, ensures that these flags are correct irrespective of Layout handling
+    if (Setup.Version != VERSION) { // do after Layout, ensures that these flags are correct irrespective of Layout handling
         Setup.Version = VERSION;
         doEEPROMwrite = true;
     }
@@ -465,9 +465,6 @@ bool doEEPROMwrite;
     }
 
     setup_configure_metadata();
-
-// TODO: we currently force BindPhrase to the compile defaults, we first want to have bind
-//    strcpy(Setup.BindPhrase, BIND_PHRASE);
 
 #ifdef SETUP_FORCE_COMMON_CONF
 setup_default();

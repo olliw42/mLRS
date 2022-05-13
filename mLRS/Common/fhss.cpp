@@ -27,69 +27,72 @@
 
 uint16_t FhssBase::prng(void)
 {
-  const uint32_t a = 214013;
-  const uint32_t c = 2531011;
-  const uint32_t m = 2147483648;
-  _seed = (a * _seed + c) % m;
-  return _seed >> 16;
+    const uint32_t a = 214013;
+    const uint32_t c = 2531011;
+    const uint32_t m = 2147483648;
+
+    _seed = (a * _seed + c) % m;
+
+    return _seed >> 16;
 }
 
 
 void FhssBase::generate(uint32_t seed)
 {
-  _seed = seed;
+    _seed = seed;
 
-  bool used_flag[FREQ_LIST_LEN];
-  for (uint8_t ch = 0; ch < FREQ_LIST_LEN; ch++) used_flag[ch] = false;
+    bool used_flag[FHSS_FREQ_LIST_MAX_LEN];
+    for (uint8_t ch = 0; ch < FHSS_FREQ_LIST_MAX_LEN; ch++) used_flag[ch] = false;
 
-  uint8_t k = 0;
-  while (k < cnt) {
+    uint8_t k = 0;
+    while (k < cnt) {
 
-     uint8_t rn = prng() % (FREQ_LIST_LEN - k); // get a random number in the remaining range
+        uint8_t rn = prng() % (FREQ_LIST_LEN - k); // get a random number in the remaining range
 
-     uint8_t i = 0;
-     uint8_t ch;
-     for (ch = 0; ch < FREQ_LIST_LEN; ch++) {
-       if (used_flag[ch]) continue;
-       if (i == rn) break; // ch is our next index
-       i++;
-     }
+        uint8_t i = 0;
+        uint8_t ch;
+        for (ch = 0; ch < FREQ_LIST_LEN; ch++) {
+            if (used_flag[ch]) continue;
+            if (i == rn) break; // ch is our next index
+            i++;
+        }
 
-     if (ch >= FREQ_LIST_LEN) { // argh, must not happen !
-       ch = 0;
-     }
+        if (ch >= FREQ_LIST_LEN) { // argh, must not happen !
+            ch = 0;
+        }
 
-     // do not pick a bind channel
-     bool is_bind_channel = false;
-     for (uint8_t bi = 0; bi < FHSS_BIND_CHANNEL_LIST_LEN; bi++) {
-       if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
-     }
-     if (is_bind_channel) continue;
+        // do not pick a bind channel
+        bool is_bind_channel = false;
+        for (uint8_t bi = 0; bi < FHSS_BIND_CHANNEL_LIST_LEN; bi++) {
+            if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
+        }
+        if (is_bind_channel) continue;
 
-     // ensure it is not too close to the previous
-     bool is_too_close = false;
-     if (k > 0) {
-       int8_t last_ch = ch_list[k - 1];
-       if (last_ch == 0) { // special treatment for this case
-         if (ch < 2) is_too_close = true;
-       } else {
-         if ((ch >= last_ch - 1) && (ch <= last_ch + 1)) is_too_close = true;
-       }
-     }
-     if (is_too_close) continue;
+        // ensure it is not too close to the previous
+        bool is_too_close = false;
+        if (k > 0) {
+            int8_t last_ch = ch_list[k - 1];
+            if (last_ch == 0) { // special treatment for this case
+                if (ch < 2) is_too_close = true;
+            } else {
+                if ((ch >= last_ch - 1) && (ch <= last_ch + 1)) is_too_close = true;
+            }
+        }
+        if (is_too_close) continue;
 
-     // we got a new ch, so register it
-     ch_list[k] = ch;
-     fhss_list[k] = fhss_freq_list[ch];
-     used_flag[ch] = true;
+        // we got a new ch, so register it
+        ch_list[k] = ch;
+        fhss_list[k] = fhss_freq_list[ch];
+        used_flag[ch] = true;
 
-     k++;
+        k++;
   }
 
   curr_i = 0;
+
   // mark all channels as equally bad
   for (uint8_t k = 0; k < cnt; k++) {
-    fhss_last_rssi[k] = INT8_MIN;
+      fhss_last_rssi[k] = INT8_MIN;
   }
 }
 

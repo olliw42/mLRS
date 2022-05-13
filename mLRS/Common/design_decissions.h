@@ -591,6 +591,17 @@ the sx power is calculated as
 
 
 -------------------------------------------------------
+Cmds handling
+
+we could have a special frame for cmds or embed them into the normal frame
+opted for the 2nd approach
+- easier, as one just have to work on different payload
+- as the rc data is nevertheless transported one doesn't lose rc link quality, one only loses serial data
+- it's maybe even mandatory for graceful connection/reconnection, isn't it?
+  that way we can ask for some info using the cmds without compromising the connection/reconnection process
+
+
+-------------------------------------------------------
 stuff
 
 https://interrupt.memfault.com/blog/cortex-m-fault-debug
