@@ -173,7 +173,7 @@ void BindBase::do_transmit(uint8_t antenna)
     txBindFrame.connected = connected();
 
     strbufstrcpy(txBindFrame.BindPhrase_6, Setup.BindPhrase, 6);
-    txBindFrame.FrequencyBand = Setup.FrequencyBand;
+    // TODO txBindFrame.FrequencyBand = Setup.FrequencyBand;
     txBindFrame.Mode = Setup.Mode;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
@@ -207,7 +207,7 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
     if (rx_status == RX_STATUS_INVALID) return;
 
     strstrbufcpy(Setup.BindPhrase, txBindFrame.BindPhrase_6, 6);
-    Setup.FrequencyBand = txBindFrame.FrequencyBand;
+    // TODO Setup.FrequencyBand = txBindFrame.FrequencyBand;
     Setup.Mode = txBindFrame.Mode;
 
     if (txBindFrame.connected) {

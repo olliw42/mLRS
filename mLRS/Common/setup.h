@@ -172,14 +172,16 @@ void setup_sanitize(void)
     sanitize_bindphrase(Setup.BindPhrase);
 
 #ifdef FREQUENCY_BAND_2P4_GHZ
-    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
-    Setup.FrequencyBand = SETUP_FREQUENCY_BAND_868_MHZ;
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
 #else
     #error Unknown Frequencyband !
 #endif
+    if (Setup.FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) Setup.FrequencyBand = frequency_band_default;
+    if (!SETUP_TST_ALLOWED(FrequencyBand_allowed_mask,FrequencyBand)) Setup.FrequencyBand = frequency_band_default;
 
     if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
     if (SETUP_TST_ALLOWED(Mode_allowed_mask,Mode) == 0) Setup.Mode = MODE_19HZ;

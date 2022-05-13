@@ -261,8 +261,10 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2] = rx_setupdata->FailsafeOutChannelValue_Ch15;
     Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3] = rx_setupdata->FailsafeOutChannelValue_Ch16;
 
-    SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
-    SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
+    // TODO
+    //SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
+    //SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
+
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
     power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 32);
@@ -359,8 +361,10 @@ tRxCmdFrameRxSetupData rx_setupdata = {0};
     rx_setupdata.FailsafeOutChannelValue_Ch15 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2];
     rx_setupdata.FailsafeOutChannelValue_Ch16 = Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3];
 
-    rx_setupdata.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
-    rx_setupdata.Mode_allowed_mask = SetupMetaData.Mode_allowed_mask;
+    // TODO
+    //rx_setupdata.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
+    //rx_setupdata.Mode_allowed_mask = SetupMetaData.Mode_allowed_mask;
+
     for (uint8_t i = 0; i < 8; i++) {
         rx_setupdata.Power_list[i] = (i < RFPOWER_LIST_NUM) ? rfpower_list[i].mW : INT16_MAX;
     }

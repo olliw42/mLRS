@@ -149,7 +149,7 @@ typedef struct
     uint8_t connected : 1;
 
     char BindPhrase_6[6];
-    uint8_t FrequencyBand : 4;
+    uint8_t FrequencyBand_XXX : 4; // TODO
     uint8_t Mode : 4;
 
     uint8_t spare[72];
@@ -232,8 +232,8 @@ typedef struct
     uint8_t FailsafeOutChannelValue_Ch16 : 2;
 
     // rx setup meta data 2, parameter metadata
-    uint16_t FrequencyBand_allowed_mask;
-    uint8_t Mode_allowed_mask;
+    uint16_t FrequencyBand_allowed_mask_XXX; // TODO
+    uint8_t Mode_allowed_mask_XXX; // TODO
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
