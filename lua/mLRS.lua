@@ -8,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.08, mOTX v33
+-- works with mLRS v0.01.13, mOTX v33
 
 
 ----------------------------------------------------------------------
@@ -218,7 +218,7 @@ local function mb_to_u8_bits(payload,pos,bitpos,bitmask)
     return v    
 end
 
-local function mb_allowed_mask_editable(allowed_mask)
+local function mb_allowed_mask_editable(allowed_mask) -- only one option allowed
     if allowed_mask == 1 then return false end
     if allowed_mask == 2 then return false end
     if allowed_mask == 4 then return false end
@@ -376,7 +376,16 @@ end
 
 local page_nr = 0 -- 0: main, 1: edit Tx, 2: edit Rx
 
-local cursor_idx = 2
+local BindPhrase_idx = 0
+local Mode_idx = 1
+local RFBand_idx = 2
+local EditTx_idx = 3
+local EditRx_idx = 4
+local Save_idx = 5
+local Reload_idx = 6
+local Bind_idx = 7
+
+local cursor_idx = EditTx_idx
 local edit = false
 local option_value = 0
     
@@ -395,6 +404,29 @@ local function cur_attr(idx) -- used in menu
     end    
     return attr
 end    
+
+
+local function cur_attr_x(idx, x_idx) -- for Bind Phrase character editing
+    local attr = TEXT_COLOR
+    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
+        if edit then 
+            if cursor_x_idx == x_idx then attr = attr + BLINK + INVERS end    
+        else    
+            attr = attr + INVERS
+        end    
+    end    
+    return attr
+end    
+
+
+local function cur_attr_p(idx, pidx) -- used for parameters
+    local attr = cur_attr(idx)
+    if not DEVICE_PARAM_LIST[pidx].editable then 
+        lcd.setColor(CUSTOM_COLOR, GREY)
+        attr = CUSTOM_COLOR
+    end
+    return attr
+end
     
     
 local function param_value_inc(idx)
@@ -429,19 +461,6 @@ local function param_value_dec(idx)
     if p.value < p.min then p.value = p.min end
     DEVICE_PARAM_LIST[idx].value = p.value
 end
-    
-    
-local function cur_attr_x(idx, x_idx) -- for Bind Phrase character editing
-    local attr = TEXT_COLOR
-    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
-        if edit then 
-            if cursor_x_idx == x_idx then attr = attr + BLINK + INVERS end    
-        else    
-            attr = attr + INVERS
-        end    
-    end    
-    return attr
-end    
     
     
 local function param_str6_inc(idx)
@@ -484,6 +503,14 @@ local function param_str6_next(idx)
 end
 
 
+local function param_focusable(idx)
+    local p = DEVICE_PARAM_LIST[idx]
+    if p == nil then return false end
+    if p.editable == nil then return false end
+    return p.editable
+end  
+
+
 ----------------------------------------------------------------------
 -- Page Edit Tx/Rx
 ----------------------------------------------------------------------
@@ -523,15 +550,10 @@ local function drawPageEdit(page_str)
             if shifted_idx >= page_N1 then y = y - page_N1*dy; xofs = 230 end
             
             lcd.drawText(10+xofs, y, name, TEXT_COLOR)
-            local attr = cur_attr(idx)
-            if not DEVICE_PARAM_LIST[pidx].editable then 
-                lcd.setColor(CUSTOM_COLOR, GREY)
-                attr = CUSTOM_COLOR
-            end
             if p.typ < mbridge.PARAM_TYPE_LIST then
-                lcd.drawText(140+xofs, y, p.value.." "..p.unit, attr)  
+                lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))  
             elseif p.typ == mbridge.PARAM_TYPE_LIST then
-                lcd.drawText(140+xofs, y, p.options[p.value+1], attr)  
+                lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr_p(idx, pidx))  
             end
         end
         
@@ -561,7 +583,7 @@ local function doPageEdit(event, page_str)
 
     if event == EVT_VIRTUAL_EXIT and not edit then
         page_nr = 0
-        cursor_idx = 2
+        cursor_idx = 3
         return
     end
      
@@ -627,7 +649,7 @@ local function drawPageMain()
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
 --        lcd.drawText(140, y, DEVICE_PARAM_LIST[0].value, cur_attr(0))  
-      local x = 140  
+      local x = 140
       for i = 1,6 do
           local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
           local attr = cur_attr_x(0, i-1)
@@ -640,23 +662,32 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[1] ~= nil then
         local p = DEVICE_PARAM_LIST[1]
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y+20, p.options[p.value+1], cur_attr(1)) 
+            lcd.drawText(140, y+21, p.options[p.value+1], cur_attr_p(1,1))
         end  
     end
-  
-    y = 145
-    lcd.drawText(10, y, "Edit Tx", cur_attr(2))  
+    
+    lcd.drawText(10, y + 2*21, "RF Band", TEXT_COLOR)  
+    if DEVICE_PARAM_LIST_complete then
+        local p = DEVICE_PARAM_LIST[2]
+        if p.options[p.value+1] ~= nil then
+            --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
+            if p.value <= 2 then lcd.drawText(140, y + 2*21, freq_band_list[p.value], cur_attr_p(2,2)) end
+        end  
+    end
+ 
+    y = 166
+    lcd.drawText(10, y, "Edit Tx", cur_attr(3))  
     if not connected then 
         lcd.drawText(10 + 80, y, "Edit Rx", TEXT_DISABLE_COLOR)
     else  
-        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(3))
+        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(4))
     end  
-    lcd.drawText(10 + 160, y, "Save", cur_attr(4))  
-    lcd.drawText(10 + 225, y, "Reload", cur_attr(5))
-    lcd.drawText(10 + 305, y, "Bind", cur_attr(6))
+    lcd.drawText(10 + 160, y, "Save", cur_attr(5))  
+    lcd.drawText(10 + 225, y, "Reload", cur_attr(6))
+    lcd.drawText(10 + 305, y, "Bind", cur_attr(7))
      
     -- show overview of some selected parameters
-    y = 190
+    y = 205
     lcd.setColor(CUSTOM_COLOR, GREY)
     lcd.drawFilledRectangle(0, y-6, LCD_W, 1, CUSTOM_COLOR)
     
@@ -681,7 +712,6 @@ local function drawPageMain()
     end
     lcd.drawText(10+240, y, "Rx Power", rx_attr)
     lcd.drawText(10+240, y+20, "Rx Diversity", rx_attr)  
-    --if DEVICE_INFO.rx_power_dbm < 127 then
     if connected then
         lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)  
         if DEVICE_INFO.rx_diversity <= #diversity_list then
@@ -707,21 +737,21 @@ local function doPageMain(event)
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
         elseif event == EVT_VIRTUAL_ENTER and DEVICE_PARAM_LIST_complete then
-            if cursor_idx == 2 then -- EditTX pressed
+            if cursor_idx == EditTx_idx then -- EditTX pressed
               page_nr = 1
               cursor_idx = 0
               top_idx = 0
               return
-            elseif cursor_idx == 3 then -- EditRX pressed
+            elseif cursor_idx == EditRx_idx then -- EditRX pressed
               page_nr = 2
               cursor_idx = 0
               top_idx = 0
               return
-            elseif cursor_idx == 4 then -- Save pressed
+            elseif cursor_idx == Save_idx then -- Save pressed
               sendParamStore()
-            elseif cursor_idx == 5 then -- Reload pressed
+            elseif cursor_idx == Reload_idx then -- Reload pressed
               clearParams()
-            elseif cursor_idx == 6 then -- Bind pressed
+            elseif cursor_idx == Bind_idx then -- Bind pressed
               sendBind()
             else      
               cursor_x_idx = 0
@@ -729,44 +759,48 @@ local function doPageMain(event)
             end  
         elseif event == EVT_VIRTUAL_NEXT and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx + 1
-            if cursor_idx > 6 then cursor_idx = 6 end
+            if cursor_idx > 7 then cursor_idx = 7 end
           
-            if cursor_idx == 3 and not connected then cursor_idx = 4 end
+            if cursor_idx == Mode_idx and not param_focusable(1) then cursor_idx = cursor_idx + 1 end
+            if cursor_idx == RFBand_idx and not param_focusable(2) then cursor_idx = cursor_idx + 1 end
+            if cursor_idx == EditRx_idx and not connected then cursor_idx = cursor_idx + 1 end
         elseif event == EVT_VIRTUAL_PREV and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end
           
-            if cursor_idx == 3 and not connected then cursor_idx = 2 end
+            if cursor_idx == EditRx_idx and not connected then cursor_idx = cursor_idx - 1 end
+            if cursor_idx == RFBand_idx and not param_focusable(2) then cursor_idx = cursor_idx - 1 end
+            if cursor_idx == Mode_idx and not param_focusable(1) then cursor_idx = cursor_idx - 1 end
         end
     else
         if event == EVT_VIRTUAL_EXIT then
-            if cursor_idx <= 1 then -- BindPhrase, Mode
+            if cursor_idx <= 2 then -- BindPhrase, Mode, RF Band
                 sendParamSet(cursor_idx)
             end  
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
-            if cursor_idx == 0 then -- BindPhrase
+            if cursor_idx == BindPhrase_idx then -- BindPhrase
                 if param_str6_next(0) then 
                     sendParamSet(0)
                     edit = false
                 end    
-            elseif cursor_idx == 1 then -- Mode
-                sendParamSet(1)
+            elseif cursor_idx <= 2 then -- Mode, RF Band
+                sendParamSet(cursor_idx)
                 edit = false
             else          
                 edit = false
             end  
         elseif event == EVT_VIRTUAL_NEXT then
-            if cursor_idx == 0 then 
+            if cursor_idx == BindPhrase_idx then -- BindPhrase 
                 param_str6_inc(0)
-            elseif cursor_idx == 1 then 
-                param_value_inc(1)
+            elseif cursor_idx <= 2 then -- Mode, RF Band 
+                param_value_inc(cursor_idx)
             end    
         elseif event == EVT_VIRTUAL_PREV then
-            if cursor_idx == 0 then 
+            if cursor_idx == BindPhrase_idx then -- BindPhrase
                 param_str6_dec(0)
-            elseif cursor_idx == 1 then 
-                param_value_dec(1)
+            elseif cursor_idx <= 2 then -- Mode, RF Band
+                param_value_dec(cursor_idx)
             end    
         end
     end  
@@ -793,7 +827,7 @@ local function Do(event)
     end
     if not connected and page_nr == 2 then
         page_nr = 0
-        cursor_idx = 2
+        cursor_idx = EditTx_idx
     end  
 
     doParamLoop()

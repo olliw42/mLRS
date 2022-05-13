@@ -24,6 +24,7 @@
 // this is not totally satisfying, since non-LIST options cannot be hidden
 
 #define SETUP_MSK_MODE              &SetupMetaData.Mode_allowed_mask // this we get from the hal
+#define SETUP_MSK_RFBAND            &SetupMetaData.FrequencyBand_allowed_mask // this we get from the hal
 
 #define SETUP_OPT_TX_POWER          SetupMetaData.Tx_Power_optstr // this we get from the hal
 #define SETUP_OPT_RX_POWER          SetupMetaData.Rx_Power_optstr // this we get from the receiver
@@ -55,6 +56,7 @@
 #define SETUP_PARAMETER_LIST \
   X( Setup.BindPhrase[0],         STR6,  "Bind Phrase",  "BIND_PHRASE",  0,0,0,"", "", 0)\
   X( Setup.Mode,                  LIST,  "Mode",         "MODE",         0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
+  X( Setup.FrequencyBand,         LIST,  "RF Band",      "RF_BAND",      0,0,0,"", "2.4,915 FCC,868", SETUP_MSK_RFBAND )\
   \
   X( Setup.Tx.Power,              LIST,  "Tx Power",     "TX_POWER",     0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
   X( Setup.Tx.Diversity,          LIST,  "Tx Diversity", "TX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_TX_DIVERSITY )\
@@ -200,7 +202,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
 
     // if a RX parameter has changed, tell it to main
     if (param_changed) {
-        if (param_idx == 1) { // Mode
+        if (param_idx == 1 || param_idx == 2) { // Mode, RF Band
           return true;
         }
         if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') { // "Rx" name

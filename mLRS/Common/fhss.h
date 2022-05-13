@@ -16,6 +16,7 @@
 #include "hal\device_conf.h"
 #include "sx-drivers\sx12xx.h"
 #include "common_conf.h"
+#include "setup_types.h"
 
 
 #define FHSS_MAX_NUM            32
@@ -24,30 +25,46 @@
 //-------------------------------------------------------
 // Frequency list
 //-------------------------------------------------------
+
+#ifdef FREQUENCY_BAND_433_MHZ
+#define FHSS_HAS_FREQUENCY_BAND_433_MHZ
+#endif
+#if defined FREQUENCY_BAND_868_MHZ || defined FREQUENCY_BAND_868_915_MHZ
+#define FHSS_HAS_FREQUENCY_BAND_868_MHZ
+#endif
+#if defined FREQUENCY_BAND_915_MHZ_FCC || defined FREQUENCY_BAND_868_915_MHZ
+#define FHSS_HAS_FREQUENCY_BAND_915_MHZ_FCC
+#endif
+#ifdef FREQUENCY_BAND_2P4_GHZ
+#define FHSS_HAS_FREQUENCY_BAND_2P4_GHZ
+#endif
+
+
 #ifdef DEVICE_HAS_SX126x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #endif
 
-#ifdef FREQUENCY_BAND_433_MHZ
+
+#ifdef FHSS_HAS_FREQUENCY_BAND_433_MHZ
 // 433.050 ... 434.790 in 0.506 MH steps
 
-const uint32_t fhss_freq_list[] = {
+const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.360),
     SX12XX_FREQ_MHZ_TO_REG(433.920),
     SX12XX_FREQ_MHZ_TO_REG(433.480),
 };
 
-const uint8_t fhss_bind_channel_list[] = {
+const uint8_t fhss_bind_channel_list_433[] = {
     0, // just pick some
 };
 
 #endif
-#ifdef FREQUENCY_BAND_868_MHZ
+#ifdef FHSS_HAS_FREQUENCY_BAND_868_MHZ
 // 863.275 ... 869.575  in 0.525 MHz steps
 
-const uint32_t fhss_freq_list[] = {
+const uint32_t fhss_freq_list_868[] = {
     SX12XX_FREQ_MHZ_TO_REG(863.275),
     SX12XX_FREQ_MHZ_TO_REG(863.800),
     SX12XX_FREQ_MHZ_TO_REG(864.325),
@@ -64,15 +81,15 @@ const uint32_t fhss_freq_list[] = {
     // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
 };
 
-const uint8_t fhss_bind_channel_list[] = {
+const uint8_t fhss_bind_channel_list_868[] = {
     0, // just pick some
 };
 
 #endif
-#ifdef FREQUENCY_BAND_915_MHZ_FCC
+#ifdef FHSS_HAS_FREQUENCY_BAND_915_MHZ_FCC
 // based on ExpressLRS
 
-const uint32_t fhss_freq_list[] = {
+const uint32_t fhss_freq_list_915_fcc[] = {
     SX12XX_FREQ_MHZ_TO_REG(903.5),
     SX12XX_FREQ_MHZ_TO_REG(904.1),
     SX12XX_FREQ_MHZ_TO_REG(904.7),
@@ -116,16 +133,16 @@ const uint32_t fhss_freq_list[] = {
     SX12XX_FREQ_MHZ_TO_REG(926.3),
 };
 
-const uint8_t fhss_bind_channel_list[] = {
+const uint8_t fhss_bind_channel_list_915_fcc[] = {
     19 // just pick some
 };
 
 #endif
-#ifdef FREQUENCY_BAND_2P4_GHZ
+#ifdef FHSS_HAS_FREQUENCY_BAND_2P4_GHZ
 // 2406.0 ... 2473.0  in 1 MHz steps
 // = 68 channels
 
-const uint32_t fhss_freq_list[] = {
+const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.406), // channel 0
     SX1280_FREQ_GHZ_TO_REG(2.407),
     SX1280_FREQ_GHZ_TO_REG(2.408),
@@ -204,15 +221,10 @@ const uint32_t fhss_freq_list[] = {
 };
 
 
-const uint8_t fhss_bind_channel_list[] = {
-    14, 33, 46, 61 // just pick some
+const uint8_t fhss_bind_channel_list_2p4[] = {
+    46, 14, 33, 61 // just pick some
 };
 #endif
-
-
-const uint8_t FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list)/sizeof(uint32_t)); // 2.4 GHz = 68
-
-const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list)/sizeof(uint8_t));
 
 
 //-------------------------------------------------------
@@ -222,9 +234,39 @@ const uint8_t FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_li
 class FhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed)
+    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
+
+        _frequency_band = frequency_band; // just for reporting
+        switch (_frequency_band) {
+#ifdef FHSS_HAS_FREQUENCY_BAND_2P4_GHZ
+        case SETUP_FREQUENCY_BAND_2P4_GHZ:
+            fhss_freq_list = fhss_freq_list_2p4;
+            FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_2p4) / sizeof(uint32_t));
+            fhss_bind_channel_list = fhss_bind_channel_list_2p4;
+            FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_2p4) / sizeof(uint8_t));
+            break;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_915_MHZ_FCC
+        case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
+            fhss_freq_list = fhss_freq_list_915_fcc;
+            FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_915_fcc) / sizeof(uint32_t));
+            fhss_bind_channel_list = fhss_bind_channel_list_915_fcc;
+            FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_915_fcc) / sizeof(uint8_t));
+            break;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_868_MHZ
+        case SETUP_FREQUENCY_BAND_868_MHZ:
+            fhss_freq_list = fhss_freq_list_868;
+            FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_868) / sizeof(uint32_t));
+            fhss_bind_channel_list = fhss_bind_channel_list_868;
+            FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_868) / sizeof(uint8_t));
+            break;
+#endif
+        default:
+            while (1) {} // should not happen, but play it safe
+        }
 
         cnt = fhss_num;
 
@@ -279,6 +321,12 @@ class FhssBase
 
 //  private:
     uint32_t _seed;
+
+    uint8_t _frequency_band;
+    uint8_t FREQ_LIST_LEN;
+    const uint32_t* fhss_freq_list;
+    uint8_t FHSS_BIND_CHANNEL_LIST_LEN;
+    const uint8_t* fhss_bind_channel_list;
 
     uint8_t curr_i;
     uint8_t cnt;

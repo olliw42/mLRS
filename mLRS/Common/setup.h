@@ -35,6 +35,8 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b0010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b0100; // only 868 MHz, not editable
+#elif defined FREQUENCY_BAND_868_915_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0110; // only 915 FCC, 868
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"
@@ -134,7 +136,7 @@ void setup_configure_metadata(void)
 void setup_default(void)
 {
     strcpy(Setup.BindPhrase, BIND_PHRASE);
-    Setup.FrequencyBand = 0;
+    Setup.FrequencyBand = SETUP_RF_BAND;
     Setup.Mode = SETUP_MODE;
 
     Setup.Tx.Power = SETUP_TX_POWER;
@@ -177,6 +179,8 @@ void setup_sanitize(void)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_868_915_MHZ
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ; // my privilege to be in the EU :)
 #else
     #error Unknown Frequencyband !
 #endif
@@ -346,25 +350,25 @@ void setup_configure(void)
     // we could make it dependable with a #ifdef, but what's the point
     Config.FhssSeed = Config.FrameSyncWord;
 
-#if defined FREQUENCY_BAND_868_MHZ
-    Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC
-    Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
-#else
-    switch (Config.Mode) {
-    case MODE_50HZ:
-        Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ;
+    switch (Setup.FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_2P4_GHZ:
+        switch (Config.Mode) {
+        case MODE_50HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
+        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
+        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        default:
+            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        }
         break;
-    case MODE_31HZ:
-        Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE;
+    case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
+        Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
         break;
-    case MODE_19HZ:
-        Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE;
+    case SETUP_FREQUENCY_BAND_868_MHZ:
+        Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
-#endif
 
     //-- More Config, may depend on above config settings
 

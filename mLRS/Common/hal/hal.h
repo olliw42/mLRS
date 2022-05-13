@@ -171,5 +171,11 @@
   #error Must be either SX128x or SX127x or SX126x !
 #endif
 
+#if !defined FREQUENCY_BAND_2P4_GHZ && \
+    !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && !defined FREQUENCY_BAND_868_915_MHZ && \
+    !defined FREQUENCY_BAND_433_MHZ
+  #error Correct frequency band must be defined !
+#endif
+
 
 #endif // HAL_H
