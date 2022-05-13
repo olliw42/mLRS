@@ -48,6 +48,9 @@
 
 #define SETUP_TX_SEND_RADIO_STATUS      1 // 0: off, 1: RADIO_STATUS
 
+#define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
+#define SETUP_TX_CLI_LINE_END           0 // 0: CR, 1: LF, 2: CRLF
+
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
