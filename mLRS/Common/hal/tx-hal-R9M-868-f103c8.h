@@ -41,7 +41,7 @@
 #define UARTB_USE_UART1 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // cli needs it // TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // TX_SERIAL_TXBUFSIZE // choose the bigger one
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE

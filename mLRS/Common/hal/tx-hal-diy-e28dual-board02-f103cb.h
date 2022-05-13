@@ -36,18 +36,18 @@
 #define UARTB_USE_UART3 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 512
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1 // USB, cli or debug
+#define UARTC_USE_UART1 // COM (CLI)
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           1024 // cli needs it // 512
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           512
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
 #ifdef DEVICE_HAS_IN
 #define UARTE_USE_UART2 // SBus

@@ -64,10 +64,10 @@
 #define UARTD_USE_UART4 // BT/ESP
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           512
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTD_USE_TX_ISR
 #define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           512
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define ESP_RESET                 IO_PA11
 #define ESP_GPIO0                 IO_PA12

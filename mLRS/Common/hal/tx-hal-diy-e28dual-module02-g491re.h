@@ -63,10 +63,10 @@
 #define UARTD_USE_UART3 // BT/ESP
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           512
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTD_USE_TX_ISR
 #define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           512
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define ESP_RESET                 IO_PA11
 #define ESP_GPIO0                 IO_PA12
@@ -98,7 +98,7 @@
 #define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_5
 #define SX_DIO_EXTI_IRQn              EXTI9_5_IRQn
 #define SX_DIO_EXTI_IRQHandler        EXTI9_5_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY   11
+//#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 void sx_init_gpio(void)
 {
