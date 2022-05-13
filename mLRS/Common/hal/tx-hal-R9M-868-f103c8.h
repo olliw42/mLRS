@@ -80,10 +80,12 @@
 #define SX_SWITCH_RX_EN           IO_PB3
 #define SX_PA_EN                  IO_PA6
 
-#define DEVICE_HAS_I2C
-#define I2C_USE_I2C1
-#define I2C_CLOCKSPEED_400KHZ
-#define SX_PA_DAC_I2C_DEVICE_ADR  0x0C
+#define SX_DIO0_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
+#define SX_DIO0_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE15
+#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
+#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
+#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 // R9M power management:
 // the Sky65111 (S111) PA has two pins, Vapc1, Vapc2, to control the gains of its two amplifier stages
@@ -95,12 +97,7 @@
 // the Sky13330 (SKY3330) switch's CNTRL pin 7 is connected to PB3, ENABLE pin 8 is high
 // PB3 low = TX, high = RX
 
-#define SX_DIO0_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
-#define SX_DIO0_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY    11
+//#define SX_PA_DAC_I2C_DEVICE_ADR  0x0C // defined below in Power section
 
 void sx_init_gpio(void)
 {
@@ -257,6 +254,9 @@ void pos_switch_init(void)
 //-- POWER
 
 #define DEVICE_HAS_I2C_DAC
+#define I2C_USE_I2C1
+#define I2C_CLOCKSPEED_400KHZ
+#define SX_PA_DAC_I2C_DEVICE_ADR  0x0C
 
 void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
 {

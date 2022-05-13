@@ -114,6 +114,11 @@
 #endif
 
 
+#if (defined DEVICE_HAS_I2C_DAC)
+  #define DEVICE_HAS_I2C
+#endif
+
+
 #ifdef DEVICE_HAS_SX126x
   #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x
