@@ -608,6 +608,35 @@ https://interrupt.memfault.com/blog/cortex-m-fault-debug
 
 
 -------------------------------------------------------
+Some Hardware info
+
+TX:
+
+Diy F103
+U1  uartc/com or uartf/debug  //DEVICE_HAS_COM_OR_DEBUG
+U2  uarte/in or uart/jrpin5   //DEVICE_HAS_IN or DEVICE_HAS_JRPIN5
+U3  uartb/serial
+
+R9M
+U1 uartb/serial or uartb/com  //DEVICE_HAS_SERIAL_OR_COM
+U2 uartf/debug
+U3 uart/jrpin5                //DEVICE_HAS_JRPIN5
+
+Siyi
+U1 uart/jrpin5                //DEVICE_HAS_JRPIN5
+U2 uartb/serial or uartb/com  //DEVICE_HAS_SERIAL_OR_COM
+U3 uartf/debug
+
+G491
+U1 uartc/com
+U2 uart/jrpin5                //DEVICE_HAS_JRPIN5
+U3 uartd/serial2              //DEVICE_HAS_BT
+U4 uartb/serial
+U5 rx is on jrpin1, not used currently
+LPU1 uartf/debug
+
+
+-------------------------------------------------------
 MAVLink rate flow control
 rate management by radio_status txbuf
 

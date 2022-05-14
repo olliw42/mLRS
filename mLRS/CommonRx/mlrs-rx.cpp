@@ -16,7 +16,7 @@ v0.0.00:
 #define FAIL_ENABLED
 
 
-// we set the priorities here to have an overview
+// we set the priorities here to have an overview, SysTick is at 15
 #define CLOCK_IRQ_PRIORITY          10
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // debug

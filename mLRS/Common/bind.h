@@ -16,6 +16,7 @@
 
 uint32_t millis32(void);
 static inline bool connected(void);
+void clock_reset(void);
 
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
@@ -229,9 +230,6 @@ void BindBase::do_transmit(uint8_t antenna)
     rxBindFrame.crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
     sxSendFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
 }
-
-
-void clock_reset(void);
 
 
 uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)

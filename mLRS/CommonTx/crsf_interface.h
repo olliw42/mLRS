@@ -20,6 +20,7 @@
 
 
 uint16_t micros(void);
+extern TxStatsBase txstats;
 
 
 //-------------------------------------------------------

@@ -18,8 +18,9 @@
 #include "jr_pin5_interface.h"
 #include "mbridge_protocol.h"
 
-
 uint16_t micros(void);
+uint8_t mavlink_vehicle_state(void);
+extern TxStatsBase txstats;
 
 
 //-------------------------------------------------------
@@ -404,6 +405,7 @@ void tMBridge::Unlock(void)
 // handler
 
 void mbridge_start_ParamRequestList(void);
+
 
 uint8_t tMBridge::HandleRequestCmd(uint8_t* payload)
 {

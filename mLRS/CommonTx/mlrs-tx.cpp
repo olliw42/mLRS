@@ -16,7 +16,7 @@ v0.0.00:
 #define FAIL_ENABLED
 
 
-// we set the priorities here to have an overview
+// we set the priorities here to have an overview, SysTick is at 15
 #define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // com
@@ -44,6 +44,9 @@ v0.0.00:
 #ifdef USE_COM
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #endif
+#ifdef USE_IN
+#include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
+#endif
 #ifdef USE_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
 #endif
@@ -57,13 +60,12 @@ v0.0.00:
 #include "..\Common\micros.h"
 //#include "..\Common\test.h" // un-comment if you want to compile for board test
 
-#ifdef USE_IN
-#include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
-#endif
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
 #include "buzzer.h"
+#include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
+#include "crsf_interface.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
 
 TxStatsBase txstats;
@@ -161,8 +163,12 @@ tBuzzer buzzer;
 tSerialBase* serialport;
 
 
+
 void init(void)
 {
+    // disable all interrupts, they may be enabled with restart
+    __disable_irq();
+
     leds_init();
     button_init();
     pos_switch_init();
@@ -182,17 +188,12 @@ void init(void)
 
     sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
+
+    mbridge.Init(Config.UseMbridge); // these affect peripherals, hence do here
+    crsf.Init(Config.UseCrsf);
+
+    __enable_irq();
 }
-
-
-//-------------------------------------------------------
-// mbridge
-//-------------------------------------------------------
-
-uint8_t mavlink_vehicle_state(void);
-
-#include "mbridge_interface.h" // this includes uart.h as it needs callbacks
-#include "crsf_interface.h" // this includes uart.h as it needs callbacks
 
 
 //-------------------------------------------------------
@@ -623,8 +624,6 @@ RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-  mbridge.Init(Config.UseMbridge);
-  crsf.Init(Config.UseCrsf);
   serial.SetBaudRate(Config.SerialBaudrate);
   init_serialport();
 
@@ -926,7 +925,6 @@ IF_ANTENNA2(
       txstats.Next();
 
       if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once) {
-      //if (connect_occured_once) {
         if (!valid_frame_received) buzzer.BeepLP();
       }
 
