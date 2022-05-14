@@ -420,7 +420,7 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
       if (connected()) {
         if (serialport) {
           for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+            if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
               if (!mavlink.available()) break; // get from serial port via mavlink parser
               payload[payload_len] = mavlink.getc();
             } else {
