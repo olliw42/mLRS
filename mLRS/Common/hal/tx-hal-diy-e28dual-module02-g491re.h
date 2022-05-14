@@ -14,6 +14,8 @@
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_BT
+#define DEVICE_HAS_BUZZER
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -68,8 +70,8 @@
 #define UARTD_USE_RX
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define ESP_RESET                 IO_PA11
-#define ESP_GPIO0                 IO_PA12
+#define ESP_RESET                 IO_PC6
+#define ESP_GPIO0                 IO_PB0
 
 #define UARTF_USE_LPUART1_REMAPPED // debug
 #define UARTF_BAUD                115200
@@ -226,7 +228,7 @@ void sx2_dio_enable_exti_isr(void)
 
 //-- Button
 
-#define BUTTON                    IO_PB9
+#define BUTTON                    IO_PB7
 
 void button_init(void)
 {
@@ -327,6 +329,18 @@ uint8_t fiveway_read(void)
 #define I2C_USE_DMAMODE
 
 
+//-- Buzzer
+// Buzzer is active high
+
+#define BUZZER                    IO_PB9
+#define BUZZER_IO_AF              IO_AF_12
+#define BUZZER_TIMx               TIM1
+#define BUZZER_IRQn               TIM1_UP_TIM16_IRQn
+#define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
+#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
+//#define BUZZER_TIM_IRQ_PRIORITY   14
+
+
 //-- POWER
 
 #define POWER_GAIN_DBM            27 // gain of a PA stage if present
@@ -351,7 +365,7 @@ uint32_t porta[] = {
 };
 
 uint32_t portb[] = {
-  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3, LL_GPIO_PIN_4,
+  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_7,
   LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
 };
 

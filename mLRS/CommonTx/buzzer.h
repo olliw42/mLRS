@@ -94,7 +94,12 @@ uint32_t ll_tim_channel_ch;
 
     beep_off();
 
+#ifdef STM32F1
     gpio_init(BUZZER, IO_MODE_OUTPUT_ALTERNATE_PP, IO_SPEED_SLOW);
+#endif
+#ifdef STM32G4
+    gpio_init_af(BUZZER, IO_MODE_OUTPUT_ALTERNATE_PP, BUZZER_IO_AF, IO_SPEED_SLOW);
+#endif
 
     tim_config_up(BUZZER_TIMx, 1000, TIMER_BASE_1US);
 
@@ -123,7 +128,9 @@ uint32_t ll_tim_channel_ch;
     LL_TIM_OC_DisableFast(BUZZER_TIMx, ll_tim_channel_ch);
 
     if (BUZZER_TIMx == TIM1) {
+#ifdef STM32F1
         LL_GPIO_AF_RemapPartial_TIM1();
+#endif
         LL_TIM_EnableAllOutputs(BUZZER_TIMx);
     }
 
