@@ -17,7 +17,6 @@
 extern TxStatsBase txstats;
 
 
-
 typedef enum {
     CLI_TASK_NONE = 0,
     CLI_TASK_RX_PARAM_SET,
@@ -163,13 +162,17 @@ uint8_t sep, n;
 }
 
 
-// "50 Hz,31 Hz,19 Hz"
+// "50 Hz,31 Hz,19 Hz" etc
 bool param_get_optstr(char* s, uint8_t param_idx, uint8_t value)
 {
 int8_t seps[24];
 uint8_t nr, n;
 
     const char* optstr = SetupParameter[param_idx].optstr;
+
+    if (param_idx == 2) { // RF Mode
+        optstr = SETUP_OPT_RF_BAND_LONGSTR;
+    }
 
     seps[0] = -1;
     nr = 1;

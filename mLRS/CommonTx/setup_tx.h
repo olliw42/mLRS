@@ -49,6 +49,8 @@
 #define SETUP_OPT_SERIAL_LINK_MODE  "transp.,mavlink"
 #define SETUP_OPT_SEND_RADIOSTATUS  "off,on,on w txbuf"
 
+#define SETUP_OPT_RF_BAND_LONGSTR   "2.4 GHz,915 MHz FCC,868 MHz" // this is used e.g. in cli
+
 #define MSK_ALL                     nullptr // is converted to UINT16_MAX
 
 // Tx parameters must begin with "Tx "
