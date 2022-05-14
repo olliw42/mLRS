@@ -101,6 +101,10 @@
     #define USE_DEBUG
   #endif
 #endif
+
+#ifdef DEVICE_HAS_BT
+  #define USE_SERIAL2
+#endif
 #endif
 
 

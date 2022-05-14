@@ -13,7 +13,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
-
+#define DEVICE_HAS_BT
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -28,8 +28,8 @@
 //-- UARTS
 // UARTB = serial port
 // UARTC = COM (CLI)
-// UARTD = BT/ESP port
-// UART  = SPORT (pin5) on JR bay
+// UARTD = serial2 BT/ESP port
+// UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
@@ -41,7 +41,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1 // USB (CLI)
+#define UARTC_USE_UART1 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -60,7 +60,7 @@
 #define JRPIN5_UARTx              UART_UARTx
 #define JRPIN5_RX_TX_INVERT_INTERNAL
 
-#define UARTD_USE_UART3 // BT/ESP
+#define UARTD_USE_UART3 // serial2 BT/ESP
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX
 #define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE

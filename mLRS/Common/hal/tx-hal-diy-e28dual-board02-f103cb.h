@@ -30,7 +30,7 @@
 //-- UARTS
 // UARTB = serial port
 // UARTC = USB (CLI) or debug port
-// UART = SPORT (pin5) on JR bay
+// UART = JR bay pin5 (SPORT)
 // UARTE = in port, SBus or whatever
 
 #define UARTB_USE_UART3 // serial

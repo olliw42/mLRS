@@ -34,7 +34,7 @@
 //-- UARTS
 // UARTB = serial port or COM (CLI)
 // UARTC = --
-// UART = SPORT (pin5) on JR bay
+// UART = JR bay pin5 (SPORT)
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 

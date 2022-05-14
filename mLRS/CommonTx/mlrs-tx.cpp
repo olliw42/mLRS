@@ -20,6 +20,7 @@ v0.0.00:
 #define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // com
+#define UARTD_IRQ_PRIORITY          15 // serial2/ESP/BT
 #define UARTF_IRQ_PRIORITY          15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
