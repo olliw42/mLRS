@@ -171,6 +171,10 @@ void init(void)
 
 MavlinkBase mavlink;
 
+#include "sx_serial_interface_rx.h"
+
+tRxSxSerial sx_serial;
+
 
 //-------------------------------------------------------
 // SX12xx
@@ -301,13 +305,8 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
       // read data from serial
       if (connected()) {
         for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-            if (!mavlink.available()) break; // get from serial via mavlink parser
-            payload[payload_len] = mavlink.getc();
-          } else {
-            if (!serial.available()) break; // get from serial
-            payload[payload_len] = serial.getc();
-          }
+          if (!sx_serial.available()) break;
+          payload[payload_len] = sx_serial.getc();
 //dbg.putc(payload[payload_len]);
           payload_len++;
         }
@@ -315,7 +314,7 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
         stats.bytes_transmitted.Add(payload_len);
         stats.fresh_serial_data_transmitted.Inc();
       } else {
-        mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
+        sx_serial.flush();
       }
     }
 
@@ -365,11 +364,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     if (connected()) {
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
-            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-                mavlink.putc(c); // send to serial via mavlink parser
-            } else {
-                serial.putc(c); // send to serial
-            }
+            sx_serial.putc(c);
 //dbg.putc(c);
         }
 
@@ -556,6 +551,7 @@ RESTARTCONTROLLER:
 
   out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannelMode, Setup.Rx.FailsafeMode);
   mavlink.Init();
+  sx_serial.Init();
 
   led_blink = 0;
   tick_1hz = 0;

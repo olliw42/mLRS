@@ -161,9 +161,6 @@ tComPort com;
 tTxCli cli;
 tBuzzer buzzer;
 
-tSerialBase* serialport;
-
-
 
 void init(void)
 {
@@ -212,19 +209,9 @@ uint8_t mavlink_vehicle_state(void)
 }
 
 
-void init_serialport(void)
-{
-    switch (Setup.Tx.SerialDestination) {
-    case SERIAL_DESTINATION_MBRDIGE:
-        serialport = &mbridge;
-        break;
-    case SERIAL_DESTINATION_SERIAL_PORT:
-        serialport = &serial;
-        break;
-    default:
-        serialport = nullptr;
-    }
-}
+#include "sx_serial_interface_tx.h"
+
+tTxSxSerial sx_serial;
 
 
 //-------------------------------------------------------
@@ -419,15 +406,10 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 
       // read data from serial port
       if (connected()) {
-        if (serialport) {
+        if (sx_serial.IsEnabled()) {
           for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-            if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-              if (!mavlink.available()) break; // get from serial port via mavlink parser
-              payload[payload_len] = mavlink.getc();
-            } else {
-              if (!serialport->available()) break; // get from serial port
-              payload[payload_len] = serialport->getc();
-            }
+            if (!sx_serial.available()) break;
+            payload[payload_len] = sx_serial.getc();
 //dbg.putc(payload[payload_len]);
             payload_len++;
           }
@@ -436,7 +418,7 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
         stats.bytes_transmitted.Add(payload_len);
         stats.fresh_serial_data_transmitted.Inc();
       } else {
-        if (serialport) mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink hanlder
+        sx_serial.flush();
       }
     }
 
@@ -475,14 +457,10 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     }
 
     // output data on serial
-    if (serialport) {
+    if (sx_serial.IsEnabled()) {
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
-            if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-                mavlink.putc(c);
-            } else {
-              serialport->putc(c);
-            }
+            sx_serial.putc(c);
 //dbg.putc(c);
         }
     }
@@ -626,7 +604,6 @@ RESTARTCONTROLLER:
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   serial.SetBaudRate(Config.SerialBaudrate);
-  init_serialport();
 
   // startup sign of life
   LED_RED_OFF;
@@ -660,6 +637,7 @@ RESTARTCONTROLLER:
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
+  sx_serial.Init(&serial, &mbridge, nullptr);
   whileTransmit.Init();
 
   led_blink = 0;

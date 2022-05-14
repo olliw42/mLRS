@@ -25,6 +25,7 @@ class MavlinkBase
   public:
     void Init(void);
     void Do(void);
+
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
@@ -123,6 +124,7 @@ void MavlinkBase::flush(void)
 void MavlinkBase::send_msg_serial_out(void)
 {
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+
     serial.putbuf(_buf, len);
 }
 

@@ -14,6 +14,8 @@
 #include "..\Common\mavlink\fmav_extension.h"
 
 static inline bool connected(void);
+extern tSerialBase* serialport;
+
 
 #define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
 
@@ -26,6 +28,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     uint8_t VehicleState(void);
+
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
@@ -122,7 +125,7 @@ void MavlinkBase::putc(char c)
 
 bool MavlinkBase::available(void)
 {
-    if (!serialport) return false;
+    if (!serialport) return false; // should not happen
 
     return serialport->available();
 }
@@ -130,7 +133,7 @@ bool MavlinkBase::available(void)
 
 uint8_t MavlinkBase::getc(void)
 {
-    if (!serialport) return 0;
+    if (!serialport) return 0; // should not happen
 
     return serialport->getc();
 }
@@ -138,7 +141,7 @@ uint8_t MavlinkBase::getc(void)
 
 void MavlinkBase::flush(void)
 {
-    if (!serialport) return;
+    if (!serialport) return; // should not happen
 
     serialport->flush();
 }
