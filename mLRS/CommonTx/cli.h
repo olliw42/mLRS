@@ -384,11 +384,11 @@ void tTxCli::print_param_list(uint8_t flag)
     }
 
     for (uint8_t idx = 0; idx < SETUP_PARAMETER_NUM; idx++) {
-        if ((flag == 1) && (SetupParameter[idx].name[0] == 'T' || SetupParameter[idx].name[0] == 'R')) continue;
-        if ((flag == 2) && (SetupParameter[idx].name[0] != 'T')) continue;
-        if ((flag == 3) && (SetupParameter[idx].name[0] != 'R')) continue;
+        if ((flag == 1) && (setup_param_is_tx(idx) || setup_param_is_rx(idx))) continue;
+        if ((flag == 2) && !setup_param_is_tx(idx)) continue;
+        if ((flag == 3) && !setup_param_is_rx(idx)) continue;
 
-        if ((flag == 0 || flag == 3) && !connected() && (SetupParameter[idx].name[0] == 'R')) continue;
+        if ((flag == 0 || flag == 3) && !connected() && setup_param_is_rx(idx)) continue;
 
         print_param(idx);
     }

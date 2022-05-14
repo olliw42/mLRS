@@ -154,6 +154,22 @@ const tSetupParameterItem SetupParameter[] = {
 
 
 //-------------------------------------------------------
+// helper
+//-------------------------------------------------------
+
+bool setup_param_is_tx(uint8_t param_idx)
+{
+    return (SetupParameter[param_idx].name[0] == 'T' && SetupParameter[param_idx].name[1] == 'x');
+}
+
+
+bool setup_param_is_rx(uint8_t param_idx)
+{
+    return (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x');
+}
+
+
+//-------------------------------------------------------
 // handler
 //-------------------------------------------------------
 
@@ -164,6 +180,14 @@ typedef union
     uint16_t u16;
     int16_t i16;
 } tParamValue;
+
+
+bool _setup_param_is_for_rx(uint8_t param_idx)
+{
+    if (param_idx >= 0 && param_idx <= 2) return true; // BindPhrase, Mode, RF Band
+    if (setup_param_is_rx(param_idx)) return true; // "Rx" name
+    return false;
+}
 
 
 bool setup_set_param(uint8_t param_idx, tParamValue value)
@@ -202,12 +226,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
 
     // if a RX parameter has changed, tell it to main
     if (param_changed) {
-        if (param_idx == 1 || param_idx == 2) { // Mode, RF Band
-          return true;
-        }
-        if (SetupParameter[param_idx].name[0] == 'R' && SetupParameter[param_idx].name[1] == 'x') { // "Rx" name
-          return true;
-        }
+        if (_setup_param_is_for_rx(param_idx)) return true;
     }
 
     return false;
@@ -231,9 +250,7 @@ bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
 
     // if a RX parameter has changed, tell it to main
     if (param_changed) {
-        if (param_idx == 0) { // BindPhrase
-          return true;
-        }
+        if (_setup_param_is_for_rx(param_idx)) return true;
     }
 
     return false;
