@@ -215,6 +215,17 @@ tTxSxSerial sx_serial;
 
 
 //-------------------------------------------------------
+// Display
+//-------------------------------------------------------
+// doing one, draw or update, every cycle in 50 Hz mode works, but
+// doing both every cycle does not work! why ???
+
+#include "..\CommonTx\disp.h"
+
+tTxDisp disp;
+
+
+//-------------------------------------------------------
 // While transmit/receive tasks
 //-------------------------------------------------------
 // we may want to add some timer to do more than one task in the transmit/receive period
@@ -238,6 +249,23 @@ void WhileTransmit::handle_once(void)
 {
     cli.Set(Setup.Tx.CliLineEnd);
     cli.Do();
+
+#ifdef DEVICE_HAS_DISPLAY
+    static uint32_t main_tlast_ms = 0;
+    uint32_t tnow_ms = millis32();
+    if (tnow_ms - main_tlast_ms >= 250) { // Update Main page at 4 Hz
+        main_tlast_ms = tnow_ms;
+        disp.UpdateMain();
+    }
+
+    if (bind.IsInBind()) disp.SetBind();
+
+    static uint8_t step = 0;
+    if (Config.frame_rate_ms < 50) { DECc(step, 2); } else { step = 0; } // slow down if in 50 Hz mode
+    if (!step) {
+        disp.Draw();
+    }
+#endif
 }
 
 
@@ -640,6 +668,8 @@ RESTARTCONTROLLER:
   sx_serial.Init(&serial, &mbridge, nullptr);
   whileTransmit.Init();
 
+  disp.Init();
+
   led_blink = 0;
   tick_1hz = 0;
   tick_1hz_commensurate = 0;
@@ -692,6 +722,8 @@ RESTARTCONTROLLER:
       mbridge.TelemetryTick_ms();
       crsf.TelemetryTick_ms();
       link_task_tick_ms();
+
+      disp.Tick();
 
       if (!tick_1hz) {
         dbg.puts(".");

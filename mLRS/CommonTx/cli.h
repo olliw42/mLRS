@@ -18,6 +18,12 @@ extern TxStatsBase txstats;
 
 
 typedef enum {
+    PARAM_FORMAT_DEFAULT = 0,
+    PARAM_FORMAT_CLI
+} PARAM_FORMAT_ENUM;
+
+
+typedef enum {
     CLI_TASK_NONE = 0,
     CLI_TASK_RX_PARAM_SET,
     CLI_TASK_PARAM_STORE,
@@ -163,15 +169,17 @@ uint8_t sep, n;
 
 
 // "50 Hz,31 Hz,19 Hz" etc
-bool param_get_optstr(char* s, uint8_t param_idx, uint8_t value)
+bool param_get_optstr(char* s, uint8_t param_idx, uint8_t value, uint8_t format)
 {
 int8_t seps[24];
 uint8_t nr, n;
 
     const char* optstr = SetupParameter[param_idx].optstr;
 
-    if (param_idx == 2) { // RF Mode
-        optstr = SETUP_OPT_RF_BAND_LONGSTR;
+    if (format == PARAM_FORMAT_CLI) { // we do some cli specific faking
+         if(param_idx == 2) { // RF Mode
+             optstr = SETUP_OPT_RF_BAND_LONGSTR;
+         }
     }
 
     seps[0] = -1;
@@ -193,7 +201,7 @@ uint8_t nr, n;
 }
 
 
-bool param_get_setting_str(char* s, uint8_t param_idx)
+bool param_get_setting_str(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
 {
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
@@ -213,7 +221,7 @@ bool param_get_setting_str(char* s, uint8_t param_idx)
         break;
     case SETUP_PARAM_TYPE_LIST:{
         uint8_t u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
-        return param_get_optstr(s, param_idx, u8);
+        return param_get_optstr(s, param_idx, u8, format);
         }break;
     case SETUP_PARAM_TYPE_STR6:
         strstrbufcpy(s, (char*)SetupParameter[param_idx].ptr, 6);
@@ -338,7 +346,7 @@ char s[16];
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
-        while (param_get_optstr(s, idx, i)) {
+        while (param_get_optstr(s, idx, i, PARAM_FORMAT_CLI)) {
             if (allowed_mask & (1 << i)) {
                 com->puts("  "); com->putc(i + '0'); com->puts(" = "); putsn(s);
             }
@@ -358,7 +366,7 @@ void tTxCli::print_param(uint8_t idx)
     puts(SetupParameter[idx].name);
     puts(" = ");
     char s[32];
-    param_get_setting_str(s, idx);
+    param_get_setting_str(s, idx, PARAM_FORMAT_CLI);
     puts(s);
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_UINT8:

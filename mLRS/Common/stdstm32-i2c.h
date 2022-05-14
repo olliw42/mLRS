@@ -10,6 +10,10 @@
 // Interface:
 //
 // #define I2C_USE_I2C1, I2C_USE_I2C2, I2C_USE_I2C3
+//
+// #define I2C_USE_ITMODE
+// #define I2C_IT_IRQ_PRIORITY // may also be needed for DMA mode !
+//
 // #define I2C_USE_DMAMODE
 // #define I2C_DMA_PRIORITY
 // #define I2C_DMA_IRQ_PRIORITY
@@ -29,6 +33,14 @@ extern "C" {
 #else
 
 
+//-------------------------------------------------------
+// Defines
+//-------------------------------------------------------
+
+#ifndef I2C_IT_IRQ_PRIORITY
+  #define I2C_IT_IRQ_PRIORITY  15
+#endif
+
 #ifndef I2C_DMA_PRIORITY
   #define I2C_DMA_PRIORITY  DMA_PRIORITY_MEDIUM
 #endif
@@ -47,28 +59,42 @@ extern "C" {
 
 //#include "stdstm32-peripherals.h"
 
-#if defined I2C2 && defined I2C_USE_I2C1
+#if defined I2C1 && defined I2C_USE_I2C1
   #define I2C_I2Cx               I2C1
+#ifdef STM32F1  
   #define I2C_SCL_IO             IO_PB6
   #define I2C_SDA_IO             IO_PB7
   #define I2C_SCL_IO_AF          IO_AF_DEFAULT
   #define I2C_SDA_IO_AF          IO_AF_DEFAULT
-
+  
+  #define I2C_TX_DMAx_Channely_IRQn        DMA1_Channel6_IRQn
+  #define I2C_RX_DMAx_Channely_IRQn        DMA1_Channel7_IRQn
   #define I2C_TX_DMAx_Channely_IRQHandler  DMA1_Channel6_IRQHandler
   #define I2C_RX_DMAx_Channely_IRQHandler  DMA1_Channel7_IRQHandler
+#endif  
 
 #elif defined I2C2 && defined I2C_USE_I2C2
   #define I2C_I2Cx               I2C2
+  #error I2C: Using I2C2 not yet supported!
 
 #elif defined I2C3 && defined I2C_USE_I2C3
   #define I2C_I2Cx               I2C3
+#ifdef STM32G4
   #define I2C_SCL_IO             IO_PC9
   #define I2C_SDA_IO             IO_PA8
   #define I2C_SCL_IO_AF          IO_AF_8 // GPIO_AF8_I2C3
   #define I2C_SDA_IO_AF          IO_AF_2 // GPIO_AF2_I2C3
 
+  #define I2C_EV_IRQn            I2C3_EV_IRQn
+  #define I2C_ER_IRQn            I2C3_ER_IRQn
+  #define I2C_EV_IRQHandler      I2C3_EV_IRQHandler
+  #define I2C_ER_IRQHandler      I2C3_ER_IRQHandler
+
+  #define I2C_TX_DMAx_Channely_IRQn        DMA1_Channel2_IRQn
+  #define I2C_RX_DMAx_Channely_IRQn        DMA1_Channel1_IRQn
   #define I2C_TX_DMAx_Channely_IRQHandler  DMA1_Channel2_IRQHandler
   #define I2C_RX_DMAx_Channely_IRQHandler  DMA1_Channel1_IRQHandler
+#endif
 
 #else
 #error Error in stdstm32-i2c.h
@@ -91,10 +117,11 @@ DMA_HandleTypeDef hdma_i2c_tx;
 #ifndef STDSTM32_I2C_MSPINIT
 #define STDSTM32_I2C_MSPINIT
 
-void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
+void HAL_I2C_MspInit(I2C_HandleTypeDef* _hi2c)
 {
-#if defined I2C1 && defined I2C_USE_I2C1
-  if (hi2c->Instance == I2C1) {
+#if defined I2C1 && defined I2C_USE_I2C1 && defined STM32F1
+  if (_hi2c->Instance == I2C1) {
+      
     gpio_init_af(I2C_SCL_IO, IO_MODE_OUTPUT_ALTERNATE_OD, I2C_SCL_IO_AF, IO_SPEED_FAST);
     gpio_init_af(I2C_SDA_IO, IO_MODE_OUTPUT_ALTERNATE_OD, I2C_SDA_IO_AF, IO_SPEED_FAST);
 
@@ -113,7 +140,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     hdma_i2c_rx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_i2c_rx) != HAL_OK) {}
 
-    __HAL_LINKDMA(hi2c, hdmarx, hdma_i2c_rx);
+    __HAL_LINKDMA(_hi2c, hdmarx, hdma_i2c_rx);
 
     hdma_i2c_tx.Instance = DMA1_Channel6;
     hdma_i2c_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -125,13 +152,13 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     hdma_i2c_tx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_i2c_tx) != HAL_OK) { }
 
-    __HAL_LINKDMA(hi2c, hdmatx, hdma_i2c_tx);
+    __HAL_LINKDMA(_hi2c, hdmatx, hdma_i2c_tx);
     #endif
   }
 #endif
 
-#if defined I2C3 && defined I2C_USE_I2C3
-  if (hi2c->Instance == I2C3) {
+#if defined I2C3 && defined I2C_USE_I2C3 && defined STM32G4
+  if (_hi2c->Instance == I2C3) {
 
     gpio_init_af(I2C_SCL_IO, IO_MODE_OUTPUT_ALTERNATE_OD, I2C_SCL_IO_AF, IO_SPEED_FAST);
     gpio_init_af(I2C_SDA_IO, IO_MODE_OUTPUT_ALTERNATE_OD, I2C_SDA_IO_AF, IO_SPEED_FAST);
@@ -153,7 +180,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     hdma_i2c_rx.Init.Priority = I2C_DMA_PRIORITY;
     if (HAL_DMA_Init(&hdma_i2c_rx) != HAL_OK) {}
 
-    __HAL_LINKDMA(hi2c, hdmarx, hdma_i2c3_rx);
+    __HAL_LINKDMA(_hi2c, hdmarx, hdma_i2c_rx);
 
     hdma_i2c_tx.Instance = DMA1_Channel2;
     hdma_i2c_tx.Init.Request = DMA_REQUEST_I2C3_TX;
@@ -166,7 +193,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
     hdma_i2c_tx.Init.Priority = I2C_DMA_PRIORITY;
     if (HAL_DMA_Init(&hdma_i2c_tx) != HAL_OK) {}
 
-    __HAL_LINKDMA(hi2c, hdmatx, hdma_i2c_tx);
+    __HAL_LINKDMA(_hi2c, hdmatx, hdma_i2c_tx);
     #endif
   }
 #endif
@@ -220,19 +247,15 @@ void MX_I2C_Init(void)
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c, 0) != HAL_OK) return;
 #endif
 
-// we don't support IT mode
-//  HAL_NVIC_SetPriority(I2C3_EV_IRQn, 15, 0);
-//  HAL_NVIC_EnableIRQ(I2C3_EV_IRQn);
-//  HAL_NVIC_SetPriority(I2C3_ER_IRQn, 15, 0);
-//  HAL_NVIC_EnableIRQ(I2C3_ER_IRQn);
+#if defined I2C_USE_ITMODE || (defined I2C_USE_DMAMODE && defined STM32G4)
+  // somehow G4 seems to need isr also for DMA mode
+  nvic_irq_enable_w_priority(I2C_EV_IRQn, I2C_IT_IRQ_PRIORITY);
+  nvic_irq_enable_w_priority(I2C_ER_IRQn, I2C_IT_IRQ_PRIORITY);
+#endif
 
 #ifdef I2C_USE_DMAMODE
-#ifdef STM32F1
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, I2C_DMA_IRQ_PRIORITY, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, I2C_DMA_IRQ_PRIORITY, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
-#endif
+  nvic_irq_enable_w_priority(I2C_TX_DMAx_Channely_IRQn, I2C_DMA_IRQ_PRIORITY);
+  nvic_irq_enable_w_priority(I2C_RX_DMAx_Channely_IRQn, I2C_DMA_IRQ_PRIORITY);
 #endif
 }
 
@@ -240,6 +263,18 @@ void MX_I2C_Init(void)
 //-------------------------------------------------------
 // ISR routines
 //-------------------------------------------------------
+
+#if defined I2C_USE_ITMODE || (defined I2C_USE_DMAMODE && defined STM32G4)
+void I2C_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&hi2c);
+}
+
+void I2C_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&hi2c);
+}
+#endif
 
 #ifdef I2C_USE_DMAMODE
 void I2C_TX_DMAx_Channely_IRQHandler(void)
@@ -284,8 +319,10 @@ HAL_StatusTypeDef i2c_put(uint8_t reg_adr, uint8_t* buf, uint16_t len)
 {
 #ifdef I2C_USE_DMAMODE
   return HAL_I2C_Mem_Write_DMA(&hi2c, i2c_dev_adr << 1, reg_adr, 1, buf, len);
+#elif defined I2C_USE_ITMODE
+  return HAL_I2C_Mem_Write_IT(&hi2c, i2c_dev_adr << 1, reg_adr, 1, buf, len);
 #else
-  return i2c_put_blocked(reg_adr, buf, len);
+  return HAL_I2C_Mem_Write(&hi2c, i2c_dev_adr << 1, reg_adr, 1, buf, len, I2C_BLOCKING_TMO_MS);
 #endif
 }
 
@@ -294,6 +331,8 @@ HAL_StatusTypeDef i2c_put_buf(uint8_t* buf, uint16_t len)
 {
 #ifdef I2C_USE_DMAMODE
   return HAL_I2C_Master_Transmit_DMA(&hi2c, i2c_dev_adr << 1, buf, len);
+#elif defined I2C_USE_ITMODE
+  return HAL_I2C_Master_Transmit_IT(&hi2c, i2c_dev_adr << 1, buf, len);
 #else
   return i2c_put_buf_blocked(buf, len);
 #endif
@@ -302,11 +341,7 @@ HAL_StatusTypeDef i2c_put_buf(uint8_t* buf, uint16_t len)
 
 HAL_StatusTypeDef i2c_device_ready(void)
 {
-HAL_StatusTypeDef res;
-
-  res = HAL_I2C_IsDeviceReady(&hi2c, i2c_dev_adr << 1, 10, HAL_MAX_DELAY);
-
-  return res;
+  return HAL_I2C_IsDeviceReady(&hi2c, i2c_dev_adr << 1, 10, HAL_MAX_DELAY);
 }
 
 

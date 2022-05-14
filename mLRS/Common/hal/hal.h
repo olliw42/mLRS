@@ -118,8 +118,13 @@
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DAC)
+#if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY)
   #define DEVICE_HAS_I2C
+#endif
+
+
+#ifdef DEVICE_HAS_I2C_DISPLAY
+  #define DEVICE_HAS_DISPLAY
 #endif
 
 
