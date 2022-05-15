@@ -17,58 +17,61 @@ tSerialBase* serialport; // currently still needed by MavlinkBase class
 class tTxSxSerial : public tSerialBase
 {
   public:
-      void Init(tSerialBase* _serial, tSerialBase* _mbridge, tSerialBase* _serial2)
-      {
-          tSerialBase::Init();
+    void Init(tSerialBase* _serial, tSerialBase* _mbridge, tSerialBase* _serial2)
+    {
+        tSerialBase::Init();
 
-          switch (Setup.Tx.SerialDestination) {
-          case SERIAL_DESTINATION_SERIAL_PORT:
-              serialport = _serial; //&serial;
-              break;
-          case SERIAL_DESTINATION_MBRDIGE:
-              serialport = _mbridge; //&mbridge;
-              break;
-          default:
-              serialport = nullptr;
-          }
-      }
+        switch (Setup.Tx.SerialDestination) {
+        case SERIAL_DESTINATION_SERIAL_PORT:
+            serialport = _serial; //&serial;
+            break;
+        case SERIAL_DESTINATION_MBRDIGE:
+            serialport = _mbridge; //&mbridge;
+            break;
+        default:
+            serialport = nullptr;
+        }
+    }
 
-      bool IsEnabled(void) { return (serialport != nullptr); }
+    bool IsEnabled(void)
+    {
+        return (serialport != nullptr);
+    }
 
-      virtual bool available(void)
-      {
-          if (!serialport) return false;
+    virtual bool available(void)
+    {
+        if (!serialport) return false;
 
-          if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.available(); // get from serial via mavlink parser
-          return serialport->available(); // get from serial
-      }
+        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.available(); // get from serial via mavlink parser
+        return serialport->available(); // get from serial
+    }
 
-      virtual char getc(void)
-      {
-          if (!serialport) return '\0';
+    virtual char getc(void)
+    {
+        if (!serialport) return '\0';
 
-          if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.getc(); // get from serial via mavlink parser
-          return serialport->getc(); // get from serial
-      }
+        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.getc(); // get from serial via mavlink parser
+        return serialport->getc(); // get from serial
+    }
 
-      virtual void flush(void)
-      {
-          if (!serialport) return;
+    virtual void flush(void)
+    {
+        if (!serialport) return;
 
-          mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
-          serialport->flush();
-      }
+        mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
+        serialport->flush();
+    }
 
-      virtual void putc(char c)
-      {
-          if (!serialport) return;
+    virtual void putc(char c)
+    {
+        if (!serialport) return;
 
-          if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // this has to go via the parser
-              mavlink.putc(c);
-          } else {
+        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // this has to go via the parser
+            mavlink.putc(c);
+        } else {
             serialport->putc(c);
-          }
-      }
+        }
+    }
 };
 
 

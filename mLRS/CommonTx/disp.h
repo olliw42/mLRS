@@ -202,10 +202,10 @@ uint16_t keys, i, keys_new;
             idx_first = 0;
             idx_focused = 0;
             switch (page) {
-            case PAGE_MAIN: idx_max = 0; break;
-            case PAGE_COMMON: idx_max = common_list_num - 1; break;
-            case PAGE_TX: idx_max = tx_list_num - 1; break;
-            case PAGE_RX: idx_max = rx_list_num - 1; break;
+                case PAGE_MAIN: idx_max = 0; break;
+                case PAGE_COMMON: idx_max = common_list_num - 1; break;
+                case PAGE_TX: idx_max = tx_list_num - 1; break;
+                case PAGE_RX: idx_max = rx_list_num - 1; break;
             }
         }
     }
@@ -216,10 +216,10 @@ uint16_t keys, i, keys_new;
             idx_first = 0;
             idx_focused = 0;
             switch (page) {
-            case PAGE_MAIN: idx_max = 0; break;
-            case PAGE_COMMON: idx_max = common_list_num - 1; break;
-            case PAGE_TX: idx_max = tx_list_num - 1; break;
-            case PAGE_RX: idx_max = rx_list_num - 1; break;
+                case PAGE_MAIN: idx_max = 0; break;
+                case PAGE_COMMON: idx_max = common_list_num - 1; break;
+                case PAGE_TX: idx_max = tx_list_num - 1; break;
+                case PAGE_RX: idx_max = rx_list_num - 1; break;
             }
         }
     }
@@ -264,12 +264,12 @@ void tTxDisp::Draw(void)
 //uint32_t t1 = micros(); //HAL_GetTick();
 
         switch (page) {
-        case PAGE_STARTUP: draw_page_startup(); break;
-        case PAGE_BIND: draw_page_bind(); break;
-        case PAGE_MAIN: if (page_modified) draw_page_main(); break;
-        case PAGE_COMMON: draw_page_common(); break;
-        case PAGE_TX: draw_page_tx(); break;
-        case PAGE_RX: draw_page_rx(); break;
+            case PAGE_STARTUP: draw_page_startup(); break;
+            case PAGE_BIND: draw_page_bind(); break;
+            case PAGE_MAIN: if (page_modified) draw_page_main(); break;
+            case PAGE_COMMON: draw_page_common(); break;
+            case PAGE_TX: draw_page_tx(); break;
+            case PAGE_RX: draw_page_rx(); break;
         }
 
 //uint32_t t2 = micros(); //HAL_GetTick();
@@ -335,9 +335,9 @@ void tTxDisp::draw_header(const char* s)
 void _disp_div_str(char* s, uint8_t div)
 {
     switch (div) {
-      case 0: strcpy(s, "en."); return;
-      case 1: strcpy(s, "ant1"); return;
-      case 2: strcpy(s, "ant2"); return;
+        case 0: strcpy(s, "en."); return;
+        case 1: strcpy(s, "ant1"); return;
+        case 2: strcpy(s, "ant2"); return;
     }
     strcpy(s, "?");
 }
@@ -363,11 +363,9 @@ char s[32];
     gdisp_puts("Power");
     gdisp_setcurX(40);
     stoBCDstr(sx.RfPower_dbm(), s);
-//    strcat(s, " dB");
     gdisp_puts(s);
     gdisp_setcurX(80);
     stoBCDstr(SetupMetaData.rx_actual_power_dbm, s);
-//    strcat(s, " dB");
     if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
 
     gdisp_setcurX(115);

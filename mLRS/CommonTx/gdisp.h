@@ -270,8 +270,8 @@ void gdisp_hal_init(uint16_t type)
     gdisp.type = type;
 
     switch (gdisp.type) {
-    case GDISPLAY_TYPE_SSD1306: ssd1306_init(); break;
-    case GDISPLAY_TYPE_SH1106: break;
+        case GDISPLAY_TYPE_SSD1306: ssd1306_init(); break;
+        case GDISPLAY_TYPE_SH1106: break;
     }
 }
 
@@ -279,8 +279,8 @@ void gdisp_hal_init(uint16_t type)
 void gdisp_hal_cmdhome(void)
 {
     switch (gdisp.type) {
-    case GDISPLAY_TYPE_SSD1306: ssd1306_cmdhome(); return;
-    case GDISPLAY_TYPE_SH1106: return;
+        case GDISPLAY_TYPE_SSD1306: ssd1306_cmdhome(); return;
+        case GDISPLAY_TYPE_SH1106: return;
     }
 }
 
@@ -294,8 +294,8 @@ HAL_StatusTypeDef gdisp_hal_put(uint8_t* buf, uint16_t len)
 void gdisp_hal_contraststart(void)
 {
     switch (gdisp.type) {
-    case GDISPLAY_TYPE_SSD1306: ssd1306_contraststart(); return;
-    case GDISPLAY_TYPE_SH1106: return;
+        case GDISPLAY_TYPE_SSD1306: ssd1306_contraststart(); return;
+        case GDISPLAY_TYPE_SH1106: return;
     }
 }
 
@@ -303,8 +303,8 @@ void gdisp_hal_contraststart(void)
 void gdisp_hal_contrastend(void)
 {
     switch (gdisp.type) {
-    case GDISPLAY_TYPE_SSD1306: ssd1306_contrastend(); return;
-    case GDISPLAY_TYPE_SH1106: return;
+        case GDISPLAY_TYPE_SSD1306: ssd1306_contrastend(); return;
+        case GDISPLAY_TYPE_SH1106: return;
     }
 }
 
@@ -312,8 +312,8 @@ void gdisp_hal_contrastend(void)
 void gdisp_hal_contrast(uint8_t c)
 {
     switch (gdisp.type) {
-    case GDISPLAY_TYPE_SSD1306: ssd1306_contrast(c); return;
-    case GDISPLAY_TYPE_SH1106: return;
+        case GDISPLAY_TYPE_SSD1306: ssd1306_contrast(c); return;
+        case GDISPLAY_TYPE_SH1106: return;
     }
 }
 
@@ -428,12 +428,12 @@ void gdisp_drawpixel(int16_t x, int16_t y, uint16_t color)
 
     // in this routine we may take advantage of hardware acceleration possibilities
     switch (gdisp.rotation) {
-    case GDISPLAY_ROTATION_NORMAL: gdisp_setpixel_(x, y, color); return;
-    case GDISPLAY_ROTATION_90: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-y, x, color); return;
-    case GDISPLAY_ROTATION_180: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-x, (GDISPLAY_ROWS-1)-y, color); return;
-    case GDISPLAY_ROTATION_270: gdisp_setpixel_(y, (GDISPLAY_ROWS-1)-x, color); return;
-    default:
-        gdisp_setpixel_(x, y, color);
+        case GDISPLAY_ROTATION_NORMAL: gdisp_setpixel_(x, y, color); return;
+        case GDISPLAY_ROTATION_90: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-y, x, color); return;
+        case GDISPLAY_ROTATION_180: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-x, (GDISPLAY_ROWS-1)-y, color); return;
+        case GDISPLAY_ROTATION_270: gdisp_setpixel_(y, (GDISPLAY_ROWS-1)-x, color); return;
+        default:
+            gdisp_setpixel_(x, y, color);
     }
 }
 

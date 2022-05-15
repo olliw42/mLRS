@@ -107,11 +107,11 @@ uint32_t ll_tim_channel_ch;
     // LL_TIM_CHANNEL_CHx, even if LL_TIM_CHANNEL_CHxN is used
     // so we need to cover up for this here
     switch (BUZZER_TIM_CHANNEL) {
-    case LL_TIM_CHANNEL_CH1N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH1; break;
-    case LL_TIM_CHANNEL_CH2N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH2; break;
-    case LL_TIM_CHANNEL_CH3N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH3; break;
-    default:
-        ll_tim_channel_ch = BUZZER_TIM_CHANNEL;
+        case LL_TIM_CHANNEL_CH1N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH1; break;
+        case LL_TIM_CHANNEL_CH2N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH2; break;
+        case LL_TIM_CHANNEL_CH3N: ll_tim_channel_ch = LL_TIM_CHANNEL_CH3; break;
+        default:
+            ll_tim_channel_ch = BUZZER_TIM_CHANNEL;
     }
 
     LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};

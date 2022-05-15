@@ -429,25 +429,25 @@ uint8_t payload_len = 0;
 void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 {
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-      memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
-      payload_len = 0;
+        memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
+        payload_len = 0;
 
-      // read data from serial port
-      if (connected()) {
-        if (sx_serial.IsEnabled()) {
-          for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-            if (!sx_serial.available()) break;
-            payload[payload_len] = sx_serial.getc();
+        // read data from serial port
+        if (connected()) {
+            if (sx_serial.IsEnabled()) {
+                for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+                    if (!sx_serial.available()) break;
+                    payload[payload_len] = sx_serial.getc();
 //dbg.putc(payload[payload_len]);
-            payload_len++;
-          }
-        }
+                    payload_len++;
+                }
+            }
 
-        stats.bytes_transmitted.Add(payload_len);
-        stats.fresh_serial_data_transmitted.Inc();
-      } else {
-        sx_serial.flush();
-      }
+            stats.bytes_transmitted.Add(payload_len);
+            stats.fresh_serial_data_transmitted.Inc();
+        } else {
+            sx_serial.flush();
+        }
     }
 
     stats.last_tx_antenna = antenna;
@@ -618,7 +618,7 @@ bool connect_occured_once;
 
 static inline bool connected(void)
 {
-  return (connect_state == CONNECT_STATE_CONNECTED);
+    return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 
