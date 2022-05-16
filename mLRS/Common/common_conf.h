@@ -30,7 +30,7 @@
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_DESTINATION     1 // 0: serial port, 1: mBridge
+#define SETUP_TX_SERIAL_DESTINATION     1 // 0: serial port, 1: mBridge, 2: serial2 (BT/ESP) port
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: mBridge (pin5), 2: In (In or pin1), 3: Crsf (pin5)
 

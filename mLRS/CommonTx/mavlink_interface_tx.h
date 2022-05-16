@@ -149,7 +149,7 @@ void MavlinkBase::flush(void)
 
 void MavlinkBase::send_msg_serial_out(void)
 {
-    if (!serialport) return;
+    if (!serialport) return; // should not happen
 
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
 

@@ -65,7 +65,7 @@
   X( Setup.Tx.ChannelsSource,     LIST,  "Tx Ch Source", "TX_CH_SOURCE", 0,0,0,"", "none,mbridge,in,crsf", SETUP_MSK_TX_CH_SOURCE )\
   X( Setup.Tx.ChannelOrder,       LIST,  "Tx Ch Order",  "TX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Tx.InMode,             LIST,  "Tx In Mode",   "TX_IN_MODE",   0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
-  X( Setup.Tx.SerialDestination,  LIST,  "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge", SETUP_MSK_TX_SER_DEST )\
+  X( Setup.Tx.SerialDestination,  LIST,  "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge,serial2", SETUP_MSK_TX_SER_DEST )\
   X( Setup.Tx.SerialBaudrate,     LIST,  "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx.SerialLinkMode,     LIST,  "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Tx.SendRadioStatus,    LIST,  "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\

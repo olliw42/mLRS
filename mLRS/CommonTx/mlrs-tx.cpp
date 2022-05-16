@@ -45,6 +45,9 @@ v0.0.00:
 #ifdef USE_COM
 #include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
 #endif
+#ifdef USE_SERIAL2
+#include "..\modules\stm32ll-lib\src\stdstm32-uartd.h"
+#endif
 #ifdef USE_IN
 #include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
 #endif
@@ -175,6 +178,7 @@ void init(void)
     micros_init();
 
     serial.Init();
+    serial2.Init();
     in.Init();
 
     com.Init();
@@ -632,6 +636,7 @@ RESTARTCONTROLLER:
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   serial.SetBaudRate(Config.SerialBaudrate);
+  serial2.SetBaudRate(Config.SerialBaudrate);
 
   // startup sign of life
   LED_RED_OFF;
@@ -665,7 +670,7 @@ RESTARTCONTROLLER:
 
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
-  sx_serial.Init(&serial, &mbridge, nullptr);
+  sx_serial.Init(&serial, &mbridge, &serial2);
   whileTransmit.Init();
 
   disp.Init();

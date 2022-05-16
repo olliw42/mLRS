@@ -113,11 +113,28 @@ class tComPort : public tSerialBase
 };
 
 
+// is always uartd
+class tSerial2Port : public tSerialBase
+{
+#ifdef USE_SERIAL2
+  public:
+    void Init(void) override { uartd_init(); }
+    void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    void putc(char c) override { uartd_putc(c); }
+    bool available(void) override { return uartd_rx_available(); }
+    char getc(void) override { return uartd_getc(); }
+    void flush(void) override { uartd_rx_flush(); uartd_tx_flush(); }
+    uint16_t bytes_available(void) override { return uartd_rx_bytesavailable(); }
+#endif
+};
+
+
 //-------------------------------------------------------
 // Common Variables
 //-------------------------------------------------------
 
 tSerialPort serial;
+tSerial2Port serial2;
 tDebugPort dbg;
 
 tRcData rcData;

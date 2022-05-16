@@ -18,6 +18,8 @@
 // Setup Enums
 //-------------------------------------------------------
 
+//-- common to Tx & Rx
+
 typedef enum {
     SETUP_FREQUENCY_BAND_2P4_GHZ = 0,
     SETUP_FREQUENCY_BAND_915_MHZ_FCC,
@@ -75,11 +77,12 @@ typedef enum {
 } SEND_RADIO_STATUS_ENUM;
 
 
-//-- Tx
+//-- Tx only
 
 typedef enum {
-    SERIAL_DESTINATION_SERIAL_PORT = 0,
+    SERIAL_DESTINATION_SERIAL = 0,
     SERIAL_DESTINATION_MBRDIGE,
+    SERIAL_DESTINATION_SERIAL2,
     SERIAL_DESTINATION_NUM,
 } TX_SERIAL_DESTINATION_ENUM;
 
@@ -116,7 +119,7 @@ typedef enum {
 } TX_BUZZER_END_ENUM;
 
 
-//-- Rx
+//-- Rx only
 
 typedef enum {
     OUT_CONFIG_SBUS = 0,
