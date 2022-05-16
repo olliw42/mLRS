@@ -839,7 +839,6 @@ IF_ANTENNA2(
 
       if (irq2_status & SX12xx_IRQ_RX_DONE) {
         FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
-
       }
       if (irq2_status & SX12xx_IRQ_TX_DONE) {
         FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");

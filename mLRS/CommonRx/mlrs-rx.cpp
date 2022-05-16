@@ -352,17 +352,19 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
     // copy rc data
     if (!do_payload) {
-        // copy only channels 1-4, and jump out
+        // copy only channels 1-4,12,13 and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
         return;
     }
 
     rcdata_from_txframe(&rcData, frame);
 
+    // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_txcmdframe(frame);
         return;
     }
+
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
@@ -444,6 +446,7 @@ uint8_t ack = 1;
 
     prepare_transmit_frame(antenna, ack);
 
+    // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
     sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
 }
 
@@ -595,7 +598,8 @@ RESTARTCONTROLLER:
       if (!connect_occured_once) bind.AutoBind();
 
       if (!tick_1hz) {
-        dbg.puts("\nRX: ");
+        dbg.puts(".");
+/*        dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
         dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
         dbg.puts(" (");
@@ -610,7 +614,7 @@ RESTARTCONTROLLER:
         dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
         dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
       }
     }
 

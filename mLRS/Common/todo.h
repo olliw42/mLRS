@@ -9,16 +9,13 @@
 /*
 
 ISSUES:
-- work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
-
-- ensure that it works with asymmetric connection, i.e., rx connects to tx, but not tx connects to rx !!!!!!!!!
-
 - sx Init implicitly uses Config, would be nicer to have this disentangled
 
 - setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
 - entering bind by power cycles
+- work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
 
 - EVERY tx module needs a means to set the parameters, via SWD?
 
