@@ -182,10 +182,10 @@ bool tTxCrsf::Update(tRcData* rc)
 
     // command model select id
     if (header->address == CRSF_OPENTX_SYNC) {
-        dbg.puts("\ncrsf sync");
+//dbg.puts("\ncrsf sync");
         if (header->frame_id == CRSF_FRAME_ID_COMMAND && header->cmd_id == CRSF_SUBCOMMAND_ID &&
             header->cmd == CRSF_COMMAND_MODEL_SELECT_ID) {
-            dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(header->cmd_data[0]));
+//dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(header->cmd_data[0]));
         }
         return false;
     }
