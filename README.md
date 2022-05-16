@@ -31,7 +31,7 @@ You of course use the project fully at your own risk.
 
 The project is work in progress, and there is still a mile to go before one would call it mature.
 
-Its basic features however, i.e., the RC link and serial link, are quite stable. It also provides already several options for input/output, and integrates with the MAVLink for OpenTx project.
+The basic features however, i.e., the RC link and serial link, are quite stable. It also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, and it integrates well with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz and 915/868 MHz frequency bands.
 
