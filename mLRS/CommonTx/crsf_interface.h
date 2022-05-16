@@ -192,7 +192,7 @@ bool tTxCrsf::Update(tRcData* rc)
 
     // update channels
     if (header->frame_id == CRSF_FRAME_ID_CHANNELS) {
-        fill_rcdata(&rcData);
+        fill_rcdata(rc);
         return true;
     }
 
@@ -245,58 +245,58 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 
 void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
-  if (state != STATE_IDLE) {
-      uint16_t dt = tnow_us - tlast_us;
-      if (dt > CRSF_TMO_US) state = STATE_IDLE;
-  }
+    if (state != STATE_IDLE) {
+        uint16_t dt = tnow_us - tlast_us;
+        if (dt > CRSF_TMO_US) state = STATE_IDLE;
+    }
 
-  tlast_us = tnow_us;
+    tlast_us = tnow_us;
 
-  switch (state) {
-  case STATE_IDLE:
-      if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
-        cnt = 0;
+    switch (state) {
+    case STATE_IDLE:
+        if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
+            cnt = 0;
+            frame[cnt++] = c;
+            state = STATE_RECEIVE_CRSF_LEN;
+        }
+        break;
+
+    case STATE_RECEIVE_CRSF_LEN:
         frame[cnt++] = c;
-        state = STATE_RECEIVE_CRSF_LEN;
-      }
-      break;
-
-  case STATE_RECEIVE_CRSF_LEN:
-      frame[cnt++] = c;
-      len = c;
-      state = STATE_RECEIVE_CRSF_PAYLOAD;
-      break;
-  case STATE_RECEIVE_CRSF_PAYLOAD:
-      frame[cnt++] = c;
-      if (cnt >= len + 1) {
-        state = STATE_RECEIVE_CRSF_CRC;
-      }
-    break;
-  case STATE_RECEIVE_CRSF_CRC:
-      frame[cnt++] = c;
-      // let's just ignore it
-      frame_received = true;
-      state = STATE_TRANSMIT_START;
-      break;
-  }
+        len = c;
+        state = STATE_RECEIVE_CRSF_PAYLOAD;
+        break;
+    case STATE_RECEIVE_CRSF_PAYLOAD:
+        frame[cnt++] = c;
+        if (cnt >= len + 1) {
+            state = STATE_RECEIVE_CRSF_CRC;
+        }
+        break;
+    case STATE_RECEIVE_CRSF_CRC:
+        frame[cnt++] = c;
+        // let's just ignore it
+        frame_received = true;
+        state = STATE_TRANSMIT_START;
+        break;
+    }
 }
 
 
 uint8_t tTxCrsf::crc8(const uint8_t* buf)
 {
-  return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
+    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
 }
 
 
 bool tTxCrsf::IsEmpty(void)
 {
-  return (tx_available == 0);
+    return (tx_available == 0);
 }
 
 
 bool tTxCrsf::IsChannelData(void)
 {
-  return (frame[2] == CRSF_FRAME_ID_CHANNELS);
+    return (frame[2] == CRSF_FRAME_ID_CHANNELS);
 }
 
 
@@ -312,55 +312,55 @@ void tTxCrsf::fill_rcdata(tRcData* rc)
 {
 tCrsfChannelBuffer buf;
 
-  memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
+    memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
 
-  rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
-  rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
+    rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1966 + 1024 );
 
-  rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1966 + 1024 );
-  rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1966 + 1024 );
+    rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1966 + 1024 );
 }
 
 
 void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload)
 {
-  tx_frame[0] = CRSF_ADDRESS_RADIO;
-  tx_frame[1] = (4-2) + len;
-  tx_frame[2] = frame_id;
-  memcpy(&(tx_frame[3]), payload, len);
-  tx_frame[3 + len] = crc8(tx_frame);
+    tx_frame[0] = CRSF_ADDRESS_RADIO;
+    tx_frame[1] = (4-2) + len;
+    tx_frame[2] = frame_id;
+    memcpy(&(tx_frame[3]), payload, len);
+    tx_frame[3 + len] = crc8(tx_frame);
 
-  tx_available = 4 + len;
+    tx_available = 4 + len;
 }
 
 
 void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
 {
-  SendFrame(CRSF_LINK_STATISTICS_LEN, CRSF_FRAME_ID_LINK_STATISTICS, payload);
+    SendFrame(CRSF_LINK_STATISTICS_LEN, CRSF_FRAME_ID_LINK_STATISTICS, payload);
 }
 
 
 void tTxCrsf::SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload)
 {
-  SendFrame(CRSF_LINK_STATISTICS_TX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_TX, payload);
+    SendFrame(CRSF_LINK_STATISTICS_TX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_TX, payload);
 }
 
 
 void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 {
-  SendFrame(CRSF_LINK_STATISTICS_RX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_RX, payload);
+    SendFrame(CRSF_LINK_STATISTICS_RX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_RX, payload);
 }
 
 
