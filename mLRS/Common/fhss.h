@@ -290,6 +290,11 @@ class FhssBase
         return cnt;
     }
 
+    uint8_t CurrI(void)
+    {
+        return curr_i;
+    }
+
     uint32_t GetCurrFreq(void)
     {
         if (is_in_binding) return fhss_freq_list[fhss_bind_channel_list[0]];
@@ -319,7 +324,7 @@ class FhssBase
         return fhss_list[curr_i];
     }
 
-//  private:
+  private:
     uint32_t _seed;
 
     uint8_t _frequency_band;

@@ -502,7 +502,7 @@ tMBridgeLinkStats lstats = {0};
     lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
     lstats.fhss_curr_i = txstats.fhss_curr_i;
-    lstats.fhss_cnt = fhss.cnt;
+    lstats.fhss_cnt = fhss.Cnt();
 
     lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
 
