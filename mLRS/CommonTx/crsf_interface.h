@@ -528,7 +528,7 @@ tCrsfLinkStatistics clstats;
         clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
         clstats.uplink_rssi2 = 255;
     }
-    clstats.uplink_LQ = txstats.GetLQ();
+    clstats.uplink_LQ = txstats.GetLQ(); // this sets main rssi in OpenTx, 0 = resets main rssi
     clstats.uplink_snr = stats.GetLastRxSnr();
     clstats.active_antenna = stats.last_rx_antenna;
     clstats.mode = crsf_cvt_mode(Config.Mode);

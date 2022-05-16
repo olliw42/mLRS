@@ -1028,7 +1028,7 @@ IF_MBRIDGE(
       case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
       case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
       case MBRIDGE_CMD_MODELID_SET: {
-        uint8_t* payload = mbridge.GetPayloadPtr();
+//        uint8_t* payload = mbridge.GetPayloadPtr();
 //dbg.puts("\nmbridge model id"); dbg.puts(u8toBCD_s(*payload));
         }break;
       }
