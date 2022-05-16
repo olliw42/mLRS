@@ -28,7 +28,7 @@ typedef enum {
     CLI_TASK_RX_PARAM_SET,
     CLI_TASK_PARAM_STORE,
     CLI_TASK_BIND,
-    CLI_TASK_RX_RELOAD,
+    CLI_TASK_PARAM_RELOAD,
 } CLI_TASK_ENUM;
 
 
@@ -526,11 +526,12 @@ bool rx_param_changed;
 
       } else
       if (strcmp(buf, "reload") == 0) {
+          task_pending = CLI_TASK_PARAM_RELOAD;
           if (!connected()) {
               putsn("warn: receiver not connected");
+              putsn("  Tx parameters reloaded");
           } else {
-              task_pending = CLI_TASK_RX_RELOAD;
-              putsn("  Rx setupdata reloaded");
+              putsn("  parameters reloaded");
           }
 
       } else

@@ -352,6 +352,7 @@ bool link_task_set(uint8_t task)
     // set a timeout if relevant, or do other things as needed
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
+    case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
@@ -412,6 +413,9 @@ void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
+        break;
+    case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
         break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
@@ -1000,8 +1004,9 @@ IF_MBRIDGE(
     if (mbridge.CommandReceived(&mbcmd)) {
       switch (mbcmd) {
       case MBRIDGE_CMD_REQUEST_INFO:
+        setup_reload();
         if (connected()) {
-          link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+          link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
           mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mbridge
         } else {
           mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
@@ -1091,9 +1096,10 @@ IF_CRSF(
       }
       break;
     case CLI_TASK_BIND: bind.StartBind(); break;
-    case CLI_TASK_RX_RELOAD:
+    case CLI_TASK_PARAM_RELOAD:
+      setup_reload();
       if (connected()) {
-        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
         mbridge.Lock(); // lock mbridge
       }
       break;

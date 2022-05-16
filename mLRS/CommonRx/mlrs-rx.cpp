@@ -264,16 +264,21 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     switch (head->cmd) {
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
-        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
         unpack_txcmdframe_setrxparams(frame);
-        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
         doParamsStore = true;
+        break;
+    case FRAME_CMD_GET_RX_SETUPDATA_WRELOAD:
+        setup_reload();
+        // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
     }
 }
@@ -282,7 +287,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 {
     switch (link_task) {
-    case LINK_TASK_TX_GET_RX_SETUPDATA:
+    case LINK_TASK_RX_SEND_RX_SETUPDATA:
         // send rx setup data
         pack_rxcmdframe_rxsetupdata(frame, frame_stats);
         break;

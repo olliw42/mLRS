@@ -440,6 +440,13 @@ EE_STATUS_ENUM setup_retrieve_from_EEPROM(void)
 }
 
 
+void setup_reload(void)
+{
+    setup_retrieve_from_EEPROM();
+    setup_sanitize();
+}
+
+
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
