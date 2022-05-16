@@ -12,6 +12,7 @@
 
 
 #include <stdint.h>
+#include "common_conf.h"
 
 
 uint32_t millis32(void);
@@ -56,6 +57,9 @@ class BindBase
     void Do(void);
     uint8_t Task(void);
 
+    void AutoBind(void); // only for receiver
+    uint32_t auto_bind_tmo;
+
     bool is_in_binding; // is in snyc with link loop
     bool binding_requested;
     bool binding_stop_requested;
@@ -84,6 +88,8 @@ void BindBase::Init(void)
 
     memcpy(&TxSignature, BIND_SIGNATURE_TX_STR, 8);
     memcpy(&RxSignature, BIND_SIGNATURE_RX_STR, 8);
+
+    auto_bind_tmo = 1000 * RX_BIND_MODE_AFTER_POWERUP_TIME_SEC;
 }
 
 
@@ -149,6 +155,20 @@ uint8_t BindBase::Task(void)
     uint8_t ret = task;
     task = BIND_TASK_NONE;
     return ret;
+}
+
+
+void BindBase::AutoBind(void) // only for receiver
+{
+#if defined DEVICE_IS_RECEIVER && defined RX_BIND_MODE_AFTER_POWERUP
+    if (!auto_bind_tmo) return;
+
+    auto_bind_tmo--;
+
+    if (auto_bind_tmo == 0) {
+        binding_requested = true;
+    }
+#endif
 }
 
 

@@ -587,6 +587,8 @@ RESTARTCONTROLLER:
 
       DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
+      if (!connect_occured_once) bind.AutoBind();
+
       if (!tick_1hz) {
         dbg.puts("\nRX: ");
         dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');

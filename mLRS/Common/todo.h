@@ -15,7 +15,6 @@ ISSUES:
 
 - sx Init implicitly uses Config, would be nicer to have this disentangled
 
-- entering bind after a timeout, make this setable?!
 - setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?

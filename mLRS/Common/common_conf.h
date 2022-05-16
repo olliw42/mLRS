@@ -17,6 +17,14 @@
 
 
 //-------------------------------------------------------
+// Selectable System Configs
+//-------------------------------------------------------
+
+// un-comment to enable Rx module to go into bind mode after power up
+//#define RX_BIND_MODE_AFTER_POWERUP
+
+
+//-------------------------------------------------------
 // Setup
 //-------------------------------------------------------
 
@@ -120,6 +128,9 @@
 #define TX_COM_BAUDRATE                 115200
 #define TX_COM_TXBUFSIZE                1024 // cli needs it
 #define TX_COM_RXBUFSIZE                512
+
+
+#define RX_BIND_MODE_AFTER_POWERUP_TIME_SEC   60
 
 
 #endif // COMMON_CONFIG_H
