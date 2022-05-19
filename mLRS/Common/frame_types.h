@@ -222,8 +222,8 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
+    uint8_t Buzzer : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[6];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
@@ -238,8 +238,9 @@ typedef struct
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
+    uint8_t Buzzer_allowed_mask;
 
-    uint8_t spare3[9];
+    uint8_t spare3[8];
 }) tRxCmdFrameRxSetupData; // 82
 
 
@@ -264,8 +265,8 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
+    uint8_t Buzzer : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[6];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120

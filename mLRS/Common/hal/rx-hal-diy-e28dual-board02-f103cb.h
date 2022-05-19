@@ -13,6 +13,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
+#define DEVICE_HAS_BUZZER
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -257,6 +258,16 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
+//-- Buzzer
+
+#define BUZZER                    IO_PB7
+#define BUZZER_TIMx               TIM4
+#define BUZZER_IRQn               TIM4_IRQn
+#define BUZZER_IRQHandler         TIM4_IRQHandler
+#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH2
+//#define BUZZER_TIM_IRQ_PRIORITY   14
+
+
 //-- POWER
 
 #define POWER_GAIN_DBM            27 // gain of a PA stage if present
@@ -280,7 +291,7 @@ uint32_t porta[] = {
 };
 
 uint32_t portb[] = {
-    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
     LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
     LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
 };

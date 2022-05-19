@@ -15,7 +15,6 @@
 
 
 tSetupMetaData SetupMetaData;
-
 tSetup Setup;
 tGlobalConfig Config;
 
@@ -92,7 +91,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial, not editable
 #endif
 
-    // Tx Buzzer: ""off,L,rxLQ"
+    // Tx Buzzer: ""off,LP,rxLQ"
 #ifdef DEVICE_HAS_BUZZER
     SetupMetaData.Tx_Buzzer_allowed_mask = UINT16_MAX; // all
 #else
@@ -119,6 +118,13 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus, not editable
 #else
     SetupMetaData.Rx_OutMode_allowed_mask = 0;  // not available, do not display
+#endif
+
+    // Rx Buzzer: ""off,LP"
+#ifdef DEVICE_HAS_BUZZER
+    SetupMetaData.Rx_Buzzer_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Rx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
     //-- Tx: Receiver setup meta data
@@ -164,6 +170,7 @@ void setup_default(void)
     Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
+    Setup.Rx.Buzzer = SETUP_RX_BUZZER;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
     for (uint8_t ch = 0; ch < 4; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1; }
@@ -242,6 +249,10 @@ void setup_sanitize(void)
 
     if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
+
+    if (Setup.Rx.Buzzer > BUZZER_LOST_PACKETS) Setup.Rx.Buzzer = BUZZER_OFF;
+    if (SETUP_TST_NOTALLOWED(Rx_Buzzer_allowed_mask,Rx.Buzzer)) Setup.Rx.Buzzer = BUZZER_OFF;
+
     for (uint8_t ch = 0; ch < 12; ch++) {
         if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] < -120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
         if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] > 120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;

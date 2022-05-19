@@ -264,6 +264,7 @@ typedef struct
     char Rx_Power_optstr[32+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
+    uint16_t Rx_Buzzer_allowed_mask;
 
     bool rx_available;
 

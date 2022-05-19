@@ -29,6 +29,12 @@ ISSUES:
 
 - crsf baro alt item, can we add more of our own?
 
+- rx R9MM R9MX, why buzzer behaves different for R9MX?
+
+- don't allow bind, save, reload, param changes, etc, when vehicle is armed/flying
+  => this requires the tx&rx to know if that is the case
+  that's possible for when mavlink mode is used, but else?
+
 The 3 MAIN topics TODO:
 
 1) Link

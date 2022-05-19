@@ -11,7 +11,7 @@
 #pragma once
 
 
-#ifdef STM32L4
+#ifndef TIM3 // the L433xx do not have a TIM3
 #define MICROS_TIMx               TIM15
 #else
 #define MICROS_TIMx               TIM3

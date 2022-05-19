@@ -23,6 +23,7 @@ v0.0.00:
 #define UART_IRQ_PRIORITY           12 // SBus out pin
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
+#define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "..\Common\common_conf.h"
 #include "..\Common\common_types.h"
@@ -56,10 +57,12 @@ v0.0.00:
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
+#include "..\Common\buzzer.h"
 
 
 ClockBase clock;
 RxStatsBase rxstats;
+tBuzzer buzzer;
 
 
 void clock_reset(void) { clock.Reset(); }
@@ -152,6 +155,7 @@ void init(void)
     serial.Init();
     out.Init();
 
+    buzzer.Init();
     dbg.Init();
 
     setup_init();
@@ -842,6 +846,10 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
       }
 
       if (connect_state < CONNECT_STATE_SYNC) link_task_reset();
+
+      if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once) {
+        if (!valid_frame_received) buzzer.BeepLP();
+      }
 
       bind.Do();
       switch (bind.Task()) {

@@ -42,6 +42,7 @@
 
 // Rx only
 #define SETUP_MSK_RX_OUT_MODE       &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
+#define SETUP_MSK_RX_BUZZER         &SetupMetaData.Rx_Buzzer_allowed_mask // this we get from the receiver
 
 // common to Tx,Rx, all options always allowed
 #define SETUP_OPT_CH_ORDER          "AETR,TAER,ETAR"
@@ -81,6 +82,7 @@
   X( Setup.Rx.SerialBaudrate,     LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST,  "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST,  "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
+  X( Setup.Rx.Buzzer,             LIST,  "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
   \
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[0],  INT8, "Rx FS Ch1", "RX_FS_CH1", 0, -120, 120, "%", "",0 )\
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[1],  INT8, "Rx FS Ch2", "RX_FS_CH2", 0, -120, 120, "%", "",0 )\

@@ -252,6 +252,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     Setup.Rx.SerialBaudrate = rx_setupdata->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_setupdata->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_setupdata->SendRadioStatus;
+    Setup.Rx.Buzzer = rx_setupdata->Buzzer;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_setupdata->FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -270,6 +271,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 32);
     SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
     SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
+    SetupMetaData.Rx_Buzzer_allowed_mask = rx_setupdata->Buzzer_allowed_mask;
 }
 
 
@@ -294,6 +296,7 @@ tTxCmdFrameRxParams rx_params = {0};
     rx_params.SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params.SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_params.SendRadioStatus = Setup.Rx.SendRadioStatus;
+    rx_params.Buzzer = Setup.Rx.Buzzer;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -352,6 +355,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {0};
     rx_setupdata.SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_setupdata.SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_setupdata.SendRadioStatus = Setup.Rx.SendRadioStatus;
+    rx_setupdata.Buzzer = Setup.Rx.Buzzer;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_setupdata.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -370,6 +374,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {0};
     }
     rx_setupdata.Diversity_allowed_mask = SetupMetaData.Rx_Diversity_allowed_mask;
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
+    rx_setupdata.Buzzer_allowed_mask = SetupMetaData.Rx_Buzzer_allowed_mask;
 
     _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
@@ -394,6 +399,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
+    Setup.Rx.Buzzer = rx_params->Buzzer;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];
