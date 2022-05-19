@@ -67,12 +67,15 @@ v0.0.00:
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
-#include "buzzer.h"
+#include "..\Common\buzzer.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
 
 TxStatsBase txstats;
+tComPort com;
+tTxCli cli;
+tBuzzer buzzer;
 
 
 class In : public InBase
@@ -159,12 +162,6 @@ class ChannelOrder
 ChannelOrder channelOrder;
 
 
-tComPort com;
-
-tTxCli cli;
-tBuzzer buzzer;
-
-
 void init(void)
 {
     // disable all interrupts, they may be enabled with restart
@@ -232,8 +229,6 @@ tTxDisp disp;
 //-------------------------------------------------------
 // While transmit/receive tasks
 //-------------------------------------------------------
-// we may want to add some timer to do more than one task in the transmit/receive period
-// this would help a lot with the different available periods depending on the mode
 
 #include "..\Common\while.h"
 
