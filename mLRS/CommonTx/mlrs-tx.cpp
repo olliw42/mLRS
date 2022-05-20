@@ -54,7 +54,7 @@ v0.0.00:
 #ifdef USE_DEBUG
 #include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
 #endif
-#ifdef DEVICE_HAS_I2C
+#ifdef USE_I2C
 #include "..\Common\stdstm32-i2c.h"
 #endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
@@ -249,7 +249,7 @@ void WhileTransmit::handle_once(void)
     cli.Set(Setup.Tx.CliLineEnd);
     cli.Do();
 
-#ifdef DEVICE_HAS_DISPLAY
+#ifdef USE_DISPLAY
     static uint32_t main_tlast_ms = 0;
     uint32_t tnow_ms = millis32();
     if (tnow_ms - main_tlast_ms >= 250) { // Update Main page at 4 Hz

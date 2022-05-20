@@ -10,7 +10,7 @@
 #define DISP_H
 #pragma once
 
-#ifndef DEVICE_HAS_DISPLAY
+#ifndef USE_DISPLAY
 
 class tTxDisp
 {
@@ -473,7 +473,7 @@ void tTxDisp::draw_page_rx(void)
 }
 
 
-#endif // DEVICE_HAS_DISPLAY
+#endif // USE_DISPLAY
 
 #endif // DISP_H
 

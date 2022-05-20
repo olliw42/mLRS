@@ -122,12 +122,12 @@
 
 
 #if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY)
-  #define DEVICE_HAS_I2C
+  #define USE_I2C
 #endif
 
 
 #ifdef DEVICE_HAS_I2C_DISPLAY
-  #define DEVICE_HAS_DISPLAY
+  #define USE_DISPLAY
 #endif
 
 
