@@ -194,11 +194,12 @@ void ssd1306_contrast(uint8_t c)
 }
 
 
+/* not used
 HAL_StatusTypeDef ssd1306_put(uint8_t* buf, uint16_t len)
 {
     ssd1306_cmdhome();
     return i2c_put_blocked(SSD1306_DATA, buf, len);
-}
+} */
 
 
 HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len)
@@ -351,6 +352,7 @@ bool gdisp_update_completed(void)
 {
     return (i2c_device_ready() != HAL_BUSY);
 }
+
 
 void gdisp_setrotation(uint16_t rotation)
 {

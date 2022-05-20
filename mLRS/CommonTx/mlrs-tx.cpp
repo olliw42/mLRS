@@ -441,7 +441,6 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
                 for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
                     if (!sx_serial.available()) break;
                     payload[payload_len] = sx_serial.getc();
-//dbg.putc(payload[payload_len]);
                     payload_len++;
                 }
             }
@@ -492,7 +491,6 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
             sx_serial.putc(c);
-//dbg.putc(c);
         }
     }
 

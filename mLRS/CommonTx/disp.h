@@ -98,7 +98,6 @@ void tTxDisp::Init(void)
     i2c_init();
     i2c_setdeviceadr(SSD1306_ADR);
     initialized = (i2c_device_ready() == HAL_OK);
-    //initialized = true;
 
     if (initialized) {
         gdisp_init(GDISPLAY_TYPE_SSD1306);
