@@ -50,7 +50,7 @@
 #include "stm32f3xx_hal_flash_ex.h"
 
 #endif
-#ifdef STM32G491xx
+#if (defined STM32G491xx) || (defined STM32G441xx)  || (defined STM32G431xx)
 
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_rcc.h"

@@ -31,6 +31,9 @@
 #ifdef RX_DIY_E28DUAL_BOARD02_F103CB
 #include "rx-hal-diy-e28dual-board02-f103cb.h"
 #endif
+#ifdef RX_DIY_E28_G441KB
+#include "rx-hal-diy-e28-g441kb.h"
+#endif
 
 
 #ifdef TX_DIY_E28DUAL_BOARD02_F103CB
