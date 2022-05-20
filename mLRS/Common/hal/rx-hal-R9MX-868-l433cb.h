@@ -135,8 +135,6 @@ void sx_dio_enable_exti_isr(void)
 
 //-- SBus output pin
 
-#define OUT                       IO_PA2 // UART2 TX, the pin is inverted in hardware
-
 void out_init_gpio(void)
 {
 }

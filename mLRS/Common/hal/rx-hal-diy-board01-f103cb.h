@@ -198,7 +198,6 @@ void sx2_dio_enable_exti_isr(void)
 
 //-- SBus output pin
 
-#define OUT                       IO_PA9 // UART1 TX // PB6 !!!!!!!!!!
 #define OUT_XOR                   IO_PA15
 
 void out_init_gpio(void)
