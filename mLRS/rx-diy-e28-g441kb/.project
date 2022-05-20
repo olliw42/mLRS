@@ -34,17 +34,17 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<location>C:/Users/Olli/Documents/GitHub/mlrs/mLRS/Common</location>
+			<location>WORKSPACE_LOC/Common</location>
 		</link>
 		<link>
 			<name>CommonRx</name>
 			<type>2</type>
-			<location>C:/Users/Olli/Documents/GitHub/mlrs/mLRS/CommonRx</location>
+			<location>WORKSPACE_LOC/CommonRx</location>
 		</link>
 		<link>
 			<name>modules</name>
 			<type>2</type>
-			<location>C:/Users/Olli/Documents/GitHub/mlrs/mLRS/modules</location>
+			<location>WORKSPACE_LOC/modules</location>
 		</link>
 	</linkedResources>
 </projectDescription>
