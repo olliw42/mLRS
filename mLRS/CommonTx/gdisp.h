@@ -155,6 +155,7 @@ static const uint8_t ssd1306_initstream[] = {
 
 void ssd1306_init()
 {
+    i2c_setdeviceadr(SSD1306_ADR);
     i2c_put_blocked(SSD1306_CMD, (uint8_t*)&ssd1306_initstream, sizeof(ssd1306_initstream));
 }
 
@@ -288,7 +289,11 @@ void gdisp_hal_cmdhome(void)
 
 HAL_StatusTypeDef gdisp_hal_put(uint8_t* buf, uint16_t len)
 {
-    return ssd1306_put_noblock(buf, len);
+    switch (gdisp.type) {
+        case GDISPLAY_TYPE_SSD1306: return ssd1306_put_noblock(buf, len);
+        case GDISPLAY_TYPE_SH1106: return HAL_OK;
+    }
+    return HAL_OK;
 }
 
 
