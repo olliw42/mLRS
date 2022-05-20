@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY DUAL-E28 MODULE02 v031 STM32G491RE
+// TX DIY DUAL-SX MODULE02 v031 STM32G491RE
 //-------------------------------------------------------
 
 #define DEVICE_HAS_DIVERSITY
@@ -86,30 +86,26 @@
 //-- SX12xx & SPI
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
-#define SPI_CS_IO                 IO_PA2
+#define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
 #define SPI_USE_CLOCKSPEED_9MHZ
 
-#define SX_RESET                  IO_PA4
-#define SX_DIO1                   IO_PC5
-#define SX_BUSY                   IO_PC4
-#define SX_RX_EN                  IO_PA1
-#define SX_TX_EN                  IO_PA3
+#define SX_RESET                  IO_PA1
+#define SX_DIO1                   IO_PC4
+#define SX_BUSY                   IO_PA3
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
-#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE5
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_5
-#define SX_DIO_EXTI_IRQn              EXTI9_5_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI9_5_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY    11
+#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
+#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_4
+#define SX_DIO_EXTI_IRQn              EXTI4_IRQn
+#define SX_DIO_EXTI_IRQHandler        EXTI4_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx_init_gpio(void)
 {
   gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-  gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_dio_read(void)
@@ -124,14 +120,10 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
-  gpio_low(SX_RX_EN);
-  gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
-  gpio_low(SX_TX_EN);
-  gpio_high(SX_RX_EN);
 }
 
 void sx_dio_init_exti_isroff(void)
@@ -158,21 +150,19 @@ void sx_dio_enable_exti_isr(void)
 //-- SX12xx II & SPIB
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
-#define SPIB_CS_IO                IO_PB1
+#define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
 #define SPIB_USE_CLOCKSPEED_9MHZ
 
-#define SX2_RESET                 IO_PC8
-#define SX2_DIO1                  IO_PA12
-#define SX2_BUSY                  IO_PA11
-#define SX2_RX_EN                 IO_PB12
-#define SX2_TX_EN                 IO_PC7
+#define SX2_RESET                 IO_PC5
+#define SX2_DIO1                  IO_PB1
+#define SX2_BUSY                  IO_PB0
 
-#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTA
-#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE12
-#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_12
-#define SX2_DIO_EXTI_IRQn             EXTI15_10_IRQn
-#define SX2_DIO_EXTI_IRQHandler       EXTI15_10_IRQHandler
+#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTB
+#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE1
+#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_1
+#define SX2_DIO_EXTI_IRQn             EXTI1_IRQn
+#define SX2_DIO_EXTI_IRQHandler       EXTI1_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx2_init_gpio(void)
@@ -180,8 +170,6 @@ void sx2_init_gpio(void)
   gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
   gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-  gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx2_dio_read(void)
@@ -196,14 +184,10 @@ bool sx2_busy_read(void)
 
 void sx2_amp_transmit(void)
 {
-  gpio_low(SX2_RX_EN);
-  gpio_high(SX2_TX_EN);
 }
 
 void sx2_amp_receive(void)
 {
-  gpio_low(SX2_TX_EN);
-  gpio_high(SX2_RX_EN);
 }
 
 void sx2_dio_init_exti_isroff(void)
@@ -344,24 +328,23 @@ uint8_t fiveway_read(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            27 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_23_DBM, .mW = 200 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
+    { .dbm = POWER_12p5_DBM, .mW = 18 },
 };
 
 
 //-- TEST
 
 uint32_t porta[] = {
-  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-  LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12,
+  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+  LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10,
   LL_GPIO_PIN_15,
 };
 
@@ -371,11 +354,10 @@ uint32_t portb[] = {
 };
 
 uint32_t portc[] = {
-  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-  LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
+  LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5,
+  LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
   LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15
 };
-
 
 
 
