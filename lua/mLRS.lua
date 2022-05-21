@@ -138,35 +138,35 @@ local function mb_to_string(payload,pos,len)
     return str
 end    
 
-local function mb_to_u8(payload,pos)
+local function mb_to_u8(payload, pos)
     return payload[pos]
 end    
 
-local function mb_to_i8(payload,pos)
+local function mb_to_i8(payload, pos)
     local v = payload[pos+0]
     if v >= 128 then v = v - 256 end
     return v
 end    
 
-local function mb_to_u16(payload,pos)
+local function mb_to_u16(payload, pos)
     return payload[pos+0] + payload[pos+1]*256
 end    
 
-local function mb_to_i16(payload,pos)
+local function mb_to_i16(payload, pos)
     local v = payload[pos+0] + payload[pos+1]*256
     if v >= 32768 then v = v - 65536 end
     return v
 end    
 
-local function mb_to_u24(payload,pos)
+local function mb_to_u24(payload, pos)
     return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256
 end    
 
-local function mb_to_u32(payload,pos)
+local function mb_to_u32(payload, pos)
     return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256 + payload[pos+2]*256*256*256
 end    
 
-local function mb_to_value(payload,pos,typ)
+local function mb_to_value(payload, pos, typ)
     if typ == mbridge.PARAM_TYPE_UINT8 then -- UINT8
         return mb_to_u8(payload,pos)
     elseif typ == mbridge.PARAM_TYPE_INT8 then -- INT8
@@ -181,7 +181,7 @@ local function mb_to_value(payload,pos,typ)
     return 0
 end    
 
-local function mb_to_value_or_str6(payload,pos,typ)
+local function mb_to_value_or_str6(payload, pos, typ)
     if typ == 5 then --mbridge.PARAM_TYPE_STR6 then
         return mb_to_string(payload,pos,6)
     else
@@ -189,7 +189,7 @@ local function mb_to_value_or_str6(payload,pos,typ)
     end
 end    
 
-local function mb_to_options(payload,pos,len)
+local function mb_to_options(payload, pos, len)
     local str = ""
     for i = 0,len-1 do 
         if payload[pos+i] == 0 then break end
@@ -211,7 +211,7 @@ local function mb_to_firmware_u16_string(u16)
     return string.format("v%d.%02d.%02d", major, minor, patch)
 end
 
-local function mb_to_u8_bits(payload,pos,bitpos,bitmask)
+local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
     local v = payload[pos]
     v = bit32.rshift(v, bitpos)
     v = bit32.band(v, bitmask)
@@ -264,85 +264,84 @@ local function doParamLoop()
     end    
   
     -- handle received commands
-for ijk = 1,6 do -- handle only 6 at most per lua cycle
-    local cmd = mbridge.cmdPop()
-    if cmd == nil then break end
-    if cmd ~= nil then
-      if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
-          -- MBRIDGE_CMD_DEVICE_ITEM_TX
-          DEVICE_ITEM_TX = cmd
-          DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
-          DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
-          DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
-          DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
-      elseif cmd.cmd == mbridge.CMD_DEVICE_ITEM_RX then 
-          -- MBRIDGE_CMD_DEVICE_ITEM_RX
-          DEVICE_ITEM_RX = cmd
-          DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
-          DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
-          DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
-          DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
-      elseif cmd.cmd == mbridge.CMD_INFO then 
-          -- MBRIDGE_CMD_INFO
-          DEVICE_INFO = cmd
-          DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
-          DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
-          DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
-          DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-          DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-          DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
-      elseif cmd.cmd == mbridge.CMD_PARAM_ITEM then 
-          -- MBRIDGE_CMD_PARAM_ITEM
-          local index = cmd.payload[0]
-          if index < 128 then
-              DEVICE_PARAM_LIST[index] = cmd
-              DEVICE_PARAM_LIST[index].typ = mb_to_u8(cmd.payload, 1)
-              DEVICE_PARAM_LIST[index].name = mb_to_string(cmd.payload, 2, 16)
-              DEVICE_PARAM_LIST[index].value = mb_to_value_or_str6(cmd.payload, 18, DEVICE_PARAM_LIST[index].typ)
-              DEVICE_PARAM_LIST[index].min = 0
-              DEVICE_PARAM_LIST[index].max = 0
-              DEVICE_PARAM_LIST[index].unit = ""
-              DEVICE_PARAM_LIST[index].options = {}
-              DEVICE_PARAM_LIST[index].allowed_mask = 65536
-              DEVICE_PARAM_LIST[index].editable = true
-          elseif index == 255 then
-            DEVICE_PARAM_LIST_complete = true
-          end  
-      elseif cmd.cmd == mbridge.CMD_PARAM_ITEM2 then 
-          -- MBRIDGE_CMD_PARAM_ITEM2
-          local index = cmd.payload[0]
-          if DEVICE_PARAM_LIST[index] ~= nil then
-              if DEVICE_PARAM_LIST[index].typ < mbridge.PARAM_TYPE_LIST then
-                  DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
-                  DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
-                  DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 7, 6)
-              elseif DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
-                  DEVICE_PARAM_LIST[index].allowed_mask = mb_to_u16(cmd.payload, 1)
-                  DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 3, 21)
-                  DEVICE_PARAM_LIST[index].item2payload = cmd.payload
-                  DEVICE_PARAM_LIST[index].min = 0
-                  DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
-                  DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
-              end  
-          end -- anything else should not happen, but ???
-      elseif cmd.cmd == mbridge.CMD_PARAM_ITEM3 then 
-          -- MBRIDGE_CMD_PARAM_ITEM3
-          local index = cmd.payload[0]
-          if DEVICE_PARAM_LIST[index] ~= nil then
-              if DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
-                  local s = DEVICE_PARAM_LIST[index].item2payload
-                  for i=1,23 do s[23+i] = cmd.payload[i] end  
-                  DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-                  DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
-              end  
-          end -- anything else should not happen, but ???
-      end
-    end  
-end--for    
+    for ijk = 1,6 do -- handle only 6 at most per lua cycle
+        local cmd = mbridge.cmdPop()
+        if cmd == nil then break end
+        if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
+            -- MBRIDGE_CMD_DEVICE_ITEM_TX
+            DEVICE_ITEM_TX = cmd
+            DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
+            DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
+            DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
+        elseif cmd.cmd == mbridge.CMD_DEVICE_ITEM_RX then 
+            -- MBRIDGE_CMD_DEVICE_ITEM_RX
+            DEVICE_ITEM_RX = cmd
+            DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
+            DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
+            DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
+        elseif cmd.cmd == mbridge.CMD_INFO then 
+            -- MBRIDGE_CMD_INFO
+            DEVICE_INFO = cmd
+            DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
+            DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
+            DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
+            DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
+            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
+            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
+        elseif cmd.cmd == mbridge.CMD_PARAM_ITEM then 
+            -- MBRIDGE_CMD_PARAM_ITEM
+            local index = cmd.payload[0]
+            if index < 128 then
+                DEVICE_PARAM_LIST[index] = cmd
+                DEVICE_PARAM_LIST[index].typ = mb_to_u8(cmd.payload, 1)
+                DEVICE_PARAM_LIST[index].name = mb_to_string(cmd.payload, 2, 16)
+                DEVICE_PARAM_LIST[index].value = mb_to_value_or_str6(cmd.payload, 18, DEVICE_PARAM_LIST[index].typ)
+                DEVICE_PARAM_LIST[index].min = 0
+                DEVICE_PARAM_LIST[index].max = 0
+                DEVICE_PARAM_LIST[index].unit = ""
+                DEVICE_PARAM_LIST[index].options = {}
+                DEVICE_PARAM_LIST[index].allowed_mask = 65536
+                DEVICE_PARAM_LIST[index].editable = true
+            elseif index == 255 then
+                DEVICE_PARAM_LIST_complete = true
+            end  
+        elseif cmd.cmd == mbridge.CMD_PARAM_ITEM2 then 
+            -- MBRIDGE_CMD_PARAM_ITEM2
+            local index = cmd.payload[0]
+            if DEVICE_PARAM_LIST[index] ~= nil then
+                if DEVICE_PARAM_LIST[index].typ < mbridge.PARAM_TYPE_LIST then
+                    DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
+                    DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
+                    DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 7, 6)
+                elseif DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
+                    DEVICE_PARAM_LIST[index].allowed_mask = mb_to_u16(cmd.payload, 1)
+                    DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 3, 21)
+                    DEVICE_PARAM_LIST[index].item2payload = cmd.payload
+                    DEVICE_PARAM_LIST[index].min = 0
+                    DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                    DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
+                end  
+            end -- anything else should not happen, but ???
+        elseif cmd.cmd == mbridge.CMD_PARAM_ITEM3 then 
+            -- MBRIDGE_CMD_PARAM_ITEM3
+            local index = cmd.payload[0]
+            if DEVICE_PARAM_LIST[index] ~= nil then
+                if DEVICE_PARAM_LIST[index].typ == mbridge.PARAM_TYPE_LIST then
+                    local s = DEVICE_PARAM_LIST[index].item2payload
+                    for i=1,23 do s[23+i] = cmd.payload[i] end  
+                    DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
+                    DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                end  
+            end -- anything else should not happen, but ???
+        end
+    end--for    
 end    
    
    
 local function sendParamSet(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < mbridge.PARAM_TYPE_LIST then
         mbridge.cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
@@ -359,12 +358,14 @@ end
     
     
 local function sendParamStore()
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     mbridge.cmdPush(mbridge.CMD_PARAM_STORE, {})
     setPopupWTmo("Save Parameters",250)
 end  
 
 
 local function sendBind()
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     mbridge.cmdPush(mbridge.CMD_BIND, {})
     setPopupBlocked("Binding")
 end  
@@ -408,7 +409,7 @@ end
 
 local function cur_attr_x(idx, x_idx) -- for Bind Phrase character editing
     local attr = TEXT_COLOR
-    if cursor_idx == idx and DEVICE_PARAM_LIST_complete then
+    if DEVICE_PARAM_LIST_complete and cursor_idx == idx then
         if edit then 
             if cursor_x_idx == x_idx then attr = attr + BLINK + INVERS end    
         else    
@@ -421,7 +422,7 @@ end
 
 local function cur_attr_p(idx, pidx) -- used for parameters
     local attr = cur_attr(idx)
-    if not DEVICE_PARAM_LIST[pidx].editable then 
+    if DEVICE_PARAM_LIST_complete and not DEVICE_PARAM_LIST[pidx].editable then 
         lcd.setColor(CUSTOM_COLOR, GREY)
         attr = CUSTOM_COLOR
     end
@@ -430,6 +431,7 @@ end
     
     
 local function param_value_inc(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < mbridge.PARAM_TYPE_LIST then
         p.value = p.value + 1
@@ -447,6 +449,7 @@ end
 
 
 local function param_value_dec(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < mbridge.PARAM_TYPE_LIST then
         p.value = p.value - 1
@@ -464,6 +467,7 @@ end
     
     
 local function param_str6_inc(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == mbridge.PARAM_TYPE_STR6 then 
         local c = string.sub(p.value, cursor_x_idx+1, cursor_x_idx+1)
@@ -478,6 +482,7 @@ end
 
 
 local function param_str6_dec(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == mbridge.PARAM_TYPE_STR6 then 
         local c = string.sub(p.value, cursor_x_idx+1, cursor_x_idx+1)
@@ -492,6 +497,7 @@ end
     
     
 local function param_str6_next(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == mbridge.PARAM_TYPE_STR6 then 
         cursor_x_idx = cursor_x_idx + 1
@@ -504,6 +510,7 @@ end
 
 
 local function param_focusable(idx)
+    if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p == nil then return false end
     if p.editable == nil then return false end
@@ -535,10 +542,8 @@ local function drawPageEdit(page_str)
     local idx = 0
     page_param_cnt = 0
     for pidx = 2, #DEVICE_PARAM_LIST do
-      if DEVICE_PARAM_LIST[pidx] ~= nil and 
-           string.sub(DEVICE_PARAM_LIST[pidx].name,1,2) == page_str and
-           DEVICE_PARAM_LIST[pidx].allowed_mask > 0 then
         local p = DEVICE_PARAM_LIST[pidx]
+        if p ~= nil and string.sub(p.name,1,2) == page_str and p.allowed_mask > 0 then
         local name = string.sub(p.name, 4)
            
         if idx >= top_idx and idx < top_idx + page_N then
@@ -629,33 +634,34 @@ local function drawPageMain()
     y = 35
     lcd.drawText(5, y, "Tx:", TEXT_COLOR)  
     if DEVICE_ITEM_TX == nil then
-      lcd.drawText(35, y, "---", TEXT_COLOR)  
+        lcd.drawText(35, y, "---", TEXT_COLOR)  
     else
-      lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR)  
-      lcd.drawText(35, y+20, DEVICE_ITEM_TX.version_str, TEXT_COLOR)  
+        lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR)  
+        lcd.drawText(35, y+20, DEVICE_ITEM_TX.version_str, TEXT_COLOR)  
     end
+    
     lcd.drawText(240, y, "Rx:", TEXT_COLOR)
     if not DEVICE_PARAM_LIST_complete then
+        -- don't do anything
     elseif not connected then
-      lcd.drawText(270, y, "not connected", TEXT_COLOR)  
+        lcd.drawText(270, y, "not connected", TEXT_COLOR)  
     elseif DEVICE_ITEM_RX == nil then
-      lcd.drawText(270, y, "---", TEXT_COLOR)  
+        lcd.drawText(270, y, "---", TEXT_COLOR)  
     else
-      lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR)  
-      lcd.drawText(270, y+20, DEVICE_ITEM_RX.version_str, TEXT_COLOR)  
+        lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR)  
+        lcd.drawText(270, y+20, DEVICE_ITEM_RX.version_str, TEXT_COLOR)  
     end
  
     y = 90
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
---        lcd.drawText(140, y, DEVICE_PARAM_LIST[0].value, cur_attr(0))  
-      local x = 140
-      for i = 1,6 do
-          local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
-          local attr = cur_attr_x(0, i-1)
-          lcd.drawText(x, y, c, attr)
-          x = x + lcd.getTextWidth(c,1,attr)+1
-      end
+        local x = 140
+        for i = 1,6 do
+            local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
+            local attr = cur_attr_x(0, i-1)
+            lcd.drawText(x, y, c, attr)
+            x = x + lcd.getTextWidth(c,1,attr)+1
+        end
     end    
     
     lcd.drawText(10, y + 21, "Mode", TEXT_COLOR)  
