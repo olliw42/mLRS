@@ -55,7 +55,7 @@ v0.0.00:
 #include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
 #endif
 #ifdef USE_I2C
-#include "..\Common\stdstm32-i2c.h"
+#include "..\modules\stm32ll-lib\src\stdstm32-i2c.h"
 #endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
 #include "..\Common\mavlink\out\mlrs\mlrs.h"
