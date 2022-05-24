@@ -10,6 +10,10 @@
 #define DISP_H
 #pragma once
 
+
+#include "..\Common\hal\hal.h"
+
+
 #ifndef USE_DISPLAY
 
 class tTxDisp
@@ -25,6 +29,7 @@ class tTxDisp
 #include <ctype.h>
 #include "..\Common\thirdparty\gfxfont.h"
 #include "..\Common\thirdparty\gfxfontFreeMono12pt7b.h"
+#include "..\Common\thirdparty\gfxfontFreeMono9pt7b.h"
 #include "..\CommonTx\gdisp.h"
 
 
@@ -36,12 +41,26 @@ class tTxDisp
 typedef enum {
     PAGE_STARTUP = 0,
     PAGE_BIND,
+
+    // left-right navigation menu
     PAGE_MAIN,
     PAGE_COMMON,
     PAGE_TX,
     PAGE_RX,
-    PAGE_UNDEFINED,
+    PAGE_NAV_MIN = PAGE_MAIN,
+    PAGE_NAV_MAX = PAGE_RX,
+
+    PAGE_UNDEFINED, // this is also used to time startup page sequence
 } PAGE_ENUM;
+
+
+typedef enum {
+    SUBPAGE_DEFAULT = 0,
+
+    // sub pages for main page
+    SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT,
+    SUBPAGE_MAIN_SUB1,
+} SUBPAGE_ENUM;
 
 
 class tTxDisp
@@ -62,6 +81,9 @@ class tTxDisp
     void draw_page_tx(void);
     void draw_page_rx(void);
 
+    void draw_page_main_sub0(void);
+    void draw_page_main_sub1(void);
+
     void draw_header(const char* s);
     void draw_options(uint8_t* list, uint8_t num);
 
@@ -77,6 +99,9 @@ class tTxDisp
     uint8_t page;
     uint16_t page_startup_tmo;
     bool page_modified;
+
+    uint8_t subpage; // for pages which may have different screens
+    uint8_t subpage_max;
 
     uint8_t idx_first;
     uint8_t idx_max;
@@ -116,6 +141,9 @@ void tTxDisp::Init(void)
     page = PAGE_UNDEFINED;
     page_startup_tmo = DISP_START_TMO_MS;
     page_modified = false;
+
+    subpage = SUBPAGE_DEFAULT;
+    subpage_max = 0;
 
     common_list_num = tx_list_num = rx_list_num = 0;
     memset(common_list, 0, SETUP_PARAMETER_NUM);
@@ -184,6 +212,8 @@ uint16_t keys, i, keys_new;
                 page_startup_tmo = DISP_START_PAGE_TMO_MS;
             } else {
                 page = PAGE_MAIN;
+                subpage = SUBPAGE_DEFAULT;
+                subpage_max = 1;
             }
             page_modified = true;
         }
@@ -195,7 +225,7 @@ uint16_t keys, i, keys_new;
 
     // navigation
     if (key_has_been_pressed(KEY_RIGHT)) {
-        if (page >= PAGE_MAIN && page < PAGE_RX) {
+        if (page >= PAGE_NAV_MIN && page < PAGE_NAV_MAX) {
             page++;
             page_modified = true;
             idx_first = 0;
@@ -206,10 +236,11 @@ uint16_t keys, i, keys_new;
                 case PAGE_TX: idx_max = tx_list_num - 1; break;
                 case PAGE_RX: idx_max = rx_list_num - 1; break;
             }
+            subpage = SUBPAGE_DEFAULT;
         }
     }
     if (key_has_been_pressed(KEY_LEFT)) {
-        if (page > PAGE_MAIN && page <= PAGE_RX) {
+        if (page > PAGE_NAV_MIN && page <= PAGE_NAV_MAX) {
             page--;
             page_modified = true;
             idx_first = 0;
@@ -220,6 +251,11 @@ uint16_t keys, i, keys_new;
                 case PAGE_TX: idx_max = tx_list_num - 1; break;
                 case PAGE_RX: idx_max = rx_list_num - 1; break;
             }
+            subpage = SUBPAGE_DEFAULT;
+            subpage_max = 0;
+            switch (page) {
+                case PAGE_MAIN: subpage_max = 1; break;
+            }
         }
     }
 
@@ -229,6 +265,10 @@ uint16_t keys, i, keys_new;
             if (idx_focused - idx_first > (5 - 1)) { idx_first = idx_focused - (5 - 1); }
             page_modified = true;
         }
+        if (subpage < subpage_max) {
+            subpage++;
+            page_modified = true;
+        }
     }
     if (key_has_been_pressed(KEY_UP)) {
         if (idx_focused > 0) {
@@ -236,10 +276,15 @@ uint16_t keys, i, keys_new;
             if (idx_focused < idx_first) { idx_first = idx_focused; }
             page_modified = true;
         }
+        if (subpage > 0) {
+            subpage--;
+            page_modified = true;
+        }
     }
 }
 
 
+// this needs to be called to update pages which show live data
 void tTxDisp::UpdateMain(void)
 {
     if (page == PAGE_MAIN) page_modified = true;
@@ -265,7 +310,7 @@ void tTxDisp::Draw(void)
         switch (page) {
             case PAGE_STARTUP: draw_page_startup(); break;
             case PAGE_BIND: draw_page_bind(); break;
-            case PAGE_MAIN: if (page_modified) draw_page_main(); break;
+            case PAGE_MAIN: draw_page_main(); break;
             case PAGE_COMMON: draw_page_common(); break;
             case PAGE_TX: draw_page_tx(); break;
             case PAGE_RX: draw_page_rx(); break;
@@ -304,7 +349,7 @@ void tTxDisp::draw_page_startup(void)
     gdisp_clear();
     gdisp_setcurXY(0, 6);
     gdisp_setfont(&FreeMono12pt7b);
-    gdisp_setcurY(37-10); gdisp_puts_XCentered("mLRS");
+    gdisp_setcurY(33-10); gdisp_puts_XCentered("mLRS");
     gdisp_unsetfont();
     gdisp_setcurY(48); gdisp_puts_XCentered(DEVICE_NAME);
     gdisp_setcurY(60); gdisp_puts_XCentered(VERSIONONLYSTR);
@@ -330,7 +375,6 @@ void tTxDisp::draw_header(const char* s)
 }
 
 
-
 void _disp_div_str(char* s, uint8_t div)
 {
     switch (div) {
@@ -342,7 +386,7 @@ void _disp_div_str(char* s, uint8_t div)
 }
 
 
-void tTxDisp::draw_page_main(void)
+void tTxDisp::draw_page_main_sub0(void)
 {
 char s[32];
 
@@ -416,6 +460,58 @@ char s[32];
     gdisp_setcurX(115+6);
     strcpy(s, "%");
     gdisp_puts(s);
+}
+
+
+void tTxDisp::draw_page_main_sub1(void)
+{
+char s[32];
+
+    draw_header("Main/1");
+
+    gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_puts("Rssi");
+
+    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
+    gdisp_setfont(&FreeMono9pt7b);
+    s8toBCDstr(stats.GetLastRxRssi(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60);
+    s8toBCDstr(stats.received_rssi, s);
+    if (connected()) gdisp_puts(s);
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115);
+    strcpy(s, "dB");
+    gdisp_puts(s);
+
+    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
+    gdisp_puts("LQ");
+
+    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
+    gdisp_setfont(&FreeMono9pt7b);
+    stoBCDstr(txstats.GetLQ(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60 + 11);
+    if (connected()) {
+        stoBCDstr(stats.received_LQ, s);
+        gdisp_puts(s);
+    }
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115+6);
+    strcpy(s, "%");
+    gdisp_puts(s);
+}
+
+
+void tTxDisp::draw_page_main(void)
+{
+    switch (subpage) {
+    case SUBPAGE_MAIN_SUB1: draw_page_main_sub1(); return;
+    default:
+        draw_page_main_sub0();
+    }
 }
 
 
