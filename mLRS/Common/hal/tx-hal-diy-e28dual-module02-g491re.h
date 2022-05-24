@@ -326,7 +326,7 @@ uint8_t fiveway_read(void)
 //-- Display I2C
 
 #define I2C_USE_I2C3              // PA8, PC9
-#define I2C_CLOCKSPEED_1000KHZ
+#define I2C_CLOCKSPEED_400KHZ     // not all displays seem to work well with I2C_CLOCKSPEED_1000KHZ
 #define I2C_USE_DMAMODE
 
 
