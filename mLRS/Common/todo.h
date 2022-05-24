@@ -32,8 +32,9 @@ ISSUES:
 - rx R9MM R9MX, why buzzer behaves different for R9MX?
 
 - don't allow bind, save, reload, param changes, etc, when vehicle is armed/flying
-  => this requires the tx&rx to know if that is the case
+  => this requires the tx&rx to know if the vehicle is in this state
   that's possible for when mavlink mode is used, but else?
+- don't allow bind, save, reload, param changes, etc, when connection is too weak, e.g. rssi too low
 
 The 3 MAIN topics TODO:
 
@@ -51,6 +52,10 @@ The 3 MAIN topics TODO:
 - router on Tx side
 - mavlinkX (transform mavlink data into more robust & slim format, introduce cmpr_msg)
 
+4) Auxiliary features
+- beacon mode
+- relay setup, how could this be done?
+
 TODO:
 - can we pl check the real spi clock speed !?!?!!?
 
@@ -67,8 +72,11 @@ Longterm TODO:
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
+  alternatively: the receiver cis not automatically updated together with the tx, but simply through the tx module
 
-- long range mode with rx only, switch to a longer-range mode when not connected, would also allow rc data to be transmitted further out
+- long range mode with rx only, switch to a longer-range mode when not connected
+  would also allow rc data to be transmitted further out
+  the problem is how could we then ever reconnect?
 */
 
 
