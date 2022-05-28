@@ -12,7 +12,7 @@ v0.0.00:
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
-#define DEBUG_ENABLED
+//#define DEBUG_ENABLED
 #define FAIL_ENABLED
 
 

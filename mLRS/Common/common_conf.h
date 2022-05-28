@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             116 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.1.16"
+#define VERSION             200 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.2.00"
 #define SETUPLAYOUT         2   // this should be changed then Setup struct and/or serial changes
 
 
@@ -21,7 +21,7 @@
 //-------------------------------------------------------
 
 // un-comment to enable Rx module to go into bind mode after power up
-//#define RX_BIND_MODE_AFTER_POWERUP
+#define RX_BIND_MODE_AFTER_POWERUP
 
 
 //-------------------------------------------------------
@@ -32,8 +32,8 @@
 //#define SETUP_FORCE_COMMON_CONF
 
 
-#define CPOWER                          0 // 0: minimum power, 255: maximum power
-//#define CPOWER                          255 // 0: minimum power, 255: maximum power
+//#define CPOWER                          0 // 0: minimum power, 255: maximum power
+#define CPOWER                          255 // 0: minimum power, 255: maximum power
 
 #define DIVERSITY                       0
 
