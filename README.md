@@ -84,6 +84,11 @@ The range which one may expect can be estimated from the standard math; the [Imm
 
 Only very few range testes were reported so far (and only for 2.4 GHz/50 Hz). They are however consistent with the estimated ranges. Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at even larger ranges.
 
+## Firmware: Flashing ##
+
+Ready-to-flash firmwares can be found in the "firmware" subfolder. All you need to do is to flash the .bin file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The tx module can then be configured to your needs via the CLI or via the mLRS lua script. The rx module is configured by first binding to the tx module, and then configuring it through the tx module, exactly as the tx module is configured.
+
+
 ## Software: Installation Bits and Bops ##
 
 This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
