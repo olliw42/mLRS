@@ -18,6 +18,7 @@
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "gdisp.h"
 
+tGDisplay gdisp;
 
 //-------------------------------------------------------
 // Fonts
