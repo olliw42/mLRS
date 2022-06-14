@@ -107,7 +107,7 @@ typedef struct {
     uint8_t buf[GDISPLAY_BUFSIZE] ALIGNED8_ATTR;
 } tGDisplay;
 
-tGDisplay gdisp;
+//tGDisplay gdisp;
 
 
 //-------------------------------------------------------
