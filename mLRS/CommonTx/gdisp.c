@@ -18,7 +18,6 @@
 #include "..\modules\stm32ll-lib\src\stdstm32.h"
 #include "gdisp.h"
 
-tGDisplay gdisp;
 
 //-------------------------------------------------------
 // Fonts
@@ -209,6 +208,9 @@ HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len)
 //-------------------------------------------------------
 // Graphical display API
 //-------------------------------------------------------
+
+tGDisplay gdisp;
+
 
 //-------------------------------------------------------
 // HAL
