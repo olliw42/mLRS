@@ -92,7 +92,7 @@ class Out : public OutBase
     bool config_crsf(bool enable_flag) override
     {
         if (enable_flag) {
-            uart_setprotocol(416666, XUART_PARITY_EVEN, UART_STOPBIT_1);
+            uart_setprotocol(416666, XUART_PARITY_NO, UART_STOPBIT_1);
             out_set_normal();
         }
         return true;
