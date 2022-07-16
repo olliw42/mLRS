@@ -208,8 +208,8 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
     if (!enabled) return false;
 
     if (telemetry_start_next_tick) {
-      telemetry_start_next_tick = false;
-      telemetry_state = 1; // start
+        telemetry_start_next_tick = false;
+        telemetry_state = 1; // start
     }
 
     bool ret = false;
@@ -371,19 +371,19 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
     switch (msg->msgid) {
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
-      fmav_battery_status_t payload;
-      fmav_msg_battery_status_decode(&payload, msg);
-      int32_t voltage = 0;
-      for (uint8_t i = 0; i < 10; i++) {
-        if (payload.voltages[i] != UINT16_MAX) {
-          voltage += payload.voltages[i]; //uint16_t mV, UINT16_MAX if not known
+        fmav_battery_status_t payload;
+        fmav_msg_battery_status_decode(&payload, msg);
+        int32_t voltage = 0;
+        for (uint8_t i = 0; i < 10; i++) {
+            if (payload.voltages[i] != UINT16_MAX) {
+                voltage += payload.voltages[i]; //uint16_t mV, UINT16_MAX if not known
+            }
         }
-      }
-      for (uint8_t i = 0; i < 4; i++) { //we assume this never is relevant if validcellcount = false
-        if (payload.voltages_ext[i] != 0) {
-          voltage += payload.voltages_ext[i]; //uint16_t mV, 0 if not known
+        for (uint8_t i = 0; i < 4; i++) { //we assume this never is relevant if validcellcount = false
+            if (payload.voltages_ext[i] != 0) {
+                voltage += payload.voltages_ext[i]; //uint16_t mV, 0 if not known
+            }
         }
-      }
 //      if (payload.id == 0) {
         battery.voltage = __REV16(voltage / 100);
         battery.current = __REV16((payload.current_battery == -1) ? 0 : payload.current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
@@ -395,7 +395,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         battery.remaining = (payload.battery_remaining == -1) ? 0 : payload.battery_remaining;
         battery_updated = true;
 //      }
-      }break;
+        }break;
 
     case FASTMAVLINK_MSG_ID_ATTITUDE: {
         fmav_attitude_t payload;
@@ -439,18 +439,18 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         gps.gps_heading = __REV16(payload.hdg);
         // take ground speed from VFR_HUD
         if (vfr_groundspd_mps != NAN) {
-          gps.groundspeed = __REV16(100.0f * vfr_groundspd_mps / 3.6f);
+            gps.groundspeed = __REV16(100.0f * vfr_groundspd_mps / 3.6f);
         } else {
-          gps.groundspeed = 0;
+            gps.groundspeed = 0;
         }
         // take the satellites of the previous reports
         if (gps1_sat != UINT8_MAX && gps2_sat != UINT8_MAX) { // we have two gps
-          gps.satellites = (gps1_sat > gps2_sat) ? gps1_sat : gps2_sat; // take the larger
+            gps.satellites = (gps1_sat > gps2_sat) ? gps1_sat : gps2_sat; // take the larger
         } else
         if (gps1_sat != UINT8_MAX) {
-          gps.satellites = gps1_sat;
+            gps.satellites = gps1_sat;
         } else {
-          gps.satellites = 0;
+            gps.satellites = 0;
         }
         // mark as updated
         gps_updated = true;
@@ -482,9 +482,9 @@ void tTxCrsf::SendTelemetryFrame(void)
         return; // only send one per slot
     }
     if (baro_altitude_updated) {
-      baro_altitude_updated = false;
-      SendFrame(CRSF_BARO_ALTITUDE_LEN, CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude);
-      return; // only send one per slot
+        baro_altitude_updated = false;
+        SendFrame(CRSF_BARO_ALTITUDE_LEN, CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude);
+        return; // only send one per slot
   }
 }
 
