@@ -10,8 +10,8 @@
 
 #include <string.h>
 #include "out.h"
-#include "..\Common\thirdparty\thirdparty.h"
-#include "..\Common\crsf_protocol.h"
+#include "../Common/thirdparty/thirdparty.h"
+#include "../Common/crsf_protocol.h"
 
 
 void OutBase::Init(tRxSetup* _setup)

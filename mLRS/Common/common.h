@@ -12,7 +12,7 @@
 
 
 #include "common_conf.h"
-#include "sx-drivers\sx12xx_driver.h"
+#include "sx-drivers/sx12xx_driver.h"
 #include "lq_counter.h"
 #include "fhss.h"
 #include "frames.h"

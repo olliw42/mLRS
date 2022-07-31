@@ -11,7 +11,7 @@
 #pragma once
 
 
-#include "..\Common\mavlink\fmav_extension.h"
+#include "../Common/mavlink/fmav_extension.h"
 
 static inline bool connected(void);
 

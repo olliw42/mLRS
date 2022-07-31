@@ -8,7 +8,7 @@
 //*******************************************************
 
 #include <string.h>
-#include "..\modules\stm32ll-lib\src\stdstm32.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "common_types.h"
 #include "setup_types.h"
 #include "crsf_protocol.h"

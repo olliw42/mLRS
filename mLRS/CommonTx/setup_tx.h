@@ -12,7 +12,7 @@
 
 
 #include <stdint.h>
-#include "..\Common\setup.h"
+#include "../Common/setup.h"
 
 
 //-------------------------------------------------------

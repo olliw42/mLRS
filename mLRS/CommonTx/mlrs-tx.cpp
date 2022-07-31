@@ -26,48 +26,48 @@ v0.0.00:
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
-#include "..\Common\common_conf.h"
-#include "..\Common\common_types.h"
-#include "..\Common\hal\glue.h"
-#include "..\modules\stm32ll-lib\src\stdstm32.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\sx-drivers\sx12xx.h"
-#include "..\Common\hal\hal.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-delay.h" // these are dependent on hal
-#include "..\modules\stm32ll-lib\src\stdstm32-eeprom.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
+#include "../Common/common_conf.h"
+#include "../Common/common_types.h"
+#include "../Common/hal/glue.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+#include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
+#include "../Common/sx-drivers/sx12xx.h"
+#include "../Common/hal/hal.h"
+#include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
+#include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
+#include "../modules/stm32ll-lib/src/stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
-#include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
+#include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
 #ifdef USE_SERIAL
-#include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #ifdef USE_COM
-#include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
 #endif
 #ifdef USE_SERIAL2
-#include "..\modules\stm32ll-lib\src\stdstm32-uartd.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
 #endif
 #ifdef USE_IN
-#include "..\modules\stm32ll-lib\src\stdstm32-uarte.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
 #endif
 #ifdef USE_DEBUG
-#include "..\modules\stm32ll-lib\src\stdstm32-uartf.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartf.h"
 #endif
 #ifdef USE_I2C
-#include "..\modules\stm32ll-lib\src\stdstm32-i2c.h"
+#include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
-#include "..\Common\mavlink\out\mlrs\mlrs.h"
-#include "..\Common\setup.h"
-#include "..\Common\common.h"
-#include "..\Common\micros.h"
-//#include "..\Common\test.h" // un-comment if you want to compile for board test
+#include "../Common/mavlink/out/mlrs/mlrs.h"
+#include "../Common/setup.h"
+#include "../Common/common.h"
+#include "../Common/micros.h"
+//#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
-#include "..\Common\buzzer.h"
+#include "../Common/buzzer.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
@@ -221,7 +221,7 @@ tTxSxSerial sx_serial;
 // doing one, draw or update, every cycle in 50 Hz mode works, but
 // doing both every cycle does not work! why ???
 
-#include "..\CommonTx\disp.h"
+#include "../CommonTx/disp.h"
 
 tTxDisp disp;
 
@@ -230,7 +230,7 @@ tTxDisp disp;
 // While transmit/receive tasks
 //-------------------------------------------------------
 
-#include "..\Common\while.h"
+#include "../Common/while.h"
 
 
 class WhileTransmit : public WhileBase
