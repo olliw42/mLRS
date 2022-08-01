@@ -15,7 +15,7 @@
 
 
 #include <string.h>
-#include "..\modules\stm32ll-lib\src\stdstm32.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "gdisp.h"
 
 

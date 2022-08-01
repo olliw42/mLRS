@@ -25,39 +25,39 @@ v0.0.00:
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
-#include "..\Common\common_conf.h"
-#include "..\Common\common_types.h"
-#include "..\Common\hal\glue.h"
-#include "..\modules\stm32ll-lib\src\stdstm32.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-peripherals.h"
-#include "..\Common\sx-drivers\sx12xx.h"
-#include "..\Common\hal\hal.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-delay.h" // these are dependent on hal
-#include "..\modules\stm32ll-lib\src\stdstm32-eeprom.h"
-#include "..\modules\stm32ll-lib\src\stdstm32-spi.h"
+#include "../Common/common_conf.h"
+#include "../Common/common_types.h"
+#include "../Common/hal/glue.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+#include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
+#include "../Common/sx-drivers/sx12xx.h"
+#include "../Common/hal/hal.h"
+#include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
+#include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
+#include "../modules/stm32ll-lib/src/stdstm32-spi.h"
 #ifdef DEVICE_HAS_DIVERSITY
-#include "..\modules\stm32ll-lib\src\stdstm32-spib.h"
+#include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
 #ifdef USE_SERIAL
-#include "..\modules\stm32ll-lib\src\stdstm32-uartb.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #ifdef USE_DEBUG
-#include "..\modules\stm32ll-lib\src\stdstm32-uartc.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
 #endif
 #ifdef USE_OUT
-#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 #endif
 #define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
-#include "..\Common\mavlink\out\mlrs\mlrs.h"
-#include "..\Common\setup.h"
-#include "..\Common\common.h"
-#include "..\Common\micros.h"
-//#include "..\Common\test.h" // un-comment if you want to compile for board test
+#include "../Common/mavlink/out/mlrs/mlrs.h"
+#include "../Common/setup.h"
+#include "../Common/common.h"
+#include "../Common/micros.h"
+//#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
-#include "..\Common\buzzer.h"
+#include "../Common/buzzer.h"
 
 
 ClockBase clock;

@@ -11,7 +11,7 @@
 #pragma once
 
 
-#include "..\Common\hal\hal.h" // not needed but helps editor to get defines correct LOL
+#include "../Common/hal/hal.h" // not needed but helps editor to get defines correct LOL
 
 
 //-------------------------------------------------------
@@ -26,7 +26,7 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
-#include "..\modules\stm32ll-lib\src\stdstm32-uart.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 
 
 void uart_putc_tobuf(char c)

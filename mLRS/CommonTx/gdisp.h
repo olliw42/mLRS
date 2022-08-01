@@ -21,7 +21,7 @@ extern "C" {
 
 
 #include "main.h" // this is to include the correct stm32XXxx_hal.h
-#include "..\Common\thirdparty\gfxfont.h"
+#include "../Common/thirdparty/gfxfont.h"
 
 
 //-------------------------------------------------------

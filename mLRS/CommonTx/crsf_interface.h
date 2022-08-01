@@ -14,8 +14,8 @@
 #if (defined DEVICE_HAS_JRPIN5)
 
 #include "math.h"
-#include "..\Common\thirdparty\thirdparty.h"
-#include "..\Common\crsf_protocol.h"
+#include "../Common/thirdparty/thirdparty.h"
+#include "../Common/crsf_protocol.h"
 #include "jr_pin5_interface.h"
 
 

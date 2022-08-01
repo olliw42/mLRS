@@ -11,7 +11,7 @@
 #pragma once
 
 
-#include "..\Common\hal\hal.h"
+#include "../Common/hal/hal.h"
 
 
 #ifndef USE_DISPLAY
@@ -27,10 +27,10 @@ class tTxDisp
 
 #include <stdlib.h>
 #include <ctype.h>
-#include "..\Common\thirdparty\gfxfont.h"
-#include "..\Common\thirdparty\gfxfontFreeMono12pt7b.h"
-#include "..\Common\thirdparty\gfxfontFreeMono9pt7b.h"
-#include "..\CommonTx\gdisp.h"
+#include "../Common/thirdparty/gfxfont.h"
+#include "../Common/thirdparty/gfxfontFreeMono12pt7b.h"
+#include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
+#include "../CommonTx/gdisp.h"
 
 
 extern tGDisplay gdisp;
