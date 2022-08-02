@@ -45,7 +45,7 @@ class OutBase
   public:
     void Init(tRxSetup* _setup);
 
-    void Configure(uint8_t new_config, uint8_t new_rssi_channel_mode, uint8_t new_failsafe_mode);
+    void Configure(uint8_t new_config);
 
     void Do(uint16_t tnow_us);
 
@@ -54,6 +54,8 @@ class OutBase
     void SendLinkStatisticsDisconnected(void);
 
     void SetChannelOrder(uint8_t new_channel_order);
+
+    tRcData* GetRcDataPtr(void) { return &rc; }
 
   private:
     void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
@@ -79,8 +81,7 @@ class OutBase
     uint16_t link_stats_tstart_us;
     tOutLinkStats link_stats;
 
-    uint8_t rssi_channel;
-    uint8_t failsafe_mode;
+    tRcData rc;
 };
 
 

@@ -47,6 +47,7 @@
 // common to Tx,Rx, all options always allowed
 #define SETUP_OPT_CH_ORDER          "AETR,TAER,ETAR"
 #define SETUP_OPT_SERIAL_BAUDRATE   "9600,19200,38400,57600,115200"
+#define SETUP_OPT_RX_SERIAL_BAUDRATE "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE  "transp.,mavlink"
 #define SETUP_OPT_SEND_RADIOSTATUS  "off,on,on w txbuf"
 
@@ -79,9 +80,10 @@
   X( Setup.Rx.OutMode,            LIST,  "Rx Out Mode",  "RX_OUT_MODE",  0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
   X( Setup.Rx.OutRssiChannelMode, LIST,  "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,4,5,6,7,8,9,10,11,12", MSK_ALL )\
   X( Setup.Rx.FailsafeMode,       LIST,  "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
-  X( Setup.Rx.SerialBaudrate,     LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Rx.SerialBaudrate,     LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST,  "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST,  "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
+  X( Setup.Rx.SendRcChannels,     LIST,  "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.Buzzer,             LIST,  "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
   \
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[0],  INT8, "Rx FS Ch1", "RX_FS_CH1", 0, -120, 120, "%", "",0 )\

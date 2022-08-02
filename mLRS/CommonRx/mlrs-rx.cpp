@@ -561,7 +561,7 @@ RESTARTCONTROLLER:
 
   rxstats.Init(Config.LQAveragingPeriod);
 
-  out.Configure(Setup.Rx.OutMode, Setup.Rx.OutRssiChannelMode, Setup.Rx.FailsafeMode);
+  out.Configure(Setup.Rx.OutMode);
   mavlink.Init();
   sx_serial.Init();
 
@@ -882,11 +882,13 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
       if (connected()) {
         out.SendRcData(&rcData, frame_missed, false, stats.GetLastRxRssi());
         out.SendLinkStatistics();
+        mavlink.SendRcData(out.GetRcDataPtr(), false);
       } else {
         if (connect_occured_once) {
           // generally output a signal only if we had a connection at least once
           out.SendRcData(&rcData, true, true, RSSI_MIN);
           out.SendLinkStatisticsDisconnected();
+          mavlink.SendRcData(out.GetRcDataPtr(), true);
         }
       }
     }//end of if(doPostReceive2)

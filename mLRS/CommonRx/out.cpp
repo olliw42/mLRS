@@ -25,27 +25,14 @@ void OutBase::Init(tRxSetup* _setup)
     link_stats_set_tstart = false;
     link_stats_tstart_us = 0;
 
-    rssi_channel = 0;
-    failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
+    rc = {0};
 
     setup = _setup;
 }
 
 
-void OutBase::Configure(uint8_t new_config, uint8_t new_rssi_channel_mode, uint8_t new_failsafe_mode)
+void OutBase::Configure(uint8_t new_config)
 {
-    if (new_rssi_channel_mode == OUT_RSSI_CHANNEL_OFF) {
-        rssi_channel = 0;
-    } else
-    if (new_rssi_channel_mode <= OUT_RSSI_CHANNEL_CH12) {
-        rssi_channel = new_rssi_channel_mode + 4;
-    } else {
-        rssi_channel = 0;
-    }
-
-    failsafe_mode = new_failsafe_mode;
-    if (failsafe_mode >= FAILSAFE_MODE_NUM) failsafe_mode = FAILSAFE_MODE_NO_SIGNAL;
-
     if (new_config == config) return;
 
     // first disable the previous setting
@@ -124,14 +111,13 @@ void OutBase::SetChannelOrder(uint8_t new_channel_order)
 
 void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi)
 {
-    if (!initialized) return;
-
-    tRcData rc; // copy rc data, to not modify it !!
-    memcpy(&rc, rc_orig, sizeof(tRcData));
+    memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
 
     for (uint8_t n = 0; n < 4; n++) {
         rc.ch[n] = rc_orig->ch[channel_map[n]];
     }
+
+    uint8_t failsafe_mode = setup->FailsafeMode;
 
     if (failsafe) {
         switch (failsafe_mode) {
@@ -158,9 +144,6 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         case FAILSAFE_MODE_CH1CH4_CENTER:
             for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024; // center all four
             break;
-        default:
-            // should not happen, but play it safe, do not output anything, so jump out
-            return;
         }
     }
 
@@ -188,12 +171,16 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         }
     }
 
+    if (setup->OutRssiChannelMode >= OUT_RSSI_CHANNEL_CH5 && setup->OutRssiChannelMode <= OUT_RSSI_CHANNEL_CH12) {
+        uint8_t rssi_channel = setup->OutRssiChannelMode + 4;
+        rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(rssi);
+    }
+
+    if (!initialized) return;
+
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
-        if (rssi_channel) {
-          rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(rssi);
-        }
         send_sbus_rcdata(&rc, frame_lost, failsafe);
         break;
     case OUT_CONFIG_CRSF:

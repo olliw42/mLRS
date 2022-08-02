@@ -170,6 +170,7 @@ void setup_default(void)
     Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
+    Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
     Setup.Rx.Buzzer = SETUP_RX_BUZZER;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
@@ -263,6 +264,7 @@ void setup_sanitize(void)
     if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
     if (Setup.Rx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
+    if (Setup.Rx.SendRcChannels >= SEND_RC_CHANNELS_NUM) Setup.Rx.SendRcChannels = SEND_RC_CHANNELS_OFF;
 }
 
 
@@ -407,6 +409,7 @@ void setup_configure(void)
     case SERIAL_BAUDRATE_38400: Config.SerialBaudrate = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
+    case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 23040; break;
     default:
         Config.SerialBaudrate = 57600;
     }
