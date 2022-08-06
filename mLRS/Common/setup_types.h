@@ -222,8 +222,8 @@ typedef struct
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
-
     uint8_t SendRcChannels;
+
     uint8_t spare[9];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
