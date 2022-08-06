@@ -61,24 +61,34 @@ class tTxCrsf : public tPin5BridgeBase
 
     // telemetry handling
     bool TelemetryUpdate(uint8_t* packet_idx);
-
-    tCrsfBattery battery;
-    bool battery_updated;
-    tCrsfAttitude attitude;
-    bool attitude_updated;
-    tCrsfGps gps;
-    uint8_t gps1_sat;
-    uint8_t gps2_sat;
-    float vfr_groundspd_mps;
-    float vfr_alt_m;
-    bool gps_updated;
-    tCrsfVario vario;
-    bool vario_updated;
-    tCrsfBaroAltitude baro_altitude;
-    bool baro_altitude_updated;
-
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
+
+    // crsf telemetry
+    tCrsfBattery battery; // collected from BATTERY_STATUS
+    bool battery_updated;
+
+    tCrsfAttitude attitude; // collected from ATTITUDE
+    bool attitude_updated;
+
+    uint8_t gps_raw_int_sat;
+    uint8_t gps2_raw_sat;
+    float vfr_hud_groundspd_mps;
+    tCrsfGps gps; // collected from several MAVLink messages: GPS_RAW_INT, GPS2_RAW, VFR_HUD, GLOBAL_POSITION_INT
+    bool gps_updated;
+
+    tCrsfVario vario; // collected from VFR_HUD
+    bool vario_updated;
+
+    tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message
+    bool baro_altitude_updated;
+
+    void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
+    void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
+    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload);
+    void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload);
+    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload);
+    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);
 };
 
 tTxCrsf crsf;
@@ -155,10 +165,9 @@ void tTxCrsf::Init(bool enable_flag)
 
     battery_updated = false;
     attitude_updated = false;
-    gps1_sat = UINT8_MAX; // unknown
-    gps2_sat = UINT8_MAX; // unknown
-    vfr_groundspd_mps = NAN; // unknown
-    vfr_alt_m = NAN; // unknown
+    gps_raw_int_sat = UINT8_MAX; // unknown
+    gps2_raw_sat = UINT8_MAX; // unknown
+    vfr_hud_groundspd_mps = NAN; // unknown
     gps_updated = false;
     vario_updated = false;
     baro_altitude_updated = false;
@@ -367,93 +376,140 @@ void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 //-------------------------------------------------------
 // CRSF Telemetry Mavlink Handling
 
+#define CRSF_REV_U16(x)  __REV16(x)
+#define CRSF_REV_I16(x)  __REVSH(x)
+#define CRSF_REV_U32(x)  __REV(x)
+
+
+void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
+{
+    int32_t voltage = 0;
+    for (uint8_t i = 0; i < 10; i++) {
+        if (payload->voltages[i] != UINT16_MAX) {
+            voltage += payload->voltages[i]; // uint16_t mV, UINT16_MAX if not known
+        }
+    }
+    for (uint8_t i = 0; i < 4; i++) { // we assume this never is relevant if validcellcount = false
+        if (payload->voltages_ext[i] != 0) {
+            voltage += payload->voltages_ext[i]; // uint16_t mV, 0 if not known
+        }
+    }
+//  if (payload.id == 0) {
+    battery.voltage = CRSF_REV_U16(voltage / 100);
+    battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
+    uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
+    if (capacity > 8388607) capacity = 8388607; // int 24 bit
+    battery.capacity[0] = (capacity >> 16);
+    battery.capacity[1] = (capacity >> 8);
+    battery.capacity[2] = capacity;
+    battery.remaining = (payload->battery_remaining == -1) ? 0 : payload->battery_remaining;
+    battery_updated = true;
+//  }
+}
+
+
+void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* payload)
+{
+    attitude.pitch = CRSF_REV_I16(10000.0f * payload->pitch);
+    attitude.roll = CRSF_REV_I16(10000.0f * payload->roll);
+    attitude.yaw = CRSF_REV_I16(10000.0f * payload->yaw);
+    attitude_updated = true;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload)
+{
+    gps_raw_int_sat = payload->satellites_visible;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload)
+{
+    gps2_raw_sat = payload->satellites_visible;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload)
+{
+    gps.latitude = CRSF_REV_U32(payload->lat);
+    gps.longitude = CRSF_REV_U32(payload->lon);
+    int32_t alt = payload->alt / 1000 + 1000;
+    if (alt < 0) alt = 0;
+    if (alt > UINT16_MAX) alt = UINT16_MAX;
+    gps.altitude = CRSF_REV_U16(alt);
+    gps.gps_heading = CRSF_REV_U16(payload->hdg);
+
+    // take the ground speed from VFR_HUD
+    if (vfr_hud_groundspd_mps != NAN) {
+        gps.groundspeed = CRSF_REV_U16(100.0f * vfr_hud_groundspd_mps / 3.6f);
+    } else {
+        gps.groundspeed = 0;
+    }
+
+    // take the satellites of the previous reports
+    if (gps_raw_int_sat != UINT8_MAX && gps2_raw_sat != UINT8_MAX) { // we have two gps
+        gps.satellites = (gps_raw_int_sat > gps2_raw_sat) ? gps_raw_int_sat : gps2_raw_sat; // take the larger
+    } else
+    if (gps_raw_int_sat != UINT8_MAX) {
+        gps.satellites = gps_raw_int_sat;
+    } else {
+        gps.satellites = 0;
+    }
+
+    // mark as updated
+    gps_updated = true;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
+{
+    vfr_hud_groundspd_mps = payload->groundspeed;
+
+    vario.climb_rate = CRSF_REV_I16(100.0f * payload->climb);
+    vario_updated = true;
+}
+
+
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
     switch (msg->msgid) {
+
+    // these are for crsf telemetry
+
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
-        int32_t voltage = 0;
-        for (uint8_t i = 0; i < 10; i++) {
-            if (payload.voltages[i] != UINT16_MAX) {
-                voltage += payload.voltages[i]; //uint16_t mV, UINT16_MAX if not known
-            }
-        }
-        for (uint8_t i = 0; i < 4; i++) { //we assume this never is relevant if validcellcount = false
-            if (payload.voltages_ext[i] != 0) {
-                voltage += payload.voltages_ext[i]; //uint16_t mV, 0 if not known
-            }
-        }
-//      if (payload.id == 0) {
-        battery.voltage = __REV16(voltage / 100);
-        battery.current = __REV16((payload.current_battery == -1) ? 0 : payload.current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
-        uint32_t capacity = (payload.current_consumed == -1) ? 0 : payload.current_consumed;
-        if (capacity > 8388607) capacity = 8388607; // int 24 bit
-        battery.capacity[0] = (capacity >> 16);
-        battery.capacity[1] = (capacity >> 8);
-        battery.capacity[2] = capacity;
-        battery.remaining = (payload.battery_remaining == -1) ? 0 : payload.battery_remaining;
-        battery_updated = true;
-//      }
+        handle_mavlink_msg_battery_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_ATTITUDE: {
         fmav_attitude_t payload;
         fmav_msg_attitude_decode(&payload, msg);
-        attitude.pitch = __REVSH(10000.0f * payload.pitch);
-        attitude.roll = __REVSH(10000.0f * payload.roll);
-        attitude.yaw = __REVSH(10000.0f * payload.yaw);
-        attitude_updated = true;
+        handle_mavlink_msg_attitude(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GPS_RAW_INT: {
         fmav_gps_raw_int_t payload;
         fmav_msg_gps_raw_int_decode(&payload, msg);
-        gps1_sat = payload.satellites_visible;
+        handle_mavlink_msg_gps_raw_int(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GPS2_RAW: {
         fmav_gps2_raw_t payload;
         fmav_msg_gps2_raw_decode(&payload, msg);
-        gps2_sat = payload.satellites_visible;
+        handle_mavlink_msg_gps2_raw(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_VFR_HUD: {
         fmav_vfr_hud_t payload;
         fmav_msg_vfr_hud_decode(&payload, msg);
-        vfr_groundspd_mps = payload.groundspeed;
-        vfr_alt_m = payload.alt;
-        vario.climb_rate = __REVSH(100.0f * payload.climb);
-        vario_updated = true;
+        handle_mavlink_msg_vfr_hud(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
         fmav_global_position_int_t payload;
         fmav_msg_global_position_int_decode(&payload, msg);
-        gps.latitude = __REV(payload.lat);
-        gps.longitude = __REV(payload.lon);
-        int32_t alt = payload.alt / 1000 + 1000;
-        if (alt < 0) alt = 0;
-        if (alt > UINT16_MAX) alt = UINT16_MAX;
-        gps.altitude = __REV16(alt);
-        gps.gps_heading = __REV16(payload.hdg);
-        // take ground speed from VFR_HUD
-        if (vfr_groundspd_mps != NAN) {
-            gps.groundspeed = __REV16(100.0f * vfr_groundspd_mps / 3.6f);
-        } else {
-            gps.groundspeed = 0;
-        }
-        // take the satellites of the previous reports
-        if (gps1_sat != UINT8_MAX && gps2_sat != UINT8_MAX) { // we have two gps
-            gps.satellites = (gps1_sat > gps2_sat) ? gps1_sat : gps2_sat; // take the larger
-        } else
-        if (gps1_sat != UINT8_MAX) {
-            gps.satellites = gps1_sat;
-        } else {
-            gps.satellites = 0;
-        }
-        // mark as updated
-        gps_updated = true;
+        handle_mavlink_msg_global_position_int(&payload);
         }break;
     }
 }
