@@ -565,6 +565,10 @@ old 0..2047 = +-100% scaling:
  opentx: sbus value = ch value * 8 / 10 + 992, where ch value = -1024 ... 1023
  => sbus values = 173 ... 992 ... 1811
 
+ ArduPilot handles incoming rc data as
+ crsf:  rc = x * 5 / 8 + 880  = (x - 992) * 5 / 8 + 1500
+ sbus:  rc = x * 1000 / 1600 + 875  = (x - 1000) * 5 / 8 + 1500
+
 
 -------------------------------------------------------
 SX1280 power

@@ -354,7 +354,7 @@ tCrsfChannelBuffer crsf_buf;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_BROADCAST);
+    putc(CRSF_ADDRESS_BROADCAST); // or CRSF_ADDRESS_FLIGHT_CONTROLLER ??? what's better?
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);
