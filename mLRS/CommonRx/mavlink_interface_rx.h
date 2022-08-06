@@ -247,7 +247,7 @@ void MavlinkBase::generate_rc_channels_override(void)
 {
     fmav_msg_rc_channels_override_pack(
         &msg_serial_out,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, SiK uses 51, 68
+        255, MAV_COMP_ID_TELEMETRY_RADIO, // ArduPilot accepts it only if it comes from it's GCS, let's assume 255 for the GCS
         0, 0, // we do not know the sysid, compid of the flight controller
         rc.ch[0], rc.ch[1], rc.ch[2], rc.ch[3], rc.ch[4], rc.ch[5], rc.ch[6], rc.ch[7],
         rc.ch[8], rc.ch[9], rc.ch[10], rc.ch[11], rc.ch[12], rc.ch[13], rc.ch[14], rc.ch[15],

@@ -409,7 +409,7 @@ void setup_configure(void)
     case SERIAL_BAUDRATE_38400: Config.SerialBaudrate = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
-    case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 23040; break;
+    case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 230400; break;
     default:
         Config.SerialBaudrate = 57600;
     }
