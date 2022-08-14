@@ -90,6 +90,36 @@ uint16_t clip_rc(int32_t x)
 }
 
 
+uint16_t rc_from_sbus(uint16_t sbus_ch)
+{
+    return clip_rc( (((int32_t)(sbus_ch) - 992) * 2047) / 1966 + 1024 );
+}
+
+
+uint16_t rc_from_crsf(uint16_t crsf_ch)
+{
+    return clip_rc( (((int32_t)(crsf_ch) - 992) * 2047) / 1966 + 1024 );
+}
+
+
+uint16_t rc_to_sbus(uint16_t rc_ch)
+{
+    return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 1000;
+}
+
+
+uint16_t rc_to_crsf(uint16_t rc_ch)
+{
+    return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 1000;
+}
+
+
+uint16_t rc_to_mavlink(uint16_t rc_ch)
+{
+    return (((int32_t)(rc_ch) - 1024) * 1200) / 2047 + 1500; // 1200 = 1920 * 5/8
+}
+
+
 //-- crsf
 
 uint8_t crsf_cvt_power(int8_t power_dbm)

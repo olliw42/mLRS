@@ -284,6 +284,7 @@ void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusFrameBuffer sbus_buf;
 
+/*
     sbus_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
@@ -300,6 +301,23 @@ tSBusFrameBuffer sbus_buf;
     sbus_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
+*/
+    sbus_buf.ch0 = rc_to_sbus(rc->ch[0]);
+    sbus_buf.ch1 = rc_to_sbus(rc->ch[1]);
+    sbus_buf.ch2 = rc_to_sbus(rc->ch[2]);
+    sbus_buf.ch3 = rc_to_sbus(rc->ch[3]);
+    sbus_buf.ch4 = rc_to_sbus(rc->ch[4]);
+    sbus_buf.ch5 = rc_to_sbus(rc->ch[5]);
+    sbus_buf.ch6 = rc_to_sbus(rc->ch[6]);
+    sbus_buf.ch7 = rc_to_sbus(rc->ch[7]);
+    sbus_buf.ch8 = rc_to_sbus(rc->ch[8]);
+    sbus_buf.ch9 = rc_to_sbus(rc->ch[9]);
+    sbus_buf.ch10 = rc_to_sbus(rc->ch[10]);
+    sbus_buf.ch11 = rc_to_sbus(rc->ch[11]);
+    sbus_buf.ch12 = rc_to_sbus(rc->ch[12]);
+    sbus_buf.ch13 = rc_to_sbus(rc->ch[13]);
+    sbus_buf.ch14 = rc_to_sbus(rc->ch[14]);
+    sbus_buf.ch15 = rc_to_sbus(rc->ch[15]);
 
     uint8_t flags = 0;
     if (rc->ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
@@ -321,7 +339,7 @@ tSBusFrameBuffer sbus_buf;
 void OutBase::send_crsf_rcdata(tRcData* rc)
 {
 tCrsfChannelBuffer crsf_buf;
-
+/*
     crsf_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
@@ -338,6 +356,23 @@ tCrsfChannelBuffer crsf_buf;
     crsf_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
+*/
+    crsf_buf.ch0 = rc_to_crsf(rc->ch[0]);
+    crsf_buf.ch1 = rc_to_crsf(rc->ch[1]);
+    crsf_buf.ch2 = rc_to_crsf(rc->ch[2]);
+    crsf_buf.ch3 = rc_to_crsf(rc->ch[3]);
+    crsf_buf.ch4 = rc_to_crsf(rc->ch[4]);
+    crsf_buf.ch5 = rc_to_crsf(rc->ch[5]);
+    crsf_buf.ch6 = rc_to_crsf(rc->ch[6]);
+    crsf_buf.ch7 = rc_to_crsf(rc->ch[7]);
+    crsf_buf.ch8 = rc_to_crsf(rc->ch[8]);
+    crsf_buf.ch9 = rc_to_crsf(rc->ch[9]);
+    crsf_buf.ch10 = rc_to_crsf(rc->ch[10]);
+    crsf_buf.ch11 = rc_to_crsf(rc->ch[11]);
+    crsf_buf.ch12 = rc_to_crsf(rc->ch[12]);
+    crsf_buf.ch13 = rc_to_crsf(rc->ch[13]);
+    crsf_buf.ch14 = rc_to_crsf(rc->ch[14]);
+    crsf_buf.ch15 = rc_to_crsf(rc->ch[15]);
 
     uint8_t crc = 0;
 

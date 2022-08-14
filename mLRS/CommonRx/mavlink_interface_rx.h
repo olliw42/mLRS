@@ -54,7 +54,7 @@ class MavlinkBase
 
     // to inject RC_CHANNELS_OVERRDIE, RC_CHANNELS
     bool inject_rc_channels;
-    tRcData rc;
+    uint16_t rc_chan[16]; // holds the rc data in MAVLink format
 };
 
 
@@ -72,7 +72,7 @@ void MavlinkBase::Init(void)
     bytes_serial_in = 0;
 
     inject_rc_channels = false;
-    rc = {0};
+    for (uint8_t ch = 0; ch < 16; ch++) rc_chan[ch] = 0;
 }
 
 
@@ -89,26 +89,42 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
             return;
         }
     }
+/*
+    rc_chan[0] = (((int32_t)(rc_out->ch[0]) - 1024) * 1200) / 2047 + 1500; // 1200 = 1920 * 5/8
+    rc_chan[1] = (((int32_t)(rc_out->ch[1]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[2] = (((int32_t)(rc_out->ch[2]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[3] = (((int32_t)(rc_out->ch[3]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[4] = (((int32_t)(rc_out->ch[4]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[5] = (((int32_t)(rc_out->ch[5]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[6] = (((int32_t)(rc_out->ch[6]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[7] = (((int32_t)(rc_out->ch[7]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[8] = (((int32_t)(rc_out->ch[8]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[9] = (((int32_t)(rc_out->ch[9]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[10] = (((int32_t)(rc_out->ch[10]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[11] = (((int32_t)(rc_out->ch[11]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[12] = (((int32_t)(rc_out->ch[12]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[13] = (((int32_t)(rc_out->ch[13]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[14] = (((int32_t)(rc_out->ch[14]) - 1024) * 1200) / 2047 + 1500;
+    rc_chan[15] = (((int32_t)(rc_out->ch[15]) - 1024) * 1200) / 2047 + 1500;
+*/
+    rc_chan[0] = rc_to_mavlink(rc_out->ch[0]);
+    rc_chan[1] = rc_to_mavlink(rc_out->ch[1]);
+    rc_chan[2] = rc_to_mavlink(rc_out->ch[2]);
+    rc_chan[3] = rc_to_mavlink(rc_out->ch[3]);
+    rc_chan[4] = rc_to_mavlink(rc_out->ch[4]);
+    rc_chan[5] = rc_to_mavlink(rc_out->ch[5]);
+    rc_chan[6] = rc_to_mavlink(rc_out->ch[6]);
+    rc_chan[7] = rc_to_mavlink(rc_out->ch[7]);
+    rc_chan[8] = rc_to_mavlink(rc_out->ch[8]);
+    rc_chan[9] = rc_to_mavlink(rc_out->ch[9]);
+    rc_chan[10] = rc_to_mavlink(rc_out->ch[10]);
+    rc_chan[11] = rc_to_mavlink(rc_out->ch[11]);
+    rc_chan[12] = rc_to_mavlink(rc_out->ch[12]);
+    rc_chan[13] = rc_to_mavlink(rc_out->ch[13]);
+    rc_chan[14] = rc_to_mavlink(rc_out->ch[14]);
+    rc_chan[15] = rc_to_mavlink(rc_out->ch[15]);
 
-    memcpy(&rc, rc_out, sizeof(tRcData));
     inject_rc_channels = true;
-
-    rc.ch[0] = (((int32_t)(rc.ch[0]) - 1024) * 1200) / 2047 + 1500; // why 1200, and not 1920 ????
-    rc.ch[1] = (((int32_t)(rc.ch[1]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[2] = (((int32_t)(rc.ch[2]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[3] = (((int32_t)(rc.ch[3]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[4] = (((int32_t)(rc.ch[4]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[5] = (((int32_t)(rc.ch[5]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[6] = (((int32_t)(rc.ch[6]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[7] = (((int32_t)(rc.ch[7]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[8] = (((int32_t)(rc.ch[8]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[9] = (((int32_t)(rc.ch[9]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[10] = (((int32_t)(rc.ch[10]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[11] = (((int32_t)(rc.ch[11]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[12] = (((int32_t)(rc.ch[12]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[13] = (((int32_t)(rc.ch[13]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[14] = (((int32_t)(rc.ch[14]) - 1024) * 1200) / 2047 + 1500;
-    rc.ch[15] = (((int32_t)(rc.ch[15]) - 1024) * 1200) / 2047 + 1500;
 }
 
 
@@ -249,8 +265,8 @@ void MavlinkBase::generate_rc_channels_override(void)
         &msg_serial_out,
         255, MAV_COMP_ID_TELEMETRY_RADIO, // ArduPilot accepts it only if it comes from it's GCS, let's assume 255 for the GCS
         0, 0, // we do not know the sysid, compid of the flight controller
-        rc.ch[0], rc.ch[1], rc.ch[2], rc.ch[3], rc.ch[4], rc.ch[5], rc.ch[6], rc.ch[7],
-        rc.ch[8], rc.ch[9], rc.ch[10], rc.ch[11], rc.ch[12], rc.ch[13], rc.ch[14], rc.ch[15],
+        rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
+        rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0,0,
         //uint8_t target_system, uint8_t target_component,
         //uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
@@ -267,8 +283,8 @@ void MavlinkBase::generate_rc_channels(void)
         RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, SiK uses 51, 68
         millis32(),
         16,
-        rc.ch[0], rc.ch[1], rc.ch[2], rc.ch[3], rc.ch[4], rc.ch[5], rc.ch[6], rc.ch[7],
-        rc.ch[8], rc.ch[9], rc.ch[10], rc.ch[11], rc.ch[12], rc.ch[13], rc.ch[14], rc.ch[15],
+        rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
+        rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0,0,
         0,
         //uint32_t time_boot_ms, uint8_t chancount,

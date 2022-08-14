@@ -123,6 +123,12 @@ typedef struct
 // clip a value for rcData to range
 uint16_t clip_rc(int32_t x);
 
+uint16_t rc_from_sbus(uint16_t sbus_ch);
+uint16_t rc_from_crsf(uint16_t crsf_ch);
+uint16_t rc_to_sbus(uint16_t rc_ch);
+uint16_t rc_to_crsf(uint16_t rc_ch);
+uint16_t rc_to_mavlink(uint16_t rc_ch);
+
 
 //-- crsf
 
