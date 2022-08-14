@@ -82,8 +82,8 @@ typedef enum {
 
 
 typedef enum {
-    CRSF_SUBCOMMAND_ID                = 0x10,
-} CRSF_SUBCOMMAND_ENUM;
+    CRSF_COMMAND_ID                   = 0x10,
+} CRSF_COMMAND_ID_ENUM;
 
 
 typedef enum {
