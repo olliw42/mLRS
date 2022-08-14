@@ -1,6 +1,6 @@
 # mLRS Documentation: Parameters (v0.2.04) #
 
-([back to main page](..\README.md))
+([back to main page](../README.md))
 
 
 Brief description of the paranmeters for configuring mLRS. The parameters fall into three categories: 
