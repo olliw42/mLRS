@@ -139,4 +139,4 @@ Don't hesitate to join the discussion thread at rcgroups for more details.
 
 You find more documentation on the following pages:
 - [CLI Commands](docs/CLI.md)
-- [Parameters](docs/PARAMTERS.md)
+- [Parameters](docs/PARAMETERS.md)
