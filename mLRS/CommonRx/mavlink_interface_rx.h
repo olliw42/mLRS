@@ -73,7 +73,7 @@ void MavlinkBase::Init(void)
     bytes_serial_in = 0;
 
     inject_rc_channels = false;
-    for (uint8_t ch = 0; ch < 16; ch++) rc_chan[ch] = 0;
+    for (uint8_t i = 0; i < 16; i++) rc_chan[i] = 0;
 }
 
 
@@ -108,22 +108,7 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
     rc_chan[14] = (((int32_t)(rc_out->ch[14]) - 1024) * 1200) / 2047 + 1500;
     rc_chan[15] = (((int32_t)(rc_out->ch[15]) - 1024) * 1200) / 2047 + 1500;
 */
-    rc_chan[0] = rc_to_mavlink(rc_out->ch[0]);
-    rc_chan[1] = rc_to_mavlink(rc_out->ch[1]);
-    rc_chan[2] = rc_to_mavlink(rc_out->ch[2]);
-    rc_chan[3] = rc_to_mavlink(rc_out->ch[3]);
-    rc_chan[4] = rc_to_mavlink(rc_out->ch[4]);
-    rc_chan[5] = rc_to_mavlink(rc_out->ch[5]);
-    rc_chan[6] = rc_to_mavlink(rc_out->ch[6]);
-    rc_chan[7] = rc_to_mavlink(rc_out->ch[7]);
-    rc_chan[8] = rc_to_mavlink(rc_out->ch[8]);
-    rc_chan[9] = rc_to_mavlink(rc_out->ch[9]);
-    rc_chan[10] = rc_to_mavlink(rc_out->ch[10]);
-    rc_chan[11] = rc_to_mavlink(rc_out->ch[11]);
-    rc_chan[12] = rc_to_mavlink(rc_out->ch[12]);
-    rc_chan[13] = rc_to_mavlink(rc_out->ch[13]);
-    rc_chan[14] = rc_to_mavlink(rc_out->ch[14]);
-    rc_chan[15] = rc_to_mavlink(rc_out->ch[15]);
+    for (uint8_t i = 0; i < 16; i++) rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
 
     inject_rc_channels = true;
 }
