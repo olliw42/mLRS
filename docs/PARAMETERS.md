@@ -5,7 +5,7 @@
 
 Brief description of the paranmeters for configuring mLRS. The parameters fall into three categories: 
 
-1. Parameters common to Tx and Rx. These need to be configured to be identical for Tx and Rx, in order for a connection to be possible.
+1. Parameters common to Tx and Rx. These need to be configured to be identical for Tx and Rx, in order for a connection to be possible. For an arbitrary receiver, this can be achieved by binding the receiver to the Tx module.
 
 2. Parameters for Tx.
 
