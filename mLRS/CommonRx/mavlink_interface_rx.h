@@ -15,7 +15,8 @@
 
 static inline bool connected(void);
 
-#define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
+#define RADIO_LINK_SYSTEM_ID        51 // SiK uses 51, 68
+#define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC
 
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
 
@@ -252,7 +253,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // SiK uses 51, 68
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
@@ -263,15 +264,15 @@ void MavlinkBase::generate_rc_channels_override(void)
 {
     fmav_msg_rc_channels_override_pack(
         &msg_serial_out,
-        255, MAV_COMP_ID_TELEMETRY_RADIO, // ArduPilot accepts it only if it comes from it's GCS, let's assume 255 for the GCS
+        GCS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // ArduPilot accepts it only if it comes from its GCS sysid
         0, 0, // we do not know the sysid, compid of the flight controller
         rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
         rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0,0,
-        //uint8_t target_system, uint8_t target_component,
-        //uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
-        //uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
-        //uint16_t chan17_raw, uint16_t chan18_raw,
+        // uint8_t target_system, uint8_t target_component,
+        // uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
+        // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
+        // uint16_t chan17_raw, uint16_t chan18_raw,
         &status_serial_out);
 }
 
@@ -280,18 +281,18 @@ void MavlinkBase::generate_rc_channels(void)
 {
     fmav_msg_rc_channels_pack(
         &msg_serial_out,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         millis32(),
         16,
         rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
         rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0,0,
         0,
-        //uint32_t time_boot_ms, uint8_t chancount,
-        //uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
-        //uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
-        //uint16_t chan17_raw, uint16_t chan18_raw,
-        //uint8_t rssi,
+        // uint32_t time_boot_ms, uint8_t chancount,
+        // uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
+        // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
+        // uint16_t chan17_raw, uint16_t chan18_raw,
+        // uint8_t rssi,
         &status_serial_out);
 }
 
