@@ -15,7 +15,7 @@ The parameters are configured via the Tx module, by using the CLI or the mLRS Co
 
 Depending on the specific mLRs hardware, not all parameters may be available, as well as not all options for a parameter may be available.
 
-#### Common Parameters ####
+## Common Parameters ##
 
 Bind Phrase<br>
 String of 6 characters. The characters can be 'a'-'z', '0'-'9', '-', '.', 
@@ -26,7 +26,7 @@ Operation mode. Can be "50 Hz", "31 Hz", "19 Hz".
 RF Band<br>
 Frequency band (e.g. 2.4 GHz). May not be selectable.
 
-#### Tx Parameters ####
+### Tx Parameters ###
 
 Tx Power<br>
 Transmission power in Watts.
