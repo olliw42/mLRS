@@ -26,7 +26,7 @@ Operation mode. Can be "50 Hz", "31 Hz", "19 Hz".
 RF Band<br>
 Frequency band (e.g. 2.4 GHz). May not be selectable.
 
-### Tx Parameters ###
+## Tx Parameters ##
 
 Tx Power<br>
 Transmission power in Watts.
@@ -61,7 +61,7 @@ Enables the buzzer, and selects what data it reflects. Can be "off", "LP", "rxLQ
 Tx Cli LineEnd<br>
 Determines the line termination character used by the CLI. Can be "CR", "LF", "CRLF".
 
-#### Rx Parameters ####
+## Rx Parameters ##
 
 Rx Power<br>
 Transmission power in Watts.
