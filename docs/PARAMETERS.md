@@ -6,13 +6,13 @@ Brief description of the parameters for configuring mLRS. The parameters fall in
 
 1. Parameters common to Tx and Rx. These need to be configured to be identical for Tx and Rx, in order for a connection to be possible. For an arbitrary receiver, this can be achieved by binding the receiver to the Tx module.
 
-2. Parameters for Tx.
+2. Parameters for the Tx module (Tx parameters).
 
-3. Parameters for Rx.
+3. Parameters for the receiver (Rx parameters).
 
-The parameters are configured via the Tx module, by using the CLI or the mLRS Configuration lua script. If no receiver is connected, then the Rx parameters cannot be configured.
+The parameters are configured via the Tx module, by using the CLI or the mLRS configuration Lua script. If no receiver is connected, then the Rx parameters cannot be configured.
 
-Depending on the specific mLRs hardware, not all parameters may be available, as well as not all options for a parameter may be available.
+Depending on the specific mLRs hardware, it may happen that not all parameters are available, as well as that not all options for a parameter are available.
 
 ## Common Parameters ##
 
@@ -25,7 +25,7 @@ Operation mode.
 Can be "50 Hz", "31 Hz", "19 Hz".
 
 #### RF Band ####
-Frequency band (e.g. 2.4 GHz). May not be selectable.
+Frequency band. May not be selectable.
 
 ## Tx Parameters ##
 
@@ -41,15 +41,15 @@ Selects the source from which the rc data should be read.
 Can be "none", "mbridge", "in", "crsf".
 
 #### Tx Ch Order #### 
-Channel order provided by the radio. 
+Channel order of the rc data provided to the Tx module. 
 Can be "AETR", "TAER", "ETAR".
 
 #### Tx In Mode #### 
-Selects the rc protocol on the in port. Effective only when "Tx Ch Source" = "in". 
+Selects the protocol of the rc data on the in port. Effective only when "Tx Ch Source" = "in". 
 Can be "sbus", "sbus inv".
 
 #### Tx Ser Dest #### 
-Selects the source of the serial data stream. 
+Selects the destination/source of the serial data stream. 
 Can be "serial", "mbridge", "serial2"
 
 #### Tx Ser Baudrate #### 
@@ -69,7 +69,7 @@ Enables the buzzer, and selects what data it reflects.
 Can be "off", "LP", "rxLQ".
 
 #### Tx Cli LineEnd ####
-Determines the line termination character used by the CLI. 
+Determines the line termination character(s) used by the CLI. 
 Can be "CR", "LF", "CRLF".
 
 ## Rx Parameters ##
@@ -82,11 +82,11 @@ Diversity mode.
 Can be "enabled", "antenna1", "antenna2". 
 
 #### Rx Ch Order #### 
-Channel order with which the rc data is emitted by the receiver. 
+Channel order of the rc data emitted by the receiver. 
 Can be "AETR", "TAER", "ETAR".
 
 #### Rx Out Mode #### 
-Selects the rc protocol on the out port. 
+Selects the protocol of the rc data emitted on the out port. 
 Can be "sbus", "crsf", "sbus inv".
 
 #### Rx Out Rssi Ch #### 

@@ -17,7 +17,7 @@
 #define ARRAY_LEN(x)  sizeof(x)/sizeof(x[0])
 
 #ifndef PACKED
-#  define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) //that's for __GNUC__
+#  define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) // that's for __GNUC__
 #endif
 
 
