@@ -1,4 +1,4 @@
-# mLRS Documentation. CLI Commands#
+# mLRS Documentation: CLI Commands #
 
 ([back to main page](../README.md))
 
