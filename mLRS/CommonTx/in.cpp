@@ -10,6 +10,8 @@
 
 #include <string.h>
 #include "in.h"
+#include "../Common/setup_types.h"
+#include "../Common/sbus_protocol.h"
 
 
 typedef enum {
@@ -58,71 +60,39 @@ bool InBase::Update(tRcData* rc)
 //-------------------------------------------------------
 // SBus
 //-------------------------------------------------------
-// 11 bit, 173 ... 992 .. 1811 for +-100%
-// so: 9 ... 173 ... 992 .. 1811 ... 1965  for -120%  -100%    0%    +100%    +120%
-// 100% = 819 span
-// 120% = 983 span
-// OpenTx produces 173 ... 992 ... 1811 for -100% ... 100%
-// see design_decissions.h
-
-#define SBUS_CHANNELPACKET_SIZE      22
-
-typedef union {
-  uint8_t c[SBUS_CHANNELPACKET_SIZE];
-  PACKED(
-  struct {
-    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-    uint16_t ch1  : 11;
-    uint16_t ch2  : 11;
-    uint16_t ch3  : 11;
-    uint16_t ch4  : 11;
-    uint16_t ch5  : 11;
-    uint16_t ch6  : 11;
-    uint16_t ch7  : 11;
-    uint16_t ch8  : 11;
-    uint16_t ch9  : 11;
-    uint16_t ch10 : 11;
-    uint16_t ch11 : 11;
-    uint16_t ch12 : 11;
-    uint16_t ch13 : 11;
-    uint16_t ch14 : 11;
-    uint16_t ch15 : 11;
-  });
-} tSBusFrameBuffer;
-
 
 bool InBase::parse_sbus(tRcData* rc)
 {
-  uint16_t t_now_us = tim_1us();
-  bool updated = false;
+    uint16_t t_now_us = tim_1us();
+    bool updated = false;
 
-  while (available()) {
-    char c = getc();
+    while (available()) {
+        char c = getc();
 
-    if (_state == IN_STATE_IDLE) { // scan for new frame
-      if (c == 0x0F) { // new frame
-        _buf_pos = 0;
-        _state = IN_STATE_RECEIVING;
-      }
+        if (_state == IN_STATE_IDLE) { // scan for new frame
+            if (c == SBUS_STX) { // new frame
+                _buf_pos = 0;
+                _state = IN_STATE_RECEIVING;
+            }
+        }
+
+        if (_state == IN_STATE_RECEIVING) {
+            _buf[_buf_pos] = c;
+            _buf_pos++;
+            if (_buf_pos >= SBUS_FRAME_SIZE) {
+                get_sbus_data(rc);
+                updated = true;
+                _state = IN_STATE_IDLE;
+                break; // is this what we want, or shouldn't we catch all?
+            }
+        }
+
+        _t_last_us = t_now_us;
     }
 
     if (_state == IN_STATE_RECEIVING) {
-      _buf[_buf_pos] = c;
-      _buf_pos++;
-      if (_buf_pos >= 25) {
-        get_sbus_data(rc);
-        updated = true;
-        _state = IN_STATE_IDLE;
-        break; // is this what we want, or shouldn't we catch all?
-      }
+        if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
     }
-
-    _t_last_us = t_now_us;
-  }
-
-  if (_state == IN_STATE_RECEIVING) {
-    if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
-  }
 
     return updated;
 }
@@ -130,10 +100,9 @@ bool InBase::parse_sbus(tRcData* rc)
 
 void InBase::get_sbus_data(tRcData* rc)
 {
-tSBusFrameBuffer sbus_buf;
+tSBusChannelBuffer sbus_buf;
 
-  memcpy(sbus_buf.c, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
-
+    memcpy(sbus_buf.c, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
 /*
     rc->ch[0] = clip_rc( (((int32_t)(sbus_buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
     rc->ch[1] = clip_rc( (((int32_t)(sbus_buf.ch1) - 992) * 2047) / 1966 + 1024 );

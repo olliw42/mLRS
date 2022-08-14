@@ -11,6 +11,7 @@
 #include <string.h>
 #include "out.h"
 #include "../Common/thirdparty/thirdparty.h"
+#include "../Common/sbus_protocol.h"
 #include "../Common/crsf_protocol.h"
 
 
@@ -242,48 +243,10 @@ void OutBase::putbuf(uint8_t* buf, uint16_t len)
 //-------------------------------------------------------
 // SBus
 //-------------------------------------------------------
-// SBus frame: 0x0F , 22 bytes channel data , flags byte, 0x00
-// 100000 bps, 8E2
-// send every 14 ms (normal) or 7 ms (high speed), 10ms or 20ms
-
-#define SBUS_CHANNELPACKET_SIZE      22
-
-typedef union {
-  uint8_t c[SBUS_CHANNELPACKET_SIZE];
-  PACKED(
-  struct {
-    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-    uint16_t ch1  : 11;
-    uint16_t ch2  : 11;
-    uint16_t ch3  : 11;
-    uint16_t ch4  : 11;
-    uint16_t ch5  : 11;
-    uint16_t ch6  : 11;
-    uint16_t ch7  : 11;
-    uint16_t ch8  : 11;
-    uint16_t ch9  : 11;
-    uint16_t ch10 : 11;
-    uint16_t ch11 : 11;
-    uint16_t ch12 : 11;
-    uint16_t ch13 : 11;
-    uint16_t ch14 : 11;
-    uint16_t ch15 : 11;
-  });
-} tSBusFrameBuffer;
-
-
-typedef enum {
-    SBUS_FLAG_CH17 = 0x01,
-    SBUS_FLAG_CH18 = 0x02,
-    SBUS_FLAG_FRAME_LOST = 0x04,
-    SBUS_FLAG_FAILSAFE = 0x08,
-} SBUS_FLAG_ENUM;
-
 
 void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
-tSBusFrameBuffer sbus_buf;
-
+tSBusChannelBuffer sbus_buf;
 /*
     sbus_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
@@ -325,10 +288,10 @@ tSBusFrameBuffer sbus_buf;
     if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
     if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
-    putc(0x0F);
+    putc(SBUS_STX);
     putbuf(sbus_buf.c, SBUS_CHANNELPACKET_SIZE);
     putc(flags);
-    putc(0x00);
+    putc(SBUS_END_STX);
 }
 
 
