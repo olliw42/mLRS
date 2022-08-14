@@ -78,7 +78,7 @@
   X( Setup.Rx.Diversity,          LIST,  "Rx Diversity", "RX_DIVERSITY", 0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
   X( Setup.Rx.ChannelOrder,       LIST,  "Rx Ch Order",  "RX_CH_ORDER",  0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Rx.OutMode,            LIST,  "Rx Out Mode",  "RX_OUT_MODE",  0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
-  X( Setup.Rx.OutRssiChannelMode, LIST,  "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,4,5,6,7,8,9,10,11,12", MSK_ALL )\
+  X( Setup.Rx.OutRssiChannelMode, LIST,  "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12", MSK_ALL )\
   X( Setup.Rx.FailsafeMode,       LIST,  "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
   X( Setup.Rx.SerialBaudrate,     LIST,  "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST,  "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\

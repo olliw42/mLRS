@@ -91,7 +91,7 @@ Can be "sbus", "crsf", "sbus inv".
 
 #### Rx Out Rssi Ch #### 
 Determines if and on which channel the RSSI value is send out. 
-Can be "off", "4" - "12".
+Can be "off", "5" - "12".
 
 #### Rx FailSafe Mode #### 
 Determines the behavior upon a failsafe. 
