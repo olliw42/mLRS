@@ -135,9 +135,11 @@ In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and read
 
 Don't hesitate to join the discussion thread at rcgroups for more details.
 
-## CLI Commands ##
+## Further Documentations ##
 
-please go to [CLI Commands](docs/CLI.md).
+- [CLI Commands](docs/CLI.md)
+
+- [Parameters](docs/PARAMTERS.md)
 
 When the transmitter is not flashed with the MAVLink for OpenTx firmware, the CLI is currently the main and sole method for configuring the transmitter and receiver module.
 
