@@ -18,6 +18,7 @@ Depending on the specific mLRs hardware, not all parameters may be available, as
 ## Common Parameters ##
 
 ####Bind Phrase####
+
 String of 6 characters. The characters can be 'a'-'z', '0'-'9', '-', '.', 
 
 Mode<br>
