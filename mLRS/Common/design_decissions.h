@@ -566,8 +566,24 @@ old 0..2047 = +-100% scaling:
  => sbus values = 173 ... 992 ... 1811
 
  ArduPilot handles incoming rc data as
- crsf:  rc = x * 5 / 8 + 880  = (x - 992) * 5 / 8 + 1500
- sbus:  rc = x * 1000 / 1600 + 875  = (x - 1000) * 5 / 8 + 1500
+
+ crsf:
+ https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L351
+ decode_11bit_channels((const uint8_t*)(&_frame.payload), CRSF_MAX_CHANNELS, _channels, 5U, 8U, 880U)
+   rc = x * 5 / 8 + 880  = (x - 992) * 5 / 8 + 1500
+        [880 ... 2159]
+
+ sbus:
+ https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_SBUS.cpp#L118-L119
+ decode_11bit_channels((const uint8_t*)(&frame[1]), SBUS_INPUT_CHANNELS, values, SBUS_TARGET_RANGE, SBUS_RANGE_RANGE, SBUS_SCALE_OFFSET)
+                                                                                 1000,              1600,             875
+   rc = x * 1000 / 1600 + 875  = (x - 1000) * 5 / 8 + 1500
+        [875 ... 2154]
+
+=> for ArduPilot crsf is larger by 8*5/8 = 5 units than sbus for the same x
+
+ RC_CHANNELS_OVERRIDE:
+   rc = chanX_raw
 
 
 -------------------------------------------------------

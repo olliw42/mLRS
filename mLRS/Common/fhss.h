@@ -48,7 +48,7 @@
 
 
 #ifdef FHSS_HAS_FREQUENCY_BAND_433_MHZ
-// 433.050 ... 434.790 in 0.506 MH steps
+// 433.050 ... 434.790 in 0.506 MHz steps
 
 const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.360),

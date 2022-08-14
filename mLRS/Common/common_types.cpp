@@ -14,6 +14,8 @@
 #include "crsf_protocol.h"
 
 
+//-- rssi & snr
+
 uint8_t rssi_u7_from_i8(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return RSSI_U7_INVALID;
@@ -77,6 +79,18 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
     return (r * 1705 + m/2) / m + 172;
 }
 
+
+//-- rc data
+
+uint16_t clip_rc(int32_t x)
+{
+    if (x <= 1) return 1;
+    if (x >= 2047) return 2047;
+    return x;
+}
+
+
+//-- crsf
 
 uint8_t crsf_cvt_power(int8_t power_dbm)
 {
@@ -256,15 +270,7 @@ uint32_t version_from_u16(uint16_t version_u16)
 }
 
 
-//-- auxiliary
-
-uint16_t clip_rc(int32_t x)
-{
-    if (x <= 1) return 1;
-    if (x >= 2047) return 2047;
-    return x;
-}
-
+//-- auxiliary functions
 
 void strbufstrcpy(char* res, const char* src, uint16_t len)
 {

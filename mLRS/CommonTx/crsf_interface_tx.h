@@ -4,10 +4,10 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// CRSF Interface Header
+// CRSF Interface TX Side
 //********************************************************
-#ifndef CRSF_INTERFACE_H
-#define CRSF_INTERFACE_H
+#ifndef CRSF_INTERFACE_TX_H
+#define CRSF_INTERFACE_TX_H
 #pragma once
 
 
@@ -323,7 +323,7 @@ tCrsfChannelBuffer buf;
 
     memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
 
-    rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
+    rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 );
     rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
     rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
     rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
@@ -644,7 +644,7 @@ void crsf_send_LinkStatisticsRx(void) {}
 
 #endif // if (defined DEVICE_HAS_JRPIN5)
 
-#endif // CRSF_INTERFACE_H
+#endif // CRSF_INTERFACE_TX_H
 
 
 

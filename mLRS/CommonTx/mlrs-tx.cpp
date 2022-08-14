@@ -69,7 +69,7 @@ v0.0.00:
 #include "cli.h"
 #include "../Common/buzzer.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
-#include "crsf_interface.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
+#include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
 
 TxStatsBase txstats;

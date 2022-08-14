@@ -13,45 +13,45 @@
 
 
 typedef enum {
-  IN_STATE_IDLE = 0,
-  IN_STATE_RECEIVING,
+    IN_STATE_IDLE = 0,
+    IN_STATE_RECEIVING,
 } IN_STATE_ENUM;
 
 
 void InBase::Init(void)
 {
-  _config = UINT8_MAX;
+    _config = UINT8_MAX;
 
-  _t_last_us = 0;
-  _state = IN_STATE_IDLE;
+    _t_last_us = 0;
+    _state = IN_STATE_IDLE;
 }
 
 
 void InBase::Configure(uint8_t new_config)
 {
-  if (new_config == _config) return;
-  _config = new_config;
+      if (new_config == _config) return;
+      _config = new_config;
 
-  switch (_config) {
-  case IN_CONFIG_SBUS:
-      config_sbus(false);
-      break;
-  case IN_CONFIG_SBUS_INVERTED:
-      config_sbus(true);
-      break;
-  }
+      switch (_config) {
+      case IN_CONFIG_SBUS:
+          config_sbus(false);
+          break;
+      case IN_CONFIG_SBUS_INVERTED:
+          config_sbus(true);
+          break;
+      }
 }
 
 
 bool InBase::Update(tRcData* rc)
 {
-  switch (_config) {
-  case IN_CONFIG_SBUS:
-  case IN_CONFIG_SBUS_INVERTED:
-      return parse_sbus(rc);
-  }
+    switch (_config) {
+    case IN_CONFIG_SBUS:
+    case IN_CONFIG_SBUS_INVERTED:
+        return parse_sbus(rc);
+    }
 
-  return false;
+    return false;
 }
 
 
@@ -124,7 +124,7 @@ bool InBase::parse_sbus(tRcData* rc)
     if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
   }
 
-  return updated;
+    return updated;
 }
 
 

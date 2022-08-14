@@ -107,6 +107,23 @@ uint8_t rssi_i8_to_ap(int8_t rssi_i8);
 uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
 
 
+//-- rc data
+
+#define RC_DATA_LEN     18
+
+#define RC_DATA_MIN     1
+#define RC_DATA_CENTER  1024
+#define RC_DATA_MAX     2047
+
+typedef struct
+{
+    uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
+} tRcData;
+
+// clip a value for rcData to range
+uint16_t clip_rc(int32_t x);
+
+
 //-- crsf
 
 uint8_t crsf_cvt_power(int8_t power_dbm);
@@ -139,10 +156,6 @@ typedef enum {
 
 
 //-- auxiliary functions
-
-// clip a value for rcData to range
-
-uint16_t clip_rc(int32_t x);
 
 void strbufstrcpy(char* res, const char* src, uint16_t len);
 void strstrbufcpy(char* res, const char* src, uint16_t len);

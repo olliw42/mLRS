@@ -71,15 +71,6 @@ typedef struct
 
 //-- Tx Frame ----------
 
-#define RC_DATA_LEN  18
-
-
-typedef struct
-{
-    uint16_t ch[RC_DATA_LEN]; // 0 .. 1024 .. 2047, 11 bits
-} tRcData;
-
-
 PACKED(
 typedef struct
 {
@@ -283,7 +274,7 @@ typedef struct
 }) tTxCmdFrameRxParams; // 64
 
 
-
+// for type casting to get the header
 PACKED(
 typedef struct
 {
