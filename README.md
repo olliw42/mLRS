@@ -138,5 +138,6 @@ Don't hesitate to join the discussion thread at rcgroups for more details.
 ## Further Documentations ##
 
 You find more documentation on the following pages:
+- [Binding](docs/BINDING.md)
+- [Configuration Parameters](docs/PARAMETERS.md)
 - [CLI Commands](docs/CLI.md)
-- [Parameters](docs/PARAMETERS.md)
