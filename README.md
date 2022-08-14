@@ -137,6 +137,8 @@ Don't hesitate to join the discussion thread at rcgroups for more details.
 
 ## CLI Commands ##
 
+please go to [CLI Commands](docs/CLI.md).
+
 When the transmitter is not flashed with the MAVLink for OpenTx firmware, the CLI is currently the main and sole method for configuring the transmitter and receiver module.
 
 The CLI commands consist of one or more strings, each separated by a blank, and a terminating character. The terminating character can be a '\r' (carriage return), '\n' (line feed), ',' or ';'. The line feed handling depends very much on the terminal which is being used and/or its configuration. Hence, it is good practice to just always terminate the CLI command with, e.g., a ';' (this will be done for the commands listed here). 
