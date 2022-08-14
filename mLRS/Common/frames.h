@@ -253,6 +253,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     Setup.Rx.SerialLinkMode = rx_setupdata->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_setupdata->SendRadioStatus;
     Setup.Rx.Buzzer = rx_setupdata->Buzzer;
+    Setup.Rx.SendRcChannels = rx_setupdata->SendRcChannels;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_setupdata->FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -297,6 +298,7 @@ tTxCmdFrameRxParams rx_params = {0};
     rx_params.SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_params.SendRadioStatus = Setup.Rx.SendRadioStatus;
     rx_params.Buzzer = Setup.Rx.Buzzer;
+    rx_params.SendRcChannels = Setup.Rx.SendRcChannels;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -356,6 +358,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {0};
     rx_setupdata.SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_setupdata.SendRadioStatus = Setup.Rx.SendRadioStatus;
     rx_setupdata.Buzzer = Setup.Rx.Buzzer;
+    rx_setupdata.SendRcChannels = Setup.Rx.SendRcChannels;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_setupdata.FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -400,6 +403,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
     Setup.Rx.Buzzer = rx_params->Buzzer;
+    Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];

@@ -50,6 +50,7 @@ typedef enum {
     SERIAL_BAUDRATE_38400,
     SERIAL_BAUDRATE_57600,
     SERIAL_BAUDRATE_115200,
+    SERIAL_BAUDRATE_230400,
     SERIAL_BAUDRATE_NUM,
 } SERIAL_BAUDRATE_ENUM;
 
@@ -153,6 +154,14 @@ typedef enum {
 } RX_FAILSAFE_MODE_ENUM;
 
 
+typedef enum {
+    SEND_RC_CHANNELS_OFF = 0,
+    SEND_RC_CHANNELS_OVERRIDE,
+    SEND_RC_CHANNELS_RCCHANNELS,
+    SEND_RC_CHANNELS_NUM,
+} RX_SEND_RCCHANNELS_ENUM;
+
+
 //-------------------------------------------------------
 // Config Enums
 //-------------------------------------------------------
@@ -213,8 +222,9 @@ typedef struct
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
+    uint8_t SendRcChannels;
 
-    uint8_t spare[10];
+    uint8_t spare[9];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
