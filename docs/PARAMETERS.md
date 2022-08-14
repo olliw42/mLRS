@@ -2,7 +2,6 @@
 
 ([back to main page](../README.md))
 
-
 Brief description of the paranmeters for configuring mLRS. The parameters fall into three categories: 
 
 1. Parameters common to Tx and Rx. These need to be configured to be identical for Tx and Rx, in order for a connection to be possible. For an arbitrary receiver, this can be achieved by binding the receiver to the Tx module.
@@ -19,12 +18,10 @@ Depending on the specific mLRs hardware, not all parameters may be available, as
 
 #### Bind Phrase ####
 String of 6 characters. 
-
 The characters can be 'a'-'z', '0'-'9', '-', '.', 
 
 #### Mode ####
 Operation mode. 
-
 Can be "50 Hz", "31 Hz", "19 Hz".
 
 #### RF Band ####
