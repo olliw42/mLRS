@@ -28,7 +28,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     uint8_t VehicleState(void);
-
+    void lost_data(void);
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
@@ -106,6 +106,11 @@ uint8_t MavlinkBase::VehicleState(void)
     return vehicle_is_armed;
 }
 
+// missing or corrupt frame => reset mavlink parser
+void MavlinkBase::lost_data(void)
+{
+  fmav_status_reset_rx(&status_link_in);
+}
 
 void MavlinkBase::putc(char c)
 {

@@ -67,6 +67,13 @@ class tTxSxSerial : public tSerialBase
             serialport->putc(c);
         }
     }
+
+    virtual void lost_data(void)
+    {
+        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // this has to go via the parser
+            mavlink.lost_data();
+        }
+    }
 };
 
 

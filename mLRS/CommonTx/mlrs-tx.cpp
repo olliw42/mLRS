@@ -471,6 +471,15 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 }
 
 
+void process_lost_payload()
+{
+    if (sx_serial.IsEnabled()) {
+        sx_serial.lost_data();
+
+    }
+}
+
+    
 void process_received_frame(bool do_payload, tRxFrame* frame)
 {
     stats.received_antenna = frame->status.antenna;
@@ -479,7 +488,10 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     stats.received_LQ = frame->status.LQ;
     stats.received_LQ_serial_data = frame->status.LQ_serial_data;
 
-    if (!do_payload) return;
+    if (!do_payload) {
+        process_lost_payload();
+        return;
+    }
 
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) { //!= FRAME_TYPE_RX) {
         process_received_rxcmdframe(frame);
@@ -530,6 +542,7 @@ tRxFrame* frame;
         stats.received_ack_last = frame->status.ack;
 
     } else { // RX_STATUS_INVALID
+        process_lost_payload();
         stats.received_seq_no_last = UINT8_MAX;
         stats.received_ack_last = 0;
     }
