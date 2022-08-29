@@ -67,6 +67,11 @@
 #endif
 
 
+#ifdef TX_DIY_E22DUAL_MODULE02_G491RE
+#include "tx-hal-diy-e22dual-module02-g491re.h"
+#endif
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------

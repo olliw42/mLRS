@@ -105,3 +105,10 @@
 #endif
 
 
+#ifdef TX_DIY_E22DUAL_MODULE02_G491RE
+  #define DEVICE_NAME "DIY DualE22 G491RE"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_915_MHZ
+#endif
+
