@@ -16,6 +16,8 @@
 #include "device_conf.h"
 
 
+//-- 2.4 GHz Devices
+
 #ifdef RX_SIYI_F373CC
 #include "rx-hal-siyi-f373cc.h"
 #endif
@@ -49,6 +51,8 @@
 #include "tx-hal-diy-e28dual-module02-g491re.h"
 #endif
 
+
+//-- 868/915 MHz Devices
 
 #ifdef RX_R9MX_868_L433CB
 #include "rx-hal-R9MX-868-l433cb.h"

@@ -358,7 +358,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 // Driver for SX2
 //-------------------------------------------------------
 #ifdef DEVICE_HAS_DIVERSITY
-
+#error Diversity not yet supported for SX127x
 #endif
 
 
