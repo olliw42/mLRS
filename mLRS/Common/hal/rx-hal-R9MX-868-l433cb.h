@@ -57,7 +57,7 @@
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
-//#define SWUART_IRQ_OC_PRIORITY    11
+//#define SWUART_TIM_IRQ_PRIORITY   11
 
 #define UART_USE_UART2 // SBus
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow

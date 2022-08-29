@@ -23,7 +23,7 @@ v0.0.00:
 #define UART_IRQ_PRIORITY           12 // SBus out pin
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
-#define SWUART_IRQ_OC_PRIORITY      11 // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     11 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
