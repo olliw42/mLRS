@@ -23,6 +23,7 @@ v0.0.00:
 #define UART_IRQ_PRIORITY           12 // SBus out pin
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
+#define SWUART_IRQ_OC_PRIORITY      11 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
@@ -42,7 +43,11 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
+#endif
 #endif
 #ifdef USE_OUT
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
