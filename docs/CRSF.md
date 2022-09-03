@@ -55,7 +55,7 @@ For my Matek H743 board the configuration is:
 
 These configurations are not strictly neccesary, but recommended.
 
-- Rx Ser Link Mode = mvlink
+- Rx Ser Link Mode = mavlink
 - Rx Snd RadioStat = w txbuf
 
 
