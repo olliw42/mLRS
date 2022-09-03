@@ -19,18 +19,14 @@
 //   Pin4 Inv SPort   PB11
 //   Pin5 SBusOut     PA2 inverted
 //   Pin6 SBusIn      ???
-//   Ch1    PA11
-//   Ch2    PA10 / U1Rx
-//   Ch3    PA9 / U1Tx
-//   Ch4    PA8
+//   Ch1    PA11          -> Debug TX
+//   Ch2    PA10 / U1Rx   -> Serial Rx
+//   Ch3    PA9 / U1Tx    -> Serial Tx
+//   Ch4    PA8           -> Buzzer
 
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
+#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -56,13 +52,12 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
-#define UARTC_USE_UART1 //3 // debug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define SWUART_USE_TIM15 // debug
+#define SWUART_TX_IO              IO_PA11
+#define SWUART_BAUD               115200
+#define SWUART_USE_TX
+#define SWUART_TXBUFSIZE          512
+//#define SWUART_TIM_IRQ_PRIORITY   11
 
 #define UART_USE_UART2 // SBus
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow

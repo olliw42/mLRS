@@ -75,14 +75,19 @@ class tSerialPort : public tSerialBase
 };
 
 
-// is always uartc
+// is uartc on rx / uartf on tx (or swuart)
 class tDebugPort : public tSerialBase
 {
 #ifdef USE_DEBUG
   public:
 #ifdef DEVICE_IS_RECEIVER
+#ifdef DEVICE_HAS_DEBUG_SWUART
+    void Init(void) { swuart_init(); }
+    void putc(char c) override { swuart_putc(c); }
+#else
     void Init(void) { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
+#endif
 #endif
 #ifdef DEVICE_IS_TRANSMITTER
     void Init(void) { uartf_init(); }

@@ -68,6 +68,7 @@ Further features:
 - bind mode for binding "unknown" receivers to the transmitter.
 - support for buzzer, oled & five-way button, serial2. 
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332).
+- support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios.
 
 ## Community ##
 
@@ -141,3 +142,5 @@ You find more documentation on the following pages:
 - [Binding](docs/BINDING.md)
 - [Configuration Parameters](docs/PARAMETERS.md)
 - [CLI Commands](docs/CLI.md)
+- Set up [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
+- Set up [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)

@@ -16,7 +16,7 @@
 #include "../Common/fifo.h"
 #include "setup_tx.h"
 #include "jr_pin5_interface.h"
-#include "mbridge_protocol.h"
+#include "../Common/protocols/mbridge_protocol.h"
 
 uint16_t micros(void);
 uint8_t mavlink_vehicle_state(void);
@@ -574,7 +574,7 @@ tMBridgeDeviceItem item = {0};
 
 
 uint8_t param_idx;
-uint8_t param_itemtype_cnt;
+uint8_t param_itemtype_to_send;
 
 // we have to send (much) more than SETUP_PARAMETER_NUM PARAM_ITEM messages
 // since all parameters need 2 and some even 3 of them
@@ -583,7 +583,7 @@ uint8_t param_itemtype_cnt;
 void mbridge_start_ParamRequestList(void)
 {
     param_idx = 0;
-    param_itemtype_cnt = 0;
+    param_itemtype_to_send = 0;
 
     mbridge.cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out first
 }
@@ -599,9 +599,9 @@ void mbridge_send_ParamItem(void)
         return;
     }
 
-    bool item3_needed = false;
+    bool item3_needed = false; // if a LIST parameter has a long option string, we send a 3rd ParamItem
 
-    if (param_itemtype_cnt == 0) {
+    if (param_itemtype_to_send == 0) {
         tMBridgeParamItem item = {0};
         item.index = param_idx;
         switch (SetupParameter[param_idx].type) {
@@ -634,10 +634,10 @@ void mbridge_send_ParamItem(void)
 
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
 
-        param_itemtype_cnt = 1;
+        param_itemtype_to_send = 1; // send the 2nd ParamItem in the next call
 
     } else
-    if (param_itemtype_cnt == 1) {
+    if (param_itemtype_to_send == 1) {
         tMBridgeParamItem2 item2 = {0};
         item2.index = param_idx;
         switch (SetupParameter[param_idx].type) {
@@ -679,14 +679,14 @@ void mbridge_send_ParamItem(void)
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
 
         if (item3_needed) {
-            param_itemtype_cnt = 2;
+            param_itemtype_to_send = 2; // we need to send a 3rd ParamItem
         } else {
             // next param item
-            param_itemtype_cnt = 0;
+            param_itemtype_to_send = 0; // done with this parameter
             param_idx++;
         }
     } else
-    if (param_itemtype_cnt >= 2) {
+    if (param_itemtype_to_send >= 2) {
         tMBridgeParamItem3 item3 = {0};
         item3.index = param_idx;
         strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21, 23);
@@ -694,7 +694,7 @@ void mbridge_send_ParamItem(void)
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
 
         // next param item
-        param_itemtype_cnt = 0;
+        param_itemtype_to_send = 0; // done with this parameter
         param_idx++;
     }
 

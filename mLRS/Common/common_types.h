@@ -25,13 +25,14 @@ typedef enum {
     POWER_MIN       = INT8_MIN,
     POWER_m18_DBM   = -18, // 16 uW
     POWER_m10_DBM   = -10, // 100 uW
+    POWER_m9_DBM    = -9, // 126 uW
     POWER_0_DBM     = 0, // 1 mW
     POWER_10_DBM    = 10, // 10 mW
     POWER_12_DBM    = 12, // 16 mW
     POWER_12p5_DBM  = 13, // 18 mW
     POWER_17_DBM    = 17, // 50 mW
     POWER_20_DBM    = 20, // 100 mW
-    POWER_22_DBM    = 22, // 159 mW
+    POWER_22_DBM    = 22, // 158 mW
     POWER_23_DBM    = 24, // 200 mW
     POWER_24_DBM    = 24, // 251 mW
     POWER_27_DBM    = 27, // 501 mW

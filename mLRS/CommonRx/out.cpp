@@ -11,8 +11,8 @@
 #include <string.h>
 #include "out.h"
 #include "../Common/thirdparty/thirdparty.h"
-#include "../Common/sbus_protocol.h"
-#include "../Common/crsf_protocol.h"
+#include "../Common/protocols/sbus_protocol.h"
+#include "../Common/protocols/crsf_protocol.h"
 
 
 void OutBase::Init(tRxSetup* _setup)

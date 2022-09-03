@@ -5,7 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // CRSF Interface TX Side
-//********************************************************
+//*******************************************************
 #ifndef CRSF_INTERFACE_TX_H
 #define CRSF_INTERFACE_TX_H
 #pragma once
@@ -15,7 +15,8 @@
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
-#include "../Common/crsf_protocol.h"
+#include "../Common/protocols/crsf_protocol.h"
+#include "../Common/protocols/passthrough_protocol.h"
 #include "jr_pin5_interface.h"
 
 
@@ -26,6 +27,14 @@ extern TxStatsBase txstats;
 //-------------------------------------------------------
 // Interface Implementation
 
+typedef enum {
+    TXCRSF_SEND_LINK_STATISTICS = 0,
+    TXCRSF_SEND_LINK_STATISTICS_TX,
+    TXCRSF_SEND_LINK_STATISTICS_RX,
+    TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
+} TXCRSF_SEND_ENUM;
+
+
 class tTxCrsf : public tPin5BridgeBase
 {
   public:
@@ -34,7 +43,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
-    void SendFrame(const uint8_t len, const uint8_t frame_id, void* payload);
+    void SendFrame(const uint8_t frame_id, void* payload, const uint8_t len);
 
     // helper
     void Clear(void);
@@ -60,7 +69,7 @@ class tTxCrsf : public tPin5BridgeBase
     void fill_rcdata(tRcData* rc);
 
     // telemetry handling
-    bool TelemetryUpdate(uint8_t* packet_idx);
+    bool TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms);
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
 
@@ -80,8 +89,10 @@ class tTxCrsf : public tPin5BridgeBase
     tCrsfVario vario; // collected from VFR_HUD
     bool vario_updated;
 
-    tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message
+    tCrsfBaroAltitude baro_altitude; // not yet populated from a mavlink message
     bool baro_altitude_updated;
+
+    // mavlink handlers
 
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
     void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
@@ -89,6 +100,12 @@ class tTxCrsf : public tPin5BridgeBase
     void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload);
     void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload);
     void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);
+
+    uint8_t vehicle_sysid;
+
+    // crsf passthrough telemetry
+
+    tPassThrough passthrough;
 };
 
 tTxCrsf crsf;
@@ -171,6 +188,9 @@ void tTxCrsf::Init(bool enable_flag)
     gps_updated = false;
     vario_updated = false;
     baro_altitude_updated = false;
+
+    vehicle_sysid = 0;
+    passthrough.Init();
 }
 
 
@@ -212,27 +232,36 @@ bool tTxCrsf::Update(tRcData* rc)
 //-------------------------------------------------------
 // CRSF Telemetry
 
-bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
+bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
-    if (telemetry_start_next_tick) {
+    if (telemetry_start_next_tick) { // start a new cycle
         telemetry_start_next_tick = false;
         telemetry_state = 1; // start
     }
 
     bool ret = false;
 
-    if (telemetry_state && telemetry_tick_next && IsEmpty()) {
+    if (telemetry_state && telemetry_tick_next && IsEmpty()) { // time for the next frame
         telemetry_tick_next = false;
-        switch (telemetry_state) {
-            case 1: *packet_idx = 1; ret = true; break;
-            case 5: *packet_idx = 2; ret = true; break;
-            case 9: *packet_idx = 3; ret = true; break;
-            case 13: *packet_idx = 4; ret = true; break;
+
+        int16_t telemetry_state_max = (frame_rate_ms - 7);
+        if (telemetry_state_max > 30) telemetry_state_max = 30;
+
+        switch (telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
+            case 1: *packet_idx = TXCRSF_SEND_LINK_STATISTICS; ret = true; break;
+            case 5: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_TX; ret = true; break;
+            case 9: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_RX; ret = true; break;
+            case 13: *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; break;
+            // don't do this if 50 Hz
+            // we need to get them called frequently enough, since there are potentially already "plenty" of native crsf frames
+            case 17: case 21: case 25: case 29:
+                if (telemetry_state <= telemetry_state_max) { *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; }
+                break;
         }
         telemetry_state++;
-        if (telemetry_state > 15) telemetry_state = 0; // stop
+        if (telemetry_state > telemetry_state_max) telemetry_state = 0; // stop
     }
 
     return ret;
@@ -245,7 +274,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
 // gaps between frames are 1 ms or so
-#define CRSF_TMO_US        500
+#define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 
 // CRSF frame format:
@@ -256,7 +285,7 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
-        if (dt > CRSF_TMO_US) state = STATE_IDLE;
+        if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
     }
 
     tlast_us = tnow_us;
@@ -322,24 +351,6 @@ void tTxCrsf::fill_rcdata(tRcData* rc)
 tCrsfChannelBuffer buf;
 
     memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
-/*
-    rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1966 + 1024 );
-*/
     rc->ch[0] = rc_from_crsf(buf.ch0);
     rc->ch[1] = rc_from_crsf(buf.ch1);
     rc->ch[2] = rc_from_crsf(buf.ch2);
@@ -359,7 +370,7 @@ tCrsfChannelBuffer buf;
 }
 
 
-void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload)
+void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO;
     tx_frame[1] = (4-2) + len;
@@ -373,31 +384,36 @@ void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload
 
 void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_LEN, CRSF_FRAME_ID_LINK_STATISTICS, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS, payload, CRSF_LINK_STATISTICS_LEN);
 }
 
 
 void tTxCrsf::SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_TX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_TX, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_TX, payload, CRSF_LINK_STATISTICS_TX_LEN);
 }
 
 
 void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_RX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_RX, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_RX, payload, CRSF_LINK_STATISTICS_RX_LEN);
 }
 
 
 //-------------------------------------------------------
 // CRSF Telemetry Mavlink Handling
+// we have to kinds to consider:
+// - native CRSF telemetry frames:
+//   these are filled from MAVLink messages by the tTxCrsf class
+// - passthrough packets which are packet into the CRSF passthrough telemetry frame:
+//   these are filled from MAVLink messages through the tPassThrough class
 
 #define CRSF_REV_U16(x)  __REV16(x)
 #define CRSF_REV_I16(x)  __REVSH(x)
 #define CRSF_REV_U32(x)  __REV(x)
 
 
-void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
+int32_t mav_battery_voltage(fmav_battery_status_t* payload)
 {
     int32_t voltage = 0;
     for (uint8_t i = 0; i < 10; i++) {
@@ -410,8 +426,15 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
             voltage += payload->voltages_ext[i]; // uint16_t mV, 0 if not known
         }
     }
-//  if (payload.id == 0) {
-    battery.voltage = CRSF_REV_U16(voltage / 100);
+    return voltage;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
+{
+    if (payload->id != 0) return;
+
+    battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
     battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
     uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
     if (capacity > 8388607) capacity = 8388607; // int 24 bit
@@ -420,7 +443,6 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
     battery.capacity[2] = capacity;
     battery.remaining = (payload->battery_remaining == -1) ? 0 : payload->battery_remaining;
     battery_updated = true;
-//  }
 }
 
 
@@ -488,29 +510,53 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
+    if (msg->sysid == 0) return; // this can't be anything meaningful
+
+    // autodetect vehicle sysid
+/* we don't really need this for as long as we can assume that there is only one autopilot, so play it simple
+    if (!vehicle_sysid) {
+        if (msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) {
+            fmav_heartbeat_t payload;
+            fmav_msg_heartbeat_decode(&payload, msg);
+            if ((msg->compid == MAV_COMP_ID_AUTOPILOT1) || (payload.autopilot != MAV_AUTOPILOT_INVALID)) {
+                vehicle_sysid = msg->sysid;
+            }
+        }
+        if (!vehicle_sysid) return;
+    }
+    if (msg->sysid != vehicle_sysid) return;
+*/
+
+    if (msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
+
+    // from here on we only see the mavlink messages from our vehicle
+
     switch (msg->msgid) {
 
-    // these are for crsf telemetry
+    // these are for crsf telemetry, some are also for passthrough
 
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
         handle_mavlink_msg_battery_status(&payload);
+        passthrough.handle_mavlink_msg_battery_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_ATTITUDE: {
         fmav_attitude_t payload;
         fmav_msg_attitude_decode(&payload, msg);
         handle_mavlink_msg_attitude(&payload);
+        passthrough.handle_mavlink_msg_attitude(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GPS_RAW_INT: {
         fmav_gps_raw_int_t payload;
         fmav_msg_gps_raw_int_decode(&payload, msg);
         handle_mavlink_msg_gps_raw_int(&payload);
+        passthrough.handle_mavlink_msg_gps_raw_int(&payload);
         }break;
 
-    case FASTMAVLINK_MSG_ID_GPS2_RAW: {
+    case FASTMAVLINK_MSG_ID_GPS2_RAW: { // not used by passthrough
         fmav_gps2_raw_t payload;
         fmav_msg_gps2_raw_decode(&payload, msg);
         handle_mavlink_msg_gps2_raw(&payload);
@@ -520,44 +566,121 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_vfr_hud_t payload;
         fmav_msg_vfr_hud_decode(&payload, msg);
         handle_mavlink_msg_vfr_hud(&payload);
+        passthrough.handle_mavlink_msg_vfr_hud(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
         fmav_global_position_int_t payload;
         fmav_msg_global_position_int_decode(&payload, msg);
         handle_mavlink_msg_global_position_int(&payload);
+        passthrough.handle_mavlink_msg_global_position_int(&payload);
         }break;
+
+    // these are for passthrough only
+
+    case FASTMAVLINK_MSG_ID_HEARTBEAT: {
+        fmav_heartbeat_t payload;
+        fmav_msg_heartbeat_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_heartbeat(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_SYS_STATUS: {
+        fmav_sys_status_t payload;
+        fmav_msg_sys_status_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_sys_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RAW_IMU: {
+        fmav_raw_imu_t payload;
+        fmav_msg_raw_imu_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_raw_imu(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_MISSION_CURRENT: {
+        fmav_mission_current_t payload;
+        fmav_msg_mission_current_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_mission_current(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT: {
+        fmav_nav_controller_output_t payload;
+        fmav_msg_nav_controller_output_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_nav_controller_output(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_TERRAIN_REPORT: {
+        fmav_terrain_report_t payload;
+        fmav_msg_terrain_report_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_terrain_report(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_FENCE_STATUS: {
+        fmav_fence_status_t payload;
+        fmav_msg_fence_status_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_fence_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RANGEFINDER: {
+        fmav_rangefinder_t payload;
+        fmav_msg_rangefinder_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_rangefinder(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RPM: {
+        fmav_rpm_t payload;
+        fmav_msg_rpm_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_rpm(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_HOME_POSITION: {
+        fmav_home_position_t payload;
+        fmav_msg_home_position_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_home_position(&payload);
+        }break;
+
     }
 }
 
 
 void tTxCrsf::SendTelemetryFrame(void)
 {
+    // native crsf
+
     if (battery_updated) {
         battery_updated = false;
-        SendFrame(CRSF_BATTERY_LEN, CRSF_FRAME_ID_BATTERY, &battery);
+        SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
         return; // only send one per slot
     }
     if (gps_updated) {
         gps_updated = false;
-        SendFrame(CRSF_GPS_LEN, CRSF_FRAME_ID_GPS, &gps);
+        SendFrame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
         return; // only send one per slot
     }
     if (vario_updated) {
         vario_updated = false;
-        SendFrame(CRSF_VARIO_LEN, CRSF_FRAME_ID_VARIO, &vario);
+        SendFrame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
         return; // only send one per slot
     }
     if (attitude_updated) {
         attitude_updated = false;
-        SendFrame(CRSF_ATTITUDE_LEN, CRSF_FRAME_ID_ATTITUDE, &attitude);
+        SendFrame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
         return; // only send one per slot
     }
     if (baro_altitude_updated) {
         baro_altitude_updated = false;
-        SendFrame(CRSF_BARO_ALTITUDE_LEN, CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude);
+        SendFrame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
         return; // only send one per slot
-  }
+    }
+
+    // passthrough
+
+    uint8_t data[64+10];
+    uint8_t len;
+
+    if (passthrough.GetTelemetryFrameMulti(data, &len)) {
+        SendFrame(CRSF_FRAME_ID_AP_CUSTOM_TELEM, data, len);
+        return;
+    }
 }
 
 
@@ -586,13 +709,30 @@ uint8_t crsf_cvt_rssi_percent(int8_t rssi)
 //      = 126 ->  126dB
 // hmhm ...
 
+// uplink:   Tx (tx -> rx)
+// downlink: Rx (rx -> tx)
+// somehow the OpenTx naming/usage doesn't make fully sense
+// so we "correct" things here such that the names make sense, irrespective of uplink/downlink notation
+
 void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
+    clstats.uplink_rssi1 = crsf_cvt_rssi(stats.received_rssi);          // OpenTX -> "1RSS"
+    clstats.uplink_rssi2 = 0; // we don't know it                       // OpenTX -> "2RSS"
+    clstats.uplink_LQ = stats.received_LQ; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
+    clstats.uplink_snr = 0; // we don't know it                         // OpenTx -> "RSNR"
+    clstats.active_antenna = 0; // we don't know it                     // OpenTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
+
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());       // OpenTx -> "TRSS"
+    clstats.downlink_LQ = txstats.GetLQ();                              // OpenTx -> "TQly"
+    clstats.downlink_snr = stats.GetLastRxSnr();                        // OpenTx -> "TSNR"
+/*
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
-        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
+        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);      // OpenTX -> "1RSS"
+        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);      // OpenTX -> "2RSS"
     } else if (USE_ANTENNA2) {
         clstats.uplink_rssi1 = 255;
         clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
@@ -600,14 +740,15 @@ tCrsfLinkStatistics clstats;
         clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
         clstats.uplink_rssi2 = 255;
     }
-    clstats.uplink_LQ = txstats.GetLQ(); // this sets main rssi in OpenTx, 0 = resets main rssi
-    clstats.uplink_snr = stats.GetLastRxSnr();
-    clstats.active_antenna = stats.last_rx_antenna;
-    clstats.mode = crsf_cvt_mode(Config.Mode);
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);
-    clstats.downlink_LQ = stats.received_LQ;
-    clstats.downlink_snr = 0;
+    clstats.uplink_LQ = txstats.GetLQ(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
+    clstats.uplink_snr = stats.GetLastRxSnr();                          // OpenTx -> "RSNR"
+    clstats.active_antenna = stats.last_rx_antenna;                     // OpenTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);         // OpenTx -> "TRSS"
+    clstats.downlink_LQ = stats.received_LQ;                            // OpenTx -> "TQly"
+    clstats.downlink_snr = 0;                                           // OpenTx -> "TSNR"
+*/
     crsf.SendLinkStatistics(&clstats);
 }
 
@@ -616,12 +757,20 @@ void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx clstats;
 
-    clstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi()); // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());
-    clstats.uplink_LQ = txstats.GetLQ(); // ignored by OpenTx
-    clstats.uplink_snr = stats.GetLastRxSnr(); // ignored by OpenTx
-    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());
-    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx
+    clstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());                   // ignored by OpenTx
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());   // OpenTx -> "TRSP"
+    clstats.uplink_LQ = txstats.GetLQ();                                          // ignored by OpenTx
+    clstats.uplink_snr = stats.GetLastRxSnr();                                    // ignored by OpenTx
+    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
+    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
+/*
+    clstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());                   // ignored by OpenTx
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());   // OpenTx -> "TRSP"
+    clstats.uplink_LQ = txstats.GetLQ();                                          // ignored by OpenTx
+    clstats.uplink_snr = stats.GetLastRxSnr();                                    // ignored by OpenTx
+    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "RPWR"
+    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
+*/
     crsf.SendLinkStatisticsTx(&clstats);
 }
 
@@ -630,11 +779,18 @@ void crsf_send_LinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi); // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);
-    clstats.downlink_LQ = stats.received_LQ; // ignored by OpenTx
-    clstats.downlink_snr = 0; // ignored by OpenTx
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);                   // ignored by OpenTx
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
+    clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
+    clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());             // OpenTx -> "TPWR"
+/*
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);                   // ignored by OpenTx
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
+    clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
+    clstats.downlink_snr = 0;                                                     // ignored by OpenTx
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());             // OpenTx -> "TPWR"
+*/
     crsf.SendLinkStatisticsRx(&clstats);
 }
 
@@ -677,7 +833,7 @@ uint8_t c;
 
   if ((state != STATE_IDLE)) {
     uint16_t dt = tim_us() - tlast_us;
-    if (dt > CRSF_TMO_US) state = STATE_IDLE;
+    if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
   }
 
   switch (state) {
