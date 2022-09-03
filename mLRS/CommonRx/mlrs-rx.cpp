@@ -346,6 +346,14 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 }
 
 
+void process_lost_payload()
+{
+    if (connected()) {
+        sx_serial.lost_data();
+    }
+}
+
+    
 void process_received_frame(bool do_payload, tTxFrame* frame)
 {
     stats.received_antenna = frame->status.antenna;
@@ -358,6 +366,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
+        process_lost_payload();
         return;
     }
 
@@ -418,6 +427,7 @@ tTxFrame* frame;
         stats.received_ack_last = frame->status.ack;
 
     } else { // RX_STATUS_INVALID
+        process_lost_payload();
         stats.received_seq_no_last = UINT8_MAX;
         stats.received_ack_last = 0;
     }

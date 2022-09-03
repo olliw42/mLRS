@@ -46,6 +46,13 @@ class tRxSxSerial : public tSerialBase
               serial.putc(c); // send to serial
           }
       }
+
+  virtual void lost_data(void)
+    {
+        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+            mavlink.lost_data();
+        }
+    }
 };
 
 

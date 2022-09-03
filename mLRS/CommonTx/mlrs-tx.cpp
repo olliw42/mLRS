@@ -475,7 +475,6 @@ void process_lost_payload()
 {
     if (sx_serial.IsEnabled()) {
         sx_serial.lost_data();
-
     }
 }
 

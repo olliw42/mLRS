@@ -28,6 +28,7 @@ class MavlinkBase
     void Do(void);
     void SendRcData(tRcData* rc_out, bool failsafe);
 
+    void lost_data(void);
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
@@ -152,6 +153,12 @@ void MavlinkBase::Do(void)
     }
 }
 
+
+// missing or corrupt frame => reset mavlink parser
+void MavlinkBase::lost_data(void)
+{
+  fmav_status_reset_rx(&status_link_in);
+}
 
 void MavlinkBase::putc(char c)
 {
