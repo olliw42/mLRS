@@ -5,7 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // CRSF Interface TX Side
-//********************************************************
+//*******************************************************
 #ifndef CRSF_INTERFACE_TX_H
 #define CRSF_INTERFACE_TX_H
 #pragma once
@@ -15,7 +15,7 @@
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
-#include "../Common/crsf_protocol.h"
+#include "../Common/protocols/crsf_protocol.h"
 #include "jr_pin5_interface.h"
 
 
@@ -26,6 +26,14 @@ extern TxStatsBase txstats;
 //-------------------------------------------------------
 // Interface Implementation
 
+typedef enum {
+    TXCRSF_SEND_LINK_STATISTICS = 0,
+    TXCRSF_SEND_LINK_STATISTICS_TX,
+    TXCRSF_SEND_LINK_STATISTICS_RX,
+    TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
+} TXCRSF_SEND_ENUM;
+
+
 class tTxCrsf : public tPin5BridgeBase
 {
   public:
@@ -34,7 +42,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
-    void SendFrame(const uint8_t len, const uint8_t frame_id, void* payload);
+    void SendFrame(const uint8_t frame_id, void* payload, const uint8_t len);
 
     // helper
     void Clear(void);
@@ -82,6 +90,8 @@ class tTxCrsf : public tPin5BridgeBase
 
     tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message
     bool baro_altitude_updated;
+
+    // mavlink handlers
 
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
     void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
@@ -216,20 +226,20 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 {
     if (!enabled) return false;
 
-    if (telemetry_start_next_tick) {
+    if (telemetry_start_next_tick) { // start a new cycle
         telemetry_start_next_tick = false;
         telemetry_state = 1; // start
     }
 
     bool ret = false;
 
-    if (telemetry_state && telemetry_tick_next && IsEmpty()) {
+    if (telemetry_state && telemetry_tick_next && IsEmpty()) { // time for the next frame
         telemetry_tick_next = false;
-        switch (telemetry_state) {
-            case 1: *packet_idx = 1; ret = true; break;
-            case 5: *packet_idx = 2; ret = true; break;
-            case 9: *packet_idx = 3; ret = true; break;
-            case 13: *packet_idx = 4; ret = true; break;
+        switch (telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
+            case 1: *packet_idx = TXCRSF_SEND_LINK_STATISTICS; ret = true; break;
+            case 5: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_TX; ret = true; break;
+            case 9: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_RX; ret = true; break;
+            case 13: *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; break;
         }
         telemetry_state++;
         if (telemetry_state > 15) telemetry_state = 0; // stop
@@ -245,7 +255,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
 // gaps between frames are 1 ms or so
-#define CRSF_TMO_US        500
+#define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 
 // CRSF frame format:
@@ -256,7 +266,7 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
 {
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
-        if (dt > CRSF_TMO_US) state = STATE_IDLE;
+        if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
     }
 
     tlast_us = tnow_us;
@@ -322,24 +332,6 @@ void tTxCrsf::fill_rcdata(tRcData* rc)
 tCrsfChannelBuffer buf;
 
     memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
-/*
-    rc->ch[0] = clip_rc( (((int32_t)(buf.ch0) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[1] = clip_rc( (((int32_t)(buf.ch1) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[2] = clip_rc( (((int32_t)(buf.ch2) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[3] = clip_rc( (((int32_t)(buf.ch3) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[4] = clip_rc( (((int32_t)(buf.ch4) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[5] = clip_rc( (((int32_t)(buf.ch5) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[6] = clip_rc( (((int32_t)(buf.ch6) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[7] = clip_rc( (((int32_t)(buf.ch7) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[8] = clip_rc( (((int32_t)(buf.ch8) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[9] = clip_rc( (((int32_t)(buf.ch9) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[10] = clip_rc( (((int32_t)(buf.ch10) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[11] = clip_rc( (((int32_t)(buf.ch11) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[12] = clip_rc( (((int32_t)(buf.ch12) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[13] = clip_rc( (((int32_t)(buf.ch13) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[14] = clip_rc( (((int32_t)(buf.ch14) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[15] = clip_rc( (((int32_t)(buf.ch15) - 992) * 2047) / 1966 + 1024 );
-*/
     rc->ch[0] = rc_from_crsf(buf.ch0);
     rc->ch[1] = rc_from_crsf(buf.ch1);
     rc->ch[2] = rc_from_crsf(buf.ch2);
@@ -359,7 +351,7 @@ tCrsfChannelBuffer buf;
 }
 
 
-void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload)
+void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO;
     tx_frame[1] = (4-2) + len;
@@ -373,19 +365,19 @@ void tTxCrsf::SendFrame(const uint8_t len, const uint8_t frame_id, void* payload
 
 void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_LEN, CRSF_FRAME_ID_LINK_STATISTICS, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS, payload, CRSF_LINK_STATISTICS_LEN);
 }
 
 
 void tTxCrsf::SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_TX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_TX, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_TX, payload, CRSF_LINK_STATISTICS_TX_LEN);
 }
 
 
 void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 {
-    SendFrame(CRSF_LINK_STATISTICS_RX_LEN, CRSF_FRAME_ID_LINK_STATISTICS_RX, payload);
+    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_RX, payload, CRSF_LINK_STATISTICS_RX_LEN);
 }
 
 
@@ -527,6 +519,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_msg_global_position_int_decode(&payload, msg);
         handle_mavlink_msg_global_position_int(&payload);
         }break;
+
     }
 }
 
@@ -535,27 +528,27 @@ void tTxCrsf::SendTelemetryFrame(void)
 {
     if (battery_updated) {
         battery_updated = false;
-        SendFrame(CRSF_BATTERY_LEN, CRSF_FRAME_ID_BATTERY, &battery);
+        SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
         return; // only send one per slot
     }
     if (gps_updated) {
         gps_updated = false;
-        SendFrame(CRSF_GPS_LEN, CRSF_FRAME_ID_GPS, &gps);
+        SendFrame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
         return; // only send one per slot
     }
     if (vario_updated) {
         vario_updated = false;
-        SendFrame(CRSF_VARIO_LEN, CRSF_FRAME_ID_VARIO, &vario);
+        SendFrame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
         return; // only send one per slot
     }
     if (attitude_updated) {
         attitude_updated = false;
-        SendFrame(CRSF_ATTITUDE_LEN, CRSF_FRAME_ID_ATTITUDE, &attitude);
+        SendFrame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
         return; // only send one per slot
     }
     if (baro_altitude_updated) {
         baro_altitude_updated = false;
-        SendFrame(CRSF_BARO_ALTITUDE_LEN, CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude);
+        SendFrame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
         return; // only send one per slot
   }
 }
@@ -677,7 +670,7 @@ uint8_t c;
 
   if ((state != STATE_IDLE)) {
     uint16_t dt = tim_us() - tlast_us;
-    if (dt > CRSF_TMO_US) state = STATE_IDLE;
+    if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
   }
 
   switch (state) {

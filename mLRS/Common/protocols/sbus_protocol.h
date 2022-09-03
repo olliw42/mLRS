@@ -5,6 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // SBUS Protocol
+//
 // SBus frame: 0x0F, 22 bytes channel data, flags byte, 0x00
 // 100000 bps, 8E2
 // send every 14 ms (normal) or 7 ms (high speed), 10 ms or 20 ms
@@ -14,7 +15,7 @@
 // 100% = 819 span
 // 120% = 983 span
 // OpenTx produces 173 ... 992 ... 1811 for -100% ... 100%
-//********************************************************
+//*******************************************************
 #ifndef SBUS_PROTOCOL_H
 #define SBUS_PROTOCOL_H
 #pragma once

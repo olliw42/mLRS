@@ -900,11 +900,11 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
     out.Do(micros());
 
-    //-- do mavlink
+    //-- Do mavlink
 
     mavlink.Do();
 
-    //-- store parameters
+    //-- Store parameters
 
     if (doParamsStore) {
       LED_RED_ON; LED_GREEN_ON;

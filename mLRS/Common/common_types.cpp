@@ -11,7 +11,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "common_types.h"
 #include "setup_types.h"
-#include "crsf_protocol.h"
+#include "protocols/crsf_protocol.h"
 
 
 //-- rssi & snr

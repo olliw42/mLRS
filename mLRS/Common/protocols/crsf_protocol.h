@@ -5,6 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // CRSF Protocol
+//
 // The CRSF protocol details have been thankfully released by TBS
 // So, this info is openly available.
 // See e.g.
@@ -38,7 +39,7 @@
 //   data
 //   command_crc8
 //
-//********************************************************
+//*******************************************************
 #ifndef CRSF_PROTOCOL_H
 #define CRSF_PROTOCOL_H
 #pragma once

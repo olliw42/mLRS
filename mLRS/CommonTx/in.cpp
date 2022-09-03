@@ -11,7 +11,7 @@
 #include <string.h>
 #include "in.h"
 #include "../Common/setup_types.h"
-#include "../Common/sbus_protocol.h"
+#include "../Common/protocols/sbus_protocol.h"
 
 
 typedef enum {

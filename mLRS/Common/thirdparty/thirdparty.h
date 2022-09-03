@@ -11,6 +11,9 @@
 #include <stdint.h>
 
 
+//-------------------------------------------------------
+// Crsf Auxiliary Helper
+//-------------------------------------------------------
 // This code is from betaflight
 // https://github.com/betaflight/betaflight/blob/master/src/main/common/crc.c
 

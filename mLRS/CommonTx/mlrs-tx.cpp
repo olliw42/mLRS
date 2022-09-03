@@ -682,7 +682,7 @@ RESTARTCONTROLLER:
 
     if (doSysTask) {
       // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
-      // the commands below must not be sensitive to strict ms timming
+      // the commands below must not be sensitive to strict ms timing
       doSysTask--; // doSysTask = 0;
 
       if (connect_tmo_cnt) {
@@ -1035,10 +1035,10 @@ IF_CRSF(
     uint8_t packet_idx;
     if (crsf.TelemetryUpdate(&packet_idx)) {
       switch (packet_idx) {
-      case 1: crsf_send_LinkStatistics(); break;
-      case 2: crsf_send_LinkStatisticsTx(); break;
-      case 3: crsf_send_LinkStatisticsRx(); break;
-      case 4:
+      case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); break;
+      case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
+      case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
+      case TXCRSF_SEND_TELEMETRY_FRAME:
         if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) crsf.SendTelemetryFrame();
         break;
       }
@@ -1062,15 +1062,15 @@ IF_CRSF(
     }
 #endif
 
-    //-- do mavlink
+    //-- Do mavlink
 
     mavlink.Do();
 
-    //-- do WhileTransmit stuff
+    //-- Do WhileTransmit stuff
 
     whileTransmit.Do();
 
-    //-- cli task
+    //-- Handle cli task
 
     switch (cli.Task()) {
     case CLI_TASK_RX_PARAM_SET:
