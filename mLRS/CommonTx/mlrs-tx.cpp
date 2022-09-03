@@ -1033,7 +1033,7 @@ IF_MBRIDGE(
 );
 IF_CRSF(
     uint8_t packet_idx;
-    if (crsf.TelemetryUpdate(&packet_idx)) {
+    if (crsf.TelemetryUpdate(&packet_idx, Config.frame_rate_ms)) {
       switch (packet_idx) {
       case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); break;
       case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;

@@ -16,6 +16,7 @@
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
+#include "../Common/protocols/passthrough_protocol.h"
 #include "jr_pin5_interface.h"
 
 
@@ -30,7 +31,7 @@ typedef enum {
     TXCRSF_SEND_LINK_STATISTICS = 0,
     TXCRSF_SEND_LINK_STATISTICS_TX,
     TXCRSF_SEND_LINK_STATISTICS_RX,
-    TXCRSF_SEND_TELEMETRY_FRAME, // native telemetry frame
+    TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
 } TXCRSF_SEND_ENUM;
 
 
@@ -68,7 +69,7 @@ class tTxCrsf : public tPin5BridgeBase
     void fill_rcdata(tRcData* rc);
 
     // telemetry handling
-    bool TelemetryUpdate(uint8_t* packet_idx);
+    bool TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms);
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
 
@@ -101,6 +102,10 @@ class tTxCrsf : public tPin5BridgeBase
     void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);
 
     uint8_t vehicle_sysid;
+
+    // crsf passthrough telemetry
+
+    tPassThrough passthrough;
 };
 
 tTxCrsf crsf;
@@ -185,6 +190,7 @@ void tTxCrsf::Init(bool enable_flag)
     baro_altitude_updated = false;
 
     vehicle_sysid = 0;
+    passthrough.Init();
 }
 
 
@@ -226,7 +232,7 @@ bool tTxCrsf::Update(tRcData* rc)
 //-------------------------------------------------------
 // CRSF Telemetry
 
-bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
+bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
@@ -239,14 +245,23 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx)
 
     if (telemetry_state && telemetry_tick_next && IsEmpty()) { // time for the next frame
         telemetry_tick_next = false;
+
+        int16_t telemetry_state_max = (frame_rate_ms - 7);
+        if (telemetry_state_max > 30) telemetry_state_max = 30;
+
         switch (telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
             case 1: *packet_idx = TXCRSF_SEND_LINK_STATISTICS; ret = true; break;
             case 5: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_TX; ret = true; break;
             case 9: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_RX; ret = true; break;
             case 13: *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; break;
+            // don't do this if 50 Hz
+            // we need to get them called frequently enough, since there are potentially already "plenty" of native crsf frames
+            case 17: case 21: case 25: case 29:
+                if (telemetry_state <= telemetry_state_max) { *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; }
+                break;
         }
         telemetry_state++;
-        if (telemetry_state > 15) telemetry_state = 0; // stop
+        if (telemetry_state > telemetry_state_max) telemetry_state = 0; // stop
     }
 
     return ret;
@@ -387,6 +402,11 @@ void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 
 //-------------------------------------------------------
 // CRSF Telemetry Mavlink Handling
+// we have to kinds to consider:
+// - native CRSF telemetry frames:
+//   these are filled from MAVLink messages by the tTxCrsf class
+// - passthrough packets which are packet into the CRSF passthrough telemetry frame:
+//   these are filled from MAVLink messages through the tPassThrough class
 
 #define CRSF_REV_U16(x)  __REV16(x)
 #define CRSF_REV_I16(x)  __REVSH(x)
@@ -513,25 +533,30 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
     switch (msg->msgid) {
 
+    // these are for crsf telemetry, some are also for passthrough
+
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
         handle_mavlink_msg_battery_status(&payload);
+        passthrough.handle_mavlink_msg_battery_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_ATTITUDE: {
         fmav_attitude_t payload;
         fmav_msg_attitude_decode(&payload, msg);
         handle_mavlink_msg_attitude(&payload);
+        passthrough.handle_mavlink_msg_attitude(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GPS_RAW_INT: {
         fmav_gps_raw_int_t payload;
         fmav_msg_gps_raw_int_decode(&payload, msg);
         handle_mavlink_msg_gps_raw_int(&payload);
+        passthrough.handle_mavlink_msg_gps_raw_int(&payload);
         }break;
 
-    case FASTMAVLINK_MSG_ID_GPS2_RAW: {
+    case FASTMAVLINK_MSG_ID_GPS2_RAW: { // not used by passthrough
         fmav_gps2_raw_t payload;
         fmav_msg_gps2_raw_decode(&payload, msg);
         handle_mavlink_msg_gps2_raw(&payload);
@@ -541,12 +566,76 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_vfr_hud_t payload;
         fmav_msg_vfr_hud_decode(&payload, msg);
         handle_mavlink_msg_vfr_hud(&payload);
+        passthrough.handle_mavlink_msg_vfr_hud(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_GLOBAL_POSITION_INT: {
         fmav_global_position_int_t payload;
         fmav_msg_global_position_int_decode(&payload, msg);
         handle_mavlink_msg_global_position_int(&payload);
+        passthrough.handle_mavlink_msg_global_position_int(&payload);
+        }break;
+
+    // these are for passthrough only
+
+    case FASTMAVLINK_MSG_ID_HEARTBEAT: {
+        fmav_heartbeat_t payload;
+        fmav_msg_heartbeat_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_heartbeat(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_SYS_STATUS: {
+        fmav_sys_status_t payload;
+        fmav_msg_sys_status_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_sys_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RAW_IMU: {
+        fmav_raw_imu_t payload;
+        fmav_msg_raw_imu_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_raw_imu(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_MISSION_CURRENT: {
+        fmav_mission_current_t payload;
+        fmav_msg_mission_current_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_mission_current(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT: {
+        fmav_nav_controller_output_t payload;
+        fmav_msg_nav_controller_output_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_nav_controller_output(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_TERRAIN_REPORT: {
+        fmav_terrain_report_t payload;
+        fmav_msg_terrain_report_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_terrain_report(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_FENCE_STATUS: {
+        fmav_fence_status_t payload;
+        fmav_msg_fence_status_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_fence_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RANGEFINDER: {
+        fmav_rangefinder_t payload;
+        fmav_msg_rangefinder_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_rangefinder(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_RPM: {
+        fmav_rpm_t payload;
+        fmav_msg_rpm_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_rpm(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_HOME_POSITION: {
+        fmav_home_position_t payload;
+        fmav_msg_home_position_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_home_position(&payload);
         }break;
 
     }
@@ -555,6 +644,8 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
 void tTxCrsf::SendTelemetryFrame(void)
 {
+    // native crsf
+
     if (battery_updated) {
         battery_updated = false;
         SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
@@ -579,7 +670,17 @@ void tTxCrsf::SendTelemetryFrame(void)
         baro_altitude_updated = false;
         SendFrame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
         return; // only send one per slot
-  }
+    }
+
+    // passthrough
+
+    uint8_t data[64+10];
+    uint8_t len;
+
+    if (passthrough.GetTelemetryFrameMulti(data, &len)) {
+        SendFrame(CRSF_FRAME_ID_AP_CUSTOM_TELEM, data, len);
+        return;
+    }
 }
 
 

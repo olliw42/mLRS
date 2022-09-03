@@ -79,6 +79,8 @@ typedef enum {
     CRSF_FRAME_ID_REQUEST_SETTINGS    = 0x2A,
     CRSF_FRAME_ID_COMMAND             = 0x32,
     CRSF_FRAME_ID_RADIO               = 0x3A,
+
+    CRSF_FRAME_ID_AP_CUSTOM_TELEM     = 0x80,
 } CRSF_FRAME_ID_ENUM;
 
 
@@ -90,6 +92,14 @@ typedef enum {
 typedef enum {
     CRSF_COMMAND_MODEL_SELECT_ID      = 0x05,
 } CRSF_COMMAND_ENUM;
+
+
+// SubType IDs for CRSF_FRAMETYPE_CUSTOM_TELEM
+typedef enum {
+    CRSF_AP_CUSTOM_TELEM_TYPE_SINGLE_PACKET_PASSTHROUGH = 0xF0,
+    CRSF_AP_CUSTOM_TELEM_TYPE_STATUS_TEXT = 0xF1,
+    CRSF_AP_CUSTOM_TELEM_TYPE_MULTI_PACKET_PASSTHROUGH = 0xF2,
+}CRSF_AP_CUSTOM_TELEM_TYPE_ENUM;
 
 
 typedef enum {
@@ -312,6 +322,33 @@ typedef struct
 }) tCrsfCmdModelSelectId;
 
 #define CRSF_COMMAND_MODEL_SELECT_ID_LEN  8
+
+
+//-- Passthrough payload frames
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t sub_type;
+    uint16_t packet_type;
+    uint32_t data;
+}) tCrsfPassthroughSingle;
+
+#define CRSF_PASSTHROUGH_SINGLE_LEN  7
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t sub_type;
+    uint8_t count;
+    CRSF_PACKED(struct {
+        uint16_t packet_type;
+        uint32_t data;
+    }) packet[9];
+}) tCrsfPassthroughMulti;
+
+#define CRSF_PASSTHROUGH_MULTI_COUNT_MAX  9
 
 
 #endif // CRSF_PROTOCOL_H
