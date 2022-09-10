@@ -187,23 +187,11 @@ typedef enum {
 } FRAME_CMD_ENUM;
 
 
-// send from Rx as response to GET_RX_SETUPDATA
+// Rx Parameter structure
+// limit to 4 bits, so 16 options per parameter max; is also the limit of allowed_mask_ptr in tSetupParameterItem
 PACKED(
 typedef struct
 {
-    uint8_t cmd;
-    uint8_t spare;
-
-    // rx setup meta data 1
-    uint16_t firmware_version_u16;
-    uint16_t setup_layout;
-    char device_name_20[20];
-    int8_t actual_power_dbm;
-    uint8_t actual_diversity;
-
-    // rx parameter values
-    // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
-    // limit to 4 bits, so 16 options per parameter max; is also the limit of allowed_mask_ptr in tSetupParameterItem
     uint8_t Power : 4;
     uint8_t Diversity : 4;
     uint8_t ChannelOrder : 4;
@@ -224,6 +212,26 @@ typedef struct
     uint8_t FailsafeOutChannelValue_Ch14 : 2;
     uint8_t FailsafeOutChannelValue_Ch15 : 2;
     uint8_t FailsafeOutChannelValue_Ch16 : 2;
+}) tCmdFrameRxParameters; // 24 bytes
+
+
+// send from Rx as response to GET_RX_SETUPDATA
+PACKED(
+typedef struct
+{
+    uint8_t cmd;
+    uint8_t spare;
+
+    // rx setup meta data 1
+    uint16_t firmware_version_u16;
+    uint16_t setup_layout;
+    char device_name_20[20];
+    int8_t actual_power_dbm;
+    uint8_t actual_diversity;
+
+    // rx parameter values
+    // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
+    tCmdFrameRxParameters RxParams;
 
     // rx setup meta data 2, parameter metadata
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
@@ -249,26 +257,7 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
 
-    uint8_t Power : 4;
-    uint8_t Diversity : 4;
-    uint8_t ChannelOrder : 4;
-    uint8_t OutMode : 4;
-    uint8_t OutRssiChannelMode : 4;
-    uint8_t FailsafeMode : 4;
-    uint8_t SerialBaudrate : 4;
-    uint8_t SerialLinkMode : 4;
-    uint8_t SendRadioStatus : 4;
-    uint8_t Buzzer : 4;
-    uint8_t SendRcChannels : 4;
-
-    uint8_t spare1 : 4;
-    uint8_t spare2[5];
-
-    int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
-    uint8_t FailsafeOutChannelValue_Ch13 : 2;
-    uint8_t FailsafeOutChannelValue_Ch14 : 2;
-    uint8_t FailsafeOutChannelValue_Ch15 : 2;
-    uint8_t FailsafeOutChannelValue_Ch16 : 2;
+    tCmdFrameRxParameters RxParams;
 
     uint8_t spare3[31];
 }) tTxCmdFrameRxParams; // 64
