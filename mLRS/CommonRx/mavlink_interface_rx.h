@@ -211,8 +211,9 @@ uint8_t rssi, remrssi, txbuf, noise;
     txbuf = 100;
     if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
         // method C
-        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
-        uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
+        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+        // we need to account for RADIOSTATUS interval
+        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
         if (rate_percentage > 80) {
             txbuf = 0; // +60 ms
         } else if (rate_percentage > 70) {
