@@ -203,8 +203,8 @@ typedef struct
     uint8_t SendRadioStatus : 4;
     uint8_t Buzzer : 4;
     uint8_t SendRcChannels : 4;
+    uint8_t RadioStatusMethod : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[5];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120

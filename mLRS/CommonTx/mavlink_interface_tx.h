@@ -81,14 +81,18 @@ void MavlinkBase::Do(void)
     if (!connected()) {
         //Init();
         inject_radio_status = false;
-        radio_status_tlast_ms = millis32() + 1000;
+        radio_status_tlast_ms = tnow_ms + 1000;
     }
 
     if (Setup.Tx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+    if (Setup.Tx.SendRadioStatus) {
+        if ((tnow_ms - radio_status_tlast_ms) >= (1000 / Setup.Tx.SendRadioStatus)) {
+            radio_status_tlast_ms = tnow_ms;
+            if (connected()) inject_radio_status = true;
+        }
+    } else {
         radio_status_tlast_ms = tnow_ms;
-        if (connected() && Setup.Tx.SendRadioStatus) inject_radio_status = true;
     }
 
     if (inject_radio_status) { // && serial.tx_is_empty()) {

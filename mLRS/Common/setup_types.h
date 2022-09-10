@@ -72,10 +72,21 @@ typedef enum {
 
 typedef enum {
     SEND_RADIO_STATUS_OFF = 0,
-    SEND_RADIO_STATUS_ON,
-    SEND_RADIO_STATUS_ON_W_TXBUF,
+//    SEND_RADIO_STATUS_ON,
+//    SEND_RADIO_STATUS_ON_W_TXBUF,
+    SEND_RADIO_STATUS_1HZ,
+    SEND_RADIO_STATUS_2HZ,
+    SEND_RADIO_STATUS_3HZ,
+    SEND_RADIO_STATUS_4HZ,
     SEND_RADIO_STATUS_NUM,
 } SEND_RADIO_STATUS_ENUM;
+
+
+typedef enum {
+    RADIO_STATUS_METHOD_DEFAULT = 0,
+    RADIO_STATUS_METHOD_W_TXBUF,
+    RADIO_STATUS_METHOD_NUM,
+} RADIO_STATUS_METHOD_ENUM;
 
 
 //-- Tx only
@@ -223,8 +234,9 @@ typedef struct
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
     uint8_t SendRcChannels;
+    uint8_t RadioStatusMethod;
 
-    uint8_t spare[9];
+    uint8_t spare[8];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120

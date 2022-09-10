@@ -121,14 +121,18 @@ void MavlinkBase::Do(void)
     if (!connected()) {
         //Init();
         inject_radio_status = false;
-        radio_status_tlast_ms = millis32() + 1000;
+        radio_status_tlast_ms = tnow_ms + 1000;
     }
 
     if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+    if (Setup.Rx.SendRadioStatus) {
+        if ((tnow_ms - radio_status_tlast_ms) >= (1000 / Setup.Rx.SendRadioStatus)) {
+            radio_status_tlast_ms = tnow_ms;
+            if (connected()) inject_radio_status = true;
+        }
+    } else {
         radio_status_tlast_ms = tnow_ms;
-        if (connected() && Setup.Rx.SendRadioStatus) inject_radio_status = true;
     }
 
     if (inject_rc_channels) { // && serial.tx_is_empty()) { // give it priority
@@ -205,7 +209,7 @@ uint8_t rssi, remrssi, txbuf, noise;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
     txbuf = 100;
-    if (Setup.Rx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF) {
+    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
         // method C
         uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
         uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
