@@ -62,9 +62,9 @@ void ClockBase::Reset(void)
     if (!CLOCK_PERIOD_10US) while (1) {}
 
     __disable_irq();
-    CLOCK_TIMx->CNT = 0;
-    CLOCK_TIMx->CCR1 = CLOCK_PERIOD_10US;
-    CLOCK_TIMx->CCR3 = CLOCK_SHIFT_10US;
+    uint32_t CNT = CLOCK_TIMx->CNT;
+    CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
+    CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
     LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
     LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
     __enable_irq();
