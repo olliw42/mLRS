@@ -43,7 +43,7 @@ class ClockBase
     void init_isr_off(void);
     void enable_isr(void);
 
-    uint32_t tim_10us(void);
+    uint16_t tim_10us(void);
 };
 
 
@@ -93,7 +93,7 @@ void ClockBase::enable_isr(void)
 }
 
 
-uint32_t ClockBase::tim_10us(void)
+uint16_t ClockBase::tim_10us(void)
 {
     return CLOCK_TIMx->CNT;
 }
