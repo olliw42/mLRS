@@ -13,6 +13,7 @@
 // we use a 10us time base, so that overrun is 655 ms
 // 65 ms would only be 3 packets
 // I have tested it with 1us time base, and it also works fine, but hey
+// Note that TIM2 may be 16 bit or 32 bit depending on which STM32 controller is used
 
 
 // TIM1, TIM4 may be used by buzzer
@@ -42,7 +43,7 @@ class ClockBase
     void init_isr_off(void);
     void enable_isr(void);
 
-    uint16_t tim_10us(void);
+    uint32_t tim_10us(void);
 };
 
 
@@ -61,9 +62,9 @@ void ClockBase::Reset(void)
     if (!CLOCK_PERIOD_10US) while (1) {}
 
     __disable_irq();
-    uint16_t CNT = CLOCK_TIMx->CNT;
-    CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
-    CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
+    CLOCK_TIMx->CNT = 0;
+    CLOCK_TIMx->CCR1 = CLOCK_PERIOD_10US;
+    CLOCK_TIMx->CCR3 = CLOCK_SHIFT_10US;
     LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
     LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
     __enable_irq();
@@ -72,7 +73,7 @@ void ClockBase::Reset(void)
 
 void ClockBase::init_isr_off(void)
 {
-    tim_init_up(CLOCK_TIMx, 0xFFFF, TIMER_BASE_10US);
+    tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US);
 
     LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
     TIM_OC_InitStruct.CompareValue = 100; // start in 1 ms;
@@ -92,7 +93,7 @@ void ClockBase::enable_isr(void)
 }
 
 
-uint16_t ClockBase::tim_10us(void)
+uint32_t ClockBase::tim_10us(void)
 {
     return CLOCK_TIMx->CNT;
 }
