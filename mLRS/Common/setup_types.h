@@ -72,8 +72,6 @@ typedef enum {
 
 typedef enum {
     SEND_RADIO_STATUS_OFF = 0,
-//    SEND_RADIO_STATUS_ON,
-//    SEND_RADIO_STATUS_ON_W_TXBUF,
     SEND_RADIO_STATUS_1HZ,
     SEND_RADIO_STATUS_2HZ,
     SEND_RADIO_STATUS_3HZ,
@@ -218,7 +216,7 @@ typedef struct
     uint8_t CliLineEnd;
 
     uint8_t spare[9];
-} tTxSetup;
+} tTxSetup; // 20 bytes
 
 
 typedef struct
@@ -240,7 +238,7 @@ typedef struct
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
-} tRxSetup;
+} tRxSetup; // 36 bytes
 
 
 #define SETUP_MARKER_STR      "SetupStartMarker"

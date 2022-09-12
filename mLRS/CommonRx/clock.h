@@ -62,7 +62,7 @@ void ClockBase::Reset(void)
     if (!CLOCK_PERIOD_10US) while (1) {}
 
     __disable_irq();
-    uint32_t CNT = CLOCK_TIMx->CNT;
+    uint32_t CNT = CLOCK_TIMx->CNT; // works for both 16 and 32 bit timer
     CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
     CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
     LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
@@ -73,7 +73,7 @@ void ClockBase::Reset(void)
 
 void ClockBase::init_isr_off(void)
 {
-    tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US);
+    tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US); // works for both 16 and 32 bit timer
 
     LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
     TIM_OC_InitStruct.CompareValue = 100; // start in 1 ms;
@@ -95,7 +95,7 @@ void ClockBase::enable_isr(void)
 
 uint16_t ClockBase::tim_10us(void)
 {
-    return CLOCK_TIMx->CNT;
+    return CLOCK_TIMx->CNT; // return 16 bit even for 32 bit timer
 }
 
 
@@ -107,14 +107,14 @@ IRQHANDLER(
 void CLOCK_IRQHandler(void)
 {
     if (LL_TIM_IsActiveFlag_CC1(CLOCK_TIMx)) { // this is at about when RX was or was supposed to be received
-      LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
-      CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US; // next doPostReceive
-      CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US; // next tick
-      //LED_GREEN_ON;
+        LL_TIM_ClearFlag_CC1(CLOCK_TIMx);
+        CLOCK_TIMx->CCR3 = CLOCK_TIMx->CCR1 + CLOCK_SHIFT_10US; // next doPostReceive
+        CLOCK_TIMx->CCR1 = CLOCK_TIMx->CCR1 + CLOCK_PERIOD_10US; // next tick
+        //LED_GREEN_ON;
     }
     if (LL_TIM_IsActiveFlag_CC3(CLOCK_TIMx)) { // this is 1 ms after RX was or was supposed to be received
-      LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
-      doPostReceive = true;
+        LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
+        doPostReceive = true;
     }
 })
 

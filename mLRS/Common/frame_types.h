@@ -242,7 +242,7 @@ typedef struct
     uint8_t Buzzer_allowed_mask;
 
     uint8_t spare3[8];
-}) tRxCmdFrameRxSetupData; // 82
+}) tRxCmdFrameRxSetupData; // 82 bytes
 
 
 // send from Tx to do SET_RX_PARAMS
@@ -257,10 +257,10 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
 
-    tCmdFrameRxParameters RxParams;
+    tCmdFrameRxParameters RxParams; // 24 bytes
 
     uint8_t spare3[31];
-}) tTxCmdFrameRxParams; // 64
+}) tTxCmdFrameRxParams; // 64 bytes
 
 
 // for type casting to get the header
@@ -268,7 +268,7 @@ PACKED(
 typedef struct
 {
     uint8_t cmd;
-}) tCmdFrameHeader; // 1
+}) tCmdFrameHeader; // 1 byte
 
 
 
