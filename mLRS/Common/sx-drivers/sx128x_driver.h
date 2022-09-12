@@ -96,8 +96,8 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM + 18;
 
-    if (power_sx < SX1280_POWER_m18_DBM) power_sx = SX1280_POWER_m18_DBM;
-    if (power_sx > SX1280_POWER_12p5_DBM) power_sx = SX1280_POWER_12p5_DBM;
+    if (power_sx < SX1280_POWER_MIN) power_sx = SX1280_POWER_MIN;
+    if (power_sx > SX1280_POWER_MAX) power_sx = SX1280_POWER_MAX;
     if (power_sx > POWER_SX1280_MAX_DBM) power_sx = POWER_SX1280_MAX_DBM;
 
     *sx_power = power_sx;
