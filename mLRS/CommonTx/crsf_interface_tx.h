@@ -535,10 +535,19 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
     // these are for crsf telemetry, some are also for passthrough
 
+    case FASTMAVLINK_MSG_ID_TUNNEL: {
+        fmav_tunnel_t payload;
+        fmav_msg_tunnel_decode(&payload, msg);
+        if (payload.payload_type == 34567) {
+            passthrough.handle_mavlink_msg_passthrough_array(&payload);
+        }
+        }break;
+
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
         handle_mavlink_msg_battery_status(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_battery_status(&payload);
         }break;
 
@@ -546,6 +555,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_attitude_t payload;
         fmav_msg_attitude_decode(&payload, msg);
         handle_mavlink_msg_attitude(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_attitude(&payload);
         }break;
 
@@ -553,6 +563,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_gps_raw_int_t payload;
         fmav_msg_gps_raw_int_decode(&payload, msg);
         handle_mavlink_msg_gps_raw_int(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_gps_raw_int(&payload);
         }break;
 
@@ -566,6 +577,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_vfr_hud_t payload;
         fmav_msg_vfr_hud_decode(&payload, msg);
         handle_mavlink_msg_vfr_hud(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_vfr_hud(&payload);
         }break;
 
@@ -573,66 +585,77 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_global_position_int_t payload;
         fmav_msg_global_position_int_decode(&payload, msg);
         handle_mavlink_msg_global_position_int(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_global_position_int(&payload);
         }break;
 
     // these are for passthrough only
 
     case FASTMAVLINK_MSG_ID_HEARTBEAT: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_heartbeat_t payload;
         fmav_msg_heartbeat_decode(&payload, msg);
         passthrough.handle_mavlink_msg_heartbeat(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_SYS_STATUS: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_sys_status_t payload;
         fmav_msg_sys_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_sys_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RAW_IMU: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_raw_imu_t payload;
         fmav_msg_raw_imu_decode(&payload, msg);
         passthrough.handle_mavlink_msg_raw_imu(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_MISSION_CURRENT: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_mission_current_t payload;
         fmav_msg_mission_current_decode(&payload, msg);
         passthrough.handle_mavlink_msg_mission_current(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_nav_controller_output_t payload;
         fmav_msg_nav_controller_output_decode(&payload, msg);
         passthrough.handle_mavlink_msg_nav_controller_output(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_TERRAIN_REPORT: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_terrain_report_t payload;
         fmav_msg_terrain_report_decode(&payload, msg);
         passthrough.handle_mavlink_msg_terrain_report(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_FENCE_STATUS: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_fence_status_t payload;
         fmav_msg_fence_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_fence_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RANGEFINDER: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_rangefinder_t payload;
         fmav_msg_rangefinder_decode(&payload, msg);
         passthrough.handle_mavlink_msg_rangefinder(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RPM: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_rpm_t payload;
         fmav_msg_rpm_decode(&payload, msg);
         passthrough.handle_mavlink_msg_rpm(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_HOME_POSITION: {
+        if (passthrough.passthrough_array_is_receiving) break;
         fmav_home_position_t payload;
         fmav_msg_home_position_decode(&payload, msg);
         passthrough.handle_mavlink_msg_home_position(&payload);
