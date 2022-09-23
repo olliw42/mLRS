@@ -142,5 +142,6 @@ You find more documentation on the following pages:
 - [Binding](docs/BINDING.md)
 - [Configuration Parameters](docs/PARAMETERS.md)
 - [CLI Commands](docs/CLI.md)
-- Set up [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
-- Set up [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
+- Setup for [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
+- Setup for [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
+- Basic setup for [SBus Radios](docs/BASIC_SETUP.md)

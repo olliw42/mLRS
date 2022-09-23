@@ -4,9 +4,11 @@
 
 This page describes how to set up a mLRS system for EdgeTx/OpenTx radios, such that you get the usual CRSF telemetry sensors and can use the Yaapu telemetry app.
 
-Two things need to be done, (1) the mLRS Tx module needs to be put into "CRSF mode", and (2) the flight controller needs to be set up to send a MAVLink stream with the desired MAVLink messages. 
+Two things need to be done, (1) the mLRS Tx module needs to be put into "CRSF mode", and (2) the flight controller needs to be set up to send a MAVLink stream with the desired MAVLink messages.
 
 In principle, there is no specific configuration of the mLRS receiver neccessary. It is however recommended to set the receiver into "mavlink mode", as described below.
+
+Note: Any radio which supports CRSF should work. This should include many brands besides EdgeTx/OpenTx radios.
 
 Note: An ArduPilot flight controller is assumed. For PX4 and iNav it needs to be tested and seen.
 
@@ -55,15 +57,19 @@ For my Matek H743 board the configuration is:
 
 These configurations are not strictly neccesary, but recommended.
 
+- Rx Out Mode = crsf
 - Rx Ser Link Mode = mavlink
 - Rx Snd RadioStat = w txbuf
 
 
 ## OpenTx and Yaapu Telemetry App
 
-In EdgeTx/OpenTx go as usual to MDL->TELEMETRY and start "Discover new sensors". You should see then plenty of sensors appearing.
+The radio needs to be set up for CRSF. This however proceeds exactly as described in common tutorials.
+
+In EdgeTx/OpenTx go as usual to MDL->TELEMETRY and start "Discover new sensors". You should then see plenty of sensors appearing.
 
 Install the Yaapu app exactly as described in its wiki. Note: You need to install the dev version, the stable release version does not work. You can check if all is good by running the "Yaapu Debug CRSF" script in SYS->TOOLS.
+
 
 
 
