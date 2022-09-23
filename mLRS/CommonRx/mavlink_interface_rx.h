@@ -311,7 +311,5 @@ void MavlinkBase::generate_radio_rc_channels(void)
         &status_serial_out);
 }
 
-}
-
 
 #endif // MAVLINK_INTERFACE_RX_H
