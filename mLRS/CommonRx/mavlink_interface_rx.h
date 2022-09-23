@@ -36,7 +36,8 @@ class MavlinkBase
   private:
     void generate_radio_status(void);
     void generate_rc_channels_override(void);
-    void generate_rc_channels(void);
+    //void generate_rc_channels(void);
+    void generate_radio_rc_channels(void);
     void send_msg_serial_out(void);
 
     fmav_status_t status_link_in;
@@ -56,6 +57,7 @@ class MavlinkBase
     // to inject RC_CHANNELS_OVERRDIE, RC_CHANNELS
     bool inject_rc_channels;
     uint16_t rc_chan[16]; // holds the rc data in MAVLink format
+    bool rc_failsafe;
 };
 
 
@@ -74,6 +76,7 @@ void MavlinkBase::Init(void)
 
     inject_rc_channels = false;
     for (uint8_t i = 0; i < 16; i++) rc_chan[i] = 0;
+    rc_failsafe = false;
 }
 
 
@@ -109,6 +112,7 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
     rc_chan[15] = (((int32_t)(rc_out->ch[15]) - 1024) * 1200) / 2047 + 1500;
 */
     for (uint8_t i = 0; i < 16; i++) rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+    rc_failsafe = failsafe;
 
     inject_rc_channels = true;
 }
@@ -135,6 +139,8 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
+    // TODO: either the buffer must be guaranteed to be large, or wee need to check filling
+
     if (inject_rc_channels) { // && serial.tx_is_empty()) { // give it priority
         inject_rc_channels = false;
         switch (Setup.Rx.SendRcChannels) {
@@ -143,7 +149,8 @@ void MavlinkBase::Do(void)
             send_msg_serial_out();
             break;
         case SEND_RC_CHANNELS_RCCHANNELS:
-            generate_rc_channels();
+            //generate_rc_channels();
+            generate_radio_rc_channels();
             send_msg_serial_out();
             break;
         }
@@ -258,7 +265,7 @@ void MavlinkBase::generate_rc_channels_override(void)
         0, 0, // we do not know the sysid, compid of the flight controller
         rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
         rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
-        0,0,
+        0, 0,
         // uint8_t target_system, uint8_t target_component,
         // uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
         // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
@@ -266,7 +273,7 @@ void MavlinkBase::generate_rc_channels_override(void)
         &status_serial_out);
 }
 
-
+/*
 void MavlinkBase::generate_rc_channels(void)
 {
     fmav_msg_rc_channels_pack(
@@ -284,6 +291,26 @@ void MavlinkBase::generate_rc_channels(void)
         // uint16_t chan17_raw, uint16_t chan18_raw,
         // uint8_t rssi,
         &status_serial_out);
+}*/
+
+void MavlinkBase::generate_radio_rc_channels(void)
+{
+    uint16_t channels[18];
+    memcpy(channels, rc_chan, 16*2);
+    channels[16] = 0;
+    channels[17] = 0;
+
+    uint8_t flags = 0;
+    if (rc_failsafe) flags |= RADIO_RC_CHANNELS_FLAGS_FAILSAFE;
+
+    fmav_msg_radio_rc_channels_pack(
+        &msg_serial_out,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+        16, flags, channels,
+        //uint8_t count, uint8_t flags, const uint16_t* channels,
+        &status_serial_out);
+}
+
 }
 
 
