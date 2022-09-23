@@ -7,8 +7,8 @@
 // Mavlink
 //*******************************************************
 #pragma once
-#ifndef FASMAVLINK_EXTENSION_H
-#define FASMAVLINK_EXTENSION_H
+#ifndef FASTMAVLINK_EXTENSION_H
+#define FASTMAVLINK_EXTENSION_H
 
 
 typedef struct {
@@ -106,4 +106,4 @@ class ComponentList
 };
 
 
-#endif // FASMAVLINK_EXTENSION_H
+#endif // FASTMAVLINK_EXTENSION_H
