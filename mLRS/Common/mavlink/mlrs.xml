@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <mavlink>
-  <include>../../modules/mavlink/external/dialects/storm32.xml</include>
-  <include>../../modules/mavlink/message_definitions/v1.0/ardupilotmega.xml</include>
+  <include>../../modules/mavlink/message_definitions/v1.0/all.xml</include>
   <dialect>0</dialect>
   <messages>
     <message id="60049" name="LINK_NODE_FLOW_CONTROL">
