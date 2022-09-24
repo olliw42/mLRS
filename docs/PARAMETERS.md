@@ -106,11 +106,11 @@ Selects how the serial data stream is processed.
 Can be "transp.", "mavlink".
 
 #### Rx Snd RadioStat #### 
-Determines if a MAVLink RADIO_STATUS message is emitted by the receiver, and what txbuf mechanism is used. Effective only when "Rx Ser Link Mode" = "mavlink". 
-Can be "off", "on", "on w txbuf".
+Determines if a MAVLink RADIO_STATUS or RADIO_LINK_FLOW_CONTROL message is emitted by the receiver, and what txbuf mechanism is used. Effective only when "Rx Ser Link Mode" = "mavlink". 
+Can be "off", "on", "on w txbuf". A RADIO_LINK_FLOW_CONTROLis emitted if "Rx Snd RcChannel" is set to "rc channels".
 
 #### Rx Snd RcChannel #### 
-Determines if a MAVLink RC_CHANNELS_OVERRIDE or RC_CHANNELS message is emitted by the receiver. Effective only when "Rx Ser Link Mode" = "mavlink". 
+Determines if a MAVLink RC_CHANNELS_OVERRIDE or RADIO_RC_CHANNELS message is emitted by the receiver. Effective only when "Rx Ser Link Mode" = "mavlink". 
 Can be "off", "rc override", "rc channels".
 
 #### Rx Buzzer #### 

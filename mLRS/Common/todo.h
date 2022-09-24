@@ -9,6 +9,8 @@
 /*
 
 ISSUES:
+- we should take into account in rssi scaling a LNA as well as the db min for a board & setting
+
 - sx Init implicitly uses Config, would be nicer to have this disentangled
 
 - setup per model

@@ -53,6 +53,9 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 //
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L483-L510
 //   -120 ... -50 -> 0 .. 254
+//
+// ArduPilot wants to have it in range 0..254, which it scales to 0.0..1.0, 255 gets 0.0
+// TODO: we should take into account in the scaling a LNA as well as the db min for a board & setting
 uint8_t rssi_i8_to_ap(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
