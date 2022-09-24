@@ -129,6 +129,7 @@ uint16_t rc_from_crsf(uint16_t crsf_ch);
 uint16_t rc_to_sbus(uint16_t rc_ch);
 uint16_t rc_to_crsf(uint16_t rc_ch);
 uint16_t rc_to_mavlink(uint16_t rc_ch);
+int16_t rc_to_mavlink_13bcentered(uint16_t rc_ch);
 
 
 //-- crsf

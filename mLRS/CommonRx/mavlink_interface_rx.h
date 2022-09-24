@@ -57,6 +57,7 @@ class MavlinkBase
     // to inject RC_CHANNELS_OVERRDIE, RC_CHANNELS
     bool inject_rc_channels;
     uint16_t rc_chan[16]; // holds the rc data in MAVLink format
+    int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
 };
 
@@ -75,7 +76,7 @@ void MavlinkBase::Init(void)
     bytes_serial_in = 0;
 
     inject_rc_channels = false;
-    for (uint8_t i = 0; i < 16; i++) rc_chan[i] = 0;
+    for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
 }
 
@@ -111,7 +112,10 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
     rc_chan[14] = (((int32_t)(rc_out->ch[14]) - 1024) * 1200) / 2047 + 1500;
     rc_chan[15] = (((int32_t)(rc_out->ch[15]) - 1024) * 1200) / 2047 + 1500;
 */
-    for (uint8_t i = 0; i < 16; i++) rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+    for (uint8_t i = 0; i < 16; i++) {
+        rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+        rc_chan_13b[i] = rc_to_mavlink_13bcentered(rc_out->ch[i]);
+    }
     rc_failsafe = failsafe;
 
     inject_rc_channels = true;
@@ -295,10 +299,16 @@ void MavlinkBase::generate_rc_channels(void)
 
 void MavlinkBase::generate_radio_rc_channels(void)
 {
-    uint16_t channels[18];
-    memcpy(channels, rc_chan, 16*2);
+    int16_t channels[24]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 24
+    memcpy(channels, rc_chan_13b, 16*2);
     channels[16] = 0;
     channels[17] = 0;
+    channels[18] = 0;
+    channels[19] = 0;
+    channels[20] = 0;
+    channels[21] = 0;
+    channels[22] = 0;
+    channels[23] = 0;
 
     uint8_t flags = 0;
     if (rc_failsafe) flags |= RADIO_RC_CHANNELS_FLAGS_FAILSAFE;
@@ -307,7 +317,7 @@ void MavlinkBase::generate_radio_rc_channels(void)
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         16, flags, channels,
-        //uint8_t count, uint8_t flags, const uint16_t* channels,
+        //uint8_t count, uint8_t flags, const int16_t* channels,
         &status_serial_out);
 }
 

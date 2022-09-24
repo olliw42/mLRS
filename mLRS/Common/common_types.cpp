@@ -120,6 +120,13 @@ uint16_t rc_to_mavlink(uint16_t rc_ch)
 }
 
 
+int16_t rc_to_mavlink_13bcentered(uint16_t rc_ch)
+{
+//    return ((int32_t)(rc_ch) - 1024) * 4;
+    return (((int32_t)(rc_ch) - 1024) * 15) / 4; // let's mimic rc_to_mavlink()
+}
+
+
 //-- crsf
 
 uint8_t crsf_cvt_power(int8_t power_dbm)
