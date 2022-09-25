@@ -100,24 +100,7 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
             return;
         }
     }
-/*
-    rc_chan[0] = (((int32_t)(rc_out->ch[0]) - 1024) * 1200) / 2047 + 1500; // 1200 = 1920 * 5/8
-    rc_chan[1] = (((int32_t)(rc_out->ch[1]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[2] = (((int32_t)(rc_out->ch[2]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[3] = (((int32_t)(rc_out->ch[3]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[4] = (((int32_t)(rc_out->ch[4]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[5] = (((int32_t)(rc_out->ch[5]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[6] = (((int32_t)(rc_out->ch[6]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[7] = (((int32_t)(rc_out->ch[7]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[8] = (((int32_t)(rc_out->ch[8]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[9] = (((int32_t)(rc_out->ch[9]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[10] = (((int32_t)(rc_out->ch[10]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[11] = (((int32_t)(rc_out->ch[11]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[12] = (((int32_t)(rc_out->ch[12]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[13] = (((int32_t)(rc_out->ch[13]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[14] = (((int32_t)(rc_out->ch[14]) - 1024) * 1200) / 2047 + 1500;
-    rc_chan[15] = (((int32_t)(rc_out->ch[15]) - 1024) * 1200) / 2047 + 1500;
-*/
+
     for (uint8_t i = 0; i < 16; i++) {
         rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
         rc_chan_13b[i] = rc_to_mavlink_13bcentered(rc_out->ch[i]);
@@ -343,25 +326,6 @@ void MavlinkBase::generate_rc_channels_override(void)
         &status_serial_out);
 }
 
-/*
-void MavlinkBase::generate_rc_channels(void)
-{
-    fmav_msg_rc_channels_pack(
-        &msg_serial_out,
-        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        millis32(),
-        16,
-        rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
-        rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
-        0,0,
-        0,
-        // uint32_t time_boot_ms, uint8_t chancount,
-        // uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
-        // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
-        // uint16_t chan17_raw, uint16_t chan18_raw,
-        // uint8_t rssi,
-        &status_serial_out);
-}*/
 
 void MavlinkBase::generate_radio_rc_channels(void)
 {
