@@ -132,7 +132,7 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
-    // TODO: either the buffer must be guaranteed to be large, or wee need to check filling
+    // TODO: either the buffer must be guaranteed to be large, or we need to check filling
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
@@ -354,7 +354,9 @@ void MavlinkBase::generate_radio_rc_channels(void)
 
 void MavlinkBase::generate_radio_link_stats(void)
 {
-uint8_t rx_rssi1, rx_rssi2, tx_rssi;
+uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
+
+    flags = 0; // rssi are in MAVLink units
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
         rx_rssi1 = rssi_i8_to_ap(stats.last_rx_rssi1);
@@ -372,6 +374,8 @@ uint8_t rx_rssi1, rx_rssi2, tx_rssi;
     fmav_msg_radio_link_stats_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+
+        flags,
 
         // rx stats
         rxstats.GetLQ(), // uint8_t rx_LQ
@@ -391,6 +395,7 @@ uint8_t rx_rssi1, rx_rssi2, tx_rssi;
         UINT8_MAX, //stats.received_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_receive_antenna
         UINT8_MAX, //stats.received_transmit_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_transmit_antenna
 
+        //uint8_t flags,
         //uint8_t rx_LQ, uint8_t rx_rssi1, int8_t rx_snr1, uint8_t rx_rssi2, int8_t rx_snr2,
         //uint8_t rx_receive_antenna, uint8_t rx_transmit_antenna,
         //uint8_t tx_LQ, uint8_t tx_rssi1, int8_t tx_snr1, uint8_t tx_rssi2, int8_t tx_snr2,
