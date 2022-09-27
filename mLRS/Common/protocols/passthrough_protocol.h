@@ -106,7 +106,7 @@ class tPassThrough
         GPS_STATUS_0x5002,        // 0x5002 GPS status (sats,fix,hdop,altitude_MSL)
         BATT_1_0x5003,            // 0x5003 battery 1 (voltage,current,mAh)
         HOME_0x5004,              // 0x5004 home (distance,altitude_rel,direction)
-        VEL_YAW_0x5005,            // 0x5005 velocity and yaw (climbspeed,speed,yaw,flag for groundspeed/airspeed)
+        VEL_YAW_0x5005,           // 0x5005 velocity and yaw (climbspeed,speed,yaw,flag for groundspeed/airspeed)
         ATTITUDE_RANGE_0x5006,    // 0x5006 attitude and range (roll,pitch,rangefinder_distance)
         PARAM_0x5007,             // 0x5007 parameters
         BATT_2_0x5008,            // 0x5008 battery 2 (voltage,current,mAh)
@@ -574,7 +574,7 @@ bool tPassThrough::get_Home_0x5004(uint32_t* data)
     int32_t pt_direction = direction_i16;
 
     *data = 0;
-   pt_pack32(data, prep_number(roundf(pt_distance), 3, 2), 0, 12);
+    pt_pack32(data, prep_number(roundf(pt_distance), 3, 2), 0, 12);
     pt_pack32(data, prep_number(roundf(pt_altitude_rel), 3, 2), 12, 12+1); // + sign bit
     pt_pack32(data, pt_direction, 25, 7);
 
