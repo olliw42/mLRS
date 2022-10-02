@@ -12,6 +12,7 @@
 
 
 #include "../Common/hal/hal.h" // not needed but helps editor to get defines correct LOL
+#include "../Common/micros.h"
 
 
 //-------------------------------------------------------
@@ -57,7 +58,7 @@ class tPin5BridgeBase
 
     void TelemetryStart(void);
     void TelemetryTick_ms(void);
-    bool TelemetryUpdateState(uint8_t* state);
+    bool TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_t telemetry_state_max);
 
     // interface to the uart hardware peripheral used for the bridge
     void pin5_tx_enable(bool enable_flag);
@@ -69,6 +70,13 @@ class tPin5BridgeBase
     // for in-isr processing
     virtual void parse_nextchar(uint8_t c, uint16_t tnow_us);
     virtual bool transmit_start(void); // returns true if transmission should be started
+
+    // actual isr functions
+    void uart_rx_callback(uint8_t c);
+    void uart_tc_callback(void);
+
+    // helper
+    virtual bool is_empty(void) { return true; }
 
     typedef enum {
         STATE_IDLE = 0,
@@ -149,19 +157,19 @@ void tPin5BridgeBase::TelemetryTick_ms(void)
 }
 
 
-bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* state)
+bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_t telemetry_state_max)
 {
     if (telemetry_start_next_tick) {
         telemetry_start_next_tick = false;
         telemetry_state = 1; // start
     }
 
-   *state = telemetry_state;
+   *curr_telemetry_state = telemetry_state;
 
-    if (telemetry_state && telemetry_tick_next) {
+    if (telemetry_state && telemetry_tick_next && is_empty()) {
         telemetry_tick_next = false;
         telemetry_state++;
-        if (telemetry_state > 15) telemetry_state = 0; // stop
+        if (telemetry_state > telemetry_state_max) telemetry_state = 0; // stop
         return true;
     }
 
@@ -187,6 +195,30 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
   }
 }
 
+
+// we do not add a delay here before we transmit
+// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+
+void tPin5BridgeBase::uart_rx_callback(uint8_t c)
+{
+    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
+        state = STATE_IDLE;
+    }
+
+    uint16_t tnow_us = micros();
+    parse_nextchar(c, tnow_us);
+
+    if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
+        pin5_tx_start();
+    }
+}
+
+
+void tPin5BridgeBase::uart_tc_callback(void)
+{
+    pin5_tx_enable(false); // switches on rx
+    state = STATE_IDLE;
+}
 
 
 #endif // JRPIN5_INTERFACE_H

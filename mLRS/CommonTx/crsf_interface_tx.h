@@ -35,24 +35,35 @@ typedef enum {
 } TXCRSF_SEND_ENUM;
 
 
+typedef enum {
+    TXCRSF_CMD_MODELID_SET = 0,
+    TXCRSF_CMD_MBRIDGE_IN,
+} TXCRSF_CMD_ENUM;
+
+
 class tTxCrsf : public tPin5BridgeBase
 {
   public:
     void Init(bool enable_flag);
-    bool Update(tRcData* rc);
+    bool ChannelsUpdated(tRcData* rc);
+    bool TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms);
+
+    bool CommandReceived(uint8_t* cmd);
+    uint8_t* GetCmdDataPtr(void);
+
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
     void SendFrame(const uint8_t frame_id, void* payload, const uint8_t len);
 
+    void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
+    void SendTelemetryFrame(void);
+
     // helper
-    void Clear(void);
-    bool IsEmpty(void);
-    bool IsChannelData(void);
+    bool is_empty(void) override;
+    uint8_t crc8(const uint8_t* buf);
 
     // for in-isr processing
-    void uart_rx_callback(uint8_t c);
-    void uart_tc_callback(void);
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
     bool transmit_start(void) override; // returns true if transmission should be started
 
@@ -60,18 +71,13 @@ class tTxCrsf : public tPin5BridgeBase
 
     uint8_t frame[128];
 
-    volatile bool frame_received;
-
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
     uint8_t tx_frame[128];
 
-    uint8_t crc8(const uint8_t* buf);
+    volatile bool channels_received;
     void fill_rcdata(tRcData* rc);
 
-    // telemetry handling
-    bool TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms);
-    void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
-    void SendTelemetryFrame(void);
+    volatile bool cmd_received;
 
     // crsf telemetry
 
@@ -117,31 +123,6 @@ void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
 void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
 
 
-// we do not add a delay here before we transmit
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
-
-void tTxCrsf::uart_rx_callback(uint8_t c)
-{
-    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
-        state = STATE_IDLE;
-    }
-
-    uint16_t tnow_us = micros();
-    parse_nextchar(c, tnow_us);
-
-    if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        pin5_tx_start();
-    }
-}
-
-
-void tTxCrsf::uart_tc_callback(void)
-{
-    pin5_tx_enable(false); // switches on rx
-    state = STATE_IDLE;
-}
-
-
 bool tTxCrsf::transmit_start(void)
 {
     if (state < STATE_TRANSMIT_START) return false; // we are in receiving
@@ -163,114 +144,6 @@ bool tTxCrsf::transmit_start(void)
     return true;
 }
 
-
-//-------------------------------------------------------
-// Crsf user interface
-
-void tTxCrsf::Init(bool enable_flag)
-{
-    enabled = enable_flag;
-
-    if (!enabled) return;
-
-    uart_rx_callback_ptr = &crsf_uart_rx_callback;
-    uart_tc_callback_ptr = &crsf_uart_tc_callback;
-
-    tPin5BridgeBase::Init();
-
-    frame_received = false;
-    tx_available = 0;
-
-    battery_updated = false;
-    attitude_updated = false;
-    gps_raw_int_sat = UINT8_MAX; // unknown
-    gps2_raw_sat = UINT8_MAX; // unknown
-    vfr_hud_groundspd_mps = NAN; // unknown
-    gps_updated = false;
-    vario_updated = false;
-    baro_altitude_updated = false;
-
-    vehicle_sysid = 0;
-    passthrough.Init();
-}
-
-
-void tTxCrsf::Clear(void)
-{
-    frame_received = false;
-    tx_available = 0;
-}
-
-
-bool tTxCrsf::Update(tRcData* rc)
-{
-    if (!enabled) return false;
-    if (!frame_received) return false;
-    frame_received = false;
-
-    tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
-
-    // command model select id
-    if (header->address == CRSF_OPENTX_SYNC) {
-//dbg.puts("\ncrsf sync");
-        if (header->frame_id == CRSF_FRAME_ID_COMMAND && header->cmd_id == CRSF_COMMAND_ID &&
-            header->cmd == CRSF_COMMAND_MODEL_SELECT_ID) {
-//dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(header->cmd_data[0]));
-        }
-        return false;
-    }
-
-    // update channels
-    if (header->frame_id == CRSF_FRAME_ID_CHANNELS) {
-        fill_rcdata(rc);
-        return true;
-    }
-
-    return false;
-}
-
-
-//-------------------------------------------------------
-// CRSF Telemetry
-
-bool tTxCrsf::TelemetryUpdate(uint8_t* packet_idx, uint16_t frame_rate_ms)
-{
-    if (!enabled) return false;
-
-    if (telemetry_start_next_tick) { // start a new cycle
-        telemetry_start_next_tick = false;
-        telemetry_state = 1; // start
-    }
-
-    bool ret = false;
-
-    if (telemetry_state && telemetry_tick_next && IsEmpty()) { // time for the next frame
-        telemetry_tick_next = false;
-
-        int16_t telemetry_state_max = (frame_rate_ms - 7);
-        if (telemetry_state_max > 30) telemetry_state_max = 30;
-
-        switch (telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
-            case 1: *packet_idx = TXCRSF_SEND_LINK_STATISTICS; ret = true; break;
-            case 5: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_TX; ret = true; break;
-            case 9: *packet_idx = TXCRSF_SEND_LINK_STATISTICS_RX; ret = true; break;
-            case 13: *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; break;
-            // don't do this if 50 Hz
-            // we need to get them called frequently enough, since there are potentially already "plenty" of native crsf frames
-            case 17: case 21: case 25: case 29:
-                if (telemetry_state <= telemetry_state_max) { *packet_idx = TXCRSF_SEND_TELEMETRY_FRAME; ret = true; }
-                break;
-        }
-        telemetry_state++;
-        if (telemetry_state > telemetry_state_max) telemetry_state = 0; // stop
-    }
-
-    return ret;
-}
-
-
-//-------------------------------------------------------
-// CRSF Bridge
 
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
@@ -313,29 +186,16 @@ void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
         break;
     case STATE_RECEIVE_CRSF_CRC:
         frame[cnt++] = c;
-        // let's just ignore it
-        frame_received = true;
+        // let's just ignore the crc
+        //if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
+        if (((tCrsfFrameHeader*)frame)->frame_id == CRSF_FRAME_ID_CHANNELS) {
+            channels_received = true;
+        } else {
+            cmd_received = true;
+        }
         state = STATE_TRANSMIT_START;
         break;
     }
-}
-
-
-uint8_t tTxCrsf::crc8(const uint8_t* buf)
-{
-    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
-}
-
-
-bool tTxCrsf::IsEmpty(void)
-{
-    return (tx_available == 0);
-}
-
-
-bool tTxCrsf::IsChannelData(void)
-{
-    return (frame[2] == CRSF_FRAME_ID_CHANNELS);
 }
 
 
@@ -368,6 +228,121 @@ tCrsfChannelBuffer buf;
     rc->ch[13] = rc_from_crsf(buf.ch13);
     rc->ch[14] = rc_from_crsf(buf.ch14);
     rc->ch[15] = rc_from_crsf(buf.ch15);
+}
+
+
+//-------------------------------------------------------
+// Crsf user interface
+
+void tTxCrsf::Init(bool enable_flag)
+{
+    enabled = enable_flag;
+
+    if (!enabled) return;
+
+    uart_rx_callback_ptr = &crsf_uart_rx_callback;
+    uart_tc_callback_ptr = &crsf_uart_tc_callback;
+
+    tPin5BridgeBase::Init();
+
+    tx_available = 0;
+    channels_received = false;
+    cmd_received = false;
+
+    battery_updated = false;
+    attitude_updated = false;
+    gps_raw_int_sat = UINT8_MAX; // unknown
+    gps2_raw_sat = UINT8_MAX; // unknown
+    vfr_hud_groundspd_mps = NAN; // unknown
+    gps_updated = false;
+    vario_updated = false;
+    baro_altitude_updated = false;
+
+    vehicle_sysid = 0;
+    passthrough.Init();
+}
+
+
+bool tTxCrsf::ChannelsUpdated(tRcData* rc)
+{
+    if (!enabled) return false;
+    if (!channels_received) return false;
+
+    channels_received = false;
+
+    fill_rcdata(rc);
+    return true;
+}
+
+
+bool tTxCrsf::is_empty(void)
+{
+    return (tx_available == 0);
+}
+
+
+bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
+{
+    if (!enabled) return false;
+
+    uint8_t telemetry_state_max = (frame_rate_ms - 7); // frame rate is 20 ms, 32 ms, 53 ms
+    if (telemetry_state_max > 30) telemetry_state_max = 30;
+
+    uint8_t curr_telemetry_state;
+
+    if (!tPin5BridgeBase::TelemetryUpdateState(&curr_telemetry_state, telemetry_state_max)) return false;
+
+    switch (curr_telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
+        case 1: *task = TXCRSF_SEND_LINK_STATISTICS; return true;
+        case 5: *task = TXCRSF_SEND_LINK_STATISTICS_TX; return true;
+        case 9: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
+        case 13: *task = TXCRSF_SEND_TELEMETRY_FRAME; return true;
+        // don't do this if 50 Hz
+        // we need to get them called frequently enough, since there are potentially already "plenty" of native crsf frames
+        case 17: case 21: case 25: case 29:
+            if (curr_telemetry_state <= telemetry_state_max) { *task = TXCRSF_SEND_TELEMETRY_FRAME; return true; }
+            break;
+    }
+
+    return false;
+}
+
+
+bool tTxCrsf::CommandReceived(uint8_t* cmd)
+{
+    if (!enabled) return false;
+    if (!cmd_received) return false;
+
+    cmd_received = false;
+
+    tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
+
+    // command model select id
+    if (header->address == CRSF_OPENTX_SYNC &&
+        header->frame_id == CRSF_FRAME_ID_COMMAND &&
+        header->cmd_id == CRSF_COMMAND_ID &&
+        header->cmd == CRSF_COMMAND_MODEL_SELECT_ID) {
+        *cmd = TXCRSF_CMD_MODELID_SET;
+        return true;
+    }
+
+    return false;
+}
+
+
+uint8_t* tTxCrsf::GetCmdDataPtr(void)
+{
+    return ((tCrsfFrameHeader*)frame)->cmd_data;
+}
+
+
+//-------------------------------------------------------
+// CRSF Bridge
+
+
+uint8_t tTxCrsf::crc8(const uint8_t* buf)
+{
+    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
 }
 
 

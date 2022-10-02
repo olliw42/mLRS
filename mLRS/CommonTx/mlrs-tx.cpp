@@ -977,11 +977,11 @@ IF_MBRIDGE(
       mbridge.TelemetryStart();
     }
     // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
-    uint8_t mbstate; uint8_t mbcmd;
-    if (mbridge.TelemetryUpdateState(&mbstate)) {
-      switch (mbstate) {
-      case 1: mbridge_send_LinkStats(); break;
-      case 6: case 9:
+    uint8_t mbtask; uint8_t mbcmd;
+    if (mbridge.TelemetryUpdate(&mbtask)) {
+      switch (mbtask) {
+      case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
+      case TXBRIDGE_SEND_CMD:
         if (mbridge.CommandInFifo(&mbcmd)) {
           switch (mbcmd) {
           case MBRIDGE_CMD_DEVICE_ITEM_TX: mbridge_send_DeviceItemTx(); break;
@@ -1032,9 +1032,16 @@ IF_MBRIDGE(
     }
 );
 IF_CRSF(
-    uint8_t packet_idx;
-    if (crsf.TelemetryUpdate(&packet_idx, Config.frame_rate_ms)) {
-      switch (packet_idx) {
+    if (crsf.ChannelsUpdated(&rcData)) {
+      // update channels
+      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
+        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+        channelOrder.Apply(&rcData);
+      }
+    }
+    uint8_t crsftask; uint8_t crsfcmd;
+    if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
+      switch (crsftask) {
       case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); break;
       case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
       case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
@@ -1043,11 +1050,11 @@ IF_CRSF(
         break;
       }
     }
-    if (crsf.Update(&rcData)) {
-      // update channels
-      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
-        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
+    if (crsf.CommandReceived(&crsfcmd)) {
+      switch (crsfcmd) {
+      case TXCRSF_CMD_MODELID_SET:
+dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
+          break;
       }
     }
 );

@@ -26,12 +26,18 @@ extern TxStatsBase txstats;
 //-------------------------------------------------------
 // Interface Implementation
 
+typedef enum {
+    TXBRIDGE_SEND_LINK_STATS = 0,
+    TXBRIDGE_SEND_CMD,
+} TXMBRIDGE_SEND_ENUM;
+
+
 class tMBridge : public tPin5BridgeBase, public tSerialBase
 {
   public:
     void Init(bool enable_flag);
     bool ChannelsUpdated(tRcData* rc);
-    bool TelemetryUpdateState(uint8_t* state);
+    bool TelemetryUpdate(uint8_t* task);
 
     bool CommandReceived(uint8_t* cmd);
     uint8_t* GetPayloadPtr(void);
@@ -43,8 +49,6 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t HandleCmd(uint8_t cmd);
 
     // for in-isr processing
-    void uart_rx_callback(uint8_t c);
-    void uart_tc_callback(void);
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
     bool transmit_start(void) override; // returns true if transmission should be started
     uint8_t send_serial(void);
@@ -92,31 +96,6 @@ tMBridge mbridge;
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
 void mbridge_uart_rx_callback(uint8_t c) { mbridge.uart_rx_callback(c); }
 void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
-
-
-// we do not add a delay here as with SpinOnce()
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
-
-void tMBridge::uart_rx_callback(uint8_t c)
-{
-    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
-        state = STATE_IDLE;
-    }
-
-    uint16_t tnow_us = micros();
-    parse_nextchar(c, tnow_us);
-
-    if (transmit_start()) {
-        pin5_tx_start();
-    }
-}
-
-
-void tMBridge::uart_tc_callback(void)
-{
-    pin5_tx_enable(false);
-    state = STATE_IDLE;
-}
 
 
 bool tMBridge::transmit_start(void)
@@ -313,10 +292,23 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 }
 
 
-bool tMBridge::TelemetryUpdateState(uint8_t* state)
+bool tMBridge::TelemetryUpdate(uint8_t* task)
 {
     if (!enabled) return false;
-    return tPin5BridgeBase::TelemetryUpdateState(state);
+
+    uint8_t curr_telemetry_state;
+
+    if (!tPin5BridgeBase::TelemetryUpdateState(&curr_telemetry_state, 15)) return false;
+
+    switch (curr_telemetry_state) {
+    case 1:
+        *task = TXBRIDGE_SEND_LINK_STATS;
+        return true;
+    case 6: case 9:
+        *task = TXBRIDGE_SEND_CMD;
+        return true;
+    }
+    return false;
 }
 
 
