@@ -34,7 +34,6 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool TelemetryUpdateState(uint8_t* state);
 
     bool CommandReceived(uint8_t* cmd);
-    void GetCommand(uint8_t* cmd, uint8_t* payload);
     uint8_t* GetPayloadPtr(void);
     void SendCommand(uint8_t cmd, uint8_t* payload);
     bool CommandInFifo(uint8_t* cmd);
@@ -52,14 +51,6 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void send_command(void);
 
     bool enabled;
-
-    typedef enum {
-        PARSE_TYPE_NONE = 0,
-        PARSE_TYPE_SERIALPACKET,
-        PARSE_TYPE_CHANNELPACKET,
-        PARSE_TYPE_COMMANDPACKET,
-    } PARSE_TYPE_ENUM;;
-    uint8_t type;
 
     volatile bool channels_received;
     tMBridgeChannelBuffer channels;
@@ -211,14 +202,12 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
         cnt = 0;
         if (c == MBRIDGE_CHANNELPACKET_STX) {
             len = MBRIDGE_CHANNELPACKET_SIZE;
-            type = PARSE_TYPE_CHANNELPACKET;
             state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
         } else
         if (c >= MBRIDGE_COMMANDPACKET_STX) {
             uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
             cmd_r2m_frame[cnt++] = cmd;
             len = mbridge_cmd_payload_len(cmd);
-            type = PARSE_TYPE_COMMANDPACKET;
             if (len == 0) {
                 cmd_received = true;
                 state = STATE_TRANSMIT_START;
@@ -231,10 +220,8 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
         } else
         if (c > 0) {
             len = c;
-            type = PARSE_TYPE_SERIALPACKET;
             state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
         } else {
-            type = PARSE_TYPE_NONE;
             state = STATE_TRANSMIT_START; // tx_len = 0, no payload
         }
         break;
@@ -302,7 +289,6 @@ void tMBridge::Init(bool enable_flag)
     tSerialBase::Init();
     tPin5BridgeBase::Init();
 
-    type = PARSE_TYPE_NONE;
     channels_received = false;
     cmd_received = false;
     cmd_m2r_available = 0;
@@ -353,13 +339,13 @@ uint8_t* tMBridge::GetPayloadPtr(void)
 }
 
 
-void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
+/* void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
 {
     *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
 
     uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
     memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
-}
+} */
 
 
 void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
