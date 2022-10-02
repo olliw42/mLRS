@@ -188,7 +188,7 @@ void init(void)
     sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
 
-    mbridge.Init(Config.UseMbridge); // these affect peripherals, hence do here
+    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
 
     __enable_irq();
@@ -986,6 +986,10 @@ IF_MBRIDGE(
         break;
       }
     }
+);
+IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
+    // handle an incoming command
+    uint8_t mbcmd;
     if (mbridge.CommandReceived(&mbcmd)) {
       switch (mbcmd) {
       case MBRIDGE_CMD_REQUEST_INFO:
@@ -1033,13 +1037,24 @@ IF_CRSF(
       }
     }
     uint8_t crsftask; uint8_t crsfcmd;
+    uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's to fast lua script gets out of sync
+    uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
       switch (crsftask) {
-      case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); break;
+      case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); do_cnt = 2; break;
       case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
       case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
       case TXCRSF_SEND_TELEMETRY_FRAME:
-        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) crsf.SendTelemetryFrame();
+        if (do_cnt && mbridge.CommandInFifo(&mbcmd)) {
+          mbridge_send_cmd(mbcmd);
+        }
+        if (mbridge.CrsfFrameAvailable(&buf, &len)) {
+            crsf.SendMBridgeFrame(buf, len);
+        } else
+        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+          crsf.SendTelemetryFrame();
+        }
+        DECl(do_cnt);
         break;
       }
     }
@@ -1047,6 +1062,10 @@ IF_CRSF(
       switch (crsfcmd) {
       case TXCRSF_CMD_MODELID_SET:
 dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
+          break;
+      case TXCRSF_CMD_MBRIDGE_IN:
+dbg.puts("\ncrsf mbridge ");
+          mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
           break;
       }
     }

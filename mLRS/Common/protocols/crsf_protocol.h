@@ -91,6 +91,9 @@ typedef enum {
 
     CRSF_FRAMETYPE_AP_CUSTOM_TELEM_LEGACY = 0x7F,
     CRSF_FRAME_ID_AP_CUSTOM_TELEM     = 0x80,
+
+    CRSF_FRAME_ID_MBRIDGE_TO_MODULE   = 0x81, // radio -> tx module
+    CRSF_FRAME_ID_MBRIDGE_TO_RADIO    = 0x82, // tx module -> radio
 } CRSF_FRAME_ID_ENUM;
 
 

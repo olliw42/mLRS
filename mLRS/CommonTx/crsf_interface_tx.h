@@ -50,6 +50,8 @@ class tTxCrsf : public tPin5BridgeBase
 
     bool CommandReceived(uint8_t* cmd);
     uint8_t* GetCmdDataPtr(void);
+    uint8_t* GetPayloadPtr(void);
+    uint8_t GetPayloadLen(void);
 
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
@@ -58,6 +60,8 @@ class tTxCrsf : public tPin5BridgeBase
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
+
+    void SendMBridgeFrame(void* payload, const uint8_t len);
 
     // helper
     bool is_empty(void) override;
@@ -326,6 +330,13 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
         return true;
     }
 
+    // mBridge emulation
+    if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
+        header->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
+        *cmd = TXCRSF_CMD_MBRIDGE_IN;
+        return true;
+    }
+
     return false;
 }
 
@@ -333,6 +344,18 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
 uint8_t* tTxCrsf::GetCmdDataPtr(void)
 {
     return ((tCrsfFrameHeader*)frame)->cmd_data;
+}
+
+
+uint8_t* tTxCrsf::GetPayloadPtr(void)
+{
+    return ((tCrsfFrameHeader*)frame)->payload;
+}
+
+
+uint8_t tTxCrsf::GetPayloadLen(void)
+{
+    return ((tCrsfFrameHeader*)frame)->len - 2;
 }
 
 
@@ -373,6 +396,13 @@ void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 {
     SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_RX, payload, CRSF_LINK_STATISTICS_RX_LEN);
 }
+
+
+void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t len)
+{
+    SendFrame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, len);
+}
+
 
 
 //-------------------------------------------------------

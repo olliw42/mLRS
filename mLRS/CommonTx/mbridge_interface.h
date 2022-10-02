@@ -35,7 +35,7 @@ typedef enum {
 class tMBridge : public tPin5BridgeBase, public tSerialBase
 {
   public:
-    void Init(bool enable_flag);
+    void Init(bool enable_flag, bool crsf_emulation_flag);
     bool ChannelsUpdated(tRcData* rc);
     bool TelemetryUpdate(uint8_t* task);
 
@@ -48,6 +48,9 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t HandleRequestCmd(uint8_t* payload);
     uint8_t HandleCmd(uint8_t cmd);
 
+    void ParseCrsfFrame(uint8_t* crsf, uint8_t len, uint16_t tnow_us);
+    bool CrsfFrameAvailable(uint8_t** buf, uint8_t* len);
+
     // for in-isr processing
     void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
     bool transmit_start(void) override; // returns true if transmission should be started
@@ -55,6 +58,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void send_command(void);
 
     bool enabled;
+    bool crsf_emulation;
 
     volatile bool channels_received;
     tMBridgeChannelBuffer channels;
@@ -100,6 +104,8 @@ void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
 
 bool tMBridge::transmit_start(void)
 {
+if (crsf_emulation) return false; // CRSF: just don't ever do it
+
     if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
     if (state != STATE_TRANSMIT_START) {
@@ -131,6 +137,8 @@ bool tMBridge::transmit_start(void)
 
 uint8_t tMBridge::send_serial(void)
 {
+if (crsf_emulation) return false; // CRSF: just don't ever do it
+
     uint8_t count = 0;
     uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
     for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
@@ -150,6 +158,8 @@ uint8_t tMBridge::send_serial(void)
 
 void tMBridge::send_command(void)
 {
+if (crsf_emulation) return; // CRSF: just don't ever do it
+
     for (uint8_t i = 0; i < cmd_m2r_available; i++) {
         uint8_t c = cmd_m2r_frame[i];
         pin5_putc(c);
@@ -182,6 +192,7 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
         if (c == MBRIDGE_CHANNELPACKET_STX) {
             len = MBRIDGE_CHANNELPACKET_SIZE;
             state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
+            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
         } else
         if (c >= MBRIDGE_COMMANDPACKET_STX) {
             uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
@@ -200,6 +211,7 @@ void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
         if (c > 0) {
             len = c;
             state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
+            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
         } else {
             state = STATE_TRANSMIT_START; // tx_len = 0, no payload
         }
@@ -254,19 +266,59 @@ void tMBridge::fill_rcdata(tRcData* rc)
 
 
 //-------------------------------------------------------
+// CRSF MBridge emulation
+
+void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len, uint16_t tnow_us)
+{
+    if (!crsf_emulation) return;
+
+    state = STATE_IDLE; // to start the parser
+
+    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i], tnow_us);
+
+    state = STATE_IDLE; // this is to suppress that mBridge sends
+    channels_received = false; // this should not have happened, but let's play it safe
+
+    // we should have now a good cmd in cmd_r2m_frame[]
+    // mbridge.ChannelsUpdated() should not trigger
+    // mbridge.TelemetryUpdate() should not trigger, since mbridge.TelemetryStart() not called
+    // mbridge.CommandReceived() should however trigger and should be called"
+}
+
+
+bool tMBridge::CrsfFrameAvailable(uint8_t** buf, uint8_t* len)
+{
+    if (!crsf_emulation) return false;
+
+    if (cmd_m2r_available) {
+        *buf = cmd_m2r_frame;
+        *len = cmd_m2r_available;
+        cmd_m2r_available = 0;
+        return true;
+    }
+
+    return false;
+}
+
+
+//-------------------------------------------------------
 // MBridge user interface
 
-void tMBridge::Init(bool enable_flag)
+void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 {
     enabled = enable_flag;
+    crsf_emulation = crsf_emulation_flag;
+    if (crsf_emulation) enabled = true;
 
     if (!enabled) return;
 
-    uart_rx_callback_ptr = &mbridge_uart_rx_callback;
-    uart_tc_callback_ptr = &mbridge_uart_tc_callback;
+    if (!crsf_emulation) {
+        uart_rx_callback_ptr = &mbridge_uart_rx_callback;
+        uart_tc_callback_ptr = &mbridge_uart_tc_callback;
 
-    tSerialBase::Init();
-    tPin5BridgeBase::Init();
+        tPin5BridgeBase::Init();
+        tSerialBase::Init();
+    }
 
     channels_received = false;
     cmd_received = false;
@@ -282,6 +334,8 @@ void tMBridge::Init(bool enable_flag)
 
 bool tMBridge::ChannelsUpdated(tRcData* rc)
 {
+if (crsf_emulation) return false; // CRSF: just don't ever do it
+
     if (!enabled) return false;
     if (!channels_received) return false;
 
@@ -294,6 +348,8 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 
 bool tMBridge::TelemetryUpdate(uint8_t* task)
 {
+if (crsf_emulation) return false; // CRSF: just don't ever do it
+
     if (!enabled) return false;
 
     uint8_t curr_telemetry_state;
@@ -726,7 +782,7 @@ void mbridge_send_cmd(uint8_t cmd)
 class tMBridge : public tSerialBase
 {
   public:
-    void Init(bool enable_flag) {};
+    void Init(bool enable_flag, bool crsf_emulation_flag) {};
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
     void Lock(void) {}
