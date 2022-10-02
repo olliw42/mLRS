@@ -8,7 +8,127 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.01.13, mOTX v33
+-- works with mLRS v0.01.13 and later, mOTX v33
+
+
+----------------------------------------------------------------------
+-- MBridge CRSF emulation
+----------------------------------------------------------------------
+
+local isConnected = nil
+local cmdPush = nil
+local cmdPop = nil
+
+local MBRIDGE_COMMANDPACKET_STX  = 0xA0
+local MBRIDGE_COMMANDPACKET_MASK = 0xE0
+
+local MBRIDGE_CMD_TX_LINK_STATS_LEN = 22
+local MBRIDGE_CMD_DEVICE_ITEM_LEN   = 24
+local MBRIDGE_CMD_PARAM_ITEM_LEN    = 24
+local MBRIDGE_CMD_REQUEST_CMD_LEN   = 18
+local MBRIDGE_CMD_INFO_LEN          = 24
+local MBRIDGE_CMD_PARAM_SET_LEN     = 7
+local MBRIDGE_CMD_MODELID_SET_LEN   = 3
+
+local function mbridgeCmdLen(cmd)
+    if cmd == mbridge.CMD_TX_LINK_STATS then return MBRIDGE_CMD_TX_LINK_STATS_LEN; end
+    if cmd == mbridge.CMD_REQUEST_INFO then return 0; end
+    if cmd == mbridge.CMD_DEVICE_ITEM_TX then return MBRIDGE_CMD_DEVICE_ITEM_LEN; end
+    if cmd == mbridge.CMD_DEVICE_ITEM_RX then return MBRIDGE_CMD_DEVICE_ITEM_LEN; end
+    if cmd == mbridge.CMD_PARAM_REQUEST_LIST then return 0; end
+    if cmd == mbridge.CMD_PARAM_ITEM then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
+    if cmd == mbridge.CMD_PARAM_ITEM2 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
+    if cmd == mbridge.CMD_PARAM_ITEM3 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
+    if cmd == mbridge.CMD_REQUEST_CMD then return MBRIDGE_CMD_REQUEST_CMD_LEN; end
+    if cmd == mbridge.CMD_INFO then return MBRIDGE_CMD_INFO_LEN; end
+    if cmd == mbridge.CMD_PARAM_SET then return MBRIDGE_CMD_PARAM_SET_LEN; end
+    if cmd == mbridge.CMD_PARAM_STORE then return 0; end
+    if cmd == mbridge.CMD_BIND_START then return 0; end
+    if cmd == mbridge.CMD_BIND_STOP then return 0; end
+    if cmd == mbridge.CMD_MODELID_SET then return MBRIDGE_CMD_MODELID_SET_LEN; end
+    return 0;
+end
+  
+local function crsfIsConnected()
+    if getRSSI() ~= 0 then return true end
+    return false
+end
+  
+local function crsfCmdPush(cmd, payload)
+    -- 'O', 'W', len/cmd, payload bytes
+    local data = { 79, 87, cmd + MBRIDGE_COMMANDPACKET_STX }
+    for i=1, mbridgeCmdLen(cmd) do data[#data + 1] = 0 end -- fill with zeros of correct length
+    for i=1, #payload do data[3 + i] = payload[i] end -- fill in data
+    -- crossfireTelemetryPush() extends it to
+    -- 0xEE, len, 129, 'O', 'W', len/cmd, payload bytes, crc8
+    return crossfireTelemetryPush(129, data)
+end
+
+local function crsfCmdPop()
+    -- crossfireTelemetryPop() is invoked if
+    -- address = RADIO_ADDRESS (0xEA) or UART_SYNC (0xC8)
+    -- frame id != normal crsf telemetry sensor id
+    -- 0xEE, len, 130, len/cmd, payload bytes, crc8
+    local cmd, data = crossfireTelemetryPop()
+    -- cmd = 130
+    -- data = len/cmd, payload bytes
+    if cmd == nil then return nil end
+    local command = data[1] - MBRIDGE_COMMANDPACKET_STX
+    local res = {
+        cmd = command,
+        len = mbridgeCmdLen(command),
+        payload = {}
+    }
+    for i=2, #data do res.payload[i-2] = data[i] end
+    return res
+end  
+
+
+local function mbridgeIsConnected()
+    local LStats = mbridge.getLinkStats()
+    if LStats.LQ > 0 then return true end
+    return false
+end
+
+
+local function setupBridge()
+    if mbridge == nil then
+  
+        mbridge.PARAM_TYPE_UINT8 = 0
+        mbridge.PARAM_TYPE_INT8 = 1
+        mbridge.PARAM_TYPE_UINT16 = 2
+        mbridge.PARAM_TYPE_INT16 = 3
+        mbridge.PARAM_TYPE_LIST = 4
+        mbridge.PARAM_TYPE_STR6 = 5
+
+        mbridge.CMD_TX_LINK_STATS         = 2
+        mbridge.CMD_REQUEST_INFO          = 3
+        mbridge.CMD_DEVICE_ITEM_TX        = 4
+        mbridge.CMD_DEVICE_ITEM_RX        = 5
+        mbridge.CMD_PARAM_REQUEST_LIST    = 6
+        mbridge.CMD_PARAM_ITEM            = 7
+        mbridge.CMD_PARAM_ITEM2           = 8
+        mbridge.CMD_PARAM_ITEM3           = 9
+        mbridge.CMD_REQUEST_CMD           = 10
+        mbridge.CMD_INFO                  = 11
+        mbridge.CMD_PARAM_SET             = 12
+        mbridge.CMD_PARAM_STORE           = 13
+        mbridge.CMD_BIND_START            = 14
+        mbridge.CMD_BIND_STOP             = 15
+        mbridge.CMD_MODELID_SET           = 16
+
+        mbridge.CMD_BIND = 0 -- ???
+    end
+    if mbridge == nil or not mbridge.enabled() then
+        isConnected = crsfIsConnected
+        cmdPush = crsfCmdPush
+        cmdPop = crsfCmdPop
+    else  
+        isConnected = mbridgeIsConnected
+        cmdPush = mbridge.cmdPush
+        cmdPop = mbridge.cmdPop
+    end
+end  
 
 
 ----------------------------------------------------------------------
@@ -86,10 +206,7 @@ local has_connected = false
 local has_disconnected = false
 
 local function doConnected()
-    local LStats = mbridge.getLinkStats()
-    
-    local is_connected = false
-    if LStats.LQ > 0 then is_connected = true end
+    local is_connected = isConnected()
     
     connected_has_changed = false
     if is_connected ~= connected then connected_has_changed = true end
@@ -252,20 +369,20 @@ local function doParamLoop()
     if t_10ms - t_last > 10 then
       t_last = t_10ms
       if DEVICE_ITEM_TX == nil then
-          mbridge.cmdPush(mbridge.CMD_REQUEST_INFO, {})
-          --mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_REQUEST_INFO)
+          cmdPush(mbridge.CMD_REQUEST_INFO, {})
+          --cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_REQUEST_INFO)
       elseif DEVICE_PARAM_LIST == nil then
           if DEVICE_INFO ~= nil then -- wait for it to be populated
               DEVICE_PARAM_LIST = {}
-              mbridge.cmdPush(mbridge.CMD_PARAM_REQUEST_LIST, {})
-              --mbridge.cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_PARAM_REQUEST_LIST})
+              cmdPush(mbridge.CMD_PARAM_REQUEST_LIST, {})
+              --cmdPush(mbridge.CMD_REQUEST_CMD, {mbridge.CMD_PARAM_REQUEST_LIST})
           end    
       end  
     end    
   
     -- handle received commands
     for ijk = 1,6 do -- handle only 6 at most per lua cycle
-        local cmd = mbridge.cmdPop()
+        local cmd = cmdPop()
         if cmd == nil then break end
         if cmd.cmd == mbridge.CMD_DEVICE_ITEM_TX then 
             -- MBRIDGE_CMD_DEVICE_ITEM_TX
@@ -344,29 +461,29 @@ local function sendParamSet(idx)
     if not DEVICE_PARAM_LIST_complete then return end -- needed??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < mbridge.PARAM_TYPE_LIST then
-        mbridge.cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
+        cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == mbridge.PARAM_TYPE_LIST then
-        mbridge.cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
+        cmdPush(mbridge.CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == mbridge.PARAM_TYPE_STR6 then
         local cmd = {idx}
         for i = 1,6 do
             cmd[i+1] = string.byte(string.sub(p.value, i,i))
         end    
-        mbridge.cmdPush(mbridge.CMD_PARAM_SET, cmd)
+        cmdPush(mbridge.CMD_PARAM_SET, cmd)
     end  
 end  
     
     
 local function sendParamStore()
     if not DEVICE_PARAM_LIST_complete then return end -- needed??
-    mbridge.cmdPush(mbridge.CMD_PARAM_STORE, {})
+    cmdPush(mbridge.CMD_PARAM_STORE, {})
     setPopupWTmo("Save Parameters",250)
 end  
 
 
 local function sendBind()
     if not DEVICE_PARAM_LIST_complete then return end -- needed??
-    mbridge.cmdPush(mbridge.CMD_BIND, {})
+    cmdPush(mbridge.CMD_BIND, {})
     setPopupBlocked("Binding")
 end  
 
@@ -864,9 +981,14 @@ local function scriptRun(event)
         return 2
     end  
     if mbridge == nil or not mbridge.enabled() then
-        error("mLRS not accessible: mBridge is not enabled!")
-        return 2
+        if model.getModule(1).Type ~= 5 then
+            error("mLRS not accessible: mBridge or CRSF not enabled!")
+            return 2
+        end
     end
+    
+    setupBridge()
+    
     if not edit and page_nr == 0 then
         if event == EVT_VIRTUAL_EXIT then
             return 2
