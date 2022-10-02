@@ -339,7 +339,6 @@ uint8_t* tTxCrsf::GetCmdDataPtr(void)
 //-------------------------------------------------------
 // CRSF Bridge
 
-
 uint8_t tTxCrsf::crc8(const uint8_t* buf)
 {
     return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
