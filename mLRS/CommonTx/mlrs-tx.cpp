@@ -982,14 +982,7 @@ IF_MBRIDGE(
       switch (mbtask) {
       case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
       case TXBRIDGE_SEND_CMD:
-        if (mbridge.CommandInFifo(&mbcmd)) {
-          switch (mbcmd) {
-          case MBRIDGE_CMD_DEVICE_ITEM_TX: mbridge_send_DeviceItemTx(); break;
-          case MBRIDGE_CMD_DEVICE_ITEM_RX: mbridge_send_DeviceItemRx(); break;
-          case MBRIDGE_CMD_PARAM_ITEM: mbridge_send_ParamItem(); break;
-          case MBRIDGE_CMD_INFO: mbridge_send_Info(); break;
-          }
-        }
+        if (mbridge.CommandInFifo(&mbcmd)) mbridge_send_cmd(mbcmd);
         break;
       }
     }

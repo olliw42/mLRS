@@ -702,6 +702,25 @@ tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
 }
 
 
+void mbridge_send_cmd(uint8_t cmd)
+{
+    switch (cmd) {
+    case MBRIDGE_CMD_DEVICE_ITEM_TX:
+        mbridge_send_DeviceItemTx();
+        break;
+    case MBRIDGE_CMD_DEVICE_ITEM_RX:
+        mbridge_send_DeviceItemRx();
+        break;
+    case MBRIDGE_CMD_PARAM_ITEM:
+        mbridge_send_ParamItem();
+        break;
+    case MBRIDGE_CMD_INFO:
+        mbridge_send_Info();
+        break;
+    }
+}
+
+
 #else
 
 class tMBridge : public tSerialBase
