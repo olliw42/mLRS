@@ -3,8 +3,8 @@
   <include>../../modules/mavlink/message_definitions/v1.0/all.xml</include>
   <dialect>0</dialect>
   <enums>
-    <enum name="RADIO_RC_CHANNELS_FLAGS">
-      <description>RADIO_RC_CHANNELS flags.</description>
+    <enum name="RADIO_RC_CHANNELS_FLAGS" bitmask="true">
+      <description>RADIO_RC_CHANNELS flags (bitmask).</description>
       <entry value="1" name="RADIO_RC_CHANNELS_FLAGS_FAILSAFE">
         <description>Failsafe is active.</description>
       </entry>
@@ -12,8 +12,8 @@
         <description>Indicates that the current frame has not been received. Channel values are frozen.</description>
       </entry>
     </enum>
-    <enum name="RADIO_LINK_STATS_FLAGS">
-      <description>RADIO_LINK_STATS flags.</description>
+    <enum name="RADIO_LINK_STATS_FLAGS" bitmask="true">
+      <description>RADIO_LINK_STATS flags (bitmask).</description>
       <entry value="1" name="RADIO_LINK_STATS_FLAGS_RSSI_DBM">
         <description>Rssi are in negative dBm. 0..254 corresponds to 0..-254 dBm.</description>
       </entry>
