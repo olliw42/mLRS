@@ -74,6 +74,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendTelemetryFrame(void);
 
     // crsf telemetry
+
     tCrsfBattery battery; // collected from BATTERY_STATUS
     bool battery_updated;
 
@@ -372,7 +373,7 @@ tCrsfChannelBuffer buf;
 
 void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t len)
 {
-    tx_frame[0] = CRSF_ADDRESS_RADIO;
+    tx_frame[0] = CRSF_ADDRESS_RADIO; // works, but is it correct? should it be CRSF_ADDRESS_TRANSMITTER_MODULE?
     tx_frame[1] = (4-2) + len;
     tx_frame[2] = frame_id;
     memcpy(&(tx_frame[3]), payload, len);

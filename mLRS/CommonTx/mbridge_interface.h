@@ -130,14 +130,14 @@ void tMBridge::uart_tc_callback(void)
 
 bool tMBridge::transmit_start(void)
 {
-uint8_t available = 0;
-
     if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
     if (state != STATE_TRANSMIT_START) {
         state = STATE_IDLE;
         return false;
     }
+
+    uint8_t available = 0;
 
     if (cmd_m2r_available) {
         send_command(); // uses cmd_m2r_available

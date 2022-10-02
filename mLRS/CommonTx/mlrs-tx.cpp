@@ -965,7 +965,6 @@ IF_ANTENNA2(
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
 #ifdef DEVICE_HAS_JRPIN5
-    uint8_t mbstate, mbcmd; // for some reason it gives an error when put inside IF_MBRIDGE()
 IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
@@ -978,6 +977,7 @@ IF_MBRIDGE(
       mbridge.TelemetryStart();
     }
     // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
+    uint8_t mbstate; uint8_t mbcmd;
     if (mbridge.TelemetryUpdateState(&mbstate)) {
       switch (mbstate) {
       case 1: mbridge_send_LinkStats(); break;

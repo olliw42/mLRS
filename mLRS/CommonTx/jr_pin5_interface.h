@@ -73,20 +73,24 @@ class tPin5BridgeBase
     typedef enum {
         STATE_IDLE = 0,
 
+        // mBridge receive states
         STATE_RECEIVE_MBRIDGE_STX2,
         STATE_RECEIVE_MBRIDGE_LEN,
         STATE_RECEIVE_MBRIDGE_SERIALPACKET,
         STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
         STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
 
+        // crsf receive states
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,
 
+        // transmit states, used by all
         STATE_TRANSMIT_START,
         STATE_TRANSMITING,
     } STATE_ENUM;
 
+    // not used in this class, but required by the childs, so just add them here
     uint8_t state;
     uint8_t len;
     uint8_t cnt;
