@@ -146,5 +146,5 @@ You find more documentation on the following pages:
 - Setup for [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
 - Setup for [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
 - Basic setup for [SBus Radios](docs/BASIC_SETUP.md)
-- Flashing [Frsky R9 Devices](docs/FLASHING_FRSKY_R9.md)
+- Using [Frsky R9 Devices](docs/FRSKY_R9.md)
 
