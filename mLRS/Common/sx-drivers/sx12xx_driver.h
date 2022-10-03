@@ -12,6 +12,7 @@
 
 
 #include "../hal/device_conf.h"
+#include "../hal/hal.h"
 
 #ifdef DEVICE_HAS_I2C_DAC
 class tI2cDac : public tI2cBase

@@ -139,6 +139,9 @@
 
 #if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY)
   #define USE_I2C
+  #ifndef HAL_I2C_MODULE_ENABLED
+    #error HAL_I2C_MODULE_ENABLED is not defined, but I2C is used!
+  #endif
 #endif
 
 
