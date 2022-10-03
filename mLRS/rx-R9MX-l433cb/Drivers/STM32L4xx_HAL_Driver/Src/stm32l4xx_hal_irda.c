@@ -1078,14 +1078,14 @@ HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData,
     }
 #else
     if (hirda->Init.Parity != IRDA_PARITY_NONE)
-    { 
-      /* Enable the IRDA Parity Error and Data Register not empty Interrupts */  
+    {
+      /* Enable the IRDA Parity Error and Data Register not empty Interrupts */
       SET_BIT(hirda->Instance->CR1, USART_CR1_PEIE | USART_CR1_RXNEIE);
     }
     else
     {
-     /* Enable the IRDA Data Register not empty Interrupts */ 
-     SET_BIT(hirda->Instance->CR1, USART_CR1_RXNEIE); 
+      /* Enable the IRDA Data Register not empty Interrupts */
+      SET_BIT(hirda->Instance->CR1, USART_CR1_RXNEIE);
     }
 #endif /* USART_CR1_FIFOEN */
 
@@ -1325,7 +1325,7 @@ HAL_StatusTypeDef HAL_IRDA_DMAResume(IRDA_HandleTypeDef *hirda)
 
     /* Re-enable PE and ERR (Frame error, noise error, overrun error) interrupts */
     if (hirda->Init.Parity != IRDA_PARITY_NONE)
-    {    
+    {
       SET_BIT(hirda->Instance->CR1, USART_CR1_PEIE);
     }
     SET_BIT(hirda->Instance->CR3, USART_CR3_EIE);
@@ -2262,7 +2262,7 @@ __weak void HAL_IRDA_AbortReceiveCpltCallback(IRDA_HandleTypeDef *hirda)
   *                the configuration information for the specified IRDA module.
   * @retval HAL state
   */
-HAL_IRDA_StateTypeDef HAL_IRDA_GetState(IRDA_HandleTypeDef *hirda)
+HAL_IRDA_StateTypeDef HAL_IRDA_GetState(const IRDA_HandleTypeDef *hirda)
 {
   /* Return IRDA handle state */
   uint32_t temp1;
@@ -2279,7 +2279,7 @@ HAL_IRDA_StateTypeDef HAL_IRDA_GetState(IRDA_HandleTypeDef *hirda)
   *               the configuration information for the specified IRDA module.
   * @retval IRDA Error Code
   */
-uint32_t HAL_IRDA_GetError(IRDA_HandleTypeDef *hirda)
+uint32_t HAL_IRDA_GetError(const IRDA_HandleTypeDef *hirda)
 {
   return hirda->ErrorCode;
 }

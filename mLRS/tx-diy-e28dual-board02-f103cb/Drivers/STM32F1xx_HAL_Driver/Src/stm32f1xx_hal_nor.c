@@ -6,6 +6,17 @@
   *          This file provides a generic firmware to drive NOR memories mounted
   *          as external device.
   *
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
   @verbatim
   ==============================================================================
                      ##### How to use this driver #####
@@ -89,17 +100,6 @@
       and weak (surcharged) callbacks are used.
 
   @endverbatim
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                       opensource.org/licenses/BSD-3-Clause
-  *
   ******************************************************************************
   */
 
@@ -230,6 +230,7 @@ HAL_StatusTypeDef HAL_NOR_Init(NOR_HandleTypeDef *hnor, FSMC_NORSRAM_TimingTypeD
                                FSMC_NORSRAM_TimingTypeDef *ExtTiming)
 {
   uint32_t deviceaddress;
+  HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the NOR handle parameter */
   if (hnor == NULL)
@@ -299,11 +300,23 @@ HAL_StatusTypeDef HAL_NOR_Init(NOR_HandleTypeDef *hnor, FSMC_NORSRAM_TimingTypeD
     deviceaddress = NOR_MEMORY_ADRESS4;
   }
 
+  FSMC_NORSRAM_WriteOperation_Enable(hnor->Instance,hnor->Init.NSBank);
+  
   /* Get the value of the command set */
   NOR_WRITE(NOR_ADDR_SHIFT(deviceaddress, uwNORMemoryDataWidth, NOR_CMD_ADDRESS_FIRST_CFI), NOR_CMD_DATA_CFI);
   hnor->CommandSet = *(__IO uint16_t *) NOR_ADDR_SHIFT(deviceaddress, uwNORMemoryDataWidth, NOR_ADDRESS_COMMAND_SET);
+  
+  status = HAL_NOR_ReturnToReadMode(hnor);
 
-  return HAL_NOR_ReturnToReadMode(hnor);
+  if (hnor->Init.WriteOperation == FSMC_WRITE_OPERATION_DISABLE)
+  {
+    FSMC_NORSRAM_WriteOperation_Disable(hnor->Instance,hnor->Init.NSBank);
+
+    /* Update the NOR controller state */
+    hnor->State = HAL_NOR_STATE_PROTECTED;
+  }
+
+  return status;
 }
 
 /**
@@ -1508,5 +1521,3 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
   */
 
 #endif /* FSMC_BANK1 */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

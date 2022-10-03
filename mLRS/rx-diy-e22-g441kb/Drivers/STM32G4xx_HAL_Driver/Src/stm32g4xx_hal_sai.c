@@ -10,6 +10,17 @@
   *           + Peripheral Control functions
   *           + Peripheral State functions
   *
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
   @verbatim
   ==============================================================================
                   ##### How to use this driver #####
@@ -197,18 +208,6 @@
     and weak (surcharged) callbacks are used.
 
   @endverbatim
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
@@ -562,7 +561,7 @@ HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
     if (hsai->Init.Protocol == SAI_SPDIF_PROTOCOL)
     {
       hsai->Init.Mckdiv = hsai->Init.Mckdiv >> 1;
-    } 
+    }
   }
   /* Check the SAI Block master clock divider parameter */
   assert_param(IS_SAI_BLOCK_MASTER_DIVIDER(hsai->Init.Mckdiv));
@@ -2079,7 +2078,7 @@ __weak void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
   *              the configuration information for SAI module.
   * @retval HAL state
   */
-HAL_SAI_StateTypeDef HAL_SAI_GetState(SAI_HandleTypeDef *hsai)
+HAL_SAI_StateTypeDef HAL_SAI_GetState(const SAI_HandleTypeDef *hsai)
 {
   return hsai->State;
 }
@@ -2090,7 +2089,7 @@ HAL_SAI_StateTypeDef HAL_SAI_GetState(SAI_HandleTypeDef *hsai)
   *              the configuration information for the specified SAI Block.
   * @retval SAI Error Code
   */
-uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai)
+uint32_t HAL_SAI_GetError(const SAI_HandleTypeDef *hsai)
 {
   return hsai->ErrorCode;
 }
@@ -2768,4 +2767,3 @@ static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

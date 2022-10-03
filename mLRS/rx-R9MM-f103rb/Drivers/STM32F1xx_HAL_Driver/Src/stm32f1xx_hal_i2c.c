@@ -9,6 +9,17 @@
   *           + IO operation functions
   *           + Peripheral State, Mode and Error functions
   *
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
   @verbatim
   ==============================================================================
                         ##### How to use this driver #####
@@ -302,17 +313,6 @@
        (@) You can refer to the I2C HAL driver header file for more useful macros
 
   @endverbatim
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
   ******************************************************************************
   */
 
@@ -1423,6 +1423,13 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAd
 
         if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BTF) == SET)
         {
+
+          if (hi2c->XferSize == 3U)
+          {
+            /* Disable Acknowledge */
+            CLEAR_BIT(hi2c->Instance->CR1, I2C_CR1_ACK);
+          }
+
           /* Read data from DR */
           *hi2c->pBuffPtr = (uint8_t)hi2c->Instance->DR;
 
@@ -3194,6 +3201,10 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAdd
     hi2c->XferCount   = Size;
     hi2c->XferSize    = hi2c->XferCount;
     hi2c->XferOptions = I2C_NO_OPTION_FRAME;
+    hi2c->Devaddress  = DevAddress;
+    hi2c->Memaddress  = MemAddress;
+    hi2c->MemaddSize  = MemAddSize;
+    hi2c->EventCount  = 0U;
 
     if (hi2c->XferSize > 0U)
     {
@@ -3372,6 +3383,10 @@ HAL_StatusTypeDef HAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
     hi2c->XferCount   = Size;
     hi2c->XferSize    = hi2c->XferCount;
     hi2c->XferOptions = I2C_NO_OPTION_FRAME;
+    hi2c->Devaddress  = DevAddress;
+    hi2c->Memaddress  = MemAddress;
+    hi2c->MemaddSize  = MemAddSize;
+    hi2c->EventCount  = 0U;
 
     if (hi2c->XferSize > 0U)
     {
@@ -5709,7 +5724,9 @@ static void I2C_MasterReceive_RXNE(I2C_HandleTypeDef *hi2c)
     }
     else
     {
-      /* Do nothing */
+      /* Disable BUF interrupt, this help to treat correctly the last 2 bytes
+         on BTF subroutine if there is a reception delay between N-1 and N byte */
+      __HAL_I2C_DISABLE_IT(hi2c, I2C_IT_BUF);
     }
   }
 }
@@ -7614,5 +7631,3 @@ static void I2C_ConvertOtherXferOptions(I2C_HandleTypeDef *hi2c)
 /**
   * @}
   */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

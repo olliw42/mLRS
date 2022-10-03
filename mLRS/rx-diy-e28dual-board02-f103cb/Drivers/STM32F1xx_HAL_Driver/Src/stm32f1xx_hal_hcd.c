@@ -10,6 +10,17 @@
   *           + Peripheral Control functions
   *           + Peripheral State functions
   *
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
   @verbatim
   ==============================================================================
                     ##### How to use this driver #####
@@ -36,17 +47,6 @@
         (##) HAL_HCD_Start();
 
   @endverbatim
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
   ******************************************************************************
   */
 
@@ -1243,21 +1243,11 @@ static void HCD_HC_IN_IRQHandler(HCD_HandleTypeDef *hhcd, uint8_t chnum)
       (void)USB_HC_Halt(hhcd->Instance, (uint8_t)ch_num);
       __HAL_HCD_CLEAR_HC_INT(ch_num, USB_OTG_HCINT_NAK);
     }
-    else if (hhcd->hc[ch_num].ep_type == EP_TYPE_INTR)
+    else if ((hhcd->hc[ch_num].ep_type == EP_TYPE_INTR) ||
+             (hhcd->hc[ch_num].ep_type == EP_TYPE_ISOC))
     {
       USBx_HC(ch_num)->HCCHAR |= USB_OTG_HCCHAR_ODDFRM;
       hhcd->hc[ch_num].urb_state = URB_DONE;
-
-#if (USE_HAL_HCD_REGISTER_CALLBACKS == 1U)
-      hhcd->HC_NotifyURBChangeCallback(hhcd, (uint8_t)ch_num, hhcd->hc[ch_num].urb_state);
-#else
-      HAL_HCD_HC_NotifyURBChange_Callback(hhcd, (uint8_t)ch_num, hhcd->hc[ch_num].urb_state);
-#endif /* USE_HAL_HCD_REGISTER_CALLBACKS */
-    }
-    else if (hhcd->hc[ch_num].ep_type == EP_TYPE_ISOC)
-    {
-      hhcd->hc[ch_num].urb_state = URB_DONE;
-      hhcd->hc[ch_num].toggle_in ^= 1U;
 
 #if (USE_HAL_HCD_REGISTER_CALLBACKS == 1U)
       hhcd->HC_NotifyURBChangeCallback(hhcd, (uint8_t)ch_num, hhcd->hc[ch_num].urb_state);
@@ -1698,5 +1688,3 @@ static void HCD_Port_IRQHandler(HCD_HandleTypeDef *hhcd)
 /**
   * @}
   */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

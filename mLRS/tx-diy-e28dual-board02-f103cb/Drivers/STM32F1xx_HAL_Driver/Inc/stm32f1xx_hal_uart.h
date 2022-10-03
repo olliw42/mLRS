@@ -6,13 +6,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -71,7 +70,7 @@ typedef struct
                                            This parameter can be a value of @ref UART_Hardware_Flow_Control */
 
   uint32_t OverSampling;              /*!< Specifies whether the Over sampling 8 is enabled or disabled, to achieve higher speed (up to fPCLK/8).
-                                           This parameter can be a value of @ref UART_Over_Sampling. This feature is only available 
+                                           This parameter can be a value of @ref UART_Over_Sampling. This feature is only available
                                            on STM32F100xx family, so OverSampling parameter should always be set to 16. */
 } UART_InitTypeDef;
 
@@ -575,7 +574,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   * @retval The new state of __IT__ (TRUE or FALSE).
   */
 #define __HAL_UART_GET_IT_SOURCE(__HANDLE__, __IT__) (((((__IT__) >> 28U) == UART_CR1_REG_INDEX)? (__HANDLE__)->Instance->CR1:(((((uint32_t)(__IT__)) >> 28U) == UART_CR2_REG_INDEX)? \
-                                                      (__HANDLE__)->Instance->CR2 : (__HANDLE__)->Instance->CR3)) & (((uint32_t)(__IT__)) & UART_IT_MASK))
+                                                       (__HANDLE__)->Instance->CR2 : (__HANDLE__)->Instance->CR3)) & (((uint32_t)(__IT__)) & UART_IT_MASK))
 
 /** @brief  Enable CTS flow control
   * @note   This macro allows to enable CTS hardware flow control for a given UART instance,
@@ -593,7 +592,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   */
 #define __HAL_UART_HWCONTROL_CTS_ENABLE(__HANDLE__)        \
   do{                                                      \
-    SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE);  \
+    ATOMIC_SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE);  \
     (__HANDLE__)->Init.HwFlowCtl |= USART_CR3_CTSE;        \
   } while(0U)
 
@@ -613,7 +612,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   */
 #define __HAL_UART_HWCONTROL_CTS_DISABLE(__HANDLE__)        \
   do{                                                       \
-    CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE); \
+    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_CTSE); \
     (__HANDLE__)->Init.HwFlowCtl &= ~(USART_CR3_CTSE);      \
   } while(0U)
 
@@ -633,7 +632,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   */
 #define __HAL_UART_HWCONTROL_RTS_ENABLE(__HANDLE__)       \
   do{                                                     \
-    SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE); \
+    ATOMIC_SET_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE); \
     (__HANDLE__)->Init.HwFlowCtl |= USART_CR3_RTSE;       \
   } while(0U)
 
@@ -653,7 +652,7 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   */
 #define __HAL_UART_HWCONTROL_RTS_DISABLE(__HANDLE__)       \
   do{                                                      \
-    CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE);\
+    ATOMIC_CLEAR_BIT((__HANDLE__)->Instance->CR3, USART_CR3_RTSE);\
     (__HANDLE__)->Init.HwFlowCtl &= ~(USART_CR3_RTSE);     \
   } while(0U)
 #if defined(USART_CR3_ONEBIT)
@@ -668,7 +667,8 @@ typedef  void (*pUART_RxEventCallbackTypeDef)(struct __UART_HandleTypeDef *huart
   * @param  __HANDLE__ specifies the UART Handle.
   * @retval None
   */
-#define __HAL_UART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint16_t)~((uint16_t)USART_CR3_ONEBIT))
+#define __HAL_UART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3\
+                                                       &= (uint16_t)~((uint16_t)USART_CR3_ONEBIT))
 #endif /* UART_ONE_BIT_SAMPLE_Feature */
 
 /** @brief  Enable UART
@@ -706,7 +706,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart);
 
 /* Callbacks Register/UnRegister functions  ***********************************/
 #if (USE_HAL_UART_REGISTER_CALLBACKS == 1)
-HAL_StatusTypeDef HAL_UART_RegisterCallback(UART_HandleTypeDef *huart, HAL_UART_CallbackIDTypeDef CallbackID, pUART_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_UART_RegisterCallback(UART_HandleTypeDef *huart, HAL_UART_CallbackIDTypeDef CallbackID,
+                                            pUART_CallbackTypeDef pCallback);
 HAL_StatusTypeDef HAL_UART_UnRegisterCallback(UART_HandleTypeDef *huart, HAL_UART_CallbackIDTypeDef CallbackID);
 
 HAL_StatusTypeDef HAL_UART_RegisterRxEventCallback(UART_HandleTypeDef *huart, pUART_RxEventCallbackTypeDef pCallback);
@@ -732,7 +733,8 @@ HAL_StatusTypeDef HAL_UART_DMAPause(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_UART_DMAResume(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef HAL_UART_DMAStop(UART_HandleTypeDef *huart);
 
-HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint16_t *RxLen, uint32_t Timeout);
+HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint16_t *RxLen,
+                                           uint32_t Timeout);
 HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_IT(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 
@@ -838,20 +840,22 @@ uint32_t              HAL_UART_GetError(UART_HandleTypeDef *huart);
 
 #define UART_DIV_SAMPLING16(_PCLK_, _BAUD_)            (((_PCLK_)*25U)/(4U*(_BAUD_)))
 #define UART_DIVMANT_SAMPLING16(_PCLK_, _BAUD_)        (UART_DIV_SAMPLING16((_PCLK_), (_BAUD_))/100U)
-#define UART_DIVFRAQ_SAMPLING16(_PCLK_, _BAUD_)        ((((UART_DIV_SAMPLING16((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING16((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
+#define UART_DIVFRAQ_SAMPLING16(_PCLK_, _BAUD_)        ((((UART_DIV_SAMPLING16((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING16((_PCLK_), (_BAUD_)) * 100U)) * 16U)\
+                                                         + 50U) / 100U)
 /* UART BRR = mantissa + overflow + fraction
             = (UART DIVMANT << 4) + (UART DIVFRAQ & 0xF0) + (UART DIVFRAQ & 0x0FU) */
 #define UART_BRR_SAMPLING16(_PCLK_, _BAUD_)            (((UART_DIVMANT_SAMPLING16((_PCLK_), (_BAUD_)) << 4U) + \
-                                                        (UART_DIVFRAQ_SAMPLING16((_PCLK_), (_BAUD_)) & 0xF0U)) + \
+                                                         (UART_DIVFRAQ_SAMPLING16((_PCLK_), (_BAUD_)) & 0xF0U)) + \
                                                         (UART_DIVFRAQ_SAMPLING16((_PCLK_), (_BAUD_)) & 0x0FU))
 
 #define UART_DIV_SAMPLING8(_PCLK_, _BAUD_)             (((_PCLK_)*25U)/(2U*(_BAUD_)))
 #define UART_DIVMANT_SAMPLING8(_PCLK_, _BAUD_)         (UART_DIV_SAMPLING8((_PCLK_), (_BAUD_))/100U)
-#define UART_DIVFRAQ_SAMPLING8(_PCLK_, _BAUD_)         ((((UART_DIV_SAMPLING8((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING8((_PCLK_), (_BAUD_)) * 100U)) * 8U) + 50U) / 100U)
+#define UART_DIVFRAQ_SAMPLING8(_PCLK_, _BAUD_)         ((((UART_DIV_SAMPLING8((_PCLK_), (_BAUD_)) - (UART_DIVMANT_SAMPLING8((_PCLK_), (_BAUD_)) * 100U)) * 8U)\
+                                                         + 50U) / 100U)
 /* UART BRR = mantissa + overflow + fraction
             = (UART DIVMANT << 4) + ((UART DIVFRAQ & 0xF8) << 1) + (UART DIVFRAQ & 0x07U) */
 #define UART_BRR_SAMPLING8(_PCLK_, _BAUD_)             (((UART_DIVMANT_SAMPLING8((_PCLK_), (_BAUD_)) << 4U) + \
-                                                        ((UART_DIVFRAQ_SAMPLING8((_PCLK_), (_BAUD_)) & 0xF8U) << 1U)) + \
+                                                         ((UART_DIVFRAQ_SAMPLING8((_PCLK_), (_BAUD_)) & 0xF8U) << 1U)) + \
                                                         (UART_DIVFRAQ_SAMPLING8((_PCLK_), (_BAUD_)) & 0x07U))
 
 /**
@@ -883,5 +887,3 @@ HAL_StatusTypeDef UART_Start_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pDa
 #endif
 
 #endif /* __STM32F1xx_HAL_UART_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
