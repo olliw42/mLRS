@@ -47,7 +47,7 @@
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
 
-#define UART_USE_UART2 // SBus
+#define UART_USE_UART2 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256 // 512

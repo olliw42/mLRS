@@ -20,7 +20,7 @@ v0.0.00:
 #define CLOCK_IRQ_PRIORITY          10
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // debug
-#define UART_IRQ_PRIORITY           12 // SBus out pin
+#define UART_IRQ_PRIORITY           12 // out pin
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
 #define SWUART_TIM_IRQ_PRIORITY     11 // debug on swuart

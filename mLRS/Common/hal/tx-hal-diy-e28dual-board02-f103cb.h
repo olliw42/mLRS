@@ -50,7 +50,7 @@
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
 #ifdef DEVICE_HAS_IN
-#define UARTE_USE_UART2 // SBus
+#define UARTE_USE_UART2 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
