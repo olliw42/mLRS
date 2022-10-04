@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             213 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.2.13"
+#define VERSION             214 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.2.14"
 #define SETUPLAYOUT         2   // this should be changed then Setup struct and/or serial changes
 
 
