@@ -142,6 +142,7 @@ You find more documentation on the following pages:
 
 - [Binding](docs/BINDING.md)
 - [Configuration Parameters](docs/PARAMETERS.md)
+- [mLRS Configuration Lua Script](docs/LUA.md)
 - [CLI Commands](docs/CLI.md)
 - Setup for [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
 - Setup for [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
