@@ -10,7 +10,57 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.01.13 and later, mOTX v33
 
-local version = '2022-10-04.01'
+local version = '2022-10-04.02'
+
+
+----------------------------------------------------------------------
+-- it would be so nice to have
+----------------------------------------------------------------------
+local charSize = {}
+charSize["a"] = 10
+charSize["b"] = 10
+charSize["c"] = 9
+charSize["d"] = 10
+charSize["e"] = 9
+charSize["f"] = 7
+charSize["g"] = 10
+charSize["h"] = 10
+charSize["i"] = 5
+charSize["j"] = 6
+charSize["k"] = 10
+charSize["l"] = 5
+charSize["m"] = 15
+charSize["n"] = 10
+charSize["o"] = 10
+charSize["p"] = 10
+charSize["r"] = 7
+charSize["s"] = 9
+charSize["t"] = 6
+charSize["u"] = 10
+charSize["v"] = 9
+charSize["w"] = 13
+charSize["x"] = 9
+charSize["y"] = 9
+charSize["z"] = 9
+charSize["0"] = 10
+charSize["1"] = 10
+charSize["2"] = 10
+charSize["3"] = 10
+charSize["4"] = 10
+charSize["5"] = 10
+charSize["6"] = 10
+charSize["7"] = 10
+charSize["8"] = 10
+charSize["9"] = 10
+charSize["_"] = 9
+charSize["#"] = 11
+charSize["-"] = 6
+charSize["."] = 5
+
+local function getCharWidth(c)
+    if charSize[c] == nil then return 10 end
+    return charSize[c]
+end    
 
 
 ----------------------------------------------------------------------
@@ -775,7 +825,8 @@ local function drawPageMain()
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
             local attr = cur_attr_x(0, i-1)
             lcd.drawText(x, y, c, attr)
-            x = x + lcd.getTextWidth(c,1,attr)+1
+            --x = x + lcd.getTextWidth(c,1,attr)+1
+            x = x + getCharWidth(c) + 1
         end
     end    
     
