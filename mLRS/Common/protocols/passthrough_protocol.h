@@ -223,7 +223,7 @@ void tPassThrough::Init(void)
 
     pt_param_id_to_send = 1;
 
-    passthrough_array_is_receiving = true; //false;
+    passthrough_array_is_receiving = false;
 }
 
 
