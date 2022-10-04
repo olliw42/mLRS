@@ -32,13 +32,13 @@
     <message id="95" name="RADIO_RC_CHANNELS">
       <description>Radio channels. Supports up to 24 channels. Channel values are in centerd 13 bit format. Range is [-4096,4096], center is 0. Conversion to PWM is x * 5/32 + 1500. Should be emitted only by components with component id MAV_COMP_ID_TELEMETRY_RADIO.</description>
       <field type="uint8_t" name="count">Total number of RC channels being received. This can be larger than 24, indicating that more channels are available but not given in this message.</field>
-      <field type="uint8_t" name="flags" enum="RADIO_RC_CHANNELS_FLAGS">Radio channels status flags.</field>
+      <field type="uint8_t" name="flags" display="bitmask" enum="RADIO_RC_CHANNELS_FLAGS">Radio channels status flags.</field>
       <extensions/>
       <field type="int16_t[24]" name="channels">Rc channels. Channels above count should be set to 0, to benefit from MAVLink's zero padding.</field>
     </message>
     <message id="96" name="RADIO_LINK_STATS">
       <description>Radio link statistics. Should be emitted only by components with component id MAV_COMP_ID_TELEMETRY_RADIO. Per default, rssi values are in MAVLink units: 0 represents weakest signal, 254 represents maximum signal, but can be changed by RADIO_LINK_STATS_FLAGS_RSSI_DBM to dBm.</description>
-      <field type="uint8_t" name="flags" enum="RADIO_LINK_STATS_FLAGS">Radio link statistics flags.</field>
+      <field type="uint8_t" name="flags" display="bitmask" enum="RADIO_LINK_STATS_FLAGS">Radio link statistics flags.</field>
       <field type="uint8_t" name="rx_LQ" units="c%" invalid="UINT8_MAX">Values: 0..100. UINT8_MAX: invalid/unknown.</field>
       <field type="uint8_t" name="rx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. UINT8_MAX: invalid/unknown.</field>
       <field type="int8_t" name="rx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio dependent. INT8_MAX: invalid/unknown.</field>
