@@ -206,9 +206,8 @@ class tPassThrough
 
     bool vehicle_is_armed;
 
-    uint8_t pt_param_id_to_send;
+    uint8_t param_id_to_send;
 };
-
 
 
 void tPassThrough::Init(void)
@@ -221,7 +220,7 @@ void tPassThrough::Init(void)
 
     vehicle_is_armed = false;
 
-    pt_param_id_to_send = 1;
+    param_id_to_send = 1;
 
     passthrough_array_is_receiving = false;
 }
@@ -737,10 +736,12 @@ bool tPassThrough::get_Param_0x5007(uint32_t* data)
     if (!pt_update[PARAM_0x5007]) return false;
     pt_update[PARAM_0x5007] = false;
 
-    uint32_t pt_param_id = pt_param_id_to_send;
+    if (passthrough_array_is_receiving) { *data = pt_data[PARAM_0x5007]; return true; }
 
-    pt_param_id_to_send++;
-    if (pt_param_id_to_send > 4) pt_param_id_to_send = 1;
+    uint32_t pt_param_id = param_id_to_send;
+
+    param_id_to_send++;
+    if (param_id_to_send > 4) param_id_to_send = 1;
 
     uint32_t pt_param_value = 0;
     switch (pt_param_id) {

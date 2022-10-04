@@ -404,7 +404,6 @@ void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t len)
 }
 
 
-
 //-------------------------------------------------------
 // CRSF Telemetry Mavlink Handling
 // we have to kinds to consider:
