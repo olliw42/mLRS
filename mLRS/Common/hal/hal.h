@@ -57,7 +57,9 @@
 #ifdef RX_R9MX_868_L433CB
 #include "rx-hal-R9MX-868-l433cb.h"
 #endif
-
+#ifdef RX_R9M_868_F103C8
+#include "rx-hal-R9M-868-f103c8.h"
+#endif
 #ifdef RX_R9MM_868_F103RB
 #include "rx-hal-R9MM-868-f103rb.h"
 #endif
