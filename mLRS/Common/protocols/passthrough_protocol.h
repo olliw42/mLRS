@@ -148,11 +148,13 @@ class tPassThrough
     void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* payload);       // #173, ArduPilot dialect specific
     void handle_mavlink_msg_rpm(fmav_rpm_t* payload);                       // #226, ArduPilot dialect specific
     void handle_mavlink_msg_home_position(fmav_home_position_t* payload);   // #242
+    void handle_mavlink_msg_statustext(fmav_statustext_t* payload);         // #253
 
     // methods to convert mavlink data to passthrough (OpenTX) format
 
     bool get_GpsLat_0x800(uint32_t* data);
     bool get_GpsLon_0x800(uint32_t* data);
+    bool get_Text_0x5000(uint32_t* data);
     bool get_ApStatus_0x5001(uint32_t* data);
     bool get_GpsStatus_0x5002(uint32_t* data);
     bool get_Battery1_0x5003(uint32_t* data);
@@ -199,6 +201,11 @@ class tPassThrough
     fmav_rangefinder_t rangefinder = {0};
     fmav_rpm_t rpm = {0};
     fmav_home_position_t home_position = {0};
+    fmav_statustext_t statustext = {0};
+
+    fmav_statustext_t statustext_cur = {0};
+    bool statustext_cur_inprocess;
+    uint8_t statustext_cur_chunk_index;
 
     bool global_position_int_received_once;
     bool fence_status_received_once;
@@ -213,6 +220,9 @@ class tPassThrough
 void tPassThrough::Init(void)
 {
     for (uint8_t n = 0; n < PASSTHROUGH_PACKET_TYPE_NUM; n++) pt_update[n] = false;
+
+    statustext_cur_inprocess = false;
+    statustext_cur_chunk_index = 0;
 
     global_position_int_received_once = false;
     fence_status_received_once = false;
@@ -247,7 +257,8 @@ void tPassThrough::decode_passthrough_array(uint8_t count, uint8_t* buf)
               pt_update[GPS_LAT_0x800] = true;
             }
             break;
-        case 0x5001: pt_data[AP_STATUS_0x5001] = data;  pt_update[AP_STATUS_0x5001] = true; break;
+        case 0x5000: pt_data[TEXT_0x5000] = data; pt_update[TEXT_0x5000] = true; break;
+        case 0x5001: pt_data[AP_STATUS_0x5001] = data; pt_update[AP_STATUS_0x5001] = true; break;
         case 0x5002: pt_data[GPS_STATUS_0x5002] = data; pt_update[GPS_STATUS_0x5002] = true; break;
         case 0x5003: pt_data[BATT_1_0x5003] = data; pt_update[BATT_1_0x5003] = true; break;
         case 0x5004: pt_data[HOME_0x5004] = data; pt_update[HOME_0x5004] = true; break;
@@ -429,6 +440,13 @@ void tPassThrough::handle_mavlink_msg_home_position(fmav_home_position_t* payloa
 }
 
 
+void tPassThrough::handle_mavlink_msg_statustext(fmav_statustext_t* payload) // #253 -> 0x5000 TEXT
+{
+    memcpy(&statustext, payload, sizeof(fmav_statustext_t));
+    pt_update[TEXT_0x5000] = true;
+}
+
+
 //-------------------------------------------------------
 // Passthrough Converters
 
@@ -479,6 +497,52 @@ bool tPassThrough::get_GpsLon_0x800(uint32_t* data)
     *data = 0;
     pt_pack32(data, pt_lon, 0, 30);
     pt_pack32(data, (global_position_int.lon < 0) ? 3 : 2, 30, 2);
+
+    return true;
+}
+
+
+// this needs a special treatments as we send it in chunks
+// we double buffer the statustext message
+bool tPassThrough::get_Text_0x5000(uint32_t* data)
+{
+    if (passthrough_array_is_receiving) {
+        if (!pt_update[TEXT_0x5000]) return false;
+        pt_update[TEXT_0x5000] = false;
+        *data = pt_data[TEXT_0x5000];
+        return true;
+    }
+
+    if (!statustext_cur_inprocess) { // idle, so we can check for a new statustext
+        if (!pt_update[TEXT_0x5000]) return false; // nothing to do
+        pt_update[TEXT_0x5000] = false;
+
+        memcpy(&statustext_cur, &statustext, sizeof(fmav_statustext_t));
+        statustext_cur_inprocess = true;
+        statustext_cur_chunk_index = 0;
+    }
+
+    *data = 0;
+
+    char c = '\0';
+    for (uint8_t i = 0; i < 4; i++) {
+        if (statustext_cur_chunk_index >= sizeof(statustext_cur.text)) break; // last char reached
+        c = statustext_cur.text[statustext_cur_chunk_index++];
+        if (c == '\0') break; // terminating char reached
+        pt_pack32(data, c, (3 - i) * 8, 7); // 24, 16, 8, 0
+    }
+    // text is of size 50, which is not divisible by 4
+    // hence, we always will have a terminating '\0' in a chunk, also when the string ends because of reaching 50
+    if ((c == '\0') || (statustext_cur_chunk_index >= sizeof(statustext_cur.text))) {
+        // we reached end of text
+        // severity is sent as MSB of last three bytes of the last chunk (bits 24, 16, and 8)
+        // works since characters are 7 bits
+        pt_pack32(data, (statustext.severity & 0x01), 7, 1);
+        pt_pack32(data, (statustext.severity & 0x02) >> 1, 15, 1);
+        pt_pack32(data, (statustext.severity & 0x04) >> 2, 23, 1);
+
+        statustext_cur_inprocess = false;
+    }
 
     return true;
 }
@@ -862,6 +926,7 @@ bool tPassThrough::get_VfrHud_0x50F2(uint32_t* data)
 bool tPassThrough::get_packet_data(uint8_t packet_type, uint32_t* data)
 {
     switch (packet_type) {
+    case TEXT_0x5000: return get_Text_0x5000(data);
     case AP_STATUS_0x5001: return get_ApStatus_0x5001(data);
     case GPS_STATUS_0x5002: return get_GpsStatus_0x5002(data);
     case BATT_1_0x5003: return get_Battery1_0x5003(data);
@@ -960,26 +1025,32 @@ bool tPassThrough::GetTelemetryFrameMulti(uint8_t* data, uint8_t* len)
         pm.count++;
     }
 
-    if ((pm.count < 8) && get_Battery1_0x5003(&pd)) {
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Battery1_0x5003(&pd)) {
         pm.packet[pm.count].packet_type = pt_id[BATT_1_0x5003];
         pm.packet[pm.count].data = pd;
         pm.count++;
     }
 
-    if ((pm.count < 8) && get_Battery2_0x5008(&pd)) {
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Battery2_0x5008(&pd)) {
         pm.packet[pm.count].packet_type = pt_id[BATT_2_0x5008];
         pm.packet[pm.count].data = pd;
         pm.count++;
     }
 
-    if ((pm.count < 8) && get_Home_0x5004(&pd)) {
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Home_0x5004(&pd)) {
         pm.packet[pm.count].packet_type = pt_id[HOME_0x5004];
         pm.packet[pm.count].data = pd;
         pm.count++;
     }
 
-    if ((pm.count < 8) && get_Param_0x5007(&pd)) {
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Param_0x5007(&pd)) {
         pm.packet[pm.count].packet_type = pt_id[PARAM_0x5007];
+        pm.packet[pm.count].data = pd;
+        pm.count++;
+    }
+
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Text_0x5000(&pd)) {
+        pm.packet[pm.count].packet_type = pt_id[TEXT_0x5000];
         pm.packet[pm.count].data = pd;
         pm.count++;
     }

@@ -669,6 +669,13 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         passthrough.handle_mavlink_msg_home_position(&payload);
         }break;
 
+    case FASTMAVLINK_MSG_ID_STATUSTEXT: {
+        if (passthrough.passthrough_array_is_receiving) break;
+        fmav_statustext_t payload;
+        fmav_msg_statustext_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_statustext(&payload);
+        }break;
+
     }
 }
 
