@@ -10,12 +10,18 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.01.13 and later, mOTX v33
 
-local version = '2022-10-04.02'
+local version = '2022-10-05.00'
 
 
 ----------------------------------------------------------------------
 -- it would be so nice to have
 ----------------------------------------------------------------------
+
+local function drawFilledTriangle(x0, y0, x1, y1, x2, y2, flags)
+    if lcd.drawFilledTriangle == nil then return end
+    lcd.drawFilledTriangle(x0, y0, x1, y1, x2, y2, flags)
+end    
+
 local charSize = {}
 charSize["a"] = 10
 charSize["b"] = 10
@@ -33,6 +39,7 @@ charSize["m"] = 15
 charSize["n"] = 10
 charSize["o"] = 10
 charSize["p"] = 10
+charSize["q"] = 10
 charSize["r"] = 7
 charSize["s"] = 9
 charSize["t"] = 6
@@ -74,36 +81,36 @@ local cmdPop = nil
 local MBRIDGE_COMMANDPACKET_STX  = 0xA0
 local MBRIDGE_COMMANDPACKET_MASK = 0xE0
 
-local MBRIDGE_CMD_TX_LINK_STATS_LEN = 22
-local MBRIDGE_CMD_DEVICE_ITEM_LEN   = 24
-local MBRIDGE_CMD_PARAM_ITEM_LEN    = 24
-local MBRIDGE_CMD_REQUEST_CMD_LEN   = 18
-local MBRIDGE_CMD_INFO_LEN          = 24
-local MBRIDGE_CMD_PARAM_SET_LEN     = 7
-local MBRIDGE_CMD_MODELID_SET_LEN   = 3
+local MBRIDGE_CMD_TX_LINK_STATS_LEN  = 22
+local MBRIDGE_CMD_DEVICE_ITEM_LEN    = 24
+local MBRIDGE_CMD_PARAM_ITEM_LEN     = 24
+local MBRIDGE_CMD_REQUEST_CMD_LEN    = 18
+local MBRIDGE_CMD_INFO_LEN           = 24
+local MBRIDGE_CMD_PARAM_SET_LEN      = 7
+local MBRIDGE_CMD_MODELID_SET_LEN    = 3
 
-local MBRIDGE_PARAM_TYPE_UINT8 = 0
-local MBRIDGE_PARAM_TYPE_INT8 = 1
-local MBRIDGE_PARAM_TYPE_UINT16 = 2
-local MBRIDGE_PARAM_TYPE_INT16 = 3
-local MBRIDGE_PARAM_TYPE_LIST = 4
-local MBRIDGE_PARAM_TYPE_STR6 = 5
+local MBRIDGE_PARAM_TYPE_UINT8       = 0
+local MBRIDGE_PARAM_TYPE_INT8        = 1
+local MBRIDGE_PARAM_TYPE_UINT16      = 2
+local MBRIDGE_PARAM_TYPE_INT16       = 3
+local MBRIDGE_PARAM_TYPE_LIST        = 4
+local MBRIDGE_PARAM_TYPE_STR6        = 5
 
-local MBRIDGE_CMD_TX_LINK_STATS         = 2
-local MBRIDGE_CMD_REQUEST_INFO          = 3
-local MBRIDGE_CMD_DEVICE_ITEM_TX        = 4
-local MBRIDGE_CMD_DEVICE_ITEM_RX        = 5
-local MBRIDGE_CMD_PARAM_REQUEST_LIST    = 6
-local MBRIDGE_CMD_PARAM_ITEM            = 7
-local MBRIDGE_CMD_PARAM_ITEM2           = 8
-local MBRIDGE_CMD_PARAM_ITEM3           = 9
-local MBRIDGE_CMD_REQUEST_CMD           = 10
-local MBRIDGE_CMD_INFO                  = 11
-local MBRIDGE_CMD_PARAM_SET             = 12
-local MBRIDGE_CMD_PARAM_STORE           = 13
-local MBRIDGE_CMD_BIND_START            = 14
-local MBRIDGE_CMD_BIND_STOP             = 15
-local MBRIDGE_CMD_MODELID_SET           = 16
+local MBRIDGE_CMD_TX_LINK_STATS      = 2
+local MBRIDGE_CMD_REQUEST_INFO       = 3
+local MBRIDGE_CMD_DEVICE_ITEM_TX     = 4
+local MBRIDGE_CMD_DEVICE_ITEM_RX     = 5
+local MBRIDGE_CMD_PARAM_REQUEST_LIST = 6
+local MBRIDGE_CMD_PARAM_ITEM         = 7
+local MBRIDGE_CMD_PARAM_ITEM2        = 8
+local MBRIDGE_CMD_PARAM_ITEM3        = 9
+local MBRIDGE_CMD_REQUEST_CMD        = 10
+local MBRIDGE_CMD_INFO               = 11
+local MBRIDGE_CMD_PARAM_SET          = 12
+local MBRIDGE_CMD_PARAM_STORE        = 13
+local MBRIDGE_CMD_BIND_START         = 14
+local MBRIDGE_CMD_BIND_STOP          = 15
+local MBRIDGE_CMD_MODELID_SET        = 16
 
 local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_TX_LINK_STATS then return MBRIDGE_CMD_TX_LINK_STATS_LEN; end
@@ -738,11 +745,13 @@ local function drawPageEdit(page_str)
     local x_mid = LCD_W/2 - 5 
     if top_idx > 0 then
         local y_base = y0 - 4
-        lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
+        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
+        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
     end
     if page_param_cnt > top_idx + page_N then
         local y_base = y0 + page_N1*dy + 4
-        lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
+        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
+        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
     end      
 end    
 
