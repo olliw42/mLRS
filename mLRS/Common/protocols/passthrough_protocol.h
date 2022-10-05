@@ -203,6 +203,7 @@ class tPassThrough
     fmav_home_position_t home_position = {0};
     fmav_statustext_t statustext = {0};
 
+    // we double-buffer it, tried 8-size fifo, didn't appear to make a difference
     fmav_statustext_t statustext_cur = {0};
     bool statustext_cur_inprocess;
     uint8_t statustext_cur_chunk_index;
@@ -537,9 +538,9 @@ bool tPassThrough::get_Text_0x5000(uint32_t* data)
         // we reached end of text
         // severity is sent as MSB of last three bytes of the last chunk (bits 24, 16, and 8)
         // works since characters are 7 bits
-        pt_pack32(data, (statustext.severity & 0x01), 7, 1);
-        pt_pack32(data, (statustext.severity & 0x02) >> 1, 15, 1);
-        pt_pack32(data, (statustext.severity & 0x04) >> 2, 23, 1);
+        pt_pack32(data, (statustext_cur.severity & 0x01), 7, 1);
+        pt_pack32(data, (statustext_cur.severity & 0x02) >> 1, 15, 1);
+        pt_pack32(data, (statustext_cur.severity & 0x04) >> 2, 23, 1);
 
         statustext_cur_inprocess = false;
     }
