@@ -87,6 +87,10 @@ The range which one may expect can be estimated from the standard math; the [Imm
 
 Only very few range testes were reported so far (and only for 2.4 GHz/50 Hz). They are however consistent with the estimated ranges. Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at even larger ranges.
 
+## Firmware: Flashing ##
+
+Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the .hex file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The Tx module can then be configured to your needs via the CLI or via the mLRS Configuration lua script. The Rx module is configured by first binding it to the Tx module, and then configuring it through the Tx module, exactly like the Tx module is configured
+
 ## Software: Installation Bits and Bops ##
 
 This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
@@ -125,11 +129,11 @@ You need to have git and python3 installed.
 
 ## Hardware ##
 
-Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS TX modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
+Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
 
 The code so far supports:
 - Frsky R9M transmitter and R9MX and R9MM receiver modules
-- Siyi FM30 system (early version only, those with STM32 chips; the TX module needs few small hardware modifications, see https://github.com/olliw42/mLRS/issues/4#issuecomment-1030601900)
+- Siyi FM30 system (early version only, those with STM32 chips; the Tx module needs few small hardware modifications, see https://github.com/olliw42/mLRS/issues/4#issuecomment-1030601900)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. In the 2.4 GHz range, the DIY options are currently the way to go.

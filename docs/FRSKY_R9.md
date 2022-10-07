@@ -9,14 +9,16 @@ Comment: mLRS also supports the R9MM receiver. However, flashing the R9MM with S
 
 ## R9M Tx Module ##
 
-TODO: serial port limitations
+The R9M module is unfortunately limited with respect to serial ports. It provides acess to only one serial port, which moreover has inverted TTL signals. In order to use this serial port, these conditions apply:
 
-TODO: dip switches
+1. One needs to use a "Frsky inverter" dongle. You either can buy one or build it yourself. The DIY approach is based on the MAX3232 RS232 chip; an excellent build tutorial is provided here (Some soldering required)[https://discuss.ardupilot.org/t/some-soldering-required/27613]. Be aware however that many fake chips are available, and the original scheme suggested in this blog may not work. One in fact may have to add an extra diode and resistor.
+
+2. The serial port of the R9M module can be configured to work either as "serial" or "CLI". This is done by setting the dip switch 1 (left dip switch): off (switch down) = CLI, on (switch up) = serial. Note that the dip switch position is read only at power up, i.e., one needs to repower the module to make the change effective.
 
 
 ## Flashing ##
 
-ExpressLRS has figured out a convenient and easy way, which is unfortunately not available for mLRS (someone needs to figure it out). For flashing mLRS only the grass-route DIY procedure using a ST-Link programmer is currently possible.
+ExpressLRS has figured out a convenient and easy way for flashing, which is unfortunately not available for mLRS (someone needs to figure it out). For flashing mLRS only the grass-route DIY procedure using a ST-Link programmer is currently possible.
 
 Note: Fashing mLRS with the ST-Link is a non-reversible operation, i.e., it is not possible to revert back to the original Frsky firmware. It is possible to switch to ExpressLRS however.
 
