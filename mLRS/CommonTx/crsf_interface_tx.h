@@ -670,7 +670,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         }break;
 
     case FASTMAVLINK_MSG_ID_STATUSTEXT: {
-        if (passthrough.passthrough_array_is_receiving) break;
+        //NO, we always take it from statustext and ignore passthrough_array if (passthrough.passthrough_array_is_receiving) break;
         fmav_statustext_t payload;
         fmav_msg_statustext_decode(&payload, msg);
         passthrough.handle_mavlink_msg_statustext(&payload);

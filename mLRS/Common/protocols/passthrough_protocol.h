@@ -258,7 +258,7 @@ void tPassThrough::decode_passthrough_array(uint8_t count, uint8_t* buf)
               pt_update[GPS_LAT_0x800] = true;
             }
             break;
-        case 0x5000: pt_data[TEXT_0x5000] = data; pt_update[TEXT_0x5000] = true; break;
+//NO, we ignore it        case 0x5000: pt_data[TEXT_0x5000] = data; pt_update[TEXT_0x5000] = true; break;
         case 0x5001: pt_data[AP_STATUS_0x5001] = data; pt_update[AP_STATUS_0x5001] = true; break;
         case 0x5002: pt_data[GPS_STATUS_0x5002] = data; pt_update[GPS_STATUS_0x5002] = true; break;
         case 0x5003: pt_data[BATT_1_0x5003] = data; pt_update[BATT_1_0x5003] = true; break;
@@ -507,12 +507,14 @@ bool tPassThrough::get_GpsLon_0x800(uint32_t* data)
 // we double buffer the statustext message
 bool tPassThrough::get_Text_0x5000(uint32_t* data)
 {
+/*// NO: even with passthrough array we do it by reading the statustext, we ignore 0x5000 data from passthrough array
     if (passthrough_array_is_receiving) {
         if (!pt_update[TEXT_0x5000]) return false;
         pt_update[TEXT_0x5000] = false;
         *data = pt_data[TEXT_0x5000];
         return true;
     }
+*/
 
     if (!statustext_cur_inprocess) { // idle, so we can check for a new statustext
         if (!pt_update[TEXT_0x5000]) return false; // nothing to do
