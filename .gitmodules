@@ -28,3 +28,9 @@
 [submodule "tools/st-drivers/cmsis_device_l4"]
 	path = tools/st-drivers/cmsis_device_l4
 	url = https://github.com/STMicroelectronics/cmsis_device_l4.git
+[submodule "tools/st-drivers/cmsis_device_wl"]
+	path = tools/st-drivers/cmsis_device_wl
+	url = https://github.com/STMicroelectronics/cmsis_device_wl.git
+[submodule "tools/st-drivers/stm32wlxx_hal_driver"]
+	path = tools/st-drivers/stm32wlxx_hal_driver
+	url = https://github.com/STMicroelectronics/stm32wlxx_hal_driver.git
