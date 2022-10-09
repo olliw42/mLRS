@@ -51,6 +51,13 @@ g4xx_hal_files_to_exclude = [
   'stm32g4xx_hal_timebase_tim_template.c',
 ]
 
+wlxx_hal_files_to_exclude = [
+  'stm32wlxx_hal_msp_template.c',
+  'stm32wlxx_hal_timebase_rtc_alarm_template.c',
+  'stm32wlxx_hal_timebase_rtc_wakeup_template.c',
+  'stm32wlxx_hal_timebase_tim_template.c',
+]
+
 
 def copy_cmsis_driver(folder, chip):
     print('--- COPY CMSIS ---')
@@ -58,7 +65,7 @@ def copy_cmsis_driver(folder, chip):
     print('chip:  ', chip)
     chip_short = chip[:2]
     chip_short_upper = chip_short.upper()
-    if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4':
+    if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4' or chip_short == 'wl':
         source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_device_'+chip_short,'Include')
         print('src:   ', source)
         target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Device','ST','STM32'+chip_short_upper+'xx','Include')
@@ -74,7 +81,7 @@ def copy_hal_driver(folder, chip):
     print('chip:  ', chip)
     chip_short = chip[:2]
     chip_short_upper = chip_short.upper()
-    if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4' :
+    if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4' or chip_short == 'wl':
         # copy Inc
         source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','stm32'+chip_short+'xx_hal_driver','Inc')
         print('src:   ', source)
@@ -96,6 +103,8 @@ def copy_hal_driver(folder, chip):
             files_to_exclude = l4xx_hal_files_to_exclude
         if chip_short == 'g4':
             files_to_exclude = g4xx_hal_files_to_exclude
+        if chip_short == 'wl':
+            files_to_exclude = wlxx_hal_files_to_exclude
         for f in dirlist:
             copy_woverwrite(target, source, f, files_to_exclude)
        
