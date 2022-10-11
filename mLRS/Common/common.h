@@ -80,18 +80,18 @@ class tDebugPort : public tSerialBase
 {
 #ifdef USE_DEBUG
   public:
-#ifdef DEVICE_IS_RECEIVER
 #ifdef DEVICE_HAS_DEBUG_SWUART
     void Init(void) { swuart_init(); }
     void putc(char c) override { swuart_putc(c); }
 #else
+#ifdef DEVICE_IS_RECEIVER
     void Init(void) { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
-#endif
 #endif
 #ifdef DEVICE_IS_TRANSMITTER
     void Init(void) { uartf_init(); }
     void putc(char c) override { uartf_putc(c); }
+#endif
 #endif
 #endif
 };
