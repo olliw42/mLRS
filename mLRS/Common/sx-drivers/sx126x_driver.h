@@ -100,6 +100,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetLoraConfiguration(const tSxLoraConfiguration* config)
     {
+        // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
                             config->CodingRate);
@@ -139,7 +140,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         data |= 0x1E;
         WriteRegister(SX126X_REG_TX_CLAMP_CONFIG, data);
 
-        ClearDeviceError();
+        ClearDeviceError(); // XOSC_START_ERR is raised, datasheet 13.3.6 SetDIO3AsTCXOCtrl, p.84
 
         // set DIO3 as TCXO control
         SetDio3AsTcxoControl(SX126X_DIO3_OUTPUT_1_8, 250); // set output to 1.8V, ask specification of TCXO to maker board
@@ -203,12 +204,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void config_calc(void)
     {
-         int8_t power_dbm = Config.Power_dbm;
-         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        int8_t power_dbm = Config.Power_dbm;
+        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
-         uint8_t index = Config.LoraConfigIndex;
-         if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
-         lora_configuration = &(Sx126xLoraConfiguration[index]);
+        uint8_t index = Config.LoraConfigIndex;
+        if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
+        lora_configuration = &(Sx126xLoraConfiguration[index]);
     }
 
     // cumbersome to calculate in general, so use hardcoded for a specific settings
@@ -314,7 +315,7 @@ class Sx126xDriver : public Sx126xDriverCommon
         sx_init_gpio();
         sx_dio_init_exti_isroff();
 
-        // no idea how long the SX1280 takes to boot up, so give it some good time
+        // no idea how long the SX126x takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1262 ??
