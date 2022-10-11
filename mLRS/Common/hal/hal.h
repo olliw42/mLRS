@@ -116,8 +116,12 @@
     #define USE_DEBUG
   #endif
 #else
-  #define USE_SERIAL
-  #define USE_COM
+  #if !defined DEVICE_HAS_NO_SERIAL
+    #define USE_SERIAL
+  #endif
+  #if !defined DEVICE_HAS_NO_COM
+    #define USE_COM
+  #endif
   #ifdef DEBUG_ENABLED
     #define USE_DEBUG
   #endif
