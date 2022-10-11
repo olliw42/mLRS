@@ -801,6 +801,7 @@ IF_ANTENNA1(
         link_state = LINK_STATE_IDLE;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
+        DBG_MAIN_SLIM(dbg.puts("?");)
       }
 
       if (irq_status & SX12xx_IRQ_RX_DONE) {
