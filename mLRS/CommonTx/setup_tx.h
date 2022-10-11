@@ -180,6 +180,12 @@ bool setup_param_is_rx(uint8_t param_idx)
 }
 
 
+bool setup_param_str_is_rx(const char* name)
+{
+    return (name[0] == 'R' && name[1] == 'x');
+}
+
+
 //-------------------------------------------------------
 // handler
 //-------------------------------------------------------

@@ -495,7 +495,7 @@ bool rx_param_changed;
       if (cmd_param_set(sname, svalue)) { // p name, p name = value
           if (!param_get_idx(&param_idx, sname)) {
               putsn("err: invalid parameter name");
-          } else if (!connected() && sname[0] == 'R'){
+          } else if (!connected() && setup_param_str_is_rx(sname)) {
               putsn("warn: receiver not connected");
           } else if (svalue[0] == '?') {
               print_param(param_idx);
