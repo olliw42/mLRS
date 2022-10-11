@@ -300,11 +300,15 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void _reset(void)
     {
+#ifdef SX_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // datasheet says > 100 us
         gpio_high(SX_RESET);
         delay_ms(50);
         WaitOnBusy();
+#else
+        sx_reset();
+#endif
     }
 
     void Init(void)

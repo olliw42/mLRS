@@ -311,11 +311,15 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void _reset(void)
     {
+#ifdef SX_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
         gpio_high(SX_RESET);
         delay_ms(50); // semtech driver says "typically 2ms observed"
         WaitOnBusy();
+#else
+        sx_reset();
+#endif
     }
 
     void Init(void)

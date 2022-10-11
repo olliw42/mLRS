@@ -315,10 +315,14 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     void _reset(void)
     {
+#ifdef SX_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // datasheet says > 100 us
         gpio_high(SX_RESET);
         delay_ms(50); // datasheet says 5 ms
+#else
+        sx_reset();
+#endif
     }
 
     void Init(void)
