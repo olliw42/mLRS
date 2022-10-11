@@ -85,11 +85,6 @@ void sx_init_gpio(void)
   gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
-bool sx_dio_read(void)
-{
-  return (gpio_read_activehigh(SX_DIO1)) ? true : false;
-}
-
 bool sx_busy_read(void)
 {
   return (gpio_read_activehigh(SX_BUSY)) ? true : false;
@@ -155,11 +150,6 @@ void sx2_init_gpio(void)
   gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
   gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
   gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-}
-
-bool sx2_dio_read(void)
-{
-  return (gpio_read_activehigh(SX2_DIO1)) ? true : false;
 }
 
 bool sx2_busy_read(void)

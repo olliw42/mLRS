@@ -107,11 +107,6 @@ void sx_init_gpio(void)
   gpio_init(SX_PA_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
-bool sx_dio_read(void)
-{
-  return (gpio_read_activehigh(SX_DIO0)) ? true : false;
-}
-
 void sx_amp_transmit(void)
 {
   gpio_low(SX_SWITCH_RX_EN);

@@ -80,22 +80,13 @@ void sx_init_gpio(void)
 {
   gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-#ifdef SX_BUSY
   gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-#endif
 }
 
-bool sx_dio_read(void)
-{
-  return (gpio_read_activehigh(SX_DIO1)) ? true : false;
-}
-
-#ifdef SX_BUSY
 bool sx_busy_read(void)
 {
   return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
-#endif
 
 void sx_amp_transmit(void)
 {
@@ -155,11 +146,6 @@ void sx2_init_gpio(void)
   gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
   gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
   gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-}
-
-bool sx2_dio_read(void)
-{
-  return (gpio_read_activehigh(SX2_DIO1)) ? true : false;
 }
 
 bool sx2_busy_read(void)
