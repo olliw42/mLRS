@@ -146,6 +146,9 @@ class Out : public OutBase
         }
         OutBase::SendLinkStatistics(&lstats);
     }
+#else
+    void Init(void) {}
+    void SendLinkStatistics(void) {}
 #endif
 };
 
