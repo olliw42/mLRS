@@ -99,7 +99,7 @@ class In : public InBase
         uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
         if (!inverted) {
             in_set_inverted();
-            gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
+            gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST); //TODO: should go to hal, but UARTE_RX_IO not known to hal at the time
         } else {
             in_set_normal();
             gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);

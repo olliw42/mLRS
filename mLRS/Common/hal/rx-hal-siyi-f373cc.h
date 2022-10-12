@@ -138,7 +138,7 @@ void sx_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus output pin
+//-- Out port
 
 #define OUT_XOR                   IO_PF6
 

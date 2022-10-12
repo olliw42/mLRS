@@ -121,7 +121,8 @@ void sx_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus output pin
+//-- Out port
+// UART_UARTx = USART2
 
 void out_init_gpio(void)
 {

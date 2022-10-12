@@ -190,7 +190,7 @@ void sx2_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus output pin
+//-- Out port
 
 #define OUT_XOR                   IO_PB9
 

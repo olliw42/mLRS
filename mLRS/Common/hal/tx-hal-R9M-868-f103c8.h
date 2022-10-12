@@ -140,9 +140,9 @@ void sx_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus input pin
 
-#define IN                        IO_PA2 // UART2 RX, inverted
+//-- In port
+// is on IO_PA2, UART2 RX, inverted
 
 void in_init_gpio(void)
 {

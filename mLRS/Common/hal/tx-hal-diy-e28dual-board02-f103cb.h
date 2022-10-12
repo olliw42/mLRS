@@ -218,7 +218,7 @@ void sx2_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus input pin
+//-- In port
 
 #define IN_XOR                    IO_PC15
 

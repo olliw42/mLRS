@@ -119,7 +119,7 @@ void sx_dio_enable_exti_isr(void)
 }
 
 
-//-- SBus output pin
+//-- Out port
 
 #define OUT_ENABLE                IO_PA5 // high = enabled
 
