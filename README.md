@@ -155,5 +155,5 @@ You find more documentation on the following pages:
 - Setup for [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
 - Basic setup for [SBus Radios](docs/BASIC_SETUP.md)
 - Using [Frsky R9 Devices](docs/FRSKY_R9.md)
-- Using [SeeedStudio Wio-E5 Boards](docs/SeeedStudio_Wio_E5.md)
+- Using [SeeedStudio Wio-E5 Boards](docs/SEEEDSTUDIO_WIO_E5.md)
 
