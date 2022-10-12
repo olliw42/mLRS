@@ -59,3 +59,4 @@ def correct_folders_in_project_files():
 
 
 correct_folders_in_project_files()
+os.system("pause")

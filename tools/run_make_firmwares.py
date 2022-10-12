@@ -107,3 +107,4 @@ def make_all_targets():
 
 do_common_conf_h()
 make_all_targets()
+os.system("pause")

@@ -128,3 +128,4 @@ def do_for_each_folder():
 
 
 do_for_each_folder()
+os.system("pause")
