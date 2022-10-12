@@ -249,18 +249,25 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
 {
     memset(Power_optstr, 0, slen);
 
-    char optstr[32+2] = {0};
+    char optstr[44+2] = {0};
 
     for (uint8_t i = 0; i < num; i++) {
-        char s[32];
+        char s[44+2];
         if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {
             strcpy(s, "min,");
-        } else{
+        } else
+        if (power_list[i] < 1000) {
             u16toBCDstr(power_list[i], s);
             remove_leading_zeros(s);
             strcat(s, " mW,");
+        } else {
+            u16toBCDstr((power_list[i] + 50) / 100, s);
+            remove_leading_zeros(s);
+            uint8_t l = strlen(s);
+            s[l] = s[l-1]; s[l-1] = '.'; s[l+1] = '\0';
+            strcat(s, " W,");
         }
         if (strlen(optstr) + strlen(s) <= slen) { // we are going to cut off the last char, hence <=
             strcat(optstr, s);

@@ -49,7 +49,7 @@ void setup_configure_metadata(void)
 
     //-- Tx:
 
-    power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
+    power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
@@ -100,7 +100,7 @@ void setup_configure_metadata(void)
 
     //-- Rx:
 
-    power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 32);
+    power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Rx Diversity: "on,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY

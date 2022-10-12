@@ -274,14 +274,14 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask;
     uint16_t Mode_allowed_mask;
 
-    char Tx_Power_optstr[32+1];
+    char Tx_Power_optstr[44+1];
     uint16_t Tx_Diversity_allowed_mask;
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
 
-    char Rx_Power_optstr[32+1];
+    char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
     uint16_t Rx_Buzzer_allowed_mask;

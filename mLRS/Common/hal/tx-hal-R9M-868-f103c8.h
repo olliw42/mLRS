@@ -259,7 +259,7 @@ void pos_switch_init(void)
 
 void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
 {
-  // these values are taken from ELRS
+  // these are the values of ELRS
   // 10mW   10dbm   720
   // 25mW   14dbm   875
   // 50mW   17dBm   1000
@@ -268,9 +268,10 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
   // 500mW  27dBm   1730
   // 1000mW 30dBm   2100
   // my estimated 1mW 0dBm 200
+  // measurements with an IRC power meter suggests changes (https://www.rcgroups.com/forums/showpost.php?p=49934177&postcount=888)
   uint32_t voltage_mV; // 2500 was too high
   if (power_dbm > 28) {
-    voltage_mV = 2100;
+    voltage_mV = 2250; // was 2100
     *actual_power_dbm = 30;
   } else if (power_dbm > 25) {
     voltage_mV = 1730;
@@ -279,7 +280,7 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
     voltage_mV = 1390;
     *actual_power_dbm = 24;
   } else if (power_dbm > 18) {
-    voltage_mV = 1140;
+    voltage_mV = 1195; // was 1140
     *actual_power_dbm = 20;
   } else if (power_dbm > 15) {
     voltage_mV = 1000;
@@ -291,8 +292,8 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
     voltage_mV = 720;
     *actual_power_dbm = 10;
   } else {
-    voltage_mV = 200;
-    *actual_power_dbm = 0;
+    voltage_mV = 100; // was 200
+    *actual_power_dbm = 3; // was 0
   }
 
   //if (!dac->initialized) return;
@@ -308,11 +309,12 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
 }
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_23_DBM, .mW = 200 },
     { .dbm = POWER_27_DBM, .mW = 500 },
+    { .dbm = POWER_30_DBM, .mW = 1000 },
 };
 
 

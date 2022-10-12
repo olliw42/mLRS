@@ -27,6 +27,7 @@ typedef enum {
     POWER_m10_DBM   = -10, // 100 uW
     POWER_m9_DBM    = -9, // 126 uW
     POWER_0_DBM     = 0, // 1 mW
+    POWER_3_DBM     = 3, // 2 mW
     POWER_10_DBM    = 10, // 10 mW
     POWER_12_DBM    = 12, // 16 mW
     POWER_12p5_DBM  = 13, // 18 mW
