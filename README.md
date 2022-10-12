@@ -67,7 +67,7 @@ Further features:
 - the transmitter and receiver parameters can be set via a LUA script or a CLI.
 - bind mode for binding "unknown" receivers to the transmitter.
 - support for buzzer, oled & five-way button, serial2. 
-- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](mLRS#further-documentations).
+- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](further-documentations).
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios.
 
 ## Community ##
