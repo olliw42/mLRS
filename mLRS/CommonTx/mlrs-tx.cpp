@@ -283,7 +283,7 @@ volatile uint16_t irq2_status;
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
@@ -301,7 +301,7 @@ void SX_DIO_EXTI_IRQHandler(void)
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    sx2_dio_exti_isr_clearflag();
     irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
     if (irq2_status & SX12xx_IRQ_RX_DONE) {
         if (bind.IsInBind()) {

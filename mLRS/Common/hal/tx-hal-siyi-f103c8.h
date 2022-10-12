@@ -131,6 +131,11 @@ void sx_dio_enable_exti_isr(void)
   LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
 }
 
+void sx_dio_exti_isr_clearflag(void)
+{
+  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+}
+
 
 //-- Button
 
