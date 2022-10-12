@@ -78,6 +78,15 @@
 #endif
 
 
+#ifdef RX_WIO_E5_GROVE_WLE5JC
+#include "rx-hal-wio-e5-grove-wle5jc.h"
+#endif
+
+#ifdef TX_WIO_E5_MINI_WLE5JC
+#include "tx-hal-wio-e5-mini-wle5jc.h"
+#endif
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
