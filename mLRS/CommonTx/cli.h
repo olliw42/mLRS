@@ -250,6 +250,18 @@ uint16_t param_get_allowed_mask(uint8_t param_idx)
 }
 
 
+uint8_t param_get_allowed_opt_num(uint8_t param_idx)
+{
+    uint16_t allowed_mask = param_get_allowed_mask(param_idx);
+
+    uint8_t nr = 0;
+    for (uint8_t i = 0; i < param_get_opt_num(param_idx); i++) {
+        if (allowed_mask & (1 << i)) nr++;
+    }
+    return nr;
+}
+
+
 bool param_get_idx(uint8_t* param_idx, char* name)
 {
 char s[64];
@@ -362,9 +374,16 @@ char s[16];
 
 void tTxCli::print_param(uint8_t idx)
 {
+    uint8_t allowed_nr = param_get_allowed_opt_num(idx);
+
     puts("  ");
     puts(SetupParameter[idx].name);
     puts(" = ");
+    if (allowed_nr == 0) {
+      puts("-"); // this parameter is not available on this device
+      puts(ret);
+      return;
+    }
     char s[32];
     param_get_setting_str(s, idx, PARAM_FORMAT_CLI);
     puts(s);
@@ -380,6 +399,7 @@ void tTxCli::print_param(uint8_t idx)
     case SETUP_PARAM_TYPE_LIST:{
         uint8_t u8 = *(uint8_t*)(SetupParameter[idx].ptr);
         puts(" ["); com->putc(u8 + '0'); puts("]");
+        if (allowed_nr == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
     case SETUP_PARAM_TYPE_STR6:
         break;
