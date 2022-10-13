@@ -11,9 +11,15 @@ Comment: mLRS also supports the R9MM receiver. However, flashing the R9MM with S
 
 The R9M module is unfortunately limited with respect to serial ports. It provides acess to only one serial port, which moreover has inverted TTL signals. In order to use this serial port, these conditions apply:
 
-1. One needs to use a "Frsky inverter" dongle. You either can buy one or build it yourself. The DIY approach is based on the MAX3232 RS232 chip; an excellent build tutorial is provided here [Some soldering required](https://discuss.ardupilot.org/t/some-soldering-required/27613). Be aware however that many fake chips are available, and the original scheme suggested in this blog may not work. One in fact may have to add an extra diode and resistor.
+1. One needs to use a "Frsky inverter" dongle. You either can buy one or build it yourself.
 
 2. The serial port of the R9M module can be configured to work either as "serial" or "CLI". This is done by setting the dip switch 1 (left dip switch): off (switch down) = CLI, on (switch up) = serial. Note that the dip switch position is read only at power up, i.e., one needs to repower the module to make the change effective.
+
+### DIY Inverter Dongle ###
+
+There are several DIY apporaches available for building the inverter dongle. A common approach is based on the MAX3232 RS232 chip; an excellent build tutorial is provided here [Some soldering required](https://discuss.ardupilot.org/t/some-soldering-required/27613). Be aware however that many fake chips are available, and the original scheme suggested in this blog may not work. One in fact may have to add an extra diode and resistor.
+
+<img src="images/frsky-max3232-inverter-scheme.jpg" style="display: inline-block; margin: 0 auto; max-width: 300px">
 
 
 ## Flashing ##
