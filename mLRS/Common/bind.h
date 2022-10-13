@@ -73,6 +73,9 @@ class BindBase
     void handle_receive(uint8_t antenna, uint8_t rx_status);
     void do_transmit(uint8_t antenna);
     uint8_t do_receive(uint8_t antenna, bool do_clock_reset);
+
+    bool is_pressed = false;
+    int8_t pressed_cnt = 0;
 };
 
 
@@ -85,6 +88,8 @@ void BindBase::Init(void)
     is_connected = false;
 
     button_tlast_ms = millis32();
+    is_pressed = false;
+    pressed_cnt = 0;
 
     memcpy(&TxSignature, BIND_SIGNATURE_TX_STR, 8);
     memcpy(&RxSignature, BIND_SIGNATURE_RX_STR, 8);
@@ -116,7 +121,16 @@ void BindBase::Do(void)
 {
     uint32_t tnow = millis32();
 
-    if (button_pressed()) {
+    // a not so efficient but simple debounce
+    if (!is_pressed) {
+      if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
+      if (pressed_cnt >= 4) is_pressed = true;
+    } else {
+      if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = 4; }
+      if (pressed_cnt <= 0) is_pressed = false;
+    }
+
+    if (is_pressed) {
         if (tnow - button_tlast_ms > BIND_BUTTON_TMO) {
           binding_requested = true;
         }
@@ -151,7 +165,7 @@ uint8_t BindBase::Task(void)
     case BIND_TASK_TX_RESTART_CONTROLLER:
     case BIND_TASK_RX_STORE_PARAMS:
         // postpone until button is released, prevents jumping to RESTART while button is till pressed by user
-        if (button_pressed()) return BIND_TASK_NONE;
+        if (is_pressed) return BIND_TASK_NONE;
         break;
     }
 
