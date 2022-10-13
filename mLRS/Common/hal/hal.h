@@ -12,6 +12,51 @@
 
 // enter define into "MCU G++ Compiler"->"Preprocessor" !!!
 
+/* Documentation
+
+The availability of the many features are handled via #define declarations. In order to keep somewhat track,
+this naming convention is used (with few exceptions):
+- DEVICE_HAS_XXXX: is set in a hal file to indicate the availability/non-availability of a feature
+- USE_XXXX: these are determined through some processing, which can involve the DEVICE_HAS_XXXX flags
+In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
+If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
+flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor" of the feature
+(example: IN feature with normal or inverted UART levels).
+
+Many feature flags are available, which can be set in the hal files. They are listed in the following for the
+tx-hal and rx-hal files.
+
+In tx-hal files:
+
+#define DEVICE_HAS_DIVERSITY        // board supports diversity
+#define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
+#define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
+#define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
+#define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
+#define DEVICE_HAS_SERIAL_OR_DEBUG  // board has UART which is shared between SerialL or Debug, selected by DEBUG_ENABLED flag
+#define DEVICE_HAS_COM_OR_DEBUG     // board has UART which is shared between Com or Debug, selected by DEBUG_ENABLED flag
+#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_NO_SERIAL        // board has no Serial port
+#define DEVICE_HAS_NO_COM           // board has no Com port
+#define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
+#define DEVICE_HAS_I2C_DISPLAY      // board has DISPLAY on I2C
+#define DEVICE_HAS_BT               // board has a Serial2 port
+#define DEVICE_HAS_BUZZER           // board has a Buzzer
+#define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
+
+In rx-hal files:
+
+#define DEVICE_HAS_DIVERSITY        // board supports diversity
+#define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
+#define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
+#define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
+#define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
+#define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
+#define DEVICE_HAS_BUZZER           // board has a Buzzer
+
+Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
+*/
+
 
 #include "device_conf.h"
 

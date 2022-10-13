@@ -11,21 +11,11 @@
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
 
-//#define DEVICE_HAS_DIVERSITY        // board supports diversity
-//#define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
-#define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
-//#define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
-//#define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
-//#define DEVICE_HAS_SERIAL_OR_DEBUG  // board has UART which is shared between SerialL or Debug, selected by DEBUG_ENABLED flag
-//#define DEVICE_HAS_COM_OR_DEBUG     // board has UART which is shared between Com or Debug, selected by DEBUG_ENABLED flag
-//#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
-//#define DEVICE_HAS_NO_SERIAL        // board has no Serial port
-//#define DEVICE_HAS_NO_COM           // board has no Com port
-#define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-//#define DEVICE_HAS_I2C_DISPLAY      // board has DISPLAY on I2C
-//#define DEVICE_HAS_BT               // board has a Serial2 port
-//#define DEVICE_HAS_BUZZER           // board has a Buzzer
-//#define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
+//#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_IN
+#define DEVICE_HAS_DEBUG_SWUART
+//#define DEVICE_HAS_BT
+//#define DEVICE_HAS_BUZZER
 
 
 //-- Timers, Timing, EEPROM, and such stuff

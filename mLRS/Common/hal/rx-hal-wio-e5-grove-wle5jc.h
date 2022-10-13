@@ -11,13 +11,7 @@
 // RX Seeedstudio Grove Wio-E5 board STM32WLE5JC, https://wiki.seeedstudio.com/Grove_LoRa_E5_New_Version/
 //-------------------------------------------------------
 
-//#define DEVICE_HAS_DIVERSITY        // board supports diversity
-//#define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals 
-//#define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
-//#define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
-//#define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-//#define DEVICE_HAS_BUZZER           // board has a Buzzer
+#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
