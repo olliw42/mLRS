@@ -81,11 +81,10 @@
       <description>Parameter multi param value container.</description>
       <field type="uint16_t" name="param_count">Total number of onboard parameters.</field>
       <field type="uint16_t" name="param_index_first">Index of the first onboard parameter in this array.</field>
-      <field type="uint16_t" name="param_index_last">Index of the last onboard parameter in this array.</field>
-      <field type="uint16_t" name="flags">Flags.</field>
-      <field type="uint8_t[247]" name="packet_buf">Param value packet buffer. A packet has 21 bytes: 16 x char + float + uint8_t. The array has space for 11 packets.</field>
+      <field type="uint16_t" name="param_array_len">Number of onboard parameters in this array.</field>
+      <field type="uint16_t" name="flags" display="bitmask" enum="PARAM_VALUE_ARRAY_FLAGS">Flags.</field>
+      <field type="uint8_t[247]" name="packet_buf">Parameters buffer. Contains a series of variable length parameter blocks, one per parameter, with format as specifed elsewhere.</field>
     </message>
-
-
+<!-- ********** -->
   </messages>
 </mavlink>
