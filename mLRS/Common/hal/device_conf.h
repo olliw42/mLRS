@@ -10,6 +10,8 @@
 // enter define into "MCU G++ Compiler"->"Preprocessor" !!!
 // for devices with I2C, un-comment #define HAL_I2C_MODULE_ENABLED in Core/Inc/stm32xxxx_hal_conf.h
 
+// Note: A device may support multiple frequency bands.
+
 
 #ifdef RX_SIYI_F373CC
   #define DEVICE_NAME "Siyi FM30 RX"
@@ -81,36 +83,32 @@
   #define DEVICE_NAME "Frsky R9MX"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_915_MHZ
-  //#define FREQUENCY_BAND_868_MHZ
-  //#define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 #ifdef RX_R9M_868_F103C8
   #define DEVICE_NAME "Frsky R9M"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_915_MHZ
-  //#define FREQUENCY_BAND_868_MHZ
-  //#define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 #ifdef RX_R9MM_868_F103RB
   #define DEVICE_NAME "Frsky R9MM"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_915_MHZ
-  //#define FREQUENCY_BAND_868_MHZ
-  //#define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 #ifdef TX_R9M_868_F103C8
   #define DEVICE_NAME "Frsky R9M"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_915_MHZ
-  //#define FREQUENCY_BAND_868_MHZ
-  //#define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 
@@ -118,14 +116,16 @@
   #define DEVICE_NAME "DIY E22 G441KB"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_915_MHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
   #define DEVICE_NAME "DIY DualE22 G491RE"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_915_MHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 
@@ -133,12 +133,15 @@
   #define DEVICE_NAME "Wio E5 Grove WLE5JC"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_915_MHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
   #define DEVICE_NAME "Wio E5 Mini WLE5JC"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_915_MHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
+

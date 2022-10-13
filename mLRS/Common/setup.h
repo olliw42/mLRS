@@ -30,12 +30,12 @@ void setup_configure_metadata(void)
     //-- FrequencyBand: "2.4,915 FCC,868"
 #ifdef FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b0001; // only 2.4 GHz, not editable
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0110; // only 915 FCC, 868
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     SetupMetaData.FrequencyBand_allowed_mask = 0b0010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b0100; // only 868 MHz, not editable
-#elif defined FREQUENCY_BAND_868_915_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0110; // only 915 FCC, 868
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"
@@ -190,12 +190,12 @@ void setup_sanitize(void)
 
 #ifdef FREQUENCY_BAND_2P4_GHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ; // my privilege to be in the EU :)
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_868_915_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ; // my privilege to be in the EU :)
 #else
     #error Unknown Frequencyband !
 #endif
