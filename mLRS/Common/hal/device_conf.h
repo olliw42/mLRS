@@ -13,21 +13,6 @@
 // Note: A device may support multiple frequency bands.
 
 
-#ifdef RX_SIYI_F373CC
-  #define DEVICE_NAME "Siyi FM30 RX"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-#ifdef TX_SIYI_F103C8
-  #define DEVICE_NAME "Siyi FM30 TX"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-
 #ifdef RX_DIY_BOARD01_F103CB
   #define DEVICE_NAME "DIY DualSX F103CB"
   #define DEVICE_IS_RECEIVER

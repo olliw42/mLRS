@@ -63,15 +63,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- 2.4 GHz Devices
 
-#ifdef RX_SIYI_F373CC
-#include "rx-hal-siyi-f373cc.h"
-#endif
-
-#ifdef TX_SIYI_F103C8
-#include "tx-hal-siyi-f103c8.h"
-#endif
-
-
 #ifdef RX_DIY_BOARD01_F103CB
 #include "rx-hal-diy-board01-f103cb.h"
 #endif
