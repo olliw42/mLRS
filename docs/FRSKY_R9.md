@@ -2,9 +2,9 @@
 
 ([back to main page](../README.md))
 
-The Frsky R9M transmitter module and R9MX receiver are commercially available and hence interesting hardware for mLRS. However, the R9 system also provides some hurdles in that flashing is currently a bit of a hack and in that the R9M hardware is not entirely fit for the purpose. Hence this page.
+The Frsky R9M transmitter module and R9MX receiver are commercially available and hence interesting hardware for mLRS. However, the R9 system also provides some hurdles in that flashing is currently a bit of a hack and in that the R9M hardware is not entirely fit for the purpose.
 
-Comment: mLRS also supports the R9MM receiver. However, flashing the R9MM with ST-Link is really tedious and requires top soldering skills, as one needs to connect to four tiny solder pads. You really should consider using the R9MX receiver instead.
+Comment: mLRS also supports the R9MM receiver. However, flashing the R9MM with ST-Link is really tedious and requires top soldering skills or employing other tricks, as one needs to connect to four tiny solder pads. You really should consider using the R9MX receiver instead.
 
 
 ## R9M Tx Module ##
@@ -13,13 +13,13 @@ The R9M module is unfortunately limited with respect to serial ports. It provide
 
 1. One needs to use a "Frsky inverter" dongle. You either can buy one or build it yourself.
 
-2. The serial port of the R9M module can be configured to work either as "serial" or "CLI". This is done by setting the dip switch 1 (left dip switch): off (switch down) = CLI, on (switch up) = serial. Note that the dip switch position is read only at power up, i.e., one needs to repower the module to make the change effective.
+2. The serial port of the R9M module can be configured to work either as "serial" or "CLI". This is done by setting the dip switch 1 (left dip switch): off (switch down) = CLI, on (switch up) = serial. Note that the dip switch position is read only at power up, i.e., one needs to repower the module to make any change effective.
 
 ### DIY Inverter Dongle ###
 
-There are several DIY apporaches available for building the inverter dongle. A common approach is based on the MAX3232 RS232 chip; an excellent build tutorial is provided here [Some soldering required](https://discuss.ardupilot.org/t/some-soldering-required/27613). Be aware however that many fake chips are available, and the original scheme suggested in this blog may not work. One in fact may have to add an extra diode and resistor.
+There are several DIY apporaches for building the inverter dongle. A common approach is based on the MAX3232 RS232 chip; an excellent build tutorial is provided here [Some soldering required](https://discuss.ardupilot.org/t/some-soldering-required/27613). Be aware however that many fake chips are available, and the original scheme suggested in this blog may not work. One in fact may have to add an extra diode and resistor.
 
-<img src="images/frsky-max3232-inverter-scheme.jpg" alt="fid" title="fid" style="display: inline-block; margin: 0 auto; max-width: 200px">
+<img src="images/frsky-max3232-inverter-scheme.jpg" width="360px">
 
 
 ## Flashing ##
