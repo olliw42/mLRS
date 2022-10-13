@@ -67,8 +67,8 @@ class BindBase
     uint8_t task;
     bool is_connected;
 
-    uint64_t TxSignature; // 8 bytes
-    uint64_t RxSignature; // 8 bytes
+    uint64_t TxSignature; // 8 bytes, signature of Tx module
+    uint64_t RxSignature; // 8 bytes, signature of Rx module
 
     void handle_receive(uint8_t antenna, uint8_t rx_status);
     void do_transmit(uint8_t antenna);
@@ -111,6 +111,7 @@ void BindBase::ConfigForBind(void)
 }
 
 
+// called in each doPreTransmit or doPostReceive cycle
 void BindBase::Do(void)
 {
     uint32_t tnow = millis32();
@@ -143,11 +144,13 @@ void BindBase::Do(void)
 }
 
 
+// called directly after bind.Do()
 uint8_t BindBase::Task(void)
 {
     switch (task) {
     case BIND_TASK_TX_RESTART_CONTROLLER:
-    case BIND_TASK_RX_STORE_PARAMS: // postpone until button released
+    case BIND_TASK_RX_STORE_PARAMS:
+        // postpone until button is released, prevents jumping to RESTART while button is till pressed by user
         if (button_pressed()) return BIND_TASK_NONE;
         break;
     }

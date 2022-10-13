@@ -819,6 +819,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
           connect_listen_cnt = 0;
           link_state = LINK_STATE_RECEIVE; // switch back to RX
         }
+        if (fhss.HopToNextBind()) { link_state = LINK_STATE_RECEIVE; } // switch back to RX
       }
 
       // we just disconnected, or are in sync but don't receive anything
@@ -871,13 +872,16 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         bind.ConfigForBind();
         CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
         clock.Reset();
-        fhss.SetToBind();
+        fhss.SetToBind(Config.frame_rate_ms);
         LED_GREEN_ON;
         LED_RED_OFF;
         connect_state = CONNECT_STATE_LISTEN;
         link_state = LINK_STATE_RECEIVE;
         break;
-      case BIND_TASK_RX_STORE_PARAMS: doParamsStore = true; break;
+      case BIND_TASK_RX_STORE_PARAMS:
+        Setup.FrequencyBand = fhss.GetCurrFrequencyBand();
+        doParamsStore = true;
+        break;
       }
 
       doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops

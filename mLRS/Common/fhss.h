@@ -231,12 +231,39 @@ const uint8_t fhss_bind_channel_list_2p4[] = {
 // FHSS Class
 //-------------------------------------------------------
 
+typedef enum {
+    FHSS_FREQ_BAND_2P4_GHZ = 0,
+    FHSS_FREQ_BAND_915_MHZ_FCC,
+    FHSS_FREQ_BAND_868_MHZ,
+    FHSS_FREQ_BAND_433_MHZ,
+    FHSS_FREQ_BAND_NUM,
+} FHSS_FREQ_BAND_FLAG_ENUM;
+
+
 class FhssBase
 {
   public:
     void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
+
+        for (uint8_t i = 0; i < FHSS_FREQ_BAND_NUM; i++) fhss_freq_list_array[i] = nullptr;
+#ifdef FHSS_HAS_FREQUENCY_BAND_2P4_GHZ
+        fhss_freq_list_array[FHSS_FREQ_BAND_2P4_GHZ] = fhss_freq_list_2p4;
+        fhss_bind_channel_list_array[FHSS_FREQ_BAND_2P4_GHZ] = fhss_bind_channel_list_2p4;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_915_MHZ_FCC
+        fhss_freq_list_array[FHSS_FREQ_BAND_915_MHZ_FCC] = fhss_freq_list_915_fcc;
+        fhss_bind_channel_list_array[FHSS_FREQ_BAND_915_MHZ_FCC] = fhss_bind_channel_list_915_fcc;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_868_MHZ
+        fhss_freq_list_array[FHSS_FREQ_BAND_868_MHZ] = fhss_freq_list_868;
+        fhss_bind_channel_list_array[FHSS_FREQ_BAND_868_MHZ] = fhss_bind_channel_list_868;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_433_MHZ
+        fhss_freq_list_array[FHSS_FREQ_BAND_433_MHZ] = fhss_freq_list_433;
+        fhss_bind_channel_list_array[FHSS_FREQ_BAND_433_MHZ] = fhss_bind_channel_list_433;
+#endif
 
         _frequency_band = frequency_band; // just for reporting
         switch (_frequency_band) {
@@ -246,6 +273,7 @@ class FhssBase
             FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_2p4) / sizeof(uint32_t));
             fhss_bind_channel_list = fhss_bind_channel_list_2p4;
             FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_2p4) / sizeof(uint8_t));
+            curr_bind_freq_list_i = FHSS_FREQ_BAND_2P4_GHZ; // we start with what setup suggests
             break;
 #endif
 #ifdef FHSS_HAS_FREQUENCY_BAND_915_MHZ_FCC
@@ -254,6 +282,7 @@ class FhssBase
             FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_915_fcc) / sizeof(uint32_t));
             fhss_bind_channel_list = fhss_bind_channel_list_915_fcc;
             FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_915_fcc) / sizeof(uint8_t));
+            curr_bind_freq_list_i = FHSS_FREQ_BAND_915_MHZ_FCC; // we start with what setup suggests
             break;
 #endif
 #ifdef FHSS_HAS_FREQUENCY_BAND_868_MHZ
@@ -262,6 +291,16 @@ class FhssBase
             FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_868) / sizeof(uint32_t));
             fhss_bind_channel_list = fhss_bind_channel_list_868;
             FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_868) / sizeof(uint8_t));
+            curr_bind_freq_list_i = FHSS_FREQ_BAND_868_MHZ; // we start with what setup suggests
+            break;
+#endif
+#ifdef FHSS_HAS_FREQUENCY_BAND_433_MHZ
+        case SETUP_FREQUENCY_BAND_433_MHZ: // is not yet existing !!
+            fhss_freq_list = fhss_freq_list_433;
+            FREQ_LIST_LEN = (uint8_t)(sizeof(fhss_freq_list_433) / sizeof(uint32_t));
+            fhss_bind_channel_list = fhss_bind_channel_list_433;
+            FHSS_BIND_CHANNEL_LIST_LEN = (uint8_t)(sizeof(fhss_bind_channel_list_433) / sizeof(uint8_t));
+            curr_bind_freq_list_i = FHSS_FREQ_BAND_433_MHZ; // we start with what setup suggests
             break;
 #endif
         default:
@@ -297,7 +336,13 @@ class FhssBase
 
     uint32_t GetCurrFreq(void)
     {
-        if (is_in_binding) return fhss_freq_list[fhss_bind_channel_list[0]];
+        if (is_in_binding) {
+            const uint32_t* curr_bind_freq_list = fhss_freq_list_array[curr_bind_freq_list_i];
+            if (curr_bind_freq_list == nullptr) while (1) {} // should not happen, but play it safe
+            const uint8_t* curr_bind_channel_list = fhss_bind_channel_list_array[curr_bind_freq_list_i];
+
+            return curr_bind_freq_list[curr_bind_channel_list[0]];
+        }
 
         return fhss_list[curr_i];
     }
@@ -308,9 +353,44 @@ class FhssBase
         if (curr_i >= cnt) curr_i = 0;
     }
 
-    void SetToBind(void)
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
         is_in_binding = true;
+        bind_listen_cnt = (5000 / frame_rate_ms); // should be 5 secs
+        bind_listen_i = 0;
+    }
+
+    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    bool HopToNextBind(void)
+    {
+        if (!is_in_binding) return false;
+
+        bind_listen_i++;
+        if (bind_listen_i >= bind_listen_cnt) {
+            bind_listen_i = 0;
+            // find next bind frequency
+            uint8_t iii = curr_bind_freq_list_i;
+            for (uint8_t i = 0; i < FHSS_FREQ_BAND_NUM; i++) { // we give it at most that much attempts
+                iii++;
+                if (iii >= FHSS_FREQ_BAND_NUM) iii = 0;
+                if (fhss_freq_list_array[iii] != nullptr) { curr_bind_freq_list_i = iii; return true; }
+            }
+        }
+
+        return false;
+    }
+
+    // only used by receiver
+    uint8_t GetCurrFrequencyBand(void)
+    {
+        switch (curr_bind_freq_list_i) {
+        case FHSS_FREQ_BAND_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
+        case FHSS_FREQ_BAND_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
+        case FHSS_FREQ_BAND_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
+        // case FHSS_FREQ_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // is not yet existing !!
+        }
+        while (1) {} // should not happen, but play it safe
+        return 0;
     }
 
     uint32_t bestX(void)
@@ -327,11 +407,14 @@ class FhssBase
   private:
     uint32_t _seed;
 
-    uint8_t _frequency_band;
+    uint8_t _frequency_band; // SETUP_FREQUENCY_BAND_ENUM
     uint8_t FREQ_LIST_LEN;
     const uint32_t* fhss_freq_list;
     uint8_t FHSS_BIND_CHANNEL_LIST_LEN;
     const uint8_t* fhss_bind_channel_list;
+
+    const uint32_t* fhss_freq_list_array[FHSS_FREQ_BAND_NUM];
+    const uint8_t* fhss_bind_channel_list_array[FHSS_FREQ_BAND_NUM];
 
     uint8_t curr_i;
     uint8_t cnt;
@@ -339,6 +422,9 @@ class FhssBase
     uint32_t fhss_list[FHSS_MAX_NUM]; // that's our list of randomly selected frequencies
     int8_t fhss_last_rssi[FHSS_MAX_NUM];
     bool is_in_binding;
+    uint8_t curr_bind_freq_list_i;
+    uint16_t bind_listen_cnt;
+    uint16_t bind_listen_i;
 
     uint16_t prng(void);
     void generate(uint32_t seed);
