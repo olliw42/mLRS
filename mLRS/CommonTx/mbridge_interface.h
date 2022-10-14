@@ -85,7 +85,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     char serial_getc(void) { return tx_fifo.Get(); }
 
     FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo;
-    FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo; // MissionPlanner is rude
+    FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
     FifoBase<uint8_t,128> cmd_fifo;

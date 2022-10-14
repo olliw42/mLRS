@@ -16,8 +16,9 @@ ISSUES:
 - setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
-- entering bind by power cycles
+- entering bind by power cycles Q: how the heck can this be done, without persistent OB???
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
+- work out how to go with setup layout changes
 
 - EVERY tx module needs a means to set the parameters, via SWD?
 
@@ -55,15 +56,18 @@ The 3 MAIN topics TODO:
 - mavlinkX (transform mavlink data into more robust & slim format, introduce cmpr_msg)
 
 4) Auxiliary features
-- beacon mode
 - relay setup, how could this be done?
+- 2.4 GHz high-interference mode bw 400kHz, at least for experiment to evaluate
+- wifi band exclusion method
+- beacon mode
+
 
 TODO:
 - can we pl check the real spi clock speed !?!?!!?
 
 - effect of USE_DCDC? where to place it??
 
-- USB on TX side
+- USB on TX side (no pressure, since no target which needs it)
 
 Longterm TODO:
 - support high_latency2
@@ -74,7 +78,8 @@ Longterm TODO:
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
-  alternatively: the receiver cis not automatically updated together with the tx, but simply through the tx module
+  alternatively: the receiver is not automatically updated together with the tx, but simply through the tx module
+  yes, that's in view of teh growing targets the only way to go, and it is sufficiently userfriendly
 
 - long range mode with rx only, switch to a longer-range mode when not connected
   would also allow rc data to be transmitted further out
