@@ -263,4 +263,6 @@ STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tRxSetup) == 36, "tRxSetup len missmatch")
 STATIC_ASSERT(sizeof(tSetup) == 38+20+36+8+2, "tSetup len missmatch")
 
+STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * FHSS_CONFIG_NUM, "fhss_config size missmatch")
+
 #endif // COMMON_H

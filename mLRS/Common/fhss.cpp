@@ -63,7 +63,7 @@ void FhssBase::generate(uint32_t seed)
 
         // do not pick a bind channel
         bool is_bind_channel = false;
-        for (uint8_t bi = 0; bi < FHSS_BIND_CHANNEL_LIST_LEN; bi++) {
+        for (uint8_t bi = 0; bi < BIND_CHANNEL_LIST_LEN; bi++) {
             if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
         }
         if (is_bind_channel) continue;
