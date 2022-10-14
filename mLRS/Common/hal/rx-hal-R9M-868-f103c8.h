@@ -219,7 +219,7 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
     *actual_power_dbm = 27;
   } else if (power_dbm > 22) {
     voltage_mV = 1390;
-    *actual_power_dbm = 24;
+    *actual_power_dbm = 23;
   } else if (power_dbm > 18) {
     voltage_mV = 1195; // was 1140
     *actual_power_dbm = 20;
