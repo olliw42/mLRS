@@ -16,11 +16,13 @@
 // Note that TIM2 may be 16 bit or 32 bit depending on which STM32 controller is used
 
 
-// TIM1, TIM4 may be used by buzzer
+// this should eventually go consistently into hal, allow migration
+#ifndef CLOCK_TIMx
 #define CLOCK_TIMx                TIM2
 #define CLOCK_IRQn                TIM2_IRQn
 #define CLOCK_IRQHandler          TIM2_IRQHandler
 //#define CLOCK_IRQ_PRIORITY        10
+#endif
 
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 

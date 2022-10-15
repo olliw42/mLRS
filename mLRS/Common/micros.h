@@ -10,6 +10,11 @@
 #define MICROS_H
 #pragma once
 
+// free running timer with 1us time base
+
+
+// this should eventually go consistently into hal, allow migration
+#ifndef MICROS_TIMx
 
 #if defined TIM3
 #define MICROS_TIMx               TIM3
@@ -17,6 +22,8 @@
 #define MICROS_TIMx               TIM15
 #elif defined TIM16 // the WL5xx do not have a TIM3 nor TIM15, but have a TIM16
 #define MICROS_TIMx               TIM16
+#endif
+
 #endif
 
 
