@@ -28,7 +28,7 @@ ExpressLRS has figured out a convenient and easy way for flashing, which is unfo
 
 Note: Fashing mLRS with the ST-Link is a non-reversible operation, i.e., it is not possible to revert back to the original Frsky firmware. It is possible to switch to ExpressLRS however.
 
-In principle, the procedure goes eaxtly as already described in the ExpressLRS docs:
+In principle, the procedure goes exactly as already described in the ExpressLRS docs:
 - R9M module: https://www.expresslrs.org/1.0/quick-start/tx-r9m/#flashing-using-stlink
 - R9MX receiver: https://www.expresslrs.org/1.0/quick-start/rx-stlink/
 
