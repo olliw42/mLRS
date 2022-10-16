@@ -44,3 +44,10 @@ If anyone has deeper/better insight into the STM32CubeProgrammer/STM32CubeIDE vs
 
 If you wonder what STLink programmer I (olliw42) am using: Every NUCLEO board comes also with a STLink programmer... and these board are relatively cheap too, about 15Eur.
 
+## Cooling ##
+
+
+With mLRS and ELRS the radio is ran at a much higher duty cycle than the fR-SKY firmware so the radio module will require active cooling when running above 500mw.
+
+ELRS has these modifications documented here along with 3d printed case covers with fan mounts.
+https://www.expresslrs.org/2.0/hardware/fan-mod/
