@@ -48,4 +48,4 @@ If you wonder what STLink programmer I (olliw42) am using: Every NUCLEO board co
 
 With mLRS the R9M module will require active cooling when running at power levels above 500 mW, but cooling might be advisable also at lower powers, at 500 mW or even 250 mW.
 
-A description for installing a fan along with documentation for 3D printed case covers with fan mount can be found here https://www.expresslrs.org/2.0/hardware/fan-mod/.
+A description for installing a fan along with documentation for 3D printed case covers with fan mount can be found here https://www.expresslrs.org/2.0/hardware/fan-mod/. Note: The PB9 mechanism does not work with mLRS; you need to connect the fan to gnd,+5V directly.
