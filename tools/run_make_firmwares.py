@@ -18,9 +18,9 @@ import sys
 
 # installation dependent
 # can we find this automatically?
-STdirectory = os.path.join("C:/",'ST','STM32CubeIDE_1.7.0','STM32CubeIDE','plugins')
-GNUdirectory = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.win32_2.0.0.202105311346'
-Makedirectory = 'com.st.stm32cube.ide.mcu.externaltools.make.win32_2.0.0.202105311346'
+STdirectory = os.path.join("C:/",'ST','STM32CubeIDE','STM32CubeIDE','plugins')
+GNUdirectory = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127'
+Makedirectory = 'com.st.stm32cube.ide.mcu.externaltools.make.win32_2.0.100.202202231230'
 
 
 mLRSProjectdirectory = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
