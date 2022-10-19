@@ -76,6 +76,7 @@ v0.0.00:
 #include "txstats.h"
 #include "cli.h"
 #include "../Common/buzzer.h"
+#include "../Common/fan.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
@@ -84,6 +85,7 @@ TxStatsBase txstats;
 tComPort com;
 tTxCli cli;
 tBuzzer buzzer;
+tFan fan;
 
 
 class In : public InBase
@@ -189,6 +191,7 @@ void init(void)
     com.Init();
     cli.Init(&com);
     buzzer.Init();
+    fan.Init();
     dbg.Init();
 
     setup_init();
@@ -676,6 +679,7 @@ RESTARTCONTROLLER:
   in.Configure(Setup.Tx.InMode);
   mavlink.Init();
   sx_serial.Init(&serial, &mbridge, &serial2);
+  fan.SetPower(sx.RfPower_dbm());
   whileTransmit.Init();
 
   disp.Init();
@@ -1097,6 +1101,10 @@ dbg.puts("\ncrsf mbridge ");
     //-- Do WhileTransmit stuff
 
     whileTransmit.Do();
+
+    //-- Handle fan
+
+    fan.Do();
 
     //-- Handle cli task
 

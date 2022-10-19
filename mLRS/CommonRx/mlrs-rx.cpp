@@ -69,11 +69,13 @@ v0.0.00:
 #include "out.h"
 #include "rxstats.h"
 #include "../Common/buzzer.h"
+#include "../Common/fan.h"
 
 
 ClockBase clock;
 RxStatsBase rxstats;
 tBuzzer buzzer;
+tFan fan;
 
 
 void clock_reset(void) { clock.Reset(); }
@@ -170,6 +172,7 @@ void init(void)
     out.Init();
 
     buzzer.Init();
+    fan.Init();
     dbg.Init();
 
     setup_init();
@@ -578,6 +581,7 @@ RESTARTCONTROLLER:
   out.Configure(Setup.Rx.OutMode);
   mavlink.Init();
   sx_serial.Init();
+  fan.SetPower(sx.RfPower_dbm());
 
   led_blink = 0;
   tick_1hz = 0;
@@ -916,6 +920,10 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
     //-- Do mavlink
 
     mavlink.Do();
+
+    //-- Handle fan
+
+    fan.Do();
 
     //-- Store parameters
 

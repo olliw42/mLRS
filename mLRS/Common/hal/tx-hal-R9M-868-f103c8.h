@@ -19,6 +19,7 @@
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
 #define DEVICE_HAS_BUZZER
+#define DEVICE_HAS_FAN_ONOFF
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -316,6 +317,26 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };
+
+
+//-- Cooling Fan
+
+#define FAN_IO                    IO_PB9
+
+void fan_init(void)
+{
+  gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  gpio_low(FAN_IO);
+}
+
+void fan_set_power(int8_t power_dbm)
+{
+  if (power_dbm >= POWER_23_DBM) {
+      gpio_high(FAN_IO);
+  } else {
+    gpio_low(FAN_IO);
+  }
+}
 
 
 //-- TEST

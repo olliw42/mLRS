@@ -196,8 +196,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#ifdef DEVICE_HAS_I2C_DISPLAY
+#if (defined DEVICE_HAS_I2C_DISPLAY)
   #define USE_DISPLAY
+#endif
+
+
+#if (defined DEVICE_HAS_FAN_ONOFF)
+  #define USE_FAN
 #endif
 
 
