@@ -42,6 +42,7 @@ In tx-hal files:
 #define DEVICE_HAS_I2C_DISPLAY      // board has DISPLAY on I2C
 #define DEVICE_HAS_BT               // board has a Serial2 port
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
+#define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 
 In rx-hal files:
@@ -53,6 +54,7 @@ In rx-hal files:
 #define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
+#define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */

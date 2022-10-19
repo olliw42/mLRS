@@ -332,7 +332,7 @@ void fan_init(void)
 void fan_set_power(int8_t power_dbm)
 {
   if (power_dbm >= POWER_23_DBM) {
-      gpio_high(FAN_IO);
+    gpio_high(FAN_IO);
   } else {
     gpio_low(FAN_IO);
   }
