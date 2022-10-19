@@ -21,6 +21,8 @@
 #include "common_stats.h"
 #include "bind.h"
 #include "fail.h"
+#include "buzzer.h"
+#include "fan.h"
 
 
 //-------------------------------------------------------
@@ -161,6 +163,9 @@ Stats stats;
 FhssBase fhss;
 
 BindBase bind;
+
+tBuzzer buzzer;
+tFan fan;
 
 
 //-------------------------------------------------------

@@ -68,14 +68,10 @@ v0.0.00:
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
-#include "../Common/buzzer.h"
-#include "../Common/fan.h"
 
 
 ClockBase clock;
 RxStatsBase rxstats;
-tBuzzer buzzer;
-tFan fan;
 
 
 void clock_reset(void) { clock.Reset(); }

@@ -75,8 +75,6 @@ v0.0.00:
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
-#include "../Common/buzzer.h"
-#include "../Common/fan.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
 
@@ -84,8 +82,6 @@ v0.0.00:
 TxStatsBase txstats;
 tComPort com;
 tTxCli cli;
-tBuzzer buzzer;
-tFan fan;
 
 
 class In : public InBase
