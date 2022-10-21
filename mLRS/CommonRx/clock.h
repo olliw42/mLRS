@@ -39,7 +39,7 @@ uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need 
 class ClockBase
 {
   public:
-    void Init(void);
+    void Init(uint16_t frame_rate_ms);
     void Reset(void);
 
     void init_isr_off(void);
@@ -49,9 +49,9 @@ class ClockBase
 };
 
 
-void ClockBase::Init(void)
+void ClockBase::Init(uint16_t frame_rate_ms)
 {
-    CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
+    CLOCK_PERIOD_10US = frame_rate_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
 
     init_isr_off();

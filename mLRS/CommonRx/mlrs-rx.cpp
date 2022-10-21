@@ -74,6 +74,7 @@ ClockBase clock;
 RxStatsBase rxstats;
 
 
+// is required in bind.h
 void clock_reset(void) { clock.Reset(); }
 
 
@@ -173,7 +174,7 @@ void init(void)
 
     setup_init();
 
-    clock.Init(); // clock needs Config, so call after setup_init()
+    clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
 
     sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
