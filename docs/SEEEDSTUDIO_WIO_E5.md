@@ -9,12 +9,25 @@ The SeeedStudio [Wio-E5 module](https://wiki.seeedstudio.com/LoRa-E5_STM32WLE5JC
 
 https://wiki.seeedstudio.com/LoRa_E5_mini/
 
+### As Tx Module ###
+
 Connections (name in respect to board print-ons):
 
 - serial: Tx2,Rx2
 - in: Rx1
-- debug: D0
 - com/cli: Tx,Rx and on-board USB plug
+- debug: D0
+- led green: A4 (solder a green LED with resistor > 300 Ohms to GND)
+- led red: on-board
+- button: on-board (BOOT button)
+
+### As Rx Module ###
+
+Connections (name in respect to board print-ons):
+
+- serial: Tx2,Rx2
+- out: Tx1
+- debug: Tx, and on-board USB plug
 - led green: A4 (solder a green LED with resistor > 300 Ohms to GND)
 - led red: on-board
 - button: on-board (BOOT button)
@@ -22,6 +35,12 @@ Connections (name in respect to board print-ons):
 ## SeeedStudio Grove Wio-E5 Board as Rx Module ##
 
 https://wiki.seeedstudio.com/Grove_LoRa_E5_New_Version/
+
+### As Tx Module ###
+
+not recommended
+
+### As Rx Module ###
 
 Connections (name in respect to board print-ons):
 
