@@ -256,6 +256,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
+#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },

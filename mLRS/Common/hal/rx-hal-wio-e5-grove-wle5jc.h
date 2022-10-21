@@ -39,10 +39,10 @@
 #define UARTB_USE_UART2 // serial // PA2,PA3
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_UART2 // debug // also UART2
 #define UARTC_BAUD                115200
@@ -55,7 +55,7 @@
 #define UART_USE_LPUART1_REMAPPED // out pin // PC1
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
-#define UART_TXBUFSIZE            256 // 512
+#define UART_TXBUFSIZE            256
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
@@ -194,6 +194,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
+
+#define RFPOWER_DEFAULT           2 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },

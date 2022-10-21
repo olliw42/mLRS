@@ -204,6 +204,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },

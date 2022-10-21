@@ -192,6 +192,26 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
+//-- Cooling Fan
+
+#define FAN_IO                    IO_PB9
+
+void fan_init(void)
+{
+  gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+  gpio_low(FAN_IO);
+}
+
+void fan_set_power(int8_t power_dbm)
+{
+  if (power_dbm >= POWER_23_DBM) {
+      gpio_high(FAN_IO);
+  } else {
+    gpio_low(FAN_IO);
+  }
+}
+
+
 //-- POWER
 
 #define DEVICE_HAS_I2C_DAC
@@ -250,6 +270,8 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
   *sx_power = 0;
 }
 
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
@@ -258,26 +280,6 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };
-
-
-//-- Cooling Fan
-
-#define FAN_IO                    IO_PB9
-
-void fan_init(void)
-{
-  gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_low(FAN_IO);
-}
-
-void fan_set_power(int8_t power_dbm)
-{
-  if (power_dbm >= POWER_23_DBM) {
-      gpio_high(FAN_IO);
-  } else {
-    gpio_low(FAN_IO);
-  }
-}
 
 
 //-- TEST

@@ -299,6 +299,8 @@ void pos_switch_init(void)
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },

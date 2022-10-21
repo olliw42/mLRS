@@ -33,7 +33,7 @@
 
 
 #define CPOWER                          0 // 0: minimum power, 255: maximum power
-//#define CPOWER                          255 // 0: minimum power, 255: maximum power
+//#define CPOWER                          RFPOWER_DEFAULT
 
 #define DIVERSITY                       0
 
