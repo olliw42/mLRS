@@ -21,7 +21,6 @@ class tFan
 {
   public:
     void Init(void) {}
-    void Do(void) {}
 
     void SetPower(int8_t power_dbm) {}
 };
@@ -32,7 +31,6 @@ class tFan
 {
   public:
     void Init(void);
-    void Do(void);
 
     void SetPower(int8_t power_dbm);
 
@@ -59,11 +57,6 @@ void tFan::SetPower(int8_t power_dbm)
         power_dbm_curr = power_dbm;
     }
 #endif
-}
-
-
-void tFan::Do(void)
-{
 }
 
 

@@ -918,10 +918,6 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
     mavlink.Do();
 
-    //-- Handle fan
-
-    fan.Do();
-
     //-- Store parameters
 
     if (doParamsStore) {

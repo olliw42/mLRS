@@ -1098,10 +1098,6 @@ dbg.puts("\ncrsf mbridge ");
 
     whileTransmit.Do();
 
-    //-- Handle fan
-
-    fan.Do();
-
     //-- Handle cli task
 
     switch (cli.Task()) {
