@@ -861,7 +861,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         rxstats.Update1Hz();
       }
 
-      if (connect_state < CONNECT_STATE_SYNC) link_task_reset();
+      if (connect_state == CONNECT_STATE_LISTEN) link_task_reset();
 
       if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
         if (!valid_frame_received) buzzer.BeepLP();
