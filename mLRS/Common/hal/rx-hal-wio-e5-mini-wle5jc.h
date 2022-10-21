@@ -8,13 +8,10 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
+// RX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
 
-//#define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_IN
-#define DEVICE_HAS_DEBUG_SWUART
-//#define DEVICE_HAS_BT
+#define DEVICE_HAS_OUT
 //#define DEVICE_HAS_BUZZER // TODO: do not use
 
 
@@ -29,56 +26,40 @@
 
 #define MICROS_TIMx               TIM16
 
+#define CLOCK_TIMx                TIM2
+#define CLOCK_IRQn                TIM2_IRQn
+#define CLOCK_IRQHandler          TIM2_IRQHandler
+//#define CLOCK_IRQ_PRIORITY        10
+
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = serial2 BT/ESP port
-// UART  = JR bay pin5
-// UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTC = debug port
+// UART = output port, SBus or whatever
 
 #define UARTB_USE_UART2 // serial // PA2,PA3
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
+#define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_REMAPPED // com USB/CLI // PB6,PB7
-#define UARTC_BAUD                TX_COM_BAUDRATE
+#define UARTC_USE_UART1_REMAPPED // debug // PB6,PB7 usb plug
+#define UARTC_BAUD                115200
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           512
 #define UARTC_USE_TX_ISR
-#define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+//#define UARTC_USE_RX
+//#define UARTC_RXBUFSIZE           512
 
-#define UART_USE_LPUART1_REMAPPED // JR pin5, MBridge // PC1,PC0
-#define UART_BAUD                 400000
+#define UART_USE_LPUART1_REMAPPED // out pin // PC1
+#define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
-#define UART_TXBUFSIZE            512
+#define UART_TXBUFSIZE            256
 #define UART_USE_TX_ISR
-#define UART_USE_RX
-#define UART_RXBUFSIZE            512
-
-#define JRPIN5_UARTx              UART_UARTx
-#define JRPIN5_RX_TX_INVERT_INTERNAL
-
-#define UARTE_USE_LPUART1_REMAPPED // in port // PC1
-#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
-//#define UARTE_USE_TX
-//#define UARTE_TXBUFSIZE           512
-//#define UARTE_USE_TX_ISR
-#define UARTE_USE_RX
-#define UARTE_RXBUFSIZE           512
-
-#define SWUART_USE_TIM17 // debug
-#define SWUART_TX_IO              IO_PA0
-#define SWUART_BAUD               115200
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   11
+//#define UART_USE_RX
+//#define UART_RXBUFSIZE            512
 
 
 //-- SX12xx & SPI
@@ -152,24 +133,24 @@ void sx_dio_exti_isr_clearflag(void)
 }
 
 
-//-- In port
-// UARTE_UARTx = LPUART1
+//-- Out port
+// UART_UARTx = LPUART1
 
-void in_init_gpio(void)
+void out_init_gpio(void)
 {
 }
 
-void in_set_normal(void)
+void out_set_normal(void)
 {
   LL_USART_Disable(LPUART1);
-  LL_USART_SetRXPinLevel(LPUART1, LL_USART_RXPIN_LEVEL_STANDARD);
+  LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
   LL_USART_Enable(LPUART1);
 }
 
-void in_set_inverted(void)
+void out_set_inverted(void)
 {
   LL_USART_Disable(LPUART1);
-  LL_USART_SetRXPinLevel(LPUART1, LL_USART_RXPIN_LEVEL_INVERTED);
+  LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
   LL_USART_Enable(LPUART1);
 }
 
@@ -209,30 +190,6 @@ void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Position Switch
-
-void pos_switch_init(void)
-{
-}
-
-uint8_t pos_switch_read(void)
-{
-  return 0;
-}
-
-
-//-- 5 Way Switch
-
-void fiveway_init(void)
-{
-}
-
-uint8_t fiveway_read(void)
-{
-  return 0;
-}
-
-
 //-- Buzzer
 // Buzzer is active high // TODO: needs pin and AF check! do not use
 
@@ -265,16 +222,15 @@ const rfpower_t rfpower_list[] = {
 //-- TEST
 
 uint32_t porta[] = {
-  LL_GPIO_PIN_0, LL_GPIO_PIN_2, LL_GPIO_PIN_3,
+  LL_GPIO_PIN_2, LL_GPIO_PIN_3,
 };
 
 uint32_t portb[] = {
-  LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-  LL_GPIO_PIN_13,
+  LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_9, LL_GPIO_PIN_13,
 };
 
 uint32_t portc[] = {
-  LL_GPIO_PIN_0, LL_GPIO_PIN_1,
+  LL_GPIO_PIN_1,
 };
 
 

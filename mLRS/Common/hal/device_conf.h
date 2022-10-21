@@ -122,6 +122,14 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_WIO_E5_MINI_WLE5JC
+  #define DEVICE_NAME "Wio E5 Mini WLE5JC"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 #ifdef TX_WIO_E5_MINI_WLE5JC
   #define DEVICE_NAME "Wio E5 Mini WLE5JC"
   #define DEVICE_IS_TRANSMITTER
