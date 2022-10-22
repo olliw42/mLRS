@@ -222,7 +222,6 @@ void MavlinkBase::send_msg_serial_out(void)
 // see design_decissions.h for details
 uint8_t MavlinkBase::_calc_txbuf(void)
 {
-
     uint8_t txbuf = 100;
 
     if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
@@ -275,41 +274,6 @@ uint8_t rssi, remrssi, txbuf, noise;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
     txbuf = _calc_txbuf();
-
-#if 0
-    txbuf = 100;
-    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
-        // method C
-        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
-        // we need to account for RADIO_STATUS interval
-        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-        if (rate_percentage > 80) {
-            txbuf = 0; // +60 ms
-        } else if (rate_percentage > 70) {
-            txbuf = 30; // +20 ms
-        } else if (rate_percentage < 45) {
-            txbuf = 100; // -40 ms
-        } else if (rate_percentage < 55) {
-            txbuf = 91; // -20 ms
-        } else {
-            txbuf = 60; // no change
-        }
-
-        if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
-
-/*dbg.puts("\nM: ");
-dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
-dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
-dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
-dbg.puts(u8toBCD_s(rate_percentage));dbg.puts(", ");
-dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
-if(txbuf<20) dbg.puts("+60 "); else
-if(txbuf<40) dbg.puts("+20 "); else
-if(txbuf>95) dbg.puts("-40 "); else
-if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
-    }
-    bytes_serial_in = 0; // reset, to restart rate measurement
-#endif
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,
