@@ -22,13 +22,17 @@ class tRxSxSerial : public tSerialBase
 
       virtual bool available(void)
       {
-          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.available(); // get from serial via mavlink parser
+          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+              return mavlink.available(); // get from serial via mavlink parser
+          }
           return serial.available(); // get from serial
       }
 
       virtual char getc(void)
       {
-          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.getc(); // get from serial via mavlink parser
+          if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+              return mavlink.getc(); // get from serial via mavlink parser
+          }
           return serial.getc(); // get from serial
       }
 

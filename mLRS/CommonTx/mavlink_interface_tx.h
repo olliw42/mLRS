@@ -45,8 +45,6 @@ class MavlinkBase
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
 
-    uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
-
     // to inject RADIO_STATUS messages
     bool inject_radio_status;
     uint32_t radio_status_tlast_ms;
@@ -54,6 +52,8 @@ class MavlinkBase
     uint8_t vehicle_sysid; // 0 indicates data is invalid
     uint8_t vehicle_is_armed;
     uint8_t vehicle_is_flying;
+
+    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
 
@@ -161,6 +161,10 @@ void MavlinkBase::send_msg_serial_out(void)
 }
 
 
+//-------------------------------------------------------
+// Handle Messages
+//-------------------------------------------------------
+
 void MavlinkBase::handle_msg_serial_out(void)
 {
     if ((msg_serial_out.msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) && (msg_serial_out.compid == MAV_COMP_ID_AUTOPILOT1)) {
@@ -184,6 +188,10 @@ void MavlinkBase::handle_msg_serial_out(void)
     }
 }
 
+
+//-------------------------------------------------------
+// Generate Messages
+//-------------------------------------------------------
 
 void MavlinkBase::generate_radio_status(void)
 {

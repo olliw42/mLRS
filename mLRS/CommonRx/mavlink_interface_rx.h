@@ -34,13 +34,12 @@ class MavlinkBase
     void flush(void);
 
   private:
+    void send_msg_serial_out(void);
     void generate_radio_status(void);
     void generate_rc_channels_override(void);
-    //void generate_rc_channels(void);
     void generate_radio_rc_channels(void);
     void generate_radio_link_stats(void);
     void generate_radio_link_flow_control(void);
-    void send_msg_serial_out(void);
 
     uint8_t _calc_txbuf(void);
 
@@ -49,8 +48,6 @@ class MavlinkBase
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
-
-    uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     bool inject_radio_status;
@@ -64,6 +61,8 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
     bool inject_radio_link_stats;
+
+    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
 
@@ -208,6 +207,17 @@ void MavlinkBase::send_msg_serial_out(void)
     serial.putbuf(_buf, len);
 }
 
+
+//-------------------------------------------------------
+// Handle Messages
+//-------------------------------------------------------
+
+// nothing yet
+
+
+//-------------------------------------------------------
+// Generate Messages
+//-------------------------------------------------------
 
 // see design_decissions.h for details
 uint8_t MavlinkBase::_calc_txbuf(void)
