@@ -254,6 +254,24 @@ if(txbuf<40) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
     }
+
+    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
+    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690
+    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
+        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
+        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
+        if (rate_percentage > 80) {
+            txbuf = 10; // < 25 => * 0.8
+        } else if (rate_percentage > 70) {
+            txbuf = 30; // < 35 => * 0.975
+        } else if (rate_percentage < 55) {
+            txbuf = 60; // > 50 => * 1.025
+        } else {
+            txbuf = 40; // no change
+        }
+        if (serial.bytes_available() > 512) txbuf = 0;
+    }
+
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     return txbuf;
