@@ -265,8 +265,8 @@ void setup_sanitize(void)
     if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
     if (Setup.Rx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
-//    if (Setup.Rx.RadioStatusMethod >= RADIO_STATUS_METHOD_NUM) Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF;
-    Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF; // for the moment we fix it to this setting
+    if (Setup.Rx.RadioStatusMethod >= RADIO_STATUS_METHOD_NUM) Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF;
+    //Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF; // for the moment we fix it to this setting
     if (Setup.Rx.SendRcChannels >= SEND_RC_CHANNELS_NUM) Setup.Rx.SendRcChannels = SEND_RC_CHANNELS_OFF;
 }
 
