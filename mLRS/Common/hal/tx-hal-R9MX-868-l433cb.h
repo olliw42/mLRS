@@ -176,7 +176,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define DIPP1                      IO_PB0                 //  borrowed Bind button
 
-bool r9mx_ser_or_com_serial = false;  // we use serial as default (later)
+bool r9mx_ser_or_com_serial = true;  // we use serial as default
 
 void ser_or_com_init(void)
 {
@@ -185,9 +185,8 @@ void ser_or_com_init(void)
   for (uint8_t i = 0; i < 16; i++) {
     if (gpio_read_activelow(DIPP1)) cnt++;
   }
-  r9mx_ser_or_com_serial = (cnt > 8);
-//   r9mx_ser_or_com_serial = !r9mx_ser_or_com_serial;     // not inverted
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+  r9mx_ser_or_com_serial = !(cnt > 8);
+  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);  //  free borrowed Bind button
 }
 
 bool ser_or_com_serial(void)
