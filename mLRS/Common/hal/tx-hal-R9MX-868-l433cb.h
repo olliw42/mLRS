@@ -6,9 +6,9 @@
 //*******************************************************
 // hal
 //*******************************************************
-
+//
 //-------------------------------------------------------
-// R9MX RX Module STM32L433CB
+// R9MX TX Module STM32L433CB
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_RX_R9M.h
 // many THX to the ExpressLRS project !
@@ -29,7 +29,7 @@
 // #define DEVICE_HAS_BUZZER
 
 
-/-- Timers, Timing, EEPROM, and such stuff
+//-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
 
@@ -174,9 +174,9 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 // use COM if button is pressed while power up
 // the button is used bind later on! so we need to play dirty tricks
 
-#define DIPP1                      IO_PB0
+#define DIPP1                      IO_PB0                 //  borrowed Bind button
 
-bool r9mx_ser_or_com_serial = true;  // we use serial as default
+bool r9mx_ser_or_com_serial = false;  // we use serial as default (later)
 
 void ser_or_com_init(void)
 {
@@ -186,15 +186,21 @@ void ser_or_com_init(void)
     if (gpio_read_activelow(DIPP1)) cnt++;
   }
   r9mx_ser_or_com_serial = (cnt > 8);
-  r9mx_ser_or_com_serial = !r9mx_ser_or_com_serial;
+//   r9mx_ser_or_com_serial = !r9mx_ser_or_com_serial;     // not inverted
   gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool ser_or_com_serial(void)
 {
-  return r9m_ser_or_com_serial;
+  return r9mx_ser_or_com_serial;
 }
 
+
+//-- Position Switch
+
+void pos_switch_init(void)
+{
+}
 
 //-- Buzzer
 

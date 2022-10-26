@@ -30,4 +30,21 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Common</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/Common</locationURI>
+		</link>
+		<link>
+			<name>CommonTx</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/CommonTx</locationURI>
+		</link>
+		<link>
+			<name>modules</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/modules</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>
