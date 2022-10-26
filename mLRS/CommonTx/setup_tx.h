@@ -50,7 +50,7 @@
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
 #define SETUP_OPT_SEND_RADIOSTATUS    "off,1 Hz,2 Hz,3 Hz,4 Hz"
-#define SETUP_OPT_RADIOSTATUS_METHOD  "default,w txbuf"
+#define SETUP_OPT_RADIOSTATUS_METHOD  "default,w txbuf,px4"
 
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz" // this is used e.g. in cli
 

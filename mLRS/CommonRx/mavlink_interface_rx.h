@@ -34,13 +34,12 @@ class MavlinkBase
     void flush(void);
 
   private:
+    void send_msg_serial_out(void);
     void generate_radio_status(void);
     void generate_rc_channels_override(void);
-    //void generate_rc_channels(void);
     void generate_radio_rc_channels(void);
     void generate_radio_link_stats(void);
     void generate_radio_link_flow_control(void);
-    void send_msg_serial_out(void);
 
     uint8_t _calc_txbuf(void);
 
@@ -49,8 +48,6 @@ class MavlinkBase
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
-
-    uint8_t _buf[MAVLINK_BUF_SIZE]; // working buffer
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     bool inject_radio_status;
@@ -64,6 +61,8 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
     bool inject_radio_link_stats;
+
+    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
 
@@ -209,10 +208,20 @@ void MavlinkBase::send_msg_serial_out(void)
 }
 
 
+//-------------------------------------------------------
+// Handle Messages
+//-------------------------------------------------------
+
+// nothing yet
+
+
+//-------------------------------------------------------
+// Generate Messages
+//-------------------------------------------------------
+
 // see design_decissions.h for details
 uint8_t MavlinkBase::_calc_txbuf(void)
 {
-
     uint8_t txbuf = 100;
 
     if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
@@ -245,6 +254,24 @@ if(txbuf<40) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
     }
+
+    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
+    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690
+    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
+        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
+        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
+        if (rate_percentage > 80) {
+            txbuf = 10; // < 25 => * 0.8
+        } else if (rate_percentage > 70) {
+            txbuf = 30; // < 35 => * 0.975
+        } else if (rate_percentage < 55) {
+            txbuf = 60; // > 50 => * 1.025
+        } else {
+            txbuf = 40; // no change
+        }
+        if (serial.bytes_available() > 512) txbuf = 0;
+    }
+
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     return txbuf;
@@ -265,41 +292,6 @@ uint8_t rssi, remrssi, txbuf, noise;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
     txbuf = _calc_txbuf();
-
-#if 0
-    txbuf = 100;
-    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
-        // method C
-        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
-        // we need to account for RADIO_STATUS interval
-        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-        if (rate_percentage > 80) {
-            txbuf = 0; // +60 ms
-        } else if (rate_percentage > 70) {
-            txbuf = 30; // +20 ms
-        } else if (rate_percentage < 45) {
-            txbuf = 100; // -40 ms
-        } else if (rate_percentage < 55) {
-            txbuf = 91; // -20 ms
-        } else {
-            txbuf = 60; // no change
-        }
-
-        if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
-
-/*dbg.puts("\nM: ");
-dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
-dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
-dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
-dbg.puts(u8toBCD_s(rate_percentage));dbg.puts(", ");
-dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
-if(txbuf<20) dbg.puts("+60 "); else
-if(txbuf<40) dbg.puts("+20 "); else
-if(txbuf>95) dbg.puts("-40 "); else
-if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
-    }
-    bytes_serial_in = 0; // reset, to restart rate measurement
-#endif
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,
