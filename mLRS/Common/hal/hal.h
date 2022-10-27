@@ -105,9 +105,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef TX_R9MX_868_L433CB
 #include "tx-hal-R9MX-868-l433cb.h"
 #endif
-#ifdef TX_R9MM_868_F103RB
-#include "tx-hal-R9MM-868-f103rb.h"
-#endif
 #ifdef TX_R9M_868_F103C8
 #include "tx-hal-R9M-868-f103c8.h"
 #endif
