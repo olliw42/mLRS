@@ -26,6 +26,8 @@
 //
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by pressing button while power on 
 #define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_IN
+#define USE_IN                      // hal.h#L191 should do it
 // #define DEVICE_HAS_BUZZER
 
 
@@ -41,8 +43,9 @@
 
 //-- UARTS
 // UARTB = serial port or COM (CLI)
-// UARTC = debug port
-// UART = in port, SBus or whatever, not used
+// UARTE = in port, SBus
+// UARTF = not used
+// SWUART= debug
 
 #define UARTB_USE_UART1 // serial or COM (CLI)
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -59,6 +62,15 @@
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
 //#define SWUART_TIM_IRQ_PRIORITY   11
+
+
+#define UARTE_USE_UART3                  // in port       // Pin4 Inv SPort   PB11
+#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
+//#define UARTE_USE_TX
+//#define UARTE_TXBUFSIZE           512
+//#define UARTE_USE_TX_ISR
+#define UARTE_USE_RX
+#define UARTE_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
@@ -172,11 +184,11 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- Serial or Com Switch
 // use COM if button is pressed while power up
-// the button is used bind later on! so we need to play dirty tricks
+// the button is Bind later on! so we need to play dirty tricks
 
 #define DIPP1                      IO_PB0                 //  borrowed Bind button
 
-bool r9mx_ser_or_com_serial = true;  // we use serial as default
+bool r9mx_ser_or_com_serial = true;  // serial is default
 
 void ser_or_com_init(void)
 {
