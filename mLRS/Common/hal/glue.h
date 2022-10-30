@@ -92,7 +92,7 @@
 #include "stm32wlxx_ll_spi.h"
 #include "stm32wlxx_ll_system.h"
 #include "stm32wlxx_ll_exti.h"
-//#include "stm32wlxx_ll_lpuart.h"
+#include "stm32wlxx_ll_lpuart.h"
 #include "stm32wlxx_hal.h"
 #include "stm32wlxx_hal_flash.h"
 #include "stm32wlxx_hal_flash_ex.h"
