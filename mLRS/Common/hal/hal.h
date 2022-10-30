@@ -16,14 +16,14 @@
 
 The availability of the many features are handled via #define declarations. In order to keep somewhat track,
 this naming convention is used (with few exceptions):
-- DEVICE_HAS_XXXX: is set in a hal file to indicate the availability/non-availability of a feature
+- DEVICE_HAS_XXXX: is set in a device's hal file to indicate the availability/non-availability of a feature
 - USE_XXXX: these are determined through some processing, which can involve the DEVICE_HAS_XXXX flags
 In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
 If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
 flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor" of the feature
 (example: IN feature with normal or inverted UART levels).
 
-Many feature flags are available, which can be set in the hal files. They are listed in the following for the
+Many feature flags are available, which can be set in the device hal files. They are listed in the following for the
 tx-hal and rx-hal files.
 
 In tx-hal files:
@@ -33,7 +33,7 @@ In tx-hal files:
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_DEBUG  // board has UART which is shared between SerialL or Debug, selected by DEBUG_ENABLED flag
+#define DEVICE_HAS_SERIAL_OR_DEBUG  // board has UART which is shared between Serial or Debug, selected by DEBUG_ENABLED flag
 #define DEVICE_HAS_COM_OR_DEBUG     // board has UART which is shared between Com or Debug, selected by DEBUG_ENABLED flag
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
@@ -63,34 +63,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "device_conf.h"
 
 
-//-- 2.4 GHz Devices
-
-#ifdef RX_DIY_BOARD01_F103CB
-#include "rx-hal-diy-board01-f103cb.h"
-#endif
-#ifdef RX_DIY_E28DUAL_BOARD02_F103CB
-#include "rx-hal-diy-e28dual-board02-f103cb.h"
-#endif
-#ifdef RX_DIY_E28_G441KB
-#include "rx-hal-diy-e28-g441kb.h"
-#endif
-
-
-#ifdef TX_DIY_E28DUAL_BOARD02_F103CB
-#include "tx-hal-diy-e28dual-board02-f103cb.h"
-#endif
-#ifdef TX_DIY_BOARD01_G491RE
-#include "tx-hal-diy-board01-g491re.h"
-#endif
-#ifdef TX_DIY_SXDUAL_BOARD02_G491RE
-#include "tx-hal-diy-sxdual-board02-g491re.h"
-#endif
-#ifdef TX_DIY_E28DUAL_MODULE02_G491RE
-#include "tx-hal-diy-e28dual-module02-g491re.h"
-#endif
-
-
-//-- 868/915 MHz Devices
+//-- FrsKy R9 system
 
 #ifdef RX_R9MX_868_L433CB
 #include "rx-hal-R9MX-868-l433cb.h"
@@ -110,25 +83,54 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#ifdef RX_DIY_E22_G441KB
-#include "rx-hal-diy-e22-g441kb.h"
-#endif
-
-#ifdef TX_DIY_E22DUAL_MODULE02_G491RE
-#include "tx-hal-diy-e22dual-module02-g491re.h"
-#endif
-
+//-- SeeedStudio WioE5 boards
 
 #ifdef RX_WIO_E5_GROVE_WLE5JC
 #include "rx-hal-wio-e5-grove-wle5jc.h"
 #endif
-
 #ifdef RX_WIO_E5_MINI_WLE5JC
 #include "rx-hal-wio-e5-mini-wle5jc.h"
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
 #include "tx-hal-wio-e5-mini-wle5jc.h"
+#endif
+
+
+//-- DIY Boards, 2.4 GHz Devices
+
+#ifdef RX_DIY_BOARD01_F103CB
+#include "rx-hal-diy-board01-f103cb.h"
+#endif
+#ifdef RX_DIY_E28DUAL_BOARD02_F103CB
+#include "rx-hal-diy-e28dual-board02-f103cb.h"
+#endif
+#ifdef RX_DIY_E28_G441KB
+#include "rx-hal-diy-e28-g441kb.h"
+#endif
+
+#ifdef TX_DIY_E28DUAL_BOARD02_F103CB
+#include "tx-hal-diy-e28dual-board02-f103cb.h"
+#endif
+#ifdef TX_DIY_BOARD01_G491RE
+#include "tx-hal-diy-board01-g491re.h"
+#endif
+#ifdef TX_DIY_SXDUAL_BOARD02_G491RE
+#include "tx-hal-diy-sxdual-board02-g491re.h"
+#endif
+#ifdef TX_DIY_E28DUAL_MODULE02_G491RE
+#include "tx-hal-diy-e28dual-module02-g491re.h"
+#endif
+
+
+//-- DIY Boards, 868/915 MHz Devices
+
+#ifdef RX_DIY_E22_G441KB
+#include "rx-hal-diy-e22-g441kb.h"
+#endif
+
+#ifdef TX_DIY_E22DUAL_MODULE02_G491RE
+#include "tx-hal-diy-e22dual-module02-g491re.h"
 #endif
 
 

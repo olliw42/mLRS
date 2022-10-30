@@ -36,7 +36,8 @@
 // UARTD = serial2 BT/ESP port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF = --
+// SWUART= debug port
 
 #define UARTB_USE_UART2 // serial // PA2,PA3
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
