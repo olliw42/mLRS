@@ -364,7 +364,100 @@ class Sx126xDriver : public Sx126xDriverCommon
 // Driver for SX2
 //-------------------------------------------------------
 #ifdef DEVICE_HAS_DIVERSITY
-#error Diversity not yet supported for SX127x
+
+#ifndef SX2_BUSY
+    #error SX2 must have a BUSY pin !!
+#endif
+
+class Sx126xDriver2 : public Sx126xDriverCommon
+{
+  public:
+
+    void WaitOnBusy(void) override
+    {
+        while (sx2_busy_read()) { __NOP(); };
+    }
+
+    void SpiSelect(void) override
+    {
+        spib_select();
+        delay_ns(50); // datasheet says t6 = 15 ns, NSS falling to MISO delay, t1 = 32 ns, NSS falling edge to SCK setup time
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 31.25 ns, SCK to NSS rising edge hold time
+        spib_deselect();
+    }
+
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spib_transfer(dataout, datain, len);
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+#ifdef SX2_RESET
+        gpio_low(SX2_RESET);
+        delay_ms(5); // datasheet says > 100 us
+        gpio_high(SX2_RESET);
+        delay_ms(50);
+        WaitOnBusy();
+#else
+        sx2_reset();
+#endif
+    }
+
+    void Init(void)
+    {
+        Sx126xDriverCommon::Init();
+
+        spib_init();
+        sx2_init_gpio();
+        sx2_dio_init_exti_isroff();
+
+        // no idea how long the SX126x takes to boot up, so give it some good time
+        // we could probably speed up by using WaitOnBusy()
+        delay_ms(300);
+        _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1262 ??
+    }
+
+    //-- high level API functions
+
+    void StartUp(void)
+    {
+        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // is this needed ????
+
+#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+        SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
+#endif
+
+        Configure();
+        delay_us(125); // may not be needed if busy available
+
+        sx2_dio_enable_exti_isr();
+    }
+
+    //-- this are the API functions used in the loop
+
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    {
+        sx2_amp_transmit();
+        Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
+        delay_us(125); // may not be needed if busy available
+    }
+
+    void SetToRx(uint16_t tmo_ms = 10)
+    {
+        sx2_amp_receive();
+        Sx126xDriverCommon::SetToRx(tmo_ms);
+        delay_us(125); // may not be needed if busy available
+    }
+};
+
 #endif
 
 
