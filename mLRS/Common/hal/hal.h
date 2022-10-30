@@ -133,6 +133,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "tx-hal-diy-e22dual-module02-g491re.h"
 #endif
 
+#ifdef RX_DIY_WIOE5_E22_WLE5JC
+#include "rx-hal-diy-wioe5-e22-wle5jc.h"
+#endif
+
 
 //-------------------------------------------------------
 // Derived Defines

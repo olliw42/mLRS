@@ -158,4 +158,11 @@
 #endif
 
 
+#ifdef RX_DIY_WIOE5_E22_WLE5JC
+  #define DEVICE_NAME "DIY WioE5 E22"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
 
