@@ -21,7 +21,7 @@ hit Next
 opens "Project & Options" dialog
 
 
-3. Project -> Project Name: enter rx-diy-Wio-E5_E22-dual-wle5jc
+3. Project -> Project Name: enter rx-diy-Wio-E5_E22-dual-wle5jc (the name depends on specific WioE5 project)
    Options -> Targeted Language: choose C++
 
 hit Finish
@@ -100,7 +100,8 @@ opens select folder dialog
 
 should add a folder "Common" to the project
 
-repeat for "CommonRx" and "modules"
+repeat for "CommonRx" or "CommonTx", depending on whether it's a rx or tx target
+repeat for "modules"
 
 
 12. right-mouse click on "Common" -> Properties
@@ -110,7 +111,8 @@ opens "Properties for Common" dialog
   -> C/C++ Build -> Settings: uncheck "Exclude resource from build"
   -> hit "Apply and Close"
 
-repeat for "CommonRx" and "modules"
+repeat for "CommonRx" or "CommonTx", depending on whether it's a rx or tx target
+repeat for "modules"
 
 
 13. unfold "modules" folder, to see "fastmavlink", "mavlink", "stm32ll-lib", "sx12xx-lib"
@@ -134,20 +136,20 @@ These steps are equal for all targets, except of course that differnt values nee
 14. in the IDE, unfold "Common", unfold "hal"
 
   -> double-click device_conf.h to open it in editor
-  -> enter new target in appropriate place, with define RX_DIY_WIOE5_E22_WLE5JC
+  -> enter new target in appropriate place, with define e.g. RX_DIY_WIOE5_E22_WLE5JC
 
   -> double-click hal.h to open it in editor
-  -> enter new target in appropriate place, with define RX_DIY_WIOE5_E22_WLE5JC, rx-hal-dio-wioe5-e22-wle5jc.h
+  -> enter new target in appropriate place, with define e.g. RX_DIY_WIOE5_E22_WLE5JC, rx-hal-dio-wioe5-e22-wle5jc.h
 
 
-15. create file rx-hal-dio-wioe5-e22-wle5jc.h with appropriate entries
+15. create decvice hal file, e.g. rx-hal-dio-wioe5-e22-wle5jc.h, with appropriate entries
 
 
-16. right-mouse click "rx-diy-WioE5-E22-dual-wle5jc" -> Properties
+16. right-mouse click created target (e.g. "tx-diy-WioE5-E22-dual-wle5jc") -> Properties
 
 opens "Properties for rx-diy-WioE5-E22-dual-wle5jc" dialog
 
-  -> C/C++ Build -> Settings -> Tool Settings -> MCU G++ Compiler -> Preprozessor -> Define Symbols -> "+" icon: add RX_DIY_WIOE5_E22_WLE5JC
+  -> C/C++ Build -> Settings -> Tool Settings -> MCU G++ Compiler -> Preprozessor -> Define Symbols -> "+" icon: add e.g. RX_DIY_WIOE5_E22_WLE5JC
     
 hit "Apply and Close"
 
