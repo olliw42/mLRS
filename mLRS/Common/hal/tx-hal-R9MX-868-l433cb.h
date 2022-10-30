@@ -23,11 +23,10 @@
 //   Ch2    PA10 / U1Rx   -> Serial Rx
 //   Ch3    PA9 / U1Tx    -> Serial Tx
 //   Ch4    PA8           -> Buzzer
-//
-#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by pressing button while power on 
-#define DEVICE_HAS_DEBUG_SWUART
+
 #define DEVICE_HAS_IN
-#define USE_IN                      // hal.h#L191 should do it
+#define DEVICE_HAS_SERIAL_OR_COM // serial or COM is selected by pressing BUTTON during power on
+#define DEVICE_HAS_DEBUG_SWUART
 // #define DEVICE_HAS_BUZZER
 
 
@@ -43,9 +42,11 @@
 
 //-- UARTS
 // UARTB = serial port or COM (CLI)
-// UARTE = in port, SBus
-// UARTF = not used
-// SWUART= debug
+// UARTC = --
+// UART = --
+// UARTE = in port, SBus or whatever
+// UARTF = --
+// SWUART= debug port
 
 #define UARTB_USE_UART1 // serial or COM (CLI)
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -55,6 +56,13 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
+#define UARTE_USE_UART3 // in port // PB11, pin4 Inv SPort
+#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
+//#define UARTE_USE_TX
+//#define UARTE_TXBUFSIZE           512
+//#define UARTE_USE_TX_ISR
+#define UARTE_USE_RX
+#define UARTE_RXBUFSIZE           512
 
 #define SWUART_USE_TIM15 // debug
 #define SWUART_TX_IO              IO_PA11
@@ -62,15 +70,6 @@
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
 //#define SWUART_TIM_IRQ_PRIORITY   11
-
-
-#define UARTE_USE_UART3                  // in port       // Pin4 Inv SPort   PB11
-#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
-//#define UARTE_USE_TX
-//#define UARTE_TXBUFSIZE           512
-//#define UARTE_USE_TX_ISR
-#define UARTE_USE_RX
-#define UARTE_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
@@ -132,17 +131,27 @@ void sx_dio_exti_isr_clearflag(void)
   LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
 }
 
+
 //-- In port
+// is on IO_PB11, USART3 RX, inverted
+// UARTE_UARTx = USART3
+
 void in_init_gpio(void)
 {
 }
 
 void in_set_normal(void)
 {
+  LL_USART_Disable(USART3);
+  LL_USART_SetRXPinLevel(USART3, LL_USART_RXPIN_LEVEL_STANDARD);
+  LL_USART_Enable(USART3);
 }
 
 void in_set_inverted(void)
 {
+  LL_USART_Disable(USART3);
+  LL_USART_SetRXPinLevel(USART3, LL_USART_RXPIN_LEVEL_INVERTED);
+  LL_USART_Enable(USART3);
 }
 
 
@@ -182,23 +191,21 @@ void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
+
 //-- Serial or Com Switch
-// use COM if button is pressed while power up
-// the button is Bind later on! so we need to play dirty tricks
+// use COM if BUTTON is pressed during power up
+// BUTTON becomes bind button later on
 
-#define DIPP1                      IO_PB0                 //  borrowed Bind button
-
-bool r9mx_ser_or_com_serial = true;  // serial is default
+bool r9mx_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
-  gpio_init(DIPP1, IO_MODE_INPUT_PU, IO_SPEED_SLOW);
+  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
   uint8_t cnt = 0;
   for (uint8_t i = 0; i < 16; i++) {
-    if (gpio_read_activelow(DIPP1)) cnt++;
+    if (gpio_read_activelow(BUTTON)) cnt++;
   }
   r9mx_ser_or_com_serial = !(cnt > 8);
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);  //  free borrowed Bind button
 }
 
 bool ser_or_com_serial(void)
@@ -212,6 +219,7 @@ bool ser_or_com_serial(void)
 void pos_switch_init(void)
 {
 }
+
 
 //-- Buzzer
 

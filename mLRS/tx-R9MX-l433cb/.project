@@ -34,17 +34,17 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/Common</locationURI>
+			<location>WORKSPACE_LOC/Common</location>
 		</link>
 		<link>
 			<name>CommonTx</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/CommonTx</locationURI>
+			<location>WORKSPACE_LOC/CommonTx</location>
 		</link>
 		<link>
 			<name>modules</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/modules</locationURI>
+			<location>WORKSPACE_LOC/modules</location>
 		</link>
 	</linkedResources>
 </projectDescription>
