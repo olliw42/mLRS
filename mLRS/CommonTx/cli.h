@@ -160,7 +160,7 @@ uint8_t sep, n;
        for (uint8_t i = 0; i < sep; i++) name[n++] = toupper(s[i]);
        name[n] = '\0';
        n = 0;
-       for (uint8_t i = sep + 1; i < strlen(s); i++) svalue[n++] = toupper(s[i]);
+       for (uint8_t i = sep + 1; i < strlen(s); i++) svalue[n++] = s[i]; // we must not modify it, e.g. bind phrase
        svalue[n] = '\0';
    }
 
@@ -366,7 +366,7 @@ char s[16];
         }
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        putsn("  [a-zA-Z0-9#-._]");
+        putsn("  [a-z0-9#-._]");
         break;
     }
 }
