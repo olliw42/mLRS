@@ -177,7 +177,7 @@ uint8_t nr, n;
     const char* optstr = SetupParameter[param_idx].optstr;
 
     if (format == PARAM_FORMAT_CLI) { // we do some cli specific faking
-         if(param_idx == 2) { // RF Mode
+         if (param_idx == 2) { // RF Mode
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
     }
@@ -320,10 +320,7 @@ bool param_set_val(bool* rx_param_changed, char* svalue, uint8_t idx)
     case SETUP_PARAM_TYPE_STR6:
         if (strlen(svalue) != 6) return false;
         for (uint8_t i = 0; i < 6; i++) {
-            if (!((svalue[i] >= 'a' && svalue[i] <= 'z') ||
-                  (svalue[i] >= '0' && svalue[i] <= '9' ) ||
-                  (svalue[i] == '_') || (svalue[i] == '#') ||
-                  (svalue[i] == '-') || (svalue[i] == '.')   )) return false;
+            if (!is_valid_bindphrase_char(svalue[i])) return false;
         }
         // set
         *rx_param_changed = setup_set_param_str6(idx, svalue);

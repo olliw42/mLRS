@@ -143,6 +143,7 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 //-- bind phrase & version
 
+bool is_valid_bindphrase_char(char c);
 void sanitize_bindphrase(char* bindphrase);
 uint32_t u32_from_bindphrase(char* bindphrase);
 

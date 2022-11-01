@@ -174,24 +174,18 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8)
 
 //-- bind phrase & version
 
+bool is_valid_bindphrase_char(char c)
+{
+    return ((c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9' ) ||
+            (c == '_') || (c == '#') || (c == '-') || (c == '.'));
+}
+
+
 void sanitize_bindphrase(char* bindphrase)
 {
     for (uint8_t i = 0; i < 6; i++) {
-
-        if (bindphrase[i] >= 'a' && bindphrase[i] <= 'z' ) {
-        } else
-        if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
-        } else
-        if (bindphrase[i] == '_') {
-        } else
-        if (bindphrase[i] == '#') {
-        } else
-        if (bindphrase[i] == '-') {
-        } else
-        if (bindphrase[i] == '.') {
-        } else {
-          bindphrase[i] = '_';
-        }
+        if (!is_valid_bindphrase_char(bindphrase[i])) bindphrase[i] = '_';
     }
 
     bindphrase[6] = '\0';
@@ -206,10 +200,10 @@ uint32_t u32_from_bindphrase(char* bindphrase)
     for (uint8_t i = 0; i < 6; i++) {
         uint8_t n = 0;
 
-        if (bindphrase[i] >= 'a' && bindphrase[i] <= 'z' ) {
+        if ((bindphrase[i] >= 'a') && (bindphrase[i] <= 'z')) {
             n = bindphrase[i] - 'a';
         } else
-        if (bindphrase[i] >= '0' && bindphrase[i] <= '9' ) {
+        if ((bindphrase[i] >= '0') && (bindphrase[i] <= '9')) {
             n = 26 + bindphrase[i] - '0';
         } else
         if (bindphrase[i] == '_') {
