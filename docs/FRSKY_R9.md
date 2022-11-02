@@ -38,9 +38,9 @@ The wiring is similar to the ExpressLRS docs found in the link below. Different 
 
 ### As Tx module ###
 
-The R9MX-receiver (official Frsky naming) can used as Tx module too. Due to hardware limitations it is a very limited Tx module with special applications in mind. The module can be configured via CLI only. The CLI uses the same serial port which is used for the Mavlink communication. 
+The R9MX-receiver (in official Frsky naming) can used as Tx module too. Due to hardware limitations it is a very limited Tx module with special applications in mind. The module can be configured via CLI only. The CLI shares the same serial port with the Mavlink communication. Switching between CLI and serial port is done by "Bind" button.
 - wiring:
-similar to Rx and ExpressLRS. Optional the "Inerted SPort" (orginal naming) is available as input for SBUS or inerted SBUS signal.
+similar to Rx and ExpressLRS. Optional the "Inerted SPort" pin (orginal naming) is available as input for SBUS or inverted SBUS signal.
 - usage:
 Powering up the R9MX without holding down the button (default) will boot in "Serial" mode.
 To enter the CLI mode press the "Bind button" while powering up. The device run's in CLI mode. RX and TX can be configured as usual via CLI commands.
