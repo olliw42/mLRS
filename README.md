@@ -143,11 +143,11 @@ In case of issues with this procedure, don't hesitate to join the discussion thr
 
 You need to have git and python3 installed.
 
-## Further Documentations ##
+## Further Documentation ##
 
-You find more documentation in the [mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md).
+You find more information in the [mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md).
 
-Direct links to some pages:
+Direct links to few selected pages:
 
 - [Binding](https://github.com/olliw42/mLRS-docu/blob/master/docs/BINDING.md)
 - [Configuration Parameters](https://github.com/olliw42/mLRS-docu/blob/master/docs/PARAMETERS.md)
