@@ -27,23 +27,26 @@ With mLRS the R9M module will require active cooling when running at power level
 
 A description for installing a fan along with documentation for 3D printed case covers with fan mount can be found here https://www.expresslrs.org/2.0/hardware/fan-mod/. Note: The PB9 mechanism described there to control the fan is available with mLRS too.
 
+### As Receiver ###
 
-## R9MX receiver ##
+The R9M module can also be flashed with firmware which allows it to be used as mLRS receiver. This yields a receiver working at high transmit power. For details please consult the rcgrouops thread. 
 
-The R9MX receiver can used as Rx or as Tx module.
 
-### As Rx module ###
+## R9MX Receiver ##
 
-The wiring is similar to the ExpressLRS docs found in the link below. Different from ExpressLRS project the SBUS-out-pin is available.
+The R9MX receiver is a good choice for mLRS. The transmit power may however be somewhat low for applications aiming for largest range.
 
-### As Tx module ###
+The wiring is similar to the ExpressLRS docs found in the link below. Different from the ExpressLRS project the SBUS-out-pin is available.
 
-The R9MX-receiver (in official Frsky naming) can used as Tx module too. Due to hardware limitations it is a very limited Tx module with special applications in mind. The module can be configured via CLI only. The CLI shares the same serial port with the Mavlink communication. Switching between CLI and serial port is done by "Bind" button.
-- wiring:
-similar to Rx and ExpressLRS. Optional the "Inerted SPort" pin (orginal naming) is available as input for SBUS or inverted SBUS signal.
-- usage:
-Powering up the R9MX without holding down the button (default) will boot in "Serial" mode.
-To enter the CLI mode press the "Bind button" while powering up. The device run's in CLI mode. RX and TX can be configured as usual via CLI commands.
+### As Tx Module ###
+
+The R9MX receiver can also be used as mLRS Tx module. Due to hardware restrictions it is somewhat limited but can be a great choice for special applications. 
+
+The module can be configured via CLI only. The CLI shares the same port used for serial/Mavlink communication. Switching between CLI and serial port is done via the bind button:
+- Powering up the R9MX without holding down the bind button will boot in "Serial" mode. To enter CLI mode, press the bind button while powering up. The device then runs in CLI mode, and the Rx and Tx can be configured as usual via CLI commands.
+
+The wiring is similar to Rx and ExpressLRS, with the exception that the "Inverted SPort" pin (orginal naming) is available as input port.
+
 
 ## Flashing ##
 
