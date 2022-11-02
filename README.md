@@ -145,15 +145,11 @@ You need to have git and python3 installed.
 
 ## Further Documentations ##
 
-You find more documentation on the following pages:
+You find more documentation in the [mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md).
 
-- [Binding](docs/BINDING.md)
-- [Configuration Parameters](docs/PARAMETERS.md)
-- [mLRS Configuration Lua Script](docs/LUA.md)
-- [CLI Commands](docs/CLI.md)
-- Setup for [CRSF Telemetry and Yaapu Telemetry App](docs/CRSF.md)
-- Setup for [MAVLink for OpenTx](docs/MAVLINK_FOR_OPENTX.md)
-- Basic setup for [SBus Radios](docs/BASIC_SETUP.md)
-- Using [Frsky R9 Devices](docs/FRSKY_R9.md)
-- Using [SeeedStudio Wio-E5 Boards](docs/SEEEDSTUDIO_WIO_E5.md)
+Direct links to some pages:
 
+- [Binding](https://github.com/olliw42/mLRS-docu/blob/master/docs/BINDING.md)
+- [Configuration Parameters](https://github.com/olliw42/mLRS-docu/blob/master/docs/PARAMETERS.md)
+- [mLRS Configuration Lua Script](https://github.com/olliw42/mLRS-docu/blob/master/docs/LUA.md)
+- [CLI Commands](https://github.com/olliw42/mLRS-docu/blob/master/docs/CLI.md)
