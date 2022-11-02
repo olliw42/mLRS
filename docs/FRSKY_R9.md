@@ -25,7 +25,25 @@ There are several DIY apporaches for building the inverter dongle. A common appr
 
 With mLRS the R9M module will require active cooling when running at power levels above 500 mW, but cooling might be advisable also at lower powers, at 500 mW or even 250 mW.
 
-A description for installing a fan along with documentation for 3D printed case covers with fan mount can be found here https://www.expresslrs.org/2.0/hardware/fan-mod/. Note: The PB9 mechanism described there does not work with mLRS; you need to connect the fan to gnd,+5V directly.
+A description for installing a fan along with documentation for 3D printed case covers with fan mount can be found here https://www.expresslrs.org/2.0/hardware/fan-mod/. Note: The PB9 mechanism described there to control the fan is available with mLRS too.
+
+
+## R9MX receiver ##
+
+The R9MX receiver can used as Rx or as Tx module.
+
+### As Rx module ###
+
+The wiring is similar to the ExpressLRS docs found in the link below. Different from ExpressLRS project the SBUS-out-pin is available.
+
+### As Tx module ###
+
+The R9MX-receiver (in official Frsky naming) can used as Tx module too. Due to hardware limitations it is a very limited Tx module with special applications in mind. The module can be configured via CLI only. The CLI shares the same serial port with the Mavlink communication. Switching between CLI and serial port is done by "Bind" button.
+- wiring:
+similar to Rx and ExpressLRS. Optional the "Inerted SPort" pin (orginal naming) is available as input for SBUS or inverted SBUS signal.
+- usage:
+Powering up the R9MX without holding down the button (default) will boot in "Serial" mode.
+To enter the CLI mode press the "Bind button" while powering up. The device run's in CLI mode. RX and TX can be configured as usual via CLI commands.
 
 ## Flashing ##
 
