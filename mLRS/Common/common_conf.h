@@ -92,8 +92,8 @@
 //#define SETUP_MODE                      MODE_19HZ
 
 
-#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
-//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ
+//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
+#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
 
 
 //-------------------------------------------------------
