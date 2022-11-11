@@ -170,8 +170,9 @@ void setup_default(void)
     Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
-    Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
     Setup.Rx.Buzzer = SETUP_RX_BUZZER;
+    Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
+    Setup.Rx.RadioStatusMethod = SETUP_RX_RADIO_STATUS_METHOD;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
     for (uint8_t ch = 0; ch < 4; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1; }

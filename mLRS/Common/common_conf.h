@@ -27,6 +27,7 @@
 //-------------------------------------------------------
 // Setup
 //-------------------------------------------------------
+// these defines determine the default values for the setup parameters
 
 // un-comment to force setup to the below defines, else setup is taken from EEPROM
 //#define SETUP_FORCE_COMMON_CONF
@@ -75,6 +76,7 @@
 #define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
 
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: 1 Hz, 2: 2 Hz, 3: 3 Hz, 4: 4 Hz
+#define SETUP_RX_RADIO_STATUS_METHOD    1 // 0: default, 1: w txbuf, 2: px4
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
 #define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 12: CH12, note: CH13 - CH16 are 3-way and not suitable
