@@ -16,6 +16,10 @@
 #define DEVICE_HAS_JRPIN5 // requires diode-R network soldered onto board
 #define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define
 
+#ifdef DEBUG_ENABLED
+#undef DEBUG_ENABLED
+#endif
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
