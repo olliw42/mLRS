@@ -35,7 +35,7 @@ def generate_mavlink_c_library():
     print(' run fmav_generate_c_library.py')
     print('----------------------------------------')
     os.chdir(os.path.join(mLRSdirectory,'Common','mavlink'))
-    os.system('fmav_generate_c_library.py')
+    os.system(os.path.join('.','fmav_generate_c_library.py')) 
     print('# DONE #')
 
 
