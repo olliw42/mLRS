@@ -33,7 +33,6 @@ In tx-hal files:
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_DEBUG  // board has UART which is shared between Serial or Debug, selected by DEBUG_ENABLED flag
 #define DEVICE_HAS_COM_OR_DEBUG     // board has UART which is shared between Com or Debug, selected by DEBUG_ENABLED flag
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
@@ -173,7 +172,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #else
     #define USE_DEBUG
   #endif
-#elif defined DEVICE_HAS_SERIAL_OR_COM // R9M, Siyi, has device dependent ways to select serial or com
+#elif defined DEVICE_HAS_SERIAL_OR_COM // R9M,R9MX, have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
   #ifdef DEBUG_ENABLED
