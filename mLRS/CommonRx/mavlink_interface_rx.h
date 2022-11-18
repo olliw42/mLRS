@@ -156,16 +156,12 @@ void MavlinkBase::Do(void)
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-        switch (Setup.Rx.SendRcChannels) {
-        case SEND_RC_CHANNELS_OVERRIDE:
-            generate_radio_status();
-            send_msg_serial_out();
-            break;
-        case SEND_RC_CHANNELS_RCCHANNELS:
-            generate_radio_link_flow_control();
-            send_msg_serial_out();
-            break;
+        if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RCCHANNELS) {
+          generate_radio_link_flow_control();
+        } else {
+          generate_radio_status();
         }
+        send_msg_serial_out();
     }
 }
 
