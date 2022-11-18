@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             305 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.3.05"
+#define VERSION             306 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.3.06"
 #define SETUPLAYOUT         2   // this should be changed then Setup struct and/or serial changes
 
 
@@ -55,7 +55,7 @@
 
 #define SETUP_TX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
 
-#define SETUP_TX_SEND_RADIO_STATUS      1 // 0: off, 1: 1 Hz, 2: 2 Hz, 3: 3 Hz, 4: 4 Hz
+#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz, 2: 2 Hz, 3: 3 Hz, 4: 4 Hz
 
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
 #define SETUP_TX_CLI_LINE_END           0 // 0: CR, 1: LF, 2: CRLF
