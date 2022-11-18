@@ -66,7 +66,7 @@
 #define JRPIN5_UARTx              UART_UARTx
 #define JRPIN5_RX_TX_INVERT_INTERNAL
 
-#define UARTE_USE_LPUART1_REMAPPED // in port // PC1
+#define UARTE_USE_LPUART1_REMAPPED // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
