@@ -17,6 +17,7 @@
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include "../Common/protocols/passthrough_protocol.h"
+#include "../Common/protocols/ardupilot_protocol.h"
 #include "jr_pin5_interface.h"
 
 
@@ -85,6 +86,9 @@ class tTxCrsf : public tPin5BridgeBase
 
     // crsf telemetry
 
+    tCrsfFlightMode flightmode; // collected from HEARTBEAT
+    bool flightmode_updated;
+
     tCrsfBattery battery; // collected from BATTERY_STATUS
     bool battery_updated;
 
@@ -105,6 +109,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     // mavlink handlers
 
+    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload);
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
     void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
     void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload);
@@ -253,6 +258,7 @@ void tTxCrsf::Init(bool enable_flag)
     channels_received = false;
     cmd_received = false;
 
+    flightmode_updated = false;
     battery_updated = false;
     attitude_updated = false;
     gps_raw_int_sat = UINT8_MAX; // unknown
@@ -417,6 +423,23 @@ void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t len)
 #define CRSF_REV_U32(x)  __REV(x)
 
 
+void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload)
+{
+    memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
+
+    if (payload->autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
+        ap_flight_mode_name4(flightmode.flight_mode, ap_vehicle_from_mavtype(payload->type), payload->custom_mode);
+
+        if ((payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) == 0) {
+            if (flightmode.flight_mode[3] == ' ') flightmode.flight_mode[3] = '\0';
+            strcat(flightmode.flight_mode, "*");
+        }
+    }
+
+    flightmode_updated = true;
+}
+
+
 int32_t mav_battery_voltage(fmav_battery_status_t* payload)
 {
     int32_t voltage = 0;
@@ -551,6 +574,14 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         passthrough.handle_mavlink_msg_passthrough_array_tunnel(&payload);
         }break;
 
+    case FASTMAVLINK_MSG_ID_HEARTBEAT: {
+        fmav_heartbeat_t payload;
+        fmav_msg_heartbeat_decode(&payload, msg);
+        handle_mavlink_msg_heartbeat(&payload);
+        if (passthrough.passthrough_array_is_receiving) break;
+        passthrough.handle_mavlink_msg_heartbeat(&payload);
+        }break;
+
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
@@ -598,13 +629,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         }break;
 
     // these are for passthrough only
-
-    case FASTMAVLINK_MSG_ID_HEARTBEAT: {
-        if (passthrough.passthrough_array_is_receiving) break;
-        fmav_heartbeat_t payload;
-        fmav_msg_heartbeat_decode(&payload, msg);
-        passthrough.handle_mavlink_msg_heartbeat(&payload);
-        }break;
 
     case FASTMAVLINK_MSG_ID_SYS_STATUS: {
         if (passthrough.passthrough_array_is_receiving) break;
@@ -684,6 +708,11 @@ void tTxCrsf::SendTelemetryFrame(void)
 {
     // native crsf
 
+    if (flightmode_updated) {
+      flightmode_updated = false;
+        SendFrame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
+        return; // only send one per slot
+    }
     if (battery_updated) {
         battery_updated = false;
         SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);

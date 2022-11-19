@@ -12,6 +12,7 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "../Common/protocols/ardupilot_protocol.h"
 
 static inline bool connected(void);
 extern tSerialBase* serialport;
@@ -52,6 +53,8 @@ class MavlinkBase
     uint8_t vehicle_sysid; // 0 indicates data is invalid
     uint8_t vehicle_is_armed;
     uint8_t vehicle_is_flying;
+    uint8_t vehicle_type;
+    uint8_t vehicle_flight_mode;
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -71,6 +74,8 @@ void MavlinkBase::Init(void)
     vehicle_sysid = 0;
     vehicle_is_armed = UINT8_MAX;
     vehicle_is_flying = UINT8_MAX;
+    vehicle_type = UINT8_MAX;
+    vehicle_flight_mode = UINT8_MAX;
 }
 
 
@@ -174,6 +179,15 @@ void MavlinkBase::handle_msg_serial_out(void)
             // this is an autopilot
             vehicle_sysid = msg_serial_out.sysid;
             vehicle_is_armed = (payload.base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
+
+            // ArduPilot provides flight mode number in custom mode
+            if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
+                vehicle_type = ap_vehicle_from_mavtype(payload.type);
+                vehicle_flight_mode = payload.custom_mode;
+            } else {
+                vehicle_type = UINT8_MAX;
+                vehicle_flight_mode = UINT8_MAX;
+            }
         }
     }
 
