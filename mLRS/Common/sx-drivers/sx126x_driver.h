@@ -151,7 +151,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         SetAutoFs(true); // SetRxTxFallbackMode to FS
 
-        SetLnaGainMode(SX126X_LNA_GAIN_MODE_HIGH_SENSITIVITY);
+        SetRxGain(SX126X_RX_GAIN_BOOSTED_GAIN);
+        SetOverCurrentProtection(SX126X_OCP_CONFIGURATION_140_MA); // default for SX1262 according to data sheet, but can't hurt
 
         SetPaConfig_22dbm();
 
