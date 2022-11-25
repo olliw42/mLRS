@@ -166,10 +166,31 @@ void MavlinkBase::Do(void)
 }
 
 
+typedef enum {
+    MAVFTP_OPCODE_OpenFileRO = 4,
+} MAVFTPOPCODEENUM;
+
+
 void MavlinkBase::putc(char c)
 {
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
+
+        // if its a mavftp call to @PARAM/param.pck we fake the url
+        // this will make ArduPilot to response with a NACK:FileNotFound
+        // which will make the GCS to quickly jump to normal parameter upload
+        if ((Setup.Mode != MODE_50HZ) && (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL)) {
+            uint8_t target_component = msg_serial_out.payload[2];
+            uint8_t opcode = msg_serial_out.payload[6];
+            char* url = (char*)(msg_serial_out.payload + 15);
+            if ((target_component == MAV_COMP_ID_AUTOPILOT1) && (opcode == MAVFTP_OPCODE_OpenFileRO)) {
+                if (!strcmp(url, "@PARAM/param.pck")) {
+                    // now fake it to "@xARAM/xaram.xck"
+                    url[1] = url[7] = url[13] = 'x';
+                    //return; // for MissionPlanner it doesn't matter what we do, but for QGC?
+                }
+            }
+        }
 
         send_msg_serial_out();
     }
