@@ -23,34 +23,34 @@
 // one bit set = option not selectable (displayed, but maybe grayed out)
 // this is not totally satisfying, since non-LIST options cannot be hidden
 
-#define SETUP_MSK_MODE                &SetupMetaData.Mode_allowed_mask // this we get from the hal
-#define SETUP_MSK_RFBAND              &SetupMetaData.FrequencyBand_allowed_mask // this we get from the hal
+// common to Tx,Rx
+#define SETUP_MSK_MODE                &SetupMetaData.Mode_allowed_mask // this we infer from the hal
+#define SETUP_MSK_RFBAND              &SetupMetaData.FrequencyBand_allowed_mask // this we infer from the hal
 
-#define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we get from the hal
-#define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
-
-// common to Tx,Rx, all options limited depending on hardware, implementation
-#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2"
-#define SETUP_MSK_TX_DIVERSITY        &SetupMetaData.Tx_Diversity_allowed_mask // this we get from the hal
+// for Tx,Rx, options limited depending on hardware, implementation
+#define SETUP_MSK_TX_DIVERSITY        &SetupMetaData.Tx_Diversity_allowed_mask // this we generate from the hal
 #define SETUP_MSK_RX_DIVERSITY        &SetupMetaData.Rx_Diversity_allowed_mask // this we get from the receiver
 
 // Tx only
-#define SETUP_MSK_TX_SER_DEST         &SetupMetaData.Tx_SerialDestination_allowed_mask // this we get from the hal
-#define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we get from the hal
-#define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we get from the hal
-#define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we get from the hal
+#define SETUP_MSK_TX_SER_DEST         &SetupMetaData.Tx_SerialDestination_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
 
 // Rx only
 #define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
 #define SETUP_MSK_RX_BUZZER           &SetupMetaData.Rx_Buzzer_allowed_mask // this we get from the receiver
 
-// common to Tx,Rx, all options always allowed
+// for Tx,Rx, option strings
+#define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
+#define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
+
+#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2"
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
 #define SETUP_OPT_SERIAL_BAUDRATE     "9600,19200,38400,57600,115200"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
 #define SETUP_OPT_SEND_RADIOSTATUS    "off,1 Hz,2 Hz,3 Hz,4 Hz"
-#define SETUP_OPT_RADIOSTATUS_METHOD  "default,w txbuf,px4"
 
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz" // this is used e.g. in cli
 
@@ -61,11 +61,12 @@
 // a parameter name is limited to 16 chars max
 // a LIST can have only 16 options at most
 // a LIST option string is limited to 44 chars max (exhausted by Rx_FailSafe_Mode for instance)
-#define SETUP_PARAMETER_LIST \
+#define SETUP_PARAMETER_LIST_COMMON \
   X( Setup.BindPhrase[0],         STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
   X( Setup.Mode,                  LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
   X( Setup.FrequencyBand,         LIST, "RF Band",          "RF_BAND",          0,0,0,"", "2.4,915 FCC,868", SETUP_MSK_RFBAND )\
-  \
+
+#define SETUP_PARAMETER_LIST_TX \
   X( Setup.Tx.Power,              LIST, "Tx Power",         "TX_POWER",         0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
   X( Setup.Tx.Diversity,          LIST, "Tx Diversity",     "TX_DIVERSITY",     0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_TX_DIVERSITY )\
   X( Setup.Tx.ChannelsSource,     LIST, "Tx Ch Source",     "TX_CH_SOURCE",     0,0,0,"", "none,mbridge,in,crsf", SETUP_MSK_TX_CH_SOURCE )\
@@ -77,7 +78,8 @@
   X( Setup.Tx.SendRadioStatus,    LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
   X( Setup.Tx.Buzzer,             LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\
   X( Setup.Tx.CliLineEnd,         LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CR,LF,CRLF", MSK_ALL )\
-  \
+
+#define SETUP_PARAMETER_LIST_RX \
   X( Setup.Rx.Power,              LIST, "Rx Power",         "RX_POWER",         0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
   X( Setup.Rx.Diversity,          LIST, "Rx Diversity",     "RX_DIVERSITY",     0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
   X( Setup.Rx.ChannelOrder,       LIST, "Rx Ch Order",      "RX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
@@ -87,7 +89,7 @@
   X( Setup.Rx.SerialBaudrate,     LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
-  X( Setup.Rx.RadioStatusMethod,  LIST, "Rx RadioStat Mtd", "RX_RADIOSTAT_MTD", 0,0,0,"", SETUP_OPT_RADIOSTATUS_METHOD, MSK_ALL )\
+  X( Setup.Rx.RadioStatusMethod,  LIST, "Rx RadioStat Mtd", "RX_RADIOSTAT_MTD", 0,0,0,"", "default,w txbuf,px4", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.Buzzer,             LIST, "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
   \
@@ -107,6 +109,12 @@
   X( Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[1], LIST, "Rx FS Ch14", "RX_FS_CH14", 0,0,0,"", "-120 %,0 %,120 %", MSK_ALL )\
   X( Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[2], LIST, "Rx FS Ch15", "RX_FS_CH15", 0,0,0,"", "-120 %,0 %,120 %", MSK_ALL )\
   X( Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[3], LIST, "Rx FS Ch16", "RX_FS_CH16", 0,0,0,"", "-120 %,0 %,120 %", MSK_ALL )\
+
+
+#define SETUP_PARAMETER_LIST \
+  SETUP_PARAMETER_LIST_COMMON \
+  SETUP_PARAMETER_LIST_TX \
+  SETUP_PARAMETER_LIST_RX
 
 
 // this must EXACTLY match MAV_PARAM_TYPE !! Otherwise Mavlink will be broken !!
