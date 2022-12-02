@@ -14,7 +14,7 @@ import sys
 
 mavlinkpathtorepository = os.path.join('..','..','modules','fastmavlink')
 
-mavlinkdialect = "mlrs.xml"
+mavlinkdialect = "mlrs_all.xml"
 
 mavlinkoutputdirectory = 'out'
 
