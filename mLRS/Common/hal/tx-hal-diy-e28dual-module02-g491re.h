@@ -351,7 +351,7 @@ uint8_t fiveway_read(void)
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_23_DBM, .mW = 200 },

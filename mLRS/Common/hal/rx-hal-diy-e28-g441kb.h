@@ -194,7 +194,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_23_DBM, .mW = 200 },
