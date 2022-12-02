@@ -179,7 +179,7 @@ void MavlinkBase::putc(char c)
         // if its a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
         // which will make the GCS to quickly jump to normal parameter upload
-        if ((Setup.Mode != MODE_50HZ) && (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL)) {
+        if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL) {
             uint8_t target_component = msg_serial_out.payload[2];
             uint8_t opcode = msg_serial_out.payload[6];
             char* url = (char*)(msg_serial_out.payload + 15);
