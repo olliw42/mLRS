@@ -679,6 +679,7 @@ IF_ANTENNA1(
           irq_status = 0;
           bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
           link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
+	  if (link_rx1_status == RX_STATUS_VALID) sx.HandleAFC();
           DBG_MAIN_SLIM(dbg.puts("!");)
         }
       }
@@ -707,6 +708,7 @@ IF_ANTENNA2(
           irq2_status = 0;
           bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
           link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
+	  if (link_rx2_status == RX_STATUS_VALID) sx2.HandleAFC();
         }
       }
 
