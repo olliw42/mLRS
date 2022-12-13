@@ -212,6 +212,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         *RssiSync = rssi;
     }
 
+    void HandleAFC(void) {}
+
     //-- helper
 
     void config_calc(void)

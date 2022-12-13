@@ -209,6 +209,8 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetFs();
     }
 
+    void HandleAFC(void) {}
+
     //-- helper
 
     void config_calc(void)

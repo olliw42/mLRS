@@ -196,6 +196,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRx(tmo_ms * 64);
     }
 
+    void HandleAFC(void) {}
+
     //-- helper
 
     void SetToIdle(void)

@@ -58,6 +58,8 @@ class SxDriverDummy
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }
     int8_t RfPower_dbm(void) { return INT8_MIN; }
+
+    void HandleAFC(void) {}
 };
 
 
