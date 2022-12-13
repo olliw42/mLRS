@@ -737,7 +737,7 @@ IF_ANTENNA2(
       } else if (USE_ANTENNA1) {
         frame_received = (link_rx1_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-        invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); //frame_received && !valid_frame_received;
+        invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
       } else if (USE_ANTENNA2) {
         frame_received = (link_rx2_status > RX_STATUS_NONE);
         valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);

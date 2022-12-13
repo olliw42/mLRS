@@ -212,7 +212,15 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         *RssiSync = rssi;
     }
 
-    void HandleAFC(void) {}
+    void SetRfFrequency(uint32_t RfFrequency)
+    {
+        Sx127xDriverBase::AfcSetRfFrequency(RfFrequency);
+    }
+
+    void HandleAFC(void)
+    {
+        AfcDo();
+    }
 
     //-- helper
 
