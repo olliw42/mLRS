@@ -202,8 +202,8 @@ void sx2_amp_transmit(void)
 
 void sx2_amp_receive(void)
 {
-  gpio_low(SX_TX_EN);
-  gpio_high(SX_RX_EN);
+  gpio_low(SX2_TX_EN);
+  gpio_high(SX2_RX_EN);
 }
 
 void sx2_dio_init_exti_isroff(void)
