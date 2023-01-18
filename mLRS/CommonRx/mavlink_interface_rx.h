@@ -61,6 +61,7 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
     bool inject_radio_link_stats;
+    uint8_t txbuf_overflow = 0; // Was the last call to _calc_txbuf done early
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -123,10 +124,25 @@ void MavlinkBase::Do(void)
     if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
     if (Setup.Rx.SendRadioStatus) {
+        // Send at Setup.Rx.SendRadioStatus rate
+        // Send extra if buffer is nearly full
+        // or if buffer was nearly full but is now nearly empty
         if ((tnow_ms - radio_status_tlast_ms) >= (1000 / Setup.Rx.SendRadioStatus)) {
-            radio_status_tlast_ms = tnow_ms;
-            if (connected()) inject_radio_status = true;
-        }
+	        radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+	} else if ((txbuf_overflow < 2) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE*3/4)) {
+	        buzzer.BeepLP();
+	        radio_status_tlast_ms = tnow_ms;
+                txbuf_overflow = 2;
+                inject_radio_status = true;
+	} else if ((!txbuf_overflow) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
+	        radio_status_tlast_ms = tnow_ms;
+                txbuf_overflow = 1;
+                inject_radio_status = true;
+	} else if ((txbuf_overflow) && (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)) {
+	        radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+	}
     } else {
         radio_status_tlast_ms = tnow_ms;
     }
@@ -154,7 +170,7 @@ void MavlinkBase::Do(void)
         send_msg_serial_out();
     }
 
-    if (inject_radio_status) { // check available size!?
+    if (inject_radio_status && connected()) { // check available size!?
         inject_radio_status = false;
         if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RCCHANNELS) {
           generate_radio_link_flow_control();
@@ -251,19 +267,28 @@ uint8_t MavlinkBase::_calc_txbuf(void)
         uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
         // we need to account for RADIO_STATUS, RADIO_LINK_FLOW_CONTROL interval
         uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-        if (rate_percentage > 80) {
-            txbuf = 0; // +60 ms
-        } else if (rate_percentage > 70) {
-            txbuf = 30; // +20 ms
-        } else if (rate_percentage < 45) {
-            txbuf = 100; // -40 ms
-        } else if (rate_percentage < 55) {
-            txbuf = 91; // -20 ms
+	// common txbuf || Ardu range -> delay  || PX4 range -> rate mult
+        if (rate_percentage > 95) {
+            txbuf = 0;  //       0-19 -> +60 ms ||      0-24 -> *0.8
+        } else if (rate_percentage > 85) {
+            txbuf = 30; //      20-49 -> +20 ms ||     25-34 ->  *0.975
+        } else if (rate_percentage < 60) {
+            txbuf = 100;//     96-100 -> -40 ms ||    51-100 -> *1.025
+        } else if (rate_percentage < 75) {
+            txbuf = 91; //      91-95 -> -20 ms ||    51-100 -> *1.025
         } else {
-            txbuf = 60; // no change
+            txbuf = 50; // 50-90      -> no chg ||     35-50 -> no change
         }
 
-        if (serial.bytes_available() > 512) txbuf = 0; // keep the buffer low !!
+        if (serial.bytes_available() > 512) {
+	  if (txbuf_overflow == 1) txbuf = 33; // Just enough to stop parameter flow
+	    else  txbuf = 0; // Minimize latency
+	}
+
+        if (txbuf_overflow &&  (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)){
+	    txbuf = 99; // restart data flow
+	    txbuf_overflow = 0;
+	}
 
 /*dbg.puts("\nM: ");
 dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
@@ -282,16 +307,29 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
     if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
         uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
         uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-        if (rate_percentage > 80) {
-            txbuf = 10; // < 25 => * 0.8
-        } else if (rate_percentage > 70) {
-            txbuf = 30; // < 35 => * 0.975
-        } else if (rate_percentage < 55) {
-            txbuf = 60; // > 50 => * 1.025
+	// common txbuf || Ardu range -> delay  || PX4 range -> rate mult
+        if (rate_percentage > 99 && !txbuf_overflow) {
+            txbuf = 0;  //       0-19 -> +60 ms ||      0-24 -> *0.8
+        } else if (rate_percentage > 90) {
+            txbuf = 30; //      20-49 -> +20 ms ||     25-34 ->  *0.975
+        } else if (rate_percentage < 70) {
+            txbuf = 100;//     96-100 -> -40 ms ||    51-100 -> *1.025
+        } else if (rate_percentage < 80) {
+            txbuf = 91; //      91-95 -> -20 ms ||    51-100 -> *1.025
         } else {
-            txbuf = 40; // no change
+            txbuf = 50; // 50-90      -> no chg ||     35-50 -> no change
         }
-        if (serial.bytes_available() > 512) txbuf = 0;
+
+        if (serial.bytes_available() > 512) {
+	  if (txbuf_overflow == 1) txbuf = 33; // Just enough to stop parameter flow
+	    else  txbuf = 0; // Going way too fast
+	}
+
+        if (txbuf_overflow &&  (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)){
+	    txbuf = 91; // restart data flow
+	    txbuf_overflow = 0;
+	}
+	    
     }
 
     bytes_serial_in = 0; // reset, to restart rate measurement
@@ -303,7 +341,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
 // see design_decissions.h for details
 void MavlinkBase::generate_radio_status(void)
 {
-uint8_t rssi, remrssi, txbuf, noise;
+    uint8_t rssi, remrssi, txbuf, noise;
 
     rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
     remrssi = rssi_i8_to_ap(stats.received_rssi);
@@ -368,7 +406,7 @@ void MavlinkBase::generate_radio_rc_channels(void)
 
 void MavlinkBase::generate_radio_link_stats(void)
 {
-uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
+    uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
 
     flags = 0; // rssi are in MAVLink units
 
