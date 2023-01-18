@@ -183,16 +183,18 @@ void MavlinkBase::putc(char c)
             uint8_t target_component = msg_serial_out.payload[2];
             uint8_t opcode = msg_serial_out.payload[6];
             char* url = (char*)(msg_serial_out.payload + 15);
-            if (((target_component == MAV_COMP_ID_AUTOPILOT1) || (target_component == MAV_COMP_ID_ALL)) && (opcode == MAVFTP_OPCODE_OpenFileRO)) {
-	        if (!strncmp(url, "@PARAM/param.pck", 16)) {
+            if (((target_component == MAV_COMP_ID_AUTOPILOT1) || (target_component == MAV_COMP_ID_ALL)) &&
+                (opcode == MAVFTP_OPCODE_OpenFileRO)) {
+                if (!strncmp(url, "@PARAM/param.pck", 16)) {
                     // now fake it to "@xARAM/xaram.xck"
                     url[1] = url[7] = url[13] = 'x';
-		    // Need to recalculate CRC
-		    uint16_t crc = fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1);
-		    fmav_crc_accumulate_buf(&crc, msg_serial_out.payload, msg_serial_out.len);
-		    //uint16_t crc = fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1 + msg_serial_out.len);
-		    fmav_crc_accumulate(&crc, msg_serial_out.crc_extra);
-		    msg_serial_out.checksum = crc;
+                    // we need to recalculate CRC
+                    // can't do fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1 + msg_serial_out.len)
+                    // since we just modified payload in msg_serial_out
+                    uint16_t crc = fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1);
+                    fmav_crc_accumulate_buf(&crc, msg_serial_out.payload, msg_serial_out.len);
+                    fmav_crc_accumulate(&crc, msg_serial_out.crc_extra);
+                    msg_serial_out.checksum = crc;
                 }
             }
         }
