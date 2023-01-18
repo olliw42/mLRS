@@ -180,14 +180,17 @@ void MavlinkBase::putc(char c)
         // this will make ArduPilot to response with a NACK:FileNotFound
         // which will make the GCS to quickly jump to normal parameter upload
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL) {
-            uint8_t target_component = msg_serial_out.payload[2];
             uint8_t opcode = msg_serial_out.payload[6];
             char* url = (char*)(msg_serial_out.payload + 15);
-            if ((target_component == MAV_COMP_ID_AUTOPILOT1) && (opcode == MAVFTP_OPCODE_OpenFileRO)) {
-                if (!strcmp(url, "@PARAM/param.pck")) {
+            if (opcode == MAVFTP_OPCODE_OpenFileRO) {
+	        if (!strncmp(url, "@PARAM/param.pck", 16)) {
                     // now fake it to "@xARAM/xaram.xck"
                     url[1] = url[7] = url[13] = 'x';
-                    //return; // for MissionPlanner it doesn't matter what we do, but for QGC?
+		    // Need to recalculate CRC
+		    uint16_t crc = fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1);
+		    fmav_crc_accumulate_buf(&crc, msg_serial_out.payload, msg_serial_out.len);
+		    fmav_crc_accumulate(&crc, msg_serial_out.crc_extra);
+		    msg_serial_out.checksum = crc;
                 }
             }
         }
