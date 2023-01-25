@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <mavlink>
   <include>../../modules/mavlink/message_definitions/v1.0/all.xml</include>
-  <include>mlrs.xml</include>
+  <include>olliw_dev.xml</include>
   <messages/>
 </mavlink>
