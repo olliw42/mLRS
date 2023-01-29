@@ -135,6 +135,20 @@ For cloning you of course can use any other tool you like, but ensure that the s
 
 <img src="https://user-images.githubusercontent.com/6089567/154903396-25f62bf6-573a-4b80-9720-a0ad4a21f291.jpg" width="480">
 
+### Generating Hex Files with STM32CubeIDE ###
+
+To enable Hex file output, use the following steps for each project:
+- Right Click on the Project in the Project Explorer Window select 'Properties'
+- Expand C/C++ Build
+- Select Settings
+- Select 'Tool Settings' Tab
+- Select 'MCU Post build outputs'
+- Select 'Convert to Intel Hex file (-O ihex)
+- Click Apply
+
+![Alt text](CubeIDE_Hex.png?raw=true "Title") 
+
+
 The STM32CubeIDE has its weirdness, so you may have to get used to it. 
 
 In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups, or submit an issue in the github repository.
