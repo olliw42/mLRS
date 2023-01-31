@@ -61,7 +61,15 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
     bool inject_radio_link_stats;
-    uint8_t txbuf_overflow = 0; // Was the last call to _calc_txbuf done early
+
+    typedef enum {
+        TXBUF_STATE_NORMAL = 0, // normal periodic data rate based txbuf reports
+        TXBUF_STATE_BURST,     // Buffer filling, pause bulk download
+        TXBUF_STATE_RECOVER,   // Buffer draining, resume bulk download
+    } TXBUF_STATE_ENUM;
+    uint8_t txbuf_state;
+
+    bool radio_status_extra_time; // True if we are in overtime waiting for txbuf_state to change
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -84,6 +92,9 @@ void MavlinkBase::Init(void)
     for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
     inject_radio_link_stats = false;
+
+    txbuf_state = TXBUF_STATE_NORMAL;
+    radio_status_extra_time = false;
 }
 
 
@@ -115,36 +126,55 @@ void MavlinkBase::Do(void)
 {
     uint32_t tnow_ms = millis32();
 
-    if (!connected()) {
-        //Init();
-        inject_radio_status = false;
-        radio_status_tlast_ms = tnow_ms + 1000;
-    }
-
     if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-    if (Setup.Rx.SendRadioStatus) {
-        // Send at Setup.Rx.SendRadioStatus rate
-        // Send extra if buffer is nearly full
-        // or if buffer was nearly full but is now nearly empty
-        if ((tnow_ms - radio_status_tlast_ms) >= (1000 / Setup.Rx.SendRadioStatus)) {
-	        radio_status_tlast_ms = tnow_ms;
+    // Implement two modes of operation:  Normal and burst (parameter download, etc).
+    // Normal mode sends status once per second
+    // Burst mode sends as needed as buffer fills/drains
+    // Switch to burst mode when periodic txbuf reports don't prevent buffer growth
+    // Switch to normal mode when buffer does not reach half full for more than 2 seconds.
+    if (Setup.Rx.SendRadioStatus && connected()) {
+        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+            if (txbuf_state != TXBUF_STATE_NORMAL) {
+                if (radio_status_extra_time) {
+                    // We have been stuck in BURST or RECOVER for 2 seconds
+                    // Give up and revert to NORMAL mode
+                    txbuf_state = TXBUF_STATE_NORMAL;
+                    inject_radio_status = true;
+                }
+                else if ((txbuf_state == TXBUF_STATE_BURST) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
+                    // We have been above BURST threshold for 1 second.
+                    // Should not happen unless normal stream rate is too high.
+                    txbuf_state = TXBUF_STATE_NORMAL;
+                    inject_radio_status = true;
+                    // This is the only case where BURST and RECOVERING won't balance so we need to slow down normal stream rates.
+                    // This helps us avoid buffer overflow after startup and when the GCS changes stream rates.
+                    // We will likely send txbuf = 0 twice immediately.
+                } else {
+                    // Wait an additional second to see if we reach RECOVER or BURST again
+                    radio_status_extra_time = true;
+                    bytes_serial_in = 0;
+                    inject_radio_status = false;
+                }
+            } else {
                 inject_radio_status = true;
-	} else if ((txbuf_overflow < 2) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE*3/4)) {
-	        buzzer.BeepLP();
-	        radio_status_tlast_ms = tnow_ms;
-                txbuf_overflow = 2;
-                inject_radio_status = true;
-	} else if ((!txbuf_overflow) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
-	        radio_status_tlast_ms = tnow_ms;
-                txbuf_overflow = 1;
-                inject_radio_status = true;
-	} else if ((txbuf_overflow) && (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)) {
-	        radio_status_tlast_ms = tnow_ms;
-                inject_radio_status = true;
-	}
-    } else {
+            }
+            radio_status_tlast_ms = tnow_ms;
+        } else if ((txbuf_state != TXBUF_STATE_BURST) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
+            radio_status_extra_time = false;
+            txbuf_state = TXBUF_STATE_BURST;
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+        } else if ((txbuf_state == TXBUF_STATE_BURST) && (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*2)) {
+            radio_status_extra_time = false;
+            txbuf_state = TXBUF_STATE_RECOVER;
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+        } // else we don't inject_radio_status
+        
+    } else { // !Setup.Rx.SendRadioStatus || !connected()
         radio_status_tlast_ms = tnow_ms;
+        inject_radio_status = false;
     }
 
     // TODO: either the buffer must be guaranteed to be large, or we need to check filling
@@ -170,7 +200,7 @@ void MavlinkBase::Do(void)
         send_msg_serial_out();
     }
 
-    if (inject_radio_status && connected()) { // check available size!?
+    if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
         if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RADIORCCHANNELS) {
             generate_radio_link_flow_control();
@@ -264,75 +294,71 @@ uint8_t MavlinkBase::_calc_txbuf(void)
 {
     uint8_t txbuf = 100;
 
+    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
     if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
-        // method C
-        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
-        // we need to account for RADIO_STATUS, RADIO_LINK_FLOW_CONTROL interval
-        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-	// common txbuf || Ardu range -> delay  || PX4 range -> rate mult
-        if (rate_percentage > 95) {
-            txbuf = 0;  //       0-19 -> +60 ms ||      0-24 -> *0.8
-        } else if (rate_percentage > 85) {
-            txbuf = 30; //      20-49 -> +20 ms ||     25-34 ->  *0.975
-        } else if (rate_percentage < 60) {
-            txbuf = 100;//     96-100 -> -40 ms ||    51-100 -> *1.025
-        } else if (rate_percentage < 75) {
-            txbuf = 91; //      91-95 -> -20 ms ||    51-100 -> *1.025
-        } else {
-            txbuf = 50; // 50-90      -> no chg ||     35-50 -> no change
+        if (txbuf_state == TXBUF_STATE_NORMAL) {
+            // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
+            // method C, with improvements
+            // aim at 75%..85% rate usage in steady state
+            if (rate_percentage > 95) {
+                txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
+            } else if (rate_percentage > 85) {
+                txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
+            } else if (rate_percentage < 60) {
+                txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
+            } else if (rate_percentage < 75) {
+                txbuf = 92;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
+            } else {
+                txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+            }
         }
+        else if (txbuf_state == TXBUF_STATE_BURST) txbuf = 33; // Just enough to stop parameter flow for PX4
+        else if (txbuf_state == TXBUF_STATE_RECOVER) txbuf = 93; // restart data flow for Ardupilot or PX4
+    }
 
-        if (serial.bytes_available() > 512) {
-	  if (txbuf_overflow == 1) txbuf = 33; // Just enough to stop parameter flow
-	    else  txbuf = 0; // Minimize latency
-	}
+    else if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
+        if (txbuf_state == TXBUF_STATE_NORMAL) {
+            // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
+            // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690
+            // method C, with improvements
+            // PX4 is less bursty for normal streams, we might be able to sustain higher rates; 80%..90%
+            if (rate_percentage > 98) {
+                txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
+            } else if (rate_percentage > 90) {
+                txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
+            } else if (rate_percentage < 70) {
+                txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
+            } else if (rate_percentage < 80) {
+                txbuf = 92;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
+            } else {
+                txbuf = 51;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+            }
+        }
+        else if (txbuf_state == TXBUF_STATE_BURST) txbuf = 33; // Just enough to stop parameter flow for PX4
+        else if (txbuf_state == TXBUF_STATE_RECOVER) txbuf = 93; // restart data flow for Ardupilot or PX4
+    }
 
-        if (txbuf_overflow &&  (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)){
-	    txbuf = 99; // restart data flow
-	    txbuf_overflow = 0;
-	}
-
-/*dbg.puts("\nM: ");
-dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
+#if 0
+static uint32_t t_last = 0;
+uint32_t t = millis32();
+uint32_t dt = t - t_last;
+t_last = t;
+dbg.puts("\nM: ");
+dbg.puts(u16toBCD_s(t));dbg.puts(" (");dbg.puts(u16toBCD_s(dt));dbg.puts("), ");
+//dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
 dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
 dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
 dbg.puts(u8toBCD_s(rate_percentage));dbg.puts(", ");
+if(txbuf_state == TXBUF_STATE_BURST) dbg.puts("burs, ");
+else if(txbuf_state == TXBUF_STATE_RECOVER) dbg.puts("reco, ");
+else dbg.puts("norm, ");
 dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
 if(txbuf<20) dbg.puts("+60 "); else
-if(txbuf<40) dbg.puts("+20 "); else
+if(txbuf<50) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
-if(txbuf>90) dbg.puts("-20 "); else dbg.puts("+-0 ");*/
-    }
-
-    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
-    // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690
-    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
-        uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms;
-        uint32_t rate_percentage = (bytes_serial_in * 100 * Setup.Rx.SendRadioStatus) / rate_max;
-	// common txbuf || Ardu range -> delay  || PX4 range -> rate mult
-        if (rate_percentage > 99 && !txbuf_overflow) {
-            txbuf = 0;  //       0-19 -> +60 ms ||      0-24 -> *0.8
-        } else if (rate_percentage > 90) {
-            txbuf = 30; //      20-49 -> +20 ms ||     25-34 ->  *0.975
-        } else if (rate_percentage < 70) {
-            txbuf = 100;//     96-100 -> -40 ms ||    51-100 -> *1.025
-        } else if (rate_percentage < 80) {
-            txbuf = 91; //      91-95 -> -20 ms ||    51-100 -> *1.025
-        } else {
-            txbuf = 50; // 50-90      -> no chg ||     35-50 -> no change
-        }
-
-        if (serial.bytes_available() > 512) {
-	  if (txbuf_overflow == 1) txbuf = 33; // Just enough to stop parameter flow
-	    else  txbuf = 0; // Going way too fast
-	}
-
-        if (txbuf_overflow &&  (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN * 2)){
-	    txbuf = 91; // restart data flow
-	    txbuf_overflow = 0;
-	}
-	    
-    }
+if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0 ");
+#endif
 
     bytes_serial_in = 0; // reset, to restart rate measurement
 
