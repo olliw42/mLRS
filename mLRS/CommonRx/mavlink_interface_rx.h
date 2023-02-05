@@ -51,8 +51,6 @@ class MavlinkBase
     fmav_message_t msg_serial_out;
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
-    bool inject_radio_status;
-
     uint32_t radio_status_tlast_ms;
     uint32_t bytes_serial_in;
     uint8_t radio_status_txbuf;
@@ -70,7 +68,6 @@ class MavlinkBase
     uint16_t rc_chan[16]; // holds the rc data in MAVLink format
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
-    bool inject_radio_link_stats;
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -84,7 +81,6 @@ void MavlinkBase::Init(void)
     status_link_in = {0};
     status_serial_out = {0};
 
-    inject_radio_status = false;
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;
     txbuf_state = TXBUF_STATE_NORMAL;
@@ -95,7 +91,6 @@ void MavlinkBase::Init(void)
     inject_rc_channels = false;
     for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
-    inject_radio_link_stats = false;
 }
 
 
@@ -126,6 +121,13 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
 void MavlinkBase::Do(void)
 {
     uint32_t tnow_ms = millis32();
+    bool inject_radio_link_stats = false;
+    bool inject_radio_status = false;
+
+    if (!connected()) {
+        //Init();
+        radio_status_tlast_ms = tnow_ms + 1000;
+    }
 
     if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
@@ -141,7 +143,6 @@ void MavlinkBase::Do(void)
         }
     } else {
         radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = false;
     }
 
     // TODO: either the buffer must be guaranteed to be large, or we need to check filling

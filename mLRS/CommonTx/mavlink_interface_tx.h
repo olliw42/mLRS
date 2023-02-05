@@ -47,7 +47,6 @@ class MavlinkBase
     fmav_message_t msg_serial_out;
 
     // to inject RADIO_STATUS messages
-    bool inject_radio_status;
     uint32_t radio_status_tlast_ms;
 
     uint8_t vehicle_sysid; // 0 indicates data is invalid
@@ -68,7 +67,6 @@ void MavlinkBase::Init(void)
     status_link_in = {0};
     status_serial_out = {0};
 
-    inject_radio_status = false;
     radio_status_tlast_ms = millis32() + 1000;
 
     vehicle_sysid = 0;
@@ -82,19 +80,19 @@ void MavlinkBase::Init(void)
 void MavlinkBase::Do(void)
 {
     uint32_t tnow_ms = millis32();
+    bool inject_radio_status = false;
 
     if (!connected()) {
         //Init();
-        inject_radio_status = false;
         radio_status_tlast_ms = tnow_ms + 1000;
     }
 
     if (Setup.Tx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-    if (Setup.Tx.SendRadioStatus) {
+    if (Setup.Tx.SendRadioStatus && connected()) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
             radio_status_tlast_ms = tnow_ms;
-            if (connected()) inject_radio_status = true;
+            inject_radio_status = true;
         }
     } else {
         radio_status_tlast_ms = tnow_ms;
