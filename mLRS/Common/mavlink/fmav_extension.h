@@ -11,6 +11,22 @@
 #define FASTMAVLINK_EXTENSION_H
 
 
+void fmav_msg_recalculate_crc(fmav_message_t* msg)
+{
+    uint16_t crc = fmav_crc_calculate(&(msg->len), 1);
+    fmav_crc_accumulate(&crc, msg->incompat_flags);
+    fmav_crc_accumulate(&crc, msg->compat_flags);
+    fmav_crc_accumulate(&crc, msg->seq);
+    fmav_crc_accumulate(&crc, msg->sysid);
+    fmav_crc_accumulate(&crc, msg->compid);
+    fmav_crc_accumulate_buf(&crc, msg->msgid_a, 3);
+
+    fmav_crc_accumulate_buf(&crc, msg->payload, msg->len);
+    fmav_crc_accumulate(&crc, msg->crc_extra);
+    msg->checksum = crc;
+}
+
+
 typedef struct {
   uint8_t sys_id;
   uint8_t comp_id;

@@ -20,6 +20,8 @@ static inline bool connected(void);
 
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 280 bytes
 
+#define MAVLINK_OPT_FAKE_PARAMFTP   1 // 0: off, 1: always, 2: determined from mode & baudrate
+
 
 class MavlinkBase
 {
@@ -190,6 +192,16 @@ void MavlinkBase::putc(char c)
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
+#if MAVLINK_OPT_FAKE_PARAMFTP > 0
+#if MAVLINK_OPT_FAKE_PARAMFTP > 1
+        bool force_param_list = true;
+        switch (Config.Mode) {
+        case MODE_50HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps is ok for mftp
+        case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps is ok for mftp
+        case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps is ok for mftp
+        }
+        if (force_param_list)
+#endif
         // if it's a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
         // which will make MissionPlanner (any GCS?) to fallback to normal parameter upload
@@ -200,18 +212,12 @@ void MavlinkBase::putc(char c)
             if (((target_component == MAV_COMP_ID_AUTOPILOT1) || (target_component == MAV_COMP_ID_ALL)) &&
                 (opcode == MAVFTP_OPCODE_OpenFileRO)) {
                 if (!strncmp(url, "@PARAM/param.pck", 16)) {
-                    // now fake it to "@xARAM/xaram.xck"
-                    url[1] = url[7] = url[13] = 'x';
-                    // we need to recalculate CRC
-                    // can't do fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1 + msg_serial_out.len)
-                    // since we just modified payload in msg_serial_out
-                    uint16_t crc = fmav_crc_calculate(&(buf_link_in[1]), FASTMAVLINK_HEADER_V2_LEN - 1);
-                    fmav_crc_accumulate_buf(&crc, msg_serial_out.payload, msg_serial_out.len);
-                    fmav_crc_accumulate(&crc, msg_serial_out.crc_extra);
-                    msg_serial_out.checksum = crc;
+                    url[1] = url[7] = url[13] = 'x'; // now fake it to "@xARAM/xaram.xck"
+                    fmav_msg_recalculate_crc(&msg_serial_out); // we need to recalculate CRC
                 }
             }
         }
+#endif
 
         send_msg_serial_out();
     }
