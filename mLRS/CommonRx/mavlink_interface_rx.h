@@ -296,7 +296,8 @@ uint8_t MavlinkBase::_calc_txbuf(void)
 
     uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
     uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
-    if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_W_TXBUF) {
+
+    if (Setup.Rx.SendRadioStatus == RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) {
         if (txbuf_state == TXBUF_STATE_NORMAL) {
             // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
             // method C, with improvements
@@ -317,7 +318,7 @@ uint8_t MavlinkBase::_calc_txbuf(void)
         else if (txbuf_state == TXBUF_STATE_RECOVER) txbuf = 93; // restart data flow for Ardupilot or PX4
     }
 
-    else if (Setup.Rx.RadioStatusMethod == RADIO_STATUS_METHOD_PX4) {
+    else if (Setup.Rx.SendRadioStatus == RX_SEND_RADIO_STATUS_METHOD_PX4) {
         if (txbuf_state == TXBUF_STATE_NORMAL) {
             // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
             // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690

@@ -203,7 +203,7 @@ typedef struct
     uint8_t SendRadioStatus : 4;
     uint8_t Buzzer : 4;
     uint8_t SendRcChannels : 4;
-    uint8_t RadioStatusMethod : 4;
+    uint8_t __RadioStatusMethod : 4; // deprecated
 
     uint8_t spare2[5];
 

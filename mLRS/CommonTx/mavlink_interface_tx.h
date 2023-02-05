@@ -92,7 +92,7 @@ void MavlinkBase::Do(void)
     if (Setup.Tx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
     if (Setup.Tx.SendRadioStatus) {
-        if ((tnow_ms - radio_status_tlast_ms) >= (1000 / Setup.Tx.SendRadioStatus)) {
+        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
             radio_status_tlast_ms = tnow_ms;
             if (connected()) inject_radio_status = true;
         }

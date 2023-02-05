@@ -50,7 +50,6 @@
 #define SETUP_OPT_SERIAL_BAUDRATE     "9600,19200,38400,57600,115200"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
-#define SETUP_OPT_SEND_RADIOSTATUS    "off,1 Hz,2 Hz,3 Hz,4 Hz"
 
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz" // this is used e.g. in cli
 
@@ -75,7 +74,7 @@
   X( Setup.Tx.SerialDestination,  LIST, "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge,serial2", SETUP_MSK_TX_SER_DEST )\
   X( Setup.Tx.SerialBaudrate,     LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx.SerialLinkMode,     LIST, "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
-  X( Setup.Tx.SendRadioStatus,    LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
+  X( Setup.Tx.SendRadioStatus,    LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx.Buzzer,             LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\
   X( Setup.Tx.CliLineEnd,         LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CR,LF,CRLF", MSK_ALL )\
 
@@ -88,8 +87,7 @@
   X( Setup.Rx.FailsafeMode,       LIST, "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
   X( Setup.Rx.SerialBaudrate,     LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
-  X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", SETUP_OPT_SEND_RADIOSTATUS, MSK_ALL )\
-  X( Setup.Rx.RadioStatusMethod,  LIST, "Rx RadioStat Mtd", "RX_RADIOSTAT_MTD", 0,0,0,"", "default,w txbuf,px4", MSK_ALL )\
+  X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,px4", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.Buzzer,             LIST, "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
   \

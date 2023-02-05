@@ -230,7 +230,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
     rx_params->SendRadioStatus = Setup.Rx.SendRadioStatus;
     rx_params->Buzzer = Setup.Rx.Buzzer;
     rx_params->SendRcChannels = Setup.Rx.SendRcChannels;
-    rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
+    // deprecated rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params->FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -255,7 +255,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
     Setup.Rx.Buzzer = rx_params->Buzzer;
     Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
-    Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
+    // deprecated Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];

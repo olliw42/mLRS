@@ -172,10 +172,11 @@ void setup_default(void)
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
     Setup.Rx.Buzzer = SETUP_RX_BUZZER;
     Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
-    Setup.Rx.RadioStatusMethod = SETUP_RX_RADIO_STATUS_METHOD;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
     for (uint8_t ch = 0; ch < 4; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1; }
+
+    Setup.Rx.__RadioStatusMethod = 0xFF; // deprecated
 }
 
 
@@ -225,7 +226,7 @@ void setup_sanitize(void)
     if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = CHANNEL_ORDER_AETR;
     if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     if (Setup.Tx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Tx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
-    if (Setup.Tx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
+    if (Setup.Tx.SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = TX_SEND_RADIO_STATUS_OFF;
 
     if (Setup.Tx.Buzzer >= BUZZER_NUM) Setup.Tx.Buzzer = BUZZER_OFF;
     if (SETUP_TST_NOTALLOWED(Tx_Buzzer_allowed_mask,Tx.Buzzer)) Setup.Tx.Buzzer = BUZZER_OFF;
@@ -265,8 +266,8 @@ void setup_sanitize(void)
 
     if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
     if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
-    if (Setup.Rx.SendRadioStatus >= SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SEND_RADIO_STATUS_OFF;
-    if (Setup.Rx.RadioStatusMethod >= RADIO_STATUS_METHOD_NUM) Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF;
+    if (Setup.Rx.SendRadioStatus >= RX_SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = RX_SEND_RADIO_STATUS_OFF;
+    // deprecated if (Setup.Rx.RadioStatusMethod >= RADIO_STATUS_METHOD_NUM) Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF;
     //Setup.Rx.RadioStatusMethod = RADIO_STATUS_METHOD_W_TXBUF; // for the moment we fix it to this setting
     if (Setup.Rx.SendRcChannels >= SEND_RC_CHANNELS_NUM) Setup.Rx.SendRcChannels = SEND_RC_CHANNELS_OFF;
 }
