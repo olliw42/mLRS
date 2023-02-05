@@ -44,7 +44,7 @@ class MavlinkBase
     void generate_radio_link_flow_control(void);
 
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
-    bool handle_txbuf_px4(uint32_t tnow_ms); // aka "brad" method
+    bool handle_txbuf_px4(uint32_t tnow_ms); // for PX4, aka "brad"
 
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
