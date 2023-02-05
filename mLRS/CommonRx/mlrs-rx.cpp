@@ -322,23 +322,23 @@ uint8_t payload_len;
 void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 {
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-      memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-      payload_len = 0;
+        memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
+        payload_len = 0;
 
-      // read data from serial
-      if (connected()) {
-        for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-          if (!sx_serial.available()) break;
-          payload[payload_len] = sx_serial.getc();
+        // read data from serial
+        if (connected()) {
+            for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                if (!sx_serial.available()) break;
+                payload[payload_len] = sx_serial.getc();
 //dbg.putc(payload[payload_len]);
-          payload_len++;
-        }
+                payload_len++;
+            }
 
-        stats.bytes_transmitted.Add(payload_len);
-        stats.fresh_serial_data_transmitted.Inc();
-      } else {
-        sx_serial.flush();
-      }
+            stats.bytes_transmitted.Add(payload_len);
+            stats.fresh_serial_data_transmitted.Inc();
+        } else {
+            sx_serial.flush();
+        }
     }
 
     stats.last_tx_antenna = antenna;

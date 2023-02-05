@@ -18,7 +18,7 @@ static inline bool connected(void);
 #define RADIO_LINK_SYSTEM_ID        51 // SiK uses 51, 68
 #define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
+#define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 280 bytes
 
 
 class MavlinkBase
@@ -189,9 +189,9 @@ void MavlinkBase::putc(char c)
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
-        // if its a mavftp call to @PARAM/param.pck we fake the url
+        // if it's a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
-        // which will make the GCS to quickly jump to normal parameter upload
+        // which will make MissionPlanner (any GCS?) to fallback to normal parameter upload
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL) {
             uint8_t target_component = msg_serial_out.payload[2];
             uint8_t opcode = msg_serial_out.payload[6];
@@ -435,7 +435,7 @@ if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*0 ");
 // see design_decissions.h for details
 void MavlinkBase::generate_radio_status(void)
 {
-    uint8_t rssi, remrssi, txbuf, noise;
+uint8_t rssi, remrssi, txbuf, noise;
 
     rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
     remrssi = rssi_i8_to_ap(stats.received_rssi);
@@ -475,7 +475,8 @@ void MavlinkBase::generate_rc_channels_override(void)
 
 void MavlinkBase::generate_radio_rc_channels(void)
 {
-    int16_t channels[24]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 24
+int16_t channels[24]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 24
+
     memcpy(channels, rc_chan_13b, 16*2);
     channels[16] = 0;
     channels[17] = 0;
@@ -500,7 +501,7 @@ void MavlinkBase::generate_radio_rc_channels(void)
 
 void MavlinkBase::generate_radio_link_stats(void)
 {
-    uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
+uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
 
     flags = 0; // rssi are in MAVLink units
 

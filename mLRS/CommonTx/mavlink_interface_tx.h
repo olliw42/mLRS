@@ -219,11 +219,8 @@ uint8_t rssi, remrssi, txbuf, noise;
     int16_t snr = -stats.GetLastRxSnr() + 10;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
+    // we do nothing, I'm not aware that any GCS respect this, and if so, it needs detailed investigation
     txbuf = 100;
-// we do nothing, I'm not aware that GCSes respect this, and if so, it needs detailed investigation
-//  if (Setup.Tx.SendRadioStatus == SEND_RADIO_STATUS_ON_W_TXBUF && serialport) {
-//    txbuf = serial.rx_free_percent();
-//  }
 
     fmav_msg_radio_status_pack(
         &msg_serial_out,
