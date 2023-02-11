@@ -43,6 +43,7 @@ In tx-hal files:
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
+#define DEVICE_HAS_ESP_WIFI_BRIDGE  // board has ESP32 with RESET,GPIO support
 
 In rx-hal files:
 
@@ -282,6 +283,16 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && \
     !defined FREQUENCY_BAND_433_MHZ
   #error Correct frequency band must be defined !
+#endif
+
+
+//-------------------------------------------------------
+// Empty Prototypes
+//-------------------------------------------------------
+// should be in the device hal files, but is just so much more convenient to have them here
+
+#ifndef DEVICE_HAS_ESP_WIFI_BRIDGE
+    void esp_init(void) {}
 #endif
 
 

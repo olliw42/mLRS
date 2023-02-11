@@ -423,23 +423,6 @@ void tTxCli::print_param_list(uint8_t flag)
 }
 
 
-void tTxCli::print_help(void)
-{
-    putsn("  help, h, ?  -> this help page");
-    putsn("  pl          -> list all parameters");
-    putsn("  pl c        -> list common parameters");
-    putsn("  pl tx       -> list Tx parameters");
-    putsn("  pl rx       -> list Rx parameters");
-    putsn("  p name          -> get parameter value");
-    putsn("  p name = value  -> set parameter value");
-    putsn("  p name = ?      -> get parameter value and list of allowed values");
-    putsn("  pstore      -> store parameters");
-    putsn("  bind        -> start binding");
-    putsn("  reload      -> reload all parameter settings");
-    putsn("  stats       -> starts streaming statistics");
-}
-
-
 void tTxCli::stream(void)
 {
     uint32_t t_now = millis32();
@@ -466,6 +449,59 @@ void tTxCli::stream(void)
             puts(", ");
             puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec()));
             putsn(";");
+        }
+    }
+}
+
+
+void tTxCli::print_help(void)
+{
+    putsn("  help, h, ?  -> this help page");
+    putsn("  pl          -> list all parameters");
+    putsn("  pl c        -> list common parameters");
+    putsn("  pl tx       -> list Tx parameters");
+    putsn("  pl rx       -> list Rx parameters");
+    putsn("  p name          -> get parameter value");
+    putsn("  p name = value  -> set parameter value");
+    putsn("  p name = ?      -> get parameter value and list of allowed values");
+    putsn("  pstore      -> store parameters");
+    putsn("  bind        -> start binding");
+    putsn("  reload      -> reload all parameter settings");
+    putsn("  stats       -> starts streaming statistics");
+
+    putsn("  ptser       -> enter serial passthrough");
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+    putsn("  espboot     -> reboot ESP and enter serial passthrough");
+    putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
+#endif
+}
+
+
+// TODO: should really be abstracted out, but for the moment let's be happy to have it here
+void passthrough_do(tSerialBase* com, tSerialBase* com2)
+{
+uint16_t led_blink = 0;
+
+    if (!com) return;
+    if (!com2) return;
+
+    LED_RED_OFF;
+    LED_GREEN_ON;
+
+    while (1) {
+        if (doSysTask) {
+            doSysTask = 0;
+            DECc(led_blink, SYSTICK_DELAY_MS(100));
+            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+        }
+
+        if (com->available()) {
+            char c = com->getc();
+            com2->putc(c);
+        }
+        if (com2->available()) {
+            char c = com2->getc();
+            com->putc(c);
         }
     }
 }
@@ -500,6 +536,7 @@ bool rx_param_changed;
       }
       putsn(">");
 
+      //-- basic commands
       if (strcmp(buf, "h") == 0)     { print_help(); } else
       if (strcmp(buf, "help") == 0)  { print_help(); } else
       if (strcmp(buf, "?") == 0)     { print_help(); } else
@@ -557,6 +594,34 @@ bool rx_param_changed;
           putsn("  starts streaming stats");
           putsn("  send any character to stop");
 
+      //-- ESP handling
+      } else
+      if (strcmp(buf, "ptser") == 0) {
+          // enter passthrough to serial, can only be exited by re-powering
+          serial.SetBaudRate(115200);
+          passthrough_do(com, &serial);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+      } else
+      if (strcmp(buf, "espboot") == 0) {
+          esp_gpio0_low();
+          esp_reset_low();
+          delay_ms(100);
+          esp_reset_high();
+          delay_ms(100);
+          esp_gpio0_high();
+          delay_ms(100);
+          serial.SetBaudRate(115200);
+          passthrough_do(com, &serial);
+      } else
+      if (strcmp(buf, "espcli") == 0) {
+          // enter esp cli, can only be exited by re-powering
+          esp_gpio0_low();
+          delay_ms(100);
+          serial.SetBaudRate(115200);
+          passthrough_do(com, &serial);
+#endif
+
+      //-- invalid command
       } else {
           putsn((!pos) ? "  empty cmd" : "  invalid cmd");
       }

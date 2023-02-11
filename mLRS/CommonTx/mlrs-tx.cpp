@@ -176,6 +176,7 @@ void init(void)
     leds_init();
     button_init();
     pos_switch_init();
+    esp_init();
 
     delay_init();
     micros_init();

@@ -1,4 +1,7 @@
 mLRS/Common/mavlink/out/*
+esp/mlrs-wifi-bridge/*.cfg
+esp/mlrs-wifi-bridge/*.json
+esp/mlrs-wifi-bridge/*.svd
 mLRS/.metadata/*
 **/.settings/*
 **/Release/*
