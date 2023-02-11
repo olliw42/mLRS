@@ -80,13 +80,13 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_busy_read(void)
 {
-  return subghz_is_busy();
+    return subghz_is_busy();
 }
 
 // we need to provide it as we don't have SX_RESET defined, but is empty since reset is done by spi_init()
@@ -96,40 +96,40 @@ void sx_reset(void)
 
 void sx_amp_transmit(void)
 {
-  gpio_low(SX_RX_EN);
-  gpio_high(SX_TX_EN);
+    gpio_low(SX_RX_EN);
+    gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
-  gpio_low(SX_TX_EN);
-  gpio_high(SX_RX_EN);
+    gpio_low(SX_TX_EN);
+    gpio_high(SX_RX_EN);
 }
 
 void sx_dio_init_exti_isroff(void)
 {
-  // there is no EXTI_LINE_44 interrupt flag
-  //LL_EXTI_DisableEvent_32_63(SX_DIO_EXTI_LINE_x);
-  //LL_EXTI_DisableIT_32_63(SX_DIO_EXTI_LINE_x);
+    // there is no EXTI_LINE_44 interrupt flag
+    //LL_EXTI_DisableEvent_32_63(SX_DIO_EXTI_LINE_x);
+    //LL_EXTI_DisableIT_32_63(SX_DIO_EXTI_LINE_x);
 
-  NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
-  //NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+    NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
+    //NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
 void sx_dio_enable_exti_isr(void)
 { /*
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x); */
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x); */
 
-  // there is no EXTI_LINE_44 interrupt flag
-  //LL_EXTI_ClearFlag_32_63(SX_DIO_EXTI_LINE_x);
-  //LL_EXTI_EnableIT_32_63(SX_DIO_EXTI_LINE_x);
-  NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+    // there is no EXTI_LINE_44 interrupt flag
+    //LL_EXTI_ClearFlag_32_63(SX_DIO_EXTI_LINE_x);
+    //LL_EXTI_EnableIT_32_63(SX_DIO_EXTI_LINE_x);
+    NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-  // there is no EXTI_LINE_44 interrupt flag
+    // there is no EXTI_LINE_44 interrupt flag
 }
 
 
@@ -142,16 +142,16 @@ void out_init_gpio(void)
 
 void out_set_normal(void)
 {
-  LL_USART_Disable(LPUART1);
-  LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
-  LL_USART_Enable(LPUART1);
+    LL_USART_Disable(LPUART1);
+    LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(LPUART1);
 }
 
 void out_set_inverted(void)
 {
-  LL_USART_Disable(LPUART1);
-  LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
-  LL_USART_Enable(LPUART1);
+    LL_USART_Disable(LPUART1);
+    LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(LPUART1);
 }
 
 
@@ -161,12 +161,12 @@ void out_set_inverted(void)
 
 void button_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-  return gpio_read_activelow(BUTTON);
+    return gpio_read_activelow(BUTTON);
 }
 
 
@@ -177,8 +177,8 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-  gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
@@ -222,15 +222,15 @@ const rfpower_t rfpower_list[] = {
 //-- TEST
 
 uint32_t porta[] = {
-  LL_GPIO_PIN_2, LL_GPIO_PIN_3,
+    LL_GPIO_PIN_2, LL_GPIO_PIN_3,
 };
 
 uint32_t portb[] = {
-  LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_9, LL_GPIO_PIN_13,
+    LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_9, LL_GPIO_PIN_13,
 };
 
 uint32_t portc[] = {
-  LL_GPIO_PIN_1,
+    LL_GPIO_PIN_1,
 };
 
 
