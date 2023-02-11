@@ -110,53 +110,53 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-  gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-  gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_busy_read(void)
 {
-  return (gpio_read_activehigh(SX_BUSY)) ? true : false;
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
 void sx_amp_transmit(void)
 {
-  gpio_low(SX_RX_EN);
-  gpio_high(SX_TX_EN);
+    gpio_low(SX_RX_EN);
+    gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
-  gpio_low(SX_TX_EN);
-  gpio_high(SX_RX_EN);
+    gpio_low(SX_TX_EN);
+    gpio_high(SX_RX_EN);
 }
 
 void sx_dio_init_exti_isroff(void)
 {
-  LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
+    LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
 
-  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-  LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
 
-  NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
-  NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+    NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
 void sx_dio_enable_exti_isr(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 
@@ -182,53 +182,53 @@ void sx_dio_exti_isr_clearflag(void)
 
 void sx2_init_gpio(void)
 {
-  gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-  gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-  gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx2_busy_read(void)
 {
-  return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
+    return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
 }
 
 void sx2_amp_transmit(void)
 {
-  gpio_low(SX2_RX_EN);
-  gpio_high(SX2_TX_EN);
+    gpio_low(SX2_RX_EN);
+    gpio_high(SX2_TX_EN);
 }
 
 void sx2_amp_receive(void)
 {
-  gpio_low(SX2_TX_EN);
-  gpio_high(SX2_RX_EN);
+    gpio_low(SX2_TX_EN);
+    gpio_high(SX2_RX_EN);
 }
 
 void sx2_dio_init_exti_isroff(void)
 {
-  LL_GPIO_AF_SetEXTISource(SX2_DIO1_GPIO_AF_EXTI_PORTx, SX2_DIO1_GPIO_AF_EXTI_LINEx);
+    LL_GPIO_AF_SetEXTISource(SX2_DIO1_GPIO_AF_EXTI_PORTx, SX2_DIO1_GPIO_AF_EXTI_LINEx);
 
-  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-  LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableIT_0_31(SX2_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableFallingTrig_0_31(SX2_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableRisingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX2_DIO_EXTI_LINE_x);
 
-  NVIC_SetPriority(SX2_DIO_EXTI_IRQn, SX2_DIO_EXTI_IRQ_PRIORITY);
-  NVIC_EnableIRQ(SX2_DIO_EXTI_IRQn);
+    NVIC_SetPriority(SX2_DIO_EXTI_IRQn, SX2_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX2_DIO_EXTI_IRQn);
 }
 
 void sx2_dio_enable_exti_isr(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableIT_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX2_DIO_EXTI_LINE_x);
 }
 
 void sx2_dio_exti_isr_clearflag(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
 }
 
 
@@ -238,18 +238,18 @@ void sx2_dio_exti_isr_clearflag(void)
 
 void in_init_gpio(void)
 {
-  gpio_init(IN_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-  gpio_low(IN_XOR);
+    gpio_init(IN_XOR, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_low(IN_XOR);
 }
 
 void in_set_normal(void)
 {
-  gpio_low(IN_XOR);
+    gpio_low(IN_XOR);
 }
 
 void in_set_inverted(void)
 {
-  gpio_high(IN_XOR);
+    gpio_high(IN_XOR);
 }
 
 
@@ -259,12 +259,12 @@ void in_set_inverted(void)
 
 void button_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-  return gpio_read_activelow(BUTTON);
+    return gpio_read_activelow(BUTTON);
 }
 
 
@@ -275,10 +275,10 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-  gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_low(LED_GREEN); // LED_GREEN_OFF
-  gpio_low(LED_RED); // LED_RED_OFF
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
+    gpio_low(LED_RED); // LED_RED_OFF
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
