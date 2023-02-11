@@ -17,6 +17,7 @@
 #define DEVICE_HAS_DEBUG_SWUART
 //#define DEVICE_HAS_BT
 //#define DEVICE_HAS_BUZZER // TODO: do not use
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -252,6 +253,24 @@ uint8_t fiveway_read(void)
 #define BUZZER_IRQHandler         TIM1_UP_IRQHandler
 #define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
 //#define BUZZER_TIM_IRQ_PRIORITY   14
+
+
+//-- ESP32 Wifi Bridge
+
+#define ESP_RESET                 IO_PA9
+#define ESP_GPIO0                 IO_PB10
+
+void esp_init(void)
+{
+    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low = esp is in reset
+    gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low = esp will start in bootloader mode
+}
+
+void esp_reset_high(void) { gpio_high(ESP_RESET); }
+void esp_reset_low(void) { gpio_low(ESP_RESET); }
+
+void esp_gpio0_high(void) { gpio_high(ESP_GPIO0); }
+void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 
 
 //-- POWER
