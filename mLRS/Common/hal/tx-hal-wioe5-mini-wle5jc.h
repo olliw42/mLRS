@@ -12,8 +12,8 @@
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
 
-#define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_IN
+//#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 //#define DEVICE_HAS_BUZZER // TODO: do not use
 //#define DEVICE_HAS_BT
