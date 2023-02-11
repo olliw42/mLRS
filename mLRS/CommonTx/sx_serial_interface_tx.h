@@ -63,9 +63,9 @@ class tTxSxSerial : public tSerialBase
     {
         if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // this has to go via the parser
             mavlink.putc(c);
-        } else {
-            serialport->putc(c);
+            return;
         }
+        serialport->putc(c);
     }
 };
 
