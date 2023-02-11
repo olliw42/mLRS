@@ -161,7 +161,7 @@ bool tTxCrsf::transmit_start(void)
 
 
 // CRSF frame format:
-// adress len type payload crc
+// address len type payload crc
 // len is the length including type, payload, crc
 
 void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)

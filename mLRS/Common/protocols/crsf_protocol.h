@@ -9,12 +9,14 @@
 // The CRSF protocol details have been thankfully released by TBS
 // So, this info is openly available.
 // See e.g.
-// betaflight:
+// BetaFlight:
 // https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf_protocol.h
 // https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
-// ardupilot:
+// ArduPilot:
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.h
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCTelemetry/AP_CRSF_Telem.h
+// ExpressLRS:
+// https://github.com/ExpressLRS/ExpressLRS/blob/master/src/lib/CrsfProtocol/crsf_protocol.h
 
 // CRSF frame format:
 //   address
@@ -24,6 +26,8 @@
 //   crc8
 // len is the length including type, payload, crc8
 // crc8 includes type, payload
+// maximal frame length is 64 bytes (ELRS says 66 bytes!) correct???
+// maximal payload length is thus 60 bytes (ELRS says 62 bytes!)
 //
 // baudrate:
 // is reported inconsistently across the various resources
@@ -59,7 +63,7 @@ typedef enum {
     CRSF_ADDRESS_RECEIVER             = 0xEC,
     CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
 
-    CRSF_OPENTX_SYNC                  = 0xC8, // is this an otx specific thing?
+    CRSF_OPENTX_SYNC                  = 0xC8, // is this an otx specific thing? called CRSF_SYNC_BYTE in CleanFlight
 } CRSF_ADDRESS_ENUM;
 
 
@@ -89,7 +93,7 @@ typedef enum {
     CRSF_FRAME_ID_MSP_RESPONSE        = 0x7B,
     CRSF_FRAME_ID_MSP_WRITE           = 0x7C,
 
-    CRSF_FRAMETYPE_AP_CUSTOM_TELEM_LEGACY = 0x7F,
+    CRSF_FRAME_ID_AP_CUSTOM_TELEM_LEGACY = 0x7F,
     CRSF_FRAME_ID_AP_CUSTOM_TELEM     = 0x80,
 
     CRSF_FRAME_ID_MBRIDGE_TO_MODULE   = 0x81, // radio -> tx module
@@ -107,7 +111,7 @@ typedef enum {
 } CRSF_COMMAND_ENUM;
 
 
-// SubType IDs for CRSF_FRAMETYPE_CUSTOM_TELEM
+// SubType IDs for CRSF_FRAME_ID_AP_CUSTOM_TELEM
 typedef enum {
     CRSF_AP_CUSTOM_TELEM_TYPE_SINGLE_PACKET_PASSTHROUGH = 0xF0,
     CRSF_AP_CUSTOM_TELEM_TYPE_STATUS_TEXT = 0xF1,
@@ -138,6 +142,7 @@ typedef enum {
 
 //-- Frame header
 
+// final crc8 included in payload or cmd_data, hence these fields are one byte longer
 CRSF_PACKED(
 typedef struct
 {
@@ -145,13 +150,13 @@ typedef struct
     uint8_t len;
     uint8_t frame_id;
     CRSF_PACKED(union {
-        uint8_t payload[64 - 3];
+        uint8_t payload[64 - 4 + 1]; // +1 for crc
         CRSF_PACKED(struct {
             uint8_t cmd_dest_adress;
             uint8_t cmd_src_adress;
             uint8_t cmd_id;
             uint8_t cmd;
-            uint8_t cmd_data[64 - 3 - 4];
+            uint8_t cmd_data[64 - 4 - 4 + 1]; // +1 for crc
         });
     });
 }) tCrsfFrameHeader;
