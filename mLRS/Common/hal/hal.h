@@ -10,7 +10,7 @@
 #define HAL_H
 #pragma once
 
-// enter define into "MCU G++ Compiler"->"Preprocessor" !!!
+// enter define for the board (RX_xxx, TX_xxx) into "MCU G++ Compiler"->"Preprocessor" !!!
 
 /* Documentation
 
@@ -92,7 +92,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
-#include "tx-hal-wio-e5-mini-wle5jc.h"
+#include "tx-hal-wioe5-mini-wle5jc.h"
 #endif
 
 
