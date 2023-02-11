@@ -39,11 +39,12 @@ In tx-hal files:
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DISPLAY      // board has DISPLAY on I2C
-#define DEVICE_HAS_BT               // board has a Serial2 port
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
-#define DEVICE_HAS_ESP_WIFI_BRIDGE  // board has ESP32 with RESET,GPIO support
+#define DEVICE_HAS_BT               // board has a Serial2 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
 
 In rx-hal files:
 
@@ -191,7 +192,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
 #endif
 
-#ifdef DEVICE_HAS_BT
+#if (defined DEVICE_HAS_BT) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
   #define USE_SERIAL2
 #endif
 #endif
@@ -222,6 +223,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #if (defined DEVICE_HAS_FAN_ONOFF)
   #define USE_FAN
+#endif
+
+
+#if (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+  #define USE_ESP_WIFI_BRIDGE
 #endif
 
 
@@ -291,7 +297,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-------------------------------------------------------
 // should be in the device hal files, but is just so much more convenient to have them here
 
-#ifndef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifndef USE_ESP_WIFI_BRIDGE
     void esp_init(void) {}
 #endif
 

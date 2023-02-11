@@ -470,7 +470,7 @@ void tTxCli::print_help(void)
     putsn("  stats       -> starts streaming statistics");
 
     putsn("  ptser       -> enter serial passthrough");
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifdef USE_ESP_WIFI_BRIDGE
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
@@ -600,7 +600,7 @@ bool rx_param_changed;
           // enter passthrough to serial, can only be exited by re-powering
           serial.SetBaudRate(115200);
           passthrough_do(com, &serial);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifdef USE_ESP_WIFI_BRIDGE
       } else
       if (strcmp(buf, "espboot") == 0) {
           esp_gpio0_low();
@@ -610,15 +610,27 @@ bool rx_param_changed;
           delay_ms(100);
           esp_gpio0_high();
           delay_ms(100);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
           serial.SetBaudRate(115200);
           passthrough_do(com, &serial);
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+          serial2.SetBaudRate(115200);
+          passthrough_do(com, &serial2);
+#endif
       } else
       if (strcmp(buf, "espcli") == 0) {
           // enter esp cli, can only be exited by re-powering
           esp_gpio0_low();
           delay_ms(100);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
           serial.SetBaudRate(115200);
           passthrough_do(com, &serial);
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+          serial2.SetBaudRate(115200);
+          passthrough_do(com, &serial2);
+#endif
 #endif
 
       //-- invalid command
