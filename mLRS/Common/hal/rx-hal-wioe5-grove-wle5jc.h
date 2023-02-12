@@ -40,7 +40,7 @@
 // UARTC = debug port
 // UART = output port, SBus or whatever
 
-#define UARTB_USE_UART2 // serial // PA2,PA3
+#define UARTB_USE_UART1_REMAPPED // serial // PB6,PB7 Grove plug
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
