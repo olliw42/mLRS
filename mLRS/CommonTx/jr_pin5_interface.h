@@ -130,6 +130,7 @@ void tPin5BridgeBase::Init(void)
     LL_USART_SetTXPinLevel(JRPIN5_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
     LL_USART_SetRXPinLevel(JRPIN5_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_Enable(JRPIN5_UARTx);
+    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
 
     pin5_tx_enable(false);
