@@ -48,7 +48,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART2 // debug // also UART2
+#define UARTC_USE_UART1_REMAPPED // debug // also UART2
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           512
