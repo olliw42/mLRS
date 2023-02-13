@@ -12,7 +12,7 @@
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
-//#define DEVICE_HAS_JRPIN5
+//#define DEVICE_HAS_JRPIN5 // would require external diode from Tx to Rx
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 //#define DEVICE_HAS_BUZZER // TODO: do not use
@@ -64,7 +64,6 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_UARTx              UART_UARTx
 #define JRPIN5_RX_TX_INVERT_INTERNAL */
 
 #define UARTE_USE_UART2 // in port // PA3

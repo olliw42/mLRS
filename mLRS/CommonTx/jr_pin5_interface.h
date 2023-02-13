@@ -17,6 +17,7 @@
 
 //-------------------------------------------------------
 // Interface Implementation
+// the uart used for JR pin5 must be UART_UARTx
 
 void uart_rx_callback_dummy(uint8_t c) {};
 void uart_tc_callback_dummy(void) {};
@@ -29,7 +30,7 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 
-
+// not available in stdstm32-uart.h
 void uart_putc_tobuf(char c)
 {
     uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
@@ -39,7 +40,7 @@ void uart_putc_tobuf(char c)
     }
 }
 
-
+// not available in stdstm32-uart.h
 void uart_tx_start(void)
 {
     LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
@@ -108,7 +109,7 @@ class tPin5BridgeBase
 
 void tPin5BridgeBase::Init(void)
 {
-// TX & RX XOR method
+// TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
     gpio_init(JRPIN5_RX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -116,7 +117,7 @@ void tPin5BridgeBase::Init(void)
     JRPIN5_RX_SET_INVERTED;
 #endif
 
-// TX & RX inverter with TX buffer method
+// TX & RX inverter with TX buffer method, F103
 #if defined JRPIN5_TX_OE
     gpio_init(JRPIN5_TX_OE, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
     JRPIN5_TX_OE_DISABLED;
@@ -124,12 +125,12 @@ void tPin5BridgeBase::Init(void)
 
     uart_init_isroff();
 
-// internal peripheral inverter method
+// internal peripheral inverter method, G491, WLE5, needs a diode from Tx to Rx
 #if defined JRPIN5_RX_TX_INVERT_INTERNAL
-    LL_USART_Disable(JRPIN5_UARTx);
-    LL_USART_SetTXPinLevel(JRPIN5_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_SetRXPinLevel(JRPIN5_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(JRPIN5_UARTx);
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UART_UARTx);
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
 

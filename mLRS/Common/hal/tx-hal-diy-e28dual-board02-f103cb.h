@@ -13,7 +13,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 //#define DEVICE_HAS_IN
-#define DEVICE_HAS_JRPIN5 // requires diode-R network soldered onto board
+#define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
 #define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define
 
 #ifdef DEBUG_ENABLED

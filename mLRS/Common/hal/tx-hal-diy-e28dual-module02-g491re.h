@@ -61,7 +61,6 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_UARTx              UART_UARTx
 #define JRPIN5_RX_TX_INVERT_INTERNAL
 
 #define UARTD_USE_UART3 // serial2 BT/ESP
