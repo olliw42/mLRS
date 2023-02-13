@@ -10,6 +10,10 @@
 //-------------------------------------------------------
 // RX Seeedstudio Grove Wio-E5 board STM32WLE5JC, https://wiki.seeedstudio.com/Grove_LoRa_E5_New_Version/
 //-------------------------------------------------------
+// this board has significant restrictions
+// no green LED (is available on pin PB4 = pin 7 on WioE5, located on corner for easier soldering)
+// no bind button (is available via the BOOT solder pad located on the bottom side = pin PB13 = pin 24 on WioE5)
+// no out port (not available, to make available change this hal accordingly)
 
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 
