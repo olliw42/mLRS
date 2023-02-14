@@ -66,6 +66,7 @@
 #define UART_RXBUFSIZE            512
 
 #define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_FULL_INTERNAL
 
 #define UARTE_USE_LPUART1_REMAPPED // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow

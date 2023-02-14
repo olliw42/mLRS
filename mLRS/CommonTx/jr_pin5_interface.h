@@ -133,6 +133,16 @@ void tPin5BridgeBase::Init(void)
     LL_USART_Enable(UART_UARTx);
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
+#if defined JRPIN5_FULL_INTERNAL
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_ConfigHalfDuplexMode(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_NONE);
+    LL_USART_Enable(UART_UARTx);
+    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+#endif
 
     pin5_tx_enable(false);
 
@@ -187,10 +197,16 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 #if defined JRPIN5_TX_OE
       JRPIN5_TX_OE_ENABLED;
 #endif
+#if defined JRPIN5_FULL_INTERNAL
+      LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_TX);
+#endif
 
   } else {
 #if defined JRPIN5_TX_OE
       JRPIN5_TX_OE_DISABLED;
+#endif
+#if defined JRPIN5_FULL_INTERNAL
+      LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_RX);
 #endif
 
       uart_rx_enableisr(ENABLE);
