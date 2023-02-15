@@ -923,6 +923,8 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
+      sx.SetToIdle();
+      sx2.SetToIdle();
       LED_RED_ON; LED_GREEN_ON;
       setup_store_to_EEPROM();
       goto RESTARTCONTROLLER;

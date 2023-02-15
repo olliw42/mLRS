@@ -952,6 +952,8 @@ IF_ANTENNA2(
 
       // store parameters
       if (doParamsStore) {
+        sx.SetToIdle();
+        sx2.SetToIdle();
         setup_store_to_EEPROM();
         goto RESTARTCONTROLLER;
       }
