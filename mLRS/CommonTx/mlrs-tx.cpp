@@ -280,14 +280,14 @@ uint8_t link_rx2_status;
 
 uint8_t link_task;
 uint8_t transmit_frame_type;
-uint16_t link_task_tmo;
+uint16_t link_task_delay_ms;
 bool doParamsStore;
 
 
 void link_task_init(void)
 {
     link_task = LINK_TASK_NONE;
-    link_task_tmo = 0;
+    link_task_delay_ms = 0;
     transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
 
     doParamsStore = false;
@@ -301,7 +301,7 @@ bool link_task_set(uint8_t task)
     link_task = task;
     transmit_frame_type = TRANSMIT_FRAME_TYPE_CMD;
 
-    link_task_tmo = 0;
+    link_task_delay_ms = 0;
 
     // set a timeout if relevant, or do other things as needed
     switch (link_task) {
@@ -310,7 +310,7 @@ bool link_task_set(uint8_t task)
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
-        link_task_tmo = 6 * Config.frame_rate_ms; // we set a timeout, the actual store is triggered when it expires
+        link_task_delay_ms = 6 * Config.frame_rate_ms; // we set a delay, the actual store is triggered when it expires
         break;
     }
 
@@ -321,17 +321,17 @@ bool link_task_set(uint8_t task)
 void link_task_reset(void)
 {
     link_task = LINK_TASK_NONE;
-    link_task_tmo = 0;
+    link_task_delay_ms = 0;
     transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
 }
 
 
 void link_task_tick_ms(void)
 {
-    // if a timeout has been set, count it down
-    if (link_task_tmo) {
-        link_task_tmo--;
-        if (!link_task_tmo) {
+    // if a delay has been set, count it down
+    if (link_task_delay_ms) {
+        link_task_delay_ms--;
+        if (!link_task_delay_ms) {
             switch (link_task) {
             case LINK_TASK_TX_STORE_RX_PARAMS: doParamsStore = true; break;
             }
