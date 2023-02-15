@@ -72,6 +72,7 @@ v0.0.00:
 #include "../Common/micros.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
+#include "../Common/channel_order.h"
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
@@ -82,6 +83,7 @@ v0.0.00:
 TxStatsBase txstats;
 tComPort com;
 tTxCli cli;
+ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 
 
 class In : public InBase
@@ -115,57 +117,6 @@ class In : public InBase
 };
 
 In in;
-
-
-class ChannelOrder
-{
-  public:
-    ChannelOrder(void)
-    {
-        channel_order = CHANNEL_ORDER_AETR;
-        for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
-    }
-
-    void Set(uint8_t new_channel_order)
-    {
-        if (new_channel_order == channel_order) return;
-        channel_order = new_channel_order;
-
-        switch (channel_order) {
-        case CHANNEL_ORDER_AETR:
-            for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
-            break;
-        case CHANNEL_ORDER_TAER:
-            channel_map[0] = 1;
-            channel_map[1] = 2;
-            channel_map[2] = 0;
-            channel_map[3] = 3;
-            break;
-        case CHANNEL_ORDER_ETAR:
-            channel_map[0] = 2;
-            channel_map[1] = 0;
-            channel_map[2] = 1;
-            channel_map[3] = 3;
-            break;
-        default:
-            while (1) {} // must not happen
-        }
-    }
-
-    void Apply(tRcData* rc)
-    {
-        uint16_t ch[4] = { rc->ch[0], rc->ch[1], rc->ch[2], rc->ch[3] };
-        for (uint8_t n = 0; n < 4; n++) {
-            rc->ch[n] = ch[channel_map[n]];
-        }
-    }
-
-  private:
-    uint8_t channel_order;
-    uint8_t channel_map[4];
-};
-
-ChannelOrder channelOrder;
 
 
 void init(void)
