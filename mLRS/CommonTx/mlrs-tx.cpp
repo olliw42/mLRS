@@ -970,8 +970,8 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
         bool rx_param_changed;
         bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
         if (param_changed && rx_param_changed && connected()) {
-            link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-            mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
+          link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
+          mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
         }
         }break;
       case MBRIDGE_CMD_PARAM_STORE:
@@ -1012,7 +1012,7 @@ IF_CRSF(
           mbridge_send_cmd(mbcmd);
         }
         if (mbridge.CrsfFrameAvailable(&buf, &len)) {
-            crsf.SendMBridgeFrame(buf, len);
+          crsf.SendMBridgeFrame(buf, len);
         } else
         if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
           crsf.SendTelemetryFrame();
@@ -1025,11 +1025,11 @@ IF_CRSF(
       switch (crsfcmd) {
       case TXCRSF_CMD_MODELID_SET:
 dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
-          break;
+        break;
       case TXCRSF_CMD_MBRIDGE_IN:
 dbg.puts("\ncrsf mbridge ");
-          mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
-          break;
+        mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
+        break;
       }
     }
 );
