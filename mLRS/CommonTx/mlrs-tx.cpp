@@ -310,7 +310,7 @@ bool link_task_set(uint8_t task)
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
-        link_task_delay_ms = 6 * Config.frame_rate_ms; // we set a delay, the actual store is triggered when it expires
+        link_task_delay_ms = 500; // we set a delay, the actual store is triggered when it expires
         break;
     }
 
