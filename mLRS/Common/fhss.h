@@ -111,6 +111,8 @@ const uint32_t fhss_freq_list_915_fcc[] = {
     SX12XX_FREQ_MHZ_TO_REG(913.7),
     SX12XX_FREQ_MHZ_TO_REG(914.3),
     SX12XX_FREQ_MHZ_TO_REG(914.9),
+    
+    SX12XX_FREQ_MHZ_TO_REG(915.5), //added
 
     SX12XX_FREQ_MHZ_TO_REG(916.1),
     SX12XX_FREQ_MHZ_TO_REG(916.7),
@@ -131,6 +133,8 @@ const uint32_t fhss_freq_list_915_fcc[] = {
     SX12XX_FREQ_MHZ_TO_REG(925.1),
     SX12XX_FREQ_MHZ_TO_REG(925.7),
     SX12XX_FREQ_MHZ_TO_REG(926.3),
+
+    SX12XX_FREQ_MHZ_TO_REG(926.9), //added
 };
 
 const uint8_t fhss_bind_channel_list_915_fcc[] = {
