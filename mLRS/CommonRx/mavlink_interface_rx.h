@@ -20,7 +20,7 @@ static inline bool connected(void);
 
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 280 bytes
 
-#define MAVLINK_OPT_FAKE_PARAMFTP   1 // 0: off, 1: always, 2: determined from mode & baudrate
+#define MAVLINK_OPT_FAKE_PARAMFTP   2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
 class MavlinkBase
@@ -196,9 +196,9 @@ void MavlinkBase::putc(char c)
 #if MAVLINK_OPT_FAKE_PARAMFTP > 1
         bool force_param_list = true;
         switch (Config.Mode) {
-        case MODE_50HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps is ok for mftp
-        case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps is ok for mftp
-        case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps is ok for mftp
+        case MODE_50HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
+        case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
+        case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
         }
         if (force_param_list)
 #endif
