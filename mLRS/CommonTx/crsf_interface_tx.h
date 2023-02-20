@@ -789,7 +789,7 @@ tCrsfLinkStatistics clstats;
     clstats.uplink_rssi2 = 0; // we don't know it                       // OpenTX -> "2RSS"
     clstats.uplink_LQ = stats.received_LQ; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
     clstats.uplink_snr = 0; // we don't know it                         // OpenTx -> "RSNR"
-    clstats.active_antenna = 0; // we don't know it                     // OpenTx -> "ANT"
+    clstats.active_antenna = stats.received_antenna;                    // OpenTx -> "ANT"
     clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
     clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
 
