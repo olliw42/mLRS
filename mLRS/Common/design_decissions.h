@@ -650,7 +650,7 @@ U3 uartf/debug
 G491
 U1 uartc/com
 U2 uart/jrpin5                //DEVICE_HAS_JRPIN5
-U3 uartd/serial2              //DEVICE_HAS_BT
+U3 uartd/serial2              //DEVICE_HAS_SERIAL2
 U4 uartb/serial
 U5 rx is on jrpin1, not used currently
 LPU1 uartf/debug
