@@ -18,12 +18,14 @@ class ChannelOrder
   public:
     enum {
         DIRECTION_TX_TO_MLRS = 0,
-        DIRECTION_MLRS_TO_RX = 0,
+        DIRECTION_MLRS_TO_RX,
     };
 
     ChannelOrder(uint8_t direction);
+
     void Set(uint8_t new_channel_order);
     void Apply(tRcData* rc);
+    uint8_t ChannelMap(uint8_t n);
 
   private:
     bool direction_is_tx;

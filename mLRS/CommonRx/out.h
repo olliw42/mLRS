@@ -15,6 +15,7 @@
 #include "../Common/common_types.h"
 #include "../Common/frame_types.h"
 #include "../Common/setup_types.h"
+#include "../Common/channel_order.h"
 
 
 //-------------------------------------------------------
@@ -23,26 +24,28 @@
 
 typedef struct
 {
-  int8_t receiver_rssi1;
-  int8_t receiver_rssi2;
-  uint8_t receiver_LQ;
-  int8_t receiver_snr;
-  uint8_t receiver_antenna;
-  uint8_t receiver_transmit_antenna;
-  int8_t receiver_power_dbm;
-  int8_t transmitter_rssi;
-  uint8_t transmitter_LQ;
-  int8_t transmitter_snr;
-  uint8_t transmitter_antenna;
-  uint8_t transmitter_transmit_antenna;
-  uint8_t mode;
-  uint8_t antenna_config;
+    int8_t receiver_rssi1;
+    int8_t receiver_rssi2;
+    uint8_t receiver_LQ;
+    int8_t receiver_snr;
+    uint8_t receiver_antenna;
+    uint8_t receiver_transmit_antenna;
+    int8_t receiver_power_dbm;
+    int8_t transmitter_rssi;
+    uint8_t transmitter_LQ;
+    int8_t transmitter_snr;
+    uint8_t transmitter_antenna;
+    uint8_t transmitter_transmit_antenna;
+    uint8_t mode;
+    uint8_t antenna_config;
 } tOutLinkStats;
 
 
 class OutBase
 {
   public:
+    OutBase(void);
+
     void Init(tRxSetup* _setup);
 
     void Configure(uint8_t new_config);
@@ -70,10 +73,9 @@ class OutBase
     virtual bool config_crsf(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
+    ChannelOrder channel_order;
     tRxSetup* setup;
     uint8_t config;
-    uint8_t channel_order;
-    uint8_t channel_map[4];
     bool initialized;
 
     bool link_stats_available;

@@ -73,3 +73,11 @@ void ChannelOrder::Apply(tRcData* rc)
         rc->ch[n] = ch[channel_map[n]];
     }
 }
+
+
+uint8_t ChannelOrder::ChannelMap(uint8_t n)
+{
+    return channel_map[n];
+}
+
+

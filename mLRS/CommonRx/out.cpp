@@ -15,11 +15,15 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
+OutBase::OutBase(void)
+    : channel_order(ChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
+{
+}
+
+
 void OutBase::Init(tRxSetup* _setup)
 {
     config = UINT8_MAX;
-    channel_order = CHANNEL_ORDER_AETR;
-    for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
     initialized = false;
 
     link_stats_available = false;
@@ -85,38 +89,14 @@ void OutBase::Do(uint16_t tnow_us)
 
 void OutBase::SetChannelOrder(uint8_t new_channel_order)
 {
-    if (new_channel_order == channel_order) return;
-    channel_order = new_channel_order;
-
-    switch (channel_order) {
-    case CHANNEL_ORDER_AETR:
-        for (uint8_t n = 0; n < 4; n++) channel_map[n] = n;
-        break;
-    case CHANNEL_ORDER_TAER:
-        channel_map[0] = 2;
-        channel_map[1] = 0;
-        channel_map[2] = 1;
-        channel_map[3] = 3;
-        break;
-    case CHANNEL_ORDER_ETAR:
-        channel_map[0] = 1;
-        channel_map[1] = 2;
-        channel_map[2] = 0;
-        channel_map[3] = 3;
-        break;
-    default:
-        while (1) {} // must not happen
-    }
+    channel_order.Set(new_channel_order);
 }
 
 
 void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi)
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
-
-    for (uint8_t n = 0; n < 4; n++) {
-        rc.ch[n] = rc_orig->ch[channel_map[n]];
-    }
+    channel_order.Apply(&rc);
 
     uint8_t failsafe_mode = setup->FailsafeMode;
 
@@ -161,7 +141,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         switch (failsafe_mode) {
         case FAILSAFE_MODE_LOW_THROTTLE:
         case FAILSAFE_MODE_LOW_THROTTLE_ELSE_CENTER:
-            rc.ch[channel_map[2]] = 0; // that's the minimum we can send, gives 905 on ArduPilot
+            rc.ch[channel_order.ChannelMap(2)] = 0; // that's the minimum we can send, gives 905 on ArduPilot
             break;
         case FAILSAFE_MODE_CH1CH4_CENTER:
             // in this mode do not let sbus report bad signal
@@ -247,24 +227,8 @@ void OutBase::putbuf(uint8_t* buf, uint16_t len)
 void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusChannelBuffer sbus_buf;
-/*
-    sbus_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch3 = (((int32_t)(rc->ch[3]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch4 = (((int32_t)(rc->ch[4]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch5 = (((int32_t)(rc->ch[5]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch6 = (((int32_t)(rc->ch[6]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch7 = (((int32_t)(rc->ch[7]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch8 = (((int32_t)(rc->ch[8]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch9 = (((int32_t)(rc->ch[9]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch10 = (((int32_t)(rc->ch[10]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch11 = (((int32_t)(rc->ch[11]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch12 = (((int32_t)(rc->ch[12]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
-*/
+
+    // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
     sbus_buf.ch0 = rc_to_sbus(rc->ch[0]);
     sbus_buf.ch1 = rc_to_sbus(rc->ch[1]);
     sbus_buf.ch2 = rc_to_sbus(rc->ch[2]);
@@ -302,24 +266,8 @@ tSBusChannelBuffer sbus_buf;
 void OutBase::send_crsf_rcdata(tRcData* rc)
 {
 tCrsfChannelBuffer crsf_buf;
-/*
-    crsf_buf.ch0 = (((int32_t)(rc->ch[0]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch1 = (((int32_t)(rc->ch[1]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch2 = (((int32_t)(rc->ch[2]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch3 = (((int32_t)(rc->ch[3]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch4 = (((int32_t)(rc->ch[4]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch5 = (((int32_t)(rc->ch[5]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch6 = (((int32_t)(rc->ch[6]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch7 = (((int32_t)(rc->ch[7]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch8 = (((int32_t)(rc->ch[8]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch9 = (((int32_t)(rc->ch[9]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch10 = (((int32_t)(rc->ch[10]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch11 = (((int32_t)(rc->ch[11]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch12 = (((int32_t)(rc->ch[12]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch13 = (((int32_t)(rc->ch[13]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch14 = (((int32_t)(rc->ch[14]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch15 = (((int32_t)(rc->ch[15]) - 1024) * 1920) / 2047 + 1000;
-*/
+
+    // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch0 = rc_to_crsf(rc->ch[0]);
     crsf_buf.ch1 = rc_to_crsf(rc->ch[1]);
     crsf_buf.ch2 = rc_to_crsf(rc->ch[2]);
