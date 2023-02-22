@@ -88,7 +88,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | 2.4 GHz | 7 km | 10 km | 15 km
 | 868/915 MHz | - | 26 km | 42 km
 
-Only very few range testes were reported so far (and only for 2.4 GHz/50 Hz). They are however consistent with the estimated ranges. Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at even larger ranges.
+Only few range testes were reported so far; they however appear to be consistent with the estimated ranges (e.g., [6 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50537585&postcount=1356) for 2.4 GHz, 10 mW, 19 Hz, with 100 LQ, no failsafe, which translates to > 19 km at 100 mW). Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
 ## Hardware ##
 
