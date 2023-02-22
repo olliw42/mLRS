@@ -1032,7 +1032,7 @@ dbg.puts("\ncrsf mbridge ");
     }
 );
 #endif
-#if (defined DEVICE_HAS_IN)
+#ifdef USE_IN
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
       // update channels
       if (in.Update(&rcData)) {
