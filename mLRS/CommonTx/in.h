@@ -15,6 +15,9 @@
 #include "../Common/common_types.h"
 
 
+extern uint16_t micros(void);
+
+
 //-------------------------------------------------------
 // Generic In Class
 //-------------------------------------------------------
@@ -31,17 +34,16 @@ class InBase
   private:
     virtual bool available(void) { return false; }
     virtual char getc(void) { return 0; }
-    virtual uint16_t tim_1us(void) { return 0; }
 
     virtual void config_sbus(bool inverted) {}
     bool parse_sbus(tRcData* rc);
     void get_sbus_data(tRcData* rc);
 
-    uint8_t _config;
+    uint8_t config;
 
-    uint16_t _t_last_us;
-    uint8_t _state;
-    uint8_t _buf_pos;
+    uint16_t tlast_us;
+    uint8_t state;
+    uint8_t buf_pos;
     uint8_t _buf[32];
 };
 

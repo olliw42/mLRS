@@ -22,19 +22,19 @@ typedef enum {
 
 void InBase::Init(void)
 {
-    _config = UINT8_MAX;
+    config = UINT8_MAX;
 
-    _t_last_us = 0;
-    _state = IN_STATE_IDLE;
+    tlast_us = 0;
+    state = IN_STATE_IDLE;
 }
 
 
 void InBase::Configure(uint8_t new_config)
 {
-      if (new_config == _config) return;
-      _config = new_config;
+      if (new_config == config) return;
+      config = new_config;
 
-      switch (_config) {
+      switch (config) {
       case IN_CONFIG_SBUS:
           config_sbus(false);
           break;
@@ -47,7 +47,7 @@ void InBase::Configure(uint8_t new_config)
 
 bool InBase::Update(tRcData* rc)
 {
-    switch (_config) {
+    switch (config) {
     case IN_CONFIG_SBUS:
     case IN_CONFIG_SBUS_INVERTED:
         return parse_sbus(rc);
@@ -63,35 +63,35 @@ bool InBase::Update(tRcData* rc)
 
 bool InBase::parse_sbus(tRcData* rc)
 {
-    uint16_t t_now_us = tim_1us();
+    uint16_t tnow_us = micros();
     bool updated = false;
 
     while (available()) {
         char c = getc();
 
-        if (_state == IN_STATE_IDLE) { // scan for new frame
+        if (state == IN_STATE_IDLE) { // scan for new frame
             if (c == SBUS_STX) { // new frame
-                _buf_pos = 0;
-                _state = IN_STATE_RECEIVING;
+                buf_pos = 0;
+                state = IN_STATE_RECEIVING;
             }
         }
 
-        if (_state == IN_STATE_RECEIVING) {
-            _buf[_buf_pos] = c;
-            _buf_pos++;
-            if (_buf_pos >= SBUS_FRAME_SIZE) {
+        if (state == IN_STATE_RECEIVING) {
+            _buf[buf_pos] = c;
+            buf_pos++;
+            if (buf_pos >= SBUS_FRAME_SIZE) {
                 get_sbus_data(rc);
                 updated = true;
-                _state = IN_STATE_IDLE;
+                state = IN_STATE_IDLE;
                 break; // is this what we want, or shouldn't we catch all?
             }
         }
 
-        _t_last_us = t_now_us;
+        tlast_us = tnow_us;
     }
 
-    if (_state == IN_STATE_RECEIVING) {
-        if ((t_now_us - _t_last_us) > 2500) _state = IN_STATE_IDLE;
+    if (state == IN_STATE_RECEIVING) {
+        if ((tnow_us - tlast_us) > 2500) state = IN_STATE_IDLE;
     }
 
     return updated;
