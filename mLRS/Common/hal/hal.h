@@ -143,6 +143,12 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
+//-- DIY "easy-to-solder" Boards
+#ifdef RX_DIY_E77_E22_WLE5CC
+#include "rx-hal-easysolder-e77-e22-wle5cc.h"
+#endif
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
