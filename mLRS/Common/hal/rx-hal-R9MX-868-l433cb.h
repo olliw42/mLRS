@@ -41,8 +41,8 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = debug port
 // UART = output port, SBus or whatever
+// UARTC = debug port
 
 #define UARTB_USE_UART1 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -52,13 +52,6 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
-#define SWUART_USE_TIM15 // debug
-#define SWUART_TX_IO              IO_PA11
-#define SWUART_BAUD               115200
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   11
-
 #define UART_USE_UART2 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
@@ -66,6 +59,13 @@
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+
+#define SWUART_USE_TIM15 // debug
+#define SWUART_TX_IO              IO_PA11
+#define SWUART_BAUD               115200
+#define SWUART_USE_TX
+#define SWUART_TXBUFSIZE          512
+//#define SWUART_TIM_IRQ_PRIORITY   11
 
 
 //-- SX1: SX12xx & SPI
