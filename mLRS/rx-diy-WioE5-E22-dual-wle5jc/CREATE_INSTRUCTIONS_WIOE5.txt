@@ -9,19 +9,19 @@ These steps are very targets dependent. Pay attention to the details.
 
 1. File -> New -> STM32 Project
 
-opens "Target Selection" dialog
+opens "Target Selection" dialog (note: this can take a while, be patient)
 
 
-2. MCU/MPU Selector -> Commercial Part Number: enter STM32WLE5JC
+2. MCU/MPU Selector -> Commercial Part Number: enter STM32WLE5JC (the part depends on the specific project) 
 
-choose STM32WLE5JCI6 (doesn't actually matter which one)
+choose STM32WLE5JCI6 (doesn't actually matter which of the "JC's")
 
 hit Next
 
 opens "Project & Options" dialog
 
 
-3. Project -> Project Name: enter rx-diy-Wio-E5_E22-dual-wle5jc (the name depends on specific WioE5 project)
+3. Project -> Project Name: enter rx-diy-Wio-E5_E22-dual-wle5jc (the name depends on the specific project)
    Options -> Targeted Language: choose C++
 
 hit Finish
@@ -130,7 +130,7 @@ repeat for "mavlink"
 
 ## IV. Create Target: Target HAL ##
 
-These steps are equal for all targets, except of course that differnt values need to be entered.
+These steps are equal for all targets, except of course that different values need to be entered.
 
 
 14. in the IDE, unfold "Common", unfold "hal"
