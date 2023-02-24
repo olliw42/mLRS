@@ -264,6 +264,7 @@ bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
     uint8_t txbuf_state_last = txbuf_state; // to track changes in txbuf_state
 
     if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+        txbuf_state_last = txbuf_state = TXBUF_STATE_NORMAL;
         radio_status_tlast_ms = tnow_ms;
         inject_radio_status = true;
     } else if ((txbuf_state == TXBUF_STATE_NORMAL) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
@@ -399,7 +400,7 @@ bool MavlinkBase::handle_txbuf_px4(uint32_t tnow_ms)
     } else if (rate_percentage < 80) {
         txbuf = 92;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
     } else {
-        txbuf = 51;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+        txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
     }
 
     if (txbuf_state == TXBUF_STATE_BURST) txbuf = 33; // just enough to stop parameter flow
