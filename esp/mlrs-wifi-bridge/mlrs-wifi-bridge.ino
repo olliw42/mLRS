@@ -6,28 +6,26 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 11. Feb. 2023
+// 24. Feb. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
 // use upload speed 115200 if serial passthrough shall be used for flashing
 /*
-ESP32-PICO-KIT
-board: ESP32-PICO-D4
-IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
-IO9/IO10: U1RXD/U1TXD, is Serial1
-IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
+for more details on the boards see mlrs-wifi-bridge-boards.h
 
-TTGO-MICRO32
-board:  ESP32-PICO-D4
-IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
-IO9/IO10: U1RXD/U1TXD, is Serial1
-no IO16/IO17 pads
-use only U0
+- ESP32-PICO-KIT
+  board: ESP32-PICO-D4
+- TTGO-MICRO32
+  board: ESP32-PICO-D4
+- Adafruit QT Py S2
+  board: Adafruit QT Py ESP32-S2
+- M5Stack M5Stamp C3 Mate
+  board: ESP32C3 Dev Module
+  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
+*/
 
-shortening GPIO15 to GND suppresses the bootloader preamble on Serial port
-GPIO15 = RTC_GPIO13
-
+/*
 much info is in 
 C:\Users\...\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.6\cores\esp32\HardwareSerial.h/.cpp
 default buffer sizes are
@@ -42,6 +40,15 @@ _txBufferSize(0),
 // User configuration
 //-------------------------------------------------------
 
+// Board
+// comment out what you want
+//#define MODULE_GENERIC
+#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
+//#define MODULE_M5STAMP_C3_MATE
+//#define MODULE_TTGO_MICRO32
+//#define MODULE_ESP32_PICO_KIT
+
+
 // Wifi credentials
 String ssid = "mLRS AP"; // Wifi name
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
@@ -52,36 +59,31 @@ int port = 5760; // connect to this port // MissionPlanner default is 5760
 // baudrate
 int baudrate = 57600;
 
-// serial port usage
-// comment out for default behavior, which is using only Serial port
-//#define USE_SERIAL1_DBG // use Serial1 for communication and Serial for debug output and flashing
-
-// LED pin
-// comment out if you don't want a LED
-#define LED_IO  13
-
 // WiFi power
 // comment out for default setting
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 
 
+// serial port usage (only effective for a generic board)
+// comment out for default behavior, which is using only Serial port
+//#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
+//#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
+
+// LED pin (only effective for a generic board)
+// comment out if you want a LED
+// #define LED_IO  13
+
+
+//-------------------------------------------------------
+// board details
+//-------------------------------------------------------
+
+#include "mlrs-wifi-bridge-boards.h"
+
+
 //-------------------------------------------------------
 // internals
 //-------------------------------------------------------
-
-#ifdef USE_SERIAL1_DBG
-    #define SERIAL Serial1
-    #define SERIAL_RXD  9 // = RX1
-    #define SERIAL_TXD  10 // = TX1
-    #define DBG Serial
-    #define DBG_PRINT(x) Serial.print(x)
-    #define DBG_PRINTLN(x) Serial.println(x)
-#else    
-    #define SERIAL Serial
-    #define DBG_PRINT(x)
-    #define DBG_PRINTLN(x)
-#endif
-
 
 IPAddress netmask(255, 255, 255, 0);
 WiFiServer server(port);
@@ -105,17 +107,8 @@ void serialFlushRx(void)
 
 void setup() 
 {
-#ifdef LED_IO  
-    pinMode(LED_IO, OUTPUT);
-    digitalWrite(LED_IO, LOW);
-#endif    
-
-#ifdef DBG
-    DBG.begin(115200);
-    DBG_PRINTLN();
-    DBG_PRINTLN("Hello");
-#endif    
-
+    led_init();
+    dbg_init();
     delay(500);
 
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
@@ -160,9 +153,7 @@ void loop()
     if (tnow_ms - led_tlast_ms > ((client.connected()) ? 500 : 200)) {
         led_tlast_ms = tnow_ms;
         led_state = !led_state;
-#ifdef LED_IO  
-        digitalWrite(LED_IO, (led_state) ? HIGH : LOW);
-#endif        
+        if (led_state) led_on(); else led_off();
     }
 
     //-- here comes the core code, handle wifi connection and do the bridge
