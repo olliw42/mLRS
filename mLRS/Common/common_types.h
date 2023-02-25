@@ -152,6 +152,7 @@ void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower
 
 uint16_t version_to_u16(uint32_t version);
 uint32_t version_from_u16(uint16_t version_u16);
+void version_to_str(char* s, uint32_t version);
 
 
 //-- display & keys

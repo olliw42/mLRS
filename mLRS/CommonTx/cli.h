@@ -52,6 +52,7 @@ class tTxCli
     void print_param(uint8_t idx);
     void print_param_list(uint8_t flag);
     void print_param_opt_list(uint8_t idx);
+    void print_device_version(void);
     void stream(void);
 
     bool cmd_param_set(char* name, char* svalue);
@@ -454,9 +455,31 @@ void tTxCli::stream(void)
 }
 
 
+void tTxCli::print_device_version(void)
+{
+    putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+
+    puts("  Rx: ");
+    if (connected()) {
+        if (SetupMetaData.rx_available) { // this should always be true when connected, shouldn't it?
+            puts(SetupMetaData.rx_device_name);
+            puts(", ");
+            char s[32];
+            version_to_str(s, SetupMetaData.rx_firmware_version);
+            putsn(s);
+        } else {
+            putsn("-");
+        }
+    } else {
+        putsn("receiver not connected");
+    }
+}
+
+
 void tTxCli::print_help(void)
 {
     putsn("  help, h, ?  -> this help page");
+    putsn("  v           -> print device and version");
     putsn("  pl          -> list all parameters");
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
@@ -540,6 +563,7 @@ bool rx_param_changed;
       if (strcmp(buf, "h") == 0)     { print_help(); } else
       if (strcmp(buf, "help") == 0)  { print_help(); } else
       if (strcmp(buf, "?") == 0)     { print_help(); } else
+      if (strcmp(buf, "v") == 0)     { print_device_version(); } else
       if (strcmp(buf, "pl") == 0)    { print_param_list(0); } else
       if (strcmp(buf, "pl c") == 0)  { print_param_list(1); } else
       if (strcmp(buf, "pl tx") == 0) { print_param_list(2); } else
