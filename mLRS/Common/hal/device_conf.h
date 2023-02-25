@@ -60,7 +60,7 @@
 //-- SeeedStudio WioE5 boards
 
 #ifdef RX_WIO_E5_GROVE_WLE5JC
-  #define DEVICE_NAME "Wio E5 Grove WLE5JC"
+  #define DEVICE_NAME "WioE5 Grove WLE5JC"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -68,7 +68,7 @@
 #endif
 
 #ifdef RX_WIO_E5_MINI_WLE5JC
-  #define DEVICE_NAME "Wio E5 Mini WLE5JC"
+  #define DEVICE_NAME "WioE5 Mini WLE5JC"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -77,7 +77,7 @@
 
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
-  #define DEVICE_NAME "Wio E5 Mini WLE5JC"
+  #define DEVICE_NAME "WioE5 Mini WLE5JC"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ

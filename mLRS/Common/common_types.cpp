@@ -311,6 +311,31 @@ uint32_t version_from_u16(uint16_t version_u16)
 }
 
 
+void version_to_str(char* s, uint32_t version)
+{
+char ss[32];
+
+    uint32_t major = version / 10000;
+    version -= major * 10000;
+    uint32_t minor = version / 100;
+    version -= minor * 100;
+    uint32_t patch = version;
+
+    strcpy(s, "v");
+    u32toBCDstr(major, ss);
+    remove_leading_zeros(ss);
+    strcat(s, ss);
+    strcat(s, ".");
+    u32toBCDstr(minor, ss);
+    remove_leading_zeros(ss);
+    strcat(s, ss);
+    strcat(s, ".");
+    u32toBCDstr(patch, ss);
+    remove_leading_zeros(ss);
+    strcat(s, ss);
+}
+
+
 //-- auxiliary functions
 
 void strbufstrcpy(char* res, const char* src, uint16_t len)

@@ -6,6 +6,7 @@
 //*******************************************************
 // hal
 //*******************************************************
+// 24.Feb.2023: LED pin changed! pin for artificial GND (PA0)! consistent with tx-wioe5
 
 //-------------------------------------------------------
 // RX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
@@ -172,13 +173,20 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PB4
+#define LED_GREEN                 IO_PA15
 #define LED_RED                   IO_PB5
 
 void leds_init(void)
 {
     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+
+    // pin IO_PB15 must be floating, is used as artificial pad for green LED!
+    gpio_init(IO_PB15, IO_MODE_Z, IO_SPEED_DEFAULT);
+
+    // artificial GND for R+Diode mod, ONLY temporary
+    // this is dirty! we do it here in leds_init() to ensure it is called
+    gpio_init(IO_PA0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
