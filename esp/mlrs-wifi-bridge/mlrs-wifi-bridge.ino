@@ -41,7 +41,7 @@ _txBufferSize(0),
 //-------------------------------------------------------
 
 // Board
-// comment out what you want
+// un-comment what you want
 //#define MODULE_GENERIC
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
@@ -65,13 +65,13 @@ int baudrate = 57600;
 
 
 // serial port usage (only effective for a generic board)
-// comment out for default behavior, which is using only Serial port
+// comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
 
 // LED pin (only effective for a generic board)
-// comment out if you want a LED
-// #define LED_IO  13
+// un-comment if you want a LED
+//#define LED_IO  13
 
 
 //-------------------------------------------------------
