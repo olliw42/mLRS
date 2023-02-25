@@ -15,8 +15,6 @@
 //#define DEVICE_HAS_JRPIN5 // would require external diode from Tx to Rx
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
-//#define DEVICE_HAS_BUZZER // TODO: do not use
-//#define DEVICE_HAS_BT
 
 
 //-- Timers, Timing, EEPROM, and such stuff

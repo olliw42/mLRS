@@ -66,6 +66,19 @@ typedef enum {
 } SX12xx_IRQ_ENUM;
 
 
+typedef enum {
+    SX12xx_OSCILLATOR_CONFIG_TXCO_1P6_V = SX126X_DIO3_OUTPUT_1_6,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_1P7_V = SX126X_DIO3_OUTPUT_1_7,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_1P8_V = SX126X_DIO3_OUTPUT_1_8,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_2P2_V = SX126X_DIO3_OUTPUT_2_2,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_2P4_V = SX126X_DIO3_OUTPUT_2_4,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_2P7_V = SX126X_DIO3_OUTPUT_2_7,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_3P0_V = SX126X_DIO3_OUTPUT_3_0,
+    SX12xx_OSCILLATOR_CONFIG_TXCO_3P3_V = SX126X_DIO3_OUTPUT_3_3,
+    SX12xx_OSCILLATOR_CONFIG_CRYSTAL = UINT8_MAX,
+} SX12xx_OSCILLATOR_CONFIG_ENUM;
+
+
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
@@ -87,6 +100,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void Init(void)
     {
+        osc_configuration = SX12xx_OSCILLATOR_CONFIG_TXCO_1P8_V;
         lora_configuration = nullptr;
     }
 
@@ -143,7 +157,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ClearDeviceError(); // XOSC_START_ERR is raised, datasheet 13.3.6 SetDIO3AsTCXOCtrl, p.84
 
         // set DIO3 as TCXO control
-        SetDio3AsTcxoControl(SX126X_DIO3_OUTPUT_1_8, 250); // set output to 1.8V, ask specification of TCXO to maker board
+        if (osc_configuration != SX12xx_OSCILLATOR_CONFIG_CRYSTAL) {
+            SetDio3AsTcxoControl(osc_configuration, 250); // set output to 1.6V-3.3V, ask specification of TCXO to maker board
+        }
         // set DIO2 as RF control switching
         // check the RF module if antenna switching is internally connected to DIO2
         // E22-900M rf switching controlled by IO pin of MCU
@@ -237,6 +253,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return actual_power_dbm;
     }
 
+  protected:
+    uint8_t osc_configuration; // "hidden" variable, TXCO 1.8 V per default, allow child access
+
   private:
     const tSxLoraConfiguration* lora_configuration;
     uint8_t sx_power;
@@ -317,6 +336,9 @@ class Sx126xDriver : public Sx126xDriverCommon
     void Init(void)
     {
         Sx126xDriverCommon::Init();
+#ifdef SX_USE_CRYSTALOSCILLATOR
+        osc_configuration = SX12xx_OSCILLATOR_CONFIG_CRYSTAL;
+#endif
 
         spi_init();
         sx_init_gpio();
@@ -416,6 +438,9 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     void Init(void)
     {
         Sx126xDriverCommon::Init();
+#ifdef SX2_USE_CRYSTALOSCILLATOR
+        osc_configuration = SX12xx_OSCILLATOR_CONFIG_CRYSTAL;
+#endif
 
         spib_init();
         sx2_init_gpio();

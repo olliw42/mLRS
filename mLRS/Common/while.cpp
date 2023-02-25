@@ -23,7 +23,7 @@ void WhileBase::Init(void)
 void WhileBase::Trigger(void)
 {
     do_cnt = 10; // postpone action by few loops
-    tstart_us = tnow_us();
+    tstart_us = micros();
     tremaining_us = dtmax_us(); // this starts it
 }
 
@@ -38,7 +38,7 @@ void WhileBase::Do(void)
         return;
     }
 
-    tremaining_us = dtmax_us() - (int32_t)(tnow_us() - tstart_us);
+    tremaining_us = dtmax_us() - (int32_t)(micros() - tstart_us);
     if (tremaining_us <= 0) return;
 
     handle();

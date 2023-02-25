@@ -33,13 +33,13 @@
 
 void micros_init(void)
 {
-  tim_init_1us_freerunning(MICROS_TIMx);
+    tim_init_1us_freerunning(MICROS_TIMx);
 }
 
 
 uint16_t micros(void)
 {
-  return MICROS_TIMx->CNT;
+    return MICROS_TIMx->CNT;
 }
 
 

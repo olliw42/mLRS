@@ -11,6 +11,9 @@
 #pragma once
 
 
+extern uint16_t micros(void);
+
+
 //-------------------------------------------------------
 // While transmit/receive tasks
 //-------------------------------------------------------
@@ -25,7 +28,6 @@ class WhileBase
     virtual void handle_once(void) {};
     virtual void handle(void) {};
 
-    virtual uint16_t tnow_us(void);
     virtual int32_t dtmax_us(void) { return 1; }
 
     uint16_t do_cnt;

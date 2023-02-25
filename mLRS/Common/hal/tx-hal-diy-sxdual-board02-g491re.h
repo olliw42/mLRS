@@ -15,7 +15,7 @@
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_I2C_DISPLAY
 #define DEVICE_HAS_BUZZER
-#define DEVICE_HAS_BT
+#define DEVICE_HAS_SERIAL2
 
 
 //-- Timers, Timing, EEPROM, and such stuff

@@ -12,6 +12,7 @@
 
 
 #include "setup_types.h"
+#include "hal\hal.h"
 
 
 tSetupMetaData SetupMetaData;
@@ -59,11 +60,11 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx ChannelSource: "none,mbridge,in,crsf"
-#if defined DEVICE_HAS_JRPIN5 && (defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED)
+#if defined DEVICE_HAS_JRPIN5 && defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, mbridge, crsf
-#elif (defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED)
+#elif defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
 #else
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none, not editable

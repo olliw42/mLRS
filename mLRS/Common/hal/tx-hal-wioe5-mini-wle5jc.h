@@ -15,8 +15,6 @@
 #define DEVICE_HAS_JRPIN5 // requires external diode from Tx to Rx
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
-//#define DEVICE_HAS_BUZZER // TODO: do not use
-//#define DEVICE_HAS_BT
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 

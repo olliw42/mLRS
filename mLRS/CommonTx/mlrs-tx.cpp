@@ -71,8 +71,8 @@ v0.0.00:
 #include "../Common/common.h"
 #include "../Common/micros.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
-
 #include "../Common/channel_order.h"
+
 #include "in.h"
 #include "txstats.h"
 #include "cli.h"
@@ -112,7 +112,6 @@ class In : public InBase
 
     bool available(void) override { return uarte_rx_available(); }
     char getc(void) override { return uarte_getc(); }
-    uint16_t tim_1us(void) override { return micros(); }
 #endif
 };
 
@@ -195,7 +194,6 @@ tTxDisp disp;
 class WhileTransmit : public WhileBase
 {
   public:
-    uint16_t tnow_us(void) override { return micros(); }
     int32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
 };
@@ -1034,7 +1032,7 @@ dbg.puts("\ncrsf mbridge ");
     }
 );
 #endif
-#if (defined DEVICE_HAS_IN)
+#ifdef USE_IN
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
       // update channels
       if (in.Update(&rcData)) {

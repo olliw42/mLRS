@@ -42,7 +42,7 @@ In tx-hal files:
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
-#define DEVICE_HAS_BT               // board has a Serial2 port
+#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
 
@@ -143,6 +143,12 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
+//-- DIY "easy-to-solder" Boards
+#ifdef RX_DIY_E77_E22_WLE5CC
+#include "rx-hal-easysolder-e77-e22-wle5cc.h"
+#endif
+
+
 //-------------------------------------------------------
 // Derived Defines
 //-------------------------------------------------------
@@ -192,7 +198,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
 #endif
 
-#if (defined DEVICE_HAS_BT) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+#if (defined DEVICE_HAS_SERIAL2) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
   #define USE_SERIAL2
 #endif
 #endif

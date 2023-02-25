@@ -2,7 +2,7 @@
 
 The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
-The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 50 km or so, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
+The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of the associated compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
 Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
 
@@ -29,9 +29,9 @@ You of course use the project fully at your own risk.
 
 ## Project Status ##
 
-The project is work in progress, and there is still a mile to go before one would call it mature.
+The project is work in progress, and there is still plenty of room for improvement.
 
-The basic features however, i.e., the RC link and serial link, are quite stable. It also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, and it integrates well with the MAVLink for OpenTx project.
+However, the essential basic features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz and 915/868 MHz frequency bands.
 
@@ -69,7 +69,9 @@ Further features:
 - support for buzzer, oled & five-way button, serial2. 
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](#further-documentations).
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (no need for extra dongles anymore).
-- support of plenty platforms: STM32F103, STM32G4, STM32L4, Wio-E5, STM32WLE5, E28, E22, SX1280, SX1262, SX1276.
+- support of ESP32 modules for wireless connection to a ground control station.
+- optimizations for ArduPilot and PX4 systems.
+- support of plenty platforms: STM32F103, STM32G4, STM32L4, Wio-E5, STM32WLE5, E28, E22, E77, SX1280, SX1262, SX1276.
 
 ## Community ##
 
@@ -86,7 +88,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | 2.4 GHz | 7 km | 10 km | 15 km
 | 868/915 MHz | - | 26 km | 42 km
 
-Only very few range testes were reported so far (and only for 2.4 GHz/50 Hz). They are however consistent with the estimated ranges. Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at even larger ranges.
+Only few range testes were reported so far; they however appear to be consistent with the estimated ranges (e.g., [6 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50537585&postcount=1356) for 2.4 GHz, 10 mW, 19 Hz, with 100 LQ, no failsafe, which translates to > 19 km at 100 mW). Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
 ## Hardware ##
 
@@ -101,7 +103,7 @@ In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and read
 
 In the 2.4 GHz range, the DIY options are currently the (only) way to go.
 
-Don't hesitate to join the discussion thread at rcgroups for more details.
+Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 
 ## Firmware: Flashing ##
 
@@ -145,11 +147,6 @@ You need to have git and python3 installed.
 
 ## Further Documentation ##
 
-You find more information in the [mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md).
+You find many more information here:
 
-Direct links to few selected pages:
-
-- [Binding](https://github.com/olliw42/mLRS-docu/blob/master/docs/BINDING.md)
-- [Configuration Parameters](https://github.com/olliw42/mLRS-docu/blob/master/docs/PARAMETERS.md)
-- [mLRS Configuration Lua Script](https://github.com/olliw42/mLRS-docu/blob/master/docs/LUA.md)
-- [CLI Commands](https://github.com/olliw42/mLRS-docu/blob/master/docs/CLI.md)
+[mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md)

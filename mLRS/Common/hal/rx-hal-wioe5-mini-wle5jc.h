@@ -34,8 +34,8 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = debug port
 // UART = output port, SBus or whatever
+// UARTC = debug port
 
 #define UARTB_USE_UART2 // serial // PA2,PA3
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -45,14 +45,6 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_REMAPPED // debug // PB6,PB7 usb plug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
-
 #define UART_USE_LPUART1_REMAPPED // out pin // PC1
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
@@ -60,6 +52,14 @@
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+
+#define UARTC_USE_UART1_REMAPPED // debug // PB6,PB7 usb plug
+#define UARTC_BAUD                115200
+#define UARTC_USE_TX
+#define UARTC_TXBUFSIZE           512
+#define UARTC_USE_TX_ISR
+//#define UARTC_USE_RX
+//#define UARTC_RXBUFSIZE           512
 
 
 //-- SX12xx & SPI
