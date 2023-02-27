@@ -431,6 +431,8 @@ local freq_band_list = {}
 freq_band_list[0] = "2.4 GHz"
 freq_band_list[1] = "915 MHz FCC"
 freq_band_list[2] = "868 MHz"
+freq_band_list[3] = "433 MHz"
+freq_band_list[4] = "70 CM HAM"
 
 
 ----------------------------------------------------------------------

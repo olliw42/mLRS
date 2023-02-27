@@ -30,13 +30,17 @@ void setup_configure_metadata(void)
 
     //-- FrequencyBand: "2.4,915 FCC,868"
 #ifdef FREQUENCY_BAND_2P4_GHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0001; // only 2.4 GHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b00001; // only 2.4 GHz, not editable
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0110; // only 915 FCC, 868
+    SetupMetaData.FrequencyBand_allowed_mask = 0b00110; // only 915 FCC, 868
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0010; // only 915 MHz FCC, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b00010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b0100; // only 868 MHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b00100; // only 868 MHz, not editable
+#elif defined FREQUENCY_BAND_433_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b01000; // only 433 MHz, not editable
+#elif defined FREQUENCY_BAND_70_CM_HAM
+    SetupMetaData.FrequencyBand_allowed_mask = 0b10000; // only 70_CM HAM, not editable
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"
@@ -199,6 +203,10 @@ void setup_sanitize(void)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_433_MHZ
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_433_MHZ;
+#elif defined FREQUENCY_BAND_70_CM_HAM
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_70_CM_HAM;
 #else
     #error Unknown Frequencyband !
 #endif
@@ -398,6 +406,20 @@ void setup_configure(void)
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
+    case SETUP_FREQUENCY_BAND_433_MHZ:
+        switch (Config.Mode) {
+        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_433_MHZ; break;
+        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_433_MHZ_19HZ_MODE; break;
+        default:
+            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        }
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+        switch (Config.Mode) {
+        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_70_CM_HAM; break;
+        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
+        default:
+            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        }
     }
 
     //-- More Config, may depend on above config settings
