@@ -103,8 +103,8 @@
 #define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
 
-#define FHSS_NUM_BAND_433_MHZ               3 // there are only 3
-#define FHSS_NUM_BAND_433_MHZ_19HZ_MODE     3 // there are only 3
+#define FHSS_NUM_BAND_433_MHZ_19HZ_MODE     2 // 2 since 1 is needed for bind
+#define FHSS_NUM_BAND_433_MHZ               2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE   12 // to match 2P4 19 Hz
 #define FHSS_NUM_BAND_70_CM_HAM             18 // to match 2P4 31 Hz
 #define FHSS_NUM_BAND_868_MHZ               6 // it's a very narrow band
