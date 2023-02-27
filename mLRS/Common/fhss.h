@@ -62,9 +62,6 @@ const uint32_t fhss_freq_list_433[] = {
 // 33 Channels w/ 0.6 MHz spacing
 
 const uint32_t fhss_freq_list_70_CM_HAM[] = {
-    SX12XX_FREQ_MHZ_TO_REG(433.360),
-    SX12XX_FREQ_MHZ_TO_REG(433.920),
-    SX12XX_FREQ_MHZ_TO_REG(433.480),
     SX12XX_FREQ_MHZ_TO_REG(430.4),
     SX12XX_FREQ_MHZ_TO_REG(431.0),
     SX12XX_FREQ_MHZ_TO_REG(431.6),
