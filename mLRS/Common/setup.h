@@ -28,7 +28,7 @@ void setup_configure_metadata(void)
 {
     SetupMetaData = {0};
 
-    //-- FrequencyBand: "2.4,915 FCC,868"
+    //-- FrequencyBand: "2.4,915 FCC,868,433,70 cm"
 #ifdef FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b00001; // only 2.4 GHz, not editable
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
@@ -40,7 +40,7 @@ void setup_configure_metadata(void)
 #elif defined FREQUENCY_BAND_433_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b01000; // only 433 MHz, not editable
 #elif defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b10000; // only 70_CM HAM, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b10000; // only 70 cm HAM, not editable
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"

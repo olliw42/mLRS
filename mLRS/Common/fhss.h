@@ -56,12 +56,13 @@ const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.480),
 };
 
-#ifdef FHSS_HAS_CONFIG__70_CM_HAM
+#endif
+#ifdef FHSS_HAS_CONFIG_70_CM_HAM
 // USA Ham Bands w/ Tech License
 // https://www.arrl.org/files/file/Tech%20Band%20Chart/US%20Amateur%20Radio%20Technician%20Privileges.pdf
 // 33 Channels w/ 0.6 MHz spacing
 
-const uint32_t fhss_freq_list_70_CM_HAM[] = {
+const uint32_t fhss_freq_list_70_cm_ham[] = {
     SX12XX_FREQ_MHZ_TO_REG(430.4),
     SX12XX_FREQ_MHZ_TO_REG(431.0),
     SX12XX_FREQ_MHZ_TO_REG(431.6),
@@ -334,7 +335,7 @@ const tFhssConfig fhss_config[] = {
     },
 #else
     { .freq_list = nullptr },
-#ifdef FHSS_HAS_CONFIG_BAND__70_CM_HAM
+#ifdef FHSS_HAS_CONFIG_BAND_70_CM_HAM
     {
         .freq_list = fhss_freq_list_70_CM_HAM,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_CM_HAM) / sizeof(uint32_t)),
