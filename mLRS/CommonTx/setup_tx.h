@@ -51,7 +51,7 @@
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
 
-#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz, 433 MHz, 70 CM HAM" // this is used e.g. in cli
+#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433,70" // this is used e.g. in cli
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
 
