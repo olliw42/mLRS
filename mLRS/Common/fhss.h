@@ -48,16 +48,51 @@
 
 
 #ifdef FHSS_HAS_CONFIG_433_MHZ
-// 433.050 ... 434.790 in 0.506 MHz steps
+// USA Ham Bands w/ Tech License
+// https://www.arrl.org/files/file/Tech%20Band%20Chart/US%20Amateur%20Radio%20Technician%20Privileges.pdf
+// 33 Channels w/ 0.6 MHz spacing
 
 const uint32_t fhss_freq_list_433[] = {
-    SX12XX_FREQ_MHZ_TO_REG(433.360),
-    SX12XX_FREQ_MHZ_TO_REG(433.920),
-    SX12XX_FREQ_MHZ_TO_REG(433.480),
+    SX12XX_FREQ_MHZ_TO_REG(430.4),
+    SX12XX_FREQ_MHZ_TO_REG(431.0),
+    SX12XX_FREQ_MHZ_TO_REG(431.6),
+    SX12XX_FREQ_MHZ_TO_REG(432.2),
+    SX12XX_FREQ_MHZ_TO_REG(432.8),
+    SX12XX_FREQ_MHZ_TO_REG(433.4),
+    SX12XX_FREQ_MHZ_TO_REG(434.0),
+    SX12XX_FREQ_MHZ_TO_REG(434.6),
+    SX12XX_FREQ_MHZ_TO_REG(435.2),
+    SX12XX_FREQ_MHZ_TO_REG(435.8),
+
+    SX12XX_FREQ_MHZ_TO_REG(436.4),
+    SX12XX_FREQ_MHZ_TO_REG(437.0),
+    SX12XX_FREQ_MHZ_TO_REG(437.6),
+    SX12XX_FREQ_MHZ_TO_REG(438.2),
+    SX12XX_FREQ_MHZ_TO_REG(438.8),
+    SX12XX_FREQ_MHZ_TO_REG(439.4),
+    SX12XX_FREQ_MHZ_TO_REG(440.0),
+    SX12XX_FREQ_MHZ_TO_REG(440.6),
+    SX12XX_FREQ_MHZ_TO_REG(441.2),
+    SX12XX_FREQ_MHZ_TO_REG(441.8),
+
+    SX12XX_FREQ_MHZ_TO_REG(442.4),
+    SX12XX_FREQ_MHZ_TO_REG(443.0),
+    SX12XX_FREQ_MHZ_TO_REG(443.6),
+    SX12XX_FREQ_MHZ_TO_REG(444.2),
+    SX12XX_FREQ_MHZ_TO_REG(444.8),
+    SX12XX_FREQ_MHZ_TO_REG(445.4),
+    SX12XX_FREQ_MHZ_TO_REG(446.0),
+    SX12XX_FREQ_MHZ_TO_REG(446.6),
+    SX12XX_FREQ_MHZ_TO_REG(447.2),
+    SX12XX_FREQ_MHZ_TO_REG(447.8),
+    
+    SX12XX_FREQ_MHZ_TO_REG(448.4),
+    SX12XX_FREQ_MHZ_TO_REG(449.0),
+    SX12XX_FREQ_MHZ_TO_REG(449.6),
 };
 
 const uint8_t fhss_bind_channel_list_433[] = {
-    0, // just pick some
+    10, 20 // picked 2
 };
 
 #endif
@@ -287,7 +322,12 @@ const tFhssConfig fhss_config[] = {
     { .freq_list = nullptr },
 #endif
 #ifdef FHSS_HAS_CONFIG_BAND_433_MHZ
-    { Xhkahsdkhasd }, // to force an error
+    {
+        .freq_list = fhss_freq_list_433,
+        .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_433) / sizeof(uint32_t)),
+        .bind_channel_list = fhss_bind_channel_list_433,
+        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_433) / sizeof(uint8_t))
+    },
 #else
     { .freq_list = nullptr },
 #endif
@@ -305,7 +345,7 @@ class FhssBase
         case SETUP_FREQUENCY_BAND_2P4_GHZ: config_i = FHSS_CONFIG_2P4_GHZ; break;
         case SETUP_FREQUENCY_BAND_915_MHZ_FCC: config_i = FHSS_CONFIG_915_MHZ_FCC; break;
         case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
-        // case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break; // is not yet existing !!
+        case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break; // first pass
         default:
           while (1) {} // should not happen, but play it safe
         }
@@ -396,7 +436,7 @@ class FhssBase
         case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
         case FHSS_CONFIG_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
         case FHSS_CONFIG_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        // case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // is not yet existing !!
+        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // first pass
         }
         while (1) {} // should not happen, but play it safe
         return 0;

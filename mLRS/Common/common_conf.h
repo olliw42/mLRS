@@ -103,6 +103,8 @@
 #define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
 
+#define FHSS_NUM_BAND_433_MHZ_19HZ_MODE     12 // 
+#define FHSS_NUM_BAND_433_MHZ               18 // 
 #define FHSS_NUM_BAND_868_MHZ               6 // it's a very narrow band
 #define FHSS_NUM_BAND_915_MHZ_FCC_19HZ_MODE 25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
 #define FHSS_NUM_BAND_915_MHZ_FCC           25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)

@@ -37,6 +37,8 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b0010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b0100; // only 868 MHz, not editable
+#elif defined FREQUENCY_BAND_433_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b1000; // only 433 MHz, not editable
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz"
@@ -199,6 +201,8 @@ void setup_sanitize(void)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_433_MHZ
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_433_MHZ;
 #else
     #error Unknown Frequencyband !
 #endif
@@ -398,6 +402,13 @@ void setup_configure(void)
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
+    case SETUP_FREQUENCY_BAND_433_MHZ:
+        switch (Config.Mode) {
+        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_433_MHZ; break;
+        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_433_MHZ_19HZ_MODE; break;
+        default:
+            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        }
     }
 
     //-- More Config, may depend on above config settings
