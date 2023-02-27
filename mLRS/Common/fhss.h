@@ -451,8 +451,8 @@ class FhssBase
         case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
         case FHSS_CONFIG_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
         case FHSS_CONFIG_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // exists
-        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_70_CM_HAM; // exists
+        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // exists?
+        case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM; // exists?
         }
         while (1) {} // should not happen, but play it safe
         return 0;
