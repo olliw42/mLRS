@@ -359,7 +359,7 @@ class FhssBase
         case SETUP_FREQUENCY_BAND_915_MHZ_FCC: config_i = FHSS_CONFIG_915_MHZ_FCC; break;
         case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
         case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break; // exists
-        case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG__70_CM_HAM; break; // exists
+        case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG_70_CM_HAM; break; // exists
         default:
           while (1) {} // should not happen, but play it safe
         }
