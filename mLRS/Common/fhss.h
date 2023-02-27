@@ -29,6 +29,9 @@
 #ifdef FREQUENCY_BAND_433_MHZ
 #define FHSS_HAS_CONFIG_433_MHZ
 #endif
+#ifdef FREQUENCY_BAND_70_CM_HAM
+#define FHSS_HAS_CONFIG_70_CM_HAM
+#endif
 #if defined FREQUENCY_BAND_868_MHZ
 #define FHSS_HAS_CONFIG_868_MHZ
 #endif
@@ -54,6 +57,10 @@ const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.360),
     SX12XX_FREQ_MHZ_TO_REG(433.920),
     SX12XX_FREQ_MHZ_TO_REG(433.480),
+};
+
+const uint8_t fhss_bind_channel_list_433[] = {
+    0 // just pick some
 };
 
 #endif
@@ -102,7 +109,7 @@ const uint32_t fhss_freq_list_70_cm_ham[] = {
 };
 
 
-const uint8_t fhss_bind_channel_list_70_CM_HAM[] = {
+const uint8_t fhss_bind_channel_list_70_cm_ham[] = {
     10, 20 // picked 2
 };
 
@@ -335,12 +342,13 @@ const tFhssConfig fhss_config[] = {
     },
 #else
     { .freq_list = nullptr },
+#endif
 #ifdef FHSS_HAS_CONFIG_BAND_70_CM_HAM
     {
-        .freq_list = fhss_freq_list_70_CM_HAM,
-        .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_CM_HAM) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_70_CM_HAM,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_70_CM_HAM) / sizeof(uint8_t))
+        .freq_list = fhss_freq_list_70_cm_ham,
+        .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_cm_ham) / sizeof(uint32_t)),
+        .bind_channel_list = fhss_bind_channel_list_70_cm_ham,
+        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_70_cm_ham) / sizeof(uint8_t))
     },
 #else
     { .freq_list = nullptr },
