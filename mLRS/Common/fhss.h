@@ -108,7 +108,6 @@ const uint32_t fhss_freq_list_70_cm_ham[] = {
     SX12XX_FREQ_MHZ_TO_REG(449.6),
 };
 
-
 const uint8_t fhss_bind_channel_list_70_cm_ham[] = {
     10, 20 // picked 2
 };
@@ -333,7 +332,7 @@ const tFhssConfig fhss_config[] = {
 #else
     { .freq_list = nullptr },
 #endif
-#ifdef FHSS_HAS_CONFIG_BAND_433_MHZ
+#ifdef FHSS_HAS_CONFIG_433_MHZ
     {
         .freq_list = fhss_freq_list_433,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_433) / sizeof(uint32_t)),
@@ -343,7 +342,7 @@ const tFhssConfig fhss_config[] = {
 #else
     { .freq_list = nullptr },
 #endif
-#ifdef FHSS_HAS_CONFIG_BAND_70_CM_HAM
+#ifdef FHSS_HAS_CONFIG_70_CM_HAM
     {
         .freq_list = fhss_freq_list_70_cm_ham,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_cm_ham) / sizeof(uint32_t)),
@@ -459,8 +458,8 @@ class FhssBase
         case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
         case FHSS_CONFIG_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
         case FHSS_CONFIG_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ; // exists?
-        case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM; // exists?
+        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
+        case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
         }
         while (1) {} // should not happen, but play it safe
         return 0;
