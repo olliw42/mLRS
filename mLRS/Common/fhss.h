@@ -272,7 +272,6 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
 };
 
-
 const uint8_t fhss_bind_channel_list_2p4[] = {
     46, 14, 33, 61 // just pick some
 };
@@ -366,10 +365,10 @@ class FhssBase
         case SETUP_FREQUENCY_BAND_2P4_GHZ: config_i = FHSS_CONFIG_2P4_GHZ; break;
         case SETUP_FREQUENCY_BAND_915_MHZ_FCC: config_i = FHSS_CONFIG_915_MHZ_FCC; break;
         case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
-        case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break; // exists
-        case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG_70_CM_HAM; break; // exists
+        case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break;
+        case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG_70_CM_HAM; break;
         default:
-          while (1) {} // should not happen, but play it safe
+            while (1) {} // should not happen, but play it safe
         }
 
         if (fhss_config[config_i].freq_list == nullptr) while (1) {} // should not happen, but play it safe
