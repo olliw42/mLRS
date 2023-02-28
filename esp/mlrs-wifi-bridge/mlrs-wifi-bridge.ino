@@ -71,6 +71,10 @@ int baudrate = 57600;
 // comment out for default setting
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 
+// WiFi channel
+// comment out for default setting
+int wifi_channel = 13; // Use 13 (2461-2483 MHz) since it has least overlap with 2.4 freqs
+
 
 // serial port usage (only effective for a generic board)
 // comment all for default behavior, which is using only Serial port
@@ -141,7 +145,7 @@ void setup()
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL);
+    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel);
 
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
