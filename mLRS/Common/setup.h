@@ -31,14 +31,19 @@ void setup_configure_metadata(void)
     //-- FrequencyBand: "2.4,915 FCC,868,433,70"
 #ifdef FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b00001; // only 2.4 GHz, not editable
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
+      !defined FREQUENCY_BAND_433_MHZ && !defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b00110; // only 915 FCC, 868
+#elif !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && \
+      defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+    SetupMetaData.FrequencyBand_allowed_mask = 0b11000; // only 433 MHz, 70 cm HAM
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
+      defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+      SetupMetaData.FrequencyBand_allowed_mask = 0b11110; // only 915 FCC, 868, 433 MHz, 70 cm HAM
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     SetupMetaData.FrequencyBand_allowed_mask = 0b00010; // only 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b00100; // only 868 MHz, not editable
-#elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b11000; // only 433, 70
 #elif defined FREQUENCY_BAND_433_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b01000; // only 433 MHz, not editable
 #elif defined FREQUENCY_BAND_70_CM_HAM
