@@ -52,7 +52,6 @@ _txBufferSize(0),
 // Wifi Protocol 0 = TCP, 1 = UDP
 #define WIFI_PROTOCOL  1
 
-
 // Wifi credentials
 String ssid = "mLRS AP"; // Wifi name
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
@@ -62,18 +61,15 @@ IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default i
 int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
-
 // baudrate
 int baudrate = 57600;
 
+// WiFi channel
+int wifi_channel = 13; // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies
 
 // WiFi power
 // comment out for default setting
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
-
-// WiFi channel
-// comment out for default setting
-int wifi_channel = 13; // Use 13 (2461-2483 MHz) since it has least overlap with 2.4 freqs
 
 
 // serial port usage (only effective for a generic board)
@@ -145,10 +141,11 @@ void setup()
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel);
-
+    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
+    DBG_PRINT("channel: ");
+    DBG_PRINTLN(WiFi.channel());
 
     server.begin();
     server.setNoDelay(true);
