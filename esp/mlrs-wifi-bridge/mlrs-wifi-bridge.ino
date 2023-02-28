@@ -145,7 +145,7 @@ void setup()
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL);
+    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, WIFI_CHANNEL);
 
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
