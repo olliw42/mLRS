@@ -73,7 +73,7 @@ int baudrate = 57600;
 
 // WiFi channel
 // comment out for default setting
-int WIFI_CHANNEL = 13; // Use 13 (2461-2483 MHz) since it has least overlap with 2.4 freqs
+int wifi_channel = 13; // Use 13 (2461-2483 MHz) since it has least overlap with 2.4 freqs
 
 
 // serial port usage (only effective for a generic board)
@@ -145,7 +145,7 @@ void setup()
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, WIFI_CHANNEL);
+    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel);
 
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
