@@ -71,6 +71,10 @@ int baudrate = 57600;
 // comment out for default setting
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 
+// WiFi channel
+// comment out for default setting
+#define WIFI_CHANNEL  13 // Use 13 (2461-2483 MHz) since it has least overlap with mLRS 2.4 freqs, default is 1
+
 
 // serial port usage (only effective for a generic board)
 // comment all for default behavior, which is using only Serial port
