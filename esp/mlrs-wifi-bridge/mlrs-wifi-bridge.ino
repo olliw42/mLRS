@@ -73,7 +73,7 @@ int baudrate = 57600;
 
 // WiFi channel
 // comment out for default setting
-#define WIFI_CHANNEL  13 // Use 13 (2461-2483 MHz) since it has least overlap with mLRS 2.4 freqs, default is 1
+int WIFI_CHANNEL = 13; // Use 13 (2461-2483 MHz) since it has least overlap with 2.4 freqs
 
 
 // serial port usage (only effective for a generic board)
