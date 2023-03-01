@@ -306,7 +306,7 @@ bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
         txbuf = 51; // allow PARAMS but don't change stream rate
     }
     txbuf_state_last = txbuf_state;
-
+/*
 static uint32_t t_last = 0;
 uint32_t t = millis32(), dt = t - t_last; t_last = t;
 dbg.puts("\nMa: ");
@@ -321,7 +321,7 @@ if(txbuf<20) dbg.puts("+60 "); else
 if(txbuf<50) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
-
+*7
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     radio_status_txbuf = txbuf;
@@ -404,7 +404,7 @@ bool MavlinkBase::handle_txbuf_px4(uint32_t tnow_ms)
 
     if (txbuf_state == TXBUF_STATE_BURST) txbuf = 33; // just enough to stop parameter flow
     if (txbuf_state == TXBUF_STATE_PX4_RECOVER) txbuf = 93; // restart data flow
-
+/*
 static uint32_t t_last = 0;
 uint32_t t = millis32(), dt = t - t_last; t_last = t;
 dbg.puts("\nMp: ");
@@ -420,7 +420,7 @@ dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
 if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
 if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*0 ");
-
+*/
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     radio_status_txbuf = txbuf;
