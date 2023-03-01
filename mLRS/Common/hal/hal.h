@@ -177,7 +177,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     #define USE_DEBUG
   #endif
 #endif
-#endif
+#endif // DEVICE_IS_RECEIVER
 
 #ifdef DEVICE_IS_TRANSMITTER
 #if defined DEVICE_HAS_COM_OR_DEBUG
@@ -208,7 +208,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #if (defined DEVICE_HAS_SERIAL2) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
   #define USE_SERIAL2
 #endif
-#endif
+#endif // DEVICE_IS_TRANSMITTER
 
 
 #if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)

@@ -70,8 +70,8 @@ v0.0.00:
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/micros.h"
-//#include "../Common/test.h" // un-comment if you want to compile for board test
 #include "../Common/channel_order.h"
+//#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "in.h"
 #include "txstats.h"
