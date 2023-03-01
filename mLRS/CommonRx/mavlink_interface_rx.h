@@ -321,7 +321,7 @@ if(txbuf<20) dbg.puts("+60 "); else
 if(txbuf<50) dbg.puts("+20 "); else
 if(txbuf>95) dbg.puts("-40 "); else
 if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
-*7
+*/
     bytes_serial_in = 0; // reset, to restart rate measurement
 
     radio_status_txbuf = txbuf;

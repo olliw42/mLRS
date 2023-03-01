@@ -220,7 +220,6 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
 };
 
-
 const uint8_t fhss_bind_channel_list_2p4[] = {
     46, 14, 33, 61 // just pick some
 };
