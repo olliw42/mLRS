@@ -113,6 +113,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef TX_DIY_E28DUAL_BOARD02_F103CB
 #include "tx-hal-diy-e28dual-board02-f103cb.h"
 #endif
+#ifdef TX_DIY_E28_G431KB
+#include "tx-hal-diy-e28-g431kb.h"
+#endif
 #ifdef TX_DIY_BOARD01_G491RE
 #include "tx-hal-diy-board01-g491re.h"
 #endif
@@ -128,6 +131,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_DIY_E22_G441KB
 #include "rx-hal-diy-e22-g441kb.h"
+#endif
+
+#ifdef TX_DIY_E22_G431KB
+#include "tx-hal-diy-e22-g431kb.h"
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
