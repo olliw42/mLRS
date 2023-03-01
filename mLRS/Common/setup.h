@@ -393,6 +393,7 @@ void setup_configure(void)
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
+        break;
     case SETUP_FREQUENCY_BAND_868_MHZ:
         Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
         break;
