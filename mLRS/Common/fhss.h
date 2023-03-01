@@ -35,7 +35,7 @@
 #if defined FREQUENCY_BAND_868_MHZ
 #define FHSS_HAS_CONFIG_868_MHZ
 #endif
-#if defined FREQUENCY_BAND_915_MHZ_FCC
+#ifdef FREQUENCY_BAND_915_MHZ_FCC
 #define FHSS_HAS_CONFIG_915_MHZ_FCC
 #endif
 #ifdef FREQUENCY_BAND_2P4_GHZ
@@ -300,6 +300,7 @@ typedef struct {
 } tFhssConfig;
 
 
+// this must be in exactly the same order as FHSS_CONFIG_ENUM
 const tFhssConfig fhss_config[] = {
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
     {

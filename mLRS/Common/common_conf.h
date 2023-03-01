@@ -53,7 +53,7 @@
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_TX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
+#define SETUP_TX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
 
@@ -73,7 +73,7 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
+#define SETUP_RX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
@@ -102,6 +102,7 @@
 #define MODE_50HZ_SEND_FRAME_TMO        10 // just needs to be larger than toa, not critical
 #define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
+
 
 #define FHSS_NUM_BAND_433_MHZ_19HZ_MODE       2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
