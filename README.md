@@ -1,6 +1,6 @@
 # mLRS #
 
-The goal of the mLRS project is an open source 2.4 GHz, 915/868 MHz, 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of the associated compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -10,7 +10,7 @@ Many LRS or radio links with telemetry exist, among them open source projects su
 
 However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them checks all points, like 
 - relatively cheap
-- 2.4 GHz, 915/868 MHz, and 433 MHz/70 cm
+- 2.4 GHz, 915/868 MHz, 433 MHz/70 cm
 - LoRa
 - full-duplex serial link with sufficient data rate
 - plenty full-size RC channels
