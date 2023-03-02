@@ -30,7 +30,7 @@ opens CubeMX "Pinout & Configuration" page (inside CubeIDE)
 
 
 4. Pinout & Configuration -> System Core -> SYS -> Timebase Source: select SysTick
-   Pinout & Configuration -> System Core -> RCC -> High Speed Clock (HSE): select TCXO
+   Pinout & Configuration -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
    Pinout & Configuration -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"
 
 
