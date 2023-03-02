@@ -53,7 +53,7 @@
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_TX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
+#define SETUP_TX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
 
@@ -73,7 +73,7 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink
+#define SETUP_RX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
@@ -103,12 +103,12 @@
 #define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
 
-#define FHSS_NUM_BAND_868_MHZ               6 // it's a very narrow band
-#define FHSS_NUM_BAND_915_MHZ_FCC_19HZ_MODE 25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
-#define FHSS_NUM_BAND_915_MHZ_FCC           25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
-#define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE     12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
-#define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE     18
-#define FHSS_NUM_BAND_2P4_GHZ               24
+#define FHSS_NUM_BAND_868_MHZ                 6 // it's a very narrow band
+#define FHSS_NUM_BAND_915_MHZ_FCC_19HZ_MODE   12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
+#define FHSS_NUM_BAND_915_MHZ_FCC             12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
+#define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
+#define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
+#define FHSS_NUM_BAND_2P4_GHZ                 24
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
