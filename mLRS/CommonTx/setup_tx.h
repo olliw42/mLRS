@@ -51,7 +51,7 @@
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
 
-#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz" // this is used e.g. in cli
+#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM" // this is used e.g. in cli
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
 
@@ -63,7 +63,7 @@
 #define SETUP_PARAMETER_LIST_COMMON \
   X( Setup.BindPhrase[0],         STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
   X( Setup.Mode,                  LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
-  X( Setup.FrequencyBand,         LIST, "RF Band",          "RF_BAND",          0,0,0,"", "2.4,915 FCC,868", SETUP_MSK_RFBAND )\
+  X( Setup.FrequencyBand,         LIST, "RF Band",          "RF_BAND",          0,0,0,"", "2.4,915 FCC,868,433,70", SETUP_MSK_RFBAND )\
 
 #define SETUP_PARAMETER_LIST_TX \
   X( Setup.Tx.Power,              LIST, "Tx Power",         "TX_POWER",         0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
