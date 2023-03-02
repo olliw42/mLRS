@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 24. Feb. 2023
+// 28. Feb. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -49,15 +49,23 @@ _txBufferSize(0),
 //#define MODULE_ESP32_PICO_KIT
 
 
+// Wifi Protocol 0 = TCP, 1 = UDP
+#define WIFI_PROTOCOL  1
+
 // Wifi credentials
 String ssid = "mLRS AP"; // Wifi name
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
-IPAddress ip(192, 168, 4, 1); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
-int port = 5760; // connect to this port // MissionPlanner default is 5760
+IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
+
+int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
+int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
 // baudrate
 int baudrate = 57600;
+
+// WiFi channel
+int wifi_channel = 13; // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies
 
 // WiFi power
 // comment out for default setting
@@ -85,14 +93,21 @@ int baudrate = 57600;
 // internals
 //-------------------------------------------------------
 
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
 IPAddress netmask(255, 255, 255, 0);
-WiFiServer server(port);
+#if WIFI_PROTOCOL == 1 // UDP
+WiFiServer server(80);
+WiFiUDP udp;
+#else // TCP
+WiFiServer server(port_tcp);
 WiFiClient client;
+#endif
 
 int led_tlast_ms;
 bool led_state;
 
-bool connected_last;
+bool is_connected;
+int is_connected_tlast_ms;
 
 
 void serialFlushRx(void)
@@ -124,12 +139,13 @@ void setup()
     DBG_PRINTLN(txbufsize);
 
     // AP mode
+    //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    //WiFi.mode(WIFI_AP); // seems to not be needed, probably done by WiFi.softAP()
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL);
-
+    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
+    DBG_PRINT("channel: ");
+    DBG_PRINTLN(WiFi.channel());
 
     server.begin();
     server.setNoDelay(true);
@@ -137,11 +153,15 @@ void setup()
 #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
 #endif    
+#if WIFI_PROTOCOL == 1
+    udp.begin(port_udp);
+#endif    
 
     led_tlast_ms = 0;
     led_state = false;
 
-    connected_last = false;
+    is_connected = false;
+    is_connected_tlast_ms = 0;
 
     serialFlushRx();
 }
@@ -150,13 +170,37 @@ void setup()
 void loop() 
 {
     int tnow_ms = millis();
-    if (tnow_ms - led_tlast_ms > ((client.connected()) ? 500 : 200)) {
+    if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) { // nothing from GCS for 2 secs
+        is_connected = false;
+    }
+    if (tnow_ms - led_tlast_ms > (is_connected ? 500 : 200)) {
         led_tlast_ms = tnow_ms;
         led_state = !led_state;
         if (led_state) led_on(); else led_off();
     }
 
     //-- here comes the core code, handle wifi connection and do the bridge
+
+    uint8_t buf[256]; // working buffer
+
+#if WIFI_PROTOCOL == 1 // UDP
+
+    int packetSize = udp.parsePacket();
+    if (packetSize) {
+        int len = udp.read(buf, sizeof(buf));
+        SERIAL.write(buf, len);
+        is_connected = true;
+        is_connected_tlast_ms = millis();;
+    }
+
+    while (SERIAL.available()) {
+        int len = SERIAL.read(buf, sizeof(buf));
+        udp.beginPacket(ip_udp, port_udp);
+        udp.write(buf, len);
+        udp.endPacket();    
+    }   
+
+#else // TCP
 
     if (server.hasClient()) {
         if (!client.connected()) {
@@ -169,25 +213,20 @@ void loop()
         }
     }
 
-    bool connected = client.connected();
-    if (connected_last != connected) { // connected status has changed
-        connected_last = connected;
-        DBG_PRINTLN((connected) ? "connected" : "disconnected"); 
-    }
-
     if (!client.connected()) { // nothing to do
         client.stop();
         serialFlushRx();  
+        is_connected = false;
         return;
     }
-
-    uint8_t buf[256]; // working buffer
 
     while (client.available()) {
         //uint8_t c = (uint8_t)client.read();
         //SERIAL.write(c);
         int len = client.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
+        is_connected = true;
+        is_connected_tlast_ms = millis();;
     }
 
     while (SERIAL.available()) {
@@ -196,5 +235,7 @@ void loop()
         int len = SERIAL.read(buf, sizeof(buf));
         client.write(buf, len);
     }    
+
+#endif    
 }
 

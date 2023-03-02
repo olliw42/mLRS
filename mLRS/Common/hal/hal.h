@@ -113,6 +113,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef TX_DIY_E28DUAL_BOARD02_F103CB
 #include "tx-hal-diy-e28dual-board02-f103cb.h"
 #endif
+#ifdef TX_DIY_E28_G431KB
+#include "tx-hal-diy-e28-g431kb.h"
+#endif
 #ifdef TX_DIY_BOARD01_G491RE
 #include "tx-hal-diy-board01-g491re.h"
 #endif
@@ -128,6 +131,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_DIY_E22_G441KB
 #include "rx-hal-diy-e22-g441kb.h"
+#endif
+
+#ifdef TX_DIY_E22_G431KB
+#include "tx-hal-diy-e22-g431kb.h"
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
@@ -170,7 +177,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     #define USE_DEBUG
   #endif
 #endif
-#endif
+#endif // DEVICE_IS_RECEIVER
 
 #ifdef DEVICE_IS_TRANSMITTER
 #if defined DEVICE_HAS_COM_OR_DEBUG
@@ -201,7 +208,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #if (defined DEVICE_HAS_SERIAL2) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
   #define USE_SERIAL2
 #endif
-#endif
+#endif // DEVICE_IS_TRANSMITTER
 
 
 #if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)
@@ -294,7 +301,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #if !defined FREQUENCY_BAND_2P4_GHZ && \
     !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && \
     !defined FREQUENCY_BAND_433_MHZ
-  #error Correct frequency band must be defined !
+  #error At least one frequency band must be defined !
 #endif
 
 

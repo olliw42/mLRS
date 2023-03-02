@@ -17,6 +17,7 @@
 // https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCTelemetry/AP_CRSF_Telem.h
 // ExpressLRS:
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/lib/CrsfProtocol/crsf_protocol.h
+// https://github.com/ExpressLRS/ExpressLRS/wiki/CRSF-Protocol
 
 // CRSF frame format:
 //   address

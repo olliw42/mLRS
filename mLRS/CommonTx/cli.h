@@ -18,9 +18,9 @@ extern TxStatsBase txstats;
 
 
 typedef enum {
-    PARAM_FORMAT_DEFAULT = 0,
-    PARAM_FORMAT_CLI
-} PARAM_FORMAT_ENUM;
+    CLI_PARAM_FORMAT_DEFAULT = 0,
+    CLI_PARAM_FORMAT_CLI
+} CLI_PARAM_FORMAT_ENUM;
 
 
 typedef enum {
@@ -177,7 +177,7 @@ uint8_t nr, n;
 
     const char* optstr = SetupParameter[param_idx].optstr;
 
-    if (format == PARAM_FORMAT_CLI) { // we do some cli specific faking
+    if (format == CLI_PARAM_FORMAT_CLI) { // we do some cli specific faking
          if (param_idx == 2) { // RF Mode
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
@@ -202,7 +202,7 @@ uint8_t nr, n;
 }
 
 
-bool param_get_setting_str(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
+bool param_get_setting_str(char* s, uint8_t param_idx, uint8_t format = CLI_PARAM_FORMAT_DEFAULT)
 {
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
@@ -356,7 +356,7 @@ char s[16];
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
-        while (param_get_optstr(s, idx, i, PARAM_FORMAT_CLI)) {
+        while (param_get_optstr(s, idx, i, CLI_PARAM_FORMAT_CLI)) {
             if (allowed_mask & (1 << i)) {
                 com->puts("  "); com->putc(i + '0'); com->puts(" = "); putsn(s);
             }
@@ -383,7 +383,7 @@ void tTxCli::print_param(uint8_t idx)
       return;
     }
     char s[32];
-    param_get_setting_str(s, idx, PARAM_FORMAT_CLI);
+    param_get_setting_str(s, idx, CLI_PARAM_FORMAT_CLI);
     puts(s);
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_UINT8:

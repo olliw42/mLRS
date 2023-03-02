@@ -29,10 +29,10 @@
 #ifdef FREQUENCY_BAND_433_MHZ
 #define FHSS_HAS_CONFIG_433_MHZ
 #endif
-#if defined FREQUENCY_BAND_868_MHZ
+#ifdef FREQUENCY_BAND_868_MHZ
 #define FHSS_HAS_CONFIG_868_MHZ
 #endif
-#if defined FREQUENCY_BAND_915_MHZ_FCC
+#ifdef FREQUENCY_BAND_915_MHZ_FCC
 #define FHSS_HAS_CONFIG_915_MHZ_FCC
 #endif
 #ifdef FREQUENCY_BAND_2P4_GHZ
@@ -227,7 +227,6 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
 };
 
-
 const uint8_t fhss_bind_channel_list_2p4[] = {
     46, 14, 33, 61 // just pick some
 };
@@ -255,6 +254,7 @@ typedef struct {
 } tFhssConfig;
 
 
+// this must be in exactly the same order as FHSS_CONFIG_ENUM
 const tFhssConfig fhss_config[] = {
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
     {
@@ -286,7 +286,7 @@ const tFhssConfig fhss_config[] = {
 #else
     { .freq_list = nullptr },
 #endif
-#ifdef FHSS_HAS_CONFIG_BAND_433_MHZ
+#ifdef FHSS_HAS_CONFIG_433_MHZ
     { Xhkahsdkhasd }, // to force an error
 #else
     { .freq_list = nullptr },
@@ -307,7 +307,7 @@ class FhssBase
         case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
         // case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break; // is not yet existing !!
         default:
-          while (1) {} // should not happen, but play it safe
+            while (1) {} // should not happen, but play it safe
         }
 
         if (fhss_config[config_i].freq_list == nullptr) while (1) {} // should not happen, but play it safe
