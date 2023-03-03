@@ -35,7 +35,7 @@ extern Stats stats;
 
 #define BIND_SIGNATURE_TX_STR  "mLRS\x01\x02\x03\x04"
 #define BIND_SIGNATURE_RX_STR  "mLRS\x04\x03\x02\x01"
-#define BIND_BUTTON_TMO        4000
+#define BIND_BUTTON_TMO_MS     4000
 
 
 typedef enum {
@@ -131,7 +131,7 @@ void BindBase::Do(void)
     }
 
     if (is_pressed) {
-        if (tnow - button_tlast_ms > BIND_BUTTON_TMO) {
+        if (tnow - button_tlast_ms > BIND_BUTTON_TMO_MS) {
           binding_requested = true;
         }
     } else {
