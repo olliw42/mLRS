@@ -60,10 +60,10 @@
 #include "stm32g4xx_ll_spi.h"
 #include "stm32g4xx_ll_system.h"
 #include "stm32g4xx_ll_exti.h"
+#include "stm32g4xx_ll_lpuart.h"
 #include "stm32g4xx_hal.h"
 #include "stm32g4xx_hal_flash.h"
 #include "stm32g4xx_hal_flash_ex.h"
-#include "stm32g4xx_ll_lpuart.h"
 
 #endif
 #ifdef STM32L433xx

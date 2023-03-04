@@ -300,7 +300,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #if !defined FREQUENCY_BAND_2P4_GHZ && \
     !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && \
-    !defined FREQUENCY_BAND_433_MHZ
+    !defined FREQUENCY_BAND_433_MHZ && !defined FREQUENCY_BAND_70_CM_HAM
   #error At least one frequency band must be defined !
 #endif
 

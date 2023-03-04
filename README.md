@@ -1,6 +1,6 @@
 # mLRS #
 
-The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of the associated compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -10,7 +10,7 @@ Many LRS or radio links with telemetry exist, among them open source projects su
 
 However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them checks all points, like 
 - relatively cheap
-- 2.4 GHz and 915/868 MHz
+- 2.4 GHz, 915/868 MHz, 433 MHz/70 cm
 - LoRa
 - full-duplex serial link with sufficient data rate
 - plenty full-size RC channels
@@ -33,7 +33,7 @@ The project is work in progress, and there is still plenty of room for improveme
 
 However, the essential basic features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
-It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz and 915/868 MHz frequency bands.
+It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
 The RC channels layout is as follows:
 - 8 channels with 11 bit resolution (CH1 - CH8), 4 of them with a higher reliability margin (CH1 - CH4)
@@ -48,13 +48,13 @@ It provides these operation modes:
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 - 31 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz (SX1280 and SX1262 chips)<br>
+  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280 and SX1262 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 2000 Bytes/sec<br>
   downlink serial rate: 2562 Bytes/sec<br>
   receiver sensitivity: -108 dBm
 - 19 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz (SX1280, SX1276, SX1262 chips)<br>
+  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280, SX1276, SX1262 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>
@@ -87,6 +87,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | --- | --- | --- | ---        
 | 2.4 GHz | 7 km | 10 km | 15 km
 | 868/915 MHz | - | 26 km | 42 km
+| 433 MHz/70 cm | - | 55 km | 87 km
 
 Only few range testes were reported so far; they however appear to be consistent with the estimated ranges (e.g., [6 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50537585&postcount=1356) for 2.4 GHz, 10 mW, 19 Hz, with 100 LQ, no failsafe, which translates to > 19 km at 100 mW). Also note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
@@ -99,7 +100,7 @@ The code currently supports:
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
-In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. The SeeedStudio Wio-E5 boards are also readily available, and hence excellent options too to enter mLRS. They are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm.
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. The SeeedStudio Wio-E5 boards are also readily available, and hence excellent options too to enter mLRS. They are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used for the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
 In the 2.4 GHz range, the DIY options are currently the (only) way to go.
 

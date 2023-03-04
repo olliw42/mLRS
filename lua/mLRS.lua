@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-02-16.00'
+local version = '2023-02-28.00'
 
 
 -- experimental
@@ -431,6 +431,8 @@ local freq_band_list = {}
 freq_band_list[0] = "2.4 GHz"
 freq_band_list[1] = "915 MHz FCC"
 freq_band_list[2] = "868 MHz"
+freq_band_list[3] = "433 MHz"
+freq_band_list[4] = "70 cm HAM"
 
 
 ----------------------------------------------------------------------
@@ -909,7 +911,11 @@ local function drawPageMain()
         local p = DEVICE_PARAM_LIST[2]
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
-            if p.value <= 2 then lcd.drawText(140, y + 2*21, freq_band_list[p.value], cur_attr_p(2,2)) end
+            if p.value <= #freq_band_list then 
+                lcd.drawText(140, y + 2*21, freq_band_list[p.value], cur_attr_p(2,2)) 
+            else
+                lcd.drawText(140, y + 2*21, p.options[p.value+1], cur_attr_p(2,2)) 
+            end
         end  
     end
  
