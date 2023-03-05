@@ -161,9 +161,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             SetDio3AsTcxoControl(osc_configuration, 250); // set output to 1.6V-3.3V, ask specification of TCXO to maker board
         }
 
-        //Image Calibration per datasheet 9.2.1
-        //Default for SX1261/2 is 902 to 902 MHz
-        //Default for SX1268 is 470 to 510 MHz
+        // Image calibration per datasheet 9.2.1
+        // default for SX1261/2 (E22/E77-900) is 902 to 928 MHz
+        // default for SX1268 (E22/E77-400) is 470 to 510 MHz
         switch (Setup.FrequencyBand) {
             case SETUP_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
             case SETUP_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
