@@ -44,14 +44,17 @@ extern tGDisplay gdisp;
 typedef enum {
     PAGE_STARTUP = 0,
     PAGE_BIND,
+    PAGE_STORE,
 
     // left-right navigation menu
     PAGE_MAIN,
     PAGE_COMMON,
     PAGE_TX,
     PAGE_RX,
-    PAGE_NAV_MIN = PAGE_MAIN,
-    PAGE_NAV_MAX = PAGE_RX,
+    PAGE_ACTIONS,
+
+    PAGE_NAV_MIN = PAGE_MAIN, // left endpoint
+    PAGE_NAV_MAX = PAGE_ACTIONS, //PAGE_RX, // right endpoint
 
     PAGE_UNDEFINED, // this is also used to time startup page sequence
 } PAGE_ENUM;
@@ -74,23 +77,35 @@ class tTxDisp
     void UpdateMain(void);
     void SetBind(void);
     void Draw(void);
+    uint8_t Task(void);
+
+    typedef struct {
+        uint8_t list[SETUP_PARAMETER_NUM];
+        uint8_t num;
+        uint8_t allowed_num[SETUP_PARAMETER_NUM];
+        void clear(void) { num = 0; }
+        void add(uint8_t param_idx) { list[num] = param_idx; allowed_num[num] = param_get_allowed_opt_num(param_idx); num++; }
+    } tParamList;
 
     bool key_has_been_pressed(uint8_t key_idx);
 
     void draw_page_startup(void);
-    void draw_page_bind(void);
+    void draw_page_notify(const char* s);
     void draw_page_main(void);
     void draw_page_common(void);
     void draw_page_tx(void);
     void draw_page_rx(void);
+    void draw_page_actions(void);
 
     void draw_page_main_sub0(void);
     void draw_page_main_sub1(void);
 
     void draw_header(const char* s);
-    void draw_options(uint8_t* list, uint8_t num);
+    void draw_options(tParamList* list);
 
     bool initialized;
+    uint8_t task_pending;
+    bool connected_last; // to detect connection changes
 
     uint16_t keys_tick;
     uint8_t keys_state;
@@ -98,6 +113,7 @@ class tTxDisp
     uint8_t keys_ct1;
     uint8_t keys_has_been_pressed;
     uint16_t keys_pressed_tmo;
+    uint8_t keys_pending;
 
     uint8_t page;
     uint16_t page_startup_tmo;
@@ -106,16 +122,22 @@ class tTxDisp
     uint8_t subpage; // for pages which may have different screens
     uint8_t subpage_max;
 
-    uint8_t idx_first;
-    uint8_t idx_max;
-    uint8_t idx_focused;
+    uint8_t idx_first;          // index of first param displayed on page
+    uint8_t idx_max;            // index of last param in list
+    uint8_t idx_focused;        // index of highlighted param
+    bool idx_focused_in_edit;   // if param is in edit
+    uint8_t idx_focused_task_pending;
 
-    uint8_t common_list[SETUP_PARAMETER_NUM];
-    uint8_t common_list_num;
-    uint8_t tx_list[SETUP_PARAMETER_NUM];
-    uint8_t tx_list_num;
-    uint8_t rx_list[SETUP_PARAMETER_NUM];
-    uint8_t rx_list_num;
+    tParamList common_list;
+    tParamList tx_list;
+    tParamList rx_list;
+
+    void load_rx_list(void);
+    tParamList* current_list(void);
+
+    void page_init(void);
+    void edit_setting(void);
+    void run_action(void);
 };
 
 
@@ -131,6 +153,9 @@ void tTxDisp::Init(void)
         gdisp_init(GDISPLAY_TYPE_SSD1306);
         gdisp_setrotation(GDISPLAY_ROTATION_180);
     }
+
+    task_pending = CLI_TASK_NONE;
+    connected_last = false;
 
     keys_tick = 0;
     keys_state = 0;
@@ -148,24 +173,53 @@ void tTxDisp::Init(void)
     subpage = SUBPAGE_DEFAULT;
     subpage_max = 0;
 
-    common_list_num = tx_list_num = rx_list_num = 0;
-    memset(common_list, 0, SETUP_PARAMETER_NUM);
-    memset(tx_list, 0, SETUP_PARAMETER_NUM);
-    memset(rx_list, 0, SETUP_PARAMETER_NUM);
+    common_list.clear();
+    tx_list.clear();
+    rx_list.clear();
     for (uint8_t param_idx = 0; param_idx < SETUP_PARAMETER_NUM; param_idx++) {
         if (setup_param_is_tx(param_idx)) {
-            tx_list[tx_list_num++] = param_idx;
+            tx_list.add(param_idx);
         } else
         if (setup_param_is_rx(param_idx)) {
-            rx_list[rx_list_num++] = param_idx;
+        //    rx_list.add(param_idx);
         } else {
-            common_list[common_list_num++] = param_idx;
+            common_list.add(param_idx);
         }
     }
 
     idx_first = 0;
     idx_focused = 0;
     idx_max = 0;
+    idx_focused_in_edit = false;
+    idx_focused_task_pending = CLI_TASK_NONE;
+}
+
+
+uint8_t tTxDisp::Task(void)
+{
+    uint8_t task = task_pending;
+    task_pending = 0;
+    return task;
+}
+
+
+void tTxDisp::load_rx_list(void)
+{
+    rx_list.clear();
+    for (uint8_t param_idx = 0; param_idx < SETUP_PARAMETER_NUM; param_idx++) {
+        if (setup_param_is_rx(param_idx)) rx_list.add(param_idx);
+    }
+}
+
+
+tTxDisp::tParamList* tTxDisp::current_list(void)
+{
+    switch (page) {
+        case PAGE_COMMON: return &common_list;
+        case PAGE_TX: return &tx_list;
+        case PAGE_RX: return &rx_list;
+    }
+    return nullptr;
 }
 
 
@@ -191,18 +245,20 @@ uint16_t keys, i, keys_new;
         keys_has_been_pressed |= keys_new;    // 0->1: key press detect, is not erased automatically
     }
 
-    // keys scrolling
+    // keys fast scrolling
     if (!keys_state) {
         keys_pressed_tmo = 0;
     }
-    if (keys_has_been_pressed & (1 << KEY_DOWN) || keys_has_been_pressed & (1 << KEY_UP)) {
+    uint8_t fast_scroll_mask = (1 << KEY_DOWN) | (1 << KEY_UP);
+    if (idx_focused_in_edit) fast_scroll_mask = (1 << KEY_LEFT) | (1 << KEY_RIGHT);
+    if (keys_has_been_pressed & fast_scroll_mask) {
         keys_pressed_tmo = SYSTICK_DELAY_MS(750);
     }
     if (keys_pressed_tmo) {
         keys_pressed_tmo--;
-        if (!keys_pressed_tmo && (keys_state & (1 << KEY_DOWN) || keys_state & (1 << KEY_UP))) {
+        if (!keys_pressed_tmo && (keys_state & fast_scroll_mask)) {
             keys_pressed_tmo = SYSTICK_DELAY_MS(175);
-            keys_has_been_pressed = keys_state;
+            keys_has_been_pressed = keys_state & fast_scroll_mask;
         }
     }
 
@@ -224,55 +280,59 @@ uint16_t keys, i, keys_new;
     }
 
     // bind
-    if (page == PAGE_BIND) return;
+    if (page == PAGE_BIND) {
+        return;
+    }
 
+    // store
+    if (page == PAGE_STORE) {
+        return;
+    }
+
+    // handle connection & receiver
+    if (connected_last != connected()) { // connection state has changed
+        page_modified = true; // redraws, and avoids calling gdisp_update() multiple time
+        if (connected()) load_rx_list();
+    }
+    connected_last = connected();
+
+    if (!connected() && page == PAGE_RX) { // reset navigation
+        idx_first = 0;
+        idx_focused = 0;
+        idx_focused_in_edit = false;
+        return;
+    }
+
+    // navigation & edit
+if(!idx_focused_in_edit){
     // navigation
+    // only allow one key event
     if (key_has_been_pressed(KEY_RIGHT)) {
         if (page >= PAGE_NAV_MIN && page < PAGE_NAV_MAX) {
             page++;
+            page_init();
             page_modified = true;
-            idx_first = 0;
-            idx_focused = 0;
-            switch (page) {
-                case PAGE_MAIN: idx_max = 0; break;
-                case PAGE_COMMON: idx_max = common_list_num - 1; break;
-                case PAGE_TX: idx_max = tx_list_num - 1; break;
-                case PAGE_RX: idx_max = rx_list_num - 1; break;
-            }
-            subpage = SUBPAGE_DEFAULT;
         }
-    }
+    } else
     if (key_has_been_pressed(KEY_LEFT)) {
         if (page > PAGE_NAV_MIN && page <= PAGE_NAV_MAX) {
             page--;
+            page_init();
             page_modified = true;
-            idx_first = 0;
-            idx_focused = 0;
-            switch (page) {
-                case PAGE_MAIN: idx_max = 0; break;
-                case PAGE_COMMON: idx_max = common_list_num - 1; break;
-                case PAGE_TX: idx_max = tx_list_num - 1; break;
-                case PAGE_RX: idx_max = rx_list_num - 1; break;
-            }
-            subpage = SUBPAGE_DEFAULT;
-            subpage_max = 0;
-            switch (page) {
-                case PAGE_MAIN: subpage_max = 1; break;
-            }
         }
-    }
 
+    } else
     if (key_has_been_pressed(KEY_DOWN)) {
         if (idx_focused < idx_max) {
             idx_focused++;
-            if (idx_focused - idx_first > (5 - 1)) { idx_first = idx_focused - (5 - 1); }
+            if (idx_focused - idx_first > (5 - 1)) { idx_first = idx_focused - (5 - 1); } // 5 lines visible
             page_modified = true;
         }
         if (subpage < subpage_max) {
             subpage++;
             page_modified = true;
         }
-    }
+    } else
     if (key_has_been_pressed(KEY_UP)) {
         if (idx_focused > 0) {
             idx_focused--;
@@ -283,6 +343,68 @@ uint16_t keys, i, keys_new;
             subpage--;
             page_modified = true;
         }
+
+    } else
+    if (key_has_been_pressed(KEY_CENTER)) {
+        if (page >= PAGE_COMMON && page <= PAGE_RX) {
+            tParamList* list = current_list();
+            if (list && list->allowed_num[idx_focused] > 1) {
+                idx_focused_in_edit = true;
+                page_modified = true;
+            }
+        } else
+        if (page == PAGE_ACTIONS) {
+            run_action();
+        }
+    }
+
+}else{
+    // edit parameter
+    if (key_has_been_pressed(KEY_CENTER)) {
+        idx_focused_in_edit = false;
+        page_modified = true;
+        if (idx_focused_task_pending != CLI_TASK_NONE) task_pending = idx_focused_task_pending;
+        idx_focused_task_pending = CLI_TASK_NONE;
+    } else {
+        edit_setting();
+    }
+
+}
+}
+
+
+void tTxDisp::page_init(void)
+{
+    idx_first = 0;
+    idx_focused = 0;
+
+    idx_max = 0;
+    switch (page) {
+        case PAGE_COMMON: idx_max = common_list.num - 1; break;
+        case PAGE_TX: idx_max = tx_list.num - 1; break;
+        case PAGE_RX: idx_max = rx_list.num - 1; break;
+        case PAGE_ACTIONS: idx_max = 1; break;
+    }
+
+    subpage = SUBPAGE_DEFAULT;
+    subpage_max = 0;
+    switch (page) {
+        case PAGE_MAIN: subpage_max = 1; break;
+    }
+}
+
+
+void tTxDisp::run_action(void)
+{
+    switch (idx_focused) {
+    case 0:
+        page = PAGE_STORE;
+        page_modified = true;
+        task_pending = CLI_TASK_PARAM_STORE;
+        break;
+    case 1:
+        task_pending = CLI_TASK_BIND;
+        break;
     }
 }
 
@@ -312,11 +434,13 @@ void tTxDisp::Draw(void)
 
         switch (page) {
             case PAGE_STARTUP: draw_page_startup(); break;
-            case PAGE_BIND: draw_page_bind(); break;
+            case PAGE_BIND: draw_page_notify("BINDING"); break;
+            case PAGE_STORE: draw_page_notify("STORE"); break;
             case PAGE_MAIN: draw_page_main(); break;
             case PAGE_COMMON: draw_page_common(); break;
             case PAGE_TX: draw_page_tx(); break;
             case PAGE_RX: draw_page_rx(); break;
+            case PAGE_ACTIONS: draw_page_actions(); break;
         }
 
 //uint32_t t2 = micros(); //HAL_GetTick();
@@ -347,25 +471,14 @@ bool tTxDisp::key_has_been_pressed(uint8_t key_idx)
 }
 
 
-void tTxDisp::draw_page_startup(void)
+void _diversity_str(char* s, uint8_t div)
 {
-    gdisp_clear();
-    gdisp_setcurXY(0, 6);
-    gdisp_setfont(&FreeMono12pt7b);
-    gdisp_setcurY(33-10); gdisp_puts_XCentered("mLRS");
-    gdisp_unsetfont();
-    gdisp_setcurY(48); gdisp_puts_XCentered(DEVICE_NAME);
-    gdisp_setcurY(60); gdisp_puts_XCentered(VERSIONONLYSTR);
-}
-
-
-void tTxDisp::draw_page_bind(void)
-{
-    gdisp_clear();
-    gdisp_setcurXY(0, 6);
-    gdisp_setfont(&FreeMono12pt7b);
-    gdisp_setcurY(37-10); gdisp_puts_XCentered("BINDING");
-    gdisp_unsetfont();
+    switch (div) {
+        case 0: strcpy(s, "en."); return;
+        case 1: strcpy(s, "ant1"); return;
+        case 2: strcpy(s, "ant2"); return;
+    }
+    strcpy(s, "?");
 }
 
 
@@ -378,14 +491,69 @@ void tTxDisp::draw_header(const char* s)
 }
 
 
-void _disp_div_str(char* s, uint8_t div)
+void tTxDisp::draw_options(tParamList* list)
 {
-    switch (div) {
-        case 0: strcpy(s, "en."); return;
-        case 1: strcpy(s, "ant1"); return;
-        case 2: strcpy(s, "ant2"); return;
+char s[32];
+
+    for (uint8_t idx = 0; idx < list->num; idx++) {
+        if (idx < idx_first) continue;
+        if (idx - idx_first >= 5) break;
+
+        uint8_t param_idx = list->list[idx];
+
+        gdisp_setcurXY(0, (idx - idx_first) * 10 + 20);
+        if (idx == idx_focused) gdisp_setinverted();
+
+        if (setup_param_is_tx(param_idx) || setup_param_is_rx(param_idx)) {
+            strcpy(s, SetupParameter[param_idx].name + 3); // +3 to remove 'Tx ', 'Rx '
+        } else {
+            strcpy(s, SetupParameter[param_idx].name);
+        }
+
+        s[13] = '\0'; // ensure it's not more than 13 chars
+        gdisp_puts(s);
+        gdisp_unsetinverted();
+
+        gdisp_setcurX(gdisp.width-1 - 7*6);
+        if (idx == idx_focused && idx_focused_in_edit) gdisp_setinverted();
+        strcpy(s, "ups ?");
+        if (list->allowed_num[idx] == 0) { // unavailable
+            strcpy(s, "-");
+        } else {
+            param_get_setting_str(s, param_idx, PARAM_FORMAT_DISPLAY);
+            // fake some settings
+            if (!strncmp(s,"antenna",7)) { s[3] = s[7]; s[4] = '\0'; }
+        }
+        s[7] = '\0'; // ensure it's not more than 7 chars
+        gdisp_puts(s);
+        gdisp_unsetinverted();
     }
-    strcpy(s, "?");
+}
+
+
+//-------------------------------------------------------
+// Page Draw routines
+//-------------------------------------------------------
+
+void tTxDisp::draw_page_startup(void)
+{
+    gdisp_clear();
+    gdisp_setcurXY(0, 6);
+    gdisp_setfont(&FreeMono12pt7b);
+    gdisp_setcurY(33-10); gdisp_puts_XCentered("mLRS");
+    gdisp_unsetfont();
+    gdisp_setcurY(48); gdisp_puts_XCentered(DEVICE_NAME);
+    gdisp_setcurY(60); gdisp_puts_XCentered(VERSIONONLYSTR);
+}
+
+
+void tTxDisp::draw_page_notify(const char* s)
+{
+    gdisp_clear();
+    gdisp_setcurXY(0, 6);
+    gdisp_setfont(&FreeMono12pt7b);
+    gdisp_setcurY(37-10); gdisp_puts_XCentered(s);
+    gdisp_unsetfont();
 }
 
 
@@ -429,11 +597,11 @@ char s[32];
     } else if (USE_ANTENNA2) {
         tx_actual_diversity = 2;
     }
-    _disp_div_str(s, tx_actual_diversity);
+    _diversity_str(s, tx_actual_diversity);
     gdisp_puts(s);
     gdisp_setcurX(80);
     uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : 3; // 3 = invalid
-    _disp_div_str(s, rx_actual_diversity);
+    _diversity_str(s, rx_actual_diversity);
     if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
 
     gdisp_setcurXY(0, 3 * 10 + 20);
@@ -470,7 +638,7 @@ void tTxDisp::draw_page_main_sub1(void)
 {
 char s[32];
 
-    draw_header("Main/1");
+    draw_header("Main/2");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Rssi");
@@ -511,42 +679,11 @@ char s[32];
 void tTxDisp::draw_page_main(void)
 {
     switch (subpage) {
-    case SUBPAGE_MAIN_SUB1: draw_page_main_sub1(); return;
+    case SUBPAGE_MAIN_SUB1:
+        draw_page_main_sub1();
+        return;
     default:
         draw_page_main_sub0();
-    }
-}
-
-
-void tTxDisp::draw_options(uint8_t* list, uint8_t num)
-{
-char s[32];
-
-    for (uint8_t idx = 0; idx < num; idx++) {
-        if (idx < idx_first) continue;
-        if (idx - idx_first >= 5) break;
-
-        uint8_t param_idx = list[idx];
-
-        gdisp_setcurXY(0, (idx - idx_first) * 10 + 20);
-
-        if (idx == idx_focused) gdisp_setinverted();
-        if (setup_param_is_tx(param_idx) || setup_param_is_rx(param_idx)) {
-            strcpy(s, SetupParameter[param_idx].name + 3);
-        } else {
-            strcpy(s, SetupParameter[param_idx].name);
-        }
-        s[13] = '\0';
-        gdisp_puts(s);
-
-        gdisp_unsetinverted();
-
-        gdisp_setcurX(gdisp.width-1 - 7*6);
-        strcpy(s, "ups");
-        param_get_setting_str(s, param_idx);
-        if (!strncmp(s,"antenna",7)) { s[6] = s[7]; }
-        s[7] = '\0';
-        gdisp_puts(s);
     }
 }
 
@@ -554,21 +691,123 @@ char s[32];
 void tTxDisp::draw_page_common(void)
 {
     draw_header("Common");
-    draw_options(common_list, common_list_num);
+    draw_options(&common_list);
 }
 
 
 void tTxDisp::draw_page_tx(void)
 {
     draw_header("Tx");
-    draw_options(tx_list, tx_list_num);
+    draw_options(&tx_list);
 }
 
 
 void tTxDisp::draw_page_rx(void)
 {
     draw_header("Rx");
-    draw_options(rx_list, rx_list_num);
+
+    if (!connected()) {
+        gdisp_setcurXY(0, 20);
+        gdisp_puts("not connected!");
+        return;
+    }
+
+    draw_options(&rx_list);
+}
+
+
+void tTxDisp::draw_page_actions(void)
+{
+    draw_header("Actions");
+
+    gdisp_setfont(&FreeMono9pt7b);
+
+    uint8_t idx = 0;
+    gdisp_setcurXY(5, idx * 16 + 25);
+    if (idx == idx_focused) gdisp_setinverted();
+    gdisp_puts("STORE");
+    gdisp_unsetinverted();
+
+/*    idx++;
+    gdisp_setcurXY(5, idx * 16 + 25);
+    if (idx == idx_focused) gdisp_setinverted();
+    gdisp_puts("RELOAD");
+    gdisp_unsetinverted(); */
+
+    idx++;
+    gdisp_setcurXY(5, idx * 16 + 25);
+    if (idx == idx_focused) gdisp_setinverted();
+    gdisp_puts("BIND");
+    gdisp_unsetinverted();
+
+    gdisp_unsetfont();
+}
+
+
+//-------------------------------------------------------
+// Edit Parameter
+//-------------------------------------------------------
+
+void tTxDisp::edit_setting(void)
+{
+    if (!keys_has_been_pressed) return; // no key pressed
+
+    tParamValue vv;
+    tParamList* list = current_list();
+    uint8_t param_idx = list->list[idx_focused];
+    bool rx_param_changed = false;
+
+    if (key_has_been_pressed(KEY_RIGHT)) {
+
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_INT8) {
+            int8_t v = *(int8_t*)(SetupParameter[param_idx].ptr);
+            if (v < SetupParameter[param_idx].max.INT8_value) {
+                vv.i8 = v + 1;
+                rx_param_changed = setup_set_param(param_idx, vv);
+                page_modified = true;
+            }
+        } else
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
+            uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            uint8_t vmax = param_get_opt_num(param_idx);
+            while (v < vmax) {
+                v++;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+            }
+            if (v < vmax) {
+                vv.u8 = v;
+                rx_param_changed = setup_set_param(param_idx, vv);
+                page_modified = true;
+            }
+        }
+
+    } else
+    if (key_has_been_pressed(KEY_LEFT)) {
+
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_INT8) {
+            int8_t v = *(int8_t*)(SetupParameter[param_idx].ptr);
+            if (v > SetupParameter[param_idx].min.INT8_value) {
+                vv.i8 = v - 1;
+                rx_param_changed = setup_set_param(param_idx, vv);
+                page_modified = true;
+            }
+        } else
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
+            uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            while (v > 0) {
+                v--;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+            }
+            if (v >= 0) {
+                vv.u8 = v;
+                rx_param_changed = setup_set_param(param_idx, vv);
+                page_modified = true;
+            }
+        }
+
+    }
+
+    if (rx_param_changed) idx_focused_task_pending = CLI_TASK_RX_PARAM_SET;
 }
 
 
