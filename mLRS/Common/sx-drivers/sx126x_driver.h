@@ -170,7 +170,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             case SETUP_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             case SETUP_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
-            while (1) {}  // protection
+                while (1) {}  // protection
         }
 
         // set DIO2 as RF control switching
