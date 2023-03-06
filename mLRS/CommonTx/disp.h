@@ -300,7 +300,7 @@ uint16_t keys, i, keys_new;
         idx_first = 0;
         idx_focused = 0;
         idx_focused_in_edit = false;
-        return;
+        keys_has_been_pressed &= ((1 << KEY_RIGHT) | (1 << KEY_LEFT)); // only allow these
     }
 
     // navigation & edit
