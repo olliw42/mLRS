@@ -172,7 +172,7 @@ uint8_t crsf_cvt_rssi(int8_t rssi_i8)
 }
 
 
-//-- bind phrase & version
+//-- bind phrase & power & version
 
 bool is_valid_bindphrase_char(char c)
 {
@@ -198,26 +198,9 @@ uint32_t u32_from_bindphrase(char* bindphrase)
     uint64_t base = 1;
 
     for (uint8_t i = 0; i < 6; i++) {
-        uint8_t n = 0;
 
-        if ((bindphrase[i] >= 'a') && (bindphrase[i] <= 'z')) {
-            n = bindphrase[i] - 'a';
-        } else
-        if ((bindphrase[i] >= '0') && (bindphrase[i] <= '9')) {
-            n = 26 + bindphrase[i] - '0';
-        } else
-        if (bindphrase[i] == '_') {
-            n = 36;
-        } else
-        if (bindphrase[i] == '#') {
-            n = 37;
-        } else
-        if (bindphrase[i] == '-') {
-            n = 38;
-        } else
-        if (bindphrase[i] == '.') {
-            n = 39;
-        }
+        char* cptr = strchr(bindphrase_chars, bindphrase[i]);
+        uint8_t n = (cptr) ? cptr - bindphrase_chars : 0; // must not happen that c is not found, but play it safe
 
         v += n * base;
         base *= 40;

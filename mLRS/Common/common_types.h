@@ -141,7 +141,7 @@ uint8_t crsf_cvt_fps(uint8_t mode);
 uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 
-//-- bind phrase & version
+//-- bind phrase & power & version
 
 const char bindphrase_chars[] = "abcdefghijklmnopqrstuvwxyz0123456789_#-.";
 
