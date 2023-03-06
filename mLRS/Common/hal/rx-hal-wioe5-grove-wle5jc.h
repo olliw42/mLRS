@@ -16,6 +16,7 @@
 // no out port (not available, to make available change this hal accordingly)
 
 #define DEVICE_HAS_SERIAL_OR_DEBUG
+//#define DEVICE_HAS_OUT
 
 #ifdef DEBUG_ENABLED
 #undef DEBUG_ENABLED
@@ -141,24 +142,27 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-// UART_UARTx = LPUART1
+#if defined UART_USE_LPUART1 || defined UART_USE_LPUART1_REMAPPED
+  #define OUT_UARTx               LPUART1
+#endif
+
 
 void out_init_gpio(void)
 {
 }
 
 void out_set_normal(void)
-{ /*
-    LL_USART_Disable(LPUART1);
-    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(LPUART1); */
+{
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 void out_set_inverted(void)
-{ /*
-    LL_USART_Disable(LPUART1);
-    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(LPUART1); */
+{
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 

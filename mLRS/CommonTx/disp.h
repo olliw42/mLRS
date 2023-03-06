@@ -20,7 +20,8 @@ class tTxDisp
 {
   public:
     void Init(void) {};
-    void Tick(void) {};
+    void Tick_ms(void) {};
+    uint8_t Task(void) { return 0; };
 };
 #else
 
