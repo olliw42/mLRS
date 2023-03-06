@@ -73,7 +73,7 @@ class tTxDisp
 {
   public:
     void Init(void);
-    void Tick(void);
+    void Tick_ms(void);
     void UpdateMain(void);
     void SetBind(void);
     void Draw(void);
@@ -225,7 +225,7 @@ tTxDisp::tParamList* tTxDisp::current_list(void)
 }
 
 
-void tTxDisp::Tick(void)
+void tTxDisp::Tick_ms(void)
 {
 uint16_t keys, i, keys_new;
 

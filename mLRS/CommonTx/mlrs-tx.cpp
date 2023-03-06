@@ -683,7 +683,7 @@ RESTARTCONTROLLER:
       crsf.TelemetryTick_ms();
       link_task_tick_ms();
 
-      disp.Tick();
+      disp.Tick_ms();
 
       if (!tick_1hz) {
         dbg.puts(".");
