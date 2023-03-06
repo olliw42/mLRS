@@ -151,7 +151,9 @@ void tTxDisp::Init(void)
 
     if (initialized) {
         gdisp_init(GDISPLAY_TYPE_SSD1306);
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
         gdisp_setrotation(GDISPLAY_ROTATION_180);
+#endif
     }
 
     task_pending = CLI_TASK_NONE;
