@@ -1069,7 +1069,7 @@ dbg.puts("\ncrsf mbridge ");
         doParamsStore = true;
       }
       break;
-    case CLI_TASK_BIND: bind.StartBind(); break;
+    case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
     case CLI_TASK_PARAM_RELOAD:
       setup_reload();
       if (connected()) {
