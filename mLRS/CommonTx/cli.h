@@ -22,8 +22,9 @@ extern TxStatsBase txstats;
 //-------------------------------------------------------
 
 typedef enum {
-    PARAM_IDX_RF_BAND = 2,
-} PARAM_IDX_ENUM;
+    PARAM_INDEX_MODE = 1,
+    PARAM_INDEX_RF_BAND = 2,
+} PARAM_INDEX_ENUM;
 
 
 typedef enum {
@@ -33,9 +34,9 @@ typedef enum {
 } PARAM_FORMAT_ENUM;
 
 
-// helper, extracts setting str from optstr for param type LIST
+// helper, extracts value as string from optstr for parameters of type LIST
 // "50 Hz,31 Hz,19 Hz" etc
-bool _param_get_optstr(char* s, uint8_t param_idx, uint8_t value, uint8_t format)
+bool _param_get_listval_fromoptstr(char* s, uint8_t param_idx, uint8_t value, uint8_t format)
 {
 int8_t seps[24];
 uint8_t nr, n;
@@ -43,12 +44,12 @@ uint8_t nr, n;
     const char* optstr = SetupParameter[param_idx].optstr;
 
     if (format == PARAM_FORMAT_LONGSTR) {
-         if (param_idx == PARAM_IDX_RF_BAND) { // RF Band
+         if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
     } else
     if (format == PARAM_FORMAT_DISPLAY) {
-        if (param_idx == PARAM_IDX_RF_BAND) { // RF Band
+        if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPLAYSTR;
         }
     }
@@ -72,37 +73,14 @@ uint8_t nr, n;
 }
 
 
-bool param_get_setting_str(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
+// helper, returns allowed mask for LIST
+uint16_t param_get_allowed_mask(uint8_t param_idx)
 {
-    switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
-    case SETUP_PARAM_TYPE_INT8:{
-        int8_t i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
-        stoBCDstr(i8, s);
-        if (SetupParameter[param_idx].unit[0] != '\0') {
-            strcat(s, " ");
-            strcat(s, SetupParameter[param_idx].unit);
-        }
-        return true;
-        }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
-    case SETUP_PARAM_TYPE_LIST:{
-        uint8_t u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
-        return _param_get_optstr(s, param_idx, u8, format);
-        }break;
-    case SETUP_PARAM_TYPE_STR6:
-        strstrbufcpy(s, (char*)SetupParameter[param_idx].ptr, 6);
-        return true;
-    }
-    s[0] = '\0';
-    return false;
+    return (SetupParameter[param_idx].allowed_mask_ptr) ? *(SetupParameter[param_idx].allowed_mask_ptr) : UINT16_MAX;
 }
 
 
+// helper, determines number of options in optstr (= maximal number of options)
 uint8_t param_get_opt_num(uint8_t param_idx)
 {
     const char* optstr = SetupParameter[param_idx].optstr;
@@ -115,12 +93,7 @@ uint8_t param_get_opt_num(uint8_t param_idx)
 }
 
 
-uint16_t param_get_allowed_mask(uint8_t param_idx)
-{
-    return (SetupParameter[param_idx].allowed_mask_ptr) ? *(SetupParameter[param_idx].allowed_mask_ptr) : UINT16_MAX;
-}
-
-
+// helper, determines number of allowed options in optstr
 uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 {
     if (SetupParameter[param_idx].type != SETUP_PARAM_TYPE_LIST) return UINT8_MAX;
@@ -135,6 +108,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 }
 
 
+// helper, finds index from name
 bool param_get_idx(uint8_t* param_idx, char* name)
 {
 char s[64];
@@ -156,7 +130,40 @@ char s[64];
 }
 
 
-bool param_set_val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+// helper, gets parameter value as formatted string, different formats can be specified
+bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
+{
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+        break;
+    case SETUP_PARAM_TYPE_INT8:{
+        int8_t i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+        stoBCDstr(i8, s);
+        if (SetupParameter[param_idx].unit[0] != '\0') {
+            strcat(s, " ");
+            strcat(s, SetupParameter[param_idx].unit);
+        }
+        return true;
+        }break;
+    case SETUP_PARAM_TYPE_UINT16:
+        break;
+    case SETUP_PARAM_TYPE_INT16:
+        break;
+    case SETUP_PARAM_TYPE_LIST:{
+        uint8_t u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+        return _param_get_listval_fromoptstr(s, param_idx, u8, format);
+        }break;
+    case SETUP_PARAM_TYPE_STR6:
+        strstrbufcpy(s, (char*)SetupParameter[param_idx].ptr, 6);
+        return true;
+    }
+    s[0] = '\0';
+    return false;
+}
+
+
+// helper, sets parameter value for integer-valued parameters
+bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
@@ -164,14 +171,14 @@ bool param_set_val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
     case SETUP_PARAM_TYPE_UINT8:
         break;
     case SETUP_PARAM_TYPE_INT8:{
-        int32_t v = atoi(svalue);
-        int8_t i8 = SetupParameter[param_idx].min.INT8_value;
-        if (v < i8) return false;
+        // check
+        int32_t i8 = SetupParameter[param_idx].min.INT8_value;
+        if (value < i8) return false;
         i8 = SetupParameter[param_idx].max.INT8_value;
-        if (v > i8) return false;
+        if (value > i8) return false;
         // set
         tParamValue vv;
-        vv.i8 = v;
+        vv.i8 = value;
         *rx_param_changed = setup_set_param(param_idx, vv);
         return true;
         }break;
@@ -180,17 +187,40 @@ bool param_set_val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
     case SETUP_PARAM_TYPE_INT16:
         break;
     case SETUP_PARAM_TYPE_LIST:{
-        int32_t v = atoi(svalue);
-        if (v < 0) return false;
-        if (v >= param_get_opt_num(param_idx)) return false;
-        if ((param_get_allowed_mask(param_idx) & (1 << v)) == 0) return false;
+        // check
+        if (value < 0) return false;
+        if (value >= param_get_opt_num(param_idx)) return false;
+        if ((param_get_allowed_mask(param_idx) & (1 << value)) == 0) return false;
         // set
         tParamValue vv;
-        vv.u8 = v;
+        vv.u8 = value;
         *rx_param_changed = setup_set_param(param_idx, vv);
         return true;
         }break;
     case SETUP_PARAM_TYPE_STR6:
+        // not an integer-valued parameter, so return false
+        break;
+    }
+
+    return false;
+}
+
+
+// helper, sets parameter value from an input string
+bool param_set_str6val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+{
+    *rx_param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+    case SETUP_PARAM_TYPE_INT8:
+    case SETUP_PARAM_TYPE_UINT16:
+    case SETUP_PARAM_TYPE_INT16:
+    case SETUP_PARAM_TYPE_LIST:
+        // not a str6-valued parameter, so return false
+        break;
+    case SETUP_PARAM_TYPE_STR6:
+        // check
         if (strlen(svalue) != 6) return false;
         for (uint8_t i = 0; i < 6; i++) {
             if (!is_valid_bindphrase_char(svalue[i])) return false;
@@ -199,6 +229,28 @@ bool param_set_val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
         *rx_param_changed = setup_set_param_str6(param_idx, svalue);
         return true;
         break;
+    }
+
+    return false;
+}
+
+
+// helper, sets parameter value from an input string
+bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+{
+    *rx_param_changed = false;
+
+    switch (SetupParameter[param_idx].type) {
+    case SETUP_PARAM_TYPE_UINT8:
+    case SETUP_PARAM_TYPE_INT8:
+    case SETUP_PARAM_TYPE_UINT16:
+    case SETUP_PARAM_TYPE_INT16:
+    case SETUP_PARAM_TYPE_LIST:{
+        int32_t value = atoi(svalue);
+        return param_set_val_fromint(rx_param_changed, value, param_idx);
+        }break;
+    case SETUP_PARAM_TYPE_STR6:
+        return param_set_str6val(rx_param_changed, svalue, param_idx);
     }
 
     return false;
@@ -378,7 +430,7 @@ char s[16];
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
-        while (_param_get_optstr(s, idx, i, PARAM_FORMAT_LONGSTR)) {
+        while (_param_get_listval_fromoptstr(s, idx, i, PARAM_FORMAT_LONGSTR)) {
             if (allowed_mask & (1 << i)) {
                 puts("  "); putc(i + '0'); puts(" = "); putsn(s);
             }
@@ -404,7 +456,7 @@ void tTxCli::print_param(uint8_t idx)
         return;
     }
     char s[32];
-    param_get_setting_str(s, idx, PARAM_FORMAT_LONGSTR);
+    param_get_val_formattedstr(s, idx, PARAM_FORMAT_LONGSTR);
     puts(s);
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
@@ -602,7 +654,7 @@ bool rx_param_changed;
                 print_param_opt_list(param_idx);
             } else if (svalue[0] == '\0') {
                 putsn("err: no value specified");
-            } else if (!param_set_val(&rx_param_changed, svalue, param_idx)) {
+            } else if (!param_set_val_fromstr(&rx_param_changed, svalue, param_idx)) {
                 putsn("err: invalid value");
             } else {
                 print_param(param_idx);

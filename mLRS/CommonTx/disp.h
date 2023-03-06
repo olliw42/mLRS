@@ -522,7 +522,7 @@ char s[32];
         if (list->allowed_num[idx] == 0) { // unavailable
             strcpy(s, "-");
         } else {
-            param_get_setting_str(s, param_idx, PARAM_FORMAT_DISPLAY);
+            param_get_val_formattedstr(s, param_idx, PARAM_FORMAT_DISPLAY);
             // fake some settings
             if (!strncmp(s,"antenna",7)) { s[3] = s[7]; s[4] = '\0'; }
         }
@@ -568,7 +568,7 @@ char s[32];
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Mode");
     gdisp_setcurX(40);
-    param_get_setting_str(s, 1);
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
     stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
@@ -774,7 +774,7 @@ void tTxDisp::edit_setting(void)
             uint8_t vmax = param_get_opt_num(param_idx);
             while (v < vmax) {
                 v++;
-                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break; // allowed, so be happy
             }
             if (v < vmax) {
                 vv.u8 = v;
