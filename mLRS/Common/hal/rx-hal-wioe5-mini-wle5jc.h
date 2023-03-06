@@ -13,7 +13,6 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-//#define DEVICE_HAS_BUZZER // TODO: do not use
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -135,7 +134,10 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-// UART_UARTx = LPUART1
+#if defined UART_USE_LPUART1 || defined UART_USE_LPUART1_REMAPPED
+  #define OUT_UARTx               LPUART1
+#endif
+
 
 void out_init_gpio(void)
 {
@@ -143,16 +145,16 @@ void out_init_gpio(void)
 
 void out_set_normal(void)
 {
-    LL_USART_Disable(LPUART1);
-    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(LPUART1);
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 void out_set_inverted(void)
 {
-    LL_USART_Disable(LPUART1);
-    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(LPUART1);
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 
@@ -196,18 +198,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Buzzer
-// Buzzer is active high // TODO: needs pin and AF check! do not use
-
-#define BUZZER                    IO_PB9
-#define BUZZER_IO_AF              IO_AF_12
-#define BUZZER_TIMx               TIM1
-#define BUZZER_IRQn               TIM1_UP_IRQn
-#define BUZZER_IRQHandler         TIM1_UP_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
-//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- POWER
