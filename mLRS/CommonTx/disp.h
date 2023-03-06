@@ -38,7 +38,7 @@ extern tGDisplay gdisp;
 
 #define DISP_START_TMO_MS       SYSTICK_DELAY_MS(500)
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
-#define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(60)
+#define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
 
 
 typedef enum {
