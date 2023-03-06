@@ -38,7 +38,7 @@ extern tGDisplay gdisp;
 
 #define DISP_START_TMO_MS       SYSTICK_DELAY_MS(500)
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
-#define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(60)
+#define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
 
 
 typedef enum {
@@ -66,6 +66,9 @@ typedef enum {
     // sub pages for main page
     SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT,
     SUBPAGE_MAIN_SUB1,
+    SUBPAGE_MAIN_SUB2,
+
+    SUBPAGE_MAIN_NUM,
 } SUBPAGE_ENUM;
 
 
@@ -73,7 +76,7 @@ class tTxDisp
 {
   public:
     void Init(void);
-    void Tick(void);
+    void Tick_ms(void);
     void UpdateMain(void);
     void SetBind(void);
     void Draw(void);
@@ -99,6 +102,7 @@ class tTxDisp
 
     void draw_page_main_sub0(void);
     void draw_page_main_sub1(void);
+    void draw_page_main_sub2(void);
 
     void draw_header(const char* s);
     void draw_options(tParamList* list);
@@ -151,7 +155,9 @@ void tTxDisp::Init(void)
 
     if (initialized) {
         gdisp_init(GDISPLAY_TYPE_SSD1306);
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
         gdisp_setrotation(GDISPLAY_ROTATION_180);
+#endif
     }
 
     task_pending = CLI_TASK_NONE;
@@ -223,7 +229,7 @@ tTxDisp::tParamList* tTxDisp::current_list(void)
 }
 
 
-void tTxDisp::Tick(void)
+void tTxDisp::Tick_ms(void)
 {
 uint16_t keys, i, keys_new;
 
@@ -272,7 +278,7 @@ uint16_t keys, i, keys_new;
             } else {
                 page = PAGE_MAIN;
                 subpage = SUBPAGE_DEFAULT;
-                subpage_max = 1;
+                subpage_max = SUBPAGE_MAIN_NUM - 1;
             }
             page_modified = true;
         }
@@ -300,7 +306,7 @@ uint16_t keys, i, keys_new;
         idx_first = 0;
         idx_focused = 0;
         idx_focused_in_edit = false;
-        return;
+        keys_has_been_pressed &= ((1 << KEY_RIGHT) | (1 << KEY_LEFT)); // only allow these
     }
 
     // navigation & edit
@@ -389,7 +395,7 @@ void tTxDisp::page_init(void)
     subpage = SUBPAGE_DEFAULT;
     subpage_max = 0;
     switch (page) {
-        case PAGE_MAIN: subpage_max = 1; break;
+        case PAGE_MAIN: subpage_max = SUBPAGE_MAIN_NUM - 1; break;
     }
 }
 
@@ -520,7 +526,7 @@ char s[32];
         if (list->allowed_num[idx] == 0) { // unavailable
             strcpy(s, "-");
         } else {
-            param_get_setting_str(s, param_idx, PARAM_FORMAT_DISPLAY);
+            param_get_val_formattedstr(s, param_idx, PARAM_FORMAT_DISPLAY);
             // fake some settings
             if (!strncmp(s,"antenna",7)) { s[3] = s[7]; s[4] = '\0'; }
         }
@@ -564,9 +570,51 @@ char s[32];
     draw_header("Main");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_puts("Rssi");
+
+    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
+    gdisp_setfont(&FreeMono9pt7b);
+    s8toBCDstr(stats.GetLastRxRssi(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60);
+    s8toBCDstr(stats.received_rssi, s);
+    if (connected()) gdisp_puts(s);
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115);
+    strcpy(s, "dB");
+    gdisp_puts(s);
+
+    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
+    gdisp_puts("LQ");
+
+    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
+    gdisp_setfont(&FreeMono9pt7b);
+    stoBCDstr(txstats.GetLQ(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60 + 11);
+    if (connected()) {
+        stoBCDstr(stats.received_LQ, s);
+        gdisp_puts(s);
+    }
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115+6);
+    strcpy(s, "%");
+    gdisp_puts(s);
+}
+
+
+void tTxDisp::draw_page_main_sub1(void)
+{
+char s[32];
+
+    draw_header("Main/2");
+
+    gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Mode");
     gdisp_setcurX(40);
-    param_get_setting_str(s, 1);
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
     stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
@@ -634,45 +682,24 @@ char s[32];
 }
 
 
-void tTxDisp::draw_page_main_sub1(void)
+void tTxDisp::draw_page_main_sub2(void)
 {
 char s[32];
 
-    draw_header("Main/2");
+    draw_header("Main/3");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
-    gdisp_puts("Rssi");
+    gdisp_puts(DEVICE_NAME);
+    gdisp_setcurXY(0, 1 * 10 + 20);
+    gdisp_puts(VERSIONONLYSTR);
 
-    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
-    gdisp_setfont(&FreeMono9pt7b);
-    s8toBCDstr(stats.GetLastRxRssi(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(60);
-    s8toBCDstr(stats.received_rssi, s);
-    if (connected()) gdisp_puts(s);
-    gdisp_unsetfont();
-
-    gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
-
-    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
-    gdisp_puts("LQ");
-
-    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
-    gdisp_setfont(&FreeMono9pt7b);
-    stoBCDstr(txstats.GetLQ(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(60 + 11);
-    if (connected()) {
-        stoBCDstr(stats.received_LQ, s);
+    if (connected() && SetupMetaData.rx_available) {
+        gdisp_setcurXY(0, 3 * 10 + 20);
+        gdisp_puts(SetupMetaData.rx_device_name);
+        gdisp_setcurXY(0, 4 * 10 + 20);
+        version_to_str(s, SetupMetaData.rx_firmware_version);
         gdisp_puts(s);
     }
-    gdisp_unsetfont();
-
-    gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
 }
 
 
@@ -681,6 +708,9 @@ void tTxDisp::draw_page_main(void)
     switch (subpage) {
     case SUBPAGE_MAIN_SUB1:
         draw_page_main_sub1();
+        return;
+    case SUBPAGE_MAIN_SUB2:
+        draw_page_main_sub2();
         return;
     default:
         draw_page_main_sub0();
@@ -772,7 +802,7 @@ void tTxDisp::edit_setting(void)
             uint8_t vmax = param_get_opt_num(param_idx);
             while (v < vmax) {
                 v++;
-                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break; // allowed, so be happy
             }
             if (v < vmax) {
                 vv.u8 = v;
@@ -794,11 +824,12 @@ void tTxDisp::edit_setting(void)
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
             uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
-            while (v > 0) {
+            while (v >= 0) {
+                if (v == 0) { v = UINT8_MAX; break; }
                 v--;
-                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break; // allowed, so be happy
             }
-            if (v >= 0) {
+            if (v != UINT8_MAX) {
                 vv.u8 = v;
                 rx_param_changed = setup_set_param(param_idx, vv);
                 page_modified = true;

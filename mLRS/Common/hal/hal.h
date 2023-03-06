@@ -38,7 +38,8 @@ In tx-hal files:
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_I2C_DISPLAY      // board has DISPLAY on I2C
+#define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C
+#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
@@ -221,16 +222,16 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY)
+#if (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
+  #define USE_DISPLAY
+#endif
+
+
+#if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
   #define USE_I2C
   #ifndef HAL_I2C_MODULE_ENABLED
     #error HAL_I2C_MODULE_ENABLED is not defined, but I2C is used!
   #endif
-#endif
-
-
-#if (defined DEVICE_HAS_I2C_DISPLAY)
-  #define USE_DISPLAY
 #endif
 
 

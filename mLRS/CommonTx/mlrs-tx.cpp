@@ -683,7 +683,7 @@ RESTARTCONTROLLER:
       crsf.TelemetryTick_ms();
       link_task_tick_ms();
 
-      disp.Tick();
+      disp.Tick_ms();
 
       if (!tick_1hz) {
         dbg.puts(".");
@@ -1069,7 +1069,7 @@ dbg.puts("\ncrsf mbridge ");
         doParamsStore = true;
       }
       break;
-    case CLI_TASK_BIND: bind.StartBind(); break;
+    case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
     case CLI_TASK_PARAM_RELOAD:
       setup_reload();
       if (connected()) {
