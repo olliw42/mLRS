@@ -806,9 +806,6 @@ void tTxDisp::draw_page_actions(void)
 // Edit Parameter
 //-------------------------------------------------------
 
-const char bind_phrase_chars[] = "abcdefghijklmnopqrstuvwxy0123456789_#-.";
-
-
 bool tTxDisp::edit_setting(void)
 {
     if (!keys_has_been_pressed) return false; // no key pressed, don't do anything
@@ -853,10 +850,10 @@ bool tTxDisp::edit_setting(void)
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
             char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
-            const char* vptr = strchr(bind_phrase_chars, c);
+            const char* vptr = strchr(bindphrase_chars, c);
             if (!vptr) while(1){} // must not happen
             vptr++;
-            if (vptr >= bind_phrase_chars + (sizeof(bind_phrase_chars) - 1)) vptr = bind_phrase_chars;
+            if (vptr >= bindphrase_chars + BINDPHRASE_CHARS_LEN) vptr = bindphrase_chars;
             ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
             rx_param_changed = true;
             page_modified = true;
@@ -888,10 +885,10 @@ bool tTxDisp::edit_setting(void)
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
             char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
-            const char* vptr = strchr(bind_phrase_chars, c);
+            const char* vptr = strchr(bindphrase_chars, c);
             if (!vptr) while(1){} // must not happen
             vptr--;
-            if (vptr < bind_phrase_chars) vptr = bind_phrase_chars + (sizeof(bind_phrase_chars) - 1) - 1;
+            if (vptr < bindphrase_chars) vptr = bindphrase_chars + BINDPHRASE_CHARS_LEN - 1;
             ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
             rx_param_changed = true;
             page_modified = true;
