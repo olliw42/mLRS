@@ -144,14 +144,14 @@ void out_init_gpio(void)
 void out_set_normal(void)
 {
     LL_USART_Disable(LPUART1);
-    LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_STANDARD);
     LL_USART_Enable(LPUART1);
 }
 
 void out_set_inverted(void)
 {
     LL_USART_Disable(LPUART1);
-    LL_USART_SetRXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetTXPinLevel(LPUART1, LL_USART_TXPIN_LEVEL_INVERTED);
     LL_USART_Enable(LPUART1);
 }
 
