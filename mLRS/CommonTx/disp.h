@@ -796,11 +796,12 @@ void tTxDisp::edit_setting(void)
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
             uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
-            while (v > 0) {
+            while (v >= 0) {
+                if (v == 0) { v = UINT8_MAX; break; }
                 v--;
-                if (param_get_allowed_mask(param_idx) & (1 << v)) break;
+                if (param_get_allowed_mask(param_idx) & (1 << v)) break; // allowed, so be happy
             }
-            if (v >= 0) {
+            if (v != UINT8_MAX) {
                 vv.u8 = v;
                 rx_param_changed = setup_set_param(param_idx, vv);
                 page_modified = true;
