@@ -564,13 +564,18 @@ void gdisp_wf(char c)
     int16_t y = gdisp.curY;
     gdisp.curX += xa;
 
+    if (gdisp.inverted) {
+        gdisp_fillrect_WH(x + xo - 1, y + yo - 1, xa + 2, h + 2, 1);
+    }
+
     uint16_t bit = 0; // counts how many pixels were set
     uint16_t bits = 0;
     uint16_t bo = glyph->bitmapOffset;
+    uint16_t col = (gdisp.inverted) ? 0 : 1;
     for (uint16_t yy = 0; yy < h; yy++) {
         for (uint16_t xx = 0; xx < w; xx++) {
             if (!(bit++ & 7)) bits = bitmap[bo++];
-            if (bits & 0x80) gdisp_drawpixel(x + xo + xx, y + yo + yy, 1);
+            if (bits & 0x80) gdisp_drawpixel(x + xo + xx, y + yo + yy, col);
             bits <<= 1;
         }
     }

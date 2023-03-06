@@ -64,11 +64,11 @@ Further features:
 - full transmitter and receiver diversity: The Tx and Rx modules which provide two Semtech Lora chips provide full diversity. This really improves link quality in the far range.
 - all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
 - the receiver parameters can be set from within the transmitter; no need to mess with the receiver in any ways.
-- the transmitter and receiver parameters can be set via a LUA script or a CLI.
+- the transmitter and receiver parameters can be set via a LUA script, a CLI, or a display.
 - bind mode for binding "unknown" receivers to the transmitter.
-- support for buzzer, oled & five-way button, serial2. 
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](#further-documentations).
-- support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (no need for extra dongles anymore).
+- support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
+- support for buzzer, oled display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
 - optimizations for ArduPilot and PX4 systems.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, Wio-E5, STM32WLE5, E28, E22, E77, SX1280, SX1262, SX1276.
@@ -100,7 +100,9 @@ The code currently supports:
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
-In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. The SeeedStudio Wio-E5 boards are also readily available, and hence excellent options too to enter mLRS. They are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used for the 915/868 MHz and 433 MHz/70 cm frequency ranges.
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry to mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. 
+
+The SeeedStudio Wio-E5 boards are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" Rx module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
 In the 2.4 GHz range, the DIY options are currently the (only) way to go.
 
