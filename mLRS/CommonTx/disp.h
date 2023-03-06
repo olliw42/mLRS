@@ -66,6 +66,9 @@ typedef enum {
     // sub pages for main page
     SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT,
     SUBPAGE_MAIN_SUB1,
+    SUBPAGE_MAIN_SUB2,
+
+    SUBPAGE_MAIN_NUM,
 } SUBPAGE_ENUM;
 
 
@@ -99,6 +102,7 @@ class tTxDisp
 
     void draw_page_main_sub0(void);
     void draw_page_main_sub1(void);
+    void draw_page_main_sub2(void);
 
     void draw_header(const char* s);
     void draw_options(tParamList* list);
@@ -274,7 +278,7 @@ uint16_t keys, i, keys_new;
             } else {
                 page = PAGE_MAIN;
                 subpage = SUBPAGE_DEFAULT;
-                subpage_max = 1;
+                subpage_max = SUBPAGE_MAIN_NUM - 1;
             }
             page_modified = true;
         }
@@ -391,7 +395,7 @@ void tTxDisp::page_init(void)
     subpage = SUBPAGE_DEFAULT;
     subpage_max = 0;
     switch (page) {
-        case PAGE_MAIN: subpage_max = 1; break;
+        case PAGE_MAIN: subpage_max = SUBPAGE_MAIN_NUM - 1; break;
     }
 }
 
@@ -566,6 +570,48 @@ char s[32];
     draw_header("Main");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_puts("Rssi");
+
+    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
+    gdisp_setfont(&FreeMono9pt7b);
+    s8toBCDstr(stats.GetLastRxRssi(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60);
+    s8toBCDstr(stats.received_rssi, s);
+    if (connected()) gdisp_puts(s);
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115);
+    strcpy(s, "dB");
+    gdisp_puts(s);
+
+    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
+    gdisp_puts("LQ");
+
+    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
+    gdisp_setfont(&FreeMono9pt7b);
+    stoBCDstr(txstats.GetLQ(), s);
+    gdisp_puts(s);
+    gdisp_setcurX(60 + 11);
+    if (connected()) {
+        stoBCDstr(stats.received_LQ, s);
+        gdisp_puts(s);
+    }
+    gdisp_unsetfont();
+
+    gdisp_setcurX(115+6);
+    strcpy(s, "%");
+    gdisp_puts(s);
+}
+
+
+void tTxDisp::draw_page_main_sub1(void)
+{
+char s[32];
+
+    draw_header("Main/2");
+
+    gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Mode");
     gdisp_setcurX(40);
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
@@ -636,45 +682,24 @@ char s[32];
 }
 
 
-void tTxDisp::draw_page_main_sub1(void)
+void tTxDisp::draw_page_main_sub2(void)
 {
 char s[32];
 
-    draw_header("Main/2");
+    draw_header("Main/3");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
-    gdisp_puts("Rssi");
+    gdisp_puts(DEVICE_NAME);
+    gdisp_setcurXY(0, 1 * 10 + 20);
+    gdisp_puts(VERSIONONLYSTR);
 
-    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
-    gdisp_setfont(&FreeMono9pt7b);
-    s8toBCDstr(stats.GetLastRxRssi(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(60);
-    s8toBCDstr(stats.received_rssi, s);
-    if (connected()) gdisp_puts(s);
-    gdisp_unsetfont();
-
-    gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
-
-    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
-    gdisp_puts("LQ");
-
-    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
-    gdisp_setfont(&FreeMono9pt7b);
-    stoBCDstr(txstats.GetLQ(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(60 + 11);
-    if (connected()) {
-        stoBCDstr(stats.received_LQ, s);
+    if (connected() && SetupMetaData.rx_available) {
+        gdisp_setcurXY(0, 3 * 10 + 20);
+        gdisp_puts(SetupMetaData.rx_device_name);
+        gdisp_setcurXY(0, 4 * 10 + 20);
+        version_to_str(s, SetupMetaData.rx_firmware_version);
         gdisp_puts(s);
     }
-    gdisp_unsetfont();
-
-    gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
 }
 
 
@@ -683,6 +708,9 @@ void tTxDisp::draw_page_main(void)
     switch (subpage) {
     case SUBPAGE_MAIN_SUB1:
         draw_page_main_sub1();
+        return;
+    case SUBPAGE_MAIN_SUB2:
+        draw_page_main_sub2();
         return;
     default:
         draw_page_main_sub0();
