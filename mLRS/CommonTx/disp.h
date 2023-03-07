@@ -594,8 +594,23 @@ void tTxDisp::draw_page_notify(const char* s)
 void tTxDisp::draw_page_main_sub0(void)
 {
 char s[32];
+int8_t power;
 
     draw_header("Main");
+
+    gdisp_setcurXY(50, 6);
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    gdisp_puts(s);
+    gdisp_setcurX(85);
+    power = sx.RfPower_dbm();
+    if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+    gdisp_setcurX(100);
+    if (connected() && SetupMetaData.rx_available) {
+        power = SetupMetaData.rx_actual_power_dbm;
+        if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+    }
+    gdisp_setcurX(115);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Rssi");
@@ -610,8 +625,7 @@ char s[32];
     gdisp_unsetfont();
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 3 * 10 + 20 - 4);
     gdisp_puts("LQ");
@@ -628,8 +642,7 @@ char s[32];
     gdisp_unsetfont();
 
     gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
+    gdisp_puts("%");
 }
 
 
@@ -646,8 +659,8 @@ char s[32];
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
     stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
-    strcat(s, " dB");
     gdisp_puts(s);
+    gdisp_puts(" dB");
 
     gdisp_setcurXY(0, 1 * 10 + 20);
     gdisp_puts("Power");
@@ -659,8 +672,7 @@ char s[32];
     if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 2 * 10 + 20);
     gdisp_puts("Div.");
@@ -690,8 +702,7 @@ char s[32];
     if (connected()) gdisp_puts(s);
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 4 * 10 + 20);
     gdisp_puts("LQ");
@@ -705,8 +716,7 @@ char s[32];
     }
 
     gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
+    gdisp_puts("%");
 }
 
 
