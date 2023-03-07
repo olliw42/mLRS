@@ -210,16 +210,16 @@ typedef union {
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t uplink_rssi1;
-    uint8_t uplink_rssi2;
-    uint8_t uplink_LQ;
-    int8_t uplink_snr;
-    uint8_t active_antenna;
-    uint8_t mode;
-    uint8_t uplink_transmit_power;
-    uint8_t downlink_rssi;
-    uint8_t downlink_LQ;
-    int8_t downlink_snr;
+    uint8_t uplink_rssi1;               // OpenTX -> "1RSS"
+    uint8_t uplink_rssi2;               // OpenTX -> "2RSS"
+    uint8_t uplink_LQ;                  // OpenTx -> "RQly"
+    int8_t uplink_snr;                  // OpenTx -> "RSNR"
+    uint8_t active_antenna;             // OpenTx -> "ANT"
+    uint8_t mode;                       // OpenTx -> "RFMD"
+    uint8_t uplink_transmit_power;      // OpenTx -> "TPw2" ?? uplink but "T" ??
+    uint8_t downlink_rssi;              // OpenTx -> "TRSS"
+    uint8_t downlink_LQ;                // OpenTx -> "TQly"
+    int8_t downlink_snr;                // OpenTx -> "TSNR"
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
@@ -238,11 +238,11 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t uplink_rssi;
-    uint8_t uplink_rssi_percent;
+    uint8_t uplink_rssi_percent;        // OpenTx -> "TRSP"
     uint8_t uplink_LQ;
     int8_t uplink_snr;
-    uint8_t downlink_transmit_power;
-    uint8_t uplink_fps;
+    uint8_t downlink_transmit_power;    // OpenTx -> "RPWR"
+    uint8_t uplink_fps;                 // OpenTx -> "TFPS"
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
@@ -252,10 +252,10 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t downlink_rssi;
-    uint8_t downlink_rssi_percent;
+    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
     uint8_t downlink_LQ;
     int8_t downlink_snr;
-    uint8_t uplink_transmit_power;
+    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
 }) tCrsfLinkStatisticsRx;
 
 #define CRSF_LINK_STATISTICS_RX_LEN  5
@@ -266,12 +266,12 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    int32_t latitude; // degree / 1e7
-    int32_t longitude; // degree / 1e7
-    uint16_t groundspeed; // km/h / 100
-    uint16_t gps_heading; // degree / 100
-    uint16_t altitude; // meter - 1000m offset
-    uint8_t satellites;
+    int32_t latitude; // degree / 1e7                 // OpenTx -> "GPS"
+    int32_t longitude; // degree / 1e7                // OpenTx -> "GPS"
+    uint16_t groundspeed; // km/h / 100               // OpenTx -> "GSpd"
+    uint16_t gps_heading; // degree / 100             // OpenTx -> "Hdg"
+    uint16_t altitude; // meter - 1000m offset        // OpenTx -> "GAlt"
+    uint8_t satellites;                               // OpenTx -> "Sats"
 }) tCrsfGps;
 
 #define CRSF_GPS_LEN  15
@@ -280,7 +280,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    int16_t climb_rate; // units ??? m/s / 100 indirectly concluded from otx
+    int16_t climb_rate; // units ??? m/s / 100 indirectly concluded from otx    // OpenTx -> "VSpd"
 }) tCrsfVario;
 
 #define CRSF_VARIO_LEN  2
@@ -289,10 +289,10 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    uint16_t voltage; // mV * 100
-    uint16_t current; // mA * 100
-    uint8_t capacity[3]; // mAh
-    uint8_t remaining; // percent
+    uint16_t voltage; // mV * 100                     // OpenTx -> "RxBt"
+    uint16_t current; // mA * 100                     // OpenTx -> "Curr"
+    uint8_t capacity[3]; // mAh                       // openTx -> "Capa"
+    uint8_t remaining; // percent                     // OpenTx -> "Bat%"
 }) tCrsfBattery;
 
 #define CRSF_BATTERY_LEN  8
@@ -301,9 +301,9 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    int16_t pitch; // rad * 1e4
-    int16_t roll; // rad * 1e4
-    int16_t yaw; // rad * 1e4
+    int16_t pitch; // rad * 1e4                       // OpenTx -> "Ptch"
+    int16_t roll; // rad * 1e4                        // OpenTx -> "Roll"
+    int16_t yaw; // rad * 1e4                         // OpenTx -> "Yaw"
 }) tCrsfAttitude;
 
 #define CRSF_ATTITUDE_LEN  6
@@ -312,7 +312,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    char flight_mode[16]; // null-terminated string
+    char flight_mode[16]; // null-terminated string   // OpenTx -> "FM"
 }) tCrsfFlightMode;
 
 #define CRSF_FLIGHTMODE_LEN  16
@@ -321,7 +321,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    uint16_t altitude; // units ??? message ???
+    uint16_t altitude; // units ??? message ???       // OpenTx -> "Alt"
 }) tCrsfBaroAltitude;
 
 #define CRSF_BARO_ALTITUDE_LEN  2
