@@ -12,6 +12,7 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "filters.h"
 
 static inline bool connected(void);
 
@@ -58,9 +59,13 @@ class MavlinkBase
     uint8_t radio_status_txbuf;
     bool radio_status_extra_time; // for PX4
 
+    uint32_t bytes_serial_in_cnt;
+    LPFilterRate bytes_serial_in_rate_filt;
+
     typedef enum {
         TXBUF_STATE_NORMAL = 0,
         TXBUF_STATE_BURST,
+        TXBUF_STATE_BURST_HIGH,
         TXBUF_STATE_PX4_RECOVER, // for PX4, buffer draining, resume bulk download
     } TXBUF_STATE_ENUM;
     uint8_t txbuf_state;
@@ -89,6 +94,8 @@ void MavlinkBase::Init(void)
     radio_status_extra_time = false;
 
     bytes_serial_in = 0;
+    bytes_serial_in_cnt = 0;
+    bytes_serial_in_rate_filt.Reset();
 
     inject_rc_channels = false;
     for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
@@ -145,6 +152,7 @@ void MavlinkBase::Do(void)
         }
     } else {
         radio_status_tlast_ms = tnow_ms;
+        bytes_serial_in_rate_filt.Reset();
     }
 
     // TODO: either the buffer must be guaranteed to be large, or we need to check filling
@@ -233,6 +241,7 @@ bool MavlinkBase::available(void)
 uint8_t MavlinkBase::getc(void)
 {
     bytes_serial_in++;
+    bytes_serial_in_cnt++;
 
     return serial.getc();
 }
@@ -257,6 +266,116 @@ void MavlinkBase::send_msg_serial_out(void)
 //-------------------------------------------------------
 // for the txbuf rate-based mechanism see design_decissions.h for details
 
+bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
+{
+    // work out state
+    bool inject_radio_status = false;
+    uint8_t txbuf_state_last = txbuf_state; // to track changes in txbuf_state
+
+    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+        //txbuf_state = TXBUF_STATE_NORMAL; // ??? or should we enter this case only if in normal?? does it matter ??
+        radio_status_tlast_ms = tnow_ms;
+        inject_radio_status = true;
+    } else
+    if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
+        switch (txbuf_state) {
+        case TXBUF_STATE_NORMAL:
+            if (serial.bytes_available() > 1024) { // ups, suddenly lots of traffic
+                txbuf_state = TXBUF_STATE_BURST;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+            }
+            break;
+        case TXBUF_STATE_BURST:
+            if (serial.bytes_available() > 1024) { // it hasn't depleted, so raise alarm high
+                txbuf_state = TXBUF_STATE_BURST_HIGH;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+            } else
+            if (serial.bytes_available() < 384) { // quite empty, so we can go back and try normal
+                txbuf_state = TXBUF_STATE_NORMAL;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+            }
+            break;
+        case TXBUF_STATE_BURST_HIGH:
+            if (serial.bytes_available() < 1024) { // it has depleted, we can go back and try burst
+                txbuf_state = TXBUF_STATE_BURST;
+            }
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+            break;
+        }
+    }
+
+    if (!inject_radio_status) return false;
+
+    // now calculate txbuf
+    uint8_t txbuf = 100;
+
+    // method C, with improvements
+    // assumes 1 sec delta time
+    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
+
+    // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
+    // aim at 75%..85% rate usage in steady state
+    if (rate_percentage > 95) {
+        txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
+    } else if (rate_percentage > 85) {
+        txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
+    } else if (rate_percentage < 60) {
+        txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
+    } else if (rate_percentage < 75) {
+        txbuf = 91;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
+    } else {
+        txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+    }
+
+    if (txbuf_state == TXBUF_STATE_BURST_HIGH) {
+        txbuf = 0; // try to slow down as much as possible
+    } else
+    if (txbuf_state == TXBUF_STATE_BURST) {
+        txbuf = 50; // cut out PARAMS but don't change stream rate
+    } else
+    if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf_state_last > TXBUF_STATE_NORMAL)) { // has changed back to NORMAL
+        txbuf = 51; // allow PARAMS but don't change stream rate
+    }
+    txbuf_state_last = txbuf_state;
+
+    // only for "educational" purposes currently
+    bytes_serial_in_rate_filt.Update(tnow_ms, bytes_serial_in_cnt, 1000);
+/*
+static uint32_t t_last = 0;
+uint32_t t = millis32(), dt = t - t_last; t_last = t;
+dbg.puts("\nMa: ");
+dbg.puts(u16toBCD_s(t));dbg.puts(" (");dbg.puts(u16toBCD_s(dt));dbg.puts("), ");
+//dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
+dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(" (");
+dbg.puts(u16toBCD_s(bytes_serial_in_rate_filt.Get()));dbg.puts("), ");
+dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
+dbg.puts(u8toBCD_s((rate_percentage<256)?rate_percentage:255));dbg.puts(", ");
+if(txbuf_state==2) dbg.puts("high, "); else
+if(txbuf_state==1) dbg.puts("brst, "); else dbg.puts("norm, ");
+dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
+if(txbuf<20) dbg.puts("+60 "); else
+if(txbuf<50) dbg.puts("+20 "); else
+if(txbuf>95) dbg.puts("-40 "); else
+if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
+*/
+    if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
+        radio_status_tlast_ms -= 666; // do again in 1/3 sec
+        bytes_serial_in = (bytes_serial_in * 2)/3; // approximate by 2/3 of what was received in the last 1 sec
+    } else {
+        bytes_serial_in = 0; // reset, to restart rate measurement
+    }
+
+    radio_status_txbuf = txbuf;
+    return true;
+}
+
+
+#if 0
 bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
 {
     // work out state
@@ -327,6 +446,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
     radio_status_txbuf = txbuf;
     return true;
 }
+#endif
 
 
 bool MavlinkBase::handle_txbuf_px4(uint32_t tnow_ms)
