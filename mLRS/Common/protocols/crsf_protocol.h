@@ -134,10 +134,10 @@ typedef enum {
 
 
 typedef enum {
-    CRSF_RFMODE_4HZ = 0,
-    CRSF_RFMODE_50HZ,
-    CRSF_RFMODE_150HZ,
-    CRSF_RFMODE_250HZ,
+    CRSF_RFMODE_4_HZ = 0,
+    CRSF_RFMODE_50_HZ,
+    CRSF_RFMODE_150_HZ,
+    CRSF_RFMODE_250_HZ,
 } CRSF_RFMODE_ENUM;
 
 

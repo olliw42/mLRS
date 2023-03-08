@@ -814,17 +814,17 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
-    clstats.uplink_rssi1 = crsf_cvt_rssi(stats.received_rssi);          // OpenTX -> "1RSS"
-    clstats.uplink_rssi2 = 0; // we don't know it                       // OpenTX -> "2RSS"
+    clstats.uplink_rssi1 = crsf_cvt_rssi(stats.received_rssi);              // OpenTX -> "1RSS"
+    clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
     clstats.uplink_LQ = stats.received_LQ; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
-    clstats.uplink_snr = 0; // we don't know it                         // OpenTx -> "RSNR"
-    clstats.active_antenna = stats.received_antenna;                    // OpenTx -> "ANT"
-    clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
+    clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
+    clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());       // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
 
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());       // OpenTx -> "TRSS"
-    clstats.downlink_LQ = txstats.GetLQ();                              // OpenTx -> "TQly"
-    clstats.downlink_snr = stats.GetLastRxSnr();                        // OpenTx -> "TSNR"
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());           // OpenTx -> "TRSS"
+    clstats.downlink_LQ = txstats.GetLQ();                                  // OpenTx -> "TQly"
+    clstats.downlink_snr = stats.GetLastRxSnr();                            // OpenTx -> "TSNR"
     crsf.SendLinkStatistics(&clstats);
 }
 
@@ -851,7 +851,7 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
     clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());             // OpenTx -> "TPWR"
+    clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
     crsf.SendLinkStatisticsRx(&clstats);
 }
 

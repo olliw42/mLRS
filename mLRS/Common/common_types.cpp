@@ -151,7 +151,7 @@ uint8_t crsf_cvt_mode(uint8_t mode)
 {
     if (mode == MODE_19HZ) return 19;
     if (mode == MODE_31HZ) return 31;
-    if (mode == MODE_50HZ) return CRSF_RFMODE_50HZ;
+    if (mode == MODE_50HZ) return CRSF_RFMODE_50_HZ;
     return UINT8_MAX;
 }
 
