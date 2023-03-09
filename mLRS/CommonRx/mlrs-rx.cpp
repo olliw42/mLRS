@@ -798,13 +798,13 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
-                if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+                if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
+                    connect_state = CONNECT_STATE_CONNECTED;
+                    connect_occured_once = true;
+                }
                 break;
-            default:
-                connect_state = CONNECT_STATE_CONNECTED;
             }
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-            connect_occured_once = true;
 
             link_state = LINK_STATE_TRANSMIT; // switch to TX
         }
