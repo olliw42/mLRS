@@ -356,7 +356,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         mbridge.Unlock();
 #endif
         break;
-  }
+    }
 }
 
 
@@ -861,6 +861,8 @@ IF_ANTENNA2(
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
+                    // this should not happen, since we started with GET_RX_SETUPDATA, right?
+                    if (!SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -873,6 +875,7 @@ IF_ANTENNA2(
         if (connected() && !connect_tmo_cnt) {
             // so disconnect
             connect_state = CONNECT_STATE_LISTEN;
+            link_task_reset(); // to ensure that the next set is enforced, good idea ?
             link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         }
 
