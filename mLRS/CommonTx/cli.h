@@ -22,12 +22,6 @@ extern TxStatsBase txstats;
 //-------------------------------------------------------
 
 typedef enum {
-    PARAM_INDEX_MODE = 1,
-    PARAM_INDEX_RF_BAND = 2,
-} PARAM_INDEX_ENUM;
-
-
-typedef enum {
     PARAM_FORMAT_DEFAULT = 0,
     PARAM_FORMAT_LONGSTR,
     PARAM_FORMAT_DISPLAY,

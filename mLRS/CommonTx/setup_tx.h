@@ -27,6 +27,13 @@
   SETUP_PARAMETER_LIST_RX
 
 
+typedef enum {
+    PARAM_INDEX_BIND_PHRASE = 0,
+    PARAM_INDEX_MODE = 1,
+    PARAM_INDEX_RF_BAND = 2,
+} PARAM_INDEX_ENUM;
+
+
 //-------------------------------------------------------
 // defines
 //-------------------------------------------------------
@@ -117,7 +124,7 @@ typedef union
 
 bool _setup_param_is_for_rx(uint8_t param_idx)
 {
-    if (param_idx >= 0 && param_idx <= 2) return true; // BindPhrase, Mode, RF Band
+    if (param_idx <= PARAM_INDEX_RF_BAND) return true; // BindPhrase, Mode, RF Band
     if (setup_param_is_rx(param_idx)) return true; // "Rx" name
     return false;
 }
