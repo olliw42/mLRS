@@ -298,8 +298,10 @@ void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm,
     voltage_mV = 1730;
     *actual_power_dbm = 27;
   } else if (power_dbm > 22) {
-    voltage_mV = 1390;
-    *actual_power_dbm = 23;
+    //voltage_mV = 1390;
+    //*actual_power_dbm = 23;
+    voltage_mV = 1475;
+    *actual_power_dbm = 24;
   } else if (power_dbm > 18) {
     voltage_mV = 1195; // was 1140
     *actual_power_dbm = 20;
@@ -335,10 +337,11 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_23_DBM, .mW = 200 },
+    { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };
+
 
 
 //-- TEST
