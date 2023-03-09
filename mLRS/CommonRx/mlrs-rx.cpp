@@ -839,7 +839,7 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
         if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
             frame_missed = true;
             // reset sync counter, relevant if in sync
-            connect_sync_cnt = 0;
+            // connect_sync_cnt = 0; // NO!! when in sync this means that we need to get five in a row, right!?!
             // switch to transmit state
             // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
             // we are on the correct frequency, so no need to hop

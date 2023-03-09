@@ -880,7 +880,7 @@ IF_ANTENNA2(
         // we are connected but didn't receive a valid frame
         if (connected() && !valid_frame_received) {
             // reset sync counter, relevant if in sync
-            connect_sync_cnt = 0;
+            //connect_sync_cnt = 0; //isn't needed, right? since when connected we can't be in sync
         }
 
         link_state = LINK_STATE_TRANSMIT;
