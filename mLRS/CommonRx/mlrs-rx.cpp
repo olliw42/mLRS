@@ -589,329 +589,329 @@ RESTARTCONTROLLER:
     //-- SysTask handling
 
     if (doSysTask) {
-      doSysTask = 0;
+        doSysTask = 0;
 
-      if (connect_tmo_cnt) {
-        connect_tmo_cnt--;
-      }
+        if (connect_tmo_cnt) {
+            connect_tmo_cnt--;
+        }
 
-      if (connected()) {
-        DECc(led_blink, SYSTICK_DELAY_MS(500));
-      } else {
-        DECc(led_blink, SYSTICK_DELAY_MS(200));
-      }
+        if (connected()) {
+            DECc(led_blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(led_blink, SYSTICK_DELAY_MS(200));
+        }
 
-      if (bind.IsInBind()) {
-        if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-      } else
-      if (connected()) {
-        if (!led_blink) LED_GREEN_TOGGLE;
-        LED_RED_OFF;
-      } else {
-        LED_GREEN_OFF;
-        if (!led_blink) LED_RED_TOGGLE;
-      }
+        if (bind.IsInBind()) {
+            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+        } else
+        if (connected()) {
+            if (!led_blink) LED_GREEN_TOGGLE;
+            LED_RED_OFF;
+        } else {
+            LED_GREEN_OFF;
+            if (!led_blink) LED_RED_TOGGLE;
+        }
 
-      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
+        DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-      if (!connect_occured_once) bind.AutoBind();
+        if (!connect_occured_once) bind.AutoBind();
 
-      if (!tick_1hz) {
-        dbg.puts(".");
-/*        dbg.puts("\nRX: ");
-        dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
-        dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
-        dbg.puts(" (");
-        dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
-        dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
-        dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-        dbg.puts("),");
-        dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
+        if (!tick_1hz) {
+            dbg.puts(".");
+/*            dbg.puts("\nRX: ");
+            dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
+            dbg.puts(" (");
+            dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+            dbg.puts("),");
+            dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
 
-        dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
-        dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-        dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
+            dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
+            dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
+            dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
 
-        dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-      }
+            dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+        }
     }
 
     //-- SX handling
 
     switch (link_state) {
     case LINK_STATE_RECEIVE: {
-      if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
-        fhss.HopToNext();
-      }
-      sx.SetRfFrequency(fhss.GetCurrFreq());
-      sx2.SetRfFrequency(fhss.GetCurrFreq());
-      IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
-      IF_ANTENNA2(sx2.SetToRx(0));
-      link_state = LINK_STATE_RECEIVE_WAIT;
-      link_rx1_status = RX_STATUS_NONE;
-      link_rx2_status = RX_STATUS_NONE;
-      irq_status = 0;
-      irq2_status = 0;
-      DBG_MAIN_SLIM(dbg.puts("\n>");)
-      }break;
+        if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
+            fhss.HopToNext();
+        }
+        sx.SetRfFrequency(fhss.GetCurrFreq());
+        sx2.SetRfFrequency(fhss.GetCurrFreq());
+        IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
+        IF_ANTENNA2(sx2.SetToRx(0));
+        link_state = LINK_STATE_RECEIVE_WAIT;
+        link_rx1_status = RX_STATUS_NONE;
+        link_rx2_status = RX_STATUS_NONE;
+        irq_status = 0;
+        irq2_status = 0;
+        DBG_MAIN_SLIM(dbg.puts("\n>");)
+        }break;
 
     case LINK_STATE_TRANSMIT: {
-      // TODO: transmit antenna diversity
-      do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
-      link_state = LINK_STATE_TRANSMIT_WAIT;
-      irq_status = 0; // important, in low connection condition, RxDone isr could trigger
-      irq2_status = 0;
-      }break;
+        // TODO: transmit antenna diversity
+        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        link_state = LINK_STATE_TRANSMIT_WAIT;
+        irq_status = 0; // important, in low connection condition, RxDone isr could trigger
+        irq2_status = 0;
+        }break;
     }//end of switch(link_state)
 
 IF_ANTENNA1(
     if (irq_status) {
-      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq_status & SX12xx_IRQ_TX_DONE) {
-          irq_status = 0;
-          link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(dbg.puts("<");)
+        if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+            if (irq_status & SX12xx_IRQ_TX_DONE) {
+                irq_status = 0;
+                link_state = LINK_STATE_RECEIVE;
+                DBG_MAIN_SLIM(dbg.puts("<");)
+            }
+        } else
+        if (link_state == LINK_STATE_RECEIVE_WAIT) {
+            if (irq_status & SX12xx_IRQ_RX_DONE) {
+                irq_status = 0;
+                bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
+                link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
+                if (link_rx1_status == RX_STATUS_VALID) sx.HandleAFC();
+                DBG_MAIN_SLIM(dbg.puts("!");)
+            }
         }
-      } else
-      if (link_state == LINK_STATE_RECEIVE_WAIT) {
-        if (irq_status & SX12xx_IRQ_RX_DONE) {
-          irq_status = 0;
-          bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
-          link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
-          if (link_rx1_status == RX_STATUS_VALID) sx.HandleAFC();
-          DBG_MAIN_SLIM(dbg.puts("!");)
-        }
-      }
 
-      if (irq_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
-        FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
-      }
-      if (irq_status & SX12xx_IRQ_TX_DONE) {
-        FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
-      }
-      if (irq_status & SX12xx_IRQ_TIMEOUT) {
-        FAILALWAYS(BLINK_COMMON, "IRQ TMO FAIL");
-      }
+        if (irq_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+            FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
+        }
+        if (irq_status & SX12xx_IRQ_TX_DONE) {
+            FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
+        }
+        if (irq_status & SX12xx_IRQ_TIMEOUT) {
+            FAILALWAYS(BLINK_COMMON, "IRQ TMO FAIL");
+        }
     }//end of if(irq_status)
 );
 IF_ANTENNA2(
     if (irq2_status) {
-      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq2_status & SX12xx_IRQ_TX_DONE) {
-          irq2_status = 0;
-          link_state = LINK_STATE_RECEIVE;
+        if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+            if (irq2_status & SX12xx_IRQ_TX_DONE) {
+                irq2_status = 0;
+                link_state = LINK_STATE_RECEIVE;
+            }
+        } else
+        if (link_state == LINK_STATE_RECEIVE_WAIT) {
+            if (irq2_status & SX12xx_IRQ_RX_DONE) {
+                irq2_status = 0;
+                bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
+                link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
+                if (link_rx2_status == RX_STATUS_VALID) sx2.HandleAFC();
+            }
         }
-      } else
-      if (link_state == LINK_STATE_RECEIVE_WAIT) {
-        if (irq2_status & SX12xx_IRQ_RX_DONE) {
-          irq2_status = 0;
-          bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
-          link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
-          if (link_rx2_status == RX_STATUS_VALID) sx2.HandleAFC();
-        }
-      }
 
-      if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
-        FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
-      }
-      if (irq2_status & SX12xx_IRQ_TX_DONE) {
-        FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
-      }
-      if (irq2_status & SX12xx_IRQ_TIMEOUT) {
-        FAILALWAYS(BLINK_ALTERNATE, "IRQ2 TMO FAIL");
-      }
+        if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+            FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
+        }
+        if (irq2_status & SX12xx_IRQ_TX_DONE) {
+            FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
+        }
+        if (irq2_status & SX12xx_IRQ_TIMEOUT) {
+            FAILALWAYS(BLINK_ALTERNATE, "IRQ2 TMO FAIL");
+        }
     }//end of if(irq2_status)
-)
+);
 
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
-      doPostReceive = false;
+        doPostReceive = false;
 
-      bool frame_received, valid_frame_received, invalid_frame_received;
-      frame_received = valid_frame_received = invalid_frame_received = false; // to make compiler happy
-      if (USE_ANTENNA1 && USE_ANTENNA2) {
-        frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
-        invalid_frame_received = frame_received && !valid_frame_received;
-      } else if (USE_ANTENNA1) {
-        frame_received = (link_rx1_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-        invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
-      } else if (USE_ANTENNA2) {
-        frame_received = (link_rx2_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
-        invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
-      }
+        bool frame_received, valid_frame_received, invalid_frame_received;
+        frame_received = valid_frame_received = invalid_frame_received = false; // to make compiler happy
+        if (USE_ANTENNA1 && USE_ANTENNA2) {
+            frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
+            invalid_frame_received = frame_received && !valid_frame_received;
+        } else if (USE_ANTENNA1) {
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
+        } else if (USE_ANTENNA2) {
+            frame_received = (link_rx2_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
+            invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
+        }
 
 /*dbg.puts("\n> 1: ");
 dbg.puts(s8toBCD_s(stats.last_rx_rssi1));
 dbg.puts(" 2: ");
 dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
 
-      if (frame_received) { // frame received
-        uint8_t antenna = ANTENNA_1;
+        if (frame_received) { // frame received
+            uint8_t antenna = ANTENNA_1;
 
-        if (USE_ANTENNA1 && USE_ANTENNA2) {
-          // work out which antenna we choose
-          //            |   NONE   |  INVALID  | CRC1_VALID | VALID
-          // --------------------------------------------------------
-          // NONE       |          |   1 or 2  |     1      |  1
-          // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
-          // CRC1_VALID |    2     |     2     |   1 or 2   |  1
-          // VALID      |    2     |     2     |     2      |  1 or 2
-          if (link_rx1_status == link_rx2_status) {
-            // we can choose either antenna, so select the one with the better rssi
-            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
-          } else
-          if (link_rx1_status == RX_STATUS_VALID) {
-            antenna = ANTENNA_1;
-          } else
-          if (link_rx2_status == RX_STATUS_VALID) {
-            antenna = ANTENNA_2;
-          } else
-          if (link_rx1_status == RX_STATUS_CRC1_VALID) {
-            antenna = ANTENNA_1;
-          } else
-          if (link_rx2_status == RX_STATUS_CRC1_VALID) {
-            antenna = ANTENNA_2;
-          } else {
-            // we can choose either antenna, so select the one with the better rssi
-            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
-          }
-        } else if (USE_ANTENNA2) {
-          antenna = ANTENNA_2;
-        }
+            if (USE_ANTENNA1 && USE_ANTENNA2) {
+                // work out which antenna we choose
+                //            |   NONE   |  INVALID  | CRC1_VALID | VALID
+                // --------------------------------------------------------
+                // NONE       |          |   1 or 2  |     1      |  1
+                // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
+                // CRC1_VALID |    2     |     2     |   1 or 2   |  1
+                // VALID      |    2     |     2     |     2      |  1 or 2
 
-        handle_receive(antenna);
+                if (link_rx1_status == link_rx2_status) {
+                    // we can choose either antenna, so select the one with the better rssi
+                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                } else
+                if (link_rx1_status == RX_STATUS_VALID) {
+                    antenna = ANTENNA_1;
+                } else
+                if (link_rx2_status == RX_STATUS_VALID) {
+                    antenna = ANTENNA_2;
+                } else
+                if (link_rx1_status == RX_STATUS_CRC1_VALID) {
+                    antenna = ANTENNA_1;
+                } else
+                if (link_rx2_status == RX_STATUS_CRC1_VALID) {
+                    antenna = ANTENNA_2;
+                } else {
+                    // we can choose either antenna, so select the one with the better rssi
+                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                }
+            } else if (USE_ANTENNA2) {
+                antenna = ANTENNA_2;
+            }
 
+            handle_receive(antenna);
 //dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
-      } else {
-        handle_receive_none();
-      }
-
-      if (valid_frame_received) { // valid frame received
-        switch (connect_state) {
-        case CONNECT_STATE_LISTEN:
-          connect_state = CONNECT_STATE_SYNC;
-          connect_sync_cnt = 0;
-          break;
-        case CONNECT_STATE_SYNC:
-          connect_sync_cnt++;
-          if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-          break;
-        default:
-          connect_state = CONNECT_STATE_CONNECTED;
+        } else {
+            handle_receive_none();
         }
-        connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-        connect_occured_once = true;
 
-        link_state = LINK_STATE_TRANSMIT; // switch to TX
-      }
+        if (valid_frame_received) { // valid frame received
+            switch (connect_state) {
+            case CONNECT_STATE_LISTEN:
+                connect_state = CONNECT_STATE_SYNC;
+                connect_sync_cnt = 0;
+                break;
+            case CONNECT_STATE_SYNC:
+                connect_sync_cnt++;
+                if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+                break;
+            default:
+                connect_state = CONNECT_STATE_CONNECTED;
+            }
+            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+            connect_occured_once = true;
 
-      // when in listen: we received something, but something wrong, so we need go back to RX
-      if ((connect_state == CONNECT_STATE_LISTEN) && invalid_frame_received) {
-        link_state = LINK_STATE_RECEIVE;
-      }
-
-      // when in listen, slowly loop through frequencies
-      if (connect_state == CONNECT_STATE_LISTEN) {
-        connect_listen_cnt++;
-        if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
-          fhss.HopToNext();
-          connect_listen_cnt = 0;
-          link_state = LINK_STATE_RECEIVE; // switch back to RX
+            link_state = LINK_STATE_TRANSMIT; // switch to TX
         }
-        if (fhss.HopToNextBind()) { link_state = LINK_STATE_RECEIVE; } // switch back to RX
-      }
 
-      // we just disconnected, or are in sync but don't receive anything
-      if ((connect_state >= CONNECT_STATE_SYNC) && !connect_tmo_cnt) {
-        // switch to listen state
-        // only do it if not in listen, since otherwise it never could reach receive wait and hence never could connect
-        connect_state = CONNECT_STATE_LISTEN;
-        connect_listen_cnt = 0;
-        link_state = LINK_STATE_RECEIVE; // switch back to RX
-      }
+        // when in listen: we received something, but something wrong, so we need go back to RX
+        if ((connect_state == CONNECT_STATE_LISTEN) && invalid_frame_received) {
+            link_state = LINK_STATE_RECEIVE;
+        }
 
-      // we didn't receive a valid frame
-      frame_missed = false;
-      if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
-        frame_missed = true;
-        // reset sync counter, relevant if in sync
-        connect_sync_cnt = 0;
-        // switch to transmit state
-        // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
-        // we are on the correct frequency, so no need to hop
-        link_state = LINK_STATE_TRANSMIT;
-      }
+        // when in listen, slowly loop through frequencies
+        if (connect_state == CONNECT_STATE_LISTEN) {
+            connect_listen_cnt++;
+            if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
+                fhss.HopToNext();
+                connect_listen_cnt = 0;
+                link_state = LINK_STATE_RECEIVE; // switch back to RX
+            }
+            if (fhss.HopToNextBind()) { link_state = LINK_STATE_RECEIVE; } // switch back to RX
+        }
+
+        // we just disconnected, or are in sync but don't receive anything
+        if ((connect_state >= CONNECT_STATE_SYNC) && !connect_tmo_cnt) {
+            // switch to listen state
+            // only do it if not in listen, since otherwise it never could reach receive wait and hence never could connect
+            connect_state = CONNECT_STATE_LISTEN;
+            connect_listen_cnt = 0;
+            link_state = LINK_STATE_RECEIVE; // switch back to RX
+        }
+
+        // we didn't receive a valid frame
+        frame_missed = false;
+        if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
+            frame_missed = true;
+            // reset sync counter, relevant if in sync
+            connect_sync_cnt = 0;
+            // switch to transmit state
+            // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
+            // we are on the correct frequency, so no need to hop
+            link_state = LINK_STATE_TRANSMIT;
+        }
 
 #ifdef DEVICE_HAS_SX127x
-      if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
+        if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
 #else
-      if (connect_state >= CONNECT_STATE_SYNC) {
+        if (connect_state >= CONNECT_STATE_SYNC) {
 #endif
-        sx.SetToIdle();
-        sx2.SetToIdle();
-      }
+            sx.SetToIdle();
+            sx2.SetToIdle();
+        }
 
-      if (!connected()) stats.Clear();
-      rxstats.Next();
+        if (!connected()) stats.Clear();
+        rxstats.Next();
 
-      DECc(tick_1hz_commensurate, Config.frame_rate_hz);
-      if (!tick_1hz_commensurate) {
-        rxstats.Update1Hz();
-      }
+        DECc(tick_1hz_commensurate, Config.frame_rate_hz);
+        if (!tick_1hz_commensurate) {
+            rxstats.Update1Hz();
+        }
 
-      if (connect_state == CONNECT_STATE_LISTEN) link_task_reset();
+        if (connect_state == CONNECT_STATE_LISTEN) link_task_reset();
 
-      if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
-        if (!valid_frame_received) buzzer.BeepLP();
-      }
+        if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
+            if (!valid_frame_received) buzzer.BeepLP();
+        }
 
-      bind.Do();
-      switch (bind.Task()) {
-      case BIND_TASK_CHANGED_TO_BIND:
-        bind.ConfigForBind();
-        CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
-        clock.Reset();
-        fhss.SetToBind(Config.frame_rate_ms);
-        LED_GREEN_ON;
-        LED_RED_OFF;
-        connect_state = CONNECT_STATE_LISTEN;
-        link_state = LINK_STATE_RECEIVE;
-        break;
-      case BIND_TASK_RX_STORE_PARAMS:
-        Setup.FrequencyBand = fhss.GetCurrFrequencyBand();
-        doParamsStore = true;
-        break;
-      }
+        bind.Do();
+        switch (bind.Task()) {
+        case BIND_TASK_CHANGED_TO_BIND:
+            bind.ConfigForBind();
+            CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
+            clock.Reset();
+            fhss.SetToBind(Config.frame_rate_ms);
+            LED_GREEN_ON;
+            LED_RED_OFF;
+            connect_state = CONNECT_STATE_LISTEN;
+            link_state = LINK_STATE_RECEIVE;
+            break;
+        case BIND_TASK_RX_STORE_PARAMS:
+            Setup.FrequencyBand = fhss.GetCurrFrequencyBand();
+            doParamsStore = true;
+            break;
+        }
 
-      doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
+        doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
     }//end of if(doPostReceive)
 
     //-- Update channels, Out handling, etc
 
     if (doPostReceive2_cnt) {
-      doPostReceive2_cnt--;
-      if (!doPostReceive2_cnt) doPostReceive2 = true;
+        doPostReceive2_cnt--;
+        if (!doPostReceive2_cnt) doPostReceive2 = true;
     }
     if (doPostReceive2) {
-      doPostReceive2 = false;
+        doPostReceive2 = false;
 
-      out.SetChannelOrder(Setup.Rx.ChannelOrder);
-      if (connected()) {
-        out.SendRcData(&rcData, frame_missed, false, stats.GetLastRxRssi());
-        out.SendLinkStatistics();
-        mavlink.SendRcData(out.GetRcDataPtr(), false);
-      } else {
-        if (connect_occured_once) {
-          // generally output a signal only if we had a connection at least once
-          out.SendRcData(&rcData, true, true, RSSI_MIN);
-          out.SendLinkStatisticsDisconnected();
-          mavlink.SendRcData(out.GetRcDataPtr(), true);
+        out.SetChannelOrder(Setup.Rx.ChannelOrder);
+        if (connected()) {
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRxRssi());
+            out.SendLinkStatistics();
+            mavlink.SendRcData(out.GetRcDataPtr(), false);
+        } else {
+            if (connect_occured_once) {
+                // generally output a signal only if we had a connection at least once
+                out.SendRcData(&rcData, true, true, RSSI_MIN);
+                out.SendLinkStatisticsDisconnected();
+                mavlink.SendRcData(out.GetRcDataPtr(), true);
+            }
         }
-      }
     }//end of if(doPostReceive2)
 
     out.Do(micros());
@@ -923,11 +923,11 @@ dbg.puts(s8toBCD_s(stats.last_rx_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
-      sx.SetToIdle();
-      sx2.SetToIdle();
-      LED_RED_ON; LED_GREEN_ON;
-      setup_store_to_EEPROM();
-      goto RESTARTCONTROLLER;
+        sx.SetToIdle();
+        sx2.SetToIdle();
+        LED_RED_ON; LED_GREEN_ON;
+        setup_store_to_EEPROM();
+        goto RESTARTCONTROLLER;
     }
 
   }//end of while(1) loop

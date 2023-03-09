@@ -639,69 +639,69 @@ RESTARTCONTROLLER:
     //-- SysTask handling
 
     if (doSysTask) {
-      // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
-      // the commands below must not be sensitive to strict ms timing
-      doSysTask--; // doSysTask = 0;
+        // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
+        // the commands below must not be sensitive to strict ms timing
+        doSysTask--; // doSysTask = 0;
 
-      if (connect_tmo_cnt) {
-        connect_tmo_cnt--;
-      }
-
-      if (connected()) {
-        DECc(led_blink, SYSTICK_DELAY_MS(500));
-      } else {
-        DECc(led_blink, SYSTICK_DELAY_MS(200));
-      }
-
-      if (bind.IsInBind()) {
-        if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-      } else
-      if (connected()) {
-        if (!led_blink) LED_GREEN_TOGGLE;
-        LED_RED_OFF;
-      } else {
-        LED_GREEN_OFF;
-        if (!led_blink) LED_RED_TOGGLE;
-      }
-
-      DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
-
-      if (!tick_1hz) {
-        if (Setup.Tx.Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-          buzzer.BeepLQ(stats.received_LQ);
+        if (connect_tmo_cnt) {
+            connect_tmo_cnt--;
         }
-      }
 
-      DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
+        if (connected()) {
+            DECc(led_blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(led_blink, SYSTICK_DELAY_MS(200));
+        }
 
-      if (!tx_tick) {
-        doPreTransmit = true; // trigger next cycle
-        crsf.TelemetryStart();
-      }
+        if (bind.IsInBind()) {
+            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+        } else
+        if (connected()) {
+            if (!led_blink) LED_GREEN_TOGGLE;
+            LED_RED_OFF;
+        } else {
+            LED_GREEN_OFF;
+            if (!led_blink) LED_RED_TOGGLE;
+        }
 
-      mbridge.TelemetryTick_ms();
-      crsf.TelemetryTick_ms();
-      link_task_tick_ms();
+        DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-      disp.Tick_ms();
+        if (!tick_1hz) {
+            if (Setup.Tx.Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+                buzzer.BeepLQ(stats.received_LQ);
+            }
+        }
 
-      if (!tick_1hz) {
-        dbg.puts(".");
-/*        dbg.puts("\nTX: ");
-        dbg.puts(u8toBCD_s(txstats.GetLQ()));
-        dbg.puts("(");
-        dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
-        dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-        dbg.puts("),");
-        dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
+        DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
 
-        dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
-        dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-        dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
+        if (!tx_tick) {
+            doPreTransmit = true; // trigger next cycle
+            crsf.TelemetryStart();
+        }
 
-        dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-        dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-      }
+        mbridge.TelemetryTick_ms();
+        crsf.TelemetryTick_ms();
+        link_task_tick_ms();
+
+        disp.Tick_ms();
+
+        if (!tick_1hz) {
+            dbg.puts(".");
+/*            dbg.puts("\nTX: ");
+            dbg.puts(u8toBCD_s(txstats.GetLQ()));
+            dbg.puts("(");
+            dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+            dbg.puts("),");
+            dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
+
+            dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
+            dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
+            dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
+
+            dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+        }
     }
 
     //-- SX handling
@@ -709,215 +709,215 @@ RESTARTCONTROLLER:
     switch (link_state) {
     case LINK_STATE_IDLE:
     case LINK_STATE_RECEIVE_DONE:
-      break;
+        break;
 
     case LINK_STATE_TRANSMIT:
-      fhss.HopToNext();
-      sx.SetRfFrequency(fhss.GetCurrFreq());
-      sx2.SetRfFrequency(fhss.GetCurrFreq());
-      do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
-      link_state = LINK_STATE_TRANSMIT_WAIT;
-      irq_status = 0;
-      irq2_status = 0;
-      DBG_MAIN_SLIM(dbg.puts("\n>");)
-      whileTransmit.Trigger();
-      break;
+        fhss.HopToNext();
+        sx.SetRfFrequency(fhss.GetCurrFreq());
+        sx2.SetRfFrequency(fhss.GetCurrFreq());
+        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        link_state = LINK_STATE_TRANSMIT_WAIT;
+        irq_status = 0;
+        irq2_status = 0;
+        DBG_MAIN_SLIM(dbg.puts("\n>");)
+        whileTransmit.Trigger();
+        break;
 
     case LINK_STATE_RECEIVE:
-      IF_ANTENNA1(sx.SetToRx(0));
-      IF_ANTENNA2(sx2.SetToRx(0));
-      link_state = LINK_STATE_RECEIVE_WAIT;
-      irq_status = 0;
-      irq2_status = 0;
-      break;
+        IF_ANTENNA1(sx.SetToRx(0));
+        IF_ANTENNA2(sx2.SetToRx(0));
+        link_state = LINK_STATE_RECEIVE_WAIT;
+        irq_status = 0;
+        irq2_status = 0;
+        break;
     }//end of switch(link_state)
 
 IF_ANTENNA1(
     if (irq_status) {
-      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq_status & SX12xx_IRQ_TX_DONE) {
-          irq_status = 0;
-          link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(dbg.puts("!");)
+        if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+            if (irq_status & SX12xx_IRQ_TX_DONE) {
+                irq_status = 0;
+                link_state = LINK_STATE_RECEIVE;
+                DBG_MAIN_SLIM(dbg.puts("!");)
+            }
+        } else
+        if (link_state == LINK_STATE_RECEIVE_WAIT) {
+            if (irq_status & SX12xx_IRQ_RX_DONE) {
+                irq_status = 0;
+                link_rx1_status = do_receive(ANTENNA_1);
+                DBG_MAIN_SLIM(dbg.puts("<");)
+            }
         }
-      } else
-      if (link_state == LINK_STATE_RECEIVE_WAIT) {
+
+        if (irq_status & SX12xx_IRQ_TIMEOUT) {
+            irq_status = 0;
+            link_state = LINK_STATE_IDLE;
+            link_rx1_status = RX_STATUS_NONE;
+            link_rx2_status = RX_STATUS_NONE;
+            DBG_MAIN_SLIM(dbg.puts("?");)
+        }
+
         if (irq_status & SX12xx_IRQ_RX_DONE) {
-          irq_status = 0;
-          link_rx1_status = do_receive(ANTENNA_1);
-          DBG_MAIN_SLIM(dbg.puts("<");)
+            FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
         }
-      }
-
-      if (irq_status & SX12xx_IRQ_TIMEOUT) {
-        irq_status = 0;
-        link_state = LINK_STATE_IDLE;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
-        DBG_MAIN_SLIM(dbg.puts("?");)
-      }
-
-      if (irq_status & SX12xx_IRQ_RX_DONE) {
-        FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
-      }
-      if (irq_status & SX12xx_IRQ_TX_DONE) {
-        FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
-      }
+        if (irq_status & SX12xx_IRQ_TX_DONE) {
+            FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
+        }
     }//end of if(irq_status)
 );
 IF_ANTENNA2(
     if (irq2_status) {
-      if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-        if (irq2_status & SX12xx_IRQ_TX_DONE) {
-          irq2_status = 0;
-          link_state = LINK_STATE_RECEIVE;
-          DBG_MAIN_SLIM(dbg.puts("!");)
+        if (link_state == LINK_STATE_TRANSMIT_WAIT) {
+            if (irq2_status & SX12xx_IRQ_TX_DONE) {
+                irq2_status = 0;
+                link_state = LINK_STATE_RECEIVE;
+                DBG_MAIN_SLIM(dbg.puts("!");)
+            }
+        } else
+        if (link_state == LINK_STATE_RECEIVE_WAIT) {
+            if (irq2_status & SX12xx_IRQ_RX_DONE) {
+                irq2_status = 0;
+                link_rx2_status = do_receive(ANTENNA_2);
+                DBG_MAIN_SLIM(dbg.puts("<");)
+            }
         }
-      } else
-      if (link_state == LINK_STATE_RECEIVE_WAIT) {
+
+        if (irq2_status & SX12xx_IRQ_TIMEOUT) { // ??????????????????
+            irq2_status = 0;
+            link_state = LINK_STATE_IDLE;
+            link_rx1_status = RX_STATUS_NONE;
+            link_rx2_status = RX_STATUS_NONE;
+        }
+
         if (irq2_status & SX12xx_IRQ_RX_DONE) {
-          irq2_status = 0;
-          link_rx2_status = do_receive(ANTENNA_2);
-          DBG_MAIN_SLIM(dbg.puts("<");)
+            FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
         }
-      }
-
-      if (irq2_status & SX12xx_IRQ_TIMEOUT) { // ??????????????????
-        irq2_status = 0;
-        link_state = LINK_STATE_IDLE;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
-      }
-
-      if (irq2_status & SX12xx_IRQ_RX_DONE) {
-        FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
-      }
-      if (irq2_status & SX12xx_IRQ_TX_DONE) {
-        FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
-      }
+        if (irq2_status & SX12xx_IRQ_TX_DONE) {
+            FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
+        }
     }//end of if(irq2_status)
 );
 
     // this happens before switching to transmit, i.e. after a frame was or should have been received
     if (doPreTransmit) {
-      doPreTransmit = false;
+        doPreTransmit = false;
 
-      bool frame_received = false;
-      bool valid_frame_received = false;
-      if (USE_ANTENNA1 && USE_ANTENNA2) {
-        frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
-      } else if (USE_ANTENNA1) {
-        frame_received = (link_rx1_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-      } else if (USE_ANTENNA2) {
-        frame_received = (link_rx2_status > RX_STATUS_NONE);
-        valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
-      }
-
-      if (frame_received) { // frame received
-        uint8_t antenna = ANTENNA_1;
-
+        bool frame_received = false;
+        bool valid_frame_received = false;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
-          // work out which antenna we choose
-          //            |   NONE   |  INVALID  | VALID
-          // --------------------------------------------------------
-          // NONE       |          |   1 or 2  |  1
-          // INVALID    |  1 or 2  |   1 or 2  |  1
-          // VALID      |    2     |     2     |  1 or 2
-
-          if (link_rx1_status == link_rx2_status) {
-            // we can choose either antenna, so select the one with the better rssi
-            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
-          } else
-          if (link_rx1_status == RX_STATUS_VALID) {
-            antenna = ANTENNA_1;
-          } else
-          if (link_rx2_status == RX_STATUS_VALID) {
-            antenna = ANTENNA_2;
-          } else {
-            // we can choose either antenna, so select the one with the better rssi
-            antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
-          }
+            frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
+        } else if (USE_ANTENNA1) {
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         } else if (USE_ANTENNA2) {
-          antenna = ANTENNA_2;
+            frame_received = (link_rx2_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         }
 
-        handle_receive(antenna);
-      } else {
-        handle_receive_none();
-      }
+        if (frame_received) { // frame received
+            uint8_t antenna = ANTENNA_1;
 
-      txstats.fhss_curr_i = fhss.CurrI();
-      txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
-      txstats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
+            if (USE_ANTENNA1 && USE_ANTENNA2) {
+                // work out which antenna we choose
+                //            |   NONE   |  INVALID  | VALID
+                // --------------------------------------------------------
+                // NONE       |          |   1 or 2  |  1
+                // INVALID    |  1 or 2  |   1 or 2  |  1
+                // VALID      |    2     |     2     |  1 or 2
 
-      if (valid_frame_received) { // valid frame received
-        switch (connect_state) {
-        case CONNECT_STATE_LISTEN:
-          connect_state = CONNECT_STATE_SYNC;
-          connect_sync_cnt = 0;
-          break;
-        case CONNECT_STATE_SYNC:
-          connect_sync_cnt++;
-          if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
-          break;
-        default:
-          connect_state = CONNECT_STATE_CONNECTED;
+                if (link_rx1_status == link_rx2_status) {
+                    // we can choose either antenna, so select the one with the better rssi
+                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                } else
+                if (link_rx1_status == RX_STATUS_VALID) {
+                    antenna = ANTENNA_1;
+                } else
+                if (link_rx2_status == RX_STATUS_VALID) {
+                    antenna = ANTENNA_2;
+                } else {
+                    // we can choose either antenna, so select the one with the better rssi
+                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                }
+            } else if (USE_ANTENNA2) {
+                antenna = ANTENNA_2;
+            }
+
+            handle_receive(antenna);
+        } else {
+            handle_receive_none();
         }
-        connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
-      }
 
-      if (connect_state == CONNECT_STATE_CONNECTED) connect_occured_once = true;
+        txstats.fhss_curr_i = fhss.CurrI();
+        txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
+        txstats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
-      // we are connected but tmo ran out
-      if (connected() && !connect_tmo_cnt) {
-        // so disconnect
-        connect_state = CONNECT_STATE_LISTEN;
-        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
-      }
+        if (valid_frame_received) { // valid frame received
+            switch (connect_state) {
+            case CONNECT_STATE_LISTEN:
+                connect_state = CONNECT_STATE_SYNC;
+                connect_sync_cnt = 0;
+                break;
+            case CONNECT_STATE_SYNC:
+                connect_sync_cnt++;
+                if (connect_sync_cnt >= CONNECT_SYNC_CNT) connect_state = CONNECT_STATE_CONNECTED;
+                break;
+            default:
+                connect_state = CONNECT_STATE_CONNECTED;
+            }
+            connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
+        }
 
-      // we are connected but didn't receive a valid frame
-      if (connected() && !valid_frame_received) {
-        // reset sync counter, relevant if in sync
-        connect_sync_cnt = 0;
-      }
+        if (connect_state == CONNECT_STATE_CONNECTED) connect_occured_once = true;
 
-      link_state = LINK_STATE_TRANSMIT;
-      link_rx1_status = RX_STATUS_NONE;
-      link_rx2_status = RX_STATUS_NONE;
+        // we are connected but tmo ran out
+        if (connected() && !connect_tmo_cnt) {
+            // so disconnect
+            connect_state = CONNECT_STATE_LISTEN;
+            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        }
 
-      DECc(tick_1hz_commensurate, Config.frame_rate_hz);
-      if (!tick_1hz_commensurate) {
-        txstats.Update1Hz();
-      }
+        // we are connected but didn't receive a valid frame
+        if (connected() && !valid_frame_received) {
+            // reset sync counter, relevant if in sync
+            connect_sync_cnt = 0;
+        }
 
-      if (!connected()) stats.Clear();
-      txstats.Next();
+        link_state = LINK_STATE_TRANSMIT;
+        link_rx1_status = RX_STATUS_NONE;
+        link_rx2_status = RX_STATUS_NONE;
 
-      if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
-        if (!valid_frame_received) buzzer.BeepLP();
-      }
+        DECc(tick_1hz_commensurate, Config.frame_rate_hz);
+        if (!tick_1hz_commensurate) {
+            txstats.Update1Hz();
+        }
 
-      // store parameters
-      if (doParamsStore) {
-        sx.SetToIdle();
-        sx2.SetToIdle();
-        setup_store_to_EEPROM();
-        goto RESTARTCONTROLLER;
-      }
+        if (!connected()) stats.Clear();
+        txstats.Next();
 
-      bind.Do();
-      switch (bind.Task()) {
-      case BIND_TASK_CHANGED_TO_BIND:
-        bind.ConfigForBind();
-        fhss.SetToBind();
-        LED_GREEN_ON;
-        LED_RED_OFF;
-        connect_state = CONNECT_STATE_LISTEN;
-        break;
-      case BIND_TASK_TX_RESTART_CONTROLLER: goto RESTARTCONTROLLER; break;
-      }
+        if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
+            if (!valid_frame_received) buzzer.BeepLP();
+        }
+
+        // store parameters
+        if (doParamsStore) {
+            sx.SetToIdle();
+            sx2.SetToIdle();
+            setup_store_to_EEPROM();
+            goto RESTARTCONTROLLER;
+        }
+
+        bind.Do();
+        switch (bind.Task()) {
+        case BIND_TASK_CHANGED_TO_BIND:
+            bind.ConfigForBind();
+            fhss.SetToBind();
+            LED_GREEN_ON;
+            LED_RED_OFF;
+            connect_state = CONNECT_STATE_LISTEN;
+            break;
+        case BIND_TASK_TX_RESTART_CONTROLLER: goto RESTARTCONTROLLER; break;
+        }
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
     }//end of if(doPreTransmit)
@@ -929,116 +929,116 @@ IF_ANTENNA2(
 IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
-      // update channels
-      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-      }
-      // when we receive channels packet from transmitter, we send link stats to transmitter
-      mbridge.TelemetryStart();
+        // update channels
+        if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
+            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+            channelOrder.Apply(&rcData);
+        }
+        // when we receive channels packet from transmitter, we send link stats to transmitter
+        mbridge.TelemetryStart();
     }
     // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
     uint8_t mbtask; uint8_t mbcmd;
     if (mbridge.TelemetryUpdate(&mbtask)) {
-      switch (mbtask) {
-      case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
-      case TXBRIDGE_SEND_CMD:
-        if (mbridge.CommandInFifo(&mbcmd)) mbridge_send_cmd(mbcmd);
-        break;
-      }
+        switch (mbtask) {
+        case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
+        case TXBRIDGE_SEND_CMD:
+            if (mbridge.CommandInFifo(&mbcmd)) mbridge_send_cmd(mbcmd);
+            break;
+        }
     }
 );
 IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
     // handle an incoming command
     uint8_t mbcmd;
     if (mbridge.CommandReceived(&mbcmd)) {
-      switch (mbcmd) {
-      case MBRIDGE_CMD_REQUEST_INFO:
-        setup_reload();
-        if (connected()) {
-          link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-          mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mbridge
-        } else {
-          mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
-        }
-        break;
-      case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge.HandleCmd(MBRIDGE_CMD_PARAM_REQUEST_LIST); break;
-      case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
-      case MBRIDGE_CMD_PARAM_SET: {
-        bool rx_param_changed;
-        bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-        if (param_changed && rx_param_changed && connected()) {
-          link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-          mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
-        }
-        }break;
-      case MBRIDGE_CMD_PARAM_STORE:
-        if (connected()) {
-          link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-          mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mbridge
-        } else {
-          doParamsStore = true;
-        }
-        break;
-      case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
-      case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
-      case MBRIDGE_CMD_MODELID_SET: {
-//        uint8_t* payload = mbridge.GetPayloadPtr();
+        switch (mbcmd) {
+        case MBRIDGE_CMD_REQUEST_INFO:
+            setup_reload();
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mbridge
+            } else {
+                mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
+            }
+            break;
+        case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge.HandleCmd(MBRIDGE_CMD_PARAM_REQUEST_LIST); break;
+        case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
+        case MBRIDGE_CMD_PARAM_SET: {
+            bool rx_param_changed;
+            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+            if (param_changed && rx_param_changed && connected()) {
+                link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
+                mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mbridge
+            }
+            }break;
+        case MBRIDGE_CMD_PARAM_STORE:
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+                mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mbridge
+            } else {
+                doParamsStore = true;
+            }
+            break;
+        case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
+        case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
+        case MBRIDGE_CMD_MODELID_SET: {
+//            uint8_t* payload = mbridge.GetPayloadPtr();
 //dbg.puts("\nmbridge model id"); dbg.puts(u8toBCD_s(*payload));
-        }break;
-      }
+            }break;
+        }
     }
 );
 IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
-      // update channels
-      if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
-        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-      }
+        // update channels
+        if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
+            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+            channelOrder.Apply(&rcData);
+        }
     }
     uint8_t crsftask; uint8_t crsfcmd;
     uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's to fast lua script gets out of sync
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
-      switch (crsftask) {
-      case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); do_cnt = 2; break;
-      case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
-      case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
-      case TXCRSF_SEND_TELEMETRY_FRAME:
-        if (do_cnt && mbridge.CommandInFifo(&mbcmd)) {
-          mbridge_send_cmd(mbcmd);
+        switch (crsftask) {
+        case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); do_cnt = 2; break;
+        case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
+        case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
+        case TXCRSF_SEND_TELEMETRY_FRAME:
+            if (do_cnt && mbridge.CommandInFifo(&mbcmd)) {
+                mbridge_send_cmd(mbcmd);
+            }
+            if (mbridge.CrsfFrameAvailable(&buf, &len)) {
+                crsf.SendMBridgeFrame(buf, len);
+            } else
+            if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+                crsf.SendTelemetryFrame();
+            }
+            DECl(do_cnt);
+            break;
         }
-        if (mbridge.CrsfFrameAvailable(&buf, &len)) {
-          crsf.SendMBridgeFrame(buf, len);
-        } else
-        if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
-          crsf.SendTelemetryFrame();
-        }
-        DECl(do_cnt);
-        break;
-      }
     }
     if (crsf.CommandReceived(&crsfcmd)) {
-      switch (crsfcmd) {
-      case TXCRSF_CMD_MODELID_SET:
+        switch (crsfcmd) {
+        case TXCRSF_CMD_MODELID_SET:
 dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
-        break;
-      case TXCRSF_CMD_MBRIDGE_IN:
+            break;
+        case TXCRSF_CMD_MBRIDGE_IN:
 dbg.puts("\ncrsf mbridge ");
-        mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
-        break;
-      }
+            mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
+            break;
+        }
     }
 );
 #endif
 #ifdef USE_IN
     if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
-      // update channels
-      if (in.Update(&rcData)) {
-        channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-      }
+        // update channels
+        if (in.Update(&rcData)) {
+            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+            channelOrder.Apply(&rcData);
+        }
     }
 #endif
 
@@ -1056,27 +1056,27 @@ dbg.puts("\ncrsf mbridge ");
 
     switch (cli_task) {
     case CLI_TASK_RX_PARAM_SET:
-      if (connected()) {
-        link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-        mbridge.Lock(); // lock mbridge
-      }
-      break;
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+            mbridge.Lock(); // lock mbridge
+        }
+        break;
     case CLI_TASK_PARAM_STORE:
-      if (connected()) {
-        link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-        mbridge.Lock(); // lock mbridge
-      } else {
-        doParamsStore = true;
-      }
-      break;
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+            mbridge.Lock(); // lock mbridge
+        } else {
+            doParamsStore = true;
+        }
+        break;
     case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
     case CLI_TASK_PARAM_RELOAD:
-      setup_reload();
-      if (connected()) {
-        link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-        mbridge.Lock(); // lock mbridge
-      }
-      break;
+        setup_reload();
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+            mbridge.Lock(); // lock mbridge
+        }
+        break;
     }
 
   }//end of while(1) loop
