@@ -277,35 +277,35 @@ bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
         radio_status_tlast_ms = tnow_ms;
         inject_radio_status = true;
     } else
-    if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
-        switch (txbuf_state) {
+    switch (txbuf_state) {
         case TXBUF_STATE_NORMAL:
-            if (serial.bytes_available() > 1024) { // ups, suddenly lots of traffic
+            if (serial.bytes_available() > 800) { // oops, suddenly lots of traffic
                 txbuf_state = TXBUF_STATE_BURST;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_BURST:
-            if (serial.bytes_available() > 1024) { // it hasn't depleted, so raise alarm high
+            if (serial.bytes_available() > 1400) { // Still growing, so raise alarm high
                 txbuf_state = TXBUF_STATE_BURST_HIGH;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             } else
-            if (serial.bytes_available() < 384) { // quite empty, so we can go back and try normal
+            if (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*2) { // less than 2 radio messages remain, go back and try normal
                 txbuf_state = TXBUF_STATE_NORMAL;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_BURST_HIGH:
-            if (serial.bytes_available() < 1024) { // it has depleted, we can go back and try burst
+	    if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
+                if (serial.bytes_available() < 1400) { // it has depleted some, we can go back and try burst
                 txbuf_state = TXBUF_STATE_BURST;
-            }
-            radio_status_tlast_ms = tnow_ms;
-            inject_radio_status = true;
+		}
+		radio_status_tlast_ms = tnow_ms;
+		inject_radio_status = true;
+	    }
             break;
-        }
     }
 
     if (!inject_radio_status) return false;
