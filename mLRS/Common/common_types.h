@@ -141,7 +141,11 @@ uint8_t crsf_cvt_fps(uint8_t mode);
 uint8_t crsf_cvt_rssi(int8_t rssi_i8);
 
 
-//-- bind phrase & version
+//-- bind phrase & power & version
+
+const char bindphrase_chars[] = "abcdefghijklmnopqrstuvwxyz0123456789_#-.";
+
+#define BINDPHRASE_CHARS_LEN  (sizeof(bindphrase_chars) - 1)  // -1 since it's a null-terminated string
 
 bool is_valid_bindphrase_char(char c);
 void sanitize_bindphrase(char* bindphrase);

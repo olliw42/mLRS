@@ -31,7 +31,7 @@ class tTxDisp
 #include "../Common/thirdparty/gfxfont.h"
 #include "../Common/thirdparty/gfxfontFreeMono12pt7b.h"
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
-#include "../CommonTx/gdisp.h"
+#include "../Common/libs/gdisp.h"
 
 
 extern tGDisplay gdisp;
@@ -131,6 +131,7 @@ class tTxDisp
     uint8_t idx_max;            // index of last param in list
     uint8_t idx_focused;        // index of highlighted param
     bool idx_focused_in_edit;   // if param is in edit
+    uint8_t idx_focused_pos;    // pos in str6 (bind phrase) parameter
     uint8_t idx_focused_task_pending;
 
     tParamList common_list;
@@ -141,7 +142,7 @@ class tTxDisp
     tParamList* current_list(void);
 
     void page_init(void);
-    void edit_setting(void);
+    bool edit_setting(void);
     void run_action(void);
 };
 
@@ -198,6 +199,7 @@ void tTxDisp::Init(void)
     idx_focused = 0;
     idx_max = 0;
     idx_focused_in_edit = false;
+    idx_focused_pos = 0;
     idx_focused_task_pending = CLI_TASK_NONE;
 }
 
@@ -307,6 +309,7 @@ uint16_t keys, i, keys_new;
         idx_first = 0;
         idx_focused = 0;
         idx_focused_in_edit = false;
+        idx_focused_pos = 0;
         keys_has_been_pressed &= ((1 << KEY_RIGHT) | (1 << KEY_LEFT)); // only allow these
     }
 
@@ -354,9 +357,9 @@ if(!idx_focused_in_edit){
     } else
     if (key_has_been_pressed(KEY_CENTER)) {
         if (page >= PAGE_COMMON && page <= PAGE_RX) {
-            tParamList* list = current_list();
-            if (list && list->allowed_num[idx_focused] > 1) {
+            if (current_list()->allowed_num[idx_focused] > 1) { // param is editable
                 idx_focused_in_edit = true;
+                idx_focused_pos = 0;
                 page_modified = true;
             }
         } else
@@ -367,6 +370,7 @@ if(!idx_focused_in_edit){
 
 }else{
     // edit parameter
+/*
     if (key_has_been_pressed(KEY_CENTER)) {
         idx_focused_in_edit = false;
         page_modified = true;
@@ -374,6 +378,12 @@ if(!idx_focused_in_edit){
         idx_focused_task_pending = CLI_TASK_NONE;
     } else {
         edit_setting();
+    } */
+    if (edit_setting()) { // edit, and finish if true
+        idx_focused_in_edit = false;
+        page_modified = true;
+        if (idx_focused_task_pending != CLI_TASK_NONE) task_pending = idx_focused_task_pending;
+        idx_focused_task_pending = CLI_TASK_NONE;
     }
 
 }
@@ -384,6 +394,7 @@ void tTxDisp::page_init(void)
 {
     idx_first = 0;
     idx_focused = 0;
+    idx_focused_pos = 0;
 
     idx_max = 0;
     switch (page) {
@@ -522,17 +533,33 @@ char s[32];
         gdisp_unsetinverted();
 
         gdisp_setcurX(gdisp.width-1 - 7*6);
-        if (idx == idx_focused && idx_focused_in_edit) gdisp_setinverted();
         strcpy(s, "ups ?");
-        if (list->allowed_num[idx] == 0) { // unavailable
-            strcpy(s, "-");
-        } else {
+
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
             param_get_val_formattedstr(s, param_idx, PARAM_FORMAT_DISPLAY);
-            // fake some settings
-            if (!strncmp(s,"antenna",7)) { s[3] = s[7]; s[4] = '\0'; }
+            // inverted makes it very hard to see, so we draw a box
+            /* for (uint8_t i = 0; i < 6; i++) {
+                if ((idx == idx_focused) && idx_focused_in_edit && (i == idx_focused_pos)) gdisp_setinverted();
+                gdisp_putc(s[i]);
+                gdisp_unsetinverted();
+            } */
+            uint8_t x = gdisp.curX - 2;
+            gdisp_puts(s);
+            if ((idx == idx_focused) && idx_focused_in_edit) {
+                gdisp_drawrect_WH(x + idx_focused_pos*6, gdisp.curY - 9,  11, 13, 1);
+            }
+        } else {
+            if (idx == idx_focused && idx_focused_in_edit) gdisp_setinverted();
+            if (list->allowed_num[idx] == 0) { // unavailable
+                strcpy(s, "-");
+            } else {
+                param_get_val_formattedstr(s, param_idx, PARAM_FORMAT_DISPLAY);
+                // fake some settings
+                if (!strncmp(s,"antenna",7)) { s[3] = s[7]; s[4] = '\0'; }
+            }
+            s[7] = '\0'; // ensure it's not more than 7 chars
+            gdisp_puts(s);
         }
-        s[7] = '\0'; // ensure it's not more than 7 chars
-        gdisp_puts(s);
         gdisp_unsetinverted();
     }
 }
@@ -567,8 +594,23 @@ void tTxDisp::draw_page_notify(const char* s)
 void tTxDisp::draw_page_main_sub0(void)
 {
 char s[32];
+int8_t power;
 
     draw_header("Main");
+
+    gdisp_setcurXY(50, 6);
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    gdisp_puts(s);
+    gdisp_setcurX(85);
+    power = sx.RfPower_dbm();
+    if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+    gdisp_setcurX(100);
+    if (connected() && SetupMetaData.rx_available) {
+        power = SetupMetaData.rx_actual_power_dbm;
+        if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+    }
+    gdisp_setcurX(115);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Rssi");
@@ -583,8 +625,7 @@ char s[32];
     gdisp_unsetfont();
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 3 * 10 + 20 - 4);
     gdisp_puts("LQ");
@@ -601,8 +642,7 @@ char s[32];
     gdisp_unsetfont();
 
     gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
+    gdisp_puts("%");
 }
 
 
@@ -619,8 +659,8 @@ char s[32];
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
     stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
-    strcat(s, " dB");
     gdisp_puts(s);
+    gdisp_puts(" dB");
 
     gdisp_setcurXY(0, 1 * 10 + 20);
     gdisp_puts("Power");
@@ -632,8 +672,7 @@ char s[32];
     if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 2 * 10 + 20);
     gdisp_puts("Div.");
@@ -663,8 +702,7 @@ char s[32];
     if (connected()) gdisp_puts(s);
 
     gdisp_setcurX(115);
-    strcpy(s, "dB");
-    gdisp_puts(s);
+    gdisp_puts("dB");
 
     gdisp_setcurXY(0, 4 * 10 + 20);
     gdisp_puts("LQ");
@@ -678,8 +716,7 @@ char s[32];
     }
 
     gdisp_setcurX(115+6);
-    strcpy(s, "%");
-    gdisp_puts(s);
+    gdisp_puts("%");
 }
 
 
@@ -779,13 +816,23 @@ void tTxDisp::draw_page_actions(void)
 // Edit Parameter
 //-------------------------------------------------------
 
-void tTxDisp::edit_setting(void)
+bool tTxDisp::edit_setting(void)
 {
-    if (!keys_has_been_pressed) return; // no key pressed
+    if (!keys_has_been_pressed) return false; // no key pressed, don't do anything
 
-    tParamValue vv;
     tParamList* list = current_list();
     uint8_t param_idx = list->list[idx_focused];
+
+    if (key_has_been_pressed(KEY_CENTER)) {
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
+            idx_focused_pos++;
+            page_modified = true;
+            return (idx_focused_pos >= 6);
+        }
+        return true; // we are done with editing
+    }
+
+    tParamValue vv;
     bool rx_param_changed = false;
 
     if (key_has_been_pressed(KEY_RIGHT)) {
@@ -810,6 +857,16 @@ void tTxDisp::edit_setting(void)
                 rx_param_changed = setup_set_param(param_idx, vv);
                 page_modified = true;
             }
+        } else
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
+            char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
+            const char* vptr = strchr(bindphrase_chars, c);
+            if (!vptr) while(1){} // must not happen
+            vptr++;
+            if (vptr >= bindphrase_chars + BINDPHRASE_CHARS_LEN) vptr = bindphrase_chars;
+            ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
+            rx_param_changed = true;
+            page_modified = true;
         }
 
     } else
@@ -835,11 +892,22 @@ void tTxDisp::edit_setting(void)
                 rx_param_changed = setup_set_param(param_idx, vv);
                 page_modified = true;
             }
+        } else
+        if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
+            char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
+            const char* vptr = strchr(bindphrase_chars, c);
+            if (!vptr) while(1){} // must not happen
+            vptr--;
+            if (vptr < bindphrase_chars) vptr = bindphrase_chars + BINDPHRASE_CHARS_LEN - 1;
+            ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
+            rx_param_changed = true;
+            page_modified = true;
         }
 
     }
 
     if (rx_param_changed) idx_focused_task_pending = CLI_TASK_RX_PARAM_SET;
+    return false; // keep on editing
 }
 
 

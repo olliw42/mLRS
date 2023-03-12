@@ -21,7 +21,7 @@
 #include "jr_pin5_interface.h"
 
 
-uint16_t micros(void);
+uint32_t millis_32(void);
 extern TxStatsBase txstats;
 
 
@@ -88,24 +88,30 @@ class tTxCrsf : public tPin5BridgeBase
 
     tCrsfFlightMode flightmode; // collected from HEARTBEAT
     bool flightmode_updated;
+    uint32_t flightmode_send_tlast_ms;
 
     tCrsfBattery battery; // collected from BATTERY_STATUS
     bool battery_updated;
+    uint32_t battery_send_tlast_ms;
 
     tCrsfAttitude attitude; // collected from ATTITUDE
     bool attitude_updated;
+    uint32_t attitude_send_tlast_ms;
 
     uint8_t gps_raw_int_sat;
     uint8_t gps2_raw_sat;
     float vfr_hud_groundspd_mps;
     tCrsfGps gps; // collected from several MAVLink messages: GPS_RAW_INT, GPS2_RAW, VFR_HUD, GLOBAL_POSITION_INT
     bool gps_updated;
+    uint32_t gps_send_tlast_ms;
 
     tCrsfVario vario; // collected from VFR_HUD
     bool vario_updated;
+    uint32_t vario_send_tlast_ms;
 
     tCrsfBaroAltitude baro_altitude; // not yet populated from a mavlink message
     bool baro_altitude_updated;
+    uint32_t baro_send_tlast_ms;
 
     // mavlink handlers
 
@@ -259,14 +265,20 @@ void tTxCrsf::Init(bool enable_flag)
     cmd_received = false;
 
     flightmode_updated = false;
+    flightmode_send_tlast_ms = 0;
     battery_updated = false;
+    battery_send_tlast_ms = 0;
     attitude_updated = false;
+    attitude_send_tlast_ms = 0;
     gps_raw_int_sat = UINT8_MAX; // unknown
     gps2_raw_sat = UINT8_MAX; // unknown
     vfr_hud_groundspd_mps = NAN; // unknown
     gps_updated = false;
+    gps_send_tlast_ms = 0;
     vario_updated = false;
+    vario_send_tlast_ms = 0;
     baro_altitude_updated = false;
+    baro_send_tlast_ms = 0;
 
     vehicle_sysid = 0;
     passthrough.Init();
@@ -708,33 +720,50 @@ void tTxCrsf::SendTelemetryFrame(void)
 {
     // native crsf
 
+    uint32_t tnow_ms = millis32();
+
+    #define CRSF_REFRESH_TIME_MS  2500 // what is actually a proper value ??
+
+    if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
+    if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
+    if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
+    if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
+    if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
+    if (baro_send_tlast_ms && (tnow_ms - baro_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
+
     if (flightmode_updated) {
-      flightmode_updated = false;
+        flightmode_updated = false;
+        flightmode_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
         return; // only send one per slot
     }
     if (battery_updated) {
         battery_updated = false;
+        battery_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
         return; // only send one per slot
     }
     if (gps_updated) {
         gps_updated = false;
+        gps_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
         return; // only send one per slot
     }
     if (vario_updated) {
         vario_updated = false;
+        vario_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
         return; // only send one per slot
     }
     if (attitude_updated) {
         attitude_updated = false;
+        attitude_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
         return; // only send one per slot
     }
     if (baro_altitude_updated) {
         baro_altitude_updated = false;
+        baro_send_tlast_ms = tnow_ms;
         SendFrame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
         return; // only send one per slot
     }
@@ -785,37 +814,17 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
-    clstats.uplink_rssi1 = crsf_cvt_rssi(stats.received_rssi);          // OpenTX -> "1RSS"
-    clstats.uplink_rssi2 = 0; // we don't know it                       // OpenTX -> "2RSS"
+    clstats.uplink_rssi1 = crsf_cvt_rssi(stats.received_rssi);              // OpenTX -> "1RSS"
+    clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
     clstats.uplink_LQ = stats.received_LQ; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
-    clstats.uplink_snr = 0; // we don't know it                         // OpenTx -> "RSNR"
-    clstats.active_antenna = stats.received_antenna;                    // OpenTx -> "ANT"
-    clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
+    clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
+    clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());       // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
 
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());       // OpenTx -> "TRSS"
-    clstats.downlink_LQ = txstats.GetLQ();                              // OpenTx -> "TQly"
-    clstats.downlink_snr = stats.GetLastRxSnr();                        // OpenTx -> "TSNR"
-/*
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);      // OpenTX -> "1RSS"
-        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);      // OpenTX -> "2RSS"
-    } else if (USE_ANTENNA2) {
-        clstats.uplink_rssi1 = 255;
-        clstats.uplink_rssi2 = crsf_cvt_rssi(stats.last_rx_rssi2);
-    } else {
-        clstats.uplink_rssi1 = crsf_cvt_rssi(stats.last_rx_rssi1);
-        clstats.uplink_rssi2 = 255;
-    }
-    clstats.uplink_LQ = txstats.GetLQ(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
-    clstats.uplink_snr = stats.GetLastRxSnr();                          // OpenTx -> "RSNR"
-    clstats.active_antenna = stats.last_rx_antenna;                     // OpenTx -> "ANT"
-    clstats.mode = crsf_cvt_mode(Config.Mode);                          // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "TPw2"
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);         // OpenTx -> "TRSS"
-    clstats.downlink_LQ = stats.received_LQ;                            // OpenTx -> "TQly"
-    clstats.downlink_snr = 0;                                           // OpenTx -> "TSNR"
-*/
+    clstats.downlink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());           // OpenTx -> "TRSS"
+    clstats.downlink_LQ = txstats.GetLQ();                                  // OpenTx -> "TQly"
+    clstats.downlink_snr = stats.GetLastRxSnr();                            // OpenTx -> "TSNR"
     crsf.SendLinkStatistics(&clstats);
 }
 
@@ -830,14 +839,6 @@ tCrsfLinkStatisticsTx clstats;
     clstats.uplink_snr = stats.GetLastRxSnr();                                    // ignored by OpenTx
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
     clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
-/*
-    clstats.uplink_rssi = crsf_cvt_rssi(stats.GetLastRxRssi());                   // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRxRssi());   // OpenTx -> "TRSP"
-    clstats.uplink_LQ = txstats.GetLQ();                                          // ignored by OpenTx
-    clstats.uplink_snr = stats.GetLastRxSnr();                                    // ignored by OpenTx
-    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it // crsf_cvt_power(sx.RfPower_dbm());   // OpenTx -> "RPWR"
-    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
-*/
     crsf.SendLinkStatisticsTx(&clstats);
 }
 
@@ -850,14 +851,7 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
     clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());             // OpenTx -> "TPWR"
-/*
-    clstats.downlink_rssi = crsf_cvt_rssi(stats.received_rssi);                   // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
-    clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
-    clstats.downlink_snr = 0;                                                     // ignored by OpenTx
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());             // OpenTx -> "TPWR"
-*/
+    clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
     crsf.SendLinkStatisticsRx(&clstats);
 }
 

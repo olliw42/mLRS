@@ -115,9 +115,9 @@
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
-#define CONNECT_TMO_MS                  750 // was 500, make longer to better handle 19 Hz mode
+#define CONNECT_TMO_MS                  1250 // time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
 
-#define CONNECT_SYNC_CNT                5
+#define CONNECT_SYNC_CNT                5 // number of packets to connect
 
 #define LQ_AVERAGING_MS                 1000
 

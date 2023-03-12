@@ -12,7 +12,7 @@
 
 
 #include "setup_types.h"
-#include "hal\hal.h"
+#include "hal/hal.h"
 
 
 tSetupMetaData SetupMetaData;

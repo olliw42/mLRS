@@ -13,7 +13,7 @@
 
 #if (defined DEVICE_HAS_JRPIN5)
 
-#include "../Common/fifo.h"
+#include "../Common/libs/fifo.h"
 #include "setup_tx.h"
 #include "jr_pin5_interface.h"
 #include "../Common/protocols/mbridge_protocol.h"

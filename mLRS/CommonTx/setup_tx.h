@@ -22,9 +22,16 @@
 
 
 #define SETUP_PARAMETER_LIST \
-  SETUP_PARAMETER_LIST_COMMON \
-  SETUP_PARAMETER_LIST_TX \
-  SETUP_PARAMETER_LIST_RX
+    SETUP_PARAMETER_LIST_COMMON \
+    SETUP_PARAMETER_LIST_TX \
+    SETUP_PARAMETER_LIST_RX
+
+
+typedef enum {
+    PARAM_INDEX_BIND_PHRASE = 0,
+    PARAM_INDEX_MODE = 1,
+    PARAM_INDEX_RF_BAND = 2,
+} PARAM_INDEX_ENUM;
 
 
 //-------------------------------------------------------
@@ -77,7 +84,17 @@ typedef struct {
 
 
 const tSetupParameterItem SetupParameter[] = {
-    #define X(p,t, n,mn, d,mi,ma,u, s, amp) {.ptr=(t*)&(p), .type=SETUP_PARAM_TYPE_##t, .name=n, .m_name=mn, .unit=u, .dflt={.t##_value=d}, .min={.t##_value=mi}, .max={.t##_value=ma}, .optstr = s, .allowed_mask_ptr = amp },
+    #define X(p,t, n,mn, d,mi,ma,u, s, amp) { \
+                .ptr = (t*)&(p), \
+                .type = SETUP_PARAM_TYPE_##t, \
+                .name = n, \
+                .m_name = mn, \
+                .unit = u, \
+                .dflt = {.t##_value=d}, \
+                .min = {.t##_value=mi}, \
+                .max = {.t##_value=ma}, \
+                .optstr = s, \
+                .allowed_mask_ptr = amp },
     SETUP_PARAMETER_LIST
     #undef X
 };
@@ -117,7 +134,7 @@ typedef union
 
 bool _setup_param_is_for_rx(uint8_t param_idx)
 {
-    if (param_idx >= 0 && param_idx <= 2) return true; // BindPhrase, Mode, RF Band
+    if (param_idx <= PARAM_INDEX_RF_BAND) return true; // BindPhrase, Mode, RF Band
     if (setup_param_is_rx(param_idx)) return true; // "Rx" name
     return false;
 }
@@ -158,9 +175,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
     }
 
     // if a RX parameter has changed, tell it to main
-    if (param_changed) {
-        if (_setup_param_is_for_rx(param_idx)) return true;
-    }
+    if (param_changed && _setup_param_is_for_rx(param_idx)) return true;
 
     return false;
 }
@@ -182,9 +197,7 @@ bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
     }
 
     // if a RX parameter has changed, tell it to main
-    if (param_changed) {
-        if (_setup_param_is_for_rx(param_idx)) return true;
-    }
+    if (param_changed && _setup_param_is_for_rx(param_idx)) return true;
 
     return false;
 }
