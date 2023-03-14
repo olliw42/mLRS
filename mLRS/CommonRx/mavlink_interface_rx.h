@@ -45,7 +45,7 @@ class MavlinkBase
     void generate_radio_link_flow_control(void);
 
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
-    bool handle_txbuf_px4(uint32_t tnow_ms); // for PX4, aka "brad"
+    bool handle_txbuf_method_b(uint32_t tnow_ms); // for PX4, aka "brad"
 
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
@@ -145,7 +145,7 @@ void MavlinkBase::Do(void)
             inject_radio_status = handle_txbuf_ardupilot(tnow_ms);
             break;
         case RX_SEND_RADIO_STATUS_METHOD_PX4:
-            inject_radio_status = handle_txbuf_px4(tnow_ms);
+            inject_radio_status = handle_txbuf_method_b(tnow_ms);
             break;
         }
     } else {
@@ -447,7 +447,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
 #endif
 
 // This method should be selected for PX4 and currently may be a useful alternative for Ardupilot
-bool MavlinkBase::handle_txbuf_px4(uint32_t tnow_ms)
+bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
 {
     // work out state
     bool inject_radio_status = false;
