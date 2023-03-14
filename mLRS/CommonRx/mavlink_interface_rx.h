@@ -45,7 +45,7 @@ class MavlinkBase
     void generate_radio_link_flow_control(void);
 
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
-    bool handle_txbuf_px4(uint32_t tnow_ms); // for PX4, aka "brad"
+    bool handle_txbuf_method_b(uint32_t tnow_ms); // for PX4, aka "brad"
 
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
@@ -57,7 +57,6 @@ class MavlinkBase
     uint32_t radio_status_tlast_ms;
     uint32_t bytes_serial_in;
     uint8_t radio_status_txbuf;
-    bool radio_status_extra_time; // for PX4
 
     uint32_t bytes_serial_in_cnt;
     LPFilterRate bytes_serial_in_rate_filt;
@@ -91,7 +90,6 @@ void MavlinkBase::Init(void)
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;
     txbuf_state = TXBUF_STATE_NORMAL;
-    radio_status_extra_time = false;
 
     bytes_serial_in = 0;
     bytes_serial_in_cnt = 0;
@@ -147,7 +145,7 @@ void MavlinkBase::Do(void)
             inject_radio_status = handle_txbuf_ardupilot(tnow_ms);
             break;
         case RX_SEND_RADIO_STATUS_METHOD_PX4:
-            inject_radio_status = handle_txbuf_px4(tnow_ms);
+            inject_radio_status = handle_txbuf_method_b(tnow_ms);
             break;
         }
     } else {
@@ -448,83 +446,95 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
 }
 #endif
 
-
-bool MavlinkBase::handle_txbuf_px4(uint32_t tnow_ms)
+// This method should be selected for PX4 and currently may be a useful alternative for Ardupilot
+bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
 {
     // work out state
     bool inject_radio_status = false;
 
-    // Implement two modes of operation:  Normal and burst (parameter download, etc).
-    // Normal mode sends status once per second.
-    // Burst mode sends as needed as buffer fills/drains.
-    // Switch to burst mode when periodic txbuf reports don't prevent buffer growth.
-    // Switch to normal mode when buffer does not reach half full for more than 2 seconds.
     if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-        if (txbuf_state != TXBUF_STATE_NORMAL) {
-            if (radio_status_extra_time) {
-                // We have been stuck in BURST or RECOVER for 2 seconds
-                // Give up and revert to NORMAL mode
-                txbuf_state = TXBUF_STATE_NORMAL;
-                radio_status_extra_time = false;
+        radio_status_tlast_ms = tnow_ms;
+        inject_radio_status = true;
+    } else
+    switch (txbuf_state) {
+        case TXBUF_STATE_NORMAL:
+            if (serial.bytes_available() > 800) { // oops, buffer filling
+                txbuf_state = TXBUF_STATE_BURST;
+                radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
-            } else if ((txbuf_state == TXBUF_STATE_BURST) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
-                // We have been above BURST threshold for 1 second.
-                // Should not happen unless normal stream rate is too high.
-                txbuf_state = TXBUF_STATE_NORMAL;
-                radio_status_extra_time = false;
-                inject_radio_status = true;
-                // This is the only case where BURST and RECOVERING won't balance so we need to slow down normal stream rates.
-                // This helps us avoid buffer overflow after startup and when the GCS changes stream rates.
-                // We will likely send txbuf = 0 twice immediately.
-            } else {
-                // wait an additional second to see if we reach RECOVER or BURST again
-                radio_status_extra_time = true;
-                bytes_serial_in = 0;
-                inject_radio_status = false;
             }
-        } else {
-            inject_radio_status = true;
-        }
-        radio_status_tlast_ms = tnow_ms;
-    } else if ((txbuf_state != TXBUF_STATE_BURST) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
-        txbuf_state = TXBUF_STATE_BURST;
-        radio_status_extra_time = false;
-        radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = true;
-    } else if ((txbuf_state == TXBUF_STATE_BURST) && (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*2)) {
-        txbuf_state = TXBUF_STATE_PX4_RECOVER;
-        radio_status_extra_time = false;
-        radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = true;
-    } // else we don't inject_radio_status
+            break;
+        case TXBUF_STATE_BURST:
+            if (serial.bytes_available() > 1400) { // Still growing, so raise alarm high
+                txbuf_state = TXBUF_STATE_BURST_HIGH;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+            } else
+            if (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*2) { // less than 2 radio messages remain, back to normal
+                txbuf_state = TXBUF_STATE_PX4_RECOVER;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
+            }
+            break;
+        case TXBUF_STATE_BURST_HIGH:
+            if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
+                if (serial.bytes_available() < 1400) { // it has stopped growing, we can go back and try burst
+                    txbuf_state = TXBUF_STATE_BURST;
+                }
+		radio_status_tlast_ms = tnow_ms;
+		inject_radio_status = true;
+            }
+            break;
+        case TXBUF_STATE_PX4_RECOVER: // Transient state so we don't need txbuf_state_last
+            txbuf_state = TXBUF_STATE_NORMAL;
+            break;
+    }
 
     if (!inject_radio_status) return false;
 
     // now calculate txbuf
     uint8_t txbuf = 100;
 
+    // method C, with improvements
     // assumes 1 sec delta time
     uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
     uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
 
+    // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
     // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.cpp#L1436-L1463
     // https://github.com/PX4/PX4-Autopilot/blob/fe80e7aa468a50bec6b035d0e8e4e37e516c84ff/src/modules/mavlink/mavlink_main.h#L690
     // PX4 is less bursty for normal streams, we might be able to sustain higher rates of 80%..90%
-    if (rate_percentage > 98) {
-        txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
-    } else if (rate_percentage > 90) {
-        txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
-    } else if (rate_percentage < 70) {
-        txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
-    } else if (rate_percentage < 80) {
-        txbuf = 92;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
-    } else {
-        txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+    switch (txbuf_state) {
+        case TXBUF_STATE_NORMAL:
+            if (rate_percentage > 95) {
+                txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
+            } else if (rate_percentage > 85) {
+                txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
+            } else if (rate_percentage < 60) {
+                txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
+            } else if (rate_percentage < 75) {
+                txbuf = 91;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
+            } else {
+                txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
+            }
+            break;
+
+        case TXBUF_STATE_BURST:
+            txbuf = 33; // just enough to stop parameter flow
+            break;
+
+        case TXBUF_STATE_BURST_HIGH:
+            txbuf = 0; // slow down as much as possible
+            break;
+
+        case TXBUF_STATE_PX4_RECOVER:
+            txbuf = 93; // restart data flow
+            break;
     }
 
-    if (txbuf_state == TXBUF_STATE_BURST) txbuf = 33; // just enough to stop parameter flow
-    if (txbuf_state == TXBUF_STATE_PX4_RECOVER) txbuf = 93; // restart data flow
-/*
+    // only for "educational" purposes currently
+    bytes_serial_in_rate_filt.Update(tnow_ms, bytes_serial_in_cnt, 1000);
+#if 0 // Debug
 static uint32_t t_last = 0;
 uint32_t t = millis32(), dt = t - t_last; t_last = t;
 dbg.puts("\nMp: ");
@@ -534,14 +544,20 @@ dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
 dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
 dbg.puts(u8toBCD_s((rate_percentage<256)?rate_percentage:255));dbg.puts(", ");
 if(txbuf_state==1) dbg.puts("brst, "); else
-if(txbuf_state==2) dbg.puts("recv, "); else dbg.puts("norm, ");
-if(radio_status_extra_time) dbg.puts("extra, "); else dbg.puts("     , ");
+if(txbuf_state==2) dbg.puts("high, "); else
+if(txbuf_state==3) dbg.puts("recv, "); else dbg.puts("norm, ");
 dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
 if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
-if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*0 ");
-*/
-    bytes_serial_in = 0; // reset, to restart rate measurement
+if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
+#endif
+    // Increase rate faster after transient traffic since PX4 currently has no fast recovery.  Could also try 100ms
+    if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
+        radio_status_tlast_ms -= 800; // do again in 200ms
+        bytes_serial_in = (bytes_serial_in * 4)/5; // Rolling average
+    } else {
+        bytes_serial_in = 0; // reset, to restart rate measurement
+    }
 
     radio_status_txbuf = txbuf;
     return true;
