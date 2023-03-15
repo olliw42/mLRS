@@ -29,7 +29,7 @@ class Stats
     StatsLQ valid_frames_received; // received frames which also passed crc check
 
     StatsLQ serial_data_transmitted; // frames with serial data transmitted, retransmissions are not counted
-    StatsLQ serial_data_received; // frames with serial data transmitted, retransmissions are not counted
+    StatsLQ serial_data_received; // frames with serial data received, retransmissions are not counted
 
     StatsBytes bytes_transmitted; // retransmissions are not counted
     StatsBytes bytes_received; // retransmissions are not counted
