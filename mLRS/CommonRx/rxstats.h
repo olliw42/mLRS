@@ -102,7 +102,7 @@ uint8_t RxStatsBase::GetLQ(void)
 uint8_t RxStatsBase::GetLQ_serial_data(void)
 {
     if (!connected()) return 0;
-    uint8_t LQser = stats.fresh_serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
+    uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;
 }

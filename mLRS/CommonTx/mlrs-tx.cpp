@@ -403,20 +403,20 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
             }
 
             stats.bytes_transmitted.Add(payload_len);
-            stats.fresh_serial_data_transmitted.Inc();
+            stats.serial_data_transmitted.Inc();
         } else {
             sx_serial.flush();
         }
     }
 
-    stats.last_tx_antenna = antenna;
+    stats.last_transmit_antenna = antenna;
 
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
     frame_stats.ack = ack;
-    frame_stats.antenna = stats.last_rx_antenna;
+    frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
-    frame_stats.rssi = stats.GetLastRxRssi();
+    frame_stats.rssi = stats.GetLastRssi();
     frame_stats.LQ = txstats.GetLQ();
     frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
 
@@ -452,7 +452,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
-    stats.fresh_serial_data_received.Inc();
+    stats.serial_data_received.Inc();
 }
 
 
@@ -483,16 +483,16 @@ tRxFrame* frame;
 
         txstats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
 
-        stats.received_seq_no_last = frame->status.seq_no;
-        stats.received_ack_last = frame->status.ack;
+        stats.received_seq_no = frame->status.seq_no;
+        stats.received_ack = frame->status.ack;
 
     } else { // RX_STATUS_INVALID
-        stats.received_seq_no_last = UINT8_MAX;
-        stats.received_ack_last = 0;
+        stats.received_seq_no = UINT8_MAX;
+        stats.received_ack = 0;
     }
 
     // we set it for all received frames
-    stats.last_rx_antenna = antenna;
+    stats.last_antenna = antenna;
 
     // we count all received frames
     txstats.doFrameReceived();
@@ -501,8 +501,8 @@ tRxFrame* frame;
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    stats.received_seq_no_last = UINT8_MAX;
-    stats.received_ack_last = 0;
+    stats.received_seq_no = UINT8_MAX;
+    stats.received_ack = 0;
 }
 
 
@@ -695,9 +695,9 @@ RESTARTCONTROLLER:
             dbg.puts("),");
             dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
 
-            dbg.puts(s8toBCD_s(stats.last_rx_rssi1)); dbg.putc(',');
+            dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
             dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-            dbg.puts(s8toBCD_s(stats.last_rx_snr1)); dbg.puts("; ");
+            dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
             dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
@@ -828,7 +828,7 @@ IF_ANTENNA2(
 
                 if (link_rx1_status == link_rx2_status) {
                     // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
                 } else
                 if (link_rx1_status == RX_STATUS_VALID) {
                     antenna = ANTENNA_1;
@@ -837,7 +837,7 @@ IF_ANTENNA2(
                     antenna = ANTENNA_2;
                 } else {
                     // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rx_rssi1 > stats.last_rx_rssi2) ? ANTENNA_1 : ANTENNA_2;
+                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
                 }
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;

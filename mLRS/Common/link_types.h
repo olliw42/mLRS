@@ -43,11 +43,11 @@ typedef enum {
 
 typedef enum {
     RX_STATUS_NONE = 0, // no frame received
-    RX_STATUS_INVALID,
+    RX_STATUS_INVALID, // frame received, but crc (and crc1) invalid
 #ifdef DEVICE_IS_RECEIVER
-    RX_STATUS_CRC1_VALID,
+    RX_STATUS_CRC1_VALID, // frame received, crc1 valid, but crc invalid
 #endif
-    RX_STATUS_VALID,
+    RX_STATUS_VALID, // frame received and crc (and crc1) valid
 } RX_STATUS_ENUM;
 
 

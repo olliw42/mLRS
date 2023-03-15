@@ -617,7 +617,7 @@ int8_t power;
 
     gdisp_setcurXY(5, 1 * 10 + 20 + 5);
     gdisp_setfont(&FreeMono9pt7b);
-    s8toBCDstr(stats.GetLastRxRssi(), s);
+    s8toBCDstr(stats.GetLastRssi(), s);
     gdisp_puts(s);
     gdisp_setcurX(60);
     s8toBCDstr(stats.received_rssi, s);
@@ -695,7 +695,7 @@ char s[32];
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("Rssi");
     gdisp_setcurX(40);
-    s8toBCDstr(stats.GetLastRxRssi(), s);
+    s8toBCDstr(stats.GetLastRssi(), s);
     gdisp_puts(s);
     gdisp_setcurX(80);
     s8toBCDstr(stats.received_rssi, s);

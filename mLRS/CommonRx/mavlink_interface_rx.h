@@ -580,12 +580,12 @@ void MavlinkBase::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
-    rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
+    rssi = rssi_i8_to_ap(stats.GetLastRssi());
     remrssi = rssi_i8_to_ap(stats.received_rssi);
 
     // we don't have a reasonable noise measurement, but can use this field to report on the snr
     // the snr can be positive and negative however, so we artificially set snr = 10 to zero
-    int16_t snr = -stats.GetLastRxSnr() + 10;
+    int16_t snr = -stats.GetLastSnr() + 10;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
     txbuf = radio_status_txbuf;
@@ -649,13 +649,13 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
     flags = 0; // rssi are in MAVLink units
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        rx_rssi1 = rssi_i8_to_ap(stats.last_rx_rssi1);
-        rx_rssi2 = rssi_i8_to_ap(stats.last_rx_rssi2);
+        rx_rssi1 = rssi_i8_to_ap(stats.last_rssi1);
+        rx_rssi2 = rssi_i8_to_ap(stats.last_rssi2);
     } else if (USE_ANTENNA2) {
         rx_rssi1 = UINT8_MAX;
-        rx_rssi2 = rssi_i8_to_ap(stats.last_rx_rssi2);
+        rx_rssi2 = rssi_i8_to_ap(stats.last_rssi2);
     } else {
-        rx_rssi1 = rssi_i8_to_ap(stats.last_rx_rssi1);
+        rx_rssi1 = rssi_i8_to_ap(stats.last_rssi1);
         rx_rssi2 = UINT8_MAX;
     }
 
@@ -670,11 +670,11 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
         // rx stats
         rxstats.GetLQ(), // uint8_t rx_LQ
         rx_rssi1, // uint8_t rx_rssi1
-        stats.last_rx_snr1, // int8_t rx_snr1
+        stats.last_snr1, // int8_t rx_snr1
         rx_rssi2, // uint8_t rx_rssi2
-        stats.last_rx_snr2, // int8_t rx_snr2
-        stats.last_rx_antenna, // uint8_t rx_receive_antenna
-        stats.last_tx_antenna, // uint8_t rx_transmit_antenna
+        stats.last_snr2, // int8_t rx_snr2
+        stats.last_antenna, // uint8_t rx_receive_antenna
+        stats.last_transmit_antenna, // uint8_t rx_transmit_antenna
 
         // tx stats
         stats.received_LQ, // uint8_t tx_LQ

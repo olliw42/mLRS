@@ -195,9 +195,9 @@ void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
 void sxGetPacketStatus(uint8_t antenna, Stats* stats)
 {
     if (antenna == ANTENNA_1) {
-        sx.GetPacketStatus(&(stats->last_rx_rssi1), &(stats->last_rx_snr1));
+        sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));
     } else {
-        sx2.GetPacketStatus(&(stats->last_rx_rssi2), &(stats->last_rx_snr2));
+        sx2.GetPacketStatus(&(stats->last_rssi2), &(stats->last_snr2));
     }
 }
 
