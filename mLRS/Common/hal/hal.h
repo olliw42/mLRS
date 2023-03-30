@@ -99,6 +99,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
+//-- EByte MBL Evaluation Kits
+
+#ifdef RX_E77_MBLKIT_WLE5CC
+#include "rx-hal-E77-MBLKit-wle5cc.h"
+#endif
+
+
 //-- DIY Boards, 2.4 GHz Devices
 
 #ifdef RX_DIY_BOARD01_F103CB
