@@ -211,6 +211,7 @@ void sx2_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
+
 #ifdef UART_USE_UART2
   #define OUT_UARTx               USART2
 #elif defined UART_USE_LPUART1
@@ -218,7 +219,6 @@ void sx2_dio_exti_isr_clearflag(void)
 #elif defined UART_USE_UART1_REMAPPED
   #define OUT_UARTx               USART1
 #endif
-
 
 void out_init_gpio(void)
 {
@@ -256,8 +256,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PB4
-#define LED_RED                   IO_PB3
+#define LED_GREEN                 IO_PB3
+#define LED_RED                   IO_PB4
 
 void leds_init(void)
 {
