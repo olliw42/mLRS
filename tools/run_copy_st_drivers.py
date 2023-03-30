@@ -114,7 +114,7 @@ wlxx_hal_files_to_include = [
   'stm32wlxx_hal_rcc_ex.c',
   'stm32wlxx_hal_flash.c',
   'stm32wlxx_hal_flash_ex.c',
-  'stm32wlxx_hal_dma.c',
+#  'stm32wlxx_hal_dma.c',
   'stm32wlxx_hal_i2c.c',
   'stm32wlxx_hal_i2c_ex.c',
 ]
