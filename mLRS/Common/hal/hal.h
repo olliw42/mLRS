@@ -105,6 +105,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "rx-hal-E77-MBLKit-wle5cc.h"
 #endif
 
+#ifdef TX_E77_MBLKIT_WLE5CC
+#include "tx-hal-E77-MBLKit-wle5cc.h"
+#endif
+
 
 //-- DIY Boards, 2.4 GHz Devices
 

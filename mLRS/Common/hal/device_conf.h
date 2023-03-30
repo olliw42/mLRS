@@ -100,6 +100,16 @@
   //#define FREQUENCY_BAND_70_CM_HAM
 #endif
 
+#ifdef TX_E77_MBLKIT_WLE5CC
+  #define DEVICE_NAME "E77 MBL Kit WLE5CC"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_433_MHZ
+  //#define FREQUENCY_BAND_70_CM_HAM
+#endif
+
 
 //-- DIY Boards, 2.4 GHz Devices
 
