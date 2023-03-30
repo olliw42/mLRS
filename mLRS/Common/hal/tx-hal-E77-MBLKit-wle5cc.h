@@ -17,8 +17,8 @@
 // USB <-> TxD,RxD pins   -> PA2,PA3 = LPUART1,UART2
 
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
-//#define DEVICE_HAS_JRPIN5 // TODO, requires external diode from Tx to Rx, also lack of uarts! requires JRPIN or SERIAL?
-#define DEVICE_HAS_IN
+#define DEVICE_HAS_JRPIN5 // requires external diode from Tx to Rx
+//#define DEVICE_HAS_IN
 #define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 
@@ -39,7 +39,7 @@
 // UARTB = serial port
 // UARTC = COM (CLI)
 // UARTD = -- //serial2 BT/ESP port
-// UART  = -- //JR bay pin5
+// UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
 // UARTF = --
 // SWUART= debug port
@@ -59,6 +59,16 @@
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+
+#define UART_USE_UART1_REMAPPED // JR pin5, MBridge // PB6,PB7
+#define UART_BAUD                 400000
+#define UART_USE_TX
+#define UART_TXBUFSIZE            512
+#define UART_USE_TX_ISR
+#define UART_USE_RX
+#define UART_RXBUFSIZE            512
+
+#define JRPIN5_RX_TX_INVERT_INTERNAL
 
 #define UARTE_USE_UART1_REMAPPED // in port // PB7
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
