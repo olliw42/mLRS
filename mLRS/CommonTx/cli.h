@@ -552,13 +552,16 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
+    delay_ms(10);
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
+    delay_ms(10);
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
+    delay_ms(10);
 
     putsn("  ptser       -> enter serial passthrough");
 #ifdef USE_ESP_WIFI_BRIDGE
