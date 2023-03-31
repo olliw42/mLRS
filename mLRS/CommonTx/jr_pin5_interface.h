@@ -193,6 +193,7 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
   if (enable_flag) {
       uart_rx_enableisr(DISABLE);
+      UART_UARTx->CR1 &= ~USART_CR1_RE; // turn off receiver
 
 #if defined JRPIN5_TX_OE
       JRPIN5_TX_OE_ENABLED;
@@ -209,6 +210,7 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
       LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_RX);
 #endif
 
+      UART_UARTx->CR1 |= USART_CR1_RE; // turn on receiver
       uart_rx_enableisr(ENABLE);
   }
 }
