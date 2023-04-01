@@ -568,6 +568,8 @@ void tTxCli::print_help(void)
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
+
+    putsn("  systemboot  -> call system bootloader");
 }
 
 
@@ -688,6 +690,11 @@ bool rx_param_changed;
             state = CLI_STATE_STATS;
             putsn("  starts streaming stats");
             putsn("  send any character to stop");
+
+        //-- System Bootloader
+        } else
+        if (strcmp(buf, "systemboot") == 0) {
+            BootLoaderInit();
 
         //-- ESP handling
         } else

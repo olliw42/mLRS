@@ -32,6 +32,7 @@ v0.0.00:
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
+#include "../Common/libs/stdstm32-mcu.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -123,6 +124,7 @@ void init(void)
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
 
+    systembootloader_init();
     leds_init();
     button_init();
     pos_switch_init();
@@ -130,6 +132,8 @@ void init(void)
 
     delay_init();
     micros_init();
+
+    systembootloader_do(); // after delay_init() since it may need delay
 
     serial.Init();
     serial2.Init();
