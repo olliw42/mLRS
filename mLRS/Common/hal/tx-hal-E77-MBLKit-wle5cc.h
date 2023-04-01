@@ -21,6 +21,7 @@
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_SYSTEMBOOT
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -263,6 +264,7 @@ void button_init(void)
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
+
 bool button_pressed(void)
 {
     return gpio_read_activelow(BUTTON);
@@ -289,6 +291,32 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
+//-- SystemBootLoader
+
+#define BOOT_BUTTON               IO_PA1
+
+extern "C" { void delay_ms(uint16_t ms); }
+
+void systembootloader_init(void)
+{
+    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+void systembootloader_do(void)
+{
+    // on this board, the button has a capacitor, so we need to wait for the cap to charge up
+    // 1 ms is found to not be enough, 2 ms is, but play it safe
+    delay_ms(10);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
+    }
+    if (cnt > 12) {
+        BootLoaderInit();
+    }
+}
+
+
 //-- Serial or Com Switch
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
@@ -297,12 +325,12 @@ bool e77mblkit_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-  uint8_t cnt = 0;
-  for (uint8_t i = 0; i < 16; i++) {
-    if (gpio_read_activelow(BUTTON)) cnt++;
-  }
-  e77mblkit_ser_or_com_serial = !(cnt > 8);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BUTTON)) cnt++;
+    }
+    e77mblkit_ser_or_com_serial = !(cnt > 8);
 }
 
 bool ser_or_com_serial(void)

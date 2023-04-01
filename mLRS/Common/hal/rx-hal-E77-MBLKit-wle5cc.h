@@ -19,6 +19,7 @@
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_SYSTEMBOOT
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -276,6 +277,32 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- Buzzer
 // has none
+
+
+//-- SystemBootLoader
+
+#define BOOT_BUTTON               IO_PA1
+
+extern "C" { void delay_ms(uint16_t ms); }
+
+void systembootloader_init(void)
+{
+    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+void systembootloader_do(void)
+{
+    // on this board, the button has a capacitor, so we need to wait for the cap to charge up
+    // 1 ms is found to not be enough, 2 ms is, but play it safe
+    delay_ms(10);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
+    }
+    if (cnt > 12) {
+        BootLoaderInit();
+    }
+}
 
 
 //-- POWER
