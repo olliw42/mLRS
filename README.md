@@ -33,7 +33,7 @@ The project is work in progress, and there is still plenty of room for improveme
 
 However, the essential basic features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
-It supports the SX1280, SX1276, and SX1262 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
+It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
 The RC channels layout is as follows:
 - 8 channels with 11 bit resolution (CH1 - CH8), 4 of them with a higher reliability margin (CH1 - CH4)
@@ -66,7 +66,7 @@ Further features:
 - the receiver parameters can be set from within the transmitter; no need to mess with the receiver in any ways.
 - the transmitter and receiver parameters can be set via a LUA script, a CLI, or an OLED display.
 - bind mode for binding "unknown" receivers to the transmitter.
-- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](#further-documentations).
+- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
