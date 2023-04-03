@@ -48,13 +48,13 @@ It provides these operation modes:
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 - 31 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280 and SX1262 chips)<br>
+  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280 and SX1262/LLCC68 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 2000 Bytes/sec<br>
   downlink serial rate: 2562 Bytes/sec<br>
   receiver sensitivity: -108 dBm
 - 19 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280, SX1276, SX1262 chips)<br>
+  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280, SX1276, SX1262/LLCC68 chips)<br>
   RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>
@@ -71,7 +71,7 @@ Further features:
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
 - optimizations for ArduPilot and PX4 systems.
-- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32WLE5, Wio-E5, E28, E22, E77, SX1280, SX1262, SX1276.
+- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32WLE5, Wio-E5, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
 
 ## Community ##
 
