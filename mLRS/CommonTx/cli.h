@@ -507,11 +507,11 @@ void tTxCli::stream(void)
             puts(u8toBCD_s(stats.received_LQ));
             puts(", ");
 
-            puts(s8toBCD_s(stats.last_rx_rssi1));
+            puts(s8toBCD_s(stats.last_rssi1));
             puts(",");
             puts(s8toBCD_s(stats.received_rssi));
             puts(", ");
-            puts(s8toBCD_s(stats.last_rx_snr1));
+            puts(s8toBCD_s(stats.last_snr1));
             puts("; ");
 
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
@@ -552,19 +552,24 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
+    delay_ms(10);
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
+    delay_ms(10);
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
+    delay_ms(10);
 
     putsn("  ptser       -> enter serial passthrough");
 #ifdef USE_ESP_WIFI_BRIDGE
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
+
+    putsn("  systemboot  -> call system bootloader");
 }
 
 
@@ -685,6 +690,11 @@ bool rx_param_changed;
             state = CLI_STATE_STATS;
             putsn("  starts streaming stats");
             putsn("  send any character to stop");
+
+        //-- System Bootloader
+        } else
+        if (strcmp(buf, "systemboot") == 0) {
+            BootLoaderInit();
 
         //-- ESP handling
         } else

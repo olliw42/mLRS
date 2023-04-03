@@ -38,7 +38,7 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 
 // this would be the naive thing
 // scale is "inverted" to make it that it is higher the better
-//   rssi = (127 + stats.last_rx_rssi);
+//   rssi = (127 + stats.last_rssi);
 //   remrssi = (127 + stats.received_rssi);
 //
 // https://ardupilot.org/copter/docs/common-3dr-radio-advanced-configuration-and-technical-information.html#monitoring-the-link-quality
@@ -46,7 +46,7 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7)
 // so we could here a SiK scale
 //   rssi_SiK = ( signal_dBm + 127 ) * 1.9
 //
-//   int32_t rssi_SiK = ( ((int32_t)stats.last_rx_rssi + 127) * 19000 ) / 10000;
+//   int32_t rssi_SiK = ( ((int32_t)stats.last_rssi + 127) * 19000 ) / 10000;
 //   if (rssi_SiK < 0) rssi_SiK = 0;
 //   if (rssi_SiK > 250) rssi_SiK = 250;
 //   rssi = rssi_SiK;

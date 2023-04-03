@@ -209,12 +209,12 @@ void MavlinkBase::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
-    rssi = rssi_i8_to_ap(stats.GetLastRxRssi());
+    rssi = rssi_i8_to_ap(stats.GetLastRssi());
     remrssi = rssi_i8_to_ap(stats.received_rssi);
 
     // we don't have a reasonable noise measurement, but can use this field to report on the snr
     // the snr can be positive and negative however, so we artificially set snr = 10 to zero
-    int16_t snr = -stats.GetLastRxSnr() + 10;
+    int16_t snr = -stats.GetLastSnr() + 10;
     noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
 
     // we do nothing, I'm not aware that any GCS respect this, and if so, it needs detailed investigation

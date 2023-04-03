@@ -25,7 +25,7 @@
 //   Ch4    PA8           -> Buzzer
 
 #define DEVICE_HAS_IN
-#define DEVICE_HAS_SERIAL_OR_COM // serial or COM is selected by pressing BUTTON during power on
+#define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 // #define DEVICE_HAS_BUZZER
 
@@ -193,7 +193,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Serial or Com Switch
-// use COM if BUTTON is pressed during power up
+// use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
 bool r9mx_ser_or_com_serial = true; // we use serial as default

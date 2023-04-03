@@ -46,6 +46,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
+#define DEVICE_HAS_SYSTEMBOOT       // board has a mean to invoke the system bootloader on startup
 
 In rx-hal files:
 
@@ -57,6 +58,7 @@ In rx-hal files:
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
+#define DEVICE_HAS_SYSTEMBOOT       // board has a mean to invoke the system bootloader on startup
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
@@ -96,6 +98,17 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
 #include "tx-hal-wioe5-mini-wle5jc.h"
+#endif
+
+
+//-- EByte MBL Evaluation Kits
+
+#ifdef RX_E77_MBLKIT_WLE5CC
+#include "rx-hal-E77-MBLKit-wle5cc.h"
+#endif
+
+#ifdef TX_E77_MBLKIT_WLE5CC
+#include "tx-hal-E77-MBLKit-wle5cc.h"
 #endif
 
 
@@ -310,6 +323,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 // Empty Prototypes
 //-------------------------------------------------------
 // should be in the device hal files, but is just so much more convenient to have them here
+
+#ifndef DEVICE_HAS_SYSTEMBOOT
+    void systembootloader_init(void) {}
+    void systembootloader_do(void) {}
+#endif
 
 #ifndef USE_ESP_WIFI_BRIDGE
     void esp_init(void) {}

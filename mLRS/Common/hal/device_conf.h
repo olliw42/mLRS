@@ -11,6 +11,7 @@
 // for devices with I2C, un-comment #define HAL_I2C_MODULE_ENABLED in Core/Inc/stm32xxxx_hal_conf.h
 
 // Note: A device may support multiple frequency bands.
+// Note: Device name can be 20 chars max.
 
 
 //-- FrsKy R9 system
@@ -78,6 +79,29 @@
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
   #define DEVICE_NAME "WioE5 Mini WLE5JC"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_433_MHZ
+  //#define FREQUENCY_BAND_70_CM_HAM
+#endif
+
+
+//-- EByte MBL Evaluation Kits
+
+#ifdef RX_E77_MBLKIT_WLE5CC
+  #define DEVICE_NAME "E77 MBL Kit WLE5CC"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_433_MHZ
+  //#define FREQUENCY_BAND_70_CM_HAM
+#endif
+
+#ifdef TX_E77_MBLKIT_WLE5CC
+  #define DEVICE_NAME "E77 MBL Kit WLE5CC"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
