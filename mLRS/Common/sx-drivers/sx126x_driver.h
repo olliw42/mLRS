@@ -225,6 +225,17 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRx(tmo_ms * 64);
     }
 
+    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
+    {
+        int16_t rssi;
+        Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
+
+        if (rssi > -1) rssi = -1; // we do not support values larger than this
+        if (rssi < -127) rssi = -127; // we do not support values lower than this
+
+        *RssiSync = rssi;
+    }
+
     void HandleAFC(void) {}
 
     //-- helper
