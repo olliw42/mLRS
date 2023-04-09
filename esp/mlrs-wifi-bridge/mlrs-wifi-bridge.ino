@@ -43,6 +43,7 @@ _txBufferSize(0),
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
+//#define MODULE_M5STAMP_PICO
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32
@@ -65,7 +66,7 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 int baudrate = 57600;
 
 // WiFi channel
-int wifi_channel = 13; // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies
+int wifi_channel = 13; // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies, but is not used in the US
 
 // WiFi power
 // comment out for default setting
@@ -128,8 +129,8 @@ void setup()
 
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
-#ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
-    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
+#ifdef SERIAL_RXD // if SERIAL_TXD or SERIAL_INVERT is not defined the compiler will complain, so all good
+    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, SERIAL_INVERT);
 #else    
     SERIAL.begin(baudrate);
 #endif    
