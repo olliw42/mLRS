@@ -169,7 +169,8 @@ void setup()
 
 void loop() 
 {
-    int tnow_ms = millis();
+    unsigned int tnow_ms = millis();
+    static unsigned int last_send = 0;
     if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) { // nothing from GCS for 2 secs
         is_connected = false;
     }
@@ -192,12 +193,14 @@ void loop()
         is_connected = true;
         is_connected_tlast_ms = millis();;
     }
-
-    while (SERIAL.available()) {
+    int avail = SERIAL.available();
+    // Don't send nearly empty messages so often
+    if ((avail > 30) || (avail && (tnow_ms - last_send > 5))) {
         int len = SERIAL.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
-        udp.endPacket();    
+        udp.endPacket();
+        last_send = tnow_ms;
     }   
 
 #else // TCP
