@@ -66,7 +66,9 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 int baudrate = 57600;
 
 // WiFi channel
-int wifi_channel = 13; // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies, but is not used in the US
+// 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
+// Note: Channel 13 is generally not available in the US, where 11 is the maximum.
+int wifi_channel = 13;
 
 // WiFi power
 // comment out for default setting
@@ -189,7 +191,7 @@ void loop()
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
+        SERIAL.write(bufp, len);
         is_connected = true;
         is_connected_tlast_ms = millis();;
     }
