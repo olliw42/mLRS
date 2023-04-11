@@ -191,7 +191,7 @@ void loop()
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(bufp, len);
+        SERIAL.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();;
     }
