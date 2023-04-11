@@ -131,8 +131,12 @@ void setup()
 
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
-#ifdef SERIAL_RXD // if SERIAL_TXD or SERIAL_INVERT is not defined the compiler will complain, so all good
+#ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
+#ifdef SERIAL_INVERT
     SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, SERIAL_INVERT);
+#else
+    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
+#endif
 #else    
     SERIAL.begin(baudrate);
 #endif    
