@@ -111,7 +111,7 @@ bool led_state;
 
 bool is_connected;
 unsigned long is_connected_tlast_ms;
-unsigned int send_tlast_ms;
+unsigned long send_tlast_ms;
 
 
 void serialFlushRx(void)
