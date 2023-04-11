@@ -9,6 +9,15 @@
 
 /*
 ------------------------------
+M5Stamp Pico
+------------------------------
+board: ESP32-PICO-D4
+https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-pico-diy-kit
+IO3/IO1: is Serial, spits out lots of preamble at power up
+IO32/IO33: will be mapped to Serial1, inverted
+Mates cleanly with R9M inverted serial port pins
+
+------------------------------
 ESP32-PICO-KIT
 ------------------------------
 board: ESP32-PICO-D4
@@ -56,8 +65,51 @@ GPIO15 = RTC_GPIO13
 // board details
 //-------------------------------------------------------
 
+//-- M5 STAMP PICO
+#if defined MODULE_M5STAMP_PICO // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
+    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
+	      #error Select board ARDUINO_ESP32_PICO!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #define USE_SERIAL1_DBG
+
+    #undef LED_IO
+    #define USE_LED
+    #include <Adafruit_NeoPixel.h> // Requires library install
+    #define NUMPIXELS  1
+    #define PIN_NEOPIXEL  27
+    Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+    void led_init(void) 
+    {
+        #if defined(NEOPIXEL_POWER)
+        pinMode(NEOPIXEL_POWER, OUTPUT);
+        digitalWrite(NEOPIXEL_POWER, HIGH);
+        #endif
+
+        pixels.begin();
+        pixels.setBrightness(20); // not so bright
+    }
+
+    void led_on(void) 
+    {
+        pixels.fill(0xFF0000); // red
+        pixels.show();
+    }
+
+    void led_off(void) 
+    {
+        pixels.fill(0x000000); // off
+        pixels.show();
+    }
+
+    #define SERIAL_RXD  32 // = RX1
+    #define SERIAL_TXD  33 // = TX1
+    #define SERIAL_INVERT true
+
 //-- ESP32-PICO-KIT
-#if defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ARDUINO_ESP32_PICO!
     #endif
@@ -181,6 +233,7 @@ GPIO15 = RTC_GPIO13
     #define SERIAL Serial1
 //    #define SERIAL_RXD  9 // = RX1
 //    #define SERIAL_TXD  10 // = TX1
+//    #define SERIAL_INVERT false
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
