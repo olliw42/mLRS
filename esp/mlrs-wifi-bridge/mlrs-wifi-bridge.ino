@@ -110,7 +110,8 @@ int led_tlast_ms;
 bool led_state;
 
 bool is_connected;
-int is_connected_tlast_ms;
+unsigned long is_connected_tlast_ms;
+unsigned int send_tlast_ms;
 
 
 void serialFlushRx(void)
@@ -169,15 +170,14 @@ void setup()
 
     is_connected = false;
     is_connected_tlast_ms = 0;
-
+    send_tlast_ms = 0;
     serialFlushRx();
 }
 
 
 void loop() 
 {
-    unsigned int tnow_ms = millis();
-    static unsigned int last_send = 0;
+    unsigned long tnow_ms = millis();
     if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) { // nothing from GCS for 2 secs
         is_connected = false;
     }
@@ -202,12 +202,12 @@ void loop()
     }
     int avail = SERIAL.available();
     // Don't send nearly empty messages so often
-    if ((avail > 30) || (avail && (tnow_ms - last_send > 5))) {
+    if ((avail > 90) || (avail && (tnow_ms - send_tlast_ms > 15))) {
         int len = SERIAL.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket();
-        last_send = tnow_ms;
+        send_tlast_ms = tnow_ms;
     }   
 
 #else // TCP
