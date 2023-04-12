@@ -9,26 +9,19 @@
 
 /*
 ------------------------------
-M5Stamp Pico
+Espressif ESP32-PICO-KIT
 ------------------------------
 board: ESP32-PICO-D4
-https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-pico-diy-kit
-IO3/IO1: is Serial, spits out lots of preamble at power up
-IO32/IO33: will be mapped to Serial1, inverted
-Mates cleanly with R9M inverted serial port pins
-
-------------------------------
-ESP32-PICO-KIT
-------------------------------
-board: ESP32-PICO-D4
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html
 IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
 IO9/IO10: U1RXD/U1TXD, is Serial1
 IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
 
 ------------------------------
-TTGO-MICRO32
+Lilygo TTGO-MICRO32
 ------------------------------
 board: ESP32-PICO-D4
+http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1091
 IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
 IO9/IO10: U1RXD/U1TXD, is Serial1
 no IO16/IO17 pads
@@ -46,10 +39,22 @@ RESET and BOOT available on solder pads, BOOT is GPIO0, not very connvenient
 M5Stack M5Stamp C3 Mate
 ------------------------------
 board: ESP32C3 Dev Module
+https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-c3-mate-with-pin-headers
+https://docs.m5stack.com/en/core/stamp_c3
 IO20/IO21:: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, available on pads, is Serial, spits out lots of preamble at power up
 IO18/IO19: U1RXD/U1TXD, is Serial1
 UARTs can be mapped to any pins, according to data sheet
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
+
+------------------------------
+M5Stamp Pico
+------------------------------
+board: ESP32-PICO-D4
+https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-pico-mate-with-pin-headers
+https://docs.m5stack.com/en/core/stamp_pico
+IO3/IO1: is Serial, spits out lots of preamble at power up
+IO32/IO33: will be mapped to Serial1, inverted
+Mates cleanly with R9M inverted serial port pins
 */
 
 /*
@@ -57,59 +62,14 @@ ESP32:
 
 shortening GPIO15 to GND suppresses the bootloader preamble on Serial port
 GPIO15 = RTC_GPIO13
-
 */
 
 
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
-
-//-- M5 STAMP PICO
-#if defined MODULE_M5STAMP_PICO // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
-    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ARDUINO_ESP32_PICO!
-    #endif
-
-    #undef USE_SERIAL_DBG1
-    #define USE_SERIAL1_DBG
-
-    #undef LED_IO
-    #define USE_LED
-    #include <Adafruit_NeoPixel.h> // Requires library install
-    #define NUMPIXELS  1
-    #define PIN_NEOPIXEL  27
-    Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
-
-    void led_init(void) 
-    {
-        #if defined(NEOPIXEL_POWER)
-        pinMode(NEOPIXEL_POWER, OUTPUT);
-        digitalWrite(NEOPIXEL_POWER, HIGH);
-        #endif
-
-        pixels.begin();
-        pixels.setBrightness(20); // not so bright
-    }
-
-    void led_on(void) 
-    {
-        pixels.fill(0xFF0000); // red
-        pixels.show();
-    }
-
-    void led_off(void) 
-    {
-        pixels.fill(0x000000); // off
-        pixels.show();
-    }
-
-    #define SERIAL_RXD  32 // = RX1
-    #define SERIAL_TXD  33 // = TX1
-    #define SERIAL_INVERT true
-
 //-- ESP32-PICO-KIT
-#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#if defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ARDUINO_ESP32_PICO!
     #endif
@@ -209,6 +169,50 @@ GPIO15 = RTC_GPIO13
         pixels.fill(0x000000); // off
         pixels.show();
     }
+
+
+//-- M5 STAMP PICO
+#elif defined MODULE_M5STAMP_PICO // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
+    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
+	      #error Select board ARDUINO_ESP32_PICO!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #define USE_SERIAL1_DBG
+
+    #undef LED_IO
+    #define USE_LED
+    #include <Adafruit_NeoPixel.h> // Requires library install
+    #define NUMPIXELS  1
+    #define PIN_NEOPIXEL  27
+    Adafruit_NeoPixel pixels(NUMPIXELS, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+    void led_init(void) 
+    {
+        #if defined(NEOPIXEL_POWER)
+        pinMode(NEOPIXEL_POWER, OUTPUT);
+        digitalWrite(NEOPIXEL_POWER, HIGH);
+        #endif
+
+        pixels.begin();
+        pixels.setBrightness(20); // not so bright
+    }
+
+    void led_on(void) 
+    {
+        pixels.fill(0xFF0000); // red
+        pixels.show();
+    }
+
+    void led_off(void) 
+    {
+        pixels.fill(0x000000); // off
+        pixels.show();
+    }
+
+    #define SERIAL_RXD  32 // = RX1
+    #define SERIAL_TXD  33 // = TX1
+    #define SERIAL_INVERT true
 
 
 //-- Generic

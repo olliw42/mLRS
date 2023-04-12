@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 28. Feb. 2023
+// 12. Apr. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -14,23 +14,17 @@
 /*
 for more details on the boards see mlrs-wifi-bridge-boards.h
 
-- ESP32-PICO-KIT
-  board: ESP32-PICO-D4
-- TTGO-MICRO32
-  board: ESP32-PICO-D4
 - Adafruit QT Py S2
   board: Adafruit QT Py ESP32-S2
 - M5Stack M5Stamp C3 Mate
   board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-*/
-
-/*
-much info is in 
-C:\Users\...\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.6\cores\esp32\HardwareSerial.h/.cpp
-default buffer sizes are
-_rxBufferSize(256),
-_txBufferSize(0), 
+- M5Stack M5Stamp Pico
+  board: ESP32-PICO-D4
+- ESP32-PICO-KIT
+  board: ESP32-PICO-D4
+- TTGO-MICRO32
+  board: ESP32-PICO-D4
 */
 
 #include <WiFi.h>
@@ -43,9 +37,9 @@ _txBufferSize(0),
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
-//#define MODULE_M5STAMP_PICO
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
+//#define MODULE_M5STAMP_PICO
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_ESP32_PICO_KIT
 
@@ -106,12 +100,11 @@ WiFiServer server(port_tcp);
 WiFiClient client;
 #endif
 
-int led_tlast_ms;
 bool led_state;
-
+unsigned long led_tlast_ms;
 bool is_connected;
 unsigned long is_connected_tlast_ms;
-unsigned long send_tlast_ms;
+unsigned long send_wifi_packet_tlast_ms;
 
 
 void serialFlushRx(void)
@@ -133,11 +126,11 @@ void setup()
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
 #ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
-#ifdef SERIAL_INVERT
+  #ifdef SERIAL_INVERT
     SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, SERIAL_INVERT);
-#else
+  #else
     SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
-#endif
+  #endif
 #else    
     SERIAL.begin(baudrate);
 #endif    
@@ -170,7 +163,9 @@ void setup()
 
     is_connected = false;
     is_connected_tlast_ms = 0;
-    send_tlast_ms = 0;
+
+    send_wifi_packet_tlast_ms = 0;
+
     serialFlushRx();
 }
 
@@ -178,9 +173,11 @@ void setup()
 void loop() 
 {
     unsigned long tnow_ms = millis();
+
     if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) { // nothing from GCS for 2 secs
         is_connected = false;
     }
+
     if (tnow_ms - led_tlast_ms > (is_connected ? 500 : 200)) {
         led_tlast_ms = tnow_ms;
         led_state = !led_state;
@@ -198,16 +195,17 @@ void loop()
         int len = udp.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
         is_connected = true;
-        is_connected_tlast_ms = millis();;
+        is_connected_tlast_ms = millis();
     }
-    int avail = SERIAL.available();
-    // Don't send nearly empty messages so often
-    if ((avail > 90) || (avail && (tnow_ms - send_tlast_ms > 15))) {
+
+    int available = SERIAL.available();
+    // don't send nearly empty messages so often
+    if ((available > 90) || (available && (tnow_ms - send_wifi_packet_tlast_ms > 15))) {
         int len = SERIAL.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket();
-        send_tlast_ms = tnow_ms;
+        send_wifi_packet_tlast_ms = tnow_ms;
     }   
 
 #else // TCP
@@ -236,7 +234,7 @@ void loop()
         int len = client.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
         is_connected = true;
-        is_connected_tlast_ms = millis();;
+        is_connected_tlast_ms = millis();
     }
 
     while (SERIAL.available()) {
