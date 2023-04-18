@@ -400,12 +400,7 @@ void setup_configure(void)
         }
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
-        switch (Config.Mode) {
-        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC; break;
-        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC_19HZ_MODE; break;
-        default:
-            while (1) {} // must not happen, should have been resolved in setup_sanitize()
-        }
+        Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
         break;
     case SETUP_FREQUENCY_BAND_868_MHZ:
         Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
