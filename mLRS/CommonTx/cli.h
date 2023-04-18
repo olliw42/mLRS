@@ -564,12 +564,12 @@ void tTxCli::print_help(void)
     delay_ms(10);
 
     putsn("  ptser       -> enter serial passthrough");
+    putsn("  systemboot  -> call system bootloader");
+
 #ifdef USE_ESP_WIFI_BRIDGE
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
-
-    putsn("  systemboot  -> call system bootloader");
 }
 
 
