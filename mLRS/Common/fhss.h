@@ -38,6 +38,9 @@
 #ifdef FREQUENCY_BAND_915_MHZ_FCC
 #define FHSS_HAS_CONFIG_915_MHZ_FCC
 #endif
+#ifdef FREQUENCY_BAND_866_MHZ_IN
+#define FHSS_HAS_CONFIG_866_MHZ_IN
+#endif
 #ifdef FREQUENCY_BAND_2P4_GHZ
 #define FHSS_HAS_CONFIG_2P4_GHZ
 #endif
@@ -197,6 +200,21 @@ const uint8_t fhss_bind_channel_list_915_fcc[] = {
 };
 
 #endif
+#ifdef FHSS_HAS_CONFIG_866_MHZ_IN
+// 4 channels in range 865.375 - 866.950 MHz ??
+
+const uint32_t fhss_freq_list_866_in[] = { // !! NEEDS TO BE ADJUSTED TO PROPER FREQUENCIES !!
+    SX12XX_FREQ_MHZ_TO_REG(865.375),
+    SX12XX_FREQ_MHZ_TO_REG(865.900),
+    SX12XX_FREQ_MHZ_TO_REG(866.425),
+    SX12XX_FREQ_MHZ_TO_REG(866.950),
+};
+
+const uint8_t fhss_bind_channel_list_866_in[] = {
+    0 // just pick some
+};
+
+#endif
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
 // 2406.0 ... 2473.0  in 1 MHz steps
 // = 68 channels
@@ -293,6 +311,7 @@ typedef enum {
     FHSS_CONFIG_2P4_GHZ = 0,
     FHSS_CONFIG_915_MHZ_FCC,
     FHSS_CONFIG_868_MHZ,
+    FHSS_CONFIG_866_MHZ_IN,
     FHSS_CONFIG_433_MHZ,
     FHSS_CONFIG_70_CM_HAM,
     FHSS_CONFIG_NUM,
@@ -339,6 +358,16 @@ const tFhssConfig fhss_config[] = {
 #else
     { .freq_list = nullptr },
 #endif
+#ifdef FHSS_HAS_CONFIG_866_MHZ_IN
+    {
+        .freq_list = fhss_freq_list_866_in,
+        .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_866_in) / sizeof(uint32_t)),
+        .bind_channel_list = fhss_bind_channel_list_866_in,
+        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_866_in) / sizeof(uint8_t))
+    },
+#else
+    { .freq_list = nullptr },
+#endif
 #ifdef FHSS_HAS_CONFIG_433_MHZ
     {
         .freq_list = fhss_freq_list_433,
@@ -373,6 +402,7 @@ class FhssBase
         case SETUP_FREQUENCY_BAND_2P4_GHZ: config_i = FHSS_CONFIG_2P4_GHZ; break;
         case SETUP_FREQUENCY_BAND_915_MHZ_FCC: config_i = FHSS_CONFIG_915_MHZ_FCC; break;
         case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
+        case SETUP_FREQUENCY_BAND_866_MHZ_IN: config_i = FHSS_CONFIG_866_MHZ_IN; break;
         case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break;
         case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG_70_CM_HAM; break;
         default:
@@ -465,6 +495,7 @@ class FhssBase
         case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
         case FHSS_CONFIG_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
         case FHSS_CONFIG_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
+        case FHSS_CONFIG_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
         case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
         case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
         }
