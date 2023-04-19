@@ -55,6 +55,19 @@ https://docs.m5stack.com/en/core/stamp_pico
 IO3/IO1: is Serial, spits out lots of preamble at power up
 IO32/IO33: will be mapped to Serial1, inverted
 Mates cleanly with R9M inverted serial port pins
+
+------------------------------
+M5Stack M5Stamp C3U Mate
+------------------------------
+board: ESP32C3 Dev Module
+https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-c3u-mate-with-pin-headers
+https://docs.m5stack.com/en/core/stamp_c3u
+IO18/IO19: D-/D+ Native USB interface
+IO20/IO21: U0RXD/U0TXD, is Serial
+IO1/IO0: will be mapped to Serial1, inverted
+UARTs can be mapped to any pins, according to data sheet
+Mates cleanly with R9M inverted serial port pins
+ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 */
 
 /*
@@ -212,6 +225,44 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  32 // = RX1
     #define SERIAL_TXD  33 // = TX1
+    #define SERIAL_INVERT true
+
+
+//-- M5Stack M5Stamp C3U Mate
+#elif defined MODULE_M5STAMP_C3U_MATE // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
+    #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
+	      #error Select board ESP32C3_DEV!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #define USE_SERIAL1_DBG
+
+    #undef LED_IO
+    #define USE_LED
+    #include <Adafruit_NeoPixel.h>
+    #define NUMPIXELS  1
+    Adafruit_NeoPixel pixels(NUMPIXELS, 2, NEO_GRB + NEO_KHZ800);
+
+    void led_init(void)
+    {
+        pixels.begin();
+        pixels.setBrightness(20); // not so bright
+    }
+
+    void led_on(void)
+    {
+        pixels.fill(0xFF0000); // red
+        pixels.show();
+    }
+
+    void led_off(void)
+    {
+        pixels.fill(0x000000); // off
+        pixels.show();
+    }
+
+    #define SERIAL_RXD  1 // = RX1
+    #define SERIAL_TXD  0 // = TX1
     #define SERIAL_INVERT true
 
 
