@@ -16,6 +16,7 @@
 
 //-------------------------------------------------------
 // Setup Enums
+// ATTENTION: only extend/append, never change sequence
 //-------------------------------------------------------
 
 //-- common to Tx & Rx
@@ -26,6 +27,7 @@ typedef enum {
     SETUP_FREQUENCY_BAND_868_MHZ,
     SETUP_FREQUENCY_BAND_433_MHZ,
     SETUP_FREQUENCY_BAND_70_CM_HAM,
+    SETUP_FREQUENCY_BAND_866_MHZ_IN,
     SETUP_FREQUENCY_BAND_NUM,
 } SETUP_FREQUENCY_BAND_ENUM;
 
@@ -198,6 +200,7 @@ typedef enum {
 
 //-------------------------------------------------------
 // Setup and Config Types
+// ATTENTION: only extend/append, never change sequence
 //-------------------------------------------------------
 
 typedef struct

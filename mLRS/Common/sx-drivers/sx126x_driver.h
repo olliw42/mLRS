@@ -167,6 +167,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         switch (Setup.FrequencyBand) {
             case SETUP_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
             case SETUP_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SETUP_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
             case SETUP_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             case SETUP_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
