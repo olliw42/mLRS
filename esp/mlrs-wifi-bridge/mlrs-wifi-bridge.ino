@@ -101,11 +101,11 @@ WiFiClient client;
 #endif
 
 bool led_state;
-unsigned long led_tlast_us;
+unsigned long led_tlast_ms;
 bool is_connected;
-unsigned long is_connected_tlast_us;
-unsigned long tlast_received_serial_us;
-unsigned long tfirst_received_serial_us;
+unsigned long is_connected_tlast_ms;
+unsigned long received_serial_tlast_us;
+unsigned long received_serial_tfirst_us;
 int avail_last;
 
 
@@ -160,14 +160,14 @@ void setup()
     udp.begin(port_udp);
 #endif    
 
-    led_tlast_us = 0;
+    led_tlast_ms = 0;
     led_state = false;
 
     is_connected = false;
-    is_connected_tlast_us = 0;
+    is_connected_tlast_ms = 0;
 
-    tlast_received_serial_us = 0;
-    tfirst_received_serial_us = 0;
+    received_serial_tlast_us = 0;
+    received_serial_tfirst_us = 0;
     avail_last = 0;
     
     serialFlushRx();
@@ -176,14 +176,14 @@ void setup()
 
 void loop() 
 {
-    unsigned long tnow_us = micros();
+    unsigned long tnow_ms = millis();
 
-    if (is_connected && (tnow_us - is_connected_tlast_us > 2000000)) { // nothing from GCS for 2 secs
+    if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) { // nothing from GCS for 2 secs
         is_connected = false;
     }
 
-    if (tnow_us - led_tlast_us > (is_connected ? 500000 : 200000)) {
-        led_tlast_us = tnow_us;
+    if (tnow_ms - led_tlast_ms > (is_connected ? 500 : 200)) {
+        led_tlast_ms = tnow_ms;
         led_state = !led_state;
         if (led_state) led_on(); else led_off();
     }
@@ -194,22 +194,24 @@ void loop()
 
 #if WIFI_PROTOCOL == 1 // UDP
 
+    unsigned long tnow_us = micros();
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
         is_connected = true;
-        is_connected_tlast_us = micros();;
+        is_connected_tlast_ms = millis();
     }
     
     int avail = SERIAL.available();
-    // Wait for serial port to be idle for 600us before sending. Best if > byte time , < loop time.
+    unsigned long gap_time = (10000000ULL/baudrate)*2;
+    // Wait for serial port to be idle for 2 character times before sending.
     // Since mLRS sends us one or more full MAVLink messages at a time,
     // this should result in alligning the start of the UDP payload to the start of a MAVLink message.
     // And don't allow any data to remain in the serial buffer for more than about 22ms to constrain latency (just in case).
     // Also constrain to a maximum UDP payload and serial buffer use of just over 255 bytes (only needed for low baud rate).
     if (avail_last > 0) // data was waiting
-        if (((avail == avail_last) && (tnow_us - tlast_received_serial_us > 600)) || (tnow_us - tfirst_received_serial_us > 22000) || (avail > 255)) {
+        if (((avail == avail_last) && (tnow_us - received_serial_tlast_us > gap_time)) || (tnow_us - received_serial_tfirst_us > 22000) || (avail > 255)) {
             int len = SERIAL.read(buf, sizeof(buf));
             udp.beginPacket(ip_udp, port_udp);
             udp.write(buf, len);
@@ -219,10 +221,10 @@ void loop()
 
     if (avail != avail_last) { // We received something new
         if (0 == avail_last) { // First byte received
-            tfirst_received_serial_us = tnow_us;
+            received_serial_tfirst_us = tnow_us;
         }
         // Keep track of the time we last received something
-        tlast_received_serial_us = tnow_us;
+        received_serial_tlast_us = tnow_us;
         avail_last = avail;
     }
 
@@ -252,7 +254,7 @@ void loop()
         int len = client.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
         is_connected = true;
-        is_connected_tlast_us = micros();;
+        is_connected_tlast_ms = millis();
     }
 
     while (SERIAL.available()) {
