@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 12. Apr. 2023
+// 22. Apr. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -42,10 +42,10 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_GENERIC
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
-//#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_ESP32_PICO_KIT
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
+//#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 
 
 // Wifi Protocol 0 = TCP, 1 = UDP

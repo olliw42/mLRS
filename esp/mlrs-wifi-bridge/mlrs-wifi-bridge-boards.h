@@ -47,7 +47,7 @@ UARTs can be mapped to any pins, according to data sheet
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 
 ------------------------------
-M5Stamp Pico
+M5Stamp Pico for Frsky R9M
 ------------------------------
 board: ESP32-PICO-D4
 https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-pico-mate-with-pin-headers
@@ -57,7 +57,7 @@ IO32/IO33: will be mapped to Serial1, inverted
 Mates cleanly with R9M inverted serial port pins
 
 ------------------------------
-M5Stack M5Stamp C3U Mate
+M5Stack M5Stamp C3U Mate for Frsky R9M
 ------------------------------
 board: ESP32C3 Dev Module
 https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-c3u-mate-with-pin-headers
@@ -68,7 +68,7 @@ IO1/IO0: G1/G0, will be mapped to Serial1, inverted
 UARTs can be mapped to any pins, according to data sheet
 Mates cleanly with R9M inverted serial port pins
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-Disconnect from application before programming via USB.  Hold down central button (G9) when connecting to USB to program
+Disconnect from application before programming via USB. Hold down central button (G9) when connecting to USB to program
 */
 
 /*
