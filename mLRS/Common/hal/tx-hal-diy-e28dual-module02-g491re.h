@@ -244,39 +244,24 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_LEFT_GREEN            IO_PA15
-#define LED_LEFT_RED              IO_PC12
+#define LED_GREEN                 IO_PA15
+#define LED_RED                   IO_PC12
 #define LED_RIGHT_GREEN           IO_PA0
-//#define LED_RIGHT_RED
-
-#define LED_RIGHT_RED_ON          //gpio_high(LED_RIGHT_RED)
-#define LED_RIGHT_GREEN_ON        gpio_high(LED_RIGHT_GREEN)
-
-#define LED_RIGHT_RED_OFF         //gpio_low(LED_RIGHT_RED)
-#define LED_RIGHT_GREEN_OFF       gpio_low(LED_RIGHT_GREEN)
-
-#define LED_RIGHT_RED_TOGGLE      //gpio_toggle(LED_RIGHT_RED)
-#define LED_RIGHT_GREEN_TOGGLE    gpio_toggle(LED_RIGHT_GREEN)
 
 void leds_init(void)
 {
-    gpio_init(LED_LEFT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_init(LED_LEFT_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    //gpio_init(LED_RIGHT_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_low(LED_LEFT_GREEN); // LED_GREEN_OFF
-    gpio_low(LED_LEFT_RED); // LED_RED_OFF
-    LED_RIGHT_RED_OFF;
-    LED_RIGHT_GREEN_OFF;
 }
 
-void led_green_off(void) { gpio_low(LED_LEFT_GREEN); }
-void led_green_on(void) { gpio_high(LED_LEFT_GREEN); }
-void led_green_toggle(void) { gpio_toggle(LED_LEFT_GREEN); }
+void led_green_off(void) { gpio_low(LED_GREEN); }
+void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 
-void led_red_off(void) { gpio_low(LED_LEFT_RED); }
-void led_red_on(void) { gpio_high(LED_LEFT_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_LEFT_RED); }
+void led_red_off(void) { gpio_low(LED_RED); }
+void led_red_on(void) { gpio_high(LED_RED); }
+void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Position Switch
