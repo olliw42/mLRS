@@ -25,6 +25,9 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
   board: ESP32-PICO-D4
 - TTGO-MICRO32
   board: ESP32-PICO-D4
+- M5Stack M5Stamp C3U Mate
+  board: ESP32C3 Dev Module
+  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 */
 
 #include <WiFi.h>
@@ -39,9 +42,10 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_GENERIC
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
-//#define MODULE_M5STAMP_PICO
+//#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_ESP32_PICO_KIT
+//#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
 
 
 // Wifi Protocol 0 = TCP, 1 = UDP
