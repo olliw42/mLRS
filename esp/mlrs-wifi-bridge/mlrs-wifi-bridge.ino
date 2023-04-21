@@ -202,14 +202,11 @@ void loop()
         is_connected_tlast_ms = millis();
     }
 
-    int available = SERIAL.available();
-    // don't send nearly empty messages so often
-    if ((available > 90) || (available && (tnow_ms - send_wifi_packet_tlast_ms > 15))) {
+    while (SERIAL.available()) {
         int len = SERIAL.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket();
-        send_wifi_packet_tlast_ms = tnow_ms;
     }   
 
 #else // TCP

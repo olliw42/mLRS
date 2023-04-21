@@ -22,7 +22,7 @@ Lilygo TTGO-MICRO32
 ------------------------------
 board: ESP32-PICO-D4
 http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1091
-IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
+IO3/IO1: U0RXD/U0TXD, is Serial, spits out lots of preamble at power up
 IO9/IO10: U1RXD/U1TXD, is Serial1
 no IO16/IO17 pads
 use only U0
