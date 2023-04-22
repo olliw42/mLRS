@@ -1062,6 +1062,7 @@ IF_CRSF(
     whileTransmit.Do();
 
     //-- Handle display or cli task
+
     uint8_t cli_task = disp.Task();
     if (cli_task == CLI_TASK_NONE) cli_task = cli.Task();
 

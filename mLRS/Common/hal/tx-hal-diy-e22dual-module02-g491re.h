@@ -265,18 +265,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- Position Switch
 
-#define POS_SWITCH_BIT1
-#define POS_SWITCH_BIT2
-#define POS_SWITCH_BIT3
-#define POS_SWITCH_BIT4
-
 void pos_switch_init(void)
 {
-}
-
-uint8_t pos_switch_read(void)
-{
-    return 0;
 }
 
 
