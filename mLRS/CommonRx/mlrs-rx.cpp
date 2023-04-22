@@ -555,6 +555,7 @@ RESTARTCONTROLLER:
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
+  irq_status = irq2_status = 0;
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
