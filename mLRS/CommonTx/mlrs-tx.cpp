@@ -217,7 +217,6 @@ void init(void)
 
     com.Init();
     cli.Init(&com);
-    esp.Init(&com, &serial2, &sx, &sx2);
     buzzer.Init();
     fan.Init();
     dbg.Init();
