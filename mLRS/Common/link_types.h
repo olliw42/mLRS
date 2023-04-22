@@ -31,6 +31,7 @@ typedef enum {
     LINK_STATE_RECEIVE_WAIT,
     LINK_STATE_RECEIVE_DONE,
 } LINK_STATE_ENUM;
+const char* linkstate_str[] = { "i", "t", "tw", "r", "rw", "d" }; // for debug purposes
 #endif
 #ifdef DEVICE_IS_RECEIVER
 typedef enum {
@@ -39,6 +40,7 @@ typedef enum {
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
 } LINK_STATE_ENUM;
+const char* linkstate_str[] = { "r", "rw", "t", "tw" }; // for debug purposes
 #endif
 
 typedef enum {

@@ -158,6 +158,23 @@ class Out : public OutBase
 Out out;
 
 
+//-------------------------------------------------------
+// Mavlink
+//-------------------------------------------------------
+
+#include "mavlink_interface_rx.h"
+
+MavlinkBase mavlink;
+
+#include "sx_serial_interface_rx.h"
+
+tRxSxSerial sx_serial;
+
+
+//-------------------------------------------------------
+// Init
+//-------------------------------------------------------
+
 void init(void)
 {
     systembootloader_init();
@@ -183,19 +200,6 @@ void init(void)
     sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
 }
-
-
-//-------------------------------------------------------
-// mavlink
-//-------------------------------------------------------
-
-#include "mavlink_interface_rx.h"
-
-MavlinkBase mavlink;
-
-#include "sx_serial_interface_rx.h"
-
-tRxSxSerial sx_serial;
 
 
 //-------------------------------------------------------
