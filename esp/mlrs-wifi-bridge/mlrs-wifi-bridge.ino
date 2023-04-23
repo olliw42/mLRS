@@ -146,7 +146,12 @@ void setup()
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-    WiFi.softAP(ssid.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel); // channel = 1 is default
+#if WIFI_PROTOCOL == 1
+    String ssid_full = ssid + " UDP";
+#else    
+    String ssid_full = ssid + " TCP";
+#endif    
+    WiFi.softAP(ssid_full.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
     DBG_PRINT("channel: ");
