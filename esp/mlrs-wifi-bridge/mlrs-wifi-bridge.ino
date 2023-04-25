@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 22. Apr. 2023
+// 25. Apr. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -190,12 +190,12 @@ void loop()
     if (tnow_ms - led_tlast_ms > (is_connected ? 500 : 200)) {
         led_tlast_ms = tnow_ms;
         led_state = !led_state;
-        if (led_state) led_on(); else led_off();
+        if (led_state) led_on(is_connected); else led_off();
     }
 
     //-- here comes the core code, handle wifi connection and do the bridge
 
-    uint8_t buf[256]; // working buffer
+    uint8_t buf[512]; // working buffer
 
 #if WIFI_PROTOCOL == 1 // UDP
 

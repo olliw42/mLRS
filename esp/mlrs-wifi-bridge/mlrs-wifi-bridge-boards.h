@@ -207,9 +207,9 @@ GPIO15 = RTC_GPIO13
         pixels.setBrightness(20); // not so bright
     }
 
-    void led_on(void)
+    void led_on(bool is_connected)
     {
-        pixels.fill(0xFF0000); // red
+        pixels.fill((is_connected) ? 0x00FF00 : 0xFF0000); // green | red
         pixels.show();
     }
 
@@ -262,7 +262,7 @@ GPIO15 = RTC_GPIO13
         digitalWrite(LED_IO, LOW);
     }
 
-    void led_on(void) 
+    void led_on(bool is_connected) 
     {
         digitalWrite(LED_IO, HIGH);
     }
@@ -275,7 +275,7 @@ GPIO15 = RTC_GPIO13
 
 #ifndef USE_LED
     void led_init(void) {}
-    void led_on(void) {}
+    void led_on(bool is_connected) {}
     void led_off(void) {}
 #endif    
 
