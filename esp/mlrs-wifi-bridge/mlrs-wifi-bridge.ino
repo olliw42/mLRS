@@ -108,7 +108,7 @@ bool led_state;
 unsigned long led_tlast_ms;
 bool is_connected;
 unsigned long is_connected_tlast_ms;
-unsigned long send_wifi_packet_tlast_ms;
+unsigned long serial_data_received_tfirst_ms;
 
 
 void serialFlushRx(void)
@@ -173,7 +173,7 @@ void setup()
     is_connected = false;
     is_connected_tlast_ms = 0;
 
-    send_wifi_packet_tlast_ms = 0;
+    serial_data_received_tfirst_ms = 0;
 
     serialFlushRx();
 }
@@ -195,7 +195,7 @@ void loop()
 
     //-- here comes the core code, handle wifi connection and do the bridge
 
-    uint8_t buf[512]; // working buffer
+    uint8_t buf[256]; // working buffer
 
 #if WIFI_PROTOCOL == 1 // UDP
 
@@ -207,12 +207,19 @@ void loop()
         is_connected_tlast_ms = millis();
     }
 
-    while (SERIAL.available()) {
+    tnow_ms = millis(); // may not be relevant, but just update it
+    int avail = SERIAL.available();
+    if (avail <= 0) {
+        serial_data_received_tfirst_ms = tnow_ms;      
+    } else 
+    if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+
         int len = SERIAL.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket();
-    }   
+    }
 
 #else // TCP
 
@@ -243,12 +250,17 @@ void loop()
         is_connected_tlast_ms = millis();
     }
 
-    while (SERIAL.available()) {
-        //uint8_t c = (uint8_t)SERIAL.read();
-        //client.write(c);
+    tnow_ms = millis(); // update it
+    int avail = SERIAL.available();
+    if (avail <= 0) {
+        serial_data_received_tfirst_ms = tnow_ms;      
+    } else 
+    if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+
         int len = SERIAL.read(buf, sizeof(buf));
         client.write(buf, len);
-    }    
+    }
 
 #endif    
 }
