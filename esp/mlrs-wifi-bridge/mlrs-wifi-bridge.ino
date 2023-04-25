@@ -40,11 +40,11 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
-#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
+//#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_ESP32_PICO_KIT
-//#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
+#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 
 
@@ -61,7 +61,7 @@ int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default i
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
 // baudrate
-int baudrate = 57600; // Higher baudrate -> lower latency
+int baudrate = 115200; // Higher baudrate -> lower latency
 
 // WiFi channel
 // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
@@ -109,7 +109,6 @@ unsigned long led_tlast_ms;
 bool is_connected;
 unsigned long is_connected_tlast_ms;
 unsigned long received_serial_tlast_us;
-unsigned long received_serial_tfirst_us;
 int avail_last;
 
 
@@ -176,7 +175,6 @@ void setup()
     is_connected_tlast_ms = 0;
 
     received_serial_tlast_us = 0;
-    received_serial_tfirst_us = 0;
     avail_last = 0;
     
     serialFlushRx();
@@ -203,7 +201,6 @@ void loop()
 
 #if WIFI_PROTOCOL == 1 // UDP
 
-    unsigned long tnow_us = micros();
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
@@ -212,27 +209,25 @@ void loop()
         is_connected_tlast_ms = millis();
     }
     
+    unsigned long tnow_us = micros();
     int avail = SERIAL.available();
     unsigned long gap_time = (10000000ULL/baudrate)*2;
-    // Wait for serial port to be idle for 2 character times before sending.
+    // Wait for serial port to be idle for gap_time before sending.
     // Since mLRS sends us one or more full MAVLink messages at a time,
     // this should result in alligning the start of the UDP payload to the start of a MAVLink message.
-    // And don't allow any data to remain in the serial buffer for more than about 22ms to constrain latency (just in case).
-    // Also constrain to a maximum UDP payload and serial buffer use of just over 255 bytes (only needed for low baud rate).
-    if (avail_last > 0) // data was waiting
-        if (((avail == avail_last) && (tnow_us - received_serial_tlast_us > gap_time)) || (tnow_us - received_serial_tfirst_us > 22000) || (avail > 255)) {
-            int len = SERIAL.read(buf, sizeof(buf));
-            udp.beginPacket(ip_udp, port_udp);
-            udp.write(buf, len);
-            udp.endPacket();
-            avail_last = 0;
-        }
+    // Also constrain to a maximum UDP payload and serial buffer use of just over 255 bytes (22ms at 115200 baud)
+    // Note: 2 character times should be enough, but something seems to be occasionally delaying serial reception for as much as 1-2ms
+    // This causes false gap detection which only messes with wireshark decode but causes no additional latency and very few extra packets
+    // Increase gap_time to 2000 if perfect wireshark decode is needed.
+    if (((avail > 0) && (avail == avail_last) && (tnow_us - received_serial_tlast_us > gap_time)) || (avail > 255)) {
+        int len = SERIAL.read(buf, sizeof(buf));
+        udp.beginPacket(ip_udp, port_udp);
+        udp.write(buf, len);
+        udp.endPacket();
+        avail = avail_last = 0;
+    }
 
-    if (avail != avail_last) { // We received something new
-        if (0 == avail_last) { // First byte received
-            received_serial_tfirst_us = tnow_us;
-        }
-        // Keep track of the time we last received something
+    if (avail != avail_last) { // Keep track of the time we last received something
         received_serial_tlast_us = tnow_us;
         avail_last = avail;
     }
