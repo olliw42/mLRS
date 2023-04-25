@@ -119,46 +119,8 @@ class In : public InBase
 In in;
 
 
-void init(void)
-{
-    // disable all interrupts, they may be enabled with restart
-    __disable_irq();
-
-    systembootloader_init();
-    leds_init();
-    button_init();
-    pos_switch_init();
-    esp_init();
-
-    delay_init();
-    micros_init();
-
-    systembootloader_do(); // after delay_init() since it may need delay
-
-    serial.Init();
-    serial2.Init();
-    in.Init();
-
-    com.Init();
-    cli.Init(&com);
-    buzzer.Init();
-    fan.Init();
-    dbg.Init();
-
-    setup_init();
-
-    sx.Init(); // sx needs Config, so call after setup_init()
-    sx2.Init();
-
-    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
-
-    __enable_irq();
-}
-
-
 //-------------------------------------------------------
-// mavlink
+// Mavlink
 //-------------------------------------------------------
 
 #include "mavlink_interface_tx.h"
@@ -226,6 +188,48 @@ void WhileTransmit::handle_once(void)
         disp.Draw();
     }
 #endif
+}
+
+
+//-------------------------------------------------------
+// Init
+//-------------------------------------------------------
+
+void init(void)
+{
+    // disable all interrupts, they may be enabled with restart
+    __disable_irq();
+
+    systembootloader_init();
+    leds_init();
+    button_init();
+    pos_switch_init();
+    esp_init();
+
+    delay_init();
+    micros_init();
+
+    systembootloader_do(); // after delay_init() since it may need delay
+
+    serial.Init();
+    serial2.Init();
+    in.Init();
+
+    com.Init();
+    cli.Init(&com);
+    buzzer.Init();
+    fan.Init();
+    dbg.Init();
+
+    setup_init();
+
+    sx.Init(); // sx needs Config, so call after setup_init()
+    sx2.Init();
+
+    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
+    crsf.Init(Config.UseCrsf);
+
+    __enable_irq();
 }
 
 
@@ -603,6 +607,7 @@ RESTARTCONTROLLER:
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
+  irq_status =  irq2_status = 0;
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
@@ -1028,10 +1033,10 @@ IF_CRSF(
     if (crsf.CommandReceived(&crsfcmd)) {
         switch (crsfcmd) {
         case TXCRSF_CMD_MODELID_SET:
-dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
+//dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
             break;
         case TXCRSF_CMD_MBRIDGE_IN:
-dbg.puts("\ncrsf mbridge ");
+//dbg.puts("\ncrsf mbridge ");
             mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen(), micros());
             break;
         }
@@ -1057,6 +1062,7 @@ dbg.puts("\ncrsf mbridge ");
     whileTransmit.Do();
 
     //-- Handle display or cli task
+
     uint8_t cli_task = disp.Task();
     if (cli_task == CLI_TASK_NONE) cli_task = cli.Task();
 

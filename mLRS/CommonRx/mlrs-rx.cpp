@@ -158,6 +158,23 @@ class Out : public OutBase
 Out out;
 
 
+//-------------------------------------------------------
+// Mavlink
+//-------------------------------------------------------
+
+#include "mavlink_interface_rx.h"
+
+MavlinkBase mavlink;
+
+#include "sx_serial_interface_rx.h"
+
+tRxSxSerial sx_serial;
+
+
+//-------------------------------------------------------
+// Init
+//-------------------------------------------------------
+
 void init(void)
 {
     systembootloader_init();
@@ -183,19 +200,6 @@ void init(void)
     sx.Init(); // sx needs Config, so call after setup_init()
     sx2.Init();
 }
-
-
-//-------------------------------------------------------
-// mavlink
-//-------------------------------------------------------
-
-#include "mavlink_interface_rx.h"
-
-MavlinkBase mavlink;
-
-#include "sx_serial_interface_rx.h"
-
-tRxSxSerial sx_serial;
 
 
 //-------------------------------------------------------
@@ -555,6 +559,7 @@ RESTARTCONTROLLER:
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
+  irq_status = irq2_status = 0;
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
