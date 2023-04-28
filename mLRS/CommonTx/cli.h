@@ -261,6 +261,7 @@ typedef enum {
     CLI_TASK_PARAM_STORE,
     CLI_TASK_BIND,
     CLI_TASK_PARAM_RELOAD,
+    CLI_TASK_BOOT,
 } CLI_TASK_ENUM;
 
 
@@ -694,7 +695,7 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (strcmp(buf, "systemboot") == 0) {
-            BootLoaderInit();
+            task_pending = CLI_TASK_BOOT;
 
         //-- ESP handling
         } else

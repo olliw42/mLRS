@@ -192,6 +192,17 @@ void WhileTransmit::handle_once(void)
 
 
 //-------------------------------------------------------
+// Some helper
+//-------------------------------------------------------
+
+void enter_system_bootloader(void)
+{
+    disp.DrawBoot();
+    BootLoaderInit();
+}
+
+
+//-------------------------------------------------------
 // Init
 //-------------------------------------------------------
 
@@ -994,6 +1005,7 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
             break;
         case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
         case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
         case MBRIDGE_CMD_MODELID_SET: {
 //            uint8_t* payload = mbridge.GetPayloadPtr();
 //dbg.puts("\nmbridge model id"); dbg.puts(u8toBCD_s(*payload));
@@ -1082,7 +1094,6 @@ IF_CRSF(
             doParamsStore = true;
         }
         break;
-    case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
     case CLI_TASK_PARAM_RELOAD:
         setup_reload();
         if (connected()) {
@@ -1090,6 +1101,8 @@ IF_CRSF(
             mbridge.Lock(); // lock mbridge
         }
         break;
+    case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
+    case CLI_TASK_BOOT: enter_system_bootloader(); break;
     }
 
   }//end of while(1) loop

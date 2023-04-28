@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-02-28.00'
+local version = '2023-04-28.00'
 
 
 -- experimental
@@ -116,6 +116,7 @@ local MBRIDGE_CMD_PARAM_STORE        = 13
 local MBRIDGE_CMD_BIND_START         = 14
 local MBRIDGE_CMD_BIND_STOP          = 15
 local MBRIDGE_CMD_MODELID_SET        = 16
+local MBRIDGE_CMD_SYSTEM_BOOTLOADER  = 17
 
 local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_TX_LINK_STATS then return MBRIDGE_CMD_TX_LINK_STATS_LEN; end
@@ -133,6 +134,7 @@ local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_BIND_START then return 0; end
     if cmd == MBRIDGE_CMD_BIND_STOP then return 0; end
     if cmd == MBRIDGE_CMD_MODELID_SET then return MBRIDGE_CMD_MODELID_SET_LEN; end
+    if cmd == MBRIDGE_CMD_SYSTEM_BOOTLOADER then return 0; end
     return 0;
 end
   
@@ -601,14 +603,25 @@ local function sendBind()
     setPopupBlocked("Binding")
 end  
 
+
+local function sendBoot()
+    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    cmdPush(MBRIDGE_CMD_SYSTEM_BOOTLOADER, {})
+    setPopupBlocked("In System Bootloader")
+end  
+
     
 ----------------------------------------------------------------------
 -- Edit stuff
 ----------------------------------------------------------------------
 
-local page_nr = 0 -- 0: main, 1: edit Tx, 2: edit Rx
+local PAGE_MAIN = 0
+local PAGE_EDIT_TX = 1
+local PAGE_EDIT_RX = 2
+local PAGE_TOOLS = 3
+local page_nr = PAGE_MAIN -- 0: main, 1: edit Tx, 2: edit Rx, 3: tools
 
-local BindPhrase_idx = 0
+local BindPhrase_idx = 0 -- idxes of options on main page
 local Mode_idx = 1
 local RFBand_idx = 2
 local EditTx_idx = 3
@@ -616,6 +629,8 @@ local EditRx_idx = 4
 local Save_idx = 5
 local Reload_idx = 6
 local Bind_idx = 7
+local Tools_idx = 8
+local PAGE_MAIN_CURSOR_IDX_MAX = 8
 
 local cursor_idx = EditTx_idx
 local edit = false
@@ -820,8 +835,8 @@ local function doPageEdit(event, page_str)
     lcd.drawText(5, 5, "mLRS Configurator: Edit "..page_str, MENU_TITLE_COLOR)
 
     if event == EVT_VIRTUAL_EXIT and not edit then
-        page_nr = 0
-        cursor_idx = 3
+        page_nr = PAGE_MAIN
+        cursor_idx = EditTx_idx
         return
     end
      
@@ -852,6 +867,47 @@ local function doPageEdit(event, page_str)
         end
     end  
 
+end
+
+
+----------------------------------------------------------------------
+-- Page Tools
+----------------------------------------------------------------------
+    
+local Tools_Boot_idx = 0 -- idxes of options on tools page
+local PAGE_TOOLS_CURSOR_IDX_MAX = 0
+    
+local function drawPageTools()
+    local x, y;
+    
+    y = 60
+    lcd.drawText(10, y, "System Bootloader", cur_attr(Tools_Boot_idx))
+end
+
+
+local function doPageTools(event)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 30, TITLE_BGCOLOR)
+    lcd.drawText(5, 5, "mLRS Configurator: Tools Page", MENU_TITLE_COLOR)
+    
+    drawPageTools()
+    
+    if event == EVT_VIRTUAL_ENTER then
+        if cursor_idx == Tools_Boot_idx then -- Boot
+            page_nr = PAGE_MAIN
+            cursor_idx = EditTx_idx
+            sendBoot()
+        end  
+    elseif event == EVT_VIRTUAL_EXIT then
+        page_nr = PAGE_MAIN
+        cursor_idx = EditTx_idx
+        return
+    elseif event == EVT_VIRTUAL_NEXT then
+        cursor_idx = cursor_idx + 1
+        if cursor_idx > PAGE_TOOLS_CURSOR_IDX_MAX then cursor_idx = PAGE_TOOLS_CURSOR_IDX_MAX end
+    elseif event == EVT_VIRTUAL_PREV then
+        cursor_idx = cursor_idx - 1
+        if cursor_idx < 0 then cursor_idx = 0 end
+    end
 end
 
 
@@ -926,9 +982,10 @@ local function drawPageMain()
     else  
         lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(4))
     end  
-    lcd.drawText(10 + 160, y, "Save", cur_attr(5))  
+    lcd.drawText(10 + 160, y, "Save", cur_attr(5)) 
     lcd.drawText(10 + 225, y, "Reload", cur_attr(6))
     lcd.drawText(10 + 305, y, "Bind", cur_attr(7))
+    lcd.drawText(10 + 365, y, "Tools", cur_attr(8))
      
     -- show overview of some selected parameters
     y = 205
@@ -993,12 +1050,12 @@ local function doPageMain(event)
             -- nothing to do
         elseif event == EVT_VIRTUAL_ENTER then --and DEVICE_PARAM_LIST_complete then
             if cursor_idx == EditTx_idx and DEVICE_PARAM_LIST_complete then -- EditTX pressed
-                page_nr = 1
+                page_nr = PAGE_EDIT_TX
                 cursor_idx = 0
                 top_idx = 0
                 return
             elseif cursor_idx == EditRx_idx and DEVICE_PARAM_LIST_complete then -- EditRX pressed
-                page_nr = 2
+                page_nr = PAGE_EDIT_RX
                 cursor_idx = 0
                 top_idx = 0
                 return
@@ -1008,13 +1065,18 @@ local function doPageMain(event)
                 clearParams()
             elseif cursor_idx == Bind_idx then -- Bind pressed
                 sendBind()
-            elseif DEVICE_PARAM_LIST_complete then
+            elseif cursor_idx == Tools_idx and DEVICE_PARAM_LIST_complete then -- Tools pressed
+                page_nr = PAGE_TOOLS
+                cursor_idx = 0
+                top_idx = 0
+                return
+            elseif DEVICE_PARAM_LIST_complete then -- edit option
                 cursor_x_idx = 0
                 edit = true
             end  
         elseif event == EVT_VIRTUAL_NEXT then -- and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx + 1
-            if cursor_idx > 7 then cursor_idx = 7 end
+            if cursor_idx > PAGE_MAIN_CURSOR_IDX_MAX then cursor_idx = PAGE_MAIN_CURSOR_IDX_MAX end
           
             if cursor_idx == Mode_idx and not param_focusable(1) then cursor_idx = cursor_idx + 1 end
             if cursor_idx == RFBand_idx and not param_focusable(2) then cursor_idx = cursor_idx + 1 end
@@ -1080,17 +1142,19 @@ local function Do(event)
     if has_disconnected then
         if not popup then setPopup("Receiver\nhas disconnected!") end
     end
-    if not connected and page_nr == 2 then
-        page_nr = 0
+    if not connected and page_nr == PAGE_EDIT_RX then
+        page_nr = PAGE_MAIN
         cursor_idx = EditTx_idx
     end  
 
     doParamLoop()
     
-    if page_nr == 1 then
+    if page_nr == PAGE_EDIT_TX then
         doPageEdit(event,"Tx")
-    elseif page_nr == 2 then
+    elseif page_nr == PAGE_EDIT_RX then
         doPageEdit(event,"Rx")
+    elseif page_nr == PAGE_TOOLS then
+        doPageTools(event)
     else
         doPageMain(event)
     end
@@ -1132,7 +1196,7 @@ local function scriptRun(event)
         return 2
     end  
     
-    if not edit and page_nr == 0 then
+    if not edit and page_nr == PAGE_MAIN then
         if event == EVT_VIRTUAL_EXIT then
             return 2
         end    
