@@ -195,6 +195,18 @@ void WhileTransmit::handle_once(void)
 // Some helper
 //-------------------------------------------------------
 
+void start_bind(void)
+{
+    if (!bind.IsInBind()) bind.StartBind();
+}
+
+
+void stop_bind(void)
+{
+    if (bind.IsInBind()) bind.StopBind();
+}
+
+
 void enter_system_bootloader(void)
 {
     disp.DrawBoot();
@@ -1003,8 +1015,8 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
                 doParamsStore = true;
             }
             break;
-        case MBRIDGE_CMD_BIND_START: if (!bind.IsInBind()) bind.StartBind(); break;
-        case MBRIDGE_CMD_BIND_STOP: if (bind.IsInBind()) bind.StopBind(); break;
+        case MBRIDGE_CMD_BIND_START: start_bind(); break;
+        case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
         case MBRIDGE_CMD_MODELID_SET: {
 //            uint8_t* payload = mbridge.GetPayloadPtr();
@@ -1101,7 +1113,7 @@ IF_CRSF(
             mbridge.Lock(); // lock mbridge
         }
         break;
-    case CLI_TASK_BIND: if (!bind.IsInBind()) bind.StartBind(); break;
+    case CLI_TASK_BIND: start_bind(); break;
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
     }
 
