@@ -38,16 +38,12 @@ class MavlinkBase
   private:
     void send_msg_serial_out(void);
     void handle_msg_serial_out(void);
-    void generate_radio_status(void);
 
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
-
-    // to inject RADIO_STATUS messages
-    uint32_t radio_status_tlast_ms;
 
     uint8_t vehicle_sysid; // 0 indicates data is invalid
     uint8_t vehicle_is_armed;
@@ -67,8 +63,6 @@ void MavlinkBase::Init(void)
     status_link_in = {0};
     status_serial_out = {0};
 
-    radio_status_tlast_ms = millis32() + 1000;
-
     vehicle_sysid = 0;
     vehicle_is_armed = UINT8_MAX;
     vehicle_is_flying = UINT8_MAX;
@@ -79,30 +73,13 @@ void MavlinkBase::Init(void)
 
 void MavlinkBase::Do(void)
 {
-    uint32_t tnow_ms = millis32();
-    bool inject_radio_status = false;
-
-    if (!connected()) {
+    if (!connected()) { // implies SetupMetaData.rx_available
         //Init();
-        radio_status_tlast_ms = tnow_ms + 1000;
     }
 
     if (Setup.Tx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
-    if (Setup.Tx.SendRadioStatus && connected()) {
-        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-            radio_status_tlast_ms = tnow_ms;
-            inject_radio_status = true;
-        }
-    } else {
-        radio_status_tlast_ms = tnow_ms;
-    }
-
-    if (inject_radio_status) { // && serial.tx_is_empty()) {
-        inject_radio_status = false;
-        generate_radio_status();
-        send_msg_serial_out();
-    }
+    // there is nothing mavlink specific we currently do
 }
 
 
@@ -205,29 +182,7 @@ void MavlinkBase::handle_msg_serial_out(void)
 // Generate Messages
 //-------------------------------------------------------
 
-void MavlinkBase::generate_radio_status(void)
-{
-uint8_t rssi, remrssi, txbuf, noise;
-
-    rssi = rssi_i8_to_ap(stats.GetLastRssi());
-    remrssi = rssi_i8_to_ap(stats.received_rssi);
-
-    // we don't have a reasonable noise measurement, but can use this field to report on the snr
-    // the snr can be positive and negative however, so we artificially set snr = 10 to zero
-    int16_t snr = -stats.GetLastSnr() + 10;
-    noise = (snr < 0) ? 0 : (snr > 127) ? 127 : snr;
-
-    // we do nothing, I'm not aware that any GCS respect this, and if so, it needs detailed investigation
-    txbuf = 100;
-
-    fmav_msg_radio_status_pack(
-        &msg_serial_out,
-        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
-        MAV_COMP_ID_TELEMETRY_RADIO,
-        rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
-        //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
-        &status_serial_out);
-}
+// currently none
 
 
 #endif // MAVLINK_INTERFACE_TX_H

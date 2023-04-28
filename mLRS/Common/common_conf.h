@@ -55,8 +55,6 @@
 
 #define SETUP_TX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
 
-#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
-
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
 #define SETUP_TX_CLI_LINE_END           0 // 0: CR, 1: LF, 2: CRLF
 

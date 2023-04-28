@@ -75,12 +75,6 @@ typedef enum {
 
 
 typedef enum {
-    TX_SEND_RADIO_STATUS_OFF = 0,
-    TX_SEND_RADIO_STATUS_1HZ,
-    TX_SEND_RADIO_STATUS_NUM,
-} TX_SEND_RADIO_STATUS_ENUM;
-
-typedef enum {
     RX_SEND_RADIO_STATUS_OFF = 0,
     RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1,
     RX_SEND_RADIO_STATUS_METHOD_PX4,
@@ -213,7 +207,7 @@ typedef struct
     uint8_t SerialDestination;
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
-    uint8_t SendRadioStatus;
+    uint8_t __SendRadioStatus; // deprecated
     uint8_t Buzzer;
     uint8_t CliLineEnd;
 
