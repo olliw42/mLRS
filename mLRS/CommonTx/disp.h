@@ -84,6 +84,7 @@ class tTxDisp
     void SetBind(void);
     void Draw(void);
     uint8_t Task(void);
+    void DrawNotify(const char* s);
     void DrawBoot(void);
     void DrawFlashEsp(void);
 
@@ -457,18 +458,25 @@ void tTxDisp::SetBind(void)
 }
 
 
+void tTxDisp::DrawNotify(const char* s)
+{
+    if (!initialized) return;
+    draw_page_notify(s);
+    gdisp_update();
+    page_modified = false;
+}
+
+
 void tTxDisp::DrawBoot(void)
 {
-    draw_page_notify("BOOT");
-    gdisp_update();
+    DrawNotify("BOOT");
     delay_ms(250);
 }
 
 
 void tTxDisp::DrawFlashEsp(void)
 {
-    draw_page_notify("FLASH ESP");
-    gdisp_update();
+    DrawNotify("FLASH ESP");
 }
 
 
@@ -616,7 +624,12 @@ void tTxDisp::draw_page_notify(const char* s)
     gdisp_clear();
     gdisp_setcurXY(0, 6);
     gdisp_setfont(&FreeMono12pt7b);
+    uint8_t len = strlen(s);
+    if (len < 9) {
     gdisp_setcurY(37-10); gdisp_puts_XCentered(s);
+    } else {
+      gdisp_setcurY(37-10); gdisp_puts(s); // TODO: gets the job done, but could be smarter
+    }
     gdisp_unsetfont();
 }
 
