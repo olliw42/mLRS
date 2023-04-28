@@ -73,11 +73,11 @@ void MavlinkBase::Init(void)
 
 void MavlinkBase::Do(void)
 {
-    if (!connected()) { // implies SetupMetaData.rx_available
+    if (!connected()) { // !connected() implies !SetupMetaData.rx_available
         //Init();
     }
 
-    if (Setup.Tx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
 
     // there is nothing mavlink specific we currently do
 }

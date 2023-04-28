@@ -170,7 +170,6 @@ void setup_default(void)
     Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
     Setup.Tx.InMode = SETUP_TX_IN_MODE;
     Setup.Tx.SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
-    Setup.Tx.SerialLinkMode = SETUP_TX_SERIAL_LINK_MODE;
     Setup.Tx.Buzzer = SETUP_TX_BUZZER;
     Setup.Tx.CliLineEnd = SETUP_TX_CLI_LINE_END;
 
@@ -244,7 +243,6 @@ void setup_sanitize(void)
 
     if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = CHANNEL_ORDER_AETR;
     if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_115200;
-    if (Setup.Tx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Tx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
 
     if (Setup.Tx.Buzzer >= BUZZER_NUM) Setup.Tx.Buzzer = BUZZER_OFF;
     if (SETUP_TST_NOTALLOWED(Tx_Buzzer_allowed_mask,Tx.Buzzer)) Setup.Tx.Buzzer = BUZZER_OFF;

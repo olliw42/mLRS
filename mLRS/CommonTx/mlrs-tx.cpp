@@ -871,6 +871,7 @@ IF_ANTENNA2(
                 connect_sync_cnt++;
                 if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
                     // this should not happen, since we started with GET_RX_SETUPDATA, right?
+                    // we could be more gentle and postpone connection by one cnt
                     if (!SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
@@ -1023,7 +1024,7 @@ IF_CRSF(
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
-            if (Setup.Tx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+            if (connected() && Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // connected() implies SetupMetaData.rx_available
                 crsf.SendTelemetryFrame();
             }
             DECl(do_cnt);

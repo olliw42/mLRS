@@ -206,7 +206,7 @@ typedef struct
     uint8_t InMode;
     uint8_t SerialDestination;
     uint8_t SerialBaudrate;
-    uint8_t SerialLinkMode;
+    uint8_t __SerialLinkMode; // deprecated, substituted by Rx.SerialLinkMode
     uint8_t __SendRadioStatus; // deprecated
     uint8_t Buzzer;
     uint8_t CliLineEnd;
