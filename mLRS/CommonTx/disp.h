@@ -23,6 +23,7 @@ class tTxDisp
     void Tick_ms(void) {};
     uint8_t Task(void) { return 0; };
     void DrawBoot(void) {};
+    void DrawFlashEsp(void) {};
 };
 #else
 
@@ -84,6 +85,7 @@ class tTxDisp
     void Draw(void);
     uint8_t Task(void);
     void DrawBoot(void);
+    void DrawFlashEsp(void);
 
     typedef struct {
         uint8_t list[SETUP_PARAMETER_NUM];
@@ -405,6 +407,9 @@ void tTxDisp::page_init(void)
         case PAGE_RX: idx_max = rx_list.num - 1; break;
         case PAGE_ACTIONS: 
             idx_max = 2; 
+#ifdef USE_ESP_WIFI_BRIDGE
+            idx_max++;
+#endif
             break;
     }
 
@@ -430,6 +435,9 @@ void tTxDisp::run_action(void)
     case 2: // BOOT
         task_pending = CLI_TASK_BOOT;
         break;
+    case 3: // FLASH ESP
+        task_pending = CLI_TASK_FLASH_ESP;
+        break;
     }
 }
 
@@ -454,6 +462,13 @@ void tTxDisp::DrawBoot(void)
     draw_page_notify("BOOT");
     gdisp_update();
     delay_ms(250);
+}
+
+
+void tTxDisp::DrawFlashEsp(void)
+{
+    draw_page_notify("FLASH ESP");
+    gdisp_update();
 }
 
 
@@ -830,6 +845,14 @@ void tTxDisp::draw_page_actions(void)
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("BOOT");
     gdisp_unsetinverted();
+
+#ifdef USE_ESP_WIFI_BRIDGE
+    idx++;
+    gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+    if (idx == idx_focused) gdisp_setinverted();
+    gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
+    gdisp_unsetinverted();
+#endif
 }
 
 

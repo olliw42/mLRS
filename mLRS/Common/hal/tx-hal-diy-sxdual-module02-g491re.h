@@ -70,9 +70,6 @@
 #define UARTD_USE_RX
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define ESP_RESET                 IO_PC6
-#define ESP_GPIO0                 IO_PB0
-
 #define UARTF_USE_LPUART1_REMAPPED // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX

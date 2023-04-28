@@ -262,6 +262,7 @@ typedef enum {
     CLI_TASK_BIND,
     CLI_TASK_PARAM_RELOAD,
     CLI_TASK_BOOT,
+    CLI_TASK_FLASH_ESP,
 } CLI_TASK_ENUM;
 
 
@@ -604,6 +605,31 @@ uint16_t led_blink = 0;
 }
 
 
+// TODO: should really be abstracted out, but for the moment let's be happy to have it here
+void flashesp_do(tSerialBase* com)
+{
+#ifdef USE_ESP_WIFI_BRIDGE
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+    esp_gpio0_low();
+    esp_reset_low();
+    delay_ms(100);
+    esp_reset_high();
+    delay_ms(100);
+    esp_gpio0_high();
+    delay_ms(100);
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    serial.SetBaudRate(115200);
+    passthrough_do(com, &serial);
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    serial2.SetBaudRate(115200);
+    passthrough_do(com, &serial2);
+#endif
+#endif
+}
+
+
 void tTxCli::Do(void)
 {
 char sname[32], svalue[32];
@@ -706,26 +732,14 @@ bool rx_param_changed;
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (strcmp(buf, "espboot") == 0) {
-            esp_gpio0_low();
-            esp_reset_low();
-            delay_ms(100);
-            esp_reset_high();
-            delay_ms(100);
-            esp_gpio0_high();
-            delay_ms(100);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-            serial.SetBaudRate(115200);
-            passthrough_do(com, &serial);
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-            serial2.SetBaudRate(115200);
-            passthrough_do(com, &serial2);
-#endif
+            task_pending = CLI_TASK_FLASH_ESP;
         } else
         if (strcmp(buf, "espcli") == 0) {
             // enter esp cli, can only be exited by re-powering
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
             esp_gpio0_low();
             delay_ms(100);
+#endif
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
             serial.SetBaudRate(115200);
             passthrough_do(com, &serial);

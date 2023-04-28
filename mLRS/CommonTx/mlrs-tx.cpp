@@ -214,6 +214,13 @@ void enter_system_bootloader(void)
 }
 
 
+void enter_flash_esp(void)
+{
+    disp.DrawFlashEsp();
+    flashesp_do(&com);
+}
+
+
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
@@ -1115,6 +1122,7 @@ IF_CRSF(
         break;
     case CLI_TASK_BIND: start_bind(); break;
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
+    case CLI_TASK_FLASH_ESP: enter_flash_esp(); break;
     }
 
   }//end of while(1) loop
