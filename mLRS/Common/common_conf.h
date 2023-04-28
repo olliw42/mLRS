@@ -47,7 +47,7 @@
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
-#define SETUP_TX_SERIAL_BAUDRATE        3 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200
+#define SETUP_TX_SERIAL_BAUDRATE        4 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200, 5: 230400
 
 #define SETUP_TX_POWER                  CPOWER
 

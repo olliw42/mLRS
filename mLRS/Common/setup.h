@@ -244,7 +244,7 @@ void setup_sanitize(void)
     if (SETUP_TST_NOTALLOWED(Tx_SerialDestination_allowed_mask,Tx.SerialDestination)) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL;
 
     if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = CHANNEL_ORDER_AETR;
-    if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_115200;
     if (Setup.Tx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Tx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
     if (Setup.Tx.SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = TX_SEND_RADIO_STATUS_OFF;
 
@@ -450,7 +450,11 @@ void setup_configure(void)
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
     case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 230400; break;
     default:
+#ifdef DEVICE_IS_TRANSMITTER
+        Config.SerialBaudrate = 115200;
+#else
         Config.SerialBaudrate = 57600;
+#endif
     }
 
     //-- Mbridge, Crsf
@@ -541,7 +545,7 @@ bool doEEPROMwrite;
     setup_configure_metadata();
 
 #ifdef SETUP_FORCE_COMMON_CONF
-setup_default();
+    setup_default();
 #endif
 
     setup_sanitize();

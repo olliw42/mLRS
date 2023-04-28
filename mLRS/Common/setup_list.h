@@ -48,7 +48,7 @@
 
 #define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2"
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
-#define SETUP_OPT_SERIAL_BAUDRATE     "9600,19200,38400,57600,115200"
+#define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
 
@@ -77,7 +77,7 @@
   X( Setup.Tx.ChannelOrder,       LIST, "Tx Ch Order",      "TX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Tx.InMode,             LIST, "Tx In Mode",       "TX_IN_MODE",       0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
   X( Setup.Tx.SerialDestination,  LIST, "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,mbridge,serial2", SETUP_MSK_TX_SER_DEST )\
-  X( Setup.Tx.SerialBaudrate,     LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Tx.SerialBaudrate,     LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx.SerialLinkMode,     LIST, "Tx Ser Link Mode", "TX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Tx.SendRadioStatus,    LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx.Buzzer,             LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\

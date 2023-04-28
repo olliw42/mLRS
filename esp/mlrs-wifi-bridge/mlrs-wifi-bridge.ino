@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 25. Apr. 2023
+// 28. Apr. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -61,7 +61,7 @@ int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default i
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
 // baudrate
-int baudrate = 57600;
+int baudrate = 115200;
 
 // WiFi channel
 // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
