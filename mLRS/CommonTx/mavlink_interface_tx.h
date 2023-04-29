@@ -116,7 +116,9 @@ uint8_t MavlinkBase::VehicleState(void)
 
 void MavlinkBase::putc(char c)
 {
-    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+//XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    if (fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
         send_msg_serial_out();
