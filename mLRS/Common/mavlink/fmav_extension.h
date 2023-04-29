@@ -145,12 +145,13 @@ class ComponentList
 //    }
 //
 // this reads the complete frame, so adds latency, but for the moment we do it to keep it simple
-// should not ok for testing and dev-ing
+// should be ok for testing and dev-ing
 
-#define MAVLINKX_MAGIC_1            '0'
+#define MAVLINKX_MAGIC_1            'O'
 #define MAVLINKX_MAGIC_2            'W'
 #define MAVLINKX_HEADER_LEN_MAX     11 // STX1 STX2 flags len seq sysid compid msgid1 msgid2 msgid3 crc8
 #define MAVLINKX_FRAME_LEN_MAX      (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
+
 
 typedef enum {
     MAVLINKX_FLAGS_IS_V1            = 0x01,
@@ -161,15 +162,29 @@ typedef enum {
     MAVLINKX_FLAGS_IS_COMPRESSED    = 0x20,
 } fmavx_flags_e;
 
+
 typedef enum {
     FASTMAVLINK_PARSE_STATE_MAGIC_2 = 100,
     FASTMAVLINK_PARSE_STATE_FLAGS,
     FASTMAVLINK_PARSE_STATE_CRC8,
 } fmavx_parse_state_e;
 
-static uint8_t fmavx_status_flags = 0;
-static uint8_t fmavx_status_crc8 = 0;
 
+typedef struct _fmavx_status {
+    uint8_t flags;
+    uint8_t header[16];
+    uint8_t pos;
+} fmavx_status_t;
+
+
+void fmavX_status_reset(fmavx_status_t* status)
+{
+    status->flags = 0;
+    status->pos = 0;
+}
+
+
+fmavx_status_t fmavx_status = {0};
 
 
 // convert fmav msg structure into fmavX packet
@@ -231,53 +246,44 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 
 // parse the stream into regular fmav msg
 // returns NONE, HAS_HEADER, or OK
-FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
+FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
-    if (status->rx_cnt >= MAVLINKX_FRAME_LEN_MAX) { // this should never happen, but play it safe
-        status->rx_state = FASTMAVLINK_PARSE_STATE_IDLE;
-    }
-
     switch (status->rx_state) {
-    case FASTMAVLINK_PARSE_STATE_IDLE:
-        status->rx_cnt = 0;
-        fmavx_status_flags = 0;
-        fmavx_status_crc8 = 0;
-        if (c == MAVLINKX_MAGIC_1) {
-            status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
-        }
-        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
-        return FASTMAVLINK_PARSE_RESULT_NONE;
 
     case FASTMAVLINK_PARSE_STATE_MAGIC_2:
+        fmavx_status.header[fmavx_status.pos++] = c; // memorize
+
         if (c == MAVLINKX_MAGIC_2) {
             status->rx_state = FASTMAVLINK_PARSE_STATE_FLAGS;
         } else {
             fmav_parse_reset(status);
         }
-        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
-        return FASTMAVLINK_PARSE_RESULT_NONE;
+        return;
 
     case FASTMAVLINK_PARSE_STATE_FLAGS:{
-        fmavx_status_flags = c;
+        fmavx_status.header[fmavx_status.pos++] = c; // memorize
 
-        uint8_t magic = (fmavx_status_flags & MAVLINKX_FLAGS_IS_V1) ? FASTMAVLINK_MAGIC_V1 : FASTMAVLINK_MAGIC_V2;
+        fmavx_status.flags = c;
+
+        uint8_t magic = (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) ? FASTMAVLINK_MAGIC_V1 : FASTMAVLINK_MAGIC_V2;
         buf[status->rx_cnt++] = magic; // STX
 
         status->rx_state = FASTMAVLINK_PARSE_STATE_LEN;
-        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
-        }return FASTMAVLINK_PARSE_RESULT_NONE;
+        }return;
 
     case FASTMAVLINK_PARSE_STATE_LEN:
+        fmavx_status.header[fmavx_status.pos++] = c; // memorize
+
         buf[status->rx_cnt++] = c; // len
 
-        if (fmavx_status_flags & MAVLINKX_FLAGS_IS_V1) {
+        if (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) {
             status->rx_header_len = FASTMAVLINK_HEADER_V1_LEN;
             status->rx_frame_len = (uint16_t)c + FASTMAVLINK_HEADER_V1_LEN + FASTMAVLINK_CHECKSUM_LEN;
         } else {
             status->rx_header_len = FASTMAVLINK_HEADER_V2_LEN;
             status->rx_frame_len = (uint16_t)c + FASTMAVLINK_HEADER_V2_LEN + FASTMAVLINK_CHECKSUM_LEN;
 
-            uint8_t incompat_flags = (fmavx_status_flags & MAVLINKX_FLAGS_HAS_SIGNATURE) ? FASTMAVLINK_INCOMPAT_FLAGS_SIGNED : 0;
+            uint8_t incompat_flags = (fmavx_status.flags & MAVLINKX_FLAGS_HAS_SIGNATURE) ? FASTMAVLINK_INCOMPAT_FLAGS_SIGNED : 0;
             buf[status->rx_cnt++] = incompat_flags; // incompat_flags
             buf[status->rx_cnt++] = 0; // compat_flags
 
@@ -287,31 +293,97 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
         }
 
         status->rx_state = FASTMAVLINK_PARSE_STATE_SEQ;
-        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
-        return FASTMAVLINK_PARSE_RESULT_NONE;
+        return;
 
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
     case FASTMAVLINK_PARSE_STATE_COMPID:
     case FASTMAVLINK_PARSE_STATE_MSGID_1:
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
+        fmavx_status.header[fmavx_status.pos++] = c; // memorize
+
         buf[status->rx_cnt++] = c; // seq, sysid, compiid, msg:0, msg:1
+
         status->rx_state++;
-        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
-        return FASTMAVLINK_PARSE_RESULT_NONE;
+        return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
+        fmavx_status.header[fmavx_status.pos++] = c; // memorize
+
         buf[status->rx_cnt++] = c; // msg::2
+
         status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+        return;
+    }
+}
+
+
+FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
+{
+    if (status->rx_cnt >= MAVLINKX_FRAME_LEN_MAX) { // this should never happen, but play it safe
+        status->rx_state = FASTMAVLINK_PARSE_STATE_IDLE;
+    }
+
+    switch (status->rx_state) {
+    case FASTMAVLINK_PARSE_STATE_IDLE:
+        status->rx_cnt = 0;
+        if (c == MAVLINKX_MAGIC_1) {
+            fmavX_status_reset(&fmavx_status);
+            fmavx_status.header[fmavx_status.pos++] = MAVLINKX_MAGIC_1; // memorize
+            status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
+        }
         result->res = FASTMAVLINK_PARSE_RESULT_NONE;
         return FASTMAVLINK_PARSE_RESULT_NONE;
 
-    case FASTMAVLINK_PARSE_STATE_CRC8:
-        fmavx_status_crc8 = c;
-        // TODO: check crc8
+    case FASTMAVLINK_PARSE_STATE_MAGIC_2:
+    case FASTMAVLINK_PARSE_STATE_FLAGS:
+    case FASTMAVLINK_PARSE_STATE_LEN:
+    case FASTMAVLINK_PARSE_STATE_SEQ:
+    case FASTMAVLINK_PARSE_STATE_SYSID:
+    case FASTMAVLINK_PARSE_STATE_COMPID:
+    case FASTMAVLINK_PARSE_STATE_MSGID_1:
+    case FASTMAVLINK_PARSE_STATE_MSGID_2:
+    case FASTMAVLINK_PARSE_STATE_MSGID_3:
+        _fmavX_parse_header_to_frame_buf(result, buf, status, c);
+        result->res = FASTMAVLINK_PARSE_RESULT_NONE;
+        return FASTMAVLINK_PARSE_RESULT_NONE;
+
+    case FASTMAVLINK_PARSE_STATE_CRC8: {
+        uint8_t crc8 = fmav_crc_calculate(fmavx_status.header, fmavx_status.pos) & 0x00FF;
+
+        if (c != crc8) { // error, try to reset properly
+            fmav_parse_reset(status);
+
+            // search for another 'O'
+            uint8_t next_magic_pos = 0;
+            for (uint8_t n = 2; n < fmavx_status.pos; n++) { // sufficient to start with flags field
+                if (fmavx_status.header[n] == MAVLINKX_MAGIC_1) { next_magic_pos = n; break; }
+            }
+
+            // there is another 'O' in the header, so backtrack
+            if (next_magic_pos) {
+                fmavx_status.header[fmavx_status.pos++] = c; // memorize also crc8
+
+                uint8_t len = fmavx_status.pos;
+                uint8_t head[16];
+                memcpy(head, fmavx_status.header, len);
+
+                fmavX_status_reset(&fmavx_status);
+                fmavx_status.header[fmavx_status.pos++] = MAVLINKX_MAGIC_1; // memorize
+                status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
+
+                for (uint8_t n = next_magic_pos + 1; n < len; n++) {
+                    _fmavX_parse_header_to_frame_buf(result, buf, status, head[n]);
+                }
+            }
+
+            result->res = FASTMAVLINK_PARSE_RESULT_NONE;
+            return FASTMAVLINK_PARSE_RESULT_NONE;
+        }
+
         status->rx_state = FASTMAVLINK_FASTPARSE_STATE_FRAME;
         result->res = FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
-        return FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
+        return FASTMAVLINK_PARSE_RESULT_HAS_HEADER; }
 
     case FASTMAVLINK_FASTPARSE_STATE_FRAME:
         buf[status->rx_cnt++] = c; // payload, crc16, signature

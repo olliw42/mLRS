@@ -161,8 +161,11 @@ void MavlinkBase::Do(void)
             fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
 
             //uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-
             uint16_t len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+
+            // do some fake to stress test the parser
+            //uint8_t b[16] = { 'a', 'O', 'W', 0, 128, '!', '?' };
+            //fifo_link_out.PutBuf(b, 6);
 
             fifo_link_out.PutBuf(_buf, len);
         }
@@ -261,16 +264,7 @@ void MavlinkBase::putc(char c)
 
 
 bool MavlinkBase::available(void)
-{/*
-    while (serial.available()) {
-        char c = serial.getc();
-        if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
-            fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
-            uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-            fifo_link_out.PutBuf(_buf, len);
-        }
-    } */
-
+{
     return fifo_link_out.Available();
     //return serial.available();
 }
