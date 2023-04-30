@@ -33,6 +33,7 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
 #include "../Common/libs/stdstm32-mcu.h"
+#include "../Common/libs/stdstm32-adc.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
