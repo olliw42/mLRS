@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY DUAL-E22 MODULE02 v031 STM32G491RE
+// TX DIY DUAL-E22 MODULE02 v042 STM32G491RE
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
@@ -16,6 +16,7 @@
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SERIAL2
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -271,29 +272,43 @@ void pos_switch_init(void)
 
 
 //-- 5 Way Switch
+// PC2: resistor chain Vcc - 4.7k - down - 1k - left - 2.2k - right - 4.7k - up
+// PC13: center
 
-#define FIVEWAY_SWITCH_CENTER     IO_PC15 // POS_3
-#define FIVEWAY_SWITCH_UP         IO_PC13 // A = POS_2
-#define FIVEWAY_SWITCH_DOWN       IO_PC2 // D = POS_5
-#define FIVEWAY_SWITCH_LEFT       IO_PC3 // C = POS_4
-#define FIVEWAY_SWITCH_RIGHT      IO_PC14 // B = POS_1
+#define FIVEWAY_SWITCH_CENTER     IO_PC13
+#define FIVEWAY_ADCx              ADC2 // could also be ADC1
+#define FIVEWAY_ADC_IO            IO_PC2 // ADC12_IN8
+#define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
+
+extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
     gpio_init(FIVEWAY_SWITCH_CENTER, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    gpio_init(FIVEWAY_SWITCH_UP, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    gpio_init(FIVEWAY_SWITCH_DOWN, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    gpio_init(FIVEWAY_SWITCH_LEFT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    gpio_init(FIVEWAY_SWITCH_RIGHT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    LL_RCC_SetADCClockSource(LL_RCC_ADC12_CLKSOURCE_SYSCLK);
+    rcc_init_afio();
+    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_one_channel(FIVEWAY_ADCx);
+    adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
+    adc_enable(FIVEWAY_ADCx);
+    delay_us(100);
+    adc_start_conversion(FIVEWAY_ADCx);
+}
+
+uint16_t fiveway_adc_read(void)
+{
+    return LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
 }
 
 uint8_t fiveway_read(void)
 {
-    return ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_UP) << KEY_UP) +
-           ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_DOWN) << KEY_DOWN) +
-           ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_LEFT) << KEY_LEFT) +
-           ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_RIGHT) << KEY_RIGHT) +
-           ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_CENTER) << KEY_CENTER);
+    uint8_t center_pressed = gpio_read_activelow(FIVEWAY_SWITCH_CENTER);
+    uint16_t adc = LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
+    if (adc < (0+200)) return (1 << KEY_DOWN); // 0
+    if (adc > (655-200) && adc < (655+200)) return (1 << KEY_LEFT); // 655
+    if (adc > (1595-200) && adc < (1595+200)) return (1 << KEY_RIGHT); // 1595
+    if (adc > (2505-200) && adc < (2505+200)) return (1 << KEY_UP); // 2505
+    return (center_pressed << KEY_CENTER);
 }
 
 
@@ -314,6 +329,33 @@ uint8_t fiveway_read(void)
 #define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
 #define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
 //#define BUZZER_TIM_IRQ_PRIORITY   14
+
+
+//-- ESP32 Wifi Bridge
+
+#define ESP_RESET                 IO_PC8
+#define ESP_GPIO0                 IO_PB1
+#define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
+#define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
+
+void esp_init(void)
+{
+    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp is in reset
+    gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
+    gpio_init(ESP_DTR, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
+    gpio_init(ESP_RTS, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
+}
+
+void esp_reset_high(void) { gpio_high(ESP_RESET); }
+void esp_reset_low(void) { gpio_low(ESP_RESET); }
+
+void esp_gpio0_high(void) { gpio_high(ESP_GPIO0); }
+void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
+
+uint8_t esp_dtr_rts(void)
+{
+    return gpio_read_activehigh(ESP_DTR) + (gpio_read_activehigh(ESP_RTS) << 1);
+}
 
 
 //-- POWER
@@ -349,7 +391,7 @@ uint32_t portb[] = {
 uint32_t portc[] = {
     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
     LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
-    LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15
+    LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14,
 };
 
 
