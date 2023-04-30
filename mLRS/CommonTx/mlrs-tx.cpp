@@ -152,6 +152,15 @@ tTxDisp disp;
 
 
 //-------------------------------------------------------
+// Wifi Bridge
+//-------------------------------------------------------
+
+#include "esp.h"
+
+tTxEspWifiBridge esp;
+
+
+//-------------------------------------------------------
 // While transmit/receive tasks
 //-------------------------------------------------------
 
@@ -248,6 +257,7 @@ void init(void)
 
     com.Init();
     cli.Init(&com);
+    esp.Init(&com, &serial2);
     buzzer.Init();
     fan.Init();
     dbg.Init();
@@ -1125,6 +1135,12 @@ IF_CRSF(
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
     case CLI_TASK_FLASH_ESP: enter_flash_esp(); break;
     }
+
+    //-- Handle esp wifi bridge
+
+    esp.Do();
+    uint8_t esp_task = esp.Task();
+    if (esp_task == ESP_TASK_RESTART_CONTROLLER) goto RESTARTCONTROLLER;
 
   }//end of while(1) loop
 
