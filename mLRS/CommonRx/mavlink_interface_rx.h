@@ -153,19 +153,27 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms + 1000;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     while (serial.available()) {
         char c = serial.getc();
         if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
             fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
 
-            //uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-            uint16_t len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+//XX            uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+//XX            uint16_t len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+            uint16_t len;
+            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+            } else {
+                len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+            }
 
             // do some fake to stress test the parser
-            //uint8_t b[16] = { 'a', 'O', 'W', 0, 128, '!', '?' };
-            //fifo_link_out.PutBuf(b, 6);
+            /*static uint8_t fake_cnt = 0;
+            uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
+            uint8_t bX[8] = { 'a', 'O', 'W', 0, 128, 'b' };
+            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++; */
 
             fifo_link_out.PutBuf(_buf, len);
         }

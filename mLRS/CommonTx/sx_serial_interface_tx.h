@@ -44,14 +44,18 @@ class tTxSxSerial : public tSerialBase
     virtual bool available(void)
     {
         if (!connected()) return 0; // !connected() implies !SetupMetaData.rx_available
-        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.available(); // get from serial via mavlink parser
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            return mavlink.available(); // get from serial via mavlink parser
+        }
         return serialport->available(); // get from serial
     }
 
     virtual char getc(void)
     {
         if (!connected()) return 0; // !connected() implies !SetupMetaData.rx_available
-        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) return mavlink.getc(); // get from serial via mavlink parser
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            return mavlink.getc(); // get from serial via mavlink parser
+        }
         return serialport->getc(); // get from serial
     }
 
@@ -64,7 +68,7 @@ class tTxSxSerial : public tSerialBase
     virtual void putc(char c)
     {
         if (!connected()) return; // !connected() implies !SetupMetaData.rx_available
-        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // this has to go via the parser
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
             mavlink.putc(c);
             return;
         }

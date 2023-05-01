@@ -87,7 +87,7 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms + 1000;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     if (Setup.Tx.SendRadioStatus && connected()) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
@@ -117,7 +117,14 @@ uint8_t MavlinkBase::VehicleState(void)
 void MavlinkBase::putc(char c)
 {
 //XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
-    if (fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+//XX    if (fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
 
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
