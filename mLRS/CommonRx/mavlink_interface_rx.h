@@ -236,7 +236,15 @@ typedef enum {
 
 void MavlinkBase::putc(char c)
 {
-    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+//XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
+
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
@@ -274,17 +282,17 @@ void MavlinkBase::putc(char c)
 bool MavlinkBase::available(void)
 {
     return fifo_link_out.Available();
-    //return serial.available();
+//XX    return serial.available();
 }
 
 
-uint8_t MavlinkBase::getc(void) // TODO: bytes_serial_in counts are somewhat wrong if done here
+uint8_t MavlinkBase::getc(void)
 {
     bytes_serial_in++;
     bytes_serial_in_cnt++;
 
     return fifo_link_out.Get();
-    //return serial.getc();
+//XX    return serial.getc();
 }
 
 
@@ -311,7 +319,7 @@ void MavlinkBase::send_msg_serial_out(void)
 uint16_t MavlinkBase::serial_in_available(void)
 {
     return fifo_link_out.Available();
-    //return serial.bytes_available();
+//XX    return serial.bytes_available();
 }
 
 
