@@ -160,8 +160,8 @@ typedef enum {
     MAVLINKX_FLAGS_HAS_SIGNATURE    = 0x02,
     MAVLINKX_FLAGS_IS_TARGETED      = 0x04,
     MAVLINKX_FLAGS_HAS_MSGID16      = 0x08,
-    MAVLINKX_FLAGS_HAS_SYSID16      = 0x10,
-    MAVLINKX_FLAGS_IS_COMPRESSED    = 0x20,
+    MAVLINKX_FLAGS_HAS_SYSID16      = 0x10, // not used, it's more to indicate the possibility
+    MAVLINKX_FLAGS_IS_COMPRESSED    = 0x20, // not used currently
 } fmavx_flags_e;
 
 
@@ -178,6 +178,8 @@ typedef struct _fmavx_status {
     uint8_t flags;
     uint8_t header[16];
     uint8_t pos;
+    uint8_t target_sysid;
+    uint8_t target_compid;
 } fmavx_status_t;
 
 
@@ -352,11 +354,13 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
 
     case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
         // we don't do anything with it currently
+        fmavx_status.target_sysid = c;
         status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_COMPID;
         return;
 
     case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
         // we don't do anything with it currently
+        fmavx_status.target_compid = c;
         status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
         return;
     }
