@@ -151,7 +151,7 @@ class ComponentList
 
 #define MAVLINKX_MAGIC_1            'O'
 #define MAVLINKX_MAGIC_2            'W'
-#define MAVLINKX_HEADER_LEN_MAX     11 // STX1 STX2 flags len seq sysid compid msgid1 msgid2 msgid3 crc8
+#define MAVLINKX_HEADER_LEN_MAX     13 // STX1 STX2 flags len seq sysid compid msgid1 msgid2 msgid3 targetsysid targetcompid crc8
 #define MAVLINKX_FRAME_LEN_MAX      (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
 
 
@@ -320,16 +320,16 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
     case FASTMAVLINK_PARSE_STATE_SYSID:
     case FASTMAVLINK_PARSE_STATE_COMPID:
     case FASTMAVLINK_PARSE_STATE_MSGID_1:
-        buf[status->rx_cnt++] = c; // seq, sysid, compiid, msgid:0
+        buf[status->rx_cnt++] = c; // seq, sysid, compid, msgid1
 
         status->rx_state++;
         return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
-        buf[status->rx_cnt++] = c; // msgid:1
+        buf[status->rx_cnt++] = c; // msgid2
 
-        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) { // has no msgid:2
-            buf[status->rx_cnt++] = 0; // msgid:2
+        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) { // has no msgid3
+            buf[status->rx_cnt++] = 0; // msgid3
 
             if (fmavx_status.flags & MAVLINKX_FLAGS_IS_TARGETED) { // has targets
                 status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
@@ -343,7 +343,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
         return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
-        buf[status->rx_cnt++] = c; // msgid:2
+        buf[status->rx_cnt++] = c; // msgid3
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_IS_TARGETED) { // has targets
             status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
