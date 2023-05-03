@@ -168,7 +168,7 @@ uint8_t crsf_cvt_fps(uint8_t mode)
 uint8_t crsf_cvt_rssi(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
-    return -rssi_i8;
+    return rssi_i8;
 }
 
 
