@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-05-04.01'
+local version = '2023-05-04.02'
 
 
 -- experimental
@@ -1129,6 +1129,8 @@ end
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+local isEdgeTx = false
+
 local function Do(event)
     doConnected()
     
@@ -1147,9 +1149,9 @@ local function Do(event)
 
     doParamLoop()
     
-    -- OpenTx: must be commented
+    -- OpenTx: must display
     -- EdgeTx: don't display in param upload, EdgeTx is super slow
-    --if DEVICE_DOWNLOAD_is_running then return end
+    if isEdgeTx and DEVICE_DOWNLOAD_is_running then return end
     
     lcd.clear()  
     
@@ -1172,6 +1174,9 @@ end
 ----------------------------------------------------------------------
 
 local function scriptInit()
+    local ver, radio, maj, minor, rev, osname = getVersion()
+    isEdgeTx = (osname == 'EdgeTX')
+  
     setupBridge()
   
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
