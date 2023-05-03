@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-04-28.00'
+local version = '2023-05-04.00'
 
 
 -- experimental
@@ -466,7 +466,7 @@ local function doParamLoop()
     end    
   
     -- handle received commands
-    for ijk = 1,6 do -- handle only 6 at most per lua cycle
+    for ijk = 1,24 do -- handle up to 24 per lua cycle
         local cmd = cmdPop()
         if cmd == nil then break end
         if cmd.cmd == MBRIDGE_CMD_DEVICE_ITEM_TX then 
@@ -1130,8 +1130,6 @@ end
 ----------------------------------------------------------------------
 
 local function Do(event)
-    lcd.clear()
-
     doConnected()
     
     if has_connected then
@@ -1148,6 +1146,10 @@ local function Do(event)
     end  
 
     doParamLoop()
+    
+    if DEVICE_DOWNLOAD_is_running then return end -- don't display in param upload, EdgeTx is super slow
+    
+    lcd.clear()  
     
     if page_nr == PAGE_EDIT_TX then
         doPageEdit(event,"Tx")
@@ -1168,6 +1170,8 @@ end
 ----------------------------------------------------------------------
 
 local function scriptInit()
+    setupBridge()
+  
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     local tnow_10ms = getTime()
     if tnow_10ms < 300 then
@@ -1190,7 +1194,6 @@ local function scriptRun(event)
         end
     end
     
-    setupBridge()
     if isConnected == nil or cmdPush == nil or cmdPop == nil then --just to be sure for sure
         error("Unclear issue with mBridge or CRSF!")
         return 2
