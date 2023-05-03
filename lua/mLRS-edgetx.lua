@@ -1149,7 +1149,7 @@ local function Do(event)
     
     -- OpenTx: must be commented
     -- EdgeTx: don't display in param upload, EdgeTx is super slow
-    --if DEVICE_DOWNLOAD_is_running then return end
+    if DEVICE_DOWNLOAD_is_running then return end
     
     lcd.clear()  
     
