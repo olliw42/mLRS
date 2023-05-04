@@ -98,11 +98,12 @@ Hardware is a problem currently. One might be tempted to think that all the rece
 The code currently supports:
 - Frsky R9M transmitter and R9MX and R9MM receiver modules
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards
+- EByte E77 MBL board
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. 
 
-The SeeedStudio Wio-E5 boards are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" Rx module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
+The SeeedStudio Wio-E5 boards and EByte E77 MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" Rx module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
 In the 2.4 GHz range, the DIY options are currently the (only) way to go.
 
