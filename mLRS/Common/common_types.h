@@ -138,7 +138,8 @@ int16_t rc_to_mavlink_13bcentered(uint16_t rc_ch);
 uint8_t crsf_cvt_power(int8_t power_dbm);
 uint8_t crsf_cvt_mode(uint8_t mode);
 uint8_t crsf_cvt_fps(uint8_t mode);
-uint8_t crsf_cvt_rssi(int8_t rssi_i8);
+uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8);
+uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8);
 
 
 //-- bind phrase & power & version
