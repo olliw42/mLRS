@@ -165,10 +165,19 @@ uint8_t crsf_cvt_fps(uint8_t mode)
 }
 
 
-uint8_t crsf_cvt_rssi(int8_t rssi_i8)
+// receiver side: flight control stacks appear to expect rssi as positive value
+uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
     return -rssi_i8;
+}
+
+
+// tx module side: OpenTx/EdgeTx radios can handle rssi as negative value, and this seems to be preferred
+uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8)
+{
+    if (rssi_i8 == RSSI_INVALID) return 0;
+    return rssi_i8;
 }
 
 

@@ -305,13 +305,13 @@ void OutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
 tCrsfLinkStatistics clstats;
 
     if (lstats->antenna_config == 3) {
-        clstats.uplink_rssi1 = crsf_cvt_rssi(lstats->receiver_rssi1);
-        clstats.uplink_rssi2 = crsf_cvt_rssi(lstats->receiver_rssi2);
+        clstats.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
+        clstats.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
     } else  if (lstats->antenna_config == 2) {
         clstats.uplink_rssi1 = 255;
-        clstats.uplink_rssi2 = crsf_cvt_rssi(lstats->receiver_rssi2);
+        clstats.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
     } else {
-        clstats.uplink_rssi1 = crsf_cvt_rssi(lstats->receiver_rssi1);
+        clstats.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
         clstats.uplink_rssi2 = 255;
     }
     clstats.uplink_LQ = lstats->receiver_LQ;
@@ -319,7 +319,7 @@ tCrsfLinkStatistics clstats;
     clstats.active_antenna = lstats->receiver_antenna;
     clstats.mode = crsf_cvt_mode(lstats->mode);
     clstats.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm);
-    clstats.downlink_rssi = crsf_cvt_rssi(lstats->transmitter_rssi);
+    clstats.downlink_rssi = crsf_cvt_rssi_rx(lstats->transmitter_rssi);
     clstats.downlink_LQ = lstats->transmitter_LQ;
     clstats.downlink_snr = lstats->transmitter_snr;
 
