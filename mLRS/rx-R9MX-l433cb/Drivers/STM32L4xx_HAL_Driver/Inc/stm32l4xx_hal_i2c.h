@@ -709,9 +709,9 @@ void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c);
   * @{
   */
 /* Peripheral State, Mode and Error functions  *********************************/
-HAL_I2C_StateTypeDef HAL_I2C_GetState(I2C_HandleTypeDef *hi2c);
-HAL_I2C_ModeTypeDef  HAL_I2C_GetMode(I2C_HandleTypeDef *hi2c);
-uint32_t             HAL_I2C_GetError(I2C_HandleTypeDef *hi2c);
+HAL_I2C_StateTypeDef HAL_I2C_GetState(const I2C_HandleTypeDef *hi2c);
+HAL_I2C_ModeTypeDef  HAL_I2C_GetMode(const I2C_HandleTypeDef *hi2c);
+uint32_t             HAL_I2C_GetError(const I2C_HandleTypeDef *hi2c);
 
 /**
   * @}

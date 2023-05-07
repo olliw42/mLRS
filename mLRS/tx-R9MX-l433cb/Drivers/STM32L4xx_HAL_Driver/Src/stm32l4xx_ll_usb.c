@@ -1234,7 +1234,7 @@ uint32_t USB_ReadDevInEPInterrupt(USB_OTG_GlobalTypeDef *USBx, uint8_t epnum)
   */
 void  USB_ClearInterrupts(USB_OTG_GlobalTypeDef *USBx, uint32_t interrupt)
 {
-  USBx->GINTSTS |= interrupt;
+  USBx->GINTSTS &= interrupt;
 }
 
 /**
@@ -1814,6 +1814,10 @@ HAL_StatusTypeDef USB_HC_Halt(USB_OTG_GlobalTypeDef *USBx, uint8_t hc_num)
       {
         USBx_HC(hcnum)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
       }
+    }
+    else
+    {
+      USBx_HC(hcnum)->HCCHAR |= USB_OTG_HCCHAR_CHENA;
     }
   }
   else
