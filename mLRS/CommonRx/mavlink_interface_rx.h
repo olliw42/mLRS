@@ -31,6 +31,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     void SendRcData(tRcData* rc_out, bool failsafe);
+    void FrameLost(void);
 
     void putc(char c);
     bool available(void);
@@ -155,6 +156,7 @@ void MavlinkBase::Do(void)
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
+    // parse serial in -> link out, and convert to mavlinkX
     while (serial.available()) {
         char c = serial.getc();
         if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
@@ -229,6 +231,13 @@ void MavlinkBase::Do(void)
 }
 
 
+void MavlinkBase::FrameLost(void)
+{
+    // reset parser link in -> serial out
+    fmav_parse_reset(&status_link_in);
+}
+
+
 typedef enum {
     MAVFTP_OPCODE_OpenFileRO = 4,
 } MAVFTPOPCODEENUM;
@@ -237,6 +246,7 @@ typedef enum {
 void MavlinkBase::putc(char c)
 {
 //XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    // parse link in -> serial out, and re-convert to v2
     uint8_t res;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
         res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);

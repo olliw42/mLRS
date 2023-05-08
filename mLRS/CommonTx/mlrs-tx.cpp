@@ -898,6 +898,11 @@ IF_ANTENNA2(
             handle_receive_none();
         }
 
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        if (!valid_frame_received) {
+            mavlink.FrameLost();
+        }
+
         txstats.fhss_curr_i = fhss.CurrI();
         txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
         txstats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
