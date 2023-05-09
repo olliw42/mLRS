@@ -149,9 +149,9 @@ class ComponentList
 // this reads the complete frame, so adds latency, but for the moment we do it to keep it simple
 // should be ok for testing and dev-ing
 
-#define MAVLINKX_MAGIC_1            'O'
-#define MAVLINKX_MAGIC_2            'W'
-#define MAVLINKX_HEADER_LEN_MAX     13 // STX1 STX2 flags len seq sysid compid msgid1 msgid2 msgid3 targetsysid targetcompid crc8
+#define MAVLINKX_MAGIC_1            'o' // TODO: do we really need two STX bytes?
+#define MAVLINKX_MAGIC_2            'w'
+#define MAVLINKX_HEADER_LEN_MAX     13 // STX1 STX2 flags len seq sysid compid msgid1 msgid2 msgid3 tsysid tcompid crc8
 #define MAVLINKX_FRAME_LEN_MAX      (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
 
 
