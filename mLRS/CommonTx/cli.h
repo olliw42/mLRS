@@ -531,7 +531,7 @@ void tTxCli::print_device_version(void)
 
     puts("  Rx: ");
     if (connected()) {
-        if (SetupMetaData.rx_available) { // is always true when connected, except when some link task is going on
+        if (SetupMetaData.rx_available) { // is always true when connected, except when some link task is going on or in bind
             puts(SetupMetaData.rx_device_name);
             puts(", ");
             char s[32];

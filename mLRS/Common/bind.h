@@ -74,8 +74,8 @@ class BindBase
     void do_transmit(uint8_t antenna);
     uint8_t do_receive(uint8_t antenna, bool do_clock_reset);
 
-    bool is_pressed = false;
-    int8_t pressed_cnt = 0;
+    bool is_pressed;
+    int8_t pressed_cnt;
 };
 
 
@@ -123,16 +123,16 @@ void BindBase::Do(void)
 
     // a not so efficient but simple debounce
     if (!is_pressed) {
-      if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
-      if (pressed_cnt >= 4) is_pressed = true;
+        if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
+        if (pressed_cnt >= 4) is_pressed = true;
     } else {
-      if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = 4; }
-      if (pressed_cnt <= 0) is_pressed = false;
+        if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = 4; }
+        if (pressed_cnt <= 0) is_pressed = false;
     }
 
     if (is_pressed) {
         if (tnow - button_tlast_ms > BIND_BUTTON_TMO_MS) {
-          binding_requested = true;
+            binding_requested = true;
         }
     } else {
         button_tlast_ms = tnow;
@@ -140,21 +140,21 @@ void BindBase::Do(void)
 
 #ifdef DEVICE_IS_TRANSMITTER
     if (is_in_binding) {
-      if (is_connected && !connected()) { // we just lost connection
-        task = BIND_TASK_TX_RESTART_CONTROLLER;
-      }
-      is_connected = connected();
+        if (is_connected && !connected()) { // we just lost connection
+            task = BIND_TASK_TX_RESTART_CONTROLLER;
+        }
+        is_connected = connected();
 
-      if (binding_stop_requested) {
-        task = BIND_TASK_TX_RESTART_CONTROLLER;
-      }
+        if (binding_stop_requested) {
+            task = BIND_TASK_TX_RESTART_CONTROLLER;
+        }
     }
 #endif
 
-   if (!is_in_binding && binding_requested) {
-       is_in_binding = true;
-       task = BIND_TASK_CHANGED_TO_BIND;
-   }
+    if (!is_in_binding && binding_requested) {
+        is_in_binding = true;
+        task = BIND_TASK_CHANGED_TO_BIND;
+    }
 }
 
 

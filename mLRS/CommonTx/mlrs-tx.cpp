@@ -487,7 +487,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 
     if (!do_payload) return;
 
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) { //!= FRAME_TYPE_RX) {
+    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
@@ -512,11 +512,6 @@ void handle_receive(uint8_t antenna)
 uint8_t rx_status;
 tRxFrame* frame;
 
-    if (bind.IsInBind()) {
-        bind.handle_receive(antenna, (antenna == ANTENNA_1) ? link_rx1_status : link_rx2_status);
-        return;
-    }
-
     if (antenna == ANTENNA_1) {
         rx_status = link_rx1_status;
         frame = &rxFrame;
@@ -525,7 +520,12 @@ tRxFrame* frame;
         frame = &rxFrame2;
     }
 
-    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (bind.IsInBind()) {
+        bind.handle_receive(antenna, rx_status);
+        return;
+    }
+
+    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_VALID
         bool do_payload = true;
 
         process_received_frame(do_payload, frame);
@@ -926,6 +926,7 @@ IF_ANTENNA2(
         if (connected() && !connect_tmo_cnt) {
             // so disconnect
             connect_state = CONNECT_STATE_LISTEN;
+            // link_state will be set to LINK_STATE_TRANSMIT below
             link_task_reset(); // to ensure that the next set is enforced, good idea ?
             link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         }
@@ -968,6 +969,7 @@ IF_ANTENNA2(
             LED_GREEN_ON;
             LED_RED_OFF;
             connect_state = CONNECT_STATE_LISTEN;
+            // link_state was set to LINK_STATE_TRANSMIT already
             break;
         case BIND_TASK_TX_RESTART_CONTROLLER: goto RESTARTCONTROLLER; break;
         }
