@@ -414,17 +414,17 @@ void handle_receive(uint8_t antenna)
 uint8_t rx_status;
 tTxFrame* frame;
 
-    if (bind.IsInBind()) {
-        bind.handle_receive(antenna, (antenna == ANTENNA_1) ? link_rx1_status : link_rx2_status);
-        return;
-    }
-
     if (antenna == ANTENNA_1) {
         rx_status = link_rx1_status;
         frame = &txFrame;
     } else {
         rx_status = link_rx2_status;
         frame = &txFrame2;
+    }
+
+    if (bind.IsInBind()) {
+        bind.handle_receive(antenna, rx_status);
+        return;
     }
 
     if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID

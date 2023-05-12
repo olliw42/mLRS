@@ -487,7 +487,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 
     if (!do_payload) return;
 
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) { //!= FRAME_TYPE_RX) {
+    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
@@ -512,11 +512,6 @@ void handle_receive(uint8_t antenna)
 uint8_t rx_status;
 tRxFrame* frame;
 
-    if (bind.IsInBind()) {
-        bind.handle_receive(antenna, (antenna == ANTENNA_1) ? link_rx1_status : link_rx2_status);
-        return;
-    }
-
     if (antenna == ANTENNA_1) {
         rx_status = link_rx1_status;
         frame = &rxFrame;
@@ -525,7 +520,12 @@ tRxFrame* frame;
         frame = &rxFrame2;
     }
 
-    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (bind.IsInBind()) {
+        bind.handle_receive(antenna, rx_status);
+        return;
+    }
+
+    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_VALID
         bool do_payload = true;
 
         process_received_frame(do_payload, frame);
@@ -626,6 +626,11 @@ bool connect_occured_once;
 static inline bool connected(void)
 {
     return (connect_state == CONNECT_STATE_CONNECTED);
+}
+
+static inline bool connected_and_rx_setup_available(void)
+{
+    return (connected() && SetupMetaData.rx_available);
 }
 
 
@@ -916,9 +921,9 @@ IF_ANTENNA2(
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
-                    // this should not happen, since we started with GET_RX_SETUPDATA, right?
+                    // normally, this should not happen, since we started with GET_RX_SETUPDATA, right?
                     // we could be more gentle and postpone connection by one cnt
-                    if (!SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
+                    if (!bind.IsInBind() && !SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -931,6 +936,7 @@ IF_ANTENNA2(
         if (connected() && !connect_tmo_cnt) {
             // so disconnect
             connect_state = CONNECT_STATE_LISTEN;
+            // link_state will be set to LINK_STATE_TRANSMIT below
             link_task_reset(); // to ensure that the next set is enforced, good idea ?
             link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         }
@@ -973,6 +979,7 @@ IF_ANTENNA2(
             LED_GREEN_ON;
             LED_RED_OFF;
             connect_state = CONNECT_STATE_LISTEN;
+            // link_state was set to LINK_STATE_TRANSMIT already
             break;
         case BIND_TASK_TX_RESTART_CONTROLLER: goto RESTARTCONTROLLER; break;
         }
@@ -1071,8 +1078,7 @@ IF_CRSF(
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
-            if (connected() && // implies SetupMetaData.rx_available
-                SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            if (connected_and_rx_setup_available() && SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
                 crsf.SendTelemetryFrame();
             }
             DECl(do_cnt);

@@ -43,7 +43,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; //FRAME_TYPE_TX;
+    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -75,7 +75,7 @@ uint16_t crc;
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
-      frame->payload[i] = payload[i];
+        frame->payload[i] = payload[i];
     }
 
     // finalize, crc
@@ -168,7 +168,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; //FRAME_TYPE_RX;
+    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -177,7 +177,7 @@ uint16_t crc;
     frame->status.payload_len = payload_len;
 
     for (uint8_t i = 0; i < payload_len; i++) {
-      frame->payload[i] = payload[i];
+        frame->payload[i] = payload[i];
     }
 
     fmav_crc_init(&crc);
