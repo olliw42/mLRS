@@ -648,7 +648,7 @@ int8_t power;
     power = sx.RfPower_dbm();
     if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
     gdisp_setcurX(100);
-    if (connected() && SetupMetaData.rx_available) {
+    if (connected_and_rx_setup_available()) {
         power = SetupMetaData.rx_actual_power_dbm;
         if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
     }
@@ -712,7 +712,7 @@ char s[32];
     gdisp_puts(s);
     gdisp_setcurX(80);
     stoBCDstr(SetupMetaData.rx_actual_power_dbm, s);
-    if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
+    if (connected_and_rx_setup_available()) gdisp_puts(s);
 
     gdisp_setcurX(115);
     gdisp_puts("dB");
@@ -733,7 +733,7 @@ char s[32];
     gdisp_setcurX(80);
     uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : 3; // 3 = invalid
     _diversity_str(s, rx_actual_diversity);
-    if (connected() && SetupMetaData.rx_available) gdisp_puts(s);
+    if (connected_and_rx_setup_available()) gdisp_puts(s);
 
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("Rssi");
@@ -774,7 +774,7 @@ char s[32];
     gdisp_setcurXY(0, 1 * 10 + 20);
     gdisp_puts(VERSIONONLYSTR);
 
-    if (connected() && SetupMetaData.rx_available) {
+    if (connected_and_rx_setup_available()) {
         gdisp_setcurXY(0, 3 * 10 + 20);
         gdisp_puts(SetupMetaData.rx_device_name);
         gdisp_setcurXY(0, 4 * 10 + 20);

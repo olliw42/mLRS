@@ -628,6 +628,11 @@ static inline bool connected(void)
     return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
+static inline bool connected_and_rx_setup_available(void)
+{
+    return (connected() && SetupMetaData.rx_available);
+}
+
 
 int main_main(void)
 {
@@ -1068,7 +1073,7 @@ IF_CRSF(
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
-            if (connected() && Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) { // connected() implies SetupMetaData.rx_available
+            if (connected_and_rx_setup_available() && Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
                 crsf.SendTelemetryFrame();
             }
             DECl(do_cnt);
