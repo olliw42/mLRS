@@ -911,9 +911,9 @@ IF_ANTENNA2(
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
-                    // this should not happen, since we started with GET_RX_SETUPDATA, right?
+                    // normally, this should not happen, since we started with GET_RX_SETUPDATA, right?
                     // we could be more gentle and postpone connection by one cnt
-                    if (!SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
+                    if (!bind.IsInBind() && !SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
