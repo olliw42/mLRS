@@ -67,7 +67,7 @@ class tTxSxSerial : public tSerialBase
 
     virtual void putc(char c)
     {
-        if (!connected_and_rx_setup_available()) return 0;
+        if (!connected_and_rx_setup_available()) return;
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
             mavlink.putc(c);
             return;
