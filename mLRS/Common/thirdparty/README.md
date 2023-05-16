@@ -1,0 +1,1 @@
+This folder contains code which come with their own copyright and licence terms, i.e., are not part of mLRS. Please inspect the header in each file for more info on the copyright and licence details for the respective piece of code.

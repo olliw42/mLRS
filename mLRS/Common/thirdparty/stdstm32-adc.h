@@ -1,19 +1,23 @@
+//*******************************************************
+// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// GPL3
+// https://www.gnu.org/licenses/gpl-3.0.de.html
+//*******************************************************
+// my stripped down ADC standard library
+//*******************************************************
+// Interface:
+//
+// #define ADC_USE_DMA
+//
+// #define ADC_SAMPLINGTIME
+// #define ADC_DMA_PRIORITY
+//
+//*******************************************************
 #ifndef STDSTM32_LL_ADC_H
 #define STDSTM32_LL_ADC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-// 17.04.2023
-//*******************************************************
-// ADC standard interface
-//*******************************************************
-
-/*
-ADC_USE_DMA
-
-ADC_SAMPLINGTIME
-ADC_DMA_PRIORITY
-*/
 
 
 // only F1, G4, F7 supported currently
@@ -21,7 +25,7 @@ ADC_DMA_PRIORITY
 
 
 //-------------------------------------------------------
-//
+// Defines
 //-------------------------------------------------------
 
 #ifndef ADC_SAMPLINGTIME
@@ -40,6 +44,9 @@ ADC_DMA_PRIORITY
 #endif
 
 
+//-------------------------------------------------------
+// helper routines
+//-------------------------------------------------------
 
 #ifdef STM32F1
 void delay_us(uint32_t us);
@@ -60,7 +67,7 @@ void _adc_ADC_SelfCalibrate(ADC_TypeDef* ADCx) {}
 
 
 //-------------------------------------------------------
-//
+// Sequencer routines
 //-------------------------------------------------------
 
 void adc_init_one_channel(ADC_TypeDef* ADCx)
@@ -128,7 +135,7 @@ LL_DMA_InitTypeDef DMA_InitStruct = {0};
     DMA_InitStruct.Channel = DMA_CHANNEL;
 #endif
 #ifdef STM32G4
-    //DMA_InitStruct.PeriphRequest = DMAMUX_REQ_ADC;
+    // DMA_InitStruct.PeriphRequest = DMAMUX_REQ_ADC;
     if (ADCx == ADC1) { DMA_InitStruct.PeriphRequest = LL_DMAMUX_REQ_ADC1; } else
     if (ADCx == ADC2) { DMA_InitStruct.PeriphRequest = LL_DMAMUX_REQ_ADC2; } else
     if (ADCx == ADC3) { DMA_InitStruct.PeriphRequest = LL_DMAMUX_REQ_ADC3; } else { while (1) {} }
@@ -164,7 +171,7 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
 
     ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
 #if defined STM32F7 || defined STM32G4
-    //F7: ADC clock is derived from PCLK2, which is 108 MHz, but ADC seems to be limited to 36 MHz, hence div by 4 = 27 MHz
+    // F7: ADC clock is derived from PCLK2, which is 108 MHz, but ADC seems to be limited to 36 MHz, hence div by 4 = 27 MHz
     ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_SYNC_PCLK_DIV4;
 #endif
     LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADCx), &ADC_CommonInitStruct);
@@ -172,9 +179,9 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
     ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
     ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
     switch (no_of_channels) {
-    case 2: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_2RANKS; break;
-    case 3: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS; break;
-    case 4: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS; break;
+        case 2: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_2RANKS; break;
+        case 3: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS; break;
+        case 4: ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS; break;
     }
     ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
     ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
@@ -200,6 +207,10 @@ void adc_config_channel(ADC_TypeDef* ADCx, uint32_t Rank, uint32_t Channel, GPIO
 }
 
 
+//-------------------------------------------------------
+// INIT routines
+//-------------------------------------------------------
+
 void adc_enable(ADC_TypeDef* ADCx)
 {
 #if defined STM32G4
@@ -219,7 +230,6 @@ void adc_enable(ADC_TypeDef* ADCx)
 }
 
 
-
 void adc_start_conversion(ADC_TypeDef* ADCx)
 {
 #if defined STM32F1 || defined STM32F7
@@ -228,13 +238,6 @@ void adc_start_conversion(ADC_TypeDef* ADCx)
     LL_ADC_REG_StartConversion(ADCx);
 #endif
 }
-
-
-
-//-------------------------------------------------------
-// INIT routines
-//-------------------------------------------------------
-
 
 
 #endif // defined STM32F1 || defined STM32G4 || defined STM32F7

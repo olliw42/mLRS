@@ -1,12 +1,15 @@
+//*******************************************************
+// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// GPL3
+// https://www.gnu.org/licenses/gpl-3.0.de.html
+//*******************************************************
+// my stripped down MCU standard library
+//*******************************************************
 #ifndef STDSTM32_LL_MCU_H
 #define STDSTM32_LL_MCU_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//*******************************************************
-// MCU standard interface
-//*******************************************************
 
 
 //-------------------------------------------------------
@@ -24,6 +27,7 @@ extern "C" {
 
 
 void (*SysMemBootJump)(void);
+
 
 void BootLoaderInit(void)
 {
