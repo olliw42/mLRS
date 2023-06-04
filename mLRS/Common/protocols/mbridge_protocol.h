@@ -214,6 +214,10 @@ typedef struct
     uint8_t cmd_requested;
     MBRIDGE_PACKED(union {
         uint8_t cmd_request_data[17];
+        MBRIDGE_PACKED(struct {
+            uint8_t index;
+            char name_16[16];
+        }) param_item;
     });
 }) tMBridgeRequestCmd; // 18 bytes
 
