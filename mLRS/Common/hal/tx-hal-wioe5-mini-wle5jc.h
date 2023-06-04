@@ -226,15 +226,40 @@ void pos_switch_init(void)
 
 
 //-- 5 Way Switch
+// template for resistor chain Vcc - 4.7k - down - 1k - left - 2.2k - right - 4.7k - up - 4.7k - center
+/*
+#define FIVEWAY_ADCx              ADC
+#define FIVEWAY_ADC_IO            IO_PB4 // ADC_IN3
+#define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_3
+
+extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
+    rcc_init_afio();
+    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_one_channel(FIVEWAY_ADCx);
+    adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
+    adc_enable(FIVEWAY_ADCx);
+    delay_us(100);
+    adc_start_conversion(FIVEWAY_ADCx);
+}
+
+uint16_t fiveway_adc_read(void)
+{
+    return LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
 }
 
 uint8_t fiveway_read(void)
 {
+    uint16_t adc = LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
+    if (adc < (0+200)) return (1 << KEY_DOWN); // 0
+    if (adc > (655-200) && adc < (655+200)) return (1 << KEY_LEFT); // 655
+    if (adc > (1595-200) && adc < (1595+200)) return (1 << KEY_RIGHT); // 1595
+    if (adc > (2505-200) && adc < (2505+200)) return (1 << KEY_UP); // 2505
+    if (adc > (3054-200) && adc < (3054+200)) return (1 << KEY_CENTER); // 3054
     return 0;
-}
+} */
 
 
 //-- Buzzer
