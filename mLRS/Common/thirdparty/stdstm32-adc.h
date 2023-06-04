@@ -20,8 +20,12 @@ extern "C" {
 #endif
 
 
-// only F1, G4, F7 supported currently
-#if defined STM32F1 || defined STM32G4 || defined STM32F7
+// only F1, G4, F7,WL supported currently
+#if defined STM32F1 || defined STM32G4 || defined STM32F7 || defined STM32WL
+
+#if defined ADC_USE_DMA && defined STM32WL
+  #error DMA not supported for STM32WL!
+#endif
 
 
 //-------------------------------------------------------
@@ -35,6 +39,8 @@ extern "C" {
     #define ADC_SAMPLINGTIME    LL_ADC_SAMPLINGTIME_480CYCLES
   #elif defined STM32G4
     #define ADC_SAMPLINGTIME    LL_ADC_SAMPLINGTIME_640CYCLES_5
+  #elif defined STM32WL
+    #define ADC_SAMPLINGTIME    LL_ADC_SAMPLINGTIME_160CYCLES_5
   #endif
 #endif
 
@@ -73,7 +79,6 @@ void _adc_ADC_SelfCalibrate(ADC_TypeDef* ADCx) {}
 void adc_init_one_channel(ADC_TypeDef* ADCx)
 {
 LL_ADC_InitTypeDef ADC_InitStruct = {0};
-LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
 LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
 
     ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
@@ -85,8 +90,15 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
 #elif defined STM32F7
     ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
     ADC_InitStruct.SequencersScanMode = LL_ADC_SEQ_SCAN_DISABLE;
+#elif defined STM32WL
+    ADC_InitStruct.Clock = LL_ADC_CLOCK_SYNC_PCLK_DIV4;
+    ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
+    ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
 #endif
     LL_ADC_Init(ADCx, &ADC_InitStruct);
+
+#if defined STM32F1 || defined STM32G4 || defined STM32F7
+LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
 
     ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
 #if defined STM32F7 || defined STM32G4
@@ -94,13 +106,20 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
     ADC_CommonInitStruct.CommonClock = LL_ADC_CLOCK_SYNC_PCLK_DIV4;
 #endif
     LL_ADC_CommonInit(__LL_ADC_COMMON_INSTANCE(ADCx), &ADC_CommonInitStruct);
+#endif
+
+#ifdef STM32WL
+    LL_ADC_REG_SetSequencerConfigurable(ADCx, LL_ADC_REG_SEQ_CONFIGURABLE);
+    while (!LL_ADC_IsActiveFlag_CCRDY(ADCx)) {} // poll for ADC channel configuration ready
+    LL_ADC_ClearFlag_CCRDY(ADCx);
+#endif
 
     ADC_REG_InitStruct.TriggerSource = LL_ADC_REG_TRIG_SOFTWARE;
     ADC_REG_InitStruct.SequencerLength = LL_ADC_REG_SEQ_SCAN_DISABLE;
     ADC_REG_InitStruct.SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE;
     ADC_REG_InitStruct.ContinuousMode = LL_ADC_REG_CONV_CONTINUOUS;
     ADC_REG_InitStruct.DMATransfer = LL_ADC_REG_DMA_TRANSFER_NONE;
-#ifdef STM32G4
+#if defined STM32G4 || defined STM32WL
     ADC_REG_InitStruct.Overrun = LL_ADC_REG_OVR_DATA_OVERWRITTEN; //xxLL_ADC_REG_OVR_DATA_PRESERVED;
 #endif
     LL_ADC_REG_Init(ADCx, &ADC_REG_InitStruct);
@@ -198,7 +217,18 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
 void adc_config_channel(ADC_TypeDef* ADCx, uint32_t Rank, uint32_t Channel, GPIO_TypeDef* GPIOx, uint32_t GPIO_Pin)
 {
     LL_ADC_REG_SetSequencerRanks(ADCx, Rank, Channel);
+
+#ifdef STM32WL
+    while (!LL_ADC_IsActiveFlag_CCRDY(ADCx)) {} // poll for ADC channel configuration ready
+    LL_ADC_ClearFlag_CCRDY(ADCx);
+#endif
+
+#if defined STM32F1 || defined STM32G4 || defined STM32F7
     LL_ADC_SetChannelSamplingTime(ADCx, Channel, ADC_SAMPLINGTIME);
+#else
+    LL_ADC_SetChannelSamplingTime(ADCx, Channel, LL_ADC_SAMPLINGTIME_COMMON_1);
+#endif
+
 #ifdef STM32G4
     LL_ADC_SetChannelSingleDiff(ADCx, Channel, LL_ADC_SINGLE_ENDED);
 #endif
@@ -216,12 +246,21 @@ void adc_enable(ADC_TypeDef* ADCx)
 #if defined STM32G4
     LL_ADC_SetGainCompensation(ADCx, 0);
     LL_ADC_SetOverSamplingScope(ADCx, LL_ADC_OVS_DISABLE);
-
     LL_ADC_DisableDeepPowerDown(ADCx);
+#elif defined STM32WL
+    LL_ADC_SetOverSamplingScope(ADCx, LL_ADC_OVS_DISABLE);
+    LL_ADC_SetSamplingTimeCommonChannels(ADCx, LL_ADC_SAMPLINGTIME_COMMON_1, ADC_SAMPLINGTIME);
+    LL_ADC_SetSamplingTimeCommonChannels(ADCx, LL_ADC_SAMPLINGTIME_COMMON_2, ADC_SAMPLINGTIME);
+    //LL_ADC_DisableIT_EOC(ADCx);
+    //LL_ADC_DisableIT_EOS(ADCx);
+    //LL_ADC_SetTriggerFrequencyMode(ADCx, LL_ADC_TRIGGER_FREQ_HIGH);
+#endif
+
+#if defined STM32G4 || defined STM32WL
     LL_ADC_EnableInternalRegulator(ADCx);
     uint32_t wait_loop_index;
     wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
-    while (wait_loop_index != 0) { wait_loop_index--; }
+    while(wait_loop_index != 0) { wait_loop_index--; }
 #endif
 
     LL_ADC_Enable(ADCx);
@@ -234,7 +273,7 @@ void adc_start_conversion(ADC_TypeDef* ADCx)
 {
 #if defined STM32F1 || defined STM32F7
     LL_ADC_REG_StartConversionSWStart(ADCx);
-#elif defined STM32G4
+#elif defined STM32G4 || defined STM32WL
     LL_ADC_REG_StartConversion(ADCx);
 #endif
 }
