@@ -214,27 +214,15 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Position Switch
+// has none
 
 void pos_switch_init(void)
 {
 }
 
-uint8_t pos_switch_read(void)
-{
-    return 0;
-}
-
 
 //-- 5 Way Switch
-
-void fiveway_init(void)
-{
-}
-
-uint8_t fiveway_read(void)
-{
-    return 0;
-}
+// has none
 
 
 //-- Buzzer

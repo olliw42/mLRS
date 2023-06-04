@@ -226,6 +226,7 @@ bool ser_or_com_serial(void)
 
 
 //-- Position Switch
+// has none
 
 void pos_switch_init(void)
 {
