@@ -367,21 +367,22 @@ class Sx126xDriver : public Sx126xDriverCommon
 
         spi_init();
         sx_init_gpio();
+        sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
 
         // no idea how long the SX126x takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1262 ??
+
+        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // is this needed ????
     }
 
     //-- high level API functions
 
     void StartUp(void)
     {
-        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-        delay_us(1000); // is this needed ????
-
 #ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
@@ -470,20 +471,21 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         spib_init();
         sx2_init_gpio();
         sx2_dio_init_exti_isroff();
+        sx2_dio_exti_isr_clearflag();
 
         // no idea how long the SX126x takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1262 ??
+
+        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // is this needed ????
     }
 
     //-- high level API functions
 
     void StartUp(void)
     {
-        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-        delay_us(1000); // is this needed ????
-
 #ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif

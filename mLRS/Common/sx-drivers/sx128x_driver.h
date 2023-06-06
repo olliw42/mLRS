@@ -341,21 +341,22 @@ class Sx128xDriver : public Sx128xDriverCommon
 
         spi_init();
         sx_init_gpio();
+        sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial !
+
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // this is important, 500 us ok
     }
 
     //-- high level API functions
 
     void StartUp(void)
     {
-        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-        delay_us(1000); // this is important, 500 us ok
-
 #ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
@@ -440,20 +441,24 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
         spib_init();
         sx2_init_gpio();
+        sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();
 
         // no idea how long the SX1280 takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial !
+
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+        delay_us(1000); // this is important, 500 us ok
     }
 
     //-- high level API functions
 
     void StartUp(void)
     {
-        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-        delay_us(1000); // this is important, 500 us ok
+//XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
+//XX        delay_us(1000); // this is important, 500 us ok
 
 #ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);

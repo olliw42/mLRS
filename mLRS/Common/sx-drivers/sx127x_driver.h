@@ -340,17 +340,13 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         spi_init();
         sx_init_gpio();
+        sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
 
         // no idea how long the SX1276 takes to boot up, so give it some good time
         delay_ms(300);
         _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1276 ??
-    }
 
-    //-- high level API functions
-
-    void StartUp(void)
-    {
         // this is not nice, figure out where to place
 #ifdef DEVICE_HAS_I2C_DAC
         dac.Init();
@@ -358,6 +354,19 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         SetStandby(); // should be in STDBY after reset
         delay_us(1000); // is this needed ????
+    }
+
+    //-- high level API functions
+
+    void StartUp(void)
+    {
+//XX        // this is not nice, figure out where to place
+//XX#ifdef DEVICE_HAS_I2C_DAC
+//XX        dac.Init();
+//XX#endif
+
+//XX        SetStandby(); // should be in STDBY after reset
+//XX        delay_us(1000); // is this needed ????
 
         Configure();
         delay_us(125); // may not be needed
