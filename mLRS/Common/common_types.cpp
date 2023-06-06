@@ -235,7 +235,7 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
 {
     memset(Power_optstr, 0, slen);
 
-    char optstr[44+2] = {0};
+    char optstr[44+2] = {};
 
     for (uint8_t i = 0; i < num; i++) {
         char s[44+2];

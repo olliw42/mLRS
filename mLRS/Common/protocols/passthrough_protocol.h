@@ -185,26 +185,26 @@ class tPassThrough
     bool pt_update[PASSTHROUGH_PACKET_TYPE_NUM];
     uint32_t pt_data[PASSTHROUGH_PACKET_TYPE_NUM];
     
-    fmav_heartbeat_t heartbeat = {0};
-    fmav_sys_status_t sys_status = {0};
-    fmav_gps_raw_int_t gps_raw_int = {0};
-    fmav_raw_imu_t raw_imu = {0};
-    fmav_attitude_t attitude = {0};
-    fmav_global_position_int_t global_position_int = {0};
-    fmav_nav_controller_output_t nav_controller_output = {0};
-    fmav_mission_current_t mission_current = {0};
-    fmav_vfr_hud_t vfr_hud = {0};
-    fmav_terrain_report_t terrain_report = {0};
-    fmav_battery_status_t battery_status_id0 = {0};
-    fmav_battery_status_t battery_status_id1 = {0};
-    fmav_fence_status_t fence_status = {0};
-    fmav_rangefinder_t rangefinder = {0};
-    fmav_rpm_t rpm = {0};
-    fmav_home_position_t home_position = {0};
-    fmav_statustext_t statustext = {0};
+    fmav_heartbeat_t heartbeat = {};
+    fmav_sys_status_t sys_status = {};
+    fmav_gps_raw_int_t gps_raw_int = {};
+    fmav_raw_imu_t raw_imu = {};
+    fmav_attitude_t attitude = {};
+    fmav_global_position_int_t global_position_int = {};
+    fmav_nav_controller_output_t nav_controller_output = {};
+    fmav_mission_current_t mission_current = {};
+    fmav_vfr_hud_t vfr_hud = {};
+    fmav_terrain_report_t terrain_report = {};
+    fmav_battery_status_t battery_status_id0 = {};
+    fmav_battery_status_t battery_status_id1 = {};
+    fmav_fence_status_t fence_status = {};
+    fmav_rangefinder_t rangefinder = {};
+    fmav_rpm_t rpm = {};
+    fmav_home_position_t home_position = {};
+    fmav_statustext_t statustext = {};
 
     // we double-buffer it, tried 8-size fifo, didn't appear to make a difference
-    fmav_statustext_t statustext_cur = {0};
+    fmav_statustext_t statustext_cur = {};
     bool statustext_cur_inprocess;
     uint8_t statustext_cur_chunk_index;
 

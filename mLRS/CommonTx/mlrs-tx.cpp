@@ -431,8 +431,8 @@ void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 
 //-- normal Tx, Rx frames handling
 
-uint8_t payload[FRAME_TX_PAYLOAD_LEN] = {0};
-uint8_t payload_len = 0;
+uint8_t payload[FRAME_TX_PAYLOAD_LEN];
+uint8_t payload_len;
 
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t ack)

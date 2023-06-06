@@ -26,7 +26,7 @@ tGlobalConfig Config;
 
 void setup_configure_metadata(void)
 {
-    SetupMetaData = {0};
+    SetupMetaData = {};
 
     //-- FrequencyBand: "2.4,915 FCC,868,433,70,866 IN"
 #ifdef FREQUENCY_BAND_2P4_GHZ

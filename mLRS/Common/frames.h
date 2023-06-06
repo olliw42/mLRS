@@ -312,7 +312,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 // we take the values from Tx' Setup.Rx structure
 void pack_txcmdframe_setrxparams(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 {
-tTxCmdFrameRxParams rx_params = {0};
+tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
@@ -342,7 +342,7 @@ uint8_t payload[1];
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
 void pack_rxcmdframe_rxsetupdata(tRxFrame* frame, tFrameStats* frame_stats)
 {
-tRxCmdFrameRxSetupData rx_setupdata = {0};
+tRxCmdFrameRxSetupData rx_setupdata = {};
 
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 

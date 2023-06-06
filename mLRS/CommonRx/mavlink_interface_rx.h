@@ -83,9 +83,9 @@ void MavlinkBase::Init(void)
 {
     fmav_init();
 
-    result_link_in = {0};
-    status_link_in = {0};
-    status_serial_out = {0};
+    result_link_in = {};
+    status_link_in = {};
+    status_serial_out = {};
 
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;

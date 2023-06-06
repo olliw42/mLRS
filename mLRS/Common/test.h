@@ -18,7 +18,7 @@
 
 void init_test(void)
 {
-LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+LL_GPIO_InitTypeDef GPIO_InitStruct = {};
 uint32_t porta_all, portb_all, portc_all, n;
 
   porta_all = portb_all = portc_all= 0;

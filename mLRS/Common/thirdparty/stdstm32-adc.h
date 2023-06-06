@@ -78,8 +78,8 @@ void _adc_ADC_SelfCalibrate(ADC_TypeDef* ADCx) {}
 
 void adc_init_one_channel(ADC_TypeDef* ADCx)
 {
-LL_ADC_InitTypeDef ADC_InitStruct = {0};
-LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
+LL_ADC_InitTypeDef ADC_InitStruct = {};
+LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {};
 
     ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 #if defined STM32F1
@@ -98,7 +98,7 @@ LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
     LL_ADC_Init(ADCx, &ADC_InitStruct);
 
 #if defined STM32F1 || defined STM32G4 || defined STM32F7
-LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
+LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {};
 
     ADC_CommonInitStruct.Multimode = LL_ADC_MULTI_INDEPENDENT;
 #if defined STM32F7 || defined STM32G4
@@ -130,7 +130,7 @@ LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
 
 void adc_init_dma(ADC_TypeDef* ADCx, uint8_t no_of_channels, DMA_TypeDef* DMAx, uint32_t dma_channel, uint32_t m_ptr)
 {
-LL_DMA_InitTypeDef DMA_InitStruct = {0};
+LL_DMA_InitTypeDef DMA_InitStruct = {};
 
 #if defined STM32F1 || defined STM32G4
     LL_DMA_DeInit(DMAx, dma_channel);
@@ -172,9 +172,9 @@ LL_DMA_InitTypeDef DMA_InitStruct = {0};
 
 void adc_init_scan_dma(ADC_TypeDef* ADCx, uint8_t no_of_channels)
 {
-LL_ADC_InitTypeDef ADC_InitStruct = {0};
-LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {0};
-LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
+LL_ADC_InitTypeDef ADC_InitStruct = {};
+LL_ADC_CommonInitTypeDef ADC_CommonInitStruct = {};
+LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {};
 
     ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
 #if defined STM32F1

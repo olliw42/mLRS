@@ -122,7 +122,7 @@ uint32_t ll_tim_channel_ch;
             ll_tim_channel_ch = BUZZER_TIM_CHANNEL;
     }
 
-    LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {0};
+    LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
     TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
     TIM_OC_InitStruct.CompareValue = 0;
     TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
