@@ -295,7 +295,6 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
-
 class Sx127xDriver : public Sx127xDriverCommon
 {
   public:

@@ -418,6 +418,10 @@ class Sx126xDriver : public Sx126xDriverCommon
 #ifndef SX2_BUSY
     #error SX2 must have a BUSY pin !!
 #endif
+#ifndef SX2_RESET
+    #error SX2 must have a RESET pin !!
+#endif
+
 
 class Sx126xDriver2 : public Sx126xDriverCommon
 {
@@ -449,15 +453,11 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void _reset(void)
     {
-#ifdef SX2_RESET
         gpio_low(SX2_RESET);
         delay_ms(5); // datasheet says > 100 us
         gpio_high(SX2_RESET);
         delay_ms(50);
         WaitOnBusy();
-#else
-        sx2_reset();
-#endif
     }
 
     void Init(void)

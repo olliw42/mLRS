@@ -392,6 +392,10 @@ class Sx128xDriver : public Sx128xDriverCommon
 #ifndef SX2_BUSY
     #error SX2 must have a BUSY pin !!
 #endif
+#ifndef SX2_RESET
+    #error SX2 must have a RESET pin !!
+#endif
+
 
 class Sx128xDriver2 : public Sx128xDriverCommon
 {
