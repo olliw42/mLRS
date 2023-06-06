@@ -431,15 +431,12 @@ void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 
 //-- normal Tx, Rx frames handling
 
-uint8_t payload[FRAME_TX_PAYLOAD_LEN];
-uint8_t payload_len;
-
-
 void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 {
+uint8_t payload[FRAME_TX_PAYLOAD_LEN];
+uint8_t payload_len = 0;
+
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        memset(payload, 0, FRAME_TX_PAYLOAD_LEN);
-        payload_len = 0;
 
         // read data from serial port
         if (connected()) {
