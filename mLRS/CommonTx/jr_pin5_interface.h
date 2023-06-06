@@ -19,8 +19,8 @@
 // Interface Implementation
 // the uart used for JR pin5 must be UART_UARTx
 
-void uart_rx_callback_dummy(uint8_t c) {};
-void uart_tc_callback_dummy(void) {};
+void uart_rx_callback_dummy(uint8_t c) {}
+void uart_tc_callback_dummy(void) {}
 
 void (*uart_rx_callback_ptr)(uint8_t) = &uart_rx_callback_dummy;
 void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
@@ -154,7 +154,7 @@ void tPin5BridgeBase::Init(void)
     telemetry_start_next_tick = false;
     telemetry_tick_next = false;
     telemetry_state = 0;
-};
+}
 
 
 void tPin5BridgeBase::TelemetryStart(void)

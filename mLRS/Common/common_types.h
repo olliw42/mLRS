@@ -64,7 +64,7 @@ class tSerialBase
     virtual void putc(char c) {}
     virtual bool available(void) { return false; }
     virtual char getc(void) { return '\0'; }
-    virtual void flush(void) {};
+    virtual void flush(void) {}
     virtual uint16_t bytes_available(void) { return 0; }
 
     void putbuf(void* buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) putc(((char*)buf)[i]); }
