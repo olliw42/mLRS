@@ -191,17 +191,17 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX1280_IRQ_ALL);
-        SetTx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // if a Tx timeout occurs we have a serious problem
+        SetTx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // 0 = no timeout, if a Tx timeout occurs we have a serious problem
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms)
     {
         ClearIrqStatus(SX1280_IRQ_ALL);
-        SetRx(SX1280_PERIODBASE_62p5_US, tmo_ms*16);
+        SetRx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // 0 = no timeout
     }
 
     void SetToIdle(void)
@@ -369,14 +369,14 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms = 0)
     {
         sx_amp_receive();
         Sx128xDriverCommon::SetToRx(tmo_ms);
@@ -472,14 +472,14 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx2_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms = 0)
     {
         sx2_amp_receive();
         Sx128xDriverCommon::SetToRx(tmo_ms);

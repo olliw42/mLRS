@@ -213,17 +213,17 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetTx(tmo_ms * 64); // TimeOut period inn ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
+        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period inn ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms)
     {
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetRx(tmo_ms * 64);
+        SetRx(tmo_ms * 64); // 0 = no timeout
     }
 
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
@@ -395,14 +395,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms = 0)
     {
         sx_amp_receive();
         Sx126xDriverCommon::SetToRx(tmo_ms);
@@ -498,14 +498,14 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 100)
+    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx2_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 10)
+    void SetToRx(uint16_t tmo_ms = 0)
     {
         sx2_amp_receive();
         Sx126xDriverCommon::SetToRx(tmo_ms);
