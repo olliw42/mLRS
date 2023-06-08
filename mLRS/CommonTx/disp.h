@@ -646,11 +646,11 @@ int8_t power;
     gdisp_puts(s);
     gdisp_setcurX(85);
     power = sx.RfPower_dbm();
-    if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+    if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     gdisp_setcurX(100);
     if (connected_and_rx_setup_available()) {
         power = SetupMetaData.rx_actual_power_dbm;
-        if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-i"); }
+        if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     }
     gdisp_setcurX(115);
     gdisp_puts("dB");
