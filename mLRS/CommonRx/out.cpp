@@ -123,7 +123,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
             for (uint8_t n = 0; n < RC_DATA_LEN; n++) rc.ch[n] = 1024;
             break;
         case FAILSAFE_MODE_CH1CH4_CENTER:
-            for (uint8_t n = 0; n < 3; n++) rc.ch[n] = 1024; // center all four
+            for (uint8_t n = 0; n < 4; n++) rc.ch[n] = 1024; // center all four
             break;
         }
     }
@@ -307,7 +307,7 @@ tCrsfLinkStatistics clstats;
     if (lstats->antenna_config == 3) {
         clstats.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
         clstats.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
-    } else  if (lstats->antenna_config == 2) {
+    } else if (lstats->antenna_config == 2) {
         clstats.uplink_rssi1 = 255;
         clstats.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
     } else {
