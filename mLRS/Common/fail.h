@@ -88,10 +88,9 @@ void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
         uint8_t cnt_max = 1 + (led_pattern - FAIL_LED_PATTERN_RD_BLINK_GR_BLINK1);
         while (1) {
             if (cnt < cnt_max) led_green_on();
-            for (uint8_t i = 0; i< 4; i++) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); }
+            for (uint8_t i = 0; i< 4; i++) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
             led_green_off();
-            for (uint8_t i = 0; i< 4; i++) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); }
-            fail_do_dbg(dbg, msg);
+            for (uint8_t i = 0; i< 4; i++) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
             cnt++;
             if (cnt >= cnt_max + 2) cnt = 0;
         }
