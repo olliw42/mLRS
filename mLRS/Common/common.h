@@ -49,7 +49,7 @@ uint32_t millis32(void)
 // Serial Classes
 //-------------------------------------------------------
 
-#ifdef USE_COM_ON_SERIAL
+#if defined DEVICE_IS_TRANSMITTER && defined USE_COM_ON_SERIAL
   // TODO: when we swap ser/com, we may want to flush, we need to change baudrate
   #define SERORCOM_INIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
   #define IFNSER(x)  if (!ser_or_com_serial()) return x;

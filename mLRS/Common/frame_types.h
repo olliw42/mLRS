@@ -138,12 +138,13 @@ typedef struct
     uint8_t frame_type : 4; // 1 byte // not used currently
 
     uint8_t connected : 1;
+    uint8_t spare : 7;
 
     char BindPhrase_6[6];
     uint8_t FrequencyBand_XXX : 4; // TODO
     uint8_t Mode : 4;
 
-    uint8_t spare[72];
+    uint8_t spare2[72];
 
     uint16_t crc; // 2bytes
 }) tTxBindFrame; // 91 bytes
@@ -158,11 +159,12 @@ typedef struct
     uint8_t frame_type : 4; // 1 byte // not used currently
 
     uint8_t connected : 1;
+    uint8_t spare : 7;
 
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare[55];
+    uint8_t spare2[55];
 
     uint16_t crc; // 2bytes
 }) tRxBindFrame; // 91 bytes
@@ -188,7 +190,7 @@ typedef enum {
 
 
 // Rx Parameter structure
-// limit to 4 bits, so 16 options per parameter max; is also the limit of allowed_mask_ptr in tSetupParameterItem
+// limit to 4 bits, so max 16 options per parameter; is also the limit of allowed_mask_ptr in tSetupParameterItem
 PACKED(
 typedef struct
 {
@@ -231,7 +233,7 @@ typedef struct
 
     // rx parameter values
     // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
-    tCmdFrameRxParameters RxParams;
+    tCmdFrameRxParameters RxParams; // 24 bytes
 
     // rx setup meta data 2, parameter metadata
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
