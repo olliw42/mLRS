@@ -947,9 +947,8 @@ IF_ANTENNA2(
         if (!tick_1hz_commensurate) {
             txstats.Update1Hz();
         }
-
-        if (!connected()) stats.Clear();
         txstats.Next();
+        if (!connected()) txstats.Clear();
 
         if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
             if (!valid_frame_received) buzzer.BeepLP();

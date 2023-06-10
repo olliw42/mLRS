@@ -864,13 +864,12 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             sx2.SetToIdle();
         }
 
-        if (!connected()) stats.Clear();
-        rxstats.Next();
-
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
             rxstats.Update1Hz();
         }
+        rxstats.Next();
+        if (!connected()) rxstats.Clear();
 
         if (connect_state == CONNECT_STATE_LISTEN) link_task_reset();
 

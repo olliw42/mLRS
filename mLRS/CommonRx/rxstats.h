@@ -22,8 +22,9 @@ class RxStatsBase
   public:
     void Init(uint8_t _period);
 
-    void Update1Hz(void);
-    void Next(void);
+    void Update1Hz(void); // called at 1 Hz
+    void Next(void); // called at each cycle
+    void Clear(void); // called then not connected
 
     void doFrameReceived(void);
     void doValidCrc1FrameReceived(void);
@@ -60,12 +61,16 @@ void RxStatsBase::Next(void) // this is called when transmit starts, or shortly 
     LQma_valid_crc1.Next();
     LQma_valid.Next();
     LQma_received.Next();
+}
 
-    if (!connected()) { // start with 100% if not connected
-      LQma_valid_crc1.Reset();
-      LQma_valid.Reset();
-      LQma_received.Reset();
-    }
+
+void RxStatsBase::Clear(void)
+{
+    stats.Clear();
+
+    LQma_valid_crc1.Reset(); // start with 100% if not connected
+    LQma_valid.Reset();
+    LQma_received.Reset();
 }
 
 
