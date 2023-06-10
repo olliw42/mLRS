@@ -9,6 +9,14 @@
 /*
 
 ISSUES:
+- Tx, SetupMetaData.rx_available:
+  it very occasionally can happen that
+  !connected() && (transmit_frame_type == TRANSMIT_FRAME_TYPE_CMD) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)
+  is true, and that we may not have gotten fresh SetupMetaData when switching to CONNECT_STATE_CONNECTED
+  * general problem: no serial send to rx unless connected to rx
+  * how to avoid that race condition at the low level (currently we are ok if connect_occured_once)
+  * probably should introduce .rx_available and .rx_valid !?!
+
 - we should take into account in rssi scaling a LNA as well as the db min for a board & setting
 
 - sx Init implicitly uses Config, would be nicer to have this disentangled
