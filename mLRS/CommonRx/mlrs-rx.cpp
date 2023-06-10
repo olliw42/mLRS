@@ -323,15 +323,12 @@ void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 
 //-- normal Tx, Rx frames handling
 
-uint8_t payload[FRAME_RX_PAYLOAD_LEN];
-uint8_t payload_len;
-
-
 void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
 {
+uint8_t payload[FRAME_RX_PAYLOAD_LEN];
+uint8_t payload_len = 0;
+
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        memset(payload, 0, FRAME_RX_PAYLOAD_LEN);
-        payload_len = 0;
 
         // read data from serial
         if (connected()) {
