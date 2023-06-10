@@ -913,9 +913,19 @@ IF_ANTENNA2(
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
-                    // normally, this should not happen, since we started with GET_RX_SETUPDATA, right?
-                    // we could be more gentle and postpone connection by one cnt
-                    if (!bind.IsInBind() && !SetupMetaData.rx_available) FAIL(BLINK_3, "rx_available not true");
+                    if (!SetupMetaData.rx_available && !bind.IsInBind()) {
+                        // should not have happen, but does very occasionally happen, so let's cope with
+                        // we must have gotten it at least once, on first connect, since we need it
+                        // later on we can accept to be gentle and be ok with not getting it again
+                        // bottom line: the receiver must not change after first connection
+                        if (connect_occured_once) {
+                            link_task_reset();
+                            SetupMetaData.rx_available = true;
+                        } else {
+                            // we could be more gentle and postpone connection by one cnt
+                            FAILALWAYS(BLINK_3, "rx_available not true");
+                        }
+                    }
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -929,8 +939,6 @@ IF_ANTENNA2(
             // so disconnect
             connect_state = CONNECT_STATE_LISTEN;
             // link_state will be set to LINK_STATE_TRANSMIT below
-            link_task_reset(); // to ensure that the next set is enforced, good idea ?
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
         }
 
         // we are connected but didn't receive a valid frame
@@ -942,6 +950,11 @@ IF_ANTENNA2(
         link_state = LINK_STATE_TRANSMIT;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
+
+        if (connect_state == CONNECT_STATE_LISTEN) {
+            link_task_reset(); // to ensure that the following set is enforced
+            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        }
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

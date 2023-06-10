@@ -868,7 +868,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         rxstats.Next();
         if (!connected()) rxstats.Clear();
 
-        if (connect_state == CONNECT_STATE_LISTEN) link_task_reset();
+        if (connect_state == CONNECT_STATE_LISTEN) {
+            link_task_reset();
+            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        }
 
         if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
             if (!valid_frame_received) buzzer.BeepLP();
