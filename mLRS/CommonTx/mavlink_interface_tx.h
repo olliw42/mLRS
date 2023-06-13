@@ -12,6 +12,7 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "../Common/thirdparty/fmav_mavlinkx.h"
 #include "../Common/protocols/ardupilot_protocol.h"
 
 static inline bool connected_and_rx_setup_available(void);

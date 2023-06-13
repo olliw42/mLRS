@@ -12,6 +12,7 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "../Common/thirdparty/fmav_mavlinkx.h"
 #include "../Common/libs/filters.h"
 #include "../Common/libs/fifo.h"
 
