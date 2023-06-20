@@ -8,16 +8,15 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY E28 v007 STM32G431KB
+// TX DIY E28 v007 STM32G431KB, board primarily designed as rx
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
 //#define DEVICE_HAS_IN
 //#define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_COM_OR_DEBUG
 
 #ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
+#undef DEBUG_ENABLED // board has no dbg pin
 #endif
 
 
@@ -37,7 +36,7 @@
 // UARTD = serial2 BT/ESP port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF = -
 
 #define UARTB_USE_UART1 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -74,14 +73,6 @@
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
 #define UARTE_USE_RX_IO           IO_PA15 // normally would be PB4!!
-
-#define UARTF_USE_LPUART1 // debug
-#define UARTF_BAUD                115200
-#define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
-#define UARTF_USE_TX_ISR
-//#define UARTF_USE_RX
-//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX12xx & SPI

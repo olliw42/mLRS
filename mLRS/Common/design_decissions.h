@@ -633,7 +633,7 @@ Some Hardware info
 TX:
 
 Diy F103
-U1  uartc/com or uartf/debug  //DEVICE_HAS_COM_OR_DEBUG
+U1  uartc/com
 U2  uarte/in or uart/jrpin5   //DEVICE_HAS_IN or DEVICE_HAS_JRPIN5
 U3  uartb/serial
 

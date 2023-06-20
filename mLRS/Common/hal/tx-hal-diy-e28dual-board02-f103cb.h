@@ -14,11 +14,7 @@
 #define DEVICE_HAS_DIVERSITY
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
-#define DEVICE_HAS_COM_OR_DEBUG // is selected by DEBUG_ENABLED define
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
+#define DEVICE_HAS_DEBUG_SWUART
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -79,13 +75,12 @@
 #define JRPIN5_RX_SET_INVERTED    gpio_high(JRPIN5_RX_XOR)
 #endif
 
-#define UARTF_USE_UART1 // debug
-#define UARTF_BAUD                115200
-#define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
-#define UARTF_USE_TX_ISR
-//#define UARTF_USE_RX
-//#define UARTF_RXBUFSIZE           512
+#define SWUART_USE_TIM2 // debug
+#define SWUART_TX_IO              IO_PB7 // is the BUZZER/EXT pad
+#define SWUART_BAUD               115200
+#define SWUART_USE_TX
+#define SWUART_TXBUFSIZE          512
+//#define SWUART_TIM_IRQ_PRIORITY   11
 
 
 //-- SX1: SX12xx & SPI
