@@ -133,14 +133,14 @@ void tPin5BridgeBase::Init(void)
     LL_USART_Enable(UART_UARTx);
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
-// swaps the Tx and Rx pins for E77 easysolder as Tx
+// internal peripheral inverter method with TxRx swap, G491, WLE5, needs a diode from Rx to Tx
 #if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
     LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_Enable(UART_UARTx);
-    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+    //gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);  Not needed?
 #endif
 #if defined JRPIN5_FULL_INTERNAL
     LL_USART_Disable(UART_UARTx);
