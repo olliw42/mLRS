@@ -145,7 +145,7 @@ void tPin5BridgeBase::Init(void)
 #endif
 
 // used to swap the Tx and Rx pins for E77 easysolder as Tx
-#if defined JRPIN5_RX_TX_PIN_SWAP
+#if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_Enable(UART_UARTx);
