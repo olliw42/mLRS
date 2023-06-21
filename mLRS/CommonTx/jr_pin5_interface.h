@@ -144,6 +144,14 @@ void tPin5BridgeBase::Init(void)
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
 
+// used to swap the Tx and Rx pins for E77 easysolder as Tx
+#if defined JRPIN5_RX_TX_PIN_SWAP
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_Enable(UART_UARTx);
+#endif
+
+
     pin5_tx_enable(false);
 
     state = STATE_IDLE;
