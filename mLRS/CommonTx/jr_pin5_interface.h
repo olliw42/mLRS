@@ -125,7 +125,7 @@ void tPin5BridgeBase::Init(void)
 
     uart_init_isroff();
 
-// internal peripheral inverter method, G491, WLE5, needs a diode from Tx to Rx
+// internal peripheral inverter method, G4, WLE5, needs a diode from Tx to Rx
 #if defined JRPIN5_RX_TX_INVERT_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
@@ -133,7 +133,7 @@ void tPin5BridgeBase::Init(void)
     LL_USART_Enable(UART_UARTx);
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
-// internal peripheral inverter method with TxRx swap, G491, WLE5, needs a diode from Rx to Tx
+// internal peripheral inverter method with TxRx swap, G4, WLE5, needs a diode from Rx to Tx
 #if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
