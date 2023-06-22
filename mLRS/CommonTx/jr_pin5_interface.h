@@ -154,7 +154,6 @@ void tPin5BridgeBase::Init(void)
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
 
-
     pin5_tx_enable(false);
 
     state = STATE_IDLE;
