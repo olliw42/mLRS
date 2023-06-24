@@ -399,6 +399,12 @@ void setup_configure(void)
     // we could make it dependable with a #ifdef, but what's the point
     Config.FhssSeed = Config.FrameSyncWord;
 
+    Config.FhssExcept = 0;
+    if (Setup.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        Config.FhssExcept = except_from_bindphrase(Setup.BindPhrase);
+    }
+    Config.FhssOrtho = 0;
+
     switch (Setup.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         switch (Config.Mode) {
