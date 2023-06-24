@@ -153,6 +153,7 @@ void FhssBase::generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiban
 
         // do not pick a channel in an excepted wifi band
         // https://en.wikipedia.org/wiki/List_of_WLAN_channels
+#ifdef FHSS_HAS_CONFIG_2P4_GHZ
         uint32_t freq = fhss_freq_list[ch];
         switch (_except) {
         case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_1:
@@ -172,6 +173,7 @@ void FhssBase::generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiban
             if (SX1280_FREQ_GHZ_TO_REG(2.461) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.483)) continue;
             break;
         }
+#endif
 
         // ensure it is not too close to the previous
         bool is_too_close = false;
