@@ -37,7 +37,7 @@ os.environ["PATH"] = path
 
 
 # global variables
-VERSIONONLYSTR = ''
+VERSIONONLYSTR = 'dev-wifi2'
 
 
 def do_common_conf_h():
