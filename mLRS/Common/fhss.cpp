@@ -71,7 +71,7 @@ void FhssBase::generate(uint32_t seed)
         // ensure it is not too close to the previous
         // do only if we have plenty of channels at our disposal
         bool is_too_close = false;
-        if ((config_i != FHSS_CONFIG_433_MHZ && config_i !=FHSS_CONFIG_866_MHZ_IN) && (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
+        if ((config_i != FHSS_CONFIG_433_MHZ && config_i != FHSS_CONFIG_866_MHZ_IN) && (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
             int8_t last_ch = ch_list[k - 1];
             if (last_ch == 0) { // special treatment for this case
                 if (ch < 2) is_too_close = true;
@@ -87,14 +87,18 @@ void FhssBase::generate(uint32_t seed)
         used_flag[ch] = true;
 
         k++;
-  }
+    }
 
-  curr_i = 0;
+    // the following is not related to the generation, but does initialization
+    // is done here to allow calling generate separately, at least in principle
 
-  // mark all channels as equally bad
-  for (uint8_t k = 0; k < cnt; k++) {
-      fhss_last_rssi[k] = INT8_MIN;
-  }
+    // start with first entry
+    curr_i = 0;
+
+    // mark all channels as equally bad
+    for (uint8_t k = 0; k < cnt; k++) {
+        fhss_last_rssi[k] = INT8_MIN;
+    }
 }
 
 

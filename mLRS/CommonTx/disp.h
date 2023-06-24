@@ -626,9 +626,9 @@ void tTxDisp::draw_page_notify(const char* s)
     gdisp_setfont(&FreeMono12pt7b);
     uint8_t len = strlen(s);
     if (len < 9) {
-    gdisp_setcurY(37-10); gdisp_puts_XCentered(s);
+        gdisp_setcurY(37-10); gdisp_puts_XCentered(s);
     } else {
-      gdisp_setcurY(37-10); gdisp_puts(s); // TODO: gets the job done, but could be smarter
+        gdisp_setcurY(37-10); gdisp_puts(s); // TODO: gets the job done, but could be smarter
     }
     gdisp_unsetfont();
 }

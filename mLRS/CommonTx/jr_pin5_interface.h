@@ -143,6 +143,7 @@ void tPin5BridgeBase::Init(void)
     gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);  // tx pin is now an input after swap
     gpio_init_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST);  // rx pin is now an output after swap
 #endif
+// this is currently experimental, do not use
 #if defined JRPIN5_FULL_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_ConfigHalfDuplexMode(UART_UARTx);

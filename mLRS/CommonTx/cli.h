@@ -23,7 +23,7 @@ extern TxStatsBase txstats;
 
 typedef enum {
     PARAM_FORMAT_DEFAULT = 0,
-    PARAM_FORMAT_LONGSTR,
+    PARAM_FORMAT_CLI,
     PARAM_FORMAT_DISPLAY,
 } PARAM_FORMAT_ENUM;
 
@@ -37,7 +37,7 @@ uint8_t nr, n;
 
     const char* optstr = SetupParameter[param_idx].optstr;
 
-    if (format == PARAM_FORMAT_LONGSTR) {
+    if (format == PARAM_FORMAT_CLI) {
          if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
@@ -426,7 +426,7 @@ char s[16];
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
-        while (_param_get_listval_fromoptstr(s, idx, i, PARAM_FORMAT_LONGSTR)) {
+        while (_param_get_listval_fromoptstr(s, idx, i, PARAM_FORMAT_CLI)) {
             if (allowed_mask & (1 << i)) {
                 puts("  "); putc(i + '0'); puts(" = "); putsn(s);
             }
@@ -452,7 +452,7 @@ void tTxCli::print_param(uint8_t idx)
         return;
     }
     char s[32];
-    param_get_val_formattedstr(s, idx, PARAM_FORMAT_LONGSTR);
+    param_get_val_formattedstr(s, idx, PARAM_FORMAT_CLI);
     puts(s);
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
