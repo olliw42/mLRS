@@ -33,8 +33,8 @@
 //#define SETUP_FORCE_COMMON_CONF
 
 
-#define CPOWER                          0 // 0: minimum power, 255: maximum power
-//#define CPOWER                          RFPOWER_DEFAULT
+#define CPOWER                          RFPOWER_DEFAULT
+//#define CPOWER                          0 // 0: minimum power, 255: maximum power
 
 #define DIVERSITY                       0
 
