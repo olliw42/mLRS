@@ -40,6 +40,8 @@ uint16_t FhssBase::prng(void)
 void FhssBase::generate(uint32_t seed)
 {
     _seed = seed;
+    _ortho = FHSS_ORTHO_NONE;
+    _except = FHSS_EXCEPT_NONE;
 
     bool used_flag[FHSS_FREQ_LIST_MAX_LEN];
     for (uint8_t ch = 0; ch < FHSS_FREQ_LIST_MAX_LEN; ch++) used_flag[ch] = false;
@@ -71,7 +73,7 @@ void FhssBase::generate(uint32_t seed)
         // ensure it is not too close to the previous
         // do only if we have plenty of channels at our disposal
         bool is_too_close = false;
-        if ((config_i != FHSS_CONFIG_433_MHZ && config_i !=FHSS_CONFIG_866_MHZ_IN) && (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
+        if ((config_i != FHSS_CONFIG_433_MHZ && config_i != FHSS_CONFIG_866_MHZ_IN) && (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
             int8_t last_ch = ch_list[k - 1];
             if (last_ch == 0) { // special treatment for this case
                 if (ch < 2) is_too_close = true;
@@ -87,14 +89,122 @@ void FhssBase::generate(uint32_t seed)
         used_flag[ch] = true;
 
         k++;
-  }
+    }
 
-  curr_i = 0;
+    // the following is not related to the generation, but does initialization
+    // is done here to allow calling generate separately, at least in principle
 
-  // mark all channels as equally bad
-  for (uint8_t k = 0; k < cnt; k++) {
-      fhss_last_rssi[k] = INT8_MIN;
-  }
+    // start with first entry
+    curr_i = 0;
+
+    // mark all channels as equally bad
+    for (uint8_t k = 0; k < cnt; k++) {
+        fhss_last_rssi[k] = INT8_MIN;
+    }
 }
 
+
+void FhssBase::generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiband)
+{
+    _seed = seed;
+    _ortho = ortho;
+    _except = except_wifiband;
+
+    bool used_flag[FHSS_FREQ_LIST_MAX_LEN];
+    for (uint8_t ch = 0; ch < FHSS_FREQ_LIST_MAX_LEN; ch++) used_flag[ch] = false;
+
+    uint8_t freq_len = FREQ_LIST_LEN;
+    uint8_t ch_ofs = 0;
+    uint8_t ch_inc = 1;
+
+    if (_ortho > FHSS_ORTHO_NONE) {
+        ch_ofs = _ortho - FHSS_ORTHO_1; // 0, 1, 2
+        ch_inc = 3;
+        freq_len = FREQ_LIST_LEN / 3; // we use only 1/3 of the available channels
+    }
+
+    uint8_t k = 0;
+    uint8_t last_ch_eff = 0;
+
+    while (k < cnt) {
+
+        uint8_t rn = prng() % (freq_len - k); // get a random number in the remaining range
+
+        uint8_t i = 0;
+        uint8_t ch_eff;
+        for (ch_eff = 0; ch_eff < freq_len; ch_eff++) {
+            if (used_flag[ch_eff]) continue;
+            if (i == rn) break; // ch_eff is our next index
+            i++;
+        }
+
+        if (ch_eff >= freq_len) { // argh, must not happen !
+            ch_eff = freq_len;
+        }
+
+        uint8_t ch = ch_eff * ch_inc + ch_ofs; // that's the true channel
+
+        // do not pick a bind channel
+        bool is_bind_channel = false;
+        for (uint8_t bi = 0; bi < BIND_CHANNEL_LIST_LEN; bi++) {
+            if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
+        }
+        if (is_bind_channel) continue;
+
+        // do not pick a channel in an excepted wifi band
+        // https://en.wikipedia.org/wiki/List_of_WLAN_channels
+#ifdef FHSS_HAS_CONFIG_2P4_GHZ
+        uint32_t freq = fhss_freq_list[ch];
+        switch (_except) {
+        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_1:
+            // #1, 2.412 GHz +- 11 MHz = ]0 , 17[
+            if (SX1280_FREQ_GHZ_TO_REG(2.401) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.423)) continue;
+            break;
+        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_6:
+            // #6, 2.437 GHz +- 11 MHz = ]20 , 42[
+            if (SX1280_FREQ_GHZ_TO_REG(2.426) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.448)) continue;
+            break;
+        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_11:
+            // #11, 2.462 GHz +- 11 MHz = ]45 , 67[
+            if (SX1280_FREQ_GHZ_TO_REG(2.451) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.473)) continue;
+            break;
+        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_13:
+            // #13, 2.472 GHz +- 11 MHz = ]55, 67[
+            if (SX1280_FREQ_GHZ_TO_REG(2.461) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.483)) continue;
+            break;
+        }
+#endif
+
+        // ensure it is not too close to the previous
+        bool is_too_close = false;
+        if (k > 0) {
+            if (last_ch_eff == 0) { // special treatment for this case
+                if (ch_eff <= 1) is_too_close = true;
+            } else {
+                if ((ch_eff >= last_ch_eff - 1) && (ch_eff <= last_ch_eff + 1)) is_too_close = true;
+            }
+        }
+        if (is_too_close) continue;
+
+        last_ch_eff = ch_eff;
+
+        // we got a new ch, so register it
+        ch_list[k] = ch;
+        fhss_list[k] = fhss_freq_list[ch];
+        used_flag[ch_eff] = true;
+
+        k++;
+    }
+
+    // the following is not related to the generation, but does initialization
+    // is done here to allow calling generate separately, at least in principle
+
+    // start with first entry
+    curr_i = 0;
+
+    // mark all channels as equally bad
+    for (uint8_t k = 0; k < cnt; k++) {
+        fhss_last_rssi[k] = INT8_MIN;
+    }
+}
 

@@ -37,7 +37,7 @@ os.environ["PATH"] = path
 
 
 # global variables
-VERSIONONLYSTR = 'v0.0.00'
+VERSIONONLYSTR = ''
 
 
 def do_common_conf_h():
@@ -46,6 +46,10 @@ def do_common_conf_h():
     content = F.read()
     F.close()
     
+    if VERSIONONLYSTR != '':
+        print('VERSIONONLYSTR =', VERSIONONLYSTR)
+        return
+
     v = re.search(r'VERSIONONLYSTR\s+"(\S+)"', content)
     if v:
         VERSIONONLYSTR = v.groups()[0]

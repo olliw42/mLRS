@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-05-04.02'
+local version = '2023-05-04.03'
 
 
 -- experimental
@@ -412,15 +412,15 @@ local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
 end
 
 local function mb_allowed_mask_editable(allowed_mask) -- only one option allowed
-    if allowed_mask == 1 then return false end
-    if allowed_mask == 2 then return false end
-    if allowed_mask == 4 then return false end
-    if allowed_mask == 8 then return false end
-    if allowed_mask == 16 then return false end
-    if allowed_mask == 32 then return false end
-    if allowed_mask == 64 then return false end
-    if allowed_mask == 128 then return false end
-    if allowed_mask == 256 then return false end
+    if allowed_mask == 1 then return false; end
+    if allowed_mask == 2 then return false; end
+    if allowed_mask == 4 then return false; end
+    if allowed_mask == 8 then return false; end
+    if allowed_mask == 16 then return false; end
+    if allowed_mask == 32 then return false; end
+    if allowed_mask == 64 then return false; end
+    if allowed_mask == 128 then return false; end
+    if allowed_mask == 256 then return false; end
     return true
 end
 
@@ -435,6 +435,7 @@ freq_band_list[1] = "915 MHz FCC"
 freq_band_list[2] = "868 MHz"
 freq_band_list[3] = "433 MHz"
 freq_band_list[4] = "70 cm HAM"
+freq_band_list[5] = "866 MHz IN"
 
 
 ----------------------------------------------------------------------

@@ -57,8 +57,8 @@ class BindBase
     void Do(void);
     uint8_t Task(void);
 
-    void AutoBind(void); // only for receiver
-    uint32_t auto_bind_tmo;
+    void AutoBind(void); // only for receiver, call every ms
+    uint32_t auto_bind_tmo_ms;
 
     bool is_in_binding; // is in snyc with link loop
     bool binding_requested;
@@ -94,7 +94,7 @@ void BindBase::Init(void)
     memcpy(&TxSignature, BIND_SIGNATURE_TX_STR, 8);
     memcpy(&RxSignature, BIND_SIGNATURE_RX_STR, 8);
 
-    auto_bind_tmo = 1000 * RX_BIND_MODE_AFTER_POWERUP_TIME_SEC;
+    auto_bind_tmo_ms = 1000 * RX_BIND_MODE_AFTER_POWERUP_TIME_SEC;
 }
 
 
@@ -175,14 +175,14 @@ uint8_t BindBase::Task(void)
 }
 
 
-void BindBase::AutoBind(void) // only for receiver
+void BindBase::AutoBind(void) // only for receiver, call every ms
 {
 #if defined DEVICE_IS_RECEIVER && defined RX_BIND_MODE_AFTER_POWERUP
-    if (!auto_bind_tmo) return;
+    if (!auto_bind_tmo_ms) return;
 
-    auto_bind_tmo--;
+    auto_bind_tmo_ms--;
 
-    if (auto_bind_tmo == 0) {
+    if (auto_bind_tmo_ms == 0) {
         binding_requested = true;
     }
 #endif
