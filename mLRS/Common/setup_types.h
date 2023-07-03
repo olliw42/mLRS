@@ -313,6 +313,8 @@ typedef struct
     uint16_t FrameSyncWord;
     uint16_t FhssNum;
     uint32_t FhssSeed;
+    uint8_t FhssOrtho;
+    uint8_t FhssExcept;
 
     uint16_t LQAveragingPeriod;
 

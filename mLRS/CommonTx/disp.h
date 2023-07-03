@@ -803,6 +803,18 @@ void tTxDisp::draw_page_common(void)
 {
     draw_header("Common");
     draw_options(&common_list);
+
+    if (Setup.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        gdisp_setcurXY(0, 4 * 10 + 20); // last line
+        gdisp_puts("except ");
+        switch (except_from_bindphrase(Setup.BindPhrase)) {
+        case 1: gdisp_puts("/e1"); break;
+        case 2: gdisp_puts("/e6"); break;
+        case 3: gdisp_puts("/e11"); break;
+        case 4: gdisp_puts("/e13"); break;
+        default: gdisp_puts("/--");
+        }
+    }
 }
 
 

@@ -472,6 +472,14 @@ void tTxCli::print_param(uint8_t idx)
         if (allowed_num == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
     case SETUP_PARAM_TYPE_STR6:
+        if (Setup.FrequencyBand != SETUP_FREQUENCY_BAND_2P4_GHZ) break;
+        switch (except_from_bindphrase(s)) {
+        case 0: puts(" /--"); break;
+        case 1: puts(" /e1"); break;
+        case 2: puts(" /e6"); break;
+        case 3: puts(" /e11"); break;
+        case 4: puts(" /e13"); break;
+        }
         break;
     }
     puts(ret);
