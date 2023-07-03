@@ -128,6 +128,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         }
     }
 
+/* deactivated on 1.7.2023, momentarily left for reference, shall be removed eventually
     // mimic spektrum
     // 1090 ... 1515  ... 1940
     // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
@@ -136,6 +137,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         uint32_t xs = 850 * rc.ch[n];
         rc.ch[n] = (xs + t) / 1000;
     }
+*/
 
     if (failsafe) {
         switch (failsafe_mode) {
