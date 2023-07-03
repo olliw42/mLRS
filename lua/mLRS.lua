@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-05-04.03'
+local version = '2023-06-24.00'
 
 
 -- experimental
@@ -436,6 +436,25 @@ freq_band_list[2] = "868 MHz"
 freq_band_list[3] = "433 MHz"
 freq_band_list[4] = "70 cm HAM"
 freq_band_list[5] = "866 MHz IN"
+
+local function getExceptNoFromChar(c)
+    if (c >= 'a' and c <= 'z') then return (string.byte(c) - string.byte('a')) % 5; end
+    if (c >= '0' and c <= '9') then return (string.byte(c) - string.byte('0')) % 5; end
+    if (c == '_') then return 1; end
+    if (c == '#') then return 2; end
+    if (c == '-') then return 3; end
+    if (c == '.') then return 4; end
+    return 0
+end    
+
+local function getExceptStrFromChar(c)
+    local n = getExceptNoFromChar(c)
+    if (n == 1) then return "/e1"; end
+    if (n == 2) then return "/e6"; end
+    if (n == 3) then return "/e11"; end
+    if (n == 4) then return "/e13"; end
+    return "/--"
+end    
 
 
 ----------------------------------------------------------------------
@@ -952,6 +971,9 @@ local function drawPageMain()
             lcd.drawText(x, y, c, attr)
             --x = x + lcd.getTextWidth(c,1,attr)+1
             x = x + getCharWidth(c) + 1
+            if i == 6 and DEVICE_PARAM_LIST[2].value == 0 then -- do only for 2.4GHz band
+                lcd.drawText(140 + 70, y, getExceptStrFromChar(c), TEXT_COLOR)
+            end  
         end
     end    
     
