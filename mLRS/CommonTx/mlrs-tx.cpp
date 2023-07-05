@@ -183,8 +183,9 @@ void WhileTransmit::handle_once(void)
     cli.Do();
 
 #ifdef USE_DISPLAY
-    static uint32_t main_tlast_ms = 0;
     uint32_t tnow_ms = millis32();
+
+    static uint32_t main_tlast_ms = 0;
     if (tnow_ms - main_tlast_ms >= 250) { // Update Main page at 4 Hz
         main_tlast_ms = tnow_ms;
         disp.UpdateMain();
@@ -192,9 +193,9 @@ void WhileTransmit::handle_once(void)
 
     if (bind.IsInBind()) disp.SetBind();
 
-    static uint8_t step = 0;
-    if (Config.frame_rate_ms < 50) { DECc(step, 2); } else { step = 0; } // slow down if in 50 Hz mode
-    if (!step) {
+    static uint32_t draw_tlast_ms = 0;
+    if (tnow_ms - draw_tlast_ms >= 30) { // effectively slows down if in 50 Hz mode (Draw takes time, ca 30 ms on G4)
+        draw_tlast_ms = tnow_ms;
         disp.Draw();
     }
 #endif

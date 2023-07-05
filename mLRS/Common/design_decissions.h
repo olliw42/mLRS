@@ -74,7 +74,10 @@ ELRS 2400.4 - 0.4 ... 2479.4 + 0.4  = 2400.0 ... 2479.8
 https://www.bundesnetzagentur.de Allgemeinzuteilungen/MobilfunkDectWlanCBFunk/2013_10_WLAN_2,4GHz_pdf:
 2400,0 – 2483,5
 
-so use 2406.0 ... 2473.0  in 1MHz steps
+so use 2406.0 ... 2473.0  in 1 MHz steps
+
+4.7.2023: decision revised to include 80 channels, 2401-2480
+see https://github.com/olliw42/mLRS/pull/90
 
 -------------------------------------------------------
 868 MHz band

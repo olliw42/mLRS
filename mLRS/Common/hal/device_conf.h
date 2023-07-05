@@ -10,8 +10,22 @@
 // enter define into "MCU G++ Compiler"->"Preprocessor" !!!
 // for devices with I2C, un-comment #define HAL_I2C_MODULE_ENABLED in Core/Inc/stm32xxxx_hal_conf.h
 
-// Note: A device may support multiple frequency bands.
-// Note: Device name can be 20 chars max.
+/* Documentation
+
+Note: Device name can be 20 chars max.
+
+Note: A device may support multiple frequency bands.
+Available RF band defines:
+
+#define FREQUENCY_BAND_2P4_GHZ
+#define FREQUENCY_BAND_868_MHZ
+#define FREQUENCY_BAND_915_MHZ_FCC
+#define FREQUENCY_BAND_866_MHZ_IN
+#define FREQUENCY_BAND_433_MHZ
+#define FREQUENCY_BAND_70_CM_HAM
+
+The default selection of frequency bands can be overruled by feature defines.
+*/
 
 
 //-- FrsKy R9 system
@@ -91,8 +105,6 @@
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   //#define FREQUENCY_BAND_866_MHZ_IN
-  //#define FREQUENCY_BAND_433_MHZ
-  //#define FREQUENCY_BAND_70_CM_HAM
 #endif
 
 
@@ -244,4 +256,33 @@
 #endif
 
 
+//-------------------------------------------------------
+// MLRS Feature Defines
+//-------------------------------------------------------
+// should go somewhere else !?
 
+#if defined MLRS_FEATURE_433_MHZ || defined MLRS_FEATURE_70_CM || \
+    defined MLRS_FEATURE_868_MHZ || defined MLRS_FEATURE_915_MHZ_FCC || defined MLRS_FEATURE_866_MHZ_IN
+
+  #undef FREQUENCY_BAND_868_MHZ
+  #undef FREQUENCY_BAND_915_MHZ_FCC
+  #undef FREQUENCY_BAND_866_MHZ_IN
+  #undef FREQUENCY_BAND_433_MHZ
+  #undef FREQUENCY_BAND_70_CM_HAM
+
+  #ifdef MLRS_FEATURE_868_MHZ
+    #define FREQUENCY_BAND_868_MHZ
+  #endif
+  #ifdef MLRS_FEATURE_915_MHZ_FCC
+    #define FREQUENCY_BAND_915_MHZ_FCC
+  #endif
+  #ifdef MLRS_FEATURE_866_MHZ_IN
+    #define FREQUENCY_BAND_866_MHZ_IN
+  #endif
+  #ifdef MLRS_FEATURE_433_MHZ
+    #define FREQUENCY_BAND_433_MHZ
+  #endif
+  #ifdef MLRS_FEATURE_70_CM
+    #define FREQUENCY_BAND_70_CM
+  #endif
+#endif

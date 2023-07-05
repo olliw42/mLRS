@@ -20,7 +20,7 @@
 
 
 #define FHSS_MAX_NUM            32
-#define FHSS_FREQ_LIST_MAX_LEN  80 // 2.4 GHz is 68
+#define FHSS_FREQ_LIST_MAX_LEN  86 // 2.4 GHz is 80
 
 //-------------------------------------------------------
 // Frequency list
@@ -216,17 +216,23 @@ const uint8_t fhss_bind_channel_list_866_in[] = {
 
 #endif
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
-// 2406.0 ... 2473.0  in 1 MHz steps
-// = 68 channels
+// 2401.0 ... 2480.0  in 1 MHz steps
+// = 80 channels
 
 const uint32_t fhss_freq_list_2p4[] = {
-    SX1280_FREQ_GHZ_TO_REG(2.406), // channel 0
+
+    SX1280_FREQ_GHZ_TO_REG(2.401), // channel 0
+    SX1280_FREQ_GHZ_TO_REG(2.402),
+    SX1280_FREQ_GHZ_TO_REG(2.403),
+    SX1280_FREQ_GHZ_TO_REG(2.404),
+    SX1280_FREQ_GHZ_TO_REG(2.405),
+    SX1280_FREQ_GHZ_TO_REG(2.406),
     SX1280_FREQ_GHZ_TO_REG(2.407),
     SX1280_FREQ_GHZ_TO_REG(2.408),
     SX1280_FREQ_GHZ_TO_REG(2.409),
+    SX1280_FREQ_GHZ_TO_REG(2.410),
 
-    SX1280_FREQ_GHZ_TO_REG(2.410), // channel 4
-    SX1280_FREQ_GHZ_TO_REG(2.411),
+    SX1280_FREQ_GHZ_TO_REG(2.411), // channel 10
     SX1280_FREQ_GHZ_TO_REG(2.412),
     SX1280_FREQ_GHZ_TO_REG(2.413),
     SX1280_FREQ_GHZ_TO_REG(2.414),
@@ -235,9 +241,9 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.417),
     SX1280_FREQ_GHZ_TO_REG(2.418),
     SX1280_FREQ_GHZ_TO_REG(2.419),
+    SX1280_FREQ_GHZ_TO_REG(2.420),
 
-    SX1280_FREQ_GHZ_TO_REG(2.420), // channel 14
-    SX1280_FREQ_GHZ_TO_REG(2.421),
+    SX1280_FREQ_GHZ_TO_REG(2.421), // channel 20
     SX1280_FREQ_GHZ_TO_REG(2.422),
     SX1280_FREQ_GHZ_TO_REG(2.423),
     SX1280_FREQ_GHZ_TO_REG(2.424),
@@ -246,9 +252,9 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.427),
     SX1280_FREQ_GHZ_TO_REG(2.428),
     SX1280_FREQ_GHZ_TO_REG(2.429),
+    SX1280_FREQ_GHZ_TO_REG(2.430),
 
-    SX1280_FREQ_GHZ_TO_REG(2.430), // channel 24
-    SX1280_FREQ_GHZ_TO_REG(2.431),
+    SX1280_FREQ_GHZ_TO_REG(2.431), // channel 30
     SX1280_FREQ_GHZ_TO_REG(2.432),
     SX1280_FREQ_GHZ_TO_REG(2.433),
     SX1280_FREQ_GHZ_TO_REG(2.434),
@@ -257,9 +263,9 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.437),
     SX1280_FREQ_GHZ_TO_REG(2.438),
     SX1280_FREQ_GHZ_TO_REG(2.439),
+    SX1280_FREQ_GHZ_TO_REG(2.440),
 
-    SX1280_FREQ_GHZ_TO_REG(2.440), // channel 34
-    SX1280_FREQ_GHZ_TO_REG(2.441),
+    SX1280_FREQ_GHZ_TO_REG(2.441), // channel 40
     SX1280_FREQ_GHZ_TO_REG(2.442),
     SX1280_FREQ_GHZ_TO_REG(2.443),
     SX1280_FREQ_GHZ_TO_REG(2.444),
@@ -268,9 +274,9 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.447),
     SX1280_FREQ_GHZ_TO_REG(2.448),
     SX1280_FREQ_GHZ_TO_REG(2.449),
+    SX1280_FREQ_GHZ_TO_REG(2.450),
 
-    SX1280_FREQ_GHZ_TO_REG(2.450), // channel 44
-    SX1280_FREQ_GHZ_TO_REG(2.451),
+    SX1280_FREQ_GHZ_TO_REG(2.451), // channel 50
     SX1280_FREQ_GHZ_TO_REG(2.452),
     SX1280_FREQ_GHZ_TO_REG(2.453),
     SX1280_FREQ_GHZ_TO_REG(2.454),
@@ -279,9 +285,9 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.457),
     SX1280_FREQ_GHZ_TO_REG(2.458),
     SX1280_FREQ_GHZ_TO_REG(2.459),
+    SX1280_FREQ_GHZ_TO_REG(2.460),
 
-    SX1280_FREQ_GHZ_TO_REG(2.460), // channel 54
-    SX1280_FREQ_GHZ_TO_REG(2.461),
+    SX1280_FREQ_GHZ_TO_REG(2.461), // channel 60
     SX1280_FREQ_GHZ_TO_REG(2.462),
     SX1280_FREQ_GHZ_TO_REG(2.463),
     SX1280_FREQ_GHZ_TO_REG(2.464),
@@ -290,15 +296,22 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX1280_FREQ_GHZ_TO_REG(2.467),
     SX1280_FREQ_GHZ_TO_REG(2.468),
     SX1280_FREQ_GHZ_TO_REG(2.469),
+    SX1280_FREQ_GHZ_TO_REG(2.470),
 
-    SX1280_FREQ_GHZ_TO_REG(2.470), // channel 64
-    SX1280_FREQ_GHZ_TO_REG(2.471),
+    SX1280_FREQ_GHZ_TO_REG(2.471), // channel 70
     SX1280_FREQ_GHZ_TO_REG(2.472),
-    SX1280_FREQ_GHZ_TO_REG(2.473), // channel 67
+    SX1280_FREQ_GHZ_TO_REG(2.473),
+    SX1280_FREQ_GHZ_TO_REG(2.474),
+    SX1280_FREQ_GHZ_TO_REG(2.475),
+    SX1280_FREQ_GHZ_TO_REG(2.476),
+    SX1280_FREQ_GHZ_TO_REG(2.477),
+    SX1280_FREQ_GHZ_TO_REG(2.478),
+    SX1280_FREQ_GHZ_TO_REG(2.479),
+    SX1280_FREQ_GHZ_TO_REG(2.480), // channel 79
 };
 
 const uint8_t fhss_bind_channel_list_2p4[] = {
-    46, 14, 33, 61 // just pick some
+    46, 14, 68 // just pick some
 };
 #endif
 
@@ -442,8 +455,8 @@ class FhssBase
         switch (config_i) {
         case FHSS_CONFIG_2P4_GHZ:
             // we may need to adapt cnt in case of ortho != NONE,
-            // since the cnt_max = 68 - 4 = 64 channels may not be enough channels
-            // in case of also except we actually only have 64 - 22 = 42 channels or so...
+            // since the cnt_max = 80 - 3 = 77 channels may not be enough channels
+            // in case of also except we actually only have 77 - 22 = 55 channels or so...
             // it is not so nice to do it here locally, as we break configuration by defines, but let's be ok for now
             // probably should be done in setup_configure()?
             //
@@ -457,12 +470,12 @@ class FhssBase
             // is used by rx to cycle through frequencies when in LISTEN
             if (ortho > FHSS_ORTHO_NONE) {
                 if (except > FHSS_EXCEPT_NONE) {
-                    // we only have 42 channels or so
-                    // so narrow down to 12 (12 * 3 = 36 < 42)
+                    // we only have 55 channels or so
+                    // so narrow down to 12 (12 * 3 = 36 < 55)
                     cnt = 12;
                 } else {
-                    // we have 64 channels
-                    // so can accommodate up to 18 frequencies (18 * 3 = 54 < 64)
+                    // we have 77 channels
+                    // so can accommodate up to 18 frequencies (18 * 3 = 54 < 77)
                     if (cnt > 18) cnt = 18; // we narrow down to 12 or 18
                 }
             }

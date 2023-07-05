@@ -488,6 +488,8 @@ void tTxDisp::Draw(void)
     if (page_modified) {
 //uint32_t t1 = micros(); //HAL_GetTick();
 
+        if (!gdisp_update_completed()) return;
+
         switch (page) {
             case PAGE_STARTUP: draw_page_startup(); break;
             case PAGE_MAIN: draw_page_main(); break;
