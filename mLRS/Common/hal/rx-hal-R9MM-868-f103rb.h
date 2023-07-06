@@ -12,6 +12,16 @@
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_RX_R9M.h
 // many THX to the ExpressLRS project !
+// Connection pads:
+//   Pin1 Inv SPort   PB11 (??)
+//   Pin2 VCC
+//   Pin3 GND
+//   Pin4 SPort/FPort PA5  (??, looks strange, something is inbetween)
+//   Pin5 SBusOut     PA2 / U2Tx inverted
+//   Ch1    PA8
+//   Ch2    PA11
+//   Ch3    PA9 / U1Tx    -> Serial Tx
+//   Ch4    PA10 / U1Rx   -> Serial Rx
 
 #define DEVICE_HAS_OUT_INVERTED
 #define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
