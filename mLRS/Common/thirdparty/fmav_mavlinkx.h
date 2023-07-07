@@ -28,16 +28,16 @@
 // this reads the complete frame, so adds latency, but for the moment we do it to keep it simple
 // should be ok for testing and dev-ing
 
-// STX1
-// STX2
-// flags
-//   flagsext
-// len
-// seq
-// sysid
-//   sysid2
-// compid
-//   tsysid
+// STX1                       STX
+// STX2                       len
+// flags                      incompat_flag
+//   flagsext                 compat_flag
+// len                        seq
+// seq                        sysid
+// sysid                      compid
+//   sysid2                   msgid1
+// compid                     msgid2
+//   tsysid                   msgid3
 //     tsysid2
 //   tcompid
 // msgid1
@@ -179,7 +179,9 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     }
 
     // extra crc
-    buf[pos++] = msg->crc_extra;
+    if (!(flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)) {
+        buf[pos++] = msg->crc_extra;
+    }
 
     // crc8
     uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
@@ -206,7 +208,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 
 // parse the stream into regular fmav msg
 // returns NONE, HAS_HEADER, or OK
-FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
+FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
     fmavx_status.header[fmavx_status.pos++] = c; // memorize
 
@@ -300,8 +302,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
             buf[status->rx_cnt++] = 0; // 8: msgid2
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
-            if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
-                 (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+            if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
                 status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
                 return;
             }
@@ -320,8 +321,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
 
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
-            if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
-                 (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+            if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
                 status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
                 return;
             }
@@ -336,8 +336,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
         buf[status->rx_cnt++] = c; // 9: msgid3
 
-        if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
-             (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+        if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
             status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
             return;
         }
@@ -384,7 +383,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
     case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
-        _fmavX_parse_header_to_frame_buf(result, buf, status, c);
+        _fmavX_parse_header_to_frame_buf(buf, status, c);
         result->res = FASTMAVLINK_PARSE_RESULT_NONE;
         return FASTMAVLINK_PARSE_RESULT_NONE;
 
@@ -413,7 +412,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
                 status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
 
                 for (uint8_t n = next_magic_pos + 1; n < len; n++) {
-                    _fmavX_parse_header_to_frame_buf(result, buf, status, head[n]);
+                    _fmavX_parse_header_to_frame_buf(buf, status, head[n]);
                 }
             }
 
