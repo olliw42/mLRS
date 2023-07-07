@@ -515,24 +515,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_check_to_frame_buf(fmav_r
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
     return 0;
-
-    for(uint8_t i = 0; i < len; i++) {
-        payload_out[i] = ~ payload[i];
-    }
-
-    *len_out = len;
-
-    return 1;
 }
 
 
 // attention, overwrites the payload buffer!
 void _fmavX_payload_decompress(uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
-    for(uint8_t i = 0; i < len; i++) {
-        payload[i] = ~ payload[i];
-    }
-
     *len_out = len;
 }
 
