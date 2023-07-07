@@ -44,6 +44,7 @@ class MavlinkBase
     void generate_radio_link_stats(void);
     void generate_radio_link_flow_control(void);
 
+    uint16_t serial_in_available(void);
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
     bool handle_txbuf_method_b(uint32_t tnow_ms); // for PX4, aka "brad"
 
@@ -266,6 +267,12 @@ void MavlinkBase::send_msg_serial_out(void)
 //-------------------------------------------------------
 // for the txbuf rate-based mechanism see design_decissions.h for details
 
+uint16_t MavlinkBase::serial_in_available(void)
+{
+    return serial.bytes_available();
+}
+
+
 bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
 {
     // work out state
@@ -280,26 +287,26 @@ bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
     if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
         switch (txbuf_state) {
         case TXBUF_STATE_NORMAL:
-            if (serial.bytes_available() > 1024) { // ups, suddenly lots of traffic
+            if (serial_in_available() > 1024) { // ups, suddenly lots of traffic
                 txbuf_state = TXBUF_STATE_BURST;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_BURST:
-            if (serial.bytes_available() > 1024) { // it hasn't depleted, so raise alarm high
+            if (serial_in_available() > 1024) { // it hasn't depleted, so raise alarm high
                 txbuf_state = TXBUF_STATE_BURST_HIGH;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             } else
-            if (serial.bytes_available() < 384) { // quite empty, so we can go back and try normal
+            if (serial_in_available() < 384) { // quite empty, so we can go back and try normal
                 txbuf_state = TXBUF_STATE_NORMAL;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_BURST_HIGH:
-            if (serial.bytes_available() < 1024) { // it has depleted, we can go back and try burst
+            if (serial_in_available() < 1024) { // it has depleted, we can go back and try burst
                 txbuf_state = TXBUF_STATE_BURST;
             }
             radio_status_tlast_ms = tnow_ms;
@@ -353,7 +360,7 @@ dbg.puts(u16toBCD_s(t));dbg.puts(" (");dbg.puts(u16toBCD_s(dt));dbg.puts("), ");
 //dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
 dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(" (");
 dbg.puts(u16toBCD_s(bytes_serial_in_rate_filt.Get()));dbg.puts("), ");
-dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
+dbg.puts(u16toBCD_s(serial_in_available()));dbg.puts(", ");
 dbg.puts(u8toBCD_s((rate_percentage<256)?rate_percentage:255));dbg.puts(", ");
 if(txbuf_state==2) dbg.puts("high, "); else
 if(txbuf_state==1) dbg.puts("brst, "); else dbg.puts("norm, ");
@@ -387,19 +394,19 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
     } else
     switch (txbuf_state) {
         case TXBUF_STATE_NORMAL:
-            if (serial.bytes_available() > 800) { // oops, buffer filling
+            if (serial_in_available() > 800) { // oops, buffer filling
                 txbuf_state = TXBUF_STATE_BURST;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_BURST:
-            if (serial.bytes_available() > 1400) { // Still growing, so raise alarm high
+            if (serial_in_available() > 1400) { // still growing, so raise alarm high
                 txbuf_state = TXBUF_STATE_BURST_HIGH;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
             } else
-            if (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*2) { // less than 2 radio messages remain, back to normal
+            if (serial_in_available() < FRAME_RX_PAYLOAD_LEN*2) { // less than 2 radio messages remain, back to normal
                 txbuf_state = TXBUF_STATE_PX4_RECOVER;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
@@ -407,7 +414,7 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
             break;
         case TXBUF_STATE_BURST_HIGH:
             if ((tnow_ms - radio_status_tlast_ms) >= 100) { // limit to 10 Hz
-                if (serial.bytes_available() < 1400) { // it has stopped growing, we can go back and try burst
+                if (serial_in_available() < 1400) { // it has stopped growing, we can go back and try burst
                     txbuf_state = TXBUF_STATE_BURST;
                 }
 		            radio_status_tlast_ms = tnow_ms;
@@ -470,7 +477,7 @@ dbg.puts("\nMp: ");
 dbg.puts(u16toBCD_s(t));dbg.puts(" (");dbg.puts(u16toBCD_s(dt));dbg.puts("), ");
 //dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
 dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
-dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
+dbg.puts(u16toBCD_s(serial_in_available()));dbg.puts(", ");
 dbg.puts(u8toBCD_s((rate_percentage<256)?rate_percentage:255));dbg.puts(", ");
 if(txbuf_state==1) dbg.puts("brst, "); else
 if(txbuf_state==2) dbg.puts("high, "); else
