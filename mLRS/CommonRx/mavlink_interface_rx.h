@@ -163,20 +163,69 @@ void MavlinkBase::Do(void)
         if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
             fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
 
-//XX            uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-//XX            uint16_t len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
             uint16_t len;
             if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
                 len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+
+#if 0
+                // test it
+                fmavx_status_t tstatx;
+                memcpy(&tstatx, &fmavx_status, sizeof(fmavx_status_t));
+
+                static uint8_t fmax_err_cnt = 0;
+
+                uint8_t tbuf[300];
+                fmav_result_t tres;
+                fmav_status_t tstat;
+                fmav_status_reset(&tstat);
+                for (uint16_t i = 0; i < len; i++) {
+                    fmavX_parse_to_frame_buf(&tres, tbuf, &tstat, _buf[i]);
+                }
+
+                if (tres.res != FASTMAVLINK_PARSE_RESULT_OK) {
+                    fmax_err_cnt++;
+                    dbg.puts("\nres ");dbg.puts(u16toBCD_s(tres.res));
+                }
+
+                uint8_t tbuf2[300];
+                uint16_t tlen2;
+                tlen2 = fmav_msg_to_frame_buf(tbuf2, &msg_link_out);
+
+                if (tres.frame_len != tlen2) {
+                    fmax_err_cnt++;
+                    dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));
+                    dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));
+                }
+
+                for (uint16_t i = 0; i < tlen2; i++) {
+                    if (tbuf[i] != tbuf2[i]) {
+                        fmax_err_cnt++;
+                        dbg.puts("\n_buf ");dbg.puts(u16toBCD_s(len));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < len; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(_buf[ii])); delay_ms(1); }
+                        dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < tres.frame_len; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(tbuf[ii])); delay_ms(1); }
+                        dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < tlen2; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(tbuf2[ii])); delay_ms(1); }
+                        dbg.puts("\n");
+                    }
+                }
+
+                memcpy(&fmavx_status, &tstatx, sizeof(fmavx_status_t));
+
+                if (fmax_err_cnt > 1) fail(&dbg, FAIL_LED_PATTERN_RD_BLINK_GR_BLINK5, "grrr5");
+#endif
+
             } else {
                 len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
             }
 
+#if 0
             // do some fake to stress test the parser
-            /*static uint8_t fake_cnt = 0;
+            static uint8_t fake_cnt = 0;
             uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
             uint8_t bX[8] = { 'a', 'O', 'W', 0, 128, 'b' };
-            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++; */
+            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++;
+#endif
 
             fifo_link_out.PutBuf(_buf, len);
         }
@@ -246,7 +295,6 @@ typedef enum {
 
 void MavlinkBase::putc(char c)
 {
-//XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
     // parse link in -> serial out, and re-convert to v2
     uint8_t res;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {

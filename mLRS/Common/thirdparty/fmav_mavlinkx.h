@@ -35,14 +35,15 @@
 // len
 // seq
 // sysid
+//   sysid2
 // compid
+//   tsysid
+//     tsysid2
+//   tcompid
 // msgid1
 //   msgid2
 //   msgid3
-//   tsysid
-//   tcompid
 //   crcextra
-//   sysid2
 // crc8
 
 // TODO: do we really need two STX bytes?
@@ -53,26 +54,26 @@
 
 // TODO: should we backtrack if the crc16 doesn't match?
 
-#define MAVLINKX_MAGIC_1            'o'
-#define MAVLINKX_MAGIC_2            'w'
-#define MAVLINKX_HEADER_LEN_MAX     16 // can be 9 to 16
-#define MAVLINKX_FRAME_LEN_MAX      (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
+#define MAVLINKX_MAGIC_1              'o'
+#define MAVLINKX_MAGIC_2              'w'
+#define MAVLINKX_HEADER_LEN_MAX       16 // can be 9 to 16
+#define MAVLINKX_FRAME_LEN_MAX        (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
 
 
 typedef enum {
-    MAVLINKX_FLAGS_IS_V1            = 0x01,
-    MAVLINKX_FLAGS_IS_TARGETED      = 0x02,
-    MAVLINKX_FLAGS_HAS_CRC_EXTRA    = 0x04, // not used, it's more to indicate the possibility
-    MAVLINKX_FLAGS_HAS_MSGID8       = 0x08,
-    MAVLINKX_FLAGS_HAS_MSGID16      = 0x10,
-    MAVLINKX_FLAGS_IS_COMPRESSED    = 0x20, // not used currently
-    MAVLINKX_FLAGS_HAS_EXTENSION    = 0x80,
+    MAVLINKX_FLAGS_IS_V1              = 0x01,
+    MAVLINKX_FLAGS_HAS_TARGETS        = 0x02,
+    MAVLINKX_FLAGS_HAS_MSGID16        = 0x04,
+    MAVLINKX_FLAGS_HAS_MSGID24        = 0x08,
+    MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40, // not used currently
+    MAVLINKX_FLAGS_HAS_EXTENSION      = 0x80,
 } fmavx_flags_e;
 
 
 typedef enum {
     MAVLINKX_FLAGS_EXT_HAS_SIGNATURE  = 0x01,
-    MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x02, // not used, it's more to indicate the possibility
+    MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x02, // not yet used, it's more to indicate the possibility
+    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always used currently, unknown messages are not yet supported
 } fmavx_flags_ext_e;
 
 
@@ -82,7 +83,7 @@ typedef enum {
     FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION,
     FASTMAVLINK_PARSE_STATE_TARGET_SYSID,
     FASTMAVLINK_PARSE_STATE_TARGET_COMPID,
-
+    FASTMAVLINK_PARSE_STATE_CRC_EXTRA,
     FASTMAVLINK_PARSE_STATE_CRC8,
 } fmavx_parse_state_e;
 
@@ -94,6 +95,7 @@ typedef struct _fmavx_status {
     uint8_t pos;
     uint8_t target_sysid;
     uint8_t target_compid;
+    uint8_t crc_extra;
 } fmavx_status_t;
 
 
@@ -112,7 +114,7 @@ uint8_t fmavX_crc8_calculate(const uint8_t* buf, uint16_t len)
 }
 
 
-fmavx_status_t fmavx_status = {0};
+fmavx_status_t fmavx_status = {};
 
 
 // convert fmav msg structure into fmavX packet
@@ -137,14 +139,16 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
         buf[2] |= MAVLINKX_FLAGS_HAS_EXTENSION;
         flags_ext |= MAVLINKX_FLAGS_EXT_HAS_SIGNATURE;
     }
+    if (msg->target_sysid > 0 || msg->target_compid > 0) {
+        buf[2] |= MAVLINKX_FLAGS_HAS_TARGETS;
+    }
     if (msg->msgid < 256) {
-        buf[2] |= MAVLINKX_FLAGS_HAS_MSGID8;
+        // no flag needed
     } else
     if (msg->msgid < 65536) {
         buf[2] |= MAVLINKX_FLAGS_HAS_MSGID16;
-    }
-    if (msg->target_sysid > 0 || msg->target_compid > 0) {
-        buf[2] |= MAVLINKX_FLAGS_IS_TARGETED;
+    } else {
+        flags_ext |= MAVLINKX_FLAGS_HAS_MSGID24;
     }
 
     // flags extension
@@ -159,6 +163,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     buf[pos++] = msg->sysid;
     buf[pos++] = msg->compid;
 
+    // targets
+    if (buf[2] & MAVLINKX_FLAGS_HAS_TARGETS) {
+        buf[pos++] = msg->target_sysid;
+        buf[pos++] = msg->target_compid;
+    }
+
     // msgid
     buf[pos++] = (uint8_t)msg->msgid;
     if (msg->msgid >= 256) {
@@ -168,11 +178,8 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
         buf[pos++] = (uint8_t)((msg->msgid) >> 16);
     }
 
-    // targets
-    if (buf[2] & MAVLINKX_FLAGS_IS_TARGETED) {
-        buf[pos++] = msg->target_sysid;
-        buf[pos++] = msg->target_compid;
-    }
+    // extra crc
+    buf[pos++] = msg->crc_extra;
 
     // crc8
     uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
@@ -216,7 +223,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
         fmavx_status.flags = c;
 
         uint8_t magic = (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) ? FASTMAVLINK_MAGIC_V1 : FASTMAVLINK_MAGIC_V2;
-        buf[status->rx_cnt++] = magic; // STX
+        buf[status->rx_cnt++] = magic; // 0: STX
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_EXTENSION) {
             status->rx_state = FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION;
@@ -232,7 +239,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
         return;
 
     case FASTMAVLINK_PARSE_STATE_LEN:
-        buf[status->rx_cnt++] = c; // len
+        buf[status->rx_cnt++] = c; // 1: len
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) {
             status->rx_header_len = FASTMAVLINK_HEADER_V1_LEN;
@@ -242,8 +249,8 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
             status->rx_frame_len = (uint16_t)c + FASTMAVLINK_HEADER_V2_LEN + FASTMAVLINK_CHECKSUM_LEN;
 
             uint8_t incompat_flags = (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_SIGNATURE) ? FASTMAVLINK_INCOMPAT_FLAGS_SIGNED : 0;
-            buf[status->rx_cnt++] = incompat_flags; // incompat_flags
-            buf[status->rx_cnt++] = 0; // compat_flags
+            buf[status->rx_cnt++] = incompat_flags; // 2: incompat_flags
+            buf[status->rx_cnt++] = 0; // 3: compat_flags
 
             if (incompat_flags & FASTMAVLINK_INCOMPAT_FLAGS_SIGNED) {
                 status->rx_frame_len += FASTMAVLINK_SIGNATURE_LEN;
@@ -255,59 +262,21 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
 
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
-    case FASTMAVLINK_PARSE_STATE_COMPID:
-      buf[status->rx_cnt++] = c; // seq, sysid, compid
+      buf[status->rx_cnt++] = c; // 4: seq, 5: sysid
 
       status->rx_state++;
       return;
 
-    case FASTMAVLINK_PARSE_STATE_MSGID_1:
-        buf[status->rx_cnt++] = c; // msgid1
+    case FASTMAVLINK_PARSE_STATE_COMPID:
+      buf[status->rx_cnt++] = c; // 6: compid
 
-        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID8) { // has no msgid2, msgid3
-            buf[status->rx_cnt++] = 0; // msgid2
-            buf[status->rx_cnt++] = 0; // msgid3
+      if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_TARGETS) { // has targets
+          status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
+          return;
+      }
 
-            // TODO: this jump needs to be adapted if crcextra, extflags, sysid2 are used
-            if (fmavx_status.flags & MAVLINKX_FLAGS_IS_TARGETED) { // has targets
-                status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
-                return;
-            }
-            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
-            return;
-        }
-
-        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_2;
-        return;
-
-    case FASTMAVLINK_PARSE_STATE_MSGID_2:
-        buf[status->rx_cnt++] = c; // msgid2
-
-        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) { // has no msgid3
-            buf[status->rx_cnt++] = 0; // msgid3
-
-            // TODO: this jump needs to be adapted if crcextra, extflags, sysid2 are used
-            if (fmavx_status.flags & MAVLINKX_FLAGS_IS_TARGETED) { // has targets
-                status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
-                return;
-            }
-            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
-            return;
-        }
-
-        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_3;
-        return;
-
-    case FASTMAVLINK_PARSE_STATE_MSGID_3:
-        buf[status->rx_cnt++] = c; // msgid3
-
-        // TODO: this jump needs to be adapted if crcextra, extflags, sysid2 are used
-        if (fmavx_status.flags & MAVLINKX_FLAGS_IS_TARGETED) { // has targets
-            status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
-            return;
-        }
-        status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
-        return;
+      status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_1;
+      return;
 
     case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
         // we don't do anything with it currently
@@ -318,6 +287,66 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
     case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
         // we don't do anything with it currently
         fmavx_status.target_compid = c;
+        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_1;
+        return;
+
+    case FASTMAVLINK_PARSE_STATE_MSGID_1:
+        buf[status->rx_cnt++] = c; // 7: msgid1
+
+        if ( !(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) &&
+             !(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID24)    ) { // has no msgid2, msgid3
+
+            buf[status->rx_cnt++] = 0; // 8: msgid2
+            buf[status->rx_cnt++] = 0; // 9: msgid3
+
+            if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
+                 (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+                return;
+            }
+
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+            return;
+        }
+
+        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_2;
+        return;
+
+    case FASTMAVLINK_PARSE_STATE_MSGID_2:
+        buf[status->rx_cnt++] = c; // 8: msgid2
+
+        if (!(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID24)) { // has no msgid3
+
+            buf[status->rx_cnt++] = 0; // 9: msgid3
+
+            if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
+                 (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+                return;
+            }
+
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+            return;
+        }
+
+        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_3;
+        return;
+
+    case FASTMAVLINK_PARSE_STATE_MSGID_3:
+        buf[status->rx_cnt++] = c; // 9: msgid3
+
+        if ( (fmavx_status.flags_ext & MAVLINKX_FLAGS_HAS_EXTENSION) &&
+             (fmavx_status.flags & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)     ) { // has no crcextra
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+            return;
+        }
+
+        status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+        return;
+
+    case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
+        // we don't do anything with it currently
+        fmavx_status.crc_extra = c;
         status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
         return;
     }
@@ -347,11 +376,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
     case FASTMAVLINK_PARSE_STATE_COMPID:
+    case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
+    case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
     case FASTMAVLINK_PARSE_STATE_MSGID_1:
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
-    case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
-    case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
+    case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
         _fmavX_parse_header_to_frame_buf(result, buf, status, c);
         result->res = FASTMAVLINK_PARSE_RESULT_NONE;
         return FASTMAVLINK_PARSE_RESULT_NONE;

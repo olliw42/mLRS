@@ -111,8 +111,7 @@ void MavlinkBase::Do(void)
         char c = serialport->getc();
         if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
             fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
-//XX            uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-//XX            uint16_t len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+
             uint16_t len;
             if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
                 len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
@@ -120,11 +119,13 @@ void MavlinkBase::Do(void)
                 len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
             }
 
+#if 0
             // do some fake to stress test the parser
-            /*static uint8_t fake_cnt = 0;
+            static uint8_t fake_cnt = 0;
             uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
             uint8_t bX[8] = { 'a', 'O', 'W', 0, 128, 'b' };
-            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++; */
+            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++;
+#endif
 
             fifo_link_out.PutBuf(_buf, len);
         }
@@ -164,8 +165,6 @@ void MavlinkBase::FrameLost(void)
 
 void MavlinkBase::putc(char c)
 {
-//XX    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
-//XX    if (fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
     // parse link in -> serial out, and re-convert to v2
     uint8_t res;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
