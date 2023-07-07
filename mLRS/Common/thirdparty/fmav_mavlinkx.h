@@ -65,7 +65,7 @@ typedef enum {
     MAVLINKX_FLAGS_HAS_TARGETS        = 0x02,
     MAVLINKX_FLAGS_HAS_MSGID16        = 0x04,
     MAVLINKX_FLAGS_HAS_MSGID24        = 0x08,
-    MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40, // not used currently
+    MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40, // no actual compression implemented yet
     MAVLINKX_FLAGS_HAS_EXTENSION      = 0x80,
 } fmavx_flags_e;
 
@@ -96,6 +96,7 @@ typedef struct _fmavx_status {
     uint8_t target_sysid;
     uint8_t target_compid;
     uint8_t crc_extra;
+    uint16_t rx_payload_len;
 } fmavx_status_t;
 
 
@@ -116,6 +117,10 @@ uint8_t fmavX_crc8_calculate(const uint8_t* buf, uint16_t len)
 
 // TODO: shouldn't be global
 fmavx_status_t fmavx_status = {};
+
+
+uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len);
+void _fmavX_payload_decompress(uint8_t* len_out, uint8_t* payload, uint8_t len);
 
 
 //-------------------------------------------------------
@@ -188,13 +193,27 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     }
 
     // crc8
-    uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
-    buf[pos++] = crc8;
+    // we postpone crc8 calculation to after payload compression, since flags may change
+    //uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
+    //buf[pos++] = crc8;
+    pos++;
 
     // payload
     // we should want to remove the targets if there are any, for the moment we just don't
-    memcpy(&(buf[pos]), msg->payload, msg->len);
-    pos += msg->len;
+    // do compression, but do not advance pos since we need to do crc8
+    uint8_t len;
+    if (_fmavX_payload_compress(&(buf[pos]), &len, msg->payload, msg->len)) {
+        buf[2] |= MAVLINKX_FLAGS_IS_COMPRESSED;
+    } else {
+        memcpy(&(buf[pos]), msg->payload, msg->len);
+        len = msg->len;
+    }
+
+    // now we can do crc8
+    uint8_t crc8 = fmavX_crc8_calculate(buf, pos-1);
+    buf[pos-1] = crc8;
+
+    pos += len;
 
     // crc16
     buf[pos++] = (uint8_t)msg->checksum;
@@ -251,6 +270,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
 
     case FASTMAVLINK_PARSE_STATE_LEN:
         buf[status->rx_cnt++] = c; // 1: len
+        fmavx_status.rx_payload_len = c;
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) {
             status->rx_header_len = FASTMAVLINK_HEADER_V1_LEN;
@@ -428,12 +448,26 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
             return FASTMAVLINK_PARSE_RESULT_NONE;
         }
 
-        status->rx_state = FASTMAVLINK_FASTPARSE_STATE_FRAME;
+        status->rx_state = FASTMAVLINK_PARSE_STATE_PAYLOAD;
         result->res = FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
         return FASTMAVLINK_PARSE_RESULT_HAS_HEADER; }
 
+    case FASTMAVLINK_PARSE_STATE_PAYLOAD:
+        buf[status->rx_cnt++] = c; // payload
+        if (status->rx_cnt >= status->rx_header_len + (uint16_t)fmavx_status.rx_payload_len) {
+
+            if (fmavx_status.flags & MAVLINKX_FLAGS_IS_COMPRESSED) {
+                uint8_t len;
+                _fmavX_payload_decompress(&len, &(buf[status->rx_header_len]), fmavx_status.rx_payload_len);
+                status->rx_cnt += (len - fmavx_status.rx_payload_len);
+            }
+
+            status->rx_state = FASTMAVLINK_FASTPARSE_STATE_FRAME;
+        }
+        return FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
+
     case FASTMAVLINK_FASTPARSE_STATE_FRAME:
-        buf[status->rx_cnt++] = c; // payload, crc16, signature
+        buf[status->rx_cnt++] = c; // crc16, signature
         if (status->rx_cnt >= status->rx_frame_len) {
             status->rx_cnt = 0;
             status->rx_state = FASTMAVLINK_PARSE_STATE_IDLE;
@@ -469,6 +503,37 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_check_to_frame_buf(fmav_r
     }
 
     return 0;
+}
+
+
+//-------------------------------------------------------
+// Compression Handler
+//-------------------------------------------------------
+// just dummies currently to test mechanism
+
+// we can use payload_out buffer as working buffer
+uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
+{
+    return 0;
+
+    for(uint8_t i = 0; i < len; i++) {
+        payload_out[i] = ~ payload[i];
+    }
+
+    *len_out = len;
+
+    return 1;
+}
+
+
+// attention, overwrites the payload buffer!
+void _fmavX_payload_decompress(uint8_t* len_out, uint8_t* payload, uint8_t len)
+{
+    for(uint8_t i = 0; i < len; i++) {
+        payload[i] = ~ payload[i];
+    }
+
+    *len_out = len;
 }
 
 
