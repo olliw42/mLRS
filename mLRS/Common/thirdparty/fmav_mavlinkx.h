@@ -148,7 +148,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     if (msg->msgid < 65536) {
         buf[2] |= MAVLINKX_FLAGS_HAS_MSGID16;
     } else {
-        flags_ext |= MAVLINKX_FLAGS_HAS_MSGID24;
+        buf[2] |= MAVLINKX_FLAGS_HAS_MSGID24;
     }
 
     // flags extension
@@ -221,6 +221,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(fmav_result
 
     case FASTMAVLINK_PARSE_STATE_FLAGS:{
         fmavx_status.flags = c;
+        fmavx_status.flags_ext = 0; // ensure it's zero, makes ifs below simpler as we don't have to check for HAS_EXTENSION
 
         uint8_t magic = (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) ? FASTMAVLINK_MAGIC_V1 : FASTMAVLINK_MAGIC_V2;
         buf[status->rx_cnt++] = magic; // 0: STX
@@ -372,6 +373,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
 
     case FASTMAVLINK_PARSE_STATE_MAGIC_2:
     case FASTMAVLINK_PARSE_STATE_FLAGS:
+    case FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION:
     case FASTMAVLINK_PARSE_STATE_LEN:
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
