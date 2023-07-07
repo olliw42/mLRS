@@ -47,6 +47,7 @@ class MavlinkBase
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
     bool handle_txbuf_method_b(uint32_t tnow_ms); // for PX4, aka "brad"
 
+    // fields for link in -> serial out parser
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
@@ -195,6 +196,7 @@ typedef enum {
 
 void MavlinkBase::putc(char c)
 {
+    // parse link in -> serial out
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
@@ -373,80 +375,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
 }
 
 
-#if 0
-bool MavlinkBase::handle_txbuf_ardupilot(uint32_t tnow_ms)
-{
-    // work out state
-    bool inject_radio_status = false;
-    uint8_t txbuf_state_last = txbuf_state; // to track changes in txbuf_state
-
-    if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-        radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = true;
-    } else if ((txbuf_state == TXBUF_STATE_NORMAL) && (serial.bytes_available() > RX_SERIAL_RXBUFSIZE/2)) {
-        txbuf_state = TXBUF_STATE_BURST;
-        radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = true;
-    } else if ((txbuf_state >= TXBUF_STATE_BURST) && (serial.bytes_available() < FRAME_RX_PAYLOAD_LEN*3)) {
-        txbuf_state = TXBUF_STATE_NORMAL;
-        radio_status_tlast_ms = tnow_ms;
-        inject_radio_status = true;
-    }
-
-    if (!inject_radio_status) return false;
-
-    // now calculate txbuf
-    uint8_t txbuf = 100;
-
-    // method C, with improvements
-    // assumes 1 sec delta time
-    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
-    uint32_t rate_percentage = (bytes_serial_in * 100) / rate_max;
-
-    // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
-    // aim at 75%..85% rate usage in steady state
-    if (rate_percentage > 95) {
-        txbuf = 0;                        // ArduPilot:  0-19  -> +60 ms,    PX4:  0-24  -> *0.8
-    } else if (rate_percentage > 85) {
-        txbuf = 30;                       // ArduPilot: 20-49  -> +20 ms,    PX4: 25-34  -> *0.975
-    } else if (rate_percentage < 60) {
-        txbuf = 100;                      // ArduPilot: 96-100 -> -40 ms,    PX4: 51-100 -> *1.025
-    } else if (rate_percentage < 75) {
-        txbuf = 91;                       // ArduPilot: 91-95  -> -20 ms,    PX4: 51-100 -> *1.025
-    } else {
-        txbuf = 50;                       // ArduPilot: 50-90  -> no change, PX4: 35-50  -> no change
-    }
-
-    if (txbuf_state >= TXBUF_STATE_BURST) txbuf = 50; // cut out PARAMS but don't change stream rate
-
-    if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf_state_last > TXBUF_STATE_NORMAL)) { // has changed back to NORMAL
-        txbuf = 51; // allow PARAMS but don't change stream rate
-    }
-    txbuf_state_last = txbuf_state;
-/*
-static uint32_t t_last = 0;
-uint32_t t = millis32(), dt = t - t_last; t_last = t;
-dbg.puts("\nMa: ");
-dbg.puts(u16toBCD_s(t));dbg.puts(" (");dbg.puts(u16toBCD_s(dt));dbg.puts("), ");
-//dbg.puts(u16toBCD_s(stats.GetTransmitBandwidthUsage()*41));dbg.puts(", ");
-dbg.puts(u16toBCD_s(bytes_serial_in));dbg.puts(", ");
-dbg.puts(u16toBCD_s(serial.bytes_available()));dbg.puts(", ");
-dbg.puts(u8toBCD_s((rate_percentage<256)?rate_percentage:255));dbg.puts(", ");
-if(txbuf_state==1) dbg.puts("brst, "); else dbg.puts("norm, ");
-dbg.puts(u8toBCD_s(txbuf));dbg.puts(", ");
-if(txbuf<20) dbg.puts("+60 "); else
-if(txbuf<50) dbg.puts("+20 "); else
-if(txbuf>95) dbg.puts("-40 "); else
-if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
-*/
-    bytes_serial_in = 0; // reset, to restart rate measurement
-
-    radio_status_txbuf = txbuf;
-    return true;
-}
-#endif
-
-// This method should be selected for PX4 and currently may be a useful alternative for Ardupilot
+// this method should be selected for PX4 and currently may be a useful alternative for Ardupilot
 bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
 {
     // work out state
@@ -481,11 +410,11 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
                 if (serial.bytes_available() < 1400) { // it has stopped growing, we can go back and try burst
                     txbuf_state = TXBUF_STATE_BURST;
                 }
-		radio_status_tlast_ms = tnow_ms;
-		inject_radio_status = true;
+		            radio_status_tlast_ms = tnow_ms;
+		            inject_radio_status = true;
             }
             break;
-        case TXBUF_STATE_PX4_RECOVER: // Transient state so we don't need txbuf_state_last
+        case TXBUF_STATE_PX4_RECOVER: // transient state so we don't need txbuf_state_last
             txbuf_state = TXBUF_STATE_NORMAL;
             break;
     }
@@ -551,10 +480,10 @@ if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
 if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 #endif
-    // Increase rate faster after transient traffic since PX4 currently has no fast recovery.  Could also try 100ms
+    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100ms
     if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
         radio_status_tlast_ms -= 800; // do again in 200ms
-        bytes_serial_in = (bytes_serial_in * 4)/5; // Rolling average
+        bytes_serial_in = (bytes_serial_in * 4)/5; // rolling average
     } else {
         bytes_serial_in = 0; // reset, to restart rate measurement
     }

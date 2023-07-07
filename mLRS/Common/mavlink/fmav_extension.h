@@ -11,6 +11,10 @@
 #define FASTMAVLINK_EXTENSION_H
 
 
+//-------------------------------------------------------
+// helper
+//-------------------------------------------------------
+
 void fmav_msg_recalculate_crc(fmav_message_t* msg)
 {
     uint16_t crc = fmav_crc_calculate(&(msg->len), 1);
@@ -27,10 +31,14 @@ void fmav_msg_recalculate_crc(fmav_message_t* msg)
 }
 
 
+//-------------------------------------------------------
+// Component List Class
+//-------------------------------------------------------
+
 typedef struct {
-  uint8_t sys_id;
-  uint8_t comp_id;
-  uint8_t seq_last;
+    uint8_t sys_id;
+    uint8_t comp_id;
+    uint8_t seq_last;
 } tComponent;
 
 

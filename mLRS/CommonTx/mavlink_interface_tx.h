@@ -40,6 +40,7 @@ class MavlinkBase
     void handle_msg_serial_out(void);
     void generate_radio_status(void);
 
+    // fields for link in -> serial out parser
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
@@ -116,6 +117,7 @@ uint8_t MavlinkBase::VehicleState(void)
 
 void MavlinkBase::putc(char c)
 {
+    // parse link in -> serial out
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
