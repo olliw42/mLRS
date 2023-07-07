@@ -114,9 +114,13 @@ uint8_t fmavX_crc8_calculate(const uint8_t* buf, uint16_t len)
 }
 
 
+// TODO: shouldn't be global
 fmavx_status_t fmavx_status = {};
 
 
+//-------------------------------------------------------
+// Converter
+//-------------------------------------------------------
 // convert fmav msg structure into fmavX packet
 // fmav_message_t has all info on the packet which we need, so it's quite straightforward to do
 
@@ -206,8 +210,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 }
 
 
-// parse the stream into regular fmav msg
+//-------------------------------------------------------
+// Parser
+//-------------------------------------------------------
+// parse the stream into regular fmav frame_buf
 // returns NONE, HAS_HEADER, or OK
+
 FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
     fmavx_status.header[fmavx_status.pos++] = c; // memorize
