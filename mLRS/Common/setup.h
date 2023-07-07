@@ -55,7 +55,6 @@ void setup_configure_metadata(void)
     //-- Mode: "50 Hz,31 Hz,19 Hz,143 Hz"
 #ifdef DEVICE_HAS_SX128x
     SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
-//XXSetupMetaData.Mode_allowed_mask = 0b0111; //XX UINT16_MAX; // all
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX127x
@@ -422,6 +421,7 @@ void setup_configure(void)
         case MODE_50HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
         case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        case MODE_143HZ_FLRC: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }

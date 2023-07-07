@@ -231,13 +231,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
             SetAutoFs(true);
             SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
             SetRfPower_dbm(Config.Power_dbm);
-            //SetFlrcConfigurationByIndex(0);
-
-            SetModulationParamsFLRC(SX1280_FLRC_BR_0_650_BW_0_6, SX1280_FLRC_CR_3_4, SX1280_FLRC_BT_1);
-
-            SetPacketParamsFLRC(SX1280_FLRC_PREAMBLE_LENGTH_32_BITS, SX1280_FLRC_SYNCWORD_LEN_P32S, SX1280_FLRC_SYNCWORD_MATCH_1,
-                SX1280_FLRC_PACKET_TYPE_FIXED_LENGTH, FRAME_TX_RX_LEN, SX1280_FLRC_CRC_LENGTH_2_BYTE,
-                27368, 1836279427, SX1280_FLRC_CR_3_4);  // CrcSeed is 'j', 'p'.  SyncWord is 'm', 'l', 'r', 's'
+            SetFlrcConfigurationByIndex(0);
         }
 
         SetBufferBaseAddress(0, 0);
@@ -286,16 +280,19 @@ class Sx128xDriverCommon : public Sx128xDriverBase
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
     {
         int16_t rssi;
-        Sx128xDriverBase::GetPacketStatus(&rssi, Snr);
+
+        if (Config.Mode != MODE_143HZ_FLRC) {
+            Sx128xDriverBase::GetPacketStatus(&rssi, Snr);
+        } else {
+            // FLRC has no SNR
+            Sx128xDriverBase::GetPacketStatusFLRC(&rssi);
+            *Snr = 0;
+        }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
         *RssiSync = rssi;
-
-        if (Config.Mode == MODE_143HZ_FLRC) { // FLRC has no SNR
-            *Snr = -127;
-        }
     }
 
     void HandleAFC(void) {}
