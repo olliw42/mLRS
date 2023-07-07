@@ -67,7 +67,7 @@
 // a LIST option string is limited to 44 chars max (exhausted by Rx_FailSafe_Mode for instance)
 #define SETUP_PARAMETER_LIST_COMMON \
   X( Setup.BindPhrase[0],         STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
-  X( Setup.Mode,                  LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
+  X( Setup.Mode,                  LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz,143 Hz", SETUP_MSK_MODE )\
   X( Setup.FrequencyBand,         LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
 
 #define SETUP_PARAMETER_LIST_TX \

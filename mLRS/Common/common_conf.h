@@ -97,9 +97,10 @@
 // System Configs
 //-------------------------------------------------------
 
-#define MODE_50HZ_SEND_FRAME_TMO        10 // just needs to be larger than toa, not critical
-#define MODE_31HZ_SEND_FRAME_TMO        15 // just needs to be larger than toa, not critical
-#define MODE_19HZ_SEND_FRAME_TMO        25 // just needs to be larger than toa, not critical
+#define MODE_50HZ_SEND_FRAME_TMO              10 // just needs to be larger than toa, not critical
+#define MODE_31HZ_SEND_FRAME_TMO              15 // just needs to be larger than toa, not critical
+#define MODE_19HZ_SEND_FRAME_TMO              25 // just needs to be larger than toa, not critical
+#define MODE_143HZ_FLRC_SEND_FRAME_TMO        3  // just needs to be larger than toa, not critical
 
 #define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz

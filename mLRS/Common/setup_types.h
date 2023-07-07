@@ -36,6 +36,7 @@ typedef enum {
     MODE_50HZ = 0,
     MODE_31HZ,
     MODE_19HZ,
+    MODE_143HZ_FLRC,
     MODE_NUM,
 } MODE_ENUM;
 
@@ -305,7 +306,7 @@ typedef struct
     uint8_t Mode;
 
     uint8_t LoraConfigIndex;
-    uint8_t lora_send_frame_tmo;
+    uint8_t send_frame_tmo;
 
     uint16_t FrameSyncWord;
     uint16_t FhssNum;
@@ -335,7 +336,7 @@ typedef struct
 // Defines
 //-------------------------------------------------------
 
-#define SEND_FRAME_TMO            Config.lora_send_frame_tmo
+#define SEND_FRAME_TMO            Config.send_frame_tmo
 
 #define CONNECT_TMO_SYSTICKS      Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT    Config.connect_listen_hop_cnt
