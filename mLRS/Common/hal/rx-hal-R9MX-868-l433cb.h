@@ -17,7 +17,7 @@
 //   Pin2 VCC
 //   Pin3 SPort/FPort PA5  (looks strange)
 //   Pin4 Inv SPort   PB11
-//   Pin5 SBusOut     PA2 inverted
+//   Pin5 SBusOut     PA2 / U2_Tx inverted
 //   Pin6 SBusIn      ???
 //   Ch1    PA8           -> Buzzer
 //   Ch2    PA9 / U1Tx    -> Serial Tx

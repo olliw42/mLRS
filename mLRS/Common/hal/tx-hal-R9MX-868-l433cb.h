@@ -17,12 +17,12 @@
 //   Pin2 VCC
 //   Pin3 SPort/FPort PA5  (looks strange)
 //   Pin4 Inv SPort   PB11
-//   Pin5 SBusOut     PA2 inverted
+//   Pin5 SBusOut     PA2 / U2_Tx inverted
 //   Pin6 SBusIn      ???
-//   Ch1    PA11          -> Debug TX
-//   Ch2    PA10 / U1Rx   -> Serial Rx
-//   Ch3    PA9 / U1Tx    -> Serial Tx
-//   Ch4    PA8           -> Buzzer
+//   Ch1    PA8           -> Buzzer
+//   Ch2    PA9 / U1Tx    -> Serial Tx
+//   Ch3    PA10 / U1Rx   -> Serial Rx
+//   Ch4    PA11          -> Debug TX
 
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on

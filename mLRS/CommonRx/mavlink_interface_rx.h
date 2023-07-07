@@ -303,7 +303,6 @@ void MavlinkBase::putc(char c)
         res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
     }
     if (res) {
-
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
@@ -491,7 +490,7 @@ if(txbuf>90) dbg.puts("-20 "); else dbg.puts("0   ");
 }
 
 
-// This method should be selected for PX4 and currently may be a useful alternative for Ardupilot
+// this method should be selected for PX4 and currently may be a useful alternative for Ardupilot
 bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
 {
     // work out state
@@ -510,7 +509,7 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
             }
             break;
         case TXBUF_STATE_BURST:
-            if (serial_in_available() > 1400) { // Still growing, so raise alarm high
+            if (serial_in_available() > 1400) { // still growing, so raise alarm high
                 txbuf_state = TXBUF_STATE_BURST_HIGH;
                 radio_status_tlast_ms = tnow_ms;
                 inject_radio_status = true;
@@ -530,7 +529,7 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
 		            inject_radio_status = true;
             }
             break;
-        case TXBUF_STATE_PX4_RECOVER: // Transient state so we don't need txbuf_state_last
+        case TXBUF_STATE_PX4_RECOVER: // transient state so we don't need txbuf_state_last
             txbuf_state = TXBUF_STATE_NORMAL;
             break;
     }
@@ -596,10 +595,10 @@ if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
 if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 #endif
-    // Increase rate faster after transient traffic since PX4 currently has no fast recovery.  Could also try 100ms
+    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100ms
     if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
         radio_status_tlast_ms -= 800; // do again in 200ms
-        bytes_serial_in = (bytes_serial_in * 4)/5; // Rolling average
+        bytes_serial_in = (bytes_serial_in * 4)/5; // rolling average
     } else {
         bytes_serial_in = 0; // reset, to restart rate measurement
     }
