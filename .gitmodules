@@ -34,3 +34,9 @@
 [submodule "tools/st-drivers/stm32wlxx_hal_driver"]
 	path = tools/st-drivers/stm32wlxx_hal_driver
 	url = https://github.com/STMicroelectronics/stm32wlxx_hal_driver.git
+[submodule "tools/st-drivers/stm32f0xx_hal_driver"]
+	path = tools/st-drivers/stm32f0xx_hal_driver
+	url = https://github.com/STMicroelectronics/stm32f0xx_hal_driver.git
+[submodule "tools/st-drivers/cmsis_device_f0"]
+	path = tools/st-drivers/cmsis_device_f0
+	url = https://github.com/STMicroelectronics/cmsis_device_f0.git
