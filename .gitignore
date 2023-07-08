@@ -8,6 +8,7 @@ mLRS/.metadata/*
 **/Debug/*
 *.launch
 tools/build3/*
+mLRS/*/Drivers/CMSIS/Include/*
 mLRS/*/Drivers/CMSIS/Device/ST/*
 mLRS/*/Drivers/STM32??xx_HAL_Driver/*
 
