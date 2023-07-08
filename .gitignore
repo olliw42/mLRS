@@ -7,6 +7,7 @@ mLRS/.metadata/*
 **/Release/*
 **/Debug/*
 *.launch
+tools/build3/*
 
 # Prerequisites
 *.d
