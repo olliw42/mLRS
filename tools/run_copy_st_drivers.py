@@ -230,6 +230,11 @@ def do_for_each_folder(clean=False):
             print('#############################')
             print('*', f)
             chip = re.findall(r"\w+-(\w+)$", f)[0]
+            
+            target = os.path.join(mLRSdirectory,f,'Drivers')
+            create_clean_dir(target)
+            if clean: continue
+            
             copy_cmsis_core(f, clean)
             copy_cmsis_driver(f, chip, clean)
             copy_hal_driver(f, chip, clean)
