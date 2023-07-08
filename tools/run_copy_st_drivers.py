@@ -144,7 +144,23 @@ def copy_cmsis_driver(folder, chip, clean=False):
         #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Device','ST','STM32'+chip_short_upper+'xx','Include')
         print('target:', target)
         copy_dir(target, source)
+
+
+def copy_cmsis_core(folder, clean=False):
+    print('--- COPY CMSIS CORE ---')
+    print('folder:', folder)
+
+    # clean target
+    target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
+    create_clean_dir(target)
+    if clean: return
         
+    # copy Include
+    source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core','Include')
+    print('src:   ', source)
+    #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
+    print('target:', target)
+    copy_dir(target, source)
 
 
 def create_exclude_list(dirlist, chip_short):
@@ -214,6 +230,7 @@ def do_for_each_folder(clean=False):
             print('#############################')
             print('*', f)
             chip = re.findall(r"\w+-(\w+)$", f)[0]
+            copy_cmsis_core(f, clean)
             copy_cmsis_driver(f, chip, clean)
             copy_hal_driver(f, chip, clean)
             #break
