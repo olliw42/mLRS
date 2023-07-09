@@ -30,7 +30,7 @@ void OutBase::Init(tRxSetup* _setup)
     link_stats_set_tstart = false;
     link_stats_tstart_us = 0;
 
-    rc = {0};
+    rc = {};
 
     setup = _setup;
 }
