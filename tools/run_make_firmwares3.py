@@ -799,6 +799,11 @@ TLIST = [
     },{
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [] , 'appendix' : '' 
+        
+    },{
+        'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
+        'extra_D_list' : [] , 'appendix' : '' 
+        
     }
     ]
 
