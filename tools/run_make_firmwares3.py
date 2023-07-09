@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 05.07.2023
+ version 09.07.2023
 ********************************************************
 '''
 import os
@@ -244,6 +244,36 @@ MLRS_SOURCES_HAL_STM32L4 = [
 	os.path.join('Drivers','STM32L4xx_HAL_Driver','Src','stm32l4xx_ll_utils.c'),
     ]
 
+MLRS_SOURCES_HAL_STM32F0 = [
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_cortex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_i2c.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_i2c_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_adc.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_comp.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crc.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crs.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_dac.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_dma.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_exti.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_gpio.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_i2c.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_pwr.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_rcc.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_rtc.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_spi.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_tim.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_usart.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_usb.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_utils.c'),
+    ]
+
 MLRS_SOURCES_CORE = [ # the ?? are going to be replaced with mcu_family label, f1, g4, wl, l4
 	os.path.join('Core','Src','main.cpp'),
 	os.path.join('Core','Src','stm32??xx_hal_msp.c'),
@@ -320,6 +350,8 @@ class cTarget:
             self.mcu_family = 'l4'
         elif 'WL' in self.mcu_D and 'WL' in self.mcu_HAL:
             self.mcu_family = 'wl'
+        elif 'F0' in self.mcu_D and 'F0' in self.mcu_HAL:
+            self.mcu_family = 'f0'
         else:
             print('SHSHHSKHSKHSKHKSHKSHKH')
             print('mcu_D',self.mcu_D)
@@ -348,6 +380,8 @@ class cTarget:
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32WL
         elif self.mcu_family == 'l4':
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32L4
+        elif self.mcu_family == 'f0':
+            self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32F0
         
         self.MLRS_SOURCES_CORE = []
         for file in MLRS_SOURCES_CORE:
@@ -586,6 +620,15 @@ class cTargetL4(cTarget):
             ['-mcpu=cortex-m4', '-mfpu=fpv4-sp-d16', '-mfloat-abi=hard'],
             extra_D_list, build_dir, elf_name)
 
+class cTargetF0(cTarget):
+    def __init__(self, target, target_D, mcu_D, startup_script, linker_script, extra_D_list, build_dir, elf_name):
+        super().__init__(
+            target, target_D, 
+            mcu_D, 'STM32F0xx', 
+            startup_script, linker_script, 
+            ['-mcpu=cortex-m0', '-mfloat-abi=soft'],
+            extra_D_list, build_dir, elf_name)
+
 
 #-- mcu specific targets
 
@@ -660,6 +703,14 @@ class cTargetL433CBYX(cTargetL4): # identical to CBUX, but unfortunately used
         super().__init__(
             target, target_D, 
             'STM32L433xx', 'startup_stm32l433cbyx.s', 'STM32L433CBYX_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
+
+class cTargetF070CB(cTargetF0):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+        super().__init__(
+            target, target_D, 
+            'STM32F070xB', 'startup_stm32f070cbtx.s', 'STM32F070CBTX_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 
@@ -779,6 +830,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
                 tlist.append( cTargetL433CBYX(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
             else:
                 tlist.append( cTargetL433CBUX(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+        elif 'f070cb' in t['target']:
+            tlist.append( cTargetF070CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         else:
             print('<ljfl<iasdjfljsdfljlsdjfljsdlfjlsdjf')
             exit(1)
@@ -802,16 +855,17 @@ def mlrs_copy_all_hex():
 mlrs_set_version()
 mlrs_set_branch()
 
-#erase_dir(MLRS_BUILD_DIR)
 create_clean_dir(MLRS_BUILD_DIR)
 
 targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
-for target in targetlist:
-    mlrs_build_target(target)
 
 #print(targetlist)
 #mlrs_build_target(targetlist[-1])
 #mlrs_build_target(targetlist[7])
+#exit(1)
+
+for target in targetlist:
+    mlrs_build_target(target)
 
 mlrs_copy_all_hex()
 
