@@ -145,6 +145,9 @@ def copy_cmsis_driver(folder, chip, clean=False):
         print('target:', target)
         copy_dir(target, source)
 
+        # copy licence
+        shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
+
 
 def copy_cmsis_core(folder, clean=False):
     print('--- COPY CMSIS CORE ---')
@@ -218,6 +221,9 @@ def copy_hal_driver(folder, chip, clean=False):
         files_to_exclude = create_exclude_list(dirlist, chip_short)
         for f in dirlist:
             copy_wexclude(target, source, f, files_to_exclude)
+            
+        # copy licence
+        shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
 def do_for_each_folder(clean=False):
@@ -233,6 +239,11 @@ def do_for_each_folder(clean=False):
             
             target = os.path.join(mLRSdirectory,f,'Drivers')
             create_clean_dir(target)
+            # copy licences, to ensure the folders are not empty
+            source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core')
+            target = os.path.join(mLRSdirectory,f,'Drivers','CMSIS')
+            create_clean_dir(target)
+            shutil.copy(os.path.join(source,'LICENSE.txt'), target)
             if clean: continue
             
             copy_cmsis_core(f, clean)
