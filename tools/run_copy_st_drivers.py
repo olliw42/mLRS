@@ -22,8 +22,8 @@ mLRSdirectory = os.path.join(mLRSProjectdirectory,'mLRS')
 
 def create_clean_dir(directory):
     if os.path.exists(directory):
-        os.system('rmdir /s /q '+directory)
-    os.system('md '+directory)
+        os.system('rmdir /s /q "'+directory+'"')
+    os.system('md "'+directory+'"')
 
 
 def copy_files_in_dir(target, source):
@@ -49,7 +49,7 @@ def copy_wexclude(target, source, f, files_to_exclude=[]):
         if f not in files_to_exclude:
             #print('-',f)
             shutil.copy(os.path.join(source,f), target)
-            
+
 
 # copy from
 #  \tools\st-drivers\STM32F1xx_HAL_Driver\Inc
@@ -124,10 +124,10 @@ f0xx_hal_files_to_include = [
 ]
 
 
-def copy_cmsis_driver(folder, chip, clean=False):
+def copy_cmsis_driver(folder, chip, clean=False, silent=False):
     print('--- COPY CMSIS ---')
-    print('folder:', folder)
-    print('chip:  ', chip)
+    if not silent: print('folder:', folder)
+    if not silent: print('chip:  ', chip)
     chip_short = chip[:2]
     chip_short_upper = chip_short.upper()
     if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4' or chip_short == 'wl' or chip_short == 'f0':
@@ -136,33 +136,33 @@ def copy_cmsis_driver(folder, chip, clean=False):
         target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Device','ST','STM32'+chip_short_upper+'xx','Include')
         create_clean_dir(target)
         if clean: return
-        
+
         # copy Include
         #source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','STM32'+chip_short_upper+'xx','Include')
         source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_device_'+chip_short,'Include')
-        print('src:   ', source)
+        if not silent: print('src:   ', source)
         #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Device','ST','STM32'+chip_short_upper+'xx','Include')
-        print('target:', target)
+        if not silent: print('target:', target)
         copy_dir(target, source)
 
         # copy licence
         shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
-def copy_cmsis_core(folder, clean=False):
+def copy_cmsis_core(folder, clean=False, silent=False):
     print('--- COPY CMSIS CORE ---')
-    print('folder:', folder)
+    if not silent: print('folder:', folder)
 
     # clean target
     target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
     create_clean_dir(target)
     if clean: return
-        
+
     # copy Include
     source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core','Include')
-    print('src:   ', source)
+    if not silent: print('src:   ', source)
     #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
-    print('target:', target)
+    if not silent: print('target:', target)
     copy_dir(target, source)
 
 
@@ -185,13 +185,13 @@ def create_exclude_list(dirlist, chip_short):
             continue
         if not f in files_to_include:
             files_to_exclude.append(f)
-    return files_to_exclude        
+    return files_to_exclude
 
 
-def copy_hal_driver(folder, chip, clean=False):
+def copy_hal_driver(folder, chip, clean=False, silent=False):
     print('--- COPY HAL ---')
-    print('folder:', folder)
-    print('chip:  ', chip)
+    if not silent: print('folder:', folder)
+    if not silent: print('chip:  ', chip)
     chip_short = chip[:2]
     chip_short_upper = chip_short.upper()
     if chip_short == 'f1' or chip_short == 'l4' or chip_short == 'g4' or chip_short == 'wl' or chip_short == 'f0':
@@ -200,33 +200,33 @@ def copy_hal_driver(folder, chip, clean=False):
         target_path = os.path.join(mLRSdirectory,folder,'Drivers','STM32'+chip_short_upper+'xx_HAL_Driver')
         create_clean_dir(target_path)
         if clean: return
-         
+
         # copy Inc
         #source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','STM32'+chip_short_upper+'xx_HAL_Driver','Inc')
         source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','stm32'+chip_short+'xx_hal_driver','Inc')
-        print('src:   ', source)
+        if not silent: print('src:   ', source)
         target = os.path.join(target_path,'Inc')
-        print('target:', target)
+        if not silent: print('target:', target)
         create_clean_dir(target)
         copy_dir(target, source)
 
         # copy Src
         #source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','STM32'+chip_short_upper+'xx_HAL_Driver','Src')
         source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','stm32'+chip_short+'xx_hal_driver','Src')
-        print('src:   ', source)
+        if not silent: print('src:   ', source)
         target = os.path.join(target_path,'Src')
-        print('target:', target)
+        if not silent: print('target:', target)
         create_clean_dir(target)
         dirlist = os.listdir(source)
         files_to_exclude = create_exclude_list(dirlist, chip_short)
         for f in dirlist:
             copy_wexclude(target, source, f, files_to_exclude)
-            
+
         # copy licence
         shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
-def do_for_each_folder(clean=False):
+def do_for_each_folder(clean=False, silent=False):
     print('----------------------------------------')
     print(' copy CMSIS and HAL files to project target folders')
     print('----------------------------------------')
@@ -236,7 +236,7 @@ def do_for_each_folder(clean=False):
             print('#############################')
             print('*', f)
             chip = re.findall(r"\w+-(\w+)$", f)[0]
-            
+
             target = os.path.join(mLRSdirectory,f,'Drivers')
             create_clean_dir(target)
             # copy licences, to ensure the folders are not empty
@@ -245,16 +245,22 @@ def do_for_each_folder(clean=False):
             create_clean_dir(target)
             shutil.copy(os.path.join(source,'LICENSE.txt'), target)
             if clean: continue
-            
-            copy_cmsis_core(f, clean)
-            copy_cmsis_driver(f, chip, clean)
-            copy_hal_driver(f, chip, clean)
+
+            copy_cmsis_core(f, clean, silent)
+            copy_cmsis_driver(f, chip, clean, silent)
+            copy_hal_driver(f, chip, clean, silent)
             #break
             #exit(1)
 
     print('# DONE #')
 
 
+silent = False
+if '-silent' in sys.argv: silent = True
+clean = False
+if '-clean' in sys.argv: clean = True
+
 #do_for_each_folder(clean=True)
-do_for_each_folder()
-os.system("pause")
+do_for_each_folder(clean=clean,silent=silent)
+if not silent:
+    os.system("pause")
