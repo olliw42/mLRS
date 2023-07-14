@@ -310,7 +310,7 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
         Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
-        Config.lora_send_frame_tmo = MODE_50HZ_SEND_FRAME_TMO; // 10;
+        Config.send_frame_tmo_ms = MODE_50HZ_SEND_FRAME_TMO_MS; // 10;
         break;
     case MODE_31HZ:
         Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
@@ -320,7 +320,7 @@ void configure_mode(uint8_t mode)
 #else
         Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
 #endif
-        Config.lora_send_frame_tmo = MODE_31HZ_SEND_FRAME_TMO; // 15
+        Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
         break;
   case MODE_19HZ:
         Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
@@ -332,7 +332,7 @@ void configure_mode(uint8_t mode)
 #else
         Config.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
 #endif
-        Config.lora_send_frame_tmo = MODE_19HZ_SEND_FRAME_TMO; // 25;
+        Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()

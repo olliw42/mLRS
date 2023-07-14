@@ -566,7 +566,7 @@ uint8_t ack = 1;
 
     prepare_transmit_frame(antenna, ack);
 
-    sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10 ms tmo
+    sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
 }
 
 

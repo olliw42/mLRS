@@ -305,7 +305,7 @@ typedef struct
     uint8_t Mode;
 
     uint8_t LoraConfigIndex;
-    uint8_t lora_send_frame_tmo;
+    uint8_t send_frame_tmo_ms;
 
     uint16_t FrameSyncWord;
     uint16_t FhssNum;
@@ -335,7 +335,7 @@ typedef struct
 // Defines
 //-------------------------------------------------------
 
-#define SEND_FRAME_TMO            Config.lora_send_frame_tmo
+#define SEND_FRAME_TMO_MS         Config.send_frame_tmo_ms
 
 #define CONNECT_TMO_SYSTICKS      Config.connect_tmo_systicks
 #define CONNECT_LISTEN_HOP_CNT    Config.connect_listen_hop_cnt

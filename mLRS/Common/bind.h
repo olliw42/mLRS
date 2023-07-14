@@ -215,7 +215,7 @@ void BindBase::do_transmit(uint8_t antenna)
     txBindFrame.Mode = Setup.Mode;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
+    sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
 }
 
 
@@ -265,7 +265,7 @@ void BindBase::do_transmit(uint8_t antenna)
     strbufstrcpy(rxBindFrame.device_name_20, DEVICE_NAME, 20);
 
     rxBindFrame.crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO);
+    sxSendFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
 }
 
 

@@ -470,7 +470,7 @@ uint8_t ack = 1;
     prepare_transmit_frame(antenna, ack);
 
     // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
-    sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO); // 10ms tmo
+    sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10ms tmo
 }
 
 
