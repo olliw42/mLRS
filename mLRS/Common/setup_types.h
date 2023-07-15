@@ -254,7 +254,7 @@ typedef struct
     uint16_t Layout;
 
     // parameters common to both Tx and Rx
-    // cannot be changed on the fly, loss of connection will happen, need restart/reconnect
+    // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
     char BindPhrase[6+1];
     uint8_t FrequencyBand;
     uint8_t Mode;
@@ -262,9 +262,11 @@ typedef struct
     uint8_t spare[7];
 
     // parameters specific to Rx, can be changed on the fly
+    // for transmitters this is populated upon first connection, see SetupMetaData.rx_available mechanism
     tRxSetup Rx;
 
     // parameters specific to Tx, can be changed on the fly
+    // not used by receivers
     tTxSetup Tx;
 
     char MarkerEnd[8];
