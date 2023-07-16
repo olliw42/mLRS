@@ -167,7 +167,7 @@ void MavlinkBase::Do(void)
             if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
                 len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
 
-#if 0
+#if 1
                 // test it
                 fmavx_status_t tstatx;
                 memcpy(&tstatx, &fmavx_status, sizeof(fmavx_status_t));
