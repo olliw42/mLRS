@@ -101,6 +101,12 @@ typedef struct _fmavx_status {
     uint8_t target_compid;
     uint8_t crc_extra;
     uint16_t rx_payload_len;
+
+    // for compression
+    uint8_t out_bit;
+    uint8_t in_pos;
+    uint8_t in_bit;
+
 } fmavx_status_t;
 
 
@@ -550,13 +556,10 @@ https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art007
 */
 
 
-#define FMAX_DBG(x)
+#define FMAX_DBG(x) x
 
 //-- compression
 // we can use payload_out buffer as working buffer
-
-static uint8_t out_bit;
-
 
 // len_out & pos_out index the next bit position to write to
 void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, uint8_t code_len)
@@ -566,14 +569,45 @@ void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, ui
 
     for (uint8_t i = 0; i < code_len; i++) {
         if (!(code & cur_code_bit)) { // clear the bit
-            payload_out[*len_out] &=~ out_bit;
+            payload_out[*len_out] &=~ fmavx_status.out_bit;
         }
         cur_code_bit >>= 1; // next bit from code
-        out_bit >>= 1; // next bit pos in out bytes
-        if (out_bit == 0) { // out byte completely done, go to next out byte
+        fmavx_status.out_bit >>= 1; // next bit pos in out bytes
+        if (fmavx_status.out_bit == 0) { // out byte completely done, go to next out byte
             (*len_out)++;
-            out_bit = 0x80;
+            fmavx_status.out_bit = 0x80;
             payload_out[*len_out] = 0xFF;
+        }
+    }
+}
+
+
+void _fmavX_encode_rle(uint8_t* payload_out, uint8_t* len_out, uint8_t c, uint8_t RLE_cnt)
+{
+uint16_t code;
+
+    if (c == 0) {
+        if (RLE_cnt <= 6) {
+            for (uint8_t i = 0; i < RLE_cnt; i++) {
+                code = (uint16_t)0b00; // 2 bit code = 2 bits length
+                _fmavX_encode_add(payload_out, len_out, code, 2);
+            }
+        } else {
+            code = (uint16_t)0b0110 << 8; // 4 bit code + 8 bits = 12 bits length
+            code += RLE_cnt;
+            _fmavX_encode_add(payload_out, len_out, code, 12);
+        }
+    } else
+    if (c == 255) {
+        if (RLE_cnt <= 4) {
+            for (uint8_t i = 0; i < RLE_cnt; i++) {
+                code = (uint16_t)0b010; // 3 bit code = 3 bits length
+                _fmavX_encode_add(payload_out, len_out, code, 3);
+            }
+        } else {
+            code = (uint16_t)0b0111 << 8; // 4 bit code + 8 bits = 12 bits length
+            code += RLE_cnt;
+            _fmavX_encode_add(payload_out, len_out, code, 12);
         }
     }
 }
@@ -581,7 +615,31 @@ void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, ui
 
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
-    //if (len > 20) return 0;
+    if (len > 20) return 0;
+/*
+    len = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+
+    payload[len++] = 0x6E;
+    payload[len++] = 0xCD;
+    payload[len++] = 0x91;
+    payload[len++] = 0x0F;
+*/
+    len = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0;
+    payload[len++] = 0xFF;
+    payload[len++] = 0xFF;
+    payload[len++] = 0;
+    payload[len++] = 0;
 
 
 FMAX_DBG(dbg.puts("\n\ncompress");
@@ -593,32 +651,48 @@ for (uint16_t i = 0; i < len; i++) {
     uint16_t code; // can be 2 bits - 12 bits
 
     *len_out = 0;
-    out_bit = 0x80;
+    fmavx_status.out_bit = 0x80;
     payload_out[0] = 0xFF; // we use 1's as stop marker in last byte, so it's easier to fill with 0xFF
+
+    uint8_t is_in_RLE = 0;
+    uint8_t RLE_char;
+    uint8_t RLE_cnt;
 
     for (uint8_t n = 0; n < len; n++) {
         uint8_t c = payload[n];
 
-        // handle c
-            if (c == 0) {
-                code = (uint16_t)0b00; // 2 bit code = 2 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 2);
-            } else
-            if (c == 255) {
-                code = (uint16_t)0b010; // 3 bit code = 3 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 3);
+        if (is_in_RLE) {
+            if (c == RLE_char) {
+                RLE_cnt++;
             } else {
-                code = (uint16_t)0b1 << 8; // 1 bit code + room for 8 bits = 9 bits length
+                is_in_RLE = 0;
+                _fmavX_encode_rle(payload_out, len_out, RLE_char, RLE_cnt);
+            }
+        }
+
+        // handle c
+        if (!is_in_RLE) {
+            if (c == 0 || c == 255) {
+                is_in_RLE = 1;
+                RLE_char = c;
+                RLE_cnt = 1;
+            } else {
+                code = (uint16_t)0b1 << 8; // 1 bit code + 8 bits = 9 bits length
                 code += c;
                 _fmavX_encode_add(payload_out, len_out, code, 9);
             }
+        }
 
         // compression doesn't reduce payload len
         // check it inside loop to prevent to write into memory outside of payload buffer
         if (*len_out >= len) return 0;
     }
 
-    if (out_bit != 0) { // handle last out byte if not completed
+    if (is_in_RLE) { // handle pending RLE
+        _fmavX_encode_rle(payload_out, len_out, RLE_char, RLE_cnt);
+    }
+
+    if (fmavx_status.out_bit != 0x80) { // handle last out byte if not completed
         (*len_out)++; // count it
     }
 
@@ -674,9 +748,7 @@ const fmavx_code_entry_t fmavx_code_list[MAVLINKX_CODE_LIST_LEN] = {
 };
 
 
-static uint8_t in_pos;
-static uint8_t in_bit;
-uint8_t in_buf[280];
+uint8_t fmavx_in_buf[280];
 
 
 uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
@@ -685,17 +757,17 @@ uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
 
     for (uint8_t i = 0; i < bits_len; i++) {
 
-        if (in_pos >= len) return 0;
+        if (fmavx_status.in_pos >= len) return 0;
 
         *code <<= 1;
-        if (in_buf[in_pos] & in_bit) { // set the bit
+        if (fmavx_in_buf[fmavx_status.in_pos] & fmavx_status.in_bit) { // set the bit
             *code |= 0x01;
         }
 
-        in_bit >>= 1; // next bit in in byte
-        if (in_bit == 0) { // in byte completely done, go to next in byte
-            in_pos++;
-            in_bit = 0x80;
+        fmavx_status.in_bit >>= 1; // next bit in in byte
+        if (fmavx_status.in_bit == 0) { // in byte completely done, go to next in byte
+            fmavx_status.in_pos++;
+            fmavx_status.in_bit = 0x80;
         }
     }
 
@@ -706,10 +778,10 @@ uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
 void _fmavX_decode_back_bits(uint8_t bits_len)
 {
     for (uint8_t i = 0; i < bits_len; i++) {
-        in_bit <<= 1;
-        if (in_bit == 0) {
-            in_pos--;
-            in_bit = 0x01;
+        fmavx_status.in_bit <<= 1;
+        if (fmavx_status.in_bit == 0) {
+            fmavx_status.in_pos--;
+            fmavx_status.in_bit = 0x01;
         }
     }
 }
@@ -727,14 +799,15 @@ for (uint16_t i = 0; i < len; i++) {
     dbg.puts("x");dbg.puts(u8toHEX_s(payload_out[i]));
 })
 
-    memcpy(in_buf, payload_out, len);
+    memcpy(fmavx_in_buf, payload_out, len);
 
     *len_out = 0;
 
-    in_pos = 0;
-    in_bit = 0x80;
+    fmavx_status.in_pos = 0;
+    fmavx_status.in_bit = 0x80;
 
-    while (in_pos < len) {
+    //while (fmavx_status.in_pos < len) {
+    while (1) {
         uint8_t c;
 
         // get next 4 bits
@@ -758,6 +831,20 @@ FMAX_DBG(dbg.puts(" -> code_255");)
                 c = 0xFF;
                 payload_out[(*len_out)++] = c;
                 break;
+
+            case MAVLINKX_CODE_0_RLE:
+FMAX_DBG(dbg.puts(" -> code_0_rle");)
+                if (!_fmavX_decode_next_bits(&c, len, 8)) break;
+FMAX_DBG(dbg.puts(" -> c x");dbg.puts(u8toHEX_s(c));)
+                for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0;
+                break;
+            case MAVLINKX_CODE_255_RLE:
+FMAX_DBG(dbg.puts(" -> code_255_rle");)
+                if (!_fmavX_decode_next_bits(&c, len, 8)) break;
+FMAX_DBG(dbg.puts(" -> c x");dbg.puts(u8toHEX_s(c));)
+                for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0xFF;
+                break;
+
             case MAVLINKX_CODE_ELSE:
 FMAX_DBG(dbg.puts(" -> code_else");)
                 if (!_fmavX_decode_next_bits(&c, len, 8)) break;
