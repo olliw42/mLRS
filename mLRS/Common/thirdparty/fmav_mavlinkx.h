@@ -14,7 +14,7 @@
 //-------------------------------------------------------
 // Mavlink X
 //-------------------------------------------------------
-// first attempt
+// 4th attempt
 // we parse the stream and simply substitute the header
 
 // the original fmav construct for sending looks like:
@@ -25,9 +25,11 @@
 //        serial.putbuf(_buf, len);
 //    }
 //
-// this reads the complete frame, so adds latency, but for the moment we do it to keep it simple
-// should be ok for testing and dev-ing
+// this reads the complete frame, so adds a bit latency, but for the moment we do it to keep it simple
+// should be ok for testing and dev-ing, and also good enough for application
 
+// header structure (indent indicates field depends on flags)
+//
 // STX1                       STX
 // STX2                       len
 // flags                      incompat_flag
@@ -53,10 +55,11 @@
 // since we backtrack the header this still might be ok
 
 // TODO: should we backtrack if the crc16 doesn't match?
+// we instead reset parser on frame lost, which in our case equally resolves the issue
 
 #define MAVLINKX_MAGIC_1              'o'
 #define MAVLINKX_MAGIC_2              'w'
-#define MAVLINKX_HEADER_LEN_MAX       16 // can be 9 to 16
+#define MAVLINKX_HEADER_LEN_MAX       17 // can be 9 to 17
 #define MAVLINKX_FRAME_LEN_MAX        (MAVLINKX_HEADER_LEN_MAX+FASTMAVLINK_PAYLOAD_LEN_MAX+FASTMAVLINK_CHECKSUM_LEN+FASTMAVLINK_SIGNATURE_LEN)
 
 
@@ -65,7 +68,7 @@ typedef enum {
     MAVLINKX_FLAGS_HAS_TARGETS        = 0x02,
     MAVLINKX_FLAGS_HAS_MSGID16        = 0x04,
     MAVLINKX_FLAGS_HAS_MSGID24        = 0x08,
-    MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40, // no actual compression implemented yet
+    MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40,
     MAVLINKX_FLAGS_HAS_EXTENSION      = 0x80,
 } fmavx_flags_e;
 
@@ -73,7 +76,7 @@ typedef enum {
 typedef enum {
     MAVLINKX_FLAGS_EXT_HAS_SIGNATURE  = 0x01,
     MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x02, // not yet used, it's more to indicate the possibility
-    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always used currently, unknown messages are not yet supported
+    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always used currently, unknown messages are not supported anyways
 } fmavx_flags_ext_e;
 
 
@@ -507,14 +510,227 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_check_to_frame_buf(fmav_r
 
 
 //-------------------------------------------------------
-// Compression Handler
+// Compression
 //-------------------------------------------------------
-// just dummies currently to test mechanism
+/*
+Compression scheme
 
+The concept developed here is based on an observation of how the bytes in the payload of mavlink messages
+are distributed. If the actual distribution is very different, the scheme becomes less effective, obviously.
+The observations are:
+- ca. 20% - 25% of the bytes in the payload are 0 (after trailing zero removal in v2)
+- ca. 3% - 4% of the bytes in the payload are 255
+- all other bytes are present "nearly" similarly with low probability, ranging from ca. 1% - 0.15%
+- the bytes 1 - 16 are present with about 10% probability
+This distribution means that beyond dealing with the many 0 and 255 there is actually not so much to compress,
+since the entropy is already relatively high.
+
+As a rough estimate for what can be achieved let's assume that all 0 and 255 can be compressed away, which
+gives a payload compression of ca 25%. Taking into account the header, we can't get more than ca 15% overall
+compression.
+
+Plenty of schemes were tried, this was (by far) the "best" one:
+
+00              -> 0
+010             -> 255
+0110 + 8 bits   -> RLE for 0: the code is followed by 8 bits to encode 1-255 0 bytes
+0111 + 8 bits   -> RLE for 255: the code is followed by 8 bits to encode 1-255 255 bytes
+10   + 4 bits   -> codes for bytes [1, 16]
+1100 + 4 bits   -> codes for bytes [17, 32]
+1101 + 4 bits   -> codes for bytes [239, 254]
+111  + 8 bits   -> codes for remaining bytes not covered by the other branches
+
+For encoding the tree we follow the method of gzip, see:
+https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art007
+*/
+
+
+//-- compression
 // we can use payload_out buffer as working buffer
+
+static uint8_t out_bit;
+
+
+// len_out & pos_out index the next bit position to write to
+void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, uint8_t code_len)
+{
+    // 1 -> 0x0001, 2 -> 0x0002, ..., 8 -> 0x0080
+    uint16_t cur_code_bit = (uint16_t)1 << (code_len - 1);
+
+dbg.puts("\ncl ");dbg.puts(u8toBCD_s(code_len));
+dbg.puts(" -> x");dbg.puts(u16toHEX_s(cur_code_bit));
+
+    for (uint8_t i = 0; i < code_len; i++) {
+        if (!(code & cur_code_bit)) { // clear the bit
+            payload_out[*len_out] &=~ out_bit;
+        }
+        cur_code_bit >>= 1; // next bit from code
+        out_bit >>= 1; // next bit pos in out bytes
+        if (out_bit == 0) { // out byte completely done, go to next out byte
+            (*len_out)++;
+            out_bit = 0x80;
+            payload_out[*len_out] = 0xFF;
+        }
+    }
+}
+
+
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
+    uint8_t is_in_RLE = 0;
+    uint8_t RLE_c = 0;
+    uint8_t RLE_cnt = 0;
+
+    uint16_t code; // can be 2 bits - 12 bits
+
+    *len_out = 0;
+    out_bit = 0x80;
+    payload_out[0] = 0xFF; // we use 1's as stop marker in last byte, so it's easier to fill with 0xFF
+
+    for (uint8_t n = 0; n < len; n++) {
+        uint8_t c = payload[n];
+
+        if (is_in_RLE) { // is_in_RLE
+
+            if (c == RLE_c) {
+                RLE_cnt++;
+            } else { // a different char
+                is_in_RLE = 0;
+
+                // handle accumulated RLE
+                switch (RLE_c) {
+                case 0:
+                    if (RLE_cnt <= 6) { // we don't need RLE code but can represent it by 0 codes, 12 / 2 = 6
+                        code = 0;
+                        for (uint8_t i = 0; i < RLE_cnt; i++) { code <<= 2; code += 0b00; }
+                        _fmavX_encode_add(payload_out, len_out, code, RLE_cnt*2);
+                    } else {
+                        code = (uint16_t)0b0110 << 8; // 4 bit code + room for 8 bits = 12 bits length
+                        code += RLE_cnt;
+                        _fmavX_encode_add(payload_out, len_out, code, 12);
+                    }
+                    break;
+                case 255:
+                    if (RLE_cnt <= 4) { // we don't need RLE code but can represent it by 255 codes, 12 / 3 = 4
+                        code = 0;
+                        for (uint8_t i = 0; i < RLE_cnt; i++) { code <<= 3; code += 0b010; }
+                        _fmavX_encode_add(payload_out, len_out, code, RLE_cnt*3);
+                    } else {
+                        code = (uint16_t)0b0111 << 8; // 4 bit code + room for 8 bits = 12 bits length
+                        code += RLE_cnt;
+                        _fmavX_encode_add(payload_out, len_out, code, 12);
+                    }
+                    break;
+                default:
+                    while (1); // must not happen
+                }
+            }
+        }
+
+        // handle c
+        if (!is_in_RLE) { // note that is_in_RLE can have changed in previous block, so we need to check here again
+
+            if (c == 0 || c == 255) {
+                is_in_RLE = 1;
+                RLE_c = c;
+                RLE_cnt = 1;
+            } else
+            if (c >= 1 && c <= 16) {
+                code = (uint16_t)0b00 << 4; // 2 bit code + room for 4 bits = 6 bits length
+                code += (c - 1);
+                _fmavX_encode_add(payload_out, len_out, code, 6);
+            } else
+            if (c >= 17 && c <= 32) {
+                code = (uint16_t)0b1100 << 4; // 4 bit code + room for 4 bits = 8 bits length
+                code += (c - 17);
+                _fmavX_encode_add(payload_out, len_out, code, 8);
+            } else
+            if (c >= 239 && c <= 254) {
+                code = (uint16_t)0b1101 << 4; // 4 bit code + room for 4 bits = 8 bits length
+                code += (c - 239);
+                _fmavX_encode_add(payload_out, len_out, code, 8);
+            } else {
+                code = (uint16_t)0b111 << 8; // 3 bit code + room for 8 bits = 11 bits length
+                code += c;
+                _fmavX_encode_add(payload_out, len_out, code, 11);
+            }
+        }
+
+        // compression doesn't reduce payload len
+        // check it inside loop to prevent to write into memory outside of payload buffer
+        if (*len_out >= len) return 0;
+    }
+
+    if (out_bit != 0) { // handle last out byte if not completed
+        (*len_out)++; // count it
+    }
+
+    // compression didn't reduce payload len
+    if (*len_out >= len) return 0;
+
     return 0;
+    return 1;
+}
+
+
+//-- decompression
+
+typedef enum {
+    MAVLINKX_CODE_0 = 0,
+    MAVLINKX_CODE_255,
+    MAVLINKX_CODE_0_RLE,
+    MAVLINKX_CODE_255_RLE,
+    MAVLINKX_CODE_1_16,
+    MAVLINKX_CODE_17_32,
+    MAVLINKX_CODE_239_254,
+    MAVLINKX_CODE_ELSE
+} fmavx_code_e;
+
+
+typedef struct {
+    uint8_t len; // bit length of the code
+    uint8_t id; // number to tell what it represents
+} fmavx_code_entry_t;
+
+
+#define MAVLINKX_CODE_LIST_LEN  16 // 4 bits maximal code length
+
+const fmavx_code_entry_t fmavx_code_list[MAVLINKX_CODE_LIST_LEN] = {
+    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|00   -> 0
+    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|01
+    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|10
+    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|11
+
+    { .len = 3, .id = MAVLINKX_CODE_255     }, // 010|0   -> 255
+    { .len = 3, .id = MAVLINKX_CODE_255     }, // 010|1
+
+    { .len = 4, .id = MAVLINKX_CODE_0_RLE   }, // 0110    -> 0 RLE
+
+    { .len = 4, .id = MAVLINKX_CODE_255_RLE }, // 0111    -> 255 RLE
+
+    { .len = 2, .id = MAVLINKX_CODE_1_16    }, // 10|00   -> 1 - 16
+    { .len = 2, .id = MAVLINKX_CODE_1_16    }, // 10|01
+    { .len = 2, .id = MAVLINKX_CODE_1_16    }, // 10|10
+    { .len = 2, .id = MAVLINKX_CODE_1_16    }, // 10|11
+
+    { .len = 4, .id = MAVLINKX_CODE_17_32   }, // 1100    -> 17 - 32
+
+    { .len = 4, .id = MAVLINKX_CODE_239_254 }, // 1101    -> 239 - 254
+
+    { .len = 3, .id = MAVLINKX_CODE_ELSE    }, // 111|0   -> rest
+    { .len = 3, .id = MAVLINKX_CODE_ELSE    }, // 111|1
+};
+
+
+typedef struct {
+    uint8_t c;
+    uint8_t pos;
+} fmavx_compress_status_t;
+
+
+void _fmavX_compress_parse_next_bit(uint8_t* payload_out, uint8_t* len_out, fmavx_compress_status_t* status, uint8_t bit)
+{
+
 }
 
 
@@ -522,6 +738,38 @@ uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t*
 void _fmavX_payload_decompress(uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
     *len_out = len;
+
+    return;
+/*
+    *len_out = 0;
+    uint16_t cc = 0;
+    uint8_t cc_pos = 0;
+
+    uint8_t n = 0;
+
+
+    while (1) {
+
+        // get next 4 bits
+        uint8_t c = payload[n];
+
+        cc = c;
+        cc_pos = 7;
+
+        uint8_t bit4 = (c & 0xF0);
+
+        fmavx_code_entry_t code = fmavx_code_list[bit4 >> 4];
+
+        //if (code.len == 2)
+
+        switch (code.id) {
+            case MAVLINKX_CODE_0:
+                break;
+        }
+
+
+    }
+*/
 }
 
 

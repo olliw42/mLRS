@@ -124,7 +124,7 @@ void MavlinkBase::Do(void)
             // do some fake to stress test the parser
             static uint8_t fake_cnt = 0;
             uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
-            uint8_t bX[8] = { 'a', 'O', 'W', 0, 128, 'b' };
+            uint8_t bX[8] = { 'a', 'o', 'w', 0, 128, 'b' };
             fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++;
 #endif
 
