@@ -791,14 +791,14 @@ IF_ANTENNA1(
             if (irq_status & SX12xx_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                DBG_MAIN_SLIM(dbg.puts("!");)
+                DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq_status & SX12xx_IRQ_RX_DONE) {
                 irq_status = 0;
                 link_rx1_status = do_receive(ANTENNA_1);
-                DBG_MAIN_SLIM(dbg.puts("<");)
+                DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         }
 
@@ -807,7 +807,7 @@ IF_ANTENNA1(
             link_state = LINK_STATE_IDLE;
             link_rx1_status = RX_STATUS_NONE;
             link_rx2_status = RX_STATUS_NONE;
-            DBG_MAIN_SLIM(dbg.puts("?");)
+            DBG_MAIN_SLIM(dbg.puts("1?");)
         }
 
         if (irq_status & SX12xx_IRQ_RX_DONE) {
@@ -824,14 +824,14 @@ IF_ANTENNA2(
             if (irq2_status & SX12xx_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                DBG_MAIN_SLIM(dbg.puts("!");)
+                DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq2_status & SX12xx_IRQ_RX_DONE) {
                 irq2_status = 0;
                 link_rx2_status = do_receive(ANTENNA_2);
-                DBG_MAIN_SLIM(dbg.puts("<");)
+                DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         }
 
@@ -840,6 +840,7 @@ IF_ANTENNA2(
             link_state = LINK_STATE_IDLE;
             link_rx1_status = RX_STATUS_NONE;
             link_rx2_status = RX_STATUS_NONE;
+            DBG_MAIN_SLIM(dbg.puts("2?");)
         }
 
         if (irq2_status & SX12xx_IRQ_RX_DONE) {

@@ -199,6 +199,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     void SetToIdle(void)
     {
         SetStandby();
+        ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)

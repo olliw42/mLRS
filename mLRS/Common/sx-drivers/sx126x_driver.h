@@ -204,6 +204,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetFs();
     }
 
+    //-- this are the API functions used in the loop
+
     void ReadFrame(uint8_t* data, uint8_t len)
     {
         uint8_t rxStartBufferPointer;
@@ -226,6 +228,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRx(tmo_ms * 64); // 0 = no timeout
     }
 
+    void SetToIdle(void)
+    {
+        SetFs();
+        ClearIrqStatus(SX126X_IRQ_ALL);
+    }
+
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
     {
         int16_t rssi;
@@ -240,11 +248,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     void HandleAFC(void) {}
 
     //-- helper
-
-    void SetToIdle(void)
-    {
-        SetFs();
-    }
 
     void config_calc(void)
     {

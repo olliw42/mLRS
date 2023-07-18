@@ -677,7 +677,7 @@ IF_ANTENNA1(
             if (irq_status & SX12xx_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                DBG_MAIN_SLIM(dbg.puts("<");)
+                DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -686,7 +686,7 @@ IF_ANTENNA1(
                 bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
                 link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
                 if (link_rx1_status == RX_STATUS_VALID) sx.HandleAFC();
-                DBG_MAIN_SLIM(dbg.puts("!");)
+                DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         }
 
@@ -707,6 +707,7 @@ IF_ANTENNA2(
             if (irq2_status & SX12xx_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_state = LINK_STATE_RECEIVE;
+                DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -715,6 +716,7 @@ IF_ANTENNA2(
                 bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
                 link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
                 if (link_rx2_status == RX_STATUS_VALID) sx2.HandleAFC();
+                DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         }
 

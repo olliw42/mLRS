@@ -207,6 +207,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
     void SetToIdle(void)
     {
         SetFs();
+        ClearIrqStatus(SX1280_IRQ_ALL);
     }
 
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
