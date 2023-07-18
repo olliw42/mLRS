@@ -149,7 +149,7 @@ const char bindphrase_chars[] = "abcdefghijklmnopqrstuvwxyz0123456789_#-.";
 #define BINDPHRASE_CHARS_LEN  (sizeof(bindphrase_chars) - 1)  // -1 since it's a null-terminated string
 
 bool is_valid_bindphrase_char(char c);
-void sanitize_bindphrase(char* bindphrase);
+void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default);
 uint32_t u32_from_bindphrase(char* bindphrase);
 uint8_t except_from_bindphrase(char* bindphrase);
 
