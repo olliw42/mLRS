@@ -643,7 +643,7 @@ int8_t power;
 
     draw_header("Main");
 
-    gdisp_setcurXY(50, 6);
+    gdisp_setcurX(50);
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(85);
@@ -736,7 +736,7 @@ char s[32];
     uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : 3; // 3 = invalid
     _diversity_str(s, rx_actual_diversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
-
+/*
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("Rssi");
     gdisp_setcurX(40);
@@ -762,6 +762,7 @@ char s[32];
 
     gdisp_setcurX(115+6);
     gdisp_puts("%");
+*/
 }
 
 
