@@ -111,7 +111,7 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
       .CrcLength = SX1280_FLRC_CRC_DISABLE,
       .CrcSeed = 27368,
       .SyncWord = 1836279427, // CrcSeed is 'j', 'p'.  SyncWord is 'm', 'l', 'r', 's' // TODO: make it setable !!!
-      .TimeOverAir = 1663,
+      .TimeOverAir = 1631,
       .ReceiverSensitivity = -103,
     }
 };
