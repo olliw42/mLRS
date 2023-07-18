@@ -263,10 +263,10 @@ void init(void)
     fan.Init();
     dbg.Init();
 
-    setup_init();
-
-    sx.Init(); // sx needs Config, so call after setup_init()
+    sx.Init();
     sx2.Init();
+
+    setup_init();
 
     mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
@@ -1053,8 +1053,7 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
         case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
         case MBRIDGE_CMD_MODELID_SET: {
-//            uint8_t* payload = mbridge.GetPayloadPtr();
-//dbg.puts("\nmbridge model id"); dbg.puts(u8toBCD_s(*payload));
+//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetPayloadPtr()[0]));
             }break;
         }
     }

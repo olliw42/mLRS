@@ -193,12 +193,12 @@ void init(void)
     fan.Init();
     dbg.Init();
 
+    sx.Init();
+    sx2.Init();
+
     setup_init();
 
     clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
-
-    sx.Init(); // sx needs Config, so call after setup_init()
-    sx2.Init();
 }
 
 
