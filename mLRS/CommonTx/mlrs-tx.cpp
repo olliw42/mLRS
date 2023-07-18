@@ -651,7 +651,7 @@ RESTARTCONTROLLER:
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
-  irq_status =  irq2_status = 0;
+  irq_status = irq2_status = 0;
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
@@ -668,8 +668,7 @@ RESTARTCONTROLLER:
   connect_tmo_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
-  link_rx1_status = RX_STATUS_NONE;
-  link_rx2_status = RX_STATUS_NONE;
+  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
   link_task_init();
   link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
@@ -770,8 +769,7 @@ RESTARTCONTROLLER:
         sx2.SetRfFrequency(fhss.GetCurrFreq());
         do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
         link_state = LINK_STATE_TRANSMIT_WAIT;
-        irq_status = 0;
-        irq2_status = 0;
+        irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
         whileTransmit.Trigger();
         break;
@@ -780,8 +778,8 @@ RESTARTCONTROLLER:
         IF_ANTENNA1(sx.SetToRx(0));
         IF_ANTENNA2(sx2.SetToRx(0));
         link_state = LINK_STATE_RECEIVE_WAIT;
-        irq_status = 0;
-        irq2_status = 0;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+        irq_status = irq2_status = 0;
         break;
     }//end of switch(link_state)
 
