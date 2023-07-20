@@ -17,11 +17,11 @@ However, while all these systems are truely excellent and achieve their goals, a
 - open source
 - rich features for Mavlink systems
 
-Hence this project. In addition, as another main feature, we want it to 
+The mLRS project fills this gap. In addition, as another main feature, we want it to 
 
 - integrate with MAVLink for OpenTx
 
-which will yield the most fluid user experience.
+as this yields the most fluid user experience.
 
 ## Disclaimer ##
 
@@ -93,19 +93,20 @@ For the 2.4 GHz band, the available range test reports consistently exceed the a
 
 ## Hardware ##
 
-Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, hence I started with STM32 as main platform. I am not against ESP however, to the contrary. So if anyone wants to add ESP32 support please join.
+Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support please join.
 
 The code currently supports:
-- Frsky R9M transmitter and R9MX and R9MM receiver modules
-- SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards
-- EByte E77 MBL board
+- Flysky FRM303 transmitter module (2.4 GHz)
+- Frsky R9M transmitter and R9MX and R9MM receiver modules (868/915 MHz)
+- SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards (868/915 MHz, 433 MHz/70 cm)
+- EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. 
 
-The SeeedStudio Wio-E5 boards and EByte E77 MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" Rx module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
+The SeeedStudio Wio-E5 boards and EByte E77 MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" receiver module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
-In the 2.4 GHz range, the DIY options are currently the (only) way to go.
+In the 2.4 GHz range, the Flysky FRM303 transmitter module is a great and readily available, albeit expensive, option. Concerning receivers, the DIY options are currently the (only) way to go. The DIY options also offer the most capable mLRS Tx modules available.
 
 Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 
