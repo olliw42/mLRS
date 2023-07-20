@@ -211,6 +211,9 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 #if defined JRPIN5_FULL_INTERNAL
       LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_TX);
 #endif
+#if defined JRPIN5_DISABLE_TX_WHILE_RX
+      uart_tx_enablepin(ENABLE);
+#endif
 
   } else {
 #if defined JRPIN5_TX_OE
@@ -218,6 +221,9 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 #endif
 #if defined JRPIN5_FULL_INTERNAL
       LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_RX);
+#endif
+#if defined JRPIN5_DISABLE_TX_WHILE_RX
+      uart_tx_enablepin(DISABLE);
 #endif
 
       uart_rx_enableisr(ENABLE);

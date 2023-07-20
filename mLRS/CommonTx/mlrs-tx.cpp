@@ -251,6 +251,7 @@ void init(void)
     micros_init();
 
     systembootloader_do(); // after delay_init() since it may need delay
+    fiveway_init();
 
     serial.Init();
     serial2.Init();
