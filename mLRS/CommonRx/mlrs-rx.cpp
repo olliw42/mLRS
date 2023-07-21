@@ -193,12 +193,12 @@ void init(void)
     fan.Init();
     dbg.Init();
 
+    sx.Init();
+    sx2.Init();
+
     setup_init();
 
     clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
-
-    sx.Init(); // sx needs Config, so call after setup_init()
-    sx2.Init();
 }
 
 
@@ -572,8 +572,7 @@ RESTARTCONTROLLER:
   connect_listen_cnt = 0;
   connect_sync_cnt = 0;
   connect_occured_once = false;
-  link_rx1_status = RX_STATUS_NONE;
-  link_rx2_status = RX_STATUS_NONE;
+  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
   link_task_init();
   doPostReceive2_cnt = 0;
   doPostReceive2 = false;
@@ -655,10 +654,8 @@ RESTARTCONTROLLER:
         IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
         IF_ANTENNA2(sx2.SetToRx(0));
         link_state = LINK_STATE_RECEIVE_WAIT;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
-        irq_status = 0;
-        irq2_status = 0;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+        irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
         }break;
 
@@ -666,8 +663,7 @@ RESTARTCONTROLLER:
         // TODO: transmit antenna diversity
         do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
         link_state = LINK_STATE_TRANSMIT_WAIT;
-        irq_status = 0; // important, in low connection condition, RxDone isr could trigger
-        irq2_status = 0;
+        irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         }break;
     }//end of switch(link_state)
 

@@ -193,10 +193,16 @@ bool is_valid_bindphrase_char(char c)
 }
 
 
-void sanitize_bindphrase(char* bindphrase)
+void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default)
 {
+    uint8_t invalid_cnt = 0;
     for (uint8_t i = 0; i < 6; i++) {
+        if (bindphrase[i] == 0xFF) invalid_cnt++;
         if (!is_valid_bindphrase_char(bindphrase[i])) bindphrase[i] = '_';
+    }
+
+    if (invalid_cnt == 6 && bindphrase_default != nullptr) {
+        memcpy(bindphrase, bindphrase_default, 6);
     }
 
     bindphrase[6] = '\0';

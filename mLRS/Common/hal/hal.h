@@ -37,8 +37,9 @@ In tx-hal files:
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C
-#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°
+#define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C, and 5-way switch
+#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°, and 5-way switch
+#define DEVICE_HAS_FIVEWAY          // board has 5-way switch (no display)
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
@@ -108,6 +109,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef TX_E77_MBLKIT_WLE5CC
 #include "tx-hal-E77-MBLKit-wle5cc.h"
+#endif
+
+
+//-- FlySky FRM303 2.4 GHz Device
+
+#ifdef TX_FRM303_F070CB
+#include "tx-hal-FRM303-f070cb.h"
 #endif
 
 
@@ -331,5 +339,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     void esp_init(void) {}
 #endif
 
+#if !defined DEVICE_HAS_FIVEWAY && !defined USE_DISPLAY
+    void fiveway_init(void) {}
+#endif
 
 #endif // HAL_H
