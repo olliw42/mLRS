@@ -14,11 +14,12 @@
 // 4 UARTS, but U3 & U4 are on same IRQ so cannot be used both
 // T1, T3, T14, T15, T16, T17, internal T6, T7
 
+#define DEVICE_HAS_COM_ON_USB
+//#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_I2C_DISPLAY_ROT180
 //#define DEVICE_HAS_FIVEWAY
 //#define DEVICE_HAS_BUZZER
-#define DEVICE_HAS_SERIAL_OR_COM
 //#define DEVICE_HAS_DEBUG_SWUART
 
 #ifdef DEBUG_ENABLED
@@ -29,7 +30,7 @@
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_TIM7_W_INIT //DELAY_USE_DWT,
-static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); __NOP(); __NOP(); } // 48 MHz => 4x nop = 100 ns
+static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } // 48 MHz => 4x nop = 100 ns
 
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
@@ -39,7 +40,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); __
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
+// UARTC or USB = COM (CLI)
 // UARTD = -
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
@@ -52,7 +53,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); __
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
-
+/*
 #define UARTC_USE_UART2 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
@@ -60,7 +61,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); __
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
-
+*/
 #define UART_USE_UART1 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
@@ -202,6 +203,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 // use com if FIVEWAY is DOWN during power up, else use serial
 // FIVEWAY-DONW becomes bind button later on
 
+#ifdef DEVICE_HAS_SERIAL_OR_COM
 bool frm303_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
@@ -218,6 +220,7 @@ bool ser_or_com_serial(void)
 {
   return frm303_ser_or_com_serial;
 }
+#endif
 
 
 //-- Position Switch
@@ -234,7 +237,8 @@ void pos_switch_init(void)
 #define FIVEWAY_ADCx              ADC1
 #define FIVEWAY_ADC_IO            IO_PA7 // ADC1_IN7
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_7
-/*
+
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 void fiveway_init(void)
 {
     rcc_init_afio();
@@ -259,12 +263,13 @@ uint8_t fiveway_read(void)
     if (adc > (2940-200) && adc < (2940+200)) return (1 << KEY_LEFT); // 2940  (2.4 V)
     if (adc > (3465-200) && adc < (3465+200)) return (1 << KEY_CENTER); // 3465 (2.8 V)
     return 0;
-} */
+}
+#endif
 
 
 //-- Display I2C
 
-#define I2C_USE_I2C2              // PB13, PB14
+#define I2C_USE_I2C2_PB13PB14     // PB13, PB14
 #define I2C_CLOCKSPEED_400KHZ     // not all displays seem to work well with I2C_CLOCKSPEED_1000KHZ
 #define I2C_USE_DMAMODE
 

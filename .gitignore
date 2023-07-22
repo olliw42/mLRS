@@ -11,6 +11,7 @@ tools/build3/*
 mLRS/*/Drivers/CMSIS/Include/*
 mLRS/*/Drivers/CMSIS/Device/ST/*
 mLRS/*/Drivers/STM32??xx_HAL_Driver/*
+mLRS/*/Drivers/STM32_USB_Device_Library/*
 
 # Prerequisites
 *.d

@@ -36,6 +36,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
+#define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C, and 5-way switch
 #define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°, and 5-way switch
@@ -213,34 +214,37 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
   #if !defined DEVICE_HAS_NO_COM
     #define USE_COM
+    #ifdef DEVICE_HAS_COM_ON_USB
+      #define USE_USB
+    #endif
   #endif
   #ifdef DEBUG_ENABLED
     #define USE_DEBUG
   #endif
 #endif
 
-#if (defined DEVICE_HAS_SERIAL2) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+#if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
   #define USE_SERIAL2
 #endif
 #endif // DEVICE_IS_TRANSMITTER
 
 
-#if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED
   #define USE_IN
 #endif
 
 
-#if (defined DEVICE_HAS_OUT) || (defined DEVICE_HAS_OUT_NORMAL) || (defined DEVICE_HAS_OUT_INVERTED)
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INVERTED
   #define USE_OUT
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
+#if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
   #define USE_DISPLAY
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
   #define USE_I2C
   #ifndef HAL_I2C_MODULE_ENABLED
     #error HAL_I2C_MODULE_ENABLED is not defined, but I2C is used!
@@ -248,17 +252,17 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if (defined DEVICE_HAS_FAN_ONOFF)
+#if defined DEVICE_HAS_FAN_ONOFF
   #define USE_FAN
 #endif
 
 
-#if (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
   #define USE_ESP_WIFI_BRIDGE
-  #if (defined ESP_RESET) && (defined ESP_GPIO0)
+  #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #endif
-  #if (defined ESP_DTR) && (defined ESP_RTS)
+  #if defined ESP_DTR && defined ESP_RTS
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
 #endif

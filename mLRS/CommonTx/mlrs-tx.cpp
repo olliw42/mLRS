@@ -49,10 +49,15 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #ifdef USE_COM
+#ifndef USE_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
+#endif
 #endif
 #ifdef USE_SERIAL2
 #include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
+#endif
+#ifdef USE_USB
+#include "../modules/stm32-usb-device/stdstm32-usb-vcp.h"
 #endif
 #ifdef USE_IN
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"

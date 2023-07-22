@@ -255,6 +255,9 @@ MLRS_SOURCES_HAL_STM32F0 = [
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr_ex.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_dma.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd_ex.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_adc.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_comp.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crc.c'),
@@ -320,6 +323,24 @@ MLRS_SOURCES_TX = [
 	os.path.join('CommonTx','in.cpp'),
 	os.path.join('CommonTx','mlrs-tx.cpp'),
     ]
+
+
+MLRS_SOURCES_USB = [
+	os.path.join('Drivers','STM32_USB_Device_library','Class','CDC','Src','usbd_cdc.c'),
+	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_core.c'),
+	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_ctlreq.c'),
+	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_ioreq.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_cdc_if.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_conf.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_desc.c'),
+    ]
+
+MLRS_INCLUDES_USB = [
+	os.path.join('Drivers','STM32_USB_Device_Library','Class','CDC','Inc'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Inc'),
+	os.path.join('..','modules','stm32-usb-device'),
+    ]
+
 
 
 #-- target class to handle targets
@@ -390,6 +411,13 @@ class cTarget:
         self.MLRS_INCLUDES = []
         for file in MLRS_INCLUDES:
             self.MLRS_INCLUDES.append(file.replace('??',self.mcu_HAL))
+
+        self.MLRS_SOURCES_EXTRA = []
+        if 'STDSTM32_USE_USB' in self.extra_D_list:
+            for file in MLRS_SOURCES_USB:
+                self.MLRS_SOURCES_EXTRA.append(file)
+            for file in MLRS_INCLUDES_USB:
+                self.MLRS_INCLUDES.append(file)
 
 
 #-- compiler & linker
@@ -462,6 +490,7 @@ def mlrs_compile_file(target, file):
         cmd += '"'+os.path.join(MLRS_DIR,file)+'" ' # asm needs it at end
     
     #print(cmd)
+    #if not is_asm: exit(1)
     
     # create folder as needed
     buildpath = os.path.join(MLRS_BUILD_DIR,target.build_dir,file_path)
@@ -487,8 +516,11 @@ def mlrs_link_target(target):
         F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
         for obj in objlist_cube_list:
             o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
-            o = o.replace('/Core', '/'+target.target+'/Core')
-            o = o.replace('/Drivers', '/'+target.target+'/Drivers')
+            if obj[3:7] == 'Core':
+                o = o.replace('/Core', '/'+target.target+'/Core')
+            if obj[3:10] == 'Drivers':
+                o = o.replace('/Drivers', '/'+target.target+'/Drivers')
+            #print('  ->',o, obj[3:7])
             F.write(o.replace('\\','/')+'\n')
         F.close()
         
@@ -556,6 +588,9 @@ def mlrs_build_target(target):
         
     for file in MLRS_SOURCES_COMMON:
         mlrs_compile_file(target, file)
+        
+    for file in target.MLRS_SOURCES_EXTRA:
+        mlrs_compile_file(target, os.path.join(target.target,file))
         
     MLRS_SOURCES_RXTX = []
     if target.rx_or_tx == 'rx':
@@ -724,19 +759,19 @@ TLIST = [
     { 
 #RX    
         'target' : 'rx-diy-board01-f103cb',             'target_D' : 'RX_DIY_BOARD01_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-diy-e22-g441kb',                 'target_D' : 'RX_DIY_E22_G441KB', 
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-e28dual-board02-f103cb',     'target_D' : 'RX_DIY_E28DUAL_BOARD02_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-e28-g441kb',                 'target_D' : 'RX_DIY_E28_G441KB',
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'RX_DIY_WIOE5_E22_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -747,22 +782,22 @@ TLIST = [
         'appendix' : '-400' 
     },{
         'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
 #TX    
         'target' : 'tx-diy-e22dual-module02-g491re',    'target_D' : 'TX_DIY_E22DUAL_MODULE02_G491RE', 
@@ -772,16 +807,16 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''  
     },{
         'target' : 'tx-diy-e28dual-board02-f103cb',     'target_D' : 'TX_DIY_E28DUAL_BOARD02_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-diy-e28dual-module02-g491re',    'target_D' : 'TX_DIY_E28DUAL_MODULE02_G491RE', 
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-diy-sxdual-module02-g491re',     'target_D' : 'TX_DIY_SXDUAL_MODULE02_G491RE', 
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -792,17 +827,18 @@ TLIST = [
         'appendix' : '-400' 
     },{ 
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
         
     },{
         'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : ['STDSTM32_USE_USB'],
+        'appendix' : '',
         
     }
     ]
@@ -865,7 +901,7 @@ create_clean_dir(MLRS_BUILD_DIR)
 targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
 
 #print(targetlist)
-#mlrs_build_target(targetlist[-1])
+#mlrs_build_target(targetlist[-2])
 #mlrs_build_target(targetlist[7])
 #exit(1)
 
