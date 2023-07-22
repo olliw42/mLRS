@@ -7,6 +7,8 @@
 // hal
 //*******************************************************
 
+#define MLRS_FEATURE_OLED
+
 //-------------------------------------------------------
 // TX FRM303 STM32F070CB
 //-------------------------------------------------------
@@ -14,13 +16,19 @@
 // 4 UARTS, but U3 & U4 are on same IRQ so cannot be used both
 // T1, T3, T14, T15, T16, T17, internal T6, T7
 
+#define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_COM_ON_USB
 //#define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_I2C_DISPLAY_ROT180
 //#define DEVICE_HAS_FIVEWAY
 //#define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
+
+#ifdef MLRS_FEATURE_OLED
+  #undef DEVICE_HAS_COM_ON_USB
+  #define DEVICE_HAS_NO_COM
+  #define DEVICE_HAS_I2C_DISPLAY_ROT180
+#endif
 
 #ifdef DEBUG_ENABLED
 #undef DEBUG_ENABLED
@@ -166,6 +174,7 @@ void sx_dio_exti_isr_clearflag(void)
 
 #define BUTTON                    IO_PA7
 
+#ifndef DEVICE_HAS_I2C_DISPLAY_ROT180
 void button_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
@@ -175,6 +184,10 @@ bool button_pressed(void)
 {
     return gpio_read_activelow(BUTTON);
 }
+#else
+void button_init(void) {}
+bool button_pressed(void) { return 0; }
+#endif
 
 
 //-- LEDs
