@@ -846,7 +846,11 @@ TLIST = [
     },{
         'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
         'extra_D_list' : ['STDSTM32_USE_USB'],
-        'appendix' : '',
+        'appendix' : '-usb',
+    },{
+        'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_OLED'],
+        'appendix' : '-oled',
         
     }
     ]

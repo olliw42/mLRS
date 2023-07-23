@@ -104,7 +104,6 @@ class tComPort : public tSerialBase
 {
 #ifdef USE_COM_ON_SERIAL
   public:
-    void InitOnce(void) {}
     // we do not initialize it as it is initialized by serial
     void putc(char c) override { IFNCOM(); uartb_putc(c); }
     bool available(void) override { IFNCOM(0); return uartb_rx_available(); }
@@ -120,12 +119,15 @@ class tComPort : public tSerialBase
     bool available(void) override { return usb_rx_available(); }
     char getc(void) override { return usb_getc(); }
 #else
-    void InitOnce(void) {}
     void Init(void) override { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
     bool available(void) override { return uartc_rx_available(); }
     char getc(void) override { return uartc_getc(); }
 #endif
+#endif
+#ifndef USE_USB
+  public:
+    void InitOnce(void) {}
 #endif
 };
 
