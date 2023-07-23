@@ -380,10 +380,14 @@ class cTarget:
             exit(1)
             
         self.rx_or_tx = ''
+        self.is_rx = False
+        self.is_tx = False
         if 'rx' in target and 'RX' in target_D:
             self.rx_or_tx = 'rx'
+            self.is_rx = True
         elif 'tx' in target and 'TX' in target_D:
             self.rx_or_tx = 'tx'
+            self.is_tx = True
         else:
             print('gkgkggjkgjkgjkgjgjgjgjg')
             exit(1)
@@ -418,7 +422,11 @@ class cTarget:
                 self.MLRS_SOURCES_EXTRA.append(file)
             for file in MLRS_INCLUDES_USB:
                 self.MLRS_INCLUDES.append(file)
-
+        elif self.is_tx: # add some usb sources to every tx target
+            for file in MLRS_SOURCES_USB:
+                if 'modules' in file:
+                    self.MLRS_SOURCES_EXTRA.append(file)
+                    
 
 #-- compiler & linker
 
@@ -893,6 +901,18 @@ def mlrs_copy_all_hex():
 
 #-- here we go
 
+cmdline_target = ''
+
+cmd_pos = -1
+for cmd in sys.argv:
+    cmd_pos += 1
+    if cmd == '--target' or cmd == '-t':
+        if sys.argv[cmd_pos+1] != '':
+            cmdline_target = sys.argv[cmd_pos+1]
+        
+#cmdline_target = 'tx-diy-e22dual-module02-g491re'
+#cmdline_target = 'tx-diy-sxdualXXX'
+
 mlrs_set_version()
 mlrs_set_branch()
 
@@ -900,14 +920,11 @@ create_clean_dir(MLRS_BUILD_DIR)
 
 targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
 
-#print(targetlist)
-#mlrs_build_target(targetlist[-2])
-#mlrs_build_target(targetlist[7])
-#exit(1)
-
 for target in targetlist:
-    mlrs_build_target(target)
-
-mlrs_copy_all_hex()
+    if cmdline_target == '' or cmdline_target in target.target:
+        mlrs_build_target(target)
+        
+if cmdline_target == '':
+    mlrs_copy_all_hex()
 
 os.system("pause")
