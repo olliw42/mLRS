@@ -241,6 +241,12 @@ void enter_flash_esp(void)
 // Init
 //-------------------------------------------------------
 
+void init_once(void)
+{
+    com.InitOnce();
+}
+
+
 void init(void)
 {
     // disable all interrupts, they may be enabled with restart
@@ -642,6 +648,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+  init_once();
 RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
