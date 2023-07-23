@@ -236,14 +236,6 @@ bool ser_or_com_serial(void)
 #endif
 
 
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
-
-
 //-- 5 Way Switch
 // resistor chain Vcc - 10k - down - 3.3k - right - 6.2k - up - 18k - left - 34.8k - center
 

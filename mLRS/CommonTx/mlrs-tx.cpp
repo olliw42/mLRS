@@ -249,7 +249,6 @@ void init(void)
     systembootloader_init();
     leds_init();
     button_init();
-    pos_switch_init();
     esp_init();
 
     delay_init();

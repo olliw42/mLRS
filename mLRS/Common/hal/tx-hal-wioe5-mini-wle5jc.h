@@ -217,14 +217,6 @@ void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
-
-
 //-- 5 Way Switch
 // template for resistor chain Vcc - 4.7k - down - 1k - left - 2.2k - right - 4.7k - up - 4.7k - center
 /*

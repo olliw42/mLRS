@@ -244,14 +244,6 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
-
-
 //-- 5 Way Switch
 
 #define FIVEWAY_SWITCH_CENTER     IO_PC15 // POS_3

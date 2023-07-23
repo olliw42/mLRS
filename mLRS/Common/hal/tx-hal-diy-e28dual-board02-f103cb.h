@@ -285,14 +285,6 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
-
-
 //-- POWER
 
 #define POWER_GAIN_DBM            27 // gain of a PA stage if present
