@@ -23,9 +23,11 @@
 //#define DEVICE_HAS_FIVEWAY
 //#define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_SYSTEMBOOT
 
 #ifdef MLRS_FEATURE_OLED
   #undef DEVICE_HAS_COM_ON_USB
+  #undef DEVICE_HAS_SYSTEMBOOT
   #define DEVICE_HAS_NO_COM
   #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
@@ -232,6 +234,29 @@ void ser_or_com_init(void)
 bool ser_or_com_serial(void)
 {
   return frm303_ser_or_com_serial;
+}
+#endif
+
+
+//-- SystemBootLoader
+// go into boot if FIVEWAY is DOWN during power up
+// FIVEWAY-DOWN becomes bind button later on
+
+#ifdef DEVICE_HAS_SYSTEMBOOT
+void systembootloader_init(void)
+{
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+}
+
+void systembootloader_do(void)
+{
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BUTTON)) cnt++;
+    }
+    if (cnt > 12) {
+        BootLoaderInit();
+    }
 }
 #endif
 
