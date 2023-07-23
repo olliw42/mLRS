@@ -228,8 +228,7 @@ extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
-    rcc_init_afio();
-    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_begin(FIVEWAY_ADCx);
     adc_init_one_channel(FIVEWAY_ADCx);
     adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
     adc_enable(FIVEWAY_ADCx);

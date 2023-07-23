@@ -278,9 +278,7 @@ extern "C" { void delay_us(uint32_t us); }
 void fiveway_init(void)
 {
     gpio_init(FIVEWAY_SWITCH_CENTER, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    LL_RCC_SetADCClockSource(LL_RCC_ADC12_CLKSOURCE_SYSCLK);
-    rcc_init_afio();
-    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_begin(FIVEWAY_ADCx);
     adc_init_one_channel(FIVEWAY_ADCx);
     adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
     adc_enable(FIVEWAY_ADCx);
