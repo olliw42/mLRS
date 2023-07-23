@@ -271,8 +271,7 @@ void systembootloader_do(void)
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 void fiveway_init(void)
 {
-    rcc_init_afio();
-    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_begin(FIVEWAY_ADCx);
     adc_init_one_channel(FIVEWAY_ADCx);
     adc_config_channel(FIVEWAY_ADCx, 0, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
     adc_enable(FIVEWAY_ADCx);
