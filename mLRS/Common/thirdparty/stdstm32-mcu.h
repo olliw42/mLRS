@@ -43,7 +43,7 @@ void BootLoaderInit(void)
     LL_GPIO_DeInit(GPIOC);
     LL_USART_DeInit(USART1);
 
-    LL_RCC_DeInit();
+    LL_RCC_DeInit(); // HAL_RCC_DeInit(); ??
 
     // reset systick timer
     SysTick->CTRL = 0;

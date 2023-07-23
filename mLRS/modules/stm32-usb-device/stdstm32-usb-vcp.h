@@ -3,7 +3,7 @@
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// my USB VCP standard library
+// STM32_USB_Device_Library based USB VCP standard library
 //*******************************************************
 #ifndef STDSTM32_USB_VCP
 #define STDSTM32_USB_VCP
@@ -28,11 +28,6 @@ char usb_getc(void);
 void usb_putc(uint8_t c);
 void usb_puts(const char *s);
 void usb_putbuf(uint8_t* buf, uint16_t len);
-
-
-//-------------------------------------------------------
-// INIT routines
-//-------------------------------------------------------
 
 void usb_init(void);
 
