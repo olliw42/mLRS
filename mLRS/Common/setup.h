@@ -301,8 +301,11 @@ void setup_sanitize(void)
         Setup.Rx.OutMode = OUT_CONFIG_SBUS;
     }
 
-    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
-    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
+    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
+    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
+
+    if (Setup.Rx.OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutLqChannelMode = SETUP_RX_OUT_LQ_CHANNEL;
+    if (Setup.Rx.OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutLqChannelMode = 0;
 
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
     if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;

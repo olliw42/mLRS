@@ -224,6 +224,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
     rx_params->ChannelOrder = Setup.Rx.ChannelOrder;
     rx_params->OutMode = Setup.Rx.OutMode;
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
+    rx_params->OutLqChannelMode = Setup.Rx.OutLqChannelMode;
     rx_params->FailsafeMode = Setup.Rx.FailsafeMode;
     rx_params->SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params->SerialLinkMode = Setup.Rx.SerialLinkMode;
@@ -249,6 +250,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
     Setup.Rx.ChannelOrder = rx_params->ChannelOrder;
     Setup.Rx.OutMode = rx_params->OutMode;
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;
+    Setup.Rx.OutLqChannelMode = rx_params->OutLqChannelMode;
     Setup.Rx.FailsafeMode = rx_params->FailsafeMode;
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;

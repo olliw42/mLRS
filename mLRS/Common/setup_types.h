@@ -141,17 +141,21 @@ typedef enum {
 
 
 typedef enum {
-    OUT_RSSI_CHANNEL_OFF = 0,
-    OUT_RSSI_CHANNEL_CH5,
-    OUT_RSSI_CHANNEL_CH6,
-    OUT_RSSI_CHANNEL_CH7,
-    OUT_RSSI_CHANNEL_CH8,
-    OUT_RSSI_CHANNEL_CH9,
-    OUT_RSSI_CHANNEL_CH10,
-    OUT_RSSI_CHANNEL_CH11,
-    OUT_RSSI_CHANNEL_CH12,
-    OUT_RSSI_CHANNEL_NUM,
-} RX_OUT_RSSI_CHANNEL_ENUM;
+    OUT_RSSI_LQ_CHANNEL_OFF = 0,
+    OUT_RSSI_LQ_CHANNEL_CH5,
+    OUT_RSSI_LQ_CHANNEL_CH6,
+    OUT_RSSI_LQ_CHANNEL_CH7,
+    OUT_RSSI_LQ_CHANNEL_CH8,
+    OUT_RSSI_LQ_CHANNEL_CH9,
+    OUT_RSSI_LQ_CHANNEL_CH10,
+    OUT_RSSI_LQ_CHANNEL_CH11,
+    OUT_RSSI_LQ_CHANNEL_CH12,
+    OUT_RSSI_LQ_CHANNEL_CH13,
+    OUT_RSSI_LQ_CHANNEL_CH14,
+    OUT_RSSI_LQ_CHANNEL_CH15,
+    OUT_RSSI_LQ_CHANNEL_CH16,
+    OUT_RSSI_LQ_CHANNEL_NUM,
+} RX_OUT_RSSI_LQ_CHANNEL_ENUM;
 
 
 typedef enum {
@@ -235,8 +239,9 @@ typedef struct
     uint8_t Buzzer;
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
+    uint8_t OutLqChannelMode;
 
-    uint8_t spare[8];
+    uint8_t spare[7];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120

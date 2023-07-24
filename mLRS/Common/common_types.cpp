@@ -83,6 +83,15 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 }
 
 
+//   0 ... 100 -> 191 .. 1792 = 1000 .. 2000 us
+uint16_t lq_to_sbus_crsf(uint8_t lq)
+{
+    if (lq >= 100) return 1792; // max value
+
+    return ((uint32_t)lq * 1601 + 50) / 100 + 191;
+}
+
+
 //-- rc data
 
 uint16_t clip_rc(int32_t x)

@@ -76,7 +76,8 @@
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
-#define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 12: CH12, note: CH13 - CH16 are 3-way and not suitable
+#define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 16: CH16
+#define SETUP_RX_OUT_LQ_CHANNEL         0 // 0: off, 5: CH5, 16: CH16
 
 #define SETUP_RX_BUZZER                 0 // 0: off, 1: LP
 
