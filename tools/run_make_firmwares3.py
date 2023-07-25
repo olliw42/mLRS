@@ -422,7 +422,7 @@ class cTarget:
                 self.MLRS_SOURCES_EXTRA.append(file)
             for file in MLRS_INCLUDES_USB:
                 self.MLRS_INCLUDES.append(file)
-        elif self.is_tx: # add some usb sources to every tx target
+        else: # add stm32-usb-device sources to every target (we could have excluded them in the IDE, but are too lazy LOL)
             for file in MLRS_SOURCES_USB:
                 if 'modules' in file:
                     self.MLRS_SOURCES_EXTRA.append(file)
