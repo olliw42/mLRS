@@ -67,6 +67,7 @@ Further features:
 - the transmitter and receiver parameters can be set via a LUA script, a CLI, or an OLED display.
 - bind mode for binding "unknown" receivers to the transmitter.
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
+- 10 model configurations stored in Tx module, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
