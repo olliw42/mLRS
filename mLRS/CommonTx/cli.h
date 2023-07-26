@@ -47,6 +47,9 @@ uint8_t nr, n;
         if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPLAYSTR;
         }
+        if (SetupParameterPtr(param_idx) == &Setup.Rx.SerialLinkMode) {
+            optstr = SETUP_OPT_RX_SERIAL_LINK_MODE_DISPLAYSTR;
+        }
     }
 
     seps[0] = -1;
