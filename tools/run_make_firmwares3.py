@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 09.07.2023
+ version 26.07.2023
 ********************************************************
 '''
 import os
@@ -20,10 +20,45 @@ import sys
 
 
 #-- installation dependent
-# can we find this automatically?
+# effort at finding this automatically
 
-ST_DIR = os.path.join("C:/",'ST','STM32CubeIDE','STM32CubeIDE','plugins')
-GNU_DIR = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127'
+#ST_DIR = os.path.join("C:/",'ST','STM32CubeIDE','STM32CubeIDE','plugins')
+#GNU_DIR = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127'
+
+def findSTM32CubeIDEGnuTools(search_root):
+    st_dir = ''
+    st_cubeide_dir = ''
+    st_cubeide_ver_nr = 0
+    for file in os.listdir(search_root):
+        if 'STM32CubeIDE' in file:
+            if '_' in file:
+                ver = file[13:].split('.')
+                ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
+                if ver_nr > st_cubeide_ver_nr:
+                    st_cubeide_ver_nr = ver_nr
+                    st_cubeide_dir = file
+            else:
+                st_cubeide_dir = file
+                st_cubeide_ver_nr = 0
+    if st_cubeide_dir != '':
+        st_dir = os.path.join(search_root,st_cubeide_dir,'STM32CubeIDE','plugins')
+
+    gnu_dir = ''
+    for dirpath in os.listdir(st_dir):
+        if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'win32' in dirpath:
+            gnu_dir = dirpath 
+    
+    return st_dir, gnu_dir    
+
+ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
+
+if not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+    printError('ERROR: gnu-tools not found!')
+    exit(1)
+
+print('STM32CubeIDE found in:', ST_DIR)
+print('gnu-tools found in:', GNU_DIR)
+print('------------------------------------------------------------')
 
 
 #-- GCC preliminaries
@@ -45,7 +80,6 @@ MLRS_DIR = os.path.join(MLRS_PROJECT_DIR,'mLRS')
 
 MLRS_TOOLS_DIR = os.path.join(MLRS_PROJECT_DIR,'tools')
 MLRS_BUILD_DIR = os.path.join(MLRS_PROJECT_DIR,'tools','build3')
-
 
 
 #-- current version and branch
@@ -98,6 +132,14 @@ def create_clean_dir(path):
     if os.path.exists(path):
         os.system('rmdir /s /q '+path)
     os.system('md '+path)
+
+
+def printWarning(txt):
+    print('\033[93m'+txt+'\033[0m') # light Yellow
+
+
+def printError(txt):
+    print('\033[91m'+txt+'\033[0m') # light Red
 
 
 #--------------------------------------------------
@@ -326,10 +368,10 @@ MLRS_SOURCES_TX = [
 
 
 MLRS_SOURCES_USB = [
-	os.path.join('Drivers','STM32_USB_Device_library','Class','CDC','Src','usbd_cdc.c'),
-	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_core.c'),
-	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_ctlreq.c'),
-	os.path.join('Drivers','STM32_USB_Device_library','Core','Src','usbd_ioreq.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Class','CDC','Src','usbd_cdc.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_core.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_ctlreq.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_ioreq.c'),
 	os.path.join('..','modules','stm32-usb-device','usbd_cdc_if.c'),
 	os.path.join('..','modules','stm32-usb-device','usbd_conf.c'),
 	os.path.join('..','modules','stm32-usb-device','usbd_desc.c'),
@@ -374,7 +416,7 @@ class cTarget:
         elif 'F0' in self.mcu_D and 'F0' in self.mcu_HAL:
             self.mcu_family = 'f0'
         else:
-            print('SHSHHSKHSKHSKHKSHKSHKH')
+            printError('SHSHHSKHSKHSKHKSHKSHKH')
             print('mcu_D',self.mcu_D)
             print('mcu_HAL',self.mcu_HAL)
             exit(1)
@@ -389,7 +431,7 @@ class cTarget:
             self.rx_or_tx = 'tx'
             self.is_tx = True
         else:
-            print('gkgkggjkgjkgjkgjgjgjgjg')
+            printError('gkgkggjkgjkgjkgjgjgjgjg')
             exit(1)
             
         self.D_list = ['USE_HAL_DRIVER', 'USE_FULL_LL_DRIVER']
@@ -510,42 +552,53 @@ def mlrs_compile_file(target, file):
 
 
 def mlrs_link_target(target):
-    # see for an original object list
-    objlist_cube_list = []
+    # generate object list from actually created .o files
+    objlist = []
+    for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
+        for file in files:
+            if os.path.splitext(file)[1] == '.o':
+                obj = os.path.join(path,file).replace(os.path.join(MLRS_BUILD_DIR,target.build_dir), '')
+                objlist.append(obj.replace('\\','/'))
+    
+    # check for a STM32CubeIDE object list
     objlist_cube_file = os.path.join(MLRS_DIR,target.target,'Release','objects.list')
-    if os.path.exists(objlist_cube_file):
+    if not os.path.exists(objlist_cube_file):
+        # generate object list
+        printWarning('WARNING: no objects.list found, use generated objects.list')
+        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        for obj in sorted(objlist): # we use sorted, this at least makes it that it is somehow standardized, thus repeatable            
+            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
+        F.close()
+    else :
+        # read STM32CubeIDE object list, and modify paths accordingly
+        print('use available objects.list')
         F = open(objlist_cube_file, mode='r')
         objlist_cube = F.read()
         F.close()
         objlist_cube_list = objlist_cube.split()
-        #print(objlist_cube_file) 
-        #print(objlist_cube) 
-        #print(objlist_cube_list) 
-        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        # correct list
+        objlist_cube_list_corrected = []
         for obj in objlist_cube_list:
-            o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
+            #o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
+            o = obj.replace('./', '/').replace('"', '')
             if obj[3:7] == 'Core':
                 o = o.replace('/Core', '/'+target.target+'/Core')
             if obj[3:10] == 'Drivers':
                 o = o.replace('/Drivers', '/'+target.target+'/Drivers')
-            #print('  ->',o, obj[3:7])
-            F.write(o.replace('\\','/')+'\n')
+            objlist_cube_list_corrected.append(o.replace('\\','/'))
+        # check lists
+        for obj in objlist:
+            if not obj in objlist_cube_list_corrected:
+                printWarning('objlist: '+obj+' not in Cube objlist')
+        for obj in objlist_cube_list_corrected:
+            if not obj in objlist:
+                printWarning('Cube objlist: '+obj+' not in objlist')
+        # write out
+        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        for obj in objlist_cube_list_corrected:
+            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
         F.close()
         
-    ''' 
-    # generate object list
-    objfiles = []
-    for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
-        for file in files:
-            if os.path.splitext(file)[1] == '.o':
-                obj = os.path.join(path,file)
-                objfiles.append(obj)
-    F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
-    for obj in sorted(objfiles): # we use sorted, this at least makes it that it is somehow standardized, thus repeatable            
-        F.write('"'+obj.replace('\\','/')+'"\n')
-    F.close()
-    '''
-
     # generate command line
     cmd = ''
     cmd += 'arm-none-eabi-g++ '
@@ -606,7 +659,7 @@ def mlrs_build_target(target):
     elif target.rx_or_tx == 'tx':
         MLRS_SOURCES_RXTX = MLRS_SOURCES_TX
     else:
-        print('aköhdfkahsfkuhafkhasfkdh')
+        printError('aköhdfkahsfkuhafkhasfkdh')
         exit(1)
     for file in MLRS_SOURCES_RXTX:
         mlrs_compile_file(target, file)
@@ -924,11 +977,15 @@ create_clean_dir(MLRS_BUILD_DIR)
 
 targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
 
+target_cnt = 0
 for target in targetlist:
-    if cmdline_target == '' or cmdline_target in target.target:
+    if ((cmdline_target == '') or
+        (cmdline_target[0] != '!' and cmdline_target in target.target) or
+        (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
         mlrs_build_target(target)
+        target_cnt +=1 
         
-if cmdline_target == '':
+if cmdline_target == '' or target_cnt > 0: 
     mlrs_copy_all_hex()
 
 os.system("pause")
