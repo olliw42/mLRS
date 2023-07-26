@@ -507,7 +507,7 @@ void tTxCli::print_param(uint8_t idx)
     case SETUP_PARAM_TYPE_INT16:
         break;
     case SETUP_PARAM_TYPE_LIST:{
-        uint8_t u8 = *(uint8_t*)(SetupParameter[idx].ptr);
+        uint8_t u8 = *(uint8_t*)(SetupParameterPtr(idx));
         puts(" ["); putc(u8 + '0'); puts("]");
         if (allowed_num == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
