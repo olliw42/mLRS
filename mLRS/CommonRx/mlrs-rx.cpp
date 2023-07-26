@@ -560,7 +560,7 @@ RESTARTCONTROLLER:
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
-  fhss.Init(Config.FhssNum, Config.FhssSeed, Setup.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
+  fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -888,7 +888,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_RECEIVE;
             break;
         case BIND_TASK_RX_STORE_PARAMS:
-            Setup.FrequencyBand = fhss.GetCurrFrequencyBand();
+            Setup.Common[0].FrequencyBand = fhss.GetCurrFrequencyBand();
             doParamsStore = true;
             break;
         }

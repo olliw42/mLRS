@@ -209,6 +209,16 @@ typedef enum {
 
 typedef struct
 {
+    char BindPhrase[6+1];
+    uint8_t FrequencyBand;
+    uint8_t Mode;
+
+    uint8_t spare[7];
+} tCommonSetup; // 16 bytes
+
+
+typedef struct
+{
     uint8_t Power;
     uint8_t Diversity;
     uint8_t ChannelsSource;
@@ -251,6 +261,9 @@ typedef struct
 #define SETUP_MARKER_STR      "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
+#define SETUP_CONFIG_LEN      10 // not more, so it's only one char
+
+
 // user setable parameter values, stored in EEPROM
 typedef struct
 {
@@ -259,12 +272,14 @@ typedef struct
     uint16_t Layout;
 
     // parameters common to both Tx and Rx
-    // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
-    char BindPhrase[6+1];
-    uint8_t FrequencyBand;
-    uint8_t Mode;
+    // deprecated
+    char __BindPhrase[6+1];
+    uint8_t __FrequencyBand;
+    uint8_t __Mode;
 
-    uint8_t spare[7];
+    uint8_t _ConfigId; // strange name to avoid mistake
+
+    uint8_t spare[6];
 
     // parameters specific to Rx, can be changed on the fly
     // for transmitters this is populated upon first connection, see SetupMetaData.rx_available mechanism
@@ -272,7 +287,11 @@ typedef struct
 
     // parameters specific to Tx, can be changed on the fly
     // not used by receivers
-    tTxSetup Tx;
+    tTxSetup Tx[SETUP_CONFIG_LEN];
+
+    // parameters common to both Tx and Rx
+    // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
+    tCommonSetup Common[SETUP_CONFIG_LEN];
 
     char MarkerEnd[8];
 } tSetup;
@@ -309,6 +328,9 @@ typedef struct
 // can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+    uint8_t ConfigId; // we take a copy at startup to avoid confusion
+
+    uint8_t FrequencyBand;
     uint8_t Mode;
 
     uint8_t LoraConfigIndex;

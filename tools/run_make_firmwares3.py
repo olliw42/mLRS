@@ -363,6 +363,7 @@ MLRS_SOURCES_RX = [
 
 MLRS_SOURCES_TX = [
 	os.path.join('CommonTx','in.cpp'),
+	os.path.join('CommonTx','config_id.cpp'),
 	os.path.join('CommonTx','mlrs-tx.cpp'),
     ]
 

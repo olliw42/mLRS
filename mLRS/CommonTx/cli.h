@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include "setup_tx.h"
 extern TxStatsBase txstats;
+extern tConfigId config_id;
 
 
 //-------------------------------------------------------
@@ -131,7 +132,7 @@ bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PAR
     case SETUP_PARAM_TYPE_UINT8:
         break;
     case SETUP_PARAM_TYPE_INT8:{
-        int8_t i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+        int8_t i8 = *(int8_t*)(SetupParameterPtr(param_idx));
         stoBCDstr(i8, s);
         if (SetupParameter[param_idx].unit[0] != '\0') {
             strcat(s, " ");
@@ -144,11 +145,11 @@ bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PAR
     case SETUP_PARAM_TYPE_INT16:
         break;
     case SETUP_PARAM_TYPE_LIST:{
-        uint8_t u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+        uint8_t u8 = *(uint8_t*)(SetupParameterPtr(param_idx));
         return _param_get_listval_fromoptstr(s, param_idx, u8, format);
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        strstrbufcpy(s, (char*)SetupParameter[param_idx].ptr, 6);
+        strstrbufcpy(s, (char*)SetupParameterPtr(param_idx), 6);
         return true;
     }
     s[0] = '\0';
@@ -263,6 +264,7 @@ typedef enum {
     CLI_TASK_PARAM_RELOAD,
     CLI_TASK_BOOT,
     CLI_TASK_FLASH_ESP,
+    CLI_TASK_CHANGE_CONFIG_ID,
 } CLI_TASK_ENUM;
 
 
@@ -273,6 +275,7 @@ class tTxCli
     void Set(uint8_t new_line_end = CLI_LINE_END_CR);
     void Do(void);
     uint8_t Task(void);
+    int32_t GetTaskValue(void) { return task_value; }
 
   private:
     typedef enum {
@@ -291,10 +294,13 @@ class tTxCli
 
     bool cmd_param_set(char* name, char* svalue);
     bool cmd_param_opt(char* name);
+    bool cmd_set_value(const char* cmd, int32_t* value);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
     void putsn(const char* s) { com->puts(s); com->puts(ret); }
+
+    void print_config_id(void);
 
     tSerialBase* com;
 
@@ -306,6 +312,7 @@ class tTxCli
     uint32_t tlast_ms;
 
     uint8_t task_pending;
+    int32_t task_value;
 
     uint8_t state;
 };
@@ -364,6 +371,42 @@ void tTxCli::clear(void)
 {
     pos = 0;
     buf[pos] = '\0';
+}
+
+
+// name = value or p name
+bool tTxCli::cmd_set_value(const char* cmd, int32_t* value)
+{
+char s[64];
+uint8_t n;
+
+    uint8_t cmd_len = strlen(cmd);
+    uint8_t buf_len = strlen(buf);
+    if (buf_len < cmd_len + 2) return false;
+    if (strncmp(buf, cmd, cmd_len) != 0) return false;
+
+    // cleanify: extract '=number'
+    n = 0;
+    for (uint8_t i = cmd_len; i < buf_len; i++) {
+        if (buf[i] != ' ') s[n++] = buf[i];
+    }
+    s[n] = '\0';
+
+    if (n != 2) return false;
+    if (s[0] != '=') return false;
+    if (s[1] < '0' || s[1] > '9') return false;
+
+    *value = s[1] - '0';
+
+    return true;
+}
+
+
+void tTxCli::print_config_id(void)
+{
+    puts("ConfigId:");
+    putc('0'+Config.ConfigId);
+    putsn("");
 }
 
 
@@ -469,7 +512,7 @@ void tTxCli::print_param(uint8_t idx)
         if (allowed_num == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
     case SETUP_PARAM_TYPE_STR6:
-        if (Setup.FrequencyBand != SETUP_FREQUENCY_BAND_2P4_GHZ) break;
+        if (Config.FrequencyBand != SETUP_FREQUENCY_BAND_2P4_GHZ) break;
         switch (except_from_bindphrase(s)) {
         case 0: puts(" /--"); break;
         case 1: puts(" /e1"); break;
@@ -641,6 +684,7 @@ void flashesp_do(tSerialBase* com)
 void tTxCli::Do(void)
 {
 char sname[32], svalue[32];
+int32_t value;
 uint8_t param_idx;
 bool rx_param_changed;
 
@@ -672,10 +716,10 @@ bool rx_param_changed;
         if (strcmp(buf, "help") == 0)  { print_help(); } else
         if (strcmp(buf, "?") == 0)     { print_help(); } else
         if (strcmp(buf, "v") == 0)     { print_device_version(); } else
-        if (strcmp(buf, "pl") == 0)    { print_param_list(0); } else
-        if (strcmp(buf, "pl c") == 0)  { print_param_list(1); } else
-        if (strcmp(buf, "pl tx") == 0) { print_param_list(2); } else
-        if (strcmp(buf, "pl rx") == 0) { print_param_list(3);
+        if (strcmp(buf, "pl") == 0)    { print_config_id(); print_param_list(0); } else
+        if (strcmp(buf, "pl c") == 0)  { print_config_id(); print_param_list(1); } else
+        if (strcmp(buf, "pl tx") == 0) { print_config_id(); print_param_list(2); } else
+        if (strcmp(buf, "pl rx") == 0) { print_config_id(); print_param_list(3);
 
         } else
         if (cmd_param_set(sname, svalue)) { // p name, p name = value
@@ -684,6 +728,7 @@ bool rx_param_changed;
             } else if (!connected() && setup_param_is_rx(param_idx)) {
                 putsn("warn: receiver not connected");
             } else if (svalue[0] == '?') {
+                print_config_id();
                 print_param(param_idx);
                 print_param_opt_list(param_idx);
             } else if (svalue[0] == '\0') {
@@ -691,6 +736,7 @@ bool rx_param_changed;
             } else if (!param_set_val_fromstr(&rx_param_changed, svalue, param_idx)) {
                 putsn("err: invalid value");
             } else {
+                print_config_id();
                 print_param(param_idx);
                 if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
             }
@@ -698,6 +744,7 @@ bool rx_param_changed;
         } else
         if (strcmp(buf, "pstore") == 0) {
             task_pending = CLI_TASK_PARAM_STORE;
+            print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
                 putsn("  Tx parameters stored");
@@ -713,11 +760,23 @@ bool rx_param_changed;
         } else
         if (strcmp(buf, "reload") == 0) {
             task_pending = CLI_TASK_PARAM_RELOAD;
+            print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
                 putsn("  Tx parameters reloaded");
             } else {
                 putsn("  parameters reloaded");
+            }
+
+        } else
+        if (cmd_set_value("setconfigid", &value)) { // setconfigid = value
+            print_config_id();
+            if (value == Config.ConfigId) {
+                putsn("  no change required");
+            } else {
+                task_pending = CLI_TASK_CHANGE_CONFIG_ID;
+                task_value = value;
+                puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
 
         } else

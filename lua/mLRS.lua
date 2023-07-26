@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-06-24.00'
+local version = '2023-07-18.00'
 
 
 -- experimental
@@ -512,6 +512,7 @@ local function doParamLoop()
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
             DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
             DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
+            DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM then 
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]
@@ -796,7 +797,11 @@ local function drawPageEdit(page_str)
     local x, y;
     
     y = 35
+    if page_str == "Tx" then
+        lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", TEXT_COLOR)
+    else
     lcd.drawText(5, y, page_str..":", TEXT_COLOR)  
+    end
     
     y = 60
     local dy = 21
@@ -945,8 +950,11 @@ local function drawPageMain()
     if DEVICE_ITEM_TX == nil then
         lcd.drawText(35, y, "---", TEXT_COLOR)  
     else
-        lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR)  
-        lcd.drawText(35, y+20, DEVICE_ITEM_TX.version_str, TEXT_COLOR)  
+        lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR+SMLSIZE)
+        lcd.drawText(35, y+16, DEVICE_ITEM_TX.version_str, TEXT_COLOR+SMLSIZE)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(35, y+32, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), TEXT_COLOR+SMLSIZE)
+        end
     end
     
     lcd.drawText(240, y, "Rx:", TEXT_COLOR)
@@ -957,11 +965,11 @@ local function drawPageMain()
     elseif DEVICE_ITEM_RX == nil then
         lcd.drawText(270, y, "---", TEXT_COLOR)  
     else
-        lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR)  
-        lcd.drawText(270, y+20, DEVICE_ITEM_RX.version_str, TEXT_COLOR)  
+        lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR+SMLSIZE)
+        lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, TEXT_COLOR+SMLSIZE)
     end
  
-    y = 90
+    y = 95 --90
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
         local x = 140
@@ -998,7 +1006,7 @@ local function drawPageMain()
         end  
     end
  
-    y = 166
+    y = 171 --166
     lcd.drawText(10, y, "Edit Tx", cur_attr(3))  
     if not connected then 
         lcd.drawText(10 + 80, y, "Edit Rx", TEXT_DISABLE_COLOR)
@@ -1011,9 +1019,9 @@ local function drawPageMain()
     lcd.drawText(10 + 365, y, "Tools", cur_attr(8))
      
     -- show overview of some selected parameters
-    y = 205
+    y = 210 --05
     lcd.setColor(CUSTOM_COLOR, GREY)
-    lcd.drawFilledRectangle(0, y-6, LCD_W, 1, CUSTOM_COLOR)
+    lcd.drawFilledRectangle(0, y-5, LCD_W, 1, CUSTOM_COLOR)
     
     --if not DEVICE_PARAM_LIST_complete then
     if DEVICE_DOWNLOAD_is_running then

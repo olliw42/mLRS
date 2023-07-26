@@ -551,6 +551,8 @@ void mbridge_send_Info(void)
 {
 tMBridgeInfo info = {};
 
+    info.tx_config_id = Config.ConfigId;
+
     info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
     info.tx_actual_power_dbm = sx.RfPower_dbm();
     if (USE_ANTENNA1 && USE_ANTENNA2) {
@@ -655,27 +657,27 @@ void mbridge_send_ParamItem(void)
         switch (SetupParameter[param_idx].type) {
         case SETUP_PARAM_TYPE_UINT8:
             item.type = MBRIDGE_PARAM_TYPE_UINT8;
-            item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            item.value.u8 = *(uint8_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_INT8:
             item.type = MBRIDGE_PARAM_TYPE_INT8;
-            item.value.i8 = *(int8_t*)(SetupParameter[param_idx].ptr);
+            item.value.i8 = *(int8_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_UINT16:
             item.type = MBRIDGE_PARAM_TYPE_UINT16;
-            item.value.u16 = *(uint16_t*)(SetupParameter[param_idx].ptr);
+            item.value.u16 = *(uint16_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_INT16:
             item.type = MBRIDGE_PARAM_TYPE_INT16;
-            item.value.i16 = *(int16_t*)(SetupParameter[param_idx].ptr);
+            item.value.i16 = *(int16_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_LIST:
             item.type = MBRIDGE_PARAM_TYPE_LIST;
-            item.value.u8 = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            item.value.u8 = *(uint8_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_STR6:
             item.type = MBRIDGE_PARAM_TYPE_STR6;
-            strbufstrcpy(item.str6_6, (char*)(SetupParameter[param_idx].ptr), 6);
+            strbufstrcpy(item.str6_6, (char*)SetupParameterPtr(param_idx), 6);
             break;
         }
         strbufstrcpy(item.name_16, SetupParameter[param_idx].name, 16);

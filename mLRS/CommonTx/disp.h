@@ -541,7 +541,12 @@ void _diversity_str(char* s, uint8_t div)
 void tTxDisp::draw_header(const char* s)
 {
     gdisp_clear();
+
     gdisp_setcurXY(0, 6);
+    gdisp_putc('0' + Config.ConfigId);
+    gdisp_drawline_V(8, 0, 10, 1);
+
+    gdisp_setcurXY(12, 6);
     gdisp_puts(s);
     gdisp_drawline_H(0, 10, gdisp.width-1, 1);
 }
@@ -805,10 +810,10 @@ void tTxDisp::draw_page_common(void)
     draw_header("Common");
     draw_options(&common_list);
 
-    if (Setup.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         gdisp_setcurXY(0, 4 * 10 + 20); // last line
         gdisp_puts("except ");
-        switch (except_from_bindphrase(Setup.BindPhrase)) {
+        switch (except_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase)) {
         case 1: gdisp_puts("/e1"); break;
         case 2: gdisp_puts("/e6"); break;
         case 3: gdisp_puts("/e11"); break;
@@ -908,7 +913,7 @@ bool tTxDisp::edit_setting(void)
     if (key_has_been_pressed(KEY_RIGHT)) {
 
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_INT8) {
-            int8_t v = *(int8_t*)(SetupParameter[param_idx].ptr);
+            int8_t v = *(int8_t*)(SetupParameterPtr(param_idx));
             if (v < SetupParameter[param_idx].max.INT8_value) {
                 vv.i8 = v + 1;
                 rx_param_changed = setup_set_param(param_idx, vv);
@@ -916,7 +921,7 @@ bool tTxDisp::edit_setting(void)
             }
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
-            uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            uint8_t v = *(uint8_t*)(SetupParameterPtr(param_idx));
             uint8_t vmax = param_get_opt_num(param_idx);
             while (v < vmax) {
                 v++;
@@ -929,12 +934,12 @@ bool tTxDisp::edit_setting(void)
             }
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
-            char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
+            char c = ((char*)SetupParameterPtr(param_idx))[idx_focused_pos];
             const char* vptr = strchr(bindphrase_chars, c);
             if (!vptr) while(1){} // must not happen
             vptr++;
             if (vptr >= bindphrase_chars + BINDPHRASE_CHARS_LEN) vptr = bindphrase_chars;
-            ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
+            ((char*)SetupParameterPtr(param_idx))[idx_focused_pos] = *vptr;
             rx_param_changed = true;
             page_modified = true;
         }
@@ -943,7 +948,7 @@ bool tTxDisp::edit_setting(void)
     if (key_has_been_pressed(KEY_LEFT)) {
 
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_INT8) {
-            int8_t v = *(int8_t*)(SetupParameter[param_idx].ptr);
+            int8_t v = *(int8_t*)(SetupParameterPtr(param_idx));
             if (v > SetupParameter[param_idx].min.INT8_value) {
                 vv.i8 = v - 1;
                 rx_param_changed = setup_set_param(param_idx, vv);
@@ -951,7 +956,7 @@ bool tTxDisp::edit_setting(void)
             }
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_LIST) {
-            uint8_t v = *(uint8_t*)(SetupParameter[param_idx].ptr);
+            uint8_t v = *(uint8_t*)(SetupParameterPtr(param_idx));
             while (1) {
                 if (v == 0) { v = UINT8_MAX; break; }
                 v--;
@@ -964,12 +969,12 @@ bool tTxDisp::edit_setting(void)
             }
         } else
         if (SetupParameter[param_idx].type == SETUP_PARAM_TYPE_STR6) {
-            char c = ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos];
+            char c = ((char*)SetupParameterPtr(param_idx))[idx_focused_pos];
             const char* vptr = strchr(bindphrase_chars, c);
             if (!vptr) while(1){} // must not happen
             vptr--;
             if (vptr < bindphrase_chars) vptr = bindphrase_chars + BINDPHRASE_CHARS_LEN - 1;
-            ((char*)SetupParameter[param_idx].ptr)[idx_focused_pos] = *vptr;
+            ((char*)SetupParameterPtr(param_idx))[idx_focused_pos] = *vptr;
             rx_param_changed = true;
             page_modified = true;
         }

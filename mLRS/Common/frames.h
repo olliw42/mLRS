@@ -318,9 +318,9 @@ tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
-    strbufstrcpy(rx_params.BindPhrase_6, Setup.BindPhrase, 6);
-    rx_params.FrequencyBand = Setup.FrequencyBand;
-    rx_params.Mode = Setup.Mode;
+    strbufstrcpy(rx_params.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
+    rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
+    rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_params.RxParams));
 
@@ -387,9 +387,9 @@ void unpack_txcmdframe_setrxparams(tTxFrame* frame)
 {
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
-    strstrbufcpy(Setup.BindPhrase, rx_params->BindPhrase_6, 6);
-    Setup.FrequencyBand = rx_params->FrequencyBand;
-    Setup.Mode = rx_params->Mode;
+    strstrbufcpy(Setup.Common[0].BindPhrase, rx_params->BindPhrase_6, 6);
+    Setup.Common[0].FrequencyBand = rx_params->FrequencyBand;
+    Setup.Common[0].Mode = rx_params->Mode;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
 }

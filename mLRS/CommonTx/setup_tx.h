@@ -119,6 +119,15 @@ bool setup_param_is_rx(uint8_t param_idx)
 }
 
 
+void* SetupParameterPtr(uint8_t param_idx)
+{
+    uint8_t* ptr = (uint8_t*)(SetupParameter[param_idx].ptr);
+    if (setup_param_is_rx(param_idx)) return ptr;
+    if (setup_param_is_tx(param_idx)) return ptr + sizeof(tTxSetup) * Config.ConfigId;
+    return ptr + sizeof(tCommonSetup) * Config.ConfigId;
+}
+
+
 //-------------------------------------------------------
 // handler
 //-------------------------------------------------------
@@ -149,27 +158,27 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_LIST:
-        if (*(uint8_t*)(SetupParameter[param_idx].ptr) != value.u8) {
+        if (*(uint8_t*)(SetupParameterPtr(param_idx)) != value.u8) {
             param_changed = true;
-            *(uint8_t*)(SetupParameter[param_idx].ptr) = value.u8;
+            *(uint8_t*)(SetupParameterPtr(param_idx)) = value.u8;
         }
         break;
     case SETUP_PARAM_TYPE_INT8:
-        if (*(int8_t*)(SetupParameter[param_idx].ptr) != value.i8) {
+        if (*(int8_t*)(SetupParameterPtr(param_idx)) != value.i8) {
             param_changed = true;
-            *(int8_t*)(SetupParameter[param_idx].ptr) = value.i8;
+            *(int8_t*)(SetupParameterPtr(param_idx)) = value.i8;
         }
         break;
     case SETUP_PARAM_TYPE_UINT16:
-        if (*(uint16_t*)(SetupParameter[param_idx].ptr) != value.u16) {
+        if (*(uint16_t*)(SetupParameterPtr(param_idx)) != value.u16) {
             param_changed = true;
-            *(uint16_t*)(SetupParameter[param_idx].ptr) = value.u16;
+            *(uint16_t*)(SetupParameterPtr(param_idx)) = value.u16;
         }
         break;
     case SETUP_PARAM_TYPE_INT16:
-        if (*(int16_t*)(SetupParameter[param_idx].ptr) != value.i16) {
+        if (*(int16_t*)(SetupParameterPtr(param_idx)) != value.i16) {
             param_changed = true;
-            *(int16_t*)(SetupParameter[param_idx].ptr) = value.i16;
+            *(int16_t*)(SetupParameterPtr(param_idx)) = value.i16;
         }
         break;
     }
@@ -189,9 +198,9 @@ bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
 
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_STR6:
-        if (!strbufeq((char*)(SetupParameter[param_idx].ptr), str6_6, 6)) {
+        if (!strbufeq((char*)(SetupParameterPtr(param_idx)), str6_6, 6)) {
             param_changed = true;
-            strstrbufcpy((char*)(SetupParameter[param_idx].ptr), str6_6, 6);
+            strstrbufcpy((char*)(SetupParameterPtr(param_idx)), str6_6, 6);
         }
         break;
     }

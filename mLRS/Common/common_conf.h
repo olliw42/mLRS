@@ -13,7 +13,7 @@
 
 #define VERSION             329 // leading zero makes it octal!
 #define VERSIONONLYSTR      "v0.3.29"
-#define SETUPLAYOUT         2   // this should be changed then Setup struct and/or serial changes
+#define SETUPLAYOUT         329 // this should be changed then Setup struct and/or serial changes
 
 
 //-------------------------------------------------------

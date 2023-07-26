@@ -157,22 +157,60 @@ void setup_configure_metadata(void)
 // Setup
 //-------------------------------------------------------
 
-void setup_default(void)
+void inc_bindphrase_char(char* s, uint8_t pos)
 {
-    strcpy(Setup.BindPhrase, BIND_PHRASE);
-    Setup.FrequencyBand = SETUP_RF_BAND;
-    Setup.Mode = SETUP_MODE;
+    char* cptr = strchr(bindphrase_chars, s[pos]);
+    uint8_t n = (cptr) ? cptr - bindphrase_chars + 1 : 0; // must not happen that c is not found, but play it safe
+    if (n >= strlen(bindphrase_chars)) n = 0;
+    s[pos] = bindphrase_chars[n];
+}
 
-    Setup.Tx.Power = SETUP_TX_POWER;
-    Setup.Tx.Diversity = SETUP_TX_DIVERSITY;
-    Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
-    Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
-    Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
-    Setup.Tx.InMode = SETUP_TX_IN_MODE;
-    Setup.Tx.SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
-    Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
-    Setup.Tx.Buzzer = SETUP_TX_BUZZER;
-    Setup.Tx.CliLineEnd = SETUP_TX_CLI_LINE_END;
+
+void setup_default_bindphrase(char* s, uint8_t config_id, const char* bindphrase_default)
+{
+    strcpy(s, bindphrase_default);
+    if (config_id == 0) return;
+
+#ifdef FREQUENCY_BAND_2P4_GHZ
+    switch (config_id) {
+        case 1: s[5] = '5'; break;
+        case 2: s[5] = 'a'; break;
+        case 3: s[5] = 'f'; break;
+        case 4: s[5] = 'k'; break;
+        case 5: s[5] = 'p'; break;
+        case 6: s[5] = 'u'; break;
+        case 7: s[5] = 'z'; break;
+        case 8: s[5] = '1'; break;
+        case 9: s[5] = '2'; break;
+    }
+    if (s[5] == bindphrase_default[5]) inc_bindphrase_char(s, 5);
+#else
+    for (uint8_t cnt = 0; cnt < config_id; cnt++) { // inc s[5] config_id many times
+        inc_bindphrase_char(s, 5);
+    }
+#endif
+}
+
+
+void setup_default(uint8_t config_id)
+{
+    char bind_phrase[6+1];
+    setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
+    strcpy(Setup.Common[config_id].BindPhrase, bind_phrase);
+
+    Setup.Common[config_id].FrequencyBand = SETUP_RF_BAND;
+    Setup.Common[config_id].Mode = SETUP_MODE;
+
+    Setup.Tx[config_id].Power = SETUP_TX_POWER;
+    Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
+    Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
+    Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
+    Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
+    Setup.Tx[config_id].InMode = SETUP_TX_IN_MODE;
+    Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
+    Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
+    Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
+    Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
 
     Setup.Rx.Power = SETUP_RX_POWER;
     Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
@@ -191,7 +229,7 @@ void setup_default(void)
 }
 
 
-void setup_sanitize(void)
+void setup_sanitize_config(uint8_t config_id)
 {
 // note: if allowed_mask = 0, this also triggers
 // we may have to distinguish between not editable and not displayed, but currently
@@ -199,7 +237,9 @@ void setup_sanitize(void)
 #define SETUP_TST_NOTALLOWED(amask,pfield) ((SetupMetaData.amask & (1 << Setup.pfield)) == 0)
 
     //-- BindPhrase, FrequencyBand, Mode
-    sanitize_bindphrase(Setup.BindPhrase, BIND_PHRASE);
+    char bind_phrase[6+1];
+    setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
+    sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
 
 #ifdef FREQUENCY_BAND_2P4_GHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
@@ -218,67 +258,70 @@ void setup_sanitize(void)
 #else
     #error Unknown Frequencyband !
 #endif
-    if (Setup.FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) Setup.FrequencyBand = frequency_band_default;
-    if (SETUP_TST_NOTALLOWED(FrequencyBand_allowed_mask,FrequencyBand)) {
-        Setup.FrequencyBand = frequency_band_default;
+    if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
+        Setup.Common[config_id].FrequencyBand = frequency_band_default;
+    }
+    if (SETUP_TST_NOTALLOWED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand)) {
+        Setup.Common[config_id].FrequencyBand = frequency_band_default;
     }
 
-    if (Setup.Mode >= MODE_NUM) Setup.Mode = SETUP_MODE;
-    if (Setup.Mode >= MODE_NUM) Setup.Mode = MODE_19HZ;
-    if (SETUP_TST_NOTALLOWED(Mode_allowed_mask,Mode)) {
-        Setup.Mode = MODE_19HZ;
+    if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = SETUP_MODE;
+    if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = MODE_19HZ;
+    if (SETUP_TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode)) {
+        Setup.Common[config_id].Mode = MODE_19HZ;
     }
 
     //-- Tx:
 
-    if (Setup.Tx.Power >= RFPOWER_LIST_NUM) Setup.Tx.Power = SETUP_TX_POWER;
-    if (Setup.Tx.Power >= RFPOWER_LIST_NUM) Setup.Tx.Power = RFPOWER_LIST_NUM - 1;
+    if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = SETUP_TX_POWER;
+    if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = RFPOWER_LIST_NUM - 1;
 
-    if (Setup.Tx.Diversity >= DIVERSITY_NUM) Setup.Tx.Diversity = SETUP_TX_DIVERSITY;
-    if (Setup.Tx.Diversity >= DIVERSITY_NUM) Setup.Tx.Diversity = DIVERSITY_DEFAULT;
-    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask,Tx.Diversity)) {
-        Setup.Tx.Diversity = DIVERSITY_ANTENNA1;
+    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
+    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].Diversity)) {
+        Setup.Tx[config_id].Diversity = DIVERSITY_ANTENNA1;
     }
 
-    if (Setup.Tx.ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx.ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
-    if (Setup.Tx.ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
-    if (SETUP_TST_NOTALLOWED(Tx_ChannelsSource_allowed_mask,Tx.ChannelsSource)) {
-        Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+    if (Setup.Tx[config_id].ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
+    if (Setup.Tx[config_id].ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
+    if (SETUP_TST_NOTALLOWED(Tx_ChannelsSource_allowed_mask, Tx[config_id].ChannelsSource)) {
+        Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
     }
 
-    if (Setup.Tx.InMode >= IN_CONFIG_NUM) Setup.Tx.InMode = SETUP_TX_IN_MODE;
-    if (Setup.Tx.InMode >= IN_CONFIG_NUM) Setup.Tx.InMode = IN_CONFIG_SBUS;
-    if (SETUP_TST_NOTALLOWED(Tx_InMode_allowed_mask,Tx.InMode)) {
-        Setup.Tx.InMode = IN_CONFIG_SBUS;
+    if (Setup.Tx[config_id].InMode >= IN_CONFIG_NUM) Setup.Tx[config_id].InMode = SETUP_TX_IN_MODE;
+    if (Setup.Tx[config_id].InMode >= IN_CONFIG_NUM) Setup.Tx[config_id].InMode = IN_CONFIG_SBUS;
+    if (SETUP_TST_NOTALLOWED(Tx_InMode_allowed_mask, Tx[config_id].InMode)) {
+        Setup.Tx[config_id].InMode = IN_CONFIG_SBUS;
     }
 
-    if (Setup.Tx.SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx.SerialDestination = SETUP_TX_SERIAL_DESTINATION;
-    if (Setup.Tx.SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL;
-    if (SETUP_TST_NOTALLOWED(Tx_SerialDestination_allowed_mask,Tx.SerialDestination)) {
-        Setup.Tx.SerialDestination = SERIAL_DESTINATION_SERIAL;
+    if (Setup.Tx[config_id].SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
+    if (Setup.Tx[config_id].SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+    if (SETUP_TST_NOTALLOWED(Tx_SerialDestination_allowed_mask, Tx[config_id].SerialDestination)) {
+        Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
     }
 
-    if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = SETUP_TX_CHANNEL_ORDER;
-    if (Setup.Tx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx.ChannelOrder = CHANNEL_ORDER_AETR;
+    if (Setup.Tx[config_id].ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
+    if (Setup.Tx[config_id].ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx[config_id].ChannelOrder = CHANNEL_ORDER_AETR;
 
-    if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
-    if (Setup.Tx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx.SerialBaudrate = SERIAL_BAUDRATE_115200;
+    if (Setup.Tx[config_id].SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
+    if (Setup.Tx[config_id].SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx[config_id].SerialBaudrate = SERIAL_BAUDRATE_115200;
 
-    if (Setup.Tx.SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
-    if (Setup.Tx.SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx.SendRadioStatus = TX_SEND_RADIO_STATUS_OFF;
+    if (Setup.Tx[config_id].SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
+    if (Setup.Tx[config_id].SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx[config_id].SendRadioStatus = TX_SEND_RADIO_STATUS_OFF;
 
-    if (Setup.Tx.Buzzer >= BUZZER_NUM) Setup.Tx.Buzzer = SETUP_TX_BUZZER;
-    if (Setup.Tx.Buzzer >= BUZZER_NUM) Setup.Tx.Buzzer = BUZZER_OFF;
-    if (SETUP_TST_NOTALLOWED(Tx_Buzzer_allowed_mask,Tx.Buzzer)) {
-        Setup.Tx.Buzzer = BUZZER_OFF;
+    if (Setup.Tx[config_id].Buzzer >= BUZZER_NUM) Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
+    if (Setup.Tx[config_id].Buzzer >= BUZZER_NUM) Setup.Tx[config_id].Buzzer = BUZZER_OFF;
+    if (SETUP_TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer)) {
+        Setup.Tx[config_id].Buzzer = BUZZER_OFF;
     }
 
-    if (Setup.Tx.CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx.CliLineEnd = SETUP_TX_CLI_LINE_END;
-    if (Setup.Tx.CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx.CliLineEnd = CLI_LINE_END_CR;
+    if (Setup.Tx[config_id].CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
+    if (Setup.Tx[config_id].CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx[config_id].CliLineEnd = CLI_LINE_END_CR;
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
-    if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
-        Setup.Tx.ChannelsSource = CHANNEL_SOURCE_NONE;
+    if ((Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE) &&
+        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF)) {
+        Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
     }
 
     //-- Rx:
@@ -339,11 +382,12 @@ void setup_sanitize(void)
     //-- Spares and deprecated options:
     // should be 0xFF'ed
 
-    Setup.Tx.__SerialLinkMode = 0xFF;
+    Setup.Tx[config_id].__SerialLinkMode = 0xFF;
     Setup.Rx.__RadioStatusMethod = 0xFF;
 
     for (uint8_t n = 0; n < sizeof(Setup.spare)/sizeof(Setup.spare[0]); n++) Setup.spare[n] = 0xFF;
-    for (uint8_t n = 0; n < sizeof(Setup.Tx.spare)/sizeof(Setup.Tx.spare[0]); n++) Setup.Tx.spare[n] = 0xFF;
+    for (uint8_t n = 0; n < sizeof(Setup.Common[config_id].spare)/sizeof(Setup.Common[config_id].spare[0]); n++) Setup.Common[config_id].spare[n] = 0xFF;
+    for (uint8_t n = 0; n < sizeof(Setup.Tx[config_id].spare)/sizeof(Setup.Tx[config_id].spare[0]); n++) Setup.Tx[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Rx.spare)/sizeof(Setup.Rx.spare[0]); n++) Setup.Rx.spare[n] = 0xFF;
 }
 
@@ -352,6 +396,7 @@ void setup_sanitize(void)
 // Configure
 //-------------------------------------------------------
 
+// also called by bind
 void configure_mode(uint8_t mode)
 {
     Config.Mode = mode;
@@ -363,6 +408,7 @@ void configure_mode(uint8_t mode)
         Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
         Config.send_frame_tmo_ms = MODE_50HZ_SEND_FRAME_TMO_MS; // 10;
         break;
+
     case MODE_31HZ:
         Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
         Config.frame_rate_hz = 31;
@@ -373,6 +419,7 @@ void configure_mode(uint8_t mode)
 #endif
         Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
         break;
+
   case MODE_19HZ:
         Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
         Config.frame_rate_hz = 19;
@@ -385,6 +432,7 @@ void configure_mode(uint8_t mode)
 #endif
         Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
         break;
+
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
 
@@ -392,11 +440,11 @@ void configure_mode(uint8_t mode)
 }
 
 
-void setup_configure(void)
+void setup_configure_config(uint8_t config_id)
 {
     //-- SyncWord
 
-    uint32_t bind_dblword = u32_from_bindphrase(Setup.BindPhrase);
+    uint32_t bind_dblword = u32_from_bindphrase(Setup.Common[config_id].BindPhrase);
 
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
@@ -404,7 +452,7 @@ void setup_configure(void)
 
     // note: the actually used power will be determined later when the SX are set up
 #ifdef DEVICE_IS_TRANSMITTER
-    Config.Power_dbm = rfpower_list[Setup.Tx.Power].dbm;
+    Config.Power_dbm = rfpower_list[Setup.Tx[config_id].Power].dbm;
 #endif
 #ifdef DEVICE_IS_RECEIVER
     Config.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
@@ -414,7 +462,7 @@ void setup_configure(void)
 
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_IS_TRANSMITTER
-    switch (Setup.Tx.Diversity) {
+    switch (Setup.Tx[config_id].Diversity) {
 #endif
 #ifdef DEVICE_IS_RECEIVER
     switch (Setup.Rx.Diversity) {
@@ -439,9 +487,13 @@ void setup_configure(void)
     Config.UseAntenna2 = false;
 #endif
 
+    //-- FrequencyBand
+
+    Config.FrequencyBand = Setup.Common[config_id].FrequencyBand;
+
     //-- Mode, Mode dependent settings, LoRa configuration
 
-    configure_mode(Setup.Mode);
+    configure_mode(Setup.Common[config_id].Mode);
 
     //-- Fhss
 
@@ -451,12 +503,12 @@ void setup_configure(void)
     Config.FhssSeed = Config.FrameSyncWord;
 
     Config.FhssExcept = 0;
-    if (Setup.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-        Config.FhssExcept = except_from_bindphrase(Setup.BindPhrase);
+    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        Config.FhssExcept = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
     Config.FhssOrtho = 0;
 
-    switch (Setup.FrequencyBand) {
+    switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         switch (Config.Mode) {
         case MODE_50HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
@@ -499,7 +551,7 @@ void setup_configure(void)
 
     //-- Serial
 #ifdef DEVICE_IS_TRANSMITTER
-    switch (Setup.Tx.SerialBaudrate) {
+    switch (Setup.Tx[config_id].SerialBaudrate) {
 #endif
 #ifdef DEVICE_IS_RECEIVER
     switch (Setup.Rx.SerialBaudrate) {
@@ -523,10 +575,12 @@ void setup_configure(void)
     Config.UseMbridge = false;
     Config.UseCrsf = false;
 #if defined DEVICE_IS_TRANSMITTER && defined DEVICE_HAS_JRPIN5
-    if ((Setup.Tx.SerialDestination == SERIAL_DESTINATION_MBRDIGE) || (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE)) {
+    if ((Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE) ||
+        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE)) {
         Config.UseMbridge = true;
     }
-    if ((Setup.Tx.SerialDestination != SERIAL_DESTINATION_MBRDIGE) && (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF)) {
+    if ((Setup.Tx[config_id].SerialDestination != SERIAL_DESTINATION_MBRDIGE) &&
+        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF)) {
         Config.UseCrsf = true;
     }
     if (Config.UseMbridge && Config.UseCrsf) {
@@ -561,13 +615,17 @@ EE_STATUS_ENUM setup_retrieve_from_EEPROM(void)
 void setup_reload(void)
 {
     setup_retrieve_from_EEPROM();
-    setup_sanitize();
+    setup_sanitize_config(Config.ConfigId);
 }
 
 
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
+
+#define SETUPLAYOUT_L0_0_02    2 // layout version up to for v0.3.28
+#define SETUPLAYOUT_L0_3_29  329 // layout version up to for v0.3.28
+
 
 void setup_init(void)
 {
@@ -586,7 +644,15 @@ bool doEEPROMwrite;
 
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
-        setup_default();
+        if (Setup.Layout < SETUPLAYOUT_L0_3_29) {
+            strstrbufcpy(Setup.Common[0].BindPhrase, Setup.__BindPhrase, 6);
+            Setup.Common[0].FrequencyBand = Setup.__FrequencyBand;
+            Setup.Common[0].Mode = Setup.__Mode;
+        } else {
+            setup_default(0);
+        }
+        for (uint8_t id = 1; id < SETUP_CONFIG_LEN; id++) setup_default(id); // default all other tables
+        Setup._ConfigId = 0;
         Setup.Layout = SETUPLAYOUT;
         doEEPROMwrite = true;
     }
@@ -603,15 +669,35 @@ bool doEEPROMwrite;
        setup_store_to_EEPROM();
     }
 
+#ifdef DEVICE_IS_TRANSMITTER
+    if (Setup._ConfigId >= SETUP_CONFIG_LEN) Setup._ConfigId = 0;
+
+    if (Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE ||
+        Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
+        // config id is supported
+        // ensure that they all have the same
+        for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) {
+            Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
+        }
+    } else {
+        // config id is not be supported, so force id = 0 page
+        Setup.Tx[0].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
+        Setup._ConfigId = 0;
+    }
+#else
+    Setup._ConfigId = 0;
+#endif
+    Config.ConfigId = Setup._ConfigId;
+
     setup_configure_metadata();
 
 #ifdef SETUP_FORCE_COMMON_CONF
-    setup_default();
+    setup_default(Config.ConfigId);
 #endif
 
-    setup_sanitize();
+    setup_sanitize_config(Config.ConfigId);
 
-    setup_configure();
+    setup_configure_config(Config.ConfigId);
 }
 
 

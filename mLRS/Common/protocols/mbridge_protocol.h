@@ -232,7 +232,9 @@ typedef struct
     uint8_t rx_available : 1;
     uint8_t tx_actual_diversity : 2;
     uint8_t rx_actual_diversity : 2;
-    uint8_t spare[18];
+    uint8_t spare2 : 3;
+    uint8_t tx_config_id;
+    uint8_t spare[17];
 }) tMBridgeInfo; // 24 bytes
 
 
