@@ -28,7 +28,7 @@
 // this reads the complete frame, so adds a bit latency, but for the moment we do it to keep it simple
 // should be ok for testing and dev-ing, and also good enough for application
 
-// header structure (indent indicates field depends on flags)
+// header structure (indentation indicates field depends on flags)
 //
 // STX1                       STX
 // STX2                       len
@@ -76,7 +76,7 @@ typedef enum {
 typedef enum {
     MAVLINKX_FLAGS_EXT_HAS_SIGNATURE  = 0x01,
     MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x02, // not yet used, it's more to indicate the possibility
-    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always used currently, unknown messages are not supported anyways
+    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always included currently, we for now don't make use of it anyways
 } fmavx_flags_ext_e;
 
 
@@ -169,6 +169,9 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     } else {
         buf[2] |= MAVLINKX_FLAGS_HAS_MSGID24;
     }
+
+    // we should do it based on whether we know the message, but we don't currently have that info easily available in msg
+    flags_ext &=~ MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA;
 
     // flags extension
     pos = 3;
@@ -526,340 +529,26 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_check_to_frame_buf(fmav_r
 //-------------------------------------------------------
 // Compression
 //-------------------------------------------------------
-/*
-Compression scheme
-
-The concept developed here is based on an observation of how the bytes in the payload of mavlink messages
-are distributed. If the actual distribution is very different, the scheme becomes less effective, obviously.
-The observations are:
-- ca. 20% - 25% of the bytes in the payload are 0 (after trailing zero removal in v2)
-- ca. 3% - 4% of the bytes in the payload are 255
-- all other bytes are present "nearly" similarly with low probability, ranging from ca. 1% - 0.15%
-- the bytes 1 - 16 are present with about 10% probability
-This distribution means that beyond dealing with the many 0 and 255 there is actually not so much to compress,
-since the entropy is already relatively high.
-
-As a rough estimate for what can be achieved let's assume that all 0 and 255 can be compressed away, which
-gives a payload compression of ca 25%. Taking into account the header, we can't get more than ca 15% overall
-compression.
-
-Plenty of schemes were tried, this was (by far) the "best" one:
-
-00              -> 0
-010             -> 255
-0110 + 8 bits   -> RLE for 0: the code is followed by 8 bits to encode 1-255 0 bytes
-0111 + 8 bits   -> RLE for 255: the code is followed by 8 bits to encode 1-255 255 bytes
-1    + 8 bits   -> codes for remaining bytes not covered by the other branches
-
-For encoding the tree we follow the method of gzip, see:
-https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art007
-*/
-
-
-#define FMAX_DBG(x) x
 
 //-- compression
-// we can use payload_out buffer as working buffer
-
-// len_out & pos_out index the next bit position to write to
-void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, uint8_t code_len)
-{
-    // 1 -> 0x0001, 2 -> 0x0002, ..., 8 -> 0x0080
-    uint16_t cur_code_bit = (uint16_t)1 << (code_len - 1);
-
-    for (uint8_t i = 0; i < code_len; i++) {
-        if (!(code & cur_code_bit)) { // clear the bit
-            payload_out[*len_out] &=~ fmavx_status.out_bit;
-        }
-        cur_code_bit >>= 1; // next bit from code
-        fmavx_status.out_bit >>= 1; // next bit pos in out bytes
-        if (fmavx_status.out_bit == 0) { // out byte completely done, go to next out byte
-            (*len_out)++;
-            fmavx_status.out_bit = 0x80;
-            payload_out[*len_out] = 0xFF;
-        }
-    }
-}
-
-
-void _fmavX_encode_rle(uint8_t* payload_out, uint8_t* len_out, uint8_t c, uint8_t RLE_cnt)
-{
-uint16_t code;
-
-    if (c == 0) {
-        if (RLE_cnt <= 6) {
-            for (uint8_t i = 0; i < RLE_cnt; i++) {
-                code = (uint16_t)0b00; // 2 bit code = 2 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 2);
-            }
-        } else {
-            code = (uint16_t)0b0110 << 8; // 4 bit code + 8 bits = 12 bits length
-            code += RLE_cnt;
-            _fmavX_encode_add(payload_out, len_out, code, 12);
-        }
-    } else
-    if (c == 255) {
-        if (RLE_cnt <= 4) {
-            for (uint8_t i = 0; i < RLE_cnt; i++) {
-                code = (uint16_t)0b010; // 3 bit code = 3 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 3);
-            }
-        } else {
-            code = (uint16_t)0b0111 << 8; // 4 bit code + 8 bits = 12 bits length
-            code += RLE_cnt;
-            _fmavX_encode_add(payload_out, len_out, code, 12);
-        }
-    }
-}
-
+// we can use payload_out buffer as working buffer, it comes from msg so is of length FASTMAVLINK_PAYLOAD_LEN_MAX
+// return 0 for no compression
+// else generate result in payload_out
 
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
-    if (len > 20) return 0;
-/*
-    len = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-
-    payload[len++] = 0x6E;
-    payload[len++] = 0xCD;
-    payload[len++] = 0x91;
-    payload[len++] = 0x0F;
-*/
-    len = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0;
-    payload[len++] = 0xFF;
-    payload[len++] = 0xFF;
-    payload[len++] = 0;
-    payload[len++] = 0;
-
-
-FMAX_DBG(dbg.puts("\n\ncompress");
-dbg.puts("\n payload ");
-for (uint16_t i = 0; i < len; i++) {
-    dbg.puts("x");dbg.puts(u8toHEX_s(payload[i]));
-})
-
-    uint16_t code; // can be 2 bits - 12 bits
-
-    *len_out = 0;
-    fmavx_status.out_bit = 0x80;
-    payload_out[0] = 0xFF; // we use 1's as stop marker in last byte, so it's easier to fill with 0xFF
-
-    uint8_t is_in_RLE = 0;
-    uint8_t RLE_char;
-    uint8_t RLE_cnt;
-
-    for (uint8_t n = 0; n < len; n++) {
-        uint8_t c = payload[n];
-
-        if (is_in_RLE) {
-            if (c == RLE_char) {
-                RLE_cnt++;
-            } else {
-                is_in_RLE = 0;
-                _fmavX_encode_rle(payload_out, len_out, RLE_char, RLE_cnt);
-            }
-        }
-
-        // handle c
-        if (!is_in_RLE) {
-            if (c == 0 || c == 255) {
-                is_in_RLE = 1;
-                RLE_char = c;
-                RLE_cnt = 1;
-            } else {
-                code = (uint16_t)0b1 << 8; // 1 bit code + 8 bits = 9 bits length
-                code += c;
-                _fmavX_encode_add(payload_out, len_out, code, 9);
-            }
-        }
-
-        // compression doesn't reduce payload len
-        // check it inside loop to prevent to write into memory outside of payload buffer
-        if (*len_out >= len) return 0;
-    }
-
-    if (is_in_RLE) { // handle pending RLE
-        _fmavX_encode_rle(payload_out, len_out, RLE_char, RLE_cnt);
-    }
-
-    if (fmavx_status.out_bit != 0x80) { // handle last out byte if not completed
-        (*len_out)++; // count it
-    }
-
-    // compression didn't reduce payload len
-    if (*len_out >= len) return 0;
-
-FMAX_DBG(dbg.puts("\n pay out ");
-for (uint16_t i = 0; i < *len_out; i++) {
-    dbg.puts("x");dbg.puts(u8toHEX_s(payload_out[i]));
-})
-
-
-    return 1;
+    return 0;
 }
 
 
 //-- decompression
-
-typedef enum {
-    MAVLINKX_CODE_0 = 0,
-    MAVLINKX_CODE_255,
-    MAVLINKX_CODE_0_RLE,
-    MAVLINKX_CODE_255_RLE,
-    MAVLINKX_CODE_ELSE
-} fmavx_code_e;
-
-
-typedef struct {
-    uint8_t len; // bit length of the code
-    uint8_t id; // number to tell what it represents
-} fmavx_code_entry_t;
-
-
-#define MAVLINKX_CODE_LIST_LEN  16 // 4 bits maximal code length
-
-const fmavx_code_entry_t fmavx_code_list[MAVLINKX_CODE_LIST_LEN] = {
-    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|00   -> 0
-    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|01
-    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|10
-    { .len = 2, .id = MAVLINKX_CODE_0       }, // 00|11
-    { .len = 3, .id = MAVLINKX_CODE_255     }, // 010|0   -> 255
-    { .len = 3, .id = MAVLINKX_CODE_255     }, // 010|1
-    { .len = 4, .id = MAVLINKX_CODE_0_RLE   }, // 0110    -> 0 RLE
-    { .len = 4, .id = MAVLINKX_CODE_255_RLE }, // 0111    -> 255 RLE
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|000   -> rest
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|001
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|010
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|011
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|100
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|101
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|110
-    { .len = 1, .id = MAVLINKX_CODE_ELSE    }, // 1|111
-};
-
-
-uint8_t fmavx_in_buf[280];
-
-
-uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
-{
-    *code = 0;
-
-    for (uint8_t i = 0; i < bits_len; i++) {
-
-        if (fmavx_status.in_pos >= len) return 0;
-
-        *code <<= 1;
-        if (fmavx_in_buf[fmavx_status.in_pos] & fmavx_status.in_bit) { // set the bit
-            *code |= 0x01;
-        }
-
-        fmavx_status.in_bit >>= 1; // next bit in in byte
-        if (fmavx_status.in_bit == 0) { // in byte completely done, go to next in byte
-            fmavx_status.in_pos++;
-            fmavx_status.in_bit = 0x80;
-        }
-    }
-
-    return 1;
-}
-
-
-void _fmavX_decode_back_bits(uint8_t bits_len)
-{
-    for (uint8_t i = 0; i < bits_len; i++) {
-        fmavx_status.in_bit <<= 1;
-        if (fmavx_status.in_bit == 0) {
-            fmavx_status.in_pos--;
-            fmavx_status.in_bit = 0x01;
-        }
-    }
-}
-
-
+// payload_out buffer is the same as payload_in buffer, so payload buffer is overwritten
+// note that it is not guaranteed to be longer than len
 
 void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t len)
 {
-//    *len_out = len;
-//    return;
-
-FMAX_DBG(dbg.puts("\ndecompress");
-dbg.puts("\n pay in  ");
-for (uint16_t i = 0; i < len; i++) {
-    dbg.puts("x");dbg.puts(u8toHEX_s(payload_out[i]));
-})
-
-    memcpy(fmavx_in_buf, payload_out, len);
-
-    *len_out = 0;
-
-    fmavx_status.in_pos = 0;
-    fmavx_status.in_bit = 0x80;
-
-    //while (fmavx_status.in_pos < len) {
-    while (1) {
-        uint8_t c;
-
-        // get next 4 bits
-        if (!_fmavX_decode_next_bits(&c, len, 4)) break;
-
-FMAX_DBG(dbg.puts("\n   c x");dbg.puts(u8toHEX_s(c));)
-
-        fmavx_code_entry_t code = fmavx_code_list[c];
-
-        // put back unused bits
-        _fmavX_decode_back_bits(4 - code.len);
-
-        switch (code.id) {
-            case MAVLINKX_CODE_0:
-FMAX_DBG(dbg.puts(" -> code_0");)
-                c = 0;
-                payload_out[(*len_out)++] = c;
-                break;
-            case MAVLINKX_CODE_255:
-FMAX_DBG(dbg.puts(" -> code_255");)
-                c = 0xFF;
-                payload_out[(*len_out)++] = c;
-                break;
-
-            case MAVLINKX_CODE_0_RLE:
-FMAX_DBG(dbg.puts(" -> code_0_rle");)
-                if (!_fmavX_decode_next_bits(&c, len, 8)) break;
-FMAX_DBG(dbg.puts(" -> c x");dbg.puts(u8toHEX_s(c));)
-                for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0;
-                break;
-            case MAVLINKX_CODE_255_RLE:
-FMAX_DBG(dbg.puts(" -> code_255_rle");)
-                if (!_fmavX_decode_next_bits(&c, len, 8)) break;
-FMAX_DBG(dbg.puts(" -> c x");dbg.puts(u8toHEX_s(c));)
-                for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0xFF;
-                break;
-
-            case MAVLINKX_CODE_ELSE:
-FMAX_DBG(dbg.puts(" -> code_else");)
-                if (!_fmavX_decode_next_bits(&c, len, 8)) break;
-FMAX_DBG(dbg.puts(" -> c x");dbg.puts(u8toHEX_s(c));)
-                payload_out[(*len_out)++] = c;
-                break;
-        }
-    }
-
-
-FMAX_DBG(dbg.puts("\n payload ");
-for (uint16_t i = 0; i < *len_out; i++) {
-    dbg.puts("x");dbg.puts(u8toHEX_s(payload_out[i]));
-})
-
+    *len_out = len;
+    return;
 }
 
 
