@@ -252,6 +252,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_SWITCH_LEFT       IO_PC3 // C = POS_4
 #define FIVEWAY_SWITCH_RIGHT      IO_PC14 // B = POS_1
 
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 void fiveway_init(void)
 {
     gpio_init(FIVEWAY_SWITCH_CENTER, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
@@ -269,6 +270,7 @@ uint8_t fiveway_read(void)
            ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_RIGHT) << KEY_RIGHT) +
            ((uint8_t)gpio_read_activelow(FIVEWAY_SWITCH_CENTER) << KEY_CENTER);
 }
+#endif
 
 
 //-- Display I2C

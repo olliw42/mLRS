@@ -273,6 +273,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_IO            IO_PC2 // ADC12_IN8
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
 
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
@@ -301,6 +302,7 @@ uint8_t fiveway_read(void)
     if (adc > (2505-200) && adc < (2505+200)) return (1 << KEY_UP); // 2505
     return (center_pressed << KEY_CENTER);
 }
+#endif
 
 
 //-- Display I2C
@@ -329,6 +331,7 @@ uint8_t fiveway_read(void)
 #define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
 #define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 void esp_init(void)
 {
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp is in reset
@@ -347,6 +350,7 @@ uint8_t esp_dtr_rts(void)
 {
     return gpio_read_activehigh(ESP_DTR) + (gpio_read_activehigh(ESP_RTS) << 1);
 }
+#endif
 
 
 //-- POWER
