@@ -29,6 +29,8 @@
 
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
+#define MICROS_TIMx               TIM3
+
 
 //-- UARTS
 // UARTB = serial port

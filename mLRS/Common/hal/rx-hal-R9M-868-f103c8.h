@@ -25,6 +25,13 @@
 
 #define EE_START_PAGE             60 // 64 kB flash, 1 kB page
 
+#define MICROS_TIMx               TIM3
+
+#define CLOCK_TIMx                TIM2
+#define CLOCK_IRQn                TIM2_IRQn
+#define CLOCK_IRQHandler          TIM2_IRQHandler
+//#define CLOCK_IRQ_PRIORITY        10
+
 
 //-- UARTS
 // UARTB = serial port

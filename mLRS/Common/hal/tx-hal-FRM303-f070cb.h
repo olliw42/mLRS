@@ -47,6 +47,8 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
+#define MICROS_TIMx               TIM3
+
 
 //-- UARTS
 // UARTB = serial port
