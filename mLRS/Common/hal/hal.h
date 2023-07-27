@@ -91,14 +91,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- SeeedStudio WioE5 boards
 
 #ifdef RX_WIO_E5_GROVE_WLE5JC
-#include "rx-hal-wioe5-grove-wle5jc.h"
+#include "rx-hal-WioE5-Grove-wle5jc.h"
 #endif
 #ifdef RX_WIO_E5_MINI_WLE5JC
-#include "rx-hal-wioe5-mini-wle5jc.h"
+#include "rx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
-#include "tx-hal-wioe5-mini-wle5jc.h"
+#include "tx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 
