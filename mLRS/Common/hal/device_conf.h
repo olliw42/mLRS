@@ -135,6 +135,13 @@ The default selection of frequency bands can be overruled by feature defines.
 
 //-- FlySky FRM303 2.4 GHz Device
 
+#ifdef RX_FRM303_F070CB
+  #define DEVICE_NAME "FlySky FRM303"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 #ifdef TX_FRM303_F070CB
   #define DEVICE_NAME "FlySky FRM303"
   #define DEVICE_IS_TRANSMITTER

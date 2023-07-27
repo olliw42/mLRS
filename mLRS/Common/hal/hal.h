@@ -115,6 +115,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- FlySky FRM303 2.4 GHz Device
 
+#ifdef RX_FRM303_F070CB
+#include "rx-hal-FRM303-f070cb.h"
+#endif
+
 #ifdef TX_FRM303_F070CB
 #include "tx-hal-FRM303-f070cb.h"
 #endif
