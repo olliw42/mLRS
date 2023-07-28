@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-07-18.00'
+local version = '2023-07-28.00'
 
 
 -- experimental
@@ -1092,6 +1092,7 @@ local function doPageMain(event)
                 return
             elseif cursor_idx == Save_idx and DEVICE_PARAM_LIST_complete then -- Save pressed
                 sendParamStore()
+                clearParams()
             elseif cursor_idx == Reload_idx then -- Reload pressed
                 clearParams()
             elseif cursor_idx == Bind_idx then -- Bind pressed
