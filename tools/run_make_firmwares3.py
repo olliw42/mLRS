@@ -622,7 +622,9 @@ def mlrs_link_target(target):
     os.system(cmd)
 
 
-def mlrs_build_target(target):
+def mlrs_build_target(target, cmdline_D_list):
+    if cmdline_D_list != []:
+        target.extra_D_list = cmdline_D_list
     print('------------------------------------------------------------')
     print('target', target.target, target.extra_D_list)
 
@@ -987,13 +989,17 @@ def mlrs_copy_all_hex():
 #-- here we go
 
 cmdline_target = ''
+cmdline_D_list = []
 
 cmd_pos = -1
 for cmd in sys.argv:
     cmd_pos += 1
-    if cmd == '--target' or cmd == '-t':
+    if cmd == '--target' or cmd == '-t' or cmd == '-T':
         if sys.argv[cmd_pos+1] != '':
             cmdline_target = sys.argv[cmd_pos+1]
+    if cmd == '--define' or cmd == '-d' or cmd == '-D':
+        if sys.argv[cmd_pos+1] != '':
+            cmdline_D_list.append(sys.argv[cmd_pos+1])
         
 #cmdline_target = 'tx-diy-e22dual-module02-g491re'
 #cmdline_target = 'tx-diy-sxdualXXX'
@@ -1010,7 +1016,7 @@ for target in targetlist:
     if ((cmdline_target == '') or
         (cmdline_target[0] != '!' and cmdline_target in target.target) or
         (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
-        mlrs_build_target(target)
+        mlrs_build_target(target, cmdline_D_list)
         target_cnt +=1 
         
 if cmdline_target == '' or target_cnt > 0: 
