@@ -1,35 +1,22 @@
-/**
-  ******************************************************************************
-  * @file           : usbd_cdc_if.c
-  * @version        : v2.0_Cube
-  * @brief          : Usb device for Virtual Com Port.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
 //*******************************************************
-// Adapted by OlliW, OlliW42, www.olliw.eu
+// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// GPL3
+// https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-
+// STM32_USB_Device_Library based USB VCP standard library
+//*******************************************************
 #ifdef STDSTM32_USE_USB
 
 #include "usbd_cdc.h"
 
 
-USBD_HandleTypeDef hUSBD_CDC;
+USBD_HandleTypeDef husbd_CDC;
 
 extern USBD_DescriptorsTypeDef USBD_Desc; // declared in usbd_desc.c
 extern PCD_HandleTypeDef hpcd_USB_FS; // declared in usbd_conf.c
 
 USBD_CDC_ItfTypeDef USBD_CDC_fops; // forward declaration
+USBD_CDC_LineCodingTypeDef USBD_CDC_LineCoding;
 
 
 // USB_HS_MAX_PACKET_SIZE is 512 !
@@ -59,7 +46,7 @@ volatile uint16_t usb_txwritepos; // pos at which the last byte was stored
 volatile uint16_t usb_txreadpos; // pos at which the next byte is to be fetched
 
 uint8_t usb_trbuf[USB_TXBUFSIZE];
-void _cdc_transmit(void);
+void _cdc_transmit(void); // forward declaration
 
 uint8_t usb_rcbuf[USB_RXBUFSIZE]; // ???? hä, why is this needed ???
 
@@ -76,18 +63,24 @@ void usb_init(void)
     }
 
     // copied from MX_USB_DEVICE_Init()
-    if (USBD_Init(&hUSBD_CDC, &USBD_Desc, 0) != USBD_OK) {
+    if (USBD_Init(&husbd_CDC, &USBD_Desc, 0) != USBD_OK) {
         //Error_Handler();
     }
-    if (USBD_RegisterClass(&hUSBD_CDC, &USBD_CDC) != USBD_OK) {
+    if (USBD_RegisterClass(&husbd_CDC, &USBD_CDC) != USBD_OK) {
         //Error_Handler();
     }
-    if (USBD_CDC_RegisterInterface(&hUSBD_CDC, &USBD_CDC_fops) != USBD_OK) {
+    if (USBD_CDC_RegisterInterface(&husbd_CDC, &USBD_CDC_fops) != USBD_OK) {
         //Error_Handler();
     }
-    if (USBD_Start(&hUSBD_CDC) != USBD_OK) {
+    if (USBD_Start(&husbd_CDC) != USBD_OK) {
         //Error_Handler();
     }
+
+    // 115200, 8N1
+    USBD_CDC_LineCoding.bitrate = 115200;
+    USBD_CDC_LineCoding.format = 0;
+    USBD_CDC_LineCoding.paritytype = 0;
+    USBD_CDC_LineCoding.datatype = 8;
 
     usb_txwritepos = usb_txreadpos = 0;
     usb_rxwritepos = usb_rxreadpos = 0;
@@ -126,7 +119,7 @@ void usb_putc(uint8_t c)
 }
 
 
-void usb_puts(const char *s)
+void usb_puts(const char* s)
 {
 	  uint8_t written = 0;
 	  while (*s) { written = _usb_putc(*s); s++; }
@@ -168,7 +161,7 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 
 static int8_t CDC_Init(void)
 {
-	  USBD_CDC_SetRxBuffer(&hUSBD_CDC, usb_rcbuf); //usb_rxbuf); ??????
+	  USBD_CDC_SetRxBuffer(&husbd_CDC, usb_rcbuf); //usb_rxbuf); ??????
 	  return (USBD_OK);
 }
 
@@ -181,14 +174,32 @@ static int8_t CDC_DeInit(void)
 
 static int8_t CDC_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
-	  return (USBD_OK);
+    switch (cmd) {
+    case CDC_SET_LINE_CODING:
+        USBD_CDC_LineCoding.bitrate = (uint32_t)(pbuf[0] | (pbuf[1] << 8) | (pbuf[2] << 16) | (pbuf[3] << 24));
+        USBD_CDC_LineCoding.format = pbuf[4];
+        USBD_CDC_LineCoding.paritytype = pbuf[5];
+        USBD_CDC_LineCoding.datatype = pbuf[6];
+        break;
+    case CDC_GET_LINE_CODING:
+        pbuf[0] = (uint8_t)(USBD_CDC_LineCoding.bitrate);
+        pbuf[1] = (uint8_t)(USBD_CDC_LineCoding.bitrate >> 8);
+        pbuf[2] = (uint8_t)(USBD_CDC_LineCoding.bitrate >> 16);
+        pbuf[3] = (uint8_t)(USBD_CDC_LineCoding.bitrate >> 24);
+        pbuf[4] = USBD_CDC_LineCoding.format;
+        pbuf[5] = USBD_CDC_LineCoding.paritytype;
+        pbuf[6] = USBD_CDC_LineCoding.datatype;
+        break;
+    }
+
+    return (USBD_OK);
 }
 
 
 static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
 {
-	  USBD_CDC_SetRxBuffer(&hUSBD_CDC, &pbuf[0]);
-	  USBD_CDC_ReceivePacket(&hUSBD_CDC);
+	  USBD_CDC_SetRxBuffer(&husbd_CDC, &pbuf[0]);
+	  USBD_CDC_ReceivePacket(&husbd_CDC);
 
 	  for (uint8_t i = 0; i < *length; i++) {
 	      uint16_t next = (usb_rxwritepos + 1) & USB_RXBUFSIZEMASK;
@@ -204,7 +215,7 @@ static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
 
 void _cdc_transmit(void)
 {
-    USBD_CDC_HandleTypeDef* hcdc = (USBD_CDC_HandleTypeDef*)hUSBD_CDC.pClassData;
+    USBD_CDC_HandleTypeDef* hcdc = (USBD_CDC_HandleTypeDef*)husbd_CDC.pClassData;
     if (hcdc->TxState != 0) return;
 
     uint8_t len = 0;
@@ -215,8 +226,8 @@ void _cdc_transmit(void)
 
     if (!len) return;
 
-    USBD_CDC_SetTxBuffer(&hUSBD_CDC, usb_trbuf, len);
-    USBD_CDC_TransmitPacket(&hUSBD_CDC);
+    USBD_CDC_SetTxBuffer(&husbd_CDC, usb_trbuf, len);
+    USBD_CDC_TransmitPacket(&husbd_CDC);
 }
 
 

@@ -41,4 +41,6 @@ The folders /Core and /Class/CDC and their content need to be copied to the resp
 
 Unfortunately they are not easily included as git submodules, since one would have to do a lot of excludes.
 
+NOTE: In Class/CDC/Inc/usbd_dcd.h the define CDC_DATA_HS_MAX_PACKET_SIZE is changed from 512U to 64U.
+
 

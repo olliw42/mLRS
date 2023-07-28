@@ -297,7 +297,7 @@ static uint8_t USBD_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
     return (uint8_t)USBD_EMEM;
   }
 
-  //(void)USBD_memset(hcdc, 0, sizeof(USBD_CDC_HandleTypeDef));
+  (void)USBD_memset(hcdc, 0, sizeof(USBD_CDC_HandleTypeDef));
 
   pdev->pClassDataCmsit[pdev->classId] = (void *)hcdc;
   pdev->pClassData = pdev->pClassDataCmsit[pdev->classId];

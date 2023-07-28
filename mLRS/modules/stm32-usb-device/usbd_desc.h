@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * @file           : usbd_desc.c
-  * @version        : v2.0_Cube
-  * @brief          : Header for usbd_conf.c file.
+  * @file    usbd_desc_template.h
+  * @author  MCD Application Team
+  * @brief   Header for usbd_desc_template.c module
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2015 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -15,11 +15,11 @@
   *
   ******************************************************************************
   */
-#ifndef __USBD_DESC__C__
-#define __USBD_DESC__C__
+#ifndef __USBD_DESC_H
+#define __USBD_DESC_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 
@@ -27,14 +27,10 @@
 
 
 #define DEVICE_ID1              (UID_BASE)
-#define DEVICE_ID2              (UID_BASE + 0x4)
-#define DEVICE_ID3              (UID_BASE + 0x8)
+#define DEVICE_ID2              (UID_BASE + 0x4U)
+#define DEVICE_ID3              (UID_BASE + 0x8U)
 
-#define USB_SIZ_STRING_SERIAL   0x1A
-
-
-/** Descriptor for the Usb device. */
-extern USBD_DescriptorsTypeDef FS_Desc;
+#define USB_SIZ_STRING_SERIAL   0x1AU
 
 
 
@@ -42,5 +38,5 @@ extern USBD_DescriptorsTypeDef FS_Desc;
 }
 #endif
 
-#endif /* __USBD_DESC__C__ */
+#endif /* __USBD_DESC_H */
 
