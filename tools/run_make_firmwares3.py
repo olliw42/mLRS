@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 26.07.2023
+ version 28.07.2023
 ********************************************************
 '''
 import os
@@ -888,6 +888,24 @@ TLIST = [
     },{ 
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
         'extra_D_list' : [], 'appendix' : '' 
+        
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_JRPIN5'],
+        'appendix' : '-jrpin5' 
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_JRPIN5'],
+        'appendix' : '-jrpin5-diversity'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_IN'],
+        'appendix' : '-in' 
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_IN'],
+        'appendix' : '-in-diversity'
+        
     },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
