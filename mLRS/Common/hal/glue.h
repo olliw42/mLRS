@@ -19,7 +19,7 @@
 //-------------------------------------------------------
 // STm32Cube LL & HAL
 //-------------------------------------------------------
-// STM32F1 etc are not yet defined, so we need to be explicit
+// defines like STM32F1 etc are not yet defined, so we need to be explicit
 
 #ifdef STM32F103xB
 
@@ -51,7 +51,7 @@
 #include "stm32f3xx_hal_flash_ex.h"
 
 #endif
-#if (defined STM32G491xx) || (defined STM32G441xx)  || (defined STM32G431xx)
+#if defined STM32G491xx || defined STM32G441xx  || defined STM32G431xx
 
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_rcc.h"
@@ -119,11 +119,5 @@
 #include "stm32f0xx_hal_flash_ex.h"
 
 #endif
-
-
-//-------------------------------------------------------
-// some useful defines
-//-------------------------------------------------------
-
 
 

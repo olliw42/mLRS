@@ -16,15 +16,18 @@
 
 The availability of the many features are handled via #define declarations. In order to keep somewhat track,
 this naming convention is used (with few exceptions):
+
+- MLRS_FEATURE_XXXX: for setting different features for a target; should ONLY be set globally/externally by the build system!
 - DEVICE_HAS_XXXX: is set in a device's hal file to indicate the availability/non-availability of a feature
 - USE_XXXX: these are determined through some processing, which can involve the DEVICE_HAS_XXXX flags
+
 In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
 If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
 flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor" of the feature
 (example: IN feature with normal or inverted UART levels).
 
-Many feature flags are available, which can be set in the device hal files. They are listed in the following for the
-tx-hal and rx-hal files.
+Many DEVICE_XXXX feature flags are available, which can be set in the device hal files. They are listed in the
+following for the tx-hal and rx-hal files.
 
 In tx-hal files:
 
