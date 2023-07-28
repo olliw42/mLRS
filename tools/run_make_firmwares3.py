@@ -844,7 +844,12 @@ TLIST = [
         'appendix' : '-400' 
     },{
         'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
-        'extra_D_list' : [], 'appendix' : '' 
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY'],
+        'appendix' : '' 
+    },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY'],
+        'appendix' : '-diversity' 
     },{ 
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '' 

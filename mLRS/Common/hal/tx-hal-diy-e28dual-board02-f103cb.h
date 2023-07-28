@@ -7,6 +7,10 @@
 // hal
 //********************************************************
 
+//#define MLRS_FEATURE_IN
+//#define MLRS_FEATURE_DIVERSITY
+//#define MLRS_FEATURE_NO_DIVERSITY
+
 //-------------------------------------------------------
 // TX DIY DUAL-E28 BOARD02 v010 STM32F103CB
 //-------------------------------------------------------
@@ -15,6 +19,18 @@
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
 #define DEVICE_HAS_DEBUG_SWUART
+
+
+#ifdef MLRS_FEATURE_IN
+  #undef DEVICE_HAS_JRPIN5
+  #define DEVICE_HAS_IN
+#endif
+#ifdef MLRS_FEATURE_DIVERSITY
+  #define DEVICE_HAS_DIVERSITY
+#endif
+#ifdef MLRS_FEATURE_NO_DIVERSITY
+  #undef DEVICE_HAS_DIVERSITY
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
