@@ -21,7 +21,6 @@ ISSUES:
 
 - sx Init implicitly uses Config, would be nicer to have this disentangled
 
-- setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
 - entering bind by power cycles Q: how the heck can this be done, without persistent OB???
@@ -66,7 +65,6 @@ The 3 MAIN topics TODO:
 4) Auxiliary features
 - relay setup, how could this be done?
 - 2.4 GHz high-interference mode bw 400kHz, at least for experiment to evaluate
-- wifi band exclusion method
 - beacon mode
 
 
@@ -74,8 +72,6 @@ TODO:
 - can we pl check the real spi clock speed !?!?!!?
 
 - effect of USE_DCDC? where to place it??
-
-- USB on TX side (no pressure, since no target which needs it)
 
 Longterm TODO:
 - support high_latency2
