@@ -300,10 +300,6 @@ extern "C" { void delay_ms(uint16_t ms); }
 void systembootloader_init(void)
 {
     gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-}
-
-void systembootloader_do(void)
-{
     // on this board, the button has a capacitor, so we need to wait for the cap to charge up
     // 1 ms is found to not be enough, 2 ms is, but play it safe
     delay_ms(10);

@@ -254,16 +254,15 @@ void init(void)
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
 
-    systembootloader_init();
+    delay_init();
+    systembootloader_init(); // after delay_init() since it may need delay
+
     leds_init();
     button_init();
     esp_init();
-
-    delay_init();
-    micros_init();
-
-    systembootloader_do(); // after delay_init() since it may need delay
     fiveway_init();
+
+    micros_init();
 
     serial.Init();
     serial2.Init();

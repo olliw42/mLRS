@@ -177,14 +177,13 @@ tRxSxSerial sx_serial;
 
 void init(void)
 {
-    systembootloader_init();
+    delay_init();
+    systembootloader_init(); // after delay_init() since it may need delay
+
     leds_init();
     button_init();
 
-    delay_init();
     micros_init();
-
-    systembootloader_do(); // after delay_init() since it may need delay
 
     serial.Init();
     out.Init();

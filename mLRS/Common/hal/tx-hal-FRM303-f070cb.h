@@ -27,7 +27,7 @@
 
 #ifdef MLRS_FEATURE_OLED
   #undef DEVICE_HAS_COM_ON_USB
-  #undef DEVICE_HAS_SYSTEMBOOT
+  //#undef DEVICE_HAS_SYSTEMBOOT
   #define DEVICE_HAS_NO_COM
   #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
@@ -219,7 +219,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //-- Serial or Com Switch
 // use com if FIVEWAY is DOWN during power up, else use serial
 // FIVEWAY-DONW becomes bind button later on
-
+/* not used never
 #ifdef DEVICE_HAS_SERIAL_OR_COM
 bool frm303_ser_or_com_serial = true; // we use serial as default
 
@@ -237,7 +237,7 @@ bool ser_or_com_serial(void)
 {
   return frm303_ser_or_com_serial;
 }
-#endif
+#endif */
 
 
 //-- SystemBootLoader
@@ -248,10 +248,6 @@ bool ser_or_com_serial(void)
 void systembootloader_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-}
-
-void systembootloader_do(void)
-{
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;

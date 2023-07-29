@@ -235,10 +235,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 void systembootloader_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-}
-
-void systembootloader_do(void)
-{
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;

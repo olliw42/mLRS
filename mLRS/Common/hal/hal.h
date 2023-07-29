@@ -348,7 +348,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifndef DEVICE_HAS_SYSTEMBOOT
     void systembootloader_init(void) {}
-    void systembootloader_do(void) {}
 #endif
 
 #ifndef USE_ESP_WIFI_BRIDGE
