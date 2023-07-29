@@ -12,7 +12,9 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "../Common/thirdparty/fmav_mavlinkx.h"
 #include "../Common/protocols/ardupilot_protocol.h"
+#include "../Common/libs/fifo.h"
 
 static inline bool connected_and_rx_setup_available(void);
 extern tSerialBase* serialport;
@@ -29,6 +31,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     uint8_t VehicleState(void);
+    void FrameLost(void);
 
     void putc(char c);
     bool available(void);
@@ -46,6 +49,15 @@ class MavlinkBase
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
+
+    // fields for serial in -> link out parser
+    fmav_status_t status_serial_in;
+    fmav_result_t result_serial_in;
+    uint8_t buf_serial_in[MAVLINK_BUF_SIZE];
+    fmav_status_t status_link_out;
+    fmav_message_t msg_link_out;
+
+    FifoBase<char,2048> fifo_link_out; // TODO: we should not need huge buffers for both fifo and serial rx
 
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
@@ -68,6 +80,11 @@ void MavlinkBase::Init(void)
     status_link_in = {};
     status_serial_out = {};
 
+    result_serial_in = {0};
+    status_serial_in = {0};
+    status_link_out = {0};
+    fifo_link_out.Init();
+
     radio_status_tlast_ms = millis32() + 1000;
 
     vehicle_sysid = 0;
@@ -88,7 +105,32 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+
+    // parse serial in -> link out, and convert to mavlinkX
+    while (serialport->available()) {
+        char c = serialport->getc();
+        if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
+            fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
+
+            uint16_t len;
+            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+            } else {
+                len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+            }
+
+#if 0
+            // do some fake to stress test the parser
+            static uint8_t fake_cnt = 0;
+            uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
+            uint8_t bX[8] = { 'a', 'o', 'w', 0, 128, 'b' };
+            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++;
+#endif
+
+            fifo_link_out.PutBuf(_buf, len);
+        }
+    }
 
     if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
@@ -115,10 +157,23 @@ uint8_t MavlinkBase::VehicleState(void)
 }
 
 
+void MavlinkBase::FrameLost(void)
+{
+    // reset parser link in -> serial out
+    fmav_parse_reset(&status_link_in); //fmav_status_reset_rx(&status_link_in); ??
+}
+
+
 void MavlinkBase::putc(char c)
 {
-    // parse link in -> serial out
-    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    // parse link in -> serial out, and re-convert to v2
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
         send_msg_serial_out();
@@ -136,7 +191,8 @@ bool MavlinkBase::available(void)
 {
     if (!serialport) return false; // should not happen
 
-    return serialport->available();
+    return fifo_link_out.Available();
+//XX    return serialport->available();
 }
 
 
@@ -144,7 +200,8 @@ uint8_t MavlinkBase::getc(void)
 {
     if (!serialport) return 0; // should not happen
 
-    return serialport->getc();
+    return fifo_link_out.Get();
+//XX    return serialport->getc();
 }
 
 
@@ -152,6 +209,7 @@ void MavlinkBase::flush(void)
 {
     if (!serialport) return; // should not happen
 
+    fifo_link_out.Flush();
     serialport->flush();
 }
 
