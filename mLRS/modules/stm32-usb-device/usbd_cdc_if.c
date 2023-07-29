@@ -50,6 +50,8 @@ void _cdc_transmit(void); // forward declaration
 
 uint8_t usb_rcbuf[USB_RXBUFSIZE]; // ???? hä, why is this needed ???
 
+static uint8_t usbd_initialized = 0; // to track if we use usb
+
 
 void usb_init(void)
 {
@@ -84,6 +86,16 @@ void usb_init(void)
 
     usb_txwritepos = usb_txreadpos = 0;
     usb_rxwritepos = usb_rxreadpos = 0;
+
+    usbd_initialized = 1;
+}
+
+
+void usb_deinit(void)
+{
+    if (!usbd_initialized) return;
+
+    USBD_DeInit(&husbd_CDC);
 }
 
 

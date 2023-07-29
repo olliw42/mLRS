@@ -31,6 +31,7 @@ void usb_putbuf(uint8_t* buf, uint16_t len);
 
 void usb_init(void);
 
+void usb_deinit(void);
 
 
 //-------------------------------------------------------
