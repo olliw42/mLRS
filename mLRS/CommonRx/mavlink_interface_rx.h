@@ -172,7 +172,7 @@ void MavlinkBase::Do(void)
                 fmavx_status_t tstatx;
                 memcpy(&tstatx, &fmavx_status, sizeof(fmavx_status_t));
 
-                static uint8_t fmax_err_cnt = 0;
+                static uint8_t fmavx_err_cnt = 0;
 
                 uint8_t tbuf[300];
                 fmav_result_t tres;
@@ -183,7 +183,7 @@ void MavlinkBase::Do(void)
                 }
 
                 if (tres.res != FASTMAVLINK_PARSE_RESULT_OK) {
-                    fmax_err_cnt++;
+                    fmavx_err_cnt++;
                     dbg.puts("\nres ");dbg.puts(u16toBCD_s(tres.res));
                 }
 
@@ -192,14 +192,14 @@ void MavlinkBase::Do(void)
                 tlen2 = fmav_msg_to_frame_buf(tbuf2, &msg_link_out);
 
                 if (tres.frame_len != tlen2) {
-                    fmax_err_cnt++;
+                    fmavx_err_cnt++;
                     dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));
                     dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));
                 }
 
                 for (uint16_t i = 0; i < tlen2; i++) {
                     if (tbuf[i] != tbuf2[i]) {
-                        fmax_err_cnt++;
+                        fmavx_err_cnt++;
                         dbg.puts("\n_buf ");dbg.puts(u16toBCD_s(len));dbg.puts(":\n");
                         for (uint16_t ii = 0; ii < len; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(_buf[ii])); delay_ms(1); }
                         dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));dbg.puts(":\n");
@@ -207,12 +207,13 @@ void MavlinkBase::Do(void)
                         dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));dbg.puts(":\n");
                         for (uint16_t ii = 0; ii < tlen2; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(tbuf2[ii])); delay_ms(1); }
                         dbg.puts("\n");
+                        break;
                     }
                 }
 
                 memcpy(&fmavx_status, &tstatx, sizeof(fmavx_status_t));
 
-                if (fmax_err_cnt > 1) fail(&dbg, FAIL_LED_PATTERN_RD_BLINK_GR_BLINK5, "grrr5");
+                if (fmavx_err_cnt > 3) fail(&dbg, FAIL_LED_PATTERN_RD_BLINK_GR_BLINK5, "grrr5");
 #endif
 
             } else {
