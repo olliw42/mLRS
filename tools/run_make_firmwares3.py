@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 28.07.2023
+ version 31.07.2023
 ********************************************************
 '''
 import os
@@ -67,9 +67,10 @@ GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
 
 # we need to modify the PATH so that the correct toolchain/compiler is used
 # why does sys.path.insert(0,xxx) not work?
-envpath = os.environ["PATH"]
-envpath = GCC_DIR + ';' + envpath
-os.environ["PATH"] = envpath
+# no, not needed anymore as we can call arm-none-eabi directly
+#envpath = os.environ["PATH"]
+#envpath = GCC_DIR + ';' + envpath
+#os.environ["PATH"] = envpath
 
 
 #-- mLRS directories
@@ -602,7 +603,7 @@ def mlrs_link_target(target):
         
     # generate command line
     cmd = ''
-    cmd += 'arm-none-eabi-g++ '
+    cmd += os.path.join(GCC_DIR,'arm-none-eabi-g++') + ' '
     cmd += '-o "'+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf')+'" '
     cmd += '@"'+os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list')+'" '
     cmd += '-T"'+os.path.join(MLRS_DIR,target.target,target.linker_script)+'" ' 
@@ -670,10 +671,10 @@ def mlrs_build_target(target, cmdline_D_list):
     print('linking')
 
     mlrs_link_target(target)
-    os.system('arm-none-eabi-size '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
+    os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
     
     os.system(
-        'arm-none-eabi-objcopy -O ihex ' +
+        os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
@@ -975,7 +976,7 @@ def mlrs_create_targetlist(appendix, extra_D_list):
 
 
 def mlrs_copy_all_hex():
-    print('copying')
+    print('copying .hex files')
     firmwarepath = os.path.join(MLRS_BUILD_DIR,'firmware')
     create_clean_dir(firmwarepath)
     for path, subdirs, files in os.walk(MLRS_BUILD_DIR):
