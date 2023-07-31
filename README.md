@@ -94,7 +94,7 @@ For the 2.4 GHz band, the available range test reports consistently exceed the a
 
 ## Hardware ##
 
-Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support please join.
+Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support for mLRS then please join.
 
 The code currently supports:
 - Flysky FRM303 transmitter module (2.4 GHz)
@@ -103,21 +103,21 @@ The code currently supports:
 - EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
-In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. 
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M transmitter module as receiver, which is supported by mLRS. 
 
-The SeeedStudio Wio-E5 boards and EByte E77 MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" receiver module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
+The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver (it can also be used to build a mLRS Tx module). These boards are all based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
-In the 2.4 GHz range, the Flysky FRM303 transmitter module is a great and readily available, albeit expensive, option. Concerning receivers, the DIY options are currently the (only) way to go. The DIY options also offer the most capable mLRS Tx modules available.
+In the 2.4 GHz range, the Flysky FRM303 transmitter module is a great and readily available, albeit expensive, option. mLRS supports using it as Tx module as well as receiver. Concerning receivers, the DIY options are however probably the way to go. The DIY options also offer Tx modules, including the most capable mLRS Tx modules available.
 
 Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 
 ## Firmware: Flashing ##
 
-Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the .hex file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The Tx module can then be configured to your needs via the CLI or via the mLRS Configuration lua script. The Rx module is configured by first binding it to the Tx module, and then configuring it through the Tx module, exactly like the Tx module is configured
+Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the .hex file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The Tx module can then be configured to your needs via the CLI, the mLRS Configuration lua script, or the OLED display if available. The receiver is configured by first binding it to the Tx module, and then configuring it through the Tx module, exactly like the Tx module is configured.
 
 ## Software: Installation Bits and Bops ##
 
-This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
+This is a STM32CubeIDE project. I don't have much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
@@ -145,7 +145,7 @@ For cloning you of course can use any other tool you like, but ensure that the s
 
 The STM32CubeIDE has its weirdness, so you may have to get used to it. 
 
-In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups, or submit an issue in the github repository.
+In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups or the discord channel, or submit an issue in the github repository.
 
 #### Dependencies ####
 
