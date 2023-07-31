@@ -292,9 +292,9 @@ class tTxCli
     void print_device_version(void);
     void stream(void);
 
-    bool cmd_param_set(char* name, char* svalue);
-    bool cmd_param_opt(char* name);
-    bool cmd_set_value(const char* cmd, int32_t* value);
+    bool is_cmd(const char* cmd);
+    bool is_cmd_param_set(char* name, char* svalue);
+    bool is_cmd_set_value(const char* cmd, int32_t* value);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
@@ -374,8 +374,16 @@ void tTxCli::clear(void)
 }
 
 
+
+// cmd;
+bool tTxCli::is_cmd(const char* cmd)
+{
+    return (strcmp(buf, cmd) == 0) ? true : false;
+}
+
+
 // name = value or p name
-bool tTxCli::cmd_set_value(const char* cmd, int32_t* value)
+bool tTxCli::is_cmd_set_value(const char* cmd, int32_t* value)
 {
 char s[64];
 uint8_t n;
@@ -411,7 +419,7 @@ void tTxCli::print_config_id(void)
 
 
 // p name = value or p name
-bool tTxCli::cmd_param_set(char* name, char* svalue)
+bool tTxCli::is_cmd_param_set(char* name, char* svalue)
 {
 char s[64];
 uint8_t sep, n;
@@ -712,17 +720,17 @@ bool rx_param_changed;
         putsn(">");
 
         //-- basic commands
-        if (strcmp(buf, "h") == 0)     { print_help(); } else
-        if (strcmp(buf, "help") == 0)  { print_help(); } else
-        if (strcmp(buf, "?") == 0)     { print_help(); } else
-        if (strcmp(buf, "v") == 0)     { print_device_version(); } else
-        if (strcmp(buf, "pl") == 0)    { print_config_id(); print_param_list(0); } else
-        if (strcmp(buf, "pl c") == 0)  { print_config_id(); print_param_list(1); } else
-        if (strcmp(buf, "pl tx") == 0) { print_config_id(); print_param_list(2); } else
-        if (strcmp(buf, "pl rx") == 0) { print_config_id(); print_param_list(3);
+        if (is_cmd("h"))     { print_help(); } else
+        if (is_cmd("help"))  { print_help(); } else
+        if (is_cmd("?"))     { print_help(); } else
+        if (is_cmd("v"))     { print_device_version(); } else
+        if (is_cmd("pl"))    { print_config_id(); print_param_list(0); } else
+        if (is_cmd("pl c"))  { print_config_id(); print_param_list(1); } else
+        if (is_cmd("pl tx")) { print_config_id(); print_param_list(2); } else
+        if (is_cmd("pl rx")) { print_config_id(); print_param_list(3);
 
         } else
-        if (cmd_param_set(sname, svalue)) { // p name, p name = value
+        if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
             if (!param_get_idx(&param_idx, sname)) {
                 putsn("err: invalid parameter name");
             } else if (!connected() && setup_param_is_rx(param_idx)) {
@@ -742,7 +750,7 @@ bool rx_param_changed;
             }
 
         } else
-        if (strcmp(buf, "pstore") == 0) {
+        if (is_cmd("pstore")) {
             task_pending = CLI_TASK_PARAM_STORE;
             print_config_id();
             if (!connected()) {
@@ -753,12 +761,12 @@ bool rx_param_changed;
             }
 
         } else
-        if (strcmp(buf, "bind") == 0) {
+        if (is_cmd("bind")) {
             task_pending = CLI_TASK_BIND;
             putsn("  Tx entered bind mode");
 
         } else
-        if (strcmp(buf, "reload") == 0) {
+        if (is_cmd("reload")) {
             task_pending = CLI_TASK_PARAM_RELOAD;
             print_config_id();
             if (!connected()) {
@@ -769,7 +777,7 @@ bool rx_param_changed;
             }
 
         } else
-        if (cmd_set_value("setconfigid", &value)) { // setconfigid = value
+        if (is_cmd_set_value("setconfigid", &value)) { // setconfigid = value
             print_config_id();
             if (value == Config.ConfigId) {
                 putsn("  no change required");
@@ -780,28 +788,28 @@ bool rx_param_changed;
             }
 
         } else
-        if (strcmp(buf, "stats") == 0) {
+        if (is_cmd("stats")) {
             state = CLI_STATE_STATS;
             putsn("  starts streaming stats");
             putsn("  send any character to stop");
 
         //-- System Bootloader
         } else
-        if (strcmp(buf, "systemboot") == 0) {
+        if (is_cmd("systemboot")) {
             task_pending = CLI_TASK_BOOT;
 
         //-- ESP handling
         } else
-        if (strcmp(buf, "ptser") == 0) {
+        if (is_cmd("ptser")) {
             // enter passthrough to serial, can only be exited by re-powering
             serial.SetBaudRate(115200);
             passthrough_do(com, &serial);
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
-        if (strcmp(buf, "espboot") == 0) {
+        if (is_cmd("espboot")) {
             task_pending = CLI_TASK_FLASH_ESP;
         } else
-        if (strcmp(buf, "espcli") == 0) {
+        if (is_cmd("espcli")) {
             // enter esp cli, can only be exited by re-powering
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
             esp_gpio0_low();
