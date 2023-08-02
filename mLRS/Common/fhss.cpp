@@ -104,11 +104,11 @@ void FhssBase::generate(uint32_t seed)
 }
 
 
-void FhssBase::generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiband)
+void FhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except)
 {
     _seed = seed;
-    _ortho = ortho;
-    _except = except_wifiband;
+    _ortho = ortho; // assumes that FHSS_ORTHO & ORTHO enums are aligned!
+    _except = except; // assumes that FHSS_EXCEPT & EXCEPT enums are aligned!
 
     bool used_flag[FHSS_FREQ_LIST_MAX_LEN];
     for (uint8_t ch = 0; ch < FHSS_FREQ_LIST_MAX_LEN; ch++) used_flag[ch] = false;
@@ -117,8 +117,8 @@ void FhssBase::generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiban
     uint8_t ch_ofs = 0;
     uint8_t ch_inc = 1;
 
-    if (_ortho > FHSS_ORTHO_NONE) {
-        ch_ofs = _ortho - FHSS_ORTHO_1; // 0, 1, 2
+    if (_ortho >= FHSS_ORTHO_1_3 && _ortho <= FHSS_ORTHO_3_3) {
+        ch_ofs = _ortho - FHSS_ORTHO_1_3; // 0, 1, 2
         ch_inc = 3;
         freq_len = FREQ_LIST_LEN / 3; // we use only 1/3 of the available channels
     }

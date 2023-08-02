@@ -41,6 +41,25 @@ typedef enum {
 
 
 typedef enum {
+    ORTHO_NONE = 0,
+    ORTHO_1_3,
+    ORTHO_2_3,
+    ORTHO_3_3,
+    ORTHO_NUM,
+} ORTHO_ENUM;
+
+
+typedef enum {
+    EXCEPT_NONE = 0,
+    EXCEPT_2P4_GHZ_WIFIBAND_1,
+    EXCEPT_2P4_GHZ_WIFIBAND_6,
+    EXCEPT_2P4_GHZ_WIFIBAND_11,
+    EXCEPT_2P4_GHZ_WIFIBAND_13,
+    EXCEPT_NUM,
+} EXCEPT_ENUM;
+
+
+typedef enum {
     DIVERSITY_DEFAULT = 0,
     DIVERSITY_ANTENNA1, // antenna 1 if diversity available
     DIVERSITY_ANTENNA2, // antenna 2 if diversity available

@@ -239,13 +239,13 @@ uint8_t except_from_bindphrase(char* bindphrase)
     char c = bindphrase[5]; // take last char
 
     if (c >= '0' && c <= '9') {
-        return (c - '0') % 5; // no, #1, #6, #11, #13 = 5 cases
+        return (c - '0') % 5; // no, #1, #6, #11, #13 = 5 cases = EXCEPT_NUM
     }
 
     char* cptr = strchr(bindphrase_chars, c);
     uint8_t n = (cptr) ? cptr - bindphrase_chars : 0; // must not happen that c is not found, but play it safe
 
-    return n % 5; // no, #1, #6, #11, #13 = 5 cases
+    return n % 5; // no, #1, #6, #11, #13 = 5 cases = EXCEPT_NUM
 }
 
 

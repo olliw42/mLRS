@@ -502,11 +502,11 @@ void setup_configure_config(uint8_t config_id)
     // we could make it dependable with a #ifdef, but what's the point
     Config.FhssSeed = Config.FrameSyncWord;
 
-    Config.FhssExcept = 0;
+    Config.FhssExcept = EXCEPT_NONE;
     if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         Config.FhssExcept = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
-    Config.FhssOrtho = 0;
+    Config.FhssOrtho = ORTHO_NONE;
 
     switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
