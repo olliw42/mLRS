@@ -770,7 +770,7 @@ end
     
     
 local function param_str6_next(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_complete then return false end -- needed here??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == MBRIDGE_PARAM_TYPE_STR6 then 
         cursor_x_idx = cursor_x_idx + 1
@@ -783,7 +783,7 @@ end
 
 
 local function param_focusable(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_complete then return false end -- needed here??
     local p = DEVICE_PARAM_LIST[idx]
     if p == nil then return false end
     if p.editable == nil then return false end
@@ -977,7 +977,7 @@ local function drawPageMain()
  
     y = 95 --90
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
-    if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
+    if DEVICE_PARAM_LIST_complete then
         local x = 140
         for i = 1,6 do
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
