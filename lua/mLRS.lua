@@ -10,11 +10,11 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.1.13 and later, mOTX v33
 
-local version = '2023-07-28.00'
+local version = '2023-08-03.00'
 
 
 -- experimental
-local paramLoadDeadTime_10ms = 200 -- 150 was a bit too short
+local paramLoadDeadTime_10ms = 300 -- 150 was a bit too short, also 200 was too short
 local disableParamLoadErrorWarnings = false
 
 
@@ -468,8 +468,9 @@ local function doParamLoop()
       paramloop_t_last = t_10ms
       if t_10ms < DEVICE_SAVE_t_last + paramLoadDeadTime_10ms then
           -- skip, we don't send a cmd if the last Save was recent
+          -- TODO: we could make deadtime dependend on whether a receiver was connected before the Save
       elseif DEVICE_ITEM_TX == nil then
-          cmdPush(MBRIDGE_CMD_REQUEST_INFO, {})
+          cmdPush(MBRIDGE_CMD_REQUEST_INFO, {}) -- triggers sending DEVICE_ITEM_TX, DEVICE_ITEM_RX, INFO
           --cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_REQUEST_INFO)
           -- these should have been set when we nil-ed DEVICE_PARAM_LIST
           DEVICE_PARAM_LIST_expected_index = 0
@@ -479,7 +480,7 @@ local function doParamLoop()
       elseif DEVICE_PARAM_LIST == nil then
           if DEVICE_INFO ~= nil then -- wait for it to be populated
               DEVICE_PARAM_LIST = {}
-              cmdPush(MBRIDGE_CMD_PARAM_REQUEST_LIST, {})
+              cmdPush(MBRIDGE_CMD_PARAM_REQUEST_LIST, {}) -- triggers sending full list of PARAM_ITEMs
               --cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_REQUEST_LIST})
           end    
       end  
@@ -521,7 +522,9 @@ local function doParamLoop()
             end
             DEVICE_PARAM_LIST_current_index = index -- inform potential Item2/3 calls
             DEVICE_PARAM_LIST_expected_index = index + 1 -- prepare for next
-            if index < 128 then
+            if DEVICE_PARAM_LIST == nil then 
+                paramsError()
+            elseif index < 128 then
                 DEVICE_PARAM_LIST[index] = cmd
                 DEVICE_PARAM_LIST[index].typ = mb_to_u8(cmd.payload, 1)
                 DEVICE_PARAM_LIST[index].name = mb_to_string(cmd.payload, 2, 16)
@@ -551,7 +554,7 @@ local function doParamLoop()
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
-            elseif DEVICE_PARAM_LIST[index] == nil then
+            elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             else  
                 if DEVICE_PARAM_LIST[index].typ < MBRIDGE_PARAM_TYPE_LIST then
@@ -576,7 +579,7 @@ local function doParamLoop()
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
-            elseif DEVICE_PARAM_LIST[index] == nil then
+            elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             elseif DEVICE_PARAM_LIST[index].typ ~= MBRIDGE_PARAM_TYPE_LIST then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
@@ -652,6 +655,9 @@ local Reload_idx = 6
 local Bind_idx = 7
 local Tools_idx = 8
 local PAGE_MAIN_CURSOR_IDX_MAX = 8
+
+-- note: for common parameters it is assumed that cursor idx = param idx
+local COMMON_PARAM_IDX_MAX = 2
 
 local cursor_idx = EditTx_idx
 local edit = false
@@ -974,7 +980,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[0] ~= nil then
         local x = 140
         for i = 1,6 do
-            local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i)
+            local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
             local attr = cur_attr_x(0, i-1)
             lcd.drawText(x, y, c, attr)
             --x = x + lcd.getTextWidth(c,1,attr)+1
@@ -987,36 +993,36 @@ local function drawPageMain()
     
     lcd.drawText(10, y + 21, "Mode", TEXT_COLOR)  
     if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[1] ~= nil then
-        local p = DEVICE_PARAM_LIST[1]
+        local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y+21, p.options[p.value+1], cur_attr_p(1,1))
+            lcd.drawText(140, y+21, p.options[p.value+1], cur_attr_p(Mode_idx,1))
         end  
     end
     
     lcd.drawText(10, y + 2*21, "RF Band", TEXT_COLOR)  
     if DEVICE_PARAM_LIST_complete then
-        local p = DEVICE_PARAM_LIST[2]
+        local p = DEVICE_PARAM_LIST[2] -- param_idx = 2 = RfBand
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
             if p.value <= #freq_band_list then 
-                lcd.drawText(140, y + 2*21, freq_band_list[p.value], cur_attr_p(2,2)) 
+                lcd.drawText(140, y + 2*21, freq_band_list[p.value], cur_attr_p(RFBand_idx,2)) 
             else
-                lcd.drawText(140, y + 2*21, p.options[p.value+1], cur_attr_p(2,2)) 
+                lcd.drawText(140, y + 2*21, p.options[p.value+1], cur_attr_p(RFBand_idx,2)) 
             end
         end  
     end
  
     y = 171 --166
-    lcd.drawText(10, y, "Edit Tx", cur_attr(3))  
+    lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))  
     if not connected then 
         lcd.drawText(10 + 80, y, "Edit Rx", TEXT_DISABLE_COLOR)
     else  
-        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(4))
+        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(EditRx_idx))
     end  
-    lcd.drawText(10 + 160, y, "Save", cur_attr(5)) 
-    lcd.drawText(10 + 225, y, "Reload", cur_attr(6))
-    lcd.drawText(10 + 305, y, "Bind", cur_attr(7))
-    lcd.drawText(10 + 365, y, "Tools", cur_attr(8))
+    lcd.drawText(10 + 160, y, "Save", cur_attr(Save_idx)) 
+    lcd.drawText(10 + 225, y, "Reload", cur_attr(Reload_idx))
+    lcd.drawText(10 + 305, y, "Bind", cur_attr(Bind_idx))
+    lcd.drawText(10 + 365, y, "Tools", cur_attr(Tools_idx))
      
     -- show overview of some selected parameters
     y = 210 --05
@@ -1123,7 +1129,7 @@ local function doPageMain(event)
         end
     else
         if event == EVT_VIRTUAL_EXIT then
-            if cursor_idx <= 2 then -- BindPhrase, Mode, RF Band
+            if cursor_idx <= COMMON_PARAM_IDX_MAX then -- BindPhrase, Mode, RF Band
                 sendParamSet(cursor_idx)
             end  
             edit = false
@@ -1133,7 +1139,7 @@ local function doPageMain(event)
                     sendParamSet(0)
                     edit = false
                 end    
-            elseif cursor_idx <= 2 then -- Mode, RF Band
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
                 sendParamSet(cursor_idx)
                 edit = false
             else          
@@ -1142,13 +1148,13 @@ local function doPageMain(event)
         elseif event == EVT_VIRTUAL_NEXT then
             if cursor_idx == BindPhrase_idx then -- BindPhrase 
                 param_str6_inc(0)
-            elseif cursor_idx <= 2 then -- Mode, RF Band 
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
                 param_value_inc(cursor_idx)
             end    
         elseif event == EVT_VIRTUAL_PREV then
             if cursor_idx == BindPhrase_idx then -- BindPhrase
                 param_str6_dec(0)
-            elseif cursor_idx <= 2 then -- Mode, RF Band
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
                 param_value_dec(cursor_idx)
             end    
         end
