@@ -119,6 +119,13 @@ bool setup_param_is_rx(uint8_t param_idx)
 }
 
 
+bool setup_param_is_for_rx(uint8_t param_idx)
+{
+    if (SetupParameter[param_idx].name[0] == 'T' && SetupParameter[param_idx].name[1] == 'x') return false;
+    return true; // not Tx -> common or Rx
+}
+
+
 void* SetupParameterPtr(uint8_t param_idx)
 {
     uint8_t* ptr = (uint8_t*)(SetupParameter[param_idx].ptr);
@@ -139,14 +146,6 @@ typedef union
     uint16_t u16;
     int16_t i16;
 } tParamValue;
-
-
-bool _setup_param_is_for_rx(uint8_t param_idx)
-{
-    if (param_idx <= PARAM_INDEX_RF_BAND) return true; // BindPhrase, Mode, RF Band
-    if (setup_param_is_rx(param_idx)) return true; // "Rx" name
-    return false;
-}
 
 
 bool setup_set_param(uint8_t param_idx, tParamValue value)
@@ -184,7 +183,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
     }
 
     // if a RX parameter has changed, tell it to main
-    if (param_changed && _setup_param_is_for_rx(param_idx)) return true;
+    if (param_changed && setup_param_is_for_rx(param_idx)) return true;
 
     return false;
 }
@@ -206,7 +205,7 @@ bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
     }
 
     // if a RX parameter has changed, tell it to main
-    if (param_changed && _setup_param_is_for_rx(param_idx)) return true;
+    if (param_changed && setup_param_is_for_rx(param_idx)) return true;
 
     return false;
 }

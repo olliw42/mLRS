@@ -25,6 +25,7 @@ ISSUES:
 - setup: which are effective only on restart? which on-the-fly?
 - entering bind by power cycles Q: how the heck can this be done, without persistent OB???
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
+  This holds for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
 - work out how to go with setup layout changes
 
 - EVERY tx module needs a means to set the parameters, via SWD?

@@ -298,6 +298,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
 
     // TODO
+    // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
     //SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
     //SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
 
@@ -367,6 +368,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
 
     // TODO
+    // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
     //rx_setupdata.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
     //rx_setupdata.Mode_allowed_mask = SetupMetaData.Mode_allowed_mask;
 

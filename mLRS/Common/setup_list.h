@@ -87,14 +87,14 @@
   X( Setup.Rx.Diversity,          LIST, "Rx Diversity",     "RX_DIVERSITY",     0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
   X( Setup.Rx.ChannelOrder,       LIST, "Rx Ch Order",      "RX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Rx.OutMode,            LIST, "Rx Out Mode",      "RX_OUT_MODE",      0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
-  X( Setup.Rx.OutRssiChannelMode, LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
-  X( Setup.Rx.OutLqChannelMode,   LIST, "Rx Out LQ Ch",     "RX_OUT_LQ_CH",     0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   X( Setup.Rx.FailsafeMode,       LIST, "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
   X( Setup.Rx.SerialBaudrate,     LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.Buzzer,             LIST, "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
+  X( Setup.Rx.OutRssiChannelMode, LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
+  X( Setup.Rx.OutLqChannelMode,   LIST, "Rx Out LQ Ch",     "RX_OUT_LQ_CH",     0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   \
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[0],  INT8, "Rx FS Ch1", "RX_FS_CH1", 0, -120, 120, "%", "",0 )\
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[1],  INT8, "Rx FS Ch2", "RX_FS_CH2", 0, -120, 120, "%", "",0 )\

@@ -66,6 +66,7 @@ f1xx_hal_files_to_include = [
   'stm32f1xx_hal_rcc_ex.c',
   'stm32f1xx_hal_flash.c',
   'stm32f1xx_hal_flash_ex.c',
+  'stm32f1xx_hal_dma.c',
   'stm32f1xx_hal_i2c.c',
 ]
 
