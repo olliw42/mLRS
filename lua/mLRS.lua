@@ -8,9 +8,11 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.1.13 and later, mOTX v33
+-- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-08-03.00'
+local version = '2023-08-04.00'
+
+local required_mLRS_version_int = 331 -- 'v0.3.31'
 
 
 -- experimental
@@ -173,13 +175,11 @@ local function crsfCmdPop()
     return res
 end  
 
-
 local function mbridgeIsConnected()
     local LStats = mbridge.getLinkStats()
     if LStats.LQ > 0 then return true end
     return false
 end
-
 
 local function setupBridge()
     if mbridge == nil or not mbridge.enabled() then
@@ -201,7 +201,6 @@ end
 local popup = false   
 local popup_text = ""
 local popup_t_end_10ms = -1
-
 
 local function setPopup(txt)
     popup = true
@@ -230,7 +229,6 @@ local function clearPopup()
     popup = false
 end
 
-
 local function drawPopup()
     lcd.drawFilledRectangle(LCD_W/2-160-2, 74, 320+4, 84, TEXT_COLOR) --TITLE_BGCOLOR)
     lcd.drawFilledRectangle(LCD_W/2-160, 76, 320, 80, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
@@ -246,7 +244,6 @@ local function drawPopup()
         lcd.drawText(LCD_W/2, 85+30, t2, attr)
     end  
 end
-
 
 local function doPopup()
     if popup then
@@ -397,6 +394,13 @@ local function mb_to_options(payload, pos, len)
     return opt
 end    
 
+local function mb_to_firmware_u16_int(u16)
+    local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
+    local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
+    local patch = bit32.band(u16, 0x003F)
+    return major * 10000 + minor * 100 + patch
+end
+
 local function mb_to_firmware_u16_string(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
@@ -411,7 +415,9 @@ local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
     return v    
 end
 
-local function mb_allowed_mask_editable(allowed_mask) -- only one option allowed
+local function mb_allowed_mask_editable(allowed_mask) 
+    -- if none or only one option allowed -> not editable
+    if allowed_mask == 0 then return false; end
     if allowed_mask == 1 then return false; end
     if allowed_mask == 2 then return false; end
     if allowed_mask == 4 then return false; end
@@ -496,6 +502,7 @@ local function doParamLoop()
             DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
             DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
             DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_TX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_TX.version_u16)
             DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
         elseif cmd.cmd == MBRIDGE_CMD_DEVICE_ITEM_RX then 
             -- MBRIDGE_CMD_DEVICE_ITEM_RX
@@ -503,6 +510,7 @@ local function doParamLoop()
             DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
             DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
             DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_RX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_RX.version_u16)
             DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
         elseif cmd.cmd == MBRIDGE_CMD_INFO then 
             -- MBRIDGE_CMD_INFO
@@ -534,6 +542,7 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].unit = ""
                 DEVICE_PARAM_LIST[index].options = {}
                 DEVICE_PARAM_LIST[index].allowed_mask = 65536
+                DEVICE_PARAM_LIST[index].visible = true
                 DEVICE_PARAM_LIST[index].editable = true
             elseif index == 255 then -- EOL (end of list :)
                 if DEVICE_PARAM_LIST_errors == 0 then
@@ -567,6 +576,7 @@ local function doParamLoop()
                     DEVICE_PARAM_LIST[index].item2payload = cmd.payload
                     DEVICE_PARAM_LIST[index].min = 0
                     DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                    DEVICE_PARAM_LIST[index].visible = DEVICE_PARAM_LIST[index].allowed_mask > 0
                     DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
                 elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_STR6 then
                     -- nothing to do, is send but hasn't any content
@@ -622,14 +632,16 @@ end
 
 
 local function sendBind()
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    --if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD_BIND_START, {})
     setPopupBlocked("Binding")
 end  
 
 
 local function sendBoot()
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    --if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD_SYSTEM_BOOTLOADER, {})
     setPopupBlocked("In System Bootloader")
 end  
@@ -805,9 +817,13 @@ local function drawPageEdit(page_str)
     
     y = 35
     if page_str == "Tx" then
-        lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", TEXT_COLOR)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", TEXT_COLOR)
+        else
+            lcd.drawText(5, y, "Tx - ?:", TEXT_COLOR)
+        end  
     else
-    lcd.drawText(5, y, page_str..":", TEXT_COLOR)  
+        lcd.drawText(5, y, page_str..":", TEXT_COLOR)  
     end
     
     y = 60
@@ -821,7 +837,7 @@ local function drawPageEdit(page_str)
     page_param_cnt = 0
     for pidx = 2, #DEVICE_PARAM_LIST do
         local p = DEVICE_PARAM_LIST[pidx]
-        if p ~= nil and string.sub(p.name,1,2) == page_str and p.allowed_mask > 0 then
+        if p ~= nil and string.sub(p.name,1,2) == page_str and p.visible then
         local name = string.sub(p.name, 4)
            
         if idx >= top_idx and idx < top_idx + page_N then
@@ -976,6 +992,20 @@ local function drawPageMain()
         lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, TEXT_COLOR+SMLSIZE)
     end
  
+    local tx_version_error = false
+    local rx_version_error = false
+    if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_TX.version_int < required_mLRS_version_int then
+        tx_version_error = true
+    end  
+    if DEVICE_ITEM_RX ~= nil and connected and DEVICE_ITEM_RX.version_int < required_mLRS_version_int then
+        rx_version_error = true
+    end    
+    if tx_version_error or rx_version_error then
+        popup_text = "mLRS Version not supported\nby this Lua Script!"
+        drawPopup()
+        return
+    end
+ 
     y = 95 --90
     lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
     if DEVICE_PARAM_LIST_complete then
@@ -993,7 +1023,7 @@ local function drawPageMain()
     end    
     
     lcd.drawText(10, y + 21, "Mode", TEXT_COLOR)  
-    if DEVICE_PARAM_LIST_complete then --DEVICE_PARAM_LIST ~= nil and DEVICE_PARAM_LIST[1] ~= nil then
+    if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
             lcd.drawText(140, y+21, p.options[p.value+1], cur_attr_p(Mode_idx,1))
@@ -1013,13 +1043,13 @@ local function drawPageMain()
         end  
     end
  
-    lcd.drawText(270, y, "Ortho", TEXT_COLOR)
-    if DEVICE_PARAM_LIST_complete then
+    if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].visible then
+        lcd.drawText(270, y, "Ortho", TEXT_COLOR)
         local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
         if p.options[p.value+1] ~= nil then
             lcd.drawText(330, y, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
         end  
-    end
+    end    
  
     y = 171 --166
     lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))  
@@ -1094,7 +1124,7 @@ local function doPageMain(event)
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
             -- nothing to do
-        elseif event == EVT_VIRTUAL_ENTER then --and DEVICE_PARAM_LIST_complete then
+        elseif event == EVT_VIRTUAL_ENTER then
             if cursor_idx == EditTx_idx and DEVICE_PARAM_LIST_complete then -- EditTX pressed
                 page_nr = PAGE_EDIT_TX
                 cursor_idx = 0
@@ -1227,7 +1257,7 @@ local function scriptInit()
     isEdgeTx = (osname == 'EdgeTX')
   
     setupBridge()
-  
+    
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     local tnow_10ms = getTime()
     if tnow_10ms < 300 then
