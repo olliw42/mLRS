@@ -194,7 +194,7 @@ void tTxDisp::Init(void)
         if (setup_param_is_rx(param_idx)) {
         //    rx_list.add(param_idx);
         } else {
-            common_list.add(param_idx);
+            if (param_get_allowed_mask(param_idx)) common_list.add(param_idx); // to drop Ortho if not available
         }
     }
 
@@ -648,7 +648,7 @@ int8_t power;
 
     gdisp_setcurX(50);
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
-    if (strlen(s) > 4) {
+    if (strlen(s) > 5) {
         gdisp_setcurXY(35, 6);
     } else {
         gdisp_setcurXY(50, 6);
