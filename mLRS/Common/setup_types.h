@@ -36,7 +36,7 @@ typedef enum {
     MODE_50HZ = 0,
     MODE_31HZ,
     MODE_19HZ,
-    MODE_143HZ_FLRC,
+    MODE_FLRC_DEV,
     MODE_NUM,
 } MODE_ENUM;
 
@@ -379,6 +379,9 @@ typedef struct
 
     bool UseMbridge;
     bool UseCrsf;
+
+    bool modeIsLora(void) { return (Mode != MODE_FLRC_DEV); }
+    bool modeIsFLRC(void) { return (Mode == MODE_FLRC_DEV); }
 } tGlobalConfig;
 
 

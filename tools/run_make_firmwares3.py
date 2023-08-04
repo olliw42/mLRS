@@ -625,7 +625,8 @@ def mlrs_link_target(target):
 
 def mlrs_build_target(target, cmdline_D_list):
     if cmdline_D_list != []:
-        target.extra_D_list = cmdline_D_list
+        #target.extra_D_list = cmdline_D_list
+        target.extra_D_list += cmdline_D_list
     print('------------------------------------------------------------')
     print('target', target.target, target.extra_D_list)
 

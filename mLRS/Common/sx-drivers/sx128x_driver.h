@@ -212,7 +212,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void Configure(void)
     {
-        if (Config.Mode != MODE_143HZ_FLRC) {
+        if (Config.modeIsLora()) {
             SetPacketType(SX1280_PACKET_TYPE_LORA);
 
             SetAutoFs(true);
@@ -226,12 +226,15 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 #ifdef LORA_SYNCWORD
             SetSyncWord(LORA_SYNCWORD);
 #endif
-        } else {
+        } else
+        if (Config.modeIsFLRC()) {
             SetPacketType(SX1280_PACKET_TYPE_FLRC);
             SetAutoFs(true);
             SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
             SetRfPower_dbm(Config.Power_dbm);
             SetFlrcConfigurationByIndex(0);
+        } else {
+            while (1) {} // must not happen
         }
 
         SetBufferBaseAddress(0, 0);
@@ -282,7 +285,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
     {
         int16_t rssi;
 
-        if (Config.Mode != MODE_143HZ_FLRC) {
+        if (Config.modeIsLora()) {
             Sx128xDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
             // FLRC has no SNR
@@ -305,7 +308,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         int8_t power_dbm = Config.Power_dbm;
         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
-        if (Config.Mode != MODE_143HZ_FLRC) {
+        if (Config.modeIsLora()) {
             uint8_t index = Config.LoraConfigIndex;
             if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while (1) {} // must not happen
             lora_configuration = &(Sx128xLoraConfiguration[index]);
@@ -319,14 +322,14 @@ class Sx128xDriverCommon : public Sx128xDriverBase
     {
         if (lora_configuration == nullptr && flrc_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (Config.Mode != MODE_143HZ_FLRC) ? lora_configuration->TimeOverAir : flrc_configuration->TimeOverAir;
+        return (Config.modeIsLora()) ? lora_configuration->TimeOverAir : flrc_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
         if (lora_configuration == nullptr && flrc_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (Config.Mode != MODE_143HZ_FLRC) ? lora_configuration->ReceiverSensitivity : flrc_configuration->ReceiverSensitivity;
+        return (Config.modeIsLora()) ? lora_configuration->ReceiverSensitivity : flrc_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
