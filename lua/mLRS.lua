@@ -648,16 +648,17 @@ local page_nr = PAGE_MAIN -- 0: main, 1: edit Tx, 2: edit Rx, 3: tools
 local BindPhrase_idx = 0 -- idxes of options on main page
 local Mode_idx = 1
 local RFBand_idx = 2
-local EditTx_idx = 3
-local EditRx_idx = 4
-local Save_idx = 5
-local Reload_idx = 6
-local Bind_idx = 7
-local Tools_idx = 8
-local PAGE_MAIN_CURSOR_IDX_MAX = 8
+local RFOrtho_idx = 3
+local EditTx_idx = 4
+local EditRx_idx = 5
+local Save_idx = 6
+local Reload_idx = 7
+local Bind_idx = 8
+local Tools_idx = 9
+local PAGE_MAIN_CURSOR_IDX_MAX = 9
 
 -- note: for common parameters it is assumed that cursor idx = param idx
-local COMMON_PARAM_IDX_MAX = 2
+local COMMON_PARAM_IDX_MAX = 3
 
 local cursor_idx = EditTx_idx
 local edit = false
@@ -1012,6 +1013,14 @@ local function drawPageMain()
         end  
     end
  
+    lcd.drawText(270, y, "Ortho", TEXT_COLOR)
+    if DEVICE_PARAM_LIST_complete then
+        local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
+        if p.options[p.value+1] ~= nil then
+            lcd.drawText(330, y, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
+        end  
+    end
+ 
     y = 171 --166
     lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))  
     if not connected then 
@@ -1118,12 +1127,14 @@ local function doPageMain(event)
           
             if cursor_idx == Mode_idx and not param_focusable(1) then cursor_idx = cursor_idx + 1 end
             if cursor_idx == RFBand_idx and not param_focusable(2) then cursor_idx = cursor_idx + 1 end
+            if cursor_idx == RFOrtho_idx and not param_focusable(3) then cursor_idx = cursor_idx + 1 end
             if cursor_idx == EditRx_idx and not connected then cursor_idx = cursor_idx + 1 end
         elseif event == EVT_VIRTUAL_PREV then -- and DEVICE_PARAM_LIST_complete then
             cursor_idx = cursor_idx - 1
             if cursor_idx < 0 then cursor_idx = 0 end
           
             if cursor_idx == EditRx_idx and not connected then cursor_idx = cursor_idx - 1 end
+            if cursor_idx == RFOrtho_idx and not param_focusable(3) then cursor_idx = cursor_idx - 1 end
             if cursor_idx == RFBand_idx and not param_focusable(2) then cursor_idx = cursor_idx - 1 end
             if cursor_idx == Mode_idx and not param_focusable(1) then cursor_idx = cursor_idx - 1 end
         end

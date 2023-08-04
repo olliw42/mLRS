@@ -61,6 +61,14 @@ void setup_configure_metadata(void)
     SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz, not editable
 #endif
 
+    //-- Ortho: "off,1/3,2/3,3/3"
+    // we cannot work out all cases here, since it also depends on the actual selection, so we just do what we can do
+#if defined FREQUENCY_BAND_2P4_GHZ || defined FREQUENCY_BAND_915_MHZ_FCC || defined FREQUENCY_BAND_70_CM_HAM
+    SetupMetaData.Ortho_allowed_mask = UINT16_MAX; // all
+#else
+    SetupMetaData.Ortho_allowed_mask = 0b0001; // only off, not editable
+#endif
+
     //-- Tx:
 
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
@@ -200,6 +208,7 @@ void setup_default(uint8_t config_id)
 
     Setup.Common[config_id].FrequencyBand = SETUP_RF_BAND;
     Setup.Common[config_id].Mode = SETUP_MODE;
+    Setup.Common[config_id].Ortho = ORTHO_NONE;
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
@@ -236,7 +245,7 @@ void setup_sanitize_config(uint8_t config_id)
 // not displayed applies only to settings for which the default is ok
 #define SETUP_TST_NOTALLOWED(amask,pfield) ((SetupMetaData.amask & (1 << Setup.pfield)) == 0)
 
-    //-- BindPhrase, FrequencyBand, Mode
+    //-- BindPhrase, FrequencyBand, Mode, Ortho
     char bind_phrase[6+1];
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
     sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
@@ -269,6 +278,19 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = MODE_19HZ;
     if (SETUP_TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode)) {
         Setup.Common[config_id].Mode = MODE_19HZ;
+    }
+
+    if (Setup.Common[config_id].Ortho >= ORTHO_NUM) Setup.Common[config_id].Ortho = ORTHO_NONE;
+    if (SETUP_TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho)) {
+        Setup.Common[config_id].Ortho = ORTHO_NONE;
+    }
+    switch (Setup.Common[config_id].FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_2P4_GHZ:
+    case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+        break;
+    default:
+        Setup.Common[config_id].Ortho = ORTHO_NONE;
     }
 
     //-- Tx:
@@ -443,6 +465,7 @@ void configure_mode(uint8_t mode)
 void setup_configure_config(uint8_t config_id)
 {
     //-- SyncWord
+    // note: FrameSyncWord will be modified below by Ortho
 
     uint32_t bind_dblword = u32_from_bindphrase(Setup.Common[config_id].BindPhrase);
 
@@ -506,7 +529,10 @@ void setup_configure_config(uint8_t config_id)
     if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         Config.FhssExcept = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
-    Config.FhssOrtho = ORTHO_NONE;
+
+    Config.FhssOrtho = Setup.Common[config_id].Ortho;
+    // modify also FrameSyncWord
+    if (Config.FhssOrtho > ORTHO_NONE) Config.FrameSyncWord += 0x1111 * Config.FhssOrtho;
 
     switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:

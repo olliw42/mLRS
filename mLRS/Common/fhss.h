@@ -484,10 +484,24 @@ class FhssBase
             generate_ortho_except(seed, ortho, except);
             break;
         case FHSS_CONFIG_915_MHZ_FCC:
+            if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
+            } else {
+                ortho = ORTHO_NONE;
+            }
+            generate_ortho_except(seed, ortho, EXCEPT_NONE);
+            break;
+        case FHSS_CONFIG_70_CM_HAM:
+            if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
+            } else {
+                ortho = ORTHO_NONE;
+            }
+            generate_ortho_except(seed, ortho, EXCEPT_NONE);
+            break;
         case FHSS_CONFIG_868_MHZ:
         case FHSS_CONFIG_866_MHZ_IN:
         case FHSS_CONFIG_433_MHZ:
-        case FHSS_CONFIG_70_CM_HAM:
             generate(seed);
             break;
         default:

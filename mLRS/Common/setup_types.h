@@ -231,8 +231,9 @@ typedef struct
     char BindPhrase[6+1];
     uint8_t FrequencyBand;
     uint8_t Mode;
+    uint8_t Ortho;
 
-    uint8_t spare[7];
+    uint8_t spare[6];
 } tCommonSetup; // 16 bytes
 
 
@@ -320,6 +321,7 @@ typedef struct
 {
     uint16_t FrequencyBand_allowed_mask;
     uint16_t Mode_allowed_mask;
+    uint16_t Ortho_allowed_mask;
 
     char Tx_Power_optstr[44+1];
     uint16_t Tx_Diversity_allowed_mask;

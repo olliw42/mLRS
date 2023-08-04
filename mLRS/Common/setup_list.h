@@ -26,6 +26,7 @@
 // common to Tx,Rx
 #define SETUP_MSK_MODE                &SetupMetaData.Mode_allowed_mask // this we infer from the hal
 #define SETUP_MSK_RFBAND              &SetupMetaData.FrequencyBand_allowed_mask // this we infer from the hal
+#define SETUP_MSK_RFORTHO             &SetupMetaData.Ortho_allowed_mask // this we infer from the hal
 
 // for Tx,Rx, options limited depending on hardware, implementation
 #define SETUP_MSK_TX_DIVERSITY        &SetupMetaData.Tx_Diversity_allowed_mask // this we generate from the hal
@@ -69,6 +70,7 @@
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz", SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
+  X( Setup.Common[0].Ortho,         LIST, "RF_Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )\
 
 #define SETUP_PARAMETER_LIST_TX \
   X( Setup.Tx[0].Power,             LIST, "Tx Power",         "TX_POWER",         0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\

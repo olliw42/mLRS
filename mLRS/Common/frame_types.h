@@ -143,10 +143,12 @@ typedef struct
     char BindPhrase_6[6];
     uint8_t FrequencyBand_XXX : 4; // TODO
     uint8_t Mode : 4;
+    uint8_t Ortho : 4;
 
-    uint8_t spare2[72];
+    uint8_t spare1 : 4;
+    uint8_t spare2[71];
 
-    uint16_t crc; // 2bytes
+    uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
 
 
@@ -240,12 +242,15 @@ typedef struct
     // rx setup meta data 2, parameter metadata
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
+    uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t spare2[2];
+
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
     uint8_t Buzzer_allowed_mask;
 
-    uint8_t spare3[8];
+    uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 
@@ -260,10 +265,14 @@ typedef struct
     char BindPhrase_6[6];
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
+    uint8_t Ortho : 4;
+
+    uint8_t spare1 : 4;
+    uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[31];
+    uint8_t spare3[28];
 }) tTxCmdFrameRxParams; // 64 bytes
 
 
