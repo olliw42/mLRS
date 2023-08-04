@@ -307,10 +307,33 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
-    uint8_t telemetry_state_max = (frame_rate_ms - 7); // frame rate is 20 ms, 32 ms, 53 ms
-    if (telemetry_state_max > 30) telemetry_state_max = 30;
+    // frame rate is
+    //   20 ms -> 13
+    //   32 ms -> 25
+    //   53 ms -> 30
+    //   7 ms  -> 13
+
+//    uint8_t telemetry_state_max = (frame_rate_ms - 7);
+//    if (telemetry_state_max > 30) telemetry_state_max = 30;
+
+    uint8_t telemetry_state_max = 13;
+    if (frame_rate_ms > 30) telemetry_state_max = 25;
+    if (frame_rate_ms > 50) telemetry_state_max = 30;
 
     uint8_t curr_telemetry_state;
+
+    // slow it down
+    static uint8_t cnt = 0;
+    if (frame_rate_ms <= 7) {
+        if (telemetry_start_next_tick) {
+            cnt++;
+            if (cnt > 2) {
+                cnt = 0;
+            } else {
+                telemetry_start_next_tick = false;
+            }
+        }
+    }
 
     if (!tPin5BridgeBase::TelemetryUpdateState(&curr_telemetry_state, telemetry_state_max)) return false;
 

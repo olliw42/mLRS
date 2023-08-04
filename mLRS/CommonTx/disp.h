@@ -648,6 +648,11 @@ int8_t power;
 
     gdisp_setcurX(50);
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    if (strlen(s) > 4) {
+        gdisp_setcurXY(35, 6);
+    } else {
+        gdisp_setcurXY(50, 6);
+    }
     gdisp_puts(s);
     gdisp_setcurX(85);
     power = sx.RfPower_dbm();

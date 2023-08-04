@@ -36,6 +36,7 @@ typedef enum {
     MODE_50HZ = 0,
     MODE_31HZ,
     MODE_19HZ,
+    MODE_143HZ_FLRC,
     MODE_NUM,
 } MODE_ENUM;
 

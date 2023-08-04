@@ -52,7 +52,7 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // only 866 MHz IN, not editable
 #endif
 
-    //-- Mode: "50 Hz,31 Hz,19 Hz"
+    //-- Mode: "50 Hz,31 Hz,19 Hz,143 Hz"
 #ifdef DEVICE_HAS_SX128x
     SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_SX126x
@@ -459,6 +459,13 @@ void configure_mode(uint8_t mode)
         Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
         break;
 
+    case MODE_143HZ_FLRC:
+        Config.frame_rate_ms = 7; // 7 ms = 143 Hz
+        Config.frame_rate_hz = 143;
+        Config.LoraConfigIndex = 0;
+        Config.send_frame_tmo_ms = MODE_143HZ_FLRC_SEND_FRAME_TMO_MS; // 3;
+        break;
+
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
 
@@ -544,6 +551,7 @@ void setup_configure_config(uint8_t config_id)
         case MODE_50HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
         case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        case MODE_143HZ_FLRC: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
