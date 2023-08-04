@@ -140,19 +140,32 @@ void tPin5BridgeBase::Init(void)
     LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_Enable(UART_UARTx);
-    gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);  // tx pin is now an input after swap
-    gpio_init_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST);  // rx pin is now an output after swap
+    gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx after swap
+    gpio_init_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx after swap
 #endif
-// this is currently experimental, do not use
-#if defined JRPIN5_FULL_INTERNAL
+// experimental, but seems to work
+// first attempt with
+//  LL_USART_ConfigHalfDuplexMode(UART_UARTx);
+//  LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_NONE);
+//  LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_TX);
+//  LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_RX);
+// did not really work out well
+#if defined JRPIN5_FULL_INTERNAL_ON_TX
     LL_USART_Disable(UART_UARTx);
-    LL_USART_ConfigHalfDuplexMode(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
     LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-    LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_NONE);
     LL_USART_Enable(UART_UARTx);
-    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+    gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
+    gpio_init(UART_RX_IO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST); // disable Rx pin, seems not really needed but makes sense
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_RX
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UART_UARTx);
+    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+    gpio_init(UART_TX_IO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST); // disable Tx pin, seems not really needed but makes sense
 #endif
 
     pin5_tx_enable(false);
@@ -208,22 +221,40 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 #if defined JRPIN5_TX_OE
       JRPIN5_TX_OE_ENABLED;
 #endif
-#if defined JRPIN5_FULL_INTERNAL
-      LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_TX);
-#endif
 #if defined JRPIN5_DISABLE_TX_WHILE_RX
       uart_tx_enablepin(ENABLE);
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_TX
+      LL_USART_Disable(UART_UARTx);
+      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+      LL_USART_Enable(UART_UARTx);
+      gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_RX
+      LL_USART_Disable(UART_UARTx);
+      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+      LL_USART_Enable(UART_UARTx);
+      gpio_change_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx
 #endif
 
   } else {
 #if defined JRPIN5_TX_OE
       JRPIN5_TX_OE_DISABLED;
 #endif
-#if defined JRPIN5_FULL_INTERNAL
-      LL_USART_SetTransferDirection(UART_UARTx, LL_USART_DIRECTION_RX);
-#endif
 #if defined JRPIN5_DISABLE_TX_WHILE_RX
       uart_tx_enablepin(DISABLE);
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_TX
+      LL_USART_Disable(UART_UARTx);
+      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+      LL_USART_Enable(UART_UARTx);
+      gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_RX
+      LL_USART_Disable(UART_UARTx);
+      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+      LL_USART_Enable(UART_UARTx);
+      gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
 #endif
 
       uart_rx_enableisr(ENABLE);
