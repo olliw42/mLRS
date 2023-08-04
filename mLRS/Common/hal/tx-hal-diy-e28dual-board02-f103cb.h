@@ -7,14 +7,35 @@
 // hal
 //********************************************************
 
+//#define MLRS_FEATURE_JRPIN5
+//#define MLRS_FEATURE_IN
+//#define MLRS_FEATURE_DIVERSITY
+//#define MLRS_FEATURE_NO_DIVERSITY
+
 //-------------------------------------------------------
 // TX DIY DUAL-E28 BOARD02 v010 STM32F103CB
 //-------------------------------------------------------
 
 #define DEVICE_HAS_DIVERSITY
-//#define DEVICE_HAS_IN
 #define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
+//#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
+
+
+#ifdef MLRS_FEATURE_JRPIN5
+  #undef DEVICE_HAS_IN
+  #define DEVICE_HAS_JRPIN5
+#endif
+#ifdef MLRS_FEATURE_IN
+  #undef DEVICE_HAS_JRPIN5
+  #define DEVICE_HAS_IN
+#endif
+#ifdef MLRS_FEATURE_DIVERSITY
+  #define DEVICE_HAS_DIVERSITY
+#endif
+#ifdef MLRS_FEATURE_NO_DIVERSITY
+  #undef DEVICE_HAS_DIVERSITY
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -25,6 +46,8 @@
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
 #define EE_START_PAGE             124 // 128 kB flash, 1 kB page
+
+#define MICROS_TIMx               TIM3
 
 
 //-- UARTS
@@ -283,14 +306,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
 
 
 //-- POWER

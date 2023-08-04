@@ -112,10 +112,22 @@ class tComPort : public tSerialBase
 #endif
 #ifdef USE_COM
   public:
+#ifdef USE_USB
+    void InitOnce(void) { usb_init(); }
+    void Init(void) override { }
+    void putc(char c) override { usb_putc(c); }
+    bool available(void) override { return usb_rx_available(); }
+    char getc(void) override { return usb_getc(); }
+#else
     void Init(void) override { uartc_init(); }
     void putc(char c) override { uartc_putc(c); }
     bool available(void) override { return uartc_rx_available(); }
     char getc(void) override { return uartc_getc(); }
+#endif
+#endif
+#ifndef USE_USB
+  public:
+    void InitOnce(void) {}
 #endif
 };
 
@@ -271,9 +283,10 @@ STATIC_ASSERT(sizeof(tRxBindFrame) == FRAME_TX_RX_LEN, "tRxBindFrame len missmat
 STATIC_ASSERT(sizeof(tTxCmdFrameRxParams) == FRAME_TX_PAYLOAD_LEN, "tTxCmdFrameRxParams len missmatch")
 STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFrameRxSetupData len missmatch")
 
-STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tRxSetup) == 36, "tRxSetup len missmatch")
-STATIC_ASSERT(sizeof(tSetup) == 38+20+36+8+2, "tSetup len missmatch")
+STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
+STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
+STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_LEN+8+2, "tSetup len missmatch")
 
 STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * FHSS_CONFIG_NUM, "fhss_config size missmatch")
 

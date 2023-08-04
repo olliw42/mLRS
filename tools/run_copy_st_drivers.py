@@ -66,6 +66,7 @@ f1xx_hal_files_to_include = [
   'stm32f1xx_hal_rcc_ex.c',
   'stm32f1xx_hal_flash.c',
   'stm32f1xx_hal_flash_ex.c',
+  'stm32f1xx_hal_dma.c',
   'stm32f1xx_hal_i2c.c',
 ]
 
@@ -118,9 +119,11 @@ f0xx_hal_files_to_include = [
   'stm32f0xx_hal_rcc_ex.c',
   'stm32f0xx_hal_flash.c',
   'stm32f0xx_hal_flash_ex.c',
-#  'stm32f0xx_hal_dma.c', # why not ??
+  'stm32f0xx_hal_dma.c', # why not ??
   'stm32f0xx_hal_i2c.c',
   'stm32f0xx_hal_i2c_ex.c',
+  'stm32f0xx_hal_pcd.c',
+  'stm32f0xx_hal_pcd_ex.c',
 ]
 
 
@@ -226,7 +229,7 @@ def copy_hal_driver(folder, chip, clean=False, silent=False):
         shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
-def do_for_each_folder(clean=False, silent=False):
+def do_for_each_target(clean=False, silent=False):
     print('----------------------------------------')
     print(' copy CMSIS and HAL files to project target folders')
     print('----------------------------------------')
@@ -252,7 +255,33 @@ def do_for_each_folder(clean=False, silent=False):
             #break
             #exit(1)
 
-    print('# DONE #')
+
+def copy_usb_device_library_driver(folder, clean=False, silent=False):
+    print('--- COPY USB Device Library ---')
+    if not silent: print('folder:', folder)
+
+    target = os.path.join(mLRSdirectory,folder,'Drivers','STM32_USB_Device_Library')
+    create_clean_dir(target)
+    if clean: return
+
+    source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','STM32_USB_Device_Library')
+    if not silent: print('src:   ', source)
+    if not silent: print('target:', target)
+    
+    loc = os.path.join('Class','CDC','Inc')
+    create_clean_dir(os.path.join(target,loc))
+    copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
+    loc = os.path.join('Class','CDC','Src')
+    create_clean_dir(os.path.join(target,loc))
+    copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
+
+    loc = os.path.join('Core','Inc')
+    create_clean_dir(os.path.join(target,loc))
+    copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
+    loc = os.path.join('Core','Src')
+    create_clean_dir(os.path.join(target,loc))
+    copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
+
 
 
 silent = False
@@ -261,6 +290,10 @@ clean = False
 if '-clean' in sys.argv: clean = True
 
 #do_for_each_folder(clean=True)
-do_for_each_folder(clean=clean,silent=silent)
+do_for_each_target(clean=clean,silent=silent)
+
+copy_usb_device_library_driver('tx-FRM303-f070cb', clean=clean,silent=silent)
+
+print('# DONE #')
 if not silent:
     os.system("pause")

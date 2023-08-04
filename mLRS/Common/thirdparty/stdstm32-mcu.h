@@ -31,19 +31,31 @@ extern "C" {
 void (*SysMemBootJump)(void);
 
 
+#ifdef STDSTM32_USE_USB
+#include "stdstm32-usb-vcp.h"
+#endif
+
+
 void BootLoaderInit(void)
 {
     SysMemBootJump = (void (*)(void)) (*((uint32_t*)(ST_BOOTLOADER_ADDRESS+4))); // point PC to system memory reset vector
 
+#ifdef STDSTM32_USE_USB
+    usb_deinit();
+#endif
+
     HAL_DeInit(); // is important
 
-    // shut down any running tasks
+    // shut down any running tasks, done already by HAL_DeInit()!
     LL_GPIO_DeInit(GPIOA);
     LL_GPIO_DeInit(GPIOB);
     LL_GPIO_DeInit(GPIOC);
     LL_USART_DeInit(USART1);
+#ifdef USART2
+    LL_USART_DeInit(USART2);
+#endif
 
-    LL_RCC_DeInit();
+    LL_RCC_DeInit(); // HAL_RCC_DeInit(); ?? ATTENTION: HAL_RCC_DeInit() uses SysTick!
 
     // reset systick timer
     SysTick->CTRL = 0;
@@ -51,10 +63,17 @@ void BootLoaderInit(void)
     SysTick->VAL = 0;
 
     // select HSI as system clock source
-    LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI); // done already in LL_RCC_Deinit() !?
+    //LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI); // is done already in LL_RCC_Deinit() !?
 
     // disable interrupts
-    __set_PRIMASK(1);
+    //__set_PRIMASK(1);
+    // this is what works for F0 to enter DFU!
+    __disable_irq();
+    for (uint8_t i = 0; i < (sizeof(NVIC->ICER) / sizeof(*NVIC->ICER)); i++) {
+        NVIC->ICER[i] = 0xFFFFFFFF;
+        NVIC->ICPR[i] = 0xFFFFFFFF;
+    }
+    __enable_irq();
 
     // remap system memory
     // stated in several sources, but doesn't seem to be relevant

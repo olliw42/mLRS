@@ -7,6 +7,9 @@
 // hal
 //********************************************************
 
+//#define MLRS_FEATURE_DIVERSITY
+//#define MLRS_FEATURE_NO_DIVERSITY
+
 //-------------------------------------------------------
 // RX DIY DUAL-E28 BOARD02 v010 STM32F103CB
 //-------------------------------------------------------
@@ -14,6 +17,14 @@
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_BUZZER
+
+
+#ifdef MLRS_FEATURE_DIVERSITY
+  #define DEVICE_HAS_DIVERSITY
+#endif
+#ifdef MLRS_FEATURE_NO_DIVERSITY
+  #undef DEVICE_HAS_DIVERSITY
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -24,6 +35,13 @@
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
 #define EE_START_PAGE             124 // 128 kB flash, 1 kB page
+
+#define MICROS_TIMx               TIM3
+
+#define CLOCK_TIMx                TIM2
+#define CLOCK_IRQn                TIM2_IRQn
+#define CLOCK_IRQHandler          TIM2_IRQHandler
+//#define CLOCK_IRQ_PRIORITY        10
 
 
 //-- UARTS

@@ -28,6 +28,8 @@
 
 #define EE_START_PAGE             250 // 512 kB flash, 2 kB page
 
+#define MICROS_TIMx               TIM3
+
 
 //-- UARTS
 // UARTB = serial port
@@ -261,14 +263,6 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
-}
-
-
 //-- 5 Way Switch
 // PC2: resistor chain Vcc - 4.7k - down - 1k - left - 2.2k - right - 4.7k - up
 // PC13: center
@@ -278,14 +272,13 @@ void pos_switch_init(void)
 #define FIVEWAY_ADC_IO            IO_PC2 // ADC12_IN8
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
 
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
     gpio_init(FIVEWAY_SWITCH_CENTER, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    LL_RCC_SetADCClockSource(LL_RCC_ADC12_CLKSOURCE_SYSCLK);
-    rcc_init_afio();
-    rcc_init_adc(FIVEWAY_ADCx);
+    adc_init_begin(FIVEWAY_ADCx);
     adc_init_one_channel(FIVEWAY_ADCx);
     adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
     adc_enable(FIVEWAY_ADCx);
@@ -308,6 +301,7 @@ uint8_t fiveway_read(void)
     if (adc > (2505-200) && adc < (2505+200)) return (1 << KEY_UP); // 2505
     return (center_pressed << KEY_CENTER);
 }
+#endif
 
 
 //-- Display I2C
@@ -336,6 +330,7 @@ uint8_t fiveway_read(void)
 #define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
 #define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 void esp_init(void)
 {
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp is in reset
@@ -354,6 +349,7 @@ uint8_t esp_dtr_rts(void)
 {
     return gpio_read_activehigh(ESP_DTR) + (gpio_read_activehigh(ESP_RTS) << 1);
 }
+#endif
 
 
 //-- POWER

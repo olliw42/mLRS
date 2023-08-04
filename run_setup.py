@@ -53,3 +53,6 @@ def generate_mavlink_c_library():
 git_submodules_update()
 copy_st_drivers()
 generate_mavlink_c_library()
+
+os.system("pause")
+

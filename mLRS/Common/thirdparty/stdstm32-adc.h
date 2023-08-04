@@ -253,6 +253,28 @@ void adc_config_channel(ADC_TypeDef* ADCx, uint32_t Rank, uint32_t Channel, GPIO
 // INIT routines
 //-------------------------------------------------------
 
+void adc_init_begin(ADC_TypeDef* ADCx)
+{
+#ifdef STM32F0
+    // ADC disable sequence from datasheet, needed to avoid getting stuck in enable
+    // ADCx->CR |= ADC_CR_ADSTP;                   // stop any ongoing conversion
+    // while ((ADCx->CR & ADC_CR_ADSTP) != 0) {}   // wait until conversion is stopped
+    // ADCx->CR |= ADC_CR_ADDIS;                   // disable ADC
+    // while ((ADCx->CR & ADC_CR_ADEN) != 0) {}    // wait until ADC is fully disabled
+    LL_ADC_REG_StopConversion(ADCx);
+    while (LL_ADC_REG_IsStopConversionOngoing(ADCx)) {}
+    LL_ADC_Disable(ADCx);
+    //while (LL_ADC_IsEnabled(ADCx)) {}
+    while (LL_ADC_IsDisableOngoing(ADCx)) {}
+#endif
+#ifdef STM32G4
+    LL_RCC_SetADCClockSource(LL_RCC_ADC12_CLKSOURCE_SYSCLK);
+#endif
+    rcc_init_afio();
+    rcc_init_adc(ADCx);
+}
+
+
 void adc_enable(ADC_TypeDef* ADCx)
 {
 #if defined STM32G4
@@ -272,14 +294,19 @@ void adc_enable(ADC_TypeDef* ADCx)
     LL_ADC_EnableInternalRegulator(ADCx);
     uint32_t wait_loop_index;
     wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
-    while(wait_loop_index != 0) { wait_loop_index--; }
+    while (wait_loop_index != 0) { wait_loop_index--; }
 #endif
 
+#ifndef STM32F0
     LL_ADC_Enable(ADCx);
-
-#if defined STM32F0
-    while (!LL_ADC_IsActiveFlag_ADRDY(ADCx)) {}
+#else
+    // ADC enable sequence from datasheet
+    // if ((ADCx->ISR & ADC_ISR_ADRDY) != 0) { ADCx->ISR |= ADC_ISR_ADRDY; } // ensure ADRDY = 0
+    // ADCx->CR |= ADC_CR_ADEN;                                              // enable ADC
+    // while ((ADCx->ISR & ADC_ISR_ADRDY) == 0) {}                           // wait until ADC read
     LL_ADC_ClearFlag_ADRDY(ADCx);
+    LL_ADC_Enable(ADCx);
+    while (!LL_ADC_IsActiveFlag_ADRDY(ADCx)) {} // makes it stuck after restart if not disable before
 #endif
 
     _adc_ADC_SelfCalibrate(ADCx);

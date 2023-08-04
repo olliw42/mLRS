@@ -42,6 +42,25 @@ typedef enum {
 
 
 typedef enum {
+    ORTHO_NONE = 0,
+    ORTHO_1_3,
+    ORTHO_2_3,
+    ORTHO_3_3,
+    ORTHO_NUM,
+} ORTHO_ENUM;
+
+
+typedef enum {
+    EXCEPT_NONE = 0,
+    EXCEPT_2P4_GHZ_WIFIBAND_1,
+    EXCEPT_2P4_GHZ_WIFIBAND_6,
+    EXCEPT_2P4_GHZ_WIFIBAND_11,
+    EXCEPT_2P4_GHZ_WIFIBAND_13,
+    EXCEPT_NUM,
+} EXCEPT_ENUM;
+
+
+typedef enum {
     DIVERSITY_DEFAULT = 0,
     DIVERSITY_ANTENNA1, // antenna 1 if diversity available
     DIVERSITY_ANTENNA2, // antenna 2 if diversity available
@@ -142,17 +161,21 @@ typedef enum {
 
 
 typedef enum {
-    OUT_RSSI_CHANNEL_OFF = 0,
-    OUT_RSSI_CHANNEL_CH5,
-    OUT_RSSI_CHANNEL_CH6,
-    OUT_RSSI_CHANNEL_CH7,
-    OUT_RSSI_CHANNEL_CH8,
-    OUT_RSSI_CHANNEL_CH9,
-    OUT_RSSI_CHANNEL_CH10,
-    OUT_RSSI_CHANNEL_CH11,
-    OUT_RSSI_CHANNEL_CH12,
-    OUT_RSSI_CHANNEL_NUM,
-} RX_OUT_RSSI_CHANNEL_ENUM;
+    OUT_RSSI_LQ_CHANNEL_OFF = 0,
+    OUT_RSSI_LQ_CHANNEL_CH5,
+    OUT_RSSI_LQ_CHANNEL_CH6,
+    OUT_RSSI_LQ_CHANNEL_CH7,
+    OUT_RSSI_LQ_CHANNEL_CH8,
+    OUT_RSSI_LQ_CHANNEL_CH9,
+    OUT_RSSI_LQ_CHANNEL_CH10,
+    OUT_RSSI_LQ_CHANNEL_CH11,
+    OUT_RSSI_LQ_CHANNEL_CH12,
+    OUT_RSSI_LQ_CHANNEL_CH13,
+    OUT_RSSI_LQ_CHANNEL_CH14,
+    OUT_RSSI_LQ_CHANNEL_CH15,
+    OUT_RSSI_LQ_CHANNEL_CH16,
+    OUT_RSSI_LQ_CHANNEL_NUM,
+} RX_OUT_RSSI_LQ_CHANNEL_ENUM;
 
 
 typedef enum {
@@ -206,6 +229,17 @@ typedef enum {
 
 typedef struct
 {
+    char BindPhrase[6+1];
+    uint8_t FrequencyBand;
+    uint8_t Mode;
+    uint8_t Ortho;
+
+    uint8_t spare[6];
+} tCommonSetup; // 16 bytes
+
+
+typedef struct
+{
     uint8_t Power;
     uint8_t Diversity;
     uint8_t ChannelsSource;
@@ -236,8 +270,9 @@ typedef struct
     uint8_t Buzzer;
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
+    uint8_t OutLqChannelMode;
 
-    uint8_t spare[8];
+    uint8_t spare[7];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
@@ -247,6 +282,9 @@ typedef struct
 #define SETUP_MARKER_STR      "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
+#define SETUP_CONFIG_LEN      10 // not more, so it's only one char
+
+
 // user setable parameter values, stored in EEPROM
 typedef struct
 {
@@ -255,12 +293,14 @@ typedef struct
     uint16_t Layout;
 
     // parameters common to both Tx and Rx
-    // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
-    char BindPhrase[6+1];
-    uint8_t FrequencyBand;
-    uint8_t Mode;
+    // deprecated
+    char __BindPhrase[6+1];
+    uint8_t __FrequencyBand;
+    uint8_t __Mode;
 
-    uint8_t spare[7];
+    uint8_t _ConfigId; // strange name to avoid mistake
+
+    uint8_t spare[6];
 
     // parameters specific to Rx, can be changed on the fly
     // for transmitters this is populated upon first connection, see SetupMetaData.rx_available mechanism
@@ -268,7 +308,11 @@ typedef struct
 
     // parameters specific to Tx, can be changed on the fly
     // not used by receivers
-    tTxSetup Tx;
+    tTxSetup Tx[SETUP_CONFIG_LEN];
+
+    // parameters common to both Tx and Rx
+    // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
+    tCommonSetup Common[SETUP_CONFIG_LEN];
 
     char MarkerEnd[8];
 } tSetup;
@@ -278,6 +322,7 @@ typedef struct
 {
     uint16_t FrequencyBand_allowed_mask;
     uint16_t Mode_allowed_mask;
+    uint16_t Ortho_allowed_mask;
 
     char Tx_Power_optstr[44+1];
     uint16_t Tx_Diversity_allowed_mask;
@@ -305,6 +350,9 @@ typedef struct
 // can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+    uint8_t ConfigId; // we take a copy at startup to avoid confusion
+
+    uint8_t FrequencyBand;
     uint8_t Mode;
 
     uint8_t LoraConfigIndex;

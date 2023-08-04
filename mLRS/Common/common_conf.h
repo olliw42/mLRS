@@ -11,9 +11,9 @@
 #pragma once
 
 
-#define VERSION             329 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.3.29"
-#define SETUPLAYOUT         2   // this should be changed then Setup struct and/or serial changes
+#define VERSION             331 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.3.31"
+#define SETUPLAYOUT         329 // this should be changed then Setup struct and/or serial changes
 
 
 //-------------------------------------------------------
@@ -76,7 +76,8 @@
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
-#define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 12: CH12, note: CH13 - CH16 are 3-way and not suitable
+#define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 16: CH16
+#define SETUP_RX_OUT_LQ_CHANNEL         0 // 0: off, 5: CH5, 16: CH16
 
 #define SETUP_RX_BUZZER                 0 // 0: off, 1: LP
 
@@ -91,6 +92,9 @@
 
 //#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
 #define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
+
+
+#define SETUP_RF_ORTHO                   0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
 
 
 //-------------------------------------------------------

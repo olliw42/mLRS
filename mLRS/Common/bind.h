@@ -210,9 +210,10 @@ void BindBase::do_transmit(uint8_t antenna)
 
     txBindFrame.connected = connected();
 
-    strbufstrcpy(txBindFrame.BindPhrase_6, Setup.BindPhrase, 6);
-    // TODO txBindFrame.FrequencyBand = Setup.FrequencyBand;
-    txBindFrame.Mode = Setup.Mode;
+    strbufstrcpy(txBindFrame.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
+    // TODO txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
+    txBindFrame.Mode = Setup.Common[Config.ConfigId].Mode;
+    txBindFrame.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
     sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
@@ -244,9 +245,10 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
-    strstrbufcpy(Setup.BindPhrase, txBindFrame.BindPhrase_6, 6);
-    // TODO Setup.FrequencyBand = txBindFrame.FrequencyBand;
-    Setup.Mode = txBindFrame.Mode;
+    strstrbufcpy(Setup.Common[0].BindPhrase, txBindFrame.BindPhrase_6, 6);
+    // TODO Setup.Common[0].FrequencyBand = txBindFrame.FrequencyBand;
+    Setup.Common[0].Mode = txBindFrame.Mode;
+    Setup.Common[0].Ortho = txBindFrame.Ortho;
 
     if (txBindFrame.connected) {
         task = BIND_TASK_RX_STORE_PARAMS;

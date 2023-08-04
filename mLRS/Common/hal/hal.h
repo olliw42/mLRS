@@ -16,15 +16,18 @@
 
 The availability of the many features are handled via #define declarations. In order to keep somewhat track,
 this naming convention is used (with few exceptions):
+
+- MLRS_FEATURE_XXXX: for setting different features for a target; should ONLY be set globally/externally by the build system!
 - DEVICE_HAS_XXXX: is set in a device's hal file to indicate the availability/non-availability of a feature
 - USE_XXXX: these are determined through some processing, which can involve the DEVICE_HAS_XXXX flags
+
 In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
 If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
 flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor" of the feature
 (example: IN feature with normal or inverted UART levels).
 
-Many feature flags are available, which can be set in the device hal files. They are listed in the following for the
-tx-hal and rx-hal files.
+Many DEVICE_XXXX feature flags are available, which can be set in the device hal files. They are listed in the
+following for the tx-hal and rx-hal files.
 
 In tx-hal files:
 
@@ -36,6 +39,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
+#define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C, and 5-way switch
 #define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°, and 5-way switch
@@ -90,14 +94,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- SeeedStudio WioE5 boards
 
 #ifdef RX_WIO_E5_GROVE_WLE5JC
-#include "rx-hal-wioe5-grove-wle5jc.h"
+#include "rx-hal-WioE5-Grove-wle5jc.h"
 #endif
 #ifdef RX_WIO_E5_MINI_WLE5JC
-#include "rx-hal-wioe5-mini-wle5jc.h"
+#include "rx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
-#include "tx-hal-wioe5-mini-wle5jc.h"
+#include "tx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 
@@ -113,6 +117,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 //-- FlySky FRM303 2.4 GHz Device
+
+#ifdef RX_FRM303_F070CB
+#include "rx-hal-FRM303-f070cb.h"
+#endif
 
 #ifdef TX_FRM303_F070CB
 #include "tx-hal-FRM303-f070cb.h"
@@ -172,8 +180,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 //-- DIY "easy-to-solder" Boards
+
 #ifdef RX_DIY_E77_E22_WLE5CC
 #include "rx-hal-easysolder-e77-e22-wle5cc.h"
+#endif
+
+#ifdef TX_DIY_E77_E22_WLE5CC
+#include "tx-hal-easysolder-e77-e22-wle5cc.h"
 #endif
 
 
@@ -213,34 +226,37 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
   #if !defined DEVICE_HAS_NO_COM
     #define USE_COM
+    #ifdef DEVICE_HAS_COM_ON_USB
+      #define USE_USB
+    #endif
   #endif
   #ifdef DEBUG_ENABLED
     #define USE_DEBUG
   #endif
 #endif
 
-#if (defined DEVICE_HAS_SERIAL2) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+#if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
   #define USE_SERIAL2
 #endif
 #endif // DEVICE_IS_TRANSMITTER
 
 
-#if (defined DEVICE_HAS_IN) || (defined DEVICE_HAS_IN_NORMAL) || (defined DEVICE_HAS_IN_INVERTED)
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED
   #define USE_IN
 #endif
 
 
-#if (defined DEVICE_HAS_OUT) || (defined DEVICE_HAS_OUT_NORMAL) || (defined DEVICE_HAS_OUT_INVERTED)
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INVERTED
   #define USE_OUT
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
+#if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
   #define USE_DISPLAY
 #endif
 
 
-#if (defined DEVICE_HAS_I2C_DAC) || (defined DEVICE_HAS_I2C_DISPLAY) || (defined DEVICE_HAS_I2C_DISPLAY_ROT180)
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
   #define USE_I2C
   #ifndef HAL_I2C_MODULE_ENABLED
     #error HAL_I2C_MODULE_ENABLED is not defined, but I2C is used!
@@ -248,17 +264,17 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if (defined DEVICE_HAS_FAN_ONOFF)
+#if defined DEVICE_HAS_FAN_ONOFF
   #define USE_FAN
 #endif
 
 
-#if (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL) || (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2)
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
   #define USE_ESP_WIFI_BRIDGE
-  #if (defined ESP_RESET) && (defined ESP_GPIO0)
+  #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #endif
-  #if (defined ESP_DTR) && (defined ESP_RTS)
+  #if defined ESP_DTR && defined ESP_RTS
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
 #endif
@@ -332,7 +348,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifndef DEVICE_HAS_SYSTEMBOOT
     void systembootloader_init(void) {}
-    void systembootloader_do(void) {}
 #endif
 
 #ifndef USE_ESP_WIFI_BRIDGE

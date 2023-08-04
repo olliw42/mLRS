@@ -49,10 +49,15 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #ifdef USE_COM
+#ifndef USE_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
+#endif
 #endif
 #ifdef USE_SERIAL2
 #include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
+#endif
+#ifdef USE_USB
+#include "../modules/stm32-usb-device/stdstm32-usb-vcp.h"
 #endif
 #ifdef USE_IN
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
@@ -77,6 +82,7 @@ v0.0.00:
 
 #include "in.h"
 #include "txstats.h"
+#include "config_id.h"
 #include "cli.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
@@ -86,6 +92,7 @@ TxStatsBase txstats;
 tComPort com;
 tTxCli cli;
 ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
+tConfigId config_id;
 
 
 class In : public InBase
@@ -179,7 +186,7 @@ WhileTransmit whileTransmit;
 
 void WhileTransmit::handle_once(void)
 {
-    cli.Set(Setup.Tx.CliLineEnd);
+    cli.Set(Setup.Tx[Config.ConfigId].CliLineEnd);
     cli.Do();
 
 #ifdef USE_DISPLAY
@@ -236,22 +243,26 @@ void enter_flash_esp(void)
 // Init
 //-------------------------------------------------------
 
+void init_once(void)
+{
+    com.InitOnce();
+}
+
+
 void init(void)
 {
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
 
-    systembootloader_init();
+    delay_init();
+    systembootloader_init(); // after delay_init() since it may need delay
+
     leds_init();
     button_init();
-    pos_switch_init();
     esp_init();
-
-    delay_init();
-    micros_init();
-
-    systembootloader_do(); // after delay_init() since it may need delay
     fiveway_init();
+
+    micros_init();
 
     serial.Init();
     serial2.Init();
@@ -638,6 +649,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+  init_once();
 RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
@@ -656,7 +668,7 @@ RESTARTCONTROLLER:
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
-  fhss.Init(Config.FhssNum, Config.FhssSeed, Setup.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
+  fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -675,13 +687,15 @@ RESTARTCONTROLLER:
 
   txstats.Init(Config.LQAveragingPeriod);
 
-  in.Configure(Setup.Tx.InMode);
+  in.Configure(Setup.Tx[Config.ConfigId].InMode);
   mavlink.Init();
   sx_serial.Init(&serial, &mbridge, &serial2);
   fan.SetPower(sx.RfPower_dbm());
   whileTransmit.Init();
 
   disp.Init();
+
+  config_id.Init();
 
   led_blink = 0;
   tick_1hz = 0;
@@ -720,7 +734,7 @@ RESTARTCONTROLLER:
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!tick_1hz) {
-            if (Setup.Tx.Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+            if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
                 buzzer.BeepLQ(stats.received_LQ);
             }
         }
@@ -964,7 +978,7 @@ IF_ANTENNA2(
         txstats.Next();
         if (!connected()) txstats.Clear();
 
-        if (Setup.Tx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
+        if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
             if (!valid_frame_received) buzzer.BeepLP();
         }
 
@@ -1000,8 +1014,8 @@ IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
         // update channels
-        if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+        if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
+            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
             channelOrder.Apply(&rcData);
         }
         // when we receive channels packet from transmitter, we send link stats to transmitter
@@ -1053,17 +1067,18 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
         case MBRIDGE_CMD_BIND_START: start_bind(); break;
         case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
-        case MBRIDGE_CMD_MODELID_SET: {
+        case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetPayloadPtr()[0]));
-            }break;
+            config_id.Change(mbridge.GetPayloadPtr()[0]);
+            break;
         }
     }
 );
 IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
         // update channels
-        if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_CRSF) {
-            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+        if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
+            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
             channelOrder.Apply(&rcData);
         }
     }
@@ -1093,6 +1108,7 @@ IF_CRSF(
         switch (crsfcmd) {
         case TXCRSF_CMD_MODELID_SET:
 //dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
+            config_id.Change(crsf.GetCmdDataPtr()[0]);
             break;
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");
@@ -1103,10 +1119,10 @@ IF_CRSF(
 );
 #endif
 #ifdef USE_IN
-    if (Setup.Tx.ChannelsSource == CHANNEL_SOURCE_INPORT) {
+    if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_INPORT) {
         // update channels
         if (in.Update(&rcData)) {
-            channelOrder.Set(Setup.Tx.ChannelOrder); //TODO: better than before, but still better place!?
+            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
             channelOrder.Apply(&rcData);
         }
     }
@@ -1150,6 +1166,7 @@ IF_CRSF(
     case CLI_TASK_BIND: start_bind(); break;
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
     case CLI_TASK_FLASH_ESP: enter_flash_esp(); break;
+    case CLI_TASK_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     }
 
     //-- Handle esp wifi bridge
@@ -1157,6 +1174,12 @@ IF_CRSF(
     esp.Do();
     uint8_t esp_task = esp.Task();
     if (esp_task == ESP_TASK_RESTART_CONTROLLER) goto RESTARTCONTROLLER;
+
+    //-- more
+
+    if (config_id.Do()) {
+        doParamsStore = true;
+    }
 
   }//end of while(1) loop
 

@@ -177,14 +177,13 @@ tRxSxSerial sx_serial;
 
 void init(void)
 {
-    systembootloader_init();
+    delay_init();
+    systembootloader_init(); // after delay_init() since it may need delay
+
     leds_init();
     button_init();
 
-    delay_init();
     micros_init();
-
-    systembootloader_do(); // after delay_init() since it may need delay
 
     serial.Init();
     out.Init();
@@ -560,7 +559,7 @@ RESTARTCONTROLLER:
   IF_ANTENNA1(sx.StartUp());
   IF_ANTENNA2(sx2.StartUp());
   bind.Init();
-  fhss.Init(Config.FhssNum, Config.FhssSeed, Setup.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
+  fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -888,7 +887,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_RECEIVE;
             break;
         case BIND_TASK_RX_STORE_PARAMS:
-            Setup.FrequencyBand = fhss.GetCurrFrequencyBand();
+            Setup.Common[0].FrequencyBand = fhss.GetCurrFrequencyBand();
             doParamsStore = true;
             break;
         }
@@ -907,13 +906,13 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi());
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
-                out.SendRcData(&rcData, true, true, RSSI_MIN);
+                out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
                 out.SendLinkStatisticsDisconnected();
                 mavlink.SendRcData(out.GetRcDataPtr(), true);
             }

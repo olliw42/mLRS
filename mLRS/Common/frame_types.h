@@ -143,10 +143,12 @@ typedef struct
     char BindPhrase_6[6];
     uint8_t FrequencyBand_XXX : 4; // TODO
     uint8_t Mode : 4;
+    uint8_t Ortho : 4;
 
-    uint8_t spare2[72];
+    uint8_t spare1 : 4;
+    uint8_t spare2[71];
 
-    uint16_t crc; // 2bytes
+    uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
 
 
@@ -206,8 +208,10 @@ typedef struct
     uint8_t Buzzer : 4;
     uint8_t SendRcChannels : 4;
     uint8_t __RadioStatusMethod : 4; // deprecated
+    uint8_t OutLqChannelMode : 4;
 
-    uint8_t spare2[5];
+    uint8_t spare : 4;
+    uint8_t spare2[4];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValue_Ch13 : 2;
@@ -238,12 +242,15 @@ typedef struct
     // rx setup meta data 2, parameter metadata
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
+    uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t spare2[2];
+
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
     uint8_t Buzzer_allowed_mask;
 
-    uint8_t spare3[8];
+    uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 
@@ -258,10 +265,14 @@ typedef struct
     char BindPhrase_6[6];
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
+    uint8_t Ortho : 4;
+
+    uint8_t spare1 : 4;
+    uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[31];
+    uint8_t spare3[28];
 }) tTxCmdFrameRxParams; // 64 bytes
 
 

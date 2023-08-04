@@ -31,11 +31,11 @@ You of course use the project fully at your own risk.
 
 The project is work in progress, and there is still plenty of room for improvement.
 
-However, the essential basic features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
+However, the essential features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
-The RC channels layout is as follows:
+It provides 16 RC channels; the layout is as follows:
 - 8 channels with 11 bit resolution (CH1 - CH8), 4 of them with a higher reliability margin (CH1 - CH4)
 - 4 channels with 8 bit resolution (CH9 - CH12)
 - 4 channels with three steps (CH13 - CH16), 2 of them with a higher reliability margin (CH13, CH14)
@@ -67,6 +67,7 @@ Further features:
 - the transmitter and receiver parameters can be set via a LUA script, a CLI, or an OLED display.
 - bind mode for binding "unknown" receivers to the transmitter.
 - the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
+- 10 model configurations stored in Tx module, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
@@ -93,7 +94,7 @@ For the 2.4 GHz band, the available range test reports consistently exceed the a
 
 ## Hardware ##
 
-Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support please join.
+Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support for mLRS then please join.
 
 The code currently supports:
 - Flysky FRM303 transmitter module (2.4 GHz)
@@ -102,21 +103,21 @@ The code currently supports:
 - EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
-In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M module as receiver, which is supported by mLRS. 
+In the 915/868 MHz range, the Frsky R9M & R9MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. Its big disadvantage is however that the receiver's transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M transmitter module as receiver, which is supported by mLRS. 
 
-The SeeedStudio Wio-E5 boards and EByte E77 MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" receiver module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver. These boards are based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
+The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver (it can also be used to build a mLRS Tx module). These boards are all based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
-In the 2.4 GHz range, the Flysky FRM303 transmitter module is a great and readily available, albeit expensive, option. Concerning receivers, the DIY options are currently the (only) way to go. The DIY options also offer the most capable mLRS Tx modules available.
+In the 2.4 GHz range, the Flysky FRM303 transmitter module is a great and readily available, albeit expensive, option. mLRS supports using it as Tx module as well as receiver. Concerning receivers, the DIY options are however probably the way to go. The DIY options also offer Tx modules, including the most capable mLRS Tx modules available.
 
 Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 
 ## Firmware: Flashing ##
 
-Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the .hex file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The Tx module can then be configured to your needs via the CLI or via the mLRS Configuration lua script. The Rx module is configured by first binding it to the Tx module, and then configuring it through the Tx module, exactly like the Tx module is configured
+Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the .hex file appropriate for your target into the device (it is not required to install the software for compiling as described in the next chapter). The Tx module can then be configured to your needs via the CLI, the mLRS Configuration lua script, or the OLED display if available. The receiver is configured by first binding it to the Tx module, and then configuring it through the Tx module, exactly like the Tx module is configured.
 
 ## Software: Installation Bits and Bops ##
 
-This is a STM32CubeIDE project. I don't have yet much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
+This is a STM32CubeIDE project. I don't have much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
@@ -144,7 +145,7 @@ For cloning you of course can use any other tool you like, but ensure that the s
 
 The STM32CubeIDE has its weirdness, so you may have to get used to it. 
 
-In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups, or submit an issue in the github repository.
+In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups or the discord channel, or submit an issue in the github repository.
 
 #### Dependencies ####
 

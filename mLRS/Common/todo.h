@@ -21,11 +21,11 @@ ISSUES:
 
 - sx Init implicitly uses Config, would be nicer to have this disentangled
 
-- setup per model
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
 - entering bind by power cycles Q: how the heck can this be done, without persistent OB???
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
+  This holds for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
 - work out how to go with setup layout changes
 
 - EVERY tx module needs a means to set the parameters, via SWD?
@@ -66,7 +66,6 @@ The 3 MAIN topics TODO:
 4) Auxiliary features
 - relay setup, how could this be done?
 - 2.4 GHz high-interference mode bw 400kHz, at least for experiment to evaluate
-- wifi band exclusion method
 - beacon mode
 
 
@@ -74,8 +73,6 @@ TODO:
 - can we pl check the real spi clock speed !?!?!!?
 
 - effect of USE_DCDC? where to place it??
-
-- USB on TX side (no pressure, since no target which needs it)
 
 Longterm TODO:
 - support high_latency2

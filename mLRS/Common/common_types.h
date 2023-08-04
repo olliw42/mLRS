@@ -108,6 +108,8 @@ int8_t rssi_i8_from_u7(uint8_t rssi_u7);
 uint8_t rssi_i8_to_ap(int8_t rssi_i8);
 uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
 
+uint16_t lq_to_sbus_crsf(uint8_t lq);
+
 
 //-- rc data
 
@@ -117,8 +119,7 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
 #define RC_DATA_CENTER  1024
 #define RC_DATA_MAX     2047
 
-typedef struct
-{
+typedef struct {
     uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
 } tRcData;
 

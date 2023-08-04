@@ -83,6 +83,15 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 }
 
 
+//   0 ... 100 -> 191 .. 1792 = 1000 .. 2000 us
+uint16_t lq_to_sbus_crsf(uint8_t lq)
+{
+    if (lq >= 100) return 1792; // max value
+
+    return ((uint32_t)lq * 1601 + 50) / 100 + 191;
+}
+
+
 //-- rc data
 
 uint16_t clip_rc(int32_t x)
@@ -232,13 +241,13 @@ uint8_t except_from_bindphrase(char* bindphrase)
     char c = bindphrase[5]; // take last char
 
     if (c >= '0' && c <= '9') {
-        return (c - '0') % 5; // no, #1, #6, #11, #13 = 5 cases
+        return (c - '0') % 5; // no, #1, #6, #11, #13 = 5 cases = EXCEPT_NUM
     }
 
     char* cptr = strchr(bindphrase_chars, c);
     uint8_t n = (cptr) ? cptr - bindphrase_chars : 0; // must not happen that c is not found, but play it safe
 
-    return n % 5; // no, #1, #6, #11, #13 = 5 cases
+    return n % 5; // no, #1, #6, #11, #13 = 5 cases = EXCEPT_NUM
 }
 
 

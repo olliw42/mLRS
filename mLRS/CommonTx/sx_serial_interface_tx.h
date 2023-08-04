@@ -21,7 +21,7 @@ class tTxSxSerial : public tSerialBase
     {
         tSerialBase::Init();
 
-        switch (Setup.Tx.SerialDestination) {
+        switch (Setup.Tx[Config.ConfigId].SerialDestination) {
         case SERIAL_DESTINATION_SERIAL:
             serialport = _serial;
             break;

@@ -7,6 +7,9 @@
 // hal
 //*******************************************************
 
+//#define MLRS_FEATURE_DIVERSITY
+//#define MLRS_FEATURE_NO_DIVERSITY
+
 //-------------------------------------------------------
 // RX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
 //-------------------------------------------------------
@@ -14,6 +17,14 @@
 //#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
+
+
+#ifdef MLRS_FEATURE_DIVERSITY
+  #define DEVICE_HAS_DIVERSITY
+#endif
+#ifdef MLRS_FEATURE_NO_DIVERSITY
+  #undef DEVICE_HAS_DIVERSITY
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff

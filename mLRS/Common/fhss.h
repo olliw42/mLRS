@@ -333,9 +333,9 @@ typedef enum {
 
 typedef enum {
     FHSS_ORTHO_NONE = 0,
-    FHSS_ORTHO_1,
-    FHSS_ORTHO_2,
-    FHSS_ORTHO_3,
+    FHSS_ORTHO_1_3,
+    FHSS_ORTHO_2_3,
+    FHSS_ORTHO_3_3,
 } FHSS_ORTHO_ENUM;
 
 
@@ -424,7 +424,7 @@ const tFhssConfig fhss_config[] = {
 class FhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint8_t ortho = FHSS_ORTHO_NONE, uint8_t except = FHSS_EXCEPT_NONE)
+    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
 
@@ -468,24 +468,40 @@ class FhssBase
             //
             // Config.connect_listen_hop_cnt does depend on Config.FhssNum !!!
             // is used by rx to cycle through frequencies when in LISTEN
-            if (ortho > FHSS_ORTHO_NONE) {
-                if (except > FHSS_EXCEPT_NONE) {
-                    // we only have 55 channels or so
-                    // so narrow down to 12 (12 * 3 = 36 < 55)
-                    cnt = 12;
+            if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                if (except >= EXCEPT_2P4_GHZ_WIFIBAND_1 && except <= EXCEPT_2P4_GHZ_WIFIBAND_13) {
+                    // we only have 55 channels or so, so narrow down to 12 (12 * 3 = 36 < 55)
+                    if (cnt > 12) cnt = 12;
                 } else {
-                    // we have 77 channels
-                    // so can accommodate up to 18 frequencies (18 * 3 = 54 < 77)
+                    // we have 77 channels, so can accommodate up to 18 frequencies (18 * 3 = 54 < 77)
                     if (cnt > 18) cnt = 18; // we narrow down to 12 or 18
+                    except = EXCEPT_NONE;
                 }
+            } else {
+                ortho = ORTHO_NONE;
+                except = EXCEPT_NONE;
             }
-            generate_2p4(seed, ortho, except);
+            generate_ortho_except(seed, ortho, except);
             break;
         case FHSS_CONFIG_915_MHZ_FCC:
+            if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
+            } else {
+                ortho = ORTHO_NONE;
+            }
+            generate_ortho_except(seed, ortho, EXCEPT_NONE);
+            break;
+        case FHSS_CONFIG_70_CM_HAM:
+            if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
+            } else {
+                ortho = ORTHO_NONE;
+            }
+            generate_ortho_except(seed, ortho, EXCEPT_NONE);
+            break;
         case FHSS_CONFIG_868_MHZ:
         case FHSS_CONFIG_866_MHZ_IN:
         case FHSS_CONFIG_433_MHZ:
-        case FHSS_CONFIG_70_CM_HAM:
             generate(seed);
             break;
         default:
@@ -607,7 +623,7 @@ class FhssBase
 
     uint16_t prng(void);
     void generate(uint32_t seed);
-    void generate_2p4(uint32_t seed, uint8_t ortho, uint8_t except_wifiband);
+    void generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except);
 };
 
 

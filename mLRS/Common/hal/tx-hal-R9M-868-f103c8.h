@@ -31,6 +31,8 @@
 
 #define EE_START_PAGE             60 // 64 kB flash, 1 kB page
 
+#define MICROS_TIMx               TIM3
+
 
 //-- UARTS
 // UARTB = serial port or COM (CLI)
@@ -222,14 +224,6 @@ void ser_or_com_init(void)
 bool ser_or_com_serial(void)
 {
   return r9m_ser_or_com_serial;
-}
-
-
-//-- Position Switch
-// has none
-
-void pos_switch_init(void)
-{
 }
 
 

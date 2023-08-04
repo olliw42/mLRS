@@ -224,6 +224,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
     rx_params->ChannelOrder = Setup.Rx.ChannelOrder;
     rx_params->OutMode = Setup.Rx.OutMode;
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
+    rx_params->OutLqChannelMode = Setup.Rx.OutLqChannelMode;
     rx_params->FailsafeMode = Setup.Rx.FailsafeMode;
     rx_params->SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params->SerialLinkMode = Setup.Rx.SerialLinkMode;
@@ -249,6 +250,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
     Setup.Rx.ChannelOrder = rx_params->ChannelOrder;
     Setup.Rx.OutMode = rx_params->OutMode;
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;
+    Setup.Rx.OutLqChannelMode = rx_params->OutLqChannelMode;
     Setup.Rx.FailsafeMode = rx_params->FailsafeMode;
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
@@ -296,8 +298,10 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
 
     // TODO
+    // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
     //SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
     //SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
+    //SetupMetaData.Ortho_allowed_mask = rx_setupdata->Ortho_allowed_mask;
 
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
@@ -316,9 +320,10 @@ tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
-    strbufstrcpy(rx_params.BindPhrase_6, Setup.BindPhrase, 6);
-    rx_params.FrequencyBand = Setup.FrequencyBand;
-    rx_params.Mode = Setup.Mode;
+    strbufstrcpy(rx_params.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
+    rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
+    rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
+    rx_params.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_params.RxParams));
 
@@ -365,8 +370,10 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
 
     // TODO
+    // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
     //rx_setupdata.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
     //rx_setupdata.Mode_allowed_mask = SetupMetaData.Mode_allowed_mask;
+    //rx_setupdata.Ortho_allowed_mask = SetupMetaData.Ortho_allowed_mask;
 
     for (uint8_t i = 0; i < 8; i++) {
         rx_setupdata.Power_list[i] = (i < RFPOWER_LIST_NUM) ? rfpower_list[i].mW : INT16_MAX;
@@ -385,9 +392,10 @@ void unpack_txcmdframe_setrxparams(tTxFrame* frame)
 {
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
-    strstrbufcpy(Setup.BindPhrase, rx_params->BindPhrase_6, 6);
-    Setup.FrequencyBand = rx_params->FrequencyBand;
-    Setup.Mode = rx_params->Mode;
+    strstrbufcpy(Setup.Common[0].BindPhrase, rx_params->BindPhrase_6, 6);
+    Setup.Common[0].FrequencyBand = rx_params->FrequencyBand;
+    Setup.Common[0].Mode = rx_params->Mode;
+    Setup.Common[0].Ortho = rx_params->Ortho;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
 }

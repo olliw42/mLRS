@@ -93,7 +93,7 @@ void OutBase::SetChannelOrder(uint8_t new_channel_order)
 }
 
 
-void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi)
+void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq)
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
     channel_order.Apply(&rc);
@@ -154,9 +154,14 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         }
     }
 
-    if (setup->OutRssiChannelMode >= OUT_RSSI_CHANNEL_CH5 && setup->OutRssiChannelMode <= OUT_RSSI_CHANNEL_CH12) {
+    if (setup->OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_CH5 && setup->OutRssiChannelMode <= OUT_RSSI_LQ_CHANNEL_CH16) {
         uint8_t rssi_channel = setup->OutRssiChannelMode + 4;
-        rc.ch[rssi_channel-1] = rssi_i8_to_ap_sbus(rssi);
+        rc.ch[rssi_channel - 1] = rssi_i8_to_ap_sbus(rssi);
+    }
+
+    if (setup->OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_CH5 && setup->OutLqChannelMode <= OUT_RSSI_LQ_CHANNEL_CH16) {
+        uint8_t lq_channel = setup->OutLqChannelMode + 4;
+        rc.ch[lq_channel - 1] = lq_to_sbus_crsf(lq);
     }
 
     if (!initialized) return;

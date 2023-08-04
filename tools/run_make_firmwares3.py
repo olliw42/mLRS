@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 09.07.2023
+ version 31.07.2023
 ********************************************************
 '''
 import os
@@ -20,10 +20,45 @@ import sys
 
 
 #-- installation dependent
-# can we find this automatically?
+# effort at finding this automatically
 
-ST_DIR = os.path.join("C:/",'ST','STM32CubeIDE','STM32CubeIDE','plugins')
-GNU_DIR = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127'
+#ST_DIR = os.path.join("C:/",'ST','STM32CubeIDE','STM32CubeIDE','plugins')
+#GNU_DIR = 'com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.10.3-2021.10.win32_1.0.0.202111181127'
+
+def findSTM32CubeIDEGnuTools(search_root):
+    st_dir = ''
+    st_cubeide_dir = ''
+    st_cubeide_ver_nr = 0
+    for file in os.listdir(search_root):
+        if 'STM32CubeIDE' in file:
+            if '_' in file:
+                ver = file[13:].split('.')
+                ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
+                if ver_nr > st_cubeide_ver_nr:
+                    st_cubeide_ver_nr = ver_nr
+                    st_cubeide_dir = file
+            else:
+                st_cubeide_dir = file
+                st_cubeide_ver_nr = 0
+    if st_cubeide_dir != '':
+        st_dir = os.path.join(search_root,st_cubeide_dir,'STM32CubeIDE','plugins')
+
+    gnu_dir = ''
+    for dirpath in os.listdir(st_dir):
+        if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'win32' in dirpath:
+            gnu_dir = dirpath 
+    
+    return st_dir, gnu_dir    
+
+ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
+
+if not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+    printError('ERROR: gnu-tools not found!')
+    exit(1)
+
+print('STM32CubeIDE found in:', ST_DIR)
+print('gnu-tools found in:', GNU_DIR)
+print('------------------------------------------------------------')
 
 
 #-- GCC preliminaries
@@ -32,9 +67,10 @@ GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
 
 # we need to modify the PATH so that the correct toolchain/compiler is used
 # why does sys.path.insert(0,xxx) not work?
-envpath = os.environ["PATH"]
-envpath = GCC_DIR + ';' + envpath
-os.environ["PATH"] = envpath
+# no, not needed anymore as we can call arm-none-eabi directly
+#envpath = os.environ["PATH"]
+#envpath = GCC_DIR + ';' + envpath
+#os.environ["PATH"] = envpath
 
 
 #-- mLRS directories
@@ -45,7 +81,6 @@ MLRS_DIR = os.path.join(MLRS_PROJECT_DIR,'mLRS')
 
 MLRS_TOOLS_DIR = os.path.join(MLRS_PROJECT_DIR,'tools')
 MLRS_BUILD_DIR = os.path.join(MLRS_PROJECT_DIR,'tools','build3')
-
 
 
 #-- current version and branch
@@ -98,6 +133,14 @@ def create_clean_dir(path):
     if os.path.exists(path):
         os.system('rmdir /s /q '+path)
     os.system('md '+path)
+
+
+def printWarning(txt):
+    print('\033[93m'+txt+'\033[0m') # light Yellow
+
+
+def printError(txt):
+    print('\033[91m'+txt+'\033[0m') # light Red
 
 
 #--------------------------------------------------
@@ -255,6 +298,9 @@ MLRS_SOURCES_HAL_STM32F0 = [
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr_ex.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc_ex.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_dma.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd.c'),
+	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd_ex.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_adc.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_comp.c'),
 	os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crc.c'),
@@ -318,8 +364,27 @@ MLRS_SOURCES_RX = [
 
 MLRS_SOURCES_TX = [
 	os.path.join('CommonTx','in.cpp'),
+	os.path.join('CommonTx','config_id.cpp'),
 	os.path.join('CommonTx','mlrs-tx.cpp'),
     ]
+
+
+MLRS_SOURCES_USB = [
+	os.path.join('Drivers','STM32_USB_Device_Library','Class','CDC','Src','usbd_cdc.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_core.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_ctlreq.c'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Src','usbd_ioreq.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_cdc_if.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_conf.c'),
+	os.path.join('..','modules','stm32-usb-device','usbd_desc.c'),
+    ]
+
+MLRS_INCLUDES_USB = [
+	os.path.join('Drivers','STM32_USB_Device_Library','Class','CDC','Inc'),
+	os.path.join('Drivers','STM32_USB_Device_Library','Core','Inc'),
+	os.path.join('..','modules','stm32-usb-device'),
+    ]
+
 
 
 #-- target class to handle targets
@@ -353,18 +418,22 @@ class cTarget:
         elif 'F0' in self.mcu_D and 'F0' in self.mcu_HAL:
             self.mcu_family = 'f0'
         else:
-            print('SHSHHSKHSKHSKHKSHKSHKH')
+            printError('SHSHHSKHSKHSKHKSHKSHKH')
             print('mcu_D',self.mcu_D)
             print('mcu_HAL',self.mcu_HAL)
             exit(1)
             
         self.rx_or_tx = ''
+        self.is_rx = False
+        self.is_tx = False
         if 'rx' in target and 'RX' in target_D:
             self.rx_or_tx = 'rx'
+            self.is_rx = True
         elif 'tx' in target and 'TX' in target_D:
             self.rx_or_tx = 'tx'
+            self.is_tx = True
         else:
-            print('gkgkggjkgjkgjkgjgjgjgjg')
+            printError('gkgkggjkgjkgjkgjgjgjgjg')
             exit(1)
             
         self.D_list = ['USE_HAL_DRIVER', 'USE_FULL_LL_DRIVER']
@@ -391,6 +460,17 @@ class cTarget:
         for file in MLRS_INCLUDES:
             self.MLRS_INCLUDES.append(file.replace('??',self.mcu_HAL))
 
+        self.MLRS_SOURCES_EXTRA = []
+        if 'STDSTM32_USE_USB' in self.extra_D_list:
+            for file in MLRS_SOURCES_USB:
+                self.MLRS_SOURCES_EXTRA.append(file)
+            for file in MLRS_INCLUDES_USB:
+                self.MLRS_INCLUDES.append(file)
+        else: # add stm32-usb-device sources to every target (we could have excluded them in the IDE, but are too lazy LOL)
+            for file in MLRS_SOURCES_USB:
+                if 'modules' in file:
+                    self.MLRS_SOURCES_EXTRA.append(file)
+                    
 
 #-- compiler & linker
 
@@ -462,6 +542,7 @@ def mlrs_compile_file(target, file):
         cmd += '"'+os.path.join(MLRS_DIR,file)+'" ' # asm needs it at end
     
     #print(cmd)
+    #if not is_asm: exit(1)
     
     # create folder as needed
     buildpath = os.path.join(MLRS_BUILD_DIR,target.build_dir,file_path)
@@ -473,42 +554,56 @@ def mlrs_compile_file(target, file):
 
 
 def mlrs_link_target(target):
-    # see for an original object list
-    objlist_cube_list = []
+    # generate object list from actually created .o files
+    objlist = []
+    for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
+        for file in files:
+            if os.path.splitext(file)[1] == '.o':
+                obj = os.path.join(path,file).replace(os.path.join(MLRS_BUILD_DIR,target.build_dir), '')
+                objlist.append(obj.replace('\\','/'))
+    
+    # check for a STM32CubeIDE object list
     objlist_cube_file = os.path.join(MLRS_DIR,target.target,'Release','objects.list')
-    if os.path.exists(objlist_cube_file):
+    if not os.path.exists(objlist_cube_file):
+        # generate object list
+        printWarning('WARNING: no objects.list found, use generated objects.list')
+        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        for obj in sorted(objlist): # we use sorted, this at least makes it that it is somehow standardized, thus repeatable            
+            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
+        F.close()
+    else :
+        # read STM32CubeIDE object list, and modify paths accordingly
+        print('use available objects.list')
         F = open(objlist_cube_file, mode='r')
         objlist_cube = F.read()
         F.close()
         objlist_cube_list = objlist_cube.split()
-        #print(objlist_cube_file) 
-        #print(objlist_cube) 
-        #print(objlist_cube_list) 
-        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        # correct list
+        objlist_cube_list_corrected = []
         for obj in objlist_cube_list:
-            o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
-            o = o.replace('/Core', '/'+target.target+'/Core')
-            o = o.replace('/Drivers', '/'+target.target+'/Drivers')
-            F.write(o.replace('\\','/')+'\n')
+            #o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
+            o = obj.replace('./', '/').replace('"', '')
+            if obj[3:7] == 'Core':
+                o = o.replace('/Core', '/'+target.target+'/Core')
+            if obj[3:10] == 'Drivers':
+                o = o.replace('/Drivers', '/'+target.target+'/Drivers')
+            objlist_cube_list_corrected.append(o.replace('\\','/'))
+        # check lists
+        for obj in objlist:
+            if not obj in objlist_cube_list_corrected:
+                printWarning('objlist: '+obj+' not in Cube objlist')
+        for obj in objlist_cube_list_corrected:
+            if not obj in objlist:
+                printWarning('Cube objlist: '+obj+' not in objlist')
+        # write out
+        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
+        for obj in objlist_cube_list_corrected:
+            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
         F.close()
         
-    ''' 
-    # generate object list
-    objfiles = []
-    for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
-        for file in files:
-            if os.path.splitext(file)[1] == '.o':
-                obj = os.path.join(path,file)
-                objfiles.append(obj)
-    F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
-    for obj in sorted(objfiles): # we use sorted, this at least makes it that it is somehow standardized, thus repeatable            
-        F.write('"'+obj.replace('\\','/')+'"\n')
-    F.close()
-    '''
-
     # generate command line
     cmd = ''
-    cmd += 'arm-none-eabi-g++ '
+    cmd += os.path.join(GCC_DIR,'arm-none-eabi-g++') + ' '
     cmd += '-o "'+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf')+'" '
     cmd += '@"'+os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list')+'" '
     cmd += '-T"'+os.path.join(MLRS_DIR,target.target,target.linker_script)+'" ' 
@@ -528,7 +623,9 @@ def mlrs_link_target(target):
     os.system(cmd)
 
 
-def mlrs_build_target(target):
+def mlrs_build_target(target, cmdline_D_list):
+    if cmdline_D_list != []:
+        target.extra_D_list = cmdline_D_list
     print('------------------------------------------------------------')
     print('target', target.target, target.extra_D_list)
 
@@ -557,13 +654,16 @@ def mlrs_build_target(target):
     for file in MLRS_SOURCES_COMMON:
         mlrs_compile_file(target, file)
         
+    for file in target.MLRS_SOURCES_EXTRA:
+        mlrs_compile_file(target, os.path.join(target.target,file))
+        
     MLRS_SOURCES_RXTX = []
     if target.rx_or_tx == 'rx':
         MLRS_SOURCES_RXTX = MLRS_SOURCES_RX
     elif target.rx_or_tx == 'tx':
         MLRS_SOURCES_RXTX = MLRS_SOURCES_TX
     else:
-        print('aköhdfkahsfkuhafkhasfkdh')
+        printError('aköhdfkahsfkuhafkhasfkdh')
         exit(1)
     for file in MLRS_SOURCES_RXTX:
         mlrs_compile_file(target, file)
@@ -571,10 +671,10 @@ def mlrs_build_target(target):
     print('linking')
 
     mlrs_link_target(target)
-    os.system('arm-none-eabi-size '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
+    os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
     
     os.system(
-        'arm-none-eabi-objcopy -O ihex ' +
+        os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
@@ -724,19 +824,19 @@ TLIST = [
     { 
 #RX    
         'target' : 'rx-diy-board01-f103cb',             'target_D' : 'RX_DIY_BOARD01_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-diy-e22-g441kb',                 'target_D' : 'RX_DIY_E22_G441KB', 
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-e28dual-board02-f103cb',     'target_D' : 'RX_DIY_E28DUAL_BOARD02_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-e28-g441kb',                 'target_D' : 'RX_DIY_E28_G441KB',
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'RX_DIY_WIOE5_E22_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -747,23 +847,32 @@ TLIST = [
         'appendix' : '-400' 
     },{
         'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY'],
+        'appendix' : '' 
+    },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY'],
+        'appendix' : '-diversity' 
     },{ 
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
+        'target' : 'rx-FRM303-f070cb',                  'target_D' : 'RX_FRM303_F070CB',
+        'extra_D_list' : [], 'appendix' : '',
+    },{
+    
 #TX    
         'target' : 'tx-diy-e22dual-module02-g491re',    'target_D' : 'TX_DIY_E22DUAL_MODULE02_G491RE', 
         'extra_D_list' : [] , 'appendix' : '' 
@@ -772,16 +881,34 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''  
     },{
         'target' : 'tx-diy-e28dual-board02-f103cb',     'target_D' : 'TX_DIY_E28DUAL_BOARD02_F103CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-diy-e28dual-module02-g491re',    'target_D' : 'TX_DIY_E28DUAL_MODULE02_G491RE', 
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-diy-sxdual-module02-g491re',     'target_D' : 'TX_DIY_SXDUAL_MODULE02_G491RE', 
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
+        
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_JRPIN5'],
+        'appendix' : '-jrpin5' 
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_JRPIN5'],
+        'appendix' : '-jrpin5-diversity'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_IN'],
+        'appendix' : '-in' 
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_IN'],
+        'appendix' : '-in-diversity'
+        
     },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -792,17 +919,22 @@ TLIST = [
         'appendix' : '-400' 
     },{ 
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
     },{
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : [], 'appendix' : '' 
         
     },{
         'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
-        'extra_D_list' : [] , 'appendix' : '' 
+        'extra_D_list' : ['STDSTM32_USE_USB'],
+        'appendix' : '-usb',
+    },{
+        'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_OLED'],
+        'appendix' : '-oled',
         
     }
     ]
@@ -844,7 +976,7 @@ def mlrs_create_targetlist(appendix, extra_D_list):
 
 
 def mlrs_copy_all_hex():
-    print('copying')
+    print('copying .hex files')
     firmwarepath = os.path.join(MLRS_BUILD_DIR,'firmware')
     create_clean_dir(firmwarepath)
     for path, subdirs, files in os.walk(MLRS_BUILD_DIR):
@@ -857,6 +989,22 @@ def mlrs_copy_all_hex():
 
 #-- here we go
 
+cmdline_target = ''
+cmdline_D_list = []
+
+cmd_pos = -1
+for cmd in sys.argv:
+    cmd_pos += 1
+    if cmd == '--target' or cmd == '-t' or cmd == '-T':
+        if sys.argv[cmd_pos+1] != '':
+            cmdline_target = sys.argv[cmd_pos+1]
+    if cmd == '--define' or cmd == '-d' or cmd == '-D':
+        if sys.argv[cmd_pos+1] != '':
+            cmdline_D_list.append(sys.argv[cmd_pos+1])
+        
+#cmdline_target = 'tx-diy-e22dual-module02-g491re'
+#cmdline_target = 'tx-diy-sxdualXXX'
+
 mlrs_set_version()
 mlrs_set_branch()
 
@@ -864,14 +1012,15 @@ create_clean_dir(MLRS_BUILD_DIR)
 
 targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
 
-#print(targetlist)
-#mlrs_build_target(targetlist[-1])
-#mlrs_build_target(targetlist[7])
-#exit(1)
-
+target_cnt = 0
 for target in targetlist:
-    mlrs_build_target(target)
-
-mlrs_copy_all_hex()
+    if ((cmdline_target == '') or
+        (cmdline_target[0] != '!' and cmdline_target in target.target) or
+        (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
+        mlrs_build_target(target, cmdline_D_list)
+        target_cnt +=1 
+        
+if cmdline_target == '' or target_cnt > 0: 
+    mlrs_copy_all_hex()
 
 os.system("pause")
