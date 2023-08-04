@@ -68,6 +68,9 @@ void setup_configure_metadata(void)
 #else
     SetupMetaData.Ortho_allowed_mask = 0b0001; // only off, not editable
 #endif
+#if SETUP_RF_ORTHO == 0
+    SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
+#endif
 
     //-- Tx:
 
@@ -208,7 +211,7 @@ void setup_default(uint8_t config_id)
 
     Setup.Common[config_id].FrequencyBand = SETUP_RF_BAND;
     Setup.Common[config_id].Mode = SETUP_MODE;
-    Setup.Common[config_id].Ortho = ORTHO_NONE;
+    Setup.Common[config_id].Ortho = SETUP_RF_ORTHO;
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
@@ -280,6 +283,7 @@ void setup_sanitize_config(uint8_t config_id)
         Setup.Common[config_id].Mode = MODE_19HZ;
     }
 
+    if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = SETUP_RF_ORTHO;
     if (Setup.Common[config_id].Ortho >= ORTHO_NUM) Setup.Common[config_id].Ortho = ORTHO_NONE;
     if (SETUP_TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho)) {
         Setup.Common[config_id].Ortho = ORTHO_NONE;
