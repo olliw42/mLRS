@@ -486,6 +486,8 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
+    Config.FlrcSyncWord = bind_dblword;
+
     //-- Power
 
     // note: the actually used power will be determined later when the SX are set up
@@ -547,7 +549,10 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FhssOrtho = Setup.Common[config_id].Ortho;
     // modify also FrameSyncWord
-    if (Config.FhssOrtho > ORTHO_NONE) Config.FrameSyncWord += 0x1111 * Config.FhssOrtho;
+    if (Config.FhssOrtho > ORTHO_NONE) {
+        Config.FrameSyncWord += 0x1111 * Config.FhssOrtho;
+        Config.FlrcSyncWord += 0x11111111 * Config.FhssOrtho;
+    }
 
     switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:

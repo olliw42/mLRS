@@ -358,6 +358,8 @@ typedef struct
     uint8_t LoraConfigIndex;
     uint8_t send_frame_tmo_ms;
 
+    uint32_t FlrcSyncWord;
+
     uint16_t FrameSyncWord;
     uint16_t FhssNum;
     uint32_t FhssSeed;

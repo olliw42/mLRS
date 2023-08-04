@@ -56,7 +56,6 @@ typedef struct {
     uint8_t PayloadLength;
     uint8_t CrcLength;
     uint16_t CrcSeed;
-    uint32_t SyncWord;
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
 } tSxFlrcConfiguration;
@@ -109,8 +108,7 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
       .PacketType = SX1280_FLRC_PACKET_TYPE_FIXED_LENGTH,
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcLength = SX1280_FLRC_CRC_DISABLE,
-      .CrcSeed = 27368,
-      .SyncWord = 1836279427, // CrcSeed is 'j', 'p'.  SyncWord is 'm', 'l', 'r', 's' // TODO: make it setable !!!
+      .CrcSeed = 27368, // CrcSeed is 'j', 'p'. Not used.
       .TimeOverAir = 1631,
       .ReceiverSensitivity = -103,
     }
@@ -179,7 +177,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void SetFlrcConfiguration(const tSxFlrcConfiguration* config)
+    void SetFlrcConfiguration(const tSxFlrcConfiguration* config, uint32_t sync_word)
     {
         SetModulationParamsFLRC(config->Bandwidth,
                                 config->CodingRate,
@@ -192,16 +190,16 @@ class Sx128xDriverCommon : public Sx128xDriverBase
                             config->PayloadLength,
                             config->CrcLength,
                             config->CrcSeed,
-                            config->SyncWord,
+                            sync_word,
                             config->CodingRate);
     }
 
-    void SetFlrcConfigurationByIndex(uint8_t index)
+    void SetFlrcConfigurationByIndex(uint8_t index, uint32_t sync_word)
     {
         if (index >= sizeof(Sx128xFlrcConfiguration)/sizeof(Sx128xFlrcConfiguration[0])) while (1) {} // must not happen
 
         flrc_configuration = &(Sx128xFlrcConfiguration[index]);
-        SetFlrcConfiguration(flrc_configuration);
+        SetFlrcConfiguration(flrc_configuration, sync_word);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
@@ -232,7 +230,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
             SetAutoFs(true);
             SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
             SetRfPower_dbm(Config.Power_dbm);
-            SetFlrcConfigurationByIndex(0);
+            SetFlrcConfigurationByIndex(0, Config.FlrcSyncWord);
         } else {
             while (1) {} // must not happen
         }
