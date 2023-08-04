@@ -105,6 +105,8 @@ void BindBase::ConfigForBind(void)
 
     sx.SetToIdle();
     sx2.SetToIdle();
+    sx.SetPacketType(SX1280_PACKET_TYPE_LORA);
+    sx2.SetPacketType(SX1280_PACKET_TYPE_LORA);
     sx.SetRfPower_dbm(rfpower_list[0].dbm);
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
     sx.SetLoraConfigurationByIndex(Config.LoraConfigIndex);
