@@ -17,9 +17,16 @@
 The availability of the many features are handled via #define declarations. In order to keep somewhat track,
 this naming convention is used (with few exceptions):
 
-- MLRS_FEATURE_XXXX: for setting different features for a target; should ONLY be set globally/externally by the build system!
-- DEVICE_HAS_XXXX: is set in a device's hal file to indicate the availability/non-availability of a feature
-- USE_XXXX: these are determined through some processing, which can involve the DEVICE_HAS_XXXX flags
+- MLRS_FEATURE_XXXX: For setting different features for a target; should ONLY be set globally/externally
+  by the build system! Must NOT be defined in code, only globally/externally.
+  Note: There can be MLRS_DEV_FEATURE_XXXX flags also, but these are for dev only.
+
+- DEVICE_HAS_XXXX: Are set in a device's hal file to indicate the availability/non-availability of a feature.
+  May be defined by user in the hal file as needed. May also be made dependent on MLRS_FEATURE_XXXX flags
+  in hal file.
+
+- USE_XXXX: These are determined through some processing, which can involve the DEVICE_HAS_XXXX flags. Must
+  NEVER be modified or set by user.
 
 In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
 If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
