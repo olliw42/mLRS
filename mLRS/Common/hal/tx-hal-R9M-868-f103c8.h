@@ -29,7 +29,7 @@
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
-#define EE_START_PAGE             60 // 64 kB flash, 1 kB page
+#define EE_START_PAGE             120 // 64 kB flash, 1 kB page // TODO: should make it cb target?
 
 #define MICROS_TIMx               TIM3
 
