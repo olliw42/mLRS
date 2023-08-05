@@ -7,12 +7,13 @@
 // hal
 //*******************************************************
 // 11.Feb.2023: DBG pin changed! LED pin changed! pin for artificial GND (PA0)!
+// 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
 
 //-------------------------------------------------------
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
 
-#define DEVICE_HAS_JRPIN5 // requires external diode from Tx to Rx
+#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
@@ -63,8 +64,11 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
-//#define JRPIN5_FULL_INTERNAL
+#ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
+#define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
+#else
+#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
+#endif
 
 #define UARTE_USE_LPUART1_REMAPPED // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow

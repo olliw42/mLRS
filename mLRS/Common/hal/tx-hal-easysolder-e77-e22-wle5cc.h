@@ -6,6 +6,7 @@
 //*******************************************************
 // hal
 //*******************************************************
+// 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_SWAP_INTERNAL to JRPIN5_FULL_INTERNAL
 
 //#define MLRS_FEATURE_JRPIN5
 //#define MLRS_FEATURE_IN
@@ -84,7 +85,11 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
+#ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
+#define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
+#else
+#define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL // requires external diode from Tx to Rx
+#endif
 
 #define UARTE_USE_UART2 // in port
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow

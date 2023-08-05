@@ -930,6 +930,19 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : '' 
         
     },{
+        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
+        'appendix' : '-900-sdiode' 
+    },{
+        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'], 
+        'appendix' : '-400-sdiode' 
+    },{
+        'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
+        'extra_D_list' : ['MLRS_DEV_FEATURE_JRPIN5_SDIODE'], 
+        'appendix' : '-sdiode' 
+        
+    },{
         'target' : 'tx-FRM303-f070cb',                  'target_D' : 'TX_FRM303_F070CB',
         'extra_D_list' : ['STDSTM32_USE_USB'],
         'appendix' : '-usb',

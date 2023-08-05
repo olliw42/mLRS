@@ -12,7 +12,7 @@
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
-//#define DEVICE_HAS_JRPIN5 // would require external diode from Tx to Rx
+//#define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 
@@ -62,7 +62,7 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL */
+#define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode */
 
 #define UARTE_USE_UART2 // in port // PA3
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
