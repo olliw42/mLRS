@@ -45,6 +45,7 @@ In tx-hal files:
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
+#define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
@@ -221,15 +222,21 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif // DEVICE_IS_RECEIVER
 
 #ifdef DEVICE_IS_TRANSMITTER
-#if defined DEVICE_HAS_SERIAL_OR_COM // R9M,R9MX, have device dependent ways to select serial or com
+#if defined DEVICE_HAS_SERIAL_OR_COM // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
+  #ifdef DEVICE_HAS_SERIAL_ON_USB
+    #define USE_USB
+  #endif
   #ifdef DEBUG_ENABLED
     #define USE_DEBUG
   #endif
 #else
   #if !defined DEVICE_HAS_NO_SERIAL
     #define USE_SERIAL
+    #ifdef DEVICE_HAS_SERIAL_ON_USB
+      #define USE_USB
+    #endif
   #endif
   #if !defined DEVICE_HAS_NO_COM
     #define USE_COM

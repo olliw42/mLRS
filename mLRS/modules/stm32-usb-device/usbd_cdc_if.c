@@ -106,6 +106,15 @@ uint8_t usb_rx_available(void)
 }
 
 
+uint16_t usb_rx_bytesavailable(void)
+{
+int16_t d;
+
+  d = (int16_t)usb_rxwritepos - (int16_t)usb_rxreadpos;
+  return (d < 0) ? d + (USB_RXBUFSIZEMASK + 1) : d;
+}
+
+
 char usb_getc(void)
 {
 	  usb_rxreadpos = (usb_rxreadpos + 1) & USB_RXBUFSIZEMASK;
@@ -146,6 +155,12 @@ void usb_putbuf(uint8_t* buf, uint16_t len)
 	  if (written) _cdc_transmit();
 }
 
+
+void usb_flush(void)
+{
+    usb_txwritepos = usb_txreadpos = 0;
+    usb_rxwritepos = usb_rxreadpos = 0;
+}
 
 
 void USB_IRQHandler(void)

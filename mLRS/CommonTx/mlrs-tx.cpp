@@ -45,13 +45,11 @@ v0.0.00:
 #ifdef DEVICE_HAS_DIVERSITY
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
-#ifdef USE_SERIAL
+#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
-#ifdef USE_COM
-#ifndef USE_USB
+#if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
-#endif
 #endif
 #ifdef USE_SERIAL2
 #include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
@@ -245,6 +243,7 @@ void enter_flash_esp(void)
 
 void init_once(void)
 {
+    serial.InitOnce();
     com.InitOnce();
 }
 

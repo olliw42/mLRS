@@ -59,6 +59,7 @@ typedef enum {
 class tSerialBase
 {
   public:
+    virtual void InitOnce(void) {}
     virtual void Init(void) {}
     virtual void SetBaudRate(uint32_t baud) {}
     virtual void putc(char c) {}

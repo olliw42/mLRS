@@ -23,11 +23,14 @@ extern "C" {
 //-------------------------------------------------------
 
 uint8_t usb_rx_available(void);
+uint16_t usb_rx_bytesavailable(void);
 char usb_getc(void);
 
 void usb_putc(uint8_t c);
 void usb_puts(const char *s);
 void usb_putbuf(uint8_t* buf, uint16_t len);
+
+void usb_flush(void);
 
 void usb_init(void);
 
