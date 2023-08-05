@@ -22,15 +22,22 @@ mLRSdirectory = os.path.join(mLRSProjectdirectory,'mLRS')
 
 def create_clean_dir(directory):
     if os.path.exists(directory):
-        os.system('rmdir /s /q "'+directory+'"')
-    os.system('md "'+directory+'"')
+        if os.name == 'posix':
+            os.system('rm -r -f "'+directory+'"')
+        else:
+            os.system('rmdir /s /q "'+directory+'"')
 
+    if os.name == 'posix':
+        os.system('mkdir -p "'+directory+'"')
+    else:
+        os.system('md "'+directory+'"')
 
+            
 def copy_files_in_dir(target, source):
     dirlist = os.listdir(source)
     for f in dirlist:
         if os.path.isfile(os.path.join(source,f)):
-            shutil.copy(os.path.join(source,f), target)
+             shutil.copy(os.path.join(source,f), target)
 
 
 def copy_dir(target, source):
@@ -149,7 +156,7 @@ def copy_cmsis_driver(folder, chip, clean=False, silent=False):
         copy_dir(target, source)
 
         # copy licence
-        shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
+        #shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
 def copy_cmsis_core(folder, clean=False, silent=False):
@@ -226,7 +233,7 @@ def copy_hal_driver(folder, chip, clean=False, silent=False):
             copy_wexclude(target, source, f, files_to_exclude)
 
         # copy licence
-        shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
+        #shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
 def do_for_each_target(clean=False, silent=False):
