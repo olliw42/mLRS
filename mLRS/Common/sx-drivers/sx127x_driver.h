@@ -117,6 +117,11 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void ResetToLoraConfiguration(void)
+    {
+        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+    }
+
     void SetRfPower_dbm(int8_t power_dbm)
     {
 #ifdef DEVICE_HAS_I2C_DAC

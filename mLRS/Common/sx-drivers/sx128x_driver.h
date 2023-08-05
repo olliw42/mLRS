@@ -177,6 +177,14 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void ResetToLoraConfiguration(void)
+    {
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC);
+        delay_us(1000); // seems ok without, but do it
+        SetPacketType(SX1280_PACKET_TYPE_LORA);
+        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+    }
+
     void SetFlrcConfiguration(const tSxFlrcConfiguration* config, uint32_t sync_word)
     {
         SetModulationParamsFLRC(config->Bandwidth,

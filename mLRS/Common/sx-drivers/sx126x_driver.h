@@ -137,6 +137,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
+    void ResetToLoraConfiguration(void)
+    {
+        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+    }
+
     void SetRfPower_dbm(int8_t power_dbm)
     {
         rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);

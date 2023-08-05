@@ -53,8 +53,8 @@ class SxDriverDummy
     void SetToRx(uint16_t tmo_ms) {}
     void SetToIdle(void) {}
 
+    void ResetToLoraConfiguration() {}
     void SetRfPower_dbm(int8_t power_dbm) {}
-    void SetLoraConfigurationByIndex(uint8_t index) {}
     void ClearIrqStatus(uint16_t IrqMask) {}
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }
