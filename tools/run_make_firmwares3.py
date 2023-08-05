@@ -152,6 +152,7 @@ def printError(txt):
 MLRS_SOURCES_HAL_STM32F1 = [
 	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal.c'),
 	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_cortex.c'),
+	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_dma.c'),
 	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_flash.c'),
 	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_flash_ex.c'),
 	os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_i2c.c'),
