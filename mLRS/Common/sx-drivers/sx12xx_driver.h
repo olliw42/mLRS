@@ -45,6 +45,7 @@ class SxDriverDummy
     void Init(void) {}
     bool isOk(void) { return true; }
     void StartUp(void) {}
+    void SetPacketType(uint8_t PacketType) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
     void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) {}
