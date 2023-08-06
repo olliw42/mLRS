@@ -30,7 +30,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     st_cubeide_dir = ''
     st_cubeide_ver_nr = 0
     for file in os.listdir(search_root):
-        if 'STM32CubeIDE' in file:
+        if 'stm32cubeide' in file.lower():
             if '_' in file:
                 ver = file[13:].split('.')
                 ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
@@ -41,16 +41,26 @@ def findSTM32CubeIDEGnuTools(search_root):
                 st_cubeide_dir = file
                 st_cubeide_ver_nr = 0
     if st_cubeide_dir != '':
-        st_dir = os.path.join(search_root,st_cubeide_dir,'STM32CubeIDE','plugins')
+        if os.name == 'posix':
+            st_dir = os.path.join(search_root,st_cubeide_dir,'plugins')
+        else:
+            st_dir = os.path.join(search_root,st_cubeide_dir,'stm32cubeide','plugins')
 
     gnu_dir = ''
     for dirpath in os.listdir(st_dir):
-        if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'win32' in dirpath:
-            gnu_dir = dirpath 
+        if os.name == 'posix':
+            if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'linux' in dirpath:
+                gnu_dir = dirpath 
+        else:
+            if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'win32' in dirpath:
+                gnu_dir = dirpath 
     
     return st_dir, gnu_dir    
 
-ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
+if os.name == 'posix':
+    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("/opt",'st'))
+else:
+    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
 
 if not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
     printError('ERROR: gnu-tools not found!')
@@ -123,17 +133,21 @@ def mlrs_set_branch():
 
 def create_dir(path):
     if not os.path.exists(path):
-        os.system('md '+path)
+        if os.name == 'posix':
+            os.system('mkdir -p '+path)
+        else:
+            os.system('md '+path)
         
 def erase_dir(path):
     if os.path.exists(path):
-        os.system('rmdir /s /q '+path)
+        if os.name == 'posix':
+            os.system('rm -r -f '+path)
+        else:
+            os.system('rmdir /s /q '+path)
 
 def create_clean_dir(path):
-    if os.path.exists(path):
-        os.system('rmdir /s /q '+path)
-    os.system('md '+path)
-
+    erase_dir(path)
+    create_dir(path)
 
 def printWarning(txt):
     print('\033[93m'+txt+'\033[0m') # light Yellow

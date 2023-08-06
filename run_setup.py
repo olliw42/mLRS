@@ -36,8 +36,7 @@ def copy_st_drivers():
     print(' run run_copy_st_drivers.py')
     print('----------------------------------------')
     os.chdir(os.path.join(mLRSProjectdirectory,'tools'))
-    #os.system(os.path.join('.','fmav_generate_c_library.py'))
-    os.system('run_copy_st_drivers.py -silent')
+    os.system(os.path.join('.','run_copy_st_drivers.py -silent'))
     print('# DONE #')
 
 
