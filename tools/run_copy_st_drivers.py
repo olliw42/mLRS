@@ -20,17 +20,25 @@ mLRSProjectdirectory = os.path.normpath(os.path.join(os.path.dirname(os.path.abs
 mLRSdirectory = os.path.join(mLRSProjectdirectory,'mLRS')
 
 
+#-- helper
+
+def remake_dir(path): # os dependent
+    if os.name == 'posix':
+        os.system('rm -r -f '+path)
+    else:
+        os.system('rmdir /s /q '+path)
+
+def make_dir(path): # os dependent
+    if os.name == 'posix':
+        os.system('mkdir -p '+path)
+    else:
+        os.system('md '+path)
+
+
 def create_clean_dir(directory):
     if os.path.exists(directory):
-        if os.name == 'posix':
-            os.system('rm -r -f "'+directory+'"')
-        else:
-            os.system('rmdir /s /q "'+directory+'"')
-
-    if os.name == 'posix':
-        os.system('mkdir -p "'+directory+'"')
-    else:
-        os.system('md "'+directory+'"')
+        remake_dir('"'+directory+'"')
+    make_dir('"'+directory+'"')
 
             
 def copy_files_in_dir(target, source):
@@ -58,6 +66,9 @@ def copy_wexclude(target, source, f, files_to_exclude=[]):
             shutil.copy(os.path.join(source,f), target)
 
 
+#--------------------------------------------------
+# main stuff
+#--------------------------------------------------
 # copy from
 #  \tools\st-drivers\STM32F1xx_HAL_Driver\Inc
 # to
@@ -156,7 +167,7 @@ def copy_cmsis_driver(folder, chip, clean=False, silent=False):
         copy_dir(target, source)
 
         # copy licence
-        if os.name == 'nt':
+        if os.name == 'nt': # do only on win, linux's case sensitivity makes it more complicated
             shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
@@ -234,7 +245,7 @@ def copy_hal_driver(folder, chip, clean=False, silent=False):
             copy_wexclude(target, source, f, files_to_exclude)
 
         # copy licence
-        if os.name == 'nt':
+        if os.name == 'nt': # do only on win, linux's case sensitivity makes it more complicated
             shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
@@ -292,6 +303,7 @@ def copy_usb_device_library_driver(folder, clean=False, silent=False):
     copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
 
 
+#-- here we go
 
 silent = False
 if '-silent' in sys.argv: silent = True

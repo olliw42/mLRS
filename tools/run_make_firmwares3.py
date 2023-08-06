@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 31.07.2023
+ version 6.08.2023
 ********************************************************
 '''
 import os
@@ -30,7 +30,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     st_cubeide_dir = ''
     st_cubeide_ver_nr = 0
     for file in os.listdir(search_root):
-        if 'stm32cubeide' in file.lower():
+        if 'stm32cubeide' in file.lower(): # makes it work on both win and linux
             if '_' in file:
                 ver = file[13:].split('.')
                 ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
@@ -41,14 +41,14 @@ def findSTM32CubeIDEGnuTools(search_root):
                 st_cubeide_dir = file
                 st_cubeide_ver_nr = 0
     if st_cubeide_dir != '':
-        if os.name == 'posix':
+        if os.name == 'posix': # install paths are os dependent
             st_dir = os.path.join(search_root,st_cubeide_dir,'plugins')
         else:
             st_dir = os.path.join(search_root,st_cubeide_dir,'stm32cubeide','plugins')
 
     gnu_dir = ''
     for dirpath in os.listdir(st_dir):
-        if os.name == 'posix':
+        if os.name == 'posix': # install paths are os dependent
             if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'linux' in dirpath:
                 gnu_dir = dirpath 
         else:
@@ -57,7 +57,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     
     return st_dir, gnu_dir    
 
-if os.name == 'posix':
+if os.name == 'posix': # install paths are os dependent
     ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("/opt",'st'))
 else:
     ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
@@ -131,23 +131,32 @@ def mlrs_set_branch():
 
 #-- helper
 
+def remake_dir(path): # os dependent
+    if os.name == 'posix':
+        os.system('rm -r -f '+path)
+    else:
+        os.system('rmdir /s /q '+path)
+
+def make_dir(path): # os dependent
+    if os.name == 'posix':
+        os.system('mkdir -p '+path)
+    else:
+        os.system('md '+path)
+
+
 def create_dir(path):
     if not os.path.exists(path):
-        if os.name == 'posix':
-            os.system('mkdir -p '+path)
-        else:
-            os.system('md '+path)
+        make_dir(path)
         
 def erase_dir(path):
     if os.path.exists(path):
-        if os.name == 'posix':
-            os.system('rm -r -f '+path)
-        else:
-            os.system('rmdir /s /q '+path)
+        remake_dir(path)
 
 def create_clean_dir(path):
-    erase_dir(path)
-    create_dir(path)
+    if os.path.exists(path):
+        remake_dir(path)
+    make_dir(path)
+
 
 def printWarning(txt):
     print('\033[93m'+txt+'\033[0m') # light Yellow
