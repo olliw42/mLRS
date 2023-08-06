@@ -695,6 +695,13 @@ def mlrs_build_target(target, cmdline_D_list):
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
 
+    if 'for-elrs-bl' in target.build_dir:
+        os.system(
+            'arm-none-eabi-objcopy -O binary ' +
+            os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
+            os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elrs')
+        )
+
     print('------------------------------------------------------------')
 
 
@@ -936,6 +943,9 @@ TLIST = [
     },{ 
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '' 
+    },{ 
+        'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
+        'extra_D_list' : ['MLRS_USE_BOOTLOADER'], 'appendix' : '-for-elrs-bl' 
     },{ 
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
         'extra_D_list' : [], 'appendix' : '' 

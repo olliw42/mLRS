@@ -56,6 +56,9 @@ int main_main();
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+#ifdef MLRS_USE_BOOTLOADER
+char mlrs_use_bootloader=1; // Indicate to linker script that bootloader will be used
+#endif
 
 /**
   * @brief  The application entry point.
@@ -70,6 +73,9 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+#ifdef MLRS_USE_BOOTLOADER
+  HAL_RCC_DeInit();
+#endif
   HAL_Init();
 
   /* USER CODE BEGIN Init */
