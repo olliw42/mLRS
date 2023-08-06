@@ -37,7 +37,7 @@ def copy_files_in_dir(target, source):
     dirlist = os.listdir(source)
     for f in dirlist:
         if os.path.isfile(os.path.join(source,f)):
-             shutil.copy(os.path.join(source,f), target)
+            shutil.copy(os.path.join(source,f), target)
 
 
 def copy_dir(target, source):

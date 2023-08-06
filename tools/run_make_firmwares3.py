@@ -30,7 +30,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     st_cubeide_dir = ''
     st_cubeide_ver_nr = 0
     for file in os.listdir(search_root):
-        if 'stm32cubeide' in file or 'STM32CubeIDE' in file:
+        if 'stm32cubeide' in file.lower():
             if '_' in file:
                 ver = file[13:].split('.')
                 ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
@@ -146,16 +146,8 @@ def erase_dir(path):
             os.system('rmdir /s /q '+path)
 
 def create_clean_dir(path):
-    if os.path.exists(path):
-        if os.name == 'posix':
-            os.system('rm -r -f '+path)
-        else:
-            os.system('rmdir /s /q '+path)
-    if os.name == 'posix':
-        os.system('mkdir -p '+path)
-    else:
-        os.system('md '+path)
-
+    erase_dir(path)
+    create_dir(path)
 
 def printWarning(txt):
     print('\033[93m'+txt+'\033[0m') # light Yellow
