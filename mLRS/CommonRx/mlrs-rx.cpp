@@ -659,8 +659,17 @@ RESTARTCONTROLLER:
         }break;
 
     case LINK_STATE_TRANSMIT: {
-        // TODO: transmit antenna diversity
-        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+    	if (USE_ANTENNA1 && USE_ANTENNA2) {  // check for diversity
+    		if (stats.last_rssi1 >= stats.last_rssi2) {  // check which antenna had the better rssi
+    			do_transmit(USE_ANTENNA1);
+    		}
+    		else {
+    			do_transmit(USE_ANTENNA2);
+    		}
+    	}
+    	else {
+    		do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+    	}
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         }break;
