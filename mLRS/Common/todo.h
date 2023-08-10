@@ -23,7 +23,6 @@ ISSUES:
 
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
-- entering bind by power cycles Q: how the heck can this be done, without persistent OB???
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
   This holds for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
 - work out how to go with setup layout changes
@@ -35,7 +34,6 @@ ISSUES:
 - allow a missing 2nd sx for diversity boards
 
 - mavlink parser should probably be reset when packets are missed
-- align mavlink messages only with respect to header, i.e., such that header is never split up
 - led blink to signal serial traffic
 
 - crsf baro alt item, can we add more of our own?

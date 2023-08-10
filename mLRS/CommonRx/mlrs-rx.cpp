@@ -69,10 +69,12 @@ v0.0.00:
 #include "clock.h"
 #include "out.h"
 #include "rxstats.h"
+#include "powerup.h"
 
 
 ClockBase clock;
 RxStatsBase rxstats;
+PowerupCounterBase powerup;
 
 
 // is required in bind.h
@@ -196,6 +198,7 @@ void init(void)
     sx2.Init();
 
     setup_init();
+    powerup.Init();
 
     clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
 }
@@ -873,6 +876,9 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
             if (!valid_frame_received) buzzer.BeepLP();
         }
+
+        powerup.Do();
+        if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();
 
         bind.Do();
         switch (bind.Task()) {
