@@ -176,7 +176,10 @@ void sx_dio_exti_isr_clearflag(void)
 
 #define BUTTON                    IO_PA7
 
-#ifndef DEVICE_HAS_I2C_DISPLAY_ROT180
+#if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
+void button_init(void) {}
+bool button_pressed(void) { return 0; }
+#else
 void button_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
@@ -186,9 +189,6 @@ bool button_pressed(void)
 {
     return gpio_read_activelow(BUTTON);
 }
-#else
-void button_init(void) {}
-bool button_pressed(void) { return 0; }
 #endif
 
 
@@ -264,7 +264,7 @@ void systembootloader_init(void)
 #define FIVEWAY_ADC_IO            IO_PA7 // ADC1_IN7
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_7
 
-#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
+#if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
 void fiveway_init(void)
 {
     adc_init_begin(FIVEWAY_ADCx);
