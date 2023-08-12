@@ -54,6 +54,10 @@ int main_main();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+// The presence of this symbol indicates to linker script that ELRS bootloader will be used
+char mlrs_elrs_bootloader;
+#endif
 
 /* USER CODE END 0 */
 
@@ -64,6 +68,9 @@ int main_main();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  HAL_RCC_DeInit(); // Need to unconfigure clock/PLL since ELRS uses HSI clock
+#endif
 
   /* USER CODE END 1 */
 

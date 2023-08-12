@@ -47,7 +47,7 @@ MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 64K
   RAM2    (xrw)    : ORIGIN = 0x10000000,   LENGTH = 16K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 128K
+  FLASH    (rx)    : ORIGIN = DEFINED(mlrs_elrs_bootloader) ? 0x8008000 : 0x8000000,   LENGTH = DEFINED(mlrs_elrs_bootloader) ? 128K-0x8000 : 128K
 }
 
 /* Sections */
