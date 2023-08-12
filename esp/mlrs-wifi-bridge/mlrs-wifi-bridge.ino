@@ -28,6 +28,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 - M5Stack M5Stamp C3U Mate
   board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
+- M5Stack ATOM Lite
+  board: M5Stack-ATOM
 */
 
 #include <WiFi.h>
@@ -46,6 +48,7 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_ESP32_PICO_KIT
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
+//#define MODULE_M5STACK_ATOM_LITE
 
 
 // Wifi Protocol 0 = TCP, 1 = UDP

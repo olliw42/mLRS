@@ -69,6 +69,15 @@ UARTs can be mapped to any pins, according to data sheet
 Mates cleanly with R9M inverted serial port pins
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 Disconnect from application before programming via USB. Hold down central button (G9) when connecting to USB to program
+
+------------------------------
+M5Stack ATOM Lite
+------------------------------
+board: M5Stack-ATOM
+https://shop.m5stack.com/products/atom-lite-esp32-development-kit
+http://docs.m5stack.com/en/core/atom_lite
+IO32/IO26: U0RXD/U0TXD, is remapped as Serial
+
 */
 
 /*
@@ -179,6 +188,23 @@ GPIO15 = RTC_GPIO13
     #define SERIAL_TXD  0 // = TX1
     #define SERIAL_INVERT true
 
+
+//-- M5Stack ATOM Lite
+#elif defined MODULE_M5STACK_ATOM_LITE
+    #ifndef ARDUINO_M5Stack_ATOM // ARDUINO_BOARD != ARDUINO_M5Stack_ATOM
+	      #error Select board ARDUINO_M5Stack_ATOM!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+
+    #define SERIAL_RXD 32 // = RX1
+    #define SERIAL_TXD 26 // = TX1
+
+    #undef LED_IO
+    #define USE_LED
+    #define NUMPIXELS  1
+    #define PIN_NEOPIXEL  27
 
 //-- Generic
 #else
