@@ -695,7 +695,7 @@ def mlrs_build_target(target, cmdline_D_list):
         os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
 
-    if 'for-elrs-bl' in target.build_dir:
+    if 'MLRS_FEATURE_ELRS_BOOTLOADER' in target.extra_D_list:
         os.system(
             'arm-none-eabi-objcopy -O binary ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
@@ -883,8 +883,14 @@ TLIST = [
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
+        'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-for-elrs-bl' 
+    },{ 
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
         'extra_D_list' : [], 'appendix' : '' 
+    },{ 
+        'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-for-elrs-bl' 
     },{ 
         'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
         'extra_D_list' : [], 'appendix' : '' 
@@ -945,7 +951,7 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : '' 
     },{ 
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
-        'extra_D_list' : ['MLRS_USE_BOOTLOADER'], 'appendix' : '-for-elrs-bl' 
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-for-elrs-bl' 
     },{ 
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
         'extra_D_list' : [], 'appendix' : '' 

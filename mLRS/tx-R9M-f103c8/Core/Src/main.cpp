@@ -54,11 +54,12 @@ int main_main();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+// The presence of this symbol indicates to linker script that ELRS bootloader will be used
+char mlrs_elrs_bootloader;
+#endif
 
 /* USER CODE END 0 */
-#ifdef MLRS_USE_BOOTLOADER
-char mlrs_use_bootloader=1; // Indicate to linker script that bootloader will be used
-#endif
 
 /**
   * @brief  The application entry point.
@@ -67,15 +68,15 @@ char mlrs_use_bootloader=1; // Indicate to linker script that bootloader will be
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  HAL_RCC_DeInit(); // Need to unconfigure clock/PLL since ELRS uses HSI clock
+#endif
 
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-#ifdef MLRS_USE_BOOTLOADER
-  HAL_RCC_DeInit();
-#endif
   HAL_Init();
 
   /* USER CODE BEGIN Init */
