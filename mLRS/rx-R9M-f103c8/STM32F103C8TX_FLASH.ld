@@ -45,7 +45,7 @@ _Min_Stack_Size = 0x400 ; /* required amount of stack */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 20K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 64K
+  FLASH    (rx)    : ORIGIN = DEFINED(mlrs_elrs_bootloader) ? 0x8004000 : 0x8000000,   LENGTH = DEFINED(mlrs_elrs_bootloader) ? 128K-0x4000 : 128K
 }
 
 /* Sections */
