@@ -264,7 +264,7 @@ void systembootloader_init(void)
 #define FIVEWAY_ADC_IO            IO_PA7 // ADC1_IN7
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_7
 
-#if defined DEVICE_HAS_I2C_DISPLAY_ROT180 || defined DEVICE_HAS_I2C_DISPLAY
+#if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
 void fiveway_init(void)
 {
     adc_init_begin(FIVEWAY_ADCx);
