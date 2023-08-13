@@ -32,4 +32,4 @@ class tConfigId
 
 
 
-#endif // CONFIGID
+#endif // CONFIGID_H
