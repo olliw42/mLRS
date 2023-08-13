@@ -105,7 +105,7 @@ uint32_t ll_tim_channel_ch;
 #ifdef STM32F1
     gpio_init(BUZZER, IO_MODE_OUTPUT_ALTERNATE_PP, IO_SPEED_SLOW);
 #endif
-#if defined STM32G4 || defined STM32L4
+#if defined STM32G4 || defined STM32L4 || defined STM32F0
     gpio_init_af(BUZZER, IO_MODE_OUTPUT_ALTERNATE_PP, BUZZER_IO_AF, IO_SPEED_SLOW);
 #endif
 

@@ -45,6 +45,9 @@ ISSUES:
   that's possible for when mavlink mode is used, but else?
 - don't allow bind, save, reload, param changes, etc, when connection is too weak, e.g. rssi too low
 
+- buzzer: work out what to do to account for active-low and actiove-high, so that buzzer isn't permanently "on".
+
+
 The 3 MAIN topics TODO:
 
 1) Link

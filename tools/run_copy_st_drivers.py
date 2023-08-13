@@ -313,7 +313,7 @@ if '-clean' in sys.argv: clean = True
 #do_for_each_folder(clean=True)
 do_for_each_target(clean=clean,silent=silent)
 
-copy_usb_device_library_driver('tx-FRM303-f070cb', clean=clean,silent=silent)
+copy_usb_device_library_driver('tx-FRM303-f072cb', clean=clean,silent=silent)
 
 print('# DONE #')
 if not silent:

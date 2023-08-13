@@ -102,7 +102,7 @@
 #include "stm32wlxx_hal_flash_ex.h"
 
 #endif
-#ifdef STM32F070xB
+#if defined STM32F070xB || defined  STM32F072xB
 
 #include "stm32f0xx_ll_cortex.h"
 #include "stm32f0xx_ll_bus.h"
