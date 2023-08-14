@@ -9,9 +9,9 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.1.13 and later, mOTX v33
+-- works with mLRS v0.3.32 and later, mOTX v33
 
-local version = '2023-04-28.00'
+local version = '2023-08-14.00'
 
 local CUSTOM_COLOR = INVERS
 local TEXT_COLOR = 0 
@@ -23,38 +23,42 @@ local function liney(line)
 end
 
 -----------------------------custom param list ---------------------------
+-- idxes of options on main page
 --------param (max 5)
-local BindPhrase_idx = 0 -- idxes of options on main page
+local BindPhrase_idx = 0 -- must not be changed
 local Mode_idx = 1
-local TxPwr_idx = 2
-local RxPwr_idx = 3
-local RxOutMode_idx = 4
+local Param1_idx = 2
+local Param2_idx = 3
+local Param3_idx = 4
 
 --------cmd (max 4)
 local Save_idx = 5
 local Reload_idx = 6
 local Bind_idx = 7
 
-local PAGE_MAIN_CURSOR_IDX_PARAM_MAX = Save_idx-1
+local PAGE_MAIN_CURSOR_IDX_PARAM_MAX = Save_idx - 1
 local PAGE_MAIN_CURSOR_IDX_MAX = Bind_idx
 
+-- param idxes of options
+local param_idx_list = {}
+param_idx_list[0] = 0 -- BindPhrase -- must not be changed
+param_idx_list[1] = 1 -- Mode
+param_idx_list[2] = 4 -- Param1 = Tx Power
+param_idx_list[3] = 14 -- Param2 = Rx Power
+param_idx_list[4] = 17 -- Param3 = Rx Out Mode
+
+
 --------convert cmd id to param list index
-local function cmd_to_list_index(index)
-    if (index == 0) then return true,BindPhrase_idx end
-    if (index == 1) then return true,Mode_idx end
-    if (index == 3) then return true,TxPwr_idx end
-    if (index == 13) then return true,RxPwr_idx end
-    if (index == 16) then return true,RxOutMode_idx end
+local function cmd_to_list_index(pidx)
+    for idx = 0, 4 do 
+		if (param_idx_list[idx] == pidx) then return true,idx; end
+	end
     return false
 end
 
 --------convert param list index to cmd id
-local function list_index_to_cmd(index)
-    if (index == BindPhrase_idx) then return true,0 end
-    if (index == Mode_idx) then return true,1 end
-    if (index == TxPwr_idx) then return true,3 end
-    if (index == RxPwr_idx) then return true,13 end
-    if (index == RxOutMode_idx) then return true,16 end
+local function list_index_to_cmd(idx)
+    if (idx <= 4) then return true, param_idx_list[idx]; end 
     return false
 end
 
@@ -75,10 +79,6 @@ end
 ----------------------------------------------------------------------
 -- MBridge CRSF emulation
 ----------------------------------------------------------------------
-
-local isConnected = nil
-local cmdPush = nil
-local cmdPop = nil
 
 local MBRIDGE_COMMANDPACKET_STX  = 0xA0
 local MBRIDGE_COMMANDPACKET_MASK = 0xE0
@@ -135,12 +135,12 @@ local function mbridgeCmdLen(cmd)
     return 0;
 end
   
-local function crsfIsConnected()
+local function isConnected()
     if getRSSI() ~= 0 then return true end
     return false
 end
   
-local function crsfCmdPush(cmd, payload)
+local function cmdPush(cmd, payload)
     -- 'O', 'W', len/cmd, payload bytes
     local data = { 79, 87, cmd + MBRIDGE_COMMANDPACKET_STX }
     for i=1, mbridgeCmdLen(cmd) do data[#data + 1] = 0 end -- fill with zeros of correct length
@@ -150,7 +150,7 @@ local function crsfCmdPush(cmd, payload)
     return crossfireTelemetryPush(129, data)
 end
 
-local function crsfCmdPop()
+local function cmdPop()
     -- crossfireTelemetryPop() is invoked if
     -- address = RADIO_ADDRESS (0xEA) or UART_SYNC (0xC8)
     -- frame id != normal crsf telemetry sensor id
@@ -168,26 +168,6 @@ local function crsfCmdPop()
     }
     for i=2, #data do res.payload[i-2] = data[i] end
     return res
-end  
-
-
-local function mbridgeIsConnected()
-    local LStats = mbridge.getLinkStats()
-    if LStats.LQ > 0 then return true end
-    return false
-end
-
-
-local function setupBridge()
-    if mbridge == nil or not mbridge.enabled() then
-        isConnected = crsfIsConnected
-        cmdPush = crsfCmdPush
-        cmdPop = crsfCmdPop -- can return nil
-    else  
-        isConnected = mbridgeIsConnected
-        cmdPush = mbridge.cmdPush
-        cmdPop = mbridge.cmdPop -- can return nil
-    end
 end  
 
 
@@ -427,15 +407,15 @@ local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
 end
 
 local function mb_allowed_mask_editable(allowed_mask) -- only one option allowed
-    if allowed_mask == 1 then return false end
-    if allowed_mask == 2 then return false end
-    if allowed_mask == 4 then return false end
-    if allowed_mask == 8 then return false end
-    if allowed_mask == 16 then return false end
-    if allowed_mask == 32 then return false end
-    if allowed_mask == 64 then return false end
-    if allowed_mask == 128 then return false end
-    if allowed_mask == 256 then return false end
+    if allowed_mask == 1 then return false; end
+    if allowed_mask == 2 then return false; end
+    if allowed_mask == 4 then return false; end
+    if allowed_mask == 8 then return false; end
+    if allowed_mask == 16 then return false; end
+    if allowed_mask == 32 then return false; end
+    if allowed_mask == 64 then return false; end
+    if allowed_mask == 128 then return false; end
+    if allowed_mask == 256 then return false; end
     return true
 end
 
@@ -628,7 +608,8 @@ end
 ----------------------------------------------------------------------
 -- Edit stuff
 ----------------------------------------------------------------------
-local cursor_idx = TxPwr_idx
+
+local cursor_idx = Param1_idx
 local edit = false
 local option_value = 0
     
@@ -925,18 +906,10 @@ local function scriptRun(event)
         error("Cannot be run as a model script!")
         return 2
     end  
-    if mbridge == nil or not mbridge.enabled() then
-        if model.getModule(1).Type ~= 5 then
-            error("mLRS not accessible: mBridge or CRSF not enabled!")
-            return 2
-        end
-    end
-    
-    setupBridge()
-    if isConnected == nil or cmdPush == nil or cmdPop == nil then --just to be sure for sure
-        error("Unclear issue with mBridge or CRSF!")
+    if model.getModule(1).Type ~= 5 then
+        error("mLRS not accessible: CRSF not enabled!")
         return 2
-    end  
+    end
     
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
