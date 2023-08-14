@@ -1035,7 +1035,7 @@ def mlrs_create_targetlist(appendix, extra_D_list):
     return tlist
 
 
-def mlrs_copy_all_hex():
+def mlrs_copy_all_hex_etc():
     print('copying .hex files')
     firmwarepath = os.path.join(MLRS_BUILD_DIR,'firmware')
     create_clean_dir(firmwarepath)
@@ -1044,6 +1044,8 @@ def mlrs_copy_all_hex():
             if 'firmware' in path:
                 continue
             if os.path.splitext(file)[1] == '.hex':
+                shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
+            if os.path.splitext(file)[1] == '.elrs':
                 shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
 
 
@@ -1081,6 +1083,6 @@ for target in targetlist:
         target_cnt +=1
 
 if cmdline_target == '' or target_cnt > 0:
-    mlrs_copy_all_hex()
+    mlrs_copy_all_hex_etc()
 
 os.system("pause")
