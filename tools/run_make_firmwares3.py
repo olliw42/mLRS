@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 13.08.2023
+ version 14.08.2023
 ********************************************************
 '''
 import os
@@ -1043,7 +1043,7 @@ def mlrs_copy_all_hex_etc():
         for file in files:
             if 'firmware' in path:
                 continue
-            if os.path.splitext(file)[1] == '.hex':
+            if os.path.splitext(file)[1] == '.hex'  and not '-elrs-bl' in file: # dirty, would be better to not be explicit on '-elrs-bl' here
                 shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
             if os.path.splitext(file)[1] == '.elrs':
                 shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
