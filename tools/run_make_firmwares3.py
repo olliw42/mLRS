@@ -698,17 +698,17 @@ def mlrs_build_target(target, cmdline_D_list):
     mlrs_link_target(target)
     os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
 
-    os.system(
-        os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
-        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
-        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
-        )
-
     if 'MLRS_FEATURE_ELRS_BOOTLOADER' in target.extra_D_list:
         os.system(
             'arm-none-eabi-objcopy -O binary ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elrs')
+        )
+    else:
+        os.system(
+        os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
+        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
+        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
 
     print('------------------------------------------------------------')
@@ -1043,7 +1043,7 @@ def mlrs_copy_all_hex_etc():
         for file in files:
             if 'firmware' in path:
                 continue
-            if os.path.splitext(file)[1] == '.hex'  and not '-elrs-bl' in file: # dirty, would be better to not be explicit on '-elrs-bl' here
+            if os.path.splitext(file)[1] == '.hex':
                 shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
             if os.path.splitext(file)[1] == '.elrs':
                 shutil.copy(os.path.join(path,file), os.path.join(firmwarepath,file))
