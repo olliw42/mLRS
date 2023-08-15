@@ -64,6 +64,7 @@ v0.0.00:
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/micros.h"
+#include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "clock.h"
@@ -75,6 +76,8 @@ v0.0.00:
 ClockBase clock;
 RxStatsBase rxstats;
 PowerupCounterBase powerup;
+tRDiversity rdiversity;
+tTDiversity tdiversity;
 
 
 // is required in bind.h
@@ -581,6 +584,8 @@ RESTARTCONTROLLER:
   frame_missed = false;
 
   rxstats.Init(Config.LQAveragingPeriod);
+  rdiversity.Init();
+  tdiversity.Init(Config.frame_rate_ms);
 
   out.Configure(Setup.Rx.OutMode);
   mavlink.Init();
@@ -662,8 +667,8 @@ RESTARTCONTROLLER:
         }break;
 
     case LINK_STATE_TRANSMIT: {
-        // TODO: transmit antenna diversity
-        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        //do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         }break;
@@ -757,46 +762,24 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         if (frame_received) { // frame received
             uint8_t antenna = ANTENNA_1;
-
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                // work out which antenna we choose
-                //            |   NONE   |  INVALID  | CRC1_VALID | VALID
-                // --------------------------------------------------------
-                // NONE       |          |   1 or 2  |     1      |  1
-                // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
-                // CRC1_VALID |    2     |     2     |   1 or 2   |  1
-                // VALID      |    2     |     2     |     2      |  1 or 2
-
-                if (link_rx1_status == link_rx2_status) {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                } else
-                if (link_rx1_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_1;
-                } else
-                if (link_rx2_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_2;
-                } else
-                if (link_rx1_status == RX_STATUS_CRC1_VALID) {
-                    antenna = ANTENNA_1;
-                } else
-                if (link_rx2_status == RX_STATUS_CRC1_VALID) {
-                    antenna = ANTENNA_2;
-                } else {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                }
+                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;
             }
-
             handle_receive(antenna);
 //dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         } else {
             handle_receive_none();
         }
 
-        // TODO: transmit antenna diversity
+        if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+            tdiversity.DoEstimate(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+        } else if (TRANSMIT_USE_ANTENNA2) {
+            tdiversity.SetAntenna(ANTENNA_2);
+        } else {
+            tdiversity.SetAntenna(ANTENNA_1);
+        }
 
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {

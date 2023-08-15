@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 14.08.2023
+ version 15.08.2023
 ********************************************************
 '''
 import os
@@ -379,6 +379,8 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','common_types.cpp'),
     os.path.join('Common','fhss.cpp'),
     os.path.join('Common','while.cpp'),
+    os.path.join('Common','link_types.cpp'),
+    os.path.join('Common','diversity.cpp'),
     ]
 
 MLRS_SOURCES_RX = [
