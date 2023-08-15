@@ -220,7 +220,8 @@ uint16_t crc;
 void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params)
 {
     rx_params->Power = Setup.Rx.Power;
-    rx_params->Diversity = Setup.Rx.Diversity;
+    rx_params->RDiversity = Setup.Rx.RDiversity;
+    rx_params->TDiversity = Setup.Rx.TDiversity;
     rx_params->ChannelOrder = Setup.Rx.ChannelOrder;
     rx_params->OutMode = Setup.Rx.OutMode;
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
@@ -246,7 +247,8 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
 void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
 {
     Setup.Rx.Power = rx_params->Power;
-    Setup.Rx.Diversity = rx_params->Diversity;
+    Setup.Rx.RDiversity = rx_params->RDiversity;
+    Setup.Rx.TDiversity = rx_params->TDiversity;
     Setup.Rx.ChannelOrder = rx_params->ChannelOrder;
     Setup.Rx.OutMode = rx_params->OutMode;
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;

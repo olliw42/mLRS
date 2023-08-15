@@ -197,7 +197,7 @@ PACKED(
 typedef struct
 {
     uint8_t Power : 4;
-    uint8_t Diversity : 4;
+    uint8_t RDiversity : 4; // renamed from Diversity to RDiversity
     uint8_t ChannelOrder : 4;
     uint8_t OutMode : 4;
     uint8_t OutRssiChannelMode : 4;
@@ -209,8 +209,8 @@ typedef struct
     uint8_t SendRcChannels : 4;
     uint8_t __RadioStatusMethod : 4; // deprecated
     uint8_t OutLqChannelMode : 4;
+    uint8_t TDiversity : 4;
 
-    uint8_t spare : 4;
     uint8_t spare2[4];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120

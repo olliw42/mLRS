@@ -559,8 +559,8 @@ RESTARTCONTROLLER:
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
-  IF_ANTENNA1(sx.StartUp());
-  IF_ANTENNA2(sx2.StartUp());
+  IF_SX1(sx.StartUp());
+  IF_SX2(sx2.StartUp());
   bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
@@ -795,6 +795,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         } else {
             handle_receive_none();
         }
+
+        // TODO: transmit antenna diversity
 
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {

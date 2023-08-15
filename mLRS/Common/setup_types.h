@@ -241,7 +241,7 @@ typedef struct
 typedef struct
 {
     uint8_t Power;
-    uint8_t Diversity;
+    uint8_t RDiversity; // renamed from Diversity to RDiversity
     uint8_t ChannelsSource;
     uint8_t ChannelOrder;
     uint8_t InMode;
@@ -251,15 +251,16 @@ typedef struct
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
     uint8_t CliLineEnd;
+    uint8_t TDiversity;
 
-    uint8_t spare[9];
+    uint8_t spare[8];
 } tTxSetup; // 20 bytes
 
 
 typedef struct
 {
     uint8_t Power;
-    uint8_t Diversity;
+    uint8_t RDiversity; // renamed from Diversity to RDiversity
     uint8_t ChannelOrder;
     uint8_t OutMode;
     uint8_t OutRssiChannelMode;
@@ -271,8 +272,9 @@ typedef struct
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
     uint8_t OutLqChannelMode;
+    uint8_t TDiversity;
 
-    uint8_t spare[7];
+    uint8_t spare[6];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
@@ -325,14 +327,14 @@ typedef struct
     uint16_t Ortho_allowed_mask;
 
     char Tx_Power_optstr[44+1];
-    uint16_t Tx_Diversity_allowed_mask;
+    uint16_t Tx_Diversity_allowed_mask; // is equal for both RDiversity and TDiversity
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
 
     char Rx_Power_optstr[44+1];
-    uint16_t Rx_Diversity_allowed_mask;
+    uint16_t Rx_Diversity_allowed_mask; // is equal for both RDiversity and TDiversity
     uint16_t Rx_OutMode_allowed_mask;
     uint16_t Rx_Buzzer_allowed_mask;
 
@@ -376,8 +378,10 @@ typedef struct
     uint16_t connect_tmo_systicks;
     uint16_t connect_listen_hop_cnt;
 
-    bool UseAntenna1;
-    bool UseAntenna2;
+    bool ReceiveUseAntenna1;
+    bool ReceiveUseAntenna2;
+    bool TransmitUseAntenna1;
+    bool TransmitUseAntenna2;
 
     bool UseMbridge;
     bool UseCrsf;

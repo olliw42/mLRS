@@ -81,6 +81,7 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "enabled,antenna1,antenna2"
+    // is equal for both RDiversity and TDiversity
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
@@ -131,7 +132,8 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
-    // Rx Diversity: "on,antenna1,antenna2"
+    // Rx Diversity: "enabled,antenna1,antenna2"
+    // is equal for both RDiversity and TDiversity
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
@@ -218,7 +220,8 @@ void setup_default(uint8_t config_id)
     Setup.Common[config_id].Ortho = SETUP_RF_ORTHO;
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
-    Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
+    Setup.Tx[config_id].RDiversity = SETUP_TX_RDIVERSITY;
+    Setup.Tx[config_id].TDiversity = SETUP_TX_TDIVERSITY;
     Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
     Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
     Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
@@ -229,7 +232,8 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
 
     Setup.Rx.Power = SETUP_RX_POWER;
-    Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
+    Setup.Rx.RDiversity = SETUP_RX_RDIVERSITY;
+    Setup.Rx.TDiversity = SETUP_RX_TDIVERSITY;
     Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
     Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
@@ -306,10 +310,15 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = SETUP_TX_POWER;
     if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = RFPOWER_LIST_NUM - 1;
 
-    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
-    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = DIVERSITY_DEFAULT;
-    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].Diversity)) {
-        Setup.Tx[config_id].Diversity = DIVERSITY_ANTENNA1;
+    if (Setup.Tx[config_id].RDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].RDiversity = SETUP_TX_RDIVERSITY;
+    if (Setup.Tx[config_id].RDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].RDiversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].RDiversity)) {
+        Setup.Tx[config_id].RDiversity = DIVERSITY_ANTENNA1;
+    }
+    if (Setup.Tx[config_id].TDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].TDiversity = SETUP_TX_TDIVERSITY;
+    if (Setup.Tx[config_id].TDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].TDiversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].TDiversity)) {
+        Setup.Tx[config_id].TDiversity = DIVERSITY_ANTENNA1;
     }
 
     if (Setup.Tx[config_id].ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -359,10 +368,15 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = SETUP_RX_POWER;
     if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = RFPOWER_LIST_NUM - 1;
 
-    if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
-    if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
-    if (SETUP_TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.Diversity)) {
-        Setup.Rx.Diversity = DIVERSITY_ANTENNA1;
+    if (Setup.Rx.RDiversity >= DIVERSITY_NUM) Setup.Rx.RDiversity = SETUP_RX_RDIVERSITY;
+    if (Setup.Rx.RDiversity >= DIVERSITY_NUM) Setup.Rx.RDiversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.RDiversity)) {
+        Setup.Rx.RDiversity = DIVERSITY_ANTENNA1;
+    }
+    if (Setup.Rx.TDiversity >= DIVERSITY_NUM) Setup.Rx.TDiversity = SETUP_RX_TDIVERSITY;
+    if (Setup.Rx.TDiversity >= DIVERSITY_NUM) Setup.Rx.TDiversity = DIVERSITY_DEFAULT;
+    if (SETUP_TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.TDiversity)) {
+        Setup.Rx.TDiversity = DIVERSITY_ANTENNA1;
     }
 
     if (Setup.Rx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
@@ -502,29 +516,52 @@ void setup_configure_config(uint8_t config_id)
 
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_IS_TRANSMITTER
-    switch (Setup.Tx[config_id].Diversity) {
+    switch (Setup.Tx[config_id].RDiversity) {
 #endif
 #ifdef DEVICE_IS_RECEIVER
-    switch (Setup.Rx.Diversity) {
+    switch (Setup.Rx.RDiversity) {
 #endif
     case DIVERSITY_DEFAULT:
-        Config.UseAntenna1 = true;
-        Config.UseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = true;
         break;
     case DIVERSITY_ANTENNA1:
-        Config.UseAntenna1 = true;
-        Config.UseAntenna2 = false;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
-        Config.UseAntenna1 = false;
-        Config.UseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = false;
+        Config.ReceiveUseAntenna2 = true;
+        break;
+    default:
+        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+    }
+#ifdef DEVICE_IS_TRANSMITTER
+    switch (Setup.Tx[config_id].TDiversity) {
+#endif        
+#ifdef DEVICE_IS_RECEIVER
+    switch (Setup.Rx.TDiversity) {
+#endif
+    case DIVERSITY_DEFAULT:
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = true;
+        break;
+    case DIVERSITY_ANTENNA1:
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = false;
+        break;
+    case DIVERSITY_ANTENNA2:
+        Config.TransmitUseAntenna1 = false;
+        Config.TransmitUseAntenna2 = true;
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
-    Config.UseAntenna1 = true;
-    Config.UseAntenna2 = false;
+    Config.ReceiveUseAntenna1 = true;
+    Config.ReceiveUseAntenna2 = false;
+    Config.TransmitUseAntenna1 = true;
+    Config.TransmitUseAntenna2 = false;
 #endif
 
     //-- FrequencyBand

@@ -664,8 +664,8 @@ RESTARTCONTROLLER:
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
-  IF_ANTENNA1(sx.StartUp());
-  IF_ANTENNA2(sx2.StartUp());
+  IF_SX1(sx.StartUp());
+  IF_SX2(sx2.StartUp());
   bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
@@ -782,6 +782,7 @@ RESTARTCONTROLLER:
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq());
         do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+//XX        do_transmit(tx_antenna);
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
@@ -912,6 +913,63 @@ IF_ANTENNA2(
             handle_receive(antenna);
         } else {
             handle_receive_none();
+        }
+
+        if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+/*            
+            // work out which antenna we want to choose for next transmission
+            //            |   NONE   |  INVALID  | VALID
+            // --------------------------------------------------------
+            // NONE       |    -     |    +1     |  +3
+            // INVALID    |   -1     | better +-x|  +3
+            // VALID      |   -3     |     -3    |  better +-x
+
+            if (link_rx1_status == link_rx2_status && link_rx1_status == RX_STATUS_VALID) {
+                if (stats.last_rx_rssi1 > stats.last_rx_rssi2 + 10)
+                    tx_antenna_estimator += 5;
+                else
+                if (stats.last_rx_rssi1 > stats.last_rx_rssi2 + 5)
+                    tx_antenna_estimator += 3;
+                else
+                if (stats.last_rx_rssi2 > stats.last_rx_rssi2 + 10)
+                    tx_antenna_estimator -= 5;
+                else
+                if (stats.last_rx_rssi2 > stats.last_rx_rssi2 + 5)
+                    tx_antenna_estimator -= 3;
+            } else
+            if (link_rx1_status == link_rx2_status && link_rx1_status == RX_STATUS_INVALID) {
+                if (stats.last_rx_rssi1 > stats.last_rx_rssi2 + 10)
+                    tx_antenna_estimator += 2;
+                else
+                if (stats.last_rx_rssi1 > stats.last_rx_rssi2 + 5)
+                    tx_antenna_estimator += 1;
+                else
+                if (stats.last_rx_rssi2 > stats.last_rx_rssi2 + 10)
+                    tx_antenna_estimator -= 2;
+                else
+                if (stats.last_rx_rssi2 > stats.last_rx_rssi2 + 5)
+                    tx_antenna_estimator -= 1;
+            } else
+            if (link_rx1_status == RX_STATUS_VALID) { // antenna 1 is the clear winner
+                tx_antenna_estimator += 3;
+            } else
+            if (link_rx2_status == RX_STATUS_VALID) { // antenna 2 is the clear winner
+                tx_antenna_estimator -= 3;
+            } else
+            if (link_rx1_status == RX_STATUS_INVALID) { // antenna 1 wins
+                tx_antenna_estimator += 1;
+            } else
+            if (link_rx2_status == RX_STATUS_INVALID) { // antenna 2 wins
+                tx_antenna_estimator -= 1;
+            }
+
+            if (tx_antenna_estimator >  10) { tx_antenna = ANTENNA_1; tx_antenna_estimator = 10; }
+            if (tx_antenna_estimator < -10) { tx_antenna = ANTENNA_2; tx_antenna_estimator = -10; }
+*/
+        } else if (TRANSMIT_USE_ANTENNA2) {
+//            tx_antenna = ANTENNA_2;
+        } else {
+//            tx_antenna = ANTENNA_1;
         }
 
         txstats.fhss_curr_i = fhss.CurrI();
