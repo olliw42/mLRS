@@ -12,6 +12,7 @@
 
 
 #include "setup_types.h"
+#include "hal/device_conf.h"
 #include "hal/hal.h"
 
 

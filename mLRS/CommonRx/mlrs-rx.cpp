@@ -674,7 +674,7 @@ RESTARTCONTROLLER:
         }break;
     }//end of switch(link_state)
 
-IF_ANTENNA1(
+IF_SX1(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX12xx_IRQ_TX_DONE) {
@@ -704,7 +704,7 @@ IF_ANTENNA1(
         }
     }//end of if(irq_status)
 );
-IF_ANTENNA2(
+IF_SX2(
     if (irq2_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX12xx_IRQ_TX_DONE) {
