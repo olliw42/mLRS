@@ -874,17 +874,16 @@ IF_SX2(
     if (doPreTransmit) {
         doPreTransmit = false;
 
-        bool frame_received = false;
-        bool valid_frame_received = false;
+        bool frame_received, valid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
-        } else if (USE_ANTENNA1) {
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         } else if (USE_ANTENNA2) {
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
+        } else { // use antenna1
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         }
 
 uint8_t antenna = ANTENNA_1;

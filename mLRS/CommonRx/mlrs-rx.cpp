@@ -740,19 +740,18 @@ IF_SX2(
         doPostReceive = false;
 
         bool frame_received, valid_frame_received, invalid_frame_received;
-        frame_received = valid_frame_received = invalid_frame_received = false; // to make compiler happy
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = frame_received && !valid_frame_received;
-        } else if (USE_ANTENNA1) {
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
         } else if (USE_ANTENNA2) {
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
+        } else { // use antenna1
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
         }
 
 /*dbg.puts("\n> 1: ");
