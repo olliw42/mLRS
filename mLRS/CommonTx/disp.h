@@ -728,22 +728,41 @@ char s[32];
     gdisp_puts("dB");
 
     gdisp_setcurXY(0, 2 * 10 + 20);
-    gdisp_puts("Div.");
+    gdisp_puts("RDiv.");
     gdisp_setcurX(40);
-    uint8_t tx_actual_diversity = 3; // 3 = invalid
+    uint8_t tx_actual_rdiversity = 3; // 3 = invalid
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        tx_actual_diversity = 0;
+        tx_actual_rdiversity = 0;
     } else if (USE_ANTENNA1) {
-        tx_actual_diversity = 1;
+        tx_actual_rdiversity = 1;
     } else if (USE_ANTENNA2) {
-        tx_actual_diversity = 2;
+        tx_actual_rdiversity = 2;
     }
-    _diversity_str(s, tx_actual_diversity);
+    _diversity_str(s, tx_actual_rdiversity);
     gdisp_puts(s);
     gdisp_setcurX(80);
-    uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : 3; // 3 = invalid
-    _diversity_str(s, rx_actual_diversity);
+    uint8_t rx_actual_rdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_rdiversity : 3; // 3 = invalid
+    _diversity_str(s, rx_actual_rdiversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
+
+    gdisp_setcurXY(0, 3 * 10 + 20);
+    gdisp_puts("TDiv.");
+    gdisp_setcurX(40);
+    uint8_t tx_actual_tdiversity = 3; // 3 = invalid
+    if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+        tx_actual_tdiversity = 0;
+    } else if (TRANSMIT_USE_ANTENNA1) {
+        tx_actual_tdiversity = 1;
+    } else if (TRANSMIT_USE_ANTENNA2) {
+        tx_actual_tdiversity = 2;
+    }
+    _diversity_str(s, tx_actual_tdiversity);
+    gdisp_puts(s);
+    gdisp_setcurX(80);
+    uint8_t rx_actual_tdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_tdiversity : 3; // 3 = invalid
+    _diversity_str(s, rx_actual_tdiversity);
+    if (connected_and_rx_setup_available()) gdisp_puts(s);
+
 /*
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("Rssi");

@@ -295,7 +295,8 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
     strstrbufcpy(SetupMetaData.rx_device_name, rx_setupdata->device_name_20, 20);
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
-    SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
+    SetupMetaData.rx_actual_rdiversity = rx_setupdata->actual_rdiversity;
+    SetupMetaData.rx_actual_tdiversity = rx_setupdata->actual_tdiversity;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
 
@@ -358,15 +359,26 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 0;
+        rx_setupdata.actual_rdiversity = 0;
     } else
     if (USE_ANTENNA1) {
-        rx_setupdata.actual_diversity = 1;
+        rx_setupdata.actual_rdiversity = 1;
     } else
     if (USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 2;
+        rx_setupdata.actual_rdiversity = 2;
     } else {
-        rx_setupdata.actual_diversity = 3; // 3 = invalid
+        rx_setupdata.actual_rdiversity = 3; // 3 = invalid
+    }
+    if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+        rx_setupdata.actual_tdiversity = 0;
+    } else
+    if (TRANSMIT_USE_ANTENNA1) {
+        rx_setupdata.actual_tdiversity = 1;
+    } else
+    if (TRANSMIT_USE_ANTENNA2) {
+        rx_setupdata.actual_tdiversity = 2;
+    } else {
+        rx_setupdata.actual_tdiversity = 3; // 3 = invalid
     }
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));

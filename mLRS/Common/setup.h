@@ -167,7 +167,8 @@ void setup_configure_metadata(void)
     SetupMetaData.rx_setup_layout = 0;
     strcpy(SetupMetaData.rx_device_name, "");
     SetupMetaData.rx_actual_power_dbm = INT8_MAX;
-    SetupMetaData.rx_actual_diversity = 3;
+    SetupMetaData.rx_actual_rdiversity = 3;
+    SetupMetaData.rx_actual_tdiversity = 3;
 }
 
 
