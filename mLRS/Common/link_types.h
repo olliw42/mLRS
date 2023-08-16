@@ -54,6 +54,7 @@ typedef enum {
 } RX_STATUS_ENUM;
 
 
+extern const char* connectstate_str[]; // for debug purposes
 #ifdef DEVICE_IS_TRANSMITTER
 extern const char* linkstate_str[]; // for debug purposes
 extern const char* rxstatus_str[];

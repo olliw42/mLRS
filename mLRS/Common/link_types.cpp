@@ -12,6 +12,9 @@
 
 
 // for debug purposes
+
+const char* connectstate_str[] = { "L", "S", "C" };
+
 #ifdef DEVICE_IS_TRANSMITTER
 const char* linkstate_str[] = { "i", "t", "tw", "r", "rw", "d" };
 const char* rxstatus_str[] = { "n", "i", "v" };
