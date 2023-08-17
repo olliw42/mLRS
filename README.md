@@ -29,9 +29,11 @@ You of course use the project fully at your own risk.
 
 ## Project Status ##
 
-The project is work in progress, and there is still plenty of room for improvement.
+The project is work in progress, and there is still plenty of room for ideas and improvement.
 
-However, the essential features, i.e., the RC link and the serial data link, are quite stable and robust. The mLRS system also provides already a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations (MissionPlanner, QGC), support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
+However, the essential features, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
+
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
@@ -61,13 +63,13 @@ It provides these operation modes:
   receiver sensitivity: -112 dBm
 
 Further features:
-- full transmitter and receiver diversity: The Tx and Rx modules which provide two Semtech Lora chips provide full diversity. This really improves link quality in the far range.
+- full diversity: The mLRS Tx modules and receivers which have two Semtech Lora chips provide full (receive) diversity. This really improves link quality in the far range.
 - all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
-- the receiver parameters can be set from within the transmitter; no need to mess with the receiver in any ways.
+- the receiver parameters can be set from within the transmitter or radio; no need to mess with the receiver in any way.
 - the transmitter and receiver parameters can be set via a LUA script, a CLI, or an OLED display.
 - bind mode for binding "unknown" receivers to the transmitter.
-- the Tx and Rx modules can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
-- 10 model configurations stored in Tx module, selected by "Receiver" number in OpenTx/EdgeTx radios.  
+- the mLRS system can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
+- 10 model configurations stored in the Tx module, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
@@ -90,11 +92,11 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | 868/915 MHz | - | 26 km | 42 km
 | 433 MHz/70 cm | - | 55 km | 87 km
 
-For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
+For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
 ## Hardware ##
 
-Hardware is a problem currently. One might be tempted to think that all the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support for mLRS then please join.
+Hardware is still a problem. One might be tempted to think that the recent commercial ExpressLRS hardware should be good platforms, but this is unfortuantely not so. The ESP's they use simply do not offer the peripherals which are desired for mLRS Tx modules, and STM32's were hence chosen as main platform. However, this is not a decission against ESP32, to the contrary: If anyone wants to add ESP32 support for mLRS then please join.
 
 The code currently supports:
 - Flysky FRM303 transmitter module (2.4 GHz)
