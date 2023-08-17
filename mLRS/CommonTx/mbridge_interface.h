@@ -551,28 +551,8 @@ tMBridgeInfo info = {};
 
     info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
     info.tx_actual_power_dbm = sx.RfPower_dbm();
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        info.tx_actual_rdiversity = 0;
-    } else
-    if (USE_ANTENNA1) {
-        info.tx_actual_rdiversity = 1;
-    } else
-    if (USE_ANTENNA2) {
-        info.tx_actual_rdiversity = 2;
-    } else {
-        info.tx_actual_rdiversity = 3; // 3 = invalid
-    }
-    if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
-        info.tx_actual_tdiversity = 0;
-    } else
-    if (TRANSMIT_USE_ANTENNA1) {
-        info.tx_actual_tdiversity = 1;
-    } else
-    if (TRANSMIT_USE_ANTENNA2) {
-        info.tx_actual_tdiversity = 2;
-    } else {
-        info.tx_actual_tdiversity = 3; // 3 = invalid
-    }
+    info.tx_actual_rdiversity = Config.RDiversity;
+    info.tx_actual_tdiversity = Config.TDiversity;
 
     if (SetupMetaData.rx_available) {
         info.rx_available = 1;
@@ -582,8 +562,8 @@ tMBridgeInfo info = {};
     } else {
         info.rx_available = 0;
         info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
-        info.rx_actual_rdiversity = 3; // 3 = invalid
-        info.rx_actual_tdiversity = 3; // 3 = invalid
+        info.rx_actual_rdiversity = DIVERSITY_NUM; // 3 = invalid
+        info.rx_actual_tdiversity = DIVERSITY_NUM; // 3 = invalid
     }
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);

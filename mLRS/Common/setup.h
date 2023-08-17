@@ -167,8 +167,8 @@ void setup_configure_metadata(void)
     SetupMetaData.rx_setup_layout = 0;
     strcpy(SetupMetaData.rx_device_name, "");
     SetupMetaData.rx_actual_power_dbm = INT8_MAX;
-    SetupMetaData.rx_actual_rdiversity = 3;
-    SetupMetaData.rx_actual_tdiversity = 3;
+    SetupMetaData.rx_actual_rdiversity = DIVERSITY_NUM; // 3 = invalid
+    SetupMetaData.rx_actual_tdiversity = DIVERSITY_NUM; // 3 = invalid
 }
 
 
@@ -258,6 +258,11 @@ void setup_sanitize_config(uint8_t config_id)
 // not displayed applies only to settings for which the default is ok
 #define SETUP_TST_NOTALLOWED(amask,pfield) ((SetupMetaData.amask & (1 << Setup.pfield)) == 0)
 
+// note: allowed TDiversity options depend on RDiversity setting
+// TDiversity estimator requires rssi from both antenna1 and antenna2
+// so can be done only when both are enabled. Else narrow to antenna used by receive.
+// This MUST be ensured by setup_sanitize_config() !
+
     //-- BindPhrase, FrequencyBand, Mode, Ortho
     char bind_phrase[6+1];
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
@@ -320,6 +325,7 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Tx[config_id].TDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].TDiversity = SETUP_TX_TDIVERSITY;
     if (Setup.Tx[config_id].TDiversity >= DIVERSITY_NUM) Setup.Tx[config_id].TDiversity = DIVERSITY_DEFAULT;
     if (Setup.Tx[config_id].TDiversity == DIVERSITY_DEFAULT && Setup.Tx[config_id].RDiversity != DIVERSITY_DEFAULT) {
+        // TDiversity cannot be used since RDiversity not enabled, so use RDiversity's antenna
         Setup.Tx[config_id].TDiversity = Setup.Tx[config_id].RDiversity;
     }
     if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].TDiversity)) {
@@ -381,6 +387,7 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Rx.TDiversity >= DIVERSITY_NUM) Setup.Rx.TDiversity = SETUP_RX_TDIVERSITY;
     if (Setup.Rx.TDiversity >= DIVERSITY_NUM) Setup.Rx.TDiversity = DIVERSITY_DEFAULT;
     if (Setup.Rx.TDiversity == DIVERSITY_DEFAULT && Setup.Rx.RDiversity != DIVERSITY_DEFAULT) {
+        // TDiversity cannot be used since RDiversity not enabled, so use RDiversity's antenna
         Setup.Rx.TDiversity = Setup.Rx.RDiversity;
     }
     if (SETUP_TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.TDiversity)) {
@@ -521,7 +528,9 @@ void setup_configure_config(uint8_t config_id)
 #endif
 
   //-- Diversity
-
+  // allowed TDiversity options depend on RDiversity setting
+  // This MUST be ensured by setup_sanitize_config() !
+  // we here only translate Setup's RDiversity & TDiversity into more convenient bool variables
 #ifdef DEVICE_HAS_DIVERSITY
 #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].RDiversity) {
@@ -530,14 +539,17 @@ void setup_configure_config(uint8_t config_id)
     switch (Setup.Rx.RDiversity) {
 #endif
     case DIVERSITY_DEFAULT:
+        Config.RDiversity = DIVERSITY_DEFAULT;
         Config.ReceiveUseAntenna1 = true;
         Config.ReceiveUseAntenna2 = true;
         break;
     case DIVERSITY_ANTENNA1:
+        Config.RDiversity = DIVERSITY_ANTENNA1;
         Config.ReceiveUseAntenna1 = true;
         Config.ReceiveUseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
+        Config.RDiversity = DIVERSITY_ANTENNA2;
         Config.ReceiveUseAntenna1 = false;
         Config.ReceiveUseAntenna2 = true;
         break;
@@ -551,17 +563,19 @@ void setup_configure_config(uint8_t config_id)
     switch (Setup.Rx.TDiversity) {
 #endif
     case DIVERSITY_DEFAULT:
-        // allowed TDiversity options depend on RDiversity setting
-        // TDiversity estimator requires rssi from both antenna1 and antenna2
-        // so can be done only when both are enabled. Else narrow to antenna used by receive.
-        Config.TransmitUseAntenna1 = (Config.ReceiveUseAntenna1) ? true : false;
-        Config.TransmitUseAntenna2 = (Config.ReceiveUseAntenna2) ? true : false;
+        Config.TDiversity = DIVERSITY_DEFAULT;
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = true;
+        if (!Config.ReceiveUseAntenna1) while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        if (!Config.ReceiveUseAntenna2) while (1) {} // must not happen, should have been resolved in setup_sanitize()
         break;
     case DIVERSITY_ANTENNA1:
+        Config.TDiversity = DIVERSITY_ANTENNA1;
         Config.TransmitUseAntenna1 = true;
         Config.TransmitUseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
+        Config.TDiversity = DIVERSITY_ANTENNA2;
         Config.TransmitUseAntenna1 = false;
         Config.TransmitUseAntenna2 = true;
         break;
@@ -569,6 +583,8 @@ void setup_configure_config(uint8_t config_id)
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
+    Config.RDiversity = DIVERSITY_ANTENNA1;
+    Config.TDiversity = DIVERSITY_ANTENNA1;
     Config.ReceiveUseAntenna1 = true;
     Config.ReceiveUseAntenna2 = false;
     Config.TransmitUseAntenna1 = true;

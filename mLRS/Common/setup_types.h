@@ -61,7 +61,7 @@ typedef enum {
 
 
 typedef enum {
-    DIVERSITY_DEFAULT = 0,
+    DIVERSITY_DEFAULT = 0, // diversity enabled
     DIVERSITY_ANTENNA1, // antenna 1 if diversity available
     DIVERSITY_ANTENNA2, // antenna 2 if diversity available
     DIVERSITY_NUM,
@@ -379,6 +379,8 @@ typedef struct
     uint16_t connect_tmo_systicks;
     uint16_t connect_listen_hop_cnt;
 
+    uint8_t RDiversity; // snapshot of Setup's RDiversity at startup
+    uint8_t TDiversity; // snapshot of Setup's TDiversity at startup
     bool ReceiveUseAntenna1;
     bool ReceiveUseAntenna2;
     bool TransmitUseAntenna1;

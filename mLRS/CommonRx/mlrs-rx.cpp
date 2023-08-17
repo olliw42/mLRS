@@ -145,9 +145,9 @@ class Out : public OutBase
           .transmitter_transmit_antenna = stats.received_transmit_antenna,
           .mode = (uint8_t)Config.Mode,
         };
-        if (USE_ANTENNA1 && USE_ANTENNA2) {
+        if (Config.RDiversity == DIVERSITY_DEFAULT) {
             lstats.antenna_config = 3;
-        } else if (USE_ANTENNA2) {
+        } else if (Config.RDiversity == DIVERSITY_ANTENNA2) {
             lstats.antenna_config = 2;
         } else {
             lstats.antenna_config = 1;
@@ -667,7 +667,6 @@ RESTARTCONTROLLER:
         }break;
 
     case LINK_STATE_TRANSMIT: {
-        //do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger

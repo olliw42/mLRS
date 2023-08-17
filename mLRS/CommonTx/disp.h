@@ -530,9 +530,9 @@ bool tTxDisp::key_has_been_pressed(uint8_t key_idx)
 void _diversity_str(char* s, uint8_t div)
 {
     switch (div) {
-        case 0: strcpy(s, "en."); return;
-        case 1: strcpy(s, "ant1"); return;
-        case 2: strcpy(s, "ant2"); return;
+        case DIVERSITY_DEFAULT: strcpy(s, "en."); return;
+        case DIVERSITY_ANTENNA1: strcpy(s, "ant1"); return;
+        case DIVERSITY_ANTENNA2: strcpy(s, "ant2"); return;
     }
     strcpy(s, "?");
 }
@@ -730,36 +730,20 @@ char s[32];
     gdisp_setcurXY(0, 2 * 10 + 20);
     gdisp_puts("RDiv.");
     gdisp_setcurX(40);
-    uint8_t tx_actual_rdiversity = 3; // 3 = invalid
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        tx_actual_rdiversity = 0;
-    } else if (USE_ANTENNA1) {
-        tx_actual_rdiversity = 1;
-    } else if (USE_ANTENNA2) {
-        tx_actual_rdiversity = 2;
-    }
-    _diversity_str(s, tx_actual_rdiversity);
+    _diversity_str(s, Config.RDiversity);
     gdisp_puts(s);
     gdisp_setcurX(80);
-    uint8_t rx_actual_rdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_rdiversity : 3; // 3 = invalid
+    uint8_t rx_actual_rdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_rdiversity : DIVERSITY_NUM; // 3 = invalid
     _diversity_str(s, rx_actual_rdiversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
 
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("TDiv.");
     gdisp_setcurX(40);
-    uint8_t tx_actual_tdiversity = 3; // 3 = invalid
-    if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
-        tx_actual_tdiversity = 0;
-    } else if (TRANSMIT_USE_ANTENNA1) {
-        tx_actual_tdiversity = 1;
-    } else if (TRANSMIT_USE_ANTENNA2) {
-        tx_actual_tdiversity = 2;
-    }
-    _diversity_str(s, tx_actual_tdiversity);
+    _diversity_str(s, Config.TDiversity);
     gdisp_puts(s);
     gdisp_setcurX(80);
-    uint8_t rx_actual_tdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_tdiversity : 3; // 3 = invalid
+    uint8_t rx_actual_tdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_tdiversity : DIVERSITY_NUM; // 3 = invalid
     _diversity_str(s, rx_actual_tdiversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
 

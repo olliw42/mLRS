@@ -786,7 +786,6 @@ RESTARTCONTROLLER:
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq());
-        //do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
