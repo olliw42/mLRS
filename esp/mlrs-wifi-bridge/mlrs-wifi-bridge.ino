@@ -44,8 +44,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
+//#define MODULE_ESP32_WROOM32
 //#define MODULE_NODEMCU_ESP32_WROOM32
-//#define MODULE_NODEMCU_ESP32_WROOM32_SERIAL_INVERTED
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32
@@ -54,6 +54,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 //#define MODULE_M5STACK_ATOM_LITE
 
+// Uncomment, if you need inverted serial
+#define USE_SERIAL_INVERTED
 
 // Wifi Protocol 0 = TCP, 1 = UDP
 #define WIFI_PROTOCOL  1
