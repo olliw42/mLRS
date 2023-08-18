@@ -120,9 +120,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD 16 // = RX2
     #define SERIAL_TXD 17 // = TX2
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef USE_LED
 
@@ -139,9 +136,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD 16 // = RX2
     #define SERIAL_TXD 17 // = TX2
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #ifndef LED_IO
         #define LED_IO  2
@@ -177,9 +171,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD 3 // = RX
     #define SERIAL_TXD 1 // = TX
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #ifndef LED_IO
         #define LED_IO  13
@@ -199,9 +190,6 @@ GPIO15 = RTC_GPIO13
     
     #define SERIAL_RXD 18 // = RX1
     #define SERIAL_TXD 17 // = TX1
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef LED_IO
     #define USE_LED
@@ -221,9 +209,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD 18 // = RX1
     #define SERIAL_TXD 19 // = TX1
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef LED_IO
     #define USE_LED
@@ -243,9 +228,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  32 // = RX1
     #define SERIAL_TXD  33 // = TX1
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef LED_IO
     #define USE_LED
@@ -265,9 +247,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  1 // = RX1
     #define SERIAL_TXD  0 // = TX1
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef LED_IO
     #define USE_LED
@@ -287,9 +266,6 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD 32 // = RX1
     #define SERIAL_TXD 26 // = TX1
-  #if defined USE_SERIAL_INVERTED
-    #define SERIAL_INVERT true
-  #endif
 
     #undef LED_IO
     #define USE_LED
