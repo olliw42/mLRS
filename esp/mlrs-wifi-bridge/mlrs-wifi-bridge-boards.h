@@ -18,10 +18,11 @@ IO9/IO10: U1RXD/U1TXD, is Serial1
 IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
 
 ------------------------------
-NodeMCU ESP32-Wroom-32
+NodeMCU ESP32-Wroom-32 or ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module
 https://esphome.io/devices/nodemcu_esp32.html
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html
 IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
 IO16/IO17: U2RXD/U2TXD, is Serial2
 
@@ -99,7 +100,7 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
-//-- ESP32 Dev Module
+//-- NodeMCU ESP32-Wroom-32 or ESP32-DevKitC V4
 #if defined MODULE_NODEMCU_ESP32_WROOM32
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
@@ -115,7 +116,7 @@ GPIO15 = RTC_GPIO13
     #define USE_LED
 
 
-//-- ESP32 Dev Module (inverted serial)
+//-- NodeMCU ESP32-Wroom-32 or ESP32-DevKitC V4 (inverted serial)
 #elif defined MODULE_NODEMCU_ESP32_WROOM32_SERIAL_INVERTED
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
