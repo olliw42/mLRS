@@ -18,6 +18,14 @@ IO9/IO10: U1RXD/U1TXD, is Serial1
 IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
 
 ------------------------------
+NodeMCU ESP32-Wroom-32
+------------------------------
+board: ESP32 Dev Module
+https://esphome.io/devices/nodemcu_esp32.html
+IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
+IO16/IO17: U2RXD/U2TXD, is Serial2
+
+------------------------------
 Lilygo TTGO-MICRO32
 ------------------------------
 board: ESP32-PICO-D4
@@ -91,8 +99,44 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
+//-- ESP32 Dev Module
+#if defined MODULE_ESP32_DEV
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ESP32 Dev Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif    
+    #define USE_LED
+
+
+//-- ESP32 Dev Module (inverted serial)
+#elif defined MODULE_ESP32_DEV_INV
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ESP32 Dev Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 16 // = RX2
+    #define SERIAL_TXD 17 // = TX2
+    #define SERIAL_INVERT true
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif    
+    #define USE_LED
+
+
 //-- ESP32-PICO-KIT
-#if defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ARDUINO_ESP32_PICO!
     #endif
@@ -192,7 +236,7 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack ATOM Lite
 #elif defined MODULE_M5STACK_ATOM_LITE
     #ifndef ARDUINO_M5Stack_ATOM // ARDUINO_BOARD != ARDUINO_M5Stack_ATOM
-	      #error Select board ARDUINO_M5Stack_ATOM!
+	      #error Select board M5Stack-ATOM!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -205,6 +249,7 @@ GPIO15 = RTC_GPIO13
     #define USE_LED
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  27
+
 
 //-- Generic
 #else
@@ -261,7 +306,13 @@ GPIO15 = RTC_GPIO13
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
-    
+
+#elif defined USE_SERIAL2_DBG
+    #define SERIAL Serial2
+    #define DBG Serial
+    #define DBG_PRINT(x) Serial.print(x)
+    #define DBG_PRINTLN(x) Serial.println(x)
+
 #else    
     #define SERIAL Serial
     #define DBG_PRINT(x)
