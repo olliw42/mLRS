@@ -110,6 +110,7 @@ GPIO15 = RTC_GPIO13
     #undef USE_SERIAL1_DBG
     #define USE_SERIAL2_DBG
 
+    // ESP32-DevKitC V4 does not have embedded LED
     #ifndef LED_IO
         #define LED_IO  2
     #endif    
@@ -130,6 +131,7 @@ GPIO15 = RTC_GPIO13
     #define SERIAL_TXD 17 // = TX2
     #define SERIAL_INVERT true
 
+    // ESP32-DevKitC V4 does not have embedded LED
     #ifndef LED_IO
         #define LED_IO  2
     #endif    
