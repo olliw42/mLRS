@@ -63,7 +63,7 @@ It provides these operation modes:
   receiver sensitivity: -112 dBm
 
 Further features:
-- full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full (receive) diversity. This really improves link quality in the far range.
+- full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range.
 - all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
 - the receiver parameters can be set from within the mLRS transmitter or the radio; no need to mess with the receiver in any way.
 - the transmitter and receiver parameters can be set via a Lua script, a CLI, or an OLED display.
