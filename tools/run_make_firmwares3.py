@@ -97,6 +97,7 @@ MLRS_BUILD_DIR = os.path.join(MLRS_PROJECT_DIR,'tools','build3')
 
 VERSIONONLYSTR = ''
 BRANCHSTR = ''
+HASHSTR = ''
 
 def mlrs_set_version():
     global VERSIONONLYSTR
@@ -119,14 +120,23 @@ def mlrs_set_version():
         exit()
 
 
-def mlrs_set_branch():
+def mlrs_set_branch_hash(version_str):
     global BRANCHSTR
+    global HASHSTR
     import subprocess
+    
     git_branch = subprocess.getoutput("git branch --show-current")
     if not git_branch == 'main':
         BRANCHSTR = '-'+git_branch
     if BRANCHSTR != '':
         print('BRANCHSTR =', BRANCHSTR)
+        
+    git_hash = subprocess.getoutput("git rev-parse --short HEAD")
+    v_patch = int(version_str.split('.')[2])
+    if v_patch % 2 == 1: # odd firmware patch version, so is dev, so add git hash
+        HASHSTR = '-@'+git_hash
+    if HASHSTR != '':
+        print('HASHSTR =', HASHSTR)
 
 
 #-- helper
@@ -1070,11 +1080,11 @@ for cmd in sys.argv:
 #cmdline_target = 'tx-diy-sxdualXXX'
 
 mlrs_set_version()
-mlrs_set_branch()
+mlrs_set_branch_hash(VERSIONONLYSTR)
 
 create_clean_dir(MLRS_BUILD_DIR)
 
-targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR, [])
+targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR+HASHSTR, [])
 
 target_cnt = 0
 for target in targetlist:
