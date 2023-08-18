@@ -25,7 +25,6 @@ https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/g
 IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
 IO16/IO17: U2RXD/U2TXD, is Serial2
 
-
 ------------------------------
 NodeMCU ESP32-Wroom-32
 ------------------------------
@@ -109,7 +108,7 @@ GPIO15 = RTC_GPIO13
 // board details
 //-------------------------------------------------------
 //-- Espressif ESP32-DevKitC V4
-#if defined MODULE_ESP32_WROOM32
+#if defined MODULE_ESP32_DEVKITC_V4
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
     #endif

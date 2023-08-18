@@ -14,6 +14,8 @@
 /*
 for more details on the boards see mlrs-wifi-bridge-boards.h
 
+- Espressif ESP32-DevKitC V4
+  board: ESP32 Dev Module
 - NodeMCU ESP32-Wroom-32
   board: ESP32 Dev Module
 - Adafruit QT Py S2
@@ -44,7 +46,7 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
-//#define MODULE_ESP32_WROOM32
+//#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
