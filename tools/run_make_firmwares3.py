@@ -1084,7 +1084,7 @@ mlrs_set_branch_hash(VERSIONONLYSTR)
 
 create_clean_dir(MLRS_BUILD_DIR)
 
-targetlist = mlrs_create_targetlist(BRANCHSTR+'-'+VERSIONONLYSTR+HASHSTR, [])
+targetlist = mlrs_create_targetlist('-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR, [])
 
 target_cnt = 0
 for target in targetlist:
