@@ -26,6 +26,7 @@
 #define DEVICE_HAS_OUT_INVERTED
 #define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 #define DEVICE_HAS_BUZZER
+#define DEVICE_HAS_SYSTEMBOOT
 
 #ifdef DEBUG_ENABLED
 #undef DEBUG_ENABLED
@@ -92,7 +93,6 @@
 #define SX_RX_EN                  //
 #define SX_TX_EN                  //
 
-
 #define SX_DIO0_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
 #define SX_DIO0_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE15
 #define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
@@ -102,8 +102,8 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 }
 
 void sx_amp_transmit(void)
@@ -116,27 +116,27 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-  LL_GPIO_AF_SetEXTISource(SX_DIO0_GPIO_AF_EXTI_PORTx, SX_DIO0_GPIO_AF_EXTI_LINEx);
+    LL_GPIO_AF_SetEXTISource(SX_DIO0_GPIO_AF_EXTI_PORTx, SX_DIO0_GPIO_AF_EXTI_LINEx);
 
-  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-  LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
 
-  NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
-  NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+    NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
 void sx_dio_enable_exti_isr(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 
@@ -161,12 +161,12 @@ void out_set_inverted(void)
 
 void button_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-  return gpio_read_activelow(BUTTON);
+    return gpio_read_activelow(BUTTON);
 }
 
 
@@ -177,10 +177,10 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-  gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_low(LED_GREEN); // LED_GREEN_OFF
-  gpio_low(LED_RED); // LED_RED_OFF
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
+    gpio_low(LED_RED); // LED_RED_OFF
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
@@ -200,6 +200,23 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
 #define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH1
 //#define BUZZER_TIM_IRQ_PRIORITY   14
+
+
+//-- SystemBootLoader
+
+#define BOOT_BUTTON               BUTTON
+
+void systembootloader_init(void)
+{
+    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
+    }
+    if (cnt > 12) {
+        BootLoaderInit();
+    }
+}
 
 
 //-- POWER
