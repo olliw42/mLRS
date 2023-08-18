@@ -100,7 +100,7 @@ GPIO15 = RTC_GPIO13
 // board details
 //-------------------------------------------------------
 //-- ESP32 Dev Module
-#if defined MODULE_ESP32_DEV
+#if defined MODULE_NODEMCU_ESP32_WROOM32
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
     #endif
@@ -116,7 +116,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- ESP32 Dev Module (inverted serial)
-#elif defined MODULE_ESP32_DEV_INV
+#elif defined MODULE_NODEMCU_ESP32_WROOM32_SERIAL_INVERTED
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
     #endif
@@ -143,6 +143,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #ifndef LED_IO
         #define LED_IO  13
@@ -158,6 +159,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #ifndef LED_IO
         #define LED_IO  13
@@ -173,6 +175,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
     
     #undef LED_IO
     #define USE_LED
@@ -188,6 +191,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #undef LED_IO
     #define USE_LED
@@ -203,6 +207,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #undef LED_IO
     #define USE_LED
@@ -222,6 +227,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #undef LED_IO
     #define USE_LED
@@ -236,11 +242,12 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack ATOM Lite
 #elif defined MODULE_M5STACK_ATOM_LITE
     #ifndef ARDUINO_M5Stack_ATOM // ARDUINO_BOARD != ARDUINO_M5Stack_ATOM
-	      #error Select board M5Stack-ATOM!
+	      #error Select board ARDUINO_M5Stack_ATOM!
     #endif
 
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #define SERIAL_RXD 32 // = RX1
     #define SERIAL_TXD 26 // = TX1

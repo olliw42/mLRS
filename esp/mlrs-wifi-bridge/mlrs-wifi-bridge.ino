@@ -44,8 +44,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
-//#define MODULE_ESP32_DEV
-//#define MODULE_ESP32_DEV_INV
+//#define MODULE_NODEMCU_ESP32_WROOM32
+//#define MODULE_NODEMCU_ESP32_WROOM32_SERIAL_INVERTED
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32
