@@ -80,8 +80,9 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
-#define JRPIN5_DISABLE_TX_WHILE_RX
+//#define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_DISABLE_TX_WHILE_RX
+#define JRPIN5_FULL_INTERNAL_ON_RX_TX
 
 #define SWUART_USE_TIM17 // debug
 #define SWUART_TX_IO              IO_PB14 // that's the I2C2 SDA pin

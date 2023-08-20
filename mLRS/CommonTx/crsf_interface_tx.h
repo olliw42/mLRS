@@ -147,15 +147,15 @@ bool tTxCrsf::transmit_start(void)
         return false;
     }
 
-    pin5_tx_enable(true); // switches of rx
-
     for (uint8_t i = 0; i < tx_available; i++) {
         uint8_t c = tx_frame[i];
         pin5_putc(c);
     }
-
     tx_available = 0;
-    state = STATE_TRANSMITING;
+
+//    pin5_tx_enable(true);
+//    state = STATE_TRANSMITING;
+
     return true;
 }
 
@@ -255,11 +255,6 @@ void tTxCrsf::Init(bool enable_flag)
 
     if (!enabled) return;
 
-    uart_rx_callback_ptr = &crsf_uart_rx_callback;
-    uart_tc_callback_ptr = &crsf_uart_tc_callback;
-
-    tPin5BridgeBase::Init();
-
     tx_available = 0;
     channels_received = false;
     cmd_received = false;
@@ -282,14 +277,21 @@ void tTxCrsf::Init(bool enable_flag)
 
     vehicle_sysid = 0;
     passthrough.Init();
+
+    uart_rx_callback_ptr = &crsf_uart_rx_callback;
+    uart_tc_callback_ptr = &crsf_uart_tc_callback;
+
+    tPin5BridgeBase::Init();
 }
 
 
 bool tTxCrsf::ChannelsUpdated(tRcData* rc)
 {
     if (!enabled) return false;
-    if (!channels_received) return false;
 
+    CheckAndRescue();
+
+    if (!channels_received) return false;
     channels_received = false;
 
     fill_rcdata(rc);

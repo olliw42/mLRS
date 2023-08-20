@@ -108,7 +108,7 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
 
     if (state < STATE_TRANSMIT_START) return false; // we are in receiving
 
-    if (state != STATE_TRANSMIT_START) {
+    if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
         state = STATE_IDLE;
         return false;
     }
@@ -128,9 +128,9 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
         return false;
     }
 
-    pin5_tx_enable(true);
+//    pin5_tx_enable(true);
+//    state = STATE_TRANSMITING; // TODO: mBridge needs some love
 
-    state = STATE_TRANSMITING;
     return true;
 }
 
@@ -272,6 +272,8 @@ void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len, uint16_t tnow_us)
 {
     if (!crsf_emulation) return;
 
+// UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant !!!
+
     state = STATE_IDLE; // to start the parser
 
     for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i], tnow_us);
@@ -312,14 +314,6 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 
     if (!enabled) return;
 
-    if (!crsf_emulation) {
-        uart_rx_callback_ptr = &mbridge_uart_rx_callback;
-        uart_tc_callback_ptr = &mbridge_uart_tc_callback;
-
-        tPin5BridgeBase::Init();
-        tSerialBase::Init();
-    }
-
     channels_received = false;
     cmd_received = false;
     cmd_m2r_available = 0;
@@ -329,6 +323,14 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 
     cmd_fifo.Init();
     cmd_in_process = 0;
+
+    if (!crsf_emulation) {
+        uart_rx_callback_ptr = &mbridge_uart_rx_callback;
+        uart_tc_callback_ptr = &mbridge_uart_tc_callback;
+
+        tPin5BridgeBase::Init();
+        tSerialBase::Init();
+    }
 }
 
 
@@ -337,8 +339,10 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 if (crsf_emulation) return false; // CRSF: just don't ever do it
 
     if (!enabled) return false;
-    if (!channels_received) return false;
 
+    CheckAndRescue();
+
+    if (!channels_received) return false;
     channels_received = false;
 
     fill_rcdata(rc);
