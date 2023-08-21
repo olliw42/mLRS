@@ -57,7 +57,7 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_M5STACK_ATOM_LITE
 
 // Uncomment, if you need inverted serial
-#define USE_SERIAL_INVERTED
+//#define USE_SERIAL_INVERTED
 
 // Wifi Protocol 0 = TCP, 1 = UDP
 #define WIFI_PROTOCOL  1

@@ -227,6 +227,7 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  32 // = RX1
     #define SERIAL_TXD  33 // = TX1
+    #define USE_SERIAL_INVERTED
 
     #undef LED_IO
     #define USE_LED
@@ -246,6 +247,7 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  1 // = RX1
     #define SERIAL_TXD  0 // = TX1
+    #define USE_SERIAL_INVERTED
 
     #undef LED_IO
     #define USE_LED
@@ -323,7 +325,6 @@ GPIO15 = RTC_GPIO13
     #define SERIAL Serial1
 //    #define SERIAL_RXD  9 // = RX1
 //    #define SERIAL_TXD  10 // = TX1
-//    #define SERIAL_INVERT false
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
