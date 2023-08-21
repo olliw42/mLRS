@@ -195,6 +195,9 @@ void tPin5BridgeBase::Init(void)
 #ifdef TX_FRM303_F072CB
 gpio_init_outpp(IO_PB9);
 #endif
+#if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
+gpio_init_outpp(IO_PA0);
+#endif
 }
 
 
@@ -328,6 +331,9 @@ void tPin5BridgeBase::CheckAndRescue(void)
         if (tnow_ms - tnottransmiting_last_ms > 20) { // we are stuck, so rescue
 #ifdef TX_FRM303_F072CB
 gpio_low(IO_PB9);
+#endif
+#if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
+gpio_high(IO_PA0);
 #endif
             state = STATE_IDLE;
             pin5_tx_enable(false);
