@@ -18,6 +18,22 @@ IO9/IO10: U1RXD/U1TXD, is Serial1
 IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
 
 ------------------------------
+Espressif ESP32-DevKitC V4
+------------------------------
+board: ESP32 Dev Module
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html
+IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
+IO16/IO17: U2RXD/U2TXD, is Serial2
+
+------------------------------
+NodeMCU ESP32-Wroom-32
+------------------------------
+board: ESP32 Dev Module
+https://esphome.io/devices/nodemcu_esp32.html
+IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
+IO16/IO17: U2RXD/U2TXD, is Serial2
+
+------------------------------
 Lilygo TTGO-MICRO32
 ------------------------------
 board: ESP32-PICO-D4
@@ -91,14 +107,50 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
+//-- Espressif ESP32-DevKitC V4
+#if defined MODULE_ESP32_DEVKITC_V4
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ESP32 Dev Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 16 // = RX2
+    #define SERIAL_TXD 17 // = TX2
+
+    #undef USE_LED
+
+
+//-- NodeMCU ESP32-Wroom-32
+#elif defined MODULE_NODEMCU_ESP32_WROOM32
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ESP32 Dev Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 16 // = RX2
+    #define SERIAL_TXD 17 // = TX2
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif    
+    #define USE_LED
+
+
 //-- ESP32-PICO-KIT
-#if defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ARDUINO_ESP32_PICO!
     #endif
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #ifndef LED_IO
         #define LED_IO  13
@@ -114,6 +166,10 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 3 // = RX
+    #define SERIAL_TXD 1 // = TX
 
     #ifndef LED_IO
         #define LED_IO  13
@@ -129,7 +185,11 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
     
+    #define SERIAL_RXD 18 // = RX1
+    #define SERIAL_TXD 17 // = TX1
+
     #undef LED_IO
     #define USE_LED
     #define NUMPIXELS  1
@@ -144,6 +204,10 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 18 // = RX1
+    #define SERIAL_TXD 19 // = TX1
 
     #undef LED_IO
     #define USE_LED
@@ -159,15 +223,16 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD  32 // = RX1
+    #define SERIAL_TXD  33 // = TX1
+    #define USE_SERIAL_INVERTED
 
     #undef LED_IO
     #define USE_LED
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  27
-
-    #define SERIAL_RXD  32 // = RX1
-    #define SERIAL_TXD  33 // = TX1
-    #define SERIAL_INVERT true
 
 
 //-- M5Stack M5Stamp C3U Mate
@@ -178,15 +243,16 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD  1 // = RX1
+    #define SERIAL_TXD  0 // = TX1
+    #define USE_SERIAL_INVERTED
 
     #undef LED_IO
     #define USE_LED
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  2
-
-    #define SERIAL_RXD  1 // = RX1
-    #define SERIAL_TXD  0 // = TX1
-    #define SERIAL_INVERT true
 
 
 //-- M5Stack ATOM Lite
@@ -197,6 +263,7 @@ GPIO15 = RTC_GPIO13
 
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
 
     #define SERIAL_RXD 32 // = RX1
     #define SERIAL_TXD 26 // = TX1
@@ -205,6 +272,7 @@ GPIO15 = RTC_GPIO13
     #define USE_LED
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  27
+
 
 //-- Generic
 #else
@@ -257,11 +325,16 @@ GPIO15 = RTC_GPIO13
     #define SERIAL Serial1
 //    #define SERIAL_RXD  9 // = RX1
 //    #define SERIAL_TXD  10 // = TX1
-//    #define SERIAL_INVERT false
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
-    
+
+#elif defined USE_SERIAL2_DBG
+    #define SERIAL Serial2
+    #define DBG Serial
+    #define DBG_PRINT(x) Serial.print(x)
+    #define DBG_PRINTLN(x) Serial.println(x)
+
 #else    
     #define SERIAL Serial
     #define DBG_PRINT(x)
