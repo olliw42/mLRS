@@ -14,6 +14,10 @@
 /*
 for more details on the boards see mlrs-wifi-bridge-boards.h
 
+- Espressif ESP32-DevKitC V4
+  board: ESP32 Dev Module
+- NodeMCU ESP32-Wroom-32
+  board: ESP32 Dev Module
 - Adafruit QT Py S2
   board: Adafruit QT Py ESP32-S2
 - M5Stack M5Stamp C3 Mate
@@ -42,6 +46,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
+//#define MODULE_ESP32_DEVKITC_V4
+//#define MODULE_NODEMCU_ESP32_WROOM32
 #define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32
@@ -50,6 +56,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
 //#define MODULE_M5STACK_ATOM_LITE
 
+// Uncomment, if you need inverted serial
+//#define USE_SERIAL_INVERTED
 
 // Wifi Protocol 0 = TCP, 1 = UDP
 #define WIFI_PROTOCOL  1
@@ -80,6 +88,7 @@ int wifi_channel = 13;
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
+//#define USE_SERIAL2_DBG // use Serial2 for communication, and Serial for debug output and flashing
 
 // LED pin (only effective for a generic board)
 // un-comment if you want a LED
@@ -133,8 +142,8 @@ void setup()
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
 #ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
-  #ifdef SERIAL_INVERT
-    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, SERIAL_INVERT);
+  #ifdef USE_SERIAL_INVERTED
+    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, true);
   #else
     SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
   #endif
