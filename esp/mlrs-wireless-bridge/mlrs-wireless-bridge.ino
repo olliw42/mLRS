@@ -57,9 +57,9 @@ List of supported modules, and board which need to be selected
 // (for the generic module also SERIAL_RXD and SERIAL_TXD need to be defined)
 //#define USE_SERIAL_INVERTED
 
-#define PROTOCOL_TYPE 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth
+#define WIRELESS_PROTOCOL 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth
 
-#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
+#if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
   // Wifi credentials
   String ssid = "mLRS AP"; // Wifi name
   String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
@@ -78,7 +78,7 @@ List of supported modules, and board which need to be selected
   // comment out for default setting
   // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
   #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
-#elif (PROTOCOL_TYPE == 2) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
   String localName = "mLRSBTbridge"; // Bluetooth name
 #endif
 
@@ -100,9 +100,9 @@ int baudrate = 115200;
 // Includes
 //-------------------------------------------------------
 
-#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
+#if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
   #include <WiFi.h>
-#elif (PROTOCOL_TYPE == 2) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
   #include <BluetoothSerial.h>
 #endif
 
@@ -118,17 +118,17 @@ int baudrate = 115200;
 // Internals
 //-------------------------------------------------------
 
-#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
+#if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
   IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
   IPAddress netmask(255, 255, 255, 0);
-  #if PROTOCOL_TYPE == 1 // UDP
+  #if WIRELESS_PROTOCOL == 1 // UDP
     WiFiServer server(80);
     WiFiUDP udp;
   #else // TCP
     WiFiServer server(port_tcp);
     WiFiClient client;
   #endif
-#elif (PROTOCOL_TYPE == 2) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
   BluetoothSerial SerialBT;
 #endif
 
@@ -171,11 +171,11 @@ void setup()
     DBG_PRINTLN(rxbufsize);
     DBG_PRINTLN(txbufsize);
 
-#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
+#if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
     // AP mode
     // WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-  #if (PROTOCOL_TYPE == 1)
+  #if (WIRELESS_PROTOCOL == 1)
     String ssid_full = ssid + " UDP";
   #else    
     String ssid_full = ssid + " TCP";
@@ -192,10 +192,10 @@ void setup()
   #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
   #endif    
-  #if (PROTOCOL_TYPE == 1)
+  #if (WIRELESS_PROTOCOL == 1)
     udp.begin(port_udp);
   #endif
-#elif (PROTOCOL_TYPE == 2) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
     SerialBT.begin(localName);
 #endif
 
@@ -229,7 +229,7 @@ void loop()
 
     uint8_t buf[256]; // working buffer
 
-#if (PROTOCOL_TYPE == 0) // WiFi TCP
+#if (WIRELESS_PROTOCOL == 0) // WiFi TCP
     if (server.hasClient()) {
         if (!client.connected()) {
             client.stop(); // doesn't appear to make a difference
@@ -268,7 +268,7 @@ void loop()
         int len = SERIAL.read(buf, sizeof(buf));
         client.write(buf, len);
     }
-#elif (PROTOCOL_TYPE == 1) // WiFi UDP
+#elif (WIRELESS_PROTOCOL == 1) // WiFi UDP
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
@@ -290,7 +290,7 @@ void loop()
         udp.write(buf, len);
         udp.endPacket();
     }
-#elif (PROTOCOL_TYPE == 2) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
     uint16_t idx = 0;
     while (SerialBT.available()) {
       buf[idx++] = SerialBT.read();
