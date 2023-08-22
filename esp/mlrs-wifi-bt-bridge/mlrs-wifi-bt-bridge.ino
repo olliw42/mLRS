@@ -57,16 +57,9 @@ List of supported modules, and board which need to be selected
 // (for the generic module also SERIAL_RXD and SERIAL_TXD need to be defined)
 //#define USE_SERIAL_INVERTED
 
-#define WIFI_nBLUETOOTH 1 // Bluetooth = 0, WiFi = 1
+#define PROTOCOL_TYPE 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth
 
-#if (WIFI_nBLUETOOTH == 0) // Bluetooth
-  String localName = "mLRSBTbridge"; // Bluetooth name
-#endif
-
-#if (WIFI_nBLUETOOTH == 1) // WiFi
-  // Wifi Protocol 0 = TCP, 1 = UDP
-  #define WIFI_PROTOCOL  1
-
+#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
   // Wifi credentials
   String ssid = "mLRS AP"; // Wifi name
   String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
@@ -75,22 +68,22 @@ List of supported modules, and board which need to be selected
 
   int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
   int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
-#endif
 
+  // WiFi channel
+  // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
+  // Note: Channel 13 is generally not available in the US, where 11 is the maximum.
+  int wifi_channel = 13;
+
+  // WiFi power
+  // comment out for default setting
+  // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
+  #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
+#elif (PROTOCOL_TYPE == 2) // Bluetooth
+  String localName = "mLRSBTbridge"; // Bluetooth name
+#endif
 
 // baudrate
 int baudrate = 115200;
-
-// WiFi channel
-// 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
-// Note: Channel 13 is generally not available in the US, where 11 is the maximum.
-int wifi_channel = 13;
-
-// WiFi power
-// comment out for default setting
-// Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
-#define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
-
 
 // serial port usage (only effective for the generic module)
 // comment all for default behavior, which is using only Serial port
@@ -107,14 +100,11 @@ int wifi_channel = 13;
 // Includes
 //-------------------------------------------------------
 
-#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
+  #include <WiFi.h>
+#elif (PROTOCOL_TYPE == 2) // Bluetooth
   #include <BluetoothSerial.h>
 #endif
-
-#if (WIFI_nBLUETOOTH == 1) // WiFi
-  #include <WiFi.h>
-#endif
-
 
 
 //-------------------------------------------------------
@@ -128,20 +118,18 @@ int wifi_channel = 13;
 // Internals
 //-------------------------------------------------------
 
-#if (WIFI_nBLUETOOTH == 0) // Bluetooth
-  BluetoothSerial SerialBT;
-#endif
-
-#if (WIFI_nBLUETOOTH == 1) // WiFi
+#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
   IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
   IPAddress netmask(255, 255, 255, 0);
-  #if WIFI_PROTOCOL == 1 // UDP
+  #if PROTOCOL_TYPE == 1 // UDP
     WiFiServer server(80);
     WiFiUDP udp;
   #else // TCP
     WiFiServer server(port_tcp);
     WiFiClient client;
   #endif
+#elif (PROTOCOL_TYPE == 2) // Bluetooth
+  BluetoothSerial SerialBT;
 #endif
 
 bool led_state;
@@ -183,15 +171,11 @@ void setup()
     DBG_PRINTLN(rxbufsize);
     DBG_PRINTLN(txbufsize);
 
-#if (WIFI_nBLUETOOTH == 0) // Bluetooth
-    SerialBT.begin(localName);
-#endif
-
-#if (WIFI_nBLUETOOTH == 1) // WiFi
+#if ((PROTOCOL_TYPE == 0) || (PROTOCOL_TYPE == 1)) // WiFi
     // AP mode
-    //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
+    // WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-  #if WIFI_PROTOCOL == 1
+  #if (PROTOCOL_TYPE == 1)
     String ssid_full = ssid + " UDP";
   #else    
     String ssid_full = ssid + " TCP";
@@ -208,9 +192,11 @@ void setup()
   #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
   #endif    
-  #if WIFI_PROTOCOL == 1
+  #if (PROTOCOL_TYPE == 1)
     udp.begin(port_udp);
   #endif
+#elif (PROTOCOL_TYPE == 2) // Bluetooth
+    SerialBT.begin(localName);
 #endif
 
     led_tlast_ms = 0;
@@ -243,59 +229,7 @@ void loop()
 
     uint8_t buf[256]; // working buffer
 
-#if (WIFI_nBLUETOOTH == 0) // Bluetooth
-    uint8_t idx = 0;
-    while (SerialBT.available()) {
-      buf[idx++] = SerialBT.read();
-      if (idx >= sizeof(buf)) break;
-    }
-    if (idx > 0)
-    {
-      is_connected = true;
-      is_connected_tlast_ms = millis();
-      SERIAL.write(buf, idx);
-    }
-    
-	tnow_ms = millis(); // may not be relevant, but just update it
-    int avail = SERIAL.available();
-    if (avail <= 0) {
-        serial_data_received_tfirst_ms = tnow_ms;      
-    } else {
-     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
-        serial_data_received_tfirst_ms = tnow_ms;
-        int len = SERIAL.read(buf, sizeof(buf));
-        SerialBT.write(buf, len);
-      }	
-	}
-#endif
-
-#if (WIFI_nBLUETOOTH == 1) // WiFi
-  #if WIFI_PROTOCOL == 1 // UDP
-
-    int packetSize = udp.parsePacket();
-    if (packetSize) {
-        int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
-        is_connected = true;
-        is_connected_tlast_ms = millis();
-    }
-
-    tnow_ms = millis(); // may not be relevant, but just update it
-    int avail = SERIAL.available();
-    if (avail <= 0) {
-        serial_data_received_tfirst_ms = tnow_ms;      
-    } else 
-    if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
-        serial_data_received_tfirst_ms = tnow_ms;
-
-        int len = SERIAL.read(buf, sizeof(buf));
-        udp.beginPacket(ip_udp, port_udp);
-        udp.write(buf, len);
-        udp.endPacket();
-    }
-
-  #else // TCP
-
+#if (PROTOCOL_TYPE == 0) // WiFi TCP
     if (server.hasClient()) {
         if (!client.connected()) {
             client.stop(); // doesn't appear to make a difference
@@ -334,8 +268,52 @@ void loop()
         int len = SERIAL.read(buf, sizeof(buf));
         client.write(buf, len);
     }
+#elif (PROTOCOL_TYPE == 1) // WiFi UDP
+    int packetSize = udp.parsePacket();
+    if (packetSize) {
+        int len = udp.read(buf, sizeof(buf));
+        SERIAL.write(buf, len);
+        is_connected = true;
+        is_connected_tlast_ms = millis();
+    }
 
-  #endif
+    tnow_ms = millis(); // may not be relevant, but just update it
+    int avail = SERIAL.available();
+    if (avail <= 0) {
+        serial_data_received_tfirst_ms = tnow_ms;      
+    } else 
+    if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+
+        int len = SERIAL.read(buf, sizeof(buf));
+        udp.beginPacket(ip_udp, port_udp);
+        udp.write(buf, len);
+        udp.endPacket();
+    }
+#elif (PROTOCOL_TYPE == 2) // Bluetooth
+    uint8_t idx = 0;
+    while (SerialBT.available()) {
+      buf[idx++] = SerialBT.read();
+      if (idx >= sizeof(buf)) break;
+    }
+    if (idx > 0)
+    {
+      is_connected = true;
+      is_connected_tlast_ms = millis();
+      SERIAL.write(buf, idx);
+    }
+    
+    tnow_ms = millis(); // may not be relevant, but just update it
+    int avail = SERIAL.available();
+    if (avail <= 0) {
+        serial_data_received_tfirst_ms = tnow_ms;      
+    } else {
+      if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+        int len = SERIAL.read(buf, sizeof(buf));
+        SerialBT.write(buf, len);
+      }	
+    }
 #endif  
 }
 
