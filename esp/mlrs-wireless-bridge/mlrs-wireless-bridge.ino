@@ -302,7 +302,7 @@ void loop()
     if (len > 0) {
         if (len > sizeof(buf)) len = sizeof(buf);
         for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
-        Serial.write(buf, len);
+        SERIAL.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
