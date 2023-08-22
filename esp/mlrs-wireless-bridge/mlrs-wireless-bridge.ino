@@ -1,5 +1,5 @@
 //*******************************************************
-// mLRS WiFi and Bluetooth Bridge
+// mLRS Wireless Bridge
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
@@ -111,7 +111,7 @@ int baudrate = 115200;
 // Module details
 //-------------------------------------------------------
 
-#include "mlrs-wifi-bt-bridge-boards.h"
+#include "mlrs-wireless-bridge-boards.h"
 
 
 //-------------------------------------------------------
