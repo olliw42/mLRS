@@ -76,6 +76,7 @@ v0.0.00:
 #include "../Common/common.h"
 #include "../Common/micros.h"
 #include "../Common/channel_order.h"
+#include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "in.h"
@@ -91,6 +92,8 @@ tComPort com;
 tTxCli cli;
 ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
+tRDiversity rdiversity;
+tTDiversity tdiversity;
 
 
 class In : public InBase
@@ -664,8 +667,8 @@ RESTARTCONTROLLER:
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
-  IF_ANTENNA1(sx.StartUp());
-  IF_ANTENNA2(sx2.StartUp());
+  IF_SX1(sx.StartUp());
+  IF_SX2(sx2.StartUp());
   bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
@@ -685,6 +688,8 @@ RESTARTCONTROLLER:
   link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
   txstats.Init(Config.LQAveragingPeriod);
+  rdiversity.Init();
+  tdiversity.Init(Config.frame_rate_ms);
 
   in.Configure(Setup.Tx[Config.ConfigId].InMode);
   mavlink.Init();
@@ -781,7 +786,7 @@ RESTARTCONTROLLER:
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq());
-        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
@@ -797,7 +802,7 @@ RESTARTCONTROLLER:
         break;
     }//end of switch(link_state)
 
-IF_ANTENNA1(
+IF_SX1(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX12xx_IRQ_TX_DONE) {
@@ -830,7 +835,7 @@ IF_ANTENNA1(
         }
     }//end of if(irq_status)
 );
-IF_ANTENNA2(
+IF_SX2(
     if (irq2_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX12xx_IRQ_TX_DONE) {
@@ -847,7 +852,7 @@ IF_ANTENNA2(
             }
         }
 
-        if (irq2_status & SX12xx_IRQ_TIMEOUT) { // ??????????????????
+        if (irq2_status & SX12xx_IRQ_TIMEOUT) {
             irq2_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = RX_STATUS_NONE;
@@ -868,51 +873,55 @@ IF_ANTENNA2(
     if (doPreTransmit) {
         doPreTransmit = false;
 
-        bool frame_received = false;
-        bool valid_frame_received = false;
+        bool frame_received, valid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
-        } else if (USE_ANTENNA1) {
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         } else if (USE_ANTENNA2) {
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
+        } else { // use antenna1
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
         }
 
+uint8_t antenna = ANTENNA_1;
+
         if (frame_received) { // frame received
-            uint8_t antenna = ANTENNA_1;
-
+//XX            uint8_t antenna = ANTENNA_1;
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                // work out which antenna we choose
-                //            |   NONE   |  INVALID  | VALID
-                // --------------------------------------------------------
-                // NONE       |          |   1 or 2  |  1
-                // INVALID    |  1 or 2  |   1 or 2  |  1
-                // VALID      |    2     |     2     |  1 or 2
-
-                if (link_rx1_status == link_rx2_status) {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                } else
-                if (link_rx1_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_1;
-                } else
-                if (link_rx2_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_2;
-                } else {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                }
+                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;
             }
-
             handle_receive(antenna);
         } else {
             handle_receive_none();
         }
+
+        if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+            tdiversity.DoEstimate(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+        } else if (TRANSMIT_USE_ANTENNA2) {
+            tdiversity.SetAntenna(ANTENNA_2);
+        } else {
+            tdiversity.SetAntenna(ANTENNA_1);
+        }
+/*
+extern char ststm32_str[32]; // we hold here a small static string
+dbg.puts("\n");
+remove_leading_zeros(u32toBCD_s(millis32()));dbg.puts(ststm32_str);dbg.puts(",");
+dbg.puts(s8toBCD_s(stats.last_rssi1));dbg.puts(",");dbg.puts(s8toBCD_s(stats.last_rssi2));dbg.puts(",");
+//XX dbg.puts(s8toBCD_s(stats.last_snr1));dbg.puts(",");dbg.puts(s8toBCD_s(stats.last_snr2));dbg.puts(",");
+dbg.putc('0'+link_rx1_status);dbg.puts(",");dbg.putc('0'+link_rx2_status);dbg.puts(",");
+dbg.puts(rxstatus_str[link_rx1_status]);dbg.puts(",");dbg.puts(rxstatus_str[link_rx2_status]);dbg.puts(",");
+dbg.puts((antenna == ANTENNA_2) ? " 1" : " 0");dbg.puts(", ");
+//XX dbg.putc(frame_received ? '1' : '0');dbg.puts(",");dbg.putc(valid_frame_received ? '1' : '0');dbg.puts(",");
+dbg.puts(s8toBCD_s(tdiversity.estimator_value));dbg.puts(", ");
+dbg.putc('0'+tdiversity.invalid1_cnt);dbg.puts(", ");
+dbg.putc('0'+tdiversity.invalid2_cnt);dbg.puts(", ");
+dbg.puts((tdiversity.Antenna() == ANTENNA_2) ? "1" : "0");//dbg.puts(", ");
+//dbg.putc('0'+tdiversity.prng());//dbg.puts(",");
+*/
 
         txstats.fhss_curr_i = fhss.CurrI();
         txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);

@@ -47,13 +47,14 @@ ISSUES:
 
 - buzzer: work out what to do to account for active-low and actiove-high, so that buzzer isn't permanently "on".
 
+- loop: it theoretically could happen that tx was not successful and link_state = LINK_STATE_TRANSMIT_WAIT
+
 
 The 3 MAIN topics TODO:
 
 1) Link
 - AFC
 - retransmissions, resend last one time to make it more robust
-- diversity for transmitting (should also work for omni + directional)
 - reconnect by choosing frequency based on rssi map
 
 2) Parameters, usability

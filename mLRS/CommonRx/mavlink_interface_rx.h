@@ -585,10 +585,10 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
 
     flags = 0; // rssi are in MAVLink units
 
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
+    if (Config.RDiversity == DIVERSITY_DEFAULT) {
         rx_rssi1 = rssi_i8_to_ap(stats.last_rssi1);
         rx_rssi2 = rssi_i8_to_ap(stats.last_rssi2);
-    } else if (USE_ANTENNA2) {
+    } else if (Config.RDiversity == DIVERSITY_ANTENNA2) {
         rx_rssi1 = UINT8_MAX;
         rx_rssi2 = rssi_i8_to_ap(stats.last_rssi2);
     } else {

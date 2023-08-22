@@ -220,7 +220,8 @@ uint16_t crc;
 void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params)
 {
     rx_params->Power = Setup.Rx.Power;
-    rx_params->Diversity = Setup.Rx.Diversity;
+    rx_params->RDiversity = Setup.Rx.RDiversity;
+    rx_params->TDiversity = Setup.Rx.TDiversity;
     rx_params->ChannelOrder = Setup.Rx.ChannelOrder;
     rx_params->OutMode = Setup.Rx.OutMode;
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
@@ -246,7 +247,8 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
 void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
 {
     Setup.Rx.Power = rx_params->Power;
-    Setup.Rx.Diversity = rx_params->Diversity;
+    Setup.Rx.RDiversity = rx_params->RDiversity;
+    Setup.Rx.TDiversity = rx_params->TDiversity;
     Setup.Rx.ChannelOrder = rx_params->ChannelOrder;
     Setup.Rx.OutMode = rx_params->OutMode;
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;
@@ -293,7 +295,8 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
     strstrbufcpy(SetupMetaData.rx_device_name, rx_setupdata->device_name_20, 20);
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
-    SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
+    SetupMetaData.rx_actual_rdiversity = rx_setupdata->actual_rdiversity;
+    SetupMetaData.rx_actual_tdiversity = rx_setupdata->actual_tdiversity;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
 
@@ -355,17 +358,8 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.setup_layout = SETUPLAYOUT;
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 0;
-    } else
-    if (USE_ANTENNA1) {
-        rx_setupdata.actual_diversity = 1;
-    } else
-    if (USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 2;
-    } else {
-        rx_setupdata.actual_diversity = 3; // 3 = invalid
-    }
+    rx_setupdata.actual_rdiversity = Config.RDiversity;
+    rx_setupdata.actual_tdiversity = Config.TDiversity;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
 

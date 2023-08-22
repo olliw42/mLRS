@@ -4,11 +4,14 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// LINK
+// LINK TYPES
 //*******************************************************
-#ifndef LINK_H
-#define LINK_H
+#ifndef LINK_TYPES_H
+#define LINK_TYPES_H
 #pragma once
+
+
+#include "hal/device_conf.h"
 
 
 //-------------------------------------------------------
@@ -31,7 +34,6 @@ typedef enum {
     LINK_STATE_RECEIVE_WAIT,
     LINK_STATE_RECEIVE_DONE,
 } LINK_STATE_ENUM;
-const char* linkstate_str[] = { "i", "t", "tw", "r", "rw", "d" }; // for debug purposes
 #endif
 #ifdef DEVICE_IS_RECEIVER
 typedef enum {
@@ -40,7 +42,6 @@ typedef enum {
     LINK_STATE_TRANSMIT,
     LINK_STATE_TRANSMIT_WAIT,
 } LINK_STATE_ENUM;
-const char* linkstate_str[] = { "r", "rw", "t", "tw" }; // for debug purposes
 #endif
 
 typedef enum {
@@ -51,6 +52,16 @@ typedef enum {
 #endif
     RX_STATUS_VALID, // frame received and crc (and crc1) valid
 } RX_STATUS_ENUM;
+
+
+extern const char* connectstate_str[]; // for debug purposes
+#ifdef DEVICE_IS_TRANSMITTER
+extern const char* linkstate_str[]; // for debug purposes
+extern const char* rxstatus_str[];
+#else
+extern const char* linkstate_str[]; // for debug purposes
+extern const char* rxstatus_str[];
+#endif
 
 
 //-- Tx/Rx cmd frame handling
@@ -77,4 +88,4 @@ typedef enum {
 } TRANSMIT_FRAME_TYPE_ENUM;
 
 
-#endif // LINK_H
+#endif // LINK_TYPES_H
