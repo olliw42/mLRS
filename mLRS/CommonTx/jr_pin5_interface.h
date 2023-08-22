@@ -320,6 +320,10 @@ void tPin5BridgeBase::uart_tc_callback(void)
 //-------------------------------------------------------
 // Check and rescue
 // a good place to call it could be ChannelsUpdated()
+// Note: For the FRM303 it was observed that the TC callback may be missed in the uart isr, basically when
+// the jrpin5's uart isr priority is too low. This caused the jrpin5 loop to get stuck in STATE_TRANSMITING,
+// and not even channel data would be received anymore (= very catastrophic). This code avoids this.
+// With proper isr priorities, the issue is mainly gone, but the code remains, as safety net.
 
 void tPin5BridgeBase::CheckAndRescue(void)
 {
