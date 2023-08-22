@@ -74,7 +74,7 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 // WiFi channel
 // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
 // Note: Channel 13 is generally not available in the US, where 11 is the maximum.
-int wifi_channel = 13;
+int wifi_channel = 6;
 
 // WiFi power
 // comment out for default setting
