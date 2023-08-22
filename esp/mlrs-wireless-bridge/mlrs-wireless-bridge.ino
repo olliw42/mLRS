@@ -291,7 +291,7 @@ void loop()
         udp.endPacket();
     }
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-    uint16_t idx = 0;
+    int idx = 0;
     while (SerialBT.available()) {
       buf[idx++] = SerialBT.read();
       if (idx >= sizeof(buf)) break;
