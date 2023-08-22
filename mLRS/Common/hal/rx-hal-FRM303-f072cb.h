@@ -24,6 +24,33 @@
 #endif
 
 
+// -- IRQ priorities
+// This is very IMPORTANT! The F07x has only 2bits priority level.
+// Note: NVIC_SetPriority() does priority << (8 - __NVIC_PRIO_BITS), so if 4bit priorities are given to it
+// while __NVIC_PRIO_BITS = 2, then they get quite disordered:
+// 10 = 0b1010 -> 0b10 = 2
+// 11 = 0b1011 -> 0b11 = 3
+// 13 = 0b1101 -> 0b01 = 1
+// 14 = 0b1110 -> 0b10 = 2
+// 15 = 0b1111 -> 0b11 = 3
+#undef CLOCK_IRQ_PRIORITY
+#undef UARTB_IRQ_PRIORITY
+#undef UART_IRQ_PRIORITY
+#undef UARTC_IRQ_PRIORITY
+#undef SX_DIO_EXTI_IRQ_PRIORITY
+#undef SX2_DIO_EXTI_IRQ_PRIORITY
+#undef SWUART_TIM_IRQ_PRIORITY
+#undef BUZZER_TIM_IRQ_PRIORITY
+#define CLOCK_IRQ_PRIORITY          0 // 10
+#define UARTB_IRQ_PRIORITY          1 // 11 // serial
+#define UART_IRQ_PRIORITY           2 // 12 // out pin
+#define UARTC_IRQ_PRIORITY          1 // 11 // debug
+#define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
+#define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
+#define SWUART_TIM_IRQ_PRIORITY     1 // 11 // debug on swuart
+#define BUZZER_TIM_IRQ_PRIORITY     3 // 14
+
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_TIM7_W_INIT //DELAY_USE_DWT,
