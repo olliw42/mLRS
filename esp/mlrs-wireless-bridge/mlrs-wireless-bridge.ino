@@ -9,7 +9,7 @@
 // 22. Aug. 2023
 //*********************************************************/
 // inspired by examples from Arduino
-// ArduinoIDE 2.1.1, esp32 by Espressif Systems 2.0.11
+// ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
 // use upload speed 115200 if serial passthrough shall be used for flashing
 /*
 Definitions:
