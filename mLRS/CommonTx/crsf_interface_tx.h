@@ -288,6 +288,9 @@ void tTxCrsf::Init(bool enable_flag)
 bool tTxCrsf::ChannelsUpdated(tRcData* rc)
 {
     if (!enabled) return false;
+
+    CheckAndRescue();
+
     if (!channels_received) return false;
 
     channels_received = false;

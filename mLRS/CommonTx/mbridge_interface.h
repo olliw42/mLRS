@@ -337,6 +337,9 @@ bool tMBridge::ChannelsUpdated(tRcData* rc)
 if (crsf_emulation) return false; // CRSF: just don't ever do it
 
     if (!enabled) return false;
+
+    CheckAndRescue();
+
     if (!channels_received) return false;
 
     channels_received = false;

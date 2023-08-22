@@ -104,6 +104,12 @@ class tPin5BridgeBase
     uint8_t len;
     uint8_t cnt;
     uint16_t tlast_us;
+
+    // check and rescue
+    // the FRM303 can get stuck, whatever we tried, so brutal rescue
+    // can't hurt generally as saftey net
+    uint32_t tnottransmiting_last_ms;
+    void CheckAndRescue(void);
 };
 
 
@@ -185,6 +191,15 @@ void tPin5BridgeBase::Init(void)
     telemetry_start_next_tick = false;
     telemetry_tick_next = false;
     telemetry_state = 0;
+
+    tnottransmiting_last_ms = 0;
+
+#ifdef TX_FRM303_F072CB
+gpio_init_outpp(IO_PB9);
+#endif
+#if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
+gpio_init_outpp(IO_PA0);
+#endif
 }
 
 
@@ -299,6 +314,33 @@ void tPin5BridgeBase::uart_tc_callback(void)
 {
     pin5_tx_enable(false); // switches on rx
     state = STATE_IDLE;
+}
+
+
+//-------------------------------------------------------
+// Check and rescue
+// a good place to call it could be ChannelsUpdated()
+
+void tPin5BridgeBase::CheckAndRescue(void)
+{
+    uint32_t tnow_ms = millis32();
+
+    if (state < STATE_TRANSMITING) {
+        tnottransmiting_last_ms = tnow_ms;
+    } else {
+        if (tnow_ms - tnottransmiting_last_ms > 20) { // we are stuck, so rescue
+#ifdef TX_FRM303_F072CB
+gpio_low(IO_PB9);
+#endif
+#if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
+gpio_high(IO_PA0);
+#endif
+            state = STATE_IDLE;
+            pin5_tx_enable(false);
+            LL_USART_DisableIT_TC(UART_UARTx);
+            LL_USART_ClearFlag_TC(UART_UARTx);
+        }
+    }
 }
 
 
