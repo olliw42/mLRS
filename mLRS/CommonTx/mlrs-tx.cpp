@@ -16,8 +16,8 @@ v0.0.00:
 #define FAIL_ENABLED
 
 
-// we set the priorities here to have an overview, SysTick is at 15
-#define UART_IRQ_PRIORITY           10 // mbridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
+// we set the priorities here to have an overview, SysTick is at 15, I2C is at 15, USB is at 0
+#define UART_IRQ_PRIORITY           10 // jrpin5 bridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UARTC_IRQ_PRIORITY          11 // com
 #define UARTD_IRQ_PRIORITY          15 // serial2/ESP/BT

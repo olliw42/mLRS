@@ -61,10 +61,8 @@ class tPin5BridgeBase
     void TelemetryTick_ms(void);
     bool TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_t telemetry_state_max);
 
-    // interface to the uart hardware peripheral used for the bridge
+    // interface to the uart hardware peripheral used for the bridge, called in isr context
     void pin5_tx_enable(bool enable_flag);
-    //bool pin5_rx_available(void) { return uart_rx_available(); }
-    //char pin5_getc(void) { return uart_getc(); }
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putc(char c) { uart_putc_tobuf(c); }
 
@@ -181,8 +179,6 @@ void tPin5BridgeBase::Init(void)
     // pins are fully handled by pin5_tx_enable(false)
 #endif
 
-    pin5_tx_enable(false);
-
     state = STATE_IDLE;
     len = 0;
     cnt = 0;
@@ -193,6 +189,8 @@ void tPin5BridgeBase::Init(void)
     telemetry_state = 0;
 
     tnottransmiting_last_ms = 0;
+
+    pin5_tx_enable(false); // also enables rx isr
 
 #ifdef TX_FRM303_F072CB
 gpio_init_outpp(IO_PB9);
@@ -234,6 +232,10 @@ bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_
     return false;
 }
 
+
+//-------------------------------------------------------
+// Interface to the uart hardware peripheral used for the bridge
+// called in isr context
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
@@ -297,14 +299,12 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 
 void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
-    if (state >= STATE_TRANSMIT_START) { // recover in case something went wrong
-        state = STATE_IDLE;
-    }
-
     uint16_t tnow_us = micros();
     parse_nextchar(c, tnow_us);
 
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
+        pin5_tx_enable(true);
+        state = STATE_TRANSMITING;
         pin5_tx_start();
     }
 }
