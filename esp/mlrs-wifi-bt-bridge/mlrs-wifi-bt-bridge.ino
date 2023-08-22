@@ -239,16 +239,15 @@ void loop()
         if (led_state) led_on(is_connected); else led_off();
     }
 
-    //-- here comes the core code, handle wifi connection and do the bridge
+    //-- here comes the core code, handle WiFi or Bluetooth connection and do the bridge
 
-    const int bufsize = 256;
-    uint8_t buf[bufsize]; // working buffer
+    uint8_t buf[256]; // working buffer
 
 #if (WIFI_nBLUETOOTH == 0) // Bluetooth
     uint8_t idx = 0;
     while (SerialBT.available()) {
       buf[idx++] = SerialBT.read();
-      if (idx >= bufsize) break;
+      if (idx >= sizeof(buf)) break;
     }
     if (idx > 0)
     {
