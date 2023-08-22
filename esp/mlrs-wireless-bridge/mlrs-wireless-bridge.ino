@@ -61,7 +61,7 @@ List of supported modules, and board which need to be selected
 
 
 //**********************//
-//*** Wi-Fi settings ***//
+//*** WiFi settings ***//
 String ssid = "mLRS AP"; // Wifi name
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
@@ -87,7 +87,7 @@ String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
 
 
 //************************//
-//*** Generic settings ***//
+//*** General settings ***//
 
 // baudrate
 int baudrate = 115200;
@@ -300,11 +300,11 @@ void loop()
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
     int len = SerialBT.available();
     if (len > 0) {
-      if (len > sizeof(buf)) len = sizeof(buf);
-      for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
-      Serial.write(buf, len);
-      is_connected = true;
-      is_connected_tlast_ms = millis();
+        if (len > sizeof(buf)) len = sizeof(buf);
+        for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
+        Serial.write(buf, len);
+        is_connected = true;
+        is_connected_tlast_ms = millis();
     }
     
     tnow_ms = millis(); // may not be relevant, but just update it
@@ -312,11 +312,11 @@ void loop()
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;      
     } else {
-      if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
-        serial_data_received_tfirst_ms = tnow_ms;
-        int len = SERIAL.read(buf, sizeof(buf));
-        SerialBT.write(buf, len);
-      }	
+        if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+            serial_data_received_tfirst_ms = tnow_ms;
+            int len = SERIAL.read(buf, sizeof(buf));
+            SerialBT.write(buf, len);
+        }	
     }
 #endif  
 }
