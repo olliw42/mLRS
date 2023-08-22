@@ -9,15 +9,6 @@
 
 /*
 ------------------------------
-Espressif ESP32-PICO-KIT
-------------------------------
-board: ESP32-PICO-D4
-https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html
-IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
-IO9/IO10: U1RXD/U1TXD, is Serial1
-IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
-
-------------------------------
 Espressif ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module
@@ -34,14 +25,13 @@ IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spit
 IO16/IO17: U2RXD/U2TXD, is Serial2
 
 ------------------------------
-Lilygo TTGO-MICRO32
+Espressif ESP32-PICO-KIT
 ------------------------------
 board: ESP32-PICO-D4
-http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1091
-IO3/IO1: U0RXD/U0TXD, is Serial, spits out lots of preamble at power up
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html
+IO3/IO1: U0RXD/U0TXD, connected via usb-ttl adapter to USB port, is Serial, spits out lots of preamble at power up
 IO9/IO10: U1RXD/U1TXD, is Serial1
-no IO16/IO17 pads
-use only U0
+IO16/IO17: U2RXD/U2TXD, uses IO16/IO17 for internal flash, hence not available as serial
 
 ------------------------------
 Adafruit QT Py S2
@@ -50,6 +40,16 @@ board: Adafruit QT Py ESP32-S2
 https://learn.adafruit.com/adafruit-qt-py-esp32-s2/arduino-ide-setup
 use only Serial1, Serial is USB port and can be used for debug
 RESET and BOOT available on solder pads, BOOT is GPIO0, not very connvenient
+
+------------------------------
+Lilygo TTGO-MICRO32
+------------------------------
+board: ESP32-PICO-D4
+http://www.lilygo.cn/prod_view.aspx?TypeId=50033&Id=1091
+IO3/IO1: U0RXD/U0TXD, is Serial, spits out lots of preamble at power up
+IO9/IO10: U1RXD/U1TXD, is Serial1
+no IO16/IO17 pads
+use only U0
 
 ------------------------------
 M5Stack M5Stamp C3 Mate
@@ -105,7 +105,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-------------------------------------------------------
-// board details
+// Module details
 //-------------------------------------------------------
 //-- Espressif ESP32-DevKitC V4
 #if defined MODULE_ESP32_DEVKITC_V4
@@ -142,10 +142,10 @@ GPIO15 = RTC_GPIO13
     #define USE_LED
 
 
-//-- ESP32-PICO-KIT
+//-- Espressif ESP32-PICO-KIT
 #elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ARDUINO_ESP32_PICO!
+	      #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -158,29 +158,10 @@ GPIO15 = RTC_GPIO13
     #define USE_LED
 
 
-//-- TTGO-MICRO32
-#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
-    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ARDUINO_ESP32_PICO!
-    #endif
-
-    #undef USE_SERIAL_DBG1
-    #undef USE_SERIAL1_DBG
-    #undef USE_SERIAL2_DBG
-
-    #define SERIAL_RXD 3 // = RX
-    #define SERIAL_TXD 1 // = TX
-
-    #ifndef LED_IO
-        #define LED_IO  13
-    #endif    
-    #define USE_LED
-
-
 //-- Adafruit QT Py S2
 #elif defined MODULE_ADAFRUIT_QT_PY_ESP32_S2 // ARDUINO_ADAFRUIT_QTPY_ESP32S2, ARDUINO_BOARD == ADAFRUIT_QTPY_ESP32S2
     #ifndef ARDUINO_ADAFRUIT_QTPY_ESP32S2 // ARDUINO_BOARD != ADAFRUIT_QTPY_ESP32S2
-	      #error Select board ADAFRUIT_QTPY_ESP32S2!
+	      #error Select board Adafruit QT Py ESP32-S2!
     #endif		
 
     #undef USE_SERIAL_DBG1
@@ -196,10 +177,29 @@ GPIO15 = RTC_GPIO13
     // board defines PIN_NEOPIXEL
 
 
+//-- Lilygo TTGO-MICRO32
+#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
+	      #error Select board ESP32 PICO-D4!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 3 // = RX
+    #define SERIAL_TXD 1 // = TX
+
+    #ifndef LED_IO
+        #define LED_IO  13
+    #endif    
+    #define USE_LED
+
+
 //-- M5Stack M5Stamp C3 Mate
 #elif defined MODULE_M5STAMP_C3_MATE // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
     #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
-	      #error Select board ESP32C3_DEV!
+	      #error Select board ESP32C3 Dev Module!
     #endif		
 
     #undef USE_SERIAL_DBG1
@@ -215,10 +215,10 @@ GPIO15 = RTC_GPIO13
     #define PIN_NEOPIXEL  2
 
 
-//-- M5 STAMP PICO
-#elif defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
+//-- M5Stack M5Stamp Pico
+#elif defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M || defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ARDUINO_ESP32_PICO!
+	      #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -227,7 +227,9 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  32 // = RX1
     #define SERIAL_TXD  33 // = TX1
-    #define USE_SERIAL_INVERTED
+    #ifdef MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
+        #define USE_SERIAL_INVERTED
+    #endif
 
     #undef LED_IO
     #define USE_LED
@@ -236,9 +238,9 @@ GPIO15 = RTC_GPIO13
 
 
 //-- M5Stack M5Stamp C3U Mate
-#elif defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
+#elif defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M || defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
     #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
-	      #error Select board ESP32C3_DEV!
+	      #error Select board ESP32C3 Dev Module!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -247,7 +249,9 @@ GPIO15 = RTC_GPIO13
 
     #define SERIAL_RXD  1 // = RX1
     #define SERIAL_TXD  0 // = TX1
-    #define USE_SERIAL_INVERTED
+    #ifdef MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
+        #define USE_SERIAL_INVERTED
+    #endif    
 
     #undef LED_IO
     #define USE_LED
@@ -258,7 +262,7 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack ATOM Lite
 #elif defined MODULE_M5STACK_ATOM_LITE
     #ifndef ARDUINO_M5Stack_ATOM // ARDUINO_BOARD != ARDUINO_M5Stack_ATOM
-	      #error Select board ARDUINO_M5Stack_ATOM!
+	      #error Select board M5Stack-ATOM!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -283,7 +287,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-------------------------------------------------------
-// internals
+// Internals
 //-------------------------------------------------------
 
 #ifdef NUMPIXELS

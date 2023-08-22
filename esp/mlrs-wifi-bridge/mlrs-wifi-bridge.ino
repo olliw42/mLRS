@@ -6,57 +6,55 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi<->serial bridge
 //*******************************************************
-// 28. Apr. 2023
+// 22. Aug. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
 // use upload speed 115200 if serial passthrough shall be used for flashing
 /*
-for more details on the boards see mlrs-wifi-bridge-boards.h
+Definitions:
+- "module" refers to the physical hardware
+- "board" refers to the board you need to select in the menu Tools->Board
 
-- Espressif ESP32-DevKitC V4
-  board: ESP32 Dev Module
-- NodeMCU ESP32-Wroom-32
-  board: ESP32 Dev Module
-- Adafruit QT Py S2
-  board: Adafruit QT Py ESP32-S2
-- M5Stack M5Stamp C3 Mate
-  board: ESP32C3 Dev Module
+For more details on the modules see mlrs-wifi-bridge-boards.h
+
+List of supported modules, and board which need to be selected
+
+- Espressif ESP32-DevKitC V4      board: ESP32 Dev Module
+- NodeMCU ESP32-Wroom-32          board: ESP32 Dev Module
+- Espressif ESP32-PICO-KIT        board: ESP32 PICO-D4
+- Adafruit QT Py S2               board: Adafruit QT Py ESP32-S2
+- Lilygo TTGO-MICRO32             board: ESP32 PICO-D4
+- M5Stack M5Stamp C3 Mate         board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack M5Stamp Pico
-  board: ESP32-PICO-D4
-- ESP32-PICO-KIT
-  board: ESP32-PICO-D4
-- TTGO-MICRO32
-  board: ESP32-PICO-D4
-- M5Stack M5Stamp C3U Mate
-  board: ESP32C3 Dev Module
+- M5Stack M5Stamp Pico            board: ESP32 PICO-D4
+- M5Stack M5Stamp C3U Mate        board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack ATOM Lite
-  board: M5Stack-ATOM
+- M5Stack ATOM Lite               board: M5Stack-ATOM
 */
-
-#include <WiFi.h>
-
 
 //-------------------------------------------------------
 // User configuration
 //-------------------------------------------------------
 
-// Board
-// un-comment what you want
+// Module
+// uncomment what you want
 //#define MODULE_GENERIC
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
-#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
-//#define MODULE_M5STAMP_C3_MATE
-//#define MODULE_TTGO_MICRO32
 //#define MODULE_ESP32_PICO_KIT
-//#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
-//#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M
+#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
+//#define MODULE_TTGO_MICRO32
+//#define MODULE_M5STAMP_C3_MATE
+//#define MODULE_M5STAMP_C3U_MATE
+//#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // uses inverted serial
+//#define MODULE_M5STAMP_PICO
+//#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE
 
-// Uncomment, if you need inverted serial
+// Serial level
+// uncomment, if you need inverted serial for a supported module 
+// (for the generic module also SERIAL_RXD and SERIAL_TXD need to be defined)
 //#define USE_SERIAL_INVERTED
 
 // Wifi Protocol 0 = TCP, 1 = UDP
@@ -81,29 +79,37 @@ int wifi_channel = 13;
 
 // WiFi power
 // comment out for default setting
+// Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 
 
-// serial port usage (only effective for a generic board)
+// serial port usage (only effective for the generic module)
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
 //#define USE_SERIAL2_DBG // use Serial2 for communication, and Serial for debug output and flashing
 
-// LED pin (only effective for a generic board)
-// un-comment if you want a LED
+// LED pin (only effective for the generic module)
+// uncomment if you want a LED
 //#define LED_IO  13
 
 
 //-------------------------------------------------------
-// board details
+// Includes
+//-------------------------------------------------------
+
+#include <WiFi.h>
+
+
+//-------------------------------------------------------
+// Module details
 //-------------------------------------------------------
 
 #include "mlrs-wifi-bridge-boards.h"
 
 
 //-------------------------------------------------------
-// internals
+// Internals
 //-------------------------------------------------------
 
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
