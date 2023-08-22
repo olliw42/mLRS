@@ -1,10 +1,10 @@
 //*******************************************************
-// mLRS WiFi Bridge
+// mLRS WiFi and BT Bridge
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// Basic but effective & reliable transparent WiFi<->serial bridge
+// Basic but effective & reliable transparent WiFi or Bluetooth<->serial bridge
 //*******************************************************
 
 /*

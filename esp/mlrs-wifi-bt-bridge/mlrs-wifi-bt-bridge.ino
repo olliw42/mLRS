@@ -1,15 +1,15 @@
 //*******************************************************
-// mLRS WiFi Bridge
+// mLRS WiFi and Bluetooth Bridge
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// Basic but effective & reliable transparent WiFi<->serial bridge
+// Basic but effective & reliable transparent WiFi and Bluetooth<->serial bridge
 //*******************************************************
 // 22. Aug. 2023
 //*********************************************************/
 // inspired by examples from Arduino
-// ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
+// ArduinoIDE 2.1.1, esp32 by Espressif Systems 2.0.11
 // use upload speed 115200 if serial passthrough shall be used for flashing
 /*
 Definitions:
@@ -57,17 +57,26 @@ List of supported modules, and board which need to be selected
 // (for the generic module also SERIAL_RXD and SERIAL_TXD need to be defined)
 //#define USE_SERIAL_INVERTED
 
-// Wifi Protocol 0 = TCP, 1 = UDP
-#define WIFI_PROTOCOL  1
+#define WIFI_nBLUETOOTH 1 // Bluetooth = 0, WiFi = 1
 
-// Wifi credentials
-String ssid = "mLRS AP"; // Wifi name
-String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
+#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+  String localName = "mLRSBTbridge"; // Bluetooth name
+#endif
 
-IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
+#if (WIFI_nBLUETOOTH == 1) // WiFi
+  // Wifi Protocol 0 = TCP, 1 = UDP
+  #define WIFI_PROTOCOL  1
 
-int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
-int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
+  // Wifi credentials
+  String ssid = "mLRS AP"; // Wifi name
+  String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
+
+  IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
+
+  int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
+  int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
+#endif
+
 
 // baudrate
 int baudrate = 115200;
@@ -98,28 +107,41 @@ int wifi_channel = 13;
 // Includes
 //-------------------------------------------------------
 
-#include <WiFi.h>
+#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+  #include <BluetoothSerial.h>
+#endif
+
+#if (WIFI_nBLUETOOTH == 1) // WiFi
+  #include <WiFi.h>
+#endif
+
 
 
 //-------------------------------------------------------
 // Module details
 //-------------------------------------------------------
 
-#include "mlrs-wifi-bridge-boards.h"
+#include "mlrs-wifi-bt-bridge-boards.h"
 
 
 //-------------------------------------------------------
 // Internals
 //-------------------------------------------------------
 
-IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
-IPAddress netmask(255, 255, 255, 0);
-#if WIFI_PROTOCOL == 1 // UDP
-WiFiServer server(80);
-WiFiUDP udp;
-#else // TCP
-WiFiServer server(port_tcp);
-WiFiClient client;
+#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+  BluetoothSerial SerialBT;
+#endif
+
+#if (WIFI_nBLUETOOTH == 1) // WiFi
+  IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
+  IPAddress netmask(255, 255, 255, 0);
+  #if WIFI_PROTOCOL == 1 // UDP
+    WiFiServer server(80);
+    WiFiUDP udp;
+  #else // TCP
+    WiFiServer server(port_tcp);
+    WiFiClient client;
+  #endif
 #endif
 
 bool led_state;
@@ -161,14 +183,19 @@ void setup()
     DBG_PRINTLN(rxbufsize);
     DBG_PRINTLN(txbufsize);
 
+#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+    SerialBT.begin(localName);
+#endif
+
+#if (WIFI_nBLUETOOTH == 1) // WiFi
     // AP mode
     //WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
-#if WIFI_PROTOCOL == 1
+  #if WIFI_PROTOCOL == 1
     String ssid_full = ssid + " UDP";
-#else    
+  #else    
     String ssid_full = ssid + " TCP";
-#endif    
+  #endif    
     WiFi.softAP(ssid_full.c_str(), (password.length()) ? password.c_str() : NULL, wifi_channel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
@@ -178,12 +205,13 @@ void setup()
     server.begin();
     server.setNoDelay(true);
 
-#ifdef WIFI_POWER
+  #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
-#endif    
-#if WIFI_PROTOCOL == 1
+  #endif    
+  #if WIFI_PROTOCOL == 1
     udp.begin(port_udp);
-#endif    
+  #endif
+#endif
 
     led_tlast_ms = 0;
     led_state = false;
@@ -213,9 +241,37 @@ void loop()
 
     //-- here comes the core code, handle wifi connection and do the bridge
 
-    uint8_t buf[256]; // working buffer
+    const int bufsize = 256;
+    uint8_t buf[bufsize]; // working buffer
 
-#if WIFI_PROTOCOL == 1 // UDP
+#if (WIFI_nBLUETOOTH == 0) // Bluetooth
+    uint8_t idx = 0;
+    while (SerialBT.available()) {
+      buf[idx++] = SerialBT.read();
+      if (idx >= bufsize) break;
+    }
+    if (idx > 0)
+    {
+      is_connected = true;
+      is_connected_tlast_ms = millis();
+      SERIAL.write(buf, idx);
+    }
+    
+	tnow_ms = millis(); // may not be relevant, but just update it
+    int avail = SERIAL.available();
+    if (avail <= 0) {
+        serial_data_received_tfirst_ms = tnow_ms;      
+    } else {
+     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+        int len = SERIAL.read(buf, sizeof(buf));
+        SerialBT.write(buf, len);
+      }	
+	}
+#endif
+
+#if (WIFI_nBLUETOOTH == 1) // WiFi
+  #if WIFI_PROTOCOL == 1 // UDP
 
     int packetSize = udp.parsePacket();
     if (packetSize) {
@@ -239,7 +295,7 @@ void loop()
         udp.endPacket();
     }
 
-#else // TCP
+  #else // TCP
 
     if (server.hasClient()) {
         if (!client.connected()) {
@@ -280,6 +336,7 @@ void loop()
         client.write(buf, len);
     }
 
-#endif    
+  #endif
+#endif  
 }
 
