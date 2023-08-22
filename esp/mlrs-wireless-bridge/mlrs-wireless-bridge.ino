@@ -6,7 +6,7 @@
 //*******************************************************
 // Basic but effective & reliable transparent WiFi and Bluetooth<->serial bridge
 //*******************************************************
-// 22. Aug. 2023
+// 23. Aug. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -43,7 +43,7 @@ List of supported modules, and board which need to be selected
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
 //#define MODULE_ESP32_PICO_KIT
-#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
+//#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_M5STAMP_C3U_MATE
@@ -57,11 +57,12 @@ List of supported modules, and board which need to be selected
 // (for the generic module also SERIAL_RXD and SERIAL_TXD need to be defined)
 //#define USE_SERIAL_INVERTED
 
-#define WIRELESS_PROTOCOL 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth
+#define WIRELESS_PROTOCOL 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth (not available for all boards)
 
 
 //**********************//
 //*** WiFi settings ***//
+
 String ssid = "mLRS AP"; // Wifi name
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
@@ -83,6 +84,7 @@ int wifi_channel = 13;
 
 //**************************//
 //*** Bluetooth settings ***//
+
 String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
 
 
@@ -110,7 +112,12 @@ int baudrate = 115200;
 #if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
   #include <WiFi.h>
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
+  #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+    #error Bluetooth is not enabled !
+  #endif
   #include <BluetoothSerial.h>
+#else
+  #error Invalid WIRELESS_PROTOCOL choosen ! 
 #endif
 
 
@@ -126,17 +133,21 @@ int baudrate = 115200;
 //-------------------------------------------------------
 
 #if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
-  IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
-  IPAddress netmask(255, 255, 255, 0);
-  #if WIRELESS_PROTOCOL == 1 // UDP
+
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
+IPAddress netmask(255, 255, 255, 0);
+#if WIRELESS_PROTOCOL == 1 // UDP
     WiFiServer server(80);
     WiFiUDP udp;
-  #else // TCP
+#else // TCP
     WiFiServer server(port_tcp);
     WiFiClient client;
-  #endif
+#endif
+
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-  BluetoothSerial SerialBT;
+
+BluetoothSerial SerialBT;
+
 #endif
 
 bool led_state;
@@ -179,6 +190,7 @@ void setup()
     DBG_PRINTLN(txbufsize);
 
 #if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
+
     // AP mode
     // WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(ip, ip, netmask);
@@ -202,8 +214,11 @@ void setup()
   #if (WIRELESS_PROTOCOL == 1)
     udp.begin(port_udp);
   #endif
+
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
+
     SerialBT.begin(bluetooth_device_name);
+
 #endif
 
     led_tlast_ms = 0;
@@ -237,6 +252,7 @@ void loop()
     uint8_t buf[256]; // working buffer
 
 #if (WIRELESS_PROTOCOL == 0) // WiFi TCP
+
     if (server.hasClient()) {
         if (!client.connected()) {
             client.stop(); // doesn't appear to make a difference
@@ -275,7 +291,9 @@ void loop()
         int len = SERIAL.read(buf, sizeof(buf));
         client.write(buf, len);
     }
+
 #elif (WIRELESS_PROTOCOL == 1) // WiFi UDP
+
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
@@ -297,7 +315,9 @@ void loop()
         udp.write(buf, len);
         udp.endPacket();
     }
+
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
+
     int len = SerialBT.available();
     if (len > 0) {
         if (len > sizeof(buf)) len = sizeof(buf);
@@ -311,13 +331,14 @@ void loop()
     int avail = SERIAL.available();
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;      
-    } else {
-        if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
-            serial_data_received_tfirst_ms = tnow_ms;
-            int len = SERIAL.read(buf, sizeof(buf));
-            SerialBT.write(buf, len);
-        }	
-    }
-#endif  
+    } else
+    if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
+        serial_data_received_tfirst_ms = tnow_ms;
+
+        int len = SERIAL.read(buf, sizeof(buf));
+        SerialBT.write(buf, len);
+    }	
+
+#endif // (WIRELESS_PROTOCOL == 2)
 }
 
