@@ -298,16 +298,13 @@ void loop()
         udp.endPacket();
     }
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-    int idx = 0;
-    while (SerialBT.available()) {
-      buf[idx++] = SerialBT.read();
-      if (idx >= sizeof(buf)) break;
-    }
-    if (idx > 0)
-    {
+    int len = SerialBT.available();
+    if (len > 0) {
+      if (len > sizeof(buf)) len = sizeof(buf);
+      for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
+      Serial.write(buf, len);
       is_connected = true;
       is_connected_tlast_ms = millis();
-      SERIAL.write(buf, idx);
     }
     
     tnow_ms = millis(); // may not be relevant, but just update it
