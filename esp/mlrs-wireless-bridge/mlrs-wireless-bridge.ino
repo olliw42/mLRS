@@ -59,28 +59,35 @@ List of supported modules, and board which need to be selected
 
 #define WIRELESS_PROTOCOL 1 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Bluetooth
 
-#if ((WIRELESS_PROTOCOL == 0) || (WIRELESS_PROTOCOL == 1)) // WiFi
-  // Wifi credentials
-  String ssid = "mLRS AP"; // Wifi name
-  String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
-  IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
+//**********************//
+//*** Wi-Fi settings ***//
+String ssid = "mLRS AP"; // Wifi name
+String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
-  int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
-  int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
+IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
 
-  // WiFi channel
-  // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
-  // Note: Channel 13 is generally not available in the US, where 11 is the maximum.
-  int wifi_channel = 13;
+int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
+int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
-  // WiFi power
-  // comment out for default setting
-  // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
-  #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
-#elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-  String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
-#endif
+// WiFi channel
+// 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
+// Note: Channel 13 is generally not available in the US, where 11 is the maximum.
+int wifi_channel = 13;
+
+// WiFi power
+// comment out for default setting
+// Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
+#define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
+
+
+//**************************//
+//*** Bluetooth settings ***//
+String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
+
+
+//************************//
+//*** Generic settings ***//
 
 // baudrate
 int baudrate = 115200;
