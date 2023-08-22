@@ -79,7 +79,7 @@ List of supported modules, and board which need to be selected
   // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
   #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-  String localName = "mLRS BT"; // Bluetooth device name
+  String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
 #endif
 
 // baudrate
@@ -196,7 +196,7 @@ void setup()
     udp.begin(port_udp);
   #endif
 #elif (WIRELESS_PROTOCOL == 2) // Bluetooth
-    SerialBT.begin(localName);
+    SerialBT.begin(bluetooth_device_name);
 #endif
 
     led_tlast_ms = 0;
