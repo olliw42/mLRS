@@ -43,7 +43,7 @@ List of supported modules, and board which need to be selected
 //#define MODULE_GENERIC
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
-#define MODULE_ESP32_PICO_KIT
+//#define MODULE_ESP32_PICO_KIT
 //#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_TTGO_MICRO32
 //#define MODULE_M5STAMP_C3_MATE
@@ -60,7 +60,7 @@ List of supported modules, and board which need to be selected
 
 // Wireless protocol
 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCI, 3 = Bluetooth (not available for all boards)
-#define WIRELESS_PROTOCOL  2
+#define WIRELESS_PROTOCOL  1
 
 
 //**********************//
