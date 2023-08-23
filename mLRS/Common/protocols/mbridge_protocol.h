@@ -170,8 +170,8 @@ typedef struct
     uint8_t transmit_antenna : 1;
     uint8_t receiver_receive_antenna : 1;
     uint8_t receiver_transmit_antenna : 1;
-    uint8_t diversity : 1;
-    uint8_t receiver_diversity : 1;
+    uint8_t _diversity : 1; // pretty useless, so deprecate
+    uint8_t _receiver_diversity : 1; // pretty useless, so deprecate
     uint8_t rx1_valid : 1;
     uint8_t rx2_valid : 1;
 
@@ -230,11 +230,14 @@ typedef struct
     int8_t tx_actual_power_dbm;
     int8_t rx_actual_power_dbm;
     uint8_t rx_available : 1;
-    uint8_t tx_actual_diversity : 2;
-    uint8_t rx_actual_diversity : 2;
+    uint8_t tx_actual_rdiversity : 2;
+    uint8_t rx_actual_rdiversity : 2;
     uint8_t spare2 : 3;
     uint8_t tx_config_id;
-    uint8_t spare[17];
+    uint8_t tx_actual_tdiversity : 2;
+    uint8_t rx_actual_tdiversity : 2;
+    uint8_t spare3 : 4;
+    uint8_t spare[16];
 }) tMBridgeInfo; // 24 bytes
 
 

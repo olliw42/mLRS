@@ -316,15 +316,23 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 #ifdef DEVICE_HAS_DIVERSITY
-  #define IF_ANTENNA1(x)            if (Config.UseAntenna1) { x; }
-  #define IF_ANTENNA2(x)            if (Config.UseAntenna2) { x; }
-  #define USE_ANTENNA1              (Config.UseAntenna1)
-  #define USE_ANTENNA2              (Config.UseAntenna2)
+  #define IF_SX1(x)                 if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
+  #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
+  #define IF_ANTENNA1(x)            if (Config.ReceiveUseAntenna1) { x; }
+  #define IF_ANTENNA2(x)            if (Config.ReceiveUseAntenna2) { x; }
+  #define USE_ANTENNA1              (Config.ReceiveUseAntenna1)
+  #define USE_ANTENNA2              (Config.ReceiveUseAntenna2)
+  #define TRANSMIT_USE_ANTENNA1     (Config.TransmitUseAntenna1)
+  #define TRANSMIT_USE_ANTENNA2     (Config.TransmitUseAntenna2)
 #else
+  #define IF_SX1(x)                 x;
+  #define IF_SX2(x)
   #define IF_ANTENNA1(x)            x;
   #define IF_ANTENNA2(x)
   #define USE_ANTENNA1              true
   #define USE_ANTENNA2              false
+  #define TRANSMIT_USE_ANTENNA1     true
+  #define TRANSMIT_USE_ANTENNA2     false
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5
