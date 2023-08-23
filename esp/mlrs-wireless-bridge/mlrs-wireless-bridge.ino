@@ -11,7 +11,7 @@
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
 // use upload speed 115200 if serial passthrough shall be used for flashing
-// this can be usefull https://github.com/espressif/arduino-esp32/blob/master/libraries
+// this can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
 /*
 Definitions:
 - "module" refers to the physical hardware
@@ -59,7 +59,7 @@ List of supported modules, and board which need to be selected
 //#define USE_SERIAL_INVERTED
 
 // Wireless protocol
-// 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCI, 3 = Bluetooth (not available for all boards)
+// 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCl, 3 = Bluetooth (not available for all boards)
 #define WIRELESS_PROTOCOL  1
 
 
@@ -75,13 +75,13 @@ IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default i
 int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
-// for UDPCI
+// for UDPCl
 String network_ssid = "****"; // name of your WiFi network
 String network_password = "****"; // password to access your WiFi network
 
-IPAddress ip_udpci(192, 168, 0, 164); // connect to this IP // MissionPlanner default is 192.168.0.164
+IPAddress ip_udpcl(192, 168, 0, 164); // connect to this IP // MissionPlanner default is 192.168.0.164
 
-int port_udpci = 14550; // connect to this port per UDPCI // MissionPlanner default is 14550
+int port_udpcl = 14550; // connect to this port per UDPCL // MissionPlanner default is 14550
 
 // WiFi channel
 // 1 is the default, 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
@@ -129,7 +129,7 @@ int baudrate = 115200;
   #endif
   #include <BluetoothSerial.h>
 #else
-  #error Invalid WIRELESS_PROTOCOL choosen !
+  #error Invalid WIRELESS_PROTOCOL chosen !
 #endif
 
 
@@ -149,16 +149,15 @@ int baudrate = 115200;
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
 IPAddress netmask(255, 255, 255, 0);
 #if WIRELESS_PROTOCOL == 1 // UDP
-    WiFiServer server(80);
     WiFiUDP udp;
 #else // TCP
     WiFiServer server(port_tcp);
     WiFiClient client;
 #endif
 
-#elif (WIRELESS_PROTOCOL == 2) // WiFi UDPCI
+#elif (WIRELESS_PROTOCOL == 2) // WiFi UDPCl
 
-IPAddress ip_gateway(ip_udpci[0], ip_udpci[1], ip_udpci[2], 1); // x.x.x.1 is usually the router IP
+IPAddress ip_gateway(ip_udpcl[0], ip_udpcl[1], ip_udpcl[2], 1); // x.x.x.1 is usually the router IP
 IPAddress netmask(255, 255, 255, 0);
 WiFiUDP udp;
 
@@ -224,23 +223,23 @@ void setup()
     DBG_PRINT("channel: ");
     DBG_PRINTLN(WiFi.channel());
 
-    server.begin();
-    server.setNoDelay(true);
-
   #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
   #endif
   #if (WIRELESS_PROTOCOL == 1)
     udp.begin(port_udp);
-  #endif
+  #else
+    server.begin();
+    server.setNoDelay(true);
+  #endif    
 
 #elif (WIRELESS_PROTOCOL == 2)
-//-- Wifi UDPCI
+//-- Wifi UDPCl
 
     // STA mode
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
-    WiFi.config(ip_udpci, ip_gateway, netmask);
+    WiFi.config(ip_udpcl, ip_gateway, netmask);
     WiFi.begin(network_ssid.c_str(), network_password.c_str());
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -254,7 +253,7 @@ void setup()
   #ifdef WIFI_POWER
     WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
   #endif
-    udp.begin(port_udpci);
+    udp.begin(port_udpcl);
 
 #elif (WIRELESS_PROTOCOL == 3)
 //-- Bluetooth
@@ -361,7 +360,7 @@ void loop()
     }
 
 #elif (WIRELESS_PROTOCOL == 2)
-//-- WiFi UDPCI (STA mode)
+//-- WiFi UDPCl (STA mode)
 
     int packetSize = udp.parsePacket();
     if (packetSize) {
