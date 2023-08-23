@@ -70,6 +70,7 @@ typedef enum {
     SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT,
     SUBPAGE_MAIN_SUB1,
     SUBPAGE_MAIN_SUB2,
+    SUBPAGE_MAIN_SUB3,
 
     SUBPAGE_MAIN_NUM,
 } SUBPAGE_ENUM;
@@ -109,6 +110,7 @@ class tTxDisp
     void draw_page_main_sub0(void);
     void draw_page_main_sub1(void);
     void draw_page_main_sub2(void);
+    void draw_page_main_sub3(void);
 
     void draw_header(const char* s);
     void draw_options(tParamList* list);
@@ -780,6 +782,55 @@ char s[32];
 
     draw_header("Main/3");
 
+    gdisp_setcurXY(5, 0 * 10 + 20);
+    gdisp_puts("Tx");
+    gdisp_setcurX(110);
+    gdisp_puts("Rx");
+
+    uint8_t tx_receive_antenna = stats.last_antenna;
+    uint8_t tx_transmit_antenna = stats.last_transmit_antenna;
+    uint8_t rx_receive_antenna = stats.received_antenna;
+    uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
+
+    gdisp_setcurXY(10, 2 * 10 + 20);
+    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurX(105);
+    gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurX(92);
+    gdisp_putc('>');
+    gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
+
+    gdisp_setcurXY(10, 3 * 10 + 20);
+    gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurX(105);
+    gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurX(28);
+    gdisp_putc('<');
+    gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
+
+    uint16_t bps_transmitted = stats.bytes_transmitted.GetBytesPerSec();
+    uint16_t bps_received = stats.bytes_received.GetBytesPerSec();
+
+    gdisp_setcurXY(40, 1 * 10 + 20);
+    utoBCDstr(bps_transmitted, s);
+    gdisp_puts(s);
+    gdisp_setcurX(70);
+    gdisp_puts("Bps");
+
+    gdisp_setcurXY(40, 4 * 10 + 20);
+    utoBCDstr(bps_received, s);
+    gdisp_puts(s);
+    gdisp_setcurX(70);
+    gdisp_puts("Bps");
+}
+
+
+void tTxDisp::draw_page_main_sub3(void)
+{
+char s[32];
+
+    draw_header("Main/4");
+
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts(DEVICE_NAME);
     gdisp_setcurXY(0, 1 * 10 + 20);
@@ -803,6 +854,9 @@ void tTxDisp::draw_page_main(void)
         return;
     case SUBPAGE_MAIN_SUB2:
         draw_page_main_sub2();
+        return;
+    case SUBPAGE_MAIN_SUB3:
+        draw_page_main_sub3();
         return;
     default:
         draw_page_main_sub0();
