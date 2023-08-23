@@ -76,8 +76,8 @@ int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default i
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
 // for UDPCI
-String network_ssid = "Vodafone-5337"; // name of your WiFi network
-String network_password = "Olive1234"; // password to access your WiFi network
+String network_ssid = "****"; // name of your WiFi network
+String network_password = "****"; // password to access your WiFi network
 
 IPAddress ip_udpci(192, 168, 0, 164); // connect to this IP // MissionPlanner default is 192.168.0.164
 
