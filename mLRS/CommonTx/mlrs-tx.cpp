@@ -76,6 +76,7 @@ v0.0.00:
 #include "../Common/common.h"
 #include "../Common/micros.h"
 #include "../Common/channel_order.h"
+#include "../Common/stack_check.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "in.h"
@@ -648,6 +649,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+  stack_check_init();
   init_once();
 RESTARTCONTROLLER:
   init();
@@ -767,6 +769,7 @@ RESTARTCONTROLLER:
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
             dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+            dbg.puts("\nstack: "); dbg.puts(u16toBCD_s(stack_check_used()));
         }
     }
 
