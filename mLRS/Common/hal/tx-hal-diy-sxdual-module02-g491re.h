@@ -62,7 +62,8 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_RX_TX_INVERT_INTERNAL // original version, board modified 22.8.2023
+#define JRPIN5_FULL_INTERNAL_ON_RX_TX
 
 #define UARTD_USE_UART3 // serial2 BT/ESP
 #define UARTD_BAUD                115200

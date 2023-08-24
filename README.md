@@ -33,7 +33,7 @@ The project is work in progress, and there is still plenty of room for ideas and
 
 However, the essential features, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, support of the Yappu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, support of the Yaapu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
 
 It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
