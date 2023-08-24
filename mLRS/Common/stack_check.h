@@ -41,7 +41,8 @@ void stack_check_init(void)
 {
     // paint the stack memory area
     uint32_t ptr = (uint32_t)&_estack - (uint32_t)&_Min_Stack_Size;
-    uint32_t end = (uint32_t)&_estack;
+    //uint32_t end = (uint32_t)&_estack;
+    uint32_t end = __get_MSP() - 1; // let's use MSP to avoid concerns with used stack space at time of function call
     while (ptr < end) {
         *(uint8_t*)ptr = 0xAA;
         ptr++;
