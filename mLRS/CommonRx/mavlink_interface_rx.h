@@ -12,7 +12,9 @@
 
 
 #include "../Common/mavlink/fmav_extension.h"
+#include "../Common/thirdparty/fmav_mavlinkx.h"
 #include "../Common/libs/filters.h"
+#include "../Common/libs/fifo.h"
 
 static inline bool connected(void);
 
@@ -30,6 +32,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     void SendRcData(tRcData* rc_out, bool failsafe);
+    void FrameLost(void);
 
     void putc(char c);
     bool available(void);
@@ -54,6 +57,15 @@ class MavlinkBase
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out;
     fmav_message_t msg_serial_out;
+
+    // fields for serial in -> link out parser
+    fmav_status_t status_serial_in;
+    fmav_result_t result_serial_in;
+    uint8_t buf_serial_in[MAVLINK_BUF_SIZE];
+    fmav_status_t status_link_out;
+    fmav_message_t msg_link_out;
+
+    FifoBase<char,2048> fifo_link_out; // TODO: we should not need huge buffers for both fifo and serial rx
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     uint32_t radio_status_tlast_ms;
@@ -88,6 +100,11 @@ void MavlinkBase::Init(void)
     result_link_in = {};
     status_link_in = {};
     status_serial_out = {};
+
+    result_serial_in = {0};
+    status_serial_in = {0};
+    status_link_out = {0};
+    fifo_link_out.Init();
 
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;
@@ -138,7 +155,82 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms + 1000;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+
+    // parse serial in -> link out, and convert to mavlinkX
+    while (serial.available()) {
+        char c = serial.getc();
+        if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
+            fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
+
+            uint16_t len;
+            if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+
+#if 0
+                // test it
+                fmavx_status_t tstatx;
+                memcpy(&tstatx, &fmavx_status, sizeof(fmavx_status_t));
+
+                static uint8_t fmavx_err_cnt = 0;
+
+                uint8_t tbuf[300];
+                fmav_result_t tres;
+                fmav_status_t tstat;
+                fmav_status_reset(&tstat);
+                for (uint16_t i = 0; i < len; i++) {
+                    fmavX_parse_to_frame_buf(&tres, tbuf, &tstat, _buf[i]);
+                }
+
+                if (tres.res != FASTMAVLINK_PARSE_RESULT_OK) {
+                    fmavx_err_cnt++;
+                    dbg.puts("\nres ");dbg.puts(u16toBCD_s(tres.res));
+                }
+
+                uint8_t tbuf2[300];
+                uint16_t tlen2;
+                tlen2 = fmav_msg_to_frame_buf(tbuf2, &msg_link_out);
+
+                if (tres.frame_len != tlen2) {
+                    fmavx_err_cnt++;
+                    dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));
+                    dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));
+                }
+
+                for (uint16_t i = 0; i < tlen2; i++) {
+                    if (tbuf[i] != tbuf2[i]) {
+                        fmavx_err_cnt++;
+                        dbg.puts("\n_buf ");dbg.puts(u16toBCD_s(len));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < len; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(_buf[ii])); delay_ms(1); }
+                        dbg.puts("\ntbuf ");dbg.puts(u16toBCD_s(tres.frame_len));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < tres.frame_len; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(tbuf[ii])); delay_ms(1); }
+                        dbg.puts("\ntbuf2 ");dbg.puts(u16toBCD_s(tlen2));dbg.puts(":\n");
+                        for (uint16_t ii = 0; ii < tlen2; ii++) { dbg.puts("x"); dbg.puts(u8toHEX_s(tbuf2[ii])); delay_ms(1); }
+                        dbg.puts("\n");
+                        break;
+                    }
+                }
+
+                memcpy(&fmavx_status, &tstatx, sizeof(fmavx_status_t));
+
+                if (fmavx_err_cnt > 3) fail(&dbg, FAIL_LED_PATTERN_RD_BLINK_GR_BLINK5, "grrr5");
+#endif
+
+            } else {
+                len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+            }
+
+#if 0
+            // do some fake to stress test the parser
+            static uint8_t fake_cnt = 0;
+            uint8_t b2[8] = { 'a', 0xFD, 128, 'b', 'c', 'd' };
+            uint8_t bX[8] = { 'a', 'o', 'w', 0, 128, 'b' };
+            fifo_link_out.PutBuf((fake_cnt & 0x01)?b2:bX, 6); fake_cnt++;
+#endif
+
+            fifo_link_out.PutBuf(_buf, len);
+        }
+    }
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
@@ -190,6 +282,13 @@ void MavlinkBase::Do(void)
 }
 
 
+void MavlinkBase::FrameLost(void)
+{
+    // reset parser link in -> serial out
+    fmav_parse_reset(&status_link_in);
+}
+
+
 typedef enum {
     MAVFTP_OPCODE_OpenFileRO = 4,
 } MAVFTPOPCODEENUM;
@@ -197,8 +296,14 @@ typedef enum {
 
 void MavlinkBase::putc(char c)
 {
-    // parse link in -> serial out
-    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    // parse link in -> serial out, and re-convert to v2
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
@@ -236,7 +341,8 @@ void MavlinkBase::putc(char c)
 
 bool MavlinkBase::available(void)
 {
-    return serial.available();
+    return fifo_link_out.Available();
+//XX    return serial.available();
 }
 
 
@@ -245,12 +351,14 @@ uint8_t MavlinkBase::getc(void)
     bytes_serial_in++;
     bytes_serial_in_cnt++;
 
-    return serial.getc();
+    return fifo_link_out.Get();
+//XX    return serial.getc();
 }
 
 
 void MavlinkBase::flush(void)
 {
+    fifo_link_out.Flush();
     serial.flush();
 }
 
@@ -270,7 +378,8 @@ void MavlinkBase::send_msg_serial_out(void)
 
 uint16_t MavlinkBase::serial_in_available(void)
 {
-    return serial.bytes_available();
+    return fifo_link_out.Available();
+//XX    return serial.bytes_available();
 }
 
 

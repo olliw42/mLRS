@@ -47,11 +47,13 @@
 #define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
 #define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
 
-#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2"
-#define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
-#define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
-#define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
-#define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
+#define SETUP_OPT_DIVERSITY               "enabled,antenna1,antenna2"
+#define SETUP_OPT_CH_ORDER                "AETR,TAER,ETAR"
+#define SETUP_OPT_TX_SERIAL_BAUDRATE      "9600,19200,38400,57600,115200,230400"
+#define SETUP_OPT_RX_SERIAL_BAUDRATE      "9600,19200,38400,57600,115200,230400"
+
+#define SETUP_OPT_RX_SERIAL_LINK_MODE     "transp.,mavlink,mavlinkX"
+#define SETUP_OPT_RX_SERIAL_LINK_MODE_DISPLAYSTR  "transp.,mavlink,mavlnkX"
 
 #ifndef MLRS_DEV_FEATURE_FLRC
 #define SETUP_OPT_RFMODE              "50 Hz,31 Hz,19 Hz"
@@ -97,7 +99,7 @@
   X( Setup.Rx.OutMode,            LIST, "Rx Out Mode",      "RX_OUT_MODE",      0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
   X( Setup.Rx.FailsafeMode,       LIST, "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
   X( Setup.Rx.SerialBaudrate,     LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
-  X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_RX_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.Buzzer,             LIST, "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
