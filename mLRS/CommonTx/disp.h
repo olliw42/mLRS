@@ -540,6 +540,14 @@ void _diversity_str(char* s, uint8_t div)
 }
 
 
+void _draw_dot2(uint8_t x, uint8_t y)
+{
+    gdisp_drawpixel(x, y-1, 1);
+    gdisp_drawline_H(x-1, y, 3, 1);
+    gdisp_drawpixel(x, y+1, 1);
+}
+
+
 void tTxDisp::draw_header(const char* s)
 {
     gdisp_clear();
@@ -795,6 +803,10 @@ char s[32];
     uint8_t rx_receive_antenna = stats.received_antenna;
     uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
 
+    if (Config.TDiversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_rdiversity == DIVERSITY_DEFAULT) {
+        _draw_dot2(125, 2 * 10 + 20 - 3);
+    }
     gdisp_setcurXY(10, 2 * 10 + 20);
     gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
@@ -803,6 +815,10 @@ char s[32];
     gdisp_putc('>');
     gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
 
+    if (Config.RDiversity == DIVERSITY_DEFAULT) _draw_dot2(1, 3 * 10 + 20 - 3);
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_tdiversity == DIVERSITY_DEFAULT) {
+        _draw_dot2(125, 3 * 10 + 20 - 3);
+    }
     gdisp_setcurXY(10, 3 * 10 + 20);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
