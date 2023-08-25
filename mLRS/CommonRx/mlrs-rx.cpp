@@ -32,6 +32,7 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
 #include "../Common/thirdparty/stdstm32-mcu.h"
+#include "../Common/thirdparty/stdstm32-stack.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -548,6 +549,7 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
+  stack_check_init();
 RESTARTCONTROLLER:
   init();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
