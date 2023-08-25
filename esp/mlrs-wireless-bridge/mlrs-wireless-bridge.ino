@@ -147,6 +147,7 @@ int baudrate = 115200;
 #if (WIRELESS_PROTOCOL <= 1) // WiFi TCP, UDP
 
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
+IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 #if WIRELESS_PROTOCOL == 1 // UDP
     WiFiUDP udp;
@@ -157,7 +158,7 @@ IPAddress netmask(255, 255, 255, 0);
 
 #elif (WIRELESS_PROTOCOL == 2) // WiFi UDPCl
 
-IPAddress ip_gateway(ip_udpcl[0], ip_udpcl[1], ip_udpcl[2], 1); // x.x.x.1 is usually the router IP
+IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 WiFiUDP udp;
 
@@ -211,7 +212,7 @@ void setup()
 
     // AP mode
     WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
-    WiFi.softAPConfig(ip, ip, netmask);
+    WiFi.softAPConfig(ip, ip_gateway, netmask);
   #if (WIRELESS_PROTOCOL == 1)
     String ssid_full = ssid + " UDP";
   #else
@@ -243,7 +244,10 @@ void setup()
     WiFi.begin(network_ssid.c_str(), network_password.c_str());
 
     while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
+        //delay(500);
+        led_on(true); delay(75); led_off(); delay(75); 
+        led_on(true); delay(75); led_off(); delay(75); 
+        led_on(true); delay(75); led_off(); delay(75); 
         DBG_PRINTLN("connecting to WiFi network...");
     }
     DBG_PRINTLN("connected");
