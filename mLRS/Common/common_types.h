@@ -180,5 +180,7 @@ void strbufstrcpy(char* res, const char* src, uint16_t len);
 void strstrbufcpy(char* res, const char* src, uint16_t len);
 bool strbufeq(char* s1, const char* s2, uint16_t len);
 
+void remove_leading_zeros(char* s);
+
 
 #endif // COMMON_TYPES_H
