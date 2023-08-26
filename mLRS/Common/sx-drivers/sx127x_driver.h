@@ -321,9 +321,9 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_ns(100); // well...
     }
 
-    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
-        spi_transfer(dataout, datain, len);
+        *bytein = spi_transmitchar(*byteout);
     }
 
     //-- init API functions

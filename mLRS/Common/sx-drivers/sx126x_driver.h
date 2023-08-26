@@ -346,9 +346,9 @@ class Sx126xDriver : public Sx126xDriverCommon
 #endif
     }
 
-    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
-        spi_transfer(dataout, datain, len);
+        *bytein = spi_transmitchar(*byteout);
     }
 
     //-- init API functions
@@ -453,9 +453,9 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         spib_deselect();
     }
 
-    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
-        spib_transfer(dataout, datain, len);
+        *bytein = spib_transmitchar(*byteout);
     }
 
     //-- init API functions
