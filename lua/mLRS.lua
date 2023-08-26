@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-08-04.00'
+local version = '2023-08-17.00'
 
 local required_mLRS_version_int = 331 -- 'v0.3.31'
 
@@ -519,9 +519,11 @@ local function doParamLoop()
             DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
             DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
+            DEVICE_INFO.tx_rdiversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
+            DEVICE_INFO.rx_rdiversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
             DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
+            DEVICE_INFO.tx_tdiversity = mb_to_u8_bits(cmd.payload,7,0,0x3)
+            DEVICE_INFO.rx_tdiversity = mb_to_u8_bits(cmd.payload,7,2,0x3)
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM then
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]
@@ -1073,11 +1075,11 @@ local function drawPageMain()
     end
 
     lcd.drawText(10, y, "Tx Power", TEXT_COLOR)
-    lcd.drawText(10, y+20, "Tx Diversity", TEXT_COLOR)
+    lcd.drawText(10, y+20, "Tx RDiversity", TEXT_COLOR)
     if DEVICE_INFO ~= nil then
         lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", TEXT_COLOR)
-        if DEVICE_INFO.tx_diversity <= #diversity_list then
-            lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], TEXT_COLOR)
+        if DEVICE_INFO.tx_rdiversity <= #diversity_list then
+            lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_rdiversity], TEXT_COLOR)
         else
             lcd.drawText(140, y+20, "?", TEXT_COLOR)
         end
@@ -1091,11 +1093,11 @@ local function drawPageMain()
         rx_attr = TEXT_DISABLE_COLOR
     end
     lcd.drawText(10+240, y, "Rx Power", rx_attr)
-    lcd.drawText(10+240, y+20, "Rx Diversity", rx_attr)
+    lcd.drawText(10+240, y+20, "Rx RDiversity", rx_attr)
     if DEVICE_INFO ~= nil and connected then
         lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
-        if DEVICE_INFO.rx_diversity <= #diversity_list then
-            lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
+        if DEVICE_INFO.rx_rdiversity <= #diversity_list then
+            lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_rdiversity], rx_attr)
         else
             lcd.drawText(140+240, y+20, "?", rx_attr)
         end
