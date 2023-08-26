@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include "../Common/setup_types.h"
 
-uint32_t millis32(void);
+volatile uint32_t millis32(void);
 
 
 //-------------------------------------------------------

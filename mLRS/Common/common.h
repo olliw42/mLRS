@@ -39,7 +39,7 @@ void HAL_IncTick(void)
 }
 
 
-uint32_t millis32(void)
+volatile uint32_t millis32(void)
 {
     return uwTick;
 }

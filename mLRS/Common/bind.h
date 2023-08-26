@@ -15,7 +15,7 @@
 #include "common_conf.h"
 
 
-uint32_t millis32(void);
+volatile uint32_t millis32(void);
 static inline bool connected(void);
 void clock_reset(void);
 

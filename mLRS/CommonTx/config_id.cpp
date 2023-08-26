@@ -14,7 +14,7 @@
 
 extern tSetup Setup;
 extern tGlobalConfig Config;
-extern uint32_t millis32();
+extern volatile uint32_t millis32();
 
 
 void tConfigId::Init(void)
