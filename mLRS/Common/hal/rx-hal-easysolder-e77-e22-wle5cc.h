@@ -149,7 +149,7 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_MOSI_IO          IO_PA12
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-#define SPIB_USE_CLOCKSPEED_9MHZ
+#define SPIB_USE_CLOCKSPEED_18MHZ // equals to 12 NHz
 
 #define SX2_RESET                 IO_PB2
 #define SX2_DIO1                  IO_PC13

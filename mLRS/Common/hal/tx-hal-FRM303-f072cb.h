@@ -62,7 +62,7 @@
 #define UARTF_IRQ_PRIORITY          3 // 15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
-#define SWUART_TIM_IRQ_PRIORITY     2 // 11 // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     0 //2 // 11 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     3 // 14
 
 
@@ -116,7 +116,8 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define JRPIN5_FULL_INTERNAL_ON_RX_TX
 
 #define SWUART_USE_TIM17 // debug
-#define SWUART_TX_IO              IO_PB14 // that's the I2C2 SDA pin
+//#define SWUART_TX_IO              IO_PB14 // that's the I2C2 SDA pin
+#define SWUART_TX_IO              IO_PA11 // that's a USB pin
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
@@ -128,7 +129,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define SPI_USE_SPI1_PB3PB4PB5    // PB3, PB4, PB5
 #define SPI_CS_IO                 IO_PA15
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_9MHZ
+#define SPI_USE_CLOCKSPEED_18MHZ  // equals to 12 MHz
 
 #define SX_RESET                  IO_PA0
 #define SX_DIO1                   IO_PB10
