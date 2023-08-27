@@ -870,6 +870,9 @@ IF_ANTENNA2(
     if (doPreTransmit) {
         doPreTransmit = false;
 
+        sx.SetToIdle();
+        sx2.SetToIdle();
+
         bool frame_received = false;
         bool valid_frame_received = false;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
@@ -985,8 +988,6 @@ IF_ANTENNA2(
 
         // store parameters
         if (doParamsStore) {
-            sx.SetToIdle();
-            sx2.SetToIdle();
             setup_store_to_EEPROM();
             goto RESTARTCONTROLLER;
         }
