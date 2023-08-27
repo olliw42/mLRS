@@ -95,6 +95,7 @@
 //-- SX12xx & SPI
 
 #define SPI_USE_SUBGHZSPI
+#define SPI_USE_CLOCKSPEED_12MHZ
 
 #define SX_BUSY                   0 // busy is provided by subghz, we need to define a dummy to fool sx126x_driver lib
 
