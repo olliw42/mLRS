@@ -14,22 +14,6 @@
 //-------------------------------------------------------
 // SX Driver
 //-------------------------------------------------------
-// some comments:
-//
-// I was polling for irq in the main loop, and initially it looked fine for both Rx & Tx
-// I was then getting more and more issues with RX, and did a rescue method to somehow recover
-// but the more code I added the more weird the behavior became. A single change in a line could make it
-// given millions of !0404, disconnect issues, and so on. It could happen that the mode was not changed
-// to TX, but stayed at FS. It seemed that there is then no rescue besides a hard reset. I
-// empirically concluded also that it doesn't like if much is done between the irq and ReadFrame().
-// For some reasons, all this wasn't required on TX. I noted however that on TX the LQ dropped quite
-// quickly with moving away.
-// For RX, I then tried using the busy flag in WaitOnBusy(), and all issues immediately went totally away.
-// I when tried doing the dio1 in an exti isr, and this improved things a bit, but not totally. Only when I
-// did also the ReadFrame() in the etxi isr, also all issues went away.
-// Doing the later on TX also improved it's LQ loss behavior a lot. (but it is still not as good as for RX)
-// => either do doi1 isr with ReadFrame() in there, or even better have a busy
-
 
 typedef struct {
     uint8_t SpreadingFactor;
