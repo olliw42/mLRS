@@ -197,7 +197,7 @@ PACKED(
 typedef struct
 {
     uint8_t Power : 4;
-    uint8_t Diversity : 4;
+    uint8_t RDiversity : 4; // renamed from Diversity to RDiversity
     uint8_t ChannelOrder : 4;
     uint8_t OutMode : 4;
     uint8_t OutRssiChannelMode : 4;
@@ -209,8 +209,8 @@ typedef struct
     uint8_t SendRcChannels : 4;
     uint8_t __RadioStatusMethod : 4; // deprecated
     uint8_t OutLqChannelMode : 4;
+    uint8_t TDiversity : 4;
 
-    uint8_t spare : 4;
     uint8_t spare2[4];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
@@ -233,7 +233,7 @@ typedef struct
     uint16_t setup_layout;
     char device_name_20[20];
     int8_t actual_power_dbm;
-    uint8_t actual_diversity;
+    uint8_t actual_rdiversity;
 
     // rx parameter values
     // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
@@ -246,11 +246,13 @@ typedef struct
     uint8_t spare2[2];
 
     int16_t Power_list[8];
-    uint8_t Diversity_allowed_mask;
+    uint8_t Diversity_allowed_mask; // is equal for RDiversity and TDiversity
     uint8_t OutMode_allowed_mask;
     uint8_t Buzzer_allowed_mask;
 
-    uint8_t spare3[5];
+    uint8_t spare3[4];
+
+    uint8_t actual_tdiversity; // damed, but put here to stay compatible
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 

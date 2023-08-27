@@ -532,11 +532,19 @@ bool tTxDisp::key_has_been_pressed(uint8_t key_idx)
 void _diversity_str(char* s, uint8_t div)
 {
     switch (div) {
-        case 0: strcpy(s, "en."); return;
-        case 1: strcpy(s, "ant1"); return;
-        case 2: strcpy(s, "ant2"); return;
+        case DIVERSITY_DEFAULT: strcpy(s, "en."); return;
+        case DIVERSITY_ANTENNA1: strcpy(s, "ant1"); return;
+        case DIVERSITY_ANTENNA2: strcpy(s, "ant2"); return;
     }
     strcpy(s, "?");
+}
+
+
+void _draw_dot2(uint8_t x, uint8_t y)
+{
+    gdisp_drawpixel(x, y-1, 1);
+    gdisp_drawline_H(x-1, y, 3, 1);
+    gdisp_drawpixel(x, y+1, 1);
 }
 
 
@@ -730,22 +738,25 @@ char s[32];
     gdisp_puts("dB");
 
     gdisp_setcurXY(0, 2 * 10 + 20);
-    gdisp_puts("Div.");
+    gdisp_puts("RDiv.");
     gdisp_setcurX(40);
-    uint8_t tx_actual_diversity = 3; // 3 = invalid
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        tx_actual_diversity = 0;
-    } else if (USE_ANTENNA1) {
-        tx_actual_diversity = 1;
-    } else if (USE_ANTENNA2) {
-        tx_actual_diversity = 2;
-    }
-    _diversity_str(s, tx_actual_diversity);
+    _diversity_str(s, Config.RDiversity);
     gdisp_puts(s);
     gdisp_setcurX(80);
-    uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : 3; // 3 = invalid
-    _diversity_str(s, rx_actual_diversity);
+    uint8_t rx_actual_rdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_rdiversity : DIVERSITY_NUM; // 3 = invalid
+    _diversity_str(s, rx_actual_rdiversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
+
+    gdisp_setcurXY(0, 3 * 10 + 20);
+    gdisp_puts("TDiv.");
+    gdisp_setcurX(40);
+    _diversity_str(s, Config.TDiversity);
+    gdisp_puts(s);
+    gdisp_setcurX(80);
+    uint8_t rx_actual_tdiversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_tdiversity : DIVERSITY_NUM; // 3 = invalid
+    _diversity_str(s, rx_actual_tdiversity);
+    if (connected_and_rx_setup_available()) gdisp_puts(s);
+
 /*
     gdisp_setcurXY(0, 3 * 10 + 20);
     gdisp_puts("Rssi");
@@ -792,6 +803,10 @@ char s[32];
     uint8_t rx_receive_antenna = stats.received_antenna;
     uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
 
+    if (Config.TDiversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_rdiversity == DIVERSITY_DEFAULT) {
+        _draw_dot2(125, 2 * 10 + 20 - 3);
+    }
     gdisp_setcurXY(10, 2 * 10 + 20);
     gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
@@ -800,6 +815,10 @@ char s[32];
     gdisp_putc('>');
     gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
 
+    if (Config.RDiversity == DIVERSITY_DEFAULT) _draw_dot2(1, 3 * 10 + 20 - 3);
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_tdiversity == DIVERSITY_DEFAULT) {
+        _draw_dot2(125, 3 * 10 + 20 - 3);
+    }
     gdisp_setcurXY(10, 3 * 10 + 20);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
