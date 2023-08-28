@@ -355,17 +355,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.setup_layout = SETUPLAYOUT;
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 0;
-    } else
-    if (USE_ANTENNA1) {
-        rx_setupdata.actual_diversity = 1;
-    } else
-    if (USE_ANTENNA2) {
-        rx_setupdata.actual_diversity = 2;
-    } else {
-        rx_setupdata.actual_diversity = 3; // 3 = invalid
-    }
+    rx_setupdata.actual_diversity = Config.Diversity;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
 

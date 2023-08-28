@@ -505,11 +505,7 @@ tMBridgeLinkStats lstats = {};
     lstats.snr_instantaneous = stats.GetLastSnr();
     lstats.receive_antenna = stats.last_antenna;
     lstats.transmit_antenna = stats.last_transmit_antenna;
-#ifdef USE_DIVERSITY
-    lstats.diversity = 1;
-#else
-    lstats.diversity = 0;
-#endif
+    lstats._diversity = 0; // pretty useless, so deprecated
     lstats.rx1_valid = txstats.rx1_valid;
     lstats.rx2_valid = txstats.rx2_valid;
 
@@ -524,7 +520,7 @@ tMBridgeLinkStats lstats = {};
     lstats.receiver_rssi_instantaneous = stats.received_rssi;
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-    lstats.receiver_diversity = 0; // TODO: this we do not know currently
+    lstats._receiver_diversity = 0; // pretty useless, so deprecated
 
     lstats.receiver_rssi_filtered = RSSI_INVALID;
 
@@ -559,17 +555,7 @@ tMBridgeInfo info = {};
 
     info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
     info.tx_actual_power_dbm = sx.RfPower_dbm();
-    if (USE_ANTENNA1 && USE_ANTENNA2) {
-        info.tx_actual_diversity = 0;
-    } else
-    if (USE_ANTENNA1) {
-        info.tx_actual_diversity = 1;
-    } else
-    if (USE_ANTENNA2) {
-        info.tx_actual_diversity = 2;
-    } else {
-        info.tx_actual_diversity = 3; // 3 = invalid
-    }
+    info.tx_actual_diversity = Config.Diversity;
 
     if (SetupMetaData.rx_available) {
         info.rx_available = 1;
@@ -578,7 +564,7 @@ tMBridgeInfo info = {};
     } else {
         info.rx_available = 0;
         info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
-        info.rx_actual_diversity = 3; // 3 = invalid
+        info.rx_actual_diversity = DIVERSITY_NUM; // 3 = invalid
     }
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);

@@ -170,8 +170,8 @@ typedef struct
     uint8_t transmit_antenna : 1;
     uint8_t receiver_receive_antenna : 1;
     uint8_t receiver_transmit_antenna : 1;
-    uint8_t diversity : 1;
-    uint8_t receiver_diversity : 1;
+    uint8_t _diversity : 1; // pretty useless, so deprecate
+    uint8_t _receiver_diversity : 1; // pretty useless, so deprecate
     uint8_t rx1_valid : 1;
     uint8_t rx2_valid : 1;
 

@@ -65,6 +65,7 @@ v0.0.00:
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/micros.h"
+#include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "clock.h"
@@ -76,6 +77,7 @@ v0.0.00:
 ClockBase clock;
 RxStatsBase rxstats;
 PowerupCounterBase powerup;
+tRDiversity rdiversity;
 
 
 // is required in bind.h
@@ -561,8 +563,8 @@ RESTARTCONTROLLER:
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
-  IF_ANTENNA1(sx.StartUp());
-  IF_ANTENNA2(sx2.StartUp());
+  IF_SX1(sx.StartUp());
+  IF_SX2(sx2.StartUp());
   bind.Init();
   fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
   fhss.Start();
@@ -583,6 +585,7 @@ RESTARTCONTROLLER:
   frame_missed = false;
 
   rxstats.Init(Config.LQAveragingPeriod);
+  rdiversity.Init();
 
   out.Configure(Setup.Rx.OutMode);
   mavlink.Init();
@@ -671,7 +674,7 @@ RESTARTCONTROLLER:
         }break;
     }//end of switch(link_state)
 
-IF_ANTENNA1(
+IF_SX1(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX12xx_IRQ_TX_DONE) {
@@ -701,7 +704,7 @@ IF_ANTENNA1(
         }
     }//end of if(irq_status)
 );
-IF_ANTENNA2(
+IF_SX2(
     if (irq2_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX12xx_IRQ_TX_DONE) {
@@ -737,19 +740,18 @@ IF_ANTENNA2(
         doPostReceive = false;
 
         bool frame_received, valid_frame_received, invalid_frame_received;
-        frame_received = valid_frame_received = invalid_frame_received = false; // to make compiler happy
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx1_status > RX_STATUS_INVALID) || (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = frame_received && !valid_frame_received;
-        } else if (USE_ANTENNA1) {
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
         } else if (USE_ANTENNA2) {
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
+        } else { // use antenna1
+            frame_received = (link_rx1_status > RX_STATUS_NONE);
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
         }
 
 /*dbg.puts("\n> 1: ");
@@ -759,39 +761,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         if (frame_received) { // frame received
             uint8_t antenna = ANTENNA_1;
-
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                // work out which antenna we choose
-                //            |   NONE   |  INVALID  | CRC1_VALID | VALID
-                // --------------------------------------------------------
-                // NONE       |          |   1 or 2  |     1      |  1
-                // INVALID    |  1 or 2  |   1 or 2  |     1      |  1
-                // CRC1_VALID |    2     |     2     |   1 or 2   |  1
-                // VALID      |    2     |     2     |     2      |  1 or 2
-
-                if (link_rx1_status == link_rx2_status) {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                } else
-                if (link_rx1_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_1;
-                } else
-                if (link_rx2_status == RX_STATUS_VALID) {
-                    antenna = ANTENNA_2;
-                } else
-                if (link_rx1_status == RX_STATUS_CRC1_VALID) {
-                    antenna = ANTENNA_1;
-                } else
-                if (link_rx2_status == RX_STATUS_CRC1_VALID) {
-                    antenna = ANTENNA_2;
-                } else {
-                    // we can choose either antenna, so select the one with the better rssi
-                    antenna = (stats.last_rssi1 > stats.last_rssi2) ? ANTENNA_1 : ANTENNA_2;
-                }
+                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;
             }
-
             handle_receive(antenna);
 //dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         } else {

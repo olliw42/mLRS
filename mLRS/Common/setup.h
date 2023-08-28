@@ -12,6 +12,7 @@
 
 
 #include "setup_types.h"
+#include "hal/device_conf.h"
 #include "hal/hal.h"
 
 
@@ -131,7 +132,7 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
-    // Rx Diversity: "on,antenna1,antenna2"
+    // Rx Diversity: "enabled,antenna1,antenna2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
@@ -164,7 +165,7 @@ void setup_configure_metadata(void)
     SetupMetaData.rx_setup_layout = 0;
     strcpy(SetupMetaData.rx_device_name, "");
     SetupMetaData.rx_actual_power_dbm = INT8_MAX;
-    SetupMetaData.rx_actual_diversity = 3;
+    SetupMetaData.rx_actual_diversity = DIVERSITY_NUM; // 3 = invalid
 }
 
 
@@ -508,14 +509,17 @@ void setup_configure_config(uint8_t config_id)
     switch (Setup.Rx.Diversity) {
 #endif
     case DIVERSITY_DEFAULT:
+        Config.Diversity = DIVERSITY_DEFAULT;
         Config.UseAntenna1 = true;
         Config.UseAntenna2 = true;
         break;
     case DIVERSITY_ANTENNA1:
+        Config.Diversity = DIVERSITY_ANTENNA1;
         Config.UseAntenna1 = true;
         Config.UseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
+        Config.Diversity = DIVERSITY_ANTENNA2;
         Config.UseAntenna1 = false;
         Config.UseAntenna2 = true;
         break;
@@ -523,6 +527,7 @@ void setup_configure_config(uint8_t config_id)
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
+    Config.Diversity = DIVERSITY_ANTENNA1;
     Config.UseAntenna1 = true;
     Config.UseAntenna2 = false;
 #endif
