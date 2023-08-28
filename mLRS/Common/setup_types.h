@@ -61,9 +61,11 @@ typedef enum {
 
 
 typedef enum {
-    DIVERSITY_DEFAULT = 0, // diversity enabled
-    DIVERSITY_ANTENNA1, // antenna 1 if diversity available
-    DIVERSITY_ANTENNA2, // antenna 2 if diversity available
+    DIVERSITY_DEFAULT = 0, // diversity enabled, both receive and transmit
+    DIVERSITY_ANTENNA1, // antenna 1
+    DIVERSITY_ANTENNA2, // antenna 2
+    DIVERSITY_R_ENABLED_T_ANTENNA1, // receive diversity enabled, transmit antenna 1
+    DIVERSITY_R_ENABLED_T_ANTENNA2, // receive diversity enabled, transmit antenna 2
     DIVERSITY_NUM,
 } DIVERSITY_ENUM;
 
@@ -377,8 +379,10 @@ typedef struct
     uint16_t connect_listen_hop_cnt;
 
     uint8_t Diversity; // snapshot of Setup's Diversity at startup
-    bool UseAntenna1;
-    bool UseAntenna2;
+    bool ReceiveUseAntenna1;
+    bool ReceiveUseAntenna2;
+    bool TransmitUseAntenna1;
+    bool TransmitUseAntenna2;
 
     bool UseMbridge;
     bool UseCrsf;

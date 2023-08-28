@@ -42,10 +42,16 @@ uint8_t nr, n;
          if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
+         if (param_idx == PARAM_INDEX_TX_DIVERSITY || param_idx == PARAM_INDEX_RX_DIVERSITY) {
+             optstr = SETUP_OPT_DIVERSITY_LONGSTR;
+         }
     } else
     if (format == PARAM_FORMAT_DISPLAY) {
         if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
-            optstr = SETUP_OPT_RF_BAND_DISPLAYSTR;
+            optstr = SETUP_OPT_RF_BAND_DISPSTR;
+        }
+        if (param_idx == PARAM_INDEX_TX_DIVERSITY || param_idx == PARAM_INDEX_RX_DIVERSITY) {
+            optstr = SETUP_OPT_DIVERSITY_DISPSTR;
         }
     }
 

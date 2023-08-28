@@ -564,8 +564,12 @@ tMBridgeInfo info = {};
     } else {
         info.rx_available = 0;
         info.rx_actual_power_dbm = INT8_MAX; // INT8_MAX = invalid
-        info.rx_actual_diversity = DIVERSITY_NUM; // 3 = invalid
+        info.rx_actual_diversity = DIVERSITY_NUM; // 5 = invalid
     }
+
+    // we try to also set the deprecated fields to something reasonable, to help with transition
+    info.__tx_actual_diversity = (info.tx_actual_diversity <= 2) ? info.tx_actual_diversity : 3;
+    info.__rx_actual_diversity = (info.rx_actual_diversity <= 2) ? info.rx_actual_diversity : 3;
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }

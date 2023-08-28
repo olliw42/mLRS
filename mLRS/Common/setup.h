@@ -81,11 +81,11 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
-    // Diversity: "enabled,antenna1,antenna2"
+    // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Tx_Diversity_allowed_mask = 0b0010; // only antenna1, not editable
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
 #endif
 
     // Tx ChannelSource: "none,mbridge,in,crsf"
@@ -132,11 +132,11 @@ void setup_configure_metadata(void)
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
-    // Rx Diversity: "enabled,antenna1,antenna2"
+    // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
 #else
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b0010; // only antenna1, not editable
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
 #endif
 
     // Rx OutMode: "sbus,crsf,sbus inv"
@@ -165,7 +165,7 @@ void setup_configure_metadata(void)
     SetupMetaData.rx_setup_layout = 0;
     strcpy(SetupMetaData.rx_device_name, "");
     SetupMetaData.rx_actual_power_dbm = INT8_MAX;
-    SetupMetaData.rx_actual_diversity = DIVERSITY_NUM; // 3 = invalid
+    SetupMetaData.rx_actual_diversity = DIVERSITY_NUM;
 }
 
 
@@ -510,26 +510,48 @@ void setup_configure_config(uint8_t config_id)
 #endif
     case DIVERSITY_DEFAULT:
         Config.Diversity = DIVERSITY_DEFAULT;
-        Config.UseAntenna1 = true;
-        Config.UseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = true;
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = true;
         break;
     case DIVERSITY_ANTENNA1:
         Config.Diversity = DIVERSITY_ANTENNA1;
-        Config.UseAntenna1 = true;
-        Config.UseAntenna2 = false;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = false;
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
         Config.Diversity = DIVERSITY_ANTENNA2;
-        Config.UseAntenna1 = false;
-        Config.UseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = false;
+        Config.ReceiveUseAntenna2 = true;
+        Config.TransmitUseAntenna1 = false;
+        Config.TransmitUseAntenna2 = true;
+        break;
+    case DIVERSITY_R_ENABLED_T_ANTENNA1:
+        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA1;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = true;
+        Config.TransmitUseAntenna1 = true;
+        Config.TransmitUseAntenna2 = false;
+        break;
+    case DIVERSITY_R_ENABLED_T_ANTENNA2:
+        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA2;
+        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = true;
+        Config.TransmitUseAntenna1 = false;
+        Config.TransmitUseAntenna2 = true;
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
     Config.Diversity = DIVERSITY_ANTENNA1;
-    Config.UseAntenna1 = true;
-    Config.UseAntenna2 = false;
+    Config.ReceiveUseAntenna1 = true;
+    Config.ReceiveUseAntenna2 = false;
+    Config.TransmitUseAntenna1 = true;
+    Config.TransmitUseAntenna2 = false;
 #endif
 
     //-- FrequencyBand

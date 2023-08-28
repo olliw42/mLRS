@@ -10,9 +10,9 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-08-04.00'
+local version = '2023-08-28.00'
 
-local required_mLRS_version_int = 331 -- 'v0.3.31'
+local required_mLRS_version_int = 333 -- 'v0.3.33'
 
 
 -- experimental
@@ -434,6 +434,8 @@ local diversity_list = {}
 diversity_list[0] = "enabled"
 diversity_list[1] = "antenna1"
 diversity_list[2] = "antenna2"
+diversity_list[3] = "r:en. t:ant1"
+diversity_list[4] = "r:en. t:ant2"
 
 local freq_band_list = {}
 freq_band_list[0] = "2.4 GHz"
@@ -519,9 +521,11 @@ local function doParamLoop()
             DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
             DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
+            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
+            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
             DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
+            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
+            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM then
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]

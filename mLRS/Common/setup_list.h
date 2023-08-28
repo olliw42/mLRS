@@ -47,7 +47,10 @@
 #define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
 #define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
 
-#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2"
+#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
+#define SETUP_OPT_DIVERSITY_LONGSTR   "enabled,antenna1,antenna2,r:en. t:ant1,r:en. t:ant2" // used e.g. in cli
+#define SETUP_OPT_DIVERSITY_DISPSTR   "enabled,antenna1,antenna2,ren ta1,ren ta2" // used in display, 7 chars max
+
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
 #define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
@@ -61,7 +64,7 @@
 
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN" // used e.g. in cli
-#define SETUP_OPT_RF_BAND_DISPLAYSTR  "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN" // used in display, 7 chars max
+#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN" // used in display, 7 chars max
 
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX

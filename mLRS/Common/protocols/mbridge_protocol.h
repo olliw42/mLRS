@@ -230,11 +230,13 @@ typedef struct
     int8_t tx_actual_power_dbm;
     int8_t rx_actual_power_dbm;
     uint8_t rx_available : 1;
-    uint8_t tx_actual_diversity : 2;
-    uint8_t rx_actual_diversity : 2;
+    uint8_t __tx_actual_diversity : 2; // deprecated, since grew too large
+    uint8_t __rx_actual_diversity : 2; // deprecated, since grew too large
     uint8_t spare2 : 3;
     uint8_t tx_config_id;
-    uint8_t spare[17];
+    uint8_t tx_actual_diversity : 4;
+    uint8_t rx_actual_diversity : 4;
+    uint8_t spare[16];
 }) tMBridgeInfo; // 24 bytes
 
 

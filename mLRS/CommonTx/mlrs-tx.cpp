@@ -94,6 +94,7 @@ tTxCli cli;
 ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tRDiversity rdiversity;
+tTDiversity tdiversity;
 
 
 class In : public InBase
@@ -690,6 +691,7 @@ RESTARTCONTROLLER:
 
   txstats.Init(Config.LQAveragingPeriod);
   rdiversity.Init();
+  tdiversity.Init(Config.frame_rate_ms);
 
   in.Configure(Setup.Tx[Config.ConfigId].InMode);
   mavlink.Init();
@@ -786,7 +788,7 @@ RESTARTCONTROLLER:
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq());
-        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
@@ -890,7 +892,6 @@ IF_SX2(
 
         if (frame_received) { // frame received
             uint8_t antenna = ANTENNA_1;
-
             if (USE_ANTENNA1 && USE_ANTENNA2) {
                 antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
@@ -899,6 +900,14 @@ IF_SX2(
             handle_receive(antenna);
         } else {
             handle_receive_none();
+        }
+
+        if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+            tdiversity.DoEstimate(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+        } else if (TRANSMIT_USE_ANTENNA2) {
+            tdiversity.SetAntenna(ANTENNA_2);
+        } else {
+            tdiversity.SetAntenna(ANTENNA_1);
         }
 
         txstats.fhss_curr_i = fhss.CurrI();

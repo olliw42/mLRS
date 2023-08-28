@@ -78,6 +78,7 @@ ClockBase clock;
 RxStatsBase rxstats;
 PowerupCounterBase powerup;
 tRDiversity rdiversity;
+tTDiversity tdiversity;
 
 
 // is required in bind.h
@@ -586,6 +587,7 @@ RESTARTCONTROLLER:
 
   rxstats.Init(Config.LQAveragingPeriod);
   rdiversity.Init();
+  tdiversity.Init(Config.frame_rate_ms);
 
   out.Configure(Setup.Rx.OutMode);
   mavlink.Init();
@@ -667,8 +669,7 @@ RESTARTCONTROLLER:
         }break;
 
     case LINK_STATE_TRANSMIT: {
-        // TODO: transmit antenna diversity
-        do_transmit((USE_ANTENNA1) ? ANTENNA_1 : ANTENNA_2);
+        do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         }break;
@@ -770,6 +771,14 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 //dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         } else {
             handle_receive_none();
+        }
+
+        if (TRANSMIT_USE_ANTENNA1 && TRANSMIT_USE_ANTENNA2) {
+            tdiversity.DoEstimate(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+        } else if (TRANSMIT_USE_ANTENNA2) {
+            tdiversity.SetAntenna(ANTENNA_2);
+        } else {
+            tdiversity.SetAntenna(ANTENNA_1);
         }
 
         if (valid_frame_received) { // valid frame received
