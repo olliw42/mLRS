@@ -162,8 +162,6 @@ uint16_t version_to_u16(uint32_t version);
 uint32_t version_from_u16(uint16_t version_u16);
 void version_to_str(char* s, uint32_t version);
 
-void remove_leading_zeros(char* s);
-
 
 //-- display & keys
 
