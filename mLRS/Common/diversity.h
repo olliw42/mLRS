@@ -6,8 +6,8 @@
 //*******************************************************
 // Diversity
 //********************************************************
-#ifndef TDIVERSITY_H
-#define TDIVERSITY_H
+#ifndef DIVERSITY_H
+#define DIVERSITY_H
 #pragma once
 
 
@@ -53,4 +53,4 @@ class tTDiversity
 };
 
 
-#endif // TDIVERSITY_H
+#endif // DIVERSITY_H

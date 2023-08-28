@@ -146,9 +146,9 @@ class Out : public OutBase
           .transmitter_transmit_antenna = stats.received_transmit_antenna,
           .mode = (uint8_t)Config.Mode,
         };
-        if (Config.RDiversity == DIVERSITY_DEFAULT) {
+        if (USE_ANTENNA1 && USE_ANTENNA2) {
             lstats.antenna_config = 3;
-        } else if (Config.RDiversity == DIVERSITY_ANTENNA2) {
+        } else if (USE_ANTENNA2) {
             lstats.antenna_config = 2;
         } else {
             lstats.antenna_config = 1;

@@ -233,7 +233,9 @@ typedef struct
     uint16_t setup_layout;
     char device_name_20[20];
     int8_t actual_power_dbm;
-    uint8_t actual_rdiversity;
+    uint8_t actual_rdiversity : 2;
+    uint8_t actual_tdiversity : 2;
+    uint8_t spare1 : 4;
 
     // rx parameter values
     // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
@@ -250,9 +252,7 @@ typedef struct
     uint8_t OutMode_allowed_mask;
     uint8_t Buzzer_allowed_mask;
 
-    uint8_t spare3[4];
-
-    uint8_t actual_tdiversity; // damed, but put here to stay compatible
+    uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 
