@@ -277,6 +277,8 @@ GPIO15 = RTC_GPIO13
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  27
 
+    #define CPUFREQMHZ 160 // Options 80, 160, 240 MHz
+
 
 //-- Generic
 #else

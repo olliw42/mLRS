@@ -187,6 +187,9 @@ void serialFlushRx(void)
 
 void setup()
 {
+#ifdef CPUFREQMHZ
+    setCpuFrequencyMhz(CPUFREQMHZ);
+#endif
     led_init();
     dbg_init();
     delay(500);
