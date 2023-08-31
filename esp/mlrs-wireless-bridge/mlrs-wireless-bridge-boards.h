@@ -4,7 +4,7 @@
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// Basic but effective & reliable transparent WiFi or Bluetooth<->serial bridge
+// Modules
 //*******************************************************
 
 /*
@@ -63,26 +63,26 @@ UARTs can be mapped to any pins, according to data sheet
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 
 ------------------------------
-M5Stamp Pico for Frsky R9M
+M5Stamp Pico (normal or for Frsky R9M)
 ------------------------------
 board: ESP32-PICO-D4
 https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-pico-mate-with-pin-headers
 https://docs.m5stack.com/en/core/stamp_pico
 IO3/IO1: is Serial, spits out lots of preamble at power up
-IO32/IO33: will be mapped to Serial1, inverted
-Mates cleanly with R9M inverted serial port pins
+IO32/IO33: will be mapped to Serial1
+NOTE: for Frsky R9M Serial1 is inverted; mates cleanly with R9M inverted serial port pins
 
 ------------------------------
-M5Stack M5Stamp C3U Mate for Frsky R9M
+M5Stack M5Stamp C3U Mate (normal or for Frsky R9M)
 ------------------------------
 board: ESP32C3 Dev Module
 https://shop.m5stack.com/collections/m5-controllers/products/m5stamp-c3u-mate-with-pin-headers
 https://docs.m5stack.com/en/core/stamp_c3u
 IO18/IO19: D-/D+ Native USB interface
 IO20/IO21: U0RXD/U0TXD, is Serial
-IO1/IO0: G1/G0, will be mapped to Serial1, inverted
+IO1/IO0: G1/G0, will be mapped to Serial1
 UARTs can be mapped to any pins, according to data sheet
-Mates cleanly with R9M inverted serial port pins
+NOTE: for Frsky R9M Serial1 is inverted; mates cleanly with R9M inverted serial port pins
 ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 Disconnect from application before programming via USB. Hold down central button (G9) when connecting to USB to program
 
@@ -143,7 +143,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- Espressif ESP32-PICO-KIT
-#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -178,7 +178,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- Lilygo TTGO-MICRO32
-#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -216,7 +216,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- M5Stack M5Stamp Pico
-#elif defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M || defined MODULE_M5STAMP_PICO // M5STAMP_PICO , ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_M5STAMP_PICO || defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // M5STAMP_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -238,7 +238,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- M5Stack M5Stamp C3U Mate
-#elif defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M || defined MODULE_M5STAMP_C3U_MATE // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
+#elif defined MODULE_M5STAMP_C3U_MATE || defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
     #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
 	      #error Select board ESP32C3 Dev Module!
     #endif
@@ -279,10 +279,13 @@ GPIO15 = RTC_GPIO13
 
 
 //-- Generic
-#else
+#elif defined MODULE_GENERIC
     #ifdef LED_IO  
         #define USE_LED
     #endif
+
+#else
+    #error No module selected !
 #endif
 
 

@@ -4,9 +4,10 @@
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// Basic but effective & reliable transparent WiFi and Bluetooth<->serial bridge
+// Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
+// Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 23. Aug. 2023
+// 31. Aug. 2023
 //*********************************************************/
 // inspired by examples from Arduino
 // ArduinoIDE 2.0.3, esp32 by Espressif Systems 2.0.6
@@ -15,11 +16,11 @@
 /*
 Definitions:
 - "module" refers to the physical hardware
-- "board" refers to the board you need to select in the menu Tools->Board
+- "board" refers to the board you need to select in the Arduino IDE menu Tools->Board
 
-For more details on the modules see mlrs-wifi-bridge-boards.h
+For more details on the modules see mlrs-wireless-bridge-boards.h
 
-List of supported modules, and board which need to be selected
+List of supported modules, and board which needs to be selected
 
 - Espressif ESP32-DevKitC V4      board: ESP32 Dev Module
 - NodeMCU ESP32-Wroom-32          board: ESP32 Dev Module
@@ -39,7 +40,7 @@ List of supported modules, and board which need to be selected
 //-------------------------------------------------------
 
 // Module
-// uncomment what you want
+// uncomment what you want, you must select one (and only one)
 //#define MODULE_GENERIC
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
@@ -103,17 +104,17 @@ String bluetooth_device_name = "mLRS BT"; // Bluetooth device name
 //************************//
 //*** General settings ***//
 
-// baudrate
+// Baudrate
 int baudrate = 115200;
 
-// serial port usage (only effective for the generic module)
+// Serial port usage (only effective for the generic module)
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
 //#define USE_SERIAL2_DBG // use Serial2 for communication, and Serial for debug output and flashing
 
 // LED pin (only effective for the generic module)
-// uncomment if you want a LED
+// uncomment if you want a LED, and set the pin number as desired
 //#define LED_IO  13
 
 
@@ -146,7 +147,7 @@ int baudrate = 115200;
 
 #if (WIRELESS_PROTOCOL <= 1) // WiFi TCP, UDP
 
-IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 #if WIRELESS_PROTOCOL == 1 // UDP
