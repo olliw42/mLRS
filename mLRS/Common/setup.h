@@ -88,11 +88,11 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
 #endif
 
-    // Tx ChannelSource: "none,mbridge,in,crsf"
+    // Tx ChannelSource: "none,crsf,in,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, mbridge, crsf
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, crsf, mbridge
 #elif defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
 #else
@@ -103,22 +103,22 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_IN
     SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_IN_NORMAL
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0010; // only sbus inv, not editable
+    SetupMetaData.Tx_InMode_allowed_mask = 0b10; // only sbus inv, not editable
 #elif defined DEVICE_HAS_IN_INVERTED
-    SetupMetaData.Tx_InMode_allowed_mask = 0b0001; // only sbus, not editable
+    SetupMetaData.Tx_InMode_allowed_mask = 0b01; // only sbus, not editable
 #else
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,mbridge,serial2"
+    // Tx SerialDestination: "serial,serial2,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_SERIAL2
     SetupMetaData.Tx_SerialDestination_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0011; // only serial, mbridge
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // only serial, mbridge
 #elif defined USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0101; // only serial, serial2
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b011; // only serial, serial2
 #else
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b0001; // only serial, not editable
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b001; // only serial, not editable
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -143,7 +143,7 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_OUT
     SetupMetaData.Rx_OutMode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_OUT_NORMAL
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b0110; // crsf,sbus inv
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b110; // crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_INVERTED
     SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus, not editable
 #else
@@ -697,8 +697,9 @@ void setup_reload(void)
 // Init
 //-------------------------------------------------------
 
-#define SETUPLAYOUT_L0_0_02    2 // layout version up to for v0.3.28
-#define SETUPLAYOUT_L0_3_29  329 // layout version up to for v0.3.28
+#define SETUPLAYOUT_L0_0_02    2 // layout version up to v0.3.28
+#define SETUPLAYOUT_L0_3_29  329 // layout version from v0.3.29 - v0.3.34
+#define SETUPLAYOUT_L0_3_35  335 // layout version from v0.3.35 onwards
 
 
 void setup_init(void)
@@ -722,6 +723,24 @@ bool doEEPROMwrite;
             strstrbufcpy(Setup.Common[0].BindPhrase, Setup.__BindPhrase, 6);
             Setup.Common[0].FrequencyBand = Setup.__FrequencyBand;
             Setup.Common[0].Mode = Setup.__Mode;
+            for (uint8_t id = 1; id < SETUP_CONFIG_LEN; id++) setup_default(id); // default all other tables
+            Setup._ConfigId = 0;
+        } else
+        if (Setup.Layout < SETUPLAYOUT_L0_3_35) {
+            for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) {
+                // Tx ChannelSource rearranged
+                uint8_t tx_channel_source = Setup.Tx[id].ChannelsSource;
+                switch (tx_channel_source) {
+                case L0329_CHANNEL_SOURCE_MBRIDGE: Setup.Tx[id].ChannelsSource = CHANNEL_SOURCE_MBRIDGE; break;
+                case L0329_CHANNEL_SOURCE_CRSF: Setup.Tx[id].ChannelsSource = CHANNEL_SOURCE_CRSF; break;
+                }
+                // Tx SerialDestination rearranged
+                uint8_t tx_serial_destination = Setup.Tx[id].SerialDestination;
+                switch (tx_serial_destination) {
+                case L0329_SERIAL_DESTINATION_MBRDIGE: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_MBRDIGE; break;
+                case L0329_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL2; break;
+                }
+            }
         } else {
             setup_default(0);
         }
@@ -740,7 +759,7 @@ bool doEEPROMwrite;
         doEEPROMwrite = true;
     }
     if (doEEPROMwrite) {
-       setup_store_to_EEPROM();
+        setup_store_to_EEPROM();
     }
 
 #ifdef DEVICE_IS_TRANSMITTER
@@ -761,6 +780,7 @@ bool doEEPROMwrite;
 #else
     Setup._ConfigId = 0;
 #endif
+
     Config.ConfigId = Setup._ConfigId;
 
     setup_configure_metadata();

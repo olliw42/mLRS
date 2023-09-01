@@ -13,7 +13,7 @@
 
 #define VERSION             335 // leading zero makes it octal!
 #define VERSIONONLYSTR      "v0.3.35"
-#define SETUPLAYOUT         329 // this should be changed then Setup struct and/or serial changes
+#define SETUPLAYOUT         335 // this should be changed then Setup struct and/or serial changes
 
 
 //-------------------------------------------------------
@@ -39,9 +39,9 @@
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_DESTINATION     0 // 0: serial port, 1: mBridge, 2: serial2 (BT/ESP) port
+#define SETUP_TX_SERIAL_DESTINATION     0 // 0: serial port, 1: serial2 (BT/ESP) port, 2: mBridge
 
-#define SETUP_TX_CHANNELS_SOURCE        3 // 0: none, 1: mBridge (pin5), 2: In (In or pin1), 3: Crsf (pin5)
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
 

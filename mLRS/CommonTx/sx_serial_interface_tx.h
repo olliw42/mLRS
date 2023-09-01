@@ -25,11 +25,11 @@ class tTxSxSerial : public tSerialBase
         case SERIAL_DESTINATION_SERIAL:
             serialport = _serial;
             break;
-        case SERIAL_DESTINATION_MBRDIGE:
-            serialport = _mbridge;
-            break;
         case SERIAL_DESTINATION_SERIAL2:
             serialport = _serial2;
+            break;
+        case SERIAL_DESTINATION_MBRDIGE:
+            serialport = _mbridge;
             break;
         default:
             while (1) {} // must not happen
