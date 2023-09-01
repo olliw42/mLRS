@@ -350,9 +350,14 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Tx[config_id].CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx[config_id].CliLineEnd = CLI_LINE_END_CR;
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
-    if ((Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE) &&
-        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF)) {
-        Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
+    // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
+    // -------------------------------------------------
+    //  SERIAL  |  -      | crsf    | -       | mbridge
+    //  SERIAL2 |  -      | crsf    | -       | mbridge
+    //  MBRDIGE | mbridge | crsf !! | mbridge | mbridge
+    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
+        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
+        Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
     }
 
     //-- Rx:
@@ -649,16 +654,16 @@ void setup_configure_config(uint8_t config_id)
     Config.UseMbridge = false;
     Config.UseCrsf = false;
 #if defined DEVICE_IS_TRANSMITTER && defined DEVICE_HAS_JRPIN5
-    if ((Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE) ||
-        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE)) {
+    // conflicts must have been sorted out before in setup_sanitize()
+    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
+        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
         Config.UseMbridge = true;
     }
-    if ((Setup.Tx[config_id].SerialDestination != SERIAL_DESTINATION_MBRDIGE) &&
-        (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF)) {
+    if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {
         Config.UseCrsf = true;
     }
     if (Config.UseMbridge && Config.UseCrsf) {
-        while (1) {} // mBridge and CRSF cannot be used simultaneously, must not happen, should have been resolved in setup_sanitize()
+        while (1) {} // mBridge and CRSF cannot be used simultaneously, must not happen
     }
 #endif
 }
