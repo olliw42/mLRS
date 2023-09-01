@@ -62,7 +62,7 @@
 #define UARTF_IRQ_PRIORITY          3 // 15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
-#define SWUART_TIM_IRQ_PRIORITY     0 //2 // 11 // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     0 // 9  // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     3 // 14
 
 
@@ -121,7 +121,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   11
+//#define SWUART_TIM_IRQ_PRIORITY   9
 
 
 //-- SX12xx & SPI

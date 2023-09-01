@@ -24,7 +24,7 @@ v0.0.00:
 #define UARTF_IRQ_PRIORITY          15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
-#define SWUART_TIM_IRQ_PRIORITY     11 // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     9  // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"

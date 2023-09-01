@@ -89,7 +89,7 @@
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   11
+//#define SWUART_TIM_IRQ_PRIORITY   9
 
 
 //-- SX12xx & SPI
