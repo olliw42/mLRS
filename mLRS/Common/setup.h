@@ -747,10 +747,9 @@ bool doEEPROMwrite;
                 }
             }
         } else {
-            setup_default(0);
+            for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) setup_default(id);
+            Setup._ConfigId = 0;
         }
-        for (uint8_t id = 1; id < SETUP_CONFIG_LEN; id++) setup_default(id); // default all other tables
-        Setup._ConfigId = 0;
         Setup.Layout = SETUPLAYOUT;
         doEEPROMwrite = true;
     }
@@ -773,13 +772,13 @@ bool doEEPROMwrite;
     if (Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE ||
         Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
         // config id is supported
-        // ensure that they all have the same
+        // ensure that they all have the same channel_source
         for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) {
             Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
         }
     } else {
-        // config id is not be supported, so force id = 0 page
-        Setup.Tx[0].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
+        // config id is not supported, so force config_id = 0 page
+        if (Setup._ConfigId > 0) Setup.Tx[0] = Setup.Tx[Setup._ConfigId]; // copy all settings to page 0
         Setup._ConfigId = 0;
     }
 #else
