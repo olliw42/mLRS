@@ -80,16 +80,16 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
 {
-    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM;
+    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
 
     if (power_sx < SX126X_POWER_MIN) power_sx = SX126X_POWER_MIN;
     if (power_sx > SX126X_POWER_MAX) power_sx = SX126X_POWER_MAX;
-    if (power_sx > POWER_SX126X_MAX_DBM) power_sx = POWER_SX126X_MAX_DBM;
+    if (power_sx > SX126X_MAX_DBM) power_sx = SX126X_MAX_DBM;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + POWER_GAIN_DBM;
+    *actual_power_dbm = power_sx + GAIN_DBM;
 }
 #endif
 
@@ -144,7 +144,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
         SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
     }
 
@@ -252,12 +252,16 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void HandleAFC(void) {}
 
+    //-- RF power interface
+
+    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+
     //-- helper
 
     void config_calc(void)
     {
         int8_t power_dbm = Config.Power_dbm;
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
 
         uint8_t index = Config.LoraConfigIndex;
         if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
@@ -349,6 +353,13 @@ class Sx126xDriver : public Sx126xDriverCommon
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
         *bytein = spi_transmitchar(*byteout);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
     }
 
     //-- init API functions
@@ -456,6 +467,13 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
         *bytein = spib_transmitchar(*byteout);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
     }
 
     //-- init API functions

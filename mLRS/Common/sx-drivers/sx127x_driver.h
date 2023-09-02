@@ -63,17 +63,17 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
 {
     // Pout = 17 - (15 - OutputPower) if PaSelect = 1 (PA_BOOST pin)
-    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM + 2;
+    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM + 2;
 
     if (power_sx < SX1276_OUTPUT_POWER_MIN) power_sx = SX1276_OUTPUT_POWER_MIN;
     if (power_sx > SX1276_OUTPUT_POWER_MAX) power_sx = SX1276_OUTPUT_POWER_MAX;
-    if (power_sx > POWER_SX1276_MAX_DBM) power_sx = POWER_SX1276_MAX_DBM;
+    if (power_sx > SX1276_MAX_DBM) power_sx = SX1276_MAX_DBM;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + POWER_GAIN_DBM - 2;
+    *actual_power_dbm = power_sx + GAIN_DBM - 2;
 }
 #endif
 
@@ -124,11 +124,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-#ifdef DEVICE_HAS_I2C_DAC
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
-#else
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-#endif
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
         // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
         // there would be special setting for +20dBm mode, don't do it
         // 5 OcpOn, 4-0 OcpTrim
@@ -228,16 +224,16 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         AfcDo();
     }
 
+    //-- RF power interface
+
+    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+
     //-- helper
 
     void config_calc(void)
     {
         int8_t power_dbm = Config.Power_dbm;
-#ifdef DEVICE_HAS_I2C_DAC
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm, &dac);
-#else
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-#endif
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
 
         uint8_t index = Config.LoraConfigIndex;
         if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
@@ -324,6 +320,17 @@ class Sx127xDriver : public Sx127xDriverCommon
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
         *bytein = spi_transmitchar(*byteout);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+#ifdef DEVICE_HAS_I2C_DAC
+        rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
+#else
+        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+#endif
     }
 
     //-- init API functions

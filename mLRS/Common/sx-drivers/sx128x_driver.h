@@ -109,16 +109,16 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1280_MAX_DBM)
 {
-    int16_t power_sx = (int16_t)power_dbm - POWER_GAIN_DBM + 18;
+    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM + 18;
 
     if (power_sx < SX1280_POWER_MIN) power_sx = SX1280_POWER_MIN;
     if (power_sx > SX1280_POWER_MAX) power_sx = SX1280_POWER_MAX;
-    if (power_sx > POWER_SX1280_MAX_DBM) power_sx = POWER_SX1280_MAX_DBM;
+    if (power_sx > SX1280_MAX_DBM) power_sx = SX1280_MAX_DBM;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + POWER_GAIN_DBM - 18;
+    *actual_power_dbm = power_sx + GAIN_DBM - 18;
 }
 #endif
 
@@ -196,7 +196,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
         SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
     }
 
@@ -291,12 +291,16 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void HandleAFC(void) {}
 
+    //-- RF power interface
+
+    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+
     //-- helper
 
     void config_calc(void)
     {
         int8_t power_dbm = Config.Power_dbm;
-        rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
 
         if (Config.modeIsLora()) {
             uint8_t index = Config.LoraConfigIndex;
@@ -392,6 +396,13 @@ class Sx128xDriver : public Sx128xDriverCommon
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
         *bytein = spi_transmitchar(*byteout);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
     }
 
     //-- init API functions
@@ -496,6 +507,13 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
     {
         *bytein = spib_transmitchar(*byteout);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
     }
 
     //-- init API functions
