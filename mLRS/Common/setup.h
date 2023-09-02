@@ -253,7 +253,18 @@ void setup_sanitize_config(uint8_t config_id)
 // not displayed applies only to settings for which the default is ok
 #define SETUP_TST_NOTALLOWED(amask,pfield) ((SetupMetaData.amask & (1 << Setup.pfield)) == 0)
 
+#define TST_NOTALLOWED(amask,pfield,val) \
+    if ((SetupMetaData.amask & (1 << Setup.pfield)) == 0) { Setup.pfield = val; } \
+    if (SetupMetaData.amask != 0 && (SetupMetaData.amask & (1 << Setup.pfield)) == 0) { \
+      for (uint8_t i = 0; i < 16; i++) { if (SetupMetaData.amask & (1 << i)) { Setup.pfield = i; break; } } \
+    }
+
+#define SANITIZE(pfield,max,setupval,val) \
+    if (Setup.pfield >= max) { Setup.pfield = setupval; } \
+    if (Setup.pfield >= max) { Setup.pfield = val; }
+
     //-- BindPhrase, FrequencyBand, Mode, Ortho
+
     char bind_phrase[6+1];
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
     sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
@@ -278,22 +289,14 @@ void setup_sanitize_config(uint8_t config_id)
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
         Setup.Common[config_id].FrequencyBand = frequency_band_default;
     }
-    if (SETUP_TST_NOTALLOWED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand)) {
-        Setup.Common[config_id].FrequencyBand = frequency_band_default;
-    }
+    TST_NOTALLOWED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default);
 
-    if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = SETUP_MODE;
-    if (Setup.Common[config_id].Mode >= MODE_NUM) Setup.Common[config_id].Mode = MODE_19HZ;
-    if (SETUP_TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode)) {
-        Setup.Common[config_id].Mode = MODE_19HZ;
-    }
+    SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, MODE_19HZ);
+    TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode, MODE_19HZ);
 
-    if (Setup.Common[config_id].Ortho >= ORTHO_NUM) Setup.Common[config_id].Ortho = SETUP_RF_ORTHO;
-    if (Setup.Common[config_id].Ortho >= ORTHO_NUM) Setup.Common[config_id].Ortho = ORTHO_NONE;
-    if (SETUP_TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho)) {
-        Setup.Common[config_id].Ortho = ORTHO_NONE;
-    }
-    switch (Setup.Common[config_id].FrequencyBand) {
+    SANITIZE(Common[config_id].Ortho, ORTHO_NUM, SETUP_RF_ORTHO, ORTHO_NONE);
+    TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho, ORTHO_NONE);
+    switch (Setup.Common[config_id].FrequencyBand) { // restrict ortho to 2.4GHz, 915FCC, 70CM
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_70_CM_HAM:
@@ -304,50 +307,30 @@ void setup_sanitize_config(uint8_t config_id)
 
     //-- Tx:
 
-    if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = SETUP_TX_POWER;
-    if (Setup.Tx[config_id].Power >= RFPOWER_LIST_NUM) Setup.Tx[config_id].Power = RFPOWER_LIST_NUM - 1;
+    SANITIZE(Tx[config_id].Power, RFPOWER_LIST_NUM, SETUP_TX_POWER, RFPOWER_LIST_NUM - 1);
 
-    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
-    if (Setup.Tx[config_id].Diversity >= DIVERSITY_NUM) Setup.Tx[config_id].Diversity = DIVERSITY_DEFAULT;
-    if (SETUP_TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].Diversity)) {
-        Setup.Tx[config_id].Diversity = DIVERSITY_ANTENNA1;
-    }
+    SANITIZE(Tx[config_id].Diversity, DIVERSITY_NUM, SETUP_TX_DIVERSITY, DIVERSITY_DEFAULT);
+    TST_NOTALLOWED(Tx_Diversity_allowed_mask, Tx[config_id].Diversity, DIVERSITY_ANTENNA1);
 
-    if (Setup.Tx[config_id].ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
-    if (Setup.Tx[config_id].ChannelsSource >= CHANNEL_SOURCE_NUM) Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
-    if (SETUP_TST_NOTALLOWED(Tx_ChannelsSource_allowed_mask, Tx[config_id].ChannelsSource)) {
-        Setup.Tx[config_id].ChannelsSource = CHANNEL_SOURCE_NONE;
-    }
+    SANITIZE(Tx[config_id].ChannelsSource, CHANNEL_SOURCE_NUM, SETUP_TX_CHANNELS_SOURCE, CHANNEL_SOURCE_NONE);
+    TST_NOTALLOWED(Tx_ChannelsSource_allowed_mask, Tx[config_id].ChannelsSource, CHANNEL_SOURCE_NONE);
 
-    if (Setup.Tx[config_id].InMode >= IN_CONFIG_NUM) Setup.Tx[config_id].InMode = SETUP_TX_IN_MODE;
-    if (Setup.Tx[config_id].InMode >= IN_CONFIG_NUM) Setup.Tx[config_id].InMode = IN_CONFIG_SBUS;
-    if (SETUP_TST_NOTALLOWED(Tx_InMode_allowed_mask, Tx[config_id].InMode)) {
-        Setup.Tx[config_id].InMode = IN_CONFIG_SBUS;
-    }
+    SANITIZE(Tx[config_id].InMode, IN_CONFIG_NUM, SETUP_TX_IN_MODE, IN_CONFIG_SBUS);
+    TST_NOTALLOWED(Tx_InMode_allowed_mask, Tx[config_id].InMode, IN_CONFIG_SBUS);
 
-    if (Setup.Tx[config_id].SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
-    if (Setup.Tx[config_id].SerialDestination >= SERIAL_DESTINATION_NUM) Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
-    if (SETUP_TST_NOTALLOWED(Tx_SerialDestination_allowed_mask, Tx[config_id].SerialDestination)) {
-        Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
-    }
+    SANITIZE(Tx[config_id].SerialDestination, SERIAL_DESTINATION_NUM, SETUP_TX_SERIAL_DESTINATION, SERIAL_DESTINATION_SERIAL);
+    TST_NOTALLOWED(Tx_SerialDestination_allowed_mask, Tx[config_id].SerialDestination, SERIAL_DESTINATION_SERIAL);
 
-    if (Setup.Tx[config_id].ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
-    if (Setup.Tx[config_id].ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Tx[config_id].ChannelOrder = CHANNEL_ORDER_AETR;
+    SANITIZE(Tx[config_id].ChannelOrder, CHANNEL_ORDER_NUM, SETUP_TX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
 
-    if (Setup.Tx[config_id].SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
-    if (Setup.Tx[config_id].SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Tx[config_id].SerialBaudrate = SERIAL_BAUDRATE_115200;
+    SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
 
-    if (Setup.Tx[config_id].SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
-    if (Setup.Tx[config_id].SendRadioStatus >= TX_SEND_RADIO_STATUS_NUM) Setup.Tx[config_id].SendRadioStatus = TX_SEND_RADIO_STATUS_OFF;
+    SANITIZE(Tx[config_id].SendRadioStatus, TX_SEND_RADIO_STATUS_NUM, SETUP_TX_SEND_RADIO_STATUS, TX_SEND_RADIO_STATUS_OFF);
 
-    if (Setup.Tx[config_id].Buzzer >= BUZZER_NUM) Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
-    if (Setup.Tx[config_id].Buzzer >= BUZZER_NUM) Setup.Tx[config_id].Buzzer = BUZZER_OFF;
-    if (SETUP_TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer)) {
-        Setup.Tx[config_id].Buzzer = BUZZER_OFF;
-    }
+    SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
+    TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);
 
-    if (Setup.Tx[config_id].CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
-    if (Setup.Tx[config_id].CliLineEnd >= CLI_LINE_END_NUM) Setup.Tx[config_id].CliLineEnd = CLI_LINE_END_CR;
+    SANITIZE(Tx[config_id].CliLineEnd, CLI_LINE_END_NUM, SETUP_TX_CLI_LINE_END, CLI_LINE_END_CR);
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
@@ -362,38 +345,24 @@ void setup_sanitize_config(uint8_t config_id)
 
     //-- Rx:
 
-    if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = SETUP_RX_POWER;
-    if (Setup.Rx.Power >= RFPOWER_LIST_NUM) Setup.Rx.Power = RFPOWER_LIST_NUM - 1;
+    SANITIZE(Rx.Power, RFPOWER_LIST_NUM, SETUP_RX_POWER, RFPOWER_LIST_NUM - 1);
 
-    if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
-    if (Setup.Rx.Diversity >= DIVERSITY_NUM) Setup.Rx.Diversity = DIVERSITY_DEFAULT;
-    if (SETUP_TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.Diversity)) {
-        Setup.Rx.Diversity = DIVERSITY_ANTENNA1;
-    }
+    SANITIZE(Rx.Diversity, DIVERSITY_NUM, SETUP_RX_DIVERSITY, DIVERSITY_DEFAULT);
+    TST_NOTALLOWED(Rx_Diversity_allowed_mask, Rx.Diversity,  DIVERSITY_ANTENNA1);
 
-    if (Setup.Rx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Rx.ChannelOrder = SETUP_RX_CHANNEL_ORDER;
-    if (Setup.Rx.ChannelOrder >= CHANNEL_ORDER_NUM) Setup.Rx.ChannelOrder = CHANNEL_ORDER_AETR;
+    SANITIZE(Rx.ChannelOrder, CHANNEL_ORDER_NUM, SETUP_RX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
 
-    if (Setup.Rx.OutMode >= OUT_CONFIG_NUM) Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
-    if (Setup.Rx.OutMode >= OUT_CONFIG_NUM) Setup.Rx.OutMode = OUT_CONFIG_SBUS;
-    if (SETUP_TST_NOTALLOWED(Rx_OutMode_allowed_mask, Rx.OutMode)) {
-        Setup.Rx.OutMode = OUT_CONFIG_SBUS;
-    }
+    SANITIZE(Rx.OutMode, OUT_CONFIG_NUM, SETUP_RX_OUT_MODE, OUT_CONFIG_SBUS);
+    TST_NOTALLOWED(Rx_OutMode_allowed_mask, Rx.OutMode, OUT_CONFIG_SBUS);
 
-    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
-    if (Setup.Rx.OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutRssiChannelMode = 0;
+    SANITIZE(Rx.OutRssiChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_RSSI_CHANNEL, 0);
 
-    if (Setup.Rx.OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutLqChannelMode = SETUP_RX_OUT_LQ_CHANNEL;
-    if (Setup.Rx.OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_NUM) Setup.Rx.OutLqChannelMode = 0;
+    SANITIZE(Rx.OutLqChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_LQ_CHANNEL, 0);
 
-    if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
-    if (Setup.Rx.FailsafeMode >= FAILSAFE_MODE_NUM) Setup.Rx.FailsafeMode = FAILSAFE_MODE_NO_SIGNAL;
+    SANITIZE(Rx.FailsafeMode, FAILSAFE_MODE_NUM, SETUP_RX_FAILSAFE_MODE, FAILSAFE_MODE_NO_SIGNAL);
 
-    if (Setup.Rx.Buzzer > BUZZER_LOST_PACKETS) Setup.Rx.Buzzer = SETUP_RX_BUZZER;
-    if (Setup.Rx.Buzzer > BUZZER_LOST_PACKETS) Setup.Rx.Buzzer = BUZZER_OFF;
-    if (SETUP_TST_NOTALLOWED(Rx_Buzzer_allowed_mask, Rx.Buzzer)) {
-        Setup.Rx.Buzzer = BUZZER_OFF;
-    }
+    SANITIZE(Rx.Buzzer, BUZZER_LOST_PACKETS + 1, SETUP_RX_BUZZER, BUZZER_OFF);
+    TST_NOTALLOWED(Rx_Buzzer_allowed_mask, Rx.Buzzer, BUZZER_OFF);
 
     for (uint8_t ch = 0; ch < 12; ch++) {
         if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] < -120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
@@ -403,17 +372,13 @@ void setup_sanitize_config(uint8_t config_id)
         if (Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] > 2) Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1;
     }
 
-    if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
-    if (Setup.Rx.SerialBaudrate >= SERIAL_BAUDRATE_NUM) Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+    SANITIZE(Rx.SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_RX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_57600);
 
-    if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
-    if (Setup.Rx.SerialLinkMode >= SERIAL_LINK_MODE_NUM) Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_TRANSPARENT;
+    SANITIZE(Rx.SerialLinkMode, SERIAL_LINK_MODE_NUM, SETUP_RX_SERIAL_LINK_MODE, SERIAL_LINK_MODE_TRANSPARENT);
 
-    if (Setup.Rx.SendRadioStatus >= RX_SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
-    if (Setup.Rx.SendRadioStatus >= RX_SEND_RADIO_STATUS_NUM) Setup.Rx.SendRadioStatus = RX_SEND_RADIO_STATUS_OFF;
+    SANITIZE(Rx.SendRadioStatus, RX_SEND_RADIO_STATUS_NUM, SETUP_RX_SEND_RADIO_STATUS, RX_SEND_RADIO_STATUS_OFF);
 
-    if (Setup.Rx.SendRcChannels >= SEND_RC_CHANNELS_NUM) Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
-    if (Setup.Rx.SendRcChannels >= SEND_RC_CHANNELS_NUM) Setup.Rx.SendRcChannels = SEND_RC_CHANNELS_OFF;
+    SANITIZE(Rx.SendRcChannels, SEND_RC_CHANNELS_NUM, SETUP_RX_SEND_RC_CHANNELS, SEND_RC_CHANNELS_OFF);
 
     //-- Spares and deprecated options:
     // should be 0xFF'ed
@@ -507,12 +472,12 @@ void setup_configure_config(uint8_t config_id)
   //-- Diversity
 
 #ifdef DEVICE_HAS_DIVERSITY
-#ifdef DEVICE_IS_TRANSMITTER
+  #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].Diversity) {
-#endif
-#ifdef DEVICE_IS_RECEIVER
+  #endif
+  #ifdef DEVICE_IS_RECEIVER
     switch (Setup.Rx.Diversity) {
-#endif
+  #endif
     case DIVERSITY_DEFAULT:
         Config.Diversity = DIVERSITY_DEFAULT;
         Config.ReceiveUseAntenna1 = true;
