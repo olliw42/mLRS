@@ -564,7 +564,7 @@ RESTARTCONTROLLER:
   if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
   if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
-  IF_SX1(sx.StartUp(&Config.Sx));
+  IF_SX(sx.StartUp(&Config.Sx));
   IF_SX2(sx2.StartUp(&Config.Sx));
   bind.Init();
   fhss.Init(&Config.Fhss);
@@ -675,7 +675,7 @@ RESTARTCONTROLLER:
         }break;
     }//end of switch(link_state)
 
-IF_SX1(
+IF_SX(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX_IRQ_TX_DONE) {
