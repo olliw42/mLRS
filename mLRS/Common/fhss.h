@@ -46,7 +46,7 @@
 #endif
 
 
-#ifdef DEVICE_HAS_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
@@ -630,13 +630,86 @@ class tFhssBase
 };
 
 
+#ifndef DEVICE_HAS_DUAL_SX126x_SX128x
+
 class tFhss : public tFhssBase
 {
   public:
-    void Init(tFhssGlobalConfig* fhss)
+    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
     {
         tFhssBase::Init(fhss->Num, fhss->Seed, fhss->FrequencyBand, fhss->Ortho, fhss->Except);
     }
+
+    uint32_t GetCurrFreq1(void) { return GetCurrFreq(); }
+    uint32_t GetCurrFreq2(void) { return GetCurrFreq(); }
 };
+
+#else
+
+class tFhss
+{
+  public:
+    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
+    {
+        fhss900MHz.Init(fhss->Num, fhss->Seed, fhss->FrequencyBand, fhss->Ortho, fhss->Except);
+        fhss2p4GHz.Init(fhss2->Num, fhss2->Seed, fhss2->FrequencyBand, fhss2->Ortho, fhss2->Except);
+    }
+
+    void Start(void)
+    {
+        fhss900MHz.Start();
+        fhss2p4GHz.Start();
+    }
+
+    uint8_t Cnt(void)
+    {
+        return fhss900MHz.Cnt();
+    }
+
+    uint8_t CurrI(void)
+    {
+        return fhss900MHz.CurrI();
+    }
+
+    uint32_t GetCurrFreq1(void)
+    {
+        return fhss900MHz.GetCurrFreq();
+    }
+
+    uint32_t GetCurrFreq2(void)
+    {
+        return fhss2p4GHz.GetCurrFreq();
+    }
+
+    void HopToNext(void)
+    {
+        fhss900MHz.HopToNext();
+        fhss2p4GHz.HopToNext();
+    }
+
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    {
+        fhss900MHz.SetToBind(frame_rate_ms);
+        fhss2p4GHz.SetToBind(frame_rate_ms);
+    }
+
+    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    bool HopToNextBind(void)
+    {
+        return false; // TODO ???
+    }
+
+    // only used by receiver
+    uint8_t GetCurrFrequencyBand(void)
+    {
+        return fhss900MHz.GetCurrFrequencyBand();
+    }
+
+  private:
+    tFhssBase fhss900MHz;
+    tFhssBase fhss2p4GHz;
+};
+
+#endif
 
 #endif // FHSS_H

@@ -28,10 +28,10 @@ this naming convention is used (with few exceptions):
 - USE_XXXX: These are determined through some processing, which can involve the DEVICE_HAS_XXXX flags. Must
   NEVER be modified or set by user.
 
-For devs: In follow-up code therefore the USE_XXXX flags should be used (if available) to enable/disable code
-for a feature. If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective
-DEVICE_HAS_XXXX flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor"
-of the feature (example: IN feature with normal or inverted UART levels).
+In follow up code therefore the USE_XXXX flags should be used (if available) to enable/disable code for a feature.
+If a USE_XXXX flag is not available (example: DEVICE_HAS_DIVERSITY) then of course the respective DEVICE_HAS_XXXX
+flag needs to be used. Also, DEVICE_HAS_XXXX flags may have to be used to distinguish the "flavor" of the feature
+(example: IN feature with normal or inverted UART levels).
 
 Many DEVICE_XXXX feature flags are available, which can be set in the device hal files. They are listed in the
 following for the tx-hal and rx-hal files.
@@ -49,16 +49,16 @@ In tx-hal files:
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
-#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180°, and 5-way switch
-#define DEVICE_HAS_FIVEWAY          // board has 5-way switch (without display)
+#define DEVICE_HAS_I2C_DISPLAY          // board has DISPLAY on I2C, and 5-way switch
+#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has DISPLAY on I2C, rotated 180°, and 5-way switch
+#define DEVICE_HAS_FIVEWAY          // board has 5-way switch (no display)
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
-#define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
+#define DEVICE_HAS_SYSTEMBOOT       // board has a mean to invoke the system bootloader on startup
 
 In rx-hal files:
 
@@ -70,7 +70,7 @@ In rx-hal files:
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
-#define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
+#define DEVICE_HAS_SYSTEMBOOT       // board has a mean to invoke the system bootloader on startup
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
@@ -190,11 +190,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
-#include "rx-hal-easysolder-e77-e22-wle5cc.h"
+//#include "rx-hal-easysolder-e77-e22-wle5cc.h"
+#include "rx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-#include "tx-hal-easysolder-e77-e22-wle5cc.h"
+//#include "tx-hal-easysolder-e77-e22-wle5cc.h"
+#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 
@@ -298,6 +300,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x
   #define SX_DRIVER Sx127xDriver
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+  #define SX_DRIVER Sx126xDriver
 #else
   #define SX_DRIVER Sx128xDriver
 #endif
@@ -310,12 +314,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #else
     #define SX2_DRIVER Sx128xDriver2
   #endif
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+  #define SX2_DRIVER Sx128xDriver2
 #else
   #define SX2_DRIVER SxDriverDummy
 #endif
 
 
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
   #define IF_ANTENNA1(x)            if (Config.ReceiveUseAntenna1) { x; }
@@ -352,7 +358,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #error Must be either transmitter or receiver !
 #endif
 
-#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x
+#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x
   #error Must be either SX128x or SX127x or SX126x !
 #endif
 

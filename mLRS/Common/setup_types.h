@@ -393,11 +393,12 @@ typedef struct
     uint8_t Mode;
 
     tSxGlobalConfig Sx;
+    tSxGlobalConfig Sx2;
     uint8_t send_frame_tmo_ms;
-
     uint16_t FrameSyncWord;
-    
+
     tFhssGlobalConfig Fhss;
+    tFhssGlobalConfig Fhss2;
 
     uint16_t LQAveragingPeriod;
 

@@ -262,22 +262,51 @@ The default selection of frequency bands can be overruled by feature defines.
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22"
+/*  #define DEVICE_NAME "DIY E77 E22"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   //#define FREQUENCY_BAND_866_MHZ_IN
   //#define FREQUENCY_BAND_433_MHZ
-  //#define FREQUENCY_BAND_70_CM_HAM
+  //#define FREQUENCY_BAND_70_CM_HAM */
+
+  #define DEVICE_NAME "DIY E77 E28 DualBand"
+  #define DEVICE_IS_RECEIVER
+
+  #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_2P4_GHZ
+/*
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ */
+/*  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC */
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22"
+/*  #define DEVICE_NAME "DIY E77 E22"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC */
+
+  #define DEVICE_NAME "DIY E77 E28 DualBand"
+  #define DEVICE_IS_TRANSMITTER
+
+  #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
+  #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_2P4_GHZ
+/*
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ */
+/*
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC */
 #endif
 
 
