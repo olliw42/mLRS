@@ -19,6 +19,7 @@
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_COM_ON_USB
 //#define DEVICE_HAS_NO_COM
+//#define DEVICE_HAS_SERIAL_ON_USB
 //#define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
@@ -94,7 +95,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
-/*
+
 #define UARTC_USE_UART2 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
@@ -102,7 +103,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
-*/
+
 #define UART_USE_UART1 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
