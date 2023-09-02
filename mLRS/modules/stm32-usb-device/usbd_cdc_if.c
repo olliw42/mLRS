@@ -189,6 +189,8 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 static int8_t CDC_Init(void)
 {
 	  USBD_CDC_SetRxBuffer(&husbd_CDC, usb_rcbuf); //usb_rxbuf); ??????
+    usb_flush();
+
 	  return (USBD_OK);
 }
 
