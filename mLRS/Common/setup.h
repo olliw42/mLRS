@@ -535,6 +535,8 @@ void setup_configure_config(uint8_t config_id)
 
     configure_mode(Setup.Common[config_id].Mode);
 
+    Config.Sx.FrequencyBand = Config.FrequencyBand;
+
     //-- Fhss
 
     Config.Fhss.FrequencyBand = Config.FrequencyBand;

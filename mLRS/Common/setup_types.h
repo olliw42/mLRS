@@ -368,6 +368,7 @@ typedef struct
     uint8_t LoraConfigIndex;
     uint32_t FlrcSyncWord;
     int8_t Power_dbm;
+    uint8_t FrequencyBand;
     // helper
     bool is_lora;
     bool modeIsLora(void) { return is_lora; }
