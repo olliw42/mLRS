@@ -24,20 +24,6 @@ https://www.thethingsnetwork.org/forum/t/should-private-lorawan-networks-use-a-d
 // SX Driver
 //-------------------------------------------------------
 
-typedef struct {
-    uint8_t SpreadingFactor;
-    uint8_t Bandwidth;
-    uint8_t CodingRate;
-    uint8_t PreambleLength;
-    uint8_t HeaderType;
-    uint8_t PayloadLength;
-    uint8_t CrcEnabled;
-    uint8_t InvertIQ;
-    uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
-} tSxLoraConfiguration;
-
-
 const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
     { .SpreadingFactor = SX1276_LORA_SF6,
       .Bandwidth = SX1276_LORA_BW_500,
@@ -110,7 +96,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
-        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+        SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
@@ -123,8 +109,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
     }
 
-    void Configure(void)
+    void Configure(tSxGlobalConfig* global_config)
     {
+        gconfig = global_config;
+
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
                                          SX1276_ACCESS_SHARED_REG_LORA |
@@ -133,7 +121,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetStandby();
         //SetOperationMode(SX1276_PACKET_TYPE_LORA, SX1276_LOW_FREQUENCY_MODE_OFF);
 
-        uint8_t band_width = Sx127xLoraConfiguration[Config.LoraConfigIndex].Bandwidth;
+        uint8_t band_width = Sx127xLoraConfiguration[gconfig->LoraConfigIndex].Bandwidth;
         OptimizeSensitivity(band_width);
         OptimizeReceiverResponse(band_width);
 
@@ -144,9 +132,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         // 5 OcpOn, 4-0 OcpTrim
         //ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
         //SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, 0, SX1276_PA_RAMP_40_US);
-        SetRfPower_dbm(Config.Power_dbm);
+        SetRfPower_dbm(gconfig->Power_dbm);
 
-        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+        SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
 
         // SetSyncWord(0x12);
 
@@ -223,10 +211,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void config_calc(void)
     {
-        int8_t power_dbm = Config.Power_dbm;
+        int8_t power_dbm = gconfig->Power_dbm;
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
 
-        uint8_t index = Config.LoraConfigIndex;
+        uint8_t index = gconfig->LoraConfigIndex;
         if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
         lora_configuration = &(Sx127xLoraConfiguration[index]);
 
@@ -257,6 +245,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    tSxGlobalConfig* gconfig;
     uint8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
@@ -371,7 +360,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(void)
+    void StartUp(tSxGlobalConfig* global_config)
     {
 //XX        // this is not nice, figure out where to place
 //XX#ifdef DEVICE_HAS_I2C_DAC
@@ -381,7 +370,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 //XX        SetStandby(); // should be in STDBY after reset
 //XX        delay_us(1000); // is this needed ????
 
-        Configure();
+        Configure(global_config);
         delay_us(125); // may not be needed
 
         sx_dio_enable_exti_isr();

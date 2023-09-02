@@ -39,12 +39,26 @@ tI2cDac dac;
 #endif
 
 
+typedef struct {
+    uint8_t SpreadingFactor;
+    uint8_t Bandwidth;
+    uint8_t CodingRate;
+    uint8_t PreambleLength;
+    uint8_t HeaderType;
+    uint8_t PayloadLength;
+    uint8_t CrcEnabled;
+    uint8_t InvertIQ;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxLoraConfiguration;
+
+
 class SxDriverDummy
 {
   public:
     void Init(void) {}
     bool isOk(void) { return true; }
-    void StartUp(void) {}
+    void StartUp(tSxGlobalConfig* global_config) {}
     void SetPacketType(uint8_t PacketType) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
     void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}

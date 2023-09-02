@@ -17,20 +17,6 @@
 // SX Driver
 //-------------------------------------------------------
 
-typedef struct {
-    uint8_t SpreadingFactor;
-    uint8_t Bandwidth;
-    uint8_t CodingRate;
-    uint8_t PreambleLength;
-    uint8_t HeaderType;
-    uint8_t PayloadLength;
-    uint8_t CrcEnabled;
-    uint8_t InvertIQ;
-    uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
-} tSxLoraConfiguration;
-
-
 const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
     { .SpreadingFactor = SX126X_LORA_SF5,
       .Bandwidth = SX126X_LORA_BW_500,
@@ -130,7 +116,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
-        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+        SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
@@ -139,8 +125,10 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
     }
 
-    void Configure(void)
+    void Configure(tSxGlobalConfig* global_config)
     {
+        gconfig = global_config;
+
         SetPacketType(SX126X_PACKET_TYPE_LORA);
 
         // WORKAROUND: Better Resistance of the SX1262 Tx to Antenna Mismatch,
@@ -183,9 +171,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetPaConfig_22dbm();
 
         //SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
-        SetRfPower_dbm(Config.Power_dbm);
+        SetRfPower_dbm(gconfig->Power_dbm);
 
-        SetLoraConfigurationByIndex(Config.LoraConfigIndex);
+        SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
 
         // SetSyncWord(0x1424); // public network, no need to call as it defaults to 0x1424
 
@@ -251,10 +239,10 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void config_calc(void)
     {
-        int8_t power_dbm = Config.Power_dbm;
+        int8_t power_dbm = gconfig->Power_dbm;
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
 
-        uint8_t index = Config.LoraConfigIndex;
+        uint8_t index = gconfig->LoraConfigIndex;
         if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
         lora_configuration = &(Sx126xLoraConfiguration[index]);
     }
@@ -286,6 +274,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    tSxGlobalConfig* gconfig;
     uint8_t sx_power;
     int8_t actual_power_dbm;
 };
@@ -400,13 +389,13 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(void)
+    void StartUp(tSxGlobalConfig* global_config)
     {
 #ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
-        Configure();
+        Configure(global_config);
         delay_us(125); // may not be needed if busy available
 
         sx_dio_enable_exti_isr();
@@ -518,13 +507,13 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(void)
+    void StartUp(tSxGlobalConfig* global_config)
     {
 #ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
-        Configure();
+        Configure(global_config);
         delay_us(125); // may not be needed if busy available
 
         sx2_dio_enable_exti_isr();

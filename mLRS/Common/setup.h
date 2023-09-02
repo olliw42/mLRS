@@ -406,7 +406,7 @@ void configure_mode(uint8_t mode)
     case MODE_50HZ:
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
-        Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
+        Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
         Config.send_frame_tmo_ms = MODE_50HZ_SEND_FRAME_TMO_MS; // 10;
         break;
 
@@ -414,9 +414,9 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
         Config.frame_rate_hz = 31;
 #ifdef DEVICE_HAS_SX128x
-        Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
+        Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
 #else
-        Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
+        Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
 #endif
         Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
         break;
@@ -425,11 +425,11 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
         Config.frame_rate_hz = 19;
 #ifdef DEVICE_HAS_SX128x
-        Config.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
+        Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
 #elif defined DEVICE_HAS_SX126x
-        Config.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
+        Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
 #else
-        Config.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
+        Config.Sx.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
 #endif
         Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
         break;
@@ -437,7 +437,7 @@ void configure_mode(uint8_t mode)
     case MODE_FLRC_DEV:
         Config.frame_rate_ms = 7; // 7 ms = 143 Hz
         Config.frame_rate_hz = 143;
-        Config.LoraConfigIndex = 0;
+        Config.Sx.LoraConfigIndex = 0;
         Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 3;
         break;
 
@@ -445,6 +445,9 @@ void configure_mode(uint8_t mode)
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
 
     }
+    
+    // helper for sx drivers
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_DEV);
 }
 
 
@@ -457,16 +460,16 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
-    Config.FlrcSyncWord = bind_dblword;
+    Config.Sx.FlrcSyncWord = bind_dblword;
 
     //-- Power
 
     // note: the actually used power will be determined later when the SX are set up
 #ifdef DEVICE_IS_TRANSMITTER
-    Config.Power_dbm = rfpower_list[Setup.Tx[config_id].Power].dbm;
+    Config.Sx.Power_dbm = rfpower_list[Setup.Tx[config_id].Power].dbm;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-    Config.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
+    Config.Sx.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
 #endif
 
   //-- Diversity
@@ -548,7 +551,7 @@ void setup_configure_config(uint8_t config_id)
     // modify also FrameSyncWord
     if (Config.FhssOrtho > ORTHO_NONE) {
         Config.FrameSyncWord += 0x1111 * Config.FhssOrtho;
-        Config.FlrcSyncWord += 0x11111111 * Config.FhssOrtho;
+        Config.Sx.FlrcSyncWord += 0x11111111 * Config.FhssOrtho;
     }
 
     switch (Config.FrequencyBand) {

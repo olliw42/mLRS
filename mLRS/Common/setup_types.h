@@ -365,17 +365,27 @@ typedef struct
 // can be/are derived from setup parameters, from defines, or otherwise
 typedef struct
 {
+    uint8_t LoraConfigIndex;
+    uint32_t FlrcSyncWord;
+    int8_t Power_dbm;
+    // helper
+    bool is_lora;
+    bool modeIsLora(void) { return is_lora; }
+} tSxGlobalConfig;
+
+
+typedef struct
+{
     uint8_t ConfigId; // we take a copy at startup to avoid confusion
 
     uint8_t FrequencyBand;
     uint8_t Mode;
 
-    uint8_t LoraConfigIndex;
+    tSxGlobalConfig Sx;
     uint8_t send_frame_tmo_ms;
 
-    uint32_t FlrcSyncWord;
-
     uint16_t FrameSyncWord;
+    
     uint16_t FhssNum;
     uint32_t FhssSeed;
     uint8_t FhssOrtho;
@@ -383,7 +393,6 @@ typedef struct
 
     uint16_t LQAveragingPeriod;
 
-    int8_t Power_dbm;
     uint32_t SerialBaudrate;
 
     uint16_t frame_rate_ms;
@@ -399,9 +408,6 @@ typedef struct
 
     bool UseMbridge;
     bool UseCrsf;
-
-    bool modeIsLora(void) { return (Mode != MODE_FLRC_DEV); }
-    bool modeIsFLRC(void) { return (Mode == MODE_FLRC_DEV); }
 } tGlobalConfig;
 
 
