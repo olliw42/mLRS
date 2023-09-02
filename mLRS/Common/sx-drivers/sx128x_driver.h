@@ -99,15 +99,6 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
 };
 
 
-// map the irq bits on some common
-typedef enum {
-    SX12xx_IRQ_TX_DONE = SX1280_IRQ_TX_DONE,
-    SX12xx_IRQ_RX_DONE = SX1280_IRQ_RX_DONE,
-    SX12xx_IRQ_TIMEOUT = SX1280_IRQ_RX_TX_TIMEOUT,
-    SX12xx_IRQ_ALL     = SX1280_IRQ_ALL,
-} SX12xx_IRQ_ENUM;
-
-
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1280_MAX_DBM)
 {
@@ -345,6 +336,15 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+// map the irq bits
+typedef enum {
+    SX_IRQ_TX_DONE = SX1280_IRQ_TX_DONE,
+    SX_IRQ_RX_DONE = SX1280_IRQ_RX_DONE,
+    SX_IRQ_TIMEOUT = SX1280_IRQ_RX_TX_TIMEOUT,
+    SX_IRQ_ALL     = SX1280_IRQ_ALL,
+} SX_IRQ_ENUM;
+
+
 class Sx128xDriver : public Sx128xDriverCommon
 {
   public:
@@ -481,6 +481,14 @@ class Sx128xDriver : public Sx128xDriverCommon
 #ifndef SX2_RESET
     #error SX2 must have a RESET pin !!
 #endif
+
+// map the irq bits
+typedef enum {
+    SX2_IRQ_TX_DONE = SX1280_IRQ_TX_DONE,
+    SX2_IRQ_RX_DONE = SX1280_IRQ_RX_DONE,
+    SX2_IRQ_TIMEOUT = SX1280_IRQ_RX_TX_TIMEOUT,
+    SX2_IRQ_ALL     = SX1280_IRQ_ALL,
+} SX2_IRQ_ENUM;
 
 
 class Sx128xDriver2 : public Sx128xDriverCommon

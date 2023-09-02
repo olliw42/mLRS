@@ -219,8 +219,8 @@ IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
-    irq_status = sx.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
-    if (irq_status & SX12xx_IRQ_RX_DONE) {
+    irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
+    if (irq_status & SX_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
             uint64_t bind_signature;
             sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
@@ -237,8 +237,8 @@ IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     sx2_dio_exti_isr_clearflag();
-    irq2_status = sx2.GetAndClearIrqStatus(SX12xx_IRQ_ALL);
-    if (irq2_status & SX12xx_IRQ_RX_DONE) {
+    irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
+    if (irq2_status & SX2_IRQ_RX_DONE) {
         if (bind.IsInBind()) {
             uint64_t bind_signature;
             sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
@@ -678,14 +678,14 @@ RESTARTCONTROLLER:
 IF_SX1(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-            if (irq_status & SX12xx_IRQ_TX_DONE) {
+            if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_state = LINK_STATE_RECEIVE;
                 DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
-            if (irq_status & SX12xx_IRQ_RX_DONE) {
+            if (irq_status & SX_IRQ_RX_DONE) {
                 irq_status = 0;
                 bool do_clock_reset = (link_rx2_status == RX_STATUS_NONE);
                 link_rx1_status = do_receive(ANTENNA_1, do_clock_reset);
@@ -694,13 +694,13 @@ IF_SX1(
             }
         }
 
-        if (irq_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+        if (irq_status & SX_IRQ_RX_DONE) { // R, T, TW
             FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
         }
-        if (irq_status & SX12xx_IRQ_TX_DONE) {
+        if (irq_status & SX_IRQ_TX_DONE) {
             FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
         }
-        if (irq_status & SX12xx_IRQ_TIMEOUT) {
+        if (irq_status & SX_IRQ_TIMEOUT) {
             FAILALWAYS(BLINK_COMMON, "IRQ TMO FAIL");
         }
     }//end of if(irq_status)
@@ -708,14 +708,14 @@ IF_SX1(
 IF_SX2(
     if (irq2_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
-            if (irq2_status & SX12xx_IRQ_TX_DONE) {
+            if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_state = LINK_STATE_RECEIVE;
                 DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
-            if (irq2_status & SX12xx_IRQ_RX_DONE) {
+            if (irq2_status & SX2_IRQ_RX_DONE) {
                 irq2_status = 0;
                 bool do_clock_reset = (link_rx1_status == RX_STATUS_NONE);
                 link_rx2_status = do_receive(ANTENNA_2, do_clock_reset);
@@ -724,13 +724,13 @@ IF_SX2(
             }
         }
 
-        if (irq2_status & SX12xx_IRQ_RX_DONE) { // R, T, TW
+        if (irq2_status & SX2_IRQ_RX_DONE) { // R, T, TW
             FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
         }
-        if (irq2_status & SX12xx_IRQ_TX_DONE) {
+        if (irq2_status & SX2_IRQ_TX_DONE) {
             FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
         }
-        if (irq2_status & SX12xx_IRQ_TIMEOUT) {
+        if (irq2_status & SX2_IRQ_TIMEOUT) {
             FAILALWAYS(BLINK_ALTERNATE, "IRQ2 TMO FAIL");
         }
     }//end of if(irq2_status)

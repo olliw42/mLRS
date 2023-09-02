@@ -57,15 +57,6 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
 };
 
 
-// map the irq bits on some common
-typedef enum {
-    SX12xx_IRQ_TX_DONE = SX126X_IRQ_TX_DONE,
-    SX12xx_IRQ_RX_DONE = SX126X_IRQ_RX_DONE,
-    SX12xx_IRQ_TIMEOUT = SX126X_IRQ_RX_TX_TIMEOUT,
-    SX12xx_IRQ_ALL     = SX126X_IRQ_ALL,
-} SX12xx_IRQ_ENUM;
-
-
 typedef enum {
     SX12xx_OSCILLATOR_CONFIG_TXCO_1P6_V = SX126X_DIO3_OUTPUT_1_6,
     SX12xx_OSCILLATOR_CONFIG_TXCO_1P7_V = SX126X_DIO3_OUTPUT_1_7,
@@ -304,6 +295,15 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+// map the irq bits
+typedef enum {
+    SX_IRQ_TX_DONE = SX126X_IRQ_TX_DONE,
+    SX_IRQ_RX_DONE = SX126X_IRQ_RX_DONE,
+    SX_IRQ_TIMEOUT = SX126X_IRQ_RX_TX_TIMEOUT,
+    SX_IRQ_ALL     = SX126X_IRQ_ALL,
+} SX_IRQ_ENUM;
+
+
 class Sx126xDriver : public Sx126xDriverCommon
 {
   public:
@@ -441,6 +441,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 #ifndef SX2_RESET
     #error SX2 must have a RESET pin !!
 #endif
+
+// map the irq bits
+typedef enum {
+    SX2_IRQ_TX_DONE = SX126X_IRQ_TX_DONE,
+    SX2_IRQ_RX_DONE = SX126X_IRQ_RX_DONE,
+    SX2_IRQ_TIMEOUT = SX126X_IRQ_RX_TX_TIMEOUT,
+    SX2_IRQ_ALL     = SX126X_IRQ_ALL,
+} SX2_IRQ_ENUM;
 
 
 class Sx126xDriver2 : public Sx126xDriverCommon

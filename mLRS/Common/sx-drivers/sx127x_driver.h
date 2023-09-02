@@ -53,15 +53,6 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
 };
 
 
-// map the irq bits on some common
-typedef enum {
-    SX12xx_IRQ_TX_DONE = SX1276_IRQ_TX_DONE,
-    SX12xx_IRQ_RX_DONE = SX1276_IRQ_RX_DONE,
-    SX12xx_IRQ_TIMEOUT = SX1276_IRQ_RX_TIMEOUT,
-    SX12xx_IRQ_ALL     = SX1276_IRQ_ALL,
-} SX12xx_IRQ_ENUM;
-
-
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
 {
@@ -296,6 +287,15 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 //-------------------------------------------------------
 // Driver for SX1
 //-------------------------------------------------------
+
+// map the irq bits
+typedef enum {
+    SX_IRQ_TX_DONE = SX1276_IRQ_TX_DONE,
+    SX_IRQ_RX_DONE = SX1276_IRQ_RX_DONE,
+    SX_IRQ_TIMEOUT = SX1276_IRQ_RX_TIMEOUT,
+    SX_IRQ_ALL     = SX1276_IRQ_ALL,
+} SX_IRQ_ENUM;
+
 
 class Sx127xDriver : public Sx127xDriverCommon
 {
