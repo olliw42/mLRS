@@ -348,7 +348,8 @@ typedef enum {
 } FHSS_EXCEPT_ENUM;
 
 
-typedef struct {
+typedef struct
+{
     const uint32_t* freq_list;
     uint8_t freq_list_len;
     const uint8_t* bind_channel_list;
@@ -421,7 +422,7 @@ const tFhssConfig fhss_config[] = {
 };
 
 
-class FhssBase
+class tFhssBase
 {
   public:
     void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint8_t ortho, uint8_t except)
@@ -518,11 +519,13 @@ class FhssBase
         curr_i = 0;
     }
 
+    // only used for statistics
     uint8_t Cnt(void)
     {
         return cnt;
     }
 
+    // only used for statistics
     uint8_t CurrI(void)
     {
         return curr_i;
@@ -626,5 +629,14 @@ class FhssBase
     void generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except);
 };
 
+
+class tFhss : public tFhssBase
+{
+  public:
+    void Init(tFhssGlobalConfig* fhss)
+    {
+        tFhssBase::Init(fhss->Num, fhss->Seed, fhss->FrequencyBand, fhss->Ortho, fhss->Except);
+    }
+};
 
 #endif // FHSS_H

@@ -25,7 +25,7 @@
 //QUESTION:
 // how many different fhss sequences can be generated with the 32bit seed value ??
 
-uint16_t FhssBase::prng(void)
+uint16_t tFhssBase::prng(void)
 {
     const uint32_t a = 214013;
     const uint32_t c = 2531011;
@@ -37,7 +37,7 @@ uint16_t FhssBase::prng(void)
 }
 
 
-void FhssBase::generate(uint32_t seed)
+void tFhssBase::generate(uint32_t seed)
 {
     _seed = seed;
     _ortho = FHSS_ORTHO_NONE;
@@ -104,7 +104,7 @@ void FhssBase::generate(uint32_t seed)
 }
 
 
-void FhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except)
+void tFhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except)
 {
     _seed = seed;
     _ortho = ortho; // assumes that FHSS_ORTHO & ORTHO enums are aligned!

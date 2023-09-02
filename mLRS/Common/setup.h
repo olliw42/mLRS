@@ -537,53 +537,55 @@ void setup_configure_config(uint8_t config_id)
 
     //-- Fhss
 
+    Config.Fhss.FrequencyBand = Config.FrequencyBand;
+
     //Config.FhssSeed = bind_dblword;
     // this is much better for narrow bands, like 868 MHz
     // we could make it dependable with a #ifdef, but what's the point
-    Config.FhssSeed = Config.FrameSyncWord;
+    Config.Fhss.Seed = Config.FrameSyncWord;
 
-    Config.FhssExcept = EXCEPT_NONE;
-    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-        Config.FhssExcept = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
+    Config.Fhss.Except = EXCEPT_NONE;
+    if (Config.Fhss.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        Config.Fhss.Except = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
 
-    Config.FhssOrtho = Setup.Common[config_id].Ortho;
+    Config.Fhss.Ortho = Setup.Common[config_id].Ortho;
     // modify also FrameSyncWord
-    if (Config.FhssOrtho > ORTHO_NONE) {
-        Config.FrameSyncWord += 0x1111 * Config.FhssOrtho;
-        Config.Sx.FlrcSyncWord += 0x11111111 * Config.FhssOrtho;
+    if (Config.Fhss.Ortho > ORTHO_NONE) {
+        Config.FrameSyncWord += 0x1111 * Config.Fhss.Ortho;
+        Config.Sx.FlrcSyncWord += 0x11111111 * Config.Fhss.Ortho;
     }
 
-    switch (Config.FrequencyBand) {
+    switch (Config.Fhss.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         switch (Config.Mode) {
-        case MODE_50HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
-        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-        case MODE_FLRC_DEV: Config.FhssNum = FHSS_NUM_BAND_2P4_GHZ; break;
+        case MODE_50HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
+        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
+        case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        case MODE_FLRC_DEV: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
-        Config.FhssNum = FHSS_NUM_BAND_915_MHZ_FCC;
+        Config.Fhss.Num = FHSS_NUM_BAND_915_MHZ_FCC;
         break;
     case SETUP_FREQUENCY_BAND_868_MHZ:
-        Config.FhssNum = FHSS_NUM_BAND_868_MHZ;
+        Config.Fhss.Num = FHSS_NUM_BAND_868_MHZ;
         break;
     case SETUP_FREQUENCY_BAND_433_MHZ:
-        Config.FhssNum = FHSS_NUM_BAND_433_MHZ;
+        Config.Fhss.Num = FHSS_NUM_BAND_433_MHZ;
         break;
     case SETUP_FREQUENCY_BAND_70_CM_HAM:
         switch (Config.Mode) {
-        case MODE_31HZ: Config.FhssNum = FHSS_NUM_BAND_70_CM_HAM; break;
-        case MODE_19HZ: Config.FhssNum = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
+        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
+        case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
     case SETUP_FREQUENCY_BAND_866_MHZ_IN:
-        Config.FhssNum = FHSS_NUM_BAND_866_MHZ_IN;
+        Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
         break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
@@ -592,7 +594,7 @@ void setup_configure_config(uint8_t config_id)
     //-- More Config, may depend on above config settings
 
     Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
-    Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.FhssNum);
+    Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
 
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 

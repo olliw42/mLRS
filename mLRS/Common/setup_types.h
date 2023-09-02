@@ -374,6 +374,16 @@ typedef struct
 } tSxGlobalConfig;
 
 
+typedef struct 
+{
+    uint8_t Num;
+    uint32_t Seed;
+    uint8_t FrequencyBand;
+    uint8_t Ortho;
+    uint8_t Except;
+} tFhssGlobalConfig;
+
+
 typedef struct
 {
     uint8_t ConfigId; // we take a copy at startup to avoid confusion
@@ -386,10 +396,7 @@ typedef struct
 
     uint16_t FrameSyncWord;
     
-    uint16_t FhssNum;
-    uint32_t FhssSeed;
-    uint8_t FhssOrtho;
-    uint8_t FhssExcept;
+    tFhssGlobalConfig Fhss;
 
     uint16_t LQAveragingPeriod;
 

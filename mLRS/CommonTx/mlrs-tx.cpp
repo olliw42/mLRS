@@ -672,7 +672,7 @@ RESTARTCONTROLLER:
   IF_SX1(sx.StartUp(&Config.Sx));
   IF_SX2(sx2.StartUp(&Config.Sx));
   bind.Init();
-  fhss.Init(Config.FhssNum, Config.FhssSeed, Config.FrequencyBand, Config.FhssOrtho, Config.FhssExcept);
+  fhss.Init(&Config.Fhss);
   fhss.Start();
 
   sx.SetRfFrequency(fhss.GetCurrFreq());

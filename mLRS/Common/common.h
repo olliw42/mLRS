@@ -189,7 +189,7 @@ SX2_DRIVER sx2;
 
 Stats stats;
 
-FhssBase fhss;
+tFhss fhss;
 
 BindBase bind;
 
