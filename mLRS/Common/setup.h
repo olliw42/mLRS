@@ -574,6 +574,7 @@ void setup_configure_config(uint8_t config_id)
     //-- Fhss
 
     Config.Fhss.FrequencyBand = Config.FrequencyBand;
+    Config.Fhss.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
 
     //Config.FhssSeed = bind_dblword;
     // this is much better for narrow bands, like 868 MHz
@@ -629,8 +630,10 @@ void setup_configure_config(uint8_t config_id)
     }
 
     Config.Fhss2 = Config.Fhss;
+
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
+    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_2P4_GHZ);
     switch (Config.Fhss2.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         switch (Config.Mode) {
@@ -653,6 +656,7 @@ void setup_configure_config(uint8_t config_id)
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
     //-- Serial
+
 #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].SerialBaudrate) {
 #endif

@@ -382,6 +382,7 @@ typedef struct
     uint8_t FrequencyBand;
     uint8_t Ortho;
     uint8_t Except;
+    uint16_t FrequencyBand_allowed_mask;
 } tFhssGlobalConfig;
 
 
