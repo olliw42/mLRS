@@ -272,7 +272,7 @@ The default selection of frequency bands can be overruled by feature defines.
   //#define FREQUENCY_BAND_70_CM_HAM
 */
 
-#if 0
+#if 1
   #define DEVICE_NAME "DIY E77 E28 DualBand"
   #define DEVICE_IS_RECEIVER
 
@@ -287,7 +287,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC */
 #endif
-#if 1
+#if 0
   #define DEVICE_NAME "DIY E77 E22 DualBand"
   #define DEVICE_IS_RECEIVER
 
@@ -308,7 +308,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 */
 
-#if 0
+#if 1
   #define DEVICE_NAME "DIY E77 E28 DualBand"
   #define DEVICE_IS_TRANSMITTER
 
@@ -324,7 +324,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC */
 #endif
-#if 1
+#if 0
   #define DEVICE_NAME "DIY E77 E22 DualBand"
   #define DEVICE_IS_TRANSMITTER
 
