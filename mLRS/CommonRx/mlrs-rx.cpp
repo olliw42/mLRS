@@ -41,7 +41,7 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
 #ifdef USE_SERIAL
@@ -232,7 +232,7 @@ void SX_DIO_EXTI_IRQHandler(void)
         }
     }
 })
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#ifdef USE_SX2
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {

@@ -276,8 +276,11 @@ void setup_sanitize_config(uint8_t config_id)
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
     sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
 
-#if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    // DUALBAND!
+#if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_2P4_GHZ
+    // DUALBAND 868/915 MHz & 2.4 GHz!
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
+    // DUALBAND 868/915 MHz & 433 MHz!
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
 #elif defined FREQUENCY_BAND_2P4_GHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
@@ -457,6 +460,7 @@ void configure_mode(uint8_t mode)
     }
 
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
+
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     switch (Config.Mode) {
     case MODE_31HZ:
