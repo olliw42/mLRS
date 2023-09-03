@@ -46,7 +46,7 @@
 #endif
 
 
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
@@ -646,7 +646,7 @@ class tFhssBase
 };
 
 
-#ifndef DEVICE_HAS_DUAL_SX126x_SX128x
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
 
 class tFhss : public tFhssBase
 {
@@ -672,7 +672,7 @@ class tFhss
         fhss900MHz.Init(fhss->Num, fhss->Seed,
                           fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
                           fhss->Ortho, fhss->Except);
-        fhss2p4GHz.Init(fhss2->Num, fhss2->Seed,
+        fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
                           fhss2->FrequencyBand, fhss2->FrequencyBand_allowed_mask,
                           fhss2->Ortho, fhss2->Except);
     }
@@ -680,7 +680,7 @@ class tFhss
     void Start(void)
     {
         fhss900MHz.Start();
-        fhss2p4GHz.Start();
+        fhss2ndBand.Start();
     }
 
     uint8_t Cnt(void)
@@ -700,26 +700,26 @@ class tFhss
 
     uint32_t GetCurrFreq2(void)
     {
-        return fhss2p4GHz.GetCurrFreq();
+        return fhss2ndBand.GetCurrFreq();
     }
 
     void HopToNext(void)
     {
         fhss900MHz.HopToNext();
-        fhss2p4GHz.HopToNext();
+        fhss2ndBand.HopToNext();
     }
 
     void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
         fhss900MHz.SetToBind(frame_rate_ms);
-        fhss2p4GHz.SetToBind(frame_rate_ms);
+        fhss2ndBand.SetToBind(frame_rate_ms);
     }
 
     // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
     bool HopToNextBind(void)
     {
         bool hop1 = fhss900MHz.HopToNextBind();
-        bool hop2 = fhss2p4GHz.HopToNextBind();
+        bool hop2 = fhss2ndBand.HopToNextBind();
         return hop1 || hop2;
     }
 
@@ -731,7 +731,7 @@ class tFhss
 
   private:
     tFhssBase fhss900MHz;
-    tFhssBase fhss2p4GHz;
+    tFhssBase fhss2ndBand;
 };
 
 #endif

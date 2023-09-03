@@ -63,7 +63,7 @@ void setup_configure_metadata(void)
 #else
     SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
 #endif
-#elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz, not editable
@@ -87,7 +87,7 @@ void setup_configure_metadata(void)
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
@@ -140,7 +140,7 @@ void setup_configure_metadata(void)
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
@@ -436,7 +436,7 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_hz = 19;
 #ifdef DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
-#elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
 #else
         Config.Sx.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
@@ -546,7 +546,7 @@ void setup_configure_config(uint8_t config_id)
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     Config.Diversity = DIVERSITY_DEFAULT;
     Config.ReceiveUseAntenna1 = true;
     Config.ReceiveUseAntenna2 = true;
@@ -639,6 +639,21 @@ void setup_configure_config(uint8_t config_id)
         switch (Config.Mode) {
         case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        default:
+            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        }
+        break;
+    default:
+        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+    }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_433_MHZ;
+    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_433_MHZ);
+    switch (Config.Fhss2.FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_433_MHZ:
+        switch (Config.Mode) {
+        case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
+        case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }

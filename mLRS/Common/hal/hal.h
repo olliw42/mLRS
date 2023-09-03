@@ -195,8 +195,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-//#include "tx-hal-easysolder-e77-e22-wle5cc.h"
-#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
+#include "tx-hal-easysolder-e77-e22-wle5cc.h"
+//#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 
@@ -300,7 +300,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x
   #define SX_DRIVER Sx127xDriver
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX_DRIVER Sx126xDriver
 #else
   #define SX_DRIVER Sx128xDriver
@@ -316,12 +316,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
   #define SX2_DRIVER Sx128xDriver2
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+  #define SX2_DRIVER Sx126xDriver2
 #else
   #define SX2_DRIVER SxDriverDummy
 #endif
 
 
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
   #define IF_ANTENNA1(x)            if (Config.ReceiveUseAntenna1) { x; }
@@ -359,7 +361,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
   #error Must be either SX128x or SX127x or SX126x !
 #endif
 

@@ -287,12 +287,15 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-/*  #define DEVICE_NAME "DIY E77 E22"
+#if 0
+  #define DEVICE_NAME "DIY E77 E22"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC */
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
 
+#if 0
   #define DEVICE_NAME "DIY E77 E28 DualBand"
   #define DEVICE_IS_TRANSMITTER
 
@@ -307,6 +310,17 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC */
+#endif
+
+  #define DEVICE_NAME "DIY E77 E22 DualBand"
+  #define DEVICE_IS_TRANSMITTER
+
+  #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 900MHz and sx2 = SX126x @ 400MHz
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  // only one 400 MHz option choseable
+  #define FREQUENCY_BAND_433_MHZ
+
 #endif
 
 

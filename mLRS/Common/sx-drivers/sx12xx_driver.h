@@ -78,7 +78,7 @@ class SxDriverDummy
 };
 
 
-#ifdef DEVICE_HAS_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
 #include "sx126x_driver.h"
 #elif defined DEVICE_HAS_SX127x
 #include "sx127x_driver.h"
