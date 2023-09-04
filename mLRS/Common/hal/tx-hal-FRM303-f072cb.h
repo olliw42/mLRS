@@ -63,7 +63,7 @@
 #define UARTF_IRQ_PRIORITY          3 // 15 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
-#define SWUART_TIM_IRQ_PRIORITY     0 // 9  // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     0 //  9 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     3 // 14
 
 

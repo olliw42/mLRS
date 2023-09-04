@@ -19,8 +19,6 @@ ISSUES:
 
 - we should take into account in rssi scaling a LNA as well as the db min for a board & setting
 
-- sx Init implicitly uses Config, would be nicer to have this disentangled
-
 - make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
@@ -43,9 +41,15 @@ ISSUES:
 - don't allow bind, save, reload, param changes, etc, when vehicle is armed/flying
   => this requires the tx&rx to know if the vehicle is in this state
   that's possible for when mavlink mode is used, but else?
+  => two bits, one to indicate available, one to indicate armed/disarmed
+  do it on rx side by parsing mavlink, most robust
 - don't allow bind, save, reload, param changes, etc, when connection is too weak, e.g. rssi too low
 
 - buzzer: work out what to do to account for active-low and actiove-high, so that buzzer isn't permanently "on".
+
+- allow jrpin5 and in to be selected as parameter, not at compile time
+
+- factory reset
 
 
 The 3 MAIN topics TODO:
@@ -74,6 +78,7 @@ TODO:
 
 - effect of USE_DCDC? where to place it??
 
+
 Longterm TODO:
 - support high_latency2
 
@@ -84,7 +89,7 @@ Longterm TODO:
   It won't work for different hardware platforms!?
   Ultimately I think it should be all G4 (and maybe ESP32)
   alternatively: the receiver is not automatically updated together with the tx, but simply through the tx module
-  yes, that's in view of teh growing targets the only way to go, and it is sufficiently userfriendly
+  yes, that's in view of the growing targets the only way to go, and it is sufficiently user friendly
 
 - long range mode with rx only, switch to a longer-range mode when not connected
   would also allow rc data to be transmitted further out

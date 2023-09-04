@@ -47,7 +47,7 @@
 #define UARTC_IRQ_PRIORITY          1 // 11 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
-#define SWUART_TIM_IRQ_PRIORITY     0 // 9  // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY     0 //  9 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     3 // 14
 
 
@@ -89,6 +89,7 @@ static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } 
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+#define OUT_UARTx                 USART1 // UART_UARTx is not known yet, so define by hand
 
 /*
 #define SWUART_USE_TIM17 // debug
@@ -181,8 +182,6 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-
-#define OUT_UARTx                 USART1
 
 void out_init_gpio(void)
 {

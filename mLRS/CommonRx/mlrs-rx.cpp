@@ -23,7 +23,7 @@ v0.0.00:
 #define UARTC_IRQ_PRIORITY          11 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13
-#define SWUART_TIM_IRQ_PRIORITY     9  // debug on swuart
+#define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
@@ -41,7 +41,7 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
-#ifdef DEVICE_HAS_DIVERSITY
+#ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
 #ifdef USE_SERIAL
@@ -232,7 +232,7 @@ void SX_DIO_EXTI_IRQHandler(void)
         }
     }
 })
-#ifdef DEVICE_HAS_DIVERSITY
+#ifdef USE_SX2
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {

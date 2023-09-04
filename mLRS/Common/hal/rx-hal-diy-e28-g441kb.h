@@ -51,6 +51,7 @@
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+#define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
 
 #define UARTC_USE_LPUART1 // debug
 #define UARTC_BAUD                115200
@@ -134,7 +135,6 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-// UART_UARTx = USART2
 
 void out_init_gpio(void)
 {
@@ -142,16 +142,16 @@ void out_init_gpio(void)
 
 void out_set_normal(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetTXPinLevel(USART2, LL_USART_TXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 void out_set_inverted(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetTXPinLevel(USART2, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 

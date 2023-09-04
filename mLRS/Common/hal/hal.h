@@ -314,8 +314,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX2_DRIVER SxDriverDummy
 #endif
 
-
 #ifdef DEVICE_HAS_DIVERSITY
+  #define USE_SX2
+#endif
+
+#ifdef USE_SX2
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
   #define IF_ANTENNA1(x)            if (Config.ReceiveUseAntenna1) { x; }

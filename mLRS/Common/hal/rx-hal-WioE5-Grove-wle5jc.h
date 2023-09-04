@@ -60,6 +60,7 @@
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+#define OUT_UARTx                 LPUART1 // UART_UARTx is not known yet, so define by hand
 
 #define UARTC_USE_UART1_REMAPPED // debug // also UART2
 #define UARTC_BAUD                115200
@@ -143,10 +144,6 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-#if defined UART_USE_LPUART1 || defined UART_USE_LPUART1_REMAPPED
-  #define OUT_UARTx               LPUART1
-#endif
-
 
 void out_init_gpio(void)
 {
