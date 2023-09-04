@@ -18,6 +18,9 @@
 #include "../Common/channel_order.h"
 
 
+extern uint16_t micros(void);
+
+
 //-------------------------------------------------------
 // Generic Out Class
 //-------------------------------------------------------
@@ -50,7 +53,7 @@ class OutBase
 
     void Configure(uint8_t new_config);
 
-    void Do(uint16_t tnow_us);
+    void Do(void);
 
     void SendRcData(tRcData* rc, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
     void SendLinkStatistics(tOutLinkStats* lstats);
@@ -64,7 +67,7 @@ class OutBase
     void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
     void send_crsf_rcdata(tRcData* rc);
     void send_crsf_linkstatistics(tOutLinkStats* lstats);
-    void do_crsf(uint16_t tnow_us);
+    void do_crsf(void);
 
     void putbuf(uint8_t* buf, uint16_t len);
 

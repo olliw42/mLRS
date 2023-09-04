@@ -15,6 +15,9 @@
 #include "../Common/micros.h"
 
 
+extern uint16_t micros(void);
+
+
 //-------------------------------------------------------
 // Interface Implementation
 // the uart used for JR pin5 must be UART_UARTx

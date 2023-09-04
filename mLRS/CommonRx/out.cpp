@@ -7,7 +7,6 @@
 // OUT
 //********************************************************
 
-
 #include <string.h>
 #include "out.h"
 #include "../Common/thirdparty/thirdparty.h"
@@ -71,7 +70,7 @@ void OutBase::Configure(uint8_t new_config)
 }
 
 
-void OutBase::Do(uint16_t tnow_us)
+void OutBase::Do(void)
 {
     if (!initialized) return;
 
@@ -81,7 +80,7 @@ void OutBase::Do(uint16_t tnow_us)
         // nothing to do
         break;
     case OUT_CONFIG_CRSF:
-        do_crsf(tnow_us);
+        do_crsf();
         break;
     }
 }
@@ -345,9 +344,11 @@ tCrsfLinkStatistics clstats;
 }
 
 
-void OutBase::do_crsf(uint16_t tnow_us)
+void OutBase::do_crsf(void)
 {
     if (!link_stats_available) return;
+
+    uint16_t tnow_us = micros();
 
     if (link_stats_set_tstart) {
         link_stats_tstart_us = tnow_us;

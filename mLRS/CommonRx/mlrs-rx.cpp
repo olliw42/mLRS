@@ -910,7 +910,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
     }//end of if(doPostReceive2)
 
-    out.Do(micros());
+    out.Do();
 
     //-- Do mavlink
 

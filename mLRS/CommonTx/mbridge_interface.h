@@ -18,8 +18,8 @@
 #include "jr_pin5_interface.h"
 #include "../Common/protocols/mbridge_protocol.h"
 
-uint16_t micros(void);
-uint8_t mavlink_vehicle_state(void);
+extern uint16_t micros(void);
+extern uint8_t mavlink_vehicle_state(void);
 extern TxStatsBase txstats;
 
 

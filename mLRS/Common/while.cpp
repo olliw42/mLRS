@@ -7,7 +7,6 @@
 // While Transmit/Receive
 //*******************************************************
 
-
 #include <stdint.h>
 #include "while.h"
 
