@@ -47,8 +47,6 @@ ISSUES:
 
 - buzzer: work out what to do to account for active-low and actiove-high, so that buzzer isn't permanently "on".
 
-- allow jrpin5 and in to be selected as parameter, not at compile time
-
 - factory reset
 
 

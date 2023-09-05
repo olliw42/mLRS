@@ -7,6 +7,9 @@
 // hal
 //*******************************************************
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
+// 5.Sep.2023: jrpin5 and in simultaneously supported
+
+//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
 
 //-------------------------------------------------------
 // TX EByte E77 MBL Kit, STM32WLE5CC
@@ -18,11 +21,19 @@
 // USB <-> TxD,RxD pins   -> PA2,PA3 = LPUART1,UART2
 
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
-#define DEVICE_HAS_JRPIN5 // requires external diode from Tx to Rx
+#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
+#define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
+
+
+#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
+  #define DEVICE_HAS_JRPIN5
+  #undef DEVICE_HAS_IN
+  #undef DEVICE_HAS_IN_ON_JRPIN5_TX
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff

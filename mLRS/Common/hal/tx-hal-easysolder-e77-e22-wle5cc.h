@@ -7,9 +7,9 @@
 // hal
 //*******************************************************
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_SWAP_INTERNAL to JRPIN5_FULL_INTERNAL
+// 5.Sep.2023: jrpin5 and in simultaneously supported
 
-//#define MLRS_FEATURE_JRPIN5
-//#define MLRS_FEATURE_IN
+//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
 //#define MLRS_FEATURE_DIVERSITY
 //#define MLRS_FEATURE_NO_DIVERSITY
 
@@ -18,19 +18,17 @@
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_JRPIN5 // requires external diode from Tx to Rx
+#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
+#define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_SERIAL_OR_COM
 #define DEVICE_HAS_DEBUG_SWUART
 
 
-#ifdef MLRS_FEATURE_JRPIN5
-  #undef DEVICE_HAS_IN
+#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
   #define DEVICE_HAS_JRPIN5
-#endif
-#ifdef MLRS_FEATURE_IN
-  #undef DEVICE_HAS_JRPIN5
-  #define DEVICE_HAS_IN
+  #undef DEVICE_HAS_IN
+  #undef DEVICE_HAS_IN_ON_JRPIN5_TX
 #endif
 #ifdef MLRS_FEATURE_DIVERSITY
   #define DEVICE_HAS_DIVERSITY

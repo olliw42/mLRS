@@ -43,6 +43,7 @@ In tx-hal files:
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
+#define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN port with JR bay Pin5/SPort, implies support of normal and inverted UART signals
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
@@ -255,7 +256,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif // DEVICE_IS_TRANSMITTER
 
 
-#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED || \
+    defined DEVICE_HAS_IN_ON_JRPIN5_TX
   #define USE_IN
 #endif
 

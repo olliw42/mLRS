@@ -8,6 +8,9 @@
 //*******************************************************
 // 11.Feb.2023: DBG pin changed! LED pin changed! pin for artificial GND (PA0)!
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
+// 5.Sep.2023: jrpin5 and in simultaneously supported
+
+//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
 
 //-------------------------------------------------------
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
@@ -15,8 +18,16 @@
 
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
+#define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+//#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+
+
+#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
+  #define DEVICE_HAS_JRPIN5
+  #undef DEVICE_HAS_IN
+  #undef DEVICE_HAS_IN_ON_JRPIN5_TX
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -276,6 +287,7 @@ uint8_t fiveway_read(void)
 
 
 //-- ESP32 Wifi Bridge
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 #define ESP_RESET                 IO_PA9
 #define ESP_GPIO0                 IO_PB10
@@ -291,6 +303,7 @@ void esp_reset_low(void) { gpio_low(ESP_RESET); }
 
 void esp_gpio0_high(void) { gpio_high(ESP_GPIO0); }
 void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
+#endif
 
 
 //-- POWER

@@ -58,9 +58,6 @@ v0.0.00:
 #ifdef USE_USB
 #include "../modules/stm32-usb-device/stdstm32-usb-vcp.h"
 #endif
-#ifdef USE_IN
-#include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
-#endif
 #ifdef USE_DEBUG
 #ifdef DEVICE_HAS_DEBUG_SWUART
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
@@ -80,12 +77,12 @@ v0.0.00:
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "in.h"
 #include "txstats.h"
 #include "config_id.h"
 #include "cli.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
+#include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
 TxStatsBase txstats;
@@ -95,52 +92,6 @@ ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
-
-
-class In : public InBase
-{
-#ifdef USE_IN
-  public:
-    void Init(bool enable_flag)
-    {
-        InBase::Init(enable_flag);
-        if (!enable_flag) return;
-        in_init_gpio();
-        uarte_init_isroff();
-    }
-
-#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_INVERTED
-    bool config_sbus(bool enable_flag) override
-    {
-        uarte_rx_enableisr(DISABLE);
-        if (enable_flag) {
-            uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-            in_set_inverted();
-            uarte_rx_enableisr(ENABLE);
-        }
-        return true;
-    }
-#endif
-
-#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL
-    bool config_sbus_inverted(bool enable_flag) override
-    {
-        uarte_rx_enableisr(DISABLE);
-        if (enable_flag) {
-            uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-            in_set_normal();
-            uarte_rx_enableisr(ENABLE);
-        }
-        return true;
-    }
-#endif
-
-    bool available(void) override { return uarte_rx_available(); }
-    char getc(void) override { return uarte_getc(); }
-#endif
-};
-
-In in;
 
 
 //-------------------------------------------------------
@@ -428,7 +379,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
         link_task_reset();
-#if (defined DEVICE_HAS_JRPIN5)
+#ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
         case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
@@ -1016,7 +967,6 @@ IF_SX2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-#ifdef DEVICE_HAS_JRPIN5
 IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
@@ -1124,8 +1074,6 @@ IF_CRSF(
         }
     }
 );
-#endif
-#ifdef USE_IN
 IF_IN(
     if (in.Update(&rcData)) {
         // update channels
@@ -1133,7 +1081,6 @@ IF_IN(
         channelOrder.Apply(&rcData);
     }
 );
-#endif
 
     //-- Do mavlink
 
