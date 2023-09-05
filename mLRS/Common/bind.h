@@ -15,9 +15,9 @@
 #include "common_conf.h"
 
 
-volatile uint32_t millis32(void);
+extern volatile uint32_t millis32(void);
 static inline bool connected(void);
-void clock_reset(void);
+extern void clock_reset(void);
 
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;

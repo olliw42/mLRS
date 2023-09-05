@@ -11,6 +11,9 @@
 #include "while.h"
 
 
+extern uint16_t micros(void);
+
+
 void WhileBase::Init(void)
 {
     do_cnt = 0;

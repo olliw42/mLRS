@@ -14,6 +14,9 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
+extern uint16_t micros(void);
+
+
 OutBase::OutBase(void)
     : channel_order(ChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
 {

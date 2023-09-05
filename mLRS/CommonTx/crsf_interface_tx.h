@@ -21,7 +21,6 @@
 #include "jr_pin5_interface.h"
 
 
-extern uint32_t millis_32(void);
 extern TxStatsBase txstats;
 
 

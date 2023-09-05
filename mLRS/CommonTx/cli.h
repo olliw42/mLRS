@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "setup_tx.h"
+
+
+extern volatile uint32_t millis32(void);
 extern TxStatsBase txstats;
 extern tConfigId config_id;
 

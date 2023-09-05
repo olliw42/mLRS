@@ -7,14 +7,13 @@
 // ConfiId
 //********************************************************
 
-
 #include "config_id.h"
 #include "../Common/setup_types.h"
 
 
+extern volatile uint32_t millis32(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
-extern volatile uint32_t millis32();
 
 
 void tConfigId::Init(void)

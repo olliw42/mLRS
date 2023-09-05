@@ -11,7 +11,6 @@
 #pragma once
 
 
-
 #include <stdint.h>
 #include "hal/device_conf.h"
 #include "sx-drivers/sx12xx.h"

@@ -14,7 +14,9 @@
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/libs/filters.h"
 
+
 static inline bool connected(void);
+
 
 #define RADIO_LINK_SYSTEM_ID        51 // SiK uses 51, 68
 #define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC

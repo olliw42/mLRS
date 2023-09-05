@@ -12,10 +12,10 @@
 
 
 #include "../Common/hal/hal.h" // not needed but helps editor to get defines correct LOL
-#include "../Common/micros.h"
 
 
 extern uint16_t micros(void);
+extern volatile uint32_t millis32(void);
 
 
 //-------------------------------------------------------

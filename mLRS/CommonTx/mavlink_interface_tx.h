@@ -14,6 +14,8 @@
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/protocols/ardupilot_protocol.h"
 
+
+extern volatile uint32_t millis32(void);
 static inline bool connected_and_rx_setup_available(void);
 extern tSerialBase* serialport;
 

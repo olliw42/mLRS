@@ -11,11 +11,7 @@
 #pragma once
 
 
-#include <inttypes.h>
 #include "../Common/common_types.h"
-
-
-extern uint16_t micros(void);
 
 
 //-------------------------------------------------------

@@ -7,7 +7,6 @@
 // Diversity
 //********************************************************
 
-
 #include "hal/device_conf.h"
 #include "common_types.h"
 #include "link_types.h"

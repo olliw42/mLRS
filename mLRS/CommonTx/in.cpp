@@ -13,6 +13,9 @@
 #include "../Common/protocols/sbus_protocol.h"
 
 
+extern uint16_t micros(void);
+
+
 typedef enum {
     IN_STATE_IDLE = 0,
     IN_STATE_RECEIVING,
