@@ -100,7 +100,7 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx InMode: "sbus,sbus inv"
-#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_ON_JRPIN5_TX
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX
     SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
 #elif defined DEVICE_HAS_IN_NORMAL
     SetupMetaData.Tx_InMode_allowed_mask = 0b10; // only sbus inv, not editable

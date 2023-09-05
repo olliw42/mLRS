@@ -20,7 +20,7 @@
 //-------------------------------------------------------
 // Interface Implementation
 
-#ifndef DEVICE_HAS_IN_ON_JRPIN5_TX
+#if !defined DEVICE_HAS_IN_ON_JRPIN5_RX && !defined DEVICE_HAS_IN_ON_JRPIN5_TX
 
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
@@ -125,19 +125,31 @@ class tIn : public InBase
     void set_normal(void)
     {
         LL_USART_Disable(UART_UARTx);
+#ifdef DEVICE_HAS_IN_ON_JRPIN5_TX
         LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+#endif
         LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
         LL_USART_Enable(UART_UARTx);
+#ifdef DEVICE_HAS_IN_ON_JRPIN5_TX
         gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PU, UART_IO_AF, IO_SPEED_VERYFAST);
+#else
+        gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PU, UART_IO_AF, IO_SPEED_VERYFAST);
+#endif
     }
 
     void set_inverted(void)
     {
         LL_USART_Disable(UART_UARTx);
+#ifdef DEVICE_HAS_IN_ON_JRPIN5_TX
         LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+#endif
         LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
         LL_USART_Enable(UART_UARTx);
+#ifdef DEVICE_HAS_IN_ON_JRPIN5_TX
         gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+#else
+        gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
+#endif
     }
 };
 
