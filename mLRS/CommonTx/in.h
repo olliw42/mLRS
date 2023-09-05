@@ -25,21 +25,25 @@ extern uint16_t micros(void);
 class InBase
 {
   public:
-    void Init(void);
+    void Init(bool enable_flag);
 
     void Configure(uint8_t new_config);
 
     bool Update(tRcData* rc);
 
-  private:
+//XX  private:
     virtual bool available(void) { return false; }
     virtual char getc(void) { return 0; }
 
-    virtual void config_sbus(bool inverted) {}
+    virtual bool config_sbus(bool enable_flag) { return false; }
+    virtual bool config_sbus_inverted(bool enable_flag) { return false; }
+
     bool parse_sbus(tRcData* rc);
     void get_sbus_data(tRcData* rc);
 
+    bool enabled;
     uint8_t config;
+    bool initialized;
 
     uint16_t tlast_us;
     uint8_t state;

@@ -347,6 +347,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define IF_CRSF(x)
   #define IF_MBRIDGE_OR_CRSF(x)
 #endif
+#ifdef USE_IN
+  #define IF_IN(x)                  if (Config.UseIn) { x; }
+#else
+  #define IF_IN(x)
+#endif
 
 
 //-- checks

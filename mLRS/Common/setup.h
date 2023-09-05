@@ -621,12 +621,14 @@ void setup_configure_config(uint8_t config_id)
 #endif
     }
 
-    //-- Mbridge, Crsf
+    //-- Mbridge, Crsf, In
 
     Config.UseMbridge = false;
     Config.UseCrsf = false;
-#if defined DEVICE_IS_TRANSMITTER && defined DEVICE_HAS_JRPIN5
+    Config.UseIn = false;
+#ifdef DEVICE_IS_TRANSMITTER
     // conflicts must have been sorted out before in setup_sanitize()
+  #ifdef DEVICE_HAS_JRPIN5
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
         (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
         Config.UseMbridge = true;
@@ -637,6 +639,15 @@ void setup_configure_config(uint8_t config_id)
     if (Config.UseMbridge && Config.UseCrsf) {
         while (1) {} // mBridge and CRSF cannot be used simultaneously, must not happen
     }
+  #endif
+  #ifdef USE_IN
+    if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_INPORT) {
+        Config.UseIn = true;
+    }
+    if ((Config.UseMbridge && Config.UseIn) || (Config.UseCrsf && Config.UseIn)) {
+        while (1) {} // In and mBridge or CRSF cannot be used simultaneously, must not happen
+    }
+  #endif
 #endif
 }
 

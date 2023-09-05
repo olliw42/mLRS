@@ -101,25 +101,39 @@ class In : public InBase
 {
 #ifdef USE_IN
   public:
-    void Init(void)
+    void Init(bool enable_flag)
     {
-        InBase::Init();
+        InBase::Init(enable_flag);
+        if (!enable_flag) return;
         in_init_gpio();
         uarte_init_isroff();
     }
 
-    void config_sbus(bool inverted) override
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_INVERTED
+    bool config_sbus(bool enable_flag) override
     {
-        uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-        if (!inverted) {
+        uarte_rx_enableisr(DISABLE);
+        if (enable_flag) {
+            uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
             in_set_inverted();
-            gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST); //TODO: should go to hal, but UARTE_RX_IO not known to hal at the time
-        } else {
-            in_set_normal();
-            gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
+            uarte_rx_enableisr(ENABLE);
         }
-        uarte_rx_enableisr(ENABLE);
+        return true;
     }
+#endif
+
+#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL
+    bool config_sbus_inverted(bool enable_flag) override
+    {
+        uarte_rx_enableisr(DISABLE);
+        if (enable_flag) {
+            uarte_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
+            in_set_normal();
+            uarte_rx_enableisr(ENABLE);
+        }
+        return true;
+    }
+#endif
 
     bool available(void) override { return uarte_rx_available(); }
     char getc(void) override { return uarte_getc(); }
@@ -269,7 +283,6 @@ void init(void)
 
     serial.Init();
     serial2.Init();
-    in.Init();
 
     com.Init();
     cli.Init(&com);
@@ -285,6 +298,7 @@ void init(void)
 
     mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
+    in.Init(Config.UseIn);
 
     __enable_irq();
 }
@@ -1112,13 +1126,13 @@ IF_CRSF(
 );
 #endif
 #ifdef USE_IN
-    if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_INPORT) {
+IF_IN(
+    if (in.Update(&rcData)) {
         // update channels
-        if (in.Update(&rcData)) {
-            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-            channelOrder.Apply(&rcData);
-        }
+        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
+        channelOrder.Apply(&rcData);
     }
+);
 #endif
 
     //-- Do mavlink

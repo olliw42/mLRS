@@ -237,10 +237,9 @@ void sx2_dio_exti_isr_clearflag(void)
 
 
 //-- In port
-
-#if defined UARTE_USE_UART1_REMAPPED
-  #define IN_UARTx                USART1
-#endif
+// this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
+#ifdef DEVICE_HAS_IN
+#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {
@@ -248,17 +247,20 @@ void in_init_gpio(void)
 
 void in_set_normal(void)
 {
-    LL_USART_Disable(IN_UARTx);
-    LL_USART_SetRXPinLevel(IN_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(IN_UARTx);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
 
 void in_set_inverted(void)
 {
-    LL_USART_Disable(IN_UARTx);
-    LL_USART_SetRXPinLevel(IN_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(IN_UARTx);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
+#endif
 
 
 //-- Button

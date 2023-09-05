@@ -7,7 +7,6 @@
 // IN
 //********************************************************
 
-
 #include <string.h>
 #include "in.h"
 #include "../Common/setup_types.h"
@@ -20,9 +19,12 @@ typedef enum {
 } IN_STATE_ENUM;
 
 
-void InBase::Init(void)
+void InBase::Init(bool enable_flag)
 {
+    enabled = enable_flag;
+
     config = UINT8_MAX;
+    initialized = false;
 
     tlast_us = 0;
     state = IN_STATE_IDLE;
@@ -31,22 +33,38 @@ void InBase::Init(void)
 
 void InBase::Configure(uint8_t new_config)
 {
-      if (new_config == config) return;
-      config = new_config;
+    if (!enabled) return;
+    if (new_config == config) return;
 
-      switch (config) {
-      case IN_CONFIG_SBUS:
-          config_sbus(false);
-          break;
-      case IN_CONFIG_SBUS_INVERTED:
-          config_sbus(true);
-          break;
-      }
+    // first disable the previous setting
+    switch (config) {
+    case IN_CONFIG_SBUS:
+        config_sbus(false);
+        break;
+    case IN_CONFIG_SBUS_INVERTED:
+        config_sbus(false);
+        break;
+    }
+
+    initialized = false;
+
+    config = new_config;
+
+    switch (config) {
+    case IN_CONFIG_SBUS:
+        initialized = config_sbus(true);
+        break;
+    case IN_CONFIG_SBUS_INVERTED:
+        initialized = config_sbus(true);
+        break;
+    }
 }
 
 
 bool InBase::Update(tRcData* rc)
 {
+    if (!initialized) return false;
+
     switch (config) {
     case IN_CONFIG_SBUS:
     case IN_CONFIG_SBUS_INVERTED:

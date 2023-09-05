@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY E28 v007 STM32G431KB, board primarily designed as rx
+// TX DIY E28 v007 STM32G431KB
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
@@ -65,7 +65,8 @@
 #define UART_RXBUFSIZE            512
 #define UART_USE_RX_IO            IO_PA15 // normally would be PB4!!
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
+#define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
 #define UARTE_USE_UART2_REMAPPED2 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
@@ -150,7 +151,9 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- In port
-// UARTE_UARTx = USART2
+// this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
+#ifdef DEVICE_HAS_IN
+#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {
@@ -158,17 +161,22 @@ void in_init_gpio(void)
 
 void in_set_normal(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetRXPinLevel(USART2, LL_USART_RXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
 
 void in_set_inverted(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetRXPinLevel(USART2, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
+#endif
 
 
 //-- Button

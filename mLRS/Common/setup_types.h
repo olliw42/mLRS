@@ -416,6 +416,7 @@ typedef struct
 
     bool UseMbridge;
     bool UseCrsf;
+    bool UseIn;
 } tGlobalConfig;
 
 

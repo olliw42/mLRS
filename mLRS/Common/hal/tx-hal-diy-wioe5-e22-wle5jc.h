@@ -13,7 +13,7 @@
 
 //#define DEVICE_HAS_DIVERSITY
 //#define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_IN
+//#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 
 
@@ -54,7 +54,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-/*#define UART_USE_UART2 // JR pin5, MBridge // PA2,PA3
+#define UART_USE_UART2 // JR pin5, MBridge // PA2,PA3
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -62,7 +62,7 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode */
+#define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
 #define UARTE_USE_UART2 // in port // PA3
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
@@ -148,7 +148,9 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- In port
-// UARTE_UARTx = USART2
+// this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
+#ifdef DEVICE_HAS_IN
+#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {
@@ -156,17 +158,22 @@ void in_init_gpio(void)
 
 void in_set_normal(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetRXPinLevel(USART2, LL_USART_RXPIN_LEVEL_STANDARD);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
 
 void in_set_inverted(void)
 {
-    LL_USART_Disable(USART2);
-    LL_USART_SetRXPinLevel(USART2, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(USART2);
+    LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UARTE_UARTx);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
+#endif
 
 
 //-- Button
