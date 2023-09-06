@@ -109,7 +109,7 @@ class tPin5BridgeBase
     // check and rescue
     // the FRM303 can get stuck, whatever we tried, so brutal rescue
     // can't hurt generally as saftey net
-    uint32_t tnottransmiting_last_ms;
+    uint32_t nottransmiting_tlast_ms;
     void CheckAndRescue(void);
 };
 
@@ -191,7 +191,7 @@ void tPin5BridgeBase::Init(void)
     telemetry_tick_next = false;
     telemetry_state = 0;
 
-    tnottransmiting_last_ms = 0;
+    nottransmiting_tlast_ms = 0;
 
     pin5_tx_enable(false); // also enables rx isr
 
@@ -333,9 +333,9 @@ void tPin5BridgeBase::CheckAndRescue(void)
     uint32_t tnow_ms = millis32();
 
     if (state < STATE_TRANSMITING) {
-        tnottransmiting_last_ms = tnow_ms;
+        nottransmiting_tlast_ms = tnow_ms;
     } else {
-        if (tnow_ms - tnottransmiting_last_ms > 20) { // we are stuck, so rescue
+        if (tnow_ms - nottransmiting_tlast_ms > 20) { // we are stuck, so rescue
 #ifdef TX_FRM303_F072CB
 gpio_low(IO_PB9);
 #endif

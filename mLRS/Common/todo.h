@@ -69,6 +69,7 @@ The 3 MAIN topics TODO:
 - relay setup, how could this be done?
 - 2.4 GHz high-interference mode bw 400kHz, at least for experiment to evaluate
 - beacon mode
+- should we do LoRa packets with header len enabled?
 
 
 TODO:
