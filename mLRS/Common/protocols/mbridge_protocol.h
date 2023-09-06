@@ -74,6 +74,7 @@ typedef enum {
     MBRIDGE_CMD_BIND_STOP             = 15, // len = 0
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
+    MBRIDGE_CMD_PARAM_ITEM4           = 18,
 } MBRIDGE_CMD_ENUM;
 
 
@@ -105,6 +106,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_BIND_STOP: return 0;
     case MBRIDGE_CMD_MODELID_SET: return MBRIDGE_CMD_MODELID_SET_LEN; break;
     case MBRIDGE_CMD_SYSTEM_BOOTLOADER: return 0;
+    case MBRIDGE_CMD_PARAM_ITEM4: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     }
     return 0;
 }

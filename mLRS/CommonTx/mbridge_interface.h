@@ -609,7 +609,7 @@ bool param_by_index; // to indicate sending requested by list or by index
 
 
 // we have to send (much) more than SETUP_PARAMETER_NUM PARAM_ITEM messages
-// since all parameters need 2 and some even 3 of them
+// since all parameters need 2 and some even 3 or 4 of them
 // currently it are about 80 for the 36 parameters => 80 x 20ms = 1600 ms
 
 
@@ -643,7 +643,7 @@ void mbridge_send_ParamItem(void)
         return;
     }
 
-    bool item3_needed = false; // if a LIST parameter has a long option string, we send a 3rd ParamItem
+    bool item3_needed = false; // if a LIST parameter has a long option string, we send a 3rd or 4th ParamItem
 
     if (param_itemtype_to_send == 0) {
         tMBridgeParamItem item = {};
@@ -732,12 +732,32 @@ void mbridge_send_ParamItem(void)
             if (param_by_index) return; // if requested by index we stop
         }
     } else
-    if (param_itemtype_to_send >= 2) {
+    if (param_itemtype_to_send == 2) {
         tMBridgeParamItem3 item3 = {};
         item3.index = param_idx;
         strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21, 23);
 
+        if (strlen(SetupParameter[param_idx].optstr) >= 21+23) item3_needed = true; // we need yet another one
+
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
+
+        if (item3_needed) {
+            param_itemtype_to_send = 3; // we need to send a 4th ParamItem
+        } else {
+            // next param item
+            param_itemtype_to_send = 0; // done with this parameter
+            param_idx++;
+
+            if (param_by_index) return; // if requested by index we stop
+        }
+
+    } else
+    if (param_itemtype_to_send >= 3) {
+        tMBridgeParamItem3 item3 = {};
+        item3.index = param_idx;
+        strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21 + 23, 23);
+
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM4, (uint8_t*)&item3);
 
         // next param item
         param_itemtype_to_send = 0; // done with this parameter

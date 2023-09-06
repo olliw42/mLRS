@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-08-28.00'
+local version = '2023-09-06.00'
 
 local required_mLRS_version_int = 333 -- 'v0.3.33'
 
@@ -119,6 +119,7 @@ local MBRIDGE_CMD_BIND_START         = 14
 local MBRIDGE_CMD_BIND_STOP          = 15
 local MBRIDGE_CMD_MODELID_SET        = 16
 local MBRIDGE_CMD_SYSTEM_BOOTLOADER  = 17
+local MBRIDGE_CMD_PARAM_ITEM4        = 18
 
 local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_TX_LINK_STATS then return MBRIDGE_CMD_TX_LINK_STATS_LEN; end
@@ -137,6 +138,7 @@ local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_BIND_STOP then return 0; end
     if cmd == MBRIDGE_CMD_MODELID_SET then return MBRIDGE_CMD_MODELID_SET_LEN; end
     if cmd == MBRIDGE_CMD_SYSTEM_BOOTLOADER then return 0; end
+    if cmd == MBRIDGE_CMD_PARAM_ITEM4 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
     return 0;
 end
 
@@ -430,14 +432,14 @@ local function mb_allowed_mask_editable(allowed_mask)
     return true
 end
 
-local diversity_list = {}
+local diversity_list = {} -- used for displaying on main page bottom info section
 diversity_list[0] = "enabled"
 diversity_list[1] = "antenna1"
 diversity_list[2] = "antenna2"
 diversity_list[3] = "r:en. t:ant1"
 diversity_list[4] = "r:en. t:ant2"
 
-local freq_band_list = {}
+local freq_band_list = {} -- used for displaying on main page instead of received options
 freq_band_list[0] = "2.4 GHz"
 freq_band_list[1] = "915 MHz FCC"
 freq_band_list[2] = "868 MHz"
@@ -586,8 +588,8 @@ local function doParamLoop()
                     paramsError() -- ERROR: should not happen, but ??? => catch this error
                 end
             end
-        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
-            -- MBRIDGE_CMD_PARAM_ITEM3
+        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 or cmd.cmd == MBRIDGE_CMD_PARAM_ITEM4 then
+            -- MBRIDGE_CMD_PARAM_ITEM3, MBRIDGE_CMD_PARAM_ITEM4
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
@@ -599,8 +601,13 @@ local function doParamLoop()
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             else
                 local s = DEVICE_PARAM_LIST[index].item2payload
-                for i=1,23 do s[23+i] = cmd.payload[i] end
-                DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
+                if cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
+                    for i=1,23 do s[23+i] = cmd.payload[i] end
+                    DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
+                else    
+                    for i=1,23 do s[23+23+i] = cmd.payload[i] end
+                    DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
+                end    
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
             end
         end

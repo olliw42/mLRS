@@ -47,7 +47,7 @@
 #define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
 #define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
 
-#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
+#define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2,r:en t:ant1,r:en t:ant2"
 #define SETUP_OPT_DIVERSITY_LONGSTR   "enabled,antenna1,antenna2,r:en. t:ant1,r:en. t:ant2" // used e.g. in cli
 #define SETUP_OPT_DIVERSITY_DISPSTR   "enabled,antenna1,antenna2,ren ta1,ren ta2" // used in display, 7 chars max
 
@@ -74,7 +74,8 @@
 // Rx parameters must begin with "Rx "
 // a parameter name is limited to 16 chars max
 // a LIST can have only 16 options at most
-// a LIST option string is limited to 44 chars max (exhausted by Rx_FailSafe_Mode for instance)
+// a LIST option string list is limited to 67 chars max
+// a LIST option string should not exceed 10 chars
 #define SETUP_PARAMETER_LIST_COMMON \
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_RFMODE, SETUP_MSK_MODE )\
