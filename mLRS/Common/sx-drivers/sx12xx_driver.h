@@ -39,7 +39,8 @@ tI2cDac dac;
 #endif
 
 
-typedef struct {
+typedef struct
+{
     uint8_t SpreadingFactor;
     uint8_t Bandwidth;
     uint8_t CodingRate;

@@ -17,7 +17,7 @@
 // TX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
 //-------------------------------------------------------
 
-#define DEVICE_HAS_DIVERSITY
+//#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_TX

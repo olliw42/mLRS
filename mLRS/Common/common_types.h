@@ -42,7 +42,8 @@ typedef enum {
 } POWER_ENUM;
 
 
-typedef struct {
+typedef struct
+{
     int8_t dbm;
     int16_t mW;
 } rfpower_t;
@@ -120,7 +121,8 @@ uint16_t lq_to_sbus_crsf(uint8_t lq);
 #define RC_DATA_CENTER  1024
 #define RC_DATA_MAX     2047
 
-typedef struct {
+typedef struct
+{
     uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
 } tRcData;
 

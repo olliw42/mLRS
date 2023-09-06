@@ -113,7 +113,8 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
 //-- MBridge Channel Packet
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
-typedef union {
+typedef union
+{
   uint8_t c[MBRIDGE_CHANNELPACKET_SIZE]; // 176 + 8 = 184 bits = 23 bytes
   MBRIDGE_PACKED(
   struct {

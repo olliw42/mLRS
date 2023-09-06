@@ -82,7 +82,8 @@ typedef enum {
 } GDISPLAY_ROTATION_ENUM;
 
 
-typedef struct {
+typedef struct
+{
     uint16_t type;
 
     uint16_t width;

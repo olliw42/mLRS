@@ -15,7 +15,8 @@
 // SX Driver
 //-------------------------------------------------------
 
-typedef struct {
+typedef struct
+{
     uint8_t Bandwidth;
     uint8_t CodingRate;
     uint8_t Bt;

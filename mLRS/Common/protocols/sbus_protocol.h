@@ -49,7 +49,8 @@ typedef enum {
 
 #define SBUS_CHANNELPACKET_SIZE  22
 
-typedef union {
+typedef union
+{
     uint8_t c[SBUS_CHANNELPACKET_SIZE];
     SBUS_PACKED(
     struct {

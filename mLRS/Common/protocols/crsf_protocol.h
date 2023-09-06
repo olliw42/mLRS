@@ -168,7 +168,8 @@ typedef struct
 #define CRSF_CHANNELPACKET_SIZE  22
 
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
-typedef union {
+typedef union
+{
     uint8_t c[CRSF_CHANNELPACKET_SIZE];
     CRSF_PACKED(
     struct {

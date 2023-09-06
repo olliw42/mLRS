@@ -62,7 +62,8 @@ typedef enum {
 #define LIST    uint8_t
 
 
-typedef union {
+typedef union
+{
     uint8_t UINT8_value;
     int8_t INT8_value;
     uint16_t UINT16_value;
@@ -72,7 +73,8 @@ typedef union {
 } tSetupParameterValue;
 
 
-typedef struct {
+typedef struct
+{
     void* ptr; // pointer to the field in the Setup structure
     uint8_t type;
     const char* name;

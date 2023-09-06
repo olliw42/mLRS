@@ -35,7 +35,8 @@ void fmav_msg_recalculate_crc(fmav_message_t* msg)
 // Component List Class
 //-------------------------------------------------------
 
-typedef struct {
+typedef struct
+{
     uint8_t sys_id;
     uint8_t comp_id;
     uint8_t seq_last;
