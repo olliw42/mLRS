@@ -73,8 +73,6 @@ The 3 MAIN topics TODO:
 
 
 TODO:
-- can we pl check the real spi clock speed !?!?!!?
-
 - effect of USE_DCDC? where to place it??
 
 

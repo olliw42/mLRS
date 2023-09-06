@@ -54,7 +54,8 @@
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_TIM7_W_INIT //DELAY_USE_DWT,
-static inline void delay_ns(uint32_t ns) { __NOP();__NOP(); __NOP(); __NOP(); } // 48 MHz => 4x nop = 100 ns
+//static inline void delay_ns(uint32_t ns) { __NOP(); __NOP(); __NOP(); __NOP(); } // 48 MHz => 4x nop = 100 ns
+static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
