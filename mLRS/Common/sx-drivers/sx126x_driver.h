@@ -284,6 +284,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+#ifndef SX_BUSY
+  #error SX must have a BUSY pin!
+#endif
+#if !defined SX_RESET && !defined SX_HAS_NO_RESET
+  #error SX must have a RESET pin!
+#endif
+
 // map the irq bits
 typedef enum {
     SX_IRQ_TX_DONE = SX126X_IRQ_TX_DONE,
@@ -297,35 +304,13 @@ class Sx126xDriver : public Sx126xDriverCommon
 {
   public:
 
-#ifdef SX_BUSY
     void WaitOnBusy(void) override
     {
         while (sx_busy_read()) { __NOP(); };
     }
-#else
-    uint32_t timer_us_tmo = 0;
-    uint32_t timer_us_start_tick = 0;
-
-    void WaitOnBusy(void) override
-    {
-        if (timer_us_tmo) {
-            while ((DWT->CYCCNT - timer_us_start_tick) < timer_us_tmo) { __NOP(); };
-            timer_us_tmo = 0;
-        }
-    }
-
-    void SetDelay(uint16_t tmo_us) override // TODO: ?? has not yet been implemented, is it needed? should/can we require BUSY ?
-    {
-        timer_us_tmo = (uint32_t)tmo_us * (SystemCoreClock/1000000);
-        timer_us_start_tick = DWT->CYCCNT;
-    }
-#endif
 
     void SpiSelect(void) override
     {
-#ifndef SX_BUSY
-        delay_ns(150); // datasheet says t9 >= 150 ns, NSS high time
-#endif
         spi_select();
         delay_ns(50); // datasheet says t6 = 15 ns, NSS falling to MISO delay, t1 = 32 ns, NSS falling edge to SCK setup time
     }
@@ -334,9 +319,6 @@ class Sx126xDriver : public Sx126xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 31.25 ns, SCK to NSS rising edge hold time
         spi_deselect();
-#ifndef SX_BUSY
-        delay_ns(100); // well...
-#endif
     }
 
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
@@ -355,14 +337,12 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void _reset(void)
     {
-#ifdef SX_RESET
+#ifndef SX_HAS_NO_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // datasheet says > 100 us
         gpio_high(SX_RESET);
         delay_ms(50);
         WaitOnBusy();
-#else
-        sx_reset();
 #endif
     }
 
@@ -425,10 +405,10 @@ class Sx126xDriver : public Sx126xDriverCommon
 #ifdef DEVICE_HAS_DIVERSITY
 
 #ifndef SX2_BUSY
-    #error SX2 must have a BUSY pin !!
+  #error SX2 must have a BUSY pin!
 #endif
 #ifndef SX2_RESET
-    #error SX2 must have a RESET pin !!
+  #error SX2 must have a RESET pin!
 #endif
 
 // map the irq bits

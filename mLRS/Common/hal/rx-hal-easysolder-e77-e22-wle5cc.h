@@ -80,6 +80,7 @@
 #define SPI_USE_CLOCKSPEED_12MHZ
 
 #define SX_BUSY                   0 // busy is provided by subghz, we need to define a dummy to fool sx126x_driver lib
+#define SX_HAS_NO_RESET           // SubGHz has no reset, reset is done by spi_init()
 
 #define SX_RX_EN                  IO_PA7
 #define SX_TX_EN                  IO_PA6
@@ -99,11 +100,6 @@ void sx_init_gpio(void)
 bool sx_busy_read(void)
 {
     return subghz_is_busy();
-}
-
-// we need to provide it as we don't have SX_RESET defined, but is empty since reset is done by spi_init()
-void sx_reset(void)
-{
 }
 
 void sx_amp_transmit(void)

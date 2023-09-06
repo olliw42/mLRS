@@ -277,6 +277,11 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+// SX1276 doesn't has BUSY
+#ifndef SX_RESET
+  #error SX must have a RESET pin!
+#endif
+
 // map the irq bits
 typedef enum {
     SX_IRQ_TX_DONE = SX1276_IRQ_TX_DONE,
@@ -326,14 +331,10 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     void _reset(void)
     {
-#ifdef SX_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // datasheet says > 100 us
         gpio_high(SX_RESET);
         delay_ms(50); // datasheet says 5 ms
-#else
-        sx_reset();
-#endif
     }
 
     void Init(void)
@@ -398,7 +399,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 // Driver for SX2
 //-------------------------------------------------------
 #ifdef DEVICE_HAS_DIVERSITY
-#error Diversity not yet supported for SX127x
+  #error Diversity not yet supported for SX127x!
 #endif
 
 

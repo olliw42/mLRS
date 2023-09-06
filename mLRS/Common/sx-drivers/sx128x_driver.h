@@ -322,6 +322,13 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+#ifndef SX_BUSY
+  #error SX must have a BUSY pin!
+#endif
+#ifndef SX_RESET
+  #error SX must have a RESET pin!
+#endif
+
 // map the irq bits
 typedef enum {
     SX_IRQ_TX_DONE = SX1280_IRQ_TX_DONE,
@@ -337,35 +344,13 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- interface to SPI peripheral
 
-#ifdef SX_BUSY
     void WaitOnBusy(void) override
     {
         while (sx_busy_read()) { __NOP(); };
     }
-#else
-    uint32_t timer_us_tmo = 0;
-    uint32_t timer_us_start_tick = 0;
-
-    void WaitOnBusy(void) override
-    {
-        if (timer_us_tmo) {
-          while ((DWT->CYCCNT - timer_us_start_tick) < timer_us_tmo) { __NOP(); };
-          timer_us_tmo = 0;
-        }
-    }
-
-    void SetDelay(uint16_t tmo_us) override
-    {
-        timer_us_tmo = (uint32_t)tmo_us * (SystemCoreClock/1000000);
-        timer_us_start_tick = DWT->CYCCNT;
-    }
-#endif
 
     void SpiSelect(void) override
     {
-#ifndef SX_BUSY
-        delay_ns(150); // datasheet says t9 = 100 ns, semtech driver doesn't do it, helps so do it
-#endif
         spi_select();
         delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
     }
@@ -374,9 +359,6 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
         spi_deselect();
-#ifndef SX_BUSY
-        delay_ns(100); // well...
-#endif
     }
 
     void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
@@ -395,15 +377,11 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void _reset(void)
     {
-#ifdef SX_RESET
         gpio_low(SX_RESET);
         delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
         gpio_high(SX_RESET);
         delay_ms(50); // semtech driver says "typically 2ms observed"
         WaitOnBusy();
-#else
-        sx_reset();
-#endif
     }
 
     void Init(void)
@@ -462,10 +440,10 @@ class Sx128xDriver : public Sx128xDriverCommon
 #ifdef DEVICE_HAS_DIVERSITY
 
 #ifndef SX2_BUSY
-    #error SX2 must have a BUSY pin !!
+  #error SX2 must have a BUSY pin!
 #endif
 #ifndef SX2_RESET
-    #error SX2 must have a RESET pin !!
+  #error SX2 must have a RESET pin!
 #endif
 
 // map the irq bits
