@@ -38,7 +38,15 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
+#if 1
 #define UARTB_USE_UART4 // serial
+#define UARTC_USE_UART1 // com USB/CLI
+#else
+#define UARTB_USE_UART1 // serial
+#define UARTC_USE_UART4 // com USB/CLI
+#endif
+
+//#define UARTB_USE_UART4 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -46,7 +54,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1 // com USB/CLI
+//#define UARTC_USE_UART1 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
