@@ -1054,7 +1054,7 @@ IF_CRSF(
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
-            if (connected_and_rx_setup_available() && Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK) {
+            if (connected_and_rx_setup_available() && SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
                 crsf.SendTelemetryFrame();
             }
             DECl(do_cnt);

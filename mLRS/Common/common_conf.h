@@ -19,15 +19,22 @@
 //-------------------------------------------------------
 // Selectable System Configs
 //-------------------------------------------------------
+// user can modify them to their liking
 
 // un-comment to enable Rx module to go into bind mode after power up
 //#define RX_BIND_MODE_AFTER_POWERUP
+
+
+// Development features. Note: They are offered for testing, but they are not for production
+//#define MLRS_DEV_FEATURE_ORTHO
+//#define MLRS_DEV_FEATURE_FLRC
 
 
 //-------------------------------------------------------
 // Setup
 //-------------------------------------------------------
 // these defines determine the default values for the setup parameters
+// user can modify them to their liking
 
 // un-comment to force setup to the below defines, else setup is taken from EEPROM
 //#define SETUP_FORCE_COMMON_CONF
@@ -100,6 +107,8 @@
 //-------------------------------------------------------
 // System Configs
 //-------------------------------------------------------
+// sets various internal values
+// user must not modify
 
 #define MODE_50HZ_SEND_FRAME_TMO_MS           10 // just needs to be larger than toa, not critical
 #define MODE_31HZ_SEND_FRAME_TMO_MS           15 // just needs to be larger than toa, not critical

@@ -12,6 +12,7 @@
 
 
 #include <stdint.h>
+#include "common_conf.h"
 
 
 //-------------------------------------------------------
@@ -94,6 +95,8 @@ typedef enum {
     SERIAL_LINK_MODE_MAVLINK,
     SERIAL_LINK_MODE_NUM,
 } SERIAL_LINK_MODE_ENUM;
+
+#define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK)
 
 
 typedef enum {

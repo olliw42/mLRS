@@ -1,7 +1,7 @@
 //*******************************************************
 // This holds code taken from other open source projects
-// For the licences, please look up in the original
-// project repositories.
+// For the copyrights and licenses, please look up in the
+// original project repositories. The links are given.
 //********************************************************
 #ifndef THIRDARTY_H
 #define THIRDARTY_H
@@ -15,7 +15,9 @@
 // Crsf Auxiliary Helper
 //-------------------------------------------------------
 // This code is from betaflight
-// https://github.com/betaflight/betaflight/blob/master/src/main/common/crc.c
+// It may however not be genuine, can be found in many sources, e.g.
+// - https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
+// - https://barrgroup.com/embedded-systems/how-to/crc-calculation-c-code.
 
 uint8_t crc8_calc(uint8_t crc, unsigned char a, uint8_t poly);
 uint8_t crc8_update(uint8_t crc, const void *data, uint32_t length, uint8_t poly);

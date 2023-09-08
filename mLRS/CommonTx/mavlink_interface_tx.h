@@ -42,12 +42,12 @@ class MavlinkBase
     void handle_msg_serial_out(void);
     void generate_radio_status(void);
 
-    // fields for link in -> serial out parser
+    // fields for link in -> parser -> serial out
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
-    fmav_status_t status_serial_out;
-    fmav_message_t msg_serial_out;
+    fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
+    fmav_message_t msg_serial_out; // could be avoided by more efficient coding
 
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
@@ -90,7 +90,7 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {

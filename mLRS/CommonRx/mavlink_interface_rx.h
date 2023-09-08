@@ -50,12 +50,12 @@ class MavlinkBase
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
     bool handle_txbuf_method_b(uint32_t tnow_ms); // for PX4, aka "brad"
 
-    // fields for link in -> serial out parser
+    // fields for link in -> parser -> serial out
     fmav_status_t status_link_in;
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
-    fmav_status_t status_serial_out;
-    fmav_message_t msg_serial_out;
+    fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
+    fmav_message_t msg_serial_out; // could be avoided by more efficient coding
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     uint32_t radio_status_tlast_ms;
@@ -140,7 +140,7 @@ void MavlinkBase::Do(void)
         radio_status_tlast_ms = tnow_ms + 1000;
     }
 
-    if (Setup.Rx.SerialLinkMode != SERIAL_LINK_MODE_MAVLINK) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
