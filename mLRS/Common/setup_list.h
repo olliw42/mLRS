@@ -54,7 +54,14 @@
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
 #define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
-#define SETUP_OPT_SERIAL_LINK_MODE    "transp.,mavlink"
+
+#ifndef MLRS_DEV_FEATURE_MAVLINKX
+#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink"
+#else
+#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink,mavlinkX"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink,mavlnkX"
+#endif
 
 #ifndef MLRS_DEV_FEATURE_FLRC
 #define SETUP_OPT_RFMODE              "50 Hz,31 Hz,19 Hz"

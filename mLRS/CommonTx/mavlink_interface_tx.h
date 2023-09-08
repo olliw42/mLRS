@@ -13,6 +13,10 @@
 
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/protocols/ardupilot_protocol.h"
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#include "../Common/thirdparty/fmav_mavlinkx.h"
+#include "../Common/libs/fifo.h"
+#endif
 
 
 extern volatile uint32_t millis32(void);
@@ -50,6 +54,15 @@ class MavlinkBase
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding
 
+    // fields for serial in -> parser -> link out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    fmav_status_t status_serial_in;
+    fmav_result_t result_serial_in;
+    uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
+    fmav_message_t msg_link_out; // could be avoided by more efficient coding
+    FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
+#endif
+
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
 
@@ -70,6 +83,12 @@ void MavlinkBase::Init(void)
     result_link_in = {};
     status_link_in = {};
     status_serial_out = {};
+
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    result_serial_in = {};
+    status_serial_in = {};
+    fifo_link_out.Init();
+#endif
 
     radio_status_tlast_ms = millis32() + 1000;
 
@@ -92,6 +111,31 @@ void MavlinkBase::Do(void)
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+
+    // parse serial in -> link out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
+        while (serialport->available()) {
+            char c = serialport->getc();
+            if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
+
+                // TODO: this could be be done more efficiently by not going via msg_link_out
+                // but by directly going buf_serial_in -> _buf
+
+                fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
+
+                uint16_t len;
+                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                    len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+                } else {
+                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+                }
+
+                fifo_link_out.PutBuf(_buf, len);
+            }
+        }
+    }
+#endif
 
     if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
@@ -120,13 +164,27 @@ uint8_t MavlinkBase::VehicleState(void)
 
 void MavlinkBase::FrameLost(void)
 {
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    // reset parser link in -> serial out
+    fmav_parse_reset(&status_link_in);
+#endif
 }
 
 
 void MavlinkBase::putc(char c)
 {
     // parse link in -> serial out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
+#else
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+#endif
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
         send_msg_serial_out();
@@ -144,7 +202,11 @@ bool MavlinkBase::available(void)
 {
     if (!serialport) return false; // should not happen
 
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    return fifo_link_out.Available();
+#else
     return serialport->available();
+#endif
 }
 
 
@@ -152,7 +214,11 @@ uint8_t MavlinkBase::getc(void)
 {
     if (!serialport) return 0; // should not happen
 
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    return fifo_link_out.Get();
+#else
     return serialport->getc();
+#endif
 }
 
 
@@ -160,6 +226,9 @@ void MavlinkBase::flush(void)
 {
     if (!serialport) return; // should not happen
 
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    fifo_link_out.Flush();
+#endif
     serialport->flush();
 }
 

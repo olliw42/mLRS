@@ -58,6 +58,9 @@ uint8_t nr, n;
             (SetupParameter[param_idx].ptr == &Setup.Rx.Diversity)) {
             optstr = SETUP_OPT_DIVERSITY_DISPSTR;
         }
+        if (SetupParameter[param_idx].ptr == &Setup.Rx.SerialLinkMode) {
+            optstr = SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR;
+        }
     }
 
     seps[0] = -1;

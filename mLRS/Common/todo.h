@@ -31,7 +31,6 @@ ISSUES:
 - for dual sx avoid that both sx.Init wait 300ms
 - allow a missing 2nd sx for diversity boards
 
-- mavlink parser should probably be reset when packets are missed
 - led blink to signal serial traffic
 
 - crsf baro alt item, can we add more of our own?
@@ -61,9 +60,7 @@ The 3 MAIN topics TODO:
 - firmware update: via connection to USB on tx module, for receiver ota-passthrough
 
 3) Mavlink
-- parser on both ends
 - router on Tx side
-- mavlinkX (transform mavlink data into more robust & slim format, introduce cmpr_msg)
 
 4) Auxiliary features
 - relay setup, how could this be done?

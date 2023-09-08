@@ -13,6 +13,10 @@
 
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/libs/filters.h"
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#include "../Common/thirdparty/fmav_mavlinkx.h"
+#include "../Common/libs/fifo.h"
+#endif
 
 
 static inline bool connected(void);
@@ -58,6 +62,15 @@ class MavlinkBase
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding
 
+    // fields for serial in -> parser -> link out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    fmav_status_t status_serial_in;
+    fmav_result_t result_serial_in;
+    uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
+    fmav_message_t msg_link_out; // could be avoided by more efficient coding
+    FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
+#endif
+
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     uint32_t radio_status_tlast_ms;
     uint32_t bytes_serial_in;
@@ -91,6 +104,12 @@ void MavlinkBase::Init(void)
     result_link_in = {};
     status_link_in = {};
     status_serial_out = {};
+
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    result_serial_in = {};
+    status_serial_in = {};
+    fifo_link_out.Init();
+#endif
 
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;
@@ -142,6 +161,31 @@ void MavlinkBase::Do(void)
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+
+    // parse serial in -> link out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
+        while (serial.available()) {
+            char c = serial.getc();
+            if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
+
+                // TODO: this could be be done more efficiently by not going via msg_link_out
+                // but by directly going buf_serial_in -> _buf
+
+                fmav_frame_buf_to_msg(&msg_link_out, &result_serial_in, buf_serial_in);
+
+                uint16_t len;
+                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                    len = fmavX_msg_to_frame_buf(_buf, &msg_link_out);
+                } else {
+                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+                }
+
+                fifo_link_out.PutBuf(_buf, len);
+            }
+        }
+    }
+#endif
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
@@ -195,6 +239,10 @@ void MavlinkBase::Do(void)
 
 void MavlinkBase::FrameLost(void)
 {
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    // reset parser link in -> serial out
+    fmav_parse_reset(&status_link_in);
+#endif
 }
 
 
@@ -206,7 +254,17 @@ typedef enum {
 void MavlinkBase::putc(char c)
 {
     // parse link in -> serial out
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    uint8_t res;
+    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    } else {
+        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+    }
+    if (res) {
+#else
     if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+#endif
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
@@ -244,7 +302,11 @@ void MavlinkBase::putc(char c)
 
 bool MavlinkBase::available(void)
 {
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    return fifo_link_out.Available();
+#else
     return serial.available();
+#endif
 }
 
 
@@ -253,12 +315,19 @@ uint8_t MavlinkBase::getc(void)
     bytes_serial_in++;
     bytes_serial_in_cnt++;
 
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    return fifo_link_out.Get();
+#else
     return serial.getc();
+#endif
 }
 
 
 void MavlinkBase::flush(void)
 {
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    fifo_link_out.Flush();
+#endif
     serial.flush();
 }
 
@@ -278,7 +347,11 @@ void MavlinkBase::send_msg_serial_out(void)
 
 uint16_t MavlinkBase::serial_in_available(void)
 {
+#ifdef MLRS_DEV_FEATURE_MAVLINKX
+    return fifo_link_out.Available();
+#else
     return serial.bytes_available();
+#endif
 }
 
 
