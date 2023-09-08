@@ -781,6 +781,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
+        if (!valid_frame_received) {
+            mavlink.FrameLost();
+        }
+
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
             case CONNECT_STATE_LISTEN:

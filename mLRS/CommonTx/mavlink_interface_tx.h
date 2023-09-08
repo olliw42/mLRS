@@ -31,6 +31,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     uint8_t VehicleState(void);
+    void FrameLost(void);
 
     void putc(char c);
     bool available(void);
@@ -114,6 +115,11 @@ uint8_t MavlinkBase::VehicleState(void)
     if (vehicle_is_armed == UINT8_MAX) return UINT8_MAX;
     if (vehicle_is_armed == 1 && vehicle_is_flying == 1) return 2;
     return vehicle_is_armed;
+}
+
+
+void MavlinkBase::FrameLost(void)
+{
 }
 
 

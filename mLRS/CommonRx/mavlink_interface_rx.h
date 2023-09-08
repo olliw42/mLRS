@@ -32,6 +32,7 @@ class MavlinkBase
     void Init(void);
     void Do(void);
     void SendRcData(tRcData* rc_out, bool failsafe);
+    void FrameLost(void);
 
     void putc(char c);
     bool available(void);
@@ -189,6 +190,11 @@ void MavlinkBase::Do(void)
         }
         send_msg_serial_out();
     }
+}
+
+
+void MavlinkBase::FrameLost(void)
+{
 }
 
 
