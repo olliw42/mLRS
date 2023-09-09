@@ -392,6 +392,7 @@ typedef struct
     uint8_t FrequencyBand;
     uint8_t Ortho;
     uint8_t Except;
+    uint16_t FrequencyBand_allowed_mask;
 } tFhssGlobalConfig;
 
 
@@ -403,11 +404,12 @@ typedef struct
     uint8_t Mode;
 
     tSxGlobalConfig Sx;
+    tSxGlobalConfig Sx2;
     uint8_t send_frame_tmo_ms;
-
     uint16_t FrameSyncWord;
-    
+
     tFhssGlobalConfig Fhss;
+    tFhssGlobalConfig Fhss2;
 
     uint16_t LQAveragingPeriod;
 
