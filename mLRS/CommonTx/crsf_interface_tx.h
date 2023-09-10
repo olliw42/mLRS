@@ -178,6 +178,8 @@ void tTxCrsf::parse_nextchar(uint8_t c)
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
         if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
+
+        if (cnt >= sizeof(frame)) state = STATE_IDLE; // prevent buffer overflow
     }
 
     tlast_us = tnow_us;
@@ -204,9 +206,9 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         break;
     case STATE_RECEIVE_CRSF_CRC:
         frame[cnt++] = c;
-        // let's just ignore the crc
-        //if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
-        if (((tCrsfFrameHeader*)frame)->frame_id == CRSF_FRAME_ID_CHANNELS) {
+        // let's ignore the crc here
+        // this is called in isr, so we want to do crc check later, if we want to do it all
+        if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
             channels_received = true;
         } else {
             cmd_received = true;
@@ -297,17 +299,16 @@ bool tTxCrsf::ChannelsUpdated(tRcData* rc)
     if (!channels_received) return false;
     channels_received = false;
 
+    // check crc before we accept it
+    uint8_t crc = crc8(frame);
+    if (crc != frame[frame[1] + 1]) return false;
+
     fill_rcdata(rc);
     return true;
 }
 
 
-bool tTxCrsf::is_empty(void)
-{
-    return (tx_available == 0);
-}
-
-
+// polled in main loop
 bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
@@ -364,6 +365,8 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
     if (!cmd_received) return false;
 
     cmd_received = false;
+
+    // TODO: we could check crc if we wanted to
 
     tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
 
