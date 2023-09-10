@@ -975,7 +975,7 @@ IF_SX2(
 IF_MBRIDGE(
     // mBridge sends channels in regular 20 ms intervals, this we can use as sync
     if (mbridge.ChannelsUpdated(&rcData)) {
-        // update channels
+        // update channels, do only if we use mBridge also as channels source
         if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
             channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
             channelOrder.Apply(&rcData);
@@ -1039,10 +1039,8 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
 IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
         // update channels
-        if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
-            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-            channelOrder.Apply(&rcData);
-        }
+        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
+        channelOrder.Apply(&rcData);
     }
     uint8_t crsftask; uint8_t crsfcmd;
     uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's to fast lua script gets out of sync
