@@ -14,7 +14,6 @@
 #include "../Common/hal/hal.h" // not needed but helps editor to get defines correct LOL
 
 
-extern uint16_t micros(void);
 extern volatile uint32_t millis32(void);
 
 
@@ -70,7 +69,7 @@ class tPin5BridgeBase
     void pin5_putc(char c) { uart_putc_tobuf(c); }
 
     // for in-isr processing
-    virtual void parse_nextchar(uint8_t c, uint16_t tnow_us);
+    virtual void parse_nextchar(uint8_t c);
     virtual bool transmit_start(void); // returns true if transmission should be started
 
     // actual isr functions
@@ -302,8 +301,7 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 
 void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
-    uint16_t tnow_us = micros();
-    parse_nextchar(c, tnow_us);
+    parse_nextchar(c);
 
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
         pin5_tx_enable(true);

@@ -21,6 +21,8 @@
 #include "jr_pin5_interface.h"
 
 
+extern uint16_t micros(void);
+extern volatile uint32_t millis32(void);
 extern TxStatsBase txstats;
 
 
@@ -68,7 +70,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t crc8(const uint8_t* buf);
 
     // for in-isr processing
-    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
+    void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
@@ -169,8 +171,10 @@ bool tTxCrsf::transmit_start(void)
 // address len type payload crc
 // len is the length including type, payload, crc
 
-void tTxCrsf::parse_nextchar(uint8_t c, uint16_t tnow_us)
+void tTxCrsf::parse_nextchar(uint8_t c)
 {
+    uint16_t tnow_us = micros();
+
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
         if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;

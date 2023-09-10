@@ -19,6 +19,7 @@
 #include "../Common/protocols/mbridge_protocol.h"
 
 
+extern uint16_t micros(void);
 extern uint8_t mavlink_vehicle_state(void);
 extern TxStatsBase txstats;
 
@@ -48,11 +49,11 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t HandleRequestCmd(uint8_t* payload);
     uint8_t HandleCmd(uint8_t cmd);
 
-    void ParseCrsfFrame(uint8_t* crsf, uint8_t len, uint16_t tnow_us);
+    void ParseCrsfFrame(uint8_t* crsf, uint8_t len);
     bool CrsfFrameAvailable(uint8_t** buf, uint8_t* len);
 
     // for in-isr processing
-    void parse_nextchar(uint8_t c, uint16_t tnow_us) override;
+    void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
     uint8_t send_serial(void);
     void send_command(void);
@@ -170,8 +171,10 @@ if (crsf_emulation) return; // CRSF: just don't ever do it
 #define MBRIDGE_TMO_US  250
 
 
-void tMBridge::parse_nextchar(uint8_t c, uint16_t tnow_us)
+void tMBridge::parse_nextchar(uint8_t c)
 {
+    uint16_t tnow_us = micros();
+
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
         if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
@@ -268,15 +271,15 @@ void tMBridge::fill_rcdata(tRcData* rc)
 //-------------------------------------------------------
 // CRSF MBridge emulation
 
-void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len, uint16_t tnow_us)
+void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len)
 {
     if (!crsf_emulation) return;
 
 // UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant !!!
 
-    state = STATE_IDLE; // to start the parser
+    state = STATE_IDLE; // to start the parser, also resets time gap check
 
-    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i], tnow_us);
+    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
 
     state = STATE_IDLE; // this is to suppress that mBridge sends
     channels_received = false; // this should not have happened, but let's play it safe
