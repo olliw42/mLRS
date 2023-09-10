@@ -32,8 +32,8 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 
-// not available in stdstm32-uart.h
-void uart_putc_tobuf(char c)
+// not available in stdstm32-uart.h, used for half-duplex mode
+void uart_tx_putc_totxbuf(char c)
 {
     uint16_t next = (uart_txwritepos + 1) & UART_TXBUFSIZEMASK;
     if (uart_txreadpos != next) { // fifo not full //this is isr safe, works also if readpos has changed in the meanwhile
@@ -42,10 +42,21 @@ void uart_putc_tobuf(char c)
     }
 }
 
-// not available in stdstm32-uart.h
+// not available in stdstm32-uart.h, used for half-duplex mode
 void uart_tx_start(void)
 {
     LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
+}
+
+
+// not available in stdstm32-uart.h, used for full-duplex mode
+void uart_rx_putc_torxbuf(uint8_t c)
+{
+    uint16_t next = (uart_rxwritepos + 1) & UART_RXBUFSIZEMASK;
+    if (uart_rxreadpos != next) { // fifo not full
+        uart_rxbuf[next] = c;
+        uart_rxwritepos = next;
+    }
 }
 
 
@@ -66,7 +77,7 @@ class tPin5BridgeBase
     // interface to the uart hardware peripheral used for the bridge, called in isr context
     void pin5_tx_enable(bool enable_flag);
     void pin5_tx_start(void) { uart_tx_start(); }
-    void pin5_putc(char c) { uart_putc_tobuf(c); }
+    void pin5_putc(char c) { uart_tx_putc_totxbuf(c); }
 
     // for in-isr processing
     virtual void parse_nextchar(uint8_t c);
@@ -115,6 +126,17 @@ class tPin5BridgeBase
 
 void tPin5BridgeBase::Init(void)
 {
+    state = STATE_IDLE;
+    len = 0;
+    cnt = 0;
+    tlast_us = 0;
+
+    telemetry_start_next_tick = false;
+    telemetry_tick_next = false;
+    telemetry_state = 0;
+
+    nottransmiting_tlast_ms = 0;
+
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -181,24 +203,13 @@ void tPin5BridgeBase::Init(void)
     // pins are fully handled by pin5_tx_enable(false)
 #endif
 
-    state = STATE_IDLE;
-    len = 0;
-    cnt = 0;
-    tlast_us = 0;
-
-    telemetry_start_next_tick = false;
-    telemetry_tick_next = false;
-    telemetry_state = 0;
-
-    nottransmiting_tlast_ms = 0;
-
     pin5_tx_enable(false); // also enables rx isr
 
 #ifdef TX_FRM303_F072CB
-gpio_init_outpp(IO_PB9);
+    gpio_init_outpp(IO_PB9);
 #endif
 #if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
-gpio_init_outpp(IO_PA0);
+    gpio_init_outpp(IO_PA0);
 #endif
 }
 
@@ -335,10 +346,10 @@ void tPin5BridgeBase::CheckAndRescue(void)
     } else {
         if (tnow_ms - nottransmiting_tlast_ms > 20) { // we are stuck, so rescue
 #ifdef TX_FRM303_F072CB
-gpio_low(IO_PB9);
+            gpio_low(IO_PB9);
 #endif
 #if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
-gpio_high(IO_PA0);
+            gpio_high(IO_PA0);
 #endif
             state = STATE_IDLE;
             pin5_tx_enable(false);

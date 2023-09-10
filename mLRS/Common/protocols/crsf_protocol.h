@@ -25,7 +25,7 @@
 //   type/frame_id
 //   payload
 //   crc8
-// len is the length including type, payload, crc8
+// len is the length including type, payload, crc8, so it is len(frame)-1
 // crc8 includes type, payload
 // maximal frame length is 64 bytes (ELRS says 66 bytes!) correct???
 // maximal payload length is thus 60 bytes (ELRS says 62 bytes!)

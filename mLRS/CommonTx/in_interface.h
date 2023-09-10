@@ -73,16 +73,6 @@ class tIn : public InBase
 #include "jr_pin5_interface.h" // in case DEVICE_HAS_JRPIN5 was not defined
 
 
-void in_uart_rx_callback(uint8_t c)
-{
-    uint16_t next = (uart_rxwritepos + 1) & UART_RXBUFSIZEMASK;
-    if (uart_rxreadpos != next) { // fifo not full
-        uart_rxbuf[next] = c;
-        uart_rxwritepos = next;
-    }
-}
-
-
 class tIn : public InBase
 {
   public:
@@ -91,7 +81,7 @@ class tIn : public InBase
         InBase::Init(enable_flag);
         if (!enable_flag) return;
 
-        uart_rx_callback_ptr = &in_uart_rx_callback;
+        uart_rx_callback_ptr = &uart_rx_putc_torxbuf;
         uart_tc_callback_ptr = &uart_tc_callback_dummy;
 
         uart_init_isroff();

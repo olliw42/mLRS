@@ -58,32 +58,31 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
     void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
-    void SendFrame(const uint8_t frame_id, void* payload, const uint8_t len);
+    void SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void SendTelemetryFrame(void);
 
-    void SendMBridgeFrame(void* payload, const uint8_t len);
+    void SendMBridgeFrame(void* payload, const uint8_t payload_len);
 
     // helper
     bool is_empty(void) override;
-    uint8_t crc8(const uint8_t* buf);
 
-    // for in-isr processing
+    uint8_t crc8(const uint8_t* buf);
+    void fill_rcdata(tRcData* rc);
+
+    // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
 
     uint8_t frame[128];
-
-    volatile uint8_t tx_available; // this signals if something needs to be send to radio
-    uint8_t tx_frame[128];
-
     volatile bool channels_received;
-    void fill_rcdata(tRcData* rc);
-
     volatile bool cmd_received;
+
+    uint8_t tx_frame[128];
+    volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
     // crsf telemetry
 
@@ -134,6 +133,9 @@ class tTxCrsf : public tPin5BridgeBase
 tTxCrsf crsf;
 
 
+//-------------------------------------------------------
+// Crsf half-duplex interface, used for radio <-> mLRS tx module
+
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
 void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
 void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
@@ -153,9 +155,6 @@ bool tTxCrsf::transmit_start(void)
         pin5_putc(c);
     }
     tx_available = 0;
-
-//    pin5_tx_enable(true);
-//    state = STATE_TRANSMITING;
 
     return true;
 }
@@ -219,6 +218,15 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 }
 
 
+bool tTxCrsf::is_empty(void)
+{
+    return (tx_available == 0);
+}
+
+
+//-------------------------------------------------------
+// miscellaneous
+
 // CRSF:
 // 11 bit, 173 ... 992 .. 1811 for +-100%
 // so: 9 ... 173 ... 992 .. 1811 ... 1965  for -120%  -100%    0%    +100%    +120%
@@ -248,6 +256,12 @@ tCrsfChannelBuffer buf;
     rc->ch[13] = rc_from_crsf(buf.ch13);
     rc->ch[14] = rc_from_crsf(buf.ch14);
     rc->ch[15] = rc_from_crsf(buf.ch15);
+}
+
+
+uint8_t tTxCrsf::crc8(const uint8_t* buf)
+{
+    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
 }
 
 
@@ -290,6 +304,7 @@ void tTxCrsf::Init(bool enable_flag)
 }
 
 
+// polled in main loop
 bool tTxCrsf::ChannelsUpdated(tRcData* rc)
 {
     if (!enabled) return false;
@@ -359,11 +374,12 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 }
 
 
+// polled in main loop
 bool tTxCrsf::CommandReceived(uint8_t* cmd)
 {
     if (!enabled) return false;
-    if (!cmd_received) return false;
 
+    if (!cmd_received) return false;
     cmd_received = false;
 
     // TODO: we could check crc if we wanted to
@@ -411,21 +427,15 @@ uint8_t tTxCrsf::GetPayloadLen(void)
 //-------------------------------------------------------
 // CRSF Bridge
 
-uint8_t tTxCrsf::crc8(const uint8_t* buf)
-{
-    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
-}
-
-
-void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t len)
+void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO; // works, but is it correct? should it be CRSF_ADDRESS_TRANSMITTER_MODULE?
-    tx_frame[1] = (4-2) + len;
+    tx_frame[1] = (4-2) + payload_len;
     tx_frame[2] = frame_id;
-    memcpy(&(tx_frame[3]), payload, len);
-    tx_frame[3 + len] = crc8(tx_frame);
+    memcpy(&(tx_frame[3]), payload, payload_len);
+    tx_frame[3 + payload_len] = crc8(tx_frame);
 
-    tx_available = 4 + len;
+    tx_available = 4 + payload_len;
 }
 
 
@@ -447,9 +457,9 @@ void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
 }
 
 
-void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t len)
+void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
 {
-    SendFrame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, len);
+    SendFrame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, payload_len);
 }
 
 
@@ -578,6 +588,7 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 }
 
 
+// called by mavlink interface, when a mavlink frame has been received
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
     if (msg->sysid == 0) return; // this can't be anything meaningful
@@ -747,6 +758,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 }
 
 
+// called in main loop, when crsf.TelemetryUpdate() true
 void tTxCrsf::SendTelemetryFrame(void)
 {
     // native crsf
