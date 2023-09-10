@@ -141,7 +141,7 @@ void setup_configure_metadata(void)
 
     // Rx OutMode: "sbus,crsf,sbus inv"
 #ifdef DEVICE_HAS_OUT
-    SetupMetaData.Rx_OutMode_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b111; // all
 #elif defined DEVICE_HAS_OUT_NORMAL
     SetupMetaData.Rx_OutMode_allowed_mask = 0b110; // crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_INVERTED
