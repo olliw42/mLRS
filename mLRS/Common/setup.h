@@ -58,7 +58,7 @@ void setup_configure_metadata(void)
 #ifndef MLRS_DEV_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
 #else
-    SetupMetaData.Mode_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Mode_allowed_mask = 0b1111; // all
 #endif
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
@@ -69,7 +69,7 @@ void setup_configure_metadata(void)
     //-- Ortho: "off,1/3,2/3,3/3"
     // we cannot work out all cases here, since it also depends on the actual selection, so we just do what we can do
 #if defined FREQUENCY_BAND_2P4_GHZ || defined FREQUENCY_BAND_915_MHZ_FCC || defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.Ortho_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Ortho_allowed_mask = 0b1111; // all
 #else
     SetupMetaData.Ortho_allowed_mask = 0b0001; // only off, not editable
 #endif
@@ -83,14 +83,14 @@ void setup_configure_metadata(void)
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
-    SetupMetaData.Tx_Diversity_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
 #else
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
 #endif
 
     // Tx ChannelSource: "none,crsf,in,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // only none, crsf, in, mbridge
 #elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, crsf, mbridge
 #elif defined USE_IN
@@ -101,7 +101,7 @@ void setup_configure_metadata(void)
 
     // Tx InMode: "sbus,sbus inv"
 #if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX
-    SetupMetaData.Tx_InMode_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Tx_InMode_allowed_mask = 0b11; // all
 #elif defined DEVICE_HAS_IN_NORMAL
     SetupMetaData.Tx_InMode_allowed_mask = 0b10; // only sbus inv, not editable
 #elif defined DEVICE_HAS_IN_INVERTED
@@ -112,7 +112,7 @@ void setup_configure_metadata(void)
 
     // Tx SerialDestination: "serial,serial2,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b111; // all
 #elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // only serial, mbridge
 #elif defined USE_SERIAL2
@@ -134,7 +134,7 @@ void setup_configure_metadata(void)
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #ifdef DEVICE_HAS_DIVERSITY
-    SetupMetaData.Rx_Diversity_allowed_mask = UINT16_MAX; // all
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #else
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
 #endif
