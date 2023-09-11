@@ -31,11 +31,6 @@
 #define MLRS_DEV_FEATURE_MAVLINKX
 
 
-#ifdef TX_FRM303_F072CB // is short of RAM, not nice to have it here, pl do better
-#undef MLRS_DEV_FEATURE_MAVLINKX
-#endif
-
-
 //-------------------------------------------------------
 // Setup
 //-------------------------------------------------------

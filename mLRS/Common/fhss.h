@@ -12,9 +12,9 @@
 
 
 #include <stdint.h>
+#include "common_conf.h"
 #include "hal/device_conf.h"
 #include "sx-drivers/sx12xx.h"
-#include "common_conf.h"
 #include "setup_types.h"
 
 

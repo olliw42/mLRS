@@ -13,7 +13,7 @@
 
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/protocols/ardupilot_protocol.h"
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
 #include "../Common/thirdparty/fmav_mavlinkx.h"
 #include "../Common/libs/fifo.h"
 #endif
@@ -55,7 +55,7 @@ class MavlinkBase
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding
 
     // fields for serial in -> parser -> link out
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     fmav_status_t status_serial_in;
     fmav_result_t result_serial_in;
     uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
@@ -84,7 +84,7 @@ void MavlinkBase::Init(void)
     status_link_in = {};
     status_serial_out = {};
 
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     result_serial_in = {};
     status_serial_in = {};
     fifo_link_out.Init();
@@ -113,7 +113,7 @@ void MavlinkBase::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (serialport->available()) {
             char c = serialport->getc();
@@ -164,7 +164,7 @@ uint8_t MavlinkBase::VehicleState(void)
 
 void MavlinkBase::FrameLost(void)
 {
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     // reset parser link in -> serial out
     fmav_parse_reset(&status_link_in);
 #endif
@@ -174,7 +174,7 @@ void MavlinkBase::FrameLost(void)
 void MavlinkBase::putc(char c)
 {
     // parse link in -> serial out
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     uint8_t res;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
         res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
@@ -202,7 +202,7 @@ bool MavlinkBase::available(void)
 {
     if (!serialport) return false; // should not happen
 
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     return fifo_link_out.Available();
 #else
     return serialport->available();
@@ -214,7 +214,7 @@ uint8_t MavlinkBase::getc(void)
 {
     if (!serialport) return 0; // should not happen
 
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     return fifo_link_out.Get();
 #else
     return serialport->getc();
@@ -226,7 +226,7 @@ void MavlinkBase::flush(void)
 {
     if (!serialport) return; // should not happen
 
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     fifo_link_out.Flush();
 #endif
     serialport->flush();

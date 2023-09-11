@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "common_conf.h"
+#include "hal/device_conf.h"
 
 
 //-------------------------------------------------------
@@ -93,13 +94,13 @@ typedef enum {
 typedef enum {
     SERIAL_LINK_MODE_TRANSPARENT = 0,
     SERIAL_LINK_MODE_MAVLINK,
-#ifdef MLRS_DEV_FEATURE_MAVLINKX
+#ifdef USE_FEATURE_MAVLINKX
     SERIAL_LINK_MODE_MAVLINK_X,
 #endif
     SERIAL_LINK_MODE_NUM,
 } SERIAL_LINK_MODE_ENUM;
 
-#ifndef MLRS_DEV_FEATURE_MAVLINKX
+#ifndef USE_FEATURE_MAVLINKX
 #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK)
 #else
 #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK || (x) == SERIAL_LINK_MODE_MAVLINK_X)
