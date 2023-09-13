@@ -17,6 +17,7 @@
 // T1, T2 (32b), T3, T14, T15, T16, T17, internal T6, T7
 
 #define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_IN_ON_JRPIN5_RX
 #define DEVICE_HAS_COM_ON_USB
 //#define DEVICE_HAS_NO_COM
 //#define DEVICE_HAS_SERIAL_ON_USB

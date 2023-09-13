@@ -152,7 +152,7 @@ void tPin5BridgeBase::Init(void)
 
     uart_init_isroff();
 
-// internal peripheral inverter method, G4, WLE5, needs a diode from Tx to Rx
+// internal peripheral inverter method, needs a diode from Tx to Rx
 #if defined JRPIN5_RX_TX_INVERT_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
@@ -160,7 +160,7 @@ void tPin5BridgeBase::Init(void)
     LL_USART_Enable(UART_UARTx);
     gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
 #endif
-// internal peripheral inverter method with TxRx swap, G4, WLE5, needs a diode from Rx to Tx
+// internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
 #if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
@@ -199,7 +199,8 @@ void tPin5BridgeBase::Init(void)
     LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
     LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_Enable(UART_UARTx);
-    // pins are fully handled by pin5_tx_enable(false)
+    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+    gpio_init(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
 #endif
 
     pin5_tx_enable(false); // also enables rx isr
@@ -251,58 +252,58 @@ bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
-  if (enable_flag) {
-      uart_rx_enableisr(DISABLE);
+    if (enable_flag) {
+        uart_rx_enableisr(DISABLE);
 
 #if defined JRPIN5_TX_OE
-      JRPIN5_TX_OE_ENABLED;
+        JRPIN5_TX_OE_ENABLED;
 #endif
 #if defined JRPIN5_DISABLE_TX_WHILE_RX
-      uart_tx_enablepin(ENABLE);
+        uart_tx_enablepin(ENABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
-      LL_USART_Disable(UART_UARTx);
-      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
-      LL_USART_Enable(UART_UARTx);
-      gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+        LL_USART_Disable(UART_UARTx);
+        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+        LL_USART_Enable(UART_UARTx);
+        gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX
-      LL_USART_Disable(UART_UARTx);
-      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-      LL_USART_Enable(UART_UARTx);
-      gpio_change_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx
+        LL_USART_Disable(UART_UARTx);
+        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+        LL_USART_Enable(UART_UARTx);
+        gpio_change_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
-      gpio_init_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
-      gpio_init(UART_RX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Rx pin
+        gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+        gpio_change(UART_RX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Rx pin
 #endif
 
-  } else {
+    } else {
 #if defined JRPIN5_TX_OE
-      JRPIN5_TX_OE_DISABLED;
+        JRPIN5_TX_OE_DISABLED;
 #endif
 #if defined JRPIN5_DISABLE_TX_WHILE_RX
-      uart_tx_enablepin(DISABLE);
+        uart_tx_enablepin(DISABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
-      LL_USART_Disable(UART_UARTx);
-      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-      LL_USART_Enable(UART_UARTx);
-      gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
+        LL_USART_Disable(UART_UARTx);
+        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+        LL_USART_Enable(UART_UARTx);
+        gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX
-      LL_USART_Disable(UART_UARTx);
-      LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
-      LL_USART_Enable(UART_UARTx);
-      gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+        LL_USART_Disable(UART_UARTx);
+        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+        LL_USART_Enable(UART_UARTx);
+        gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
-      gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
-      gpio_init(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
+        gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+        gpio_change(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
 #endif
 
-      uart_rx_enableisr(ENABLE);
-  }
+        uart_rx_enableisr(ENABLE);
+    }
 }
 
 

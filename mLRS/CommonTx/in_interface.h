@@ -20,7 +20,7 @@
 //-------------------------------------------------------
 // Interface Implementation
 
-#if !defined DEVICE_HAS_IN_ON_JRPIN5_RX && !defined DEVICE_HAS_IN_ON_JRPIN5_TX
+#if !(defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX)
 
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
@@ -68,7 +68,7 @@ class tIn : public InBase
     char getc(void) override { return uarte_getc(); }
 };
 
-#else
+#else // DEVICE_HAS_IN_ON_JRPIN5_RX or DEVICE_HAS_IN_ON_JRPIN5_TX
 
 #include "jr_pin5_interface.h" // in case DEVICE_HAS_JRPIN5 was not defined
 
@@ -85,6 +85,14 @@ class tIn : public InBase
         uart_tc_callback_ptr = &uart_tc_callback_dummy;
 
         uart_init_isroff();
+
+#ifdef JRPIN5_FULL_INTERNAL_ON_RX_TX
+  #ifdef DEVICE_HAS_IN_ON_JRPIN5_TX
+        gpio_init(UART_RX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST);
+  #else
+        gpio_init(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST);
+  #endif
+#endif
     }
 
     bool config_sbus(bool enable_flag) override
