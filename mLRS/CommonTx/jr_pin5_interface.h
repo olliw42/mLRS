@@ -48,7 +48,6 @@ void uart_tx_start(void)
     LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
 }
 
-
 // not available in stdstm32-uart.h, used for full-duplex mode
 void uart_rx_putc_torxbuf(uint8_t c)
 {

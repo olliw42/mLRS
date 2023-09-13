@@ -57,6 +57,9 @@
 #endif
 
 
+#define CRSF_FRAME_LEN_MAX  64 // the info is confusing, when using it add some bytes
+
+
 typedef enum {
     CRSF_ADDRESS_BROADCAST            = 0x00,
     CRSF_ADDRESS_FLIGHT_CONTROLLER    = 0xC8,

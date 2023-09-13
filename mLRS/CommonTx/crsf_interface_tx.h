@@ -77,11 +77,11 @@ class tTxCrsf : public tPin5BridgeBase
 
     bool enabled;
 
-    uint8_t frame[128];
+    uint8_t frame[CRSF_FRAME_LEN_MAX + 16];
     volatile bool channels_received;
     volatile bool cmd_received;
 
-    uint8_t tx_frame[128];
+    uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
     // crsf telemetry
@@ -141,6 +141,7 @@ void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
 void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
 
 
+// is called in isr context
 bool tTxCrsf::transmit_start(void)
 {
     if (state < STATE_TRANSMIT_START) return false; // we are in receiving
@@ -170,6 +171,7 @@ bool tTxCrsf::transmit_start(void)
 // address len type payload crc
 // len is the length including type, payload, crc
 
+// is called in isr context
 void tTxCrsf::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros();
