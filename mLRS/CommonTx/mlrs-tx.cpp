@@ -717,8 +717,6 @@ RESTARTCONTROLLER:
             crsf.TelemetryStart();
         }
 
-        mbridge.TelemetryTick_ms();
-        crsf.TelemetryTick_ms();
         link_task_tick_ms();
 
         disp.Tick_ms();

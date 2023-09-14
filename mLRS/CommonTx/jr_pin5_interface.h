@@ -66,19 +66,16 @@ class tPin5BridgeBase
 
     // telemetry handling
     bool telemetry_start_next_tick;
-    bool telemetry_tick_next; // called at 1 ms
     uint16_t telemetry_state;
 
     void TelemetryStart(void);
-    void TelemetryTick_ms(void);
-    bool TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_t telemetry_state_max);
 
     // interface to the uart hardware peripheral used for the bridge, called in isr context
-    void pin5_tx_enable(bool enable_flag);
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putc(char c) { uart_tx_putc_totxbuf(c); }
 
     // for in-isr processing
+    void pin5_tx_enable(bool enable_flag);
     virtual void parse_nextchar(uint8_t c);
     virtual bool transmit_start(void); // returns true if transmission should be started
 
@@ -86,9 +83,7 @@ class tPin5BridgeBase
     void uart_rx_callback(uint8_t c);
     void uart_tc_callback(void);
 
-    // helper
-    virtual bool is_empty(void) { return true; }
-
+    // parser
     typedef enum {
         STATE_IDLE = 0,
 
@@ -109,7 +104,8 @@ class tPin5BridgeBase
         STATE_TRANSMITING,
     } STATE_ENUM;
 
-    // not used in this class, but required by the childs, so just add them here
+    // not used in this class, but required by the children, so just add them here
+    // no need for volatile since used only in isr context
     uint8_t state;
     uint8_t len;
     uint8_t cnt;
@@ -117,7 +113,7 @@ class tPin5BridgeBase
 
     // check and rescue
     // the FRM303 can get stuck, whatever we tried, so brutal rescue
-    // can't hurt generally as saftey net
+    // can't hurt generally as safety net
     uint32_t nottransmiting_tlast_ms;
     void CheckAndRescue(void);
 };
@@ -131,7 +127,6 @@ void tPin5BridgeBase::Init(void)
     tlast_us = 0;
 
     telemetry_start_next_tick = false;
-    telemetry_tick_next = false;
     telemetry_state = 0;
 
     nottransmiting_tlast_ms = 0;
@@ -220,32 +215,6 @@ void tPin5BridgeBase::TelemetryStart(void)
 }
 
 
-void tPin5BridgeBase::TelemetryTick_ms(void)
-{
-    telemetry_tick_next = true;
-}
-
-
-bool tPin5BridgeBase::TelemetryUpdateState(uint8_t* curr_telemetry_state, uint8_t telemetry_state_max)
-{
-    if (telemetry_start_next_tick) {
-        telemetry_start_next_tick = false;
-        telemetry_state = 1; // start
-    }
-
-   *curr_telemetry_state = telemetry_state;
-
-    if (telemetry_state && telemetry_tick_next && is_empty()) {
-        telemetry_tick_next = false;
-        telemetry_state++;
-        if (telemetry_state > telemetry_state_max) telemetry_state = 0; // stop
-        return true;
-    }
-
-    return false;
-}
-
-
 //-------------------------------------------------------
 // Interface to the uart hardware peripheral used for the bridge
 // called in isr context
@@ -314,10 +283,19 @@ void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
     parse_nextchar(c);
 
+    if (state < STATE_TRANSMIT_START) return; // we are in receiving
+
+    if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
+        state = STATE_IDLE;
+        return;
+    }
+
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
         pin5_tx_enable(true);
         state = STATE_TRANSMITING;
         pin5_tx_start();
+    } else {
+        state = STATE_IDLE;
     }
 }
 

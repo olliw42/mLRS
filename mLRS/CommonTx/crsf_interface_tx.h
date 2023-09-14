@@ -66,8 +66,6 @@ class tTxCrsf : public tPin5BridgeBase
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
 
     // helper
-    bool is_empty(void) override;
-
     uint8_t crc8(const uint8_t* buf);
     void fill_rcdata(tRcData* rc);
 
@@ -81,6 +79,7 @@ class tTxCrsf : public tPin5BridgeBase
     volatile bool channels_received;
     volatile bool cmd_received;
 
+    volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
@@ -144,9 +143,9 @@ void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
 // is called in isr context
 bool tTxCrsf::transmit_start(void)
 {
-    if (state < STATE_TRANSMIT_START) return false; // we are in receiving
+    tx_free = true; // tell external code that tx_frame can be filled with new data
 
-    if (!tx_available || (state != STATE_TRANSMIT_START)) {
+    if (!tx_available) { // nothing to send
         state = STATE_IDLE;
         return false;
     }
@@ -220,12 +219,6 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 }
 
 
-bool tTxCrsf::is_empty(void)
-{
-    return (tx_available == 0);
-}
-
-
 //-------------------------------------------------------
 // miscellaneous
 
@@ -277,6 +270,7 @@ void tTxCrsf::Init(bool enable_flag)
     if (!enabled) return;
 
     tx_available = 0;
+    tx_free = false;
     channels_received = false;
     cmd_received = false;
 
@@ -330,49 +324,44 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
-    // frame rate is
-    //   20 ms -> 13
-    //   32 ms -> 25
-    //   53 ms -> 30
-    //   7 ms  -> 13
+    // check if we can transmit
+    if (!tx_free) return false;
+    tx_free = false;
 
-//    uint8_t telemetry_state_max = (frame_rate_ms - 7);
-//    if (telemetry_state_max > 30) telemetry_state_max = 30;
+    // check if we should restart telemetry sequence
+    if (telemetry_start_next_tick) {
+    	  telemetry_start_next_tick = false;
 
-    uint8_t telemetry_state_max = 13;
-    if (frame_rate_ms > 30) telemetry_state_max = 25;
-    if (frame_rate_ms > 50) telemetry_state_max = 30;
-
-    uint8_t curr_telemetry_state;
-
-    // slow it down
-    static uint8_t cnt = 0;
-    if (frame_rate_ms <= 7) {
-        if (telemetry_start_next_tick) {
-            cnt++;
-            if (cnt > 2) {
-                cnt = 0;
-            } else {
-                telemetry_start_next_tick = false;
-            }
+        // slow it down if frame time is too short
+        if (frame_rate_ms <= 7) {
+        	  static uint8_t cnt = 0;
+        	  if (!cnt) telemetry_state = 0;
+        	  cnt++;
+            if (cnt > 2) cnt = 0;
+        } else {
+        	  telemetry_state = 0;
         }
     }
 
-    if (!tPin5BridgeBase::TelemetryUpdateState(&curr_telemetry_state, telemetry_state_max)) return false;
+    // next slot
+    uint8_t curr_telemetry_state = telemetry_state;
+    telemetry_state++;
 
-    switch (curr_telemetry_state) { // the 1,5,9,13,... ensure that they are send with 4 ms gaps
-        case 1: *task = TXCRSF_SEND_LINK_STATISTICS; return true;
-        case 5: *task = TXCRSF_SEND_LINK_STATISTICS_TX; return true;
-        case 9: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
-        case 13: *task = TXCRSF_SEND_TELEMETRY_FRAME; return true;
-        // don't do this if 50 Hz
-        // we need to get them called frequently enough, since there are potentially already "plenty" of native crsf frames
-        case 17: case 21: case 25: case 29:
-            if (curr_telemetry_state <= telemetry_state_max) { *task = TXCRSF_SEND_TELEMETRY_FRAME; return true; }
-            break;
+    // now determine what to transmit
+    // frame rate is
+    //   20 ms -> ca 5  = 3  + 2
+    //   32 ms -> ca 8  = 3 + 5
+    //   53 ms -> ca 13 = 3 + 10
+    //   7 ms  -> 3x = 21 ms -> ca 5 = 3 + 2
+
+    switch (curr_telemetry_state) {
+        case 0: *task = TXCRSF_SEND_LINK_STATISTICS; return true;
+        case 1: *task = TXCRSF_SEND_LINK_STATISTICS_TX; return true;
+        case 2: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
     }
 
-    return false;
+    *task = TXCRSF_SEND_TELEMETRY_FRAME;
+    return true;
 }
 
 
@@ -431,7 +420,7 @@ uint8_t tTxCrsf::GetPayloadLen(void)
 
 void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
 {
-    tx_frame[0] = CRSF_ADDRESS_RADIO; // works, but is it correct? should it be CRSF_ADDRESS_TRANSMITTER_MODULE?
+    tx_frame[0] = CRSF_ADDRESS_RADIO; // correct? OpenTx accepts CRSF_ADDRESS_RADIO or CRSF_OPENTX_SYNC, so correct
     tx_frame[1] = (4-2) + payload_len;
     tx_frame[2] = frame_id;
     memcpy(&(tx_frame[3]), payload, payload_len);

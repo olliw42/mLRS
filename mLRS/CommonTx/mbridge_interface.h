@@ -52,6 +52,9 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void ParseCrsfFrame(uint8_t* crsf, uint8_t len);
     bool CrsfFrameAvailable(uint8_t** buf, uint8_t* len);
 
+    // helper
+    void fill_rcdata(tRcData* rc);
+
     // for in-isr processing
     void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
@@ -63,15 +66,15 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 
     volatile bool channels_received;
     tMBridgeChannelBuffer channels;
-    void fill_rcdata(tRcData* rc);
 
-    volatile bool cmd_received;
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
+    volatile bool cmd_received;
 
-    volatile uint8_t cmd_m2r_available;
+    volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
+    volatile uint8_t cmd_m2r_available;
 
-    // front end to communicate with mbridge
+    // front end to communicate with mBridge
     // mimics a serial interface to the main code
     void putc(char c) { tx_fifo.Put(c); }
     void putbuf(void* buf, uint16_t len) { tx_fifo.PutBuf(buf, len); }
@@ -80,12 +83,12 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     void flush(void) { rx_fifo.Flush(); }
 
     // backend
-    // fills/reads the fifo's with the mBridge uart
+    // fills/reads the fifos with the mBridge uart
     void serial_putc(char c) { rx_fifo.Put(c); }
     bool serial_rx_available(void) { return tx_fifo.Available(); }
     char serial_getc(void) { return tx_fifo.Get(); }
 
-    FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo;
+    FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo; // TODO: how large do they really need to be?
     FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
@@ -106,16 +109,12 @@ void mbridge_uart_rx_callback(uint8_t c) { mbridge.uart_rx_callback(c); }
 void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
 
 
+// is called in isr context
 bool tMBridge::transmit_start(void)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it
+if (crsf_emulation) while (1) {}; // must not happen
 
-    if (state < STATE_TRANSMIT_START) return false; // we are in receiving
-
-    if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
-        state = STATE_IDLE;
-        return false;
-    }
+    tx_free = true; // tell external code that next slot can be filled
 
     uint8_t available = 0;
 
@@ -136,9 +135,10 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
 }
 
 
+// is called in isr context
 uint8_t tMBridge::send_serial(void)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it
+if (crsf_emulation) while (1) {}; // must not happen
 
     uint8_t count = 0;
     uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
@@ -147,7 +147,7 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
         payload[count++] = serial_getc();
     }
     if (count > 0) {
-        pin5_putc(0x00); // we can send anything we want which is not a command, send 0xoo so it is easy to recognize
+        pin5_putc(0x00); // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
         for (uint8_t i = 0; i < count; i++) {
             uint8_t c = payload[i];
             pin5_putc(c);
@@ -157,9 +157,10 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
 }
 
 
+// is called in isr context
 void tMBridge::send_command(void)
 {
-if (crsf_emulation) return; // CRSF: just don't ever do it
+if (crsf_emulation) while (1) {}; // must not happen
 
     for (uint8_t i = 0; i < cmd_m2r_available; i++) {
         uint8_t c = cmd_m2r_frame[i];
@@ -171,6 +172,7 @@ if (crsf_emulation) return; // CRSF: just don't ever do it
 #define MBRIDGE_TMO_US  250
 
 
+// is called in isr context, or in ParseCrsfFrame() in case of crsf emulatiom
 void tMBridge::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros();
@@ -242,9 +244,13 @@ void tMBridge::parse_nextchar(uint8_t c)
 }
 
 
+//-------------------------------------------------------
+// miscellaneous
+
 // mBridge: ch0-15    11 bits, 1 .. 1024 .. 2047 for +-120%
 //          ch16-17:  1 bit, 0 .. 1
 // rcData:            11 bit, 1 .. 1024 .. 2047 for +-120%
+
 void tMBridge::fill_rcdata(tRcData* rc)
 {
     rc->ch[0] = channels.ch0;
@@ -275,7 +281,7 @@ void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len)
 {
     if (!crsf_emulation) return;
 
-// UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant !!!
+// UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant, is synchronized through tx_free variable
 
     state = STATE_IDLE; // to start the parser, also resets time gap check
 
@@ -317,6 +323,7 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 
     if (!enabled) return;
 
+    tx_free = false;
     channels_received = false;
     cmd_received = false;
     cmd_m2r_available = 0;
@@ -340,7 +347,7 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 // polled in main loop
 bool tMBridge::ChannelsUpdated(tRcData* rc)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it
+if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
     if (!enabled) return false;
 
@@ -357,22 +364,33 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it
 // polled in main loop
 bool tMBridge::TelemetryUpdate(uint8_t* task)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it
+if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
     if (!enabled) return false;
 
-    uint8_t curr_telemetry_state;
+    // check if we can handle the next slot
+    if (!tx_free) return false;
+    tx_free = false;
 
-    if (!tPin5BridgeBase::TelemetryUpdateState(&curr_telemetry_state, 15)) return false;
+    // check if we should restart telemetry sequence
+    if (telemetry_start_next_tick) {
+        telemetry_start_next_tick = false;
+        telemetry_state = 0;
+    }
+
+    // next slot
+    uint8_t curr_telemetry_state = telemetry_state;
+    telemetry_state++;
 
     switch (curr_telemetry_state) {
     case 1:
         *task = TXBRIDGE_SEND_LINK_STATS;
         return true;
-    case 6: case 9:
+    case 5: case 9:
         *task = TXBRIDGE_SEND_CMD;
         return true;
     }
+
     return false;
 }
 
@@ -479,12 +497,12 @@ tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
         mbridge_start_ParamRequestList();
         break;
 
-    case MBRIDGE_CMD_PARAM_ITEM:{
+    case MBRIDGE_CMD_PARAM_ITEM: {
         uint8_t idx = request->param_item.index;
         //if (request->name[0] != 0) { // name is specified, so search for index of parameter
         //}
         mbridge_start_ParamRequestByIndex(idx);
-        }break;
+        break; }
     }
 
     return request->cmd_requested;
