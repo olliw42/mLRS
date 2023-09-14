@@ -1043,15 +1043,15 @@ IF_CRSF(
         channelOrder.Apply(&rcData);
     }
     uint8_t crsftask; uint8_t crsfcmd;
-    uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's to fast lua script gets out of sync
+    uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's too fast Lua script gets out of sync
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
         switch (crsftask) {
-        case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); do_cnt = 2; break;
+        case TXCRSF_SEND_LINK_STATISTICS: crsf_send_LinkStatistics(); do_cnt = 0; break;
         case TXCRSF_SEND_LINK_STATISTICS_TX: crsf_send_LinkStatisticsTx(); break;
         case TXCRSF_SEND_LINK_STATISTICS_RX: crsf_send_LinkStatisticsRx(); break;
         case TXCRSF_SEND_TELEMETRY_FRAME:
-            if (do_cnt && mbridge.CommandInFifo(&mbcmd)) {
+            if (!do_cnt && mbridge.CommandInFifo(&mbcmd)) {
                 mbridge_send_cmd(mbcmd);
             }
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
@@ -1060,7 +1060,7 @@ IF_CRSF(
             if (connected_and_rx_setup_available() && SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
                 crsf.SendTelemetryFrame();
             }
-            DECl(do_cnt);
+            INCc(do_cnt, 3);
             break;
         }
     }
