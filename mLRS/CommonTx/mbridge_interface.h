@@ -116,52 +116,40 @@ if (crsf_emulation) while (1) {}; // must not happen
 
     tx_free = true; // tell external code that next slot can be filled
 
-    uint8_t available = 0;
-
     if (cmd_m2r_available) {
         send_command(); // uses cmd_m2r_available
-        available = cmd_m2r_available;
         cmd_m2r_available = 0;
-    } else {
-        available = send_serial();
+        return true;
     }
 
-    if (!available) {
+    if (!serial_rx_available()) { // nothing to do
         state = STATE_IDLE;
         return false;
     }
+
+    send_serial();
 
     return true;
 }
 
 
 // is called in isr context
+// we can assume that there is at least one byte available
 uint8_t tMBridge::send_serial(void)
 {
-if (crsf_emulation) while (1) {}; // must not happen
-
-    uint8_t count = 0;
-    uint8_t payload[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX];
+    pin5_putc(0x00); // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
     for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
+        uint8_t c = serial_getc();
+        pin5_putc(c);
         if (!serial_rx_available()) break;
-        payload[count++] = serial_getc();
     }
-    if (count > 0) {
-        pin5_putc(0x00); // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
-        for (uint8_t i = 0; i < count; i++) {
-            uint8_t c = payload[i];
-            pin5_putc(c);
-        }
-    }
-    return count;
+    return 1;
 }
 
 
 // is called in isr context
 void tMBridge::send_command(void)
 {
-if (crsf_emulation) while (1) {}; // must not happen
-
     for (uint8_t i = 0; i < cmd_m2r_available; i++) {
         uint8_t c = cmd_m2r_frame[i];
         pin5_putc(c);
