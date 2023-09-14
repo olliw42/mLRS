@@ -763,7 +763,10 @@ void mbridge_send_ParamItem(void)
         item3.index = param_idx;
         strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21 + 23, 23);
 
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM4, (uint8_t*)&item3);
+        // we would have to match MAVLink4OpenTx code
+        // to avoid this let's play foul: set highest bit of index
+        item3.index += 128;
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
 
         // next param item
         param_itemtype_to_send = 0; // done with this parameter

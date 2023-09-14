@@ -10,9 +10,10 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-09-06.00'
+local version = '2023-09-14.00'
 
-local required_mLRS_version_int = 333 -- 'v0.3.33'
+local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
+local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
 
 
 -- experimental
@@ -119,7 +120,6 @@ local MBRIDGE_CMD_BIND_START         = 14
 local MBRIDGE_CMD_BIND_STOP          = 15
 local MBRIDGE_CMD_MODELID_SET        = 16
 local MBRIDGE_CMD_SYSTEM_BOOTLOADER  = 17
-local MBRIDGE_CMD_PARAM_ITEM4        = 18
 
 local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_TX_LINK_STATS then return MBRIDGE_CMD_TX_LINK_STATS_LEN; end
@@ -138,7 +138,6 @@ local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_BIND_STOP then return 0; end
     if cmd == MBRIDGE_CMD_MODELID_SET then return MBRIDGE_CMD_MODELID_SET_LEN; end
     if cmd == MBRIDGE_CMD_SYSTEM_BOOTLOADER then return 0; end
-    if cmd == MBRIDGE_CMD_PARAM_ITEM4 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
     return 0;
 end
 
@@ -588,9 +587,14 @@ local function doParamLoop()
                     paramsError() -- ERROR: should not happen, but ??? => catch this error
                 end
             end
-        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 or cmd.cmd == MBRIDGE_CMD_PARAM_ITEM4 then
-            -- MBRIDGE_CMD_PARAM_ITEM3, MBRIDGE_CMD_PARAM_ITEM4
+        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
+            -- MBRIDGE_CMD_PARAM_ITEM3
             local index = cmd.payload[0]
+            local is_item4 = false
+            if (index >= 128) then -- this is actually ITEM4
+                index = index - 128;
+                is_item4 = true
+            end
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
@@ -599,13 +603,17 @@ local function doParamLoop()
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             elseif DEVICE_PARAM_LIST[index].item2payload == nil then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
+            elseif is_item4 and DEVICE_PARAM_LIST[index].item3payload == nil then
+                paramsError() -- ERROR: should not happen, but ??? => catch this error
             else
                 local s = DEVICE_PARAM_LIST[index].item2payload
-                if cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
+                if not is_item4 then
+                    DEVICE_PARAM_LIST[index].item3payload = cmd.payload
                     for i=1,23 do s[23+i] = cmd.payload[i] end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
                 else    
-                    for i=1,23 do s[23+23+i] = cmd.payload[i] end
+                    local s3 = DEVICE_PARAM_LIST[index].item3payload
+                    for i=1,23 do s[23+i] = s3[i]; s[23+23+i] = cmd.payload[i]; end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
                 end    
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
@@ -1003,14 +1011,15 @@ local function drawPageMain()
 
     local tx_version_error = false
     local rx_version_error = false
-    if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_TX.version_int < required_mLRS_version_int then
+    if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_TX.version_int < required_tx_mLRS_version_int then
         tx_version_error = true
+        popup_text = "Tx version not supported\nby this Lua script!"
     end
-    if DEVICE_ITEM_RX ~= nil and connected and DEVICE_ITEM_RX.version_int < required_mLRS_version_int then
+    if DEVICE_ITEM_RX ~= nil and connected and DEVICE_ITEM_RX.version_int < required_rx_mLRS_version_int then
         rx_version_error = true
+        popup_text = "Rx version not supported\nby this Lua script!"
     end
     if tx_version_error or rx_version_error then
-        popup_text = "mLRS Version not supported\nby this Lua Script!"
         drawPopup()
         return
     end

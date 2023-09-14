@@ -56,8 +56,9 @@ typedef enum {
 } MBRIDGE_PACKET_STX_ENUM;
 
 
+// ATTENTION: adding new command with len != 0 requires MAVLink4OpenTx code to be matched
 typedef enum {
-   // zero cannot be used
+    // zero cannot be used
     MBRIDGE_CMD_TX_LINK_STATS         = 2,
     MBRIDGE_CMD_REQUEST_INFO          = 3, // len = 0
     MBRIDGE_CMD_DEVICE_ITEM_TX        = 4,
@@ -74,7 +75,6 @@ typedef enum {
     MBRIDGE_CMD_BIND_STOP             = 15, // len = 0
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
-    MBRIDGE_CMD_PARAM_ITEM4           = 18,
 } MBRIDGE_CMD_ENUM;
 
 
@@ -106,7 +106,6 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_BIND_STOP: return 0;
     case MBRIDGE_CMD_MODELID_SET: return MBRIDGE_CMD_MODELID_SET_LEN; break;
     case MBRIDGE_CMD_SYSTEM_BOOTLOADER: return 0;
-    case MBRIDGE_CMD_PARAM_ITEM4: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     }
     return 0;
 }
