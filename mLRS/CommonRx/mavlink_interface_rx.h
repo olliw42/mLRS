@@ -187,6 +187,8 @@ void MavlinkBase::Do(void)
     }
 #endif
 
+    if (out.IsRelaySecondary()) return; // don't inject anything in this case
+
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
         switch (Setup.Rx.SendRadioStatus) {
@@ -267,6 +269,7 @@ void MavlinkBase::putc(char c)
 #endif
         fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
 
+if (!out.IsRelaySecondary()) { // don't do mavftp faking in this case
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
 #if MAVLINK_OPT_FAKE_PARAMFTP > 1
         bool force_param_list = true;
@@ -294,6 +297,7 @@ void MavlinkBase::putc(char c)
             }
         }
 #endif
+}
 
         send_msg_serial_out();
     }
