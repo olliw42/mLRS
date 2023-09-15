@@ -146,7 +146,6 @@ bool tTxCrsf::transmit_start(void)
     tx_free = true; // tell external code that tx_frame can be filled with new data
 
     if (!tx_available) { // nothing to send
-        state = STATE_IDLE;
         return false;
     }
 

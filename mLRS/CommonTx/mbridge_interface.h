@@ -92,7 +92,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
-    FifoBase<uint8_t,128> cmd_fifo;
+    FifoBase<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
     uint8_t cmd_in_process;
     uint8_t ack_cmd;
     bool ack_ok;
@@ -123,7 +123,6 @@ if (crsf_emulation) while (1) {}; // must not happen
     }
 
     if (!serial_rx_available()) { // nothing to do
-        state = STATE_IDLE;
         return false;
     }
 
