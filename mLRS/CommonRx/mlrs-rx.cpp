@@ -47,9 +47,6 @@ v0.0.00:
 #ifdef USE_SERIAL
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
-#ifdef USE_OUT
-#include "../modules/stm32ll-lib/src/stdstm32-uart.h"
-#endif
 #ifdef USE_DEBUG
 #ifdef DEVICE_HAS_DEBUG_SWUART
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
@@ -69,8 +66,8 @@ v0.0.00:
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "clock.h"
-#include "out.h"
 #include "rxstats.h"
+#include "out_interface.h" // this includes uart.h, out.h, declares tOut out
 #include "powerup.h"
 
 
@@ -83,85 +80,6 @@ tTDiversity tdiversity;
 
 // is required in bind.h
 void clock_reset(void) { clock.Reset(); }
-
-
-class Out : public OutBase
-{
-  public:
-#ifdef USE_OUT
-    void Init(void)
-    {
-        OutBase::Init(&Setup.Rx);
-        out_init_gpio();
-        uart_init_isroff();
-    }
-
-#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL
-    bool config_crsf(bool enable_flag) override
-    {
-        if (enable_flag) {
-            uart_setprotocol(416666, XUART_PARITY_NO, UART_STOPBIT_1);
-            out_set_normal();
-        }
-        return true;
-    }
-
-    bool config_sbus_inverted(bool enable_flag) override
-    {
-        if (enable_flag) {
-            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-            out_set_normal();
-        }
-        return true;
-    }
-#endif
-
-#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_INVERTED
-    bool config_sbus(bool enable_flag) override
-    {
-        if (enable_flag) {
-            uart_setprotocol(100000, XUART_PARITY_EVEN, UART_STOPBIT_2);
-            out_set_inverted();
-        }
-        return true;
-    }
-#endif
-
-    void putc(char c) override { uart_putc(c); }
-
-    void SendLinkStatistics(void)
-    {
-        tOutLinkStats lstats = {
-          .receiver_rssi1 = stats.last_rssi1,
-          .receiver_rssi2 = stats.last_rssi2,
-          .receiver_LQ = rxstats.GetLQ(),
-          .receiver_snr = stats.GetLastSnr(),
-          .receiver_antenna = stats.last_antenna,
-          .receiver_transmit_antenna = stats.last_transmit_antenna,
-          .receiver_power_dbm = sx.RfPower_dbm(),
-          .transmitter_rssi = stats.received_rssi,
-          .transmitter_LQ = stats.received_LQ,
-          .transmitter_snr = 0,
-          .transmitter_antenna = stats.received_antenna,
-          .transmitter_transmit_antenna = stats.received_transmit_antenna,
-          .mode = (uint8_t)Config.Mode,
-        };
-        if (USE_ANTENNA1 && USE_ANTENNA2) {
-            lstats.antenna_config = 3;
-        } else if (USE_ANTENNA2) {
-            lstats.antenna_config = 2;
-        } else {
-            lstats.antenna_config = 1;
-        }
-        OutBase::SendLinkStatistics(&lstats);
-    }
-#else
-    void Init(void) {}
-    void SendLinkStatistics(void) {}
-#endif
-};
-
-Out out;
 
 
 //-------------------------------------------------------
