@@ -163,6 +163,11 @@ void MavlinkBase::Do(void)
         main_radio_stats_tlast_ms = tnow_ms;
     }
 
+    if (crsf.IsRelayMain() || crsf.IsRelaySecondary()) { // this is a inner tx module
+        inject_radio_status = false;
+        inject_main_radio_stats = false;
+    }
+
     if (inject_main_radio_stats) { // check available size!?
         inject_main_radio_stats = false;
         generate_main_radio_stats();

@@ -892,7 +892,7 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
-if (crsf.main_radio_stats_receiving) {
+if (crsf.IsRelaySecondary()) {
     clstats.uplink_rssi1 = crsf.main_radio_stats.uplink_rssi;
     clstats.uplink_rssi2 = 0; // we don't know it
     clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
@@ -927,7 +927,7 @@ void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx clstats;
 
-if (crsf.main_radio_stats_receiving) {
+if (crsf.IsRelaySecondary()) {
     clstats.uplink_rssi = crsf.main_radio_stats.uplink_rssi;
     clstats.uplink_rssi_percent = crsf.main_radio_stats.uplink_rssi_percent;
     clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
@@ -952,7 +952,7 @@ void crsf_send_LinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
-if (crsf.main_radio_stats_receiving) {
+if (crsf.IsRelaySecondary()) {
     clstats.downlink_rssi = crsf.main_radio_stats.downlink_rssi;
     clstats.downlink_rssi_percent = crsf.main_radio_stats.downlink_rssi_percent;
     clstats.downlink_LQ = crsf.main_radio_stats.downlink_LQ;
