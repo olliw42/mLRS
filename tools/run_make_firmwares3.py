@@ -797,6 +797,12 @@ class cTargetF103RB(cTargetF1):
             'STM32F103xB', 'startup_stm32f103rbhx.s', 'STM32F103RBHX_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
+class cTargetG431CB(cTargetG4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+        super().__init__(
+            target, target_D,
+            'STM32G431xx', 'startup_stm32g431cbtx.s', 'STM32G431CBTX_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
 
 class cTargetG431KB(cTargetG4):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
@@ -1023,6 +1029,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetF103CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'f103rb' in t['target']:
             tlist.append( cTargetF103RB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+        elif 'g431cb' in t['target']:
+            tlist.append( cTargetG431CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'g431kb' in t['target']:
             tlist.append( cTargetG431KB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'g441kb' in t['target']:
