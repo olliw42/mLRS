@@ -215,6 +215,8 @@ MLRS_SOURCES_HAL_STM32G4 = [
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_cortex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_i2c.c'),

@@ -112,6 +112,8 @@ g4xx_hal_files_to_include = [
   'stm32g4xx_hal_dma.c',
   'stm32g4xx_hal_i2c.c',
   'stm32g4xx_hal_i2c_ex.c',
+  'stm32g4xx_hal_pcd.c',
+  'stm32g4xx_hal_pcd_ex.c',
 ]
 
 wlxx_hal_files_to_include = [

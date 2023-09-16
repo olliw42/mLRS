@@ -23,6 +23,11 @@
 #include "usbd_cdc.h"
 #include "usbd_conf.h"
 
+#ifndef USB_IRQn
+  #ifdef USB_LP_IRQn
+    #define USB_IRQn USB_LP_IRQn
+  #endif
+#endif
 
 PCD_HandleTypeDef hpcd_USB_FS;
 void Error_Handler(void);
