@@ -30,9 +30,7 @@ extern "C" {
 #ifdef STM32F072xB
 #include "stm32f0xx.h"
 #include "stm32f0xx_hal.h"
-#endif
- 
-#ifdef STM32G431xx
+#elif defined STM32G431xx
 #include "stm32g4xx.h"
 #include "stm32g4xx_hal.h"
 #endif
