@@ -31,14 +31,14 @@ extern "C" {
   #include "stm32f0xx.h"
   #include "stm32f0xx_hal.h"
   #define USBD_IRQn         USB_IRQn
-  #define USBB_IRQHandler   USB_IRQHandler
+  #define USBD_IRQHandler   USB_IRQHandler
 
 #elif defined STM32G431xx
   #include "stm32g4xx.h"
   #include "stm32g4xx_hal.h"
 
   #define USBD_IRQn         USB_LP_IRQn
-  #define USBB_IRQHandler   USB_LP_IRQHandler
+  #define USBD_IRQHandler   USB_LP_IRQHandler
 
 #endif
 
