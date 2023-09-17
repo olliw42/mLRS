@@ -8,6 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
+ version 17.09.2023
 ********************************************************
 '''
 import os
@@ -76,74 +77,79 @@ def copy_wexclude(target, source, f, files_to_exclude=[]):
 #  and all other folders with f103
 
 f1xx_hal_files_to_include = [
-  'stm32f1xx_hal.c',
-  'stm32f1xx_hal_cortex.c',
-  'stm32f1xx_hal_pwr.c',
-  'stm32f1xx_hal_pwr_ex.c',
-  'stm32f1xx_hal_rcc.c',
-  'stm32f1xx_hal_rcc_ex.c',
-  'stm32f1xx_hal_flash.c',
-  'stm32f1xx_hal_flash_ex.c',
-  'stm32f1xx_hal_dma.c',
-  'stm32f1xx_hal_i2c.c',
+    'stm32f1xx_hal.c',
+    'stm32f1xx_hal_cortex.c',
+    'stm32f1xx_hal_pwr.c',
+    'stm32f1xx_hal_pwr_ex.c',
+    'stm32f1xx_hal_rcc.c',
+    'stm32f1xx_hal_rcc_ex.c',
+    'stm32f1xx_hal_flash.c',
+    'stm32f1xx_hal_flash_ex.c',
+    'stm32f1xx_hal_dma.c',
+    'stm32f1xx_hal_i2c.c',
 ]
 
 l4xx_hal_files_to_include = [
-  'stm32l4xx_hal.c',
-  'stm32l4xx_hal_cortex.c',
-  'stm32l4xx_hal_pwr.c',
-  'stm32l4xx_hal_pwr_ex.c',
-  'stm32l4xx_hal_rcc.c',
-  'stm32l4xx_hal_rcc_ex.c',
-  'stm32l4xx_hal_flash.c',
-  'stm32l4xx_hal_flash_ex.c',
-  'stm32l4xx_hal_i2c.c',
+    'stm32l4xx_hal.c',
+    'stm32l4xx_hal_cortex.c',
+    'stm32l4xx_hal_pwr.c',
+    'stm32l4xx_hal_pwr_ex.c',
+    'stm32l4xx_hal_rcc.c',
+    'stm32l4xx_hal_rcc_ex.c',
+    'stm32l4xx_hal_flash.c',
+    'stm32l4xx_hal_flash_ex.c',
+    'stm32l4xx_hal_i2c.c',
 ]
 
 g4xx_hal_files_to_include = [
-  'stm32g4xx_hal.c',
-  'stm32g4xx_hal_cortex.c',
-  'stm32g4xx_hal_pwr.c',
-  'stm32g4xx_hal_pwr_ex.c',
-  'stm32g4xx_hal_rcc.c',
-  'stm32g4xx_hal_rcc_ex.c',
-  'stm32g4xx_hal_flash.c',
-  'stm32g4xx_hal_flash_ex.c',
-  'stm32g4xx_hal_dma.c',
-  'stm32g4xx_hal_i2c.c',
-  'stm32g4xx_hal_i2c_ex.c',
-  'stm32g4xx_hal_pcd.c',
-  'stm32g4xx_hal_pcd_ex.c',
+    'stm32g4xx_hal.c',
+    'stm32g4xx_hal_cortex.c',
+    'stm32g4xx_hal_pwr.c',
+    'stm32g4xx_hal_pwr_ex.c',
+    'stm32g4xx_hal_rcc.c',
+    'stm32g4xx_hal_rcc_ex.c',
+    'stm32g4xx_hal_flash.c',
+    'stm32g4xx_hal_flash_ex.c',
+    'stm32g4xx_hal_dma.c',
+    'stm32g4xx_hal_i2c.c',
+    'stm32g4xx_hal_i2c_ex.c',
+    'stm32g4xx_hal_pcd.c',
+    'stm32g4xx_hal_pcd_ex.c',
 ]
 
 wlxx_hal_files_to_include = [
-  'stm32wlxx_hal.c',
-  'stm32wlxx_hal_cortex.c',
-  'stm32wlxx_hal_pwr.c',
-  'stm32wlxx_hal_pwr_ex.c',
-  'stm32wlxx_hal_rcc.c',
-  'stm32wlxx_hal_rcc_ex.c',
-  'stm32wlxx_hal_flash.c',
-  'stm32wlxx_hal_flash_ex.c',
-#  'stm32wlxx_hal_dma.c', # why not ??
-  'stm32wlxx_hal_i2c.c',
-  'stm32wlxx_hal_i2c_ex.c',
+    'stm32wlxx_hal.c',
+    'stm32wlxx_hal_cortex.c',
+    'stm32wlxx_hal_pwr.c',
+    'stm32wlxx_hal_pwr_ex.c',
+    'stm32wlxx_hal_rcc.c',
+    'stm32wlxx_hal_rcc_ex.c',
+    'stm32wlxx_hal_flash.c',
+    'stm32wlxx_hal_flash_ex.c',
+#    'stm32wlxx_hal_dma.c', # why not ??
+    'stm32wlxx_hal_i2c.c',
+    'stm32wlxx_hal_i2c_ex.c',
 ]
 
 f0xx_hal_files_to_include = [
-  'stm32f0xx_hal.c',
-  'stm32f0xx_hal_cortex.c',
-  'stm32f0xx_hal_pwr.c',
-  'stm32f0xx_hal_pwr_ex.c',
-  'stm32f0xx_hal_rcc.c',
-  'stm32f0xx_hal_rcc_ex.c',
-  'stm32f0xx_hal_flash.c',
-  'stm32f0xx_hal_flash_ex.c',
-  'stm32f0xx_hal_dma.c', # why not ??
-  'stm32f0xx_hal_i2c.c',
-  'stm32f0xx_hal_i2c_ex.c',
-  'stm32f0xx_hal_pcd.c',
-  'stm32f0xx_hal_pcd_ex.c',
+    'stm32f0xx_hal.c',
+    'stm32f0xx_hal_cortex.c',
+    'stm32f0xx_hal_pwr.c',
+    'stm32f0xx_hal_pwr_ex.c',
+    'stm32f0xx_hal_rcc.c',
+    'stm32f0xx_hal_rcc_ex.c',
+    'stm32f0xx_hal_flash.c',
+    'stm32f0xx_hal_flash_ex.c',
+    'stm32f0xx_hal_dma.c', # why not ??
+    'stm32f0xx_hal_i2c.c',
+    'stm32f0xx_hal_i2c_ex.c',
+    'stm32f0xx_hal_pcd.c',
+    'stm32f0xx_hal_pcd_ex.c',
+]
+
+
+targets_with_usb_to_include = [
+    'tx-FRM303-f072cb',
 ]
 
 
@@ -251,33 +257,6 @@ def copy_hal_driver(folder, chip, clean=False, silent=False):
             shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
 
 
-def do_for_each_target(clean=False, silent=False):
-    print('----------------------------------------')
-    print(' copy CMSIS and HAL files to project target folders')
-    print('----------------------------------------')
-    dirlist = os.listdir(mLRSdirectory)
-    for f in dirlist:
-        if f[:3] == "rx-" or f[:3] == "tx-":
-            print('#############################')
-            print('*', f)
-            chip = re.findall(r"\w+-(\w+)$", f)[0]
-
-            target = os.path.join(mLRSdirectory,f,'Drivers')
-            create_clean_dir(target)
-            # copy licences, to ensure the folders are not empty
-            source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core')
-            target = os.path.join(mLRSdirectory,f,'Drivers','CMSIS')
-            create_clean_dir(target)
-            shutil.copy(os.path.join(source,'LICENSE.txt'), target)
-            if clean: continue
-
-            copy_cmsis_core(f, clean, silent)
-            copy_cmsis_driver(f, chip, clean, silent)
-            copy_hal_driver(f, chip, clean, silent)
-            #break
-            #exit(1)
-
-
 def copy_usb_device_library_driver(folder, clean=False, silent=False):
     print('--- COPY USB Device Library ---')
     if not silent: print('folder:', folder)
@@ -305,18 +284,52 @@ def copy_usb_device_library_driver(folder, clean=False, silent=False):
     copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
 
 
+def do_for_each_target(clean=False, silent=False):
+    print('----------------------------------------')
+    print(' copy CMSIS and HAL files to project target folders')
+    print('----------------------------------------')
+    dirlist = os.listdir(mLRSdirectory)
+    for f in dirlist:
+        if f[:3] == "rx-" or f[:3] == "tx-":
+            print('#############################')
+            print('*', f)
+            chip = re.findall(r"\w+-(\w+)$", f)[0]
+
+            target = os.path.join(mLRSdirectory,f,'Drivers')
+            create_clean_dir(target)
+            # copy licences, to ensure the folders are not empty
+            source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core')
+            target = os.path.join(mLRSdirectory,f,'Drivers','CMSIS')
+            create_clean_dir(target)
+            shutil.copy(os.path.join(source,'LICENSE.txt'), target)
+            
+            if not clean:
+                copy_cmsis_core(f, clean, silent)
+                copy_cmsis_driver(f, chip, clean, silent)
+                copy_hal_driver(f, chip, clean, silent)
+            
+            if f in targets_with_usb_to_include:
+                copy_usb_device_library_driver(f,clean,silent)
+            
+            #break
+            #exit(1)
+
+
 #-- here we go
 
-silent = False
-if '-silent' in sys.argv: silent = True
-clean = False
-if '-clean' in sys.argv: clean = True
+cmdline_silent = False
+cmdline_clean = False
+
+for cmd in sys.argv:
+    if cmd == '-silent':
+        cmdline_silent = True
+    if cmd == '-clean':
+        cmdline_clean = True
 
 #do_for_each_folder(clean=True)
-do_for_each_target(clean=clean,silent=silent)
+do_for_each_target(clean=cmdline_clean,silent=cmdline_silent)
 
-copy_usb_device_library_driver('tx-FRM303-f072cb', clean=clean,silent=silent)
 
 print('# DONE #')
-if not silent:
+if not cmdline_silent:
     os.system("pause")
