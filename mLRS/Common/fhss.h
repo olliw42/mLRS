@@ -447,10 +447,10 @@ class tFhssBase
         BIND_CHANNEL_LIST_LEN = fhss_config[config_i].bind_channel_list_len;
         curr_bind_config_i = config_i; // we start with what setup suggests
 
-        cnt = fhss_num;
-
         uint8_t cnt_max = (FREQ_LIST_LEN - BIND_CHANNEL_LIST_LEN);
-        if (cnt > cnt_max) cnt = cnt_max;
+        if (fhss_num > cnt_max) fhss_num = cnt_max;
+
+        cnt = fhss_num;
 
         switch (config_i) {
         case FHSS_CONFIG_2P4_GHZ:
@@ -477,6 +477,7 @@ class tFhssBase
                     if (cnt > 18) cnt = 18; // we narrow down to 12 or 18
                     except = EXCEPT_NONE;
                 }
+                if (cnt > fhss_num) cnt = fhss_num;
             } else {
                 ortho = ORTHO_NONE;
                 except = EXCEPT_NONE;
@@ -486,6 +487,7 @@ class tFhssBase
         case FHSS_CONFIG_915_MHZ_FCC:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
+                if (cnt > fhss_num) cnt = fhss_num;
             } else {
                 ortho = ORTHO_NONE;
             }
@@ -494,6 +496,7 @@ class tFhssBase
         case FHSS_CONFIG_70_CM_HAM:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
+                if (cnt > fhss_num) cnt = fhss_num;
             } else {
                 ortho = ORTHO_NONE;
             }
