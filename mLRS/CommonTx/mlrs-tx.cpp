@@ -168,7 +168,7 @@ void WhileTransmit::handle_once(void)
     if (bind.IsInBind()) disp.SetBind();
 
     static uint32_t draw_tlast_ms = 0;
-    if (tnow_ms - draw_tlast_ms >= 30) { // effectively slows down if in 50 Hz mode (Draw takes time, ca 30 ms on G4)
+    if (tnow_ms - draw_tlast_ms >= 40) { // effectively slows down (drawing takes time, ca 30 ms on G4, slower on other mcu)
         draw_tlast_ms = tnow_ms;
         disp.Draw();
     }
