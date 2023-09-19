@@ -572,7 +572,7 @@ RESTARTCONTROLLER:
     //-- SX handling
 
     switch (link_state) {
-    case LINK_STATE_RECEIVE: {
+    case LINK_STATE_RECEIVE:
         if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
             fhss.HopToNext();
         }
@@ -584,13 +584,13 @@ RESTARTCONTROLLER:
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
-        }break;
+        break;
 
-    case LINK_STATE_TRANSMIT: {
+    case LINK_STATE_TRANSMIT:
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
-        }break;
+        break;
     }//end of switch(link_state)
 
 IF_SX(
@@ -760,11 +760,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_TRANSMIT;
         }
 
-#ifdef DEVICE_HAS_SX127x
-        if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
-#else
-        if (connect_state >= CONNECT_STATE_SYNC) {
-#endif
+        if ((connect_state >= CONNECT_STATE_SYNC) ||
+            (link_state == LINK_STATE_RECEIVE) || (link_state == LINK_STATE_TRANSMIT)) {
             sx.SetToIdle();
             sx2.SetToIdle();
         }
