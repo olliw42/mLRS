@@ -272,6 +272,23 @@ void FAILALWAYS(uint8_t led_pattern, const char* msg)
 }
 
 
+void FAILALWAYS_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+{
+char s[64];
+
+    strcpy(s, msg);
+    strcat(s, " irq=x");
+    strcat(s, u16toHEX_s(irq_status));
+    strcat(s, " ls=");
+    strcat(s, linkstate_str[link_state]);
+    strcat(s, " rx1s=");
+    strcat(s, rxstatus_str[link_rx1_status]);
+    strcat(s, " rx2s=");
+    strcat(s, rxstatus_str[link_rx2_status]);
+    fail(&dbg, led_pattern, s);
+}
+
+
 //-------------------------------------------------------
 //-- LED defines
 //-------------------------------------------------------

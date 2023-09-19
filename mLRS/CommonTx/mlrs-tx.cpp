@@ -793,10 +793,10 @@ IF_SX(
         }
 
         if (irq_status & SX_IRQ_RX_DONE) {
-            FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
+            FAILALWAYS_WSTATE(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
         if (irq_status & SX_IRQ_TX_DONE) {
-            FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
+            FAILALWAYS_WSTATE(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
     }//end of if(irq_status)
 );
@@ -826,10 +826,10 @@ IF_SX2(
         }
 
         if (irq2_status & SX2_IRQ_RX_DONE) {
-            FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
+            FAILALWAYS_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
         if (irq2_status & SX2_IRQ_TX_DONE) {
-            FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
+            FAILALWAYS_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
     }//end of if(irq2_status)
 );
