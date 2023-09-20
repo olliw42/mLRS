@@ -38,6 +38,7 @@ typedef enum {
     POWER_24_DBM    = 24, // 251 mW
     POWER_27_DBM    = 27, // 501 mW
     POWER_30_DBM    = 30, // 1000 mW
+    POWER_33_DBM    = 33, // 2000 mW
     POWER_MAX       = INT8_MAX,
 } POWER_ENUM;
 
