@@ -981,7 +981,8 @@ IF_MBRIDGE(
         // when we receive channels packet from transmitter, we send link stats to transmitter
         mbridge.TelemetryStart();
     }
-    // we send a mbridge cmd twice per 20 ms cycle, we can't send too fast, in otx the receive buffer can hold 64 cmds
+    // mBridge sends mbridge cmd twice per 20 ms cycle, so we have 10 ms time to process
+    // we can't send too fast, in otx the receive buffer can hold 64 cmds
     uint8_t mbtask; uint8_t mbcmd;
     if (mbridge.TelemetryUpdate(&mbtask)) {
         switch (mbtask) {
@@ -1028,8 +1029,8 @@ IF_MBRIDGE_OR_CRSF( // to allow crsf mbridge emulation
         case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
         case MBRIDGE_CMD_MODELID_SET:
-//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetPayloadPtr()[0]));
-            config_id.Change(mbridge.GetPayloadPtr()[0]);
+//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
+            config_id.Change(mbridge.GetModelId());
             break;
         }
     }
@@ -1065,8 +1066,8 @@ IF_CRSF(
     if (crsf.CommandReceived(&crsfcmd)) {
         switch (crsfcmd) {
         case TXCRSF_CMD_MODELID_SET:
-//dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdDataPtr()[0]));
-            config_id.Change(crsf.GetCmdDataPtr()[0]);
+//dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdModelId()));
+            config_id.Change(crsf.GetCmdModelId());
             break;
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");

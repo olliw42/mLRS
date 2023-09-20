@@ -54,6 +54,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t* GetCmdDataPtr(void);
     uint8_t* GetPayloadPtr(void);
     uint8_t GetPayloadLen(void);
+    uint8_t GetCmdModelId(void);
 
     void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
@@ -78,6 +79,8 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t frame[CRSF_FRAME_LEN_MAX + 16];
     volatile bool channels_received;
     volatile bool cmd_received;
+    volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
+    volatile uint8_t cmd_modelid_value;
 
     volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
@@ -209,6 +212,11 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         // this is called in isr, so we want to do crc check later, if we want to do it all
         if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
             channels_received = true;
+        } else
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
+            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_MODEL_SELECT_ID) {
+            cmd_modelid_received = true;
+            cmd_modelid_value = frame[7];
         } else {
             cmd_received = true;
         }
@@ -272,6 +280,7 @@ void tTxCrsf::Init(bool enable_flag)
     tx_free = false;
     channels_received = false;
     cmd_received = false;
+    cmd_modelid_received = false;
 
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
@@ -369,21 +378,18 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
 {
     if (!enabled) return false;
 
+    if (cmd_modelid_received) {
+        cmd_modelid_received = false;
+        *cmd = TXCRSF_CMD_MODELID_SET;
+        return true;
+    }
+
     if (!cmd_received) return false;
     cmd_received = false;
 
     // TODO: we could check crc if we wanted to
 
     tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
-
-    // command model select id
-    if (header->address == CRSF_OPENTX_SYNC &&
-        header->frame_id == CRSF_FRAME_ID_COMMAND &&
-        header->cmd_id == CRSF_COMMAND_ID &&
-        header->cmd == CRSF_COMMAND_MODEL_SELECT_ID) {
-        *cmd = TXCRSF_CMD_MODELID_SET;
-        return true;
-    }
 
     // mBridge emulation
     if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
@@ -411,6 +417,12 @@ uint8_t* tTxCrsf::GetPayloadPtr(void)
 uint8_t tTxCrsf::GetPayloadLen(void)
 {
     return ((tCrsfFrameHeader*)frame)->len - 2;
+}
+
+
+uint8_t tTxCrsf::GetCmdModelId(void)
+{
+    return cmd_modelid_value;
 }
 
 

@@ -42,6 +42,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 
     bool CommandReceived(uint8_t* cmd);
     uint8_t* GetPayloadPtr(void);
+    uint8_t GetModelId(void);
     void SendCommand(uint8_t cmd, uint8_t* payload);
     bool CommandInFifo(uint8_t* cmd);
     void Lock(uint8_t cmd);
@@ -399,6 +400,12 @@ bool tMBridge::CommandReceived(uint8_t* cmd)
 uint8_t* tMBridge::GetPayloadPtr(void)
 {
     return &(cmd_r2m_frame[1]);
+}
+
+
+uint8_t tMBridge::GetModelId(void)
+{
+    return cmd_r2m_frame[1];
 }
 
 
