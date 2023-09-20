@@ -26,8 +26,21 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stm32f0xx.h"
-#include "stm32f0xx_hal.h"
+
+#ifdef STM32F072xB
+  #include "stm32f0xx.h"
+  #include "stm32f0xx_hal.h"
+  #define USBD_IRQn         USB_IRQn
+  #define USBD_IRQHandler   USB_IRQHandler
+
+#elif defined STM32G431xx
+  #include "stm32g4xx.h"
+  #include "stm32g4xx_hal.h"
+
+  #define USBD_IRQn         USB_LP_IRQn
+  #define USBD_IRQHandler   USB_LP_IRQHandler
+
+#endif
 
 
 #define USBD_MAX_NUM_INTERFACES                     1U

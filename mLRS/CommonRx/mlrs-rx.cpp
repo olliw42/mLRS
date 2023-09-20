@@ -572,7 +572,7 @@ RESTARTCONTROLLER:
     //-- SX handling
 
     switch (link_state) {
-    case LINK_STATE_RECEIVE: {
+    case LINK_STATE_RECEIVE:
         if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
             fhss.HopToNext();
         }
@@ -584,13 +584,13 @@ RESTARTCONTROLLER:
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
-        }break;
+        break;
 
-    case LINK_STATE_TRANSMIT: {
+    case LINK_STATE_TRANSMIT:
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
-        }break;
+        break;
     }//end of switch(link_state)
 
 IF_SX(
@@ -612,14 +612,14 @@ IF_SX(
             }
         }
 
+        if (irq_status & SX_IRQ_TIMEOUT) {
+            FAILALWAYS_WSTATE(BLINK_COMMON, "IRQ TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+        }
         if (irq_status & SX_IRQ_RX_DONE) { // R, T, TW
-            FAILALWAYS(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL");
+            FAILALWAYS_WSTATE(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
         if (irq_status & SX_IRQ_TX_DONE) {
-            FAILALWAYS(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL");
-        }
-        if (irq_status & SX_IRQ_TIMEOUT) {
-            FAILALWAYS(BLINK_COMMON, "IRQ TMO FAIL");
+            FAILALWAYS_WSTATE(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
     }//end of if(irq_status)
 );
@@ -642,14 +642,14 @@ IF_SX2(
             }
         }
 
+        if (irq2_status & SX2_IRQ_TIMEOUT) {
+            FAILALWAYS_WSTATE(BLINK_ALTERNATE, "IRQ2 TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+        }
         if (irq2_status & SX2_IRQ_RX_DONE) { // R, T, TW
-            FAILALWAYS(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL");
+            FAILALWAYS_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
         if (irq2_status & SX2_IRQ_TX_DONE) {
-            FAILALWAYS(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL");
-        }
-        if (irq2_status & SX2_IRQ_TIMEOUT) {
-            FAILALWAYS(BLINK_ALTERNATE, "IRQ2 TMO FAIL");
+            FAILALWAYS_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
         }
     }//end of if(irq2_status)
 );
@@ -760,11 +760,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_TRANSMIT;
         }
 
-#ifdef DEVICE_HAS_SX127x
-        if ((connect_state >= CONNECT_STATE_SYNC) || (link_state == LINK_STATE_RECEIVE)) {
-#else
-        if (connect_state >= CONNECT_STATE_SYNC) {
-#endif
+        if ((connect_state >= CONNECT_STATE_SYNC) ||
+            (link_state == LINK_STATE_RECEIVE) || (link_state == LINK_STATE_TRANSMIT)) {
             sx.SetToIdle();
             sx2.SetToIdle();
         }

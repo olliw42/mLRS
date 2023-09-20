@@ -24,6 +24,9 @@ extern "C" {
 #include "../thirdparty/gfxfont.h"
 
 
+#define STDSTM32_GDISP_USE_O3
+
+
 //-------------------------------------------------------
 // I2C interface
 //-------------------------------------------------------
@@ -82,6 +85,12 @@ typedef enum {
 } GDISPLAY_ROTATION_ENUM;
 
 
+typedef enum {
+    GDISPLAY_FONT_BG_NONE = 0, // no background, default since fastest
+    GDISPLAY_FONT_BG_FULL,
+} GDISPLAY_FONT_BG_ENUM;
+
+
 typedef struct
 {
     uint16_t type;
@@ -97,6 +106,7 @@ typedef struct
     int16_t inverted; // only affects text
 
     GFXfont* font;
+    uint16_t font_background;
 
     // to catch the rectangle which needs to be updated
     uint16_t needsupdate; // we could use 0,0,0,0 to indicate that nothing needs to be updated, but it's convenient so
@@ -175,6 +185,8 @@ void gdisp_fillrect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t col
 // Text functions
 //-------------------------------------------------------
 
+void gdisp_setfontbackground(void);
+void gdisp_unsetfontbackground(void);
 void gdisp_setfont(const GFXfont *f);
 void gdisp_unsetfont(void);
 void gdisp_setkerning(int16_t k);

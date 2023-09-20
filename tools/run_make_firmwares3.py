@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 5.09.2023
+ version 17.09.2023
 ********************************************************
 '''
 import os
@@ -215,6 +215,8 @@ MLRS_SOURCES_HAL_STM32G4 = [
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_cortex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_i2c.c'),
@@ -777,46 +779,60 @@ class cTargetF0(cTarget):
 #-- mcu specific targets
 
 class cTargetF103C8(cTargetF1):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'tx'
         super().__init__(
-            target, target_D,
-            'STM32F103xB', 'startup_stm32f103c8tx.s', 'STM32F103C8TX_FLASH.ld',
+            target, target_D, 
+            'STM32F103xB', 'startup_stm32f103c8'+package.lower()+'.s', 'STM32F103C8'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 class cTargetF103CB(cTargetF1):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'tx'
         super().__init__(
-            target, target_D,
-            'STM32F103xB', 'startup_stm32f103cbtx.s', 'STM32F103CBTX_FLASH.ld',
+            target, target_D, 
+            'STM32F103xB', 'startup_stm32f103cb'+package.lower()+'.s', 'STM32F103CB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 class cTargetF103RB(cTargetF1):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'hx'
         super().__init__(
-            target, target_D,
-            'STM32F103xB', 'startup_stm32f103rbhx.s', 'STM32F103RBHX_FLASH.ld',
+            target, target_D, 
+            'STM32F103xB', 'startup_stm32f103rb'+package.lower()+'.s', 'STM32F103RB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 
 class cTargetG431KB(cTargetG4):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'ux'
         super().__init__(
-            target, target_D,
-            'STM32G431xx', 'startup_stm32g431kbux.s', 'STM32G431KBUX_FLASH.ld',
+            target, target_D, 
+            'STM32G431xx', 'startup_stm32g431kb'+package.lower()+'.s', 'STM32G431KB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 class cTargetG441KB(cTargetG4): #is code compatible to G431KB!?
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'ux'
         super().__init__(
             target, target_D,
-            'STM32G441xx', 'startup_stm32g441kbux.s', 'STM32G441KBUX_FLASH.ld',
+            'STM32G441xx',  'startup_stm32g441kb'+package.lower()+'.s', 'STM32G441KB'+package.upper()+'_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
+class cTargetG431CB(cTargetG4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'ux'
+        super().__init__(
+            target, target_D,
+            'STM32G431xx', 'startup_stm32g431cb'+package.lower()+'.s', 'STM32G431CB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 class cTargetG491RE(cTargetG4):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'tx'
         super().__init__(
             target, target_D,
-            'STM32G491xx', 'startup_stm32g491retx.s', 'STM32G491RETX_FLASH.ld',
+            'STM32G491xx', 'startup_stm32g491re'+package.lower()+'.s', 'STM32G491RE'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
 
@@ -835,18 +851,13 @@ class cTargetWLE5JC(cTargetWL):
             extra_D_list, build_dir, elf_name)
 
 
-class cTargetL433CBUX(cTargetL4):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
+class cTargetL433CB(cTargetL4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        s_file = 'startup_stm32l433cb'+package.lower()+'.s'
+        ld_file = 'STM32L433CB'+package.upper()+'_FLASH.ld'
         super().__init__(
             target, target_D,
-            'STM32L433xx', 'startup_stm32l433cbux.s', 'STM32L433CBUX_FLASH.ld',
-            extra_D_list, build_dir, elf_name)
-
-class cTargetL433CBYX(cTargetL4): # identical to CBUX, but unfortunately used
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
-        super().__init__(
-            target, target_D,
-            'STM32L433xx', 'startup_stm32l433cbyx.s', 'STM32L433CBYX_FLASH.ld',
+            'STM32L433xx', s_file, ld_file,
             extra_D_list, build_dir, elf_name)
 
 
@@ -906,9 +917,11 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
+        'package' : 'yx',
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
+        'package' : 'yx',
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
     },{
 #-- rx FRM303
@@ -969,9 +982,11 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
     },{
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+        'package' : 'ux',
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+        'package' : 'ux',
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
     },{
 #-- rx FRM303
@@ -1017,28 +1032,28 @@ def mlrs_create_targetlist(appendix, extra_D_list):
     for t in TLIST:
         build_dir = t['target']+t['appendix']
         elf_name = t['target']+t['appendix']+appendix
+        package = ''
+        if 'package' in t.keys(): package = t['package']
         if 'f103c8' in t['target']:
-            tlist.append( cTargetF103C8(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetF103C8(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'f103cb' in t['target']:
-            tlist.append( cTargetF103CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetF103CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'f103rb' in t['target']:
-            tlist.append( cTargetF103RB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetF103RB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g431kb' in t['target']:
-            tlist.append( cTargetG431KB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetG431KB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g441kb' in t['target']:
-            tlist.append( cTargetG441KB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetG441KB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
+        elif 'g431cb' in t['target']:
+            tlist.append( cTargetG431CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g491re' in t['target']:
-            tlist.append( cTargetG491RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetG491RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'wle5cc' in t['target']:
             tlist.append( cTargetWLE5CC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'wle5jc' in t['target']:
             tlist.append( cTargetWLE5JC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'l433cb' in t['target']:
-            # grrr, sad that ux and yx are used
-            if 'rx' in t['target']:
-                tlist.append( cTargetL433CBYX(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
-            else:
-                tlist.append( cTargetL433CBUX(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+            tlist.append( cTargetL433CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'f072cb' in t['target']:
             tlist.append( cTargetF072CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         else:
@@ -1065,6 +1080,7 @@ def mlrs_copy_all_hex_etc():
 
 cmdline_target = ''
 cmdline_D_list = []
+cmdline_nopause = False
 
 cmd_pos = -1
 for cmd in sys.argv:
@@ -1075,6 +1091,8 @@ for cmd in sys.argv:
     if cmd == '--define' or cmd == '-d' or cmd == '-D':
         if sys.argv[cmd_pos+1] != '':
             cmdline_D_list.append(sys.argv[cmd_pos+1])
+    if cmd == '--nopause' or cmd == '-np':
+            cmdline_nopause = True
 
 #cmdline_target = 'tx-diy-e22dual-module02-g491re'
 #cmdline_target = 'tx-diy-sxdualXXX'
@@ -1097,4 +1115,5 @@ for target in targetlist:
 if cmdline_target == '' or target_cnt > 0:
     mlrs_copy_all_hex_etc()
 
-os.system("pause")
+if not cmdline_nopause:
+    os.system("pause")

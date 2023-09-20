@@ -46,8 +46,8 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
     __HAL_RCC_USB_CLK_ENABLE();
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(USB_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(USB_IRQn);
+    HAL_NVIC_SetPriority(USBD_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USBD_IRQn);
   }
 }
 
@@ -60,7 +60,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef* pcdHandle)
     __HAL_RCC_USB_CLK_DISABLE();
 
     /* Peripheral interrupt Deinit*/
-    HAL_NVIC_DisableIRQ(USB_IRQn);
+    HAL_NVIC_DisableIRQ(USBD_IRQn);
   }
 }
 

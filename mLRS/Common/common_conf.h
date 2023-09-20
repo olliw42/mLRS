@@ -26,7 +26,7 @@
 
 
 // Development features. Note: They are offered for testing, but they are not for production
-//#define MLRS_DEV_FEATURE_FLRC
+#define MLRS_DEV_FEATURE_FLRC
 #define MLRS_DEV_FEATURE_MAVLINKX
 
 
@@ -113,7 +113,7 @@
 #define MODE_50HZ_SEND_FRAME_TMO_MS           10 // just needs to be larger than toa, not critical
 #define MODE_31HZ_SEND_FRAME_TMO_MS           15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO_MS           25 // just needs to be larger than toa, not critical
-#define MODE_FLRC_SEND_FRAME_TMO_MS           3  // just needs to be larger than toa, not critical
+#define MODE_FLRC_SEND_FRAME_TMO_MS           7  // just needs to be larger than toa, not critical
 
 #define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz

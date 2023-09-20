@@ -358,7 +358,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
     	  telemetry_start_next_tick = false;
 
         // slow it down if frame time is too short
-        if (frame_rate_ms <= 7) {
+        if (frame_rate_ms <= 19) {
         	  static uint8_t cnt = 0;
         	  if (!cnt) telemetry_state = 0;
         	  cnt++;

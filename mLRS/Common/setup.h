@@ -54,7 +54,7 @@ void setup_configure_metadata(void)
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC"
 #ifdef DEVICE_HAS_SX128x
-#ifndef MLRS_DEV_FEATURE_FLRC
+#ifndef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
 #else
     SetupMetaData.Mode_allowed_mask = 0b1111; // all
@@ -436,10 +436,10 @@ void configure_mode(uint8_t mode)
         break;
 
     case MODE_FLRC_DEV:
-        Config.frame_rate_ms = 7; // 7 ms = 143 Hz
-        Config.frame_rate_hz = 143;
+        Config.frame_rate_ms = 9; // 9 ms = 111 Hz
+        Config.frame_rate_hz = 111,
         Config.Sx.LoraConfigIndex = 0;
-        Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 3;
+        Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 7;
         break;
 
     default:

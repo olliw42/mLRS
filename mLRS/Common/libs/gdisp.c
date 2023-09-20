@@ -19,6 +19,12 @@
 #include "gdisp.h"
 
 
+#ifdef STDSTM32_GDISP_USE_O3
+#pragma GCC push_options
+#pragma GCC optimize ("O3")
+#endif
+
+
 //-------------------------------------------------------
 // Fonts
 //-------------------------------------------------------
@@ -501,6 +507,8 @@ void gdisp_fillrect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t col
 // Text functions
 //-------------------------------------------------------
 
+void gdisp_setfontbackground(void) { gdisp.font_background = GDISPLAY_FONT_BG_FULL; }
+void gdisp_unsetfontbackground(void) { gdisp.font_background = GDISPLAY_FONT_BG_NONE; }
 void gdisp_setfont(const GFXfont *f) { gdisp.font = (GFXfont*)f; }
 void gdisp_unsetfont(void) { gdisp.font = NULL; }
 
@@ -530,6 +538,18 @@ void gdisp_w(char c)
     int16_t y = gdisp.curY - 6; // * (8 + gdisp.spacing);
 
     gdisp.curX += 6;
+
+    if (gdisp.font_background == GDISPLAY_FONT_BG_NONE) {
+        for (uint16_t i = 0; i < 6; i++) {
+            uint8_t b = font6x8[c * 6 + i];
+            if (gdisp.inverted) b = ~b;
+            for (uint16_t j = 0; j < 8; j++) {
+                if (b & 0x01) gdisp_drawpixel(x + i, y + j, 1);
+                b >>= 1;
+            }
+        }
+        return;
+    }
 
     for (uint16_t i = 0; i < 6; i++) {
         uint8_t b = font6x8[c * 6 + i];
@@ -568,6 +588,9 @@ void gdisp_wf(char c)
 
     if (gdisp.inverted) {
         gdisp_fillrect_WH(x + xo - 1, y + yo - 1, xa + 2, h + 2, 1);
+    } else
+    if (gdisp.font_background == GDISPLAY_FONT_BG_FULL) {
+        gdisp_fillrect_WH(x + xo - 1, y + yo - 1, xa + 2, h + 2, 0);
     }
 
     uint16_t bit = 0; // counts how many pixels were set
@@ -639,6 +662,7 @@ void gdisp_init(uint16_t type)
     gdisp.curX = 0;
     gdisp.curY = 6; // that's the base line of the default font
     gdisp.font = NULL;
+    gdisp.font_background = GDISPLAY_FONT_BG_NONE;
     gdisp.spacing = 0;
     gdisp.kerning = 0;
     gdisp.inverted = 0;
@@ -650,3 +674,7 @@ void gdisp_init(uint16_t type)
     gdisp_update();
 }
 
+
+#ifdef STDSTM32_GDISP_USE_O3
+#pragma GCC pop_options
+#endif

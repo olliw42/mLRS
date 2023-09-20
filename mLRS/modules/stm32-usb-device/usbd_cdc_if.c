@@ -163,7 +163,7 @@ void usb_flush(void)
 }
 
 
-void USB_IRQHandler(void)
+void USBD_IRQHandler(void)
 {
     HAL_PCD_IRQHandler(&hpcd_USB_FS);
 }

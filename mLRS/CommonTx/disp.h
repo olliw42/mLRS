@@ -118,6 +118,7 @@ class tTxDisp
     bool initialized;
     uint8_t task_pending;
     bool connected_last; // to detect connection changes
+    bool setupmetadata_rx_available_last; // to detect changes
 
     uint16_t keys_tick;
     uint8_t keys_state;
@@ -129,7 +130,8 @@ class tTxDisp
 
     uint8_t page;
     uint16_t page_startup_tmo;
-    bool page_modified;
+    bool page_modified; // requires complete redraw of page
+    bool page_update; // only update some elements of page
 
     uint8_t subpage; // for pages which may have different screens
     uint8_t subpage_max;
@@ -169,6 +171,7 @@ void tTxDisp::Init(void)
 
     task_pending = CLI_TASK_NONE;
     connected_last = false;
+    setupmetadata_rx_available_last = false;
 
     keys_tick = 0;
     keys_state = 0;
@@ -182,6 +185,7 @@ void tTxDisp::Init(void)
     page = PAGE_UNDEFINED;
     page_startup_tmo = DISP_START_TMO_MS;
     page_modified = false;
+    page_update = false;
 
     subpage = SUBPAGE_DEFAULT;
     subpage_max = 0;
@@ -309,6 +313,11 @@ uint16_t keys, i, keys_new;
         if (connected()) load_rx_list();
     }
     connected_last = connected();
+
+    if (setupmetadata_rx_available_last != SetupMetaData.rx_available) {
+        page_modified = true; // redraws, and avoids calling gdisp_update() multiple time
+    }
+    setupmetadata_rx_available_last = SetupMetaData.rx_available;
 
     if (!connected() && page == PAGE_RX) { // reset navigation
         idx_first = 0;
@@ -446,7 +455,7 @@ void tTxDisp::run_action(void)
 // this needs to be called to update pages which show live data
 void tTxDisp::UpdateMain(void)
 {
-    if (page == PAGE_MAIN) page_modified = true;
+    if (page == PAGE_MAIN) page_update = true;
 }
 
 
@@ -485,7 +494,7 @@ void tTxDisp::Draw(void)
     if (!initialized) return;
 
 //    if (1) { // good for stress testing
-    if (page_modified) {
+    if (page_modified || page_update) {
 //uint32_t t1 = micros(); //HAL_GetTick();
 
         if (!gdisp_update_completed()) return;
@@ -509,6 +518,7 @@ void tTxDisp::Draw(void)
         gdisp_update();
 
         page_modified = false;
+        page_update = false;
 
 //while (!gdisp_update_completed()) {}
 //t2 = micros(); //HAL_GetTick();
@@ -626,6 +636,8 @@ char s[32];
 
 void tTxDisp::draw_page_startup(void)
 {
+    if (!page_modified) return;
+
     gdisp_clear();
     gdisp_setcurXY(0, 6);
     gdisp_setfont(&FreeMono12pt7b);
@@ -638,6 +650,8 @@ void tTxDisp::draw_page_startup(void)
 
 void tTxDisp::draw_page_notify(const char* s)
 {
+    if (!page_modified) return;
+
     gdisp_clear();
     gdisp_setcurXY(0, 6);
     gdisp_setfont(&FreeMono12pt7b);
@@ -655,6 +669,11 @@ void tTxDisp::draw_page_main_sub0(void)
 {
 char s[32];
 int8_t power;
+
+// drawing full page: 4.8 ms (on FRM303)
+// redrawing only data: 8.0 ms (on FRM303)
+// is inefficient since background for FreeMono9pt7b needs to be cleared by rectangles
+// so we draw always full
 
     draw_header("Main");
 
@@ -679,24 +698,27 @@ int8_t power;
 
     gdisp_setcurXY(0, 0 * 10 + 20);
     gdisp_puts("Rssi");
+    gdisp_setcurXY(115, 1 * 10 + 20 + 5);
+    gdisp_puts("dB");
+
+    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
+    gdisp_puts("LQ");
+    gdisp_setcurXY(115+6, 4 * 10 + 20 + 1);
+    gdisp_puts("%");
+
+    // now the part which is frequently updated
+    // ca 1.1 ms on F072
+
+    gdisp_setfont(&FreeMono9pt7b);
 
     gdisp_setcurXY(5, 1 * 10 + 20 + 5);
-    gdisp_setfont(&FreeMono9pt7b);
     s8toBCDstr(stats.GetLastRssi(), s);
     gdisp_puts(s);
     gdisp_setcurX(60);
     s8toBCDstr(stats.received_rssi, s);
     if (connected()) gdisp_puts(s);
-    gdisp_unsetfont();
-
-    gdisp_setcurX(115);
-    gdisp_puts("dB");
-
-    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
-    gdisp_puts("LQ");
 
     gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
-    gdisp_setfont(&FreeMono9pt7b);
     stoBCDstr(txstats.GetLQ(), s);
     gdisp_puts(s);
     gdisp_setcurX(60 + 11);
@@ -704,10 +726,8 @@ int8_t power;
         stoBCDstr(stats.received_LQ, s);
         gdisp_puts(s);
     }
-    gdisp_unsetfont();
 
-    gdisp_setcurX(115+6);
-    gdisp_puts("%");
+    gdisp_unsetfont();
 }
 
 
@@ -782,6 +802,8 @@ void tTxDisp::draw_page_main_sub2(void)
 {
 char s[32];
 
+if (page_modified) {
+
     draw_header("Main/3");
 
     gdisp_setcurXY(5, 0 * 10 + 20);
@@ -789,10 +811,13 @@ char s[32];
     gdisp_setcurX(110);
     gdisp_puts("Rx");
 
-    uint8_t tx_receive_antenna = stats.last_antenna;
-    uint8_t tx_transmit_antenna = stats.last_transmit_antenna;
-    uint8_t rx_receive_antenna = stats.received_antenna;
-    uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
+    gdisp_setcurXY(92, 2 * 10 + 20);
+    gdisp_putc('>');
+    gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
+
+    gdisp_setcurXY(28, 3 * 10 + 20);
+    gdisp_putc('<');
+    gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
 
     if (Config.Diversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
     if (SetupMetaData.rx_available &&
@@ -801,13 +826,6 @@ char s[32];
           SetupMetaData.rx_actual_diversity == DIVERSITY_R_ENABLED_T_ANTENNA2)) {
         _draw_dot2(125, 2 * 10 + 20 - 3);
     }
-    gdisp_setcurXY(10, 2 * 10 + 20);
-    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
-    gdisp_setcurX(105);
-    gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
-    gdisp_setcurX(92);
-    gdisp_putc('>');
-    gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
 
     if (Config.Diversity == DIVERSITY_DEFAULT ||
         Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 || Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA2) {
@@ -816,28 +834,47 @@ char s[32];
     if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT) {
         _draw_dot2(125, 3 * 10 + 20 - 3);
     }
+
+    gdisp_setcurXY(40, 1 * 10 + 20);
+    gdisp_setcurX(70);
+    gdisp_puts("Bps");
+
+    gdisp_setcurXY(40, 4 * 10 + 20);
+    gdisp_setcurX(70);
+    gdisp_puts("Bps");
+}
+    // now the part which is frequently updated
+    gdisp_setfontbackground();
+
+    uint8_t tx_receive_antenna = stats.last_antenna;
+    uint8_t tx_transmit_antenna = stats.last_transmit_antenna;
+    uint8_t rx_receive_antenna = stats.received_antenna;
+    uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
+
+    gdisp_setcurXY(10, 2 * 10 + 20);
+    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurX(105);
+    gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
+
     gdisp_setcurXY(10, 3 * 10 + 20);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
     gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
-    gdisp_setcurX(28);
-    gdisp_putc('<');
-    gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
 
     uint16_t bps_transmitted = stats.bytes_transmitted.GetBytesPerSec();
     uint16_t bps_received = stats.bytes_received.GetBytesPerSec();
 
     gdisp_setcurXY(40, 1 * 10 + 20);
     utoBCDstr(bps_transmitted, s);
+    for (uint8_t i = 0; i < 4; i++) { if (s[i] == '\0') { s[i] = ' '; s[i+1] = '\0'; } }
     gdisp_puts(s);
-    gdisp_setcurX(70);
-    gdisp_puts("Bps");
 
     gdisp_setcurXY(40, 4 * 10 + 20);
     utoBCDstr(bps_received, s);
+    for (uint8_t i = 0; i < 4; i++) { if (s[i] == '\0') { s[i] = ' '; s[i+1] = '\0'; } }
     gdisp_puts(s);
-    gdisp_setcurX(70);
-    gdisp_puts("Bps");
+
+    gdisp_unsetfontbackground();
 }
 
 
@@ -866,12 +903,14 @@ void tTxDisp::draw_page_main(void)
 {
     switch (subpage) {
     case SUBPAGE_MAIN_SUB1:
+        if (!page_modified) return; // has no update elements
         draw_page_main_sub1();
         return;
     case SUBPAGE_MAIN_SUB2:
         draw_page_main_sub2();
         return;
     case SUBPAGE_MAIN_SUB3:
+        if (!page_modified) return; // has no update elements
         draw_page_main_sub3();
         return;
     default:
@@ -882,6 +921,8 @@ void tTxDisp::draw_page_main(void)
 
 void tTxDisp::draw_page_common(void)
 {
+    if (!page_modified) return;
+
     draw_header("Common");
     draw_options(&common_list);
 
@@ -901,6 +942,8 @@ void tTxDisp::draw_page_common(void)
 
 void tTxDisp::draw_page_tx(void)
 {
+    if (!page_modified) return;
+
     draw_header("Tx");
     draw_options(&tx_list);
 }
@@ -908,6 +951,8 @@ void tTxDisp::draw_page_tx(void)
 
 void tTxDisp::draw_page_rx(void)
 {
+    if (!page_modified) return;
+
     draw_header("Rx");
 
     if (!connected()) {
@@ -922,6 +967,8 @@ void tTxDisp::draw_page_rx(void)
 
 void tTxDisp::draw_page_actions(void)
 {
+    if (!page_modified) return;
+
     draw_header("Actions");
 
     gdisp_setfont(&FreeMono9pt7b);
@@ -1066,4 +1113,44 @@ bool tTxDisp::edit_setting(void)
 #endif // DISP_H
 
 
+/* some timings
+19.09.2023
+
+G491RE 170 MHz
+  draw   t2-t1 ca 1.5 ms (main)
+  update t2-t1 ca 24 ms (determined by I2C speed)
+
+  after optimization w O3 and page_update
+  main      draw   t2-t1 ca 1.0 ms
+  main/2    draw   t2-t1 ca 0 ms
+  main/3    draw   t2-t1 ca 0.4 ms
+  main/4    draw   t2-t1 ca 0 ms
+
+FRM303 F072 48 MHz
+  main      draw   t2-t1 ca 7 ms    w O3: ca 4.8 ms
+            update t2-t1 ca 25 ms (determined by I2C speed)
+  main/2    draw   t2-t1 ca 9 ms    w O3: ca 6.4 ms
+  main/3    draw   t2-t1 ca 7 ms    w O3: ca 4.7 ms
+  main/4    draw   t2-t1 ca 10 ms   w O3: ca 6.8 ms
+
+  the other pages are not updated repeatedly, some take up to 14 ms
+  compiling disp.h with O3 doesn't really do anything
+  compiling gdisp.c with O3 helps quite a bit, costs just 1.1 kB flash, so worth it
+
+  after optimization w O3 and page_update
+  main      draw   t2-t1 ca 4.8 ms
+  main/2    draw   t2-t1 ca 0 ms
+  main/3    draw   t2-t1 ca 2 ms
+  main/4    draw   t2-t1 ca 0 ms
+
+  after optimization w =3 and not drawing background for 6x8 font
+  main      draw   t2-t1 ca 3.0-3.2 ms
+  main/2    draw   t2-t1 ca 0 ms
+  main/3    draw   t2-t1 ca 2.2-2.4 ms
+  main/4    draw   t2-t1 ca 0 ms
+
+  advantage: also the other pages get significantly faster, down to 4-5 ms
+
+  on FRM303, OLED and FLRC do not work well together
+*/
 
