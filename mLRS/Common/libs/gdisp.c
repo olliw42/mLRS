@@ -318,10 +318,14 @@ uint8_t gdisp_update_completed(void)
 }
 
 
+void gdisp_setpixelfuncptr_(uint16_t rotation);
+
 void gdisp_setrotation(uint16_t rotation)
 {
     // in this routine we may take advantage of hardware acceleration possibilities
     gdisp.rotation = rotation;
+
+    gdisp_setpixelfuncptr_(gdisp.rotation);
 
     if ((gdisp.rotation == GDISPLAY_ROTATION_90) || (gdisp.rotation == GDISPLAY_ROTATION_270)) {
         gdisp.width = GDISPLAY_ROWS;
@@ -365,12 +369,44 @@ void gdisp_setpixel_(uint16_t x, uint16_t y, uint16_t color)
     if ((x < 0) || (x >= GDISPLAY_COLUMNS)) return;
     if ((y < 0) || (y >= GDISPLAY_ROWS)) return;
 
-    gdisp_u_(x, x, y, y);
+    uint16_t i = x + (y >> 3) * GDISPLAY_COLUMNS;
+    if (i >= GDISPLAY_BUFSIZE) return;
+
+    gdisp.needsupdate = 1;
 
     if (color & 0x01) {
-        gdisp.buf[x + (y / 8) * GDISPLAY_COLUMNS] |= (1 << (y % 8));
+        gdisp.buf[i] |= (1 << (y % 8));
     } else {
-        gdisp.buf[x + (y / 8) * GDISPLAY_COLUMNS] &= ~(1 << (y % 8));
+        gdisp.buf[i] &= ~(1 << (y % 8));
+    }
+}
+
+
+void gdisp_setpixel_rot90_(uint16_t x, uint16_t y, uint16_t color)
+{
+    gdisp_setpixel_((GDISPLAY_COLUMNS-1)-y, x, color);
+}
+
+void gdisp_setpixel_rot180_(uint16_t x, uint16_t y, uint16_t color)
+{
+    gdisp_setpixel_((GDISPLAY_COLUMNS-1)-x, (GDISPLAY_ROWS-1)-y, color);
+}
+
+void gdisp_setpixel_rot270_(uint16_t x, uint16_t y, uint16_t color)
+{
+    gdisp_setpixel_(y, (GDISPLAY_ROWS-1)-x, color);
+}
+
+
+void gdisp_setpixelfuncptr_(uint16_t rotation)
+{
+    switch (rotation) {
+        case GDISPLAY_ROTATION_NORMAL: gdisp.setpixel_ptr = &gdisp_setpixel_; break;
+        case GDISPLAY_ROTATION_90: gdisp.setpixel_ptr = &gdisp_setpixel_rot90_; break;
+        case GDISPLAY_ROTATION_180: gdisp.setpixel_ptr = &gdisp_setpixel_rot180_; break;
+        case GDISPLAY_ROTATION_270: gdisp.setpixel_ptr = &gdisp_setpixel_rot270_; break;
+        default:
+            gdisp.setpixel_ptr = &gdisp_setpixel_;
     }
 }
 
@@ -393,14 +429,7 @@ void gdisp_drawpixel(int16_t x, int16_t y, uint16_t color)
     // x += y / 8 * gdisp.width;
 
     // in this routine we may take advantage of hardware acceleration possibilities
-    switch (gdisp.rotation) {
-        case GDISPLAY_ROTATION_NORMAL: gdisp_setpixel_(x, y, color); return;
-        case GDISPLAY_ROTATION_90: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-y, x, color); return;
-        case GDISPLAY_ROTATION_180: gdisp_setpixel_((GDISPLAY_COLUMNS-1)-x, (GDISPLAY_ROWS-1)-y, color); return;
-        case GDISPLAY_ROTATION_270: gdisp_setpixel_(y, (GDISPLAY_ROWS-1)-x, color); return;
-        default:
-            gdisp_setpixel_(x, y, color);
-    }
+    gdisp.setpixel_ptr(x, y, color);
 }
 
 
@@ -658,6 +687,8 @@ void gdisp_init(uint16_t type)
     gdisp.rotation = GDISPLAY_ROTATION_NORMAL;
     gdisp.width = GDISPLAY_COLUMNS;
     gdisp.height = GDISPLAY_ROWS;
+
+    gdisp.setpixel_ptr = &gdisp_setpixel_;
 
     gdisp.curX = 0;
     gdisp.curY = 6; // that's the base line of the default font

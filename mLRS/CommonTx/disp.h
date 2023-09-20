@@ -1143,14 +1143,18 @@ FRM303 F072 48 MHz
   main/3    draw   t2-t1 ca 2 ms
   main/4    draw   t2-t1 ca 0 ms
 
-  after optimization w =3 and not drawing background for 6x8 font
+  after optimization w O3 and not drawing background for 6x8 font
   main      draw   t2-t1 ca 3.0-3.2 ms
   main/2    draw   t2-t1 ca 0 ms
   main/3    draw   t2-t1 ca 2.2-2.4 ms
   main/4    draw   t2-t1 ca 0 ms
-
   advantage: also the other pages get significantly faster, down to 4-5 ms
 
   on FRM303, OLED and FLRC do not work well together
+
+20.09.2023
+  further optimization
+  - no gdisp_u_() in gdisp_setpixel_()
+  - func ptr for gdisp_setpixel_()
 */
 
