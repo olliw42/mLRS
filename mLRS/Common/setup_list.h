@@ -63,7 +63,7 @@
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink,mavlnkX"
 #endif
 
-#ifndef MLRS_DEV_FEATURE_FLRC
+#ifndef USE_FEATURE_FLRC
 #define SETUP_OPT_RFMODE              "50 Hz,31 Hz,19 Hz"
 #else
 #define SETUP_OPT_RFMODE              "50 Hz,31 Hz,19 Hz,FLRC"

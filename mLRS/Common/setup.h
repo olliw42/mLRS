@@ -54,7 +54,7 @@ void setup_configure_metadata(void)
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC"
 #ifdef DEVICE_HAS_SX128x
-#ifndef MLRS_DEV_FEATURE_FLRC
+#ifndef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
 #else
     SetupMetaData.Mode_allowed_mask = 0b1111; // all
