@@ -37,33 +37,34 @@ The mLRS system also provides a high level of usability such as a variety of opt
 
 It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
-It provides 16 RC channels; the layout is as follows:
-- 8 channels with 11 bit resolution (CH1 - CH8), 4 of them with a higher reliability margin (CH1 - CH4)
-- 4 channels with 8 bit resolution (CH9 - CH12)
-- 4 channels with three steps (CH13 - CH16), 2 of them with a higher reliability margin (CH13, CH14)
+It provides 16 RC channels with the following layout (layout is equal in all operation modes):
+- CH1 - CH8: 8 channels with 11 bit resolution (CH1 - CH4 have a higher reliability margin)
+- CH9 - CH12: 4 channels with 8 bit resolution
+- CH13 - CH16: 4 channels with three steps (CH13, CH14 have a higher reliability margin) 
 
 It provides these operation modes:
 - 50 Hz Mode<br>
   frequency bands: 2.4 GHz (SX1280 chip)<br>
-  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec<br>
   receiver sensitivity: -105 dBm
 - 31 Hz Mode<br>
   frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280 and SX1262/LLCC68 chips)<br>
-  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 2000 Bytes/sec<br>
   downlink serial rate: 2562 Bytes/sec<br>
   receiver sensitivity: -108 dBm
 - 19 Hz Mode<br>
   frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280, SX1276, SX1262/LLCC68 chips)<br>
-  RC channels: 8 x 11 bit + 4 x 8 bit + 4 x three-step<br>
   uplink serial rate: 1207 Bytes/sec<br>
   downlink serial rate: 1547 Bytes/sec<br>
   receiver sensitivity: -112 dBm
+- FLRC Mode (aka 111 Hz Mode)<br>
+  frequency bands: 2.4 GHz (SX1280 chip)<br>
+  uplink serial rate: 7111 Bytes/sec<br>
+  downlink serial rate: 8111 Bytes/sec
 
 Further features:
-- full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range.
+- full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
 - all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
 - the receiver parameters can be set from within the mLRS transmitter or the radio; no need to mess with the receiver in any way.
 - the transmitter and receiver parameters can be set via a Lua script, a CLI, or an OLED display.
@@ -93,6 +94,8 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | 433 MHz/70 cm | - | 55 km | 87 km
 
 For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
+
+The FLRC mode available on 2.4 GHz systems is not intended for long ranges.
 
 ## Hardware ##
 
