@@ -434,10 +434,10 @@ void configure_mode(uint8_t mode)
         break;
 
     case MODE_FLRC_DEV:
-        Config.frame_rate_ms = 7; // 7 ms = 143 Hz
-        Config.frame_rate_hz = 143;
+        Config.frame_rate_ms = 9; // 9 ms = 111 Hz
+        Config.frame_rate_hz = 111,
         Config.Sx.LoraConfigIndex = 0;
-        Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 3;
+        Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 7;
         break;
 
     default:
