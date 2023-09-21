@@ -185,9 +185,9 @@ typedef enum {
     // these commands use the normal Tx/Rx frames, with re-purposed payload however
     FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
     FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_ACK
-    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, ask to store parameters -> response with RX_SETUPDATA
-    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD,
+    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_SETUPDATA
+    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots
+    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters -> response with RX_SETUPDATA
 } FRAME_CMD_ENUM;
 
 

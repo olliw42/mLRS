@@ -10,16 +10,11 @@
 
 ISSUES:
 - Tx, SetupMetaData.rx_available:
-  it very occasionally can happen that
-  !connected() && (transmit_frame_type == TRANSMIT_FRAME_TYPE_CMD) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)
-  is true, and that we may not have gotten fresh SetupMetaData when switching to CONNECT_STATE_CONNECTED
-  * general problem: no serial send to rx unless connected to rx
-  * how to avoid that race condition at the low level (currently we are ok if connect_occured_once)
-  * probably should introduce .rx_available and .rx_valid !?!
+  seems to be ok currently, but can it be even better?
+  should introduce .rx_available and .rx_valid !?!
 
 - we should take into account in rssi scaling a LNA as well as the db min for a board & setting
 
-- make rx name editable
 - setup: which are effective only on restart? which on-the-fly?
 - work out what to do if FrequencyBand_allowed_mask, Mode_allowed_mask are different for Rx and Tx (which should not happen)?
   This holds for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
@@ -30,8 +25,6 @@ ISSUES:
 - restart: we do not want to go through waiting for sx and testing their presence
 - for dual sx avoid that both sx.Init wait 300ms
 - allow a missing 2nd sx for diversity boards
-
-- led blink to signal serial traffic
 
 - crsf baro alt item, can we add more of our own?
 
@@ -44,7 +37,7 @@ ISSUES:
   do it on rx side by parsing mavlink, most robust
 - don't allow bind, save, reload, param changes, etc, when connection is too weak, e.g. rssi too low
 
-- buzzer: work out what to do to account for active-low and actiove-high, so that buzzer isn't permanently "on".
+- buzzer: work out what to do to account for active-low and active-high, so that buzzer isn't permanently "on"
 
 - factory reset
 
@@ -63,7 +56,7 @@ The 3 MAIN topics TODO:
 - router on Tx side
 
 4) Auxiliary features
-- relay setup, how could this be done?
+- relay setup, how can this be done? https://github.com/olliw42/mLRS/pull/123
 - 2.4 GHz high-interference mode bw 400kHz, at least for experiment to evaluate
 - beacon mode
 - should we do LoRa packets with header len enabled?
@@ -85,9 +78,6 @@ Longterm TODO:
   alternatively: the receiver is not automatically updated together with the tx, but simply through the tx module
   yes, that's in view of the growing targets the only way to go, and it is sufficiently user friendly
 
-- long range mode with rx only, switch to a longer-range mode when not connected
-  would also allow rc data to be transmitted further out
-  the problem is how could we then ever reconnect?
 */
 
 
