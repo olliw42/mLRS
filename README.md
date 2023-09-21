@@ -17,11 +17,7 @@ However, while all these systems are truely excellent and achieve their goals, a
 - open source
 - rich features for Mavlink systems
 
-The mLRS project fills this gap. In addition, as another main feature, we want it to 
-
-- integrate with MAVLink for OpenTx
-
-as this yields the most fluid user experience.
+The mLRS project fills this gap. In addition, we want it to integrate with MAVLink for OpenTx, as this yields a most fluid user experience.
 
 ## Disclaimer ##
 
@@ -65,9 +61,8 @@ It provides these operation modes:
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
-- all options selectable via parameters: There is no need to recompile the firmware for a given board or reflash the firmware in order to change an option or parameter setting. 
 - the receiver parameters can be set from within the mLRS transmitter or the radio; no need to mess with the receiver in any way.
-- the transmitter and receiver parameters can be set via a Lua script, a CLI, or an OLED display.
+- the transmitter and receiver parameters can be set via a Lua script, a CLI, or an OLED display. There is no need to recompile or reflash the firmware in order to change an option or parameter setting. 
 - bind mode for binding "unknown" receivers to a transmitter.
 - the mLRS system can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
 - 10 model configurations stored in the mLRS transmitter, selected by "Receiver" number in OpenTx/EdgeTx radios.  
