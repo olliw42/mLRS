@@ -54,11 +54,11 @@ void setup_configure_metadata(void)
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC"
 #ifdef DEVICE_HAS_SX128x
-#ifndef USE_FEATURE_FLRC
-    SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
-#else
+  #ifdef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b1111; // all
-#endif
+  #else
+    SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
+  #endif
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX127x
@@ -433,7 +433,7 @@ void configure_mode(uint8_t mode)
         Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
         break;
 
-    case MODE_FLRC_DEV:
+    case MODE_FLRC_111HZ:
         Config.frame_rate_ms = 9; // 9 ms = 111 Hz
         Config.frame_rate_hz = 111,
         Config.Sx.LoraConfigIndex = 0;
@@ -446,7 +446,7 @@ void configure_mode(uint8_t mode)
     }
     
     // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_DEV);
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ);
 }
 
 
@@ -563,7 +563,7 @@ void setup_configure_config(uint8_t config_id)
         case MODE_50HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
         case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-        case MODE_FLRC_DEV: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
+        case MODE_FLRC_111HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }

@@ -161,7 +161,7 @@ uint8_t crsf_cvt_mode(uint8_t mode)
     if (mode == MODE_19HZ) return 19;
     if (mode == MODE_31HZ) return 31;
     if (mode == MODE_50HZ) return CRSF_RFMODE_50_HZ;
-    if (mode == MODE_FLRC_DEV) return 111;
+    if (mode == MODE_FLRC_111HZ) return 111;
     return UINT8_MAX;
 }
 
@@ -171,7 +171,7 @@ uint8_t crsf_cvt_fps(uint8_t mode)
     if (mode == MODE_19HZ) return 2; // *10 in OpenTx !
     if (mode == MODE_31HZ) return 3;
     if (mode == MODE_50HZ) return 5;
-    if (mode == MODE_FLRC_DEV) return 11;
+    if (mode == MODE_FLRC_111HZ) return 11;
     return UINT8_MAX;
 }
 
