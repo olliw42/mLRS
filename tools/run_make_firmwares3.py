@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 17.09.2023
+ version 21.09.2023
 ********************************************************
 '''
 import os
@@ -464,10 +464,10 @@ class cTarget:
         self.rx_or_tx = ''
         self.is_rx = False
         self.is_tx = False
-        if 'rx' in target and 'RX' in target_D:
+        if target[:3] == 'rx-' and target_D[:3] == 'RX_':
             self.rx_or_tx = 'rx'
             self.is_rx = True
-        elif 'tx' in target and 'TX' in target_D:
+        elif target[:3] == 'tx-' and target_D[:3] == 'TX_':
             self.rx_or_tx = 'tx'
             self.is_tx = True
         else:
@@ -1077,43 +1077,44 @@ def mlrs_copy_all_hex_etc():
 
 
 #-- here we go
+if __name__ == "__main__":
 
-cmdline_target = ''
-cmdline_D_list = []
-cmdline_nopause = False
+    cmdline_target = ''
+    cmdline_D_list = []
+    cmdline_nopause = False
 
-cmd_pos = -1
-for cmd in sys.argv:
-    cmd_pos += 1
-    if cmd == '--target' or cmd == '-t' or cmd == '-T':
-        if sys.argv[cmd_pos+1] != '':
-            cmdline_target = sys.argv[cmd_pos+1]
-    if cmd == '--define' or cmd == '-d' or cmd == '-D':
-        if sys.argv[cmd_pos+1] != '':
-            cmdline_D_list.append(sys.argv[cmd_pos+1])
-    if cmd == '--nopause' or cmd == '-np':
-            cmdline_nopause = True
+    cmd_pos = -1
+    for cmd in sys.argv:
+        cmd_pos += 1
+        if cmd == '--target' or cmd == '-t' or cmd == '-T':
+            if sys.argv[cmd_pos+1] != '':
+                cmdline_target = sys.argv[cmd_pos+1]
+        if cmd == '--define' or cmd == '-d' or cmd == '-D':
+            if sys.argv[cmd_pos+1] != '':
+                cmdline_D_list.append(sys.argv[cmd_pos+1])
+        if cmd == '--nopause' or cmd == '-np':
+                cmdline_nopause = True
 
-#cmdline_target = 'tx-diy-e22dual-module02-g491re'
-#cmdline_target = 'tx-diy-sxdualXXX'
+    #cmdline_target = 'tx-diy-e22dual-module02-g491re'
+    #cmdline_target = 'tx-diy-sxdualXXX'
 
-mlrs_set_version()
-mlrs_set_branch_hash(VERSIONONLYSTR)
+    mlrs_set_version()
+    mlrs_set_branch_hash(VERSIONONLYSTR)
 
-create_clean_dir(MLRS_BUILD_DIR)
+    create_clean_dir(MLRS_BUILD_DIR)
 
-targetlist = mlrs_create_targetlist('-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR, [])
+    targetlist = mlrs_create_targetlist('-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR, [])
 
-target_cnt = 0
-for target in targetlist:
-    if ((cmdline_target == '') or
-        (cmdline_target[0] != '!' and cmdline_target in target.target) or
-        (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
-        mlrs_build_target(target, cmdline_D_list)
-        target_cnt +=1
+    target_cnt = 0
+    for target in targetlist:
+        if ((cmdline_target == '') or
+            (cmdline_target[0] != '!' and cmdline_target in target.target) or
+            (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
+            mlrs_build_target(target, cmdline_D_list)
+            target_cnt +=1
 
-if cmdline_target == '' or target_cnt > 0:
-    mlrs_copy_all_hex_etc()
+    if cmdline_target == '' or target_cnt > 0:
+        mlrs_copy_all_hex_etc()
 
-if not cmdline_nopause:
-    os.system("pause")
+    if not cmdline_nopause:
+        os.system("pause")
