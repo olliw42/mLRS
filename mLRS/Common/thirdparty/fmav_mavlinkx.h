@@ -131,7 +131,6 @@ typedef struct
     uint8_t out_bit;
     uint8_t in_pos;
     uint8_t in_bit;
-
 } fmavx_status_t;
 
 
@@ -154,7 +153,7 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
 //-------------------------------------------------------
 // Crc8
 //-------------------------------------------------------
-// catalogue of quite many crc's
+// catalogue of quite many crcs
 // - https://reveng.sourceforge.io/crc-catalogue/1-15.htm
 // standard reference for "best" crcs
 // - https://users.ece.cmu.edu/~koopman/crc/index.html
@@ -260,10 +259,10 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 
     // msgid
     buf[pos++] = (uint8_t)msg->msgid;
-    if (msg->msgid >= 256) {
+    if (buf[2] & MAVLINKX_FLAGS_HAS_MSGID16) {
        buf[pos++] = (uint8_t)((msg->msgid) >> 8);
     }
-    if (msg->msgid >= 65536) {
+    if (buf[2] & MAVLINKX_FLAGS_HAS_MSGID24) {
         buf[pos++] = (uint8_t)((msg->msgid) >> 16);
     }
 
@@ -374,21 +373,21 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
 
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
-      buf[status->rx_cnt++] = c; // 4: seq, 5: sysid
+        buf[status->rx_cnt++] = c; // 4: seq, 5: sysid
 
-      status->rx_state++;
-      return;
+        status->rx_state++;
+        return;
 
     case FASTMAVLINK_PARSE_STATE_COMPID:
-      buf[status->rx_cnt++] = c; // 6: compid
+        buf[status->rx_cnt++] = c; // 6: compid
 
-      if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_TARGETS) { // has targets
-          status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
-          return;
-      }
+        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_TARGETS) { // has targets
+            status->rx_state = FASTMAVLINK_PARSE_STATE_TARGET_SYSID;
+            return;
+        }
 
-      status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_1;
-      return;
+        status->rx_state = FASTMAVLINK_PARSE_STATE_MSGID_1;
+        return;
 
     case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
         // we don't do anything with it currently
@@ -508,7 +507,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
                 if (fmavx_status.header[n] == MAVLINKX_MAGIC_1) { next_magic_pos = n; break; }
             }
 
-            // there is another 'O' in the header, so backtrack
+            // there is another 'o' in the header, so backtrack
             if (next_magic_pos) {
                 fmavx_status.header[fmavx_status.pos++] = c; // memorize also crc8
 
@@ -822,10 +821,10 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
 
         if (_fmavX_decode_next_bits(&c, len, 2)) {
-            if (c == 0b10) { // 00
+            if (c == 0b10) { // 10
                 code = MAVLINKX_CODE_1_64;
             } else
-            if (c == 0b11) { // 10
+            if (c == 0b11) { // 11
                 code = MAVLINKX_CODE_191_254;
             } else
             if (c == 0b01) { // 01

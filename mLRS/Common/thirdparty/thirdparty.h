@@ -1,5 +1,5 @@
 //*******************************************************
-// This holds code taken from other open source projects
+// This holds code taken from other open source projects.
 // For the copyrights and licenses, please look up in the
 // original project repositories. The links are given.
 //********************************************************
@@ -14,7 +14,7 @@
 //-------------------------------------------------------
 // Crsf Auxiliary Helper
 //-------------------------------------------------------
-// This code is from betaflight
+// This code is taken from betaflight
 // It may however not be genuine, can be found in many sources, e.g.
 // - https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
 // - https://barrgroup.com/embedded-systems/how-to/crc-calculation-c-code.

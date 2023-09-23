@@ -24,7 +24,7 @@ extern "C" {
 #elif defined STM32F070xB || defined STM32F072xB // system memory location varies across the STM32F0 family
 #define ST_BOOTLOADER_ADDRESS               0x1FFFC800
 #else
-  #warning ST_BOOTLOADER_ADDRESS no defined for chip !
+  #warning ST_BOOTLOADER_ADDRESS not defined for chip !
 #endif
 
 

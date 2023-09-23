@@ -1,5 +1,4 @@
 //*******************************************************
-// Added comment by MLRS:
 // This file is taken with tiny edits from the Adafruit-GFX-Library project
 // github repo: https://github.com/adafruit/Adafruit-GFX-Library
 // license: https://github.com/adafruit/Adafruit-GFX-Library/blob/master/license.txt
