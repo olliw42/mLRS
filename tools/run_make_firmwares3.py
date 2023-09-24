@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 21.09.2023
+ version 24.09.2023
 ********************************************************
 '''
 import os
@@ -145,13 +145,13 @@ def remake_dir(path): # os dependent
     if os.name == 'posix':
         os.system('rm -r -f '+path)
     else:
-        os.system('rmdir /s /q '+path)
+        os.system('rmdir /s /q "'+path+'"')
 
 def make_dir(path): # os dependent
     if os.name == 'posix':
         os.system('mkdir -p '+path)
     else:
-        os.system('md '+path)
+        os.system('md "'+path+'"')
 
 
 def create_dir(path):

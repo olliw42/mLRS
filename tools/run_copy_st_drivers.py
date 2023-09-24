@@ -8,7 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
- version 21.09.2023
+ version 24.09.2023
 ********************************************************
 '''
 import os
@@ -23,23 +23,10 @@ mLRSdirectory = os.path.join(mLRSProjectdirectory,'mLRS')
 
 #-- helper
 
-def remake_dir(path): # os dependent
-    if os.name == 'posix':
-        os.system('rm -r -f '+path)
-    else:
-        os.system('rmdir /s /q '+path)
-
-def make_dir(path): # os dependent
-    if os.name == 'posix':
-        os.system('mkdir -p '+path)
-    else:
-        os.system('md '+path)
-
-
-def create_clean_dir(directory):
-    if os.path.exists(directory):
-        remake_dir('"'+directory+'"')
-    make_dir('"'+directory+'"')
+# these are defined in run_make_firmware3:
+#  def remake_dir(path)
+#  def make_dir(path)
+#  def create_clean_dir(directory)
 
             
 def copy_files_in_dir(target, source):
@@ -120,8 +107,25 @@ for t in TLIST:
             targets_with_usb_to_include.append(t['target'])
 
 
-def copy_cmsis_driver(folder, chip, clean=False, silent=False):
-    print('--- COPY CMSIS ---')
+def copy_cmsis_core(folder, clean=False, silent=False):
+    print('--- COPY CMSIS CORE ---')
+    if not silent: print('folder:', folder)
+
+    # clean target
+    target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
+    create_clean_dir(target)
+    if clean: return
+
+    # copy Include
+    source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core','Include')
+    if not silent: print('src:   ', source)
+    #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
+    if not silent: print('target:', target)
+    copy_dir(target, source)
+
+
+def copy_cmsis_device_driver(folder, chip, clean=False, silent=False):
+    print('--- COPY CMSIS DEVICE ---')
     if not silent: print('folder:', folder)
     if not silent: print('chip:  ', chip)
     chip_short = chip[:2]
@@ -143,23 +147,6 @@ def copy_cmsis_driver(folder, chip, clean=False, silent=False):
     # copy licence
     if os.name == 'nt': # do only on win, linux's case sensitivity makes it more complicated
         shutil.copy(os.path.join(source,'..','LICENSE.md'), os.path.join(target,'..'))
-
-
-def copy_cmsis_core(folder, clean=False, silent=False):
-    print('--- COPY CMSIS CORE ---')
-    if not silent: print('folder:', folder)
-
-    # clean target
-    target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
-    create_clean_dir(target)
-    if clean: return
-
-    # copy Include
-    source = os.path.join(mLRSProjectdirectory,'tools','st-drivers','cmsis_core','Include')
-    if not silent: print('src:   ', source)
-    #target = os.path.join(mLRSdirectory,folder,'Drivers','CMSIS','Include')
-    if not silent: print('target:', target)
-    copy_dir(target, source)
 
 
 def create_exclude_list(dirlist, chip_short):
@@ -249,13 +236,17 @@ def copy_usb_device_library_driver(folder, clean=False, silent=False):
     copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
 
 
-def do_for_each_target(clean=False, silent=False):
+def do_for_each_target(clean=False, silent=False, target_folder=''):
     print('----------------------------------------')
     print(' copy CMSIS and HAL files to project target folders')
     print('----------------------------------------')
     dirlist = os.listdir(mLRSdirectory)
     for f in dirlist:
-        if f[:3] == "rx-" or f[:3] == "tx-":
+        if (((target_folder == '') or
+             (target_folder[0] != '!' and target_folder in f) or
+             (target_folder[0] == '!' and not target_folder[1:] in f)) and 
+             (f[:3] == "rx-" or f[:3] == "tx-")):
+
             print('#############################')
             print('*', f)
             chip = re.findall(r"\w+-(\w+)$", f)[0]
@@ -270,7 +261,7 @@ def do_for_each_target(clean=False, silent=False):
             
             if not clean:
                 copy_cmsis_core(f, clean, silent)
-                copy_cmsis_driver(f, chip, clean, silent)
+                copy_cmsis_device_driver(f, chip, clean, silent)
                 copy_hal_driver(f, chip, clean, silent)
             
             if f in targets_with_usb_to_include:
@@ -284,15 +275,22 @@ def do_for_each_target(clean=False, silent=False):
 
 cmdline_silent = False
 cmdline_clean = False
+cmdline_target = ''
 
+cmd_pos = -1
 for cmd in sys.argv:
-    if cmd == '-silent':
+    cmd_pos += 1
+    if cmd == '--target' or cmd == '-t' or cmd == '-T':
+        if sys.argv[cmd_pos+1] != '':
+            cmdline_target = sys.argv[cmd_pos+1]
+    if cmd == '-silent' or cmd == '-s' or cmd == '-S':
         cmdline_silent = True
-    if cmd == '-clean':
+    if cmd == '-clean' or cmd == '-c' or cmd == '-C':
         cmdline_clean = True
 
+
 #do_for_each_folder(clean=True)
-do_for_each_target(clean=cmdline_clean,silent=cmdline_silent)
+do_for_each_target(clean=cmdline_clean,silent=cmdline_silent,target_folder=cmdline_target)
 
 
 print('# DONE #')
