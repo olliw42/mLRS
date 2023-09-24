@@ -57,7 +57,7 @@ It provides these operation modes:
 - FLRC Mode (aka 111 Hz Mode)<br>
   frequency bands: 2.4 GHz (SX1280 chip)<br>
   uplink serial rate: 7111 Bytes/sec<br>
-  downlink serial rate: 8111 Bytes/sec
+  downlink serial rate: 9111 Bytes/sec
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
