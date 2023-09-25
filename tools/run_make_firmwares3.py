@@ -702,7 +702,7 @@ def mlrs_build_target(target, cmdline_D_list):
     elif target.rx_or_tx == 'tx':
         MLRS_SOURCES_RXTX = MLRS_SOURCES_TX
     else:
-        printError('aköhdfkahsfkuhafkhasfkdh')
+        printError('akdfkahsfkuhafkhasfkdh')
         exit(1)
     for file in MLRS_SOURCES_RXTX:
         mlrs_compile_file(target, file)
