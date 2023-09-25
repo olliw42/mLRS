@@ -149,7 +149,7 @@ In case of issues with this procedure, don't hesitate to join the discussion thr
 
 #### Dependencies ####
 
-You need to have git and python3 installed.
+You need to have git and Python3 installed (depending on the Python3 distribution you may need to install further libraries).
 
 ## Further Documentation ##
 
