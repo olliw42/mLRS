@@ -23,23 +23,35 @@ extern "C" {
 #endif
 
 
+// can we pl somehow do this elsewhere, better?
+// USB_RXBUFSIZE, USB_TXBUFSIZE we can do in stdstm32-usb-vcp.h, but not USBD_IRQ_PRIORITY
+// so we do all here to have them together, but not nice
+#define USB_RXBUFSIZE       256
+#define USB_TXBUFSIZE       256
+#define USBD_IRQ_PRIORITY   0
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef STM32F072xB
+#if defined STM32F103xE
+  #include "stm32f1xx.h"
+  #include "stm32f1xx_hal.h"
+  #define USBD_IRQn         USB_LP_IRQn
+  #define USBD_IRQHandler   USB_LP_IRQHandler
+#elif defined STM32G431xx
+  #include "stm32g4xx.h"
+  #include "stm32g4xx_hal.h"
+  #define USBD_IRQn         USB_LP_IRQn
+  #define USBD_IRQHandler   USB_LP_IRQHandler
+#elif defined STM32F072xB
   #include "stm32f0xx.h"
   #include "stm32f0xx_hal.h"
   #define USBD_IRQn         USB_IRQn
   #define USBD_IRQHandler   USB_IRQHandler
-
-#elif defined STM32G431xx
-  #include "stm32g4xx.h"
-  #include "stm32g4xx_hal.h"
-
-  #define USBD_IRQn         USB_LP_IRQn
-  #define USBD_IRQHandler   USB_LP_IRQHandler
-
+#else
+  #error STM32 device not supported by USBD library !
 #endif
 
 

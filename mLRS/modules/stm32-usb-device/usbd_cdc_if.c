@@ -19,36 +19,40 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops; // forward declaration
 USBD_CDC_LineCodingTypeDef USBD_CDC_LineCoding;
 
 
-// USB_HS_MAX_PACKET_SIZE is 512 !
+// USB_HS_MAX_PACKET_SIZE is 512! define appears to be used nowhere however
+// USB_FS_MAX_PACKET_SIZE is 64. define appears to be used nowhere however
+// USB_MAX_EP0_SIZE is 64. define is used in plenty of places, so relate to it
 #if !defined CDC_DATA_HS_MAX_PACKET_SIZE || !defined CDC_DATA_FS_MAX_PACKET_SIZE
-#error CDC_DATA_HS_MAX_PACKET_SIZE or CDC_DATA_FS_MAX_PACKET_SIZE not defined, something is terribly bad !
+  #error CDC_DATA_HS_MAX_PACKET_SIZE or CDC_DATA_FS_MAX_PACKET_SIZE not defined, something is terribly bad !
 #endif
 #if CDC_DATA_HS_MAX_PACKET_SIZE > 64
-#error CDC_DATA_HS_MAX_PACKET_SIZE too large !
+  #error CDC_DATA_HS_MAX_PACKET_SIZE too large !
 #endif
 #if CDC_DATA_FS_MAX_PACKET_SIZE > 64
-#error CDC_DATA_FS_MAX_PACKET_SIZE too large !
+  #error CDC_DATA_FS_MAX_PACKET_SIZE too large !
+#endif
+#if USB_MAX_EP0_SIZE != 64
+  #error USB_MAX_EP0_SIZE is not 64, something is terribly strange !
 #endif
 
 
-#define USB_RXBUFSIZE 		256
-#define USB_RXBUFSIZEMASK  	(USB_RXBUFSIZE-1)
+//#define USB_RXBUFSIZE           256
+#define USB_RXBUFSIZEMASK       (USB_RXBUFSIZE-1)
 
 volatile uint8_t usb_rxbuf[USB_RXBUFSIZE];
 volatile uint16_t usb_rxwritepos; // pos at which the last byte was stored
 volatile uint16_t usb_rxreadpos; // pos at which the next byte is to be fetched
 
-#define USB_TXBUFSIZE 		256
-#define USB_TXBUFSIZEMASK  	(USB_TXBUFSIZE-1)
+//#define USB_TXBUFSIZE           256
+#define USB_TXBUFSIZEMASK       (USB_TXBUFSIZE-1)
 
 volatile uint8_t usb_txbuf[USB_TXBUFSIZE];
 volatile uint16_t usb_txwritepos; // pos at which the last byte was stored
 volatile uint16_t usb_txreadpos; // pos at which the next byte is to be fetched
 
-uint8_t usb_trbuf[USB_TXBUFSIZE];
+uint8_t usb_rcbuf[USB_RXBUFSIZE]; // what size does it have to be?
+uint8_t usb_trbuf[64];
 void _cdc_transmit(void); // forward declaration
-
-uint8_t usb_rcbuf[USB_RXBUFSIZE]; // ???? hä, why is this needed ???
 
 static uint8_t usbd_initialized = 0; // to track if we use usb
 
@@ -58,8 +62,13 @@ void usb_init(void)
     // copied from SystemClock_Config()
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {};
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+#if defined STM32F103xE
+    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
+#elif defined STM32G431xx
+    // TODO
+#elif defined STM32F072xB
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
-
+#endif
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
         //Error_Handler();
     }
@@ -110,49 +119,55 @@ uint16_t usb_rx_bytesavailable(void)
 {
 int16_t d;
 
-  d = (int16_t)usb_rxwritepos - (int16_t)usb_rxreadpos;
-  return (d < 0) ? d + (USB_RXBUFSIZEMASK + 1) : d;
+    d = (int16_t)usb_rxwritepos - (int16_t)usb_rxreadpos;
+    return (d < 0) ? d + (USB_RXBUFSIZEMASK + 1) : d;
 }
 
 
 char usb_getc(void)
 {
-	  usb_rxreadpos = (usb_rxreadpos + 1) & USB_RXBUFSIZEMASK;
-	  return usb_rxbuf[usb_rxreadpos];
+    usb_rxreadpos = (usb_rxreadpos + 1) & USB_RXBUFSIZEMASK;
+    return usb_rxbuf[usb_rxreadpos];
 }
 
 
 uint8_t _usb_putc(uint8_t c)
 {
-	  uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
-	  if (usb_txreadpos != next) { // fifo not full
-	      usb_txbuf[next] = c;
-	      usb_txwritepos = next;
-	      return 1;
-	  }
-	  return 0;
+    uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
+    if (usb_txreadpos != next) { // fifo not full
+        usb_txbuf[next] = c;
+        usb_txwritepos = next;
+        return 1;
+    }
+    return 0;
 }
 
 
 void usb_putc(uint8_t c)
 {
-	  if (_usb_putc(c)) _cdc_transmit();
+    if (_usb_putc(c)) _cdc_transmit();
 }
 
 
 void usb_puts(const char* s)
 {
-	  uint8_t written = 0;
-	  while (*s) { written = _usb_putc(*s); s++; }
-	  if (written) _cdc_transmit();
+    uint8_t written = 0;
+    while (*s) { written = _usb_putc(*s); s++; }
+    if (written) _cdc_transmit();
 }
 
 
 void usb_putbuf(uint8_t* buf, uint16_t len)
 {
-	  uint8_t written = 0;
-	  for (uint16_t i = 0; i < len; i++) written = _usb_putc(buf[i]);
-	  if (written) _cdc_transmit();
+    uint8_t written = 0;
+    for (uint16_t i = 0; i < len; i++) written = _usb_putc(buf[i]);
+    if (written) _cdc_transmit();
+}
+
+
+void usb_rx_flush(void)
+{
+    usb_rxwritepos = usb_rxreadpos = 0;
 }
 
 
@@ -188,16 +203,17 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
 
 static int8_t CDC_Init(void)
 {
-	  USBD_CDC_SetRxBuffer(&husbd_CDC, usb_rcbuf); //usb_rxbuf); ??????
+    USBD_CDC_SetRxBuffer(&husbd_CDC, usb_rcbuf);
+    USBD_CDC_SetTxBuffer(&husbd_CDC, usb_trbuf, 0);
     usb_flush();
 
-	  return (USBD_OK);
+    return USBD_OK;
 }
 
 
 static int8_t CDC_DeInit(void)
 {
-	  return (USBD_OK);
+    return USBD_OK;
 }
 
 
@@ -221,24 +237,27 @@ static int8_t CDC_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         break;
     }
 
-    return (USBD_OK);
+    return USBD_OK;
 }
 
 
 static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
 {
-	  USBD_CDC_SetRxBuffer(&husbd_CDC, &pbuf[0]);
-	  USBD_CDC_ReceivePacket(&husbd_CDC);
+    // pbuf is equal to usb_rcbuf, so SetRxBuffer() is not needed
+    // USBD_CDC_SetRxBuffer(&husbd_CDC, &pbuf[0]);
+    USBD_CDC_ReceivePacket(&husbd_CDC);
 
-	  for (uint8_t i = 0; i < *length; i++) {
-	      uint16_t next = (usb_rxwritepos + 1) & USB_RXBUFSIZEMASK;
-	      if (usb_rxreadpos != next) { // fifo not full
-	          usb_rxbuf[next] = pbuf[i];
-	          usb_rxwritepos = next;
-	      }
-	  }
+    if (*length > sizeof(usb_rcbuf)) return USBD_OK;
 
-	  return (USBD_OK);
+    for (uint8_t i = 0; i < *length; i++) {
+        uint16_t next = (usb_rxwritepos + 1) & USB_RXBUFSIZEMASK;
+        if (usb_rxreadpos != next) { // fifo not full
+            usb_rxbuf[next] = usb_rcbuf[i];
+            usb_rxwritepos = next;
+        }
+    }
+
+    return USBD_OK;
 }
 
 
@@ -248,22 +267,23 @@ void _cdc_transmit(void)
     if (hcdc->TxState != 0) return;
 
     uint8_t len = 0;
-    while (usb_txwritepos != usb_txreadpos) {
+
+    while ((usb_txwritepos != usb_txreadpos) && (len < 64-1)) { // the -1 avoids the need for a ZLP
         usb_txreadpos = (usb_txreadpos + 1) & USB_TXBUFSIZEMASK;
         usb_trbuf[len++] = usb_txbuf[usb_txreadpos];
     }
 
     if (!len) return;
 
-    USBD_CDC_SetTxBuffer(&husbd_CDC, usb_trbuf, len);
+    USBD_CDC_SetTxBuffer(&husbd_CDC, usb_trbuf, len); // only hcdc->TxLength = len; is really needed
     USBD_CDC_TransmitPacket(&husbd_CDC);
 }
 
 
 int8_t CDC_TransmitCplt(uint8_t* pbuf, uint32_t* length, uint8_t epnum)
 {
-	  _cdc_transmit();
-	  return (USBD_OK);
+    _cdc_transmit();
+    return USBD_OK;
 }
 
 

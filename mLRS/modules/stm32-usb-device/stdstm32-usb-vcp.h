@@ -5,6 +5,12 @@
 //*******************************************************
 // STM32_USB_Device_Library based USB VCP standard library
 //*******************************************************
+// ../Drivers/STM32_USB_Device_Library/Core/Inc
+// ../Drivers/STM32_USB_Device_Library/Class/CDC/Inc
+// "${workspace_loc:/${ProjName}/modules/stm32-usb-device}"
+// STDSTM32_USE_USB
+// #define HAL_PCD_MODULE_ENABLED in stm32yyxx_hal_conf.h
+
 #ifndef STDSTM32_USB_VCP
 #define STDSTM32_USB_VCP
 #ifdef __cplusplus
@@ -16,6 +22,12 @@ extern "C" {
 
 
 #include "usbd_cdc.h"
+
+
+// pl adjust these settings in usbd_conf.h according to your needs
+// - USB_RXBUFSIZE
+// - USB_TXBUFSIZE
+// - USBD_IRQ_PRIORITY
 
 
 //-------------------------------------------------------
@@ -30,6 +42,7 @@ void usb_putc(uint8_t c);
 void usb_puts(const char *s);
 void usb_putbuf(uint8_t* buf, uint16_t len);
 
+void usb_rx_flush(void);
 void usb_flush(void);
 
 void usb_init(void);
