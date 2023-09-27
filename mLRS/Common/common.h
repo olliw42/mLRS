@@ -252,20 +252,6 @@ typedef enum {
 } FAIL_ENUM;
 
 
-void FAIL(uint8_t led_pattern, const char* msg)
-{
-#ifdef FAIL_ENABLED
-    fail(&dbg, led_pattern, msg);
-#endif
-}
-
-
-void FAIL(const char* msg)
-{
-    fail(&dbg, 0, msg);
-}
-
-
 void FAILALWAYS(uint8_t led_pattern, const char* msg)
 {
     fail(&dbg, led_pattern, msg);
@@ -286,6 +272,30 @@ char s[64];
     strcat(s, " rx2s=");
     strcat(s, rxstatus_str[link_rx2_status]);
     fail(&dbg, led_pattern, s);
+}
+
+
+void FAIL(uint8_t led_pattern, const char* msg)
+{
+#ifdef FAIL_ENABLED
+    fail(&dbg, led_pattern, msg);
+#endif
+}
+
+
+void FAIL(const char* msg)
+{
+#ifdef FAIL_ENABLED
+    fail(&dbg, 0, msg);
+#endif
+}
+
+
+void FAIL_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+{
+#ifdef FAIL_ENABLED
+    FAILALWAYS_WSTATE(led_pattern, msg, irq_status, link_state, link_rx1_status, link_rx2_status);
+#endif
 }
 
 
