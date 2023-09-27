@@ -66,6 +66,10 @@ class tTxCrsf : public tPin5BridgeBase
 
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
 
+    bool IsRelayMain(void);
+    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg);
+    bool IsRelaySecondary(void);
+
     // helper
     uint8_t crc8(const uint8_t* buf);
     void fill_rcdata(tRcData* rc);
@@ -130,6 +134,18 @@ class tTxCrsf : public tPin5BridgeBase
     // crsf passthrough telemetry
 
     tPassThrough passthrough;
+
+    // relay
+
+    typedef enum {
+        RELAY_UNKNOWN = 0,
+        RELAY_NO,
+        RELAY_YES,
+    } RELAY_ENUM;
+    uint8_t relay;
+
+    bool main_radio_stats_receiving;
+    fmav_mlrs_main_radio_stats_t main_radio_stats;
 };
 
 tTxCrsf crsf;
@@ -188,7 +204,12 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
     switch (state) {
     case STATE_IDLE:
-        if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
+        if (relay == RELAY_UNKNOWN) {
+            if (c == CRSF_ADDRESS_TRANSMITTER_MODULE || c == CRSF_OPENTX_SYNC) relay = RELAY_NO;
+            if (c == CRSF_ADDRESS_RECEIVER) relay = RELAY_YES;
+        }
+        if ((relay == RELAY_NO && (c == CRSF_ADDRESS_TRANSMITTER_MODULE || c == CRSF_OPENTX_SYNC)) ||
+            (relay == RELAY_YES && c == CRSF_ADDRESS_RECEIVER)) {
             cnt = 0;
             frame[cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
@@ -301,6 +322,9 @@ void tTxCrsf::Init(bool enable_flag)
     vehicle_sysid = 0;
     passthrough.Init();
 
+    relay = RELAY_UNKNOWN;
+    main_radio_stats_receiving = false;
+
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
     uart_tc_callback_ptr = &crsf_uart_tc_callback;
 
@@ -335,6 +359,8 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
     // check if we can transmit
     if (!tx_free) return false;
     tx_free = false;
+
+    if (relay != RELAY_NO) return false;
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
@@ -386,6 +412,8 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
 
     if (!cmd_received) return false;
     cmd_received = false;
+
+    if (relay != RELAY_NO) return false;
 
     // TODO: we could check crc if we wanted to
 
@@ -593,6 +621,8 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 // called by mavlink interface, when a mavlink frame has been received
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
+    if (relay != RELAY_NO) return;
+
     if (msg->sysid == 0) return; // this can't be anything meaningful
 
     // autodetect vehicle sysid
@@ -826,20 +856,35 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 
 //-------------------------------------------------------
-// convenience helper
+// Relay handler
 
-uint8_t crsf_cvt_rssi_percent(int8_t rssi)
+bool tTxCrsf::IsRelayMain(void)
 {
-    if (rssi == RSSI_INVALID) return 255;
-    if (rssi >= -50) return 100;
-    if (rssi <= sx.ReceiverSensitivity_dbm()) return 0;
-
-    int32_t r = (int32_t)rssi - sx.ReceiverSensitivity_dbm();
-    int32_t m = (int32_t)(-50) - sx.ReceiverSensitivity_dbm();
-
-    return (100 * r + 49)/m;
+    return (relay == RELAY_YES);
 }
 
+
+void tTxCrsf::HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg)
+{
+    main_radio_stats_receiving = true;
+
+    fmav_msg_mlrs_main_radio_stats_decode(&main_radio_stats, msg);
+}
+
+
+bool tTxCrsf::IsRelaySecondary(void)
+{
+    return main_radio_stats_receiving;
+}
+
+
+//-------------------------------------------------------
+// convenience helper
+
+uint8_t crsf_cvt_rssi_perc(int8_t rssi)
+{
+    return crsf_cvt_rssi_percent(rssi, sx.ReceiverSensitivity_dbm());
+}
 
 // on crsf rssi
 // rssi = 255 -> red in otx
@@ -859,13 +904,29 @@ void crsf_send_LinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
+if (crsf.IsRelaySecondary()) {
+    clstats.uplink_rssi1 = crsf.main_radio_stats.uplink_rssi;
+    clstats.uplink_rssi2 = 0; // we don't know it
+    clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
+    clstats.uplink_snr = 0; // we don't know it
+    clstats.active_antenna = crsf.main_radio_stats.active_antenna;
+    clstats.mode = crsf.main_radio_stats.mode;
+    clstats.uplink_transmit_power = crsf.main_radio_stats.uplink_transmit_power_enum;
+
+    clstats.downlink_rssi = crsf.main_radio_stats.downlink_rssi;
+    clstats.downlink_LQ = crsf.main_radio_stats.downlink_LQ;
+    clstats.downlink_snr = crsf.main_radio_stats.downlink_snr;
+    crsf.SendLinkStatistics(&clstats);
+    return;
+}
+
     clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);           // OpenTX -> "1RSS"
     clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
     clstats.uplink_LQ = stats.received_LQ; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
     clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
     clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
     clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());       // OpenTx -> "TPw2"   // ?????? uplink but "T" ??
+    clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());       // OpenTx -> "TPw2"
 
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());          // OpenTx -> "TRSS"
     clstats.downlink_LQ = txstats.GetLQ();                                  // OpenTx -> "TQly"
@@ -878,10 +939,21 @@ void crsf_send_LinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx clstats;
 
-    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRssi());     // OpenTx -> "TRSP"
-    clstats.uplink_LQ = txstats.GetLQ();                                          // ignored by OpenTx
-    clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
+if (crsf.IsRelaySecondary()) {
+    clstats.uplink_rssi = crsf.main_radio_stats.uplink_rssi;
+    clstats.uplink_rssi_percent = crsf.main_radio_stats.uplink_rssi_percent;
+    clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
+    clstats.uplink_snr = crsf.main_radio_stats.downlink_snr;
+    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it
+    clstats.uplink_fps = crsf.main_radio_stats.uplink_fps;
+    crsf.SendLinkStatisticsTx(&clstats);
+    return;
+}
+
+    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx ??
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_perc(stats.GetLastRssi());        // OpenTx -> "TRSP"  // uplink but "T" ??
+    clstats.uplink_LQ = txstats.GetLQ();                                          // ignored by OpenTx ??
+    clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx ??
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
     clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
     crsf.SendLinkStatisticsTx(&clstats);
@@ -892,10 +964,20 @@ void crsf_send_LinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
-    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP"
-    clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx
-    clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
+if (crsf.IsRelaySecondary()) {
+    clstats.downlink_rssi = crsf.main_radio_stats.downlink_rssi;
+    clstats.downlink_rssi_percent = crsf.main_radio_stats.downlink_rssi_percent;
+    clstats.downlink_LQ = crsf.main_radio_stats.downlink_LQ;
+    clstats.downlink_snr = 0; // we don't know it
+    clstats.uplink_transmit_power = crsf.main_radio_stats.uplink_transmit_power_dbm;
+    crsf.SendLinkStatisticsRx(&clstats);
+    return;
+}
+
+    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx ??
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_perc(stats.received_rssi);      // OpenTx -> "RRSP"  // downlink but "R" ??
+    clstats.downlink_LQ = stats.received_LQ;                                      // ignored by OpenTx ??
+    clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx ??
     clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
     crsf.SendLinkStatisticsRx(&clstats);
 }
@@ -912,6 +994,10 @@ class tTxCrsfDummy
     void TelemetryTick_ms(void) {}
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
+
+    bool IsRelayMain(void) { return false; }
+    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg) {}
+    bool IsRelaySecondary(void) { return false; }
 };
 
 tTxCrsfDummy crsf;

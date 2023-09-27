@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             339 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v0.3.39"
+#define VERSION             338 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v0.3.38"
 #define SETUPLAYOUT         335 // this should be changed then Setup struct and/or serial changes
 
 
@@ -26,7 +26,6 @@
 
 
 // Development features. Note: They are offered for testing, but they are not for production
-//#define MLRS_DEV_FEATURE_ORTHO
 #define MLRS_DEV_FEATURE_MAVLINKX
 
 

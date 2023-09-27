@@ -192,6 +192,19 @@ uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8)
 }
 
 
+uint8_t crsf_cvt_rssi_percent(int8_t rssi_i8, int16_t receiver_sensitivity_dbm)
+{
+    if (rssi_i8 == RSSI_INVALID) return 255;
+    if (rssi_i8 >= -50) return 100;
+    if (rssi_i8 <= receiver_sensitivity_dbm) return 0;
+
+    int32_t r = (int32_t)rssi_i8 - receiver_sensitivity_dbm;
+    int32_t m = (int32_t)(-50) - receiver_sensitivity_dbm;
+
+    return (100 * r + 49)/m;
+}
+
+
 //-- bind phrase & power & version
 
 bool is_valid_bindphrase_char(char c)

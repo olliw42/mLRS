@@ -11,7 +11,7 @@
 // RX DIY E28 v007 STM32G441KB
 //-------------------------------------------------------
 
-#define DEVICE_HAS_OUT
+#define DEVICE_HAS_OUT_INTERNAL
 
 
 //-- Timers, Timing, EEPROM, and such stuff

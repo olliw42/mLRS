@@ -17,7 +17,7 @@
 // USB <-> TxD,RxD pins   -> PA2,PA3 = LPUART1,UART2
 
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
-#define DEVICE_HAS_OUT
+#define DEVICE_HAS_OUT_INTERNAL
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
 
