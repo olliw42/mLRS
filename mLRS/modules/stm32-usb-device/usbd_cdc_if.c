@@ -65,7 +65,7 @@ void usb_init(void)
 #if defined STM32F103xE
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
 #elif defined STM32G431xx
-    // TODO
+    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 #elif defined STM32F072xB
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
 #endif
