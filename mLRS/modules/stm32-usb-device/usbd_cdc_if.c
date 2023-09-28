@@ -59,6 +59,18 @@ static uint8_t usbd_initialized = 0; // to track if we use usb
 
 void usb_init(void)
 {
+#if defined STM32G431xx
+    // initialize HSI48, copied with adaption from SystemClock_Config()
+    RCC_OscInitTypeDef RCC_OscInitStruct = {};
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    // important, since otherwise HAL_RCC_OscConfig() wouldn't set it
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        //Error_Handler();
+    }
+#endif
+
     // copied from SystemClock_Config()
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {};
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
