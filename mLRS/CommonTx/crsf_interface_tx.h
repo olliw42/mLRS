@@ -111,7 +111,7 @@ class tTxCrsf : public tPin5BridgeBase
     bool vario_updated;
     uint32_t vario_send_tlast_ms;
 
-    tCrsfBaroAltitude baro_altitude; // not yet populated from a mavlink message
+    tCrsfBaroAltitude baro_altitude; // not yet populated from a mavlink message, AP does not appear to provide baro alt at all
     bool baro_altitude_updated;
     uint32_t baro_send_tlast_ms;
 
@@ -338,16 +338,16 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
-    	  telemetry_start_next_tick = false;
+        telemetry_start_next_tick = false;
 
         // slow it down if frame time is too short
         if (frame_rate_ms <= 19) {
-        	  static uint8_t cnt = 0;
-        	  if (!cnt) telemetry_state = 0;
-        	  cnt++;
+            static uint8_t cnt = 0;
+            if (!cnt) telemetry_state = 0;
+            cnt++;
             if (cnt > 2) cnt = 0;
         } else {
-        	  telemetry_state = 0;
+            telemetry_state = 0;
         }
     }
 
@@ -470,7 +470,7 @@ void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
 // we have to kinds to consider:
 // - native CRSF telemetry frames:
 //   these are filled from MAVLink messages by the tTxCrsf class
-// - passthrough packets which are packet into the CRSF passthrough telemetry frame:
+// - passthrough packets which are packed into CRSF passthrough telemetry frames:
 //   these are filled from MAVLink messages through the tPassThrough class
 
 #define CRSF_REV_U16(x)  __REV16(x)

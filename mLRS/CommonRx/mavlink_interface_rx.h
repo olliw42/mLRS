@@ -499,8 +499,8 @@ bool MavlinkBase::handle_txbuf_method_b(uint32_t tnow_ms)
                 if (serial_in_available() < 1400) { // it has stopped growing, we can go back and try burst
                     txbuf_state = TXBUF_STATE_BURST;
                 }
-		            radio_status_tlast_ms = tnow_ms;
-		            inject_radio_status = true;
+                radio_status_tlast_ms = tnow_ms;
+                inject_radio_status = true;
             }
             break;
         case TXBUF_STATE_PX4_RECOVER: // transient state so we don't need txbuf_state_last
