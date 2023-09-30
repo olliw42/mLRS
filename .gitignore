@@ -3,9 +3,9 @@ esp/mlrs-wifi-bridge/*.cfg
 esp/mlrs-wifi-bridge/*.json
 esp/mlrs-wifi-bridge/*.svd
 mLRS/.metadata/*
-**/.settings/*
-**/Release/*
-**/Debug/*
+mLRS/**/.settings/*
+mLRS/**/Release/*
+mLRS/**/Debug/*
 *.launch
 tools/build3/*
 tools/__pycache__
