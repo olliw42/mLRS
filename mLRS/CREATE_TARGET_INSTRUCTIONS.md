@@ -1,6 +1,10 @@
-For some steps it is very important to do them in the correct sequence. So it is best to just follow all steps exactly as given below.
+# Targets
 
-Quotation marks "" are used to enclose text, but should never be entered.
+This page documents in detail the steps with which the targets in this repository were created.
+
+It can, and should, serve as manual for creating new targets. For some steps it is very important to do them in the correct sequence. So it is best to just follow all steps exactly as given below.
+
+Quotation marks "" are used to enclose text, but should never be entered. '->' is used to indicate to goto a certain field, option, menu.
 
 Some steps depend on the STM32 part.
 
@@ -11,13 +15,13 @@ Notation:
 
 ## I. Create Target: Cube MX
 
-These steps are target and part dependent. Pay attention to the details.
+The steps in this chapter are target and part dependent. Pay attention to the details.
 
-#### 1. File -> New -> STM32 Project
+## 1. File -> New -> STM32 Project
 
 This opens the "Target Selection" dialog (note: this can take a while, be patient).
 
-#### 2. MCU/MPU Selector -> Commercial Part Number: enter the part, e.g., STM32G431KB
+## 2. MCU/MPU Selector -> Commercial Part Number: enter the part (e.g., STM32G431KB)
 
 The part to enter here depends on the specific target which shall be created.
 
@@ -31,37 +35,37 @@ Then hit "Next".
 
 This opens the "Project & Options" dialog.
 
-#### 3. Project -> Project Name: enter the name of the target, e.g. "tx-diy-E22-g431kb"
+### 3. Project -> Project Name: enter the name of the target (e.g. "tx-diy-E22-g431kb")
 
 The target name must start with "tx-" or "rx-" and must end with the part shorthand name in lower case, e.g., "-g431kb".
 
--> Options -> Targeted Language: choose C++
+-> Options -> Targeted Language: choose "C++"
 
 Then hit "Finish".
 
 This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 
-#### 4. Pinout & Configuration
+### 4. Pinout & Configuration
 
 - STM32F103 and STM32G4 parts
   - -> System Core -> SYS -> Debug: select "Serial Wire"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Creamic Resonator"
 
 - STM32WLE5CC in E77 module
-  - -> System Core -> SYS -> Timebase Source: select SysTick
+  - -> System Core -> SYS -> Timebase Source: select "SysTick"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
   - -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"
 
 - STM32WLE5JC in WioE5 module
-  - -> System Core -> SYS -> Timebase Source: select SysTick
-  - -> System Core -> RCC -> High Speed Clock (HSE): select TCXO
+  - -> System Core -> SYS -> Timebase Source: select "SysTick"
+  - -> System Core -> RCC -> High Speed Clock (HSE): select "TCXO"
   - -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"
 
 - STM32F072 part
   - -> System Core -> SYS -> check "Bedug Serial Wire"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
 
-#### 5. Clock Configuration
+### 5. Clock Configuration
 
 - STM32F1 parts
   - -> Input frequency: enter 8
@@ -85,13 +89,13 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 
 You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block (e.g. PLLM = /2, PLLN = 85 for the STM32G4 parts).
 
-#### 6. Project Manager
+### 6. Project Manager
 
--> Project -> Linker Settings -> Minimum Heap Size: change to 0x0
+-> Project -> Linker Settings -> Minimum Heap Size: change to "0x0"
 
 -> Code Generator -> Generated files: un-check "Delete previously generated files when not re-generated"
 
--> Advanced Settings -> Driver Selector -> GPIO: select LL
+-> Advanced Settings -> Driver Selector -> GPIO: select "LL"
 
 Then hit "Save" or "Save All".
 
@@ -102,11 +106,9 @@ The file "main.c" should be opened now in the editor.
 
 ## II. Create Target: Mangle Files
 
-These steps are largely equal for all targets and parts.
+The steps in this chapter are basically equal for all targets and parts, with few exceptions.
 
-Note: "main.cpp" may need target specific entries in few cases.
-
-#### 7. In the IDE Project explorer: unfold "Core", unfold "Src", right-mouse click main.c -> Rename
+### 7. In the IDE Project explorer: unfold "Core", unfold "Src", right-mouse click main.c -> Rename
 
 This opens the "Rename Resource" dialog.
 
@@ -114,7 +116,7 @@ This opens the "Rename Resource" dialog.
 
 Then hit "OK".
 
-#### 8. Double-click on "main.cpp" to open file in editor
+### 8. Double-click on "main.cpp" to open file in editor
 
   -> find section "/\* USER CODE BEGIN PFP \*/" and insert "int main_main();"
 
@@ -123,20 +125,20 @@ Then hit "OK".
 - STM32G4 parts only
   - -> find section "/\* USER CODE BEGIN 1 \*/" and insert "__HAL_FLASH_DATA_CACHE_DISABLE();"
 
-#### 9. Go to "mlrs/Tools" folder
+### 9. Go to "mlrs/Tools" folder
 
 -> run the Python "script run_copy_st_drivers.py"
 
 
 ## III. Create Target: IDE Config
 
-These steps are equal for all targets and parts.
+The steps in this chapter are equal for all targets and parts.
 
-#### 10. hammer icon -> down arrow: select Release
+### 10. hammer icon -> down arrow: select Release
 
 This starts the compiler. Let it run, don't worry about the errors which result.
 
-#### 11. Right-mouse click on newly created target (e.g. "tx-diy-e22-g431kb") -> New -> Folder
+### 11. Right-mouse click on newly created target (e.g. "tx-diy-e22-g431kb") -> New -> Folder
 
 This opens the "New Folder/Folder" dialog.
 
@@ -154,7 +156,7 @@ Repeat these steps for "CommonRx" or "CommonTx", depending on whether it is a rx
 
 Repeat the steps also for "modules".
 
-#### 12. Right-mouse click on "Common" -> Properties
+### 12. Right-mouse click on "Common" -> Properties
 
 This opens the "Properties for Common" dialog.
 
@@ -165,7 +167,7 @@ Repeat these steps for "CommonRx" or "CommonTx", depending on whether it is a rx
 
 Repeat the steps also for "modules".
 
-#### 13. Unfold "modules" folder, to see "fastmavlink", "mavlink", "stm32ll-lib", "sx12xx-lib"
+### 13. Unfold "modules" folder, to see "fastmavlink", "mavlink", "stm32ll-lib", "sx12xx-lib"
 
 Right-mouse click on "fastmavlink" -> Properties.
 
@@ -181,7 +183,7 @@ Repeat the steps for "mavlink".
 
 These steps are equal for all targets and parts, except of course that values need to be entered as appropriate for the target and part.
 
-#### 14. In the IDE, unfold "Common", unfold "hal"
+### 14. In the IDE, unfold "Common", unfold "hal"
 
 -> double-click "device_conf.h" to open this file in the editor
 -> enter new target in appropriate place, with define e.g. TX_DIY_E22_G431KB
@@ -189,15 +191,15 @@ These steps are equal for all targets and parts, except of course that values ne
 -> double-click "hal.h" to open this file in the editor
 -> enter new target in appropriate place, with define e.g. TX_DIY_E22_G431KB, tx-hal-diy-e22-g431kb.h
 
-#### 15. Create decvice hal file, e.g. tx-hal-diy-e22-g431kb.h, with appropriate entries
+### 15. Create decvice hal file (e.g. tx-hal-diy-e22-g431kb.h) with appropriate entries
 
 The hal file for the target contains (nearly) all information on the specific board/device. Creating it with the proper content thus represents a most important step.
 
-#### 16. Right-mouse click created target (e.g. "tx-hal-diy-e22-g431kb") -> Properties
+### 16. Right-mouse click created target (e.g. "tx-hal-diy-e22-g431kb") -> Properties
 
-This opens the  "Properties for tx-hal-diy-e22-g431kb" dialog.
+This opens the "Properties for tx-hal-diy-e22-g431kb" dialog.
 
--> C/C++ Build -> Settings -> Tool Settings -> MCU G++ Compiler -> Preprozessor -> Define Symbols -> "+" icon: add e.g. TX_DIY_E22_G431KB
+-> C/C++ Build -> Settings -> Tool Settings -> MCU G++ Compiler -> Preprozessor -> Define Symbols -> "+" icon: add e.g. "TX_DIY_E22_G431KB"
 
 Then hit "Apply and Close".
 
@@ -205,7 +207,7 @@ Then hit "Apply and Close".
 
 The project should compile now without errors, and only some intentional warnings. A last step is needed.
 
-#### 17. Close STM32CubeIDE, go to "mlrs/Tools" folder
+### 17. Close STM32CubeIDE, go to "mlrs/Tools" folder
 
 -> run the Python script "run_replace_names_by_variables.py"
 
