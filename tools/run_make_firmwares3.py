@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 24.09.2023
+ version 30.09.2023
 ********************************************************
 '''
 import os
@@ -1082,6 +1082,7 @@ if __name__ == "__main__":
     cmdline_target = ''
     cmdline_D_list = []
     cmdline_nopause = False
+    cmdline_version = ''
 
     cmd_pos = -1
     for cmd in sys.argv:
@@ -1094,12 +1095,18 @@ if __name__ == "__main__":
                 cmdline_D_list.append(sys.argv[cmd_pos+1])
         if cmd == '--nopause' or cmd == '-np':
                 cmdline_nopause = True
+        if cmd == '--version' or cmd == '-v' or cmd == '-V':
+            if sys.argv[cmd_pos+1] != '':
+                cmdline_version = sys.argv[cmd_pos+1]
 
     #cmdline_target = 'tx-diy-e22dual-module02-g491re'
     #cmdline_target = 'tx-diy-sxdualXXX'
 
-    mlrs_set_version()
-    mlrs_set_branch_hash(VERSIONONLYSTR)
+    if cmdline_version == '':
+        mlrs_set_version()
+        mlrs_set_branch_hash(VERSIONONLYSTR)
+    else:    
+        VERSIONONLYSTR = cmdline_version
 
     create_clean_dir(MLRS_BUILD_DIR)
 
