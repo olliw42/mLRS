@@ -17,17 +17,17 @@ Notation:
 
 The steps in this chapter are target and part dependent. Pay attention to the details.
 
-## 1. File -> New -> STM32 Project
+### 1. File -> New -> STM32 Project
 
 This opens the "Target Selection" dialog (note: this can take a while, be patient).
 
-## 2. MCU/MPU Selector -> Commercial Part Number: enter the part (e.g., STM32G431KB)
+### 2. MCU/MPU Selector -> Commercial Part Number: enter the part (e.g., STM32G431KB)
 
 The part to enter here depends on the specific target which shall be created.
 
-On the right side a selection of compatible parts will be shown, which differ by their package, e.g., may have an extension like U6 (e.g. STM32G431KBU6). It doesn't matter which of them you chose, but these are the preferred choices ('x' stands for a number like 5 or 6, choose whatever you like):
+On the right side a selection of compatible parts will be shown, which differ by their package, e.g., may have an extension like U6 (e.g. STM32G431KBU6). It doesn't matter which of them you chose, but these are the preferred choices ('x' stands for a number like 3 or 6, choose whatever you like):
 - STM32F103C8Tx, STM32F103CBTx, STM32F103RBHx
-- STM32G431KBUx, STM32G441KBUx, STM32G491RETx
+- STM32G431KBUx, STM32G441KBUx, STM32G431CBUx, STM32G491RETx
 - STM32WLE5CCUx, STM32WLE5JCIx
 - STM32F072CBTx
 
@@ -49,7 +49,7 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 
 - STM32F103 and STM32G4 parts
   - -> System Core -> SYS -> Debug: select "Serial Wire"
-  - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Creamic Resonator"
+  - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
 
 - STM32WLE5CC in E77 module
   - -> System Core -> SYS -> Timebase Source: select "SysTick"
@@ -75,7 +75,7 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 - STM32G4 parts
   - -> Input frequency: enter 8
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
-  - -> HCLK (Mhz): enter 170
+  - -> HCLK (Mhz): enter 170 (corresponds to PLLM = /2, PLLN = x85, PLLR = /2)
 
 - STM32WLE5 parts (E77 and WioE5)
   - -> Input frequency: enter 32
@@ -87,7 +87,7 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
   - -> HCLK (Mhz): enter 48
 
-You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block (e.g. PLLM = /2, PLLN = 85 for the STM32G4 parts).
+You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block (e.g. PLLM = /2, PLLN = x85 for the STM32G4 parts).
 
 ### 6. Project Manager
 
