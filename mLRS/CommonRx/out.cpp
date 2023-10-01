@@ -300,10 +300,10 @@ tCrsfChannelBuffer crsf_buf;
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);
-    crc = crc8_calc(crc, CRSF_FRAME_ID_CHANNELS, 0xD5);
+    crc = crsf_crc8_calc(crc, CRSF_FRAME_ID_CHANNELS);
 
     putbuf(crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
-    crc = crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE, 0xD5);
+    crc = crsf_crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
 
     putc(crc);
 }
@@ -338,10 +338,10 @@ tCrsfLinkStatistics clstats;
     putc(CRSF_LINK_STATISTICS_LEN + 2);
 
     putc(CRSF_FRAME_ID_LINK_STATISTICS);
-    crc = crc8_calc(crc, CRSF_FRAME_ID_LINK_STATISTICS, 0xD5);
+    crc = crsf_crc8_calc(crc, CRSF_FRAME_ID_LINK_STATISTICS);
 
     putbuf((uint8_t*)&clstats, CRSF_LINK_STATISTICS_LEN);
-    crc = crc8_update(crc, &clstats, CRSF_LINK_STATISTICS_LEN, 0xD5);
+    crc = crsf_crc8_update(crc, &clstats, CRSF_LINK_STATISTICS_LEN);
 
     putc(crc);
 }

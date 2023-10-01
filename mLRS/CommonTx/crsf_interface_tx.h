@@ -263,7 +263,7 @@ tCrsfChannelBuffer buf;
 
 uint8_t tTxCrsf::crc8(const uint8_t* buf)
 {
-    return crc8_update(0, &(buf[2]), buf[1] - 1, 0xD5);
+    return crsf_crc8_update(0, &(buf[2]), buf[1] - 1);
 }
 
 

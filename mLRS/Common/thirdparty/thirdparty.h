@@ -12,18 +12,6 @@
 
 
 //-------------------------------------------------------
-// Crsf Auxiliary Helper
-//-------------------------------------------------------
-// This code is taken from betaflight
-// It may however not be genuine, can be found in many sources, e.g.
-// - https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks
-// - https://barrgroup.com/embedded-systems/how-to/crc-calculation-c-code.
-
-uint8_t crc8_calc(uint8_t crc, unsigned char a, uint8_t poly);
-uint8_t crc8_update(uint8_t crc, const void *data, uint32_t length, uint8_t poly);
-
-
-//-------------------------------------------------------
 // ArduPilot PassThrough, Auxiliary Helper
 //-------------------------------------------------------
 // This code is taken from ArduPilot
