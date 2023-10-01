@@ -64,8 +64,7 @@ void usb_init(void)
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-    // important, since otherwise HAL_RCC_OscConfig() wouldn't set it
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
         //Error_Handler();
     }
@@ -77,6 +76,7 @@ void usb_init(void)
 #if defined STM32F103xE
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
 #elif defined STM32G431xx
+    // CubeMX is not adding this to SystemClock_Config(), but it is needed
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 #elif defined STM32F072xB
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
