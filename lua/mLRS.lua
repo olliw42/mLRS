@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-09-14.00'
+local version = '2023-10-1.00'
 
 local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
 local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
@@ -406,7 +406,7 @@ local function mb_to_firmware_u16_string(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
     local patch = bit32.band(u16, 0x003F)
-    return string.format("v%d.%02d.%02d", major, minor, patch)
+    return string.format("v%d.%d.%02d", major, minor, patch)
 end
 
 local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
