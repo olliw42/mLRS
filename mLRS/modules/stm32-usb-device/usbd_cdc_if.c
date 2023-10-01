@@ -117,6 +117,14 @@ void usb_deinit(void)
     if (!usbd_initialized) return;
 
     USBD_DeInit(&husbd_CDC);
+
+#if defined STM32G431xx
+    RCC_OscInitTypeDef RCC_OscInitStruct = {};
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {}
+#endif
 }
 
 
