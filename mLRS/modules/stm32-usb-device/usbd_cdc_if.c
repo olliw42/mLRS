@@ -59,13 +59,25 @@ static uint8_t usbd_initialized = 0; // to track if we use usb
 
 void usb_init(void)
 {
+#if defined STM32G431xx
+    // initialize HSI48, copied with adaption from SystemClock_Config()
+    RCC_OscInitTypeDef RCC_OscInitStruct = {};
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        //Error_Handler();
+    }
+#endif
+
     // copied from SystemClock_Config()
     RCC_PeriphCLKInitTypeDef PeriphClkInit = {};
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
 #if defined STM32F103xE
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
 #elif defined STM32G431xx
-    // TODO
+    // CubeMX is not adding this to SystemClock_Config(), but it is needed
+    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 #elif defined STM32F072xB
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
 #endif
@@ -105,6 +117,14 @@ void usb_deinit(void)
     if (!usbd_initialized) return;
 
     USBD_DeInit(&husbd_CDC);
+
+#if defined STM32G431xx
+    RCC_OscInitTypeDef RCC_OscInitStruct = {};
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {}
+#endif
 }
 
 
