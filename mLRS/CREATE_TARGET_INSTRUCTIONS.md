@@ -61,8 +61,8 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
   - -> System Core -> RCC -> High Speed Clock (HSE): select "TCXO"
   - -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"
 
-- STM32F072 part
-  - -> System Core -> SYS -> check "Bedug Serial Wire"
+- STM32F072 parts
+  - -> System Core -> SYS -> check "Debug Serial Wire"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
 
 ### 5. Clock Configuration
@@ -70,7 +70,7 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 - STM32F1 parts
   - -> Input frequency: enter 8
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
-  - -> HCLK (Mhz): enter 72
+  - -> HCLK (Mhz): enter 72 (corresponds to PLLMul = x9)
 
 - STM32G4 parts
   - -> Input frequency: enter 8
@@ -80,14 +80,14 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
 - STM32WLE5 parts (E77 and WioE5)
   - -> Input frequency: enter 32
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
-  - -> HCLK1 (Mhz): enter 48
+  - -> HCLK1 (Mhz): enter 48 (corresponds to PLLM = /2, PLLN = x6, PLLR = /2)
 
-- STM32F072 part
+- STM32F072 parts
   - -> Input frequency: enter 8
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
-  - -> HCLK (Mhz): enter 48
+  - -> HCLK (Mhz): enter 48 (corresponds to PREDiv = /1, VCOInput = 8, PLLMul = x6)
 
-You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block (e.g. PLLM = /2, PLLN = x85 for the STM32G4 parts).
+You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block.
 
 ### 6. Project Manager
 
@@ -118,9 +118,9 @@ Then hit "OK".
 
 ### 8. Double-click on "main.cpp" to open file in editor
 
-  -> find section "/\* USER CODE BEGIN PFP \*/" and insert "int main_main();"
+-> find section "/\* USER CODE BEGIN PFP \*/" and insert "int main_main();"
 
-  -> find section "/\* USER CODE BEGIN 2 \*/" and insert "return main_main();"
+-> find section "/\* USER CODE BEGIN 2 \*/" and insert "return main_main();"
 
 - STM32G4 parts only
   - -> find section "/\* USER CODE BEGIN 1 \*/" and insert "__HAL_FLASH_DATA_CACHE_DISABLE();"
@@ -210,5 +210,58 @@ The project should compile now without errors, and only some intentional warning
 ### 17. Close STM32CubeIDE, go to "mlrs/Tools" folder
 
 -> run the Python script "run_replace_names_by_variables.py"
+
+
+## A1. Targets with USB
+
+Targets which use the native USB peripheral (e.g. for the COM port) involve some additional steps.
+
+### 1. STM32 USB Device Library files
+
+The STM32 USB Device Library files need to be copied to the target folder. Two approaches are availabe.
+
+- Targets which are registered in run_make_firmware3.py can add 'STDSTM32_USE_USB' to 'extra_D_list'. Calling run_copy_drivers.py then also copies the STM32 USB Device Library files to the respective target.
+
+- The STM32 USB Device Library files can be also copied manually to a specific target by calling run_copy_st_drivers.py with the command line option "--usb". Example: run_copy_st_drivers.py -t tx-diy-yourtarget-g431cb --usb, if the target name is "tx-diy-yourtarget-g431cb".
+
+### 2. Include Paths and Defines
+
+In the IDE, right-mouse click the target (e.g. "tx-diy-yourtarget-g431cb")
+
+-> Properties
+
+This opens the "Properties for tx-diy-yourtarget-g431cb" dialog.
+
+-> C/C++ Build -> Settings
+
+This brings you to the settings tab.
+
+Three include paths need to be added to each the GCC and G++ compilers. Namely
+
+- ../Drivers/STM32_USB_Device_Library/Core/Inc
+- ../Drivers/STM32_USB_Device_Library/Class/CDC/Inc
+- "${workspace_loc:/${ProjName}/modules/stm32-usb-device}"
+
+-> MCU GCC Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
+
+repeat this 3 times for each include path
+
+-> MCU GCC Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
+
+repeat this 3 times for each include path
+
+The define STDSTM32_USE_USB needs to be added to each the GCC and G++ compilers:
+
+-> MCU GCC Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
+-> MCU G++ Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
+
+### 3. Set HAL_PCD_MODULE_ENABLED
+
+In the IDE, unfold the "Core" folder, unfolde the "Inc" folder, and double-click "stm32yyxx_hal_conf.h" to open it in the editor.
+
+Un-comment the line with #define HAL_PCD_MODULE_ENABLED.
+
+
+
 
 

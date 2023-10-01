@@ -8,7 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
- version 24.09.2023
+ version 1.10.2023
 ********************************************************
 '''
 import os
@@ -236,7 +236,7 @@ def copy_usb_device_library_driver(folder, clean=False, silent=False):
     copy_files_in_dir(os.path.join(target,loc), os.path.join(source,loc))
 
 
-def do_for_each_target(clean=False, silent=False, target_folder=''):
+def do_for_each_target(clean=False, silent=False, target_folder='', usb=False):
     print('----------------------------------------')
     print(' copy CMSIS and HAL files to project target folders')
     print('----------------------------------------')
@@ -264,7 +264,7 @@ def do_for_each_target(clean=False, silent=False, target_folder=''):
                 copy_cmsis_device_driver(f, chip, clean, silent)
                 copy_hal_driver(f, chip, clean, silent)
             
-            if f in targets_with_usb_to_include:
+            if f in targets_with_usb_to_include or usb:
                 copy_usb_device_library_driver(f,clean,silent)
             
             #break
@@ -276,6 +276,7 @@ def do_for_each_target(clean=False, silent=False, target_folder=''):
 cmdline_silent = False
 cmdline_clean = False
 cmdline_target = ''
+cmdline_usb = False
 
 cmd_pos = -1
 for cmd in sys.argv:
@@ -287,10 +288,12 @@ for cmd in sys.argv:
         cmdline_silent = True
     if cmd == '-clean' or cmd == '-c' or cmd == '-C':
         cmdline_clean = True
+    if cmd == '--usb':
+        cmdline_usb = True
 
 
 #do_for_each_folder(clean=True)
-do_for_each_target(clean=cmdline_clean,silent=cmdline_silent,target_folder=cmdline_target)
+do_for_each_target(clean=cmdline_clean,silent=cmdline_silent,target_folder=cmdline_target,usb=cmdline_usb)
 
 
 print('# DONE #')

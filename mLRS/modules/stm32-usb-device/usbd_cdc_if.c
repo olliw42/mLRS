@@ -54,7 +54,7 @@ uint8_t usb_rcbuf[USB_RXBUFSIZE]; // what size does it have to be?
 uint8_t usb_trbuf[64];
 void _cdc_transmit(void); // forward declaration
 
-static uint8_t usbd_initialized = 0; // to track if we use usb
+static uint8_t usbd_initialized = 0; // to track if we have initialized usb already
 
 
 void usb_init(void)
