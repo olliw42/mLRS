@@ -57,8 +57,7 @@ v0.0.00:
 #ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
-#define FASTMAVLINK_IGNORE_WADDRESSOFPACKEDMEMBER
-#include "../Common/mavlink/out/mlrs_all/mlrs_all.h"
+#include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/micros.h"
