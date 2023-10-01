@@ -439,16 +439,16 @@ char ss[32];
     uint32_t patch = version;
 
     strcpy(s, "v");
-    u32toBCDstr(major, ss);
+    u8toBCDstr(major, ss);
     remove_leading_zeros(ss);
     strcat(s, ss);
     strcat(s, ".");
-    u32toBCDstr(minor, ss);
+    u8toBCDstr(minor, ss);
     remove_leading_zeros(ss);
     strcat(s, ss);
     strcat(s, ".");
-    u32toBCDstr(patch, ss);
-    remove_leading_zeros(ss);
+    u8toBCDstr(patch, ss);
+    ss[0] = ss[1]; ss[1] = ss[2]; ss[2] = '\0'; // remove_leading_zeros(ss);
     strcat(s, ss);
 }
 
