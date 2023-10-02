@@ -6,6 +6,39 @@
 //*******************************************************
 // JR Pin5 Interface Header
 //********************************************************
+//
+// Documentation
+//
+// 1. Methods which require external hardware, like xor and buffer chips
+//   these are essentially used for F103 chips
+//
+//   #define JRPIN5_TX_XOR  : a xor is in the Tx line to invert the Tx signal
+//
+//   #define JRPIN5_RX_XOR  : a xor is in the Rx line to invert the Rx signal
+//
+//   #define JRPIN5_TX_OE   : Tx & Rx inverter with Tx buffer method
+//
+// 2. Methods which use the swap and invert capability of more modern UART peripherals
+//   but need an external Schottky diode
+//
+//   #define JRPIN5_RX_TX_INVERT_INTERNAL
+//     internal peripheral inverter method, needs a diode from Tx to Rx
+//     the jrpin5 signal is on the Rx pin
+//
+//   #define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
+//     internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
+//     the jrpin5 signal is on the Tx pin
+//
+// 3. Methods which use the swap and invert capability of more modern UART peripherals
+//   but avoid the need of an external Schottky diode
+//   they essentially supersede the other options
+//
+//   #define JRPIN5_FULL_INTERNAL_ON_TX     : jrpin5 signal is on the Tx pin
+//
+//   #define JRPIN5_FULL_INTERNAL_ON_RX     : jrpin5 signal is on the Rx pin
+//
+//   #define JRPIN5_FULL_INTERNAL_ON_RX_TX  : in cases there Rx & Tx pins are electrically connected
+//
 #ifndef JRPIN5_INTERFACE_H
 #define JRPIN5_INTERFACE_H
 #pragma once
