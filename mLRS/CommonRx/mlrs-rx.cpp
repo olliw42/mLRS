@@ -666,6 +666,8 @@ IF_SX2(
 );
 
     // this happens ca 1 ms after a frame was or should have been received
+    uint8_t link_state_before = link_state; // to detect changes in link state
+
     if (doPostReceive) {
         doPostReceive = false;
 
@@ -814,8 +816,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             break;
         }
 
-        doPostReceive2_cnt = 5; // allow link_state changes to be handled, so postpone this few loops
+        doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
+
+    if (link_state != link_state_before) continue; // link state has changed, so process immediately
 
     //-- Update channels, Out handling, etc
 
