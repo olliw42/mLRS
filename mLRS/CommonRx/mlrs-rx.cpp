@@ -649,13 +649,13 @@ IF_SX2(
 
         if (irq2_status) { // this should not happen
             if (irq2_status & SX2_IRQ_TIMEOUT) {
-                FAIL_WSTATE(BLINK_ALTERNATE, "IRQ2 TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_ALTERNATE, "IRQ2 TMO FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_RX_DONE) { // R, T, TW
-                FAIL_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_TX_DONE) {
-                FAIL_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             irq2_status = 0;
             link_state = LINK_STATE_RECEIVE;
