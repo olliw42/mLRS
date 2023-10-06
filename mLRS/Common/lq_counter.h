@@ -24,7 +24,7 @@ class StatsCount {
         LQ = 0;
     }
 
-    virtual void Update1Hz(void);
+    virtual void Update1Hz(void) = 0;
 
     uint32_t count;
     uint32_t count_last;

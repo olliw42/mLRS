@@ -109,8 +109,8 @@ class tPin5BridgeBase
 
     // for in-isr processing
     void pin5_tx_enable(bool enable_flag);
-    virtual void parse_nextchar(uint8_t c);
-    virtual bool transmit_start(void); // returns true if transmission should be started
+    virtual void parse_nextchar(uint8_t c) = 0;
+    virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
     // actual isr functions
     void uart_rx_callback(uint8_t c);
