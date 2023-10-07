@@ -85,6 +85,8 @@ void MavlinkBase::Init(void)
     status_serial_out = {};
 
 #ifdef USE_FEATURE_MAVLINKX
+    fmavX_init();
+
     result_serial_in = {};
     status_serial_in = {};
     fifo_link_out.Init();
@@ -108,6 +110,9 @@ void MavlinkBase::Do(void)
     if (!connected_and_rx_setup_available()) {
         //Init();
         radio_status_tlast_ms = tnow_ms;
+#ifdef USE_FEATURE_MAVLINKX
+        fifo_link_out.Flush();
+#endif
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;

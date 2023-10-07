@@ -17,14 +17,8 @@
 
 
 #define MAVLINKX_CRC8_LOOKUP_TABLE
-#define MAVLINKX_USE_COMPRESSION
-#define MAVLINKX_USE_O3
-#define MAVLINKX_USE_O3_FOR_COMPRESSION
-
-#ifdef MAVLINKX_DONOT_USE_O3
-  #undef MAVLINKX_USE_O3
-  #undef MAVLINKX_USE_O3_FOR_COMPRESSION
-#endif
+#define MAVLINKX_COMPRESSION // compression with O3 costs ca 8 kB flash
+#define MAVLINKX_O3
 
 
 //-------------------------------------------------------
@@ -74,25 +68,25 @@
 // we instead reset parser on frame lost, equally resolves the issue
 
 
-#ifdef MAVLINKX_USE_O3
-#pragma GCC push_options
-#pragma GCC optimize ("O3")
+#ifdef MAVLINKX_O3
+  #ifdef __GNUC__
+    #pragma GCC push_options
+    #pragma GCC optimize ("O3")
+  #endif
 #endif
 
 
-#define MAVLINKX_MAGIC_1              'o'
-#define MAVLINKX_MAGIC_2              'w'
+#define MAVLINKX_MAGIC_1              0x6F // 'o'
+#define MAVLINKX_MAGIC_2              0x77 // 'w'
 #define MAVLINKX_HEADER_LEN_MAX       17 // can be 9 to 17
-#define MAVLINKX_FRAME_LEN_MAX        (MAVLINKX_HEADER_LEN_MAX + \
-                                       FASTMAVLINK_PAYLOAD_LEN_MAX + \
-                                       FASTMAVLINK_CHECKSUM_LEN + FASTMAVLINK_SIGNATURE_LEN) // = 287
+#define MAVLINKX_FRAME_LEN_MAX        287 // =  HEADER_LEN_MAX + PAYLOAD_LEN_MAX + CHECKSUM_LEN + SIGNATURE_LEN
 
 
 typedef enum {
     MAVLINKX_FLAGS_IS_V1              = 0x01,
-    MAVLINKX_FLAGS_HAS_TARGETS        = 0x02,
-    MAVLINKX_FLAGS_HAS_MSGID16        = 0x04,
-    MAVLINKX_FLAGS_HAS_MSGID24        = 0x08,
+    MAVLINKX_FLAGS_HAS_MSGID16        = 0x02,
+    MAVLINKX_FLAGS_HAS_TARGETS        = 0x08,
+    MAVLINKX_FLAGS_HAS_CRC_EXTRA      = 0x10, // not yet used, indicates the possibility
     MAVLINKX_FLAGS_IS_COMPRESSED      = 0x40,
     MAVLINKX_FLAGS_HAS_EXTENSION      = 0x80,
 } fmavx_flags_e;
@@ -100,8 +94,8 @@ typedef enum {
 
 typedef enum {
     MAVLINKX_FLAGS_EXT_HAS_SIGNATURE  = 0x01,
-    MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x02, // not yet used, it's more to indicate the possibility
-    MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA   = 0x04, // always included currently, we for now don't make use of it anyways
+    MAVLINKX_FLAGS_EXT_HAS_MSGID24    = 0x02,
+    MAVLINKX_FLAGS_EXT_HAS_SYSID16    = 0x04, // not yet used, indicates the possibility
 } fmavx_flags_ext_e;
 
 
@@ -126,7 +120,7 @@ typedef struct
     uint8_t target_sysid;
     uint8_t target_compid;
     uint8_t crc_extra;
-    uint16_t rx_payload_len;
+    uint8_t rx_payload_len;
 
     // for compression
     uint8_t out_bit;
@@ -143,12 +137,40 @@ void fmavX_status_reset(fmavx_status_t* xstatus)
 }
 
 
+typedef struct
+{
+    uint8_t compression_enabled;
+} fmavx_config_t;
+static fmavx_config_t fmavx_config_g = {}; // we use a global here
+
+
+void fmavX_config_compression(uint8_t compression_flag)
+{
+    fmavx_config_g.compression_enabled = (compression_flag) ? 1 : 0;
+}
+
+
 // TODO: shouldn't be global
 fmavx_status_t fmavx_status = {};
 
 
+#ifdef MAVLINKX_COMPRESSION
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len);
 void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t len);
+#endif
+
+
+//-------------------------------------------------------
+// Init
+//-------------------------------------------------------
+
+// call it once before using the library
+FASTMAVLINK_FUNCTION_DECORATOR void fmavX_init(void)
+{
+    memset(&fmavx_status, 0, sizeof(fmavx_status));
+
+    fmavx_config_g.compression_enabled = 0; // disable it per default
+}
 
 
 //-------------------------------------------------------
@@ -191,6 +213,11 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
 
 
 #ifdef MAVLINKX_CRC8_LOOKUP_TABLE
+
+#ifdef __GNUC__
+  #pragma GCC push_options
+  #pragma GCC optimize ("O3")
+#endif
 
 // generated from https://crccalc.com/, for CRC-8
 const uint8_t fmavx_crc8_table[256] = {
@@ -244,6 +271,10 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_crc8_calculate(const uint8_t* buf, 
     return crc;
 }
 
+#ifdef __GNUC__
+  #pragma GCC pop_options
+#endif
+
 #else
 
 FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_accumulate(uint8_t* crc, uint8_t data)
@@ -296,6 +327,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
         buf[2] |= MAVLINKX_FLAGS_HAS_EXTENSION;
         flags_ext |= MAVLINKX_FLAGS_EXT_HAS_SIGNATURE;
     }
+    // can be > 0 only if we know the message, so this implicitly does it only if we know the message
     if (msg->target_sysid > 0 || msg->target_compid > 0) {
         buf[2] |= MAVLINKX_FLAGS_HAS_TARGETS;
     }
@@ -305,20 +337,24 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     if (msg->msgid < 65536) {
         buf[2] |= MAVLINKX_FLAGS_HAS_MSGID16;
     } else {
-        buf[2] |= MAVLINKX_FLAGS_HAS_MSGID24;
+        buf[2] |= MAVLINKX_FLAGS_HAS_EXTENSION;
+        flags_ext |= MAVLINKX_FLAGS_EXT_HAS_MSGID24;
     }
 
     // we should do it based on whether we know the message, but we don't currently have that info easily available in msg
-    //flags_ext &=~ MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA;
+    // if (known) buf[2] |= MAVLINKX_FLAGS_HAS_CRC_EXTRA;
+
+    pos = 3;
 
     // flags extension
-    pos = 3;
     if (buf[2] & MAVLINKX_FLAGS_HAS_EXTENSION) {
         buf[pos++] = flags_ext;
     }
 
     // more
+#ifdef MAVLINKX_COMPRESSION
     uint8_t pos_of_len = pos;
+#endif
     buf[pos++] = msg->len;
     buf[pos++] = msg->seq;
     buf[pos++] = msg->sysid;
@@ -333,17 +369,18 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     // msgid
     buf[pos++] = (uint8_t)msg->msgid;
     if (buf[2] & MAVLINKX_FLAGS_HAS_MSGID16) {
-       buf[pos++] = (uint8_t)((msg->msgid) >> 8);
+        buf[pos++] = (uint8_t)((msg->msgid) >> 8);
     }
-    if (buf[2] & MAVLINKX_FLAGS_HAS_MSGID24) {
+    if (flags_ext & MAVLINKX_FLAGS_EXT_HAS_MSGID24) {
         buf[pos++] = (uint8_t)((msg->msgid) >> 16);
     }
 
     // extra crc
-    if (!(flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA)) {
+    if (buf[2] & MAVLINKX_FLAGS_HAS_CRC_EXTRA) {
         buf[pos++] = msg->crc_extra;
     }
 
+#ifdef MAVLINKX_COMPRESSION
     // crc8
     // we postpone crc8 calculation to after payload compression, since flags may change
     //uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
@@ -353,7 +390,8 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     // we should want to remove the targets if there are any, for the moment we just don't
     // do compression, but do not advance pos since we need to do crc8
     uint8_t len;
-    if (_fmavX_payload_compress(&(buf[pos + 1]), &len, msg->payload, msg->len)) {
+    if (fmavx_config_g.compression_enabled &&
+        _fmavX_payload_compress(&(buf[pos + 1]), &len, msg->payload, msg->len)) {
         buf[2] |= MAVLINKX_FLAGS_IS_COMPRESSED;
         buf[pos_of_len] = len;
     } else {
@@ -366,6 +404,15 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
     buf[pos++] = crc8;
 
     pos += len;
+#else
+    // crc8
+    uint8_t crc8 = fmavX_crc8_calculate(buf, pos);
+    buf[pos++] = crc8;
+
+    // payload
+    memcpy(&(buf[pos]), msg->payload, msg->len);
+    pos += msg->len;
+#endif
 
     // crc16
     buf[pos++] = (uint8_t)msg->checksum;
@@ -384,7 +431,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 //-------------------------------------------------------
 // Parser
 //-------------------------------------------------------
-// parse the stream into regular fmav frame_buf
+// parse the fmavX stream into regular fmav frame_buf
 // returns NONE, HAS_HEADER, or OK
 
 FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* buf, fmav_status_t* status, uint8_t c)
@@ -409,9 +456,10 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_EXTENSION) {
             status->rx_state = FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION;
-        } else {
-            status->rx_state = FASTMAVLINK_PARSE_STATE_LEN;
+            return;
         }
+
+        status->rx_state = FASTMAVLINK_PARSE_STATE_LEN;
         return; }
 
     case FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION:
@@ -427,12 +475,13 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) {
             status->rx_header_len = FASTMAVLINK_HEADER_V1_LEN;
-            status->rx_frame_len = (uint16_t)c + FASTMAVLINK_HEADER_V1_LEN + FASTMAVLINK_CHECKSUM_LEN;
+            status->rx_frame_len = (uint16_t)c + (FASTMAVLINK_HEADER_V1_LEN + FASTMAVLINK_CHECKSUM_LEN);
         } else {
             status->rx_header_len = FASTMAVLINK_HEADER_V2_LEN;
-            status->rx_frame_len = (uint16_t)c + FASTMAVLINK_HEADER_V2_LEN + FASTMAVLINK_CHECKSUM_LEN;
+            status->rx_frame_len = (uint16_t)c + (FASTMAVLINK_HEADER_V2_LEN + FASTMAVLINK_CHECKSUM_LEN);
 
-            uint8_t incompat_flags = (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_SIGNATURE) ? FASTMAVLINK_INCOMPAT_FLAGS_SIGNED : 0;
+            uint8_t incompat_flags = 0;
+            if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_SIGNATURE) incompat_flags |= FASTMAVLINK_INCOMPAT_FLAGS_SIGNED;
             buf[status->rx_cnt++] = incompat_flags; // 2: incompat_flags
             buf[status->rx_cnt++] = 0; // 3: compat_flags
 
@@ -478,17 +527,17 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
         buf[status->rx_cnt++] = c; // 7: msgid1
 
         if ( !(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) &&
-             !(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID24)    ) { // has no msgid2, msgid3
+             !(fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_MSGID24) ) { // has no msgid2, msgid3
 
             buf[status->rx_cnt++] = 0; // 8: msgid2
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
-            if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
-                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+            if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
+                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
                 return;
             }
 
-            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
             return;
         }
 
@@ -498,16 +547,16 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
         buf[status->rx_cnt++] = c; // 8: msgid2
 
-        if (!(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID24)) { // has no msgid3
+        if (!(fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_MSGID24)) { // has no msgid3
 
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
-            if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
-                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+            if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
+                status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
                 return;
             }
 
-            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
             return;
         }
 
@@ -517,12 +566,12 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
         buf[status->rx_cnt++] = c; // 9: msgid3
 
-        if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_NO_CRC_EXTRA) { // has no crcextra
-            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
+        if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
+            status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
             return;
         }
 
-        status->rx_state = FASTMAVLINK_PARSE_STATE_CRC_EXTRA;
+        status->rx_state = FASTMAVLINK_PARSE_STATE_CRC8;
         return;
 
     case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
@@ -607,8 +656,9 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
 
     case FASTMAVLINK_PARSE_STATE_PAYLOAD:
         buf[status->rx_cnt++] = c; // payload
-        if (status->rx_cnt >= status->rx_header_len + (uint16_t)fmavx_status.rx_payload_len) {
+        if (status->rx_cnt >= status->rx_header_len + fmavx_status.rx_payload_len) {
 
+#ifdef MAVLINKX_COMPRESSION
             if (fmavx_status.flags & MAVLINKX_FLAGS_IS_COMPRESSED) {
                 uint8_t len;
                 _fmavX_payload_decompress(&(buf[status->rx_header_len]), &len, fmavx_status.rx_payload_len);
@@ -618,6 +668,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
                 status->rx_frame_len += delta_len;
                 buf[fmavx_status.pos_of_len] = len;
             }
+#endif
 
             status->rx_state = FASTMAVLINK_FASTPARSE_STATE_FRAME;
         }
@@ -663,11 +714,6 @@ uint8_t res;
 }
 
 
-#ifdef MAVLINKX_USE_O3
-#pragma GCC pop_options
-#endif
-
-
 //-------------------------------------------------------
 // Compression
 //-------------------------------------------------------
@@ -699,20 +745,26 @@ Plenty of schemes were tried, this was (so far by far) the "best" one:
 10    + 6 bits  -> 1 .. 64
 11    + 6 bits  -> 191 .. 254
 01    + 7 bits  -> codes for remaining bytes not covered by the other branches
+
+In decompression, detection of the end in the last byte is a problem.
+For the scheme however, it is easily possible by noting that the bit sequences
+  1111111
+   111111
+    11111
+     1111
+      111
+       11
+        1
+are all not possible. The end can thus be marked by simply setting the last bits in
+the last byte all to 1.
 */
-
-
-#ifdef MAVLINKX_USE_O3_FOR_COMPRESSION
-#pragma GCC push_options
-#pragma GCC optimize ("O3")
-#endif
-
+#ifdef MAVLINKX_COMPRESSION
 
 //-- compression
 // we can use payload_out buffer as working buffer
 
 // len_out & out_bit index the next bit position to write to
-void _fmavX_encode_add(uint8_t* payload_out, uint8_t* len_out, uint16_t code, uint8_t code_bit_len)
+void _fmavX_encode_put_bits(uint8_t* payload_out, uint8_t* len_out, uint16_t code, uint8_t code_bit_len)
 {
     uint16_t cur_code_bit = (uint16_t)1 << (code_bit_len - 1);
 
@@ -739,24 +791,24 @@ uint16_t code;
         if (RLE_cnt <= 4) { // 3 * x <= 13 => x <= 4
             for (uint8_t i = 0; i < RLE_cnt; i++) {
                 code = (uint16_t)0b000; // 3 bit code = 3 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 3);
+                _fmavX_encode_put_bits(payload_out, len_out, code, 3);
             }
         } else {
             code = (uint16_t)0b00110 << 8; // 5 bit code + 8 bits = 13 bits length
             code += RLE_cnt;
-            _fmavX_encode_add(payload_out, len_out, code, 13);
+            _fmavX_encode_put_bits(payload_out, len_out, code, 13);
         }
     } else
     if (c == 0xFF) {
         if (RLE_cnt <= 3) { // 4 * x <= 13 -> x <= 3
             for (uint8_t i = 0; i < RLE_cnt; i++) {
                 code = (uint16_t)0b0010; // 4 bit code = 4 bits length
-                _fmavX_encode_add(payload_out, len_out, code, 4);
+                _fmavX_encode_put_bits(payload_out, len_out, code, 4);
             }
         } else {
             code = (uint16_t)0b00111 << 8; // 5 bit code + 8 bits = 13 bits length
             code += RLE_cnt;
-            _fmavX_encode_add(payload_out, len_out, code, 13);
+            _fmavX_encode_put_bits(payload_out, len_out, code, 13);
         }
     }
 }
@@ -764,9 +816,6 @@ uint16_t code;
 
 uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t* payload, uint8_t len)
 {
-#ifndef MAVLINKX_USE_COMPRESSION
-    return 0;
-#else
 uint16_t code; // can be 2 - 13 bits
 uint8_t is_in_RLE;
 uint8_t RLE_char;
@@ -800,17 +849,17 @@ uint8_t RLE_cnt;
             if (c >= 1 && c <= 64) {
                 code = (uint16_t)0b10 << 6; // 10: 2 bit code + 6 bits = 8 bits length
                 code += (c - 1); // 0 .. 63
-                _fmavX_encode_add(payload_out, len_out, code, 8);
+                _fmavX_encode_put_bits(payload_out, len_out, code, 8);
             } else
             if (c >= 191 && c <= 254) {
                 code = (uint16_t)0b11 << 6; // 11: 2 bit code + 6 bits = 8 bits length
                 code += (c - 191); // 0 .. 63
-                _fmavX_encode_add(payload_out, len_out, code, 8);
+                _fmavX_encode_put_bits(payload_out, len_out, code, 8);
             } else {
                 // 65 .. 190
                 code = (uint16_t)0b01 << 7; // 01: 2 bit code + 7 bits = 9 bits length
                 code += (c - 65); // 0 .. 125
-                _fmavX_encode_add(payload_out, len_out, code, 9);
+                _fmavX_encode_put_bits(payload_out, len_out, code, 9);
             }
         }
 
@@ -831,7 +880,6 @@ uint8_t RLE_cnt;
     if (*len_out >= len) return 0;
 
     return 1;
-#endif
 }
 
 
@@ -853,14 +901,14 @@ typedef enum {
 uint8_t fmavx_in_buf[300];
 
 
-uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
+uint8_t _fmavX_decode_get_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
 {
     *code = 0;
     for (uint8_t i = 0; i < bits_len; i++) {
-        *code <<= 1;
-        if (fmavx_status.in_pos >= len) { // we have reached end
+        if (fmavx_status.in_pos >= len) { // reached end
             return 0;
         }
+        *code <<= 1;
         if (fmavx_in_buf[fmavx_status.in_pos] & fmavx_status.in_bit) { // set the bit
             *code |= 0x01;
         }
@@ -876,10 +924,6 @@ uint8_t _fmavX_decode_next_bits(uint8_t* code, uint8_t len, uint8_t bits_len)
 
 void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t len)
 {
-#ifndef MAVLINKX_USE_COMPRESSION
-    *len_out = len;
-    return;
-#else
     memcpy(fmavx_in_buf, payload_out, len); // copy current payload into work buffer
 
     *len_out = 0;
@@ -893,7 +937,7 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
         // get next code
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
 
-        if (_fmavX_decode_next_bits(&c, len, 2)) {
+        if (_fmavX_decode_get_bits(&c, len, 2)) {
             if (c == 0b10) { // 10
                 code = MAVLINKX_CODE_1_64;
             } else
@@ -903,15 +947,15 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
             if (c == 0b01) { // 01
                 code = MAVLINKX_CODE_65_190;
             } else
-            if (_fmavX_decode_next_bits(&c, len, 1)) {
+            if (_fmavX_decode_get_bits(&c, len, 1)) {
                 if (c == 0b0) { // 000
                     code = MAVLINKX_CODE_0;
                 } else
-                if (_fmavX_decode_next_bits(&c, len, 1)) {
+                if (_fmavX_decode_get_bits(&c, len, 1)) {
                     if (c == 0b0) { // 0010
                         code = MAVLINKX_CODE_255;
                     } else
-                    if (_fmavX_decode_next_bits(&c, len, 1)) {
+                    if (_fmavX_decode_get_bits(&c, len, 1)) {
                         if (c == 0b0) { // 00110
                             code = MAVLINKX_CODE_0_RLE;
                         } else { // 00111
@@ -922,9 +966,8 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
             }
         }
 
-        if (code == MAVLINKX_CODE_UNDEFINED) break; // end
+        if (code == MAVLINKX_CODE_UNDEFINED) return; // end
 
-        uint8_t ok = 1;
         switch (code) {
             case MAVLINKX_CODE_0:
                 payload_out[(*len_out)++] = 0x00;
@@ -933,35 +976,39 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
                 payload_out[(*len_out)++] = 0xFF;
                 break;
             case MAVLINKX_CODE_0_RLE:
-                if (!_fmavX_decode_next_bits(&c, len, 8)) { ok = 0; break; }
+                if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
                 for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0;
                 break;
             case MAVLINKX_CODE_255_RLE:
-                if (!_fmavX_decode_next_bits(&c, len, 8)) { ok = 0; break; }
+                if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
                 for (uint8_t i = 0; i < c; i++) payload_out[(*len_out)++] = 0xFF;
                 break;
             case MAVLINKX_CODE_1_64:
-                if (!_fmavX_decode_next_bits(&c, len, 6)) { ok = 0; break; }
-                payload_out[(*len_out)++] = c + 1;
+                 if (!_fmavX_decode_get_bits(&c, len, 6)) return; // end
+                 payload_out[(*len_out)++] = c + 1;
                 break;
             case MAVLINKX_CODE_191_254:
-                if (!_fmavX_decode_next_bits(&c, len, 6)) { ok = 0; break; }
-                payload_out[(*len_out)++] = c + 191;
+                 if (!_fmavX_decode_get_bits(&c, len, 6)) return; // end
+                 payload_out[(*len_out)++] = c + 191;
                 break;
             case MAVLINKX_CODE_65_190:
-                if (!_fmavX_decode_next_bits(&c, len, 7)) { ok = 0; break; }
+                if (!_fmavX_decode_get_bits(&c, len, 7)) return; // end
                 payload_out[(*len_out)++] = c + 65;
                 break;
         }
-
-        if (!ok) break; // end
     }
-#endif
 }
 
 
-#ifdef MAVLINKX_USE_O3_FOR_COMPRESSION
-#pragma GCC pop_options
+#endif // MAVLINKX_COMPRESSION
+
+
+#ifdef MAVLINKX_O3
+  #ifdef __GNUC__
+    #pragma GCC pop_options
+  #endif
 #endif
 
+
 #endif // MAVLINKX_H
+
