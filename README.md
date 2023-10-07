@@ -61,7 +61,7 @@ It provides these operation modes:
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
-- the receiver parameters can be set from within the mLRS transmitter or the radio; no need to mess with the receiver in any way.
+- the receiver parameters can be set from the mLRS transmitter or radio; no need to mess with the receiver in any way.
 - the transmitter and receiver parameters can be set via a Lua script, a CLI, or an OLED display. There is no need to recompile or reflash the firmware in order to change an option or parameter setting. 
 - bind mode for binding "unknown" receivers to a transmitter.
 - the mLRS system can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
@@ -70,6 +70,7 @@ Further features:
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
 - optimizations for ArduPilot and PX4 systems.
+- advanced features like innovative flow control, "except" and "ortho" features, MavlinkX for reduced packet loss and data compression.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32WLE5, Wio-E5, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
 
 ## Community ##
