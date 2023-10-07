@@ -60,14 +60,14 @@ class MavlinkBase
     fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
-    fmav_message_t msg_serial_out; // could be avoided by more efficient coding
+    fmav_message_t msg_serial_out; // could be avoided by more efficient coding, is used only momentarily/locally
 
     // fields for serial in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
     fmav_status_t status_serial_in;
     fmav_result_t result_serial_in;
     uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
-    fmav_message_t msg_link_out; // could be avoided by more efficient coding
+    fmav_message_t msg_link_out; // could be avoided by more efficient coding, is used only momentarily/locally
     FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
 #endif
 
