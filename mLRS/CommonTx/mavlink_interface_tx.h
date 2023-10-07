@@ -86,6 +86,7 @@ void MavlinkBase::Init(void)
 
 #ifdef USE_FEATURE_MAVLINKX
     fmavX_init();
+    fmavX_config_compression((Config.Mode == MODE_19HZ) ? 1 : 0); // use compression only in 19 Hz mode
 
     result_serial_in = {};
     status_serial_in = {};
