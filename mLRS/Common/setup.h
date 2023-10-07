@@ -72,9 +72,6 @@ void setup_configure_metadata(void)
 #else
     SetupMetaData.Ortho_allowed_mask = 0b0001; // only off, not editable
 #endif
-#ifndef MLRS_DEV_FEATURE_ORTHO
-    SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
-#endif
 
     //-- Tx:
 

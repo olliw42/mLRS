@@ -26,7 +26,7 @@
 
 
 // Development features. Note: They are offered for testing, but they are not for production
-//#define MLRS_DEV_FEATURE_ORTHO
+//currently none
 
 
 //-------------------------------------------------------
