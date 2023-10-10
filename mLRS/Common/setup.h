@@ -70,7 +70,7 @@ void setup_configure_metadata(void)
 #if defined FREQUENCY_BAND_2P4_GHZ || defined FREQUENCY_BAND_915_MHZ_FCC || defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.Ortho_allowed_mask = 0b1111; // all
 #else
-    SetupMetaData.Ortho_allowed_mask = 0b0001; // only off, not editable
+    SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
 #endif
 
     //-- Tx:
