@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 30.09.2023
+ version 11.10.2023
 ********************************************************
 '''
 import os
@@ -714,15 +714,15 @@ def mlrs_build_target(target, cmdline_D_list):
 
     if 'MLRS_FEATURE_ELRS_BOOTLOADER' in target.extra_D_list:
         os.system(
-            'arm-none-eabi-objcopy -O binary ' +
+            os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O binary ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elrs')
         )
     else:
         os.system(
-        os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
-        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
-        os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
+            os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
+            os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
+            os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
         )
 
     print('------------------------------------------------------------')
