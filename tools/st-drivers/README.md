@@ -29,7 +29,9 @@ Tag v1.1.8 | Tag v4.3.3 | Tag v5.4.0_cm3 | Tag v1.8.4 (and following, if any, ti
 
 The versions for one and the same item may not always be consistent across the different sources.
 
-In this folder, the files of "STM32Cube MCU Components -> STM32Cube CMSIS -> STM32Cube CMSIS Devices" and "STM32Cube MCU Components -> STM32Cube HAL Drivers -> STM32Cube HAL Drivers" are included as git submodules. 
+In this folder, the files of these sources are included as git submodules:
+- "STM32Cube MCU Components -> STM32Cube CMSIS -> STM32Cube CMSIS Devices" 
+- "STM32Cube MCU Components -> STM32Cube HAL Drivers -> STM32Cube HAL Drivers"
 
 The CMSIS core is not included as git submodule, due to the size of the content in https://github.com/STMicroelectronics/cmsis_core, but by downloading the zip and deleting all unneeded content. Current version: @fe753d6 on Nov 21, 2022
 
