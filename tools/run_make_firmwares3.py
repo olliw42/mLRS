@@ -47,12 +47,16 @@ def findSTM32CubeIDEGnuTools(search_root):
             st_dir = os.path.join(search_root,st_cubeide_dir,'stm32cubeide','plugins')
 
     gnu_dir = ''
+    gnu_dir_os_name = 'win32'
+    if os.name == 'posix': # install paths are os dependent
+        gnu_dir_os_name = 'linux'
+    ver_nr = 0
     for dirpath in os.listdir(st_dir):
-        if os.name == 'posix': # install paths are os dependent
-            if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'linux' in dirpath:
-                gnu_dir = dirpath
-        else:
-            if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and 'win32' in dirpath:
+        if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and gnu_dir_os_name in dirpath:
+            # the string after the last . contains a datum plus some other number
+            ver = int(dirpath[dirpath.rindex('.')+1:])
+            if ver > ver_nr:
+                ver_nr = ver
                 gnu_dir = dirpath
 
     return st_dir, gnu_dir
