@@ -60,11 +60,15 @@ class OutBase
 
     tRcData* GetRcDataPtr(void) { return &rc; }
 
+    bool IsRelaySecondary(void) { return (config == OUT_CONFIG_CRSF_TX_JRPIN5); }
+
   private:
     void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
     void send_crsf_rcdata(tRcData* rc);
+    void send_crsf_tx_rcdata(tRcData* rc);
     void send_crsf_linkstatistics(tOutLinkStats* lstats);
     void do_crsf(void);
+    void do_crsf_tx_jrpin5(void);
 
     void putbuf(uint8_t* buf, uint16_t len);
 
@@ -72,6 +76,7 @@ class OutBase
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_crsf(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
+    virtual bool config_crsf_tx_jrpin5(bool enable_flag) { return false; }
 
     ChannelOrder channel_order;
     tRxSetup* setup;
