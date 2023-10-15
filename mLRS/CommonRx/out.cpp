@@ -53,6 +53,9 @@ void OutBase::Configure(uint8_t new_config)
     case OUT_CONFIG_CRSF:
         config_crsf(false);
         break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
+        config_crsf_tx_jrpin5(false);
+        break;
     }
 
     initialized = false;
@@ -68,6 +71,9 @@ void OutBase::Configure(uint8_t new_config)
         break;
     case OUT_CONFIG_CRSF:
         initialized = config_crsf(true);
+        break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
+        initialized = config_crsf_tx_jrpin5(true);
         break;
     }
 }
@@ -85,6 +91,9 @@ void OutBase::Do(void)
     case OUT_CONFIG_CRSF:
         do_crsf();
         break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
+        do_crsf_tx_jrpin5();
+        break;
     }
 }
 
@@ -99,6 +108,10 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
     channel_order.Apply(&rc);
+
+    if (config == OUT_CONFIG_CRSF_TX_JRPIN5) { // send it straight out
+        send_crsf_tx_rcdata(&rc);
+    }
 
     uint8_t failsafe_mode = setup->FailsafeMode;
 
@@ -176,6 +189,8 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
     case OUT_CONFIG_CRSF:
         send_crsf_rcdata(&rc);
         break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
+        break;
     }
 }
 
@@ -191,6 +206,9 @@ void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
         memcpy(&link_stats, lstats, sizeof(tOutLinkStats));
         link_stats_available = true;
         link_stats_set_tstart = true;
+        break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
+        // do not send since irrelevant
         break;
     }
 }
@@ -218,6 +236,8 @@ void OutBase::SendLinkStatisticsDisconnected(void)
 
         link_stats_available = true;
         link_stats_set_tstart = true;
+        break;
+    case OUT_CONFIG_CRSF_TX_JRPIN5:
         break;
     }
 }
@@ -309,6 +329,49 @@ tCrsfChannelBuffer crsf_buf;
 }
 
 
+uint16_t rc_to_crsf_tx(uint16_t rc_ch)
+{
+//    return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 1000;
+    return (((int32_t)(rc_ch) - 1024) * (1966 + 4)) / 2047 + 992;
+}
+
+
+void OutBase::send_crsf_tx_rcdata(tRcData* rc)
+{
+tCrsfChannelBuffer crsf_buf;
+
+    crsf_buf.ch0 = rc_to_crsf_tx(rc->ch[0]);
+    crsf_buf.ch1 = rc_to_crsf_tx(rc->ch[1]);
+    crsf_buf.ch2 = rc_to_crsf_tx(rc->ch[2]);
+    crsf_buf.ch3 = rc_to_crsf_tx(rc->ch[3]);
+    crsf_buf.ch4 = rc_to_crsf_tx(rc->ch[4]);
+    crsf_buf.ch5 = rc_to_crsf_tx(rc->ch[5]);
+    crsf_buf.ch6 = rc_to_crsf_tx(rc->ch[6]);
+    crsf_buf.ch7 = rc_to_crsf_tx(rc->ch[7]);
+    crsf_buf.ch8 = rc_to_crsf_tx(rc->ch[8]);
+    crsf_buf.ch9 = rc_to_crsf_tx(rc->ch[9]);
+    crsf_buf.ch10 = rc_to_crsf_tx(rc->ch[10]);
+    crsf_buf.ch11 = rc_to_crsf_tx(rc->ch[11]);
+    crsf_buf.ch12 = rc_to_crsf_tx(rc->ch[12]);
+    crsf_buf.ch13 = rc_to_crsf_tx(rc->ch[13]);
+    crsf_buf.ch14 = rc_to_crsf_tx(rc->ch[14]);
+    crsf_buf.ch15 = rc_to_crsf_tx(rc->ch[15]);
+
+    uint8_t crc = 0;
+
+    putc(CRSF_ADDRESS_RECEIVER); // this allows the tx module to detect relay mode
+    putc(CRSF_CHANNELPACKET_SIZE + 2);
+
+    putc(CRSF_FRAME_ID_CHANNELS);
+    crc = crsf_crc8_calc(crc, CRSF_FRAME_ID_CHANNELS);
+
+    putbuf(crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
+    crc = crsf_crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
+
+    putc(crc);
+}
+
+
 void OutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
 {
 tCrsfLinkStatistics clstats;
@@ -363,6 +426,12 @@ void OutBase::do_crsf(void)
         link_stats_available = false;
         send_crsf_linkstatistics(&link_stats);
     }
+}
+
+
+void OutBase::do_crsf_tx_jrpin5(void)
+{
+    do_crsf();
 }
 
 
