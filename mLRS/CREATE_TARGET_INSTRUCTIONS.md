@@ -127,7 +127,7 @@ Then hit "OK".
 
 ### 9. Go to "mlrs/Tools" folder
 
--> run the Python "script run_copy_st_drivers.py"
+-> run the Python script "run_copy_st_drivers.py"
 
 
 ## III. Create Target: IDE Config
