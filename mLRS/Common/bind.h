@@ -60,7 +60,7 @@ class BindBase
     void AutoBind(void); // only for receiver, call every ms
     uint32_t auto_bind_tmo_ms;
 
-    bool is_in_binding; // is in snyc with link loop
+    bool is_in_binding; // is in sync with link loop
     bool binding_requested;
     bool binding_stop_requested;
     uint32_t button_tlast_ms;
