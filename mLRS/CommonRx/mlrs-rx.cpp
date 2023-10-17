@@ -520,7 +520,7 @@ RESTARTCONTROLLER:
     //-- SysTask handling
 
     if (doSysTask) {
-        doSysTask = 0;
+        doSysTask--;
 
         if (connect_tmo_cnt) {
             connect_tmo_cnt--;
