@@ -40,3 +40,9 @@
 [submodule "tools/st-drivers/cmsis_device_f0"]
 	path = tools/st-drivers/cmsis_device_f0
 	url = https://github.com/STMicroelectronics/cmsis_device_f0.git
+[submodule "tools/st-drivers/cmsis_device_f3"]
+	path = tools/st-drivers/cmsis_device_f3
+	url = https://github.com/STMicroelectronics/cmsis_device_f3.git
+[submodule "tools/st-drivers/stm32f3xx_hal_driver"]
+	path = tools/st-drivers/stm32f3xx_hal_driver
+	url = https://github.com/STMicroelectronics/stm32f3xx_hal_driver.git
