@@ -92,6 +92,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef RX_R9MM_868_F103RB
 #include "rx-hal-R9MM-868-f103rb.h"
 #endif
+#ifdef RX_R9MLITEPRO_F303CC
+#include "rx-hal-R9MLitePro-v15-f303cc.h"
+#endif
 
 #ifdef TX_R9M_868_F103C8
 #include "tx-hal-R9M-868-f103c8.h"

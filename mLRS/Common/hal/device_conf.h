@@ -60,6 +60,15 @@ The default selection of frequency bands can be overruled by feature defines.
   //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
+#ifdef RX_R9MLITEPRO_F303CC
+  #define DEVICE_NAME "Frsky R9MLitePro"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_866_MHZ_IN
+#endif
+
 
 #ifdef TX_R9M_868_F103C8
   #define DEVICE_NAME "Frsky R9M"
