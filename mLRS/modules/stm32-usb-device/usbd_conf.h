@@ -31,7 +31,6 @@ extern "C" {
 #define USBD_IRQ_PRIORITY   0
 
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
