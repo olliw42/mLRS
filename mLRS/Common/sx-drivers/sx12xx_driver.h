@@ -37,6 +37,30 @@ class tI2cDac : public tI2cBase
 
 tI2cDac dac;
 #endif
+#ifdef DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+class tInternalDac : public tInternalDacBase
+{
+  public:
+    void Init(void) override
+    {
+        dac_init(SX_PA_DAC);
+        dac_config_channel(SX_PA_DAC, SX_PA_DAC_CHANNEL1, SX_PA_DAC_IO1);
+        dac_config_channel(SX_PA_DAC, SX_PA_DAC_CHANNEL2, SX_PA_DAC_IO2);
+    }
+
+    void put_channel1(uint16_t value) override
+    {
+        dac_write_channel(SX_PA_DAC, SX_PA_DAC_CHANNEL1, value);
+    }
+
+    void put_channel2(uint16_t value) override
+    {
+        dac_write_channel(SX_PA_DAC, SX_PA_DAC_CHANNEL2, value);
+    }
+};
+
+tInternalDac dac;
+#endif
 
 
 typedef struct

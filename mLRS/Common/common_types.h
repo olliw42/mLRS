@@ -85,6 +85,16 @@ class tI2cBase
 };
 
 
+class tInternalDacBase
+{
+  public:
+    virtual void Init(void) = 0;
+    virtual void put_channel1(uint16_t value) {}
+    virtual void put_channel2(uint16_t value) {}
+    virtual void put_channel12(uint16_t value1, uint16_t value2) {}
+};
+
+
 //-- rssi & snr
 
 typedef enum : int8_t {

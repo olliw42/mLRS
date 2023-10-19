@@ -320,7 +320,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
-#ifdef DEVICE_HAS_I2C_DAC
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
 #else
         sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
@@ -351,7 +351,7 @@ class Sx127xDriver : public Sx127xDriverCommon
         _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1276 ??
 
         // this is not nice, figure out where to place
-#ifdef DEVICE_HAS_I2C_DAC
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         dac.Init();
 #endif
 
