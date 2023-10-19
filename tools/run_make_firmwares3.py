@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 11.10.2023
+ version 19.10.2023
 ********************************************************
 '''
 import os
@@ -360,6 +360,41 @@ MLRS_SOURCES_HAL_STM32F0 = [
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_utils.c'),
     ]
 
+MLRS_SOURCES_HAL_STM32F3 = [
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_cortex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_flash.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_flash_ex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_i2c.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_i2c_ex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pwr.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pwr_ex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_rcc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_rcc_ex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_dma.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pcd.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pcd_ex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_adc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_comp.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_crc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_dac.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_dma.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_exti.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_fmc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_gpio.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_hrtim.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_i2c.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_opamp.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_pwr.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_rcc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_rtc.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_spi.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_tim.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_usart.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_usb.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_utils.c'),
+    ]
+
 MLRS_SOURCES_CORE = [ # the ?? are going to be replaced with mcu_family label, f1, g4, wl, l4
     os.path.join('Core','Src','main.cpp'),
     os.path.join('Core','Src','stm32??xx_hal_msp.c'),
@@ -459,6 +494,8 @@ class cTarget:
             self.mcu_family = 'wl'
         elif 'F0' in self.mcu_D and 'F0' in self.mcu_HAL:
             self.mcu_family = 'f0'
+        elif 'F3' in self.mcu_D and 'F3' in self.mcu_HAL:
+            self.mcu_family = 'f3'
         else:
             printError('SHSHHSKHSKHSKHKSHKSHKH')
             print('mcu_D',self.mcu_D)
@@ -493,6 +530,8 @@ class cTarget:
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32L4
         elif self.mcu_family == 'f0':
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32F0
+        elif self.mcu_family == 'f3':
+            self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32F3
 
         self.MLRS_SOURCES_CORE = []
         for file in MLRS_SOURCES_CORE:
@@ -779,6 +818,15 @@ class cTargetF0(cTarget):
             ['-mcpu=cortex-m0', '-mfloat-abi=soft'],
             extra_D_list, build_dir, elf_name)
 
+class cTargetF3(cTarget):
+    def __init__(self, target, target_D, mcu_D, startup_script, linker_script, extra_D_list, build_dir, elf_name):
+        super().__init__(
+            target, target_D,
+            mcu_D, 'STM32F3xx',
+            startup_script, linker_script,
+            ['-mcpu=cortex-m4', '-mfpu=fpv4-sp-d16', '-mfloat-abi=hard'],
+            extra_D_list, build_dir, elf_name)
+
 
 #-- mcu specific targets
 
@@ -873,6 +921,15 @@ class cTargetF072CB(cTargetF0):
             extra_D_list, build_dir, elf_name)
 
 
+class cTargetF303CC(cTargetF3):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'tx'
+        super().__init__(
+            target, target_D, 
+            'STM32F303xC', 'startup_stm32f303cc'+package.lower()+'.s', 'STM32F303CC'+package.upper()+'_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
+
 #--------------------------------------------------
 # application
 #--------------------------------------------------
@@ -927,6 +984,9 @@ TLIST = [
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
         'package' : 'yx',
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+    },{
+        'target' : 'rx-R9MLitePro-v15-f303cc',          'target_D' : 'RX_R9MLITEPRO_F303CC',
+        'extra_D_list' : [], 'appendix' : ''
     },{
 #-- rx FRM303
         'target' : 'rx-FRM303-f072cb',                  'target_D' : 'RX_FRM303_F072CB',
@@ -1060,6 +1120,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetL433CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'f072cb' in t['target']:
             tlist.append( cTargetF072CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
+        elif 'f303cc' in t['target']:
+            tlist.append( cTargetF303CC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         else:
             print('<ljfl<iasdjfljsdfljlsdjfljsdlfjlsdjf')
             exit(1)

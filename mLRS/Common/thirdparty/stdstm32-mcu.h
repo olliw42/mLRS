@@ -19,6 +19,8 @@ extern "C" {
 // see AN2606 for system flash start location
 #ifdef STM32F1
 #define ST_BOOTLOADER_ADDRESS               0x1FFFF000 // = SystemMemory: F103T8 F103CB F103RC
+#elif defined STM32F3
+#define ST_BOOTLOADER_ADDRESS               0x1FFFD800
 #elif defined STM32G4 || defined STM32L4 || defined STM32WL
 #define ST_BOOTLOADER_ADDRESS               0x1FFF0000
 #elif defined STM32F070xB || defined STM32F072xB // system memory location varies across the STM32F0 family

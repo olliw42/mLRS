@@ -8,7 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
- version 1.10.2023
+ version 19.10.2023
 ********************************************************
 '''
 import os
@@ -96,6 +96,11 @@ for f in MLRS_SOURCES_HAL_STM32F0:
     if '_hal' in f:
         f0xx_hal_files_to_include.append(os.path.basename(f))
 
+f3xx_hal_files_to_include = []
+for f in MLRS_SOURCES_HAL_STM32F3:
+    if '_hal' in f:
+        f3xx_hal_files_to_include.append(os.path.basename(f))
+
 
 # some targets also need the USB driver
 # we can go through TLIST and watch for 'STDSTM32_USE_USB' to determine which do
@@ -161,6 +166,8 @@ def create_exclude_list(dirlist, chip_short):
         files_to_include = wlxx_hal_files_to_include
     if chip_short == 'f0':
         files_to_include = f0xx_hal_files_to_include
+    if chip_short == 'f3':
+        files_to_include = f3xx_hal_files_to_include
 
     # exclude all hal files which are not included
     for f in dirlist:
