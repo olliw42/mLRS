@@ -85,11 +85,11 @@ uint32_t n, nr, bitpos;
 
         delay_us(40);
 
-#if defined STM32F1 || defined STM32F3
+#if defined STM32F1
 #define PP(pn,gpiox)  uint32_t port_nr = pn & 0x000000FF; \
                       if (pn & 0x04000000) port_nr <<= 8; \
                       if (port_nr > bitpos) LL_GPIO_SetOutputPin(gpiox, pn);
-#elif defined STM32G4 || defined STM32L4 || defined STM32WL || defined STM32F0
+#elif defined STM32G4 || defined STM32L4 || defined STM32WL || defined STM32F0 || defined STM32F3
 #define PP(pn,gpiox)  if (pn > bitpos) LL_GPIO_SetOutputPin(gpiox, pn);
 #endif
 
