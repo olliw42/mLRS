@@ -120,6 +120,16 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
+#ifdef TX_WIOE5_GS_WLE5JC
+  #define DEVICE_NAME "WioE5 GS WLE5JC"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_866_MHZ_IN
+#endif
+
+
 //-- EByte MBL Evaluation Kits
 
 #ifdef RX_E77_MBLKIT_WLE5CC

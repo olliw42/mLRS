@@ -117,6 +117,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "tx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
+#ifdef TX_WIOE5_GS_WLE5JC
+#include "tx-hal-WioE5-GS-wle5jc.h"
+#endif
+
 
 //-- EByte MBL Evaluation Kits
 
