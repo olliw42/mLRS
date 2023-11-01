@@ -51,7 +51,6 @@ class MavlinkBase
     void generate_radio_rc_channels(void);
     void generate_radio_link_stats(void);
     void generate_radio_link_flow_control(void);
-    void generate_cmd_ack_preflight_reboot_shutdown(void);
 
     uint16_t serial_in_available(void);
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
@@ -95,14 +94,18 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
 
-    // to handle command PREFLIGHT_REBOOT_SHUTDOWN and to inject CMD_ACK response
-    bool inject_cmd_ack_preflight_reboot_shutdown;
+    // to handle command PREFLIGHT_REBOOT_SHUTDOWN, START_RX_PAIR and to inject CMD_ACK response
+    bool inject_cmd_ack;
     struct {
+        uint16_t command;
         uint8_t cmd_src_sysid;
         uint8_t cmd_src_compid;
         uint8_t state; // 0: not armed, 1: armed, 2: going to be executed
         uint32_t texe_ms;
-    } reboot_shutdown;
+    } cmd_ack;
+
+    void handle_cmd_long(void);
+    void generate_cmd_ack(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -137,11 +140,11 @@ void MavlinkBase::Init(void)
     for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
 
-    inject_cmd_ack_preflight_reboot_shutdown = false;
-    reboot_shutdown.cmd_src_sysid = 0;
-    reboot_shutdown.cmd_src_compid = 0;
-    reboot_shutdown.state = 0;
-    reboot_shutdown.texe_ms = 0;
+    inject_cmd_ack = false;
+    cmd_ack.cmd_src_sysid = 0;
+    cmd_ack.cmd_src_compid = 0;
+    cmd_ack.state = 0;
+    cmd_ack.texe_ms = 0;
 }
 
 
@@ -207,27 +210,7 @@ void MavlinkBase::Do(void)
                 fifo_link_out.PutBuf(_buf, len);
 
                 if (msg_link_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG) {
-                    fmav_command_long_t payload;
-                    fmav_msg_command_long_decode(&payload, &msg_link_out);
-                    if (payload.target_system == RADIO_LINK_SYSTEM_ID &&
-                        payload.target_component == MAV_COMP_ID_TELEMETRY_RADIO &&
-                        payload.command == MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN &&
-                        payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
-                        payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC) {
-
-                        inject_cmd_ack_preflight_reboot_shutdown = true;
-                        reboot_shutdown.cmd_src_sysid = msg_link_out.sysid;
-                        reboot_shutdown.cmd_src_compid = msg_link_out.compid;
-
-                        if (payload.param3 == 3.0f && payload.confirmation == 1) {
-                            reboot_shutdown.state = 1;
-                        } else if (payload.param3 == 3.0f && payload.confirmation == 2 && reboot_shutdown.state) {
-                            reboot_shutdown.state = 2;
-                            reboot_shutdown.texe_ms = millis32();
-                        } else {
-                            reboot_shutdown.state = 0;
-                        }
-                    }
+                    handle_cmd_long();
                 }
 
             }
@@ -283,14 +266,23 @@ void MavlinkBase::Do(void)
         send_msg_serial_out();
     }
 
-    if (inject_cmd_ack_preflight_reboot_shutdown) {
-        inject_cmd_ack_preflight_reboot_shutdown = false;
-        generate_cmd_ack_preflight_reboot_shutdown();
+    if (inject_cmd_ack) {
+        inject_cmd_ack = false;
+        generate_cmd_ack();
         send_msg_serial_out();
     }
 
-    if (reboot_shutdown.state == 2 && (tnow_ms - reboot_shutdown.texe_ms) > 1000) {
-        BootLoaderInit(); // jump to system bootloader
+    if (cmd_ack.state == 2 && (tnow_ms - cmd_ack.texe_ms) > 1000) {
+        switch (cmd_ack.command) {
+        case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            BootLoaderInit(); // jump to system bootloader
+            break;
+        case MAV_CMD_START_RX_PAIR:
+            bind.StartBind(); // start binding
+            break;
+        }
+        cmd_ack.command = 0;
+        cmd_ack.state = 0;
     }
 }
 
@@ -785,20 +777,68 @@ void MavlinkBase::generate_radio_link_flow_control(void)
 }
 
 
-void MavlinkBase::generate_cmd_ack_preflight_reboot_shutdown(void)
+void MavlinkBase::generate_cmd_ack(void)
 {
     fmav_msg_command_ack_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
-        (reboot_shutdown.state) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, // result
-        reboot_shutdown.state, // progress
+        cmd_ack.command,
+        (cmd_ack.state) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, // result
+        cmd_ack.state, // progress
         REBOOT_SHUTDOWN_MAGIC, // result_param2, set it to magic value
-        reboot_shutdown.cmd_src_sysid,
-        reboot_shutdown.cmd_src_compid,
+        cmd_ack.cmd_src_sysid,
+        cmd_ack.cmd_src_compid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
+}
+
+
+void MavlinkBase::handle_cmd_long(void)
+{
+fmav_command_long_t payload;
+
+    fmav_msg_command_long_decode(&payload, &msg_link_out);
+
+    // check if it is for us, only allow targeted commands
+    if (payload.target_system != RADIO_LINK_SYSTEM_ID) return;
+    if (payload.target_component != MAV_COMP_ID_TELEMETRY_RADIO) return;
+
+    // do we want to handle this command?
+    if (payload.command != MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN &&
+        payload.command != MAV_CMD_START_RX_PAIR) return;
+
+    // now handle it
+
+    if (payload.command != cmd_ack.command) { // a new sequence is started, so reset
+        cmd_ack.state = 0;
+    }
+
+    inject_cmd_ack = true;
+    cmd_ack.command = payload.command;
+    cmd_ack.cmd_src_sysid = msg_link_out.sysid;
+    cmd_ack.cmd_src_compid = msg_link_out.compid;
+
+    bool cmd_valid = false;
+    switch (payload.command) {
+        case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            cmd_valid = (payload.param3 == 3.0f &&
+                         payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
+                         payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            break;
+        case MAV_CMD_START_RX_PAIR:
+            cmd_valid = (payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            break;
+    }
+
+    if (cmd_valid && payload.confirmation == 1) {
+        cmd_ack.state = 1;
+    } else if (cmd_valid && payload.confirmation == 2 && cmd_ack.state) {
+        cmd_ack.state = 2;
+        cmd_ack.texe_ms = millis32();
+    } else {
+        cmd_ack.state = 0;
+    }
 }
 
 
