@@ -180,7 +180,7 @@ void MavlinkBase::Do(void)
 
     if (!connected()) {
         //Init();
-        radio_status_tlast_ms = tnow_ms + 1000;
+        //radio_status_tlast_ms = tnow_ms + 1000;
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
@@ -228,6 +228,13 @@ void MavlinkBase::Do(void)
             inject_radio_status = handle_txbuf_method_b(tnow_ms);
             break;
         }
+    } else if (Setup.Rx.SendRadioStatus && !connected()) {
+        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+            radio_status_txbuf = 100; // what is a smart value?
+        }
+        bytes_serial_in_rate_filt.Reset();
     } else {
         radio_status_tlast_ms = tnow_ms;
         bytes_serial_in_rate_filt.Reset();
