@@ -232,7 +232,7 @@ void MavlinkBase::Do(void)
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
             radio_status_tlast_ms = tnow_ms;
             inject_radio_status = true;
-            radio_status_txbuf = 100; // what is a smart value?
+            radio_status_txbuf = 50; // ArduPilot: 50-90, PX4: 35-50  -> no change
         }
         bytes_serial_in_rate_filt.Reset();
     } else {
