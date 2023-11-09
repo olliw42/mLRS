@@ -127,7 +127,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
         // 3 LowDataRateOptimize, 2 AgcAutoOn
-        ReadWriteRegister(SX1276_REG_ModemConfig3, 0x0C, SX1276_LORA_LOW_DATA_RATE_OPTIMIZE_OFF | SX1276_LORA_AGC_AUTO_ON);
+        ReadWriteRegister(SX1276_REG_LORA_ModemConfig3, 0x0C, SX1276_LORA_LOW_DATA_RATE_OPTIMIZE_OFF | SX1276_LORA_AGC_AUTO_ON);
 
         // 5 OcpOn, 4-0 OcpTrim
         //ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
@@ -166,7 +166,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetToRx(uint16_t tmo_ms)
     {
-        WriteRegister(SX1276_REG_FifoAddrPtr, 0);
+        WriteRegister(SX1276_REG_LORA_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
         if (tmo_ms == 0) { // 0 = no timeout
             SetRxContinuous();
