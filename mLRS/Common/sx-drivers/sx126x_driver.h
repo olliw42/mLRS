@@ -141,9 +141,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
                         config->InvertIQ);
 
         // set LoRaSymbNumTimeout for false detection of preamble
-        SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
         // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
-
+        SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -161,12 +160,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetGfskConfiguration(const tSxGfskConfiguration* config, uint16_t sync_word)
     {
-		SetModulationParamsGFSK(config->br_bps,
+        SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
                                 config->Bandwidth,
                                 config->Fdev_hz);
 
-		SetPacketParamsGFSK(config->PreambleLength,
+        SetPacketParamsGFSK(config->PreambleLength,
                             config->PreambleDetectorLength,
                             config->SyncWordLength,
                             config->AddrComp,
@@ -175,8 +174,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
                             config->CRCType,
                             config->Whitening);
 
-		SetSyncWordGFSK(sync_word);
-
+        SetSyncWordGFSK(sync_word);
     }
 
     void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
@@ -199,8 +197,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(SX126X_PACKET_TYPE_LORA);
-        }
-        else {
+        } else {
             SetPacketType(SX126X_PACKET_TYPE_GFSK);
         }
 
@@ -248,8 +245,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
-        }
-        else {
+        } else {
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
@@ -299,8 +295,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         int16_t rssi;
         if (gconfig->modeIsLora()) {
         	Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
-        }
-        else {
+        } else {
         	Sx126xDriverBase::GetPacketStatusGFSK(&rssi);
         	*Snr = 0;
         }
