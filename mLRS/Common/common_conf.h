@@ -96,8 +96,8 @@
 //#define SETUP_MODE                      MODE_19HZ
 
 
-//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
-#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
+#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
+//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
 
 
 #define SETUP_RF_ORTHO                   0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
@@ -113,6 +113,8 @@
 #define MODE_31HZ_SEND_FRAME_TMO_MS           15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO_MS           25 // just needs to be larger than toa, not critical
 #define MODE_FLRC_SEND_FRAME_TMO_MS           7  // just needs to be larger than toa, not critical
+#define MODE_FSK_SEND_FRAME_TMO_MS            10 // just needs to be larger than toa, not critical
+
 
 #define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz

@@ -55,14 +55,14 @@ void setup_configure_metadata(void)
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC"
 #ifdef DEVICE_HAS_SX128x
   #ifdef USE_FEATURE_FLRC
-    SetupMetaData.Mode_allowed_mask = 0b1111; // all
+    SetupMetaData.Mode_allowed_mask = 0b01111; // all except FSK
   #else
-    SetupMetaData.Mode_allowed_mask = 0b0111; // only 50 Hz, 31 Hz, 19 Hz
+    SetupMetaData.Mode_allowed_mask = 0b00111; // only 50 Hz, 31 Hz, 19 Hz
   #endif
 #elif defined DEVICE_HAS_SX126x
-    SetupMetaData.Mode_allowed_mask = 0b0110; // only 31 Hz, 19 Hz
+    SetupMetaData.Mode_allowed_mask = 0b10110; // only 31 Hz, 19 Hz, FSK
 #elif defined DEVICE_HAS_SX127x
-    SetupMetaData.Mode_allowed_mask = 0b0100; // only 19 Hz, not editable
+    SetupMetaData.Mode_allowed_mask = 0b00100; // only 19 Hz, not editable
 #endif
 
     //-- Ortho: "off,1/3,2/3,3/3"
@@ -407,8 +407,8 @@ void configure_mode(uint8_t mode)
         break;
 
     case MODE_31HZ:
-        Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
-        Config.frame_rate_hz = 31;
+        Config.frame_rate_ms = 20; // 32 ms = 31.25 Hz
+        Config.frame_rate_hz = 50;
 #ifdef DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
 #else
@@ -437,13 +437,20 @@ void configure_mode(uint8_t mode)
         Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 7;
         break;
 
+    case MODE_FSK:
+        Config.frame_rate_ms = 20; // 20 ms = 50 Hz
+        Config.frame_rate_hz = 50;
+        Config.Sx.LoraConfigIndex = 0;
+        Config.send_frame_tmo_ms = MODE_FSK_SEND_FRAME_TMO_MS; // 10;
+        break;
+
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
 
     }
     
     // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ);
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ || Config.Mode != MODE_FSK);
 }
 
 
