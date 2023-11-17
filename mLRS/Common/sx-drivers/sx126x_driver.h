@@ -163,17 +163,17 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
 		SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
-								config->Bandwidth,
-								config->Fdev_hz);
+                                config->Bandwidth,
+                                config->Fdev_hz);
 
 		SetPacketParamsGFSK(config->PreambleLength,
                             config->PreambleDetectorLength,
-							config->SyncWordLength,
-							config->AddrComp,
-							config->PacketType,
-							config->PayloadLength,
-							config->CRCType,
-							config->Whitening);
+                            config->SyncWordLength,
+                            config->AddrComp,
+                            config->PacketType,
+                            config->PayloadLength,
+                            config->CRCType,
+                            config->Whitening);
 
 		SetSyncWordGFSK(sync_word);
 
@@ -200,7 +200,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         if (gconfig->modeIsLora()) {
         	SetPacketType(SX126X_PACKET_TYPE_LORA);
         }
-        else {SetPacketType(SX126X_PACKET_TYPE_GFSK);}
+        else {
+            SetPacketType(SX126X_PACKET_TYPE_GFSK);
+        }
 
         // WORKAROUND: Better Resistance of the SX1262 Tx to Antenna Mismatch,
         // fixes overly eager PA clamping
@@ -247,7 +249,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         if (gconfig->modeIsLora()) {
         	SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         }
-        else {SetFskConfigurationByIndex(0, Config.FrameSyncWord);}
+        else {
+            SetFskConfigurationByIndex(0, Config.FrameSyncWord);
+        }
 
         SetBufferBaseAddress(0, 0);
 

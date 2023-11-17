@@ -407,8 +407,8 @@ void configure_mode(uint8_t mode)
         break;
 
     case MODE_31HZ:
-        Config.frame_rate_ms = 20; // 32 ms = 31.25 Hz
-        Config.frame_rate_hz = 50;
+        Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
+        Config.frame_rate_hz = 31;
 #ifdef DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
 #else
