@@ -450,7 +450,7 @@ void configure_mode(uint8_t mode)
     }
     
     // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ || Config.Mode != MODE_FSK);
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK);
 }
 
 

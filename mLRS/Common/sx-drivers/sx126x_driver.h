@@ -33,7 +33,7 @@ typedef struct
     uint8_t Whitening;
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
-} tSxFskConfiguration;
+} tSxGfskConfiguration;
 
 
 const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
@@ -62,7 +62,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
 };
 
 
-const tSxFskConfiguration Sx126xFskConfiguration[] = {
+const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
     { .br_bps = 100000,
       .PulseShape = SX126X_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = SX126X_GFSK_BW_312000,
@@ -117,7 +117,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         osc_configuration = SX12xx_OSCILLATOR_CONFIG_TXCO_1P8_V;
         lora_configuration = nullptr;
-        fsk_configuration = nullptr;
+        gfsk_configuration = nullptr;
     }
 
     //-- high level API functions
@@ -131,7 +131,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     void SetLoraConfiguration(const tSxLoraConfiguration* config)
     {
         SetModulationParams(config->SpreadingFactor,
-		                    config->Bandwidth,
+                            config->Bandwidth,
                             config->CodingRate);
 
         SetPacketParams(config->PreambleLength,
@@ -159,7 +159,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-    void SetFskConfiguration(const tSxFskConfiguration* config, uint16_t sync_word)
+    void SetGfskConfiguration(const tSxGfskConfiguration* config, uint16_t sync_word)
     {
 		SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
@@ -179,12 +179,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     }
 
-    void SetFskConfigurationByIndex(uint8_t index, uint16_t sync_word)
+    void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
     {
-        if (index >= sizeof(Sx126xFskConfiguration)/sizeof(Sx126xFskConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx126xGfskConfiguration)/sizeof(Sx126xGfskConfiguration[0])) while (1) {} // must not happen
 
-        fsk_configuration = &(Sx126xFskConfiguration[index]);
-        SetFskConfiguration(fsk_configuration, sync_word);
+        gfsk_configuration = &(Sx126xGfskConfiguration[index]);
+        SetGfskConfiguration(gfsk_configuration, sync_word);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
@@ -198,7 +198,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         gconfig = global_config;
 
         if (gconfig->modeIsLora()) {
-        	SetPacketType(SX126X_PACKET_TYPE_LORA);
+            SetPacketType(SX126X_PACKET_TYPE_LORA);
         }
         else {
             SetPacketType(SX126X_PACKET_TYPE_GFSK);
@@ -247,10 +247,10 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRfPower_dbm(gconfig->Power_dbm);
 
         if (gconfig->modeIsLora()) {
-        	SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
+            SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         }
         else {
-            SetFskConfigurationByIndex(0, Config.FrameSyncWord);
+            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
         SetBufferBaseAddress(0, 0);
@@ -329,28 +329,28 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
             lora_configuration = &(Sx126xLoraConfiguration[index]);
         } else {
-            fsk_configuration = &(Sx126xFskConfiguration[0]);
+            gfsk_configuration = &(Sx126xGfskConfiguration[0]);
         }
     }
 
     // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr && fsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : fsk_configuration->TimeOverAir;
+        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr && fsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : fsk_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr && fsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
@@ -360,7 +360,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
-    const tSxFskConfiguration* fsk_configuration;
+    const tSxGfskConfiguration* gfsk_configuration;
     tSxGlobalConfig* gconfig;
     uint8_t sx_power;
     int8_t actual_power_dbm;
