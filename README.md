@@ -95,7 +95,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 
 For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
-The FLRC mode available on 2.4 GHz systems is not intended for long ranges.
+The FLRC and FSK modes are not intended for long ranges.
 
 ## Hardware ##
 
