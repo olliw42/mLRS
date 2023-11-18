@@ -24,6 +24,7 @@ static inline bool connected(void);
 
 #define RADIO_LINK_SYSTEM_ID        51 // SiK uses 51, 68
 #define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC
+#define REBOOT_SHUTDOWN_MAGIC       1234321
 
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 280 bytes
 
@@ -93,6 +94,19 @@ class MavlinkBase
     int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
 
+    // to handle command PREFLIGHT_REBOOT_SHUTDOWN, START_RX_PAIR and to inject CMD_ACK response
+    bool inject_cmd_ack;
+    struct {
+        uint16_t command;
+        uint8_t cmd_src_sysid;
+        uint8_t cmd_src_compid;
+        uint8_t state; // 0: not armed, 1: armed, 2: going to be executed
+        uint32_t texe_ms;
+    } cmd_ack;
+
+    void handle_cmd_long(void);
+    void generate_cmd_ack(void);
+
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
@@ -125,6 +139,12 @@ void MavlinkBase::Init(void)
     inject_rc_channels = false;
     for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
+
+    inject_cmd_ack = false;
+    cmd_ack.cmd_src_sysid = 0;
+    cmd_ack.cmd_src_compid = 0;
+    cmd_ack.state = 0;
+    cmd_ack.texe_ms = 0;
 }
 
 
@@ -160,7 +180,7 @@ void MavlinkBase::Do(void)
 
     if (!connected()) {
         //Init();
-        radio_status_tlast_ms = tnow_ms + 1000;
+        //radio_status_tlast_ms = tnow_ms + 1000;
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
@@ -188,6 +208,11 @@ void MavlinkBase::Do(void)
                 }
 
                 fifo_link_out.PutBuf(_buf, len);
+
+                if (msg_link_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG) {
+                    handle_cmd_long();
+                }
+
             }
         }
     }
@@ -203,6 +228,13 @@ void MavlinkBase::Do(void)
             inject_radio_status = handle_txbuf_method_b(tnow_ms);
             break;
         }
+    } else if (Setup.Rx.SendRadioStatus && !connected()) {
+        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+            radio_status_txbuf = 50; // ArduPilot: 50-90, PX4: 35-50  -> no change
+        }
+        bytes_serial_in_rate_filt.Reset();
     } else {
         radio_status_tlast_ms = tnow_ms;
         bytes_serial_in_rate_filt.Reset();
@@ -239,6 +271,25 @@ void MavlinkBase::Do(void)
             generate_radio_status();
         }
         send_msg_serial_out();
+    }
+
+    if (inject_cmd_ack) {
+        inject_cmd_ack = false;
+        generate_cmd_ack();
+        send_msg_serial_out();
+    }
+
+    if (cmd_ack.state == 2 && (tnow_ms - cmd_ack.texe_ms) > 1000) {
+        switch (cmd_ack.command) {
+        case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            BootLoaderInit(); // jump to system bootloader
+            break;
+        case MAV_CMD_START_RX_PAIR:
+            bind.StartBind(); // start binding
+            break;
+        }
+        cmd_ack.command = 0;
+        cmd_ack.state = 0;
     }
 }
 
@@ -278,7 +329,7 @@ void MavlinkBase::putc(char c)
         bool force_param_list = true;
         switch (Config.Mode) {
         case MODE_FLRC_111HZ: force_param_list = (Config.SerialBaudrate > 230400); break; // 230400 bps and lower is ok for mftp
-        case MODE_50HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
+        case MODE_50HZ: case MODE_FSK: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
         case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
         case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
         }
@@ -730,6 +781,71 @@ void MavlinkBase::generate_radio_link_flow_control(void)
         txbuf,
         //uint16_t tx_rate, uint16_t rx_rate, uint8_t tx_used_bandwidth, uint8_t rx_used_bandwidth, uint8_t txbuf,
         &status_serial_out);
+}
+
+
+void MavlinkBase::generate_cmd_ack(void)
+{
+    fmav_msg_command_ack_pack(
+        &msg_serial_out,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+        cmd_ack.command,
+        (cmd_ack.state) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, // result
+        cmd_ack.state, // progress
+        REBOOT_SHUTDOWN_MAGIC, // result_param2, set it to magic value
+        cmd_ack.cmd_src_sysid,
+        cmd_ack.cmd_src_compid,
+        //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
+        //uint8_t target_system, uint8_t target_component,
+        &status_serial_out);
+}
+
+
+void MavlinkBase::handle_cmd_long(void)
+{
+fmav_command_long_t payload;
+
+    fmav_msg_command_long_decode(&payload, &msg_link_out);
+
+    // check if it is for us, only allow targeted commands
+    if (payload.target_system != RADIO_LINK_SYSTEM_ID) return;
+    if (payload.target_component != MAV_COMP_ID_TELEMETRY_RADIO) return;
+
+    // do we want to handle this command?
+    if (payload.command != MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN &&
+        payload.command != MAV_CMD_START_RX_PAIR) return;
+
+    // now handle it
+
+    if (payload.command != cmd_ack.command) { // a new sequence is started, so reset
+        cmd_ack.state = 0;
+    }
+
+    inject_cmd_ack = true;
+    cmd_ack.command = payload.command;
+    cmd_ack.cmd_src_sysid = msg_link_out.sysid;
+    cmd_ack.cmd_src_compid = msg_link_out.compid;
+
+    bool cmd_valid = false;
+    switch (payload.command) {
+        case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            cmd_valid = (payload.param3 == 3.0f &&
+                         payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
+                         payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            break;
+        case MAV_CMD_START_RX_PAIR:
+            cmd_valid = (payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            break;
+    }
+
+    if (cmd_valid && payload.confirmation == 1) {
+        cmd_ack.state = 1;
+    } else if (cmd_valid && payload.confirmation == 2 && cmd_ack.state) {
+        cmd_ack.state = 2;
+        cmd_ack.texe_ms = millis32();
+    } else {
+        cmd_ack.state = 0;
+    }
 }
 
 
