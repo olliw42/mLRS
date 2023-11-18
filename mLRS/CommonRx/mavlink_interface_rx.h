@@ -329,7 +329,7 @@ void MavlinkBase::putc(char c)
         bool force_param_list = true;
         switch (Config.Mode) {
         case MODE_FLRC_111HZ: force_param_list = (Config.SerialBaudrate > 230400); break; // 230400 bps and lower is ok for mftp
-        case MODE_50HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
+        case MODE_50HZ: case MODE_FSK: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
         case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
         case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
         }
@@ -803,6 +803,7 @@ void MavlinkBase::generate_cmd_ack(void)
 
 void MavlinkBase::handle_cmd_long(void)
 {
+#ifdef USE_FEATURE_MAVLINKX
 fmav_command_long_t payload;
 
     fmav_msg_command_long_decode(&payload, &msg_link_out);
@@ -846,6 +847,7 @@ fmav_command_long_t payload;
     } else {
         cmd_ack.state = 0;
     }
+#endif
 }
 
 

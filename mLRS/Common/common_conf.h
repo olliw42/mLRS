@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             10003 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.0.03"
+#define VERSION             10005 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.0.05"
 #define SETUPLAYOUT         335 // this should be changed then Setup struct and/or serial changes
 
 
@@ -113,6 +113,8 @@
 #define MODE_31HZ_SEND_FRAME_TMO_MS           15 // just needs to be larger than toa, not critical
 #define MODE_19HZ_SEND_FRAME_TMO_MS           25 // just needs to be larger than toa, not critical
 #define MODE_FLRC_SEND_FRAME_TMO_MS           7  // just needs to be larger than toa, not critical
+#define MODE_FSK_SEND_FRAME_TMO_MS            10 // just needs to be larger than toa, not critical
+
 
 #define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
 #define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz

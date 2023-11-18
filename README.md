@@ -58,6 +58,10 @@ It provides these operation modes:
   frequency bands: 2.4 GHz (SX1280 chip)<br>
   uplink serial rate: 7111 Bytes/sec<br>
   downlink serial rate: 9111 Bytes/sec
+- FSK Mode (50 Hz)<br>
+  frequency bands: 915/868 MHz, 433 MHz/70 cm (SX1262/LLCC68 chips)<br>
+  uplink serial rate: 3200 Bytes/sec<br>
+  downlink serial rate: 4100 Bytes/sec
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
@@ -81,7 +85,7 @@ Discord server by LELE2022: https://discord.gg/vwjzCD6ws5
 
 ## Range ##
 
-The range which one may expect can be estimated from the standard math; the [ImmersionRc RF Link Range](https://www.immersionrc.com/rf-calculators/) calculator comes in very handy here. Let's assume: power = 20 dBm (100 mW), antenna gain = 2 dBi, link margin = 12 dB (note: 12 dB link margin is conservative). Then:
+The range which one may expect can be estimated from the standard math; the [ImmersionRc RF Link Range](https://www.immersionrc.com/rf-calculators/) calculator comes in very handy here. Let's assume: power = 20 dBm (100 mW), antenna gain = 2 dBi, link margin = 12 dB (note: 12 dB link margin is conservative). Then, for the three LoRa modes:
 
 | | 50 Hz | 31 Hz | 19 Hz
 | --- | --- | --- | ---        
@@ -91,7 +95,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 
 For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
-The FLRC mode available on 2.4 GHz systems is not intended for long ranges.
+The FLRC and FSK modes are not intended for long ranges.
 
 ## Hardware ##
 
