@@ -803,6 +803,7 @@ void MavlinkBase::generate_cmd_ack(void)
 
 void MavlinkBase::handle_cmd_long(void)
 {
+#ifdef USE_FEATURE_MAVLINKX
 fmav_command_long_t payload;
 
     fmav_msg_command_long_decode(&payload, &msg_link_out);
@@ -846,6 +847,7 @@ fmav_command_long_t payload;
     } else {
         cmd_ack.state = 0;
     }
+#endif
 }
 
 
