@@ -148,6 +148,9 @@ void MavlinkBase::Init(void)
 }
 
 
+// rc_out is the rc data stored in out class
+// after handling of channel order and failsafes.
+// Need to take care of failsafe flag however.
 void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
@@ -157,8 +160,12 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
     if (failsafe) {
         switch (failsafe_mode) {
         case FAILSAFE_MODE_NO_SIGNAL:
-            // we do not output anything, so jump out
+            // do not output anything, so jump out
             return;
+        case FAILSAFE_MODE_CH1CH4_CENTER:
+            // in this mode do not report bad signal
+            failsafe = false;
+            break;
         }
     }
 
@@ -166,6 +173,7 @@ void MavlinkBase::SendRcData(tRcData* rc_out, bool failsafe)
         rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
         rc_chan_13b[i] = rc_to_mavlink_13bcentered(rc_out->ch[i]);
     }
+
     rc_failsafe = failsafe;
 
     inject_rc_channels = true;
@@ -265,11 +273,13 @@ void MavlinkBase::Do(void)
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
+/* only for deving, always send radio status
         if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RADIORCCHANNELS) {
             generate_radio_link_flow_control();
         } else {
             generate_radio_status();
-        }
+        } */
+        generate_radio_status();
         send_msg_serial_out();
     }
 
