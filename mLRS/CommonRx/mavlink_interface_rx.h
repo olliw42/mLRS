@@ -108,6 +108,7 @@ class MavlinkBase
     void generate_cmd_ack(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+    uint16_t parsing_in_cnt;
 };
 
 
@@ -132,6 +133,7 @@ void MavlinkBase::Init(void)
     radio_status_txbuf = 0;
     txbuf_state = TXBUF_STATE_NORMAL;
 
+    parsing_in_cnt = 0;
     bytes_serial_in = 0;
     bytes_serial_in_cnt = 0;
     bytes_serial_in_rate_filt.Reset();
@@ -201,6 +203,7 @@ void MavlinkBase::Do(void)
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (serial.available()) {
             char c = serial.getc();
+	    parsing_in_cnt++;
             if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
 
                 // TODO: this could be be done more efficiently by not going via msg_link_out
@@ -216,10 +219,12 @@ void MavlinkBase::Do(void)
                 }
 
                 fifo_link_out.PutBuf(_buf, len);
+		parsing_in_cnt = 0;
 
                 if (msg_link_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG) {
                     handle_cmd_long();
                 }
+		break; // We may not have space for a second message and need to check txbuf now
 
             }
         }
@@ -415,7 +420,7 @@ void MavlinkBase::send_msg_serial_out(void)
 uint16_t MavlinkBase::serial_in_available(void)
 {
 #ifdef USE_FEATURE_MAVLINKX
-    return fifo_link_out.Available();
+    return fifo_link_out.Available() + serial.bytes_available() + parsing_in_cnt;
 #else
     return serial.bytes_available();
 #endif
