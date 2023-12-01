@@ -540,12 +540,23 @@ local function doParamLoop()
                     end
                 end
             end
-        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then 
+     elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then 
             -- MBRIDGE_CMD_PARAM_ITEM3
             local index = cmd.payload[0]
+			
+			
+			 local is_item4 = false
+            if (index >= 128) then -- this is actually ITEM4
+                index = index - 128;
+                is_item4 = true
+            end
+			
+			
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError() -- ERROR: should not happen, but ??? => catch this error
             else
+			
+			
                 local valid,index = cmd_to_list_index(index)
                 if valid then
                     if DEVICE_PARAM_LIST[index] == nil then
@@ -554,22 +565,25 @@ local function doParamLoop()
                         paramsError() -- ERROR: should not happen, but ??? => catch this error
                     elseif DEVICE_PARAM_LIST[index].item2payload == nil then
                         paramsError() -- ERROR: should not happen, but ??? => catch this error
+											
                     else
-                        local s = DEVICE_PARAM_LIST[index].item2payload
-                        for i=1,23 do s[23+i] = cmd.payload[i] end
+                        local s = DEVICE_PARAM_LIST[index].item2payload						
+						if not is_item4 then						
+                        DEVICE_PARAM_LIST[index].item3payload = cmd.payload						
+                        for i=1,23 do s[23+i] = cmd.payload[i] end					
                         DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-                        DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
-                        DEVICE_PARAM_LIST[index].item2payload = nil
+						DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                         s = nil
                     end
                 end
             end
         end
         cmd = nil
-    end--for    
-end    
-   
-   
+		end
+		end
+		end
+		
+ 
 local function sendParamSet(idx)
     if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     local p = DEVICE_PARAM_LIST[idx]
