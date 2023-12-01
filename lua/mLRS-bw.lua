@@ -570,17 +570,19 @@ local function doParamLoop()
                         local s = DEVICE_PARAM_LIST[index].item2payload						
 						if not is_item4 then						
                         DEVICE_PARAM_LIST[index].item3payload = cmd.payload						
-                        for i=1,23 do s[23+i] = cmd.payload[i] end					
+                        for i=1,23 do s[23+i] = cmd.payload[i] end
                         DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-						DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                        DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
+                        DEVICE_PARAM_LIST[index].item2payload = nil
                         s = nil
                     end
                 end
             end
         end
-        cmd = nil
+      
 		end
 		end
+		  cmd = nil
 		end
 		
  
