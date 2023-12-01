@@ -42,10 +42,12 @@ local PAGE_MAIN_CURSOR_IDX_MAX = Bind_idx
 -- param idxes of options
 local param_idx_list = {}
 param_idx_list[0] = 0 -- BindPhrase -- must not be changed
-param_idx_list[1] = 1 -- Mode
+--param_idx_list[1] = 1 -- Mode fixed on r9
+param_idx_list[1] = 12 -- Tx Buzzer
 param_idx_list[2] = 4 -- Param1 = Tx Power
 param_idx_list[3] = 14 -- Param2 = Rx Power
-param_idx_list[4] = 17 -- Param3 = Rx Out Mode
+param_idx_list[4] = 17 -- Param3 = Rx Out Mode fixed on r9
+param_idx_list[4] = 12 -- Param3 = Tx buzzer
 
 
 --------convert cmd id to param list index
