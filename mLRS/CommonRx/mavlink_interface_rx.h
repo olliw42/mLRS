@@ -70,6 +70,7 @@ class MavlinkBase
     uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
     fmav_message_t msg_link_out; // could be avoided by more efficient coding, is used only momentarily/locally
     FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
+    uint32_t bytes_parser_in; // bytes in the parser
 #endif
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
@@ -77,7 +78,7 @@ class MavlinkBase
     uint32_t bytes_serial_in;
     uint8_t radio_status_txbuf;
 
-    uint32_t bytes_serial_in_cnt;
+    uint32_t bytes_serial_in_cnt; // for rate filter
     LPFilterRate bytes_serial_in_rate_filt;
 
     typedef enum {
@@ -108,7 +109,6 @@ class MavlinkBase
     void generate_cmd_ack(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
-    uint16_t parsing_in_cnt;
 };
 
 
@@ -127,13 +127,13 @@ void MavlinkBase::Init(void)
     result_serial_in = {};
     status_serial_in = {};
     fifo_link_out.Init();
+    bytes_parser_in = 0;
 #endif
 
     radio_status_tlast_ms = millis32() + 1000;
     radio_status_txbuf = 0;
     txbuf_state = TXBUF_STATE_NORMAL;
 
-    parsing_in_cnt = 0;
     bytes_serial_in = 0;
     bytes_serial_in_cnt = 0;
     bytes_serial_in_rate_filt.Reset();
@@ -203,7 +203,7 @@ void MavlinkBase::Do(void)
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (serial.available()) {
             char c = serial.getc();
-	    parsing_in_cnt++;
+            bytes_parser_in++; // memorize it is still in processing
             if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
 
                 // TODO: this could be be done more efficiently by not going via msg_link_out
@@ -219,13 +219,13 @@ void MavlinkBase::Do(void)
                 }
 
                 fifo_link_out.PutBuf(_buf, len);
-		parsing_in_cnt = 0;
+                bytes_parser_in = 0;
 
                 if (msg_link_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG) {
                     handle_cmd_long();
                 }
-		break; // We may not have space for a second message and need to check txbuf now
 
+                break; // give the loop a chance before handling a further message
             }
         }
     }
@@ -420,7 +420,8 @@ void MavlinkBase::send_msg_serial_out(void)
 uint16_t MavlinkBase::serial_in_available(void)
 {
 #ifdef USE_FEATURE_MAVLINKX
-    return fifo_link_out.Available() + serial.bytes_available() + parsing_in_cnt;
+    // count all bytes still in processing
+    return fifo_link_out.Available() + serial.bytes_available() + bytes_parser_in;
 #else
     return serial.bytes_available();
 #endif
