@@ -11,7 +11,10 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.32 and later, mOTX v33
 
-local version = '2023-12-01.00'
+local version = '2023-12-02.00'
+
+local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
+local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
 
 
 -----------------------------custom param list ---------------------------
@@ -389,6 +392,13 @@ local function mb_to_options(payload, pos, len)
     return r
 end
 
+local function mb_to_firmware_u16_int(u16)
+    local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
+    local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
+    local patch = bit32.band(u16, 0x003F)
+    return major * 10000 + minor * 100 + patch
+end
+
 local function mb_to_firmware_u16_string(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
@@ -403,7 +413,9 @@ local function mb_to_u8_bits(payload, pos, bitpos, bitmask)
     return v
 end
 
-local function mb_allowed_mask_editable(allowed_mask) -- only one option allowed
+local function mb_allowed_mask_editable(allowed_mask)
+    -- if none or only one option allowed -> not editable
+    if allowed_mask == 0 then return false; end
     if allowed_mask == 1 then return false; end
     if allowed_mask == 2 then return false; end
     if allowed_mask == 4 then return false; end
@@ -455,6 +467,7 @@ local function doParamLoop()
             DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
             DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
             --DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_TX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_TX.version_u16)
             DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
         elseif cmd.cmd == MBRIDGE_CMD_DEVICE_ITEM_RX then
             -- MBRIDGE_CMD_DEVICE_ITEM_RX
@@ -462,6 +475,7 @@ local function doParamLoop()
             DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
             DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
             --DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+            DEVICE_ITEM_RX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_RX.version_u16)
             DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
         elseif cmd.cmd == MBRIDGE_CMD_INFO then
             -- MBRIDGE_CMD_INFO
@@ -525,23 +539,21 @@ local function doParamLoop()
                 if valid then
                     if DEVICE_PARAM_LIST[index] == nil then
                         paramsError()
+                    elseif DEVICE_PARAM_LIST[index].typ < MBRIDGE_PARAM_TYPE_LIST then
+                        DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
+                        DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
+                        DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 7, 6)
+                    elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_LIST then
+                        DEVICE_PARAM_LIST[index].allowed_mask = mb_to_u16(cmd.payload, 1)
+                        DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 3, 21)
+                        DEVICE_PARAM_LIST[index].item2payload = cmd.payload
+                        DEVICE_PARAM_LIST[index].min = 0
+                        DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
+                        DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
+                    elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_STR6 then
+                        -- nothing to do, is send but hasn't any content
                     else
-                        if DEVICE_PARAM_LIST[index].typ < MBRIDGE_PARAM_TYPE_LIST then
-                            DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
-                            DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
-                            DEVICE_PARAM_LIST[index].unit = mb_to_string(cmd.payload, 7, 6)
-                        elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_LIST then
-                            DEVICE_PARAM_LIST[index].allowed_mask = mb_to_u16(cmd.payload, 1)
-                            DEVICE_PARAM_LIST[index].options = mb_to_options(cmd.payload, 3, 21)
-                            DEVICE_PARAM_LIST[index].item2payload = cmd.payload
-                            DEVICE_PARAM_LIST[index].min = 0
-                            DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
-                            DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
-                        elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_STR6 then
-                            -- nothing to do, is send but hasn't any content
-                        else
-                            paramsError()
-                        end
+                        paramsError()
                     end
                 end
             end
@@ -566,16 +578,25 @@ local function doParamLoop()
                         paramsError()
                     elseif DEVICE_PARAM_LIST[index].item2payload == nil then
                         paramsError()
+                    elseif is_item4 and DEVICE_PARAM_LIST[index].item3payload == nil then
+                        paramsError()
                     else
                         local s = DEVICE_PARAM_LIST[index].item2payload
                         if not is_item4 then
                             DEVICE_PARAM_LIST[index].item3payload = cmd.payload
                             for i=1,23 do s[23+i] = cmd.payload[i] end
                             DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-                            DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
                             DEVICE_PARAM_LIST[index].item2payload = nil
-                            s = nil
-                        end
+                        else    
+                            local s3 = DEVICE_PARAM_LIST[index].item3payload
+                            for i=1,23 do s[23+i] = s3[i]; s[23+23+i] = cmd.payload[i]; end
+                            DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
+                            DEVICE_PARAM_LIST[index].item2payload = nil
+                            DEVICE_PARAM_LIST[index].item3payload = nil
+                            s3 = nil
+                        end    
+                        DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options
+                        s = nil
                     end
                 end
             end
@@ -753,6 +774,20 @@ local function drawPageMain()
     if DEVICE_DOWNLOAD_is_running then
         lcd.drawText(LCD_W/3, LCD_H-24, "MLRS", DBLSIZE+TEXT_COLOR+BLINK+INVERS)
         lcd.drawText(12, LCD_H-9, "parameters loading ...", TEXT_COLOR+BLINK+INVERS)
+        return
+    end
+
+    local version_error = false
+    if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_TX.version_int < required_tx_mLRS_version_int then
+        version_error = true
+        popup_text = "Tx version not supported\nby this Lua script!"
+    end
+    if DEVICE_ITEM_RX ~= nil and connected and DEVICE_ITEM_RX.version_int < required_rx_mLRS_version_int then
+        version_error = true
+        popup_text = "Rx version not supported\nby this Lua script!"
+    end
+    if version_error then
+        drawPopup()
         return
     end
 
