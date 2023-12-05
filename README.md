@@ -1,6 +1,6 @@
 # mLRS #
 
-The goal of the mLRS project is an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
+The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
 
 The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and by no means limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to the minimal, at the cost of the associated compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
@@ -17,7 +17,7 @@ However, while all these systems are truely excellent and achieve their goals, a
 - open source
 - rich features for Mavlink systems
 
-The mLRS project fills this gap. In addition, we want it to integrate with MAVLink for OpenTx, as this yields a most fluid user experience.
+The mLRS project fills this gap.
 
 ## Disclaimer ##
 
@@ -27,9 +27,9 @@ You of course use the project fully at your own risk.
 
 The project is work in progress, and there is still plenty of room for ideas and improvement.
 
-However, the essential features, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
+The essential features, however, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, support of the Yaapu telemetry app, and it also integrates well with the MAVLink for OpenTx project.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the MAVLink for OpenTx project, which yields a most fluid user experience.
 
 It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
@@ -74,7 +74,7 @@ Further features:
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
 - optimizations for ArduPilot and PX4 systems.
-- advanced features like innovative flow control, "except" and "ortho" features, MavlinkX for reduced packet loss and data compression.
+- advanced features like innovative flow control, "except" and "ortho" features, MavlinkX for reduced packet loss and data compression. Call them mLRS technology.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32WLE5, Wio-E5, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
 
 ## Community ##
@@ -95,7 +95,7 @@ The range which one may expect can be estimated from the standard math; the [Imm
 
 For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available. Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allow to operate at larger ranges.
 
-The FLRC and FSK modes are not intended for long ranges.
+The FLRC and FSK modes are not intended for long range.
 
 ## Hardware ##
 
