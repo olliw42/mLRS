@@ -45,7 +45,7 @@
 #endif
 
 
-#ifdef DEVICE_HAS_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
@@ -424,7 +424,7 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
 
@@ -446,6 +446,16 @@ class tFhssBase
         fhss_bind_channel_list = fhss_config[config_i].bind_channel_list;
         BIND_CHANNEL_LIST_LEN = fhss_config[config_i].bind_channel_list_len;
         curr_bind_config_i = config_i; // we start with what setup suggests
+
+        bind_scan_mask = 0;
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_2P4_GHZ);
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_915_MHZ_FCC)) bind_scan_mask |= (1 << FHSS_CONFIG_915_MHZ_FCC);
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_868_MHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_868_MHZ);
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) bind_scan_mask |= (1 << FHSS_CONFIG_866_MHZ_IN);
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_433_MHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_433_MHZ);
+        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_70_CM_HAM)) bind_scan_mask |= (1 << FHSS_CONFIG_70_CM_HAM);
+
+        if (bind_scan_mask == 0) while (1) {} // should not happen, but play it safe
 
         uint8_t cnt_max = (FREQ_LIST_LEN - BIND_CHANNEL_LIST_LEN);
         if (fhss_num > cnt_max) fhss_num = cnt_max;
@@ -570,7 +580,11 @@ class tFhssBase
             for (uint8_t i = 0; i < FHSS_CONFIG_NUM; i++) { // we give it at most that much attempts
                 iii++;
                 if (iii >= FHSS_CONFIG_NUM) iii = 0;
-                if (fhss_config[iii].freq_list != nullptr) { curr_bind_config_i = iii; return true; }
+                if ((bind_scan_mask & (1 << iii)) != 0) {
+                    if (fhss_config[iii].freq_list == nullptr) while (1) {} // should not happen, but play it safe
+                    curr_bind_config_i = iii;
+                    return true;
+                }
             }
         }
 
@@ -613,6 +627,7 @@ class tFhssBase
     const uint32_t* fhss_freq_list;
     uint8_t BIND_CHANNEL_LIST_LEN;
     const uint8_t* fhss_bind_channel_list;
+    uint16_t bind_scan_mask;
 
     uint8_t curr_i;
     uint8_t cnt;
@@ -632,13 +647,94 @@ class tFhssBase
 };
 
 
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+
 class tFhss : public tFhssBase
 {
   public:
-    void Init(tFhssGlobalConfig* fhss)
+    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
     {
-        tFhssBase::Init(fhss->Num, fhss->Seed, fhss->FrequencyBand, fhss->Ortho, fhss->Except);
+        tFhssBase::Init(fhss->Num, fhss->Seed,
+                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->Ortho, fhss->Except);
     }
+
+    uint32_t GetCurrFreq1(void) { return GetCurrFreq(); }
+    uint32_t GetCurrFreq2(void) { return GetCurrFreq(); }
 };
+
+#else
+
+class tFhss
+{
+  public:
+    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
+    {
+        fhss900MHz.Init(fhss->Num, fhss->Seed,
+                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->Ortho, fhss->Except);
+        fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
+                          fhss2->FrequencyBand, fhss2->FrequencyBand_allowed_mask,
+                          fhss2->Ortho, fhss2->Except);
+    }
+
+    void Start(void)
+    {
+        fhss900MHz.Start();
+        fhss2ndBand.Start();
+    }
+
+    uint8_t Cnt(void)
+    {
+        return fhss900MHz.Cnt();
+    }
+
+    uint8_t CurrI(void)
+    {
+        return fhss900MHz.CurrI();
+    }
+
+    uint32_t GetCurrFreq1(void)
+    {
+        return fhss900MHz.GetCurrFreq();
+    }
+
+    uint32_t GetCurrFreq2(void)
+    {
+        return fhss2ndBand.GetCurrFreq();
+    }
+
+    void HopToNext(void)
+    {
+        fhss900MHz.HopToNext();
+        fhss2ndBand.HopToNext();
+    }
+
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    {
+        fhss900MHz.SetToBind(frame_rate_ms);
+        fhss2ndBand.SetToBind(frame_rate_ms);
+    }
+
+    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    bool HopToNextBind(void)
+    {
+        bool hop1 = fhss900MHz.HopToNextBind();
+        bool hop2 = fhss2ndBand.HopToNextBind();
+        return hop1 || hop2;
+    }
+
+    // only used by receiver
+    uint8_t GetCurrFrequencyBand(void)
+    {
+        return fhss900MHz.GetCurrFrequencyBand();
+    }
+
+  private:
+    tFhssBase fhss900MHz;
+    tFhssBase fhss2ndBand;
+};
+
+#endif
 
 #endif // FHSS_H
