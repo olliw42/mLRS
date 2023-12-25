@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             10003 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.0.03"
+#define VERSION             10101 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.1.01"
 #define SETUPLAYOUT         335 // this should be changed then Setup struct and/or serial changes
 
 
@@ -77,7 +77,7 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink
+#define SETUP_RX_SERIAL_LINK_MODE       1 // 0: transparent, 1: mavlink, 2: mavlinkX
 
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS

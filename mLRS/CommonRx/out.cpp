@@ -105,10 +105,10 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
     if (failsafe) {
         switch (failsafe_mode) {
         case FAILSAFE_MODE_NO_SIGNAL:
-            // we do not output anything, so jump out
+            // do not output anything, so jump out
             return;
         case FAILSAFE_MODE_LOW_THROTTLE:
-            // do below
+            // is done below
             break;
         case FAILSAFE_MODE_AS_CONFIGURED:
             for (uint8_t n = 0; n < 12; n++) {
@@ -129,17 +129,6 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
             break;
         }
     }
-
-/* deactivated on 1.7.2023, momentarily left for reference, shall be removed eventually
-    // mimic spektrum
-    // 1090 ... 1515  ... 1940
-    // => x' = (1090-1000) * 2048/1000 + 850/1000 * x
-    uint32_t t = 85*2048;
-    for (uint8_t n = 0; n < RC_DATA_LEN; n++) {
-        uint32_t xs = 850 * rc.ch[n];
-        rc.ch[n] = (xs + t) / 1000;
-    }
-*/
 
     if (failsafe) {
         switch (failsafe_mode) {

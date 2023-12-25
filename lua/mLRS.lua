@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-10-1.00'
+local version = '2023-12-01.00'
 
 local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
 local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
@@ -496,7 +496,7 @@ local function doParamLoop()
     end
 
     -- handle received commands
-    for ijk = 1,24 do -- handle up to 24 per lua cycle
+    for ijk = 1,24 do -- handle only up to 24 per lua cycle
         local cmd = cmdPop()
         if cmd == nil then break end
         if cmd.cmd == MBRIDGE_CMD_DEVICE_ITEM_TX then
@@ -531,7 +531,7 @@ local function doParamLoop()
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_expected_index and index ~= 255 then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             end
             DEVICE_PARAM_LIST_current_index = index -- inform potential Item2/3 calls
             DEVICE_PARAM_LIST_expected_index = index + 1 -- prepare for next
@@ -560,15 +560,15 @@ local function doParamLoop()
                 end
                 DEVICE_DOWNLOAD_is_running = false
             else
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             end
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM2 then
             -- MBRIDGE_CMD_PARAM_ITEM2
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_current_index then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             else
                 if DEVICE_PARAM_LIST[index].typ < MBRIDGE_PARAM_TYPE_LIST then
                     DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
@@ -584,7 +584,7 @@ local function doParamLoop()
                 elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_STR6 then
                     -- nothing to do, is send but hasn't any content
                 else
-                    paramsError() -- ERROR: should not happen, but ??? => catch this error
+                    paramsError()
                 end
             end
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
@@ -596,15 +596,15 @@ local function doParamLoop()
                 is_item4 = true
             end
             if index ~= DEVICE_PARAM_LIST_current_index then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             elseif DEVICE_PARAM_LIST[index].typ ~= MBRIDGE_PARAM_TYPE_LIST then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             elseif DEVICE_PARAM_LIST[index].item2payload == nil then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             elseif is_item4 and DEVICE_PARAM_LIST[index].item3payload == nil then
-                paramsError() -- ERROR: should not happen, but ??? => catch this error
+                paramsError()
             else
                 local s = DEVICE_PARAM_LIST[index].item2payload
                 if not is_item4 then
@@ -617,9 +617,11 @@ local function doParamLoop()
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
                 end    
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
+                s = nil
             end
         end
-    end--for
+        cmd = nil
+    end --for
 end
 
 
@@ -1009,17 +1011,16 @@ local function drawPageMain()
         lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, TEXT_COLOR+SMLSIZE)
     end
 
-    local tx_version_error = false
-    local rx_version_error = false
+    local version_error = false
     if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_TX.version_int < required_tx_mLRS_version_int then
-        tx_version_error = true
+        version_error = true
         popup_text = "Tx version not supported\nby this Lua script!"
     end
     if DEVICE_ITEM_RX ~= nil and connected and DEVICE_ITEM_RX.version_int < required_rx_mLRS_version_int then
-        rx_version_error = true
+        version_error = true
         popup_text = "Rx version not supported\nby this Lua script!"
     end
-    if tx_version_error or rx_version_error then
+    if version_error then
         drawPopup()
         return
     end
