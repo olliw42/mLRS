@@ -734,15 +734,6 @@ int16_t channels[24]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
 }
 
 
-uint8_t rssi_i8_to_mavradio(int8_t rssi_i8)
-{
-    if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
-    if (!connected()) return 254;
-    if (rssi_i8 >= 0) return 0; // max rssi value
-    return -rssi_i8;
-}
-
-
 void MavlinkBase::generate_radio_link_stats(void)
 {
 uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
@@ -767,17 +758,17 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
     flags = RADIO_LINK_STATS_FLAGS_RSSI_DBM;
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
-        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1);
-        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2);
+        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1, connected());
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
     } else if (USE_ANTENNA2) {
         rx_rssi1 = UINT8_MAX;
-        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2);
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
     } else {
-        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1);
+        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1, connected());
         rx_rssi2 = UINT8_MAX;
     }
 
-    tx_rssi = rssi_i8_to_mavradio(stats.received_rssi);
+    tx_rssi = rssi_i8_to_mavradio(stats.received_rssi, connected());
 
     fmav_msg_radio_link_stats_pack(
         &msg_serial_out,
