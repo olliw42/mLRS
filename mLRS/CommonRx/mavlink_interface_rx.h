@@ -283,7 +283,8 @@ void MavlinkBase::Do(void)
             generate_radio_link_flow_control();
         } else {
             generate_radio_status();
-        } */
+        }
+*/
         generate_radio_status();
         send_msg_serial_out();
     }
@@ -733,10 +734,20 @@ int16_t channels[24]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
 }
 
 
+uint8_t rssi_i8_to_mavradio(int8_t rssi_i8)
+{
+    if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
+    if (!connected()) return 254;
+    if (rssi_i8 >= 0) return 0; // max rssi value
+    return -rssi_i8;
+}
+
+
 void MavlinkBase::generate_radio_link_stats(void)
 {
 uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
 
+/*
     flags = 0; // rssi are in MAVLink units
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
@@ -751,6 +762,22 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
     }
 
     tx_rssi = rssi_i8_to_ap(stats.received_rssi);
+*/
+    // Rssi are in negative dBm. Values 0..253 corresponds to 0..-253 dBm. 254 = no link connection, 255 = unknown
+    flags = RADIO_LINK_STATS_FLAGS_RSSI_DBM;
+
+    if (USE_ANTENNA1 && USE_ANTENNA2) {
+        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1);
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2);
+    } else if (USE_ANTENNA2) {
+        rx_rssi1 = UINT8_MAX;
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2);
+    } else {
+        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1);
+        rx_rssi2 = UINT8_MAX;
+    }
+
+    tx_rssi = rssi_i8_to_mavradio(stats.received_rssi);
 
     fmav_msg_radio_link_stats_pack(
         &msg_serial_out,
