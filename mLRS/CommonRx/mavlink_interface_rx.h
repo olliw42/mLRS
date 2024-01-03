@@ -878,16 +878,16 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
         stats.last_snr2, // int8_t rx_snr2
         stats.last_antenna, // uint8_t rx_receive_antenna
         stats.last_transmit_antenna, // uint8_t rx_transmit_antenna
-        INT8_MAX, // int8_t rx_power
+        sx.RfPower_dbm(), // int8_t rx_power
 
         // tx stats
         (connected()) ? stats.received_LQ_serial : 0, // uint8_t tx_LQ
-        tx_rssi, //uint8_t tx_rssi1
+        tx_rssi, // uint8_t tx_rssi1
         INT8_MAX, // int8_t tx_snr1
         UINT8_MAX, // uint8_t tx_rssi2
         INT8_MAX, // int8_t tx_snr2
-        UINT8_MAX, //stats.received_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_receive_antenna
-        UINT8_MAX, //stats.received_transmit_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_transmit_antenna
+        UINT8_MAX, // stats.received_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_receive_antenna
+        UINT8_MAX, // stats.received_transmit_antenna, we know that antenna but invalidate so that rssi1 is used // uint8_t tx_transmit_antenna
         INT8_MAX, // int8_t tx_power
 
         //uint8_t target_system, uint8_t target_component,
