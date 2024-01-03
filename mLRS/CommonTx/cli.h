@@ -622,12 +622,12 @@ void tTxCli::print_device_version(void)
 
 
 #ifdef DEVICE_HAS_SX126x
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3)/(double)(1 << 25) )
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ) * 1.0E-3)/(double)(1 << 19)) )
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
 #else
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * (1.0E-6/(double)(1 << 18)) )
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * (1.0E-6 / (double)(1 << 18)) )
 #endif
 
 void tTxCli::print_frequencies(void)
