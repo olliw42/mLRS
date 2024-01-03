@@ -479,8 +479,8 @@ RESTARTCONTROLLER:
   for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
 
   // start up sx
-  if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
+  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
   IF_SX(sx.StartUp(&Config.Sx));
   IF_SX2(sx2.StartUp(&Config.Sx));
@@ -617,10 +617,10 @@ IF_SX(
                 FAIL_WSTATE(BLINK_COMMON, "IRQ TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_RX_DONE) { // R, T, TW
-                FAIL_WSTATE(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_RD_GR_OFF, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_TX_DONE) {
-                FAIL_WSTATE(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             irq_status = 0;
             link_state = LINK_STATE_RECEIVE;
@@ -653,10 +653,10 @@ IF_SX2(
                 FAIL_WSTATE(BLINK_ALTERNATE, "IRQ2 TMO FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_RX_DONE) { // R, T, TW
-                FAIL_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_RD_GR_ON, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_TX_DONE) {
-                FAIL_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             irq2_status = 0;
             link_state = LINK_STATE_RECEIVE;
