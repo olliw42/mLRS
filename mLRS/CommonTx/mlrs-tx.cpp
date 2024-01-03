@@ -502,7 +502,11 @@ tRxFrame* frame;
         return;
     }
 
-    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_VALID
+    if (rx_status < RX_STATUS_INVALID) { // must not happen
+        FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
+    }
+
+    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
         bool do_payload = true;
 
         process_received_frame(do_payload, frame);
