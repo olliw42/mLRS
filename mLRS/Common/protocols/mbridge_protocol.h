@@ -148,7 +148,7 @@ typedef struct
 {
     // transmitter side of things
 
-    uint8_t LQ; // = LQ_valid_received; // number of valid packets received on transmitter side
+    uint8_t LQ_serial; // = LQ_valid_received; // number of valid packets received on transmitter side
     int8_t rssi1_instantaneous;
     int8_t rssi2_instantaneous;
     int8_t snr_instantaneous;
@@ -159,7 +159,7 @@ typedef struct
 
     // receiver side of things
 
-    uint8_t receiver_LQ; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
+    uint8_t receiver_LQ_rc; // = receiver_LQ_crc1_received; // number of rc data packets received on receiver side
     uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
     int8_t receiver_rssi_instantaneous;
 
@@ -194,7 +194,7 @@ typedef struct
     uint8_t LQ_fresh_serial_packets_received;
     uint8_t bytes_per_sec_received;
 
-    uint8_t LQ_received; // number of packets received per sec, not practically relevant
+    uint8_t _LQ_received; // pretty useless, so deprecate // number of packets received per sec, not practically relevant
 
     uint8_t fhss_curr_i;
     uint8_t fhss_cnt;

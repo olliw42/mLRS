@@ -105,7 +105,7 @@ class LqCounterBase
     {
         shiftreg = 0xFFFFFFFFFFFFFFFF; // this makes it that it starts with 100%
         curbit = periodbit; // so that calling Next() makes it to start at bit 1
-        last_LQraw = period;
+        LQraw_last = period;
     }
 
     void Set(void)
@@ -115,7 +115,7 @@ class LqCounterBase
 
     void Next(void)
     {
-        last_LQraw = calc_raw(); // buffer it, required since Next() and Set() do not coincide
+        LQraw_last = calc_raw(); // buffer it, required since Next() and Set() do not coincide
 
         curbit <<= 1;
         if (curbit > periodbit) curbit = 1;
@@ -124,12 +124,12 @@ class LqCounterBase
 
     uint8_t GetRaw(void)
     {
-        return last_LQraw;
+        return LQraw_last;
     }
 
     uint8_t GetNormalized(void)
     {
-        return (last_LQraw * 100 + period/2) / period;
+        return (LQraw_last * 100 + period/2) / period;
     }
 
   private:
@@ -137,7 +137,7 @@ class LqCounterBase
     uint64_t periodbit;
     uint64_t shiftreg;
     uint64_t curbit;
-    uint8_t last_LQraw;
+    uint8_t LQraw_last;
 
     uint8_t calc_raw(void)
     {

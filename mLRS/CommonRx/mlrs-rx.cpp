@@ -278,8 +278,8 @@ uint8_t payload_len = 0;
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ = rxstats.GetLQ();
-    frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
+    frame_stats.LQ_rc = rxstats.GetLQ_rc();
+    frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
@@ -294,8 +294,8 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    stats.received_LQ = frame->status.LQ;
-    stats.received_LQ_serial_data = frame->status.LQ_serial_data;
+    // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
+    stats.received_LQ_serial = frame->status.LQ_serial;
 
     // copy rc data
     if (!do_payload) {
@@ -833,7 +833,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ());
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), false);
         } else {

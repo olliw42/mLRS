@@ -44,8 +44,10 @@ class Stats
 
     // statistics received from the other end
     int8_t received_rssi;
-    uint8_t received_LQ;
-    uint8_t received_LQ_serial_data;
+#ifdef DEVICE_IS_TRANSMITTER
+    uint8_t received_LQ_rc;
+#endif
+    uint8_t received_LQ_serial;
     uint8_t received_antenna;
     uint8_t received_transmit_antenna;
 
@@ -80,7 +82,10 @@ class Stats
         last_transmit_antenna = UINT8_MAX;
 
         received_rssi = RSSI_INVALID;
-        received_LQ = 0; //UINT8_MAX;
+#ifdef DEVICE_IS_TRANSMITTER
+        received_LQ_rc = 0; //UINT8_MAX;
+#endif
+        received_LQ_serial = 0; //UINT8_MAX;
         received_antenna = UINT8_MAX;
         received_transmit_antenna = UINT8_MAX;
 

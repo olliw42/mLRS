@@ -575,11 +575,11 @@ void tTxCli::stream(void)
         if (tnow_ms - tlast_ms >= 500) {
             tlast_ms = tnow_ms;
 
-            puts(u8toBCD_s(txstats.GetLQ()));
+            puts(u8toBCD_s(txstats.GetLQ_serial()));
             puts("(");
             puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             puts("),");
-            puts(u8toBCD_s(stats.received_LQ));
+            puts(u8toBCD_s(stats.received_LQ_serial));
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));

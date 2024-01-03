@@ -443,8 +443,8 @@ uint8_t payload_len = 0;
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ = txstats.GetLQ();
-    frame_stats.LQ_serial_data = txstats.GetLQ_serial_data();
+    frame_stats.LQ_rc = UINT8_MAX; // Tx has no valid value
+    frame_stats.LQ_serial = txstats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
@@ -459,8 +459,8 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    stats.received_LQ = frame->status.LQ;
-    stats.received_LQ_serial_data = frame->status.LQ_serial_data;
+    stats.received_LQ_rc = frame->status.LQ_rc;
+    stats.received_LQ_serial = frame->status.LQ_serial;
 
     if (!do_payload) return;
 
@@ -705,7 +705,7 @@ RESTARTCONTROLLER:
 
         if (!tick_1hz) {
             if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                buzzer.BeepLQ(stats.received_LQ);
+                buzzer.BeepLQ(stats.received_LQ_rc);
             }
         }
 
