@@ -706,7 +706,9 @@ bool doEEPROMwrite;
         ee_status = ee_init();
         if (ee_status == EE_STATUS_OK) { ee_status = setup_retrieve_from_EEPROM(); }
     }
-    if (ee_status != EE_STATUS_OK) setup_clear();
+
+    if (ee_status != EE_STATUS_OK) setup_clear(); // force default
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) setup_clear(); // force default
 
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
