@@ -278,8 +278,8 @@ uint8_t payload_len = 0;
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ = rxstats.GetLQ();
-    frame_stats.LQ_serial_data = rxstats.GetLQ_serial_data();
+    frame_stats.LQ_rc = rxstats.GetLQ_rc();
+    frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
@@ -294,8 +294,8 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    stats.received_LQ = frame->status.LQ;
-    stats.received_LQ_serial_data = frame->status.LQ_serial_data;
+    // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
+    stats.received_LQ_serial = frame->status.LQ_serial;
 
     // copy rc data
     if (!do_payload) {
@@ -348,7 +348,11 @@ tTxFrame* frame;
         return;
     }
 
-    if (rx_status != RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (rx_status < RX_STATUS_INVALID) { // must not happen
+        FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
+    }
+
+    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
 
@@ -479,8 +483,8 @@ RESTARTCONTROLLER:
   for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
 
   // start up sx
-  if (!sx.isOk()) { FAILALWAYS(GR_OFF_RD_BLINK, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(RD_OFF_GR_BLINK, "Sx2 not ok"); } // fail!
+  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
   IF_SX(sx.StartUp(&Config.Sx));
   IF_SX2(sx2.StartUp(&Config.Sx));
@@ -617,10 +621,10 @@ IF_SX(
                 FAIL_WSTATE(BLINK_COMMON, "IRQ TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_RX_DONE) { // R, T, TW
-                FAIL_WSTATE(GR_OFF_RD_BLINK, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_RD_GR_OFF, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_TX_DONE) {
-                FAIL_WSTATE(RD_OFF_GR_BLINK, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             irq_status = 0;
             link_state = LINK_STATE_RECEIVE;
@@ -653,10 +657,10 @@ IF_SX2(
                 FAIL_WSTATE(BLINK_ALTERNATE, "IRQ2 TMO FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_RX_DONE) { // R, T, TW
-                FAIL_WSTATE(GR_ON_RD_BLINK, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_RD_GR_ON, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_TX_DONE) {
-                FAIL_WSTATE(RD_ON_GR_BLINK, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             irq2_status = 0;
             link_state = LINK_STATE_RECEIVE;
@@ -833,7 +837,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ());
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), false);
         } else {

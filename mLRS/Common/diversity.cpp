@@ -24,15 +24,15 @@ work out which antenna we choose
 Tx:
             |   NONE   |  INVALID  | VALID
 --------------------------------------------------------
- NONE       |          |   1 or 2  |  1
- INVALID    |  1 or 2  |   1 or 2  |  1
+ NONE       |          |     1     |  1
+ INVALID    |    2     |   1 or 2  |  1
  VALID      |    2     |     2     |  1 or 2
 
 Rx:
             |   NONE   |  INVALID  | CRC1_VALID | VALID
 --------------------------------------------------------
- NONE       |          |   1 or 2  |     1      |  1
- INVALID    |  1 or 2  |   1 or 2  |     1      |  1
+ NONE       |          |     1     |     1      |  1
+ INVALID    |    2     |   1 or 2  |     1      |  1
  CRC1_VALID |    2     |     2     |   1 or 2   |  1
  VALID      |    2     |     2     |     2      |  1 or 2
 */
@@ -59,9 +59,15 @@ uint8_t antenna;
     if (link_rx2_status == RX_STATUS_CRC1_VALID) {
         antenna = ANTENNA_2;
 #endif
+    } else
+    if (link_rx1_status == RX_STATUS_INVALID) {
+        antenna = ANTENNA_1;
+    } else
+    if (link_rx2_status == RX_STATUS_INVALID) {
+        antenna = ANTENNA_2;
     } else {
-        // we can choose either antenna, so select the one with the better rssi
-        antenna = (rssi1 > rssi2) ? ANTENNA_1 : ANTENNA_2;
+        // this should never happen!
+        antenna = ANTENNA_1;
     }
 
     return antenna;

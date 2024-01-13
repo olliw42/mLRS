@@ -603,6 +603,9 @@ class tFhssBase
         return fhss_list[curr_i];
     }
 
+    uint8_t ChList(uint8_t i) { return ch_list[i]; }
+    uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
+
   private:
     uint32_t _seed;
     uint8_t _ortho;

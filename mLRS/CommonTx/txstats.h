@@ -28,8 +28,7 @@ class TxStatsBase
     void doFrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetLQ(void);
-    uint8_t GetLQ_serial_data(void);
+    uint8_t GetLQ_serial(void);
 
     bool rx1_valid;
     bool rx2_valid;
@@ -90,13 +89,7 @@ void TxStatsBase::doValidFrameReceived(void)
 }
 
 
-uint8_t TxStatsBase::GetLQ(void)
-{
-    return GetLQ_serial_data(); // it is the same for Tx, we also could set it to invalid INT8_MAX
-}
-
-
-uint8_t TxStatsBase::GetLQ_serial_data(void)
+uint8_t TxStatsBase::GetLQ_serial(void)
 {
     if (!connected()) return 0;
     uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();

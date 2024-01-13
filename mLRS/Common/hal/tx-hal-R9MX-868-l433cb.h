@@ -96,8 +96,8 @@
 
 void sx_init_gpio(void)
 {
-  gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-  gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 }
 
 void sx_amp_transmit(void)
@@ -110,27 +110,27 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-  LL_SYSCFG_SetEXTISource(SX_DIO0_SYSCFG_EXTI_PORTx, SX_DIO0_SYSCFG_EXTI_LINEx);
+    LL_SYSCFG_SetEXTISource(SX_DIO0_SYSCFG_EXTI_PORTx, SX_DIO0_SYSCFG_EXTI_LINEx);
 
-  // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-  LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
 
-  NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
-  NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+    NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
 void sx_dio_enable_exti_isr(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-  LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-  LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 
@@ -167,12 +167,12 @@ void in_set_inverted(void)
 
 void button_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-  return gpio_read_activelow(BUTTON);
+    return gpio_read_activelow(BUTTON);
 }
 
 
@@ -183,10 +183,10 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-  gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-  gpio_low(LED_GREEN); // LED_GREEN_OFF
-  gpio_low(LED_RED); // LED_RED_OFF
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
+    gpio_low(LED_RED); // LED_RED_OFF
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
@@ -206,17 +206,17 @@ bool r9mx_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
-  gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-  uint8_t cnt = 0;
-  for (uint8_t i = 0; i < 16; i++) {
-    if (gpio_read_activelow(BUTTON)) cnt++;
-  }
-  r9mx_ser_or_com_serial = !(cnt > 8);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BUTTON)) cnt++;
+    }
+    r9mx_ser_or_com_serial = !(cnt > 8);
 }
 
 bool ser_or_com_serial(void)
 {
-  return r9mx_ser_or_com_serial;
+    return r9mx_ser_or_com_serial;
 }
 
 

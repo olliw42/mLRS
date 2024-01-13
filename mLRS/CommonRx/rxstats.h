@@ -30,8 +30,8 @@ class RxStatsBase
     void doValidCrc1FrameReceived(void);
     void doValidFrameReceived(void);
 
-    uint8_t GetLQ(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
-    uint8_t GetLQ_serial_data(void);
+    uint8_t GetLQ_rc(void); // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
+    uint8_t GetLQ_serial(void);
 
   private:
     LqCounterBase LQma_received;
@@ -95,7 +95,7 @@ void RxStatsBase::doValidFrameReceived(void)
 }
 
 
-uint8_t RxStatsBase::GetLQ(void)
+uint8_t RxStatsBase::GetLQ_rc(void)
 {
     if (!connected()) return 0;
     uint8_t LQ = stats.valid_crc1_received.GetLQ();
@@ -104,7 +104,7 @@ uint8_t RxStatsBase::GetLQ(void)
 }
 
 
-uint8_t RxStatsBase::GetLQ_serial_data(void)
+uint8_t RxStatsBase::GetLQ_serial(void)
 {
     if (!connected()) return 0;
     uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();

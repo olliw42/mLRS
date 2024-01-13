@@ -706,7 +706,12 @@ bool doEEPROMwrite;
         ee_status = ee_init();
         if (ee_status == EE_STATUS_OK) { ee_status = setup_retrieve_from_EEPROM(); }
     }
-    if (ee_status != EE_STATUS_OK) setup_clear();
+
+    if (ee_status != EE_STATUS_OK) setup_clear(); // force default
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) setup_clear(); // force default
+#ifdef SETUP_FORCE_COMMON_CONF
+    setup_clear(); // force default
+#endif
 
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
@@ -774,10 +779,6 @@ bool doEEPROMwrite;
     Config.ConfigId = Setup._ConfigId;
 
     setup_configure_metadata();
-
-#ifdef SETUP_FORCE_COMMON_CONF
-    setup_default(Config.ConfigId);
-#endif
 
     setup_sanitize_config(Config.ConfigId);
 
