@@ -47,8 +47,8 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ = frame_stats->LQ;
-    frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
+    frame->status.LQ_rc = frame_stats->LQ_rc;
+    frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
     // pack rc data
@@ -172,8 +172,8 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ = frame_stats->LQ;
-    frame->status.LQ_serial_data = frame_stats->LQ_serial_data;
+    frame->status.LQ_rc = frame_stats->LQ_rc;
+    frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
     for (uint8_t i = 0; i < payload_len; i++) {

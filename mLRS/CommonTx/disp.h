@@ -719,11 +719,11 @@ int8_t power;
     if (connected()) gdisp_puts(s);
 
     gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
-    stoBCDstr(txstats.GetLQ(), s);
+    stoBCDstr(txstats.GetLQ_serial(), s);
     gdisp_puts(s);
     gdisp_setcurX(60 + 11);
     if (connected()) {
-        stoBCDstr(stats.received_LQ, s);
+        stoBCDstr(stats.received_LQ_rc, s);
         gdisp_puts(s);
     }
 

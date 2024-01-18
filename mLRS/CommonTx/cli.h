@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include "math.h"
 #include "setup_tx.h"
 
 
@@ -304,6 +305,7 @@ class tTxCli
     void print_param_list(uint8_t flag);
     void print_param_opt_list(uint8_t idx);
     void print_device_version(void);
+    void print_frequencies(void);
     void stream(void);
 
     bool is_cmd(const char* cmd);
@@ -575,11 +577,11 @@ void tTxCli::stream(void)
         if (tnow_ms - tlast_ms >= 500) {
             tlast_ms = tnow_ms;
 
-            puts(u8toBCD_s(txstats.GetLQ()));
+            puts(u8toBCD_s(txstats.GetLQ_serial()));
             puts("(");
             puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             puts("),");
-            puts(u8toBCD_s(stats.received_LQ));
+            puts(u8toBCD_s(stats.received_LQ_serial));
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));
@@ -619,6 +621,39 @@ void tTxCli::print_device_version(void)
 }
 
 
+#ifdef DEVICE_HAS_SX126x
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
+#elif defined DEVICE_HAS_SX127x
+#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
+#else
+#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
+#endif
+
+void tTxCli::print_frequencies(void)
+{
+char s[32];
+
+    for (uint8_t i = 0; i < fhss.Cnt(); i++) {
+        puts(u8toBCD_s(i));
+        puts("  ch: ");
+        puts(u8toBCD_s(fhss.ChList(i)));
+        puts("  freg: ");
+        puts(u32toBCD_s(fhss.FhssList(i)));
+        puts("  f: ");
+        u32toBCDstr(CLI_REG_TO_FREQ(fhss.FhssList(i)), s);
+        remove_leading_zeros(s);
+        puts(s);
+#if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x
+        putsn(" kHz");
+#else
+        putsn(" MHz");
+#endif
+        delay_ms(20);
+    }
+}
+
+
 void tTxCli::print_help(void)
 {
     putsn("  help, h, ?  -> this help page");
@@ -636,6 +671,7 @@ void tTxCli::print_help(void)
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
+    putsn("  listfreqs   -> lists frequencies used in fhss scheme");
     delay_ms(10);
 
     putsn("  ptser       -> enter serial passthrough");
@@ -806,6 +842,11 @@ bool rx_param_changed;
             state = CLI_STATE_STATS;
             putsn("  starts streaming stats");
             putsn("  send any character to stop");
+
+        //-- miscellaneous
+        } else
+        if (is_cmd("listfreqs")) {
+          print_frequencies();
 
         //-- System Bootloader
         } else

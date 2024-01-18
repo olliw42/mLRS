@@ -517,7 +517,7 @@ void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {};
 
-    lstats.LQ = txstats.GetLQ(); // it's the same as GetLQ_serial_data() // = LQ_valid_received; // number of valid packets received on transmitter side
+    lstats.LQ_serial = txstats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
     lstats.rssi1_instantaneous = stats.last_rssi1;
     lstats.rssi2_instantaneous = stats.last_rssi2;
     lstats.snr_instantaneous = stats.GetLastSnr();
@@ -533,8 +533,8 @@ tMBridgeLinkStats lstats = {};
 
     // receiver side of things
 
-    lstats.receiver_LQ = stats.received_LQ; // valid_crc1_received, number of rc data packets received on receiver side
-    lstats.receiver_LQ_serial = stats.received_LQ_serial_data; // valid_frames_received, number of completely valid packets received on receiver side
+    lstats.receiver_LQ_rc = stats.received_LQ_rc; // valid_crc1_received, number of rc data packets received on receiver side
+    lstats.receiver_LQ_serial = stats.received_LQ_serial; // valid_frames_received, number of completely valid packets received on receiver side
     lstats.receiver_rssi_instantaneous = stats.received_rssi;
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
@@ -551,7 +551,7 @@ tMBridgeLinkStats lstats = {};
     lstats.LQ_fresh_serial_packets_received = stats.serial_data_received.GetLQ();
     lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
 
-    lstats.LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
+    lstats._LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
     lstats.fhss_curr_i = txstats.fhss_curr_i;
     lstats.fhss_cnt = fhss.Cnt();

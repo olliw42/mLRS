@@ -69,7 +69,17 @@ uint8_t rssi_i8_to_ap(int8_t rssi_i8)
 }
 
 
-//   -120 ... -50 -> 172 .. 1877
+// 0 ... 253 -> 0 .. -253 dBm, 254 = no link connection, 255 = unknown
+uint8_t rssi_i8_to_mavradio(int8_t rssi_i8, bool connected)
+{
+    if (rssi_i8 == RSSI_INVALID) return UINT8_MAX;
+    if (!connected) return 254;
+    if (rssi_i8 >= 0) return 0; // max rssi value
+    return -rssi_i8;
+}
+
+
+// -120 ... -50 -> 172 .. 1877
 uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
@@ -83,7 +93,7 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 }
 
 
-//   0 ... 100 -> 191 .. 1792 = 1000 .. 2000 us
+// 0 ... 100 -> 191 .. 1792 = 1000 .. 2000 us
 uint16_t lq_to_sbus_crsf(uint8_t lq)
 {
     if (lq >= 100) return 1792; // max value

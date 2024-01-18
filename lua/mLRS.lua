@@ -1189,7 +1189,7 @@ local function doPageMain(event)
         end
     else
         if event == EVT_VIRTUAL_EXIT then
-            if cursor_idx <= COMMON_PARAM_IDX_MAX then -- BindPhrase, Mode, RF Band
+            if cursor_idx <= COMMON_PARAM_IDX_MAX then -- BindPhrase, Mode, RF Band, RF Ortho
                 sendParamSet(cursor_idx)
             end
             edit = false
@@ -1199,7 +1199,7 @@ local function doPageMain(event)
                     sendParamSet(0)
                     edit = false
                 end
-            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
                 sendParamSet(cursor_idx)
                 edit = false
             else
@@ -1208,13 +1208,13 @@ local function doPageMain(event)
         elseif event == EVT_VIRTUAL_NEXT then
             if cursor_idx == BindPhrase_idx then -- BindPhrase
                 param_str6_inc(0)
-            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
                 param_value_inc(cursor_idx)
             end
         elseif event == EVT_VIRTUAL_PREV then
             if cursor_idx == BindPhrase_idx then -- BindPhrase
                 param_str6_dec(0)
-            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band
+            elseif cursor_idx <= COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
                 param_value_dec(cursor_idx)
             end
         end
