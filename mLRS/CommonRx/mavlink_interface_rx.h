@@ -709,6 +709,7 @@ void MavlinkBase::generate_rc_channels_override(void)
 
 
 #if !defined FASTMAVLINK_MSG_ID_RADIO_RC_CHANNELS_DEV
+#error Please update the mavlink repo!
 
 void MavlinkBase::generate_radio_rc_channels(void)
 {
@@ -779,7 +780,7 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
         flags,
 
         // rx stats
-        rxstats.GetLQ(), // uint8_t rx_LQ
+        rxstats.GetLQ_rc(), // uint8_t rx_LQ
         rx_rssi1, // uint8_t rx_rssi1
         stats.last_snr1, // int8_t rx_snr1
         rx_rssi2, // uint8_t rx_rssi2
@@ -788,7 +789,7 @@ uint8_t flags, rx_rssi1, rx_rssi2, tx_rssi;
         stats.last_transmit_antenna, // uint8_t rx_transmit_antenna
 
         // tx stats
-        stats.received_LQ, // uint8_t tx_LQ
+        stats.received_LQ_serial, // uint8_t tx_LQ
         tx_rssi, //uint8_t tx_rssi1
         INT8_MAX, // int8_t tx_snr1
         UINT8_MAX, // uint8_t tx_rssi2
