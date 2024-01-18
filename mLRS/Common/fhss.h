@@ -733,6 +733,16 @@ class tFhss
         return fhss900MHz.GetCurrFrequencyBand();
     }
 
+    uint8_t ChList(uint8_t i)
+    {
+        return fhss900MHz.ChList(i);
+    }
+
+    uint32_t FhssList(uint8_t i)
+    {
+        return fhss900MHz.FhssList(i);
+    }
+
   private:
     tFhssBase fhss900MHz;
     tFhssBase fhss2ndBand;
