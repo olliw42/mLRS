@@ -68,6 +68,7 @@ In rx-hal files:
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
+#define DEVICE_HAS_OUT_INTERNAL     // board has an OUT port, which supports all options
 #define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
@@ -266,7 +267,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INVERTED
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INVERTED || \
+    defined DEVICE_HAS_OUT_INTERNAL
   #define USE_OUT
 #endif
 

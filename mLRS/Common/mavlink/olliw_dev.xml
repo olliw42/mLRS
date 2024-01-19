@@ -98,5 +98,22 @@
       <field type="uint8_t" name="tx_receive_sensitivity" invalid="0">Receive sensitivity of Tx in inverted dBm. 1..255 represents -1..-255 dBm, 0: unknown.</field>
       <field type="uint8_t" name="rx_receive_sensitivity" invalid="0">Receive sensitivity of Rx in inverted dBm. 1..255 represents -1..-255 dBm, 0: unknown.</field>
     </message>
+    <message id="60049" name="MLRS_MAIN_RADIO_STATS">
+      <wip/>
+      <!-- WIP -->
+      <description>mLRS specific.</description>
+      <field type="uint8_t" name="uplink_rssi">crsf_cvt_rssi_tx(stats.received_rssi);             OpenTX -> 1RSS</field>
+      <field type="uint8_t" name="uplink_LQ">stats.received_LQ;                                   OpenTx -> RQly</field>
+      <field type="uint8_t" name="active_antenna">stats.received_antenna;                         OpenTx -> ANT</field>
+      <field type="uint8_t" name="mode">crsf_cvt_mode(Config.Mode);                               OpenTx -> RFMD</field>
+      <field type="uint8_t" name="uplink_transmit_power_enum">crsf_cvt_power(sx.RfPower_dbm());   OpenTx -> TPw2</field>
+      <field type="uint8_t" name="downlink_rssi">crsf_cvt_rssi_tx(stats.GetLastRssi());           OpenTx -> TRSS</field>
+      <field type="uint8_t" name="downlink_LQ">txstats.GetLQ();                                   OpenTx -> TQly</field>
+      <field type="int8_t"  name="downlink_snr">stats.GetLastSnr();                               OpenTx -> TSNR</field>
+      <field type="uint8_t" name="uplink_rssi_percent">crsf_cvt_rssi_percent(stats.GetLastRssi());      OpenTx -> TRSP</field>
+      <field type="uint8_t" name="uplink_fps">crsf_cvt_fps(Config.Mode); // *10 in OpenTx               OpenTx -> TFPS</field>
+      <field type="uint8_t" name="downlink_rssi_percent">crsf_cvt_rssi_percent(stats.received_rssi);    OpenTx -> RRSP</field>
+      <field type="uint8_t" name="uplink_transmit_power_dbm">sx.RfPower_dbm();                          OpenTx -> TPWR</field>
+    </message>
   </messages>
 </mavlink>
