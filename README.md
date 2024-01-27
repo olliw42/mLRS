@@ -135,7 +135,8 @@ For cloning you of course can use any other tool you like.
 
 **2. Install STM32CubeIDE and setup project files**
 - download and install STM32CubeIDE. ***Note***: Install into the default folder C:/ST.
-- `cd mlrs`
+- open a command line processor
+- cd into `C:/Me/Documents/Github/mlrs`
 - run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies the ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: If STM32CubeIDE was not installed into the default folder then the Python script needs to be modified.
 
 Ensure that all three steps are executed completely.
