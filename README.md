@@ -134,7 +134,7 @@ Let's assume that the project should be located in the folder C:/Me/Documents/Gi
 For cloning you of course can use any other tool you like.
 
 **2. Install STM32CubeIDE and setup project files**
-- download and install STM32CubeIDE. ***Note***: Install into the default folder C:/ST.
+- download and install STM32CubeIDE. ***Note***: Install into the default folder (C:/ST on Windows and /opt/st on Linux).
 - open a command line processor
 - cd into `C:/Me/Documents/Github/mlrs`
 - run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies the ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: If STM32CubeIDE was not installed into the default folder then the Python script needs to be modified.
