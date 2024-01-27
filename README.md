@@ -122,25 +122,25 @@ Ready-to-flash firmware can be found in the "firmware" folder. All you need to d
 
 ## Software: Installation Bits and Bops ##
 
-This is a STM32CubeIDE project. I don't have much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
+This is a STM32CubeIDE project. Unfortunately, STM32CubeIDE is not ideal for shared projects. This procedure should work:
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
-1. Clone project
+**1. Clone project**
 - open a command line processor
 - cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
 - `git clone https://github.com/olliw42/mLRS.git mlrs`
 
 For cloning you of course can use any other tool you like.
 
-2. Install STM32CubeIDE and setup project files
+**2. Install STM32CubeIDE and setup project files**
 - download and install STM32CubeIDE. ***Note***: Install into the default folder C:/ST.
 - `cd mlrs`
-- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies the ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: If STM32CubeIDE was not installed into the default folder(s) then this Python script needs to be modified.
+- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies the ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: If STM32CubeIDE was not installed into the default folder then the Python script needs to be modified.
 
 Ensure that all three steps are executed completely.
 
-3. STM32CubeIDE
+**3. STM32CubeIDE**
 - start STM32CubeIDE
 - in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button. ***Note***: it is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
 - in the IDE's top bar go to `File->Open Projects from File System`
