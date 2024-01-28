@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 27.01.2024
+ version 28.01.2024
 ********************************************************
 '''
 import os
@@ -72,19 +72,24 @@ def findSTM32CubeIDEGnuTools(search_root):
 
     return st_dir, gnu_dir
 
-st_root = os.path.join("C:/",'ST')
-if os.name == 'posix': # install paths are os dependent
-    st_root = os.path.join("/opt",'st')
 
-ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(st_root)
+ST_DIR,GNU_DIR = '', ''
 
-if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
-    print('ERROR: gnu-tools not found!')
-    exit(1)
+# do this only when called fomr main context
+if __name__ == "__main__":
+    st_root = os.path.join("C:/",'ST')
+    if os.name == 'posix': # install paths are os dependent
+        st_root = os.path.join("/opt",'st')
 
-print('STM32CubeIDE found in:', ST_DIR)
-print('gnu-tools found in:', GNU_DIR)
-print('------------------------------------------------------------')
+    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(st_root)
+
+    if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+        print('ERROR: gnu-tools not found!')
+        exit(1)
+
+    print('STM32CubeIDE found in:', ST_DIR)
+    print('gnu-tools found in:', GNU_DIR)
+    print('------------------------------------------------------------')
 
 
 #-- GCC preliminaries
