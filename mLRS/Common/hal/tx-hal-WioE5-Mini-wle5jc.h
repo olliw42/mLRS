@@ -51,7 +51,7 @@
 // UARTF = --
 // SWUART= debug port
 
-#define UARTB_USE_UART2 // serial // PA2,PA3
+#define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -59,7 +59,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_REMAPPED // com USB/CLI // PB6,PB7
+#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -67,7 +67,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_LPUART1_REMAPPED // JR pin5, MBridge // PC1,PC0
+#define UART_USE_LPUART1_PC1PC0 // JR pin5, MBridge // PC1,PC0
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -81,7 +81,7 @@
 #define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
 #endif
 
-#define UARTE_USE_LPUART1_REMAPPED // in port // PC0
+#define UARTE_USE_LPUART1_PC1PC0 // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512

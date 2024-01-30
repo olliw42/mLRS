@@ -39,7 +39,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
-#define UARTB_USE_UART4 // serial
+#define UARTB_USE_UART4_PC10PC11 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -47,7 +47,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1 // com USB/CLI
+#define UARTC_USE_UART1_PA9PA10 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -55,7 +55,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_REMAPPED2 // JR pin5, MBridge
+#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -65,7 +65,7 @@
 
 #define JRPIN5_RX_TX_INVERT_INTERNAL
 
-#define UARTD_USE_UART3 // serial2 BT/ESP
+#define UARTD_USE_UART3_PB10PB11 // serial2 BT/ESP
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX
 #define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -73,7 +73,7 @@
 #define UARTD_USE_RX
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTF_USE_LPUART1_REMAPPED // debug
+#define UARTF_USE_LPUART1_PC1PC0 // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512

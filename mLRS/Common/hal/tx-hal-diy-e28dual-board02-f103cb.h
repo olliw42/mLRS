@@ -56,7 +56,7 @@
 // UART = JR bay pin5 (SPORT)
 // UARTE = in port, SBus or whatever
 
-#define UARTB_USE_UART3 // serial
+#define UARTB_USE_UART3_PB10PB11 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -64,7 +64,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1 // COM (CLI)
+#define UARTC_USE_UART1_PA9PA10 // COM (CLI)
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -73,7 +73,7 @@
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
 #ifdef DEVICE_HAS_IN
-#define UARTE_USE_UART2 // in pin
+#define UARTE_USE_UART2_PA2PA3 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
@@ -82,7 +82,7 @@
 #define UARTE_RXBUFSIZE           512
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-#define UART_USE_UART2 // JR pin5, MBridge
+#define UART_USE_UART2_PA2PA3 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512

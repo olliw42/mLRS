@@ -50,7 +50,7 @@
 // UARTF = --
 // SWUART= debug port
 
-#define UARTB_USE_UART1 // serial or COM (CLI)
+#define UARTB_USE_UART1_PA9PA10 // serial or COM (CLI)
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // TX_SERIAL_TXBUFSIZE // choose the bigger one
@@ -58,7 +58,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTE_USE_UART3 // in port // PB11, pin4 Inv SPort
+#define UARTE_USE_UART3_PB10PB11 // in port // PB11, pin4 Inv SPort
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
