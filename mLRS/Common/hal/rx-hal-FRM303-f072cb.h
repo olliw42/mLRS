@@ -17,11 +17,8 @@
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
 
 
 // -- IRQ priorities

@@ -18,19 +18,15 @@
 //   Pin3 GND
 //   Pin4 SPort/FPort PA5  (??, looks strange, something is inbetween)
 //   Pin5 SBusOut     PA2 / U2Tx inverted
-//   Ch1    PA8
-//   Ch2    PA11
+//   Ch1    PA8           -> Buzzer (TIM1)
+//   Ch2    PA11          -> Debug Tx (TIM4)
 //   Ch3    PA9 / U1Tx    -> Serial Tx
 //   Ch4    PA10 / U1Rx   -> Serial Rx
 
 #define DEVICE_HAS_OUT_INVERTED
-#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
+#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SYSTEMBOOT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -71,6 +67,7 @@
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
 
+/*
 #define UARTC_USE_UART1_PA9PA10 //3 // debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
@@ -78,6 +75,14 @@
 #define UARTC_USE_TX_ISR
 //#define UARTC_USE_RX
 //#define UARTC_RXBUFSIZE           512
+*/
+
+#define SWUART_USE_TIM4 // debug
+#define SWUART_TX_IO              IO_PA11
+#define SWUART_BAUD               115200
+#define SWUART_USE_TX
+#define SWUART_TXBUFSIZE          512
+//#define SWUART_TIM_IRQ_PRIORITY   9
 
 
 //-- SX1: SX12xx & SPI

@@ -12,10 +12,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff

@@ -15,10 +15,7 @@
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED // board has no dbg pin
-#endif
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff

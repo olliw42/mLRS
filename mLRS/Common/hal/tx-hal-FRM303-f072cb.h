@@ -24,16 +24,13 @@
 //#define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
 
 #ifdef MLRS_FEATURE_OLED
   #undef DEVICE_HAS_COM_ON_USB
   #define DEVICE_HAS_NO_COM
   #define DEVICE_HAS_I2C_DISPLAY_ROT180
-#endif
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
 #endif
 
 
@@ -114,10 +111,9 @@ static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-//#define JRPIN5_RX_TX_INVERT_INTERNAL
-//#define JRPIN5_DISABLE_TX_WHILE_RX
 #define JRPIN5_FULL_INTERNAL_ON_RX_TX
 
+/*
 #define SWUART_USE_TIM17 // debug
 //#define SWUART_TX_IO              IO_PB14 // that's the I2C2 SDA pin
 #define SWUART_TX_IO              IO_PA11 // that's a USB pin
@@ -125,6 +121,7 @@ static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
 //#define SWUART_TIM_IRQ_PRIORITY   9
+*/
 
 
 //-- SX12xx & SPI

@@ -15,7 +15,7 @@
 // no bind button (is available via the BOOT solder pad located on the bottom side = pin PB13 = pin 24 on WioE5)
 // no out port (not available, to make available change this hal accordingly)
 
-#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 //#define DEVICE_HAS_OUT
 
 #ifdef DEBUG_ENABLED

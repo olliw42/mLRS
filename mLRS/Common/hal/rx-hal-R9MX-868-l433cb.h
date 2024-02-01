@@ -19,10 +19,10 @@
 //   Pin4 Inv SPort   PB11
 //   Pin5 SBusOut     PA2 / U2_Tx inverted
 //   Pin6 SBusIn      ???
-//   Ch1    PA8           -> Buzzer
+//   Ch1    PA8           -> Buzzer (TIM1)
 //   Ch2    PA9 / U1Tx    -> Serial Tx
 //   Ch3    PA10 / U1Rx   -> Serial Rx
-//   Ch4    PA11          -> Debug TX
+//   Ch4    PA11          -> Debug Tx (TIM15)
 
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
