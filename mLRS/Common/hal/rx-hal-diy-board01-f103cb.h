@@ -37,7 +37,7 @@
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART2 // serial
+#define UARTB_USE_UART2_PA2PA3 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
@@ -45,7 +45,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
-#define UART_USE_UART1_REMAPPED // out pin
+#define UART_USE_UART1_PB6PB7 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256 // 512
@@ -53,7 +53,7 @@
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
 
-#define UARTC_USE_UART3 // debug
+#define UARTC_USE_UART3_PB10PB11 // debug
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           512

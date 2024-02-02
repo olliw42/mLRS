@@ -41,7 +41,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
-#define UARTB_USE_UART1 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
+#define UARTB_USE_UART1_PA9PA10 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // TX_SERIAL_TXBUFSIZE // choose the bigger one
@@ -49,7 +49,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UART_USE_UART3 // JR pin5, MBridge
+#define UART_USE_UART3_PB10PB11 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -61,7 +61,7 @@
 #define JRPIN5_TX_OE_DISABLED     gpio_low(JRPIN5_TX_OE)
 #define JRPIN5_TX_OE_ENABLED      gpio_high(JRPIN5_TX_OE)
 
-#define UARTF_USE_UART2 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
+#define UARTF_USE_UART2_PA2PA3 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512

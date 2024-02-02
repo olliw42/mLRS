@@ -178,7 +178,7 @@ unsigned long serial_data_received_tfirst_ms;
 
 void serialFlushRx(void)
 {
-    while (SERIAL.available() > 0) { uint8_t c = SERIAL.read(); }
+    while (SERIAL.available() > 0) { SERIAL.read(); }
 }
 
 

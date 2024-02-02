@@ -50,6 +50,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
+#define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
 #define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180°, and 5-way switch
@@ -69,6 +70,7 @@ In rx-hal files:
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
 #define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
+#define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
@@ -224,7 +226,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
 #else
   #define USE_SERIAL
-  #ifdef DEBUG_ENABLED
+  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
     #define USE_DEBUG
   #endif
 #endif
@@ -237,7 +239,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #ifdef DEVICE_HAS_SERIAL_ON_USB
     #define USE_USB
   #endif
-  #ifdef DEBUG_ENABLED
+  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
     #define USE_DEBUG
   #endif
 #else
@@ -253,7 +255,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
       #define USE_USB
     #endif
   #endif
-  #ifdef DEBUG_ENABLED
+  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
     #define USE_DEBUG
   #endif
 #endif

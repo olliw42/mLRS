@@ -122,21 +122,21 @@ Ready-to-flash firmware can be found in the "firmware" folder. All you need to d
 
 ## Software: Installation Bits and Bops ##
 
-This is a STM32CubeIDE project. I don't have much experience with this framework, and it seems it is not ideal for shared projects. This procedure should work:
+This is a STM32CubeIDE project. Unfortunately, STM32CubeIDE is not ideal for shared projects. This procedure should work:
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
-1. Clone and setup the project files
+**1. Clone and setup the project files**
 - open a command line processor
 - cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
 - `git clone https://github.com/olliw42/mLRS.git mlrs`
 - `cd mlrs`
-- run `run_setup.py`. This does two steps: initializes submodules, and generates mavlink library files.
+- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: Ensure that all three steps are executed completely.
 
-For cloning you of course can use any other tool you like, but ensure that the submodules are also retrieved (git submodule --init --recursive).
+For cloning you of course can use any other tool you like.
 
-2. STM32CubeIDE
-- download and install STM32CubeIDE
+**2. STM32CubeIDE**
+- download and install STM32CubeIDE. ***Note***: Install into the default folder if possible.
 - start STM32CubeIDE
 - in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button. ***Note***: it is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
 - in the IDE's top bar go to `File->Open Projects from File System`
@@ -154,7 +154,7 @@ In case of issues with this procedure, don't hesitate to join the discussion thr
 
 #### Dependencies ####
 
-You need to have git and Python3 installed (depending on the Python3 distribution you may need to install further libraries).
+You need to have git and Python3 installed. Depending on the Python3 distribution you may need to install further libraries.
 
 ## Further Documentation ##
 

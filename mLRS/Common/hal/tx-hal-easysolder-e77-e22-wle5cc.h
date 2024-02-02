@@ -19,15 +19,13 @@
 
 //#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
-#define DEVICE_HAS_SERIAL_OR_COM
+#define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 
 
 #ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
   #define DEVICE_HAS_JRPIN5
-  #undef DEVICE_HAS_IN
   #undef DEVICE_HAS_IN_ON_JRPIN5_TX
 #endif
 #ifdef MLRS_FEATURE_DIVERSITY
@@ -59,7 +57,7 @@
 // UARTF = --
 // SWUART= debug port
 
-#define UARTB_USE_UART1_REMAPPED // serial // PB6,PB7
+#define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -67,7 +65,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_REMAPPED // com USB/CLI // PB6,PB7
+#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -75,7 +73,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2 // JR pin5, MBridge // PA2
+#define UART_USE_UART2_PA2PA3 // JR pin5, MBridge // PA2
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -89,13 +87,15 @@
 #define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL // requires external diode from Tx to Rx
 #endif
 
-#define UARTE_USE_UART2 // in port
+/*
+#define UARTE_USE_UART2_PA2PA3 // in port
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
+*/
 
 #define SWUART_USE_TIM17 // debug
 #define SWUART_TX_IO              IO_PA9 // STx pad on board

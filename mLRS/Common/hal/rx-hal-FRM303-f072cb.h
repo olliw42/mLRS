@@ -17,11 +17,8 @@
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
 
 
 // -- IRQ priorities
@@ -75,7 +72,7 @@ static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART2 // serial
+#define UARTB_USE_UART2_PA2PA3 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -83,7 +80,7 @@ static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UART_USE_UART1 // out pin
+#define UART_USE_UART1_PA9PA10 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256

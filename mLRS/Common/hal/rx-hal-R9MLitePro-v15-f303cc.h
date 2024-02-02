@@ -12,10 +12,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -40,7 +37,7 @@
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART2 // serial PA2/PA3
+#define UARTB_USE_UART2_PA2PA3 // serial PA2/PA3
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
@@ -49,9 +46,7 @@
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 #define UARTB_INVERTED
 
-#define UART_USE_UART3 // out pin PB10
-#define UART_USE_TX_IO            IO_PB10
-#define UART_USE_IO_AF            IO_AF_7
+#define UART_USE_UART3_PB10PB11 // out pin PB10
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256
@@ -61,7 +56,7 @@
 #define OUT_UARTx                 USART3 // UART_UARTx is not known yet, so define by hand
 
 /*
-#define UARTC_USE_UART2 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
+#define UARTC_USE_UART2_PA2PA3 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           512

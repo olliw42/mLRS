@@ -30,6 +30,7 @@ On the right side a selection of compatible parts will be shown, which differ by
 - STM32G431KBUx, STM32G441KBUx, STM32G431CBUx, STM32G491RETx
 - STM32WLE5CCUx, STM32WLE5JCIx
 - STM32F072CBTx
+- STM32F303CCTx
 
 Then hit "Next".
 
@@ -65,6 +66,10 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
   - -> System Core -> SYS -> check "Debug Serial Wire"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
 
+- STM32F303 parts
+  - -> System Core -> SYS -> check "Debug Serial Wire"
+  - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
+
 ### 5. Clock Configuration
 
 - STM32F1 parts
@@ -86,6 +91,11 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
   - -> Input frequency: enter 8
   - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
   - -> HCLK (Mhz): enter 48 (corresponds to PREDiv = /1, VCOInput = 8, PLLMul = x6)
+
+- STM32F303 parts
+  - -> Input frequency: enter 12
+  - -> select check buttons such that HSE & PLLCLK is selected for SYSCLK
+  - -> HCLK (Mhz): enter 72 (corresponds to PLLMul = x6)
 
 You may have to do this a couple of times, or need to manually help with entering specific values in the PLL block.
 

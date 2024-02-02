@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 19.10.2023
+ version 28.01.2024
 ********************************************************
 '''
 import os
@@ -29,50 +29,67 @@ def findSTM32CubeIDEGnuTools(search_root):
     st_dir = ''
     st_cubeide_dir = ''
     st_cubeide_ver_nr = 0
-    for file in os.listdir(search_root):
-        if 'stm32cubeide' in file.lower(): # makes it work on both win and linux
-            if '_' in file:
-                ver = file[13:].split('.')
-                ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
-                if ver_nr > st_cubeide_ver_nr:
-                    st_cubeide_ver_nr = ver_nr
+    try:
+        for file in os.listdir(search_root):
+            if 'stm32cubeide' in file.lower(): # makes it work on both win and linux
+                if '_' in file:
+                    ver = file[13:].split('.')
+                    ver_nr = int(ver[0])*10000 + int(ver[1])*100 + int(ver[2])
+                    if ver_nr > st_cubeide_ver_nr:
+                        st_cubeide_ver_nr = ver_nr
+                        st_cubeide_dir = file
+                else:
                     st_cubeide_dir = file
-            else:
-                st_cubeide_dir = file
-                st_cubeide_ver_nr = 0
+                    st_cubeide_ver_nr = 0
+    except:
+        print(search_root,'not found!')
+        return '', ''
     if st_cubeide_dir != '':
         if os.name == 'posix': # install paths are os dependent
             st_dir = os.path.join(search_root,st_cubeide_dir,'plugins')
         else:
             st_dir = os.path.join(search_root,st_cubeide_dir,'stm32cubeide','plugins')
+    else:
+        print('STM32CubeIDE not found!')
+        return '', ''
 
     gnu_dir = ''
     gnu_dir_os_name = 'win32'
     if os.name == 'posix': # install paths are os dependent
         gnu_dir_os_name = 'linux'
     ver_nr = 0
-    for dirpath in os.listdir(st_dir):
-        if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and gnu_dir_os_name in dirpath:
-            # the string after the last . contains a datum plus some other number
-            ver = int(dirpath[dirpath.rindex('.')+1:])
-            if ver > ver_nr:
-                ver_nr = ver
-                gnu_dir = dirpath
+    try:
+        for dirpath in os.listdir(st_dir):
+            if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and gnu_dir_os_name in dirpath:
+                # the string after the last . contains a datum plus some other number
+                ver = int(dirpath[dirpath.rindex('.')+1:])
+                if ver > ver_nr:
+                    ver_nr = ver
+                    gnu_dir = dirpath
+    except:
+        print('STM32CubeIDE not found!')
+        return '', ''
 
     return st_dir, gnu_dir
 
-if os.name == 'posix': # install paths are os dependent
-    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("/opt",'st'))
-else:
-    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(os.path.join("C:/",'ST'))
 
-if not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
-    printError('ERROR: gnu-tools not found!')
-    exit(1)
+ST_DIR,GNU_DIR = '', ''
 
-print('STM32CubeIDE found in:', ST_DIR)
-print('gnu-tools found in:', GNU_DIR)
-print('------------------------------------------------------------')
+# do this only when called fomr main context
+if __name__ == "__main__":
+    st_root = os.path.join("C:/",'ST')
+    if os.name == 'posix': # install paths are os dependent
+        st_root = os.path.join("/opt",'st')
+
+    ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(st_root)
+
+    if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+        print('ERROR: gnu-tools not found!')
+        exit(1)
+
+    print('STM32CubeIDE found in:', ST_DIR)
+    print('gnu-tools found in:', GNU_DIR)
+    print('------------------------------------------------------------')
 
 
 #-- GCC preliminaries
@@ -128,13 +145,13 @@ def mlrs_set_branch_hash(version_str):
     global BRANCHSTR
     global HASHSTR
     import subprocess
-    
+
     git_branch = subprocess.getoutput("git branch --show-current")
     if not git_branch == 'main':
         BRANCHSTR = '-'+git_branch
     if BRANCHSTR != '':
         print('BRANCHSTR =', BRANCHSTR)
-        
+
     git_hash = subprocess.getoutput("git rev-parse --short HEAD")
     v_patch = int(version_str.split('.')[2])
     if v_patch % 2 == 1: # odd firmware patch version, so is dev, so add git hash
@@ -834,7 +851,7 @@ class cTargetF103C8(cTargetF1):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'tx'
         super().__init__(
-            target, target_D, 
+            target, target_D,
             'STM32F103xB', 'startup_stm32f103c8'+package.lower()+'.s', 'STM32F103C8'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
@@ -842,7 +859,7 @@ class cTargetF103CB(cTargetF1):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'tx'
         super().__init__(
-            target, target_D, 
+            target, target_D,
             'STM32F103xB', 'startup_stm32f103cb'+package.lower()+'.s', 'STM32F103CB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
@@ -850,7 +867,7 @@ class cTargetF103RB(cTargetF1):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'hx'
         super().__init__(
-            target, target_D, 
+            target, target_D,
             'STM32F103xB', 'startup_stm32f103rb'+package.lower()+'.s', 'STM32F103RB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
@@ -859,7 +876,7 @@ class cTargetG431KB(cTargetG4):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'ux'
         super().__init__(
-            target, target_D, 
+            target, target_D,
             'STM32G431xx', 'startup_stm32g431kb'+package.lower()+'.s', 'STM32G431KB'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
@@ -925,7 +942,7 @@ class cTargetF303CC(cTargetF3):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'tx'
         super().__init__(
-            target, target_D, 
+            target, target_D,
             'STM32F303xC', 'startup_stm32f303cc'+package.lower()+'.s', 'STM32F303CC'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
@@ -1171,7 +1188,7 @@ if __name__ == "__main__":
     if cmdline_version == '':
         mlrs_set_version()
         mlrs_set_branch_hash(VERSIONONLYSTR)
-    else:    
+    else:
         VERSIONONLYSTR = cmdline_version
 
     create_clean_dir(MLRS_BUILD_DIR)

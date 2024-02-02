@@ -15,10 +15,7 @@
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED // board has no dbg pin
-#endif
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -41,7 +38,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = -
 
-#define UARTB_USE_UART1 // serial
+#define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -49,7 +46,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_LPUART1 // com USB/CLI
+#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -57,7 +54,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_REMAPPED2 // JR pin5, MBridge
+#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
