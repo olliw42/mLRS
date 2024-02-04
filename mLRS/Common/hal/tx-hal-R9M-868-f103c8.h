@@ -15,9 +15,10 @@
 // many THX to the ExpressLRS project !
 // note: these sources are not always correct in features ELRS doesn't use and not complete for what we need
 
-//#define DEVICE_HAS_IN_INVERTED // we use this uart for debug, technically we could use it for both In (=U2RX) and Debug (=U2TX)
+#define DEVICE_HAS_IN_INVERTED
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
+#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
 
@@ -61,13 +62,20 @@
 #define JRPIN5_TX_OE_DISABLED     gpio_low(JRPIN5_TX_OE)
 #define JRPIN5_TX_OE_ENABLED      gpio_high(JRPIN5_TX_OE)
 
-#define UARTF_USE_UART2_PA2PA3 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
-#define UARTF_BAUD                115200
-#define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
-#define UARTF_USE_TX_ISR
-//#define UARTF_USE_RX
-//#define UARTF_RXBUFSIZE           512
+#define UARTE_USE_UART2_PA2PA3 // in port // PA3
+#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
+//#define UARTE_USE_TX
+//#define UARTE_TXBUFSIZE           512
+//#define UARTE_USE_TX_ISR
+#define UARTE_USE_RX
+#define UARTE_RXBUFSIZE           512
+
+#define SWUART_USE_TIM4 // debug
+#define SWUART_TX_IO              IO_PA2
+#define SWUART_BAUD               115200
+#define SWUART_USE_TX
+#define SWUART_TXBUFSIZE          512
+//#define SWUART_TIM_IRQ_PRIORITY   9
 
 
 //-- SX1: SX12xx & SPI
