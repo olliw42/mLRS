@@ -67,7 +67,7 @@
 #define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
 
 #define SWUART_USE_TIM17 // debug
-#define SWUART_TX_IO              IO_PA9
+#define SWUART_TX_IO              IO_PA9 // STx pad on board
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512

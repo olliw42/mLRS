@@ -197,19 +197,19 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
-#include "rx-hal-easysolder-e77-e28-dualband-wle5cc.h"
-#else
 #include "rx-hal-easysolder-e77-e22-wle5cc.h"
-#endif
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
-#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
-#else
 #include "tx-hal-easysolder-e77-e22-wle5cc.h"
 #endif
+
+#ifdef RX_DIY_E77_E28_DUALBAND_WLE5CC
+#include "rx-hal-easysolder-e77-e28-dualband-wle5cc.h"
+#endif
+
+#ifdef TX_DIY_E77_E28_DUALBAND_WLE5CC
+#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 

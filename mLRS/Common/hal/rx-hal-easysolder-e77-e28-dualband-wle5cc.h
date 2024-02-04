@@ -37,7 +37,7 @@
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART1_REMAPPED // serial // PB6,PB7
+#define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
@@ -45,16 +45,17 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
-#define UART_USE_UART2 // out pin // PA2
+#define UART_USE_UART2_PA2PA3 // out pin // PA2
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+#define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
 
 #define SWUART_USE_TIM17 // debug
-#define SWUART_TX_IO              IO_PA9
+#define SWUART_TX_IO              IO_PA9 // STx pad on board
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
@@ -62,7 +63,7 @@
 
 
 //-- SX12xx & SPI
-#if !defined DEVICE_HAS_SX128x
+#if !defined DEVICE_HAS_SX128x // this is to allow using this board with only the E28, for testing
 
 #define SPI_USE_SUBGHZSPI
 #define SPI_USE_CLOCKSPEED_12MHZ
@@ -284,12 +285,6 @@ void sx2_dio_exti_isr_clearflag(void)
 
 
 //-- Out port
-#ifdef UART_USE_UART2
-  #define OUT_UARTx               USART2
-#elif defined UART_USE_LPUART1
-  #define OUT_UARTx               LPUART1
-#endif
-
 
 void out_init_gpio(void)
 {

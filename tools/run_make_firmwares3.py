@@ -1103,6 +1103,16 @@ TLIST = [
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
         'appendix' : '-400-sdiode'
+    },{
+
+#-- easytosolder E77 E28 dualband
+        'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : ''
+    },{
+        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : ''
 
     }
     ]
