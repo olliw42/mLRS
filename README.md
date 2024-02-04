@@ -1,3 +1,11 @@
+This is the dual-band branch of mLRS. 
+
+It is experimental. It works well on the bench and the author has also test flown it without issues. It is experimental however since it hasn't seen yet as wide use as it should have seen in order to ensure that all little issues and edge cases have been all weeded out.
+
+The two targets it is supposed to be used with are 'rx-easy-solder-E77-E22-dual-wle5cc' and 'tx-easy-solder-E77-E22-dual-wle5cc'. For these two targets the binaries are included, for other targets you need to compile the code yourself. 
+
+Pl ask in the Discord channel for help and advice if needed. 
+
 # mLRS #
 
 The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides transparent bidirectional serial connection combined with full remote control.
