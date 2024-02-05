@@ -2,9 +2,9 @@ This is the dual-band branch of mLRS.
 
 It is experimental. It works well on the bench and the author has also test flown it without issues. It is experimental however since it hasn't seen yet as wide use as it should have seen in order to ensure that all little issues and edge cases have been all weeded out.
 
-The two targets it is supposed to be used with are 'rx-easy-solder-E77-E22-dual-wle5cc' and 'tx-easy-solder-E77-E22-dual-wle5cc'. For these two targets the binaries are included, for other targets you need to compile the code yourself. 
+The two targets it is supposed to be used with are 'rx-easysolder-E77-E28-dualband-wle5cc' and 'tx-easysolder-E77-E28-dualband-wle5cc'. For these two targets the binaries are included, for other targets you need to compile the code yourself. The two suggested targets are for dual-band operation in the 868/915 MHz and 2.4 GHz bands. Suitable diy hardware can be found [here](https://github.com/olliw42/mLRS-hardware/tree/master/olliw-stm32-based/rx-tx-E77-E28-dualband-easysolder).
 
-Pl ask in the Discord channel for help and advice if needed. 
+Please ask in the Discord channel for help and advice if needed. 
 
 # mLRS #
 
