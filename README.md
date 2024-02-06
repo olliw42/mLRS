@@ -29,7 +29,7 @@ The project is work in progress, as there is still plenty of room for ideas and 
 
 The essential features, however, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (fromerly MAVLink for OpenTx) project, which yields a most fluid user experience.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (formerly MAVLink for OpenTx) project, which yields a most fluid user experience.
 
 It supports the SX1280/1, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
@@ -40,7 +40,7 @@ It provides 16 RC channels with the following layout (layout is equal in all ope
 
 It provides these operation modes:
 
-| property \ mode | 50 Hz | 31 Hz | 19 Hz | FLRC (111 Hz) | FSK (50 Hz) |
+|  | 50 Hz | 31 Hz | 19 Hz | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- |
 | frequency bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
 | chip sets | SX128x | SX126x/LLCC68 | SX128x, SX126x/LLCC68, SX1276 | SX128x | SX126x/LLCC68 |
@@ -81,8 +81,8 @@ Further features:
 - 10 model configurations stored in the mLRS transmitter, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles!).
 - optimizations for ArduPilot and PX4 autopilot systems.
-- technologies introduced by mLRS (call em mLRS technology):
-    - innovative flow control methodology for smoother and more robustdata flow 
+- technologies introduced by mLRS:
+    - innovative flow control for smoother and more robust data flow 
     - MavlinkX for reduced packet loss and data compression
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
