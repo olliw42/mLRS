@@ -6,16 +6,16 @@ The 'm' in the project name alludes to 'Mavlink', as it will have features which
 
 Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
 
-Many LRS or radio links with telemetry exist, among them open source projects such as SiK radios, OpenLRS, ExpressLRS, but also befinitiv wifibroadcast based projects like OpenHD or Ruby, closed source hobbyist projects such as UltimateLRS, QczekLRS, as well as commercial systems such as DragonLink, RFD900, Dronee Zoon, Siyi, but also TBS Crossfire and alike.
+Many LRS or radio links with telemetry exist, among them open source projects such as SiK radios, OpenLRS, ExpressLRS, but also befinitiv wifibroadcast based projects like OpenHD or Ruby, closed source hobbyist projects such as UltimateLRS, QczekLRS, as well as commercial systems such as DragonLink, RFD900, Dronee Zoon, Siyi, and also TBS Crossfire and alike.
 
-However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them checks all points, like 
+However, while all these systems are truely excellent and achieve their goals, and some of them are indeed close to what the project aims at, none of them checks all boxes, like 
 - relatively cheap
 - 2.4 GHz, 915/868 MHz, 433 MHz/70 cm
 - LoRa
 - full-duplex serial link with sufficient data rate
 - plenty full-size RC channels
 - open source
-- rich features for Mavlink systems
+- rich features and outstanding performance for Mavlink systems
 
 The mLRS project fills this gap.
 
@@ -25,13 +25,13 @@ You of course use the project fully at your own risk.
 
 ## Project Status ##
 
-The project is work in progress, and there is still plenty of room for ideas and improvement.
+The project is work in progress, as there is still plenty of room for ideas and improvement.
 
 The essential features, however, i.e., the RC link and the serial (MAVLink) data link, are stable and robust, and perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the MAVLink for OpenTx project, which yields a most fluid user experience.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (fromerly MAVLink for OpenTx) project, which yields a most fluid user experience.
 
-It supports the SX1280, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
+It supports the SX1280/1, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
 It provides 16 RC channels with the following layout (layout is equal in all operation modes):
 - CH1 - CH8: 8 channels with 11 bit resolution (CH1 - CH4 have a higher reliability margin)
@@ -39,6 +39,15 @@ It provides 16 RC channels with the following layout (layout is equal in all ope
 - CH13 - CH16: 4 channels with three steps (CH13, CH14 have a higher reliability margin) 
 
 It provides these operation modes:
+
+| property \ mode | 50 Hz | 31 Hz | 19 Hz | FLRC (111 Hz) | FSK (50 Hz) |
+| --- | --- | --- | --- | --- | --- |
+| frequency bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
+| chip sets | SX128x | SX126x/LLCC68 | SX128x, SX126x/LLCC68, SX1276 | SX128x | SX126x/LLCC68 |
+| downlink serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
+| uplink serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
+| receiver sensitivity | -105 dBm | -108 dBm | -112 dBm | not for LR | not for LR |
+<!--
 - 50 Hz Mode<br>
   frequency bands: 2.4 GHz (SX1280 chip)<br>
   uplink serial rate: 3200 Bytes/sec<br>
@@ -62,7 +71,7 @@ It provides these operation modes:
   frequency bands: 915/868 MHz, 433 MHz/70 cm (SX1262/LLCC68 chips)<br>
   uplink serial rate: 3200 Bytes/sec<br>
   downlink serial rate: 4100 Bytes/sec
-
+-->
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
 - the receiver parameters can be set from the mLRS transmitter or radio; no need to mess with the receiver in any way.
@@ -70,11 +79,14 @@ Further features:
 - bind mode for binding "unknown" receivers to a transmitter.
 - the mLRS system can be configured through the parameters for a wide range of applications and use cases. For a pictoral representation of some typical examples see [mLRS Setup examples](https://www.rcgroups.com/forums/showpost.php?p=48821735&postcount=332), and for more details [Documentation](https://github.com/olliw42/mLRS-docu).
 - 10 model configurations stored in the mLRS transmitter, selected by "Receiver" number in OpenTx/EdgeTx radios.  
-- support of CRSF and ArduPilot Passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles anymore!).
+- support of CRSF and ArduPilot passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles!).
+- optimizations for ArduPilot and PX4 autopilot systems.
+- technologies introduced by mLRS (call em mLRS technology):
+    - innovative flow control methodology for smoother and more robustdata flow 
+    - MavlinkX for reduced packet loss and data compression
+- "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 modules for wireless connection to a ground control station.
-- optimizations for ArduPilot and PX4 systems.
-- advanced features like innovative flow control, "except" and "ortho" features, MavlinkX for reduced packet loss and data compression. Call them mLRS technology.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32WLE5, Wio-E5, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
 
 ## Community ##
