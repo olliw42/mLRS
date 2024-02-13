@@ -434,36 +434,35 @@ uint8_t rssi, remrssi, txbuf, noise;
 sx_serial:
 
   serial   o --\
-  serial2  o -- o <====> sx_serial
+  serial2  o -- o <====> o  sx_serial
   mbridge  o --/
   mavlink  o --/
 
-    ---> sx_serial.available()  transmit ~~~~~~>
+    ---> sx_serial.available() ---> transmit ~~~>
          sx_serial.putc()
 
-    <--- sx_serial.getc()       receive <~~~~~~~
-
-mavlink (wo router):
-
-  serial   o --\
-  serial2  o -- o <=== Do ====>
-  mbridge  o --/
-
-    Do:
-    serialport->available()  ---> parse&check (---> X) --->  fifo_link_out.PutBuf()
-    serialport->getc()            buf_serial_in
-                                  status_serial_in
-
-    ---> available(): fifo_link_out.Available() ---> transmit
-         getc():      fifo_link_out.Get()
-
-    <--- serialport->putbuf()  <--- parse&check(X) <--- putc() <--- receive
-                                    buf_link_in
-                                    status_link_in
-
-mavlink (w router):
+    <--- sx_serial.getc()      <--- receive <~~~
 
 
+mavlink (without router):
 
+  serial   o --\                     sx_serial
+  serial2  o -- o <=============> o
+  mbridge  o --/      mavlink        available()  ~~transmit~~>
+                                     getc()
 
+                                     putc()       <~~receive~~
+  Do:
+    serialport->available()  --->  parse&check  --->  msg_to_buf(X)
+    serialport->getc()             buf_serial_in      fifo_link_out.PutBuf()
+                                   status_serial_in
+
+  read serialport, send fifo_link_in:
+    available():  fifo_link_out.Available()
+    getc()        fifo_link_out.Get()
+
+  read link, send serialport:
+    putc():       parse&check(X)  --->  but_to_msg(), msgtobuf(), serialport->putbuf()
+                  buf_link_in
+                  status_link_in
 */
