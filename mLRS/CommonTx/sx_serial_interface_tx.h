@@ -11,9 +11,6 @@
 #pragma once
 
 
-tSerialBase* serialport = nullptr; // currently still needed by MavlinkBase class
-
-
 class tTxSxSerial : public tSerialBase
 {
   public:
@@ -34,6 +31,7 @@ class tTxSxSerial : public tSerialBase
         default:
             while (1) {} // must not happen
         }
+        if (!serialport) while (1) {} // must not happen
     }
 
     bool IsEnabled(void)
@@ -44,6 +42,7 @@ class tTxSxSerial : public tSerialBase
     virtual bool available(void)
     {
         if (!connected_and_rx_setup_available()) return 0;
+
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
             return mavlink.available(); // get from serial via mavlink parser
         }
@@ -53,10 +52,22 @@ class tTxSxSerial : public tSerialBase
     virtual char getc(void)
     {
         if (!connected_and_rx_setup_available()) return 0;
+
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
             return mavlink.getc(); // get from serial via mavlink parser
         }
         return serialport->getc(); // get from serial
+    }
+
+    virtual void putc(char c)
+    {
+        if (!connected_and_rx_setup_available()) return;
+
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
+            mavlink.putc(c);
+            return;
+        }
+        serialport->putc(c);
     }
 
     virtual void flush(void)
@@ -65,15 +76,8 @@ class tTxSxSerial : public tSerialBase
         serialport->flush();
     }
 
-    virtual void putc(char c)
-    {
-        if (!connected_and_rx_setup_available()) return;
-        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
-            mavlink.putc(c);
-            return;
-        }
-        serialport->putc(c);
-    }
+  private:
+    tSerialBase* serialport;
 };
 
 

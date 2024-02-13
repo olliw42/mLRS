@@ -662,7 +662,7 @@ RESTARTCONTROLLER:
   tdiversity.Init(Config.frame_rate_ms);
 
   in.Configure(Setup.Tx[Config.ConfigId].InMode);
-  mavlink.Init();
+  mavlink.Init(&serial, &mbridge, &serial2);
   sx_serial.Init(&serial, &mbridge, &serial2);
   fan.SetPower(sx.RfPower_dbm());
   whileTransmit.Init();
