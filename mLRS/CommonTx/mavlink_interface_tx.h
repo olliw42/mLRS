@@ -49,7 +49,6 @@ class MavlinkBase
 
     // fields for link in -> parser -> serial out
     fmav_status_t status_link_in;
-    fmav_result_t result_link_in;
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding
@@ -57,7 +56,6 @@ class MavlinkBase
     // fields for serial in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
     fmav_status_t status_serial_in;
-    fmav_result_t result_serial_in;
     uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
     fmav_message_t msg_link_out; // could be avoided by more efficient coding
     FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
@@ -80,7 +78,6 @@ void MavlinkBase::Init(void)
 {
     fmav_init();
 
-    result_link_in = {};
     status_link_in = {};
     status_serial_out = {};
 
@@ -88,7 +85,6 @@ void MavlinkBase::Init(void)
     fmavX_init();
     fmavX_config_compression((Config.Mode == MODE_19HZ) ? 1 : 0); // use compression only in 19 Hz mode
 
-    result_serial_in = {};
     status_serial_in = {};
     fifo_link_out.Init();
 #endif
@@ -118,12 +114,14 @@ void MavlinkBase::Do(void)
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
-    // parse serial in -> link out
+    // parse serialport in -> link out
 #ifdef USE_FEATURE_MAVLINKX
+    fmav_result_t result;
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (serialport->available()) {
             char c = serialport->getc();
-            if (fmav_parse_and_check_to_frame_buf(&result_serial_in, buf_serial_in, &status_serial_in, c)) {
+            fmav_parse_and_check_to_frame_buf(&result, buf_serialport_in, &status_serialport_in, c);
+            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
 
                 // TODO: this could be be done more efficiently by not going via msg_link_out
                 // but by directly going buf_serial_in -> _buf
@@ -180,18 +178,18 @@ void MavlinkBase::FrameLost(void)
 void MavlinkBase::putc(char c)
 {
     // parse link in -> serial out
+    fmav_result_t result;
 #ifdef USE_FEATURE_MAVLINKX
-    uint8_t res;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        res = fmavX_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+        fmavX_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
     } else {
-        res = fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c);
+        fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
     }
-    if (res) {
 #else
-    if (fmav_parse_and_check_to_frame_buf(&result_link_in, buf_link_in, &status_link_in, c)) {
+    fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
 #endif
-        fmav_frame_buf_to_msg(&msg_serial_out, &result_link_in, buf_link_in);
+    if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+        fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
 
         send_msg_serial_out();
 
