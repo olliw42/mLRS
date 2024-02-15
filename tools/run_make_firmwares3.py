@@ -440,25 +440,25 @@ MLRS_SOURCES_MODULES = [
     ]
 
 MLRS_SOURCES_COMMON = [
+    os.path.join('Common','thirdparty','gdisp.c'),
     os.path.join('Common','thirdparty','thirdparty.cpp'),
     os.path.join('Common','libs','filters.cpp'),
-    os.path.join('Common','libs','gdisp.c'),
     os.path.join('Common','channel_order.cpp'),
     os.path.join('Common','common_types.cpp'),
-    os.path.join('Common','fhss.cpp'),
-    os.path.join('Common','while.cpp'),
-    os.path.join('Common','link_types.cpp'),
     os.path.join('Common','diversity.cpp'),
+    os.path.join('Common','fhss.cpp'),
+    os.path.join('Common','link_types.cpp'),
+    os.path.join('Common','while.cpp'),
     ]
 
 MLRS_SOURCES_RX = [
-    os.path.join('CommonRx','out.cpp'),
     os.path.join('CommonRx','mlrs-rx.cpp'),
+    os.path.join('CommonRx','out.cpp'),
     ]
 
 MLRS_SOURCES_TX = [
-    os.path.join('CommonTx','in.cpp'),
     os.path.join('CommonTx','config_id.cpp'),
+    os.path.join('CommonTx','in.cpp'),
     os.path.join('CommonTx','mlrs-tx.cpp'),
     ]
 

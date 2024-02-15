@@ -14,7 +14,7 @@
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/libs/filters.h"
 #ifdef USE_FEATURE_MAVLINKX
-#include "../Common/thirdparty/fmav_mavlinkx.h"
+#include "../Common/thirdparty/mavlinkx.h"
 #include "../Common/libs/fifo.h"
 #endif
 

@@ -33,7 +33,7 @@ class tTxDisp
 #include "../Common/thirdparty/gfxfont.h"
 #include "../Common/thirdparty/gfxfontFreeMono12pt7b.h"
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
-#include "../Common/libs/gdisp.h"
+#include "../Common/thirdparty/gdisp.h"
 
 
 extern tGDisplay gdisp;
