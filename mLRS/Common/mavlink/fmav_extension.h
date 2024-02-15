@@ -39,7 +39,6 @@ typedef struct
 {
     uint8_t sys_id;
     uint8_t comp_id;
-    uint8_t seq_last;
 } tComponent;
 
 
@@ -102,23 +101,6 @@ class ComponentList
         buf[i].element.seq_last = seq;
         buf[i].empty = true;
         return i;
-    }
-
-    uint8_t GetSeq(uint8_t i)
-    {
-      if (i >= LIST_SIZE) return 0; // just to play it safe, must not happen
-      if (buf[i].empty) return 0;
-
-      return buf[i].element.seq_last;
-    }
-
-    bool SetSeq(uint8_t i, uint8_t seq)
-    {
-        if (i >= LIST_SIZE) return false;
-        if (buf[i].empty) return false;
-
-        buf[i].element.seq_last = seq;
-        return true;
     }
 
     typedef struct {
