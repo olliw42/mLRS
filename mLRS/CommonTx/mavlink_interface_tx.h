@@ -14,7 +14,7 @@
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/protocols/ardupilot_protocol.h"
 #ifdef USE_FEATURE_MAVLINKX
-#include "../Common/thirdparty/fmav_mavlinkx.h"
+#include "../Common/thirdparty/mavlinkx.h"
 #include "../Common/libs/fifo.h"
 #define FASTMAVLINK_ROUTER_LINKS_MAX  4
 #define FASTMAVLINK_ROUTER_COMPONENTS_MAX  12
