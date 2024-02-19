@@ -629,13 +629,13 @@ RESTARTCONTROLLER:
   if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
   IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
+  IF_SX2(sx2.StartUp(&Config.Sx2));
   bind.Init();
-  fhss.Init(&Config.Fhss);
+  fhss.Init(&Config.Fhss, &Config.Fhss2);
   fhss.Start();
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+  sx.SetRfFrequency(fhss.GetCurrFreq1());
+  sx2.SetRfFrequency(fhss.GetCurrFreq2());
 
   tx_tick = 0;
   doPreTransmit = false;
@@ -748,8 +748,8 @@ RESTARTCONTROLLER:
 
     case LINK_STATE_TRANSMIT:
         fhss.HopToNext();
-        sx.SetRfFrequency(fhss.GetCurrFreq());
-        sx2.SetRfFrequency(fhss.GetCurrFreq());
+        sx.SetRfFrequency(fhss.GetCurrFreq1());
+        sx2.SetRfFrequency(fhss.GetCurrFreq2());
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
