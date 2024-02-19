@@ -46,3 +46,10 @@ mLRS/*/Drivers/STM32_USB_Device_Library/*
 *.exe
 *.out
 *.app
+
+# Platformio
+mLRS/.pio
+mLRS/.vscode/.browse.c_cpp.db*
+mLRS/.vscode/c_cpp_properties.json
+mLRS/.vscode/launch.json
+mLRS/.vscode/ipch
