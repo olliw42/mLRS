@@ -65,7 +65,7 @@ volatile uint32_t millis32(void)
 #endif
 
 
-// is always uartb
+// is always uartb (or usb)
 class tSerialPort : public tSerialBase
 {
 #ifdef USE_SERIAL
@@ -113,7 +113,7 @@ class tDebugPort : public tSerialBase
 };
 
 
-// is uartc or uartb
+// is uartc or uartb (or usb)
 class tComPort : public tSerialBase
 {
 #ifdef USE_COM_ON_SERIAL
@@ -170,8 +170,11 @@ class tSerial2Port : public tSerialBase
 //-------------------------------------------------------
 
 tSerialPort serial;
-tSerial2Port serial2;
 tDebugPort dbg;
+#ifdef DEVICE_IS_TRANSMITTER
+tSerial2Port serial2;
+tComPort comport;
+#endif
 
 tRcData rcData;
 

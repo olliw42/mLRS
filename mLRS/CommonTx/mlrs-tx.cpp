@@ -85,7 +85,6 @@ v0.0.00:
 
 
 TxStatsBase txstats;
-tComPort com;
 tTxCli cli;
 ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
@@ -198,13 +197,6 @@ void enter_system_bootloader(void)
 }
 
 
-void enter_flash_esp(void)
-{
-    disp.DrawFlashEsp();
-    flashesp_do(&com);
-}
-
-
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
@@ -212,7 +204,8 @@ void enter_flash_esp(void)
 void init_once(void)
 {
     serial.InitOnce();
-    com.InitOnce();
+    comport.InitOnce();
+    serial2.InitOnce();
 }
 
 
@@ -233,10 +226,8 @@ void init(void)
 
     serial.Init();
     serial2.Init();
+    comport.Init();
 
-    com.Init();
-    cli.Init(&com);
-    esp.Init(&com, &serial2);
     buzzer.Init();
     fan.Init();
     dbg.Init();
@@ -662,11 +653,16 @@ RESTARTCONTROLLER:
   tdiversity.Init(Config.frame_rate_ms);
 
   in.Configure(Setup.Tx[Config.ConfigId].InMode);
-  mavlink.Init(&serial, &mbridge, &serial2);
-  sx_serial.Init(&serial, &mbridge, &serial2);
+  mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
+  sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
+  cli.Init(&comport);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+  esp.Init(&comport, &serial);
+#else
+  esp.Init(&comport, &serial2);
+#endif
   fan.SetPower(sx.RfPower_dbm());
   whileTransmit.Init();
-
   disp.Init();
 
   config_id.Init();
@@ -1127,7 +1123,9 @@ IF_IN(
         break;
     case CLI_TASK_BIND: start_bind(); break;
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
-    case CLI_TASK_FLASH_ESP: enter_flash_esp(); break;
+    case CLI_TASK_FLASH_ESP: esp.EnterFlash(); break;
+    case CLI_TASK_ESP_CLI: esp.EnterCli(); break;
+    case CLI_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case CLI_TASK_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     }
 

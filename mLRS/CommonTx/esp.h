@@ -15,9 +15,6 @@
 #include <ctype.h>
 
 
-extern volatile uint32_t millis32(void);
-
-
 //-------------------------------------------------------
 // WEPS WifiBridge class
 //-------------------------------------------------------
@@ -31,68 +28,63 @@ typedef enum {
 } ESP_TASK_ENUM;
 
 
-#if !(defined USE_ESP_WIFI_BRIDGE_DTR_RTS && defined USE_ESP_WIFI_BRIDGE_RST_GPIO0)
-class tTxEspWifiBridge
-{
-  public:
-    void Init(tSerialBase* _com, tSerialBase* _ser) {}
-    void Do(void) {}
-    uint8_t Task(void) { return ESP_TASK_NONE; }
-};
-#else
+#ifndef USE_ESP_WIFI_BRIDGE
 
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _com, tSerialBase* _ser);
+    void Init(tSerialBase* _comport, tSerialBase* _serialport) {}
+    void Do(void) {}
+    uint8_t Task(void) { return ESP_TASK_NONE; }
+
+    void EnterFlash(void) {}
+    void EnterCli(void) {}
+    void EnterPassthrough(void) {}
+};
+
+#else
+
+extern volatile uint32_t millis32(void);
+extern tTxDisp disp;
+
+
+class tTxEspWifiBridge
+{
+  public:
+    void Init(tSerialBase* _comport, tSerialBase* _serialport);
     void Do(void);
     uint8_t Task(void);
 
+    void EnterFlash(void);
+    void EnterCli(void);
+    void EnterPassthrough(void);
+
   private:
+    void passthrough_do_rts_cts(void);
     void passthrough_do(void);
 
     tSerialBase* com;
     tSerialBase* ser;
 
     bool initialized;
+    uint8_t task;
 
     bool passthrough_is_running;
     uint8_t dtr_rts_last;
-    uint8_t task;
 };
 
 
-void tTxEspWifiBridge::Init(tSerialBase* _com, tSerialBase* _ser)
+void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
 {
-    com = _com;
-    ser = _ser;
+    com = _comport;
+    ser = _serialport;
 
     initialized = (com != nullptr && ser != nullptr) ? true : false;
 
+    task = ESP_TASK_NONE;
+
     passthrough_is_running = false;
     dtr_rts_last = 0;
-    task = ESP_TASK_NONE;
-}
-
-
-void tTxEspWifiBridge::Do(void)
-{
-    if (!initialized) return;
-
-    uint8_t dtr_rts = esp_dtr_rts();
-
-    if ((dtr_rts_last == 3) && !(dtr_rts & 0x02)) {
-
-        //dbg.puts("\npst");
-
-        passthrough_do();
-
-        task = ESP_TASK_RESTART_CONTROLLER;
-
-        //dbg.puts("\nend");delay_ms(500);
-    }
-
-    dtr_rts_last = dtr_rts;
 }
 
 
@@ -102,8 +94,32 @@ uint8_t tTxEspWifiBridge::Task(void)
 }
 
 
-void tTxEspWifiBridge::passthrough_do(void)
+void tTxEspWifiBridge::Do(void)
 {
+#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
+    if (!initialized) return;
+
+    uint8_t dtr_rts = esp_dtr_rts();
+
+    if ((dtr_rts_last == 3) && !(dtr_rts & 0x02)) {
+
+        //dbg.puts("\npst");
+
+        passthrough_do_rts_cts();
+
+        task = ESP_TASK_RESTART_CONTROLLER;
+
+        //dbg.puts("\nend");delay_ms(500);
+    }
+
+    dtr_rts_last = dtr_rts;
+#endif
+}
+
+
+void tTxEspWifiBridge::passthrough_do_rts_cts(void)
+{
+#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
     if (!initialized) return;
 
     uint16_t led_blink = 0;
@@ -159,10 +175,86 @@ void tTxEspWifiBridge::passthrough_do(void)
         }
 
     }
+#endif
 }
 
 
-#endif // USE_ESP_WIFI_BRIDGE_DTR_RTS
+// enter esp flashing, can only be exited by re-powering
+void tTxEspWifiBridge::EnterFlash(void)
+{
+    if (!initialized) return;
+
+    disp.DrawNotify("FLASH ESP");
+
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+    esp_reset_low();
+    esp_gpio0_low();
+    delay_ms(100);
+    esp_reset_high();
+    delay_ms(100);
+    esp_gpio0_high();
+    delay_ms(100);
+#endif
+
+    passthrough_do();
+}
+
+
+// enter esp passthrough, can only be exited by re-powering
+void tTxEspWifiBridge::EnterPassthrough(void)
+{
+    if (!initialized) return;
+
+    passthrough_do();
+}
+
+
+// enter esp cli, can only be exited by re-powering
+void tTxEspWifiBridge::EnterCli(void)
+{
+    if (!initialized) return;
+
+    // set GPIO0 to low, but don't do RESET, allows ESP to detect it should go into CLI mode
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+    esp_gpio0_low();
+    delay_ms(100);
+#endif
+
+    passthrough_do();
+}
+
+
+void tTxEspWifiBridge::passthrough_do(void)
+{
+uint16_t led_blink = 0;
+
+    if (!initialized) return;
+
+    ser->SetBaudRate(115200);
+
+    LED_RED_OFF;
+    LED_GREEN_ON;
+
+    while (1) {
+        if (doSysTask) {
+            doSysTask = 0;
+            DECc(led_blink, SYSTICK_DELAY_MS(100));
+            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+        }
+
+        if (com->available()) {
+            char c = com->getc();
+            ser->putc(c);
+        }
+        if (ser->available()) {
+            char c = ser->getc();
+            com->putc(c);
+        }
+    }
+}
+
+
+#endif // USE_ESP_WIFI_BRIDGE
 
 #endif // TX_ESP_H
 

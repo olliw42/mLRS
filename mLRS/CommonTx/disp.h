@@ -23,10 +23,9 @@ class tTxDisp
     void Tick_ms(void) {};
     uint8_t Task(void) { return 0; };
     void DrawBoot(void) {};
-    void DrawFlashEsp(void) {};
 };
-#else
 
+#else
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -480,12 +479,6 @@ void tTxDisp::DrawBoot(void)
 {
     DrawNotify("BOOT");
     delay_ms(250);
-}
-
-
-void tTxDisp::DrawFlashEsp(void)
-{
-    DrawNotify("FLASH ESP");
 }
 
 

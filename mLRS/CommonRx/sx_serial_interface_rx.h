@@ -11,7 +11,6 @@
 #pragma once
 
 
-
 class tRxSxSerial : public tSerialBase
 {
   public:
