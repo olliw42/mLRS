@@ -284,6 +284,13 @@ if (!do_router()) {
 
         // we also want to capture it to extract some info
         handle_msg_serial_out(&msg_serial_out);
+
+#ifdef DEBUG_ENABLED
+// test if _buf = buf_link_in
+uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out); // _buf should be equal buf_link_in !?!
+if (len != result.frame_len) while(1) {}
+for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1) {}
+#endif
     }
 }
 
