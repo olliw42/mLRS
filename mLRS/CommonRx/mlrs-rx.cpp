@@ -72,8 +72,8 @@ v0.0.00:
 
 
 ClockBase clock;
-RxStatsBase rxstats;
 PowerupCounterBase powerup;
+tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 
@@ -88,7 +88,7 @@ void clock_reset(void) { clock.Reset(); }
 
 #include "mavlink_interface_rx.h"
 
-MavlinkBase mavlink;
+tRxMavlink mavlink;
 
 #include "sx_serial_interface_rx.h"
 

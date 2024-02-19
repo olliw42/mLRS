@@ -18,7 +18,7 @@
 
 
 extern volatile uint32_t millis32(void);
-extern TxStatsBase txstats;
+extern tTxStats txstats;
 extern tConfigId config_id;
 
 

@@ -32,7 +32,7 @@ static inline bool connected_and_rx_setup_available(void);
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
 
 
-class MavlinkBase
+class tTxMavlink
 {
   public:
     void Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port);
@@ -83,7 +83,7 @@ class MavlinkBase
 };
 
 
-void MavlinkBase::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port)
+void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port)
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
@@ -133,7 +133,7 @@ void MavlinkBase::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialB
 }
 
 
-uint8_t MavlinkBase::VehicleState(void)
+uint8_t tTxMavlink::VehicleState(void)
 {
     if (vehicle_is_armed == UINT8_MAX) return UINT8_MAX;
     if (vehicle_is_armed == 1 && vehicle_is_flying == 1) return 2;
@@ -141,7 +141,7 @@ uint8_t MavlinkBase::VehicleState(void)
 }
 
 
-void MavlinkBase::FrameLost(void)
+void tTxMavlink::FrameLost(void)
 {
 #ifdef USE_FEATURE_MAVLINKX
     // reset parser link in -> serial out
@@ -150,7 +150,7 @@ void MavlinkBase::FrameLost(void)
 }
 
 
-void MavlinkBase::Do(void)
+void tTxMavlink::Do(void)
 {
     uint32_t tnow_ms = millis32();
     bool inject_radio_status = false;
@@ -242,7 +242,7 @@ if (!do_router()) {
 }
 
 
-void MavlinkBase::putc(char c)
+void tTxMavlink::putc(char c)
 {
     // parse link in -> serial out
     fmav_result_t result;
@@ -288,7 +288,7 @@ if (!do_router()) {
 }
 
 
-void MavlinkBase::send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in)
+void tTxMavlink::send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in)
 {
 #ifdef USE_FEATURE_MAVLINKX
     // we misuse msg_serial_out as temporary message buffer
@@ -307,7 +307,7 @@ void MavlinkBase::send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in)
 }
 
 
-void MavlinkBase::send_msg_serial_out(void)
+void tTxMavlink::send_msg_serial_out(void)
 {
     // TODO: this could be be done more efficiently by not going via msg_serial_out
     // but by generating directly into _buf
@@ -322,7 +322,7 @@ void MavlinkBase::send_msg_serial_out(void)
 }
 
 
-bool MavlinkBase::available(void)
+bool tTxMavlink::available(void)
 {
     if (!ser) return false; // should not happen
 
@@ -334,7 +334,7 @@ bool MavlinkBase::available(void)
 }
 
 
-uint8_t MavlinkBase::getc(void)
+uint8_t tTxMavlink::getc(void)
 {
     if (!ser) return 0; // should not happen
 
@@ -346,7 +346,7 @@ uint8_t MavlinkBase::getc(void)
 }
 
 
-void MavlinkBase::flush(void)
+void tTxMavlink::flush(void)
 {
     if (!ser) return; // should not happen
 
@@ -362,7 +362,7 @@ void MavlinkBase::flush(void)
 // Handle Messages
 //-------------------------------------------------------
 
-void MavlinkBase::handle_msg_serial_out(fmav_message_t* msg)
+void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
 {
     if ((msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) && (msg->compid == MAV_COMP_ID_AUTOPILOT1)) {
         fmav_heartbeat_t payload;
@@ -399,7 +399,7 @@ void MavlinkBase::handle_msg_serial_out(fmav_message_t* msg)
 // Generate Messages
 //-------------------------------------------------------
 
-void MavlinkBase::generate_radio_status(void)
+void tTxMavlink::generate_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 

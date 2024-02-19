@@ -15,7 +15,7 @@
 #include "out.h"
 
 
-extern RxStatsBase rxstats;
+extern tRxStats rxstats;
 
 
 #ifdef USE_OUT

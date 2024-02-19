@@ -23,7 +23,7 @@
 
 extern uint16_t micros(void);
 extern volatile uint32_t millis32(void);
-extern TxStatsBase txstats;
+extern tTxStats txstats;
 
 
 //-------------------------------------------------------

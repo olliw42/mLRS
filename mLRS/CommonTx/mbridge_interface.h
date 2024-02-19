@@ -21,7 +21,7 @@
 
 extern uint16_t micros(void);
 extern uint8_t mavlink_vehicle_state(void);
-extern TxStatsBase txstats;
+extern tTxStats txstats;
 
 
 //-------------------------------------------------------

@@ -84,12 +84,12 @@ v0.0.00:
 #include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
-TxStatsBase txstats;
-tTxCli cli;
-ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
-tConfigId config_id;
+tTxStats txstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
+ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
+tConfigId config_id;
+tTxCli cli;
 
 
 //-------------------------------------------------------
@@ -98,7 +98,7 @@ tTDiversity tdiversity;
 
 #include "mavlink_interface_tx.h"
 
-MavlinkBase mavlink;
+tTxMavlink mavlink;
 
 
 uint8_t mavlink_vehicle_state(void)
