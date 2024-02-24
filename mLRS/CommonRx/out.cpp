@@ -285,7 +285,7 @@ tCrsfChannelBuffer crsf_buf;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_BROADCAST); // or CRSF_ADDRESS_FLIGHT_CONTROLLER ??? what's better?
+    putc(CRSF_ADDRESS_FLIGHT_CONTROLLER); // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);
@@ -323,7 +323,7 @@ tCrsfLinkStatistics clstats;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_BROADCAST);
+    putc(CRSF_ADDRESS_FLIGHT_CONTROLLER);
     putc(CRSF_LINK_STATISTICS_LEN + 2);
 
     putc(CRSF_FRAME_ID_LINK_STATISTICS);
