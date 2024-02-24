@@ -626,7 +626,7 @@ void tTxCli::print_device_version(void)
 }
 
 
-#ifdef DEVICE_HAS_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
 #define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
@@ -649,7 +649,7 @@ char s[32];
         u32toBCDstr(CLI_REG_TO_FREQ(fhss.FhssList(i)), s);
         remove_leading_zeros(s);
         puts(s);
-#if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined  DEVICE_HAS_SX127x
         putsn(" kHz");
 #else
         putsn(" MHz");

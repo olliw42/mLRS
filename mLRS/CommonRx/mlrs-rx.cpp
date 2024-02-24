@@ -487,13 +487,13 @@ RESTARTCONTROLLER:
   if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
   irq_status = irq2_status = 0;
   IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
+  IF_SX2(sx2.StartUp(&Config.Sx2));
   bind.Init();
-  fhss.Init(&Config.Fhss);
+  fhss.Init(&Config.Fhss, &Config.Fhss2);
   fhss.Start();
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+  sx.SetRfFrequency(fhss.GetCurrFreq1());
+  sx2.SetRfFrequency(fhss.GetCurrFreq2());
 
   link_state = LINK_STATE_RECEIVE;
   connect_state = CONNECT_STATE_LISTEN;
@@ -580,8 +580,8 @@ RESTARTCONTROLLER:
         if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
             fhss.HopToNext();
         }
-        sx.SetRfFrequency(fhss.GetCurrFreq());
-        sx2.SetRfFrequency(fhss.GetCurrFreq());
+        sx.SetRfFrequency(fhss.GetCurrFreq1());
+        sx2.SetRfFrequency(fhss.GetCurrFreq2());
         IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
         IF_ANTENNA2(sx2.SetToRx(0));
         link_state = LINK_STATE_RECEIVE_WAIT;

@@ -7,24 +7,12 @@
 // hal
 //*******************************************************
 
-//#define MLRS_FEATURE_DIVERSITY
-//#define MLRS_FEATURE_NO_DIVERSITY
-
 //-------------------------------------------------------
-// RX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
+// RX DIY "easy-to-solder" E77 E28 dualband, STM32WLE5CC
 //-------------------------------------------------------
 
-//#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
-
-
-#ifdef MLRS_FEATURE_DIVERSITY
-  #define DEVICE_HAS_DIVERSITY
-#endif
-#ifdef MLRS_FEATURE_NO_DIVERSITY
-  #undef DEVICE_HAS_DIVERSITY
-#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -75,6 +63,7 @@
 
 
 //-- SX12xx & SPI
+#if !defined DEVICE_HAS_SX128x // this is to allow using this board with only the E28, for testing
 
 #define SPI_USE_SUBGHZSPI
 #define SPI_USE_CLOCKSPEED_12MHZ
@@ -100,6 +89,11 @@ void sx_init_gpio(void)
 bool sx_busy_read(void)
 {
     return subghz_is_busy();
+}
+
+// we need to provide it as we don't have SX_RESET defined, but is empty since reset is done by spi_init()
+void sx_reset(void)
+{
 }
 
 void sx_amp_transmit(void)
@@ -138,6 +132,82 @@ void sx_dio_exti_isr_clearflag(void)
     // there is no EXTI_LINE_44 interrupt flag
 }
 
+#else
+
+#define SPI_USE_SPI1             // PA5, PA11, PA12
+#define SPI_USE_SCK_IO           IO_PA5
+#define SPI_USE_MISO_IO          IO_PA11
+#define SPI_USE_MOSI_IO          IO_PA12
+#define SPI_CS_IO                IO_PB2
+#define SPI_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
+#define SPI_USE_CLOCKSPEED_18MHZ // equals to 12 MHz
+
+#define SX_RESET                 IO_PA1
+#define SX_DIO1                  IO_PB8
+#define SX_BUSY                  IO_PA0
+#define SX_RX_EN                 IO_PB12
+#define SX_TX_EN                 IO_PA4
+
+#define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTB
+#define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE8
+#define SX_DIO_EXTI_LINE_x           LL_EXTI_LINE_8
+#define SX_DIO_EXTI_IRQn             EXTI9_5_IRQn
+#define SX_DIO_EXTI_IRQHandler       EXTI9_5_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY   11
+
+void sx_init_gpio(void)
+{
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+}
+
+bool sx_busy_read(void)
+{
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
+}
+
+void sx_amp_transmit(void)
+{
+    gpio_low(SX_RX_EN);
+    gpio_high(SX_TX_EN);
+}
+
+void sx_amp_receive(void)
+{
+    gpio_low(SX_TX_EN);
+    gpio_high(SX_RX_EN);
+}
+
+void sx_dio_init_exti_isroff(void)
+{
+    LL_SYSCFG_SetEXTISource(SX_DIO1_SYSCFG_EXTI_PORTx, SX_DIO1_SYSCFG_EXTI_LINEx);
+
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+
+    NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
+}
+
+void sx_dio_enable_exti_isr(void)
+{
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+}
+
+void sx_dio_exti_isr_clearflag(void)
+{
+    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+}
+
+#endif
+
 
 //-- SX12xx II & SPIB
 
@@ -145,21 +215,21 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_SCK_IO           IO_PA5
 #define SPIB_USE_MISO_IO          IO_PA11
 #define SPIB_USE_MOSI_IO          IO_PA12
-#define SPIB_CS_IO                IO_PB12
+#define SPIB_CS_IO                IO_PB2
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
 #define SPIB_USE_CLOCKSPEED_18MHZ // equals to 12 MHz
 
-#define SX2_RESET                 IO_PB2
-#define SX2_DIO1                  IO_PC13
-#define SX2_BUSY                  IO_PA15
-#define SX2_RX_EN                 IO_PA0
-#define SX2_TX_EN                 IO_PB8
+#define SX2_RESET                 IO_PA1
+#define SX2_DIO1                  IO_PB8
+#define SX2_BUSY                  IO_PA0
+#define SX2_RX_EN                 IO_PB12
+#define SX2_TX_EN                 IO_PA4
 
-#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
-#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE13
-#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_13
-#define SX2_DIO_EXTI_IRQn             EXTI15_10_IRQn
-#define SX2_DIO_EXTI_IRQHandler       EXTI15_10_IRQHandler
+#define SX2_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTB
+#define SX2_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE8
+#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_8
+#define SX2_DIO_EXTI_IRQn             EXTI9_5_IRQn
+#define SX2_DIO_EXTI_IRQHandler       EXTI9_5_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx2_init_gpio(void)
@@ -237,7 +307,7 @@ void out_set_inverted(void)
 
 //-- Button
 
-#define BUTTON                    IO_PA1
+#define BUTTON                    IO_PA15
 
 void button_init(void)
 {
@@ -278,6 +348,10 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
+
+#define POWER2_GAIN_DBM           27 // gain of a PA stage if present
+#define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           2 // index into rfpower_list array
@@ -294,15 +368,14 @@ const rfpower_t rfpower_list[] = {
 //-- TEST
 
 uint32_t porta[] = {
-    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_5,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5,
     LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12,
     LL_GPIO_PIN_15,
 };
 
 uint32_t portb[] = {
     LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_8,
-    LL_GPIO_PIN_12,
+    LL_GPIO_PIN_8, LL_GPIO_PIN_12,
 };
 
 uint32_t portc[] = {

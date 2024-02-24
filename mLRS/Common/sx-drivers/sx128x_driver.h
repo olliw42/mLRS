@@ -322,6 +322,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 //-------------------------------------------------------
 // Driver for SX1
 //-------------------------------------------------------
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x
 
 #ifndef SX_BUSY
   #error SX must have a BUSY pin!
@@ -434,11 +435,13 @@ class Sx128xDriver : public Sx128xDriverCommon
     }
 };
 
+#endif
+
 
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -486,7 +489,11 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
+#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX_DBM);
+#else
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+#endif
     }
 
     //-- init API functions
