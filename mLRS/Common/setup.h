@@ -434,14 +434,14 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_ms = 9; // 9 ms = 111 Hz
         Config.frame_rate_hz = 111,
         Config.Sx.LoraConfigIndex = 0;
-        Config.send_frame_tmo_ms = MODE_FLRC_SEND_FRAME_TMO_MS; // 7;
+        Config.send_frame_tmo_ms = MODE_FLRC_111HZ_SEND_FRAME_TMO_MS; // 7;
         break;
 
-    case MODE_FSK:
+    case MODE_FSK_50HZ:
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
         Config.Sx.LoraConfigIndex = 0;
-        Config.send_frame_tmo_ms = MODE_FSK_SEND_FRAME_TMO_MS; // 10;
+        Config.send_frame_tmo_ms = MODE_FSK_50HZ_SEND_FRAME_TMO_MS; // 10;
         break;
 
     default:
@@ -450,7 +450,7 @@ void configure_mode(uint8_t mode)
     }
     
     // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK);
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ);
 }
 
 
