@@ -42,10 +42,10 @@ It provides these operation modes:
 
 |  | 50 Hz | 31 Hz | 19 Hz | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- |
-| frequency bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
-| chip sets | SX128x | SX126x/LLCC68 | SX128x, SX126x/LLCC68, SX1276 | SX128x | SX126x/LLCC68 |
-| downlink serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
-| uplink serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
+| frequency<br>bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
+| chip sets | SX128x | SX126x/LLCC68 | SX128x,<br>SX126x/LLCC68, SX1276 | SX128x | SX126x/LLCC68 |
+| downlink<br>serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
+| uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver sensitivity | -105 dBm | -108 dBm | -112 dBm | not for LR | not for LR |
 <!--
 - 50 Hz Mode<br>
