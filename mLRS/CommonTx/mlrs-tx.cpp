@@ -656,6 +656,7 @@ RESTARTCONTROLLER:
   mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
   sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
   cli.Init(&comport);
+  esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
   esp.Init(&comport, &serial);
 #else

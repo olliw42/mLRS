@@ -16,7 +16,28 @@
 
 
 //-------------------------------------------------------
-// WEPS WifiBridge class
+// ESP Helper
+//-------------------------------------------------------
+
+void esp_enable(uint8_t serial_destination)
+{
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    if (serial_destination == SERIAL_DESTINATION_SERIAL) {  // enable/disable ESP on serial
+  #endif
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    if (serial_destination == SERIAL_DESTINATION_SERIAL2) {  // enable/disable ESP on serial2
+  #endif
+        esp_gpio0_high(); esp_reset_high();
+    } else {
+        esp_reset_low();
+    }
+#endif
+}
+
+
+//-------------------------------------------------------
+// ESP WifiBridge class
 //-------------------------------------------------------
 
 #define ESP_PASSTHROUGH_TMO_MS  3000
@@ -175,7 +196,7 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         }
 
     }
-#endif
+#endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && USE_ESP_WIFI_BRIDGE_DTR_RTS
 }
 
 
