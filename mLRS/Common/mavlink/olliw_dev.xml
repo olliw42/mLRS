@@ -1,27 +1,33 @@
 <?xml version="1.0"?>
 <mavlink>
   <enums>
-    <enum name="RADIO_LINK_TYPE">
+    <enum name="RADIO_LINK_STATS_FLAGS_DEV" bitmask="true">
+      <description>RADIO_LINK_STATS flags (bitmask).</description>
+      <entry value="1" name="RADIO_LINK_STATS_FLAGS_RSSI_DBM_DEV">
+        <description>Rssi values are in negative dBm. Values 0..253 corresponds to 0..-253 dBm. 254 represents no link connection.</description>
+      </entry>
+    </enum>
+    <enum name="RADIO_LINK_TYPE_DEV">
       <description>RADIO_LINK_TYPE enum.</description>
-      <entry value="0" name="RADIO_LINK_TYPE_GENERIC">
+      <entry value="0" name="RADIO_LINK_TYPE_GENERIC_DEV">
         <description>Unknown radio link type.</description>
       </entry>
-      <entry value="1" name="RADIO_LINK_TYPE_HERELINK">
+      <entry value="1" name="RADIO_LINK_TYPE_HERELINK_DEV">
         <description>Radio link is HereLink.</description>
       </entry>
-      <entry value="2" name="RADIO_LINK_TYPE_DRAGONLINK">
+      <entry value="2" name="RADIO_LINK_TYPE_DRAGONLINK_DEV">
         <description>Radio link is Dragon Link.</description>
       </entry>
-      <entry value="3" name="RADIO_LINK_TYPE_RFD900">
+      <entry value="3" name="RADIO_LINK_TYPE_RFD900_DEV">
         <description>Radio link is RFD900.</description>
       </entry>
-      <entry value="4" name="RADIO_LINK_TYPE_CROSSFIRE">
+      <entry value="4" name="RADIO_LINK_TYPE_CROSSFIRE_DEV">
         <description>Radio link is Crossfire.</description>
       </entry>
-      <entry value="5" name="RADIO_LINK_TYPE_EXPRESSLRS">
+      <entry value="5" name="RADIO_LINK_TYPE_EXPRESSLRS_DEV">
         <description>Radio link is ExpressLRS.</description>
       </entry>
-      <entry value="6" name="RADIO_LINK_TYPE_MLRS">
+      <entry value="6" name="RADIO_LINK_TYPE_MLRS_DEV">
         <description>Radio link is mLRS.</description>
       </entry>
     </enum>
@@ -47,56 +53,52 @@
       <field type="uint8_t" name="rx_used_bandwidth" units="c%" invalid="UINT8_MAX">Receive bandwidth consumption. Values: 0..100, UINT8_MAX: invalid/unknown.</field>
       <field type="uint8_t" name="txbuf" units="c%" invalid="UINT8_MAX">For compatibility with legacy method. UINT8_MAX: unknown.</field>
     </message>
-    <message id="420" name="RADIO_RC_CHANNELS_DEV">
-      <description>Radio channels. Supports up to 32 channels. Channel values are in centered 13 bit format. Range is [-4096,4096], center is 0. Conversion to PWM is x * 5/32 + 1500.
-        The target_system field should normally be set to the system id of the system the radio receiver is connected to, the target_component field can normally be set to 0.
-        </description>
-      <field type="uint8_t" name="target_system">System ID (can be 0 for broadcast, but this is discouraged).</field>
-      <field type="uint8_t" name="target_component">Component ID (normally 0 for broadcast).</field>
-      <field type="uint8_t" name="count">Total number of RC channels being received. This can be larger than 32, indicating that more channels are available but not given in this message.</field>
-      <field type="uint16_t" name="flags" enum="RADIO_RC_CHANNELS_FLAGS" display="bitmask">Radio RC channels status flags.</field>
-      <extensions/>
-      <field type="int16_t[32]" name="channels">RC channels. Channels above count should be set to 0, to benefit from MAVLink's zero padding.</field>
-    </message>
     <message id="421" name="RADIO_LINK_STATS_DEV">
-      <description>Radio link statistics. Tx: ground-side device, Rx: vehicle-side device.
-        Per default, rssi values are in MAVLink units: 0 represents weakest signal, 254 represents maximum signal; can be changed to inverted dBm with the flag
-        RADIO_LINK_STATS_FLAGS_RSSI_DBM: 0..253 correspond to 0..-253 dBm, 254 represents no link connection.
-        The target_system field should normally be set to the system id of the system the radio receiver is connected to, the target_component field can normally be set to 0.
-        </description>
-      <field type="uint8_t" name="target_system">System ID (can be 0 for broadcast, but this is discouraged).</field>
+      <description>Radio link statistics. Tx: ground-side device, Rx: vehicle-side device. 
+	    The message is normally emitted upon each receiption of a data packet on the link.
+        Per default, rssi values are in MAVLink units: 0 represents weakest signal, 254 represents maximum signal. 
+		The RADIO_LINK_STATS_FLAGS_RSSI_DBM flag is set if the units are inverted dBm: 0..253 correspond to 0..-253 dBm, 254 represents no link connection.
+        The target_system field should normally be set to the system id of the system the link is connected to, typically the flight controller.
+        The target_component field can normally be set to 0, so that all components of the system can receive the message.
+      </description>
+      <field type="uint8_t" name="target_system">System ID (ID of target system, normally flight controller).</field>
       <field type="uint8_t" name="target_component">Component ID (normally 0 for broadcast).</field>
-      <field type="uint8_t" name="flags" enum="RADIO_LINK_STATS_FLAGS" display="bitmask">Radio link statistics flags.</field>
+      <field type="uint8_t" name="flags" enum="RADIO_LINK_STATS_FLAGS_DEV" display="bitmask">Radio link statistics flags.</field>
       <field type="uint8_t" name="rx_LQ_rc" units="c%" invalid="UINT8_MAX">Link quality of RC data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
       <field type="uint8_t" name="rx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
       <field type="uint8_t" name="rx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no link connection, UINT8_MAX: unknown.</field>
       <field type="int8_t" name="rx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
-      <field type="uint8_t" name="rx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection, UINT8_MAX: ignore/unknown, use rx_rssi1.</field>
-      <field type="int8_t" name="rx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: ignore/unknown, use rx_snr1.</field>
-      <field type="uint8_t" name="rx_receive_antenna" invalid="UINT8_MAX">0: antenna1, 1: antenna2, UINT8_MAX: no Rx receive diversity, use rx_rssi1, rx_snr1.</field>
-      <field type="uint8_t" name="rx_transmit_antenna" invalid="UINT8_MAX">0: antenna1, 1: antenna2, UINT8_MAX: no Rx transmit diversity.</field>
-      <field type="int8_t" name="rx_power" units="dBm" invalid="INT8_MAX">Rx transmit power in dBm. INT8_MAX: unknown.</field>
+      <field type="uint8_t" name="rx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection, UINT8_MAX: use rx_rssi1 if known else unknown.</field>
+      <field type="int8_t" name="rx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use rx_snr1 if known else unknown.</field>
       <field type="uint8_t" name="tx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Rx to Tx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
       <field type="uint8_t" name="tx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no link connection. UINT8_MAX: unknown.</field>
       <field type="int8_t" name="tx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
-      <field type="uint8_t" name="tx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection. UINT8_MAX: ignore/unknown, use tx_rssi1.</field>
-      <field type="int8_t" name="tx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: ignore/unknown, use tx_snr1.</field>
-      <field type="uint8_t" name="tx_receive_antenna" invalid="UINT8_MAX">0: antenna1, 1: antenna2, UINT8_MAX: no Tx receive diversity, use tx_rssi1, tx_snr1.</field>
-      <field type="uint8_t" name="tx_transmit_antenna" invalid="UINT8_MAX">0: antenna1, 1: antenna2, UINT8_MAX: no Tx transmit diversity.</field>
-      <field type="int8_t" name="tx_power" units="dBm" invalid="INT8_MAX">Tx transmit power in dBm. INT8_MAX: unknown.</field>
+      <field type="uint8_t" name="tx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection. UINT8_MAX: use tx_rssi1 if known else unknown.</field>
+      <field type="int8_t" name="tx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use tx_snr1 if known else unknown.</field>
+      <field type="uint8_t" name="rx_receive_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="rx_transmit_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="tx_receive_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="tx_transmit_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
     </message>
     <message id="422" name="RADIO_LINK_INFORMATION_DEV">
-      <description>Radio link information. Tx: ground-side device, Rx: vehicle-side device. Can normally be send at a low rate, like 0.2 Hz.
-        The target_system field should normally be set to the system id of the system the radio receiver is connected to, the target_component field can normally be set to 0.
-        </description>
-      <field type="uint8_t" name="target_system">System ID (can be 0 for broadcast, but this is discouraged).</field>
+      <description>Radio link information. Tx: ground-side device, Rx: vehicle-side device.
+	    The values of the fields in this message do normally not or only slowly change with time, and for most times the message can be send at a low rate, like 0.2 Hz.
+		If values change then the message should temporarily be send more often to inform the system about the changes. 
+        The target_system field should normally be set to the system id of the system the link is connected to, typically the flight controller.
+        The target_component field can normally be set to 0, so that all components of the system can receive the message.
+      </description>
+      <field type="uint8_t" name="target_system">System ID (ID of target system, normally flight controller).</field>
       <field type="uint8_t" name="target_component">Component ID (normally 0 for broadcast).</field>
-      <field type="uint8_t" name="type" enum="RADIO_LINK_TYPE" invalid="0">Radio link type. 0: unknown/generic type.</field>
-      <field type="uint8_t" name="mode" invalid="UINT8_MAX">Operation mode. Radio link dependent. UINT8_MAX: unknown.</field>
-      <field type="uint16_t" name="tx_rate" units="Hz" invalid="0">Packet rate in Hz for Tx to Rx transmission. 0: unknown.</field>
-      <field type="uint16_t" name="rx_rate" units="Hz" invalid="0">Packet rate in Hz for Rx to Tx transmission. Normally equal to tx_rate. 0: unknown.</field>
-      <field type="uint8_t" name="tx_receive_sensitivity" invalid="0">Receive sensitivity of Tx in inverted dBm. 1..255 represents -1..-255 dBm, 0: unknown.</field>
-      <field type="uint8_t" name="rx_receive_sensitivity" invalid="0">Receive sensitivity of Rx in inverted dBm. 1..255 represents -1..-255 dBm, 0: unknown.</field>
+      <field type="uint8_t" name="type" enum="RADIO_LINK_TYPE_DEV" invalid="0">Radio link type. 0: unknown/generic type.</field>
+      <field type="uint8_t" name="mode" invalid="UINT8_MAX">Operation mode. Radio link dependent. UINT8_MAX: ignore/unknown.</field>
+      <field type="int8_t" name="tx_power" units="dBm" invalid="INT8_MAX">Tx transmit power in dBm. INT8_MAX: unknown.</field>
+      <field type="int8_t" name="rx_power" units="dBm" invalid="INT8_MAX">Rx transmit power in dBm. INT8_MAX: unknown.</field>
+      <field type="uint16_t" name="tx_packet_rate" units="Hz" invalid="0">Packet rate in Hz for Tx to Rx transmission. 0: ignore.</field>
+      <field type="uint16_t" name="rx_packet_rate" units="Hz" invalid="0">Packet rate in Hz for Rx to Tx transmission. Normally equal to tx_packet_rate. 0: ignore.</field>
+      <field type="uint16_t" name="tx_ser_data_rate" invalid="0">Data rate of serial stream in Bytes/s for Tx to Rx transmission. 0: ignore. UINT16_MAX: data rate is 64 KBytes/s or larger.</field>
+      <field type="uint16_t" name="rx_ser_data_rate" invalid="0">Data rate of serial stream in Bytes/s for Rx to Tx transmission. 0: ignore. UINT16_MAX: data rate is 64 KBytes/s or larger.</field>
+      <field type="uint8_t" name="tx_receive_sensitivity" invalid="0">Receive sensitivity of Tx in inverted dBm. 1..255 represents -1..-255 dBm, 0: ignore.</field>
+      <field type="uint8_t" name="rx_receive_sensitivity" invalid="0">Receive sensitivity of Rx in inverted dBm. 1..255 represents -1..-255 dBm, 0: ignore.</field>
     </message>
   </messages>
 </mavlink>

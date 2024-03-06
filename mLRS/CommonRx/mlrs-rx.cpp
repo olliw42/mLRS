@@ -839,13 +839,13 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         if (connected()) {
             out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
             out.SendLinkStatistics();
-            mavlink.SendRcData(out.GetRcDataPtr(), false);
+            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
                 out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
                 out.SendLinkStatisticsDisconnected();
-                mavlink.SendRcData(out.GetRcDataPtr(), true);
+                mavlink.SendRcData(out.GetRcDataPtr(), true, true);
             }
         }
     }//end of if(doPostReceive2)
