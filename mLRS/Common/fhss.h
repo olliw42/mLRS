@@ -51,6 +51,14 @@
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #endif
 
+#ifdef DEVICE_HAS_SX126x
+#define SX12XX_REG_TO_FREQ(f_reg)  SX126X_REG_TO_FREQ_KHZ(f_reg)
+#elif defined DEVICE_HAS_SX127x
+#define SX12XX_REG_TO_FREQ(f_reg)  SX127X_REG_TO_FREQ_KHZ(f_reg)
+#else
+#define SX12XX_REG_TO_FREQ(f_reg)  SX1280_REG_TO_FREQ_MHZ(f_reg)
+#endif
+
 
 #ifdef FHSS_HAS_CONFIG_433_MHZ
 // 433.050 ... 434.790 in 0.506 MHz steps
@@ -592,6 +600,16 @@ class tFhssBase
         return 0;
     }
 
+    // used by RADIO_LINK_STATS_MLRS
+    float GetCurrFreq_Hz(void)
+    {
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
+        return 1.0E3f * SX12XX_REG_TO_FREQ(GetCurrFreq());
+#else
+        return 1.0E6f * (uint32_t)SX12XX_REG_TO_FREQ(GetCurrFreq());
+#endif
+    }
+
     uint32_t bestX(void)
     {
         uint8_t i_best = 0;
@@ -603,8 +621,10 @@ class tFhssBase
         return fhss_list[curr_i];
     }
 
+    // used by CLI
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
+    uint32_t GetFreq_x1000(uint8_t i) { return (uint32_t)SX12XX_REG_TO_FREQ(fhss_list[i]); }
 
   private:
     uint32_t _seed;
