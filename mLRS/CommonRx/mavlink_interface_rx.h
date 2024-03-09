@@ -763,7 +763,15 @@ int8_t rx_snr1, rx_snr2;
         rx_snr2 = INT8_MAX;
     }
 
+#define MAVLINK_USE_RADIO_LINK_STATS_MLRS
+#ifdef MAVLINK_USE_RADIO_LINK_STATS_MLRS
+    float freq1 = fhss.GetCurrFreq_Hz();
+    float freq2 = freq1;
+
+    fmav_msg_radio_link_stats_mlrs_pack(
+#else
     fmav_msg_radio_link_stats_dev_pack(
+#endif
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         0, 0, // targets
@@ -790,6 +798,11 @@ int8_t rx_snr1, rx_snr2;
         stats.last_transmit_antenna, // uint8_t rx_transmit_antenna
         stats.received_antenna, // uint8_t tx_receive_antenna
         stats.received_transmit_antenna, // uint8_t tx_transmit_antenna
+
+#ifdef MAVLINK_USE_RADIO_LINK_STATS_MLRS
+        // frequencies in Hz
+        freq1, freq2,
+#endif
 
         //uint8_t target_system, uint8_t target_component,
         //uint8_t flags,

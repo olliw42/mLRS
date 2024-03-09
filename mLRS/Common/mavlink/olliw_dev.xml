@@ -53,9 +53,35 @@
       <field type="uint8_t" name="rx_used_bandwidth" units="c%" invalid="UINT8_MAX">Receive bandwidth consumption. Values: 0..100, UINT8_MAX: invalid/unknown.</field>
       <field type="uint8_t" name="txbuf" units="c%" invalid="UINT8_MAX">For compatibility with legacy method. UINT8_MAX: unknown.</field>
     </message>
+    <!-- -->
+    <message id="60045" name="RADIO_LINK_STATS_MLRS">
+      <description>Radio link statistics. mLRS specific.
+      </description>
+      <field type="uint8_t" name="target_system">System ID (ID of target system, normally flight controller).</field>
+      <field type="uint8_t" name="target_component">Component ID (normally 0 for broadcast).</field>
+      <field type="uint8_t" name="flags" enum="RADIO_LINK_STATS_FLAGS_DEV" display="bitmask">Radio link statistics flags.</field>
+      <field type="uint8_t" name="rx_LQ_rc" units="c%" invalid="UINT8_MAX">Link quality of RC data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
+      <field type="uint8_t" name="rx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
+      <field type="uint8_t" name="rx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no reception, UINT8_MAX: unknown.</field>
+      <field type="int8_t" name="rx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
+      <field type="uint8_t" name="rx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no reception, UINT8_MAX: use rx_rssi1 if known else unknown.</field>
+      <field type="int8_t" name="rx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use rx_snr1 if known else unknown.</field>
+      <field type="uint8_t" name="tx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Rx to Tx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
+      <field type="uint8_t" name="tx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no reception. UINT8_MAX: unknown.</field>
+      <field type="int8_t" name="tx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
+      <field type="uint8_t" name="tx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no reception. UINT8_MAX: use tx_rssi1 if known else unknown.</field>
+      <field type="int8_t" name="tx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use tx_snr1 if known else unknown.</field>
+      <field type="uint8_t" name="rx_receive_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="rx_transmit_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="tx_receive_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1. In a dual diversity/band system use 0 to indicate transmission on both antenna.</field>
+      <field type="uint8_t" name="tx_transmit_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1. In a dual diversity/band system use 0 to indicate transmission on both antenna.</field>
+      <field type="float" name="frequency1" units="Hz">Frequency on antenna1 in Hz.</field>
+      <field type="float" name="frequency2" units="Hz">Frequency on antenna2 in Hz.</field>
+    </message>
+    <!-- -->
     <message id="421" name="RADIO_LINK_STATS_DEV">
       <description>Radio link statistics. Tx: ground-side device, Rx: vehicle-side device. 
-	    The message is normally emitted upon each receiption of a data packet on the link.
+	    The message is normally emitted upon each reception of a data packet on the link.
         Per default, rssi values are in MAVLink units: 0 represents weakest signal, 254 represents maximum signal. 
 		The RADIO_LINK_STATS_FLAGS_RSSI_DBM flag is set if the units are inverted dBm: 0..253 correspond to 0..-253 dBm, 254 represents no link connection.
         The target_system field should normally be set to the system id of the system the link is connected to, typically the flight controller.
@@ -66,19 +92,19 @@
       <field type="uint8_t" name="flags" enum="RADIO_LINK_STATS_FLAGS_DEV" display="bitmask">Radio link statistics flags.</field>
       <field type="uint8_t" name="rx_LQ_rc" units="c%" invalid="UINT8_MAX">Link quality of RC data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
       <field type="uint8_t" name="rx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Tx to Rx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
-      <field type="uint8_t" name="rx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no link connection, UINT8_MAX: unknown.</field>
+      <field type="uint8_t" name="rx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no reception, UINT8_MAX: unknown.</field>
       <field type="int8_t" name="rx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
-      <field type="uint8_t" name="rx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection, UINT8_MAX: use rx_rssi1 if known else unknown.</field>
+      <field type="uint8_t" name="rx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no reception, UINT8_MAX: use rx_rssi1 if known else unknown.</field>
       <field type="int8_t" name="rx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use rx_snr1 if known else unknown.</field>
       <field type="uint8_t" name="tx_LQ_ser" units="c%" invalid="UINT8_MAX">Link quality of serial MAVLink data stream from Rx to Tx. Values: 1..100, 0: no link connection, UINT8_MAX: unknown.</field>
-      <field type="uint8_t" name="tx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no link connection. UINT8_MAX: unknown.</field>
+      <field type="uint8_t" name="tx_rssi1" invalid="UINT8_MAX">Rssi of antenna1. 254: no reception. UINT8_MAX: unknown.</field>
       <field type="int8_t" name="tx_snr1" invalid="INT8_MAX">Noise on antenna1. Radio link dependent. INT8_MAX: unknown.</field>
-      <field type="uint8_t" name="tx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no link connection. UINT8_MAX: use tx_rssi1 if known else unknown.</field>
+      <field type="uint8_t" name="tx_rssi2" invalid="UINT8_MAX">Rssi of antenna2. 254: no reception. UINT8_MAX: use tx_rssi1 if known else unknown.</field>
       <field type="int8_t" name="tx_snr2" invalid="INT8_MAX">Noise on antenna2. Radio link dependent. INT8_MAX: use tx_snr1 if known else unknown.</field>
-      <field type="uint8_t" name="rx_receive_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
-      <field type="uint8_t" name="rx_transmit_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
-      <field type="uint8_t" name="tx_receive_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
-      <field type="uint8_t" name="tx_transmit_antenna">0: antenna1, 1: antenna2. If the antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="rx_receive_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="rx_transmit_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1.</field>
+      <field type="uint8_t" name="tx_receive_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1. In a dual diversity/band system use 0 to indicate transmission on both antenna.</field>
+      <field type="uint8_t" name="tx_transmit_antenna">0: antenna1, 1: antenna2. If antenna is not known, assume antenna1. In a dual diversity/band system use 0 to indicate transmission on both antenna.</field>
     </message>
     <message id="422" name="RADIO_LINK_INFORMATION_DEV">
       <description>Radio link information. Tx: ground-side device, Rx: vehicle-side device.
