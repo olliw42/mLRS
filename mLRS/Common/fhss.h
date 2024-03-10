@@ -477,18 +477,19 @@ class tFhssBase
             // Config.connect_listen_hop_cnt does depend on Config.FhssNum !!!
             // is used by rx to cycle through frequencies when in LISTEN
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
+                // we narrow down to 12 or 18
                 if (except >= EXCEPT_2P4_GHZ_WIFIBAND_1 && except <= EXCEPT_2P4_GHZ_WIFIBAND_13) {
                     // we only have 55 channels or so, so narrow down to 12 (12 * 3 = 36 < 55)
                     if (cnt > 12) cnt = 12;
                 } else {
                     // we have 77 channels, so can accommodate up to 18 frequencies (18 * 3 = 54 < 77)
-                    if (cnt > 18) cnt = 18; // we narrow down to 12 or 18
+                    if (cnt > 18) cnt = 18;
                     except = EXCEPT_NONE;
                 }
                 if (cnt > fhss_num) cnt = fhss_num;
             } else {
                 ortho = ORTHO_NONE;
-                except = EXCEPT_NONE;
+                if (except > EXCEPT_2P4_GHZ_WIFIBAND_13) except = EXCEPT_NONE;
             }
             generate_ortho_except(seed, ortho, except);
             break;
