@@ -633,7 +633,7 @@ char s[32];
         puts(u8toBCD_s(i));
         puts("  ch: ");
         puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  freg: ");
+        puts("  freq: ");
         puts(u32toBCD_s(fhss.FhssList(i)));
         puts("  f: ");
         u32toBCDstr(fhss.GetFreq_x1000(i), s);
