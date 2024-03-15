@@ -789,7 +789,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigForBind();
-            CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
+            clock.SetPeriod(Config.frame_rate_ms);
             clock.Reset();
             fhss.SetToBind(Config.frame_rate_ms);
             leds.SetToBind();
