@@ -143,22 +143,19 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
 #if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
     if (!initialized) return;
 
-    uint16_t led_blink = 0;
     uint32_t serial_tlast_ms = millis32();
 
     disp.DrawNotify("ESP\nFLASHING");
 
     ser->SetBaudRate(115200);
 
-    LED_RED_OFF;
-    LED_GREEN_ON;
+    leds.InitPassthrough();
 
     while (1) {
 
         if (doSysTask) {
             doSysTask = 0;
-            DECc(led_blink, SYSTICK_DELAY_MS(100));
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+            leds.TickPassthrough_ms();
         }
 
         uint8_t dtr_rts = esp_dtr_rts();
@@ -247,20 +244,16 @@ void tTxEspWifiBridge::EnterCli(void)
 
 void tTxEspWifiBridge::passthrough_do(void)
 {
-uint16_t led_blink = 0;
-
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
 
-    LED_RED_OFF;
-    LED_GREEN_ON;
+    leds.InitPassthrough();
 
     while (1) {
         if (doSysTask) {
             doSysTask = 0;
-            DECc(led_blink, SYSTICK_DELAY_MS(100));
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+            leds.TickPassthrough_ms();
         }
 
         if (com->available()) {

@@ -581,7 +581,6 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 // MAIN routine
 //*******************************************************
 
-uint16_t led_blink;
 uint16_t tick_1hz;
 
 uint16_t tx_tick;
@@ -621,8 +620,7 @@ RESTARTCONTROLLER:
   serial2.SetBaudRate(Config.SerialBaudrate);
 
   // startup sign of life
-  LED_RED_OFF;
-  for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
+  leds.Init();
 
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
@@ -668,7 +666,6 @@ RESTARTCONTROLLER:
 
   config_id.Init();
 
-  led_blink = 0;
   tick_1hz = 0;
   tick_1hz_commensurate = 0;
   doSysTask = 0; // helps in avoiding too short first loop
@@ -685,22 +682,7 @@ RESTARTCONTROLLER:
             connect_tmo_cnt--;
         }
 
-        if (connected()) {
-            DECc(led_blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(led_blink, SYSTICK_DELAY_MS(200));
-        }
-
-        if (bind.IsInBind()) {
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-        } else
-        if (connected()) {
-            if (!led_blink) LED_GREEN_TOGGLE;
-            LED_RED_OFF;
-        } else {
-            LED_GREEN_OFF;
-            if (!led_blink) LED_RED_TOGGLE;
-        }
+        leds.Tick_ms(connected());
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
@@ -949,6 +931,7 @@ IF_SX2(
 
         // store parameters
         if (doParamsStore) {
+            leds.SetToParamStore();
             setup_store_to_EEPROM();
             goto RESTARTCONTROLLER;
         }
@@ -958,8 +941,7 @@ IF_SX2(
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigForBind();
             fhss.SetToBind();
-            LED_GREEN_ON;
-            LED_RED_OFF;
+            leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;

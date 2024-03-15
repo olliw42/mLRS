@@ -444,7 +444,6 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 // MAIN routine
 //*******************************************************
 
-uint16_t led_blink;
 uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
@@ -479,8 +478,7 @@ RESTARTCONTROLLER:
   serial.SetBaudRate(Config.SerialBaudrate);
 
   // startup sign of life
-  LED_RED_OFF;
-  for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
+  leds.Init();
 
   // start up sx
   if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
@@ -516,7 +514,6 @@ RESTARTCONTROLLER:
   sx_serial.Init();
   fan.SetPower(sx.RfPower_dbm());
 
-  led_blink = 0;
   tick_1hz = 0;
   tick_1hz_commensurate = 0;
   doSysTask = 0; // helps in avoiding too short first loop
@@ -531,22 +528,7 @@ RESTARTCONTROLLER:
             connect_tmo_cnt--;
         }
 
-        if (connected()) {
-            DECc(led_blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(led_blink, SYSTICK_DELAY_MS(200));
-        }
-
-        if (bind.IsInBind()) {
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-        } else
-        if (connected()) {
-            if (!led_blink) LED_GREEN_TOGGLE;
-            LED_RED_OFF;
-        } else {
-            LED_GREEN_OFF;
-            if (!led_blink) LED_RED_TOGGLE;
-        }
+        leds.Tick_ms(connected());
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
@@ -810,8 +792,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
             clock.Reset();
             fhss.SetToBind(Config.frame_rate_ms);
-            LED_GREEN_ON;
-            LED_RED_OFF;
+            leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             link_state = LINK_STATE_RECEIVE;
             break;
@@ -861,7 +842,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     if (doParamsStore) {
         sx.SetToIdle();
         sx2.SetToIdle();
-        LED_RED_ON; LED_GREEN_ON;
+        leds.SetToParamStore();
         setup_store_to_EEPROM();
         goto RESTARTCONTROLLER;
     }
