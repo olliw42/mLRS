@@ -8,7 +8,11 @@
 //*******************************************************
 
 #include <string.h>
+#ifdef ESP8266
+#include "../Common/esp/esp8266.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32.h"
+#endif
 #include "common_types.h"
 #include "setup_types.h"
 #include "protocols/crsf_protocol.h"

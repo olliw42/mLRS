@@ -24,12 +24,8 @@
 //   Ch3    PA10 / U1Rx   -> Serial Rx
 //   Ch4    PA11          -> Debug Tx (TIM15)
 
-#define DEVICE_HAS_OUT
-#define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_BUZZER
+//#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
-
-
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
@@ -37,14 +33,13 @@
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
-#define EE_START_PAGE             60 // 128 kB flash, 2 kB page
+#define EE_START_PAGE             0 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM15
 
-#define CLOCK_TIMx                TIM2
-#define CLOCK_IRQn                TIM2_IRQn
-#define CLOCK_IRQHandler          TIM2_IRQHandler
-//#define CLOCK_IRQ_PRIORITY        10
+// #define CLOCK_TIMx                TIM2
+// #define CLOCK_IRQn                TIM2_IRQn
+// #define CLOCK_IRQHandler          BLAH1
 
 
 //-- UARTS
@@ -69,71 +64,84 @@
 //#define UART_RXBUFSIZE            512
 #define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
 
-#define SWUART_USE_TIM15 // debug
-#define SWUART_TX_IO              IO_PA11
-#define SWUART_BAUD               115200
+//#define SWUART_USE_TIM15 // debug
+#define SWUART_TX_IO              10
+#define SWUART_BAUD               57600
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   9
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 IO_PB12
-#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_9MHZ
+//#define SPI_USE_SPI2              // PB13, PB14, PB15
+#define SPI_CS_IO                 D8
+// #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+// #define SPI_USE_CLOCKSPEED_9MHZ
 
-#define SX_RESET                  IO_PC14
-#define SX_DIO0                   IO_PA15
-#define SX_DIO1                   // IO_PA1 ???
-#define SX_RX_EN                  //
-#define SX_TX_EN                  //
+#define SX_RESET                  D2
+#define SX_DIO0                   D1
+// #define SX_DIO1                   // IO_PA1 ???
+// #define SX_RX_EN                  //
+// #define SX_TX_EN                  //
 
-#define SX_DIO0_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTA
-#define SX_DIO0_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
+//#define SX_DIO0_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTA
+//#define SX_DIO0_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE15
+//#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
+//#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
+#define SX_DIO_EXTI_IRQHandler          BLAH
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
-// void sx_init_gpio(void)
-// {
-//     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-//     gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-// }
+typedef enum
+{
+  HAL_TICK_FREQ_10HZ         = 100U,
+  HAL_TICK_FREQ_100HZ        = 10U,
+  HAL_TICK_FREQ_1KHZ         = 1U,
+  HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
+} HAL_TickFreqTypeDef;
 
-// void sx_amp_transmit(void)
-// {
-// }
+typedef enum
+{
+    HAL_OK = 0x00,
+    HAL_ERROR = 0x01,
+    HAL_BUSY = 0x02,
+    HAL_TIMEOUT = 0x03
+} HAL_StatusTypeDef;
 
-// void sx_amp_receive(void)
-// {
-// }
 
-// void sx_dio_init_exti_isroff(void)
-// {
-//     LL_SYSCFG_SetEXTISource(SX_DIO0_SYSCFG_EXTI_PORTx, SX_DIO0_SYSCFG_EXTI_LINEx);
+#define     __IO    volatile             /*!< Defines 'read / write' permissions */
 
-//     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-//     LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-//     LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-//     LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-//     LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+inline uint32_t uwTick;
+extern uint32_t uwTickPrio;
+extern HAL_TickFreqTypeDef uwTickFreq;
 
-//     NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
-//     NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
-// }
+void sx_init_gpio(void)
+{
+    pinMode(SX_RESET, OUTPUT);
+    digitalWrite(SX_RESET, HIGH);
+    pinMode(SX_DIO0, INPUT_PULLDOWN_16);
+} 
 
-// void sx_dio_enable_exti_isr(void)
-// {
-//     LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-//     LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
-// }
+void sx_amp_transmit(void)
+{
+}
 
-// void sx_dio_exti_isr_clearflag(void)
-// {
-//     LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-// }
+void sx_amp_receive(void)
+{
+}
+
+void sx_dio_init_exti_isroff(void)
+{
+}
+
+void sx_dio_enable_exti_isr(void)
+{
+    // this is temporarily in the mlrs-rx at line 537, need to work out
+    // how to get this in here.
+    //attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
+}
+
+void sx_dio_exti_isr_clearflag(void)
+{
+}
 
 
 // //-- Out port
@@ -158,69 +166,45 @@
 // }
 
 
-// //-- Button
+//-- Button
 
-// #define BUTTON                    IO_PB0
+#define BUTTON                    0
 
-// void button_init(void)
-// {
-//     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-// }
+void button_init(void)
+{
+    pinMode(BUTTON, INPUT_PULLUP);
+}
 
-// bool button_pressed(void)
-// {
-//     return gpio_read_activelow(BUTTON);
-// }
-
-
-// //-- LEDs
-
-// #define LED_GREEN                 IO_PB3
-// #define LED_RED                   IO_PB2
-
-// void leds_init(void)
-// {
-//     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-//     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-//     gpio_low(LED_GREEN); // LED_GREEN_OFF
-//     gpio_low(LED_RED); // LED_RED_OFF
-// }
-
-// void led_green_off(void) { gpio_low(LED_GREEN); }
-// void led_green_on(void) { gpio_high(LED_GREEN); }
-// void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
-
-// void led_red_off(void) { gpio_low(LED_RED); }
-// void led_red_on(void) { gpio_high(LED_RED); }
-// void led_red_toggle(void) { gpio_toggle(LED_RED); }
+bool button_pressed(void)
+{
+    return digitalRead(BUTTON) ? false : true;
+}
 
 
-// //-- Buzzer
+//-- LEDs
+#define LED_RED                   D4
 
-// #define BUZZER                    IO_PA8
-// #define BUZZER_IO_AF              IO_AF_1
-// #define BUZZER_TIMx               TIM1
-// #define BUZZER_IRQn               TIM1_UP_TIM16_IRQn
-// #define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
-// #define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH1
-// //#define BUZZER_TIM_IRQ_PRIORITY   14
+void leds_init(void)
+{
+    pinMode(LED_RED, OUTPUT);
+    digitalWrite(LED_RED, HIGH);// LED_RED_OFF
+}
+
+void led_green_off(void) {  }
+void led_green_on(void) {  }
+void led_green_toggle(void) {  }
+
+void led_red_off(void) { gpio_low(LED_RED); }
+void led_red_on(void) { gpio_high(LED_RED); }
+void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-// //-- SystemBootLoader
+//-- SystemBootLoader
 
-// #define BOOT_BUTTON               BUTTON
-
-// void systembootloader_init(void)
-// {
-//     gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-//     uint8_t cnt = 0;
-//     for (uint8_t i = 0; i < 16; i++) {
-//         if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
-//     }
-//     if (cnt > 12) {
-//         BootLoaderInit();
-//     }
-// }
+void systembootloader_init(void)
+{
+    // Not needed on the ESP chips, this built in.
+}
 
 
 //-- POWER
@@ -236,40 +220,3 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_17_DBM, .mW = 50 },
 };
-
-
-// //-- TEST
-
-// uint32_t porta[] = {
-//     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3,
-//     LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-//     LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
-//     LL_GPIO_PIN_12, LL_GPIO_PIN_15,
-// };
-
-// uint32_t portb[] = {
-//     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_3,
-//     LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-//     LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13,
-//     LL_GPIO_PIN_14, LL_GPIO_PIN_15,
-// };
-
-// uint32_t portc[] = {
-//     LL_GPIO_PIN_1,
-//     LL_GPIO_PIN_13, LL_GPIO_PIN_14,
-// };
-// /*
-// uint32_t porta[] = {
-//     LL_GPIO_PIN_2, LL_GPIO_PIN_5,
-//     LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
-// };
-
-// uint32_t portb[] = {
-//     LL_GPIO_PIN_3,
-//     LL_GPIO_PIN_11,
-// };
-
-// uint32_t portc[] = {
-//     LL_GPIO_PIN_1,
-// };
-// */

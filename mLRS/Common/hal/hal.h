@@ -193,6 +193,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "tx-hal-diy-wioe5-e22-wle5jc.h"
 #endif
 
+//-- DIY Boards, ESP 868/915 MHz Devices
+
+#ifdef RX_DIY_SX1278_ESP8266
+#include "rx-hal-diy-sx1278-esp8266.h"
+#endif
 
 //-- DIY "easy-to-solder" Boards
 

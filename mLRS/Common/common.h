@@ -41,7 +41,11 @@ void HAL_IncTick(void)
 
 volatile uint32_t millis32(void)
 {
+#if defined(ESP8266)
+    return millis();
+#else
     return uwTick;
+#endif
 }
 
 
@@ -278,7 +282,7 @@ char s[64];
 }
 
 
-void FAIL(uint8_t led_pattern, const char* msg)
+void FAIL_(uint8_t led_pattern, const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -286,7 +290,7 @@ void FAIL(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL(const char* msg)
+void FAIL_(const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);

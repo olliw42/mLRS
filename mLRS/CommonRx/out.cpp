@@ -13,9 +13,11 @@
 #include "../Common/protocols/sbus_protocol.h"
 #include "../Common/protocols/crsf_protocol.h"
 
-
+#ifndef ESP8266
 extern uint16_t micros(void);
-
+#else
+#include <Arduino.h>
+#endif
 
 OutBase::OutBase(void)
     : channel_order(ChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
