@@ -1,3 +1,11 @@
+//*******************************************************
+// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// GPL3
+// https://www.gnu.org/licenses/gpl-3.0.de.html
+//*******************************************************
+// my stripped down UART standard library
+// only TX, no RX, no halfduplex, no wait and tmo rx functions, no convenience functions, quite a number more strips
+//*******************************************************
 
 // These come from the STM files, not sure if they are needed
 #define LL_USART_PARITY_NONE 1
@@ -23,43 +31,46 @@ typedef enum {
 
 void uartb_init(void)
 {
-
+  Serial.setRxBufferSize(UARTB_RXBUFSIZE);
+  Serial.begin(UARTB_BAUD);
 }
 
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
-
+   Serial.begin(baud);
 }
 
 uint16_t uartb_putc(char c)
 {
+  Serial.write(c);
   return 1;
 }
 
-
 char uartb_getc(void)
 {
-  return 'a';
+  return (char)Serial.read();
 }
 
 static inline void uartb_rx_flush(void)
 {
-
+  while (Serial.available()) Serial.read();
 }
 
 static inline void uartb_tx_flush(void)
 {
-
+  Serial.flush();
 }
 
 uint16_t uartb_rx_bytesavailable(void)
 {
-  return 1;
+  return Serial.available();
 }
-
-
 
 static inline uint16_t uartb_rx_available(void)
 {
-  return 1;
+  if (Serial.available() > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }

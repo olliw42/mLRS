@@ -888,26 +888,26 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            // out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
-            // out.SendLinkStatistics();
-            // mavlink.SendRcData(out.GetRcDataPtr(), false);
+            //out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
+            //out.SendLinkStatistics();
+            mavlink.SendRcData(out.GetRcDataPtr(), false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
-                // out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
-                // out.SendLinkStatisticsDisconnected();
-                // mavlink.SendRcData(out.GetRcDataPtr(), true);
+                //out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
+                //out.SendLinkStatisticsDisconnected();
+                mavlink.SendRcData(out.GetRcDataPtr(), true);
             }
         }
     }//end of if(doPostReceive2)
 
     // out.Do();
 
-    // //-- Do mavlink
+    //-- Do mavlink
 
-    // mavlink.Do();
+    mavlink.Do();
 
-    // //-- Store parameters
+    //-- Store parameters
 
     if (doParamsStore) {
         sx.SetToIdle();
