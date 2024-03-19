@@ -41,11 +41,7 @@ void HAL_IncTick(void)
 
 volatile uint32_t millis32(void)
 {
-#if defined(ESP8266)
-    return millis();
-#else
     return uwTick;
-#endif
 }
 
 
