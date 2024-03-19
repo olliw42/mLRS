@@ -7,13 +7,19 @@
 // only TX, no RX, no halfduplex, no wait and tmo rx functions, no convenience functions, quite a number more strips
 //*******************************************************
 
+#if defined(UARTC_USE_SERIAL)
+#define UARTC_SERIAL_NO Serial
+#elif defined(UARTC_USE_SERIAL1)
+#define UARTC_SERIAL_NO Serial1
+#endif
+
 void uartc_init(void)
 {
-  Serial1.begin(115200);
+  UARTC_SERIAL_NO.begin(UARTC_BAUD);
 }
 
 uint16_t uartc_putc(char c)
 {
-  Serial1.write(c);
+  UARTC_SERIAL_NO.write(c);
   return 1;
 }

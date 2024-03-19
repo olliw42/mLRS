@@ -24,8 +24,10 @@
 //   Ch3    PA10 / U1Rx   -> Serial Rx
 //   Ch4    PA11          -> Debug Tx (TIM15)
 
-//#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
+
+#define DEVICE_HAS_SERIAL_OR_DEBUG
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
@@ -47,13 +49,16 @@
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial
-#define UARTB_BAUD                RX_SERIAL_BAUDRATE
+#define UARTB_USE_SERIAL
+#define UARTB_BAUD                  RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
+#define UARTB_TXBUFSIZE             RX_SERIAL_TXBUFSIZE // 1024 // 512
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_RXBUFSIZE             RX_SERIAL_RXBUFSIZE // 1024 // 512
+
+#define UARTC_USE_SERIAL
+#define UARTC_BAUD                  115200
 
 #define UART_USE_UART2_PA2PA3 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
@@ -117,7 +122,7 @@ void sx_init_gpio(void)
 {
     pinMode(SX_RESET, OUTPUT);
     digitalWrite(SX_RESET, HIGH);
-    pinMode(SX_DIO0, INPUT_PULLDOWN_16);
+    pinMode(SX_DIO0, INPUT);
 } 
 
 void sx_amp_transmit(void)

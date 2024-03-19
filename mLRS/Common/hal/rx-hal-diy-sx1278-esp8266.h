@@ -24,8 +24,10 @@
 //   Ch3    PA10 / U1Rx   -> Serial Rx
 //   Ch4    PA11          -> Debug Tx (TIM15)
 
-//#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
+
+#define DEVICE_HAS_SERIAL_OR_DEBUG
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
@@ -41,19 +43,21 @@
 // #define CLOCK_IRQn                TIM2_IRQn
 // #define CLOCK_IRQHandler          BLAH1
 
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial
-#define UARTB_BAUD                RX_SERIAL_BAUDRATE
+#define UARTB_USE_SERIAL
+#define UARTB_BAUD                  RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
+#define UARTB_TXBUFSIZE             RX_SERIAL_TXBUFSIZE // 1024 // 512
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_RXBUFSIZE             RX_SERIAL_RXBUFSIZE // 1024 // 512
+
+#define UARTC_USE_SERIAL
+#define UARTC_BAUD                  115200
 
 #define UART_USE_UART2_PA2PA3 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow

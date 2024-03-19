@@ -29,46 +29,52 @@ typedef enum {
   UART_STOPBIT_MAKEITU32 = UINT32_MAX,
 } UARTSTOPBITENUM;
 
+#if defined(UARTB_USE_SERIAL)
+#define UARTB_SERIAL_NO Serial
+#elif defined(UARTB_USE_SERIAL1)
+#define UARTB_SERIAL_NO Serial1
+#endif
+
 void uartb_init(void)
 {
-  Serial.setRxBufferSize(UARTB_RXBUFSIZE);
-  Serial.begin(UARTB_BAUD);
+  UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
+  UARTB_SERIAL_NO.begin(UARTB_BAUD);
 }
 
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
-   Serial.begin(baud);
+   UARTB_SERIAL_NO.begin(baud);
 }
 
 uint16_t uartb_putc(char c)
 {
-  Serial.write(c);
+  UARTB_SERIAL_NO.write(c);
   return 1;
 }
 
 char uartb_getc(void)
 {
-  return (char)Serial.read();
+  return (char)UARTB_SERIAL_NO.read();
 }
 
 static inline void uartb_rx_flush(void)
 {
-  while (Serial.available()) Serial.read();
+  while (UARTB_SERIAL_NO.available()) UARTB_SERIAL_NO.read();
 }
 
 static inline void uartb_tx_flush(void)
 {
-  Serial.flush();
+  UARTB_SERIAL_NO.flush();
 }
 
 uint16_t uartb_rx_bytesavailable(void)
 {
-  return Serial.available();
+  return UARTB_SERIAL_NO.available();
 }
 
 static inline uint16_t uartb_rx_available(void)
 {
-  if (Serial.available() > 0) {
+  if (UARTB_SERIAL_NO.available() > 0) {
     return true;
   } else {
     return false;
