@@ -111,7 +111,7 @@ typedef enum
 
 inline uint32_t uwTick;
 extern uint32_t uwTickPrio;
-extern uint32_t uwTickFreq = 1; // For esp we will call tick increment every 1ms
+extern HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ; // For esp we will call tick increment every 1ms
 
 void sx_init_gpio(void)
 {
