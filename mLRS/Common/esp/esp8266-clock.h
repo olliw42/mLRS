@@ -67,6 +67,10 @@ IRQHANDLER(
 IRAM_ATTR void CLOCK_IRQHandler(void)
 {
     espTIMER.Do();
+
+    // Call HAL_IncTick every 1ms
+    if ((espTIMER.CNT % 100) == 0) {HAL_IncTick();}
+    
     if (espTIMER.CC1_FLAG) { // this is at about when RX was or was supposed to be received
         espTIMER.CC1_FLAG = false;
         espTIMER.CCR3 = espTIMER.CCR1 + CLOCK_SHIFT_10US; // next doPostReceive
