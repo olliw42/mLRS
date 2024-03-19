@@ -73,13 +73,13 @@
 //-- SX1: SX12xx & SPI
 
 //#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 D8
+#define SPI_CS_IO                 15
 // #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
 // #define SPI_USE_CLOCKSPEED_9MHZ
 
-#define SX_RESET                  D2
-#define SX_DIO0                   D1
-// #define SX_DIO1                   // IO_PA1 ???
+#define SX_RESET                  2
+#define SX_DIO0                   4
+#define SX_DIO1                   5
 // #define SX_RX_EN                  //
 // #define SX_TX_EN                  //
 
@@ -111,8 +111,7 @@ typedef enum
 
 inline uint32_t uwTick;
 extern uint32_t uwTickPrio;
-//extern HAL_TickFreqTypeDef uwTickFreq;
-uint32_t uwTickFreq = 1; // For esp we will call tick increment every 1ms
+extern uint32_t uwTickFreq = 1; // For esp we will call tick increment every 1ms
 
 void sx_init_gpio(void)
 {
@@ -183,7 +182,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
-#define LED_RED                   D4
+#define LED_RED                   16
 
 void leds_init(void)
 {
@@ -198,7 +197,6 @@ void led_green_toggle(void) {  }
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
 
 //-- SystemBootLoader
 

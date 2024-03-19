@@ -296,6 +296,15 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_NAME "DIY SX1278 ESP8266"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
+  #define DEVICE_HAS_SINGLE_LED
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_GENERIC_SX127x_ESP8285
+  #define DEVICE_NAME "GEN SX1276 ESP8285"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define DEVICE_HAS_SINGLE_LED
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 

@@ -199,6 +199,12 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "rx-hal-diy-sx1278-esp8266.h"
 #endif
 
+//-- ELRS Hardware
+
+#ifdef RX_GENERIC_SX127x_ESP8285
+#include "rx-hal-generic-sx127x-esp8285.h"
+#endif
+
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
