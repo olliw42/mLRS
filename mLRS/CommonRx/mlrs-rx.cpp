@@ -583,6 +583,20 @@ void loop(){
         if (connect_tmo_cnt) {
             connect_tmo_cnt--;
         }
+
+#ifndef DEVICE_HAS_SINGLE_LED
+        if (!connected() && !bind.IsInBind()) {
+            DECc(led_blink, SYSTICK_DELAY_MS(500));
+        } else if (bind.IsInBind()){
+            DECc(led_blink, SYSTICK_DELAY_MS(100));
+        }
+
+        if (connected()) {
+            LED_RED_ON;
+        } else if (!connected() && (!led_blink)) {
+            LED_RED_TOGGLE;
+        }
+#else
         if (connected()) {
             DECc(led_blink, SYSTICK_DELAY_MS(500));
         } else {
@@ -598,6 +612,8 @@ void loop(){
             LED_GREEN_OFF;
             if (!led_blink) LED_RED_TOGGLE;
         }
+#endif
+
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
