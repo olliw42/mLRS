@@ -28,12 +28,7 @@
 
 // https://forum.arduino.cc/t/very-short-delays/43445
 // You can "waste" one cycle (62.5ns on a 16MHz Arduino) with this inline assembly instruction
-#define __NOP() __asm__("nop\n\t")
-
-// #define CLOCK_TIMx                TIM2
-// #define CLOCK_IRQn                TIM2_IRQn
-// #define CLOCK_IRQHandler          BLAH1
-
+#define __NOP() __asm__("nop")
 
 //-- UARTS
 // UARTB = serial port
@@ -173,7 +168,7 @@ void systembootloader_init(void)
 //-- POWER
 
 #define POWER_GAIN_DBM            23 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM  // maximum allowed sx power
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
