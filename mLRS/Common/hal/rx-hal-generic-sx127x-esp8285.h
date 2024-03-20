@@ -39,11 +39,6 @@
 
 #define MICROS_TIMx               TIM15
 
-// #define CLOCK_TIMx                TIM2
-// #define CLOCK_IRQn                TIM2_IRQn
-// #define CLOCK_IRQHandler          BLAH1
-
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
@@ -76,24 +71,14 @@
 #define SWUART_TXBUFSIZE          512
 
 //-- SX1: SX12xx & SPI
-
-//#define SPI_USE_SPI2              // PB13, PB14, PB15
 #define SPI_CS_IO                 15
-// #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-// #define SPI_USE_CLOCKSPEED_9MHZ
+#define SPI_FREQUENCY             10000000L
 
 #define SX_RESET                  2
 #define SX_DIO0                   4
 #define SX_DIO1                   5
-// #define SX_RX_EN                  //
-// #define SX_TX_EN                  //
 
-//#define SX_DIO0_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTA
-//#define SX_DIO0_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE15
-//#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-//#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler          BLAH
-//#define SX_DIO_EXTI_IRQ_PRIORITY    11
+IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 typedef enum
 {
@@ -121,54 +106,23 @@ extern HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ; // For esp we will c
 void sx_init_gpio(void)
 {
     pinMode(SX_RESET, OUTPUT);
-    digitalWrite(SX_RESET, HIGH);
     pinMode(SX_DIO0, INPUT);
+
+    digitalWrite(SX_RESET, HIGH);
 } 
 
-void sx_amp_transmit(void)
-{
-}
+void sx_amp_transmit(void) { }
 
-void sx_amp_receive(void)
-{
-}
+void sx_amp_receive(void) { }
 
-void sx_dio_init_exti_isroff(void)
-{
-}
+void sx_dio_init_exti_isroff(void) { }
 
 void sx_dio_enable_exti_isr(void)
 {
-    // this is temporarily in the mlrs-rx at line 537, need to work out
-    // how to get this in here.
-    //attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
+    attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_exti_isr_clearflag(void)
-{
-}
-
-
-// //-- Out port
-// // UART_UARTx = USART2
-
-// void out_init_gpio(void)
-// {
-// }
-
-// void out_set_normal(void)
-// {
-//     LL_USART_Disable(OUT_UARTx);
-//     LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-//     LL_USART_Enable(OUT_UARTx);
-// }
-
-// void out_set_inverted(void)
-// {
-//     LL_USART_Disable(OUT_UARTx);
-//     LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
-//     LL_USART_Enable(OUT_UARTx);
-// }
+void sx_dio_exti_isr_clearflag(void) { }
 
 
 //-- Button
