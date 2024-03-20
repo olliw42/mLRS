@@ -195,14 +195,18 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- DIY Boards, ESP 868/915 MHz Devices
 
-#ifdef RX_DIY_SX1278_ESP8266
+#ifdef RX_DEV_900
 #include "rx-hal-diy-sx1278-esp8266.h"
 #endif
 
 //-- ELRS Hardware
 
-#ifdef RX_GENERIC_SX127x_ESP8285
+#ifdef RX_GENERIC_900
 #include "rx-hal-generic-sx127x-esp8285.h"
+#endif
+
+#ifdef RX_GENERIC_2400_PA
+#include "rx-hal-generic-2400-pa.h"
 #endif
 
 //-- DIY "easy-to-solder" Boards

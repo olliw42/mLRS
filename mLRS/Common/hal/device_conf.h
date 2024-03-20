@@ -292,20 +292,28 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_DIY_SX1278_ESP8266
-  #define DEVICE_NAME "DIY SX1278 ESP8266"
+#ifdef RX_DEV_900
+  #define DEVICE_NAME "DEV 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define DEVICE_HAS_SINGLE_LED
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_GENERIC_SX127x_ESP8285
-  #define DEVICE_NAME "GEN SX1276 ESP8285"
+#ifdef RX_GENERIC_900
+  #define DEVICE_NAME "GENERIC 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define DEVICE_HAS_SINGLE_LED
   #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_GENERIC_2400_PA
+  #define DEVICE_NAME "GENERIC 2400 PA"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SINGLE_LED
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 //-------------------------------------------------------
