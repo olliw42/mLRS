@@ -28,6 +28,7 @@ v0.0.00:
 
 #if defined(ESP8266)
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 #endif
 
 #include "../Common/common_conf.h"
@@ -143,6 +144,9 @@ tRxSxSerial sx_serial;
 
 void rxInit(void)
 {
+#ifdef ESP8266
+    WiFi.mode(WIFI_OFF);
+#endif
 
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
