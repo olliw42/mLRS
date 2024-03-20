@@ -229,18 +229,18 @@ EE_STATUS_ENUM ee_init(void)
         if (status != EE_STATUS_OK) return status;
     } else
     if ((Page0Status != EE_VALID_PAGE) && (Page1Status == EE_VALID_PAGE)) {
-        // // page1 is ok, copy to page0
-        // status = _ee_write_to(EE_PAGE0, NULL, 0);
-        // if (status != EE_STATUS_OK) return status;
+        // page1 is ok, copy to page0
+        status = _ee_write_to(EE_PAGE0, NULL, 0);
+        if (status != EE_STATUS_OK) return status;
     } else {
-        // // both pages invalid, format and return EE_PAGE_EMPTY
-        // status = ee_format();
-        // if (status != EE_STATUS_OK) return status;
-        // if ((Page0Status == EE_ERASE) && (Page1Status == EE_ERASE)) {
-        //     status = EE_STATUS_PAGE_EMPTY;
-        // } else {
-        //     status = EE_STATUS_PAGE_UNDEF;
-        // }
+        // both pages invalid, format and return EE_PAGE_EMPTY
+        status = ee_format();
+        if (status != EE_STATUS_OK) return status;
+        if ((Page0Status == EE_ERASE) && (Page1Status == EE_ERASE)) {
+            status = EE_STATUS_PAGE_EMPTY;
+        } else {
+            status = EE_STATUS_PAGE_UNDEF;
+        }
     }
 
     return status;
