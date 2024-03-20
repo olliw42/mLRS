@@ -50,6 +50,7 @@ void spi_init(void)
 {
   pinMode(SPI_CS_IO, OUTPUT);
   SPI.begin();
+  SPI.setFrequency(SPI_FREQUENCY);
 }
 
 //-- transmit, transfer, read, write functions
