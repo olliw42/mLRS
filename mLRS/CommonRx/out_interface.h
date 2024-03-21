@@ -105,8 +105,13 @@ tOut out;
 class tOut : public OutBase
 {
   public:
-    void Init(void) {}
+    void Init(void) 
+    {
+        OutBase::Init(&Setup.Rx);
+    }
+
     void SendLinkStatistics(void) {}
+    void SendLinkStatisticsDisconnected(void) {}
 };
 
 tOut out;
