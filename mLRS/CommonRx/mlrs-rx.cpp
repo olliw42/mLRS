@@ -106,7 +106,7 @@ v0.0.00:
 #include "rxclock.h"
 #else
 #include "../Common/esp-libs/esp-micros.h"
-#include "../Common/esp-libs/esp-clock.h"
+#include "../Common/esp-libs/esp-rxclock.h"
 #endif
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test

@@ -7,8 +7,8 @@
 // ESP Clock
 //********************************************************
 
-#ifndef STDESP_CLOCK_H
-#define STDESP_CLOCK_H
+#ifndef STDESP_RXCLOCK_H
+#define STDESP_RXCLOCK_H
 
 #pragma once
 
@@ -27,10 +27,6 @@
 // Note that TIM2 may be 16 bit or 32 bit depending on which STM32 controller is used
 
 
-// #ifndef CLOCK_TIMx
-// #error CLOCK_TIMx not defined !
-// #endif
-
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 
 
@@ -38,6 +34,9 @@ volatile bool doPostReceive;
 
 uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
 
+//-------------------------------------------------------
+// Clock Handler - mimics some STM32 internals
+//-------------------------------------------------------
 
 class ClockHandler
 {
@@ -84,7 +83,6 @@ IRAM_ATTR bool CLOCK_IRQHandler(void * timerNo)
         espTIMER.CC1_FLAG = false;
         espTIMER.CCR3 = espTIMER.CCR1 + CLOCK_SHIFT_10US; // next doPostReceive
         espTIMER.CCR1 = espTIMER.CCR1 + CLOCK_PERIOD_10US; // next tick
-        //LED_GREEN_ON;
     }
     if (espTIMER.CC3_FLAG) { // this is 1 ms after RX was or was supposed to be received
         espTIMER.CC3_FLAG = false;
@@ -99,13 +97,14 @@ IRAM_ATTR bool CLOCK_IRQHandler(void * timerNo)
 
 
 //-------------------------------------------------------
-// Clock Class
+// Rx Clock Class
 //-------------------------------------------------------
 
-class ClockBase
+class RxClockBase
 {
   public:
-    void Init(uint16_t frame_rate_ms);
+    void Init(uint16_t period_ms);
+    void SetPeriod(uint16_t period_ms);
     void Reset(void);
 
     void init_isr_off(void);
@@ -115,9 +114,9 @@ class ClockBase
 };
 
 
-void ClockBase::Init(uint16_t frame_rate_ms)
+void RxClockBase::Init(uint16_t period_ms)
 {
-    CLOCK_PERIOD_10US = frame_rate_ms * 100; // frame rate in units of 10us
+    CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
 
     init_isr_off();
@@ -125,7 +124,13 @@ void ClockBase::Init(uint16_t frame_rate_ms)
 }
 
 
-void ClockBase::Reset(void)
+void RxClockBase::SetPeriod(uint16_t period_ms)
+{
+    CLOCK_PERIOD_10US = period_ms * 100;
+}
+
+
+void RxClockBase::Reset(void)
 {
     if (!CLOCK_PERIOD_10US) while (1) {}
 
@@ -139,22 +144,22 @@ void ClockBase::Reset(void)
 }
 
 
-void ClockBase::init_isr_off(void)
+void RxClockBase::init_isr_off(void)
 {
     ITimer.attachInterruptInterval(10, CLOCK_IRQHandler);
     ITimer.disableTimer();
 }
 
 
-void ClockBase::enable_isr(void)
+void RxClockBase::enable_isr(void)
 {
     ITimer.enableTimer();
 }
 
 
-uint16_t ClockBase::tim_10us(void)
+uint16_t RxClockBase::tim_10us(void)
 {
     return espTIMER.CNT; // return 16 bit even for 32 bit timer
 }
 
-#endif // STDESP_CLOCK_H
+#endif // STDESP_RXCLOCK_H

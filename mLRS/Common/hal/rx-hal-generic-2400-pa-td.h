@@ -154,14 +154,14 @@ bool button_pressed(void)
 #define DATA_PIN                    22
 #define NUM_LEDS                    1
 #define BRIGHTNESS                  127
-CRGB leds[NUM_LEDS];
+CRGB rgbLeds[NUM_LEDS];
 uint8_t LED_STATE;
 
 void leds_init(void)
 {
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(rgbLeds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
-    leds[0] = CRGB::Black; 
+    rgbLeds[0] = CRGB::Black; 
     FastLED.show();
     LED_STATE = 0;
 }
@@ -172,12 +172,12 @@ void led_green_toggle(void) { }
 
 
 void led_red_off(void) { 
-    leds[0] = CRGB::Black; 
+    rgbLeds[0] = CRGB::Black; 
     FastLED.show();
     LED_STATE=0; 
     }
 void led_red_on(void) { 
-    leds[0] = CRGB::Red; 
+    rgbLeds[0] = CRGB::Red; 
     FastLED.show();
     LED_STATE=1;  
 }
