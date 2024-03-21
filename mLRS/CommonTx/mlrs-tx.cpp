@@ -209,7 +209,7 @@ void init_once(void)
 }
 
 
-void init(void)
+void init_hw(void)
 {
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
@@ -613,7 +613,7 @@ int main_main(void)
   stack_check_init();
   init_once();
 RESTARTCONTROLLER:
-  init();
+  init_hw();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   serial.SetBaudRate(Config.SerialBaudrate);

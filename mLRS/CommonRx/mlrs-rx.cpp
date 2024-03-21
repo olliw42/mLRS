@@ -99,7 +99,7 @@ tRxSxSerial sx_serial;
 // Init
 //-------------------------------------------------------
 
-void init(void)
+void init_hw(void)
 {
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
@@ -472,7 +472,7 @@ int main_main(void)
 #endif
   stack_check_init();
 RESTARTCONTROLLER:
-  init();
+  init_hw();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   serial.SetBaudRate(Config.SerialBaudrate);
