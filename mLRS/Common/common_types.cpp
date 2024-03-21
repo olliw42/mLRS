@@ -8,8 +8,8 @@
 //*******************************************************
 
 #include <string.h>
-#ifdef ESP8266
-#include "../Common/esp/esp8266.h"
+#if defined(ESP8266) || defined(ESP32)
+#include "../Common/esp/esp.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #endif

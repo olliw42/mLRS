@@ -6,7 +6,7 @@
 // my stripped down STM32 standard library
 //*******************************************************
 
-#include "esp8266.h"
+#include "esp.h"
 #include <Arduino.h>
 
 void __disable_irq(void){

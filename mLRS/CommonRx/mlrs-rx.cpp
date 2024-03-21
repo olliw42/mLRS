@@ -42,10 +42,10 @@ v0.0.00:
 #include "../Common/hal/glue.h"
 
 #if defined(ESP8266) || defined(ESP32)
-#include "../Common/esp/esp8266.h"
+#include "../Common/esp/esp.h"
 #include "../Common/esp/esp-peripherals.h"
-#include "../Common/esp/esp8266-mcu.h"
-#include "../Common/esp/esp8266-stack.h"
+#include "../Common/esp/esp-mcu.h"
+#include "../Common/esp/esp-stack.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
@@ -62,9 +62,9 @@ v0.0.00:
 #include "../Common/sx-drivers/sx12xx.h"
 
 #if defined(ESP8266) || defined(ESP32)
-#include "../Common/esp/esp8266-delay.h"
-#include "../Common/esp/esp8266-eeprom.h"
-#include "../Common/esp/esp8266-spi.h"
+#include "../Common/esp/esp-delay.h"
+#include "../Common/esp/esp-eeprom.h"
+#include "../Common/esp/esp-spi.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
@@ -78,18 +78,18 @@ v0.0.00:
 #if defined(USE_SERIAL) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #elif defined(USE_SERIAL) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp/esp8266-uartb.h"
+#include "../Common/esp/esp-uartb.h"
 #endif
 
 #if defined(USE_DEBUG)
 #if defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
 #elif defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp/esp8266-uart-sw.h"
+#include "../Common/esp/esp-uart-sw.h"
 #elif !defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
 #elif !defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp/esp8266-uartc.h"
+#include "../Common/esp/esp-uartc.h"
 #endif
 #endif //USE_DEBUG
 
@@ -106,7 +106,7 @@ v0.0.00:
 #include "clock.h"
 #else
 #include "../Common/esp/esp-micros.h"
-#include "../Common/esp/esp8266-clock.h"
+#include "../Common/esp/esp-clock.h"
 #endif
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
