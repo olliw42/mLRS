@@ -59,7 +59,7 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 
-#include "../Common/micros.h"
+#include "../Common/timer.h"
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
@@ -105,11 +105,10 @@ void init_hw(void)
 {
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
+    timer_init();
 
     leds_init();
     button_init();
-
-    micros_init();
 
     serial.Init();
     out.Init();
