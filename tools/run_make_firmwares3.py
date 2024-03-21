@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 28.01.2024
+ version 22.02.2024
 ********************************************************
 '''
 import os
@@ -236,6 +236,7 @@ MLRS_SOURCES_HAL_STM32G4 = [
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_cortex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash.c'),
@@ -277,6 +278,8 @@ MLRS_SOURCES_HAL_STM32G4 = [
 MLRS_SOURCES_HAL_STM32WL = [
     os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal.c'),
     os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_cortex.c'),
+    os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_dma.c'),
+    os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_dma_ex.c'),
     os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_flash.c'),
     os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_flash_ex.c'),
     os.path.join('Drivers','STM32WLxx_HAL_Driver','Src','stm32wlxx_hal_i2c.c'),
@@ -347,6 +350,7 @@ MLRS_SOURCES_HAL_STM32L4 = [
 MLRS_SOURCES_HAL_STM32F0 = [
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_cortex.c'),
+    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_dma.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash_ex.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_i2c.c'),
@@ -355,7 +359,6 @@ MLRS_SOURCES_HAL_STM32F0 = [
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr_ex.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_dma.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_adc.c'),
@@ -380,6 +383,7 @@ MLRS_SOURCES_HAL_STM32F0 = [
 MLRS_SOURCES_HAL_STM32F3 = [
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_cortex.c'),
+    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_dma.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_flash.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_flash_ex.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_i2c.c'),
@@ -388,7 +392,6 @@ MLRS_SOURCES_HAL_STM32F3 = [
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pwr_ex.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_rcc.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_rcc_ex.c'),
-    os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_dma.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pcd.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_ll_adc.c'),

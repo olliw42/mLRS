@@ -16,7 +16,28 @@
 
 
 //-------------------------------------------------------
-// WEPS WifiBridge class
+// ESP Helper
+//-------------------------------------------------------
+
+void esp_enable(uint8_t serial_destination)
+{
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    if (serial_destination == SERIAL_DESTINATION_SERIAL) {  // enable/disable ESP on serial
+  #endif
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    if (serial_destination == SERIAL_DESTINATION_SERIAL2) {  // enable/disable ESP on serial2
+  #endif
+        esp_gpio0_high(); esp_reset_high();
+    } else {
+        esp_reset_low();
+    }
+#endif
+}
+
+
+//-------------------------------------------------------
+// ESP WifiBridge class
 //-------------------------------------------------------
 
 #define ESP_PASSTHROUGH_TMO_MS  3000
@@ -122,22 +143,19 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
 #if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
     if (!initialized) return;
 
-    uint16_t led_blink = 0;
     uint32_t serial_tlast_ms = millis32();
 
     disp.DrawNotify("ESP\nFLASHING");
 
     ser->SetBaudRate(115200);
 
-    LED_RED_OFF;
-    LED_GREEN_ON;
+    leds.InitPassthrough();
 
     while (1) {
 
         if (doSysTask) {
             doSysTask = 0;
-            DECc(led_blink, SYSTICK_DELAY_MS(100));
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+            leds.TickPassthrough_ms();
         }
 
         uint8_t dtr_rts = esp_dtr_rts();
@@ -175,7 +193,7 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         }
 
     }
-#endif
+#endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && USE_ESP_WIFI_BRIDGE_DTR_RTS
 }
 
 
@@ -226,20 +244,16 @@ void tTxEspWifiBridge::EnterCli(void)
 
 void tTxEspWifiBridge::passthrough_do(void)
 {
-uint16_t led_blink = 0;
-
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
 
-    LED_RED_OFF;
-    LED_GREEN_ON;
+    leds.InitPassthrough();
 
     while (1) {
         if (doSysTask) {
             doSysTask = 0;
-            DECc(led_blink, SYSTICK_DELAY_MS(100));
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
+            leds.TickPassthrough_ms();
         }
 
         if (com->available()) {

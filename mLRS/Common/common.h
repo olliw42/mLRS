@@ -23,6 +23,7 @@
 #include "fail.h"
 #include "buzzer.h"
 #include "fan.h"
+#include "leds.h"
 
 
 //-------------------------------------------------------
@@ -198,6 +199,7 @@ BindBase bind;
 
 tBuzzer buzzer;
 tFan fan;
+tLEDs leds;
 
 
 //-------------------------------------------------------
@@ -278,7 +280,7 @@ char s[64];
 }
 
 
-void FAIL_(uint8_t led_pattern, const char* msg)
+void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -286,7 +288,7 @@ void FAIL_(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL_(const char* msg)
+void FAIL_WMSG(const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);
@@ -300,20 +302,6 @@ void FAIL_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint
     FAILALWAYS_WSTATE(led_pattern, msg, irq_status, link_state, link_rx1_status, link_rx2_status);
 #endif
 }
-
-
-//-------------------------------------------------------
-//-- LED defines
-//-------------------------------------------------------
-
-#define LED_GREEN_ON              led_green_on()
-#define LED_RED_ON                led_red_on()
-
-#define LED_GREEN_OFF             led_green_off()
-#define LED_RED_OFF               led_red_off()
-
-#define LED_GREEN_TOGGLE          led_green_toggle()
-#define LED_RED_TOGGLE            led_red_toggle()
 
 
 //-------------------------------------------------------

@@ -13,7 +13,6 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include "math.h"
 #include "setup_tx.h"
 
 
@@ -626,15 +625,6 @@ void tTxCli::print_device_version(void)
 }
 
 
-#ifdef DEVICE_HAS_SX126x
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
-#elif defined DEVICE_HAS_SX127x
-#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
-#else
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
-#endif
-
 void tTxCli::print_frequencies(void)
 {
 char s[32];
@@ -643,10 +633,10 @@ char s[32];
         puts(u8toBCD_s(i));
         puts("  ch: ");
         puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  freg: ");
+        puts("  f_reg: ");
         puts(u32toBCD_s(fhss.FhssList(i)));
         puts("  f: ");
-        u32toBCDstr(CLI_REG_TO_FREQ(fhss.FhssList(i)), s);
+        u32toBCDstr(fhss.GetFreq_x1000(i), s);
         remove_leading_zeros(s);
         puts(s);
 #if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x

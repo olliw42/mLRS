@@ -17,7 +17,9 @@
 
 extern volatile uint32_t millis32(void);
 static inline bool connected(void);
+#ifdef DEVICE_IS_RECEIVER
 extern void clock_reset(void);
+#endif
 
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
@@ -237,7 +239,6 @@ uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 
 #endif
 #ifdef DEVICE_IS_RECEIVER
-
 
 void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
