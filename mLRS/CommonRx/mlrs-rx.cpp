@@ -59,6 +59,8 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #include "../Common/hal/timer.h"
+#include "powerup.h"
+#include "rxclock.h"
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
@@ -67,10 +69,8 @@ v0.0.00:
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "rxclock.h"
 #include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
-#include "powerup.h"
 
 
 RxClockBase rxclock;
