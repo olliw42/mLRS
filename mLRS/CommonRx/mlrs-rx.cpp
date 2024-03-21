@@ -26,16 +26,22 @@ v0.0.00:
 #define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
+#if defined(ESP8266) || defined(ESP32)
+    #include <Arduino.h>
+#endif
+
+// needed to switch off the wifi module. 
 #if defined(ESP8266)
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
+    #include <ESP8266WiFi.h>
+#elif defined(ESP32) 
+    #include <WiFi.h>
 #endif
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
 #include "../Common/hal/glue.h"
 
-#if defined(ESP8266)
+#if defined(ESP8266) || defined(ESP32)
 #include "../Common/esp/esp8266.h"
 #include "../Common/esp/esp-peripherals.h"
 #include "../Common/esp/esp8266-mcu.h"
@@ -55,7 +61,7 @@ v0.0.00:
 #include "../Common/hal/hal.h"
 #include "../Common/sx-drivers/sx12xx.h"
 
-#if defined(ESP8266)
+#if defined(ESP8266) || defined(ESP32)
 #include "../Common/esp/esp8266-delay.h"
 #include "../Common/esp/esp8266-eeprom.h"
 #include "../Common/esp/esp8266-spi.h"
@@ -65,24 +71,24 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
 #endif
 
-#if defined(USE_SX2) && !defined(ESP8266)
+#if defined(USE_SX2) && !defined(ESP8266) &&!defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
 
-#if defined(USE_SERIAL) && !defined(ESP8266)
+#if defined(USE_SERIAL) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
-#elif defined(USE_SERIAL) && defined(ESP8266)
+#elif defined(USE_SERIAL) && (defined(ESP8266) || defined(ESP32))
 #include "../Common/esp/esp8266-uartb.h"
 #endif
 
 #if defined(USE_DEBUG)
-#if defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266)
+#if defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
-#elif defined(DEVICE_HAS_DEBUG_SWUART) && defined(ESP8266)
+#elif defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
 #include "../Common/esp/esp8266-uart-sw.h"
-#elif !defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266)
+#elif !defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
-#elif !defined(DEVICE_HAS_DEBUG_SWUART) && defined(ESP8266)
+#elif !defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
 #include "../Common/esp/esp8266-uartc.h"
 #endif
 #endif //USE_DEBUG
@@ -95,7 +101,7 @@ v0.0.00:
 #include "../Common/setup.h"
 #include "../Common/common.h"
 
-#if !defined(ESP8266)
+#if !defined(ESP8266) && !defined(ESP32)
 #include "../Common/micros.h"
 #include "clock.h"
 #else
@@ -120,6 +126,8 @@ tTDiversity tdiversity;
 // used by Arduino to reset the microcontroller 
 #if defined(ESP8266)
 void(* resetFunc) (void) = 0; //declare reset function at address 0
+#elif defined(ESP32)
+void resetFunc(void) {ESP.restart();}
 #endif
 
 // is required in bind.h
@@ -144,7 +152,7 @@ tRxSxSerial sx_serial;
 
 void rxInit(void)
 {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
     WiFi.mode(WIFI_OFF);
 #endif
 
@@ -162,7 +170,6 @@ void rxInit(void)
     buzzer.Init();
     fan.Init();
     dbg.Init();
-
     sx.Init();
     sx2.Init();
 
