@@ -280,7 +280,7 @@ char s[64];
 }
 
 
-void FAIL(uint8_t led_pattern, const char* msg)
+void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -288,7 +288,7 @@ void FAIL(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL(const char* msg)
+void FAIL_WMSG(const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);
