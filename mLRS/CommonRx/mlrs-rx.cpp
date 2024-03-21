@@ -65,13 +65,13 @@ v0.0.00:
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "clock.h"
+#include "rxclock.h"
 #include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
 #include "powerup.h"
 
 
-ClockBase clock;
+RxClockBase rxclock;
 PowerupCounterBase powerup;
 tRxStats rxstats;
 tRDiversity rdiversity;
@@ -79,7 +79,7 @@ tTDiversity tdiversity;
 
 
 // is required in bind.h
-void clock_reset(void) { clock.Reset(); }
+void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
@@ -122,7 +122,7 @@ void init(void)
     setup_init();
     powerup.Init();
 
-    clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
+    rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
 }
 
 
@@ -427,7 +427,7 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 
     if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 
-        if (do_clock_reset) clock.Reset();
+        if (do_clock_reset) rxclock.Reset();
 
         rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
     }
@@ -789,8 +789,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigForBind();
-            clock.SetPeriod(Config.frame_rate_ms);
-            clock.Reset();
+            rxclock.SetPeriod(Config.frame_rate_ms);
+            rxclock.Reset();
             fhss.SetToBind(Config.frame_rate_ms);
             leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;

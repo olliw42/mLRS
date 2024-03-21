@@ -4,10 +4,10 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// Clock
+// Rx Clock
 //********************************************************
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef RXCLOCK_H
+#define RXCLOCK_H
 #pragma once
 
 // we use a 10us time base, so that overrun is 655 ms
@@ -29,10 +29,10 @@ uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need 
 
 
 //-------------------------------------------------------
-// Clock Class
+// Rx Clock Class
 //-------------------------------------------------------
 
-class ClockBase
+class RxClockBase
 {
   public:
     void Init(uint16_t period_ms);
@@ -46,7 +46,7 @@ class ClockBase
 };
 
 
-void ClockBase::Init(uint16_t period_ms)
+void RxClockBase::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
@@ -56,13 +56,13 @@ void ClockBase::Init(uint16_t period_ms)
 }
 
 
-void ClockBase::SetPeriod(uint16_t period_ms)
+void RxClockBase::SetPeriod(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100;
 }
 
 
-void ClockBase::Reset(void)
+void RxClockBase::Reset(void)
 {
     if (!CLOCK_PERIOD_10US) while (1) {}
 
@@ -76,7 +76,7 @@ void ClockBase::Reset(void)
 }
 
 
-void ClockBase::init_isr_off(void)
+void RxClockBase::init_isr_off(void)
 {
     tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US); // works for both 16 and 32 bit timer
 
@@ -91,21 +91,21 @@ void ClockBase::init_isr_off(void)
 }
 
 
-void ClockBase::enable_isr(void)
+void RxClockBase::enable_isr(void)
 {
     LL_TIM_EnableIT_CC1(CLOCK_TIMx);
     LL_TIM_EnableIT_CC3(CLOCK_TIMx);
 }
 
 
-uint16_t ClockBase::tim_10us(void)
+uint16_t RxClockBase::tim_10us(void)
 {
     return CLOCK_TIMx->CNT; // return 16 bit even for 32 bit timer
 }
 
 
 //-------------------------------------------------------
-// Clock ISR
+// Rx Clock ISR
 //-------------------------------------------------------
 
 IRQHANDLER(
@@ -124,4 +124,4 @@ void CLOCK_IRQHandler(void)
 })
 
 
-#endif // CLOCK_H
+#endif // RXCLOCK_H
