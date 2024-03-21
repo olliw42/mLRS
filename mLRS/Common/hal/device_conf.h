@@ -292,8 +292,8 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_DEV_900
-  #define DEVICE_NAME "DEV 900"
+#ifdef RX_DEVBOARD_900
+  #define DEVICE_NAME "DEVBOARD 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define DEVICE_HAS_SINGLE_LED
@@ -308,8 +308,16 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_GENERIC_2400_PA
-  #define DEVICE_NAME "GENERIC 2400 PA"
+#ifdef RX_GENERIC_2400
+  #define DEVICE_NAME "GENERIC 2400"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SINGLE_LED
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+#ifdef RX_GENERIC_2400_PA_D
+  #define DEVICE_NAME "GENERIC 2400 PA D"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SINGLE_LED
   #define DEVICE_HAS_SX128x

@@ -193,20 +193,24 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "tx-hal-diy-wioe5-e22-wle5jc.h"
 #endif
 
-//-- DEV Boards, ESP 868/915 MHz Devices
+//-- DEV Boards
 
-#ifdef RX_DEV_900
-#include "rx-hal-diy-sx1278-esp8266.h"
+#ifdef RX_DEVBOARD_900
+#include "rx-hal-dev-sx1278-esp8266.h"
 #endif
 
 //-- ELRS Hardware
 
 #ifdef RX_GENERIC_900
-#include "rx-hal-generic-sx127x-esp8285.h"
+#include "rx-hal-generic-900.h"
 #endif
 
-#ifdef RX_GENERIC_2400_PA
-#include "rx-hal-generic-2400-pa.h"
+#ifdef RX_GENERIC_2400
+#include "rx-hal-generic-2400.h"
+#endif
+
+#ifdef RX_GENERIC_2400_PA_D
+#include "rx-hal-generic-2400-pa-d.h"
 #endif
 
 #ifdef RX_GENERIC_2400_PA_TD
