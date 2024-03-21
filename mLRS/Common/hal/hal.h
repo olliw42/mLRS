@@ -75,6 +75,7 @@ In rx-hal files:
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
+#define DEVICE_HAS_SINGLE_LED       // board has only one LED
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
