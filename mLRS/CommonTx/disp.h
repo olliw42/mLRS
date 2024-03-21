@@ -488,7 +488,7 @@ void tTxDisp::Draw(void)
 
 //    if (1) { // good for stress testing
     if (page_modified || page_update) {
-//uint32_t t1 = micros(); //HAL_GetTick();
+//uint32_t t1 = micros16(); //HAL_GetTick();
 
         if (!gdisp_update_completed()) return;
 
@@ -503,10 +503,10 @@ void tTxDisp::Draw(void)
             case PAGE_NOTIFY_STORE: draw_page_notify("STORE"); break;
         }
 
-//uint32_t t2 = micros(); //HAL_GetTick();
+//uint32_t t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\ndraw ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
 
-//t1 = micros(); //HAL_GetTick();
+//t1 = micros16(); //HAL_GetTick();
 
         gdisp_update();
 
@@ -514,7 +514,7 @@ void tTxDisp::Draw(void)
         page_update = false;
 
 //while (!gdisp_update_completed()) {}
-//t2 = micros(); //HAL_GetTick();
+//t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\nupda ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
     }
 }

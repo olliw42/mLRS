@@ -21,7 +21,7 @@
 #include "jr_pin5_interface.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
 extern tTxStats txstats;
 
@@ -175,7 +175,7 @@ bool tTxCrsf::transmit_start(void)
 // is called in isr context
 void tTxCrsf::parse_nextchar(uint8_t c)
 {
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
 
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;

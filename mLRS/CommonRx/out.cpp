@@ -14,7 +14,7 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 
 
 OutBase::OutBase(void)
@@ -340,7 +340,7 @@ void OutBase::do_crsf(void)
 {
     if (!link_stats_available) return;
 
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
 
     if (link_stats_set_tstart) {
         link_stats_tstart_us = tnow_us;

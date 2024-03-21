@@ -28,7 +28,7 @@ void micros_init(void)
 }
 
 
-uint16_t micros(void)
+uint16_t micros16(void)
 {
     return MICROS_TIMx->CNT;
 }
