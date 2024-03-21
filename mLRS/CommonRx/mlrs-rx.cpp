@@ -28,6 +28,7 @@ v0.0.00:
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
@@ -38,7 +39,6 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
 #include "../Common/hal/hal.h"
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
@@ -58,10 +58,12 @@ v0.0.00:
 #ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
+
+#include "../Common/micros.h"
+#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-#include "../Common/micros.h"
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
