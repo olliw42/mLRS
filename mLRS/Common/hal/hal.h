@@ -193,7 +193,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "tx-hal-diy-wioe5-e22-wle5jc.h"
 #endif
 
-//-- DIY Boards, ESP 868/915 MHz Devices
+//-- DEV Boards, ESP 868/915 MHz Devices
 
 #ifdef RX_DEV_900
 #include "rx-hal-diy-sx1278-esp8266.h"
@@ -207,6 +207,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_GENERIC_2400_PA
 #include "rx-hal-generic-2400-pa.h"
+#endif
+
+#ifdef RX_GENERIC_2400_PA_TD
+#include "rx-hal-generic-2400-pa-td.h"
 #endif
 
 //-- DIY "easy-to-solder" Boards

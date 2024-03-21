@@ -316,6 +316,15 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef RX_GENERIC_2400_PA_TD
+  #define DEVICE_NAME "GENERIC 2400 PA TD"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SINGLE_LED
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+
 //-------------------------------------------------------
 // MLRS Feature Defines
 //-------------------------------------------------------
