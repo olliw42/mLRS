@@ -7,15 +7,20 @@
 // ESP Clock
 //********************************************************
 
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef STDESP_CLOCK_H
+#define STDESP_CLOCK_H
 
 #pragma once
 
 #define USING_TIM_DIV1 true
-#include "ESP8266TimerInterrupt.h"
 
-ESP8266Timer ITimer;
+#if defined(ESP8266)
+  #include "ESP8266TimerInterrupt.h"
+  ESP8266Timer ITimer;
+#elif defined(ESP32) 
+  #include "ESP32TimerInterrupt.h"
+  ESP32Timer ITimer(1);
+#endif
 // we use a 10us time base, so that overrun is 655 ms
 // 65 ms would only be 3 packets
 // I have tested it with 1us time base, and it also works fine, but hey
@@ -64,7 +69,11 @@ ClockHandler espTIMER;
 //-------------------------------------------------------
 
 IRQHANDLER(
+#if defined(ESP8266)
 IRAM_ATTR void CLOCK_IRQHandler(void)
+#elif defined(ESP32)
+IRAM_ATTR bool CLOCK_IRQHandler(void * timerNo)
+#endif
 {
     espTIMER.Do();
 
@@ -81,6 +90,11 @@ IRAM_ATTR void CLOCK_IRQHandler(void)
         espTIMER.CC3_FLAG = false;
         doPostReceive = true;
     }
+
+    #if defined(ESP32)
+    return true;
+    #endif
+
 })
 
 
@@ -143,4 +157,4 @@ uint16_t ClockBase::tim_10us(void)
     return espTIMER.CNT; // return 16 bit even for 32 bit timer
 }
 
-#endif // CLOCK_H
+#endif // STDESP_CLOCK_H
