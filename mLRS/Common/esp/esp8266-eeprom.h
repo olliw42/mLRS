@@ -12,8 +12,8 @@
 //
 //*******************************************************
 
-#ifndef STDESP8266_EEPROM_H
-#define STDESP8266_EEPROM_H
+#ifndef STDESP_EEPROM_H
+#define STDESP_EEPROM_H
 
 #include <EEPROM.h>
 
@@ -78,16 +78,15 @@ void ee_hal_lock(void)
 uint16_t ee_hal_programword(uint32_t Address, uint32_t Data)
 {
     EEPROM.put(Address, Data);
-    if (EEPROM.commit()) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return 1;
 }
 
 uint16_t ee_hal_erasepage(uint32_t Page_Address, uint32_t Page_No)
 {
-    return ee_hal_programword(Page_Address, EE_ERASE);
+    ee_hal_programword(Page_Address, EE_ERASE);
+    uint16_t result = EEPROM.commit();
+    delay_ms(20);
+    return result;
 }
 
 //-------------------------------------------------------
@@ -139,15 +138,26 @@ uint32_t ToPageBaseAddress, ToPageEndAddress, FromPageBaseAddress, PageNo, adr;
         if (val != (uint32_t)0xFFFFFFFF) {
             adr = ToPageBaseAddress + 16 + 4*n;
             if (adr >= ToPageEndAddress) { status = EE_STATUS_PAGE_FULL; goto QUICK_EXIT; }
-            if (!ee_hal_programword(adr, val)) { status = EE_STATUS_FLASH_FAIL; goto QUICK_EXIT; }
+            // with deffered commit we can't test the flash until commit()
+            ee_hal_programword(adr, val);
         }
     }
-    
+    if (!EEPROM.commit()) {
+         status = EE_STATUS_FLASH_FAIL; 
+         goto QUICK_EXIT;
+    }
+    delay_ms(20);
     // Set ToPage status to EE_VALID_PAGE status
-    if (!ee_hal_programword(ToPageBaseAddress, EE_VALID_PAGE)) { status = EE_STATUS_FLASH_FAIL; goto QUICK_EXIT; }
+    ee_hal_programword(ToPageBaseAddress, EE_VALID_PAGE);
+    if (!EEPROM.commit()) {
+         status = EE_STATUS_FLASH_FAIL; 
+         goto QUICK_EXIT;
+    }
+    delay_ms(20);
     status = EE_STATUS_OK;
 QUICK_EXIT:
     ee_hal_lock();
+    EEPROM.commit();
     return status;
 }
 
@@ -247,4 +257,4 @@ EE_STATUS_ENUM ee_init(void)
 }
 
 //-------------------------------------------------------
-#endif // STDESP8266_EEPROM_H
+#endif // STDESP_EEPROM_H
