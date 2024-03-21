@@ -7,11 +7,13 @@
 // ESP SPI Interface
 //********************************************************
 
-#ifndef STDESP8266_SPI_H
-#define STDESP8266_SPI_H
+#ifndef STDESP_SPI_H
+#define STDESP_SPI_H
 
 
 #include <SPI.h>
+
+SPIClass * spi = NULL;
 
 //-- select functions
 
@@ -48,9 +50,18 @@ static inline void spi_deselect(void)
 
 void spi_init(void)
 {
+#if defined(ESP32) 
+  spi = new SPIClass(HSPI);
+#elif defined(ESP8266)
+  spi = new SPIClass();
+#endif
   pinMode(SPI_CS_IO, OUTPUT);
-  SPI.begin();
-  SPI.setFrequency(SPI_FREQUENCY);
+#if defined(HSPI_SCLK) && defined(HSPI_MISO) && defined(HSPI_MOSI) &&  defined(HSPI_SS)
+  spi->begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, HSPI_SS);
+#else
+  spi->begin();
+#endif
+  spi->setFrequency(SPI_FREQUENCY);
 }
 
 //-- transmit, transfer, read, write functions
@@ -58,7 +69,7 @@ void spi_init(void)
 // is blocking
 uint8_t spi_transmitchar(uint8_t c)
 {
-  return SPI.transfer(c);
+  return spi->transfer(c);
 }
 
 // is blocking
@@ -148,4 +159,4 @@ void spi_writecandread(uint8_t c, uint8_t* data, uint16_t datalen)
 
 #endif
 
-#endif  // STDESP8266_SPI_H
+#endif  // STDESP_SPI_H
