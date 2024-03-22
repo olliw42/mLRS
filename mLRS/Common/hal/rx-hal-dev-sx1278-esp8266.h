@@ -9,6 +9,23 @@
 
 //-------------------------------------------------------
 // DEVBOARD 900 RX
+//
+// Uses a Lolin Node MCU V3 ESP8266 Devboard and a SX1276 module
+// 
+// Could use other ESP8266 devboards 
+//
+// https://www.aliexpress.com/item/1005005077804800.html
+// https://www.aliexpress.com/item/32962551530.html
+//
+// 3v  ->  Vcc
+// G   ->  GND
+// D8  ->  NSS
+// D7  ->  MOSI
+// D6  ->  MISO
+// D5  ->  SCK
+// D2  ->  REST
+// D1  ->  DIO0 
+//
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SYSTEMBOOT
