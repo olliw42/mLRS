@@ -294,6 +294,46 @@ The default selection of frequency bands can be overruled by feature defines.
 
 
 //-------------------------------------------------------
+// ESP Boards
+//-------------------------------------------------------
+
+#ifdef RX_DEVBOARD_900_ESP8266
+  #define DEVICE_NAME "DEVBOARD 900"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_GENERIC_900_ESP8285
+  #define DEVICE_NAME "GENERIC 900"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_GENERIC_2400_ESP8285
+  #define DEVICE_NAME "GENERIC 2400"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+#ifdef RX_GENERIC_2400_PA_D_ESP8285
+  #define DEVICE_NAME "GENERIC 2400 PA D"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+#ifdef RX_GENERIC_2400_PA_TD_ESP32
+  #define DEVICE_NAME "GENERIC 2400 PA TD"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+
+//-------------------------------------------------------
 // MLRS Feature Defines
 //-------------------------------------------------------
 // should go somewhere else !?

@@ -10,8 +10,8 @@
 v0.0.00:
 */
 
-#define DBG_MAIN(x)
-#define DBG_MAIN_SLIM(x)
+#define DBG_MAIN(x) x
+#define DBG_MAIN_SLIM(x) x
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -28,6 +28,36 @@ v0.0.00:
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
+
+#if defined(ESP8266) || defined(ESP32)
+#include "../Common/hal/esp-glue.h"
+
+//XX#include "../Common/esp-lib/esp.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+
+#include "../Common/esp-lib/esp-peripherals.h"
+#include "../Common/esp-lib/esp-mcu.h"
+#include "../Common/esp-lib/esp-stack.h"
+#include "../Common/hal/hal.h"
+#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../Common/esp-lib/esp-eeprom.h"
+#include "../Common/esp-lib/esp-spi.h"
+#ifdef USE_SERIAL
+#include "../Common/esp-lib/esp-uartb.h"
+#endif
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
+#else
+#include "../Common/esp-lib/esp-uartc.h"
+#endif
+#endif
+#include "../Common/hal/esp-timer.h"
+#include "../Common/hal/esp-powerup.h"
+#include "../Common/hal/esp-rxclock.h"
+
+#else
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
@@ -38,7 +68,6 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
 #include "../Common/hal/hal.h"
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
@@ -58,17 +87,20 @@ v0.0.00:
 #ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
+#include "../Common/hal/timer.h"
+#include "powerup.h"
+#include "rxclock.h"
+#endif
+
+#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-#include "../Common/micros.h"
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "rxclock.h"
 #include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
-#include "powerup.h"
 
 
 RxClockBase rxclock;
@@ -101,13 +133,14 @@ tRxSxSerial sx_serial;
 
 void init_hw(void)
 {
+    hal_init();
+    
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
+    timer_init();
 
     leds_init();
     button_init();
-
-    micros_init();
 
     serial.Init();
     out.Init();
@@ -134,7 +167,7 @@ volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
 IRQHANDLER(
-void SX_DIO_EXTI_IRQHandler(void)
+IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
@@ -461,64 +494,76 @@ bool frame_missed;
 
 static inline bool connected(void)
 {
-  return (connect_state == CONNECT_STATE_CONNECTED);
+    return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 
+#if defined(ESP8266) || defined(ESP32)
+void setup()
+#else
 int main_main(void)
+#endif
 {
 #ifdef BOARD_TEST_H
-  main_test();
+    main_test();
 #endif
-  stack_check_init();
+    stack_check_init();
 RESTARTCONTROLLER:
-  init_hw();
-  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+    init_hw();
+    DBG_MAIN(dbg.puts("DBG1: Init complete\n"));
 
-  serial.SetBaudRate(Config.SerialBaudrate);
+    serial.SetBaudRate(Config.SerialBaudrate);
 
-  // startup sign of life
-  leds.Init();
+    // startup sign of life
+    leds.Init();
 
-  // start up sx
-  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-  irq_status = irq2_status = 0;
-  IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
-  bind.Init();
-  fhss.Init(&Config.Fhss);
-  fhss.Start();
+    // start up sx
+    if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+    if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
+    irq_status = irq2_status = 0;
+    IF_SX(sx.StartUp(&Config.Sx));
+    IF_SX2(sx2.StartUp(&Config.Sx));
+    bind.Init();
+    fhss.Init(&Config.Fhss);
+    fhss.Start();
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+    sx.SetRfFrequency(fhss.GetCurrFreq());
+    sx2.SetRfFrequency(fhss.GetCurrFreq());
 
-  link_state = LINK_STATE_RECEIVE;
-  connect_state = CONNECT_STATE_LISTEN;
-  connect_tmo_cnt = 0;
-  connect_listen_cnt = 0;
-  connect_sync_cnt = 0;
-  connect_occured_once = false;
-  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-  link_task_init();
-  doPostReceive2_cnt = 0;
-  doPostReceive2 = false;
-  frame_missed = false;
+    link_state = LINK_STATE_RECEIVE;
+    connect_state = CONNECT_STATE_LISTEN;
+    connect_tmo_cnt = 0;
+    connect_listen_cnt = 0;
+    connect_sync_cnt = 0;
+    connect_occured_once = false;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_task_init();
+    doPostReceive2_cnt = 0;
+    doPostReceive2 = false;
+    frame_missed = false;
 
-  rxstats.Init(Config.LQAveragingPeriod);
-  rdiversity.Init();
-  tdiversity.Init(Config.frame_rate_ms);
+    rxstats.Init(Config.LQAveragingPeriod);
+    rdiversity.Init();
+    tdiversity.Init(Config.frame_rate_ms);
+    out.Configure(Setup.Rx.OutMode);
+    mavlink.Init();
+    sx_serial.Init();
 
-  out.Configure(Setup.Rx.OutMode);
-  mavlink.Init();
-  sx_serial.Init();
-  fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(sx.RfPower_dbm());
 
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
+    tick_1hz = 0;
+    tick_1hz_commensurate = 0;
+    doSysTask = 0; // helps in avoiding too short first loop
+
+    DBG_MAIN(dbg.puts("DBG2: Starting loop\n"));
+
+#if defined(ESP8266) || defined(ESP32)
+}//end of setup
+void loop() 
+{
+#else    
   while (1) {
-
+#endif
     //-- SysTask handling
 
     if (doSysTask) {
@@ -536,7 +581,7 @@ RESTARTCONTROLLER:
 
         if (!tick_1hz) {
             dbg.puts(".");
-/*            dbg.puts("\nRX: ");
+            dbg.puts("\nRX: ");
             dbg.puts(u8toBCD_s(rxstats.GetLQ_rc())); dbg.putc(',');
             dbg.puts(u8toBCD_s(rxstats.GetLQ_serial()));
             dbg.puts(" (");
@@ -551,7 +596,7 @@ RESTARTCONTROLLER:
             dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
         }
     }
 
@@ -788,6 +833,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
+            DBG_MAIN(dbg.puts("BINDING\n"));
             bind.ConfigForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
@@ -805,7 +851,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
 
+#if defined(ESP8266) || defined(ESP32)
+    if (link_state != link_state_before) return; // link state has changed, so process immediately
+#else
     if (link_state != link_state_before) continue; // link state has changed, so process immediately
+#endif    
 
     //-- Update channels, Out handling, etc
 
@@ -844,10 +894,16 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         sx2.SetToIdle();
         leds.SetToParamStore();
         setup_store_to_EEPROM();
+#if defined(ESP8266) || defined(ESP32)
+        resetFunc(); //call reset
+#else
         goto RESTARTCONTROLLER;
+#endif
     }
 
+#if defined(ESP8266) || defined(ESP32)
+}//end of loop
+#else
   }//end of while(1) loop
-
 }//end of main
-
+#endif

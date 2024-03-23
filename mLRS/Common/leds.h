@@ -25,6 +25,7 @@ class tLEDs
 
     void Tick_ms(bool connected)
     {
+#ifndef DEVICE_HAS_SINGLE_LED
         if (connected) {
             DECc(blink, SYSTICK_DELAY_MS(500));
         } else {
@@ -41,11 +42,26 @@ class tLEDs
             led_green_off();
             if (!blink) led_red_toggle();
         }
+#else
+        if (!is_in_bind) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(100));
+        }
+
+        if (connected && !is_in_bind) {
+            led_red_on();
+        } else if (!blink) {
+            led_red_toggle();
+        }
+#endif
     }
 
     void SetToBind(void)
     {
+#ifndef DEVICE_HAS_SINGLE_LED
         led_green_on();
+#endif
         led_red_off();
         is_in_bind = true;
      }
@@ -53,13 +69,17 @@ class tLEDs
     void SetToParamStore(void)
     {
         led_red_on();
+#ifndef DEVICE_HAS_SINGLE_LED
         led_green_on();
+#endif
      }
 
     void InitPassthrough(void)
     {
         led_red_off();
+#ifndef DEVICE_HAS_SINGLE_LED
         led_green_on();
+#endif
     }
 
     void TickPassthrough_ms(void)
