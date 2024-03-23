@@ -2,15 +2,13 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
-// ESP Clock
+// ESP RxClock
 //********************************************************
-
-#ifndef STDESP_RXCLOCK_H
-#define STDESP_RXCLOCK_H
-
+#ifndef ESP_RXCLOCK_H
+#define ESP_RXCLOCK_H
 #pragma once
+
 
 #define USING_TIM_DIV1 true
 
@@ -41,7 +39,7 @@ uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need 
 class ClockHandler
 {
   public:
-    void Init(void){};
+    void Init(void) {};
     void Do(void);
 
     uint32_t CNT = 0;
@@ -51,7 +49,8 @@ class ClockHandler
     bool CC3_FLAG = true;
 };
 
-void ClockHandler::Do(void){
+void ClockHandler::Do(void)
+{
     CNT++;
     if (CNT == CCR1){
         CC1_FLAG = true;
@@ -62,6 +61,7 @@ void ClockHandler::Do(void){
 }
 
 ClockHandler espTIMER;
+
 
 //-------------------------------------------------------
 // Clock ISR
@@ -97,7 +97,7 @@ IRAM_ATTR bool CLOCK_IRQHandler(void * timerNo)
 
 
 //-------------------------------------------------------
-// Rx Clock Class
+// RxClock Class
 //-------------------------------------------------------
 
 class RxClockBase
@@ -162,4 +162,4 @@ uint16_t RxClockBase::tim_10us(void)
     return espTIMER.CNT; // return 16 bit even for 32 bit timer
 }
 
-#endif // STDESP_RXCLOCK_H
+#endif // ESP_RXCLOCK_H

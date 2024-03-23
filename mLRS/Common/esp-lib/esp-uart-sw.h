@@ -23,9 +23,8 @@
 // #define SWUART_TIM_IRQ_PRIORITY
 //
 //*******************************************************
-
-#ifndef STDESP8266_UARTSW_H
-#define STDESP8266_UARTSW_H
+#ifndef ESPLIB_UARTSW_H
+#define ESPLIB_UARTSW_H
 
 #include <SoftwareSerial.h>
 
@@ -57,5 +56,5 @@ void swuart_init(void)
   swUart.println("Serial init");
 }
 
-#endif // STDESP8266_UARTSW_H
+#endif // ESPLIB_UARTSW_H
 

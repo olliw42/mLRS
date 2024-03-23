@@ -11,8 +11,7 @@
 // GENERIC 2400 PA RX
 //-------------------------------------------------------
 
-#include <FastLED.h>
-
+#define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
 //-- Timers, Timing, EEPROM, and such stuff
@@ -26,11 +25,6 @@
 
 #define MICROS_TIMx               TIM15
 
-//-------------------------------------------------------
-
-// https://forum.arduino.cc/t/very-short-delays/43445
-// You can "waste" one cycle (62.5ns on a 16MHz Arduino) with this inline assembly instruction
-#define __NOP() __asm__("nop")
 
 //-- UARTS
 // UARTB = serial port
@@ -57,48 +51,18 @@
 //-- SX1: SX12xx & SPI
 
 //#define SPI_USE_SPI2              // PB13, PB14, PB15
-// #define SPI_MISO                  33
-// #define SPI_MOSI                  32
-// #define SPI_SCK                   25
-#define SPI_CS_IO                 27
-#define HSPI_MISO 33
-#define HSPI_MOSI 32
-#define HSPI_SCLK 25
-#define HSPI_SS   27
+#define SPI_CS_IO                 15
 #define SPI_FREQUENCY             10000000L
 
-#define SX_RESET                  26
-#define SX_BUSY                   36
-#define SX_DIO1                   37
-#define SX_TX_EN                  14
-//#define SX_RX_EN                  
+#define SX_RESET                  2
+#define SX_BUSY                   5
+#define SX_DIO1                   4
+#define SX_TX_EN                  10
+//#define SX_RX_EN
 
 #define PA_ANTENNA                9
 
-
-IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
-
-typedef enum
-{
-  HAL_TICK_FREQ_10HZ         = 100U,
-  HAL_TICK_FREQ_100HZ        = 10U,
-  HAL_TICK_FREQ_1KHZ         = 1U,
-  HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
-} HAL_TickFreqTypeDef;
-
-typedef enum
-{
-    HAL_OK = 0x00,
-    HAL_ERROR = 0x01,
-    HAL_BUSY = 0x02,
-    HAL_TIMEOUT = 0x03
-} HAL_StatusTypeDef;
-
-#define     __IO    volatile             /*!< Defines 'read / write' permissions */
-
-inline uint32_t uwTick;
-extern uint32_t uwTickPrio;
-extern HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ;  // For esp we will call tick increment every 1ms
+IRQHANDLER(IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
@@ -114,7 +78,7 @@ void sx_init_gpio(void)
 
 bool sx_busy_read(void)
 {
-    return digitalRead(SX_BUSY) ? true : false;
+    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
 }
 
 void sx_amp_transmit(void)
@@ -127,14 +91,14 @@ void sx_amp_receive(void)
     digitalWrite(SX_TX_EN, LOW);
 }
 
-void sx_dio_init_exti_isroff(void){ }
+void sx_dio_init_exti_isroff(void) {}
 
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_exti_isr_clearflag(void) { }
+void sx_dio_exti_isr_clearflag(void) {}
 
 //-- Button
 
@@ -147,47 +111,25 @@ void button_init(void)
 
 bool button_pressed(void)
 {
-    return digitalRead(BUTTON) ? false : true;
+    return (digitalRead(BUTTON) == HIGH) ? false : true;
 }
 
 //-- LEDs
-#define DATA_PIN                    22
-#define NUM_LEDS                    1
-#define BRIGHTNESS                  127
-CRGB rgbLeds[NUM_LEDS];
-uint8_t LED_STATE;
+#define LED_RED                   16
 
 void leds_init(void)
 {
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(rgbLeds, NUM_LEDS);
-    FastLED.setBrightness(BRIGHTNESS);
-    rgbLeds[0] = CRGB::Black; 
-    FastLED.show();
-    LED_STATE = 0;
+    pinMode(LED_RED, OUTPUT);
+    digitalWrite(LED_RED, HIGH);// LED_RED_OFF
 }
 
-void led_green_off(void) { }
-void led_green_on(void) { }
-void led_green_toggle(void) { }
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
 
-
-void led_red_off(void) { 
-    rgbLeds[0] = CRGB::Black; 
-    FastLED.show();
-    LED_STATE=0; 
-    }
-void led_red_on(void) { 
-    rgbLeds[0] = CRGB::Red; 
-    FastLED.show();
-    LED_STATE=1;  
-}
-void led_red_toggle(void) { 
-    if (LED_STATE) {
-        led_red_off();
-    } else {
-        led_red_on();
-    }
-}
+void led_red_off(void) { gpio_high(LED_RED); }
+void led_red_on(void) { gpio_low(LED_RED); }
+void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- SystemBootLoader
 

@@ -13,11 +13,9 @@
 #include "../Common/protocols/sbus_protocol.h"
 #include "../Common/protocols/crsf_protocol.h"
 
-#ifndef ESP8266
-extern uint16_t micros(void);
-#else
-#include <Arduino.h>
-#endif
+
+extern uint16_t micros16(void);
+
 
 OutBase::OutBase(void)
     : channel_order(ChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
@@ -342,7 +340,7 @@ void OutBase::do_crsf(void)
 {
     if (!link_stats_available) return;
 
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
 
     if (link_stats_set_tstart) {
         link_stats_tstart_us = tnow_us;

@@ -13,7 +13,7 @@
 #include "../Common/protocols/sbus_protocol.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 
 
 typedef enum {
@@ -84,7 +84,7 @@ bool InBase::Update(tRcData* rc)
 
 bool InBase::parse_sbus(tRcData* rc)
 {
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
     bool updated = false;
 
     while (available()) {

@@ -29,6 +29,10 @@ typedef enum {
   UART_STOPBIT_MAKEITU32 = UINT32_MAX,
 } UARTSTOPBITENUM;
 
+
+#ifndef ESPLIB_UARTB_H
+#define ESPLIB_UARTB_H
+
 #if defined(UARTB_USE_SERIAL)
 #define UARTB_SERIAL_NO Serial
 #elif defined(UARTB_USE_SERIAL1)
@@ -59,7 +63,7 @@ char uartb_getc(void)
 
 static inline void uartb_rx_flush(void)
 {
-  while (UARTB_SERIAL_NO.available()) UARTB_SERIAL_NO.read();
+  while (UARTB_SERIAL_NO.available() > 0) UARTB_SERIAL_NO.read();
 }
 
 static inline void uartb_tx_flush(void)
@@ -69,14 +73,13 @@ static inline void uartb_tx_flush(void)
 
 uint16_t uartb_rx_bytesavailable(void)
 {
-  return UARTB_SERIAL_NO.available();
+  return (UARTB_SERIAL_NO.available() > 0) ? UARTB_SERIAL_NO.available() : 0;
 }
 
 static inline uint16_t uartb_rx_available(void)
 {
-  if (UARTB_SERIAL_NO.available() > 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return (UARTB_SERIAL_NO.available() > 0) ? 1 : 0;
 }
+
+
+#endif // ESPLIB_UARTC_H

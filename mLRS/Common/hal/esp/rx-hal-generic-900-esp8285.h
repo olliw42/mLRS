@@ -8,28 +8,11 @@
 //********************************************************
 
 //-------------------------------------------------------
-// DEVBOARD 900 RX
-//
-// Uses a Lolin Node MCU V3 ESP8266 Devboard and a SX1276 module
-// 
-// Could use other ESP8266 devboards 
-//
-// https://www.aliexpress.com/item/1005005077804800.html
-// https://www.aliexpress.com/item/32962551530.html
-//
-// 3v  ->  Vcc
-// G   ->  GND
-// D8  ->  NSS
-// D7  ->  MOSI
-// D6  ->  MISO
-// D5  ->  SCK
-// D2  ->  REST
-// D1  ->  DIO0 
-//
+// GENERIC 900 RX
 //-------------------------------------------------------
 
+#define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_SYSTEMBOOT
-
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -75,58 +58,35 @@
 #define SWUART_TXBUFSIZE          512
 
 //-- SX1: SX12xx & SPI
-
-//#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 D8
+#define SPI_CS_IO                 15
 #define SPI_FREQUENCY             10000000L
 
-#define SX_RESET                  D2
-#define SX_DIO0                   D1
+#define SX_RESET                  2
+#define SX_DIO0                   4
+#define SX_DIO1                   5
 
-IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
-
-typedef enum
-{
-  HAL_TICK_FREQ_10HZ         = 100U,
-  HAL_TICK_FREQ_100HZ        = 10U,
-  HAL_TICK_FREQ_1KHZ         = 1U,
-  HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
-} HAL_TickFreqTypeDef;
-
-typedef enum
-{
-    HAL_OK = 0x00,
-    HAL_ERROR = 0x01,
-    HAL_BUSY = 0x02,
-    HAL_TIMEOUT = 0x03
-} HAL_StatusTypeDef;
-
-
-#define     __IO    volatile             /*!< Defines 'read / write' permissions */
-
-inline uint32_t uwTick;
-extern uint32_t uwTickPrio;
-extern HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ;  // For esp we will call tick increment every 1ms
+IRQHANDLER(IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
     pinMode(SX_RESET, OUTPUT);
+    pinMode(SX_DIO0, INPUT);
+
     digitalWrite(SX_RESET, HIGH);
-    pinMode(SX_DIO0, INPUT_PULLDOWN_16);
 } 
 
-void sx_amp_transmit(void) { }
+void sx_amp_transmit(void) {}
 
-void sx_amp_receive(void) { }
+void sx_amp_receive(void) {}
 
-void sx_dio_init_exti_isroff(void) { }
+void sx_dio_init_exti_isroff(void) {}
 
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_exti_isr_clearflag(void) { }
+void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
@@ -140,12 +100,12 @@ void button_init(void)
 
 bool button_pressed(void)
 {
-    return digitalRead(BUTTON) ? false : true;
+    return (digitalRead(BUTTON) == HIGH) ? false : true;
 }
 
 
 //-- LEDs
-#define LED_RED                   D4
+#define LED_RED                   16
 
 void leds_init(void)
 {
@@ -153,14 +113,13 @@ void leds_init(void)
     digitalWrite(LED_RED, HIGH);// LED_RED_OFF
 }
 
-void led_green_off(void) {  }
-void led_green_on(void) {  }
-void led_green_toggle(void) {  }
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
 
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
 
 //-- SystemBootLoader
 

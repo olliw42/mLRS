@@ -6,6 +6,9 @@
 // my stripped down UART standard library
 // only TX, no RX, no halfduplex, no wait and tmo rx functions, no convenience functions, quite a number more strips
 //*******************************************************
+#ifndef ESPLIB_UARTC_H
+#define ESPLIB_UARTC_H
+
 
 #if defined(UARTC_USE_SERIAL)
 #define UARTC_SERIAL_NO Serial
@@ -23,3 +26,6 @@ uint16_t uartc_putc(char c)
   UARTC_SERIAL_NO.write(c);
   return 1;
 }
+
+
+#endif // ESPLIB_UARTC_H

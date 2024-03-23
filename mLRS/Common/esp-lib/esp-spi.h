@@ -2,18 +2,16 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // ESP SPI Interface
 //********************************************************
-
-#ifndef STDESP_SPI_H
-#define STDESP_SPI_H
+#ifndef ESPLIB_SPI_H
+#define ESPLIB_SPI_H
 
 
 #include <SPI.h>
 
-SPIClass * spi = NULL;
+SPIClass* spi = NULL;
 
 //-- select functions
 
@@ -55,12 +53,15 @@ void spi_init(void)
 #elif defined(ESP8266)
   spi = new SPIClass();
 #endif
+
   pinMode(SPI_CS_IO, OUTPUT);
-#if defined(HSPI_SCLK) && defined(HSPI_MISO) && defined(HSPI_MOSI) &&  defined(HSPI_SS)
+
+#if defined(HSPI_SCLK) && defined(HSPI_MISO) && defined(HSPI_MOSI) && defined(HSPI_SS)
   spi->begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, HSPI_SS);
 #else
   spi->begin();
 #endif
+
   spi->setFrequency(SPI_FREQUENCY);
 }
 
@@ -159,4 +160,4 @@ void spi_writecandread(uint8_t c, uint8_t* data, uint16_t datalen)
 
 #endif
 
-#endif  // STDESP_SPI_H
+#endif // ESPLIB_SPI_H

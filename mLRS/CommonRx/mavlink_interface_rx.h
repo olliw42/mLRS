@@ -19,6 +19,7 @@
 #endif
 
 
+extern volatile uint32_t millis32(void);
 static inline bool connected(void);
 
 
