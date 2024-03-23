@@ -11,9 +11,8 @@
 // #define EE_PAGE_SIZE  // optional
 //
 //*******************************************************
-
-#ifndef STDESP_EEPROM_H
-#define STDESP_EEPROM_H
+#ifndef ESPLIB_EEPROM_H
+#define ESPLIB_EEPROM_H
 
 #include <EEPROM.h>
 
@@ -257,4 +256,4 @@ EE_STATUS_ENUM ee_init(void)
 }
 
 //-------------------------------------------------------
-#endif // STDESP_EEPROM_H
+#endif // ESPLIB_EEPROM_H

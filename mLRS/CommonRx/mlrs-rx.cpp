@@ -26,94 +26,81 @@ v0.0.00:
 #define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
-#if defined(ESP8266) || defined(ESP32)
-    #include <Arduino.h>
-#endif
-
-// needed to switch off the wifi module. 
-#if defined(ESP8266)
-    #include <ESP8266WiFi.h>
-#elif defined(ESP32) 
-    #include <WiFi.h>
-#endif
-
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
-#include "../Common/hal/glue.h"
 
 #if defined(ESP8266) || defined(ESP32)
-#include "../Common/esp-libs/esp.h"
-#include "../Common/esp-libs/esp-peripherals.h"
-#include "../Common/esp-libs/esp-mcu.h"
-#include "../Common/esp-libs/esp-stack.h"
+#include "../Common/hal/esp-glue.h"
+
+//XX#include "../Common/esp-lib/esp.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+
+#include "../Common/esp-lib/esp-peripherals.h"
+#include "../Common/esp-lib/esp-mcu.h"
+#include "../Common/esp-lib/esp-stack.h"
+#include "../Common/hal/hal.h"
+#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../Common/esp-lib/esp-eeprom.h"
+#include "../Common/esp-lib/esp-spi.h"
+#ifdef USE_SERIAL
+#include "../Common/esp-lib/esp-uartb.h"
+#endif
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
 #else
+#include "../Common/esp-lib/esp-uartc.h"
+#endif
+#endif
+#include "../Common/hal/esp-timer.h"
+#include "../Common/hal/esp-powerup.h"
+#include "../Common/hal/esp-rxclock.h"
+
+#else
+
+#include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
 #include "../modules/stm32ll-lib/src/stdstm32-mcu.h"
 #include "../modules/stm32ll-lib/src/stdstm32-dac.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
-#endif
-
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
-
 #include "../Common/hal/hal.h"
-#include "../Common/sx-drivers/sx12xx.h"
-
-#if defined(ESP8266) || defined(ESP32)
-#include "../Common/esp-libs/esp-delay.h"
-#include "../Common/esp-libs/esp-eeprom.h"
-#include "../Common/esp-libs/esp-spi.h"
-#else
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
-#endif
-
-#if defined(USE_SX2) && !defined(ESP8266) &&!defined(ESP32)
+#ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
-
-#if defined(USE_SERIAL) && !defined(ESP8266) && !defined(ESP32)
+#ifdef USE_SERIAL
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
-#elif defined(USE_SERIAL) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp-libs/esp-uartb.h"
 #endif
-
-#if defined(USE_DEBUG)
-#if defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
-#elif defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp-libs/esp-uart-sw.h"
-#elif !defined(DEVICE_HAS_DEBUG_SWUART) && !defined(ESP8266) && !defined(ESP32)
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
-#elif !defined(DEVICE_HAS_DEBUG_SWUART) && (defined(ESP8266) || defined(ESP32))
-#include "../Common/esp-libs/esp-uartc.h"
 #endif
-#endif //USE_DEBUG
-
-#if defined(USE_I2C)
+#endif
+#ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
-#endif //USE_I2C
+#endif
+#include "../Common/hal/timer.h"
+#include "powerup.h"
+#include "rxclock.h"
+#endif
 
+#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-
-#if !defined(ESP8266) && !defined(ESP32)
-#include "../Common/micros.h"
-#include "rxclock.h"
-#else
-#include "../Common/esp-libs/esp-micros.h"
-#include "../Common/esp-libs/esp-rxclock.h"
-#endif
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
-#include "powerup.h"
 
 
 RxClockBase rxclock;
@@ -122,12 +109,6 @@ tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 
-// used by Arduino to reset the microcontroller 
-#if defined(ESP8266)
-void(* resetFunc) (void) = 0; //declare reset function at address 0
-#elif defined(ESP32)
-void resetFunc(void) {ESP.restart();}
-#endif
 
 // is required in bind.h
 void clock_reset(void) { rxclock.Reset(); }
@@ -142,6 +123,7 @@ void clock_reset(void) { rxclock.Reset(); }
 tRxMavlink mavlink;
 
 #include "sx_serial_interface_rx.h"
+
 tRxSxSerial sx_serial;
 
 
@@ -151,17 +133,14 @@ tRxSxSerial sx_serial;
 
 void init_hw(void)
 {
-#if defined(ESP8266) || defined(ESP32)
-    WiFi.mode(WIFI_OFF);
-#endif
-
+    hal_init();
+    
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
+    timer_init();
 
     leds_init();
     button_init();
-
-    micros_init();
 
     serial.Init();
     out.Init();
@@ -169,14 +148,12 @@ void init_hw(void)
     buzzer.Init();
     fan.Init();
     dbg.Init();
+
     sx.Init();
     sx2.Init();
 
     setup_init();
-
-    // Needs more work to implement on ESP8266
-    // Needed for entering bind mode with rapid power cycles
-    // powerup.Init();
+    powerup.Init();
 
     rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
 }
@@ -462,6 +439,7 @@ uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame f
 {
 uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
+
     if (bind.IsInBind()) {
         return bind.do_receive(antenna, do_clock_reset);
     }
@@ -516,86 +494,91 @@ bool frame_missed;
 
 static inline bool connected(void)
 {
-  return (connect_state == CONNECT_STATE_CONNECTED);
+    return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
+
+#if defined(ESP8266) || defined(ESP32)
 void setup()
+#else
+int main_main(void)
+#endif
 {
 #ifdef BOARD_TEST_H
-  main_test();
+    main_test();
 #endif
-  stack_check_init();
-//RESTARTCONTROLLER:
-  init_hw();
-  DBG_MAIN(dbg.puts("DBG1: Init complete\n"));
+    stack_check_init();
+RESTARTCONTROLLER:
+    init_hw();
+    DBG_MAIN(dbg.puts("DBG1: Init complete\n"));
 
-  serial.SetBaudRate(Config.SerialBaudrate);
+    serial.SetBaudRate(Config.SerialBaudrate);
 
-  // startup sign of life
-  leds.Init();
+    // startup sign of life
+    leds.Init();
 
-  // start up sx
-  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-  irq_status = irq2_status = 0;
-  IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
-  bind.Init();
-  fhss.Init(&Config.Fhss);
-  fhss.Start();
+    // start up sx
+    if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+    if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
+    irq_status = irq2_status = 0;
+    IF_SX(sx.StartUp(&Config.Sx));
+    IF_SX2(sx2.StartUp(&Config.Sx));
+    bind.Init();
+    fhss.Init(&Config.Fhss);
+    fhss.Start();
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+    sx.SetRfFrequency(fhss.GetCurrFreq());
+    sx2.SetRfFrequency(fhss.GetCurrFreq());
 
-  link_state = LINK_STATE_RECEIVE;
-  connect_state = CONNECT_STATE_LISTEN;
-  connect_tmo_cnt = 0;
-  connect_listen_cnt = 0;
-  connect_sync_cnt = 0;
-  connect_occured_once = false;
-  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-  link_task_init();
-  doPostReceive2_cnt = 0;
-  doPostReceive2 = false;
-  frame_missed = false;
+    link_state = LINK_STATE_RECEIVE;
+    connect_state = CONNECT_STATE_LISTEN;
+    connect_tmo_cnt = 0;
+    connect_listen_cnt = 0;
+    connect_sync_cnt = 0;
+    connect_occured_once = false;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_task_init();
+    doPostReceive2_cnt = 0;
+    doPostReceive2 = false;
+    frame_missed = false;
 
-  rxstats.Init(Config.LQAveragingPeriod);
-  rdiversity.Init();
-  tdiversity.Init(Config.frame_rate_ms);
-  out.Configure(Setup.Rx.OutMode);
-  mavlink.Init();
-  sx_serial.Init();
+    rxstats.Init(Config.LQAveragingPeriod);
+    rdiversity.Init();
+    tdiversity.Init(Config.frame_rate_ms);
+    out.Configure(Setup.Rx.OutMode);
+    mavlink.Init();
+    sx_serial.Init();
 
-  fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(sx.RfPower_dbm());
 
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
+    tick_1hz = 0;
+    tick_1hz_commensurate = 0;
+    doSysTask = 0; // helps in avoiding too short first loop
 
-  DBG_MAIN(dbg.puts("DBG2: Starting loop\n"));
+    DBG_MAIN(dbg.puts("DBG2: Starting loop\n"));
 
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
-}
+#if defined(ESP8266) || defined(ESP32)
+}//end of setup
+void loop() 
+{
+#else    
+  while (1) {
+#endif
+    //-- SysTask handling
 
-void loop() {
+    if (doSysTask) {
+        doSysTask = 0;
 
-  //-- SysTask handling
-
-  if (doSysTask) {
-    doSysTask = 0;
-
-    if (connect_tmo_cnt) {
-      connect_tmo_cnt--;
-    }
+        if (connect_tmo_cnt) {
+            connect_tmo_cnt--;
+        }
 
         leds.Tick_ms(connected());
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
-        
+
         if (!tick_1hz) {
             dbg.puts(".");
             dbg.puts("\nRX: ");
@@ -718,7 +701,6 @@ IF_SX2(
     uint8_t link_state_before = link_state; // to detect changes in link state
 
     if (doPostReceive) {
-
         doPostReceive = false;
 
         bool frame_received, valid_frame_received, invalid_frame_received;
@@ -845,8 +827,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             if (!valid_frame_received) buzzer.BeepLP();
         }
 
-        //powerup.Do();
-        //if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();
+        powerup.Do();
+        if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();
 
         bind.Do();
         switch (bind.Task()) {
@@ -869,7 +851,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
 
+#if defined(ESP8266) || defined(ESP32)
     if (link_state != link_state_before) return; // link state has changed, so process immediately
+#else
+    if (link_state != link_state_before) continue; // link state has changed, so process immediately
+#endif    
 
     //-- Update channels, Out handling, etc
 
@@ -882,20 +868,20 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            //out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
-            //out.SendLinkStatistics();
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
+            out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
-                //out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
-                //out.SendLinkStatisticsDisconnected();
+                out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
+                out.SendLinkStatisticsDisconnected();
                 mavlink.SendRcData(out.GetRcDataPtr(), true, true);
             }
         }
     }//end of if(doPostReceive2)
 
-    // out.Do();
+    out.Do();
 
     //-- Do mavlink
 
@@ -908,7 +894,16 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         sx2.SetToIdle();
         leds.SetToParamStore();
         setup_store_to_EEPROM();
-        resetFunc(); //call reset 
+#if defined(ESP8266) || defined(ESP32)
+        resetFunc(); //call reset
+#else
+        goto RESTARTCONTROLLER;
+#endif
     }
 
-}
+#if defined(ESP8266) || defined(ESP32)
+}//end of loop
+#else
+  }//end of while(1) loop
+}//end of main
+#endif

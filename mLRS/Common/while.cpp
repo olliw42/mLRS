@@ -11,7 +11,7 @@
 #include "while.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 
 
 void WhileBase::Init(void)
@@ -25,7 +25,7 @@ void WhileBase::Init(void)
 void WhileBase::Trigger(void)
 {
     do_cnt = 10; // postpone action by few loops
-    tstart_us = micros();
+    tstart_us = micros16();
     tremaining_us = dtmax_us(); // this starts it
 }
 
@@ -40,7 +40,7 @@ void WhileBase::Do(void)
         return;
     }
 
-    tremaining_us = dtmax_us() - (int32_t)(micros() - tstart_us);
+    tremaining_us = dtmax_us() - (int32_t)(micros16() - tstart_us);
     if (tremaining_us <= 0) return;
 
     handle();

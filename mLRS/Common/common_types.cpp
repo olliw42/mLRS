@@ -8,11 +8,7 @@
 //*******************************************************
 
 #include <string.h>
-#if defined(ESP8266) || defined(ESP32)
-#include "../Common/esp-libs/esp.h"
-#else
 #include "../modules/stm32ll-lib/src/stdstm32.h"
-#endif
 #include "common_types.h"
 #include "setup_types.h"
 #include "protocols/crsf_protocol.h"

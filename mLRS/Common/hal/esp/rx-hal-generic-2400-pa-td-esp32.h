@@ -8,9 +8,10 @@
 //********************************************************
 
 //-------------------------------------------------------
-// GENERIC 2400 RX
+// GENERIC 2400 PA RX
 //-------------------------------------------------------
 
+#define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
 //-- Timers, Timing, EEPROM, and such stuff
@@ -23,17 +24,6 @@
 #define EE_START_PAGE             0 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM15
-
-//-------------------------------------------------------
-
-// https://forum.arduino.cc/t/very-short-delays/43445
-// You can "waste" one cycle (62.5ns on a 16MHz Arduino) with this inline assembly instruction
-#define __NOP() __asm__("nop")
-
-// #define CLOCK_TIMx                TIM2
-// #define CLOCK_IRQn                TIM2_IRQn
-// #define CLOCK_IRQHandler          BLAH1
-
 
 //-- UARTS
 // UARTB = serial port
@@ -59,67 +49,62 @@
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_CS_IO                 15
+//#define SPI_USE_SPI2              // PB13, PB14, PB15
+// #define SPI_MISO                  33
+// #define SPI_MOSI                  32
+// #define SPI_SCK                   25
+#define SPI_CS_IO                 27
+#define HSPI_MISO 33
+#define HSPI_MOSI 32
+#define HSPI_SCLK 25
+#define HSPI_SS   27
 #define SPI_FREQUENCY             10000000L
 
-#define SX_RESET                  2
-#define SX_BUSY                   5
-#define SX_DIO1                   4
+#define SX_RESET                  26
+#define SX_BUSY                   36
+#define SX_DIO1                   37
+#define SX_TX_EN                  14
+//#define SX_RX_EN                  
 
-IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
+#define PA_ANTENNA                9
 
-typedef enum
-{
-  HAL_TICK_FREQ_10HZ         = 100U,
-  HAL_TICK_FREQ_100HZ        = 10U,
-  HAL_TICK_FREQ_1KHZ         = 1U,
-  HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
-} HAL_TickFreqTypeDef;
-
-typedef enum
-{
-    HAL_OK = 0x00,
-    HAL_ERROR = 0x01,
-    HAL_BUSY = 0x02,
-    HAL_TIMEOUT = 0x03
-} HAL_StatusTypeDef;
-
-#define     __IO    volatile             /*!< Defines 'read / write' permissions */
-
-inline uint32_t uwTick;
-extern uint32_t uwTickPrio;
-extern HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ;  // For esp we will call tick increment every 1ms
+IRQHANDLER(IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
     pinMode(SX_DIO1, INPUT);
     pinMode(SX_BUSY, INPUT_PULLUP);
+    pinMode(SX_TX_EN, OUTPUT);
     pinMode(SX_RESET, OUTPUT);
+    pinMode(PA_ANTENNA, OUTPUT);
 
     digitalWrite(SX_RESET, HIGH);
+    digitalWrite(PA_ANTENNA, HIGH); // Force to Antenna 2
 }
 
 bool sx_busy_read(void)
 {
-    return digitalRead(SX_BUSY) ? true : false;
+    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
 }
 
 void sx_amp_transmit(void)
 {
+    digitalWrite(SX_TX_EN, HIGH);
 }
 
 void sx_amp_receive(void)
 {
+    digitalWrite(SX_TX_EN, LOW);
 }
 
-void sx_dio_init_exti_isroff(void){ }
+void sx_dio_init_exti_isroff(void) {}
 
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_exti_isr_clearflag(void) { }
+void sx_dio_exti_isr_clearflag(void) {}
 
 //-- Button
 
@@ -132,25 +117,48 @@ void button_init(void)
 
 bool button_pressed(void)
 {
-    return digitalRead(BUTTON) ? false : true;
+    return (digitalRead(BUTTON) == HIGH) ? false : true;
 }
 
 //-- LEDs
-#define LED_RED                   16
+#include <FastLED.h>
+#define DATA_PIN                    22
+#define NUM_LEDS                    1
+#define BRIGHTNESS                  127
+CRGB fastleds[NUM_LEDS];
+uint8_t fastleds_state;
 
 void leds_init(void)
 {
-    pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, HIGH);// LED_RED_OFF
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(fastleds, NUM_LEDS);
+    FastLED.setBrightness(BRIGHTNESS);
+    fastleds[0] = CRGB::Black; 
+    FastLED.show();
+    fastleds_state = 0;
 }
 
-void led_green_off(void) { }
-void led_green_on(void) { }
-void led_green_toggle(void) { }
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
 
-void led_red_off(void) { gpio_high(LED_RED); }
-void led_red_on(void) { gpio_low(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
+void led_red_off(void) 
+{
+    fastleds[0] = CRGB::Black; 
+    FastLED.show();
+    fastleds_state = 0; 
+}
+
+void led_red_on(void) 
+{ 
+    fastleds[0] = CRGB::Red; 
+    FastLED.show();
+    fastleds_state = 1;  
+}
+
+void led_red_toggle(void) 
+{ 
+    if (fastleds_state) { led_red_off(); } else { led_red_on(); }
+}
 
 //-- SystemBootLoader
 
@@ -161,14 +169,14 @@ void systembootloader_init(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM  // maximum allowed sx power
+#define POWER_GAIN_DBM            23 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_m18_DBM, .mW = -18 },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_12p5_DBM, .mW = 13 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_23_DBM, .mW = 200 },
 };
