@@ -103,6 +103,8 @@ tRxSxSerial sx_serial;
 
 void init_hw(void)
 {
+    hal_init();
+    
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
@@ -462,7 +464,7 @@ bool frame_missed;
 
 static inline bool connected(void)
 {
-  return (connect_state == CONNECT_STATE_CONNECTED);
+    return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 

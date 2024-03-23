@@ -122,3 +122,8 @@
 #endif
 
 
+void hal_init(void)
+{
+    // nothing to do
+}
+

@@ -205,6 +205,8 @@ void enter_system_bootloader(void)
 
 void init_once(void)
 {
+    hal_init();
+
     serial.InitOnce();
     comport.InitOnce();
     serial2.InitOnce();
