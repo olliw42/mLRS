@@ -110,15 +110,15 @@ bool button_pressed(void)
 void leds_init(void)
 {
     pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, HIGH);// LED_RED_OFF
+    digitalWrite(LED_RED, LOW);// LED_RED_OFF
 }
 
 void led_green_off(void) {}
 void led_green_on(void) {}
 void led_green_toggle(void) {}
 
-void led_red_off(void) { gpio_high(LED_RED); }
-void led_red_on(void) { gpio_low(LED_RED); }
+void led_red_off(void) { gpio_low(LED_RED); }
+void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- SystemBootLoader
