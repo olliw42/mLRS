@@ -1,5 +1,5 @@
 //*******************************************************
-// mLRS Wireless Bridge
+// mLRS Wireless Bridge for ESP32
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
