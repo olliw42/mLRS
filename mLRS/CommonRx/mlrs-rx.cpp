@@ -499,7 +499,7 @@ static inline bool connected(void)
 
 
 #if defined(ESP8266) || defined(ESP32)
-void setup()
+void esp_setup()
 #else
 int main_main(void)
 #endif
@@ -901,7 +901,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 #endif
         setup_store_to_EEPROM();
 #if defined(ESP8266) || defined(ESP32)
-        resetFunc(); //call reset
+        esp_setup(); //call reset
+        return;
 #else
         goto RESTARTCONTROLLER;
 #endif
@@ -913,3 +914,5 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
   }//end of while(1) loop
 }//end of main
 #endif
+
+void setup(void) {esp_setup();};

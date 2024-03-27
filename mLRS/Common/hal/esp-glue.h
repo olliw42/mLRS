@@ -30,13 +30,6 @@
 #endif
 
 
-// used by Arduino to reset the microcontroller 
-void resetFunc(void)
-{
-    ESP.restart();
-}
-
-
 void __disable_irq(void) {};
 
 
