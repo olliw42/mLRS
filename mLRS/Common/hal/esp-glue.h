@@ -37,16 +37,10 @@ void resetFunc(void)
 }
 
 
-void __disable_irq(void)
-{
-    noInterrupts();
-}
+void __disable_irq(void) {};
 
 
-void __enable_irq(void)
-{
-    interrupts();
-}
+void __enable_irq(void) {};
 
 
 // https://forum.arduino.cc/t/very-short-delays/43445
