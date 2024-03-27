@@ -12,8 +12,8 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_SYSTEMBOOT
-#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 //-- Timers, Timing, EEPROM, and such stuff
 
