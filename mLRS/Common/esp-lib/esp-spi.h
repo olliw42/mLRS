@@ -33,6 +33,7 @@ SPIClass* spi = NULL;
 
 static inline void spi_select(void)
 {
+  spi->beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, SPI_MODE0));
   SPI_SELECT_PRE_DELAY;
   digitalWrite(SPI_CS_IO, LOW); // CS = low
   SPI_SELECT_POST_DELAY;
@@ -44,6 +45,7 @@ static inline void spi_deselect(void)
   SPI_DESELECT_PRE_DELAY;
   digitalWrite(SPI_CS_IO, HIGH); // CS = high
   SPI_DESELECT_POST_DELAY;
+  spi->endTransaction();
 }
 
 void spi_init(void)
@@ -54,15 +56,13 @@ void spi_init(void)
   spi = new SPIClass();
 #endif
 
-  pinMode(SPI_CS_IO, OUTPUT);
-
-#if defined(HSPI_SCLK) && defined(HSPI_MISO) && defined(HSPI_MOSI) && defined(HSPI_SS)
-  spi->begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, HSPI_SS);
-#else
+#if defined(ESP32)
+  spi->begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, SPI_CS_IO);
+#elif defined(ESP8266)
   spi->begin();
 #endif
 
-  spi->setFrequency(SPI_FREQUENCY);
+  pinMode(SPI_CS_IO, OUTPUT);
 }
 
 //-- transmit, transfer, read, write functions
