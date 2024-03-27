@@ -35,7 +35,7 @@ extern uint32_t uwTickPrio;
 HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ;  // For esp we will call tick increment every 1ms
 
 
-void HAL_IncTick(void) // overwrites __weak declaration in stm32yyxx_hal.c
+void IRAM_ATTR HAL_IncTick(void) // overwrites __weak declaration in stm32yyxx_hal.c
 {
     uwTick += uwTickFreq;
     doSysTask++;
