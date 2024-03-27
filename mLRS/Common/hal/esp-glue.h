@@ -31,14 +31,10 @@
 
 
 // used by Arduino to reset the microcontroller 
-#if defined(ESP8266)
-void(* resetFunc) (void) = 0; // declare reset function at address 0
-#elif defined(ESP32)
 void resetFunc(void)
 {
     ESP.restart();
 }
-#endif
 
 
 void __disable_irq(void)
