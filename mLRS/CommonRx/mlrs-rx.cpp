@@ -833,7 +833,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            DBG_MAIN(dbg.puts("BINDING\n"));
+            DBG_MAIN(dbg.puts("\nBINDING\n"));
             bind.ConfigForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
@@ -890,6 +890,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
+        DBG_MAIN(dbg.puts("\nPARAM STORE\n"));
         sx.SetToIdle();
         sx2.SetToIdle();
         leds.SetToParamStore();
