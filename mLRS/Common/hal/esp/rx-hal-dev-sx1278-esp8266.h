@@ -29,7 +29,6 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_SYSTEMBOOT
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -137,14 +136,6 @@ void led_green_toggle(void) {}
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- SystemBootLoader
-
-void systembootloader_init(void)
-{
-    // Not needed on the ESP chips, this built in.
-}
 
 
 //-- POWER
