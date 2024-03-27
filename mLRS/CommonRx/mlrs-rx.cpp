@@ -508,7 +508,9 @@ int main_main(void)
     main_test();
 #endif
     stack_check_init();
+#if !defined(ESP8266) && !defined(ESP32)
 RESTARTCONTROLLER:
+#endif
     init_hw();
     DBG_MAIN(dbg.puts("DBG1: Init complete\n"));
 
