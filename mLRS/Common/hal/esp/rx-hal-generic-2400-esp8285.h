@@ -34,7 +34,7 @@
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial
+#define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
@@ -120,12 +120,6 @@ void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
-//-- SystemBootLoader
-
-void systembootloader_init(void)
-{
-    // Not needed on the ESP chips, this built in.
-}
 
 //-- POWER
 
