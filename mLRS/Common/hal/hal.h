@@ -226,6 +226,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-esp8285.h"
 #endif
 
+#ifdef RX_GENERIC_2400_PA_ESP8285
+#include "esp/rx-hal-generic-2400-pa-esp8285.h"
+#endif
+
 #ifdef RX_GENERIC_2400_PA_D_ESP8285
 #include "esp/rx-hal-generic-2400-pa-d-esp8285.h"
 #endif
