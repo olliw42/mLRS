@@ -22,17 +22,10 @@
 
 #include <Arduino.h>
 
-// needed to switch off the wifi module. 
-#if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#elif defined(ESP32) 
-#include <WiFi.h>
-#endif
-
 #define __NOP() _NOP()
 
 
 void hal_init(void)
 {
-    WiFi.mode(WIFI_OFF);
+    // nothing to do
 }
