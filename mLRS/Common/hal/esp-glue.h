@@ -29,13 +29,6 @@
 #include <WiFi.h>
 #endif
 
-
-void __disable_irq(void);
-
-
-void __enable_irq(void);
-
-
 // https://forum.arduino.cc/t/very-short-delays/43445
 #define __NOP() __asm__("nop")
 
