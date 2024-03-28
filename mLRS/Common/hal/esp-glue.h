@@ -29,8 +29,7 @@
 #include <WiFi.h>
 #endif
 
-// https://forum.arduino.cc/t/very-short-delays/43445
-#define __NOP() __asm__("nop")
+#define __NOP() _NOP()
 
 
 void hal_init(void)
