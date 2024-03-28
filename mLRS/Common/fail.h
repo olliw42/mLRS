@@ -101,8 +101,9 @@ void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
 
     led_red_on();
     led_green_on();
-#endif
+
     while (1) { delay_ms(50); fail_do_dbg(dbg, msg); }
+#endif
 }
 
 
