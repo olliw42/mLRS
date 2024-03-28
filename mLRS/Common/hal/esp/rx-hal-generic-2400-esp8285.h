@@ -25,10 +25,6 @@
 
 #define MICROS_TIMx               TIM15
 
-// #define CLOCK_TIMx                TIM2
-// #define CLOCK_IRQn                TIM2_IRQn
-// #define CLOCK_IRQHandler          BLAH1
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
@@ -45,14 +41,8 @@
 #define UARTC_USE_SERIAL
 #define UARTC_BAUD                  115200
 
-//#define SWUART_USE_TIM15 // debug
-#define SWUART_TX_IO              10
-#define SWUART_BAUD               57600
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
 
 //-- SX1: SX12xx & SPI
-
 #define SPI_CS_IO                 15
 #define SPI_FREQUENCY             10000000L
 
@@ -76,22 +66,18 @@ bool sx_busy_read(void)
     return (digitalRead(SX_BUSY) == HIGH) ? true : false;
 }
 
-void sx_amp_transmit(void) {}
-
-void sx_amp_receive(void) {}
-
-void sx_dio_init_exti_isroff(void) {}
-
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
+void sx_amp_transmit(void) {}
+void sx_amp_receive(void) {}
+void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-
 #define BUTTON                    0
 
 void button_init(void)
@@ -104,6 +90,7 @@ bool button_pressed(void)
     return (digitalRead(BUTTON) == HIGH) ? false : true;
 }
 
+
 //-- LEDs
 #define LED_RED                   16
 
@@ -113,17 +100,16 @@ void leds_init(void)
     digitalWrite(LED_RED, HIGH);// LED_RED_OFF
 }
 
-void led_green_off(void) {}
-void led_green_on(void) {}
-void led_green_toggle(void) {}
-
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
+
 
 //-- POWER
-
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

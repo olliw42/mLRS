@@ -27,7 +27,6 @@
 
 #define MICROS_TIMx               TIM15
 
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
@@ -43,14 +42,11 @@
 
 
 //-- SX1: SX12xx & SPI
-
 #define SPI_CS_IO                 15
 #define SPI_FREQUENCY             16000000L
-
 #define SX_RESET                  2
 #define SX_BUSY                   5
 #define SX_DIO1                   4
-
 #define SX_TX_EN                  10
 #define PA_ANTENNA                9
 
@@ -83,18 +79,16 @@ void sx_amp_receive(void)
     digitalWrite(SX_TX_EN, LOW);
 }
 
-void sx_dio_init_exti_isroff(void) {}
-
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
+void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-
 #define BUTTON                    0
 
 void button_init(void)
@@ -117,17 +111,16 @@ void leds_init(void)
     digitalWrite(LED_RED, LOW);
 }
 
-void led_green_off(void) {}
-void led_green_on(void) {}
-void led_green_toggle(void) {}
-
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
+
 
 //-- POWER
-
 #define POWER_GAIN_DBM            23 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

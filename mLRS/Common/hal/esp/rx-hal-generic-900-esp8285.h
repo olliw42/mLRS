@@ -42,25 +42,10 @@
 #define UARTC_USE_SERIAL
 #define UARTC_BAUD                  115200
 
-#define UART_USE_UART2_PA2PA3 // out pin
-#define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
-#define UART_USE_TX
-#define UART_TXBUFSIZE            256 // 512
-#define UART_USE_TX_ISR
-//#define UART_USE_RX
-//#define UART_RXBUFSIZE            512
-#define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
-
-//#define SWUART_USE_TIM15 // debug
-#define SWUART_TX_IO              10
-#define SWUART_BAUD               57600
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
 
 //-- SX1: SX12xx & SPI
 #define SPI_CS_IO                 15
 #define SPI_FREQUENCY             10000000L
-
 #define SX_RESET                  2
 #define SX_DIO0                   4
 #define SX_DIO1                   5
@@ -75,22 +60,18 @@ void sx_init_gpio(void)
     digitalWrite(SX_RESET, HIGH);
 } 
 
-void sx_amp_transmit(void) {}
-
-void sx_amp_receive(void) {}
-
-void sx_dio_init_exti_isroff(void) {}
-
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
+void sx_amp_transmit(void) {}
+void sx_amp_receive(void) {}
+void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-
 #define BUTTON                    0
 
 void button_init(void)
@@ -113,16 +94,16 @@ void leds_init(void)
     digitalWrite(LED_RED, LOW);// LED_RED_OFF
 }
 
-void led_green_off(void) {}
-void led_green_on(void) {}
-void led_green_toggle(void) {}
-
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
-//-- POWER
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
 
+
+//-- POWER
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
