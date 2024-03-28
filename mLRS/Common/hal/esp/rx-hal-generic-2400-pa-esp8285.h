@@ -48,7 +48,7 @@
 #define SX_BUSY                   5
 #define SX_DIO1                   4
 #define SX_TX_EN                  10
-#define SX_RX_EN                  10
+#define SX_RX_EN                  9
 
 IRQHANDLER(void IRAM_ATTR SX_DIO_EXTI_IRQHandler(void);)
 
@@ -70,12 +70,14 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
+    digitalWrite(SX_RX_EN, LOW);
     digitalWrite(SX_TX_EN, HIGH);
 }
 
 void sx_amp_receive(void)
 {
     digitalWrite(SX_TX_EN, LOW);
+    digitalWrite(SX_RX_EN, HIGH);
 }
 
 void sx_dio_enable_exti_isr(void)
@@ -120,14 +122,15 @@ void led_green_toggle(void) {}
 
 
 //-- POWER
-#define POWER_GAIN_DBM            23 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
+#define POWER_GAIN_DBM            19 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           0 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_23_DBM, .mW = 200 },
+    { .dbm = POWER_22_DBM, .mW = 158 },
 };
