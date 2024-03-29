@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "common_types.h"
+#include "hal/hal.h"
 
 
 typedef enum {

@@ -12,7 +12,8 @@
 
 
 #include <stdint.h>
-#include "../Common/setup.h"
+#include "hal/device_conf.h"
+#include "setup.h"
 
 
 //-------------------------------------------------------
