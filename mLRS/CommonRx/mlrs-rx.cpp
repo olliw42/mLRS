@@ -498,19 +498,18 @@ static inline bool connected(void)
 }
 
 
-#if defined(ESP8266) || defined(ESP32)
-void esp_setup()
-#else
-int main_main(void)
-#endif
+void main_loop(void)
 {
 #ifdef BOARD_TEST_H
     main_test();
 #endif
+if(restart_controller <= 1){//init
+if(restart_controller == 0){//init once
+
     stack_check_init();
-#if !defined(ESP8266) && !defined(ESP32)
-RESTARTCONTROLLER:
-#endif
+
+}//end of init once
+
     init_hw();
     DBG_MAIN(dbg.puts("\n\nDBG: Init complete\n"));
 
@@ -559,13 +558,9 @@ RESTARTCONTROLLER:
 
     DBG_MAIN(dbg.puts("DBG: Starting loop\n"));
 
-#if defined(ESP8266) || defined(ESP32)
-}//end of setup
-void loop() 
-{
-#else    
-  while (1) {
-#endif
+restart_controller = UINT8_MAX;
+}//end of init
+
     //-- SysTask handling
 
     if (doSysTask) {
@@ -853,11 +848,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
 
-#if defined(ESP8266) || defined(ESP32)
     if (link_state != link_state_before) return; // link state has changed, so process immediately
-#else
-    if (link_state != link_state_before) continue; // link state has changed, so process immediately
-#endif    
 
     //-- Update channels, Out handling, etc
 
@@ -897,19 +888,9 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         sx2.SetToIdle();
         leds.SetToParamStore();
         setup_store_to_EEPROM();
-#if defined(ESP8266) || defined(ESP32)
-        esp_setup(); //call reset
+        restart_controller = 1;
         return;
-#else
-        goto RESTARTCONTROLLER;
-#endif
     }
 
-#if defined(ESP8266) || defined(ESP32)
 }//end of loop
-#else
-  }//end of while(1) loop
-}//end of main
-#endif
 
-void setup(void) {esp_setup();};

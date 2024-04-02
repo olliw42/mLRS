@@ -16,3 +16,9 @@ void hal_init(void)
 {
     // nothing to do
 }
+
+// setup(), loop() streamlining between Arduino/STM code
+uint8_t restart_controller = 0;
+void setup() {}
+void main_loop(void);
+void loop() { main_loop(); }
