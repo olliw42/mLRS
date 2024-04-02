@@ -512,7 +512,7 @@ int main_main(void)
 RESTARTCONTROLLER:
 #endif
     init_hw();
-    DBG_MAIN(dbg.puts("\n\nDBG1: Init complete\n"));
+    DBG_MAIN(dbg.puts("\n\nDBG: Init complete\n"));
 
     serial.SetBaudRate(Config.SerialBaudrate);
 
@@ -557,7 +557,7 @@ RESTARTCONTROLLER:
     tick_1hz_commensurate = 0;
     doSysTask = 0; // helps in avoiding too short first loop
 
-    DBG_MAIN(dbg.puts("DBG2: Starting loop\n"));
+    DBG_MAIN(dbg.puts("DBG: Starting loop\n"));
 
 #if defined(ESP8266) || defined(ESP32)
 }//end of setup
@@ -835,7 +835,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            DBG_MAIN(dbg.puts("\nBINDING\n"));
+            DBG_MAIN(dbg.puts("\nDBG: Binding\n"));
             bind.ConfigForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
@@ -892,7 +892,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
-        DBG_MAIN(dbg.puts("\nPARAM STORE\n"));
+        DBG_MAIN(dbg.puts("\nDBG: Param store\n"));
         sx.SetToIdle();
         sx2.SetToIdle();
         leds.SetToParamStore();
