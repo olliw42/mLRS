@@ -134,3 +134,15 @@ void hal_init(void)
 uint8_t restart_controller = 0;
 void main_loop(void);
 int main_main(void) { while(1) main_loop(); }
+
+#define INITCONTROLLER_ONCE \
+    if(restart_controller <= 1){ \
+    if(restart_controller == 0){
+#define RESTARTCONTROLLER \
+    }
+#define INITCONTROLLER_END \
+    restart_controller = UINT8_MAX; \
+    }
+#define GOTO_RESTARTCONTROLLER \
+    restart_controller = 1; \
+    return;

@@ -503,12 +503,11 @@ void main_loop(void)
 #ifdef BOARD_TEST_H
     main_test();
 #endif
-if(restart_controller <= 1){//init
-if(restart_controller == 0){//init once
+INITCONTROLLER_ONCE
 
     stack_check_init();
 
-}//end of init once
+RESTARTCONTROLLER
 
     init_hw();
     DBG_MAIN(dbg.puts("\n\nDBG: Init complete\n"));
@@ -558,8 +557,7 @@ if(restart_controller == 0){//init once
 
     DBG_MAIN(dbg.puts("DBG: Starting loop\n"));
 
-restart_controller = UINT8_MAX;
-}//end of init
+INITCONTROLLER_END
 
     //-- SysTask handling
 
@@ -888,8 +886,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         sx2.SetToIdle();
         leds.SetToParamStore();
         setup_store_to_EEPROM();
-        restart_controller = 1;
-        return;
+        GOTO_RESTARTCONTROLLER;
     }
 
 }//end of loop
