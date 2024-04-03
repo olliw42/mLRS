@@ -9,7 +9,7 @@
 	url = https://github.com/olliw42/stm32ll-lib.git
 [submodule "mLRS/modules/sx12xx-lib"]
 	path = mLRS/modules/sx12xx-lib
-	url = https://github.com/olliw42/sx12xx-lib.git
+	url = https://github.com/tmcadam/sx12xx-lib.git
 [submodule "tools/st-drivers/stm32f1xx_hal_driver"]
 	path = tools/st-drivers/stm32f1xx_hal_driver
 	url = https://github.com/STMicroelectronics/stm32f1xx_hal_driver.git

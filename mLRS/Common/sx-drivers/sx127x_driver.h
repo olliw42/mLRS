@@ -316,6 +316,11 @@ class Sx127xDriver : public Sx127xDriverCommon
         *bytein = spi_transmitchar(*byteout);
     }
 
+    void SpiTransferBytes(uint8_t* byteout, uint8_t* bytein, uint8_t len) override
+    {
+        spi_transferbytes(byteout, bytein, len);  // stm32-ll calls this spi_transfer
+    }
+
     //-- RF power interface
 
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override

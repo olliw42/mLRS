@@ -67,6 +67,12 @@ void spi_init(void)
 
 //-- transmit, transfer, read, write functions
 
+// to utilize ESP SPI Buffer
+static inline IRAM_ATTR void spi_transferbytes(uint8_t* dataout, uint8_t* datain, uint8_t len)
+{
+  spi->transferBytes(dataout, datain, len);
+}
+
 // is blocking
 uint8_t spi_transmitchar(uint8_t c)
 {
