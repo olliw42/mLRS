@@ -11,8 +11,6 @@
 
 #include <SPI.h>
 
-SPIClass* spi = NULL;
-
 //-- select functions
 
 #ifndef SPI_SELECT_PRE_DELAY
@@ -33,7 +31,6 @@ SPIClass* spi = NULL;
 
 static inline void spi_select(void)
 {
-  spi->beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, SPI_MODE0));
   SPI_SELECT_PRE_DELAY;
   digitalWrite(SPI_CS_IO, LOW); // CS = low
   SPI_SELECT_POST_DELAY;
@@ -45,24 +42,16 @@ static inline void spi_deselect(void)
   SPI_DESELECT_PRE_DELAY;
   digitalWrite(SPI_CS_IO, HIGH); // CS = high
   SPI_DESELECT_POST_DELAY;
-  spi->endTransaction();
 }
 
 void spi_init(void)
 {
-#if defined(ESP32) 
-  spi = new SPIClass(HSPI);
-#elif defined(ESP8266)
-  spi = new SPIClass();
-#endif
-
-#if defined(ESP32)
-  spi->begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, SPI_CS_IO);
-#elif defined(ESP8266)
-  spi->begin();
-#endif
-
   pinMode(SPI_CS_IO, OUTPUT);
+
+  SPI.begin();
+  SPI.setFrequency(SPI_FREQUENCY);
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setDataMode(SPI_MODE0);
 }
 
 //-- transmit, transfer, read, write functions
@@ -70,13 +59,13 @@ void spi_init(void)
 // to utilize ESP SPI Buffer
 static inline IRAM_ATTR void spi_transferbytes(uint8_t* dataout, uint8_t* datain, uint8_t len)
 {
-  spi->transferBytes(dataout, datain, len);
+  SPI.transferBytes(dataout, datain, len);
 }
 
 // is blocking
 uint8_t spi_transmitchar(uint8_t c)
 {
-  return spi->transfer(c);
+  return SPI.transfer(c);
 }
 
 // is blocking
