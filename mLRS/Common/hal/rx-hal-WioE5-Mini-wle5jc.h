@@ -13,6 +13,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
+#define DEVICE_HAS_SINGLE_LED
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -168,6 +169,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
+// we keep the green LED stuff in case a user wants it
 
 #define LED_GREEN                 IO_PA15
 #define LED_RED                   IO_PB5
@@ -179,10 +181,6 @@ void leds_init(void)
 
     // pin IO_PB15 must be floating, is used as artificial pad for green LED!
     gpio_init(IO_PB15, IO_MODE_Z, IO_SPEED_DEFAULT);
-
-    // artificial GND for R+Diode mod, ONLY temporary
-    // this is dirty! we do it here in leds_init() to ensure it is called
-    gpio_init(IO_PA0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }

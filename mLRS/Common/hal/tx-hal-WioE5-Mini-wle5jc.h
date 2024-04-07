@@ -20,6 +20,7 @@
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_RX
 #define DEVICE_HAS_DEBUG_SWUART
+#define DEVICE_HAS_SINGLE_LED
 //#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
@@ -208,6 +209,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
+// we keep the green LED stuff in case a user wants it
 
 #define LED_GREEN                 IO_PA15
 #define LED_RED                   IO_PB5
