@@ -50,35 +50,40 @@ IRAM_ATTR static inline void spi_deselect(void)
 
 //-- transmit, transfer, read, write functions
 
-// to utilize ESP SPI Buffer
-IRAM_ATTR static inline void spi_transferbytes(uint8_t* dataout, uint8_t* datain, uint8_t len)
+// these are blocking
+// utilize ESP SPI buffer
+// transferBytes()
+// - does while(SPI1CMD & SPIBUSY) {} as needed
+// - if dataout or datain are not aligned, then it does memcpy to aligned buffer on stack 
+// - sends 0xFFFFFFFF if no out data!! Problem: sx datasheet says 0x00
+
+IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
 {
     SPI.transferBytes(dataout, datain, len);
 }
 
 
-// is blocking
-IRAM_ATTR uint8_t spi_transmitchar(uint8_t c)
+IRAM_ATTR static inline void spi_read(uint8_t* datain, const uint8_t len)
 {
-    return SPI.transfer(c);
+    SPI.transferBytes(nullptr, datain, len);
 }
 
 
-// is blocking
-IRAM_ATTR void spi_transfer(uint8_t* dataout, uint8_t* datain, uint16_t len)
+IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 {
-    while (len) {
-        *datain = spi_transmitchar(*dataout);
-        dataout++;
-        datain++;
-        len--;
-    }
+    SPI.transferBytes(dataout, nullptr, len);
 }
 
 
 //-------------------------------------------------------
 // INIT routines
 //-------------------------------------------------------
+
+void spi_setnop(uint8_t nop)
+{
+    // currently not supported, should be 0x00 fo sx, is 0xFF per ESP SPI library
+}
+
 
 void spi_init(void)
 {
