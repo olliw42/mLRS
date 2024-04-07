@@ -23,11 +23,18 @@ mLRSProjectdirectory = os.path.dirname(os.path.abspath(__file__))
 mLRSdirectory = os.path.join(mLRSProjectdirectory,'mLRS')
 
 
+def os_system(arg):
+    res = os.system(arg)
+    if res != 0:
+        print('# ERROR (errno =',res,') DONE #')
+        os.system("pause")
+        exit(1)
+
 def git_submodules_update():
     print('----------------------------------------')
     print(' run git submodule update --init --recursive')
     print('----------------------------------------')
-    os.system('git submodule update --init --recursive')
+    os_system('git submodule update --init --recursive')
     print('# DONE #')
 
 
@@ -36,7 +43,7 @@ def copy_st_drivers():
     print(' run run_copy_st_drivers.py')
     print('----------------------------------------')
     os.chdir(os.path.join(mLRSProjectdirectory,'tools'))
-    os.system(os.path.join('.','run_copy_st_drivers.py -silent'))
+    os_system(os.path.join('.','run_copy_st_drivers.py -silent'))
     print('# DONE #')
 
 
@@ -45,7 +52,7 @@ def generate_mavlink_c_library():
     print(' run fmav_generate_c_library.py')
     print('----------------------------------------')
     os.chdir(os.path.join(mLRSdirectory,'Common','mavlink'))
-    os.system(os.path.join('.','fmav_generate_c_library.py'))
+    os_system(os.path.join('.','fmav_generate_c_library.py'))
     print('# DONE #')
 
 
