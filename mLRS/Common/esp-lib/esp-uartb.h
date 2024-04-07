@@ -78,7 +78,7 @@ static inline uint16_t uartb_rx_available(void)
 
 
 //-------------------------------------------------------
-// Init functions
+// INIT routines
 //-------------------------------------------------------
 
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)

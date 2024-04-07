@@ -27,7 +27,7 @@ IRAM_ATTR static inline void delay_ms(uint32_t ms)
 
 
 //-------------------------------------------------------
-// Init function
+// INIT routines
 //-------------------------------------------------------
 
 void delay_init(void) 

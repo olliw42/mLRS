@@ -11,6 +11,7 @@
 
 #include <SPI.h>
 
+
 //-- select functions
 
 #ifndef SPI_SELECT_PRE_DELAY
@@ -47,18 +48,6 @@ static inline void spi_deselect(void)
 #endif // #ifdef SPI_CS_IO
 
 
-void spi_init(void)
-{
-#ifdef SPI_CS_IO
-    pinMode(SPI_CS_IO, OUTPUT);
-#endif    
-
-    SPI.begin();
-    SPI.setFrequency(SPI_FREQUENCY);
-    SPI.setBitOrder(MSBFIRST);
-    SPI.setDataMode(SPI_MODE0);
-}
-
 //-- transmit, transfer, read, write functions
 
 // to utilize ESP SPI Buffer
@@ -87,78 +76,20 @@ IRAM_ATTR void spi_transfer(uint8_t* dataout, uint8_t* datain, uint16_t len)
 }
 
 
-// sends a dummy char, returns the received byte
-// is blocking
-IRAM_ATTR static inline uint8_t spi_readchar(void)
+//-------------------------------------------------------
+// INIT routines
+//-------------------------------------------------------
+
+void spi_init(void)
 {
-    return spi_transmitchar(0xFF);
-}
+#ifdef SPI_CS_IO
+    pinMode(SPI_CS_IO, OUTPUT);
+#endif    
 
-
-// sends a char, ignores the received byte
-// is blocking
-IRAM_ATTR static inline void spi_writechar(uint8_t c)
-{
-    spi_transmitchar(c);
-}
-
-
-// sends a word, returns the received word
-// is blocking
-IRAM_ATTR static inline uint16_t spi_transmitword(uint16_t w)
-{
-    return (((uint16_t)spi_transmitchar((uint8_t)(w >> 8))) << 8) + spi_transmitchar((uint8_t)(w));
-}
-
-
-// sends a dummy word, returns the received word
-// is blocking
-IRAM_ATTR static inline uint16_t spi_readword(void)
-{
-    return (((uint16_t)spi_transmitchar(0xFF)) << 8) + spi_transmitchar(0xFF);
-}
-
-
-// sends a word, ignores the received word
-// is blocking
-IRAM_ATTR static inline void spi_writeword(uint16_t w)
-{
-    spi_transmitchar((uint8_t)(w >> 8));
-    spi_transmitchar((uint8_t)(w));
-}
-
-
-// is blocking
-IRAM_ATTR void spi_read(uint8_t* data, uint16_t len)
-{
-    while (len) {
-        *data = spi_readchar();
-        data++;
-        len--;
-    }
-}
-
-
-// is blocking
-IRAM_ATTR void spi_write(uint8_t* data, uint16_t len)
-{
-    while (len) {
-        spi_writechar(*data);
-        data++;
-        len--;
-    }
-}
-
-
-// is blocking
-IRAM_ATTR void spi_writecandread(uint8_t c, uint8_t* data, uint16_t datalen)
-{
-    spi_writechar(c);
-    while (datalen) {
-        *data = spi_readchar();
-        data++;
-        datalen--;
-    }
+    SPI.begin();
+    SPI.setFrequency(SPI_FREQUENCY);
+    SPI.setBitOrder(MSBFIRST);
+    SPI.setDataMode(SPI_MODE0);
 }
 
 
