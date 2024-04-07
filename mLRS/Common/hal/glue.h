@@ -128,8 +128,6 @@ void hal_init(void)
 }
 
 
-#define IRAM_ATTR
-
 // setup(), loop() streamlining between Arduino/STM code
 uint8_t restart_controller = 0;
 void main_loop(void);

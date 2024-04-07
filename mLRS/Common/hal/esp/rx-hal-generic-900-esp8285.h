@@ -44,7 +44,7 @@
 #define SX_DIO0                   4
 #define SX_DIO1                   5
 
-IRQHANDLER(void IRAM_ATTR SX_DIO_EXTI_IRQHandler(void);)
+IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
@@ -85,7 +85,7 @@ bool button_pressed(void)
 void leds_init(void)
 {
     pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, LOW);// LED_RED_OFF
+    digitalWrite(LED_RED, LOW);
 }
 
 void led_red_off(void) { gpio_low(LED_RED); }

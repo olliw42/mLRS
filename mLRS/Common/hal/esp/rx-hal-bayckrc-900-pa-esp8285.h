@@ -44,7 +44,7 @@
 #define SX_DIO0                   4
 #define SX_DIO1                   5
 
-IRQHANDLER(void IRAM_ATTR SX_DIO_EXTI_IRQHandler(void);)
+IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {

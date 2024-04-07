@@ -164,7 +164,7 @@ volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
 IRQHANDLER(
-IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void)
+void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);

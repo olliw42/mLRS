@@ -11,6 +11,10 @@
 #define __NOP() _NOP()
 
 
+#undef IRQHANDLER
+#define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
+
+
 void hal_init(void)
 {
     // nothing to do

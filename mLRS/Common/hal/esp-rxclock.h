@@ -28,7 +28,7 @@ volatile uint32_t MS_C = 0;
 //-------------------------------------------------------
 
 IRQHANDLER(
-void IRAM_ATTR CLOCK_IRQHandler(void)
+void CLOCK_IRQHandler(void)
 {
     CNT_10us++;
 

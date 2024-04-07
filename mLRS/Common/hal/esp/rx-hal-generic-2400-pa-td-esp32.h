@@ -62,7 +62,7 @@
 
 #define PA_ANTENNA                9
 
-IRQHANDLER(IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void);)
+IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {

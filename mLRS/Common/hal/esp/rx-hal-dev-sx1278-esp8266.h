@@ -60,7 +60,7 @@
 #define SX_RESET                  D2
 #define SX_DIO0                   D1
 
-IRQHANDLER(void IRAM_ATTR SX_DIO_EXTI_IRQHandler(void);)
+IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
