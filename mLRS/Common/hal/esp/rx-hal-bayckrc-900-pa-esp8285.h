@@ -38,54 +38,52 @@
 
 
 //-- SX1: SX12xx & SPI
-#define SPI_CS_IO                 15
-#define SPI_FREQUENCY             10000000L
-#define SX_RESET                  2
-#define SX_DIO0                   4
-#define SX_DIO1                   5
+#define SPI_CS_IO                 IO_P15
+#define SPI_FREQUENCY             16000000L
+#define SX_RESET                  IO_P2
+#define SX_DIO0                   IO_P4
+#define SX_DIO1                   IO_P5
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_RESET, OUTPUT);
-    pinMode(SX_DIO0, INPUT);
-
-    digitalWrite(SX_RESET, HIGH);
-} 
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
+    gpio_init(SX_DIO0, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
 void sx_amp_transmit(void) {}
 void sx_amp_receive(void) {}
+
+IRAM_ATTR void sx_dio_enable_exti_isr(void)
+{
+    attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
+}
+
 void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-#define BUTTON                    0
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
-    return (digitalRead(BUTTON) == HIGH) ? false : true;
+    return gpio_read_activelow(BUTTON) ? true : false;
 }
 
 
 //-- LEDs
-#define LED_RED                   16
+#define LED_RED                   IO_P16
 
 void leds_init(void)
 {
-    pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, LOW);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW);
 }
 
 void led_red_off(void) { gpio_low(LED_RED); }

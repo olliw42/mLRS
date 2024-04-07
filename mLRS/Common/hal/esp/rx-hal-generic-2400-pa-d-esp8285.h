@@ -38,44 +38,42 @@
 
 
 //-- SX1: SX12xx & SPI
-#define SPI_CS_IO                 15
+#define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             16000000L
-#define SX_RESET                  2
-#define SX_BUSY                   5
-#define SX_DIO1                   4
-#define SX_TX_EN                  10
-#define PA_ANTENNA                9
+#define SX_RESET                  IO_P2
+#define SX_BUSY                   IO_P5
+#define SX_DIO1                   IO_P4
+#define SX_TX_EN                  IO_P10
+#define PA_ANTENNA                IO_P9
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_DIO1, INPUT);
-    pinMode(SX_BUSY, INPUT_PULLUP);
-    pinMode(SX_TX_EN, OUTPUT);
-    pinMode(SX_RESET, OUTPUT);
-    pinMode(PA_ANTENNA, OUTPUT);
-
-    digitalWrite(SX_RESET, HIGH);
-    digitalWrite(PA_ANTENNA, HIGH); // Force to Antenna 2
+    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
+    
+    gpio_init(PA_ANTENNA, IO_MODE_OUTPUT_PP_HIGH); // force to antenna 2
 }
 
-bool sx_busy_read(void)
+IRAM_ATTR bool sx_busy_read(void)
 {
-    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-void sx_amp_transmit(void)
+IRAM_ATTR void sx_amp_transmit(void)
 {
-    digitalWrite(SX_TX_EN, HIGH);
+    gpio_high(SX_TX_EN);
 }
 
-void sx_amp_receive(void)
+IRAM_ATTR void sx_amp_receive(void)
 {
-    digitalWrite(SX_TX_EN, LOW);
+    gpio_low(SX_TX_EN);
 }
 
-void sx_dio_enable_exti_isr(void)
+IRAM_ATTR void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
@@ -85,26 +83,25 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-#define BUTTON                    0
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
-    return (digitalRead(BUTTON) == HIGH) ? false : true;
+    return gpio_read_activelow(BUTTON) ? true : false;
 }
 
 
 //-- LEDs
-#define LED_RED                   16
+#define LED_RED                   IO_P16
 
 void leds_init(void)
 {
-    pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, LOW);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW);
 }
 
 void led_red_off(void) { gpio_low(LED_RED); }

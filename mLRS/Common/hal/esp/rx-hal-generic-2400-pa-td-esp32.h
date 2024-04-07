@@ -11,6 +11,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
+//#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
@@ -33,7 +34,7 @@
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL
-#define UARTC_BAUD                  115200
+#define UARTC_BAUD                115200
 
 //#define SWUART_USE_TIM15 // debug
 #define SWUART_TX_IO              10
@@ -66,53 +67,51 @@ IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_DIO1, INPUT);
-    pinMode(SX_BUSY, INPUT_PULLUP);
-    pinMode(SX_TX_EN, OUTPUT);
-    pinMode(SX_RESET, OUTPUT);
-    pinMode(PA_ANTENNA, OUTPUT);
-
-    digitalWrite(SX_RESET, HIGH);
-    digitalWrite(PA_ANTENNA, HIGH); // Force to Antenna 2
+    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
+    
+    gpio_init(PA_ANTENNA, IO_MODE_OUTPUT_PP_HIGH); // force to antenna 2
 }
 
-bool sx_busy_read(void)
+IRAM_ATTR bool sx_busy_read(void)
 {
-    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-void sx_amp_transmit(void)
+IRAM_ATTR void sx_amp_transmit(void)
 {
-    digitalWrite(SX_TX_EN, HIGH);
+    gpio_high(SX_TX_EN);
 }
 
-void sx_amp_receive(void)
+IRAM_ATTR void sx_amp_receive(void)
 {
-    digitalWrite(SX_TX_EN, LOW);
+    gpio_low(SX_TX_EN);
 }
 
-void sx_dio_init_exti_isroff(void) {}
-
-void sx_dio_enable_exti_isr(void)
+IRAM_ATTR void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
+void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
-//-- Button
 
-#define BUTTON                    0
+//-- Button
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
-    return (digitalRead(BUTTON) == HIGH) ? false : true;
+    return gpio_read_activelow(BUTTON) ? true : false;
 }
+
 
 //-- LEDs
 #include <FastLED.h>
@@ -130,10 +129,6 @@ void leds_init(void)
     FastLED.show();
     fastleds_state = 0;
 }
-
-void led_green_off(void) {}
-void led_green_on(void) {}
-void led_green_toggle(void) {}
 
 void led_red_off(void) 
 {
@@ -154,15 +149,12 @@ void led_red_toggle(void)
     if (fastleds_state) { led_red_off(); } else { led_red_on(); }
 }
 
-//-- SystemBootLoader
+void led_green_off(void) {}
+void led_green_on(void) {}
+void led_green_toggle(void) {}
 
-void systembootloader_init(void)
-{
-    // Not needed on the ESP chips, this built in.
-}
 
 //-- POWER
-
 #define POWER_GAIN_DBM            23 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

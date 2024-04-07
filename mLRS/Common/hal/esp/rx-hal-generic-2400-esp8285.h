@@ -34,65 +34,62 @@
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL
-#define UARTC_BAUD                  115200
+#define UARTC_BAUD                115200
 
 
 //-- SX1: SX12xx & SPI
-#define SPI_CS_IO                 15
-#define SPI_FREQUENCY             10000000L
-
-#define SX_RESET                  2
-#define SX_BUSY                   5
-#define SX_DIO1                   4
+#define SPI_CS_IO                 IO_P15
+#define SPI_FREQUENCY             16000000L
+#define SX_RESET                  IO_P2
+#define SX_BUSY                   IO_P5
+#define SX_DIO1                   IO_P4
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_DIO1, INPUT);
-    pinMode(SX_BUSY, INPUT_PULLUP);
-    pinMode(SX_RESET, OUTPUT);
-
-    digitalWrite(SX_RESET, HIGH);
+    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-bool sx_busy_read(void)
+IRAM_ATTR bool sx_busy_read(void)
 {
-    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
-}
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
 void sx_amp_transmit(void) {}
 void sx_amp_receive(void) {}
+
+IRAM_ATTR void sx_dio_enable_exti_isr(void)
+{
+    attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
+}
+
 void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-#define BUTTON                    0
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
-    return (digitalRead(BUTTON) == HIGH) ? false : true;
+    return gpio_read_activelow(BUTTON) ? true : false;
 }
 
 
 //-- LEDs
-#define LED_RED                   16
+#define LED_RED                   IO_P16
 
 void leds_init(void)
 {
-    pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, HIGH);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);
 }
 
 void led_red_off(void) { gpio_high(LED_RED); }
