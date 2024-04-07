@@ -403,9 +403,19 @@ class Sx126xDriver : public Sx126xDriverCommon
         spi_deselect();
     }
 
-    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
-        *bytein = spi_transmitchar(*byteout);
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
     }
 
     //-- RF power interface
@@ -436,6 +446,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 #endif
 
         spi_init();
+        spi_setnop(0x00); // 0x00 = NOP
         sx_init_gpio();
         sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
@@ -523,9 +534,19 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         spib_deselect();
     }
 
-    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
-        *bytein = spib_transmitchar(*byteout);
+        spib_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spib_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spib_write(dataout, len);
     }
 
     //-- RF power interface
@@ -554,6 +575,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 #endif
 
         spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
         sx2_init_gpio();
         sx2_dio_init_exti_isroff();
         sx2_dio_exti_isr_clearflag();

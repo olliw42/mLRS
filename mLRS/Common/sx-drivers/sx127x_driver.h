@@ -311,9 +311,19 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_ns(100); // well...
     }
 
-    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
-        *bytein = spi_transmitchar(*byteout);
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
     }
 
     //-- RF power interface
@@ -342,6 +352,7 @@ class Sx127xDriver : public Sx127xDriverCommon
         Sx127xDriverCommon::Init();
 
         spi_init();
+        spi_setnop(0x00); // 0x00 = NOP
         sx_init_gpio();
         sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
