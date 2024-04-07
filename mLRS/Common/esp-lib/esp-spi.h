@@ -30,18 +30,18 @@
 
 #ifdef SPI_CS_IO
 
-static inline void spi_select(void)
+IRAM_ATTR static inline void spi_select(void)
 {
     SPI_SELECT_PRE_DELAY;
-    digitalWrite(SPI_CS_IO, LOW); // CS = low
+    GPOC = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, LOW); // CS = low
     SPI_SELECT_POST_DELAY;
 }
 
 
-static inline void spi_deselect(void)
+IRAM_ATTR static inline void spi_deselect(void)
 {
     SPI_DESELECT_PRE_DELAY;
-    digitalWrite(SPI_CS_IO, HIGH); // CS = high
+    GPOS = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, HIGH); // CS = high
     SPI_DESELECT_POST_DELAY;
 }
 
