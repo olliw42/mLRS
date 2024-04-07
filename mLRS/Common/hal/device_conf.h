@@ -301,6 +301,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_NAME "GENERIC 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
@@ -332,17 +333,26 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_BAYCKRC_900_PA_ESP8285
-  #define DEVICE_NAME "BAYKRC 900 PA"
+#ifdef RX_ELRS_BAYCKRC_NANO_PRO_900_ESP8285
+  #define DEVICE_NAME "BAYCKRC NANO PRO 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
+  #define DEVICE_NAME "SPEEDYBEE NANO 2.4G"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef RX_DIYBOARD_900_ESP8266
   #define DEVICE_NAME "DIY BOARD 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 

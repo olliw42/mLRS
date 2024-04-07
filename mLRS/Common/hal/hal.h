@@ -211,17 +211,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 // ESP Boards
 //-------------------------------------------------------
 
-//-- ESP 868/915 MHz Devices
+//-- ESP 868/915 MHz Generic Devices
 
 #ifdef RX_ELRS_GENERIC_900_ESP8285
 #include "esp/rx-hal-generic-900-esp8285.h"
 #endif
 
-#ifdef RX_ELRS_BAYCKRC_900_PA_ESP8285
-#include "esp/rx-hal-bayckrc-900-pa-esp8285.h"
-#endif
-
-//-- ESP 2.4 GHz Devices
+//-- ESP 2.4 GHz Generic Devices
 
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
 #include "esp/rx-hal-generic-2400-esp8285.h"
@@ -238,6 +234,18 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef RX_ELRS_GENERIC_2400_PA_TD_ESP32
 #include "esp/rx-hal-generic-2400-pa-td-esp32.h"
 #endif
+
+//-- ESP specific Devices
+
+#ifdef RX_ELRS_BAYCKRC_NANO_PRO_900_ESP8285
+#include "esp/rx-hal-bayckrc-900-pa-esp8285.h"
+#endif
+
+#ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
+#include "esp/rx-hal-generic-2400-pa-esp8285.h"
+#endif
+
+// -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266
 #include "esp/rx-hal-dev-sx1278-esp8266.h"
