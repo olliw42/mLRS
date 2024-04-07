@@ -10,8 +10,8 @@
 v0.0.00:
 */
 
-#define DBG_MAIN(x) x
-#define DBG_MAIN_SLIM(x) x
+#define DBG_MAIN(x)
+#define DBG_MAIN_SLIM(x)
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -31,10 +31,7 @@ v0.0.00:
 
 #if defined(ESP8266) || defined(ESP32)
 #include "../Common/hal/esp-glue.h"
-
-//XX#include "../Common/esp-lib/esp.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
-
 #include "../Common/esp-lib/esp-peripherals.h"
 #include "../Common/esp-lib/esp-mcu.h"
 #include "../Common/esp-lib/esp-stack.h"

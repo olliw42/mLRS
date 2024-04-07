@@ -2,13 +2,12 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // hal
 //********************************************************
 
 //-------------------------------------------------------
-// GENERIC 2400 PA RX
+// ESP8285, ELRS GENERIC 2400 PA RX
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
@@ -18,14 +17,11 @@
 
 //-- Timers, Timing, EEPROM, and such stuff
 
-#define DELAY_USE_DWT
-
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
-#define EE_START_PAGE             0 // 128 kB flash, 2 kB page
+#define EE_START_PAGE             0
 
-#define MICROS_TIMx               TIM15
 
 //-- UARTS
 // UARTB = serial port
@@ -34,8 +30,8 @@
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
-#define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 2048
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL
 #define UARTC_BAUD                115200

@@ -2,7 +2,6 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // ESP Glue
 //*******************************************************
@@ -16,6 +15,7 @@ void hal_init(void)
 {
     // nothing to do
 }
+
 
 // setup(), loop() streamlining between Arduino/STM code
 uint8_t restart_controller = 0;
@@ -34,3 +34,6 @@ void loop() { main_loop(); }
 #define GOTO_RESTARTCONTROLLER \
     restart_controller = 1; \
     return;
+
+
+

@@ -1,9 +1,9 @@
 //*******************************************************
-// Copyright (c) OlliW, OlliW42, www.olliw.eu
+// Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// ESP - Emulated EEPROM standard library
+// ESP Emulated EEPROM standard library
 //*******************************************************
 // Interface:
 //
@@ -13,6 +13,7 @@
 //*******************************************************
 #ifndef ESPLIB_EEPROM_H
 #define ESPLIB_EEPROM_H
+
 
 #include <EEPROM.h>
 
@@ -53,6 +54,7 @@ typedef enum {
 
 #define EE_USE_WORD
 
+
 //-------------------------------------------------------
 // FLASH extensions
 //-------------------------------------------------------
@@ -87,6 +89,7 @@ uint16_t ee_hal_erasepage(uint32_t Page_Address, uint32_t Page_No)
     delay_ms(20);
     return result;
 }
+
 
 //-------------------------------------------------------
 // Helper
@@ -174,7 +177,6 @@ EE_STATUS_ENUM ee_readdata(void* data, uint16_t datalen)
     return EE_STATUS_OK;
 }
 
-
 EE_STATUS_ENUM ee_writedata(void* data, uint16_t datalen)
 {
 EE_STATUS_ENUM status;
@@ -254,6 +256,7 @@ EE_STATUS_ENUM ee_init(void)
 
     return status;
 }
+
 
 //-------------------------------------------------------
 #endif // ESPLIB_EEPROM_H

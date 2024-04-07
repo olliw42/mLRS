@@ -7,25 +7,33 @@
 //********************************************************
 #ifndef ESPLIB_DELAY_H
 #define ESPLIB_DELAY_H
+#pragma once
 
-void delay_init() 
-{
-    // Not needed on the ESP chips, this built into Arduino init.
-}
 
 static inline void delay_ns(uint32_t ns)
 {
-    // We are almost certain this is not needed for SPI operation on ESP
+    // called only in SPI functions, we are almost certain this is not needed for operation on ESP
 }
 
-static inline void delay_us(uint32_t us)
+IRAM_ATTR static inline void delay_us(uint32_t us)
 {
     delayMicroseconds(us);
 }
 
-static inline void delay_ms(uint32_t ms) 
+IRAM_ATTR static inline void delay_ms(uint32_t ms) 
 {
     delay(ms);
 }
+
+
+//-------------------------------------------------------
+// Init function
+//-------------------------------------------------------
+
+void delay_init(void) 
+{
+    // not needed on the ESP chips, built into Arduino init
+}
+
 
 #endif // ESPLIB_DELAY_H

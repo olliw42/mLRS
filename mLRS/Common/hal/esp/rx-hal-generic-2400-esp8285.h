@@ -2,28 +2,26 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // hal
 //********************************************************
 
 //-------------------------------------------------------
-// GENERIC 2400 RX
+// ESP8285, ELRS GENERIC 2400 RX
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_NO_DEBUG
-// #define DEVICE_HAS_SERIAL_OR_DEBUG
-//-- Timers, Timing, EEPROM, and such stuff
+//#define DEVICE_HAS_SERIAL_OR_DEBUG
 
-#define DELAY_USE_DWT
+
+//-- Timers, Timing, EEPROM, and such stuff
 
 #define SYSTICK_TIMESTEP          1000
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
-#define EE_START_PAGE             0 // 128 kB flash, 2 kB page
+#define EE_START_PAGE             0
 
-#define MICROS_TIMx               TIM15
 
 //-- UARTS
 // UARTB = serial port
@@ -32,11 +30,8 @@
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
-#define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
-#define UARTB_USE_TX_ISR
-#define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL
 #define UARTC_BAUD                  115200
@@ -97,7 +92,7 @@ bool button_pressed(void)
 void leds_init(void)
 {
     pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, HIGH);// LED_RED_OFF
+    digitalWrite(LED_RED, HIGH);
 }
 
 void led_red_off(void) { gpio_high(LED_RED); }
