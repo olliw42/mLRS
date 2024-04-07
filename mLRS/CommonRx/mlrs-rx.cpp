@@ -507,7 +507,7 @@ INITCONTROLLER_ONCE
 RESTARTCONTROLLER
 
     init_hw();
-    DBG_MAIN(dbg.puts("\n\nDBG: Init complete\n"));
+    DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
     serial.SetBaudRate(Config.SerialBaudrate);
 
@@ -542,17 +542,15 @@ RESTARTCONTROLLER
     rxstats.Init(Config.LQAveragingPeriod);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
+
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
     sx_serial.Init();
-
     fan.SetPower(sx.RfPower_dbm());
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
     doSysTask = 0; // helps in avoiding too short first loop
-
-    DBG_MAIN(dbg.puts("DBG: Starting loop\n"));
 
 INITCONTROLLER_END
 
@@ -573,7 +571,7 @@ INITCONTROLLER_END
 
         if (!tick_1hz) {
             dbg.puts(".");
-            dbg.puts("\nRX: ");
+/*            dbg.puts("\nRX: ");
             dbg.puts(u8toBCD_s(rxstats.GetLQ_rc())); dbg.putc(',');
             dbg.puts(u8toBCD_s(rxstats.GetLQ_serial()));
             dbg.puts(" (");
@@ -588,7 +586,7 @@ INITCONTROLLER_END
             dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
         }
     }
 
@@ -825,7 +823,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            DBG_MAIN(dbg.puts("\nDBG: Binding\n"));
             bind.ConfigForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
@@ -878,7 +875,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
-        DBG_MAIN(dbg.puts("\nDBG: Param store\n"));
         sx.SetToIdle();
         sx2.SetToIdle();
         leds.SetToParamStore();
