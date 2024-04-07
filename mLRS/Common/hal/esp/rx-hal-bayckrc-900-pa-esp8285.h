@@ -42,7 +42,7 @@
 #define SPI_FREQUENCY             16000000L
 #define SX_RESET                  IO_P2
 #define SX_DIO0                   IO_P4
-#define SX_DIO1                   IO_P5
+//#define SX_DIO1                   IO_P5
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 

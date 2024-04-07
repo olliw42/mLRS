@@ -42,16 +42,14 @@
 #define SPI_FREQUENCY             16000000L
 #define SX_RESET                  IO_P2
 #define SX_DIO0                   IO_P4
-#define SX_DIO1                   IO_P5
+//#define SX_DIO1                   IO_P5
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_RESET, OUTPUT);
-    pinMode(SX_DIO0, INPUT);
-
-    digitalWrite(SX_RESET, HIGH);
+    gpio_init(SX_DIO0, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 } 
 
 void sx_amp_transmit(void) {}
