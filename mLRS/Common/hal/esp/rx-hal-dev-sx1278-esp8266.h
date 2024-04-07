@@ -107,10 +107,6 @@ void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
-void led_green_off(void) {}
-void led_green_on(void) {}
-void led_green_toggle(void) {}
-
 
 //-- POWER
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
