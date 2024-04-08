@@ -362,14 +362,19 @@ class Sx128xDriver : public Sx128xDriverCommon
         spi_deselect();
     }
 
-    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
-        *bytein = spi_transmitchar(*byteout);
+        spi_transfer(dataout, datain, len);
+    }
+    
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
     }
 
-    void SpiTransferBytes(uint8_t* byteout, uint8_t* bytein, uint8_t len) override
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
     {
-        spi_transferbytes(byteout, bytein, len);  // stm32-ll calls this spi_transfer
+        spi_write(dataout, len);
     }
 
     //-- RF power interface
@@ -395,6 +400,7 @@ class Sx128xDriver : public Sx128xDriverCommon
         Sx128xDriverCommon::Init();
 
         spi_init();
+        spi_setnop(0x00); // 0x00 = NOP
         sx_init_gpio();
         sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
@@ -482,9 +488,19 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         spib_deselect();
     }
 
-    void SpiTransferByte(uint8_t* byteout, uint8_t* bytein) override
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
-        *bytein = spib_transmitchar(*byteout);
+        spib_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spib_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spib_write(dataout, len);
     }
 
     //-- RF power interface
@@ -510,6 +526,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         Sx128xDriverCommon::Init();
 
         spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();

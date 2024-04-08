@@ -15,6 +15,7 @@
 // no bind button (is available via the BOOT solder pad located on the bottom side = pin PB13 = pin 24 on WioE5)
 // no out port (not available, to make available change this hal accordingly)
 
+#define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 //#define DEVICE_HAS_OUT
 
@@ -177,18 +178,12 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PB4
 #define LED_RED                   IO_PA9
 
 void leds_init(void)
 {
-    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
 }
-
-void led_green_off(void) { gpio_low(LED_GREEN); }
-void led_green_on(void) { gpio_high(LED_GREEN); }
-void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }

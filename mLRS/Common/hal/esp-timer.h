@@ -15,29 +15,12 @@
 //-------------------------------------------------------
 
 volatile uint32_t doSysTask = 0;
-
-typedef enum {
-    HAL_TICK_FREQ_10HZ         = 100U,
-    HAL_TICK_FREQ_100HZ        = 10U,
-    HAL_TICK_FREQ_1KHZ         = 1U,
-    HAL_TICK_FREQ_DEFAULT      = HAL_TICK_FREQ_1KHZ
-} HAL_TickFreqTypeDef;
-
-typedef enum {
-    HAL_OK = 0x00,
-    HAL_ERROR = 0x01,
-    HAL_BUSY = 0x02,
-    HAL_TIMEOUT = 0x03
-} HAL_StatusTypeDef;
-
-volatile uint32_t uwTick;
-extern uint32_t uwTickPrio;
-HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_1KHZ;  // For esp we will call tick increment every 1ms
+volatile uint32_t uwTick = 0;
 
 
-void IRAM_ATTR HAL_IncTick(void) // overwrites __weak declaration in stm32yyxx_hal.c
+IRAM_ATTR void HAL_IncTick(void)
 {
-    uwTick += uwTickFreq;
+    uwTick += 1;
     doSysTask++;
 }
 
@@ -53,15 +36,6 @@ volatile uint32_t millis32(void)
 //-------------------------------------------------------
 // free running timer with 1us time base
 
-#ifndef MICROS_TIMx
-#error MICROS_TIMx not defined !
-#endif
-
-
-//-------------------------------------------------------
-// Micros functions
-//-------------------------------------------------------
-
 void micros_init(void)
 {
     // just a stub on ESP, handled by Arduino init()
@@ -70,7 +44,7 @@ void micros_init(void)
 
 uint16_t micros16(void)
 {
-    return micros();
+    return (uint16_t)micros();
 }
 
 
@@ -81,7 +55,9 @@ uint16_t micros16(void)
 void timer_init(void)
 {
     doSysTask = 0;
+    uwTick = 0;
     micros_init();
 }
+
 
 #endif // ESP_TIMER_H

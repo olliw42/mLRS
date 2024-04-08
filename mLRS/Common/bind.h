@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "common_conf.h"
+#include "hal/device_conf.h"
 
 
 extern volatile uint32_t millis32(void);

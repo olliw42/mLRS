@@ -9,6 +9,7 @@
 #define ESP_RXCLOCK_H
 #pragma once
 
+
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 #define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us        
 
@@ -16,22 +17,22 @@ volatile bool doPostReceive;
 
 uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
 
-
 volatile uint32_t CNT_10us = 0;
 volatile uint32_t CCR1 = 0;
 volatile uint32_t CCR3 = 0;
 volatile uint32_t MS_C = 0;
+
 
 //-------------------------------------------------------
 // Clock ISR
 //-------------------------------------------------------
 
 IRQHANDLER(
-void IRAM_ATTR CLOCK_IRQHandler(void)
+void CLOCK_IRQHandler(void)
 {
     CNT_10us++;
 
-    // Call HAL_IncTick every 1ms
+    // call HAL_IncTick every 1 ms
     if (CNT_10us == MS_C) {
         MS_C = CNT_10us + CLOCK_CNT_1MS; 
         HAL_IncTick();
@@ -64,16 +65,15 @@ class RxClockBase
     void disable_isr(void);
 };
 
-
 void RxClockBase::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
 
-    // Initialise the timer
+    // initialise the timer
     timer1_attachInterrupt(CLOCK_IRQHandler); 
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
-    timer1_write(50); //5MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
+    timer1_write(50); // 5 MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
     Reset();
 }
 
@@ -97,5 +97,6 @@ void RxClockBase::Reset(void)
     MS_C = CNT_10us + CLOCK_CNT_1MS;
     interrupts();
 }
+
 
 #endif // ESP_RXCLOCK_H

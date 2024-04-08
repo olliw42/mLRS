@@ -11,6 +11,7 @@
 
 #include <SPI.h>
 
+
 //-- select functions
 
 #ifndef SPI_SELECT_PRE_DELAY
@@ -29,130 +30,72 @@
 
 #ifdef SPI_CS_IO
 
-static inline void spi_select(void)
+IRAM_ATTR static inline void spi_select(void)
 {
-  SPI_SELECT_PRE_DELAY;
-  digitalWrite(SPI_CS_IO, LOW); // CS = low
-  SPI_SELECT_POST_DELAY;
+    SPI_SELECT_PRE_DELAY;
+    GPOC = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, LOW); // CS = low
+    SPI_SELECT_POST_DELAY;
 }
 
 
-static inline void spi_deselect(void)
+IRAM_ATTR static inline void spi_deselect(void)
 {
-  SPI_DESELECT_PRE_DELAY;
-  digitalWrite(SPI_CS_IO, HIGH); // CS = high
-  SPI_DESELECT_POST_DELAY;
+    SPI_DESELECT_PRE_DELAY;
+    GPOS = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, HIGH); // CS = high
+    SPI_DESELECT_POST_DELAY;
 }
 
-void spi_init(void)
-{
-  pinMode(SPI_CS_IO, OUTPUT);
+#endif // #ifdef SPI_CS_IO
 
-  SPI.begin();
-  SPI.setFrequency(SPI_FREQUENCY);
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setDataMode(SPI_MODE0);
-}
 
 //-- transmit, transfer, read, write functions
 
-// to utilize ESP SPI Buffer
-static inline IRAM_ATTR void spi_transferbytes(uint8_t* dataout, uint8_t* datain, uint8_t len)
-{
-  SPI.transferBytes(dataout, datain, len);
-}
+// these are blocking
+// utilize ESP SPI buffer
+// transferBytes()
+// - does while(SPI1CMD & SPIBUSY) {} as needed
+// - if dataout or datain are not aligned, then it does memcpy to aligned buffer on stack 
+// - sends 0xFFFFFFFF if no out data!! Problem: sx datasheet says 0x00
 
-// is blocking
-uint8_t spi_transmitchar(uint8_t c)
+IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
 {
-  return SPI.transfer(c);
-}
-
-// is blocking
-void spi_transfer(uint8_t* dataout, uint8_t* datain, uint16_t len)
-{
-  while (len) {
-    *datain = spi_transmitchar(*dataout);
-    dataout++;
-    datain++;
-    len--;
-  }
+    SPI.transferBytes(dataout, datain, len);
 }
 
 
-// sends a dummy char, returns the received byte
-// is blocking
-static inline uint8_t spi_readchar(void)
+IRAM_ATTR static inline void spi_read(uint8_t* datain, const uint8_t len)
 {
-  return spi_transmitchar(0xFF);
+    SPI.transferBytes(nullptr, datain, len);
 }
 
 
-// sends a char, ignores the received byte
-// is blocking
-static inline void spi_writechar(uint8_t c)
+IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 {
-  spi_transmitchar(c);
-}
-
-// sends a word, returns the received word
-// is blocking
-static inline uint16_t spi_transmitword(uint16_t w)
-{
-  return (((uint16_t)spi_transmitchar((uint8_t)(w >> 8))) << 8) + spi_transmitchar((uint8_t)(w));
+    SPI.transferBytes(dataout, nullptr, len);
 }
 
 
-// sends a dummy word, returns the received word
-// is blocking
-static inline uint16_t spi_readword(void)
+//-------------------------------------------------------
+// INIT routines
+//-------------------------------------------------------
+
+void spi_setnop(uint8_t nop)
 {
-  return (((uint16_t)spi_transmitchar(0xFF)) << 8) + spi_transmitchar(0xFF);
+    // currently not supported, should be 0x00 fo sx, is 0xFF per ESP SPI library
 }
 
 
-// sends a word, ignores the received word
-// is blocking
-static inline void spi_writeword(uint16_t w)
+void spi_init(void)
 {
-  spi_transmitchar((uint8_t)(w >> 8));
-  spi_transmitchar((uint8_t)(w));
+#ifdef SPI_CS_IO
+    pinMode(SPI_CS_IO, OUTPUT);
+#endif    
+
+    SPI.begin();
+    SPI.setFrequency(SPI_FREQUENCY);
+    SPI.setBitOrder(MSBFIRST);
+    SPI.setDataMode(SPI_MODE0);
 }
 
-
-// is blocking
-void spi_read(uint8_t* data, uint16_t len)
-{
-  while (len) {
-    *data = spi_readchar();
-    data++;
-    len--;
-  }
-}
-
-
-// is blocking
-void spi_write(uint8_t* data, uint16_t len)
-{
-  while (len) {
-    spi_writechar(*data);
-    data++;
-    len--;
-  }
-}
-
-
-// is blocking
-void spi_writecandread(uint8_t c, uint8_t* data, uint16_t datalen)
-{
-  spi_writechar(c);
-  while (datalen) {
-    *data = spi_readchar();
-    data++;
-    datalen--;
-  }
-}
-
-#endif
 
 #endif // ESPLIB_SPI_H

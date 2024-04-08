@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "common_types.h"
+#include "hal/hal.h"
 
 
 typedef enum {
@@ -54,8 +55,7 @@ void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
 
 #ifdef DEVICE_HAS_SINGLE_LED
     while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
-#endif
-
+#else
     if (led_pattern == FAIL_LED_PATTERN_GR_OFF_RD_BLINK /*1*/) {
         led_green_off();
         while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
@@ -102,7 +102,9 @@ void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
 
     led_red_on();
     led_green_on();
+
     while (1) { delay_ms(50); fail_do_dbg(dbg, msg); }
+#endif
 }
 
 

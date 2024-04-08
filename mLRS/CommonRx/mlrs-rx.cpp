@@ -10,8 +10,8 @@
 v0.0.00:
 */
 
-#define DBG_MAIN(x) x
-#define DBG_MAIN_SLIM(x) x
+#define DBG_MAIN(x)
+#define DBG_MAIN_SLIM(x)
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -31,10 +31,7 @@ v0.0.00:
 
 #if defined(ESP8266) || defined(ESP32)
 #include "../Common/hal/esp-glue.h"
-
-//XX#include "../Common/esp-lib/esp.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
-
 #include "../Common/esp-lib/esp-peripherals.h"
 #include "../Common/esp-lib/esp-mcu.h"
 #include "../Common/esp-lib/esp-stack.h"
@@ -167,7 +164,7 @@ volatile uint16_t irq_status;
 volatile uint16_t irq2_status;
 
 IRQHANDLER(
-IRAM_ATTR void SX_DIO_EXTI_IRQHandler(void)
+void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
@@ -510,7 +507,7 @@ INITCONTROLLER_ONCE
 RESTARTCONTROLLER
 
     init_hw();
-    DBG_MAIN(dbg.puts("\n\nDBG: Init complete\n"));
+    DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
     serial.SetBaudRate(Config.SerialBaudrate);
 
@@ -545,17 +542,15 @@ RESTARTCONTROLLER
     rxstats.Init(Config.LQAveragingPeriod);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
+
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
     sx_serial.Init();
-
     fan.SetPower(sx.RfPower_dbm());
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
     doSysTask = 0; // helps in avoiding too short first loop
-
-    DBG_MAIN(dbg.puts("DBG: Starting loop\n"));
 
 INITCONTROLLER_END
 
@@ -576,7 +571,7 @@ INITCONTROLLER_END
 
         if (!tick_1hz) {
             dbg.puts(".");
-            dbg.puts("\nRX: ");
+/*            dbg.puts("\nRX: ");
             dbg.puts(u8toBCD_s(rxstats.GetLQ_rc())); dbg.putc(',');
             dbg.puts(u8toBCD_s(rxstats.GetLQ_serial()));
             dbg.puts(" (");
@@ -591,7 +586,7 @@ INITCONTROLLER_END
             dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; ");
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
         }
     }
 
@@ -828,7 +823,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            DBG_MAIN(dbg.puts("\nDBG: Binding\n"));
             bind.ConfigForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
@@ -881,7 +875,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
-        DBG_MAIN(dbg.puts("\nDBG: Param store\n"));
         sx.SetToIdle();
         sx2.SetToIdle();
         leds.SetToParamStore();
@@ -889,5 +882,5 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         GOTO_RESTARTCONTROLLER;
     }
 
-}//end of loop
+}//end of main_loop
 
