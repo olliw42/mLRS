@@ -248,7 +248,7 @@ void sx2_dio_exti_isr_clearflag(void)
 //-- In port
 // this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
 #ifdef DEVICE_HAS_IN
-#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
+#include "../../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {

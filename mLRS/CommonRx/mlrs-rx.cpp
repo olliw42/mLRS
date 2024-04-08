@@ -882,5 +882,5 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         GOTO_RESTARTCONTROLLER;
     }
 
-}//end of loop
+}//end of main_loop
 
