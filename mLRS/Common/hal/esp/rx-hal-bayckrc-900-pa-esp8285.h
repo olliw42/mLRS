@@ -39,7 +39,7 @@
 
 //-- SX1: SX12xx & SPI
 #define SPI_CS_IO                 IO_P15
-#define SPI_FREQUENCY             16000000L
+#define SPI_FREQUENCY             10000000L
 #define SX_RESET                  IO_P2
 #define SX_DIO0                   IO_P4
 //#define SX_DIO1                   IO_P5
