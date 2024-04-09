@@ -6,10 +6,10 @@
  https://www.gnu.org/licenses/gpl-3.0.de.html
  OlliW @ www.olliw.eu
 *******************************************************
- run_copy_esp_firmwares.py
- requires you to generate esp fimrware files into .pio/build manually (using VSC)
+ run_make_esp_firmwares.py
+ generate esp fimrware files
  renames and copies files into tools/esp-build/firmware
- version 8.04.2024
+ version 9.04.2024
 ********************************************************
 '''
 import os
@@ -17,6 +17,12 @@ import pathlib
 import shutil
 import re
 import sys
+
+
+#-- installation dependent
+# TODO: effort at finding this automatically
+
+PIO_DIR = os.path.join("C:/",'Users','Olli','.platformio','penv','Scripts')
 
 
 
@@ -117,19 +123,34 @@ def printError(txt):
     print('\033[91m'+txt+'\033[0m') # light Red
 
 
+
+#--------------------------------------------------
+# build system
+#--------------------------------------------------
+
+def mlrs_esp_compile_all():
+    pio_run = os.path.join(PIO_DIR,'platformio.exe') + ' run --project-dir ' + MLRS_PROJECT_DIR
+    
+    print('Full Clean All')
+    os.system(pio_run+' --target fullclean')
+    print('Build All')
+    os.system(pio_run)
+
+
+
 #--------------------------------------------------
 # application
 #--------------------------------------------------
 
-def mlrs_copy_all_esp_elf_etc():
-    print('copying .elf files')
+def mlrs_esp_copy_all_bin():
+    print('copying .bin files')
     firmwarepath = os.path.join(MLRS_ESP_BUILD_DIR,'firmware')
     create_clean_dir(firmwarepath)
-    for subdir in os.listdir(MLRS_PIO_BUILD_DIR): #os.walk(MLRS_PIO_BUILD_DIR):
-        if os.path.isdir(os.path.join(MLRS_PIO_BUILD_DIR,subdir)): # needs to use full path for check
+    for subdir in os.listdir(MLRS_PIO_BUILD_DIR):
+        if os.path.isdir(os.path.join(MLRS_PIO_BUILD_DIR,subdir)): # needs to use full path for the check to work
             print(subdir)
-            file = os.path.join(MLRS_PIO_BUILD_DIR,subdir,'firmware.elf')
-            shutil.copy(file, os.path.join(firmwarepath,subdir+'-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR+'.elf'))
+            file = os.path.join(MLRS_PIO_BUILD_DIR,subdir,'firmware.bin')
+            shutil.copy(file, os.path.join(firmwarepath,subdir+'-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR+'.bin'))
 
 
 #-- here we go
@@ -163,7 +184,8 @@ if __name__ == "__main__":
     else:
         VERSIONONLYSTR = cmdline_version
 
-    mlrs_copy_all_esp_elf_etc()
+    mlrs_esp_compile_all()
+    mlrs_esp_copy_all_bin()
 
     if not cmdline_nopause:
         os.system("pause")
