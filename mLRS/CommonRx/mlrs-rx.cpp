@@ -30,6 +30,7 @@ v0.0.00:
 #include "../Common/common_types.h"
 
 #if defined(ESP8266) || defined(ESP32)
+
 #include "../Common/hal/esp-glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../Common/esp-lib/esp-peripherals.h"
@@ -87,6 +88,7 @@ v0.0.00:
 #include "../Common/hal/timer.h"
 #include "powerup.h"
 #include "rxclock.h"
+
 #endif
 
 #include "../Common/sx-drivers/sx12xx.h"
