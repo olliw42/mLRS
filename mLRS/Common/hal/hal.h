@@ -217,6 +217,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-900-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+#include "esp/rx-hal-generic-900-pa-esp8285.h"
+#endif
+
 //-- ESP 2.4 GHz Generic Devices
 
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
@@ -229,8 +233,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- ESP specific Devices
 
-#ifdef RX_ELRS_BAYCKRC_NANO_PRO_900_ESP8285
-#include "esp/rx-hal-bayckrc-900-pa-esp8285.h"
+#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+#include "esp/rx-hal-generic-900-pa-esp8285.h"
 #endif
 
 #ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285

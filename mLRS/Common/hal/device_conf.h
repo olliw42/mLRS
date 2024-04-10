@@ -305,6 +305,14 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+  #define DEVICE_NAME "GENERIC 900 PA"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
   #define DEVICE_NAME "GENERIC 2400"
   #define DEVICE_IS_RECEIVER
