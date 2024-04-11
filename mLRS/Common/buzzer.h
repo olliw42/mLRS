@@ -11,6 +11,9 @@
 #pragma once
 
 
+#include "hal/hal.h"
+
+
 #ifndef DEVICE_HAS_BUZZER
 
 class tBuzzer

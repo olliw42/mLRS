@@ -29,17 +29,17 @@ v0.0.00:
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
-#include "../Common/thirdparty/stdstm32-mcu.h"
-#include "../Common/thirdparty/stdstm32-adc.h"
-#include "../Common/thirdparty/stdstm32-stack.h"
+#include "../modules/stm32ll-lib/src/stdstm32-mcu.h"
+#include "../modules/stm32ll-lib/src/stdstm32-adc.h"
+#include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
 #include "../Common/hal/hal.h"
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
@@ -68,10 +68,12 @@ v0.0.00:
 #ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
+#include "../Common/hal/timer.h"
+
+#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-#include "../Common/micros.h"
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
@@ -84,13 +86,12 @@ v0.0.00:
 #include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
-TxStatsBase txstats;
-tComPort com;
-tTxCli cli;
-ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
-tConfigId config_id;
+tTxStats txstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
+ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
+tConfigId config_id;
+tTxCli cli;
 
 
 //-------------------------------------------------------
@@ -99,7 +100,7 @@ tTDiversity tdiversity;
 
 #include "mavlink_interface_tx.h"
 
-MavlinkBase mavlink;
+tTxMavlink mavlink;
 
 
 uint8_t mavlink_vehicle_state(void)
@@ -198,45 +199,38 @@ void enter_system_bootloader(void)
 }
 
 
-void enter_flash_esp(void)
-{
-    disp.DrawFlashEsp();
-    flashesp_do(&com);
-}
-
-
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
 
 void init_once(void)
 {
+    hal_init();
+
     serial.InitOnce();
-    com.InitOnce();
+    comport.InitOnce();
+    serial2.InitOnce();
 }
 
 
-void init(void)
+void init_hw(void)
 {
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
 
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
+    timer_init();
 
     leds_init();
     button_init();
     esp_init();
     fiveway_init();
 
-    micros_init();
-
     serial.Init();
     serial2.Init();
+    comport.Init();
 
-    com.Init();
-    cli.Init(&com);
-    esp.Init(&com, &serial2);
     buzzer.Init();
     fan.Init();
     dbg.Init();
@@ -590,7 +584,6 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 // MAIN routine
 //*******************************************************
 
-uint16_t led_blink;
 uint16_t tick_1hz;
 
 uint16_t tx_tick;
@@ -615,67 +608,72 @@ static inline bool connected_and_rx_setup_available(void)
 }
 
 
-int main_main(void)
+void main_loop(void)
 {
 #ifdef BOARD_TEST_H
-  main_test();
+    main_test();
 #endif
-  stack_check_init();
-  init_once();
-RESTARTCONTROLLER:
-  init();
-  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+INITCONTROLLER_ONCE
+    stack_check_init();
+    init_once();
+RESTARTCONTROLLER
+    init_hw();
+    DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-  serial.SetBaudRate(Config.SerialBaudrate);
-  serial2.SetBaudRate(Config.SerialBaudrate);
+    serial.SetBaudRate(Config.SerialBaudrate);
+    serial2.SetBaudRate(Config.SerialBaudrate);
 
-  // startup sign of life
-  LED_RED_OFF;
-  for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
+    // startup sign of life
+    leds.Init();
 
-  // start up sx
-  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-  irq_status = irq2_status = 0;
-  IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
-  bind.Init();
-  fhss.Init(&Config.Fhss);
-  fhss.Start();
+    // start up sx
+    if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+    if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
+    irq_status = irq2_status = 0;
+    IF_SX(sx.StartUp(&Config.Sx));
+    IF_SX2(sx2.StartUp(&Config.Sx));
+    bind.Init();
+    fhss.Init(&Config.Fhss);
+    fhss.Start();
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+    sx.SetRfFrequency(fhss.GetCurrFreq());
+    sx2.SetRfFrequency(fhss.GetCurrFreq());
 
-  tx_tick = 0;
-  doPreTransmit = false;
-  link_state = LINK_STATE_IDLE;
-  connect_state = CONNECT_STATE_LISTEN;
-  connect_tmo_cnt = 0;
-  connect_sync_cnt = 0;
-  connect_occured_once = false;
-  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-  link_task_init();
-  link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
+    tx_tick = 0;
+    doPreTransmit = false;
+    link_state = LINK_STATE_IDLE;
+    connect_state = CONNECT_STATE_LISTEN;
+    connect_tmo_cnt = 0;
+    connect_sync_cnt = 0;
+    connect_occured_once = false;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_task_init();
+    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
-  txstats.Init(Config.LQAveragingPeriod);
-  rdiversity.Init();
-  tdiversity.Init(Config.frame_rate_ms);
+    txstats.Init(Config.LQAveragingPeriod);
+    rdiversity.Init();
+    tdiversity.Init(Config.frame_rate_ms);
 
-  in.Configure(Setup.Tx[Config.ConfigId].InMode);
-  mavlink.Init();
-  sx_serial.Init(&serial, &mbridge, &serial2);
-  fan.SetPower(sx.RfPower_dbm());
-  whileTransmit.Init();
+    in.Configure(Setup.Tx[Config.ConfigId].InMode);
+    mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
+    sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
+    cli.Init(&comport);
+    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    esp.Init(&comport, &serial);
+#else
+    esp.Init(&comport, &serial2);
+#endif
+    fan.SetPower(sx.RfPower_dbm());
+    whileTransmit.Init();
+    disp.Init();
 
-  disp.Init();
+    config_id.Init();
 
-  config_id.Init();
-
-  led_blink = 0;
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
-  while (1) {
+    tick_1hz = 0;
+    tick_1hz_commensurate = 0;
+    doSysTask = 0; // helps in avoiding too short first loop
+INITCONTROLLER_END
 
     //-- SysTask handling
 
@@ -688,22 +686,7 @@ RESTARTCONTROLLER:
             connect_tmo_cnt--;
         }
 
-        if (connected()) {
-            DECc(led_blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(led_blink, SYSTICK_DELAY_MS(200));
-        }
-
-        if (bind.IsInBind()) {
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-        } else
-        if (connected()) {
-            if (!led_blink) LED_GREEN_TOGGLE;
-            LED_RED_OFF;
-        } else {
-            LED_GREEN_OFF;
-            if (!led_blink) LED_RED_TOGGLE;
-        }
+        leds.Tick_ms(connected());
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
@@ -727,12 +710,12 @@ RESTARTCONTROLLER:
         if (!tick_1hz) {
             dbg.puts(".");
 /*            dbg.puts("\nTX: ");
-            dbg.puts(u8toBCD_s(txstats.GetLQ()));
+            dbg.puts(u8toBCD_s(txstats.GetLQ_serial()));
             dbg.puts("(");
             dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
             dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             dbg.puts("),");
-            dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
+            dbg.puts(u8toBCD_s(stats.received_LQ_rc)); dbg.puts(", ");
 
             dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
             dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
@@ -952,8 +935,9 @@ IF_SX2(
 
         // store parameters
         if (doParamsStore) {
+            leds.SetToParamStore();
             setup_store_to_EEPROM();
-            goto RESTARTCONTROLLER;
+            GOTO_RESTARTCONTROLLER;
         }
 
         bind.Do();
@@ -961,18 +945,17 @@ IF_SX2(
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigForBind();
             fhss.SetToBind();
-            LED_GREEN_ON;
-            LED_RED_OFF;
+            leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: goto RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
         }
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
     }//end of if(doPreTransmit)
 
-    if (link_state != link_state_before) continue; // link state has changed, so process immediately
+    if (link_state != link_state_before) return; // link state has changed, so process immediately
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
@@ -1127,7 +1110,9 @@ IF_IN(
         break;
     case CLI_TASK_BIND: start_bind(); break;
     case CLI_TASK_BOOT: enter_system_bootloader(); break;
-    case CLI_TASK_FLASH_ESP: enter_flash_esp(); break;
+    case CLI_TASK_FLASH_ESP: esp.EnterFlash(); break;
+    case CLI_TASK_ESP_CLI: esp.EnterCli(); break;
+    case CLI_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case CLI_TASK_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     }
 
@@ -1135,7 +1120,7 @@ IF_IN(
 
     esp.Do();
     uint8_t esp_task = esp.Task();
-    if (esp_task == ESP_TASK_RESTART_CONTROLLER) goto RESTARTCONTROLLER;
+    if (esp_task == ESP_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- more
 
@@ -1143,7 +1128,5 @@ IF_IN(
         doParamsStore = true;
     }
 
-  }//end of while(1) loop
-
-}//end of main
+}//end of main_loop
 

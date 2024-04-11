@@ -14,7 +14,7 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 
 
 OutBase::OutBase(void)
@@ -95,7 +95,7 @@ void OutBase::SetChannelOrder(uint8_t new_channel_order)
 }
 
 
-void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq)
+void OutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
     channel_order.Apply(&rc);
@@ -139,7 +139,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
         case FAILSAFE_MODE_CH1CH4_CENTER:
             // in this mode do not let sbus report bad signal
             // it's a bit an ArduPilot thing, could be achieved by setting RC_OPTIONS 4
-            frame_lost = false;
+            frame_missed = false;
             failsafe = false;
             break;
         }
@@ -160,7 +160,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_lost, bool failsafe, int8_
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
-        send_sbus_rcdata(&rc, frame_lost, failsafe);
+        send_sbus_rcdata(&rc, frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
         send_crsf_rcdata(&rc);
@@ -285,7 +285,7 @@ tCrsfChannelBuffer crsf_buf;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_BROADCAST); // or CRSF_ADDRESS_FLIGHT_CONTROLLER ??? what's better?
+    putc(CRSF_ADDRESS_FLIGHT_CONTROLLER); // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);
@@ -323,7 +323,7 @@ tCrsfLinkStatistics clstats;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_BROADCAST);
+    putc(CRSF_ADDRESS_FLIGHT_CONTROLLER);
     putc(CRSF_LINK_STATISTICS_LEN + 2);
 
     putc(CRSF_FRAME_ID_LINK_STATISTICS);
@@ -340,7 +340,7 @@ void OutBase::do_crsf(void)
 {
     if (!link_stats_available) return;
 
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
 
     if (link_stats_set_tstart) {
         link_stats_tstart_us = tnow_us;

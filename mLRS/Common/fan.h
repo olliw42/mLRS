@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include "hal/hal.h"
 
 
 #ifndef USE_FAN

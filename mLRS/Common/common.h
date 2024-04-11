@@ -23,26 +23,7 @@
 #include "fail.h"
 #include "buzzer.h"
 #include "fan.h"
-
-
-//-------------------------------------------------------
-// SysTask
-//-------------------------------------------------------
-
-volatile uint32_t doSysTask = 0;
-
-
-void HAL_IncTick(void)
-{
-    uwTick += uwTickFreq;
-    doSysTask++;
-}
-
-
-volatile uint32_t millis32(void)
-{
-    return uwTick;
-}
+#include "leds.h"
 
 
 //-------------------------------------------------------
@@ -65,7 +46,7 @@ volatile uint32_t millis32(void)
 #endif
 
 
-// is always uartb
+// is always uartb (or usb)
 class tSerialPort : public tSerialBase
 {
 #ifdef USE_SERIAL
@@ -113,7 +94,7 @@ class tDebugPort : public tSerialBase
 };
 
 
-// is uartc or uartb
+// is uartc or uartb (or usb)
 class tComPort : public tSerialBase
 {
 #ifdef USE_COM_ON_SERIAL
@@ -170,8 +151,11 @@ class tSerial2Port : public tSerialBase
 //-------------------------------------------------------
 
 tSerialPort serial;
-tSerial2Port serial2;
 tDebugPort dbg;
+#ifdef DEVICE_IS_TRANSMITTER
+tSerial2Port serial2;
+tComPort comport;
+#endif
 
 tRcData rcData;
 
@@ -195,6 +179,7 @@ BindBase bind;
 
 tBuzzer buzzer;
 tFan fan;
+tLEDs leds;
 
 
 //-------------------------------------------------------
@@ -275,7 +260,7 @@ char s[64];
 }
 
 
-void FAIL(uint8_t led_pattern, const char* msg)
+void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -283,7 +268,7 @@ void FAIL(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL(const char* msg)
+void FAIL_WMSG(const char* msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);
@@ -297,20 +282,6 @@ void FAIL_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint
     FAILALWAYS_WSTATE(led_pattern, msg, irq_status, link_state, link_rx1_status, link_rx2_status);
 #endif
 }
-
-
-//-------------------------------------------------------
-//-- LED defines
-//-------------------------------------------------------
-
-#define LED_GREEN_ON              led_green_on()
-#define LED_RED_ON                led_red_on()
-
-#define LED_GREEN_OFF             led_green_off()
-#define LED_RED_OFF               led_red_off()
-
-#define LED_GREEN_TOGGLE          led_green_toggle()
-#define LED_RED_TOGGLE            led_red_toggle()
 
 
 //-------------------------------------------------------

@@ -16,7 +16,7 @@ static inline bool connected(void);
 
 //-------------------------------------------------------
 
-class TxStatsBase
+class tTxStats
 {
   public:
     void Init(uint8_t _period);
@@ -40,7 +40,7 @@ class TxStatsBase
 };
 
 
-void TxStatsBase::Init(uint8_t _period)
+void tTxStats::Init(uint8_t _period)
 {
     stats.Init();
 
@@ -53,20 +53,20 @@ void TxStatsBase::Init(uint8_t _period)
 }
 
 
-void TxStatsBase::Update1Hz(void)
+void tTxStats::Update1Hz(void)
 {
     stats.Update1Hz();
 }
 
 
-void TxStatsBase::Next(void) // this is called when transmit starts, or shortly after
+void tTxStats::Next(void) // this is called when transmit starts, or shortly after
 {
     LQma_valid.Next();
     LQma_received.Next();
 }
 
 
-void TxStatsBase::Clear(void) // this is called when transmit starts, or shortly after
+void tTxStats::Clear(void) // this is called when transmit starts, or shortly after
 {
     stats.Clear();
 
@@ -75,23 +75,24 @@ void TxStatsBase::Clear(void) // this is called when transmit starts, or shortly
 }
 
 
-void TxStatsBase::doFrameReceived(void)
+void tTxStats::doFrameReceived(void)
 {
     LQma_received.Set();
     stats.frames_received.Inc();
 }
 
 
-void TxStatsBase::doValidFrameReceived(void)
+void tTxStats::doValidFrameReceived(void)
 {
     LQma_valid.Set();
     stats.valid_frames_received.Inc();
 }
 
 
-uint8_t TxStatsBase::GetLQ_serial(void)
+uint8_t tTxStats::GetLQ_serial(void)
 {
     if (!connected()) return 0;
+
     uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;

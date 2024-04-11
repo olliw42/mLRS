@@ -23,17 +23,16 @@ class tTxDisp
     void Tick_ms(void) {};
     uint8_t Task(void) { return 0; };
     void DrawBoot(void) {};
-    void DrawFlashEsp(void) {};
 };
-#else
 
+#else
 
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/thirdparty/gfxfont.h"
 #include "../Common/thirdparty/gfxfontFreeMono12pt7b.h"
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
-#include "../Common/libs/gdisp.h"
+#include "../Common/thirdparty/gdisp.h"
 
 
 extern tGDisplay gdisp;
@@ -483,19 +482,13 @@ void tTxDisp::DrawBoot(void)
 }
 
 
-void tTxDisp::DrawFlashEsp(void)
-{
-    DrawNotify("FLASH ESP");
-}
-
-
 void tTxDisp::Draw(void)
 {
     if (!initialized) return;
 
 //    if (1) { // good for stress testing
     if (page_modified || page_update) {
-//uint32_t t1 = micros(); //HAL_GetTick();
+//uint32_t t1 = micros16(); //HAL_GetTick();
 
         if (!gdisp_update_completed()) return;
 
@@ -510,10 +503,10 @@ void tTxDisp::Draw(void)
             case PAGE_NOTIFY_STORE: draw_page_notify("STORE"); break;
         }
 
-//uint32_t t2 = micros(); //HAL_GetTick();
+//uint32_t t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\ndraw ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
 
-//t1 = micros(); //HAL_GetTick();
+//t1 = micros16(); //HAL_GetTick();
 
         gdisp_update();
 
@@ -521,7 +514,7 @@ void tTxDisp::Draw(void)
         page_update = false;
 
 //while (!gdisp_update_completed()) {}
-//t2 = micros(); //HAL_GetTick();
+//t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\nupda ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
     }
 }

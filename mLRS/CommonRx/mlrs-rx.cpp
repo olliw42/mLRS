@@ -28,17 +28,44 @@ v0.0.00:
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
+
+#if defined(ESP8266) || defined(ESP32)
+
+#include "../Common/hal/esp-glue.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+#include "../Common/esp-lib/esp-peripherals.h"
+#include "../Common/esp-lib/esp-mcu.h"
+#include "../Common/esp-lib/esp-stack.h"
+#include "../Common/hal/hal.h"
+#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../Common/esp-lib/esp-eeprom.h"
+#include "../Common/esp-lib/esp-spi.h"
+#ifdef USE_SERIAL
+#include "../Common/esp-lib/esp-uartb.h"
+#endif
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
+#else
+#include "../Common/esp-lib/esp-uartc.h"
+#endif
+#endif
+#include "../Common/hal/esp-timer.h"
+#include "../Common/hal/esp-powerup.h"
+#include "../Common/hal/esp-rxclock.h"
+
+#else
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
-#include "../Common/thirdparty/stdstm32-mcu.h"
-#include "../Common/thirdparty/stdstm32-dac.h"
-#include "../Common/thirdparty/stdstm32-stack.h"
+#include "../modules/stm32ll-lib/src/stdstm32-mcu.h"
+#include "../modules/stm32ll-lib/src/stdstm32-dac.h"
+#include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
 #include "../Common/hal/hal.h"
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../modules/stm32ll-lib/src/stdstm32-delay.h" // these are dependent on hal
 #include "../modules/stm32ll-lib/src/stdstm32-eeprom.h"
 #include "../modules/stm32ll-lib/src/stdstm32-spi.h"
@@ -58,28 +85,32 @@ v0.0.00:
 #ifdef USE_I2C
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
+#include "../Common/hal/timer.h"
+#include "powerup.h"
+#include "rxclock.h"
+
+#endif
+
+#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-#include "../Common/micros.h"
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "clock.h"
 #include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
-#include "powerup.h"
 
 
-ClockBase clock;
-RxStatsBase rxstats;
+RxClockBase rxclock;
 PowerupCounterBase powerup;
+tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 
 
 // is required in bind.h
-void clock_reset(void) { clock.Reset(); }
+void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
@@ -88,7 +119,7 @@ void clock_reset(void) { clock.Reset(); }
 
 #include "mavlink_interface_rx.h"
 
-MavlinkBase mavlink;
+tRxMavlink mavlink;
 
 #include "sx_serial_interface_rx.h"
 
@@ -99,15 +130,16 @@ tRxSxSerial sx_serial;
 // Init
 //-------------------------------------------------------
 
-void init(void)
+void init_hw(void)
 {
+    hal_init();
+    
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
+    timer_init();
 
     leds_init();
     button_init();
-
-    micros_init();
 
     serial.Init();
     out.Init();
@@ -122,7 +154,7 @@ void init(void)
     setup_init();
     powerup.Init();
 
-    clock.Init(Config.frame_rate_ms); // clock needs Config, so call after setup_init()
+    rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
 }
 
 
@@ -423,11 +455,11 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 
     // must not happen !
     // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
-    if (res == CHECK_ERROR_SYNCWORD) { FAIL("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
+    if (res == CHECK_ERROR_SYNCWORD) { FAIL_WMSG("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
 
     if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
 
-        if (do_clock_reset) clock.Reset();
+        if (do_clock_reset) rxclock.Reset();
 
         rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
     }
@@ -444,7 +476,6 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 // MAIN routine
 //*******************************************************
 
-uint16_t led_blink;
 uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
@@ -462,65 +493,68 @@ bool frame_missed;
 
 static inline bool connected(void)
 {
-  return (connect_state == CONNECT_STATE_CONNECTED);
+    return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
 
-int main_main(void)
+void main_loop(void)
 {
 #ifdef BOARD_TEST_H
-  main_test();
+    main_test();
 #endif
-  stack_check_init();
-RESTARTCONTROLLER:
-  init();
-  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+INITCONTROLLER_ONCE
 
-  serial.SetBaudRate(Config.SerialBaudrate);
+    stack_check_init();
 
-  // startup sign of life
-  LED_RED_OFF;
-  for (uint8_t i = 0; i < 7; i++) { LED_RED_TOGGLE; delay_ms(50); }
+RESTARTCONTROLLER
 
-  // start up sx
-  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-  irq_status = irq2_status = 0;
-  IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
-  bind.Init();
-  fhss.Init(&Config.Fhss);
-  fhss.Start();
+    init_hw();
+    DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+    serial.SetBaudRate(Config.SerialBaudrate);
 
-  link_state = LINK_STATE_RECEIVE;
-  connect_state = CONNECT_STATE_LISTEN;
-  connect_tmo_cnt = 0;
-  connect_listen_cnt = 0;
-  connect_sync_cnt = 0;
-  connect_occured_once = false;
-  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-  link_task_init();
-  doPostReceive2_cnt = 0;
-  doPostReceive2 = false;
-  frame_missed = false;
+    // startup sign of life
+    leds.Init();
 
-  rxstats.Init(Config.LQAveragingPeriod);
-  rdiversity.Init();
-  tdiversity.Init(Config.frame_rate_ms);
+    // start up sx
+    if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+    if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
+    irq_status = irq2_status = 0;
+    IF_SX(sx.StartUp(&Config.Sx));
+    IF_SX2(sx2.StartUp(&Config.Sx));
+    bind.Init();
+    fhss.Init(&Config.Fhss);
+    fhss.Start();
 
-  out.Configure(Setup.Rx.OutMode);
-  mavlink.Init();
-  sx_serial.Init();
-  fan.SetPower(sx.RfPower_dbm());
+    sx.SetRfFrequency(fhss.GetCurrFreq());
+    sx2.SetRfFrequency(fhss.GetCurrFreq());
 
-  led_blink = 0;
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
-  while (1) {
+    link_state = LINK_STATE_RECEIVE;
+    connect_state = CONNECT_STATE_LISTEN;
+    connect_tmo_cnt = 0;
+    connect_listen_cnt = 0;
+    connect_sync_cnt = 0;
+    connect_occured_once = false;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_task_init();
+    doPostReceive2_cnt = 0;
+    doPostReceive2 = false;
+    frame_missed = false;
+
+    rxstats.Init(Config.LQAveragingPeriod);
+    rdiversity.Init();
+    tdiversity.Init(Config.frame_rate_ms);
+
+    out.Configure(Setup.Rx.OutMode);
+    mavlink.Init();
+    sx_serial.Init();
+    fan.SetPower(sx.RfPower_dbm());
+
+    tick_1hz = 0;
+    tick_1hz_commensurate = 0;
+    doSysTask = 0; // helps in avoiding too short first loop
+
+INITCONTROLLER_END
 
     //-- SysTask handling
 
@@ -531,22 +565,7 @@ RESTARTCONTROLLER:
             connect_tmo_cnt--;
         }
 
-        if (connected()) {
-            DECc(led_blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(led_blink, SYSTICK_DELAY_MS(200));
-        }
-
-        if (bind.IsInBind()) {
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-        } else
-        if (connected()) {
-            if (!led_blink) LED_GREEN_TOGGLE;
-            LED_RED_OFF;
-        } else {
-            LED_GREEN_OFF;
-            if (!led_blink) LED_RED_TOGGLE;
-        }
+        leds.Tick_ms(connected());
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
@@ -555,14 +574,14 @@ RESTARTCONTROLLER:
         if (!tick_1hz) {
             dbg.puts(".");
 /*            dbg.puts("\nRX: ");
-            dbg.puts(u8toBCD_s(rxstats.GetLQ())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(rxstats.GetLQ_serial_data()));
+            dbg.puts(u8toBCD_s(rxstats.GetLQ_rc())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(rxstats.GetLQ_serial()));
             dbg.puts(" (");
             dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
             dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
             dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             dbg.puts("),");
-            dbg.puts(u8toBCD_s(stats.received_LQ)); dbg.puts(", ");
+            dbg.puts(u8toBCD_s(stats.received_LQ_serial)); dbg.puts(", ");
 
             dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
             dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
@@ -807,11 +826,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigForBind();
-            CLOCK_PERIOD_10US = ((uint16_t)Config.frame_rate_ms * 100);
-            clock.Reset();
+            rxclock.SetPeriod(Config.frame_rate_ms);
+            rxclock.Reset();
             fhss.SetToBind(Config.frame_rate_ms);
-            LED_GREEN_ON;
-            LED_RED_OFF;
+            leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             link_state = LINK_STATE_RECEIVE;
             break;
@@ -824,7 +842,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
 
-    if (link_state != link_state_before) continue; // link state has changed, so process immediately
+    if (link_state != link_state_before) return; // link state has changed, so process immediately
 
     //-- Update channels, Out handling, etc
 
@@ -839,13 +857,13 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         if (connected()) {
             out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
             out.SendLinkStatistics();
-            mavlink.SendRcData(out.GetRcDataPtr(), false);
+            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
                 out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
                 out.SendLinkStatisticsDisconnected();
-                mavlink.SendRcData(out.GetRcDataPtr(), true);
+                mavlink.SendRcData(out.GetRcDataPtr(), true, true);
             }
         }
     }//end of if(doPostReceive2)
@@ -861,12 +879,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     if (doParamsStore) {
         sx.SetToIdle();
         sx2.SetToIdle();
-        LED_RED_ON; LED_GREEN_ON;
+        leds.SetToParamStore();
         setup_store_to_EEPROM();
-        goto RESTARTCONTROLLER;
+        GOTO_RESTARTCONTROLLER;
     }
 
-  }//end of while(1) loop
-
-}//end of main
+}//end of main_loop
 

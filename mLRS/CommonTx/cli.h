@@ -13,12 +13,11 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include "math.h"
 #include "setup_tx.h"
 
 
 extern volatile uint32_t millis32(void);
-extern TxStatsBase txstats;
+extern tTxStats txstats;
 extern tConfigId config_id;
 
 
@@ -279,6 +278,8 @@ typedef enum {
     CLI_TASK_PARAM_RELOAD,
     CLI_TASK_BOOT,
     CLI_TASK_FLASH_ESP,
+    CLI_TASK_ESP_PASSTHROUGH,
+    CLI_TASK_ESP_CLI,
     CLI_TASK_CHANGE_CONFIG_ID,
 } CLI_TASK_ENUM;
 
@@ -286,8 +287,8 @@ typedef enum {
 class tTxCli
 {
   public:
-    void Init(tSerialBase* _com = nullptr);
-    void Set(uint8_t new_line_end = CLI_LINE_END_CR);
+    void Init(tSerialBase* _comport);
+    void Set(uint8_t new_line_end);
     void Do(void);
     uint8_t Task(void);
     int32_t GetTaskValue(void) { return task_value; }
@@ -320,6 +321,8 @@ class tTxCli
 
     tSerialBase* com;
 
+    bool initialized;
+
     uint8_t line_end;
     char ret[4];
 
@@ -334,9 +337,11 @@ class tTxCli
 };
 
 
-void tTxCli::Init(tSerialBase* _com)
+void tTxCli::Init(tSerialBase* _comport)
 {
-    com = _com;
+    com = _comport;
+
+    initialized = (com != nullptr) ? true : false;
 
     line_end = CLI_LINE_END_CR;
     strcpy(ret, "\r");
@@ -388,7 +393,6 @@ void tTxCli::clear(void)
     pos = 0;
     buf[pos] = '\0';
 }
-
 
 
 // cmd;
@@ -621,15 +625,6 @@ void tTxCli::print_device_version(void)
 }
 
 
-#ifdef DEVICE_HAS_SX126x
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
-#elif defined DEVICE_HAS_SX127x
-#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
-#else
-#define CLI_REG_TO_FREQ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
-#endif
-
 void tTxCli::print_frequencies(void)
 {
 char s[32];
@@ -638,10 +633,10 @@ char s[32];
         puts(u8toBCD_s(i));
         puts("  ch: ");
         puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  freg: ");
+        puts("  f_reg: ");
         puts(u32toBCD_s(fhss.FhssList(i)));
         puts("  f: ");
-        u32toBCDstr(CLI_REG_TO_FREQ(fhss.FhssList(i)), s);
+        u32toBCDstr(fhss.GetFreq_x1000(i), s);
         remove_leading_zeros(s);
         puts(s);
 #if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x
@@ -674,67 +669,12 @@ void tTxCli::print_help(void)
     putsn("  listfreqs   -> lists frequencies used in fhss scheme");
     delay_ms(10);
 
-    putsn("  ptser       -> enter serial passthrough");
     putsn("  systemboot  -> call system bootloader");
 
 #ifdef USE_ESP_WIFI_BRIDGE
+    putsn("  esppt       -> enter serial passthrough");
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
-#endif
-}
-
-
-// TODO: should really be abstracted out, but for the moment let's be happy to have it here
-void passthrough_do(tSerialBase* ser, tSerialBase* ser2)
-{
-uint16_t led_blink = 0;
-
-    if (!ser) return;
-    if (!ser2) return;
-
-    LED_RED_OFF;
-    LED_GREEN_ON;
-
-    while (1) {
-        if (doSysTask) {
-            doSysTask = 0;
-            DECc(led_blink, SYSTICK_DELAY_MS(100));
-            if (!led_blink) { LED_GREEN_TOGGLE; LED_RED_TOGGLE; }
-        }
-
-        if (ser->available()) {
-            char c = ser->getc();
-            ser2->putc(c);
-        }
-        if (ser2->available()) {
-            char c = ser2->getc();
-            ser->putc(c);
-        }
-    }
-}
-
-
-// TODO: should really be abstracted out, but for the moment let's be happy to have it here
-void flashesp_do(tSerialBase* com)
-{
-#ifdef USE_ESP_WIFI_BRIDGE
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-    esp_gpio0_low();
-    esp_reset_low();
-    delay_ms(100);
-    esp_reset_high();
-    delay_ms(100);
-    esp_gpio0_high();
-    delay_ms(100);
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    serial.SetBaudRate(115200);
-    passthrough_do(com, &serial);
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    serial2.SetBaudRate(115200);
-    passthrough_do(com, &serial2);
-#endif
 #endif
 }
 
@@ -746,7 +686,7 @@ int32_t value;
 uint8_t param_idx;
 bool rx_param_changed;
 
-    if (!com) return;
+    if (!initialized) return;
 
     //puts(".");
 
@@ -854,30 +794,19 @@ bool rx_param_changed;
             task_pending = CLI_TASK_BOOT;
 
         //-- ESP handling
-        } else
-        if (is_cmd("ptser")) {
-            // enter passthrough to serial, can only be exited by re-powering
-            serial.SetBaudRate(115200);
-            passthrough_do(com, &serial);
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
+        if (is_cmd("esppt")) {
+            // enter esp passthrough, can only be exited by re-powering
+            task_pending = CLI_TASK_ESP_PASSTHROUGH;
+        } else
         if (is_cmd("espboot")) {
+            // enter esp flashing, can only be exited by re-powering
             task_pending = CLI_TASK_FLASH_ESP;
         } else
         if (is_cmd("espcli")) {
             // enter esp cli, can only be exited by re-powering
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-            esp_gpio0_low();
-            delay_ms(100);
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-            serial.SetBaudRate(115200);
-            passthrough_do(com, &serial);
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-            serial2.SetBaudRate(115200);
-            passthrough_do(com, &serial2);
-#endif
+            task_pending = CLI_TASK_ESP_CLI;
 #endif
 
         //-- invalid command

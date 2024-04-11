@@ -15,7 +15,7 @@
 #include "out.h"
 
 
-extern RxStatsBase rxstats;
+extern tRxStats rxstats;
 
 
 #ifdef USE_OUT
@@ -105,8 +105,13 @@ tOut out;
 class tOut : public OutBase
 {
   public:
-    void Init(void) {}
+    void Init(void) 
+    {
+        OutBase::Init(&Setup.Rx);
+    }
+
     void SendLinkStatistics(void) {}
+    void SendLinkStatisticsDisconnected(void) {}
 };
 
 tOut out;

@@ -17,7 +17,7 @@ static inline bool connected(void);
 //-------------------------------------------------------
 // we also handle the stats field with this class, this is somewhat dirty
 
-class RxStatsBase
+class tRxStats
 {
   public:
     void Init(uint8_t _period);
@@ -40,7 +40,7 @@ class RxStatsBase
 };
 
 
-void RxStatsBase::Init(uint8_t _period)
+void tRxStats::Init(uint8_t _period)
 {
     stats.Init();
 
@@ -50,13 +50,13 @@ void RxStatsBase::Init(uint8_t _period)
 }
 
 
-void RxStatsBase::Update1Hz(void)
+void tRxStats::Update1Hz(void)
 {
     stats.Update1Hz();
 }
 
 
-void RxStatsBase::Next(void) // this is called when transmit starts, or shortly after
+void tRxStats::Next(void) // this is called when transmit starts, or shortly after
 {
     LQma_valid_crc1.Next();
     LQma_valid.Next();
@@ -64,7 +64,7 @@ void RxStatsBase::Next(void) // this is called when transmit starts, or shortly 
 }
 
 
-void RxStatsBase::Clear(void)
+void tRxStats::Clear(void)
 {
     stats.Clear();
 
@@ -74,39 +74,41 @@ void RxStatsBase::Clear(void)
 }
 
 
-void RxStatsBase::doFrameReceived(void)
+void tRxStats::doFrameReceived(void)
 {
     LQma_received.Set();
     stats.frames_received.Inc();
 }
 
 
-void RxStatsBase::doValidCrc1FrameReceived(void)
+void tRxStats::doValidCrc1FrameReceived(void)
 {
     LQma_valid_crc1.Set();
     stats.valid_crc1_received.Inc();
 }
 
 
-void RxStatsBase::doValidFrameReceived(void)
+void tRxStats::doValidFrameReceived(void)
 {
     LQma_valid.Set();
     stats.valid_frames_received.Inc();
 }
 
 
-uint8_t RxStatsBase::GetLQ_rc(void)
+uint8_t tRxStats::GetLQ_rc(void)
 {
     if (!connected()) return 0;
+
     uint8_t LQ = stats.valid_crc1_received.GetLQ();
     if (LQ == 0) return 1;
     return LQ;
 }
 
 
-uint8_t RxStatsBase::GetLQ_serial(void)
+uint8_t tRxStats::GetLQ_serial(void)
 {
     if (!connected()) return 0;
+
     uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;

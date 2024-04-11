@@ -617,8 +617,15 @@ bool tPassThrough::get_GpsStatus_0x5002(uint32_t* data)
     if (pt_sats == UINT8_MAX) pt_sats = 0; // UINT8_MAX = invalid
     if (pt_sats > 15) pt_sats = 15;
 
-    uint32_t pt_fix = gps_raw_int.fix_type & 0x03; // first two bits
-    uint32_t pt_fix2 = (gps_raw_int.fix_type >> 2) & 0x03; // next two bits
+    uint32_t pt_fix, pt_fix2;
+    if (gps_raw_int.fix_type <= GPS_FIX_TYPE_3D_FIX) { // 0,1,2,3
+        pt_fix = gps_raw_int.fix_type;
+        pt_fix2 = 0;
+    } else { // 4,5,6
+        pt_fix = 3;
+        pt_fix2 = gps_raw_int.fix_type - GPS_FIX_TYPE_3D_FIX;
+        if (pt_fix2 > 6) pt_fix2 = 6;
+    }
 
     int32_t pt_hdop = 127;
     if (gps_raw_int.fix_type >= GPS_FIX_TYPE_3D_FIX) {

@@ -19,9 +19,9 @@
 #include "../Common/protocols/mbridge_protocol.h"
 
 
-extern uint16_t micros(void);
+extern uint16_t micros16(void);
 extern uint8_t mavlink_vehicle_state(void);
-extern TxStatsBase txstats;
+extern tTxStats txstats;
 
 
 //-------------------------------------------------------
@@ -163,7 +163,7 @@ void tMBridge::send_command(void)
 // is called in isr context, or in ParseCrsfFrame() in case of crsf emulatiom
 void tMBridge::parse_nextchar(uint8_t c)
 {
-    uint16_t tnow_us = micros();
+    uint16_t tnow_us = micros16();
 
     if (state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
