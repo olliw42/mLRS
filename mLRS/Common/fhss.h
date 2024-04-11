@@ -683,10 +683,8 @@ class tFhss : public tFhssBase
                           fhss->Ortho, fhss->Except);
     }
 
-    uint32_t GetCurrFreq(void) { return GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return GetCurrFreq(); }
 
-    float GetCurrFreq_Hz(void) { return GetCurrFreq_Hz(); }
     float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); }
 };
 
