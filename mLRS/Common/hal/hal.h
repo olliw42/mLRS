@@ -88,122 +88,163 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- FrsKy R9 system
 
 #ifdef RX_R9MX_868_L433CB
-#include "rx-hal-R9MX-868-l433cb.h"
+#include "stm32/rx-hal-R9MX-868-l433cb.h"
 #endif
 #ifdef RX_R9M_868_F103C8
-#include "rx-hal-R9M-868-f103c8.h"
+#include "stm32/rx-hal-R9M-868-f103c8.h"
 #endif
 #ifdef RX_R9MM_868_F103RB
-#include "rx-hal-R9MM-868-f103rb.h"
+#include "stm32/rx-hal-R9MM-868-f103rb.h"
 #endif
 #ifdef RX_R9MLITEPRO_F303CC
-#include "rx-hal-R9MLitePro-v15-f303cc.h"
+#include "stm32/rx-hal-R9MLitePro-v15-f303cc.h"
 #endif
 
 #ifdef TX_R9M_868_F103C8
-#include "tx-hal-R9M-868-f103c8.h"
+#include "stm32/tx-hal-R9M-868-f103c8.h"
 #endif
 #ifdef TX_R9MX_868_L433CB
-#include "tx-hal-R9MX-868-l433cb.h"
+#include "stm32/tx-hal-R9MX-868-l433cb.h"
 #endif
 
 
 //-- SeeedStudio WioE5 boards
 
 #ifdef RX_WIO_E5_GROVE_WLE5JC
-#include "rx-hal-WioE5-Grove-wle5jc.h"
+#include "stm32/rx-hal-WioE5-Grove-wle5jc.h"
 #endif
 #ifdef RX_WIO_E5_MINI_WLE5JC
-#include "rx-hal-WioE5-Mini-wle5jc.h"
+#include "stm32/rx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 #ifdef TX_WIO_E5_MINI_WLE5JC
-#include "tx-hal-WioE5-Mini-wle5jc.h"
+#include "stm32/tx-hal-WioE5-Mini-wle5jc.h"
 #endif
 
 
 //-- EByte MBL Evaluation Kits
 
 #ifdef RX_E77_MBLKIT_WLE5CC
-#include "rx-hal-E77-MBLKit-wle5cc.h"
+#include "stm32/rx-hal-E77-MBLKit-wle5cc.h"
 #endif
 
 #ifdef TX_E77_MBLKIT_WLE5CC
-#include "tx-hal-E77-MBLKit-wle5cc.h"
+#include "stm32/tx-hal-E77-MBLKit-wle5cc.h"
 #endif
 
 
 //-- FlySky FRM303 2.4 GHz Device
 
 #ifdef RX_FRM303_F072CB
-#include "rx-hal-FRM303-f072cb.h"
+#include "stm32/rx-hal-FRM303-f072cb.h"
 #endif
 
 #ifdef TX_FRM303_F072CB
-#include "tx-hal-FRM303-f072cb.h"
+#include "stm32/tx-hal-FRM303-f072cb.h"
 #endif
 
 
 //-- DIY Boards, 2.4 GHz Devices
 
 #ifdef RX_DIY_BOARD01_F103CB
-#include "rx-hal-diy-board01-f103cb.h"
+#include "stm32/rx-hal-diy-board01-f103cb.h"
 #endif
 #ifdef RX_DIY_E28DUAL_BOARD02_F103CB
-#include "rx-hal-diy-e28dual-board02-f103cb.h"
+#include "stm32/rx-hal-diy-e28dual-board02-f103cb.h"
 #endif
 #ifdef RX_DIY_E28_G441KB
-#include "rx-hal-diy-e28-g441kb.h"
+#include "stm32/rx-hal-diy-e28-g441kb.h"
 #endif
 
 #ifdef TX_DIY_E28DUAL_BOARD02_F103CB
-#include "tx-hal-diy-e28dual-board02-f103cb.h"
+#include "stm32/tx-hal-diy-e28dual-board02-f103cb.h"
 #endif
 #ifdef TX_DIY_E28_G431KB
-#include "tx-hal-diy-e28-g431kb.h"
+#include "stm32/tx-hal-diy-e28-g431kb.h"
 #endif
 #ifdef TX_DIY_BOARD01_G491RE
-#include "tx-hal-diy-board01-g491re.h"
+#include "stm32/tx-hal-diy-board01-g491re.h"
 #endif
 #ifdef TX_DIY_SXDUAL_MODULE02_G491RE
-#include "tx-hal-diy-sxdual-module02-g491re.h"
+#include "stm32/tx-hal-diy-sxdual-module02-g491re.h"
 #endif
 #ifdef TX_DIY_E28DUAL_MODULE02_G491RE
-#include "tx-hal-diy-e28dual-module02-g491re.h"
+#include "stm32/tx-hal-diy-e28dual-module02-g491re.h"
 #endif
 
 
 //-- DIY Boards, 868/915 MHz Devices
 
 #ifdef RX_DIY_E22_G441KB
-#include "rx-hal-diy-e22-g441kb.h"
+#include "stm32/rx-hal-diy-e22-g441kb.h"
 #endif
 
 #ifdef TX_DIY_E22_G431KB
-#include "tx-hal-diy-e22-g431kb.h"
+#include "stm32/tx-hal-diy-e22-g431kb.h"
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
-#include "tx-hal-diy-e22dual-module02-g491re.h"
+#include "stm32/tx-hal-diy-e22dual-module02-g491re.h"
 #endif
 
 #ifdef RX_DIY_WIOE5_E22_WLE5JC
-#include "rx-hal-diy-wioe5-e22-wle5jc.h"
+#include "stm32/rx-hal-diy-wioe5-e22-wle5jc.h"
 #endif
 
 #ifdef TX_DIY_WIOE5_E22_WLE5JC
-#include "tx-hal-diy-wioe5-e22-wle5jc.h"
+#include "stm32/tx-hal-diy-wioe5-e22-wle5jc.h"
 #endif
 
 
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
-#include "rx-hal-easysolder-e77-e22-wle5cc.h"
+#include "stm32/rx-hal-easysolder-e77-e22-wle5cc.h"
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-#include "tx-hal-easysolder-e77-e22-wle5cc.h"
+#include "stm32/tx-hal-easysolder-e77-e22-wle5cc.h"
+#endif
+
+
+//-------------------------------------------------------
+// ESP Boards
+//-------------------------------------------------------
+
+//-- ESP 868/915 MHz Generic Devices
+
+#ifdef RX_ELRS_GENERIC_900_ESP8285
+#include "esp/rx-hal-generic-900-esp8285.h"
+#endif
+
+#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+#include "esp/rx-hal-generic-900-pa-esp8285.h"
+#endif
+
+//-- ESP 2.4 GHz Generic Devices
+
+#ifdef RX_ELRS_GENERIC_2400_ESP8285
+#include "esp/rx-hal-generic-2400-esp8285.h"
+#endif
+
+#ifdef RX_ELRS_GENERIC_2400_PA_ESP8285
+#include "esp/rx-hal-generic-2400-pa-esp8285.h"
+#endif
+
+//-- ESP specific Devices
+
+#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+#include "esp/rx-hal-generic-900-pa-esp8285.h"
+#endif
+
+#ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
+#include "esp/rx-hal-generic-2400-pa-esp8285.h"
+#endif
+
+// -- DIY
+
+#ifdef RX_DIYBOARD_900_ESP8266
+#include "esp/rx-hal-dev-sx1278-esp8266.h"
 #endif
 
 

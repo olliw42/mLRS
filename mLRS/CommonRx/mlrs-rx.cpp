@@ -29,6 +29,33 @@ v0.0.00:
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
+#include "../Common/hal/esp-glue.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+#include "../Common/esp-lib/esp-peripherals.h"
+#include "../Common/esp-lib/esp-mcu.h"
+#include "../Common/esp-lib/esp-stack.h"
+#include "../Common/hal/hal.h"
+#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../Common/esp-lib/esp-eeprom.h"
+#include "../Common/esp-lib/esp-spi.h"
+#ifdef USE_SERIAL
+#include "../Common/esp-lib/esp-uartb.h"
+#endif
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
+#else
+#include "../Common/esp-lib/esp-uartc.h"
+#endif
+#endif
+#include "../Common/hal/esp-timer.h"
+#include "../Common/hal/esp-powerup.h"
+#include "../Common/hal/esp-rxclock.h"
+
+#else
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
@@ -61,6 +88,8 @@ v0.0.00:
 #include "../Common/hal/timer.h"
 #include "powerup.h"
 #include "rxclock.h"
+
+#endif
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
@@ -468,59 +497,64 @@ static inline bool connected(void)
 }
 
 
-int main_main(void)
+void main_loop(void)
 {
 #ifdef BOARD_TEST_H
-  main_test();
+    main_test();
 #endif
-  stack_check_init();
-RESTARTCONTROLLER:
-  init_hw();
-  DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
+INITCONTROLLER_ONCE
 
-  serial.SetBaudRate(Config.SerialBaudrate);
+    stack_check_init();
 
-  // startup sign of life
-  leds.Init();
+RESTARTCONTROLLER
 
-  // start up sx
-  if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
-  if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-  irq_status = irq2_status = 0;
-  IF_SX(sx.StartUp(&Config.Sx));
-  IF_SX2(sx2.StartUp(&Config.Sx));
-  bind.Init();
-  fhss.Init(&Config.Fhss);
-  fhss.Start();
+    init_hw();
+    DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-  sx.SetRfFrequency(fhss.GetCurrFreq());
-  sx2.SetRfFrequency(fhss.GetCurrFreq());
+    serial.SetBaudRate(Config.SerialBaudrate);
 
-  link_state = LINK_STATE_RECEIVE;
-  connect_state = CONNECT_STATE_LISTEN;
-  connect_tmo_cnt = 0;
-  connect_listen_cnt = 0;
-  connect_sync_cnt = 0;
-  connect_occured_once = false;
-  link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-  link_task_init();
-  doPostReceive2_cnt = 0;
-  doPostReceive2 = false;
-  frame_missed = false;
+    // startup sign of life
+    leds.Init();
 
-  rxstats.Init(Config.LQAveragingPeriod);
-  rdiversity.Init();
-  tdiversity.Init(Config.frame_rate_ms);
+    // start up sx
+    if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
+    if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
+    irq_status = irq2_status = 0;
+    IF_SX(sx.StartUp(&Config.Sx));
+    IF_SX2(sx2.StartUp(&Config.Sx));
+    bind.Init();
+    fhss.Init(&Config.Fhss);
+    fhss.Start();
 
-  out.Configure(Setup.Rx.OutMode);
-  mavlink.Init();
-  sx_serial.Init();
-  fan.SetPower(sx.RfPower_dbm());
+    sx.SetRfFrequency(fhss.GetCurrFreq());
+    sx2.SetRfFrequency(fhss.GetCurrFreq());
 
-  tick_1hz = 0;
-  tick_1hz_commensurate = 0;
-  doSysTask = 0; // helps in avoiding too short first loop
-  while (1) {
+    link_state = LINK_STATE_RECEIVE;
+    connect_state = CONNECT_STATE_LISTEN;
+    connect_tmo_cnt = 0;
+    connect_listen_cnt = 0;
+    connect_sync_cnt = 0;
+    connect_occured_once = false;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_task_init();
+    doPostReceive2_cnt = 0;
+    doPostReceive2 = false;
+    frame_missed = false;
+
+    rxstats.Init(Config.LQAveragingPeriod);
+    rdiversity.Init();
+    tdiversity.Init(Config.frame_rate_ms);
+
+    out.Configure(Setup.Rx.OutMode);
+    mavlink.Init();
+    sx_serial.Init();
+    fan.SetPower(sx.RfPower_dbm());
+
+    tick_1hz = 0;
+    tick_1hz_commensurate = 0;
+    doSysTask = 0; // helps in avoiding too short first loop
+
+INITCONTROLLER_END
 
     //-- SysTask handling
 
@@ -808,7 +842,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
     }//end of if(doPostReceive)
 
-    if (link_state != link_state_before) continue; // link state has changed, so process immediately
+    if (link_state != link_state_before) return; // link state has changed, so process immediately
 
     //-- Update channels, Out handling, etc
 
@@ -847,10 +881,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         sx2.SetToIdle();
         leds.SetToParamStore();
         setup_store_to_EEPROM();
-        goto RESTARTCONTROLLER;
+        GOTO_RESTARTCONTROLLER;
     }
 
-  }//end of while(1) loop
-
-}//end of main
+}//end of main_loop
 

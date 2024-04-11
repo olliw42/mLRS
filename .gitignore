@@ -8,6 +8,7 @@ mLRS/**/Release/*
 mLRS/**/Debug/*
 *.launch
 tools/build3/*
+tools/esp-build/*
 tools/__pycache__
 mLRS/*/Drivers/CMSIS/Include/*
 mLRS/*/Drivers/CMSIS/Device/ST/*
@@ -48,3 +49,7 @@ mLRS/*/Drivers/STM32_USB_Device_Library/*
 *.exe
 *.out
 *.app
+
+# Platformio
+.pio/
+.vscode/

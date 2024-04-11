@@ -27,8 +27,6 @@
 
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
-#define MICROS_TIMx               TIM3
-
 
 //-- UARTS
 // UARTB = serial port
@@ -38,7 +36,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = -
 
-#define UARTB_USE_UART1_PA9PA10 // serial
+#define UARTB_USE_UART1 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -46,7 +44,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
+#define UARTC_USE_LPUART1 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -54,7 +52,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
+#define UART_USE_UART2_REMAPPED2 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -151,7 +149,7 @@ void sx_dio_exti_isr_clearflag(void)
 //-- In port
 // this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
 #ifdef DEVICE_HAS_IN
-#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
+#include "../../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {
@@ -230,18 +228,18 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
+#define POWER_GAIN_DBM            27 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
+    { .dbm = POWER_24_DBM, .mW = 250 },
+    { .dbm = POWER_27_DBM, .mW = 500 },
 };
 
 

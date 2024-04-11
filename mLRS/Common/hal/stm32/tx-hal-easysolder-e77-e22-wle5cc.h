@@ -6,31 +6,33 @@
 //*******************************************************
 // hal
 //*******************************************************
-// 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
+// 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_SWAP_INTERNAL to JRPIN5_FULL_INTERNAL
 // 5.Sep.2023: jrpin5 and in simultaneously supported
 
 //#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
+//#define MLRS_FEATURE_DIVERSITY
+//#define MLRS_FEATURE_NO_DIVERSITY
 
 //-------------------------------------------------------
-// TX EByte E77 MBL Kit, STM32WLE5CC
+// TX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
 //-------------------------------------------------------
-// LED1 (green)           -> PB4
-// LED2 (green)           -> PB3
-// button1                -> PA0
-// button2                -> PA1
-// USB <-> TxD,RxD pins   -> PA2,PA3 = LPUART1,UART2
 
-//#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
+//#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_IN_ON_JRPIN5_RX
+#define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_SYSTEMBOOT
 
 
 #ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
   #define DEVICE_HAS_JRPIN5
-  #undef DEVICE_HAS_IN_ON_JRPIN5_RX
+  #undef DEVICE_HAS_IN_ON_JRPIN5_TX
+#endif
+#ifdef MLRS_FEATURE_DIVERSITY
+  #define DEVICE_HAS_DIVERSITY
+#endif
+#ifdef MLRS_FEATURE_NO_DIVERSITY
+  #undef DEVICE_HAS_DIVERSITY
 #endif
 
 
@@ -49,13 +51,13 @@
 //-- UARTS
 // UARTB = serial port
 // UARTC = COM (CLI)
-// UARTD = -- //serial2 BT/ESP port
+// UARTD = serial2 BT/ESP port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
 // UARTF = --
 // SWUART= debug port
 
-#define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
+#define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -63,7 +65,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART2_PA2PA3 // com USB/CLI // PA2,PA3
+#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -71,7 +73,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART1_PB6PB7 // JR pin5, MBridge // PB6,PB7
+#define UART_USE_UART2_PA2PA3 // JR pin5, MBridge // PA2
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -80,13 +82,13 @@
 #define UART_RXBUFSIZE            512
 
 #ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
-#define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
+#define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 #else
-#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
+#define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL // requires external diode from Tx to Rx
 #endif
 
 /*
-#define UARTE_USE_UART1_PB6PB7 // in port // PB7
+#define UARTE_USE_UART2_PA2PA3 // in port
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
@@ -96,7 +98,7 @@
 */
 
 #define SWUART_USE_TIM17 // debug
-#define SWUART_TX_IO              IO_PA5
+#define SWUART_TX_IO              IO_PA9 // STx pad on board
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
 #define SWUART_TXBUFSIZE          512
@@ -176,7 +178,7 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_MOSI_IO          IO_PA12
 #define SPIB_CS_IO                IO_PB12
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-#define SPIB_USE_CLOCKSPEED_9MHZ
+#define SPIB_USE_CLOCKSPEED_18MHZ // equals to 12 MHz
 
 #define SX2_RESET                 IO_PB2
 #define SX2_DIO1                  IO_PC13
@@ -246,7 +248,7 @@ void sx2_dio_exti_isr_clearflag(void)
 //-- In port
 // this is nasty, UARTE defines not yet known, but cumbersome to add, so we include the lib
 #ifdef DEVICE_HAS_IN
-#include "../../modules/stm32ll-lib/src/stdstm32-uarte.h"
+#include "../../../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 void in_init_gpio(void)
 {
@@ -255,30 +257,31 @@ void in_init_gpio(void)
 void in_set_normal(void)
 {
     LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_STANDARD);
     LL_USART_Enable(UARTE_UARTx);
-    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PU, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
 
 void in_set_inverted(void)
 {
     LL_USART_Disable(UARTE_UARTx);
+    LL_USART_SetTXRXSwap(UARTE_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_SetRXPinLevel(UARTE_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
     LL_USART_Enable(UARTE_UARTx);
-    gpio_init_af(UARTE_RX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
+    gpio_init_af(UARTE_TX_IO, IO_MODE_INPUT_PD, UARTE_IO_AF, IO_SPEED_VERYFAST);
 }
 #endif
 
 
 //-- Button
 
-#define BUTTON                    IO_PA0
+#define BUTTON                    IO_PA1
 
 void button_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
-
 
 bool button_pressed(void)
 {
@@ -288,8 +291,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PB3
-#define LED_RED                   IO_PB4
+#define LED_GREEN                 IO_PB4
+#define LED_RED                   IO_PB3
 
 void leds_init(void)
 {
@@ -306,33 +309,11 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- SystemBootLoader
-
-#define BOOT_BUTTON               IO_PA1
-
-extern "C" { void delay_ms(uint16_t ms); }
-
-void systembootloader_init(void)
-{
-    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    // on this board, the button has a capacitor, so we need to wait for the cap to charge up
-    // 1 ms is found to not be enough, 2 ms is, but play it safe
-    delay_ms(10);
-    uint8_t cnt = 0;
-    for (uint8_t i = 0; i < 16; i++) {
-        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
-    }
-    if (cnt > 12) {
-        BootLoaderInit();
-    }
-}
-
-
 //-- Serial or Com Switch
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool e77mblkit_ser_or_com_serial = true; // we use serial as default
+bool easysolder_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
@@ -341,28 +322,16 @@ void ser_or_com_init(void)
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    e77mblkit_ser_or_com_serial = !(cnt > 8);
+    easysolder_ser_or_com_serial = !(cnt > 8);
 }
 
 bool ser_or_com_serial(void)
 {
-    return e77mblkit_ser_or_com_serial;
+    return easysolder_ser_or_com_serial;
 }
 
 
-//-- 5 Way Switch
-// has none
-
-
 //-- Buzzer
-// has none
-
-
-//-- ESP32 Wifi Bridge
-// has none
-
-
-//-- Cooling Fan
 // has none
 
 
