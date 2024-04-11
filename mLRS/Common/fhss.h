@@ -49,9 +49,11 @@
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
+#else
+// for 2.4 GHz we directly use SX1280_FREQ_GHZ_TO_REG(), not SX12XX_FREQ_MHZ_TO_REG()
 #endif
 
-#ifdef DEVICE_HAS_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
 #define SX12XX_REG_TO_FREQ(f_reg)  SX126X_REG_TO_FREQ_KHZ(f_reg)
 #elif defined DEVICE_HAS_SX127x
 #define SX12XX_REG_TO_FREQ(f_reg)  SX127X_REG_TO_FREQ_KHZ(f_reg)

@@ -297,58 +297,40 @@ The default selection of frequency bands can be overruled by feature defines.
 
 
 #ifdef RX_DIY_E77_E28_DUALBAND_WLE5CC
-#if 1
   #define DEVICE_NAME "DIY E77 E28 DualBand"
   #define DEVICE_IS_RECEIVER
-
   #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   #define FREQUENCY_BAND_2P4_GHZ
-/*
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ */
-/*  #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC */
-#endif
-#if 0
-  #define DEVICE_NAME "DIY E77 E22 DualBand"
-  #define DEVICE_IS_RECEIVER
-
-  #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 868/915 MHz and sx2 = SX126x @ 400 MHz
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-  #define FREQUENCY_BAND_433_MHZ // only one 400 MHz option can be chosen
-#endif
 #endif
 
 #ifdef TX_DIY_E77_E28_DUALBAND_WLE5CC
-#if 1
   #define DEVICE_NAME "DIY E77 E28 DualBand"
   #define DEVICE_IS_TRANSMITTER
-
   #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   #define FREQUENCY_BAND_2P4_GHZ
-/*
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ */
-/*
-  #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC */
 #endif
-#if 0
-  #define DEVICE_NAME "DIY E77 E22 DualBand"
-  #define DEVICE_IS_TRANSMITTER
 
+
+#ifdef RX_DIY_E77_E22_DUALBAND_WLE5CC
+  #define DEVICE_NAME "DIY E77 E22 DualBand"
+  #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 868/915 MHz and sx2 = SX126x @ 400 MHz
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   #define FREQUENCY_BAND_433_MHZ // only one 400 MHz option can be chosen
 #endif
+
+#ifdef TX_DIY_E77_E22_DUALBAND_WLE5CC
+  #define DEVICE_NAME "DIY E77 E22 DualBand"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 868/915 MHz and sx2 = SX126x @ 400 MHz
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_433_MHZ // only one 400 MHz option can be chosen
 #endif
 
 

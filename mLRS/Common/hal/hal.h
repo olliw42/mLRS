@@ -198,12 +198,20 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- DIY "easy-to-solder" Boards
 
-#ifdef RX_DIY_E77_E22_WLE5CC
+#if defined RX_DIY_E77_E22_WLE5CC || defined RX_DIY_E77_E22_DUALBAND_WLE5CC
 #include "stm32/rx-hal-easysolder-e77-e22-wle5cc.h"
 #endif
 
-#ifdef TX_DIY_E77_E22_WLE5CC
+#if defined TX_DIY_E77_E22_WLE5CC || defined TX_DIY_E77_E22_DUALBAND_WLE5CC
 #include "stm32/tx-hal-easysolder-e77-e22-wle5cc.h"
+#endif
+
+#ifdef RX_DIY_E77_E28_DUALBAND_WLE5CC
+#include "rx-hal-easysolder-e77-e28-dualband-wle5cc.h"
+#endif
+
+#ifdef TX_DIY_E77_E28_DUALBAND_WLE5CC
+#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 
@@ -245,14 +253,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_DIYBOARD_900_ESP8266
 #include "esp/rx-hal-dev-sx1278-esp8266.h"
-#endif
-
-#ifdef RX_DIY_E77_E28_DUALBAND_WLE5CC
-#include "rx-hal-easysolder-e77-e28-dualband-wle5cc.h"
-#endif
-
-#ifdef TX_DIY_E77_E28_DUALBAND_WLE5CC
-#include "tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
 
