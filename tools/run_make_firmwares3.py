@@ -1108,7 +1108,7 @@ TLIST = [
         'appendix' : '-400-sdiode'
     },{
 
-#-- easytosolder E77 E28 dualband
+#-- easytosolder E77 E28/E22 dualband
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
         'extra_D_list' : [],
         'appendix' : ''
@@ -1116,6 +1116,15 @@ TLIST = [
         'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
         'extra_D_list' : [],
         'appendix' : ''
+
+    },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : '-dualband'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : '-dualband'
 
     }
     ]
