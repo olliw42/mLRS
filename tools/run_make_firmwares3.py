@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 22.02.2024
+ version 11.04.2024
 ********************************************************
 '''
 import os
@@ -1116,7 +1116,6 @@ TLIST = [
         'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
         'extra_D_list' : [],
         'appendix' : ''
-
     },{
         'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : [],
