@@ -43,35 +43,11 @@ It provides these operation modes:
 |  | 50 Hz | 31 Hz | 19 Hz | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- |
 | frequency<br>bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
-| chip sets | SX128x | SX126x/LLCC68 | SX128x,<br>SX126x/LLCC68, SX1276 | SX128x | SX126x/LLCC68 |
+| chip sets | SX128x | SX128x,<br>SX126x/LLCC68 | SX128x,<br>SX126x/LLCC68,<br>SX1276 | SX128x | SX126x/LLCC68 |
 | downlink<br>serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver sensitivity | -105 dBm | -108 dBm | -112 dBm | not for LR | not for LR |
-<!--
-- 50 Hz Mode<br>
-  frequency bands: 2.4 GHz (SX1280 chip)<br>
-  uplink serial rate: 3200 Bytes/sec<br>
-  downlink serial rate: 4100 Bytes/sec<br>
-  receiver sensitivity: -105 dBm
-- 31 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280 and SX1262/LLCC68 chips)<br>
-  uplink serial rate: 2000 Bytes/sec<br>
-  downlink serial rate: 2562 Bytes/sec<br>
-  receiver sensitivity: -108 dBm
-- 19 Hz Mode<br>
-  frequency bands: 2.4 GHz, 915/868 MHz, 433 MHz/70 cm (SX1280, SX1276, SX1262/LLCC68 chips)<br>
-  uplink serial rate: 1207 Bytes/sec<br>
-  downlink serial rate: 1547 Bytes/sec<br>
-  receiver sensitivity: -112 dBm
-- FLRC Mode (aka 111 Hz Mode)<br>
-  frequency bands: 2.4 GHz (SX1280 chip)<br>
-  uplink serial rate: 7111 Bytes/sec<br>
-  downlink serial rate: 9111 Bytes/sec
-- FSK Mode (50 Hz)<br>
-  frequency bands: 915/868 MHz, 433 MHz/70 cm (SX1262/LLCC68 chips)<br>
-  uplink serial rate: 3200 Bytes/sec<br>
-  downlink serial rate: 4100 Bytes/sec
--->
+
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
 - the receiver parameters can be set from the mLRS transmitter or radio; no need to mess with the receiver in any way.
@@ -121,7 +97,7 @@ The code currently supports:
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 - ExpressLRS receivers which use the ESP8285 chipset (hardware which are based on ESP32 chipset are not yet supported)
 
-In the 915/868 MHz range, the Frsky R9M & R9 MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. The big disadvantage of the R9 receivers is however that their transmission power is quite low and telemetry range thus relatively short. This can be mitigated by using the R9M Lite Pro (or R9M) transmitter module as receiver, which is supported by mLRS. A better option can be the various ExpressLRS receivers, some of which provide up to 500 mW transmission power, and some of them are cheaply available. The combination of a Frsky R9M transmitter module and a ExpressLRS receiver can be a fantastic choice. The downside of all this gear is that they only support the 19 Hz mode.
+In the 915/868 MHz range, the Frsky R9M & R9 MX system provides a simple and readily available entry into mLRS. In this sense it is the best option available currently. The disadvantage of the R9 receivers is however their low transmission power (50 mW); the telemetry range is thus relatively short (still several 10 km). This can be mitigated by using the R9M Lite Pro (or R9M) transmitter module as receiver, which is supported by mLRS. A better option can be the various ExpressLRS receivers, some of which provide up to 500 mW transmission power, and some of them are cheaply available. The combination of a Frsky R9M transmitter module and a ExpressLRS receiver can be a fantastic choice. The downside of all these gear is that they only support the 19 Hz mode.
 
 The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available, and hence excellent options too to enter mLRS. The "easy-to-solder" module, which uses an Ebyte E77 module, is a simple DIY option for building a mLRS receiver (it can also be used to build a mLRS transmitter). These boards are all based on the STM32WL5E chip and thus provide all the advantages of the SX1262, like the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges.
 
@@ -144,17 +120,21 @@ Let's assume that the project should be located in the folder C:/Me/Documents/Gi
 - cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
 - `git clone https://github.com/olliw42/mLRS.git mlrs`
 - `cd mlrs`
-- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the targets, and generates mavlink library files. ***Note***: Ensure that all three steps are executed completely.
+- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the targets, and generates mavlink library files.
+  - ***Note***: Ensure that all three steps are executed completely.
 
 For cloning you of course can use any other tool you like.
 
-**2. STM32CubeIDE (for STM32 targets) **
-- download and install STM32CubeIDE. ***Note***: Install into the default folder if possible.
+**2. STM32CubeIDE (for STM32 targets)**
+- download and install STM32CubeIDE.
+  - ***Note***: Install into the default folder if possible.
 - start STM32CubeIDE
-- in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button. ***Note***: it is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
+- in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button.
+  - ***Note***: it is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
 - in the IDE's top bar go to `File->Open Projects from File System`
 - in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
-- change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`. ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
+- change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`.
+  - ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
 - open the file `mlrs-rx.cpp` or `mlrs-tx.cpp` into the editor
 - compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
 - Repeat the last five steps for each board you are interested in
