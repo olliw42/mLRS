@@ -46,7 +46,7 @@ It provides these operation modes:
 | chip sets | SX128x | SX128x,<br>SX126x/LLCC68 | SX128x,<br>SX126x/LLCC68,<br>SX1276 | SX128x | SX126x/LLCC68 |
 | downlink<br>serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
-| receiver sensitivity | -105 dBm | -108 dBm | -112 dBm | not for LR | not for LR |
+| receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | not for LR | not for LR |
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
