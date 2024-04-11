@@ -135,7 +135,7 @@ Ready-to-flash firmware can be found in the "firmware" folder. All you need to d
 
 ## Software: Installation Bits and Bops ##
 
-mLRS uses STM32CubeIDE for STM32 targets, and Platformio with VSCode for ESP targets. For STM32 targets this procedure should work (for ESP targets see [ESP Development](docs/ESP_DEVELOPMENT.md)):
+mLRS uses STM32CubeIDE for STM32 targets, and Platformio with VSCode for ESP targets. For STM32 targets this procedure should work (for ESP targets see [ESP Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/ESP_DEVELOPMENT.md)):
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
