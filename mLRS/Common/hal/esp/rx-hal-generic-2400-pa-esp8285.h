@@ -76,7 +76,10 @@ IRAM_ATTR void sx_dio_enable_exti_isr(void)
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_init_exti_isroff(void) {}
+void sx_dio_init_exti_isroff(void)
+{
+    detachInterrupt(SX_DIO1);
+}
 void sx_dio_exti_isr_clearflag(void) {}
 
 
