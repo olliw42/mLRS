@@ -427,6 +427,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-------------------------------------------------------
 // should be in the device hal files, but is just so much more convenient to have them here
 
+#ifndef SYSTICK_TIMESTEP
+  #define SYSTICK_TIMESTEP          1000 // 1 ms
+#endif
+
+
 #ifndef DEVICE_HAS_SYSTEMBOOT
     void systembootloader_init(void) {}
 #endif

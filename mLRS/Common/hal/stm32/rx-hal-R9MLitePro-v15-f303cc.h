@@ -19,9 +19,6 @@
 
 #define DELAY_USE_DWT
 
-#define SYSTICK_TIMESTEP          1000
-#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
-
 #define EE_START_PAGE             124 // 256 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
