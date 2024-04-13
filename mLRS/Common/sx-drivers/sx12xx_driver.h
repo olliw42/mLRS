@@ -82,6 +82,7 @@ class SxDriverDummy
 {
   public:
     void Init(void) {}
+    void deInit(void) {}
     bool isOk(void) { return true; }
     void StartUp(tSxGlobalConfig* global_config) {}
     void SetPacketType(uint8_t PacketType) {}

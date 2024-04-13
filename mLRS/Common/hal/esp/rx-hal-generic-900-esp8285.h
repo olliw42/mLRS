@@ -11,8 +11,8 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
+//#define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -57,7 +57,10 @@ IRAM_ATTR void sx_dio_enable_exti_isr(void)
     attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_init_exti_isroff(void) {}
+IRAM_ATTR void sx_dio_init_exti_isroff(void) 
+{
+    detachInterrupt(SX_DIO0);
+}
 void sx_dio_exti_isr_clearflag(void) {}
 
 

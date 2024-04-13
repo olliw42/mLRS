@@ -414,6 +414,16 @@ class Sx128xDriver : public Sx128xDriverCommon
         delay_us(1000); // this is important, 500 us ok
     }
 
+    void deInit(void)
+    {
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC);
+        delay_us(1000); // this is important, 500 us ok
+        ClearIrqStatus(SX1280_IRQ_ALL);
+
+        sx_dio_exti_isr_clearflag();
+        sx_dio_init_exti_isroff();
+    }
+
     //-- high level API functions
 
     void StartUp(tSxGlobalConfig* global_config)
@@ -539,6 +549,17 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
         delay_us(1000); // this is important, 500 us ok
     }
+
+    void deInit(void)
+    {
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC);
+        delay_us(1000); // this is important, 500 us ok
+        ClearIrqStatus(SX1280_IRQ_ALL);
+
+        sx_dio_exti_isr_clearflag();
+        sx_dio_init_exti_isroff();
+    }
+
 
     //-- high level API functions
 

@@ -370,6 +370,15 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_us(1000); // is this needed ????
     }
 
+    void deInit(void)
+    {  
+        SetStandby();
+        ClearIrqStatus(SX1276_IRQ_ALL);
+    
+        sx_dio_exti_isr_clearflag();
+        sx_dio_init_exti_isroff();
+    }
+
     //-- high level API functions
 
     void StartUp(tSxGlobalConfig* global_config)

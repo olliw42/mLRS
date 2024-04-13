@@ -877,9 +877,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     //-- Store parameters
 
     if (doParamsStore) {
-        sx.SetToIdle();
-        sx2.SetToIdle();
+        sx.deInit();
+        sx2.deInit();
         leds.SetToParamStore();
+        detachInterrupt(SX_DIO0);
         setup_store_to_EEPROM();
         GOTO_RESTARTCONTROLLER;
     }
