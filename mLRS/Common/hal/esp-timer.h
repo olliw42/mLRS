@@ -14,6 +14,9 @@
 // SysTask & millis32()  functions
 //-------------------------------------------------------
 
+#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
+
+
 volatile uint32_t doSysTask = 0;
 volatile uint32_t uwTick = 0;
 
