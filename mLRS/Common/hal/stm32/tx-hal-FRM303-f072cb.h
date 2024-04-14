@@ -71,9 +71,6 @@
 //static inline void delay_ns(uint32_t ns) { __NOP(); __NOP(); __NOP(); __NOP(); } // 48 MHz => 4x nop = 100 ns
 static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 
-#define SYSTICK_TIMESTEP          1000
-#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
-
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
