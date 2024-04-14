@@ -11,7 +11,7 @@
 
 #define GPIO_INLINE_FORCED  IRAM_ATTR static inline __attribute__ ((always_inline))
 
-// note: ESP32 break out every pin, hence the gaps
+// note: ESP32 does not break out every pin, hence the gaps
 
 #define IO_P0       0
 #define IO_P1       1
