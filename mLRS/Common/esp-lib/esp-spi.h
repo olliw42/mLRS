@@ -44,22 +44,31 @@ IRAM_ATTR static inline void spi_deselect(void)
 
 IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
 {
-    //SPI.transferBytes(dataout, datain, len);
+#if defined(ESP32) 
     spiTransferBytesNL(SPI.bus(), dataout, datain, len);
+#elif defined(ESP8266)
+    SPI.transferBytes(dataout, datain, len);
+#endif    
 }
 
 
 IRAM_ATTR static inline void spi_read(uint8_t* datain, const uint8_t len)
 {
-    //SPI.transferBytes(nullptr, datain, len);
+#if defined(ESP32) 
     spiTransferBytesNL(SPI.bus(), nullptr, datain, len);
+#elif defined(ESP8266)
+    SPI.transferBytes(nullptr, datain, len);
+#endif   
 }
 
 
 IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 {
-    //SPI.transferBytes(dataout, nullptr, len);
+#if defined(ESP32) 
     spiTransferBytesNL(SPI.bus(), dataout, nullptr, len);
+#elif defined(ESP8266)
+    SPI.transferBytes(dataout, nullptr, len);
+#endif 
 }
 
 
