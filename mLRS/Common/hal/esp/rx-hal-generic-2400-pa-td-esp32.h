@@ -79,7 +79,7 @@ void sx_init_gpio(void)
 
 bool sx_busy_read(void)
 {
-    return (digitalRead(SX_BUSY) == HIGH) ? true : false;
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
 void sx_amp_transmit(void)
@@ -118,7 +118,7 @@ void button_init(void)
 
 bool button_pressed(void)
 {
-    return (digitalRead(BUTTON) == HIGH) ? false : true;
+    return gpio_read_activelow(BUTTON) ? true : false;
 }
 
 //-- LEDs
