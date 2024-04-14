@@ -19,6 +19,7 @@ jobs:
           python-version: '3.11'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-
+      - name: Install mLRS Dependencies
+        run: python3 run_setup.py
       - name: Build PlatformIO Project
         run: pio run
