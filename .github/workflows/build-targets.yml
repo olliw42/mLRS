@@ -1,6 +1,11 @@
 name: PlatformIO CI
 
-on: [push]
+on: 
+  push:
+    branches:
+      - main
+      - 'dev-esp**'
+      - github-actions
 
 jobs:
   build-esp-targets:
