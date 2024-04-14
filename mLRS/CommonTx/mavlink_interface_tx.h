@@ -10,6 +10,7 @@
 #define MAVLINK_INTERFACE_TX_H
 #pragma once
 
+//#define USE_FEATURE_MAVLINK_PARAMS
 
 #include "../Common/mavlink/fmav_extension.h"
 #include "../Common/protocols/ardupilot_protocol.h"
@@ -39,6 +40,7 @@ class tTxMavlink
     void Do(void);
     uint8_t VehicleState(void);
     void FrameLost(void);
+    uint8_t Task(void);
 
     void putc(char c);
     bool available(void);
@@ -50,6 +52,8 @@ class tTxMavlink
     void handle_msg_serial_out(fmav_message_t* msg);
     void generate_radio_status(void);
     void send_msg_serial_out(void);
+
+    uint8_t task_pending;
 
     tSerialBase* ser;
     tSerialBase* ser2;
@@ -80,6 +84,29 @@ class tTxMavlink
     uint8_t vehicle_flight_mode;
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+
+    // parameter handling
+#if defined USE_FEATURE_MAVLINKX && defined USE_FEATURE_MAVLINK_PARAMS
+    void generate_heartbeat(void);
+    void generate_autopilot_version(void);
+    void generate_protocol_version(void);
+    void generate_cmd_ack(uint16_t cmd, uint8_t res);
+    void generate_statustext(const char* text);
+    void generate_param_value(uint16_t param_idx);
+    void param_init(void);
+    void param_do(void);
+    void handle_msg(fmav_message_t* msg);
+
+    uint16_t inject_task;
+    uint32_t heartbeat_tlast_ms;
+    bool param_request_list;
+    uint16_t param_send_param_idx;
+    uint32_t param_send_tlast_ms;
+#else
+    void param_init(void) {}
+    void param_do(void) {}
+    void handle_msg(fmav_message_t* msg) {}
+#endif
 };
 
 
@@ -130,6 +157,10 @@ void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBa
     vehicle_is_flying = UINT8_MAX;
     vehicle_type = UINT8_MAX;
     vehicle_flight_mode = UINT8_MAX;
+
+    task_pending = CLI_TASK_NONE;
+
+    param_init();
 }
 
 
@@ -163,6 +194,8 @@ void tTxMavlink::Do(void)
 #endif
     }
 
+    // BUG?? what happens if rx_setup_available is not true ?
+
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse ser in -> link out
@@ -176,6 +209,7 @@ if (!do_router()) {
             fmav_parse_and_check_to_frame_buf(&result, buf_ser_in, &status_ser_in, c);
             if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
                 send_msg_fifo_link_out(&result, buf_ser_in); // requires RESULT_OK
+                handle_msg(&msg_serial_out); // msg_serial_out is filled by send_msg_fifo_link_out()
             }
         }
     }
@@ -238,7 +272,18 @@ if (!do_router()) {
         inject_radio_status = false;
         generate_radio_status();
         send_msg_serial_out();
+        return; // only one per loop
     }
+
+    param_do();
+}
+
+
+uint8_t tTxMavlink::Task(void)
+{
+    uint8_t task = task_pending;
+    task_pending = 0;
+    return task;
 }
 
 
@@ -430,6 +475,298 @@ uint8_t rssi, remrssi, txbuf, noise;
         &status_serial_out);
 }
 
+
+//-------------------------------------------------------
+// Parameter Handling
+//-------------------------------------------------------
+// MissionPlanner inconveniences
+// - connection possible only with autopilot present
+// - one needs to call RefreshParams explicitly
+// - it doesn't disconnect/connect component upon loss of heartbeat and re-appearance of heartbeat
+// - doesn't update list if PARAM_VALUE are send voluntarily
+// MissionPlanner goodies
+// - sends MAV_CMD_PREFLIGHT_STORAGE ca 10 seconds after WriteParams
+#if defined USE_FEATURE_MAVLINKX && defined USE_FEATURE_MAVLINK_PARAMS
+
+// my mcselec usb vid/pids
+#define MAVLINK_VID               0x16D0
+#define MAVLINK_PID               0x0FCB
+
+
+typedef enum {
+    INJECT_TASK_NONE                = 0,
+    INJECT_TASK_HEARTBEAT           = 0x0001,
+    INJECT_TASK_AUTOPILOT_VERSION   = 0x0002,
+    INJECT_TASK_PROTOCOL_VERSION    = 0x0004,
+    INJECT_TASK_PARAM_VALUE         = 0x0010,
+} INJECT_TASK;
+
+
+uint32_t bindphrase_u32;
+uint8_t pstore_u8 = 0;
+
+#define PARAM_LIST_TYPE_LIST  MAV_PARAM_TYPE_UINT8
+#define PARAM_LIST_TYPE_INT8  MAV_PARAM_TYPE_INT8
+
+const fmav_param_entry_t fmav_param_list[] = {
+    { (uint32_t*)&(bindphrase_u32), MAV_PARAM_TYPE_UINT32, "BIND_PHRASE_U32" },
+    #define X(p,t, n,mn, d,mi,ma,u, s, amp) { \
+            .ptr = (t*)&(p), \
+            .type = PARAM_LIST_TYPE_##t, \
+            .name = mn },
+    SETUP_PARAMETER_LIST_COMMON_ELSE \
+    SETUP_PARAMETER_LIST_TX \
+    SETUP_PARAMETER_LIST_RX
+    #undef X
+    { (uint8_t*)&(pstore_u8), MAV_PARAM_TYPE_UINT8, "PSTORE" },
+};
+
+#define FASTMAVLINK_PARAM_NUM  sizeof(fmav_param_list)/sizeof(fmav_param_entry_t)
+#include "../Common/mavlink/out/lib/fastmavlink_parameters.h"
+
+
+void tTxMavlink::generate_heartbeat(void)
+{
+    fmav_msg_heartbeat_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        MAV_TYPE_GENERIC, // type ???
+        MAV_AUTOPILOT_INVALID,
+        MAV_MODE_FLAG_SAFETY_ARMED,
+        0,
+        MAV_STATE_ACTIVE,
+        //uint8_t type, uint8_t autopilot, uint8_t base_mode, uint32_t custom_mode, uint8_t system_status,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::generate_autopilot_version(void)
+{
+uint8_t dummy[18+2] = {};
+
+    fmav_msg_autopilot_version_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_BYTEWISE,
+        VERSION, 0, 0, 0,
+        dummy, dummy, dummy,
+        MAVLINK_VID, MAVLINK_PID, 0, dummy,
+        //uint64_t capabilities,
+        //uint32_t flight_sw_version, uint32_t middleware_sw_version, uint32_t os_sw_version, uint32_t board_version,
+        //const uint8_t* flight_custom_version, const uint8_t* middleware_custom_version, const uint8_t* os_custom_version,
+        //uint16_t vendor_id, uint16_t product_id, uint64_t uid, const uint8_t* uid2,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::generate_protocol_version(void)
+{
+uint8_t dummy[8+2] = {};
+
+    fmav_msg_protocol_version_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        200, 100, 200,
+        dummy, dummy,
+        //uint16_t version, uint16_t min_version, uint16_t max_version,
+        //const uint8_t* spec_version_hash, const uint8_t* library_version_hash,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::generate_cmd_ack(uint16_t cmd, uint8_t res)
+{
+    fmav_msg_command_ack_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        cmd, res, 0, 0, 0, 0,
+        //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
+        //uint8_t target_system, uint8_t target_component,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::generate_statustext(const char* text)
+{
+char stext[50+2];
+
+    strbufstrcpy(stext, text, 50);
+    fmav_msg_statustext_pack(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        MAV_SEVERITY_INFO, stext, 0,0,
+        //uint8_t severity, const char* text, uint16_t id, uint8_t chunk_seq,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::generate_param_value(uint16_t param_idx)
+{
+    // if BIND_PHRASE_U32 do special handling, get bind_phrase_u32 from bind_phrase
+    if (param_idx == 0) {
+        bindphrase_u32 = u32_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase);
+    }
+
+    fmav_param_value_t payload;
+    if (!fmav_param_get_param_value(&payload, param_idx)) return;
+
+    fmav_msg_param_value_encode(
+        &msg_serial_out,
+        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        &payload,
+        &status_serial_out);
+}
+
+
+void tTxMavlink::handle_msg(fmav_message_t* msg)
+{
+    if (!fmav_msg_is_for_me(RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, msg)) return; // not for us
+
+    switch (msg->msgid) {
+        case FASTMAVLINK_MSG_ID_PARAM_REQUEST_READ: {
+            fmav_param_request_read_t payload;
+            fmav_msg_param_request_read_decode(&payload, msg);
+            uint16_t param_idx;
+            if (fmav_param_do_param_request_read(&param_idx, &payload)) {
+                param_send_param_idx = param_idx;
+                inject_task |= INJECT_TASK_PARAM_VALUE;
+            }
+            break;}
+
+        case FASTMAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
+            param_request_list = true;
+            param_send_param_idx = 0;
+            param_send_tlast_ms = millis32() - 100;
+            break;}
+
+        case FASTMAVLINK_MSG_ID_PARAM_SET: {
+            fmav_param_set_t payload;
+            fmav_msg_param_set_decode(&payload, msg);
+            uint16_t param_idx;
+            if (fmav_param_do_param_set(&param_idx, &payload)) {
+                fmav_param_set_value(param_idx, payload.param_value);
+                param_send_param_idx = param_idx;
+                inject_task |= INJECT_TASK_PARAM_VALUE;
+                // if BIND_PHRASE_U32 do special handling
+                if (param_idx == 0) {
+                    bindphrase_from_u32(Setup.Common[Config.ConfigId].BindPhrase, bindphrase_u32);
+                }
+                // if PSTORE invoke paramstore
+                if (param_idx == (FASTMAVLINK_PARAM_NUM-1) && pstore_u8) {
+                    pstore_u8 = 0;
+                    task_pending = CLI_TASK_PARAM_STORE;
+                }
+                break;
+            }
+            break;}
+
+        case FASTMAVLINK_MSG_ID_COMMAND_LONG: {
+            fmav_command_long_t payload;
+            fmav_msg_command_long_decode(&payload, msg);
+
+            uint8_t res = MAV_RESULT_UNSUPPORTED; //MAV_RESULT_DENIED;
+
+            switch (payload.command) {
+                case MAV_CMD_REQUEST_MESSAGE: // #512
+                    switch ((uint32_t)payload.param1) {
+                        case FASTMAVLINK_MSG_ID_AUTOPILOT_VERSION: // #148
+                            inject_task |= INJECT_TASK_AUTOPILOT_VERSION;
+                            res = MAV_RESULT_ACCEPTED;
+                            break;
+                        case FASTMAVLINK_MSG_ID_PROTOCOL_VERSION: // #300
+                            inject_task |= INJECT_TASK_PROTOCOL_VERSION;
+                            res = MAV_RESULT_ACCEPTED;
+                            break;
+                        case MAV_CMD_REQUEST_PROTOCOL_VERSION: // #519, replaced by MAV_CMD_REQUEST_MESSAGE
+                            inject_task |= INJECT_TASK_PROTOCOL_VERSION;
+                            res = MAV_RESULT_ACCEPTED;
+                            break;
+                        case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: // #520, replaced by MAV_CMD_REQUEST_MESSAGE
+                            inject_task |= INJECT_TASK_AUTOPILOT_VERSION;
+                            res = MAV_RESULT_ACCEPTED;
+                            break;
+                    }
+                    break;
+            } //end of switch (payload.command)
+
+            // that's a small message, so let's hope buf has enough space
+            generate_cmd_ack(MAV_CMD_REQUEST_MESSAGE, res);
+            send_msg_serial_out();
+            break;}
+
+      } // end of switch (msg->msgid)
+}
+
+
+void tTxMavlink::param_do(void)
+{
+    uint32_t tnow_ms = millis32();
+
+    // heartbeat
+
+    if ((tnow_ms - heartbeat_tlast_ms) >= 1000) {
+        heartbeat_tlast_ms = tnow_ms;
+        inject_task |= INJECT_TASK_HEARTBEAT;
+    }
+
+    // param handling
+
+    if (param_request_list) {
+        if ((tnow_ms - param_send_tlast_ms) >= 50) {
+            param_send_tlast_ms = tnow_ms;
+            inject_task |= INJECT_TASK_PARAM_VALUE;
+        }
+    }
+
+    // send pending messages
+
+    if (inject_task & INJECT_TASK_PARAM_VALUE) {
+        inject_task &=~ INJECT_TASK_PARAM_VALUE;
+        generate_param_value(param_send_param_idx);
+        send_msg_serial_out();
+        param_send_param_idx++;
+        if (param_send_param_idx >= FASTMAVLINK_PARAM_NUM) param_request_list = false;
+        return; // only one per loop
+    }
+
+    if (inject_task & INJECT_TASK_AUTOPILOT_VERSION) {
+        inject_task &=~ INJECT_TASK_AUTOPILOT_VERSION;
+        generate_autopilot_version();
+        send_msg_serial_out();
+        return; // only one per loop
+    }
+
+    if (inject_task & INJECT_TASK_PROTOCOL_VERSION) {
+        inject_task &=~ INJECT_TASK_PROTOCOL_VERSION;
+        generate_autopilot_version();
+        send_msg_serial_out();
+        return; // only one per loop
+    }
+
+    if (inject_task & INJECT_TASK_HEARTBEAT) { // check available size!?
+        inject_task &=~ INJECT_TASK_HEARTBEAT;
+        generate_heartbeat();
+        send_msg_serial_out();
+        return; // only one per loop
+    }
+}
+
+
+void tTxMavlink::param_init(void)
+{
+    heartbeat_tlast_ms = millis32();
+
+    param_request_list = false;
+    param_send_param_idx = 0;
+    param_send_tlast_ms = 0;
+
+    inject_task = INJECT_TASK_NONE;
+
+    pstore_u8 = 0;
+}
+
+
+#endif //#ifdef USE_FEATURE_MAVLINKX
 
 #endif // MAVLINK_INTERFACE_TX_H
 
