@@ -35,13 +35,13 @@
 
 
 //-- SX1: SX12xx & SPI
+#define SPI_CS_IO                 IO_P18
 #define SPI_FREQUENCY             10000000L
-#define MISO                      19
-#define MOSI                      27
-#define SCK                       IO_P5
-#define SX_NSS                    18
+#define SPI_MISO                  IO_P19
+#define SPI_MOSI                  IO_P27
+#define SPI_SCK                   IO_P5
 #define SX_RESET                  IO_P14
-#define SX_DIO0                   26
+#define SX_DIO0                   IO_P26
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 

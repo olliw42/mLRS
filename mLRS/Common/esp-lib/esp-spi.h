@@ -92,8 +92,14 @@ void spi_init(void)
     SPI.begin();
 #endif 
     SPI.setFrequency(SPI_FREQUENCY);
-    SPI.setBitOrder(SPI_MSBFIRST);
     SPI.setDataMode(SPI_MODE0);
+
+#if defined(ESP32)
+    SPI.setBitOrder(SPI_MSBFIRST);
+#elif defined(ESP8266)
+    SPI.setBitOrder(MSBFIRST);
+#endif 
+
 
 #if defined(ESP32)
     spiSimpleTransaction(SPI.bus());

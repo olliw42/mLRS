@@ -34,29 +34,29 @@
 
 
 //-- SX1: SX12xx & SPI
-#define SPI_CS_IO                 27
-#define SPI_MISO                  33
-#define SPI_MOSI                  32
-#define SPI_SCK                   25
+#define SPI_CS_IO                 IO_P27
+#define SPI_MISO                  IO_P33
+#define SPI_MOSI                  IO_P32
+#define SPI_SCK                   IO_P25
 #define SPI_FREQUENCY             16000000L
 
-#define SX_BUSY                   36
-#define SX_DIO1                   37
-#define SX_RESET                  26
+#define SX_BUSY                   IO_P36
+#define SX_DIO1                   IO_P37
+#define SX_RESET                  IO_P26
 
-#define SX_RX_EN                  10
-#define SX_TX_EN                  14
+#define SX_RX_EN                  IO_P10
+#define SX_TX_EN                  IO_P14
 
 //-- SX2: SX12xx & SPI
 
-#define SX2_CS_IO                 13
+#define SX2_CS_IO                 IO_P13
 
-#define SX2_BUSY                  39
-#define SX2_DIO1                  34
-#define SX2_RESET                 21
+#define SX2_BUSY                  IO_P39
+#define SX2_DIO1                  IO_P34
+#define SX2_RESET                 IO_P21
 
-#define SX2_RX_EN                  9
-#define SX2_TX_EN                 15
+#define SX2_RX_EN                 IO_P9
+#define SX2_TX_EN                 IO_P15
 
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
