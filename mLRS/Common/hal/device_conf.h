@@ -297,6 +297,8 @@ The default selection of frequency bands can be overruled by feature defines.
 // ESP Boards
 //-------------------------------------------------------
 
+//-- ELRS 868/915 MHz Generic Devices
+
 #ifdef RX_ELRS_GENERIC_900_ESP8285
   #define DEVICE_NAME "GENERIC 900"
   #define DEVICE_IS_RECEIVER
@@ -313,6 +315,8 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+//-- ELRS 2.4 GHz Generic Devices
+
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
   #define DEVICE_NAME "GENERIC 2400"
   #define DEVICE_IS_RECEIVER
@@ -326,6 +330,8 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
+
+//-- ELRS selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
   #define DEVICE_NAME "BAYCK NANO PRO 900"
@@ -341,6 +347,8 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
+
+// -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266
   #define DEVICE_NAME "DIY BOARD 900"
