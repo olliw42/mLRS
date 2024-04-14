@@ -36,6 +36,7 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P27
 #define SPI_MISO                  IO_P33
 #define SPI_MOSI                  IO_P32
@@ -88,6 +89,7 @@ void sx_dio_init_exti_isroff(void)
 }
 
 void sx_dio_exti_isr_clearflag(void) {}
+
 
 //-- SX2: SX12xx & SPI
 
