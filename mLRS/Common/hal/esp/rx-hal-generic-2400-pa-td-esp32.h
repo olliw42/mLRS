@@ -12,9 +12,10 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
-#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_SERIAL_OR_DEBUG
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -103,7 +104,6 @@ void sx2_init_gpio(void)
 {
     gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
-    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
     gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
