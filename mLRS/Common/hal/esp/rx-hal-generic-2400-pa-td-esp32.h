@@ -17,14 +17,7 @@
 
 //-- Timers, Timing, EEPROM, and such stuff
 
-#define DELAY_USE_DWT
-
-#define SYSTICK_TIMESTEP          1000
-#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
-
 #define EE_START_PAGE             0 // 128 kB flash, 2 kB page
-
-#define MICROS_TIMx               TIM15
 
 //-- UARTS
 // UARTB = serial port

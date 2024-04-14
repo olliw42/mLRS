@@ -12,13 +12,10 @@
 
 #define DEVICE_HAS_SINGLE_LED
 //#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
-
-#define SYSTICK_TIMESTEP          1000
-#define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
 #define EE_START_PAGE             0
 
