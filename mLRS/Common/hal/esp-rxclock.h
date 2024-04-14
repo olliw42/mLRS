@@ -19,7 +19,7 @@
 
 volatile bool doPostReceive;
 
-volatile uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
+uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
 
 volatile uint32_t CNT_10us = 0;
 volatile uint32_t CCR1 = 0;
@@ -89,21 +89,12 @@ IRAM_ATTR void RxClockBase::Init(uint16_t period_ms)
 #elif defined(ESP8266)
     timer1_attachInterrupt(CLOCK_IRQHandler); 
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
-    timer1_write(50); //5MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
+    timer1_write(50); // 5MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
 #endif
     Reset();
     initialized = true;
 }
 
-IRAM_ATTR void RxClockBase::disable_isr(void)
-{
-#if defined(ESP32)
-    timerDetachInterrupt(timer0_cfg);
-#elif defined(ESP8266)
-    timer1_detachInterrupt(); 
-#endif
-    
-}
 
 IRAM_ATTR void RxClockBase::SetPeriod(uint16_t period_ms)
 {
