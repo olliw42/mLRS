@@ -231,6 +231,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+
+#ifdef TX_ELRS_GENERIC_2400_PA_ESP8285
+#include "esp/tx-hal-generic-2400-pa-esp8285.h"
+#endif
+
 //-- ELRS selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
