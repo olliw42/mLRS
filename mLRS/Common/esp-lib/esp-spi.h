@@ -14,23 +14,25 @@
 
 //-- select functions
 
-static inline IRAM_ATTR void spi_select(void)
+IRAM_ATTR static inline void spi_select(void)
 {
 #if defined(ESP32)
-  SPI.beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, SPI_MODE0)); 
-  GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
+    GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
+    //SPI.beginTransaction(SPISettings(SPI_FREQUENCY, SPI_MSBFIRST, SPI_MODE0)); 
+    spiSimpleTransaction(SPI.bus());
 #elif defined(ESP8266)
-  GPOC = (1 << SX_NSS);
+    GPOC = (1 << SX_NSS);
 #endif  
 }
 
-static inline IRAM_ATTR void spi_deselect(void)
+IRAM_ATTR static inline void spi_deselect(void)
 {
 #if defined(ESP32)
-  GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
-  SPI.endTransaction(); 
+    spiEndTransaction(SPI.bus());
+    //SPI.endTransaction(); 
+    GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
 #elif defined(ESP8266)
-  GPOS = (1 << SX_NSS);
+    GPOS = (1 << SX_NSS);
 #endif
 }
 
@@ -46,19 +48,22 @@ static inline IRAM_ATTR void spi_deselect(void)
 
 IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
 {
-    SPI.transferBytes(dataout, datain, len);
+    //SPI.transferBytes(dataout, datain, len);
+    spiTransferBytesNL(SPI.bus(), dataout, datain, len);
 }
 
 
 IRAM_ATTR static inline void spi_read(uint8_t* datain, const uint8_t len)
 {
-    SPI.transferBytes(nullptr, datain, len);
+    //SPI.transferBytes(nullptr, datain, len);
+    spiTransferBytesNL(SPI.bus(), nullptr, datain, len);
 }
 
 
 IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 {
-    SPI.transferBytes(dataout, nullptr, len);
+    //SPI.transferBytes(dataout, nullptr, len);
+    spiTransferBytesNL(SPI.bus(), dataout, nullptr, len);
 }
 
 
@@ -74,17 +79,17 @@ void spi_setnop(uint8_t nop)
 
 void spi_init(void)
 {
-  pinMode(SX_NSS, OUTPUT);
-  digitalWrite(SX_NSS, HIGH);
+    pinMode(SX_NSS, OUTPUT);
+    digitalWrite(SX_NSS, HIGH);
 
 #if defined(ESP32) 
-  SPI.begin(SCK, MISO, MOSI, SX_NSS);
+    SPI.begin(SCK, MISO, MOSI, SX_NSS);
 #elif defined(ESP8266)
-  SPI.begin();
-  SPI.setFrequency(SPI_FREQUENCY);
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setDataMode(SPI_MODE0);
+    SPI.begin();
 #endif 
+    SPI.setFrequency(SPI_FREQUENCY);
+    SPI.setBitOrder(SPI_MSBFIRST);
+    SPI.setDataMode(SPI_MODE0);
 }
 
 
