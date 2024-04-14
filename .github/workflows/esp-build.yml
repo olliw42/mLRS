@@ -3,7 +3,7 @@ name: PlatformIO CI
 on: [push]
 
 jobs:
-  build:
+  build-esp-targets:
     runs-on: ubuntu-latest
 
     steps:
