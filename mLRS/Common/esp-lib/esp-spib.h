@@ -81,8 +81,7 @@ void spib_setnop(uint8_t nop)
 void spib_init(void)
 {
 #ifdef SX2_CS_IO
-    pinMode(SX2_CS_IO, OUTPUT);
-    gpio_high(SX2_CS_IO);
+    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
 #endif    
 }
 

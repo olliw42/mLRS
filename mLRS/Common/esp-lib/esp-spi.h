@@ -81,8 +81,7 @@ void spi_setnop(uint8_t nop)
 void spi_init(void)
 {
 #ifdef SPI_CS_IO
-    pinMode(SPI_CS_IO, OUTPUT);
-    gpio_high(SPI_CS_IO);
+    gpio_init(SPI_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
 #endif
 
 #if defined(ESP32)
