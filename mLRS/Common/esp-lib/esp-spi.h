@@ -18,6 +18,7 @@ IRAM_ATTR static inline void spi_select(void)
 {
 #if defined(ESP32)
     GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
+    spiSimpleTransaction(SPI.bus());  // this is temporary, not needed
 #elif defined(ESP8266)
     GPOC = (1 << SX_NSS);
 #endif  
@@ -27,6 +28,7 @@ IRAM_ATTR static inline void spi_deselect(void)
 {
 #if defined(ESP32)
     GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
+    spiEndTransaction(SPI.bus());  // this is temporary, not needed
 #elif defined(ESP8266)
     GPOS = (1 << SX_NSS);
 #endif
@@ -97,7 +99,7 @@ void spi_init(void)
     SPI.setDataMode(SPI_MODE0);
 
 #if defined(ESP32)
-    spiSimpleTransaction(SPI.bus());
+    // call spiSimpleTransaction here but first need to add spiEndTransaction before a param store.
 #endif
     
 }
