@@ -1,4 +1,4 @@
-name: PlatformIO CI
+name: mLRS Build Checks
 
 on: 
   push:
