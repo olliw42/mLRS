@@ -18,8 +18,6 @@ IRAM_ATTR static inline void spi_select(void)
 {
 #if defined(ESP32)
     GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
-    //SPI.beginTransaction(SPISettings(SPI_FREQUENCY, SPI_MSBFIRST, SPI_MODE0)); 
-    spiSimpleTransaction(SPI.bus());
 #elif defined(ESP8266)
     GPOC = (1 << SX_NSS);
 #endif  
@@ -28,8 +26,6 @@ IRAM_ATTR static inline void spi_select(void)
 IRAM_ATTR static inline void spi_deselect(void)
 {
 #if defined(ESP32)
-    spiEndTransaction(SPI.bus());
-    //SPI.endTransaction(); 
     GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
 #elif defined(ESP8266)
     GPOS = (1 << SX_NSS);
@@ -90,6 +86,11 @@ void spi_init(void)
     SPI.setFrequency(SPI_FREQUENCY);
     SPI.setBitOrder(SPI_MSBFIRST);
     SPI.setDataMode(SPI_MODE0);
+
+#if defined(ESP32)
+    spiSimpleTransaction(SPI.bus());
+#endif
+    
 }
 
 
