@@ -14,23 +14,19 @@
 
 //-- select functions
 
+#ifdef SPI_CS_IO
+
 IRAM_ATTR static inline void spi_select(void)
 {
-#if defined(ESP32)
-    GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
-#elif defined(ESP8266)
-    GPOC = (1 << SX_NSS);
-#endif  
+    gpio_low(SPI_CS_IO);
 }
 
 IRAM_ATTR static inline void spi_deselect(void)
 {
-#if defined(ESP32)
-    GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
-#elif defined(ESP8266)
-    GPOS = (1 << SX_NSS);
-#endif
+    gpio_high(SPI_CS_IO);
 }
+
+#endif // #ifdef SPI_CS_IO
 
 
 //-- transmit, transfer, read, write functions
@@ -84,12 +80,14 @@ void spi_setnop(uint8_t nop)
 
 void spi_init(void)
 {
-    pinMode(SX_NSS, OUTPUT);
-    digitalWrite(SX_NSS, HIGH);
+#ifdef SPI_CS_IO
+    pinMode(SPI_CS_IO, OUTPUT);
+    gpio_high(SPI_CS_IO);
+#endif
 
 #if defined(ESP32)
     spiEndTransaction(SPI.bus()); 
-    SPI.begin(SCK, MISO, MOSI, SX_NSS);
+    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS_IO);
 #elif defined(ESP8266)
     SPI.begin();
 #endif 

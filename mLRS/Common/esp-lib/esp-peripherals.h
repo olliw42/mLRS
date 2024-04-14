@@ -11,7 +11,7 @@
 
 #define GPIO_INLINE_FORCED  IRAM_ATTR static inline __attribute__ ((always_inline))
 
-// note ESP32 break out every pin, hence the gaps
+// note: ESP32 break out every pin, hence the gaps
 
 #define IO_P0       0
 #define IO_P1       1
@@ -87,13 +87,22 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
-    digitalWrite(GPIO_Pin, LOW);
+#if defined(ESP32)
+    GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
+#elif defined(ESP8266)
+    GPOC = (1 << GPIO_Pin);
+#endif 
+    
 }
 
 
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
-    digitalWrite(GPIO_Pin, HIGH);
+#if defined(ESP32)
+    GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
+#elif defined(ESP8266)
+    GPOS = (1 << GPIO_Pin);
+#endif
 }
 
 

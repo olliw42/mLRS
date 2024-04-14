@@ -26,71 +26,55 @@
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
-#define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
-#define UARTB_USE_TX_ISR
-#define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL
-#define UARTC_BAUD                  115200
+#define UARTC_BAUD                115200
 
-//#define SWUART_USE_TIM15 // debug
-#define SWUART_TX_IO              10
-#define SWUART_BAUD               57600
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
 
 //-- SX1: SX12xx & SPI
-
-#define MISO                      33
-#define MOSI                      32
-#define SCK                       25
+#define SPI_CS_IO                 27
+#define SPI_MISO                  33
+#define SPI_MOSI                  32
+#define SPI_SCK                   25
 #define SPI_FREQUENCY             16000000L
 
 #define SX_BUSY                   36
 #define SX_DIO1                   37
-#define SX_NSS                    27
 #define SX_RESET                  26
 
 #define SX_RX_EN                  10
 #define SX_TX_EN                  14
 
-#define SX_BUSY_2                 39
-#define SX_DIO1_2                 34
-#define SX_NSS_2                  13
-#define SX_RESET_2                21
+//-- SX2: SX12xx & SPI
 
-#define SX_RX_EN_2                 9
-#define SX_TX_EN_2                15
+#define SX2_CS_IO                 13
+
+#define SX2_BUSY                  39
+#define SX2_DIO1                  34
+#define SX2_RESET                 21
+
+#define SX2_RX_EN                  9
+#define SX2_TX_EN                 15
 
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_DIO1, INPUT);
-    pinMode(SX_BUSY, INPUT_PULLUP);
-    pinMode(SX_RESET, OUTPUT);
-    pinMode(SX_NSS, OUTPUT);
-    pinMode(SX_RX_EN, OUTPUT);
-    pinMode(SX_TX_EN, OUTPUT);
-    
-    digitalWrite(SX_NSS, HIGH);
-    digitalWrite(SX_RESET, LOW);
+    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
 
-    pinMode(SX_DIO1_2, INPUT);
-    pinMode(SX_BUSY_2, INPUT_PULLUP);
-    pinMode(SX_RESET_2, OUTPUT);
-    pinMode(SX_NSS_2, OUTPUT);
-    pinMode(SX_RX_EN_2, OUTPUT);
-    pinMode(SX_TX_EN_2, OUTPUT);
-    
-    digitalWrite(SX_NSS_2, HIGH);
-    digitalWrite(SX_RESET_2, LOW);
-
-    pinMode(SX_RX_EN_2, LOW);
-    pinMode(SX_TX_EN_2, LOW );
+    gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
+    gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
 bool sx_busy_read(void)
@@ -100,14 +84,14 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
-    digitalWrite(SX_RX_EN, LOW);
-    digitalWrite(SX_TX_EN, HIGH);
+    gpio_low(SX_RX_EN);
+    gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
-    digitalWrite(SX_TX_EN, LOW);
-    digitalWrite(SX_RX_EN, HIGH);
+    gpio_low(SX_TX_EN);
+    gpio_high(SX_RX_EN);
 }
 
 void sx_dio_enable_exti_isr(void)
