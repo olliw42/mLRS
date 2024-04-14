@@ -14,38 +14,25 @@
 
 //-- select functions
 
-#ifndef SPI_SELECT_PRE_DELAY
-  #define SPI_SELECT_PRE_DELAY
-#endif
-#ifndef SPI_SELECT_POST_DELAY
-  #define SPI_SELECT_POST_DELAY
-#endif
-#ifndef SPI_DESELECT_PRE_DELAY
-  #define SPI_DESELECT_PRE_DELAY
-#endif
-#ifndef SPI_DESELECT_POST_DELAY
-  #define SPI_DESELECT_POST_DELAY
-#endif
-
-
-#ifdef SPI_CS_IO
-
-IRAM_ATTR static inline void spi_select(void)
+static inline IRAM_ATTR void spi_select(void)
 {
-    SPI_SELECT_PRE_DELAY;
-    GPOC = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, LOW); // CS = low
-    SPI_SELECT_POST_DELAY;
+#if defined(ESP32)
+  SPI.beginTransaction(SPISettings(SPI_FREQUENCY, MSBFIRST, SPI_MODE0)); 
+  GPIO.out_w1tc = ((uint32_t)1 << SX_NSS);
+#elif defined(ESP8266)
+  GPOC = (1 << SX_NSS);
+#endif  
 }
 
-
-IRAM_ATTR static inline void spi_deselect(void)
+static inline IRAM_ATTR void spi_deselect(void)
 {
-    SPI_DESELECT_PRE_DELAY;
-    GPOS = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, HIGH); // CS = high
-    SPI_DESELECT_POST_DELAY;
+#if defined(ESP32)
+  GPIO.out_w1ts = ((uint32_t)1 << SX_NSS);
+  SPI.endTransaction(); 
+#elif defined(ESP8266)
+  GPOS = (1 << SX_NSS);
+#endif
 }
-
-#endif // #ifdef SPI_CS_IO
 
 
 //-- transmit, transfer, read, write functions
@@ -87,14 +74,17 @@ void spi_setnop(uint8_t nop)
 
 void spi_init(void)
 {
-#ifdef SPI_CS_IO
-    pinMode(SPI_CS_IO, OUTPUT);
-#endif    
+  pinMode(SX_NSS, OUTPUT);
+  digitalWrite(SX_NSS, HIGH);
 
-    SPI.begin();
-    SPI.setFrequency(SPI_FREQUENCY);
-    SPI.setBitOrder(MSBFIRST);
-    SPI.setDataMode(SPI_MODE0);
+#if defined(ESP32) 
+  SPI.begin(SCK, MISO, MOSI, SX_NSS);
+#elif defined(ESP8266)
+  SPI.begin();
+  SPI.setFrequency(SPI_FREQUENCY);
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setDataMode(SPI_MODE0);
+#endif 
 }
 
 

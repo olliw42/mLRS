@@ -231,6 +231,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_GENERIC_2400_PA_TD_ESP32
+#include "esp/rx-hal-generic-2400-pa-td-esp32.h"
+#endif
+
 //-- ESP specific Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
@@ -245,6 +249,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_DIYBOARD_900_ESP8266
 #include "esp/rx-hal-dev-sx1278-esp8266.h"
+#endif
+
+#ifdef RX_DEV_900_ESP32
+#include "esp/rx-hal-dev-900-esp32.h"
 #endif
 
 
