@@ -13,8 +13,8 @@
 
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
+//#define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -100,6 +100,8 @@ void sx_dio_exti_isr_clearflag(void) {}
 #define SX2_RX_EN                 IO_P9
 #define SX2_TX_EN                 IO_P15
 
+IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
+
 void sx2_init_gpio(void)
 {
     gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
@@ -133,7 +135,7 @@ void sx2_dio_init_exti_isroff(void)
 
 void sx2_dio_enable_exti_isr(void)
 {
-    attachInterrupt(SX2_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
+    attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING);
 }
 
 void sx2_dio_exti_isr_clearflag(void) {}
