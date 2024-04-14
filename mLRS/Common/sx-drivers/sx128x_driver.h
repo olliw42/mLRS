@@ -389,14 +389,8 @@ class Sx128xDriver : public Sx128xDriverCommon
     void _reset(void)
     {
         gpio_low(SX_RESET);
-#ifdef SX2_RESET       
-        gpio_low(SX2_RESET);
-#endif
-        delay_ms(50); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
         gpio_high(SX_RESET);
-#ifdef SX2_RESET 
-        gpio_high(SX2_RESET);
-#endif
         delay_ms(50); // semtech driver says "typically 2ms observed"
         WaitOnBusy();
     }
@@ -415,17 +409,8 @@ class Sx128xDriver : public Sx128xDriverCommon
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial !
-
-#ifdef SX2_CS_IO
-        gpio_low(SX2_CS_IO);  // this is get SX2 to play nicely
-#endif
-
-        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
-
-#ifdef SX2_CS_IO
-        gpio_high(SX2_CS_IO);      
-#endif 
-            
+        
+        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset          
         delay_us(1000); // this is important, 500 us ok
     }
 
