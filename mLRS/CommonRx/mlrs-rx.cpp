@@ -161,27 +161,46 @@ void init_hw(void)
 // SX12xx
 //-------------------------------------------------------
 
-volatile bool irq_dio = false;
-volatile bool irq2_dio = false;
+volatile uint16_t irq_status;
+volatile uint16_t irq2_status;
 
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
-    irq_dio = true;
+    irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
+    if (irq_status & SX_IRQ_RX_DONE) {
+        if (bind.IsInBind()) {
+            uint64_t bind_signature;
+            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+            if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
+        } else {
+            uint16_t sync_word;
+            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+        }
+    }
 })
 #ifdef USE_SX2
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     sx2_dio_exti_isr_clearflag();
-    irq2_dio = true;
+    irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
+    if (irq2_status & SX2_IRQ_RX_DONE) {
+        if (bind.IsInBind()) {
+            uint64_t bind_signature;
+            sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+            if (bind_signature != bind.TxSignature) irq2_status = 0;
+        } else {
+            uint16_t sync_word;
+            sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+            if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+        }
+    }
 })
 #endif
 
-
-uint16_t irq_status;
-uint16_t irq2_status;
 
 uint8_t link_rx1_status;
 uint8_t link_rx2_status;
@@ -574,41 +593,6 @@ INITCONTROLLER_END
 
     //-- SX handling
 
-IF_SX(
-    if (irq_dio) {
-        irq_dio = false;
-        irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
-        if (irq_status & SX_IRQ_RX_DONE) {
-            if (bind.IsInBind()) {
-                uint64_t bind_signature;
-                sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-                if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
-            } else {
-                uint16_t sync_word;
-                sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-                if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-            }
-        }
-    }//end of if(irq_dio)
-);
-IF_SX2(
-    if (irq2_dio) {
-        irq2_dio = false;
-        irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
-        if (irq2_status & SX2_IRQ_RX_DONE) {
-            if (bind.IsInBind()) {
-                uint64_t bind_signature;
-                sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-                if (bind_signature != bind.TxSignature) irq2_status = 0;
-            } else {
-                uint16_t sync_word;
-                sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-                if (sync_word != Config.FrameSyncWord) irq2_status = 0;
-            }
-        }
-    }//end of if(irq2_dio)
-);
-
     switch (link_state) {
     case LINK_STATE_RECEIVE:
         if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
@@ -900,4 +884,3 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     }
 
 }//end of main_loop
-
