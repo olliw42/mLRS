@@ -11,6 +11,7 @@
 
 #define GPIO_INLINE_FORCED  IRAM_ATTR static inline __attribute__ ((always_inline))
 
+// note: ESP32 does not break out every pin, hence the gaps
 
 #define IO_P0       0
 #define IO_P1       1
@@ -29,7 +30,23 @@
 #define IO_P14      14
 #define IO_P15      15
 #define IO_P16      16
-
+#define IO_P17      17
+#define IO_P18      18
+#define IO_P19      19
+#define IO_P21      21
+#define IO_P22      22
+#define IO_P23      23
+#define IO_P25      25
+#define IO_P26      26
+#define IO_P27      27
+#define IO_P32      32
+#define IO_P33      33
+#define IO_P34      34
+#define IO_P35      35
+#define IO_P36      36
+#define IO_P37      37
+#define IO_P38      38
+#define IO_P39      39
 
 typedef enum {
     IO_MODE_Z = 0,
@@ -70,13 +87,22 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
-    digitalWrite(GPIO_Pin, LOW);
+#if defined(ESP32)
+    GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
+#elif defined(ESP8266)
+    GPOC = (1 << GPIO_Pin);
+#endif 
+    
 }
 
 
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
-    digitalWrite(GPIO_Pin, HIGH);
+#if defined(ESP32)
+    GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
+#elif defined(ESP8266)
+    GPOS = (1 << GPIO_Pin);
+#endif
 }
 
 
