@@ -218,6 +218,8 @@ void init_hw(void)
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
 
+    hal_init();
+
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
