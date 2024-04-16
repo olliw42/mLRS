@@ -356,6 +356,21 @@ uint8_t except_from_bindphrase(char* bindphrase)
 }
 
 
+void bindphrase_from_u32(char* bindphrase, uint32_t bindphrase_u32)
+{
+    uint32_t base = 40*40*40*40*40; // 40^5
+
+    for (uint8_t i = 0; i < 6; i++) {
+
+        uint32_t v = bindphrase_u32 / base;
+        bindphrase[5 - i] = (v < 40) ? bindphrase_chars[v] : '0'; // must not happen, but play it safe
+
+        bindphrase_u32 -= v * base;
+        base /= 40;
+    }
+}
+
+
 void remove_leading_zeros(char* s)
 {
 uint16_t i, len;

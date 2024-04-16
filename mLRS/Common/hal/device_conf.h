@@ -331,6 +331,14 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef TX_ELRS_GENERIC_900_ESP8285
+  #define DEVICE_NAME "GENERIC 900"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 //-- ELRS selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
@@ -347,6 +355,15 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
+
+
+#ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
+  #define DEVICE_NAME "BETAFPV MICRO 1W"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 // -- DIY
 

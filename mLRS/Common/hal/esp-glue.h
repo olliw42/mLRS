@@ -15,6 +15,10 @@
 #define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
 
 
+void __disable_irq(void) {}
+void __enable_irq(void) {}
+
+
 void hal_init(void)
 {
     // nothing to do

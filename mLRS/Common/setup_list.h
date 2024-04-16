@@ -78,11 +78,13 @@
 // a LIST can have only 16 options at most
 // a LIST option string list is limited to 67 chars max
 // a LIST option string should not exceed 10 chars
-#define SETUP_PARAMETER_LIST_COMMON \
+#define SETUP_PARAMETER_LIST_COMMON_BINDPHRASE \
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
+
+#define SETUP_PARAMETER_LIST_COMMON_ELSE \
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz,FLRC,FSK", SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
-  X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )\
+  X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "ORTHO",            0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )\
 
 #define SETUP_PARAMETER_LIST_TX \
   X( Setup.Tx[0].Power,             LIST, "Tx Power",         "TX_POWER",         0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\

@@ -30,6 +30,35 @@ v0.0.00:
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
 
+#if defined(ESP8266) || defined(ESP32)
+
+#include "../Common/hal/esp-glue.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
+#include "../Common/esp-lib/esp-peripherals.h"
+#include "../Common/esp-lib/esp-mcu.h"
+//xx #include "../Common/esp-lib/esp-adc.h"
+#include "../Common/esp-lib/esp-stack.h"
+#include "../Common/hal/hal.h"
+#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../Common/esp-lib/esp-eeprom.h"
+#include "../Common/esp-lib/esp-spi.h"
+#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
+#include "../Common/esp-lib/esp-uartb.h"
+#endif
+#if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
+#include "../Common/esp-lib/esp-uartc.h"
+#endif
+#ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
+#else
+#include "../Common/esp-lib/esp-uartf.h"
+#endif
+#endif
+#include "../Common/hal/esp-timer.h"
+
+#else
+
 #include "../Common/hal/glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../modules/stm32ll-lib/src/stdstm32-peripherals.h"
@@ -69,6 +98,8 @@ v0.0.00:
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #include "../Common/hal/timer.h"
+
+#endif //#if defined(ESP8266) || defined(ESP32)
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
@@ -1086,6 +1117,7 @@ IF_IN(
     //-- Handle display or cli task
 
     uint8_t cli_task = disp.Task();
+    if (cli_task == CLI_TASK_NONE) cli_task = mavlink.Task();
     if (cli_task == CLI_TASK_NONE) cli_task = cli.Task();
 
     switch (cli_task) {
@@ -1131,4 +1163,3 @@ IF_IN(
     }
 
 }//end of main_loop
-

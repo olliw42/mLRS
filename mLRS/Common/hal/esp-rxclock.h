@@ -18,9 +18,9 @@ volatile bool doPostReceive;
 uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
 
 volatile uint32_t CNT_10us = 0;
-volatile uint32_t CCR1 = 0;
-volatile uint32_t CCR3 = 0;
-volatile uint32_t MS_C = 0;
+volatile uint32_t CCR1 = CLOCK_PERIOD_10US;
+volatile uint32_t CCR3 = CLOCK_PERIOD_10US;
+volatile uint32_t MS_C = CLOCK_CNT_1MS;
 
 
 //-------------------------------------------------------
@@ -69,6 +69,11 @@ void RxClockBase::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
+
+    CNT_10us = 0;
+    CCR1 = CLOCK_PERIOD_10US;
+    CCR3 = CLOCK_SHIFT_10US;
+    MS_C = CLOCK_CNT_1MS;
 
     // initialise the timer
     timer1_attachInterrupt(CLOCK_IRQHandler); 
