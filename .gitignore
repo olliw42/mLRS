@@ -8,6 +8,7 @@ mLRS/**/Release/*
 mLRS/**/Debug/*
 *.launch
 tools/build3/*
+tools/build/*
 tools/esp-build/*
 tools/__pycache__
 mLRS/*/Drivers/CMSIS/Include/*

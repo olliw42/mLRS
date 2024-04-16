@@ -111,7 +111,7 @@ MLRS_PROJECT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath
 MLRS_DIR = os.path.join(MLRS_PROJECT_DIR,'mLRS')
 
 MLRS_TOOLS_DIR = os.path.join(MLRS_PROJECT_DIR,'tools')
-MLRS_BUILD_DIR = os.path.join(MLRS_PROJECT_DIR,'tools','build3')
+MLRS_BUILD_DIR = os.path.join(MLRS_PROJECT_DIR,'tools','build')
 
 
 #-- current version and branch
