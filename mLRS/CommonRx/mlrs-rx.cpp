@@ -503,11 +503,8 @@ void main_loop(void)
     main_test();
 #endif
 INITCONTROLLER_ONCE
-
     stack_check_init();
-
 RESTARTCONTROLLER
-
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
@@ -553,7 +550,6 @@ RESTARTCONTROLLER
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
     doSysTask = 0; // helps in avoiding too short first loop
-
 INITCONTROLLER_END
 
     //-- SysTask handling

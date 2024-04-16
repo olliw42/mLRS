@@ -26,37 +26,37 @@
 //-------------------------------------------------------
 
 #ifdef FREQUENCY_BAND_433_MHZ
-#define FHSS_HAS_CONFIG_433_MHZ
+  #define FHSS_HAS_CONFIG_433_MHZ
 #endif
 #ifdef FREQUENCY_BAND_70_CM_HAM
-#define FHSS_HAS_CONFIG_70_CM_HAM
+  #define FHSS_HAS_CONFIG_70_CM_HAM
 #endif
 #ifdef FREQUENCY_BAND_868_MHZ
-#define FHSS_HAS_CONFIG_868_MHZ
+  #define FHSS_HAS_CONFIG_868_MHZ
 #endif
 #ifdef FREQUENCY_BAND_915_MHZ_FCC
-#define FHSS_HAS_CONFIG_915_MHZ_FCC
+  #define FHSS_HAS_CONFIG_915_MHZ_FCC
 #endif
 #ifdef FREQUENCY_BAND_866_MHZ_IN
-#define FHSS_HAS_CONFIG_866_MHZ_IN
+  #define FHSS_HAS_CONFIG_866_MHZ_IN
 #endif
 #ifdef FREQUENCY_BAND_2P4_GHZ
-#define FHSS_HAS_CONFIG_2P4_GHZ
+  #define FHSS_HAS_CONFIG_2P4_GHZ
 #endif
 
 
 #ifdef DEVICE_HAS_SX126x
-#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
+  #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
-#define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
+  #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #endif
 
 #ifdef DEVICE_HAS_SX126x
-#define SX12XX_REG_TO_FREQ(f_reg)  SX126X_REG_TO_FREQ_KHZ(f_reg)
+  #define SX12XX_REG_TO_FREQ(f_reg)  SX126X_REG_TO_FREQ_KHZ(f_reg)
 #elif defined DEVICE_HAS_SX127x
-#define SX12XX_REG_TO_FREQ(f_reg)  SX127X_REG_TO_FREQ_KHZ(f_reg)
+  #define SX12XX_REG_TO_FREQ(f_reg)  SX127X_REG_TO_FREQ_KHZ(f_reg)
 #else
-#define SX12XX_REG_TO_FREQ(f_reg)  SX1280_REG_TO_FREQ_MHZ(f_reg)
+  #define SX12XX_REG_TO_FREQ(f_reg)  SX1280_REG_TO_FREQ_MHZ(f_reg)
 #endif
 
 

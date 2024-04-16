@@ -433,15 +433,15 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 #ifndef DEVICE_HAS_SYSTEMBOOT
-    void systembootloader_init(void) {}
+  void systembootloader_init(void) {}
 #endif
 
 #ifndef USE_ESP_WIFI_BRIDGE
-    void esp_init(void) {}
+  void esp_init(void) {}
 #endif
 
 #if !defined DEVICE_HAS_FIVEWAY && !defined USE_DISPLAY
-    void fiveway_init(void) {}
+  void fiveway_init(void) {}
 #endif
 
 #endif // HAL_H
