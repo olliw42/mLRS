@@ -78,13 +78,13 @@
 // #define MICROS_TIMx               TIM3
 
 
-// //-- UARTS
-// // UARTB = serial port
-// // UARTC or USB = COM (CLI)
-// // UARTD = -
-// // UART  = JR bay pin5
-// // UARTE = in port, SBus or whatever
-// // UARTF = debug port
+//-- UARTS
+// UARTB = serial port
+// UARTC or USB = COM (CLI)
+// UARTD = -
+// UART  = JR bay pin5
+// UARTE = in port, SBus or whatever
+// UARTF = debug port
 
 // // #define UARTB_USE_SERIAL // serial
 // // #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -292,14 +292,13 @@
 
 #define EE_START_PAGE             0
 
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
 // UARTC = debug port
 
 #define UARTB_USE_SERIAL
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
+#define UARTB_BAUD                57600
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
@@ -307,7 +306,6 @@
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
-
 
 #define UARTF_USE_SERIAL
 #define UARTF_BAUD                115200
@@ -322,8 +320,8 @@
 #define SX_RESET                  IO_P14
 #define SX_BUSY                   IO_P21
 #define SX_DIO1                   IO_P4
-#define SX_TX_EN                  IO_P27
-#define SX_RX_EN                  IO_P26
+#define SX_TX_EN                  IO_P26
+#define SX_RX_EN                  IO_P27
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
