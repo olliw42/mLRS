@@ -58,10 +58,14 @@ void CLOCK_IRQHandler(void)
     }
 })
 
+bool initialized = false;
+
 void systick_millis_init(void)
 {
     CNT_10us = 0;
     MS_C = CLOCK_CNT_1MS;
+
+    if (initialized) return; 
 
     // Initialize the timer
 #if defined(ESP32)
@@ -74,6 +78,9 @@ void systick_millis_init(void)
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
     timer1_write(50); // 5 MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
 #endif
+
+    initialized = true;
+    
 }
 
 #else
