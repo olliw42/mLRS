@@ -12,8 +12,10 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_SERIAL_OR_DEBUG
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -34,11 +36,12 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P27
 #define SPI_MISO                  IO_P33
 #define SPI_MOSI                  IO_P32
 #define SPI_SCK                   IO_P25
-#define SPI_FREQUENCY             16000000L
+#define SPI_FREQUENCY             18000000L
 
 #define SX_BUSY                   IO_P36
 #define SX_DIO1                   IO_P37
@@ -46,18 +49,6 @@
 
 #define SX_RX_EN                  IO_P10
 #define SX_TX_EN                  IO_P14
-
-//-- SX2: SX12xx & SPI
-
-#define SX2_CS_IO                 IO_P13
-
-#define SX2_BUSY                  IO_P39
-#define SX2_DIO1                  IO_P34
-#define SX2_RESET                 IO_P21
-
-#define SX2_RX_EN                 IO_P9
-#define SX2_TX_EN                 IO_P15
-
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
@@ -68,27 +59,20 @@ void sx_init_gpio(void)
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
-
-    gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
-    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
-    gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
-bool sx_busy_read(void)
+IRAM_ATTR inline bool sx_busy_read(void)
 {
     return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-void sx_amp_transmit(void)
+IRAM_ATTR inline void sx_amp_transmit(void)
 {
     gpio_low(SX_RX_EN);
     gpio_high(SX_TX_EN);
 }
 
-void sx_amp_receive(void)
+IRAM_ATTR inline void sx_amp_receive(void)
 {
     gpio_low(SX_TX_EN);
     gpio_high(SX_RX_EN);
@@ -104,7 +88,59 @@ void sx_dio_init_exti_isroff(void)
     detachInterrupt(SX_DIO1);
 }
 
-void sx_dio_exti_isr_clearflag(void) {}
+IRAM_ATTR inline void sx_dio_exti_isr_clearflag(void) {}
+
+
+//-- SX2: SX12xx & SPI
+
+#define SX2_CS_IO                 IO_P13
+
+#define SX2_BUSY                  IO_P39
+#define SX2_DIO1                  IO_P34
+#define SX2_RESET                 IO_P21
+
+#define SX2_RX_EN                 IO_P9
+#define SX2_TX_EN                 IO_P15
+
+IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
+
+void sx2_init_gpio(void)
+{
+    gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
+}
+
+IRAM_ATTR inline bool sx2_busy_read(void)
+{
+    return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
+}
+
+IRAM_ATTR inline void sx2_amp_transmit(void)
+{
+    gpio_low(SX2_RX_EN);
+    gpio_high(SX2_TX_EN);
+}
+
+IRAM_ATTR inline void sx2_amp_receive(void)
+{
+    gpio_low(SX2_TX_EN);
+    gpio_high(SX2_RX_EN);
+}
+
+void sx2_dio_init_exti_isroff(void)
+{
+    detachInterrupt(SX2_DIO1);
+}
+
+void sx2_dio_enable_exti_isr(void)
+{
+    attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING);
+}
+
+IRAM_ATTR inline void sx2_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button

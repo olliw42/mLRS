@@ -40,15 +40,14 @@ v0.0.00:
 #include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../Common/esp-lib/esp-eeprom.h"
 #include "../Common/esp-lib/esp-spi.h"
+#ifdef USE_SX2
+#include "../Common/esp-lib/esp-spib.h"
+#endif
 #ifdef USE_SERIAL
 #include "../Common/esp-lib/esp-uartb.h"
 #endif
 #ifdef USE_DEBUG
-#ifdef DEVICE_HAS_DEBUG_SWUART
-#include "../Common/esp-lib/esp-uart-sw.h"
-#else
 #include "../Common/esp-lib/esp-uartc.h"
-#endif
 #endif
 #include "../Common/hal/esp-timer.h"
 #include "../Common/hal/esp-powerup.h"
@@ -885,4 +884,3 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
     }
 
 }//end of main_loop
-
