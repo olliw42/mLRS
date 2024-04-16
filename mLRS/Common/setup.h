@@ -247,7 +247,6 @@ void setup_sanitize_config(uint8_t config_id)
 // note: if allowed_mask = 0, this also triggers
 // we may have to distinguish between not editable and not displayed, but currently
 // not displayed applies only to settings for which the default is ok
-#define SETUP_TST_NOTALLOWED(amask,pfield) ((SetupMetaData.amask & (1 << Setup.pfield)) == 0)
 
 #define TST_NOTALLOWED(amask,pfield,val) \
     if ((SetupMetaData.amask & (1 << Setup.pfield)) == 0) { Setup.pfield = val; } \
