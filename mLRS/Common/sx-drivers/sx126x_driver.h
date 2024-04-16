@@ -495,7 +495,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX126x
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
