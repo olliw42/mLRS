@@ -85,7 +85,8 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 {
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
-    UARTB_SERIAL_NO.begin(UARTB_BAUD);
+    UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
+    UARTB_SERIAL_NO.begin(baud);
 }
 
 
@@ -93,6 +94,7 @@ void uartb_init(void)
 {
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
+    UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
     UARTB_SERIAL_NO.begin(UARTB_BAUD);
 }
 
