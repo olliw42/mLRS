@@ -408,7 +408,7 @@ tCrsfChannelBuffer crsf_buf;
 
     uint8_t crc = 0;
 
-    putc(CRSF_ADDRESS_RECEIVER); // this allows the tx module to detect relay mode
+    putc(CRSF_ADDRESS_RECEIVER); // this allows main tx module to detect relay mode
     putc(CRSF_CHANNELPACKET_SIZE + 2);
 
     putc(CRSF_FRAME_ID_CHANNELS);

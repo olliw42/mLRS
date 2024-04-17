@@ -21,18 +21,18 @@ to only two for the sake of the discussion.
 
 For notation:
 
-radio <-CRSF-> secondary <-air-> secondary <-CRSF,serial-> main      <-air-> main     <-CRSF,serial-> flight
-               tx module         receiver                  tx module         receiver                 controller
+radio <-CRSF-> secondary <- air -> secondary <-CRSF,serial-> main      <- air -> main     <-CRSF,serial-> flight
+               tx module           receiver                  tx module           receiver                 controller
 
 The relay mode is enabled by setting Rx_Out_Mode = "crsf tx" in the secondary receiver. This has a chain
 of consequences in the operation of the secondary receiver and the two tx modules.
 
-Secondary receiver:
+Secondary Receiver:
 
 Relay mode is enabled by Rx_Out_Mode = "crsf tx".
 
 - OUT port is configured to use tx inverted, and 400k baud
-- rc data is send with address CRSF_ADDRESS_RECEIVER (instead of CRSF_ADDRESS_BROADCAST)
+- rc data is send with address CRSF_ADDRESS_RECEIVER (instead of CRSF_ADDRESS_FLIGHT_CONTROLLER)
 - rc data is adjusted by the channel order, but no other modifications are done (like failsafe, rssi, etc)
 - no other CRSF frames are send (like link statistics)
 - injection of mavlink frames into the outgoing stream (serial tx) is disabled
@@ -42,8 +42,9 @@ Relay mode is enabled by Rx_Out_Mode = "crsf tx".
 Main Tx Module:
 
 It determines its relay mode from the address of the received CRSF frames. When it receives a CRSF frame
-with address CRSF_ADDRESS_BROADCAST it assumes business as usual. If it receives a CRSF frame with address
-CRSF_ADDRESS_RECEIVER it however determines that it is the main tx module in a relay setup.
+with address CRSF_ADDRESS_FLIGHT_CONTROLLER (or CRSF_ADDRESS_BROADCAST) it assumes business as usual. If
+it receives a CRSF frame with address CRSF_ADDRESS_RECEIVER it however determines that it is the main tx module
+in a relay setup.
 
 - function crsf.IsRelayMain() returns true
 - all emission of CRSF frames is disabled. This implies that the IN pin is never becoming Tx and remains all
