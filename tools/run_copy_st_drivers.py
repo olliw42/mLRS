@@ -8,7 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
- version 19.10.2023
+ version 17.04.2024
 ********************************************************
 '''
 import os
@@ -68,7 +68,7 @@ def copy_wexclude(target, source, f, files_to_exclude=[]):
 # we copy only selected _hal_ .c files
 # we can extract them from run_make_firmware3.py, MLRS_SOURCES_HAL_STM32xx
 
-from run_make_firmwares3 import *
+from run_make_firmwares import *
 
 f1xx_hal_files_to_include = []
 for f in MLRS_SOURCES_HAL_STM32F1:
