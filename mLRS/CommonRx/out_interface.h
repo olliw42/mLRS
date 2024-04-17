@@ -36,7 +36,7 @@ class tOut : public OutBase
         uart_init_isroff();
     }
 
-#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INTERNAL
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL
     bool config_crsf(bool enable_flag) override
     {
         if (enable_flag) {
@@ -56,7 +56,7 @@ class tOut : public OutBase
     }
 #endif
 
-#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_INVERTED || defined DEVICE_HAS_OUT_INTERNAL
+#if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_INVERTED
     bool config_sbus(bool enable_flag) override
     {
         if (enable_flag) {
@@ -67,7 +67,7 @@ class tOut : public OutBase
     }
 #endif
 
-#if defined DEVICE_HAS_OUT_INTERNAL
+#if defined DEVICE_HAS_OUT
     bool config_crsf_tx_jrpin5(bool enable_flag) override
     {
         if (enable_flag) {

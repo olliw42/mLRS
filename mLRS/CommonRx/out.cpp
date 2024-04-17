@@ -179,6 +179,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int
         send_crsf_rcdata(&rc);
         break;
     case OUT_CONFIG_CRSF_TX_JRPIN5:
+        // done in the above
         break;
     }
 }
@@ -318,49 +319,6 @@ tCrsfChannelBuffer crsf_buf;
 }
 
 
-uint16_t rc_to_crsf_tx(uint16_t rc_ch)
-{
-//    return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 1000;
-    return (((int32_t)(rc_ch) - 1024) * (1966 + 4)) / 2047 + 992;
-}
-
-
-void OutBase::send_crsf_tx_rcdata(tRcData* rc)
-{
-tCrsfChannelBuffer crsf_buf;
-
-    crsf_buf.ch0 = rc_to_crsf_tx(rc->ch[0]);
-    crsf_buf.ch1 = rc_to_crsf_tx(rc->ch[1]);
-    crsf_buf.ch2 = rc_to_crsf_tx(rc->ch[2]);
-    crsf_buf.ch3 = rc_to_crsf_tx(rc->ch[3]);
-    crsf_buf.ch4 = rc_to_crsf_tx(rc->ch[4]);
-    crsf_buf.ch5 = rc_to_crsf_tx(rc->ch[5]);
-    crsf_buf.ch6 = rc_to_crsf_tx(rc->ch[6]);
-    crsf_buf.ch7 = rc_to_crsf_tx(rc->ch[7]);
-    crsf_buf.ch8 = rc_to_crsf_tx(rc->ch[8]);
-    crsf_buf.ch9 = rc_to_crsf_tx(rc->ch[9]);
-    crsf_buf.ch10 = rc_to_crsf_tx(rc->ch[10]);
-    crsf_buf.ch11 = rc_to_crsf_tx(rc->ch[11]);
-    crsf_buf.ch12 = rc_to_crsf_tx(rc->ch[12]);
-    crsf_buf.ch13 = rc_to_crsf_tx(rc->ch[13]);
-    crsf_buf.ch14 = rc_to_crsf_tx(rc->ch[14]);
-    crsf_buf.ch15 = rc_to_crsf_tx(rc->ch[15]);
-
-    uint8_t crc = 0;
-
-    putc(CRSF_ADDRESS_RECEIVER); // this allows the tx module to detect relay mode
-    putc(CRSF_CHANNELPACKET_SIZE + 2);
-
-    putc(CRSF_FRAME_ID_CHANNELS);
-    crc = crsf_crc8_calc(crc, CRSF_FRAME_ID_CHANNELS);
-
-    putbuf(crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
-    crc = crsf_crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
-
-    putc(crc);
-}
-
-
 void OutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
 {
 tCrsfLinkStatistics clstats;
@@ -415,6 +373,51 @@ void OutBase::do_crsf(void)
         link_stats_available = false;
         send_crsf_linkstatistics(&link_stats);
     }
+}
+
+
+// for relay operation
+
+uint16_t rc_to_crsf_tx(uint16_t rc_ch)
+{
+//    return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 1000;
+    return (((int32_t)(rc_ch) - 1024) * (1966 + 4)) / 2047 + 992;
+}
+
+
+void OutBase::send_crsf_tx_rcdata(tRcData* rc)
+{
+tCrsfChannelBuffer crsf_buf;
+
+    crsf_buf.ch0 = rc_to_crsf_tx(rc->ch[0]);
+    crsf_buf.ch1 = rc_to_crsf_tx(rc->ch[1]);
+    crsf_buf.ch2 = rc_to_crsf_tx(rc->ch[2]);
+    crsf_buf.ch3 = rc_to_crsf_tx(rc->ch[3]);
+    crsf_buf.ch4 = rc_to_crsf_tx(rc->ch[4]);
+    crsf_buf.ch5 = rc_to_crsf_tx(rc->ch[5]);
+    crsf_buf.ch6 = rc_to_crsf_tx(rc->ch[6]);
+    crsf_buf.ch7 = rc_to_crsf_tx(rc->ch[7]);
+    crsf_buf.ch8 = rc_to_crsf_tx(rc->ch[8]);
+    crsf_buf.ch9 = rc_to_crsf_tx(rc->ch[9]);
+    crsf_buf.ch10 = rc_to_crsf_tx(rc->ch[10]);
+    crsf_buf.ch11 = rc_to_crsf_tx(rc->ch[11]);
+    crsf_buf.ch12 = rc_to_crsf_tx(rc->ch[12]);
+    crsf_buf.ch13 = rc_to_crsf_tx(rc->ch[13]);
+    crsf_buf.ch14 = rc_to_crsf_tx(rc->ch[14]);
+    crsf_buf.ch15 = rc_to_crsf_tx(rc->ch[15]);
+
+    uint8_t crc = 0;
+
+    putc(CRSF_ADDRESS_RECEIVER); // this allows the tx module to detect relay mode
+    putc(CRSF_CHANNELPACKET_SIZE + 2);
+
+    putc(CRSF_FRAME_ID_CHANNELS);
+    crc = crsf_crc8_calc(crc, CRSF_FRAME_ID_CHANNELS);
+
+    putbuf(crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
+    crc = crsf_crc8_update(crc, crsf_buf.c, CRSF_CHANNELPACKET_SIZE);
+
+    putc(crc);
 }
 
 

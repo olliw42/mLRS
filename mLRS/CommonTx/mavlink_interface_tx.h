@@ -81,7 +81,7 @@ class tTxMavlink
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 
-    // relay
+    // for relay operation
     uint32_t main_radio_stats_tlast_ms;
     void generate_main_radio_stats(void);
 };
@@ -159,6 +159,8 @@ void tTxMavlink::FrameLost(void)
 void tTxMavlink::Do(void)
 {
     uint32_t tnow_ms = millis32();
+    bool inject_radio_status = false;
+    bool inject_main_radio_stats = false;
 
     if (!connected_and_rx_setup_available()) {
         //Init();
@@ -230,9 +232,6 @@ if (!do_router()) {
 } // end if(do_router())
 #endif
 
-    bool inject_radio_status = false;
-    bool inject_main_radio_stats = false;
-
     if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
             radio_status_tlast_ms = tnow_ms;
@@ -262,7 +261,7 @@ if (!do_router()) {
         send_msg_serial_out();
     }
 
-    if (inject_radio_status) { // && serial.tx_is_empty()) { // check available size!?
+    if (inject_radio_status) { // && serial.tx_is_empty()) {
         inject_radio_status = false;
         generate_radio_status();
         send_msg_serial_out();
@@ -466,6 +465,8 @@ uint8_t rssi, remrssi, txbuf, noise;
 }
 
 
+// for relay operation
+
 void tTxMavlink::generate_main_radio_stats(void)
 {
     fmav_msg_mlrs_main_radio_stats_pack(
@@ -492,7 +493,6 @@ void tTxMavlink::generate_main_radio_stats(void)
         //uint8_t uplink_transmit_power2, uint8_t downlink_rssi, uint8_t downlink_LQ, int8_t downlink_snr,
         //uint8_t uplink_rssi_percent, uint8_t uplink_fps,
         //uint8_t downlink_rssi_percent, uint8_t uplink_transmit_power,
-
         &status_serial_out);
 }
 

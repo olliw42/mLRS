@@ -145,10 +145,9 @@ void setup_configure_metadata(void)
 #endif
 
     // Rx OutMode: "sbus,crsf,sbus inv,crsf tx"
-#ifdef DEVICE_HAS_OUT_INTERNAL
+#ifdef DEVICE_HAS_OUT
     SetupMetaData.Rx_OutMode_allowed_mask = 0b1111; // all
-#elif defined DEVICE_HAS_OUT
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b0111; // sbus,crsf,sbus inv
+    //SetupMetaData.Rx_OutMode_allowed_mask = 0b0111; // sbus,crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_NORMAL
     SetupMetaData.Rx_OutMode_allowed_mask = 0b0110; // crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_INVERTED

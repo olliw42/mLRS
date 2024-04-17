@@ -70,7 +70,6 @@ In rx-hal files:
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
-#define DEVICE_HAS_OUT_INTERNAL     // board has an OUT port, which supports all options
 #define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART

@@ -12,7 +12,7 @@
 // RX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
 
-#define DEVICE_HAS_OUT_INTERNAL
+#define DEVICE_HAS_OUT
 #define DEVICE_HAS_SINGLE_LED
 
 

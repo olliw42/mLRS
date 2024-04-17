@@ -66,10 +66,6 @@ class tTxCrsf : public tPin5BridgeBase
 
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
 
-    bool IsRelayMain(void);
-    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg);
-    bool IsRelaySecondary(void);
-
     // helper
     uint8_t crc8(const uint8_t* buf);
     void fill_rcdata(tRcData* rc);
@@ -135,7 +131,11 @@ class tTxCrsf : public tPin5BridgeBase
 
     tPassThrough passthrough;
 
-    // relay
+    // for relay operation
+
+    bool IsRelayMain(void);
+    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg);
+    bool IsRelaySecondary(void);
 
     typedef enum {
         RELAY_UNKNOWN = 0,
@@ -856,35 +856,13 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 
 //-------------------------------------------------------
-// Relay handler
-
-bool tTxCrsf::IsRelayMain(void)
-{
-    return (relay == RELAY_YES);
-}
-
-
-void tTxCrsf::HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg)
-{
-    main_radio_stats_receiving = true;
-
-    fmav_msg_mlrs_main_radio_stats_decode(&main_radio_stats, msg);
-}
-
-
-bool tTxCrsf::IsRelaySecondary(void)
-{
-    return main_radio_stats_receiving;
-}
-
-
-//-------------------------------------------------------
 // convenience helper
 
 uint8_t crsf_cvt_rssi_perc(int8_t rssi)
 {
     return crsf_cvt_rssi_percent(rssi, sx.ReceiverSensitivity_dbm());
 }
+
 
 // on crsf rssi
 // rssi = 255 -> red in otx
@@ -980,6 +958,29 @@ if (crsf.IsRelaySecondary()) {
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
     clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
     crsf.SendLinkStatisticsRx(&clstats);
+}
+
+
+//-------------------------------------------------------
+// Relay handler
+
+bool tTxCrsf::IsRelayMain(void)
+{
+    return (relay == RELAY_YES);
+}
+
+
+void tTxCrsf::HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg)
+{
+    main_radio_stats_receiving = true;
+
+    fmav_msg_mlrs_main_radio_stats_decode(&main_radio_stats, msg);
+}
+
+
+bool tTxCrsf::IsRelaySecondary(void)
+{
+    return main_radio_stats_receiving;
 }
 
 
