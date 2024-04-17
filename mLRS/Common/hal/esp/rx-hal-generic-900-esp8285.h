@@ -11,19 +11,27 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_NO_DEBUG            // swap these to enable/disable debug
+//#define DEVICE_HAS_SERIAL_OR_DEBUG   // swap these to enable/disable debug
+
+#ifdef DEVICE_IS_TRANSMITTER
+#define DEVICE_HAS_NO_COM        // swap these to enable/disable cli
+//#define DEVICE_HAS_NO_SERIAL   // swap these to enable/disable cli
+#define USE_FEATURE_MAVLINK_PARAMS // has no CLI, no Lua, hence needs this
+#endif
 
 
-//-- Timers, Timing, EEPROM, and such stuff
+//-- EEPROM
 
 #define EE_START_PAGE             0
 
 
 //-- UARTS
-// UARTB = serial port
+
 // UART = output port, SBus or whatever
+// UARTB = serial port
 // UARTC = debug port
+// UARTF = com/cli port
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -33,13 +41,14 @@
 #define UARTC_USE_SERIAL
 #define UARTC_BAUD                115200
 
+#define UARTF_USE_SERIAL
+#define UARTF_BAUD                115200
 
 //-- SX1: SX12xx & SPI
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             10000000L
 #define SX_RESET                  IO_P2
 #define SX_DIO0                   IO_P4
-//#define SX_DIO1                   IO_P5
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 

@@ -299,21 +299,33 @@ The default selection of frequency bands can be overruled by feature defines.
 
 //-- ELRS 868/915 MHz Generic Devices
 
-#ifdef RX_ELRS_GENERIC_900_ESP8285
+#if defined(RX_ELRS_GENERIC_900_ESP8285) || defined(TX_ELRS_GENERIC_900_ESP8285)
   #define DEVICE_NAME "GENERIC 900"
-  #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+#ifdef RX_ELRS_GENERIC_900_ESP8285
+  #define DEVICE_IS_RECEIVER
+#endif
+#ifdef TX_ELRS_GENERIC_900_ESP8285
+  #define DEVICE_IS_TRANSMITTER
+#endif
 #endif
 
-#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+
+#if defined(RX_ELRS_GENERIC_900_PA_ESP8285) || defined(TX_ELRS_GENERIC_900_PA_ESP8285)
   #define DEVICE_NAME "GENERIC 900 PA"
-  #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+  #define DEVICE_IS_RECEIVER
 #endif
+#ifdef TX_ELRS_GENERIC_900_PA_ESP8285
+  #define DEVICE_IS_TRANSMITTER
+#endif
+#endif
+
 
 //-- ELRS 2.4 GHz Generic Devices
 
@@ -331,23 +343,22 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_GENERIC_900_ESP8285
-  #define DEVICE_NAME "GENERIC 900"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
 
 //-- ELRS selected Devices
 
-#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+#if defined(RX_ELRS_BAYCK_NANO_PRO_900_ESP8285) || defined(TX_ELRS_BAYCK_NANO_PRO_900_ESP8285)
   #define DEVICE_NAME "BAYCK NANO PRO 900"
-  #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+  #define DEVICE_IS_RECEIVER
 #endif
+#ifdef TX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+  #define DEVICE_IS_TRANSMITTER
+#endif
+#endif
+
 
 #ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
   #define DEVICE_NAME "SPEEDYBEE NANO 2.4G"

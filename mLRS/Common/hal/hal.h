@@ -213,16 +213,12 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- ELRS 868/915 MHz Generic Devices
 
-#ifdef RX_ELRS_GENERIC_900_ESP8285
+#if defined(RX_ELRS_GENERIC_900_ESP8285) || defined(TX_ELRS_GENERIC_900_ESP8285)
 #include "esp/rx-hal-generic-900-esp8285.h"
 #endif
 
-#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
+#if defined(RX_ELRS_GENERIC_900_PA_ESP8285) || defined(TX_ELRS_GENERIC_900_PA_ESP8285)
 #include "esp/rx-hal-generic-900-pa-esp8285.h"
-#endif
-
-#ifdef TX_ELRS_GENERIC_900_ESP8285
-#include "esp/tx-hal-generic-900-esp8285.h"
 #endif
 
 //-- ELRS 2.4 GHz Generic Devices
@@ -237,7 +233,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- ELRS selected Devices
 
-#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+#if defined(RX_ELRS_BAYCK_NANO_PRO_900_ESP8285) || defined(TX_ELRS_BAYCK_NANO_PRO_900_ESP8285)
 #include "esp/rx-hal-generic-900-pa-esp8285.h"
 #endif
 

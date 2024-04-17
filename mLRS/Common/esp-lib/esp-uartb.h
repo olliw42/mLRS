@@ -85,16 +85,29 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 {
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
+#ifdef ESP32
     UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
+#endif
     UARTB_SERIAL_NO.begin(baud);
 }
 
+void uartb_setbaudrate(uint32_t baud) 
+{
+    UARTB_SERIAL_NO.end();
+    UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
+#ifdef ESP32
+    UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
+#endif
+    UARTB_SERIAL_NO.begin(baud);
+}
 
 void uartb_init(void)
 {
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
+#ifdef ESP32
     UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
+#endif
     UARTB_SERIAL_NO.begin(UARTB_BAUD);
 }
 

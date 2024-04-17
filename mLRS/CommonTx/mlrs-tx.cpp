@@ -33,6 +33,7 @@ v0.0.00:
 #if defined(ESP8266) || defined(ESP32)
 
 #include "../Common/hal/esp-glue.h"
+#include "../Common/hal/esp-hal.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "../Common/esp-lib/esp-peripherals.h"
 #include "../Common/esp-lib/esp-mcu.h"
@@ -54,6 +55,9 @@ v0.0.00:
 #else
 #include "../Common/esp-lib/esp-uartf.h"
 #endif
+#endif
+#ifdef USE_I2C
+#include "../Common/esp-lib/esp-i2c.h"
 #endif
 #include "../Common/hal/esp-timer.h"
 
