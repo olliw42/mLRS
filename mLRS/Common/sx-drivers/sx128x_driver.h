@@ -576,6 +576,9 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
 #endif
 
+//-------------------------------------------------------
+// Driver for SX2 on single SPI
+//-------------------------------------------------------
 #ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
 #ifndef SX2_BUSY
