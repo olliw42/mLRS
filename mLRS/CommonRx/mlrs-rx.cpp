@@ -40,9 +40,6 @@ v0.0.00:
 #include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../Common/esp-lib/esp-eeprom.h"
 #include "../Common/esp-lib/esp-spi.h"
-#ifdef USE_SX2
-#include "../Common/esp-lib/esp-spib.h"
-#endif
 #ifdef USE_SERIAL
 #include "../Common/esp-lib/esp-uartb.h"
 #endif

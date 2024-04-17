@@ -12,7 +12,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_DIVERSITY
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_SERIAL_OR_DEBUG
 
