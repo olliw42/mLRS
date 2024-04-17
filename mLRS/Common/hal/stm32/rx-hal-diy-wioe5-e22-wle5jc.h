@@ -12,7 +12,7 @@
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_OUT_INTERNAL
+#define DEVICE_HAS_OUT
 //#define DEVICE_HAS_BUZZER // TODO: do not use
 
 

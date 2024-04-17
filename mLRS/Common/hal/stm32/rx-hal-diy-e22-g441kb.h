@@ -11,7 +11,7 @@
 // RX DIY E22 v007 STM32G441KB
 //-------------------------------------------------------
 
-#define DEVICE_HAS_OUT_INTERNAL
+#define DEVICE_HAS_OUT
 
 
 //-- Timers, Timing, EEPROM, and such stuff
