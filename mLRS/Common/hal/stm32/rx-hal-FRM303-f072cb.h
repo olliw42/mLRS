@@ -14,7 +14,7 @@
 // 4 UARTS, but U3 & U4 are on same IRQ so cannot be used both
 // T1, T2 (32b), T3, T14, T15, T16, T17, internal T6, T7
 
-#define DEVICE_HAS_OUT
+#define DEVICE_HAS_OUT_INTERNAL
 #define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_NO_DEBUG
