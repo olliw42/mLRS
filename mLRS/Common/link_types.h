@@ -59,7 +59,8 @@ extern const char* connectstate_str[]; // for debug purposes
 #ifdef DEVICE_IS_TRANSMITTER
 extern const char* linkstate_str[]; // for debug purposes
 extern const char* rxstatus_str[];
-#else
+#endif
+#ifdef DEVICE_IS_RECEIVER
 extern const char* linkstate_str[]; // for debug purposes
 extern const char* rxstatus_str[];
 #endif

@@ -73,7 +73,8 @@ class RxClockBase
 };
 
 
-IRAM_ATTR void RxClockBase::Init(uint16_t period_ms)
+
+void RxClockBase::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
@@ -102,6 +103,7 @@ IRAM_ATTR void RxClockBase::SetPeriod(uint16_t period_ms)
 }
 
 IRAM_ATTR void RxClockBase::Reset(void)
+
 {
     if (!CLOCK_PERIOD_10US) while (1) {}
 

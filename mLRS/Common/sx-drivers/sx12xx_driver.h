@@ -37,6 +37,8 @@ class tI2cDac : public tI2cBase
 
 tI2cDac dac;
 #endif
+
+
 #ifdef DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
 class tInternalDac : public tInternalDacBase
 {
@@ -103,12 +105,15 @@ class SxDriverDummy
 };
 
 
-#ifdef DEVICE_HAS_SX126x
-#include "sx126x_driver.h"
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+  #include "sx126x_driver.h"
 #elif defined DEVICE_HAS_SX127x
-#include "sx127x_driver.h"
+  #include "sx127x_driver.h"
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+  #include "sx126x_driver.h"
+  #include "sx128x_driver.h"
 #else
-#include "sx128x_driver.h"
+  #include "sx128x_driver.h"
 #endif
 
 

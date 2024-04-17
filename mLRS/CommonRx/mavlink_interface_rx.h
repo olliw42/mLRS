@@ -767,7 +767,7 @@ int8_t rx_snr1, rx_snr2;
 #define MAVLINK_USE_RADIO_LINK_STATS_MLRS
 #ifdef MAVLINK_USE_RADIO_LINK_STATS_MLRS
     float freq1 = fhss.GetCurrFreq_Hz();
-    float freq2 = freq1;
+    float freq2 = fhss.GetCurrFreq2_Hz();
 
     fmav_msg_radio_link_stats_mlrs_pack(
 #else

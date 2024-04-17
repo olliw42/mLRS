@@ -639,7 +639,7 @@ char s[32];
         u32toBCDstr(fhss.GetFreq_x1000(i), s);
         remove_leading_zeros(s);
         puts(s);
-#if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined  DEVICE_HAS_SX127x
         putsn(" kHz");
 #else
         putsn(" MHz");

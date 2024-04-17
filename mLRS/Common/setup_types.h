@@ -101,10 +101,11 @@ typedef enum {
     SERIAL_LINK_MODE_NUM,
 } SERIAL_LINK_MODE_ENUM;
 
+
 #ifndef USE_FEATURE_MAVLINKX
-#define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK)
+  #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK)
 #else
-#define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK || (x) == SERIAL_LINK_MODE_MAVLINK_X)
+  #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK || (x) == SERIAL_LINK_MODE_MAVLINK_X)
 #endif
 
 
@@ -394,6 +395,7 @@ typedef struct
     uint8_t FrequencyBand;
     uint8_t Ortho;
     uint8_t Except;
+    uint16_t FrequencyBand_allowed_mask; // copy of SetupMetaData for sx1, is modified for sx2
 } tFhssGlobalConfig;
 
 
@@ -405,11 +407,13 @@ typedef struct
     uint8_t Mode;
 
     tSxGlobalConfig Sx;
+    tSxGlobalConfig Sx2;
     uint8_t send_frame_tmo_ms;
 
     uint16_t FrameSyncWord;
-    
+
     tFhssGlobalConfig Fhss;
+    tFhssGlobalConfig Fhss2;
 
     uint16_t LQAveragingPeriod;
 

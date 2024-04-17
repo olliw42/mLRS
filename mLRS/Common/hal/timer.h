@@ -40,7 +40,7 @@ volatile uint32_t millis32(void)
 // free running timer with 1us time base
 
 #ifndef MICROS_TIMx
-#error MICROS_TIMx not defined !
+  #error MICROS_TIMx not defined !
 #endif
 
 
