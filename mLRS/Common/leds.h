@@ -36,13 +36,20 @@ class tLEDs
         }
 
         if (is_in_bind) {
+#ifndef DEVICE_HAS_SINGLE_LED_RGB
             if (!blink) { led_green_toggle(); led_red_toggle(); }
+#endif
+            if (!blink) { led_blue_toggle(); }
         } else
         if (connected) {
             if (!blink) led_green_toggle();
+#ifndef DEVICE_HAS_SINGLE_LED_RGB
             led_red_off();
+#endif
         } else {
+#ifndef DEVICE_HAS_SINGLE_LED_RGB
             led_green_off();
+#endif
             if (!blink) led_red_toggle();
         }
 #else

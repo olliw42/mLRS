@@ -11,7 +11,9 @@
 // GENERIC 2400 True Diversity PA RX
 //-------------------------------------------------------
 
-#define DEVICE_HAS_SINGLE_LED
+#define DEVICE_HAS_SINGLE_LED_RGB
+//#define DEVICE_HAS_SINGLE_LED
+
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_SERIAL_OR_DEBUG
@@ -161,6 +163,8 @@ bool button_pressed(void)
 #include <NeoPixelBus.h>
 #define LED_RED                    22
 bool ledRedState;
+bool ledGreenState;
+bool ledBlueState;
 
 NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(1, LED_RED);
 
@@ -189,6 +193,48 @@ IRAM_ATTR void led_red_on(void)
 IRAM_ATTR void led_red_toggle(void)
 {
     if (ledRedState) { led_red_off(); } else { led_red_on(); }
+}
+
+IRAM_ATTR void led_green_off(void) 
+{
+    if (!ledGreenState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledGreenState = 0;
+}
+
+IRAM_ATTR void led_green_on(void) 
+{
+    if (ledGreenState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
+    ledRGB.Show();
+    ledGreenState = 1;
+}
+
+IRAM_ATTR void led_green_toggle(void)
+{
+    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
+}
+
+IRAM_ATTR void led_blue_off(void) 
+{
+    if (!ledBlueState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledBlueState = 0;
+}
+
+IRAM_ATTR void led_blue_on(void) 
+{
+    if (ledBlueState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
+    ledRGB.Show();
+    ledBlueState = 1;
+}
+
+IRAM_ATTR void led_blue_toggle(void)
+{
+    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
 }
 
 //-- POWER
