@@ -52,11 +52,11 @@
 //#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 
-#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
+//#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 //#define DEVICE_HAS_NO_SERIAL  
-//#define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
-#define DEVICE_HAS_I2C_DISPLAY_ROT180
+//#define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_FAN_ONOFF
 #define USE_FEATURE_MAVLINK_PARAMS // has no CLI, no Lua, hence needs this
 
@@ -65,19 +65,22 @@
 #define EE_START_PAGE             0
 
 //-- UARTS
-// UARTB = serial port
-// UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTB = serial port or COM (CLI)
+// UARTC = --
+// UART = --
+// UARTE = --
+// UARTF = --
+// SWUART= debug port
 
 #define UARTB_USE_SERIAL
-#define UARTB_BAUD                57600
+#define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL          // com USB/CLI
-#define UARTC_BAUD                TX_COM_BAUDRATE
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_USE_SERIAL
+#define UARTC_BAUD                TX_SERIAL_BAUDRATE
+#define UARTC_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTF_USE_SERIAL
 #define UARTF_BAUD                115200
