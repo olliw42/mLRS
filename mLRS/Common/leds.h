@@ -28,46 +28,45 @@ class tLEDs
 
     void Tick_ms(bool connected)
     {
-#ifndef DEVICE_HAS_SINGLE_LED
-        if (connected) {
-            DECc(blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(blink, SYSTICK_DELAY_MS(200));
-        }
-
-        if (is_in_bind) {
-#ifndef DEVICE_HAS_SINGLE_LED_RGB
-            if (!blink) { led_green_toggle(); led_red_toggle(); }
-#endif
-#ifdef DEVICE_HAS_SINGLE_LED_RGB
-            if (!blink) { led_blue_toggle(); }
-#endif
-        } else
-        if (connected) {
-            if (!blink) led_green_toggle();
-#ifndef DEVICE_HAS_SINGLE_LED_RGB
-            led_red_off();
-#endif
-        } else {
-#ifndef DEVICE_HAS_SINGLE_LED_RGB
-            led_green_off();
-#endif
-            if (!blink) led_red_toggle();
-        }
-#else
-        if (!is_in_bind) {
-            DECc(blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(blink, SYSTICK_DELAY_MS(100));
-        }
-
-        if (connected && !is_in_bind) {
-            led_red_on();
-        } else if (!blink) {
-            led_red_toggle();
-        }
-#endif
+#ifdef DEVICE_HAS_SINGLE_LED
+    if (!is_in_bind) {
+        DECc(blink, SYSTICK_DELAY_MS(500));
+    } else {
+        DECc(blink, SYSTICK_DELAY_MS(100));
     }
+
+    if (connected && !is_in_bind) {
+        led_red_on();
+    } else if (!blink) {
+        led_red_toggle();
+    }
+#endif 
+    if (connected) {
+        DECc(blink, SYSTICK_DELAY_MS(500));
+    } else {
+        DECc(blink, SYSTICK_DELAY_MS(200));
+    }
+#if defined DEVICE_HAS_SINGLE_LED_RGB
+    if (is_in_bind) {
+        if (!blink) { led_blue_toggle(); }
+    } else
+    if (connected) {
+        if (!blink) led_green_toggle();
+    } else {
+        if (!blink) led_red_toggle();
+    }
+    }
+#else
+    if (is_in_bind) {
+        if (!blink) { led_green_toggle(); led_red_toggle(); }
+    } else
+    if (connected) {
+        if (!blink) led_green_toggle();
+        led_red_off();
+    } else {
+        led_green_off();
+        if (!blink) led_red_toggle();
+#endif
 
     void SetToBind(void)
     {
