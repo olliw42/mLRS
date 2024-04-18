@@ -39,7 +39,9 @@ class tLEDs
 #ifndef DEVICE_HAS_SINGLE_LED_RGB
             if (!blink) { led_green_toggle(); led_red_toggle(); }
 #endif
+#ifdef DEVICE_HAS_SINGLE_LED_RGB
             if (!blink) { led_blue_toggle(); }
+#endif
         } else
         if (connected) {
             if (!blink) led_green_toggle();
