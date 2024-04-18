@@ -40,13 +40,13 @@ class tLEDs
     } else if (!blink) {
         led_red_toggle();
     }
-#endif 
+#elif defined DEVICE_HAS_SINGLE_LED_RGB 
     if (connected) {
         DECc(blink, SYSTICK_DELAY_MS(500));
     } else {
         DECc(blink, SYSTICK_DELAY_MS(200));
     }
-#if defined DEVICE_HAS_SINGLE_LED_RGB
+
     if (is_in_bind) {
         if (!blink) { led_blue_toggle(); }
     } else
@@ -55,8 +55,13 @@ class tLEDs
     } else {
         if (!blink) led_red_toggle();
     }
-    }
 #else
+    if (connected) {
+        DECc(blink, SYSTICK_DELAY_MS(500));
+    } else {
+        DECc(blink, SYSTICK_DELAY_MS(200));
+    }
+
     if (is_in_bind) {
         if (!blink) { led_green_toggle(); led_red_toggle(); }
     } else
@@ -66,7 +71,9 @@ class tLEDs
     } else {
         led_green_off();
         if (!blink) led_red_toggle();
+    }
 #endif
+    }
 
     void SetToBind(void)
     {
