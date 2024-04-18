@@ -6,6 +6,12 @@
 //*******************************************************
 // SX128x Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define LORA_SYNCWORD
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+//*******************************************************
 #ifndef SX128X_DRIVER_H
 #define SX128X_DRIVER_H
 #pragma once
@@ -419,7 +425,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
@@ -554,7 +560,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 
-#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 

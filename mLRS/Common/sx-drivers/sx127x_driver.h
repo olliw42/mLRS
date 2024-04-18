@@ -6,6 +6,12 @@
 //*******************************************************
 // SX1276 Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_USE_RFO
+// #define DEVICE_HAS_I2C_DAC
+// #define DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+//*******************************************************
 #ifndef SX1276_DRIVER_H
 #define SX1276_DRIVER_H
 #pragma once
