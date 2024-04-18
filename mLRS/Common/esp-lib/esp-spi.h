@@ -40,7 +40,7 @@ IRAM_ATTR static inline void spi2_deselect(void)
     gpio_high(SX2_CS_IO);
 }
 
-#endif // #ifdef SPI_CS_IO
+#endif // #if defined DEVICE_HAS_DIVERSITY_SINGLE_SPI && defined SX2_CS_IO
 
 
 //-- transmit, transfer, read, write functions

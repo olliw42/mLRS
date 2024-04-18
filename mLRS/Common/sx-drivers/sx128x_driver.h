@@ -604,7 +604,7 @@ typedef enum {
 } SX2_IRQ_ENUM;
 
 
-class Sx128xDriver2 : public Sx128xDriverCommon
+class Sx128xDriver2onSpi1 : public Sx128xDriverCommon
 {
   public:
 
@@ -662,7 +662,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         Sx128xDriverCommon::Init();
 
-        //spi_init();  // no longer needed?  We've already done the init...
+        //spi_init();  // no longer needed, we've already done the init...
         spi_setnop(0x00); // 0x00 = NOP
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
