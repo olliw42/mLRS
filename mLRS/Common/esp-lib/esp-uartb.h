@@ -84,7 +84,7 @@ IRAM_ATTR static inline uint16_t uartb_rx_available(void)
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
     UARTB_SERIAL_NO.end();
-    UARTB_SERIAL_NO.setRxBufferSize(UARTB_TXBUFSIZE);
+    UARTB_SERIAL_NO.setTxBufferSize(0);
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(baud);
 #if defined(ESP32) 
@@ -97,7 +97,7 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 void uartb_init(void)
 {
     UARTB_SERIAL_NO.end();
-    UARTB_SERIAL_NO.setRxBufferSize(UARTB_TXBUFSIZE);
+    UARTB_SERIAL_NO.setTxBufferSize(0);
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(UARTB_BAUD);
 }
