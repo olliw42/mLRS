@@ -690,7 +690,7 @@ class Sx128xDriver2onSpi1 : public Sx128xDriverCommon
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 
-#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
