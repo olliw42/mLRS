@@ -746,7 +746,7 @@ INITCONTROLLER_END
 
         if (!tick_1hz) {
             dbg.puts(".");
-/*            dbg.puts("\nTX: ");
+            dbg.puts("\nTX: ");
             dbg.puts(u8toBCD_s(txstats.GetLQ_serial()));
             dbg.puts("(");
             dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
@@ -759,7 +759,7 @@ INITCONTROLLER_END
             dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); 
         }
     }
 

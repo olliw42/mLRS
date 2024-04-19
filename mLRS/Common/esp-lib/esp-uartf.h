@@ -29,7 +29,7 @@ uint16_t uartf_putc(char c)
 
 void uartf_init(void)
 {
-    UARTF_SERIAL_NO.begin(UARTF_BAUD);
+    UARTF_SERIAL_NO.begin(UARTF_BAUD, SERIAL_8N1, -1, 13);
 }
 
 
