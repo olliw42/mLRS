@@ -255,6 +255,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
+#include "esp/rx-hal-generic-2400-pa-td-esp32.h"
+#endif
+
 // -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266

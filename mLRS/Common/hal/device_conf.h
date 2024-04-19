@@ -393,6 +393,13 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
+  #define DEVICE_NAME "BetaFPV SuperD 2.4G"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 // -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266

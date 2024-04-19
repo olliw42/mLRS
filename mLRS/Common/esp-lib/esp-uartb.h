@@ -93,12 +93,6 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 }
 
 
-void uartb_init(void)
-{
-    UARTB_SERIAL_NO.end();
-    UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
-    UARTB_SERIAL_NO.begin(UARTB_BAUD);
-}
-
+void uartb_init(void) {}               // nothing needed, we rely on setprotocol
 
 #endif // ESPLIB_UARTB_H
