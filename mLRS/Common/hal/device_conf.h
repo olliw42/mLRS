@@ -353,13 +353,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_GENERIC_2400_PA_TD_ESP32
-  #define DEVICE_NAME "GENERIC 2400 PA"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
 //-- ELRS 2.4 GHz Generic Devices
 
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
@@ -371,6 +364,13 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #ifdef RX_ELRS_GENERIC_2400_PA_ESP8285
   #define DEVICE_NAME "GENERIC 2400 PA"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+#ifdef RX_GENERIC_2400_TD_PA_ESP32
+  #define DEVICE_NAME "GENERIC 2400 TD PA"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ

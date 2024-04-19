@@ -241,8 +241,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
-#ifdef RX_GENERIC_2400_PA_TD_ESP32
-#include "esp/rx-hal-generic-2400-pa-td-esp32.h"
+#ifdef RX_GENERIC_2400_TD_PA_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
 //-- ELRS selected Devices
@@ -256,7 +256,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
-#include "esp/rx-hal-generic-2400-pa-td-esp32.h"
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
 // -- DIY
