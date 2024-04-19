@@ -86,10 +86,7 @@ IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 // INIT routines
 //-------------------------------------------------------
 
-void spi_setnop(uint8_t nop)
-{
-    // currently not supported, should be 0x00 fo sx, is 0xFF per ESP SPI library
-}
+void spi_setnop(uint8_t nop) {}  // currently not supported, should be 0x00 fo sx, is 0xFF per ESP SPI library
 
 
 void spi_init(void)
@@ -105,23 +102,14 @@ void spi_init(void)
 #if defined(ESP32)
     spiEndTransaction(SPI.bus()); 
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS_IO);
+    spiSimpleTransaction(SPI.bus());
+    SPI.setBitOrder(SPI_MSBFIRST);
 #elif defined(ESP8266)
     SPI.begin();
+    SPI.setBitOrder(MSBFIRST);
 #endif 
     SPI.setFrequency(SPI_FREQUENCY);
     SPI.setDataMode(SPI_MODE0);
-
-#if defined(ESP32)
-    SPI.setBitOrder(SPI_MSBFIRST);
-#elif defined(ESP8266)
-    SPI.setBitOrder(MSBFIRST);
-#endif 
-
-
-#if defined(ESP32)
-    spiSimpleTransaction(SPI.bus());
-#endif
-    
 }
 
 
