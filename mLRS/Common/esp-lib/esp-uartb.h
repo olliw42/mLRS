@@ -88,8 +88,8 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
     UARTB_SERIAL_NO.begin(baud);
 #if defined(ESP32) 
     UARTB_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
+    UARTB_SERIAL_NO.setRxTimeout(1);   // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
 #endif    
-
 }
 
 
@@ -98,6 +98,10 @@ void uartb_init(void)
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(UARTB_BAUD);
+#if defined(ESP32) 
+    UARTB_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
+    UARTB_SERIAL_NO.setRxTimeout(1);   // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
+#endif  
 }
 
 
