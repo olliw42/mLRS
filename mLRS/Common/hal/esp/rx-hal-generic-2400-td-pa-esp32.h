@@ -106,11 +106,22 @@ IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
 
 void sx2_init_gpio(void)
 {
+    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
     gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
     gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
+}
+
+IRAM_ATTR static inline void sx2_select(void)
+{
+    gpio_low(SX2_CS_IO);
+}
+
+IRAM_ATTR static inline void sx2_deselect(void)
+{
+    gpio_high(SX2_CS_IO);
 }
 
 IRAM_ATTR inline bool sx2_busy_read(void)

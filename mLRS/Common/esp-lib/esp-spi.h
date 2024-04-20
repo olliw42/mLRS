@@ -28,20 +28,6 @@ IRAM_ATTR static inline void spi_deselect(void)
 
 #endif // #ifdef SPI_CS_IO
 
-#if defined DEVICE_HAS_DIVERSITY_SINGLE_SPI && defined SX2_CS_IO
-
-IRAM_ATTR static inline void spi2_select(void)
-{
-    gpio_low(SX2_CS_IO);
-}
-
-IRAM_ATTR static inline void spi2_deselect(void)
-{
-    gpio_high(SX2_CS_IO);
-}
-
-#endif // #if defined DEVICE_HAS_DIVERSITY_SINGLE_SPI && defined SX2_CS_IO
-
 
 //-- transmit, transfer, read, write functions
 
@@ -93,10 +79,6 @@ void spi_init(void)
 {
 #ifdef SPI_CS_IO
     gpio_init(SPI_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
-#endif
-
-#if defined DEVICE_HAS_DIVERSITY_SINGLE_SPI && defined SX2_CS_IO
-    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
 #endif
 
 #if defined(ESP32)

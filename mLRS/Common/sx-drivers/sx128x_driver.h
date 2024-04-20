@@ -621,14 +621,14 @@ class Sx128xDriver2onSpi1 : public Sx128xDriverCommon
 
     void SpiSelect(void) override
     {
-        spi2_select();
+        sx2_select();
         delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
     }
 
     void SpiDeselect(void) override
     {
         delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
-        spi2_deselect();
+        sx2_deselect();
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
