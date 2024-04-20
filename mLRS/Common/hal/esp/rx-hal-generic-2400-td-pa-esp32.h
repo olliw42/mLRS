@@ -114,12 +114,12 @@ void sx2_init_gpio(void)
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR static inline void sx2_select(void)
+IRAM_ATTR static inline void spi2_select(void)
 {
     gpio_low(SX2_CS_IO);
 }
 
-IRAM_ATTR static inline void sx2_deselect(void)
+IRAM_ATTR static inline void spi2_deselect(void)
 {
     gpio_high(SX2_CS_IO);
 }
