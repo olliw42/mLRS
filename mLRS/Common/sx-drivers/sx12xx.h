@@ -32,19 +32,15 @@
 // Helper, may eventually go into lib files
 //-------------------------------------------------------
 
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-  //#define SX126X_FREQ_MHZ_TO_REG(f_mhz)     (uint32_t)((double)f_mhz*1.0E6*(double)(1 << 25)/(double)SX126X_FREQ_XTAL_HZ)
-  #define SX126X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
-  #define SX126X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
-  #define SX1280_REG_TO_FREQ_MHZ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
-#elif defined DEVICE_HAS_SX127x
-  //#define SX127X_FREQ_MHZ_TO_REG(f_mhz)     (uint32_t)((double)f_mhz*1.0E6*(double)(1 << 19)/(double)SX127X_FREQ_XTAL_HZ)
-  #define SX127X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
-#else
-  //#define SX1280_FREQ_GHZ_TO_REG(f_ghz)     (uint32_t)((double)f_ghz*1.0E9*(double)(1 << 18)/(double)SX1280_FREQ_XTAL_HZ)
-  #define SX1280_REG_TO_FREQ_MHZ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
-#endif
+// let's just define them all here for all supported sx chips
+
+#define SX126X_FREQ_XTAL_HZ            32000000
+#define SX127X_FREQ_XTAL_HZ            32000000
+#define SX1280_FREQ_XTAL_HZ            52000000
+
+#define SX126X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
+#define SX127X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
+#define SX1280_REG_TO_FREQ_MHZ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
 
 
 #endif // SX12XX_H

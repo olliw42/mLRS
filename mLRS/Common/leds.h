@@ -56,22 +56,22 @@ class tLEDs
         if (!blink) led_red_toggle();
     }
 #else
-    if (connected) {
-        DECc(blink, SYSTICK_DELAY_MS(500));
-    } else {
-        DECc(blink, SYSTICK_DELAY_MS(200));
-    }
+        if (connected) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(200));
+        }
 
-    if (is_in_bind) {
-        if (!blink) { led_green_toggle(); led_red_toggle(); }
-    } else
-    if (connected) {
-        if (!blink) led_green_toggle();
-        led_red_off();
-    } else {
-        led_green_off();
-        if (!blink) led_red_toggle();
-    }
+        if (is_in_bind) {
+            if (!blink) { led_green_toggle(); led_red_toggle(); }
+        } else
+        if (connected) {
+            if (!blink) led_green_toggle();
+            led_red_off();
+        } else {
+            led_green_off();
+            if (!blink) led_red_toggle();
+        }
 #endif
     }
 
