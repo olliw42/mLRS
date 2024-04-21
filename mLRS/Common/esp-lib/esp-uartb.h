@@ -95,9 +95,8 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 
 void uartb_init(void)
 {
-    // this is DIRTY:
-    // nothing done here, we rely on setprotocol
-    // TODO: get this right
+    UARTB_SERIAL_NO.end();
+    UARTB_SERIAL_NO.begin(RX_SERIAL_BAUDRATE);
 }
 
 
