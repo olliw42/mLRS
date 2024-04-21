@@ -20,7 +20,7 @@ IRAM_ATTR static inline void delay_us(uint32_t us)
     delayMicroseconds(us);
 }
 
-IRAM_ATTR static inline void delay_ms(uint32_t ms) 
+IRAM_ATTR static inline void delay_ms(uint32_t ms)
 {
     delay(ms);
 }
@@ -30,7 +30,7 @@ IRAM_ATTR static inline void delay_ms(uint32_t ms)
 // INIT routines
 //-------------------------------------------------------
 
-void delay_init(void) 
+void delay_init(void)
 {
     // not needed on the ESP chips, built into Arduino init
 }

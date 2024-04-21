@@ -11,38 +11,23 @@
 
 #include <SPI.h>
 
+#ifdef ESP8266
+#define SPI_MSBFIRST  MSBFIRST // for some reasons not defined for EPR82xx
+#endif
+
 
 //-- select functions
-
-#ifndef SPI_SELECT_PRE_DELAY
-  #define SPI_SELECT_PRE_DELAY
-#endif
-#ifndef SPI_SELECT_POST_DELAY
-  #define SPI_SELECT_POST_DELAY
-#endif
-#ifndef SPI_DESELECT_PRE_DELAY
-  #define SPI_DESELECT_PRE_DELAY
-#endif
-#ifndef SPI_DESELECT_POST_DELAY
-  #define SPI_DESELECT_POST_DELAY
-#endif
-
 
 #ifdef SPI_CS_IO
 
 IRAM_ATTR static inline void spi_select(void)
 {
-    SPI_SELECT_PRE_DELAY;
-    GPOC = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, LOW); // CS = low
-    SPI_SELECT_POST_DELAY;
+    gpio_low(SPI_CS_IO);
 }
-
 
 IRAM_ATTR static inline void spi_deselect(void)
 {
-    SPI_DESELECT_PRE_DELAY;
-    GPOS = (1 << SPI_CS_IO); // digitalWrite(SPI_CS_IO, HIGH); // CS = high
-    SPI_DESELECT_POST_DELAY;
+    gpio_high(SPI_CS_IO);
 }
 
 #endif // #ifdef SPI_CS_IO
@@ -54,7 +39,7 @@ IRAM_ATTR static inline void spi_deselect(void)
 // utilize ESP SPI buffer
 // transferBytes()
 // - does while(SPI1CMD & SPIBUSY) {} as needed
-// - if dataout or datain are not aligned, then it does memcpy to aligned buffer on stack 
+// - if dataout or datain are not aligned, then it does memcpy to aligned buffer on stack
 // - sends 0xFFFFFFFF if no out data!! Problem: sx datasheet says 0x00
 
 IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
@@ -88,12 +73,12 @@ void spi_setnop(uint8_t nop)
 void spi_init(void)
 {
 #ifdef SPI_CS_IO
-    pinMode(SPI_CS_IO, OUTPUT);
-#endif    
+    gpio_init(SPI_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
+#endif
 
     SPI.begin();
     SPI.setFrequency(SPI_FREQUENCY);
-    SPI.setBitOrder(MSBFIRST);
+    SPI.setBitOrder(SPI_MSBFIRST);
     SPI.setDataMode(SPI_MODE0);
 }
 
