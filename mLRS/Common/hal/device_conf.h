@@ -369,14 +369,14 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_GENERIC_2400_TD_PA_ESP32
+#ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
   #define DEVICE_NAME "GENERIC 2400 TD PA"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-//-- ELRS selected Devices
+//-- ELRS Selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
   #define DEVICE_NAME "BAYCK NANO PRO 900"
@@ -388,6 +388,13 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
   #define DEVICE_NAME "SPEEDYBEE NANO 2.4G"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+#ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+  #define DEVICE_NAME "RM RP4TD 2.4G"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ

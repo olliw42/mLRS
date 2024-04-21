@@ -29,32 +29,32 @@ class tLEDs
     void Tick_ms(bool connected)
     {
 #ifdef DEVICE_HAS_SINGLE_LED
-    if (!is_in_bind) {
-        DECc(blink, SYSTICK_DELAY_MS(500));
-    } else {
-        DECc(blink, SYSTICK_DELAY_MS(100));
-    }
+        if (!is_in_bind) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(100));
+        }
 
-    if (connected && !is_in_bind) {
-        led_red_on();
-    } else if (!blink) {
-        led_red_toggle();
-    }
+        if (connected && !is_in_bind) {
+            led_red_on();
+        } else if (!blink) {
+            led_red_toggle();
+        }
 #elif defined DEVICE_HAS_SINGLE_LED_RGB 
-    if (connected) {
-        DECc(blink, SYSTICK_DELAY_MS(500));
-    } else {
-        DECc(blink, SYSTICK_DELAY_MS(200));
-    }
+        if (connected) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(200));
+        }
 
-    if (is_in_bind) {
-        if (!blink) { led_blue_toggle(); }
-    } else
-    if (connected) {
-        if (!blink) led_green_toggle();
-    } else {
-        if (!blink) led_red_toggle();
-    }
+        if (is_in_bind) {
+            if (!blink) { led_blue_toggle(); }
+        } else
+        if (connected) {
+            if (!blink) led_green_toggle();
+        } else {
+            if (!blink) led_red_toggle();
+        }
 #else
         if (connected) {
             DECc(blink, SYSTICK_DELAY_MS(500));

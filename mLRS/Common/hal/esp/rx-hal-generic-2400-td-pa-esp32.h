@@ -18,7 +18,7 @@
 
 //-- Timers, Timing, EEPROM, and such stuff
 
-#define EE_START_PAGE             0 // 128 kB flash, 2 kB page
+#define EE_START_PAGE             0
 
 
 //-- UARTS
@@ -156,13 +156,14 @@ IRAM_ATTR inline void sx2_dio_exti_isr_clearflag(void) {}
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
 bool button_pressed(void)
 {
     return gpio_read_activelow(BUTTON) ? true : false;
 }
+
 
 //-- LEDs
 #include <NeoPixelBus.h>

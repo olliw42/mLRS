@@ -52,8 +52,7 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 
     // Fake ground for serial
-    pinMode(13, OUTPUT);
-    digitalWrite(13, LOW);
+    gpio_init(13, IO_MODE_OUTPUT_PP_LOW);
 }
 
 void sx_amp_transmit(void) {}
