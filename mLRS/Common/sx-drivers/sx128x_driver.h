@@ -6,6 +6,12 @@
 //*******************************************************
 // SX128x Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define LORA_SYNCWORD
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+//*******************************************************
 #ifndef SX128X_DRIVER_H
 #define SX128X_DRIVER_H
 #pragma once
@@ -322,6 +328,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 //-------------------------------------------------------
 // Driver for SX1
 //-------------------------------------------------------
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x
 
 #ifndef SX_BUSY
   #error SX must have a BUSY pin!
@@ -418,7 +425,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
@@ -445,11 +452,13 @@ class Sx128xDriver : public Sx128xDriverCommon
     }
 };
 
+#endif
+
 
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -507,7 +516,11 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
+#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX_DBM);
+#else
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+#endif
     }
 
     //-- init API functions
@@ -547,7 +560,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 
-#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 

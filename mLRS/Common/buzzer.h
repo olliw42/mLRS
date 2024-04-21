@@ -83,7 +83,6 @@ void tBuzzer::BeepLQ(uint8_t LQ)
 // Low-level beep implementation
 //-------------------------------------------------------
 
-
 volatile uint16_t buzzer_repetition_counter;
 
 

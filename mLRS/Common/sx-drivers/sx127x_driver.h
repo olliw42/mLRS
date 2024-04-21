@@ -6,6 +6,12 @@
 //*******************************************************
 // SX1276 Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_USE_RFO
+// #define DEVICE_HAS_I2C_DAC
+// #define DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+//*******************************************************
 #ifndef SX1276_DRIVER_H
 #define SX1276_DRIVER_H
 #pragma once
@@ -42,15 +48,25 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
 {
+#ifdef SX_USE_RFO
+    // Pout = OutputPower if PaSelect = 0 (RFO pin)
+    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
+#else
     // Pout = 17 - (15 - OutputPower) if PaSelect = 1 (PA_BOOST pin)
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM - 2;
+#endif
 
     if (power_sx < SX1276_OUTPUT_POWER_MIN) power_sx = SX1276_OUTPUT_POWER_MIN;
     if (power_sx > SX1276_OUTPUT_POWER_MAX) power_sx = SX1276_OUTPUT_POWER_MAX;
     if (power_sx > SX1276_MAX_DBM) power_sx = SX1276_MAX_DBM;
 
     *sx_power = power_sx;
+
+#ifdef SX_USE_RFO
+    *actual_power_dbm = power_sx + GAIN_DBM;
+#else
     *actual_power_dbm = power_sx + GAIN_DBM + 2;
+#endif
 }
 #endif
 
@@ -106,7 +122,11 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         // there would be special setting for +20dBm mode, don't do it
         // 5 OcpOn, 4-0 OcpTrim
         ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
+#ifdef SX_USE_RFO
+        SetPowerParams(SX1276_PA_SELECT_RFO, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
+#else
         SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
+#endif
     }
 
     void Configure(tSxGlobalConfig* global_config)

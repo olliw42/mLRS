@@ -65,6 +65,7 @@ class RxClockBase
     void disable_isr(void);
 };
 
+
 void RxClockBase::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
@@ -81,15 +82,18 @@ void RxClockBase::Init(uint16_t period_ms)
     timer1_write(50); // 5 MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
 }
 
+
 void RxClockBase::disable_isr(void)
 {
     timer1_detachInterrupt(); 
 }
 
+
 void RxClockBase::SetPeriod(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100;
 }
+
 
 void RxClockBase::Reset(void)
 {

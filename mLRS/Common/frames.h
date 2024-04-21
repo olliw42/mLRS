@@ -389,6 +389,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
 }
+
 #endif
 
 

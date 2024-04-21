@@ -60,7 +60,7 @@ The 3 MAIN topics TODO:
 
 
 TODO:
-- effect of USE_DCDC? where to place it??
+- effect of USE_REGULATOR_MODE_DCDC? where to place it??
 
 
 Longterm TODO:
