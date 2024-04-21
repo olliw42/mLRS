@@ -10,7 +10,7 @@
 #pragma once
 
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
-#define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us        
+#define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us
 
 volatile bool doPostReceive;
 
@@ -33,18 +33,18 @@ void CLOCK_IRQHandler(void)
 
     // call HAL_IncTick every 1 ms
     if (CNT_10us == MS_C) {
-        MS_C = CNT_10us + CLOCK_CNT_1MS; 
+        MS_C = CNT_10us + CLOCK_CNT_1MS;
         HAL_IncTick();
     }
 
     // this is at about when RX was or was supposed to be received
-    if (CNT_10us == CCR1) { 
+    if (CNT_10us == CCR1) {
         CCR3 = CNT_10us + CLOCK_SHIFT_10US; // next doPostReceive
         CCR1 = CNT_10us + CLOCK_PERIOD_10US; // next tick
     }
 
     // this is 1 ms after RX was or was supposed to be received
-    if (CNT_10us == CCR3) { 
+    if (CNT_10us == CCR3) {
         doPostReceive = true;
     }
 
@@ -78,17 +78,17 @@ void RxClockBase::Init(uint16_t period_ms)
     CCR3 = CLOCK_SHIFT_10US;
     MS_C = CLOCK_CNT_1MS;
 
-    if (initialized) return; 
+    if (initialized) return;
 
     // Initialize the timer
-#if defined(ESP32)
+#ifdef ESP32
     hw_timer_t* timer0_cfg = nullptr;
-    timer0_cfg = timerBegin(0, 800, 1);  // Timer 0, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up    
+    timer0_cfg = timerBegin(0, 800, 1);  // Timer 0, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
     timerAttachInterrupt(timer0_cfg, &CLOCK_IRQHandler, true);
     timerAlarmWrite(timer0_cfg, 1, true);
     timerAlarmEnable(timer0_cfg);
-#elif defined(ESP8266)
-    timer1_attachInterrupt(CLOCK_IRQHandler); 
+#elif defined ESP8266
+    timer1_attachInterrupt(CLOCK_IRQHandler);
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
     timer1_write(50); // 5 MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
 #endif

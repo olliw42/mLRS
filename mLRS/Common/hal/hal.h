@@ -375,7 +375,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx128xDriver
 #endif
 
-#if defined DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_HAS_SX126x
     #define SX2_DRIVER Sx126xDriver2
   #elif defined DEVICE_HAS_SX127x
@@ -383,8 +383,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #else
     #define SX2_DRIVER Sx128xDriver2
   #endif
-#elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-  #define SX2_DRIVER Sx128xDriver2onSpi1
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
   #define SX2_DRIVER Sx128xDriver2
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -394,7 +392,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define USE_SX2
 #endif
 

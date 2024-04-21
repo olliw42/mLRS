@@ -35,6 +35,7 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             16000000L
 #define SX_RESET                  IO_P2
@@ -68,6 +69,7 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
+
 #define BUTTON                    IO_P0
 
 void button_init(void)
@@ -82,6 +84,7 @@ IRAM_ATTR bool button_pressed(void)
 
 
 //-- LEDs
+
 #define LED_RED                   IO_P16
 
 void leds_init(void)
@@ -95,6 +98,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
+
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

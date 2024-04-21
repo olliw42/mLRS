@@ -48,6 +48,7 @@
 #define IO_P38      38
 #define IO_P39      39
 
+
 typedef enum {
     IO_MODE_Z = 0,
     IO_MODE_INPUT_ANALOG,
@@ -87,20 +88,19 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
-#if defined(ESP32)
+#ifdef ESP32
     GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
-#elif defined(ESP8266)
+#elif defined ESP8266
     GPOC = (1 << GPIO_Pin);
-#endif 
-    
+#endif
 }
 
 
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
-#if defined(ESP32)
+#ifdef ESP32
     GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
-#elif defined(ESP8266)
+#elif defined ESP8266
     GPOS = (1 << GPIO_Pin);
 #endif
 }
