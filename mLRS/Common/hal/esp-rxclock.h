@@ -12,9 +12,11 @@
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 #define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us
 
+
 #ifdef ESP32
   static portMUX_TYPE esp32_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #endif
+
 
 volatile bool doPostReceive;
 
@@ -65,7 +67,6 @@ class RxClockBase
     void Init(uint16_t period_ms);
     void SetPeriod(uint16_t period_ms);
     void Reset(void);
-    void disable_isr(void);
 
   private:
     bool initialized = false;
