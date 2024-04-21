@@ -33,6 +33,7 @@ typedef enum {
 // ESP8266 has 4kb available for EEPROM. We need 3 pages, 2 for setup and
 // 1 for the powerup counter. So best to keep page size to 3kb to let it
 // fit in.
+#define EE_START_PAGE 0
 #define EE_PAGE_SIZE  0x0400 // Page size = 1 KByte
 
 // EEPROM start address in Flash
