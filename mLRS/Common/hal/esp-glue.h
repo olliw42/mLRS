@@ -10,10 +10,29 @@
 
 #define __NOP() _NOP()
 
-
 #undef IRQHANDLER
 #define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
 
+#if defined(ESP32) 
+  static portMUX_TYPE esp32_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#endif
+
+void __disable_irq(void)
+{
+#if defined(ESP32) 
+    taskENTER_CRITICAL(&esp32_spinlock);
+#elif defined(ESP8266)
+    noInterrupts();
+#endif
+}
+void __enable_irq(void) 
+{
+#if defined(ESP32)
+    taskEXIT_CRITICAL(&esp32_spinlock);
+#elif defined(ESP8266)
+    interrupts();
+#endif
+}
 
 void hal_init(void)
 {

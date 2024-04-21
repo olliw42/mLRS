@@ -182,23 +182,15 @@ EE_STATUS_ENUM ee_writedata(void* data, uint16_t datalen)
 EE_STATUS_ENUM status;
 
     // Write data to page0
-#if defined(ESP8266)
-    noInterrupts();
-#endif
+    __disable_irq();
     status = _ee_write_to(EE_PAGE0, data, datalen);
-#if defined(ESP8266)
-    interrupts();
-#endif
+    __enable_irq();
     if (status != EE_STATUS_OK) return status;
 
     // Write data to page1
-#if defined(ESP8266)
-    noInterrupts();
-#endif
+    __disable_irq();
     status = _ee_write_to(EE_PAGE1, data, datalen);
-#if defined(ESP8266)
-    interrupts();
-#endif
+    __enable_irq();
     if (status != EE_STATUS_OK) return status;
 
     return status;
