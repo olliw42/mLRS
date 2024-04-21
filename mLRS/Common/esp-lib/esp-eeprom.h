@@ -148,14 +148,12 @@ uint32_t ToPageBaseAddress, ToPageEndAddress, FromPageBaseAddress, PageNo, adr;
          status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     // Set ToPage status to EE_VALID_PAGE status
     ee_hal_programword(ToPageBaseAddress, EE_VALID_PAGE);
     if (!EEPROM.commit()) {
          status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     status = EE_STATUS_OK;
 QUICK_EXIT:
     ee_hal_lock();
@@ -182,15 +180,23 @@ EE_STATUS_ENUM ee_writedata(void* data, uint16_t datalen)
 EE_STATUS_ENUM status;
 
     // Write data to page0
+#ifdef ESP8266
     __disable_irq();
+#endif
     status = _ee_write_to(EE_PAGE0, data, datalen);
+#ifdef ESP8266
     __enable_irq();
+#endif
     if (status != EE_STATUS_OK) return status;
 
     // Write data to page1
+#ifdef ESP8266
     __disable_irq();
+#endif
     status = _ee_write_to(EE_PAGE1, data, datalen);
+#ifdef ESP8266
     __enable_irq();
+#endif
     if (status != EE_STATUS_OK) return status;
 
     return status;
