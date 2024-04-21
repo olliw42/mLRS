@@ -17,6 +17,7 @@
   static portMUX_TYPE esp32_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #endif
 
+
 void __disable_irq(void)
 {
 #if defined(ESP32) 
@@ -25,6 +26,7 @@ void __disable_irq(void)
     noInterrupts();
 #endif
 }
+
 void __enable_irq(void) 
 {
 #if defined(ESP32)
@@ -34,10 +36,7 @@ void __enable_irq(void)
 #endif
 }
 
-void hal_init(void)
-{
-    // nothing to do
-}
+void hal_init(void) {} // nothing to do
 
 
 // setup(), loop() streamlining between Arduino/STM code
