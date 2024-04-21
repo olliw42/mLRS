@@ -18,7 +18,23 @@
 #endif
 
 
+// ESP32 doesn't support
 void __disable_irq(void)
+{
+#ifdef ESP8266
+    noInterrupts();
+#endif
+}
+
+// ESP32 doesn't support
+void __enable_irq(void)
+{
+#ifdef ESP8266
+    interrupts();
+#endif
+}
+
+void enterCritical(void)
 {
 #ifdef ESP32
     taskENTER_CRITICAL(&esp32_spinlock);
@@ -27,7 +43,7 @@ void __disable_irq(void)
 #endif
 }
 
-void __enable_irq(void)
+void exitCritical(void)
 {
 #ifdef ESP32
     taskEXIT_CRITICAL(&esp32_spinlock);
