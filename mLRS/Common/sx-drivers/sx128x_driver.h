@@ -373,7 +373,7 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         spi_transfer(dataout, datain, len);
     }
-    
+
     void SpiRead(uint8_t* datain, uint8_t len) override
     {
         spi_read(datain, len);
