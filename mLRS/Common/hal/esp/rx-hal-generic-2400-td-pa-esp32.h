@@ -2,13 +2,12 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // hal
 //********************************************************
 
 //-------------------------------------------------------
-// GENERIC 2400 True Diversity PA Receiver ESP32
+// ESP32, ELRS GENERIC 2400 True Diversity PA RX
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED_RGB
@@ -20,6 +19,7 @@
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define EE_START_PAGE             0 // 128 kB flash, 2 kB page
+
 
 //-- UARTS
 // UARTB = serial port
@@ -42,11 +42,9 @@
 #define SPI_MOSI                  IO_P32
 #define SPI_SCK                   IO_P25
 #define SPI_FREQUENCY             18000000L
-
 #define SX_BUSY                   IO_P36
 #define SX_DIO1                   IO_P37
 #define SX_RESET                  IO_P26
-
 #define SX_RX_EN                  IO_P10
 #define SX_TX_EN                  IO_P14
 
@@ -94,11 +92,9 @@ IRAM_ATTR inline void sx_dio_exti_isr_clearflag(void) {}
 //-- SX2: SX12xx & SPI
 
 #define SX2_CS_IO                 IO_P13
-
 #define SX2_BUSY                  IO_P39
 #define SX2_DIO1                  IO_P34
 #define SX2_RESET                 IO_P21
-
 #define SX2_RX_EN                 IO_P9
 #define SX2_TX_EN                 IO_P15
 
@@ -156,7 +152,7 @@ IRAM_ATTR inline void sx2_dio_exti_isr_clearflag(void) {}
 
 //-- Button
 
-#define BUTTON                    0
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
@@ -170,7 +166,7 @@ bool button_pressed(void)
 
 //-- LEDs
 #include <NeoPixelBus.h>
-#define LED_RED                    22
+#define LED_RED                    IO_P22
 bool ledRedState;
 bool ledGreenState;
 bool ledBlueState;
@@ -183,7 +179,7 @@ IRAM_ATTR void leds_init(void)
     ledRGB.Show();
 }
 
-IRAM_ATTR void led_red_off(void) 
+IRAM_ATTR void led_red_off(void)
 {
     if (!ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -191,7 +187,7 @@ IRAM_ATTR void led_red_off(void)
     ledRedState = 0;
 }
 
-IRAM_ATTR void led_red_on(void) 
+IRAM_ATTR void led_red_on(void)
 {
     if (ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
@@ -204,7 +200,7 @@ IRAM_ATTR void led_red_toggle(void)
     if (ledRedState) { led_red_off(); } else { led_red_on(); }
 }
 
-IRAM_ATTR void led_green_off(void) 
+IRAM_ATTR void led_green_off(void)
 {
     if (!ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -212,7 +208,7 @@ IRAM_ATTR void led_green_off(void)
     ledGreenState = 0;
 }
 
-IRAM_ATTR void led_green_on(void) 
+IRAM_ATTR void led_green_on(void)
 {
     if (ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
@@ -225,7 +221,7 @@ IRAM_ATTR void led_green_toggle(void)
     if (ledGreenState) { led_green_off(); } else { led_green_on(); }
 }
 
-IRAM_ATTR void led_blue_off(void) 
+IRAM_ATTR void led_blue_off(void)
 {
     if (!ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -233,7 +229,7 @@ IRAM_ATTR void led_blue_off(void)
     ledBlueState = 0;
 }
 
-IRAM_ATTR void led_blue_on(void) 
+IRAM_ATTR void led_blue_on(void)
 {
     if (ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
@@ -245,6 +241,7 @@ IRAM_ATTR void led_blue_toggle(void)
 {
     if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
 }
+
 
 //-- POWER
 

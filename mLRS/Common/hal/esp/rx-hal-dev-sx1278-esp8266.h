@@ -5,13 +5,11 @@
 //*******************************************************
 // hal
 //********************************************************
-
-//-------------------------------------------------------
 // ESP8266 DEVBOARD 900 RX
 //
 // Uses a Lolin Node MCU V3 ESP8266 Devboard and a SX1276 module
-// 
-// Could use other ESP8266 devboards 
+//
+// Could use other ESP8266 devboards
 //
 // https://www.aliexpress.com/item/1005005077804800.html
 // https://www.aliexpress.com/item/32962551530.html
@@ -23,8 +21,7 @@
 // D6  ->  MISO
 // D5  ->  SCK
 // D2  ->  REST
-// D1  ->  DIO0 
-//
+// D1  ->  DIO0
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED
@@ -42,20 +39,19 @@
 // UARTC = debug port
 
 #define UARTB_USE_SERIAL
-#define UARTB_BAUD                  RX_SERIAL_BAUDRATE
-#define UARTB_TXBUFSIZE             RX_SERIAL_TXBUFSIZE // 1024 // 512
-#define UARTB_RXBUFSIZE             RX_SERIAL_RXBUFSIZE // 1024 // 512
+#define UARTB_BAUD                RX_SERIAL_BAUDRATE
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
 #define UARTC_USE_SERIAL
-#define UARTC_BAUD                  115200
+#define UARTC_BAUD                115200
 
 
 //-- SX1: SX12xx & SPI
-#define SPI_CS_IO                 D8
+#define SPI_CS_IO                 IO_P8
 #define SPI_FREQUENCY             10000000L
-
-#define SX_RESET                  D2
-#define SX_DIO0                   D1
+#define SX_RESET                  IO_P2
+#define SX_DIO0                   IO_P1
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
@@ -64,7 +60,7 @@ void sx_init_gpio(void)
     pinMode(SX_RESET, OUTPUT);
     digitalWrite(SX_RESET, HIGH);
     pinMode(SX_DIO0, INPUT_PULLDOWN_16);
-} 
+}
 
 void sx_dio_enable_exti_isr(void)
 {
@@ -78,7 +74,8 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-#define BUTTON                    0
+
+#define BUTTON                    IO_P0
 
 void button_init(void)
 {
@@ -92,7 +89,8 @@ bool button_pressed(void)
 
 
 //-- LEDs
-#define LED_RED                   D4
+
+#define LED_RED                   IO_P4
 
 void leds_init(void)
 {
@@ -106,6 +104,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
+
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

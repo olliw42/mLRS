@@ -33,9 +33,9 @@ typedef enum {
 #define ESPLIB_UARTB_H
 
 
-#if defined(UARTB_USE_SERIAL)
+#ifdef UARTB_USE_SERIAL
 #define UARTB_SERIAL_NO Serial
-#elif defined(UARTB_USE_SERIAL1)
+#elif defined UARTB_USE_SERIAL1
 #define UARTB_SERIAL_NO Serial1
 #endif
 
@@ -86,13 +86,19 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(baud);
-#if defined(ESP32) 
+#ifdef ESP32
     UARTB_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
     UARTB_SERIAL_NO.setRxTimeout(1);   // wait for 1 symbol (~11 bits) to trigger Rx ISR, default 2
-#endif    
+#endif
 }
 
 
-void uartb_init(void) {}               // nothing needed, we rely on setprotocol
+void uartb_init(void)
+{
+    // this is DIRTY:
+    // nothing done here, we rely on setprotocol
+    // TODO: get this right
+}
+
 
 #endif // ESPLIB_UARTB_H
