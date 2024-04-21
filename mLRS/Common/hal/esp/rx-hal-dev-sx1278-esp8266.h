@@ -48,6 +48,7 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P8
 #define SPI_FREQUENCY             10000000L
 #define SX_RESET                  IO_P2
@@ -57,8 +58,7 @@ IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    pinMode(SX_RESET, OUTPUT);
-    digitalWrite(SX_RESET, HIGH);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
     pinMode(SX_DIO0, INPUT_PULLDOWN_16);
 }
 
@@ -79,7 +79,7 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 void button_init(void)
 {
-    pinMode(BUTTON, INPUT_PULLUP);
+    gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
 bool button_pressed(void)
@@ -94,8 +94,7 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-    pinMode(LED_RED, OUTPUT);
-    digitalWrite(LED_RED, HIGH);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);    
 }
 
 void led_red_off(void) { gpio_high(LED_RED); }

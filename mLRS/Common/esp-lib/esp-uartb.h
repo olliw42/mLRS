@@ -40,14 +40,14 @@ typedef enum {
 #endif
 
 
-IRAM_ATTR inline uint16_t uartb_putc(char c)
+IRAM_ATTR static inline uint16_t uartb_putc(char c)
 {
     UARTB_SERIAL_NO.write(c);
     return 1;
 }
 
 
-IRAM_ATTR inline char uartb_getc(void)
+IRAM_ATTR static inline char uartb_getc(void)
 {
     return (char)UARTB_SERIAL_NO.read();
 }
@@ -65,7 +65,7 @@ IRAM_ATTR static inline void uartb_tx_flush(void)
 }
 
 
-IRAM_ATTR inline uint16_t uartb_rx_bytesavailable(void)
+IRAM_ATTR static inline uint16_t uartb_rx_bytesavailable(void)
 {
     return (UARTB_SERIAL_NO.available() > 0) ? UARTB_SERIAL_NO.available() : 0;
 }
@@ -97,6 +97,10 @@ void uartb_init(void)
 {
     UARTB_SERIAL_NO.end();
     UARTB_SERIAL_NO.begin(RX_SERIAL_BAUDRATE);
+#ifdef ESP32
+    UARTB_SERIAL_NO.setRxFIFOFull(8);
+    UARTB_SERIAL_NO.setRxTimeout(1);
+#endif
 }
 
 
