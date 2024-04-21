@@ -12,6 +12,10 @@
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 #define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us
 
+#ifdef ESP32
+  static portMUX_TYPE esp32_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#endif
+
 volatile bool doPostReceive;
 
 uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
@@ -104,11 +108,19 @@ IRAM_ATTR void RxClockBase::Reset(void)
 {
     if (!CLOCK_PERIOD_10US) while (1) {}
 
-    enterCritical();
+#ifdef ESP32
+    taskENTER_CRITICAL(&esp32_spinlock);
+#elif defined ESP8266
+    noInterrupts();
+#endif
     CCR1 = CNT_10us + CLOCK_PERIOD_10US;
     CCR3 = CNT_10us + CLOCK_SHIFT_10US;
     MS_C = CNT_10us + CLOCK_CNT_1MS;
-    exitCritical();
+#ifdef ESP32
+    taskEXIT_CRITICAL(&esp32_spinlock);
+#elif defined ESP8266
+    interrupts();
+#endif
 }
 
 

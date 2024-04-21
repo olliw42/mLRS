@@ -13,44 +13,9 @@
 #undef IRQHANDLER
 #define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
 
-#ifdef ESP32
-  static portMUX_TYPE esp32_spinlock = portMUX_INITIALIZER_UNLOCKED;
-#endif
 
-
-// ESP32 doesn't support
-void __disable_irq(void)
-{
-#ifdef ESP8266
-    noInterrupts();
-#endif
-}
-
-// ESP32 doesn't support
-void __enable_irq(void)
-{
-#ifdef ESP8266
-    interrupts();
-#endif
-}
-
-void enterCritical(void)
-{
-#ifdef ESP32
-    taskENTER_CRITICAL(&esp32_spinlock);
-#elif defined ESP8266
-    noInterrupts();
-#endif
-}
-
-void exitCritical(void)
-{
-#ifdef ESP32
-    taskEXIT_CRITICAL(&esp32_spinlock);
-#elif defined ESP8266
-    interrupts();
-#endif
-}
+void __disable_irq(void) {}
+void __enable_irq(void) {}
 
 void hal_init(void) {} // nothing to do
 
