@@ -458,7 +458,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -497,6 +497,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         spib_deselect();
     }
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
         spib_transfer(dataout, datain, len);
@@ -511,6 +512,22 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         spib_write(dataout, len);
     }
+#else
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+#endif
 
     //-- RF power interface
 
@@ -538,8 +555,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         Sx128xDriverCommon::Init();
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
         spib_init();
         spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();

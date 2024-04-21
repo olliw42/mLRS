@@ -67,6 +67,7 @@ In tx-hal files:
 In rx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // board supports diversity on a single SPI bus
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
@@ -361,7 +362,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx128xDriver
 #endif
 
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_HAS_SX126x
     #define SX2_DRIVER Sx126xDriver2
   #elif defined DEVICE_HAS_SX127x
@@ -377,7 +378,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX2_DRIVER SxDriverDummy
 #endif
 
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define USE_SX2
 #endif
 

@@ -85,7 +85,7 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
@@ -138,7 +138,7 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
@@ -520,7 +520,7 @@ void setup_configure_config(uint8_t config_id)
 
   //-- Diversity
 
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].Diversity) {
   #endif
