@@ -33,6 +33,7 @@ typedef enum {
 // ESP8266 has 4kb available for EEPROM. We need 3 pages, 2 for setup and
 // 1 for the powerup counter. So best to keep page size to 3kb to let it
 // fit in.
+#define EE_START_PAGE 0
 #define EE_PAGE_SIZE  0x0400 // Page size = 1 KByte
 
 // EEPROM start address in Flash
@@ -148,14 +149,12 @@ uint32_t ToPageBaseAddress, ToPageEndAddress, FromPageBaseAddress, PageNo, adr;
          status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     // Set ToPage status to EE_VALID_PAGE status
     ee_hal_programword(ToPageBaseAddress, EE_VALID_PAGE);
     if (!EEPROM.commit()) {
          status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     status = EE_STATUS_OK;
 QUICK_EXIT:
     ee_hal_lock();

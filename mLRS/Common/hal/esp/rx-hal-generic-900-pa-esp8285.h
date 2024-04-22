@@ -15,11 +15,6 @@
 //#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
-//-- Timers, Timing, EEPROM, and such stuff
-
-#define EE_START_PAGE             0
-
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever

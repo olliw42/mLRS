@@ -369,7 +369,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-//-- ELRS selected Devices
+//-- ELRS Selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
   #define DEVICE_NAME "BAYCK NANO PRO 900"
