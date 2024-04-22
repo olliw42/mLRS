@@ -54,18 +54,18 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR inline bool sx_busy_read(void)
+IRAM_ATTR static inline bool sx_busy_read(void)
 {
     return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-IRAM_ATTR inline void sx_amp_transmit(void)
+IRAM_ATTR static inline void sx_amp_transmit(void)
 {
     gpio_low(SX_RX_EN);
     gpio_high(SX_TX_EN);
 }
 
-IRAM_ATTR inline void sx_amp_receive(void)
+IRAM_ATTR static inline void sx_amp_receive(void)
 {
     gpio_low(SX_TX_EN);
     gpio_high(SX_RX_EN);
@@ -81,7 +81,7 @@ void sx_dio_init_exti_isroff(void)
     detachInterrupt(SX_DIO1);
 }
 
-IRAM_ATTR inline void sx_dio_exti_isr_clearflag(void) {}
+void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- SX2: SX12xx & SPI
@@ -115,18 +115,18 @@ IRAM_ATTR static inline void spib_deselect(void)
     gpio_high(SX2_CS_IO);
 }
 
-IRAM_ATTR inline bool sx2_busy_read(void)
+IRAM_ATTR static inline bool sx2_busy_read(void)
 {
     return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
 }
 
-IRAM_ATTR inline void sx2_amp_transmit(void)
+IRAM_ATTR static inline void sx2_amp_transmit(void)
 {
     gpio_low(SX2_RX_EN);
     gpio_high(SX2_TX_EN);
 }
 
-IRAM_ATTR inline void sx2_amp_receive(void)
+IRAM_ATTR static inline void sx2_amp_receive(void)
 {
     gpio_low(SX2_TX_EN);
     gpio_high(SX2_RX_EN);
@@ -142,7 +142,7 @@ void sx2_dio_enable_exti_isr(void)
     attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING);
 }
 
-IRAM_ATTR inline void sx2_dio_exti_isr_clearflag(void) {}
+void sx2_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
@@ -169,13 +169,13 @@ bool ledBlueState;
 
 NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(1, LED_RED);
 
-IRAM_ATTR void leds_init(void)
+void leds_init(void)
 {
     ledRGB.Begin();
     ledRGB.Show();
 }
 
-IRAM_ATTR void led_red_off(void)
+IRAM_ATTR static inline void led_red_off(void)
 {
     if (!ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -183,7 +183,7 @@ IRAM_ATTR void led_red_off(void)
     ledRedState = 0;
 }
 
-IRAM_ATTR void led_red_on(void)
+IRAM_ATTR static inline void led_red_on(void)
 {
     if (ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
@@ -191,12 +191,12 @@ IRAM_ATTR void led_red_on(void)
     ledRedState = 1;
 }
 
-IRAM_ATTR void led_red_toggle(void)
+IRAM_ATTR static inline void led_red_toggle(void)
 {
     if (ledRedState) { led_red_off(); } else { led_red_on(); }
 }
 
-IRAM_ATTR void led_green_off(void)
+IRAM_ATTR static inline void led_green_off(void)
 {
     if (!ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -204,7 +204,7 @@ IRAM_ATTR void led_green_off(void)
     ledGreenState = 0;
 }
 
-IRAM_ATTR void led_green_on(void)
+IRAM_ATTR static inline void led_green_on(void)
 {
     if (ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
@@ -212,12 +212,12 @@ IRAM_ATTR void led_green_on(void)
     ledGreenState = 1;
 }
 
-IRAM_ATTR void led_green_toggle(void)
+IRAM_ATTR static inline void led_green_toggle(void)
 {
     if (ledGreenState) { led_green_off(); } else { led_green_on(); }
 }
 
-IRAM_ATTR void led_blue_off(void)
+IRAM_ATTR static inline void led_blue_off(void)
 {
     if (!ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -225,7 +225,7 @@ IRAM_ATTR void led_blue_off(void)
     ledBlueState = 0;
 }
 
-IRAM_ATTR void led_blue_on(void)
+IRAM_ATTR static inline void led_blue_on(void)
 {
     if (ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
@@ -233,7 +233,7 @@ IRAM_ATTR void led_blue_on(void)
     ledBlueState = 1;
 }
 
-IRAM_ATTR void led_blue_toggle(void)
+IRAM_ATTR static inline void led_blue_toggle(void)
 {
     if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
 }
