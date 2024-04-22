@@ -130,8 +130,6 @@ tRxSxSerial sx_serial;
 
 void init_hw(void)
 {
-    hal_init();
-    
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
