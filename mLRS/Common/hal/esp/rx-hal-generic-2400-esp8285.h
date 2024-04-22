@@ -46,7 +46,7 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-IRAM_ATTR bool sx_busy_read(void)
+IRAM_ATTR static inline bool sx_busy_read(void)
 {
     return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
@@ -54,7 +54,7 @@ IRAM_ATTR bool sx_busy_read(void)
 void sx_amp_transmit(void) {}
 void sx_amp_receive(void) {}
 
-IRAM_ATTR void sx_dio_enable_exti_isr(void)
+void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
@@ -87,9 +87,9 @@ void leds_init(void)
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-void led_red_off(void) { gpio_high(LED_RED); }
-void led_red_on(void) { gpio_low(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
+IRAM_ATTR void led_red_off(void) { gpio_high(LED_RED); }
+IRAM_ATTR void led_red_on(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
