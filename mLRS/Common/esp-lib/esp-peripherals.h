@@ -90,10 +90,10 @@ GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
 #ifdef ESP32
     GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
-#elif defined ESP8266  // special handling needed for pin 16
+#elif defined ESP8266
     if (GPIO_Pin < 16) {
         GPOC = (1 << GPIO_Pin);
-    } else if (GPIO_Pin == 16) {
+    } else if (GPIO_Pin == 16) { // special handling needed for pin 16
         GP16O &=~ 1;
     }
 #endif
@@ -104,10 +104,10 @@ GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
 #ifdef ESP32
     GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
-#elif defined ESP8266 // special handling needed for pin 16
+#elif defined ESP8266
     if (GPIO_Pin < 16) {
         GPOS = (1 << GPIO_Pin);
-    } else if (GPIO_Pin == 16) {
+    } else if (GPIO_Pin == 16) { // special handling needed for pin 16
         GP16O |= 1;
     }
 #endif
