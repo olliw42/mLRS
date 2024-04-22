@@ -203,8 +203,6 @@ void enter_system_bootloader(void)
 
 void init_once(void)
 {
-    hal_init();
-
     serial.InitOnce();
     comport.InitOnce();
     serial2.InitOnce();
@@ -215,8 +213,6 @@ void init_hw(void)
 {
     // disable all interrupts, they may be enabled with restart
     __disable_irq();
-
-    hal_init();
 
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay

@@ -154,7 +154,7 @@ void button_init(void)
     gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
     return gpio_read_activelow(BUTTON) ? true : false;
 }
@@ -175,7 +175,7 @@ void leds_init(void)
     ledRGB.Show();
 }
 
-IRAM_ATTR static inline void led_red_off(void)
+IRAM_ATTR void led_red_off(void)
 {
     if (!ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -183,7 +183,7 @@ IRAM_ATTR static inline void led_red_off(void)
     ledRedState = 0;
 }
 
-IRAM_ATTR static inline void led_red_on(void)
+IRAM_ATTR void led_red_on(void)
 {
     if (ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
@@ -191,12 +191,12 @@ IRAM_ATTR static inline void led_red_on(void)
     ledRedState = 1;
 }
 
-IRAM_ATTR static inline void led_red_toggle(void)
+IRAM_ATTR void led_red_toggle(void)
 {
     if (ledRedState) { led_red_off(); } else { led_red_on(); }
 }
 
-IRAM_ATTR static inline void led_green_off(void)
+IRAM_ATTR void led_green_off(void)
 {
     if (!ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -204,7 +204,7 @@ IRAM_ATTR static inline void led_green_off(void)
     ledGreenState = 0;
 }
 
-IRAM_ATTR static inline void led_green_on(void)
+IRAM_ATTR void led_green_on(void)
 {
     if (ledGreenState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
@@ -212,12 +212,12 @@ IRAM_ATTR static inline void led_green_on(void)
     ledGreenState = 1;
 }
 
-IRAM_ATTR static inline void led_green_toggle(void)
+IRAM_ATTR void led_green_toggle(void)
 {
     if (ledGreenState) { led_green_off(); } else { led_green_on(); }
 }
 
-IRAM_ATTR static inline void led_blue_off(void)
+IRAM_ATTR void led_blue_off(void)
 {
     if (!ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
@@ -225,7 +225,7 @@ IRAM_ATTR static inline void led_blue_off(void)
     ledBlueState = 0;
 }
 
-IRAM_ATTR static inline void led_blue_on(void)
+IRAM_ATTR void led_blue_on(void)
 {
     if (ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
@@ -233,7 +233,7 @@ IRAM_ATTR static inline void led_blue_on(void)
     ledBlueState = 1;
 }
 
-IRAM_ATTR static inline void led_blue_toggle(void)
+IRAM_ATTR void led_blue_toggle(void)
 {
     if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
 }

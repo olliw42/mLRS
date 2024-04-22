@@ -57,13 +57,14 @@ void sx_init_gpio(void)
     pinMode(SX_DIO0, INPUT_PULLDOWN_16);
 }
 
+void sx_amp_transmit(void) {}
+void sx_amp_receive(void) {}
+
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_amp_transmit(void) {}
-void sx_amp_receive(void) {}
 void sx_dio_init_exti_isroff(void) {}
 void sx_dio_exti_isr_clearflag(void) {}
 
@@ -77,7 +78,7 @@ void button_init(void)
     gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
-bool button_pressed(void)
+IRAM_ATTR bool button_pressed(void)
 {
     return (digitalRead(BUTTON) == HIGH) ? false : true;
 }
@@ -92,9 +93,9 @@ void leds_init(void)
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-void led_red_off(void) { gpio_high(LED_RED); }
-void led_red_on(void) { gpio_low(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
+IRAM_ATTR void led_red_off(void) { gpio_high(LED_RED); }
+IRAM_ATTR void led_red_on(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
