@@ -42,7 +42,11 @@
 #include "../Common/esp-lib/esp-uartb.h"
 #endif
 #ifdef USE_DEBUG
+#ifdef DEVICE_HAS_DEBUG_SWUART
+#include "../Common/esp-lib/esp-uart-sw.h"
+#else
 #include "../Common/esp-lib/esp-uartc.h"
+#endif
 #endif
 #include "../Common/hal/esp-timer.h"
 #include "../Common/hal/esp-powerup.h"

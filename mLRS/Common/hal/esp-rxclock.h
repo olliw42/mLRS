@@ -9,6 +9,7 @@
 #define ESP_RXCLOCK_H
 #pragma once
 
+
 #define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
 #define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us
 
@@ -85,7 +86,7 @@ void RxClockBase::Init(uint16_t period_ms)
 
     if (initialized) return;
 
-    // Initialize the timer
+    // initialize the timer
 #ifdef ESP32
     hw_timer_t* timer0_cfg = nullptr;
     timer0_cfg = timerBegin(0, 800, 1);  // Timer 0, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
@@ -100,10 +101,12 @@ void RxClockBase::Init(uint16_t period_ms)
     initialized = true;
 }
 
+
 IRAM_ATTR void RxClockBase::SetPeriod(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100;
 }
+
 
 IRAM_ATTR void RxClockBase::Reset(void)
 {
