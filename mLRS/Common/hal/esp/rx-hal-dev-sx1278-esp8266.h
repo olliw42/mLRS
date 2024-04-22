@@ -89,7 +89,7 @@ bool button_pressed(void)
 
 void leds_init(void)
 {
-    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);    
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);
 }
 
 void led_red_off(void) { gpio_high(LED_RED); }

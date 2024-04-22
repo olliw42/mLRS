@@ -243,7 +243,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
 #include "esp/rx-hal-generic-2400-td-pa-esp32.h"
-#endif
 
 //-- ELRS Selected Devices
 
