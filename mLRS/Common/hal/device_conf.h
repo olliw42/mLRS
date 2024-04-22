@@ -369,6 +369,14 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+
+#ifdef TX_ELRS_GENERIC_2400_PA_ESP8285
+  #define DEVICE_NAME "GENERIC 2400 PA"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 //-- ELRS Selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
