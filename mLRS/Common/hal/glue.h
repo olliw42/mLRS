@@ -9,7 +9,7 @@
 
 
 // for as long as issues with gcc12 are not sorted
-#if __GNUC__ > 12
+#if __GNUC__ > 11
   #error Must be gnu gcc 11 or lower!
 #endif
 
