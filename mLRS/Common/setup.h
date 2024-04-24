@@ -55,14 +55,16 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // only 866 MHz IN, not editable
 #endif
 
-    //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC"
+    //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK"
 #ifdef DEVICE_HAS_SX128x
   #ifdef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b01111; // all except FSK
   #else
     SetupMetaData.Mode_allowed_mask = 0b00111; // only 50 Hz, 31 Hz, 19 Hz
   #endif
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+    SetupMetaData.Mode_allowed_mask = 0b10110; // only 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Mode_allowed_mask = 0b00110; // only 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b10110; // only 31 Hz, 19 Hz, FSK
@@ -83,7 +85,7 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
@@ -136,7 +138,7 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
@@ -474,6 +476,9 @@ void configure_mode(uint8_t mode)
   case MODE_19HZ:
         Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
         break;
+  case MODE_FSK_50HZ: // FSK for SX126x implies 50 Hz mode for SX128x
+      Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
+      break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
@@ -481,7 +486,13 @@ void configure_mode(uint8_t mode)
 
     // helper for sx drivers
     Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ);
+
     Config.Sx2.is_lora = Config.Sx.is_lora;
+
+#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+    // FSK for SX126x implies 50 Hz mode for SX128x
+    Config.Sx2.is_lora = true;
+#endif
 }
 
 
@@ -510,7 +521,7 @@ void setup_configure_config(uint8_t config_id)
 
   //-- Diversity
 
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].Diversity) {
   #endif
@@ -648,6 +659,7 @@ void setup_configure_config(uint8_t config_id)
         switch (Config.Mode) {
         case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
         default:
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }

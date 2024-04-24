@@ -49,16 +49,8 @@
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_SX127x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
-#else
+#else // DEVICE_HAS_SX128x
   // for 2.4 GHz we directly use SX1280_FREQ_GHZ_TO_REG(), not SX12XX_FREQ_MHZ_TO_REG()
-#endif
-
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-  #define SX12XX_REG_TO_FREQ(f_reg)  SX126X_REG_TO_FREQ_KHZ(f_reg)
-#elif defined DEVICE_HAS_SX127x
-  #define SX12XX_REG_TO_FREQ(f_reg)  SX127X_REG_TO_FREQ_KHZ(f_reg)
-#else
-  #define SX12XX_REG_TO_FREQ(f_reg)  SX1280_REG_TO_FREQ_MHZ(f_reg)
 #endif
 
 
@@ -620,10 +612,12 @@ class tFhssBase
     // used by RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
     {
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_SX127x
-        return 1.0E3f * SX12XX_REG_TO_FREQ(GetCurrFreq());
-#else
-        return 1.0E6f * (uint32_t)SX12XX_REG_TO_FREQ(GetCurrFreq());
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq());
+#elif defined DEVICE_HAS_SX127x
+        return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
+#else // DEVICE_HAS_SX128x
+        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
 #endif
     }
 
@@ -641,7 +635,17 @@ class tFhssBase
     // used by CLI
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
-    uint32_t GetFreq_x1000(uint8_t i) { return (uint32_t)SX12XX_REG_TO_FREQ(fhss_list[i]); }
+
+    uint32_t GetFreq_x1000(uint8_t i)
+    {
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss_list[i]);
+#elif defined DEVICE_HAS_SX127x
+        return (uint32_t)SX127X_REG_TO_FREQ_KHZ(fhss_list[i]);
+#else // DEVICE_HAS_SX128x
+        return (uint32_t)SX1280_REG_TO_FREQ_MHZ(fhss_list[i]);
+#endif
+    }
 
   private:
     uint32_t _seed;
@@ -747,7 +751,17 @@ class tFhss
     // only used by receiver
     uint8_t GetCurrFrequencyBand(void) { return fhss900MHz.GetCurrFrequencyBand(); }
     float GetCurrFreq_Hz(void) { return fhss900MHz.GetCurrFreq_Hz(); }
-    float GetCurrFreq2_Hz(void) { return fhss2ndBand.GetCurrFreq_Hz(); }
+
+    float GetCurrFreq2_Hz(void)
+    {
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq());
+#elif defined DEVICE_HAS_SX127x
+        return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
+#else // DEVICE_HAS_SX128x || DEVICE_HAS_DUAL_SX126x_SX128x
+        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
+#endif
+    }
 
     // only used by tx cli
     uint8_t ChList(uint8_t i) { return fhss900MHz.ChList(i); }

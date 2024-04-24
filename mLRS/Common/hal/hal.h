@@ -67,6 +67,7 @@ In tx-hal files:
 In rx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // board supports diversity on a single SPI bus
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
@@ -77,6 +78,7 @@ In rx-hal files:
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
+#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
@@ -239,7 +241,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
-//-- ELRS selected Devices
+#ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
+//-- ELRS Selected Devices
 
 #ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
 #include "esp/rx-hal-generic-900-pa-esp8285.h"
@@ -249,10 +255,22 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
+#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
 // -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266
 #include "esp/rx-hal-dev-sx1278-esp8266.h"
+#endif
+
+#ifdef RX_DEV_900_ESP32
+#include "esp/rx-hal-dev-900-esp32.h"
 #endif
 
 
@@ -361,7 +379,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx128xDriver
 #endif
 
-#ifdef DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_HAS_SX126x
     #define SX2_DRIVER Sx126xDriver2
   #elif defined DEVICE_HAS_SX127x
@@ -377,7 +395,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX2_DRIVER SxDriverDummy
 #endif
 
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define USE_SX2
 #endif
 

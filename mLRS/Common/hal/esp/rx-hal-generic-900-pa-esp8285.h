@@ -15,11 +15,6 @@
 //#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
-//-- Timers, Timing, EEPROM, and such stuff
-
-#define EE_START_PAGE             0
-
-
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
@@ -35,6 +30,7 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             10000000L
 #define SX_RESET                  IO_P2
@@ -62,6 +58,7 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
+
 #define BUTTON                    IO_P0
 
 void button_init(void)
@@ -76,6 +73,7 @@ IRAM_ATTR bool button_pressed(void)
 
 
 //-- LEDs
+
 #define LED_RED                   IO_P16
 
 void leds_init(void)
@@ -83,12 +81,13 @@ void leds_init(void)
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW);
 }
 
-void led_red_off(void) { gpio_low(LED_RED); }
-void led_red_on(void) { gpio_high(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
+IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
+IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
+
 #define POWER_GAIN_DBM            13 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

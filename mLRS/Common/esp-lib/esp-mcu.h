@@ -9,9 +9,9 @@
 #define ESPLIB_MCU_H
 
 
-void BootLoaderInit(void) 
+void BootLoaderInit(void)
 {
-    // Not sure what this one needs for the Arduino. 
+    // Not sure what this one needs for the Arduino.
     // Maybe a can be a hard reset using reset pin.
 };
 

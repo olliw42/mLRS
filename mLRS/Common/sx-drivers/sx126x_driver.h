@@ -8,6 +8,14 @@
 //*******************************************************
 // contributed by jinchuuriki
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_HAS_NO_RESET
+// #define SX_USE_CRYSTALOSCILLATOR
+// #define SX2_USE_CRYSTALOSCILLATOR
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+//*******************************************************
 #ifndef SX126X_DRIVER_H
 #define SX126X_DRIVER_H
 #pragma once
@@ -464,7 +472,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
@@ -593,7 +601,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 

@@ -33,45 +33,45 @@ typedef enum {
 #define ESPLIB_UARTB_H
 
 
-#if defined(UARTB_USE_SERIAL)
+#ifdef UARTB_USE_SERIAL
 #define UARTB_SERIAL_NO Serial
-#elif defined(UARTB_USE_SERIAL1)
+#elif defined UARTB_USE_SERIAL1
 #define UARTB_SERIAL_NO Serial1
 #endif
 
 
-uint16_t uartb_putc(char c)
+IRAM_ATTR static inline uint16_t uartb_putc(char c)
 {
     UARTB_SERIAL_NO.write(c);
     return 1;
 }
 
 
-char uartb_getc(void)
+IRAM_ATTR static inline char uartb_getc(void)
 {
     return (char)UARTB_SERIAL_NO.read();
 }
 
 
-static inline void uartb_rx_flush(void)
+IRAM_ATTR static inline void uartb_rx_flush(void)
 {
     while (UARTB_SERIAL_NO.available() > 0) UARTB_SERIAL_NO.read();
 }
 
 
-static inline void uartb_tx_flush(void)
+IRAM_ATTR static inline void uartb_tx_flush(void)
 {
     UARTB_SERIAL_NO.flush();
 }
 
 
-uint16_t uartb_rx_bytesavailable(void)
+IRAM_ATTR static inline uint16_t uartb_rx_bytesavailable(void)
 {
     return (UARTB_SERIAL_NO.available() > 0) ? UARTB_SERIAL_NO.available() : 0;
 }
 
 
-static inline uint16_t uartb_rx_available(void)
+IRAM_ATTR static inline uint16_t uartb_rx_available(void)
 {
     return (UARTB_SERIAL_NO.available() > 0) ? 1 : 0;
 }
@@ -83,7 +83,13 @@ static inline uint16_t uartb_rx_available(void)
 
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
+    UARTB_SERIAL_NO.end();
+    UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(baud);
+#ifdef ESP32
+    UARTB_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
+    UARTB_SERIAL_NO.setRxTimeout(1);   // wait for 1 symbol (~11 bits) to trigger Rx ISR, default 2
+#endif
 }
 
 
@@ -91,6 +97,10 @@ void uartb_init(void)
 {
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
     UARTB_SERIAL_NO.begin(UARTB_BAUD);
+#ifdef ESP32
+    UARTB_SERIAL_NO.setRxFIFOFull(8);
+    UARTB_SERIAL_NO.setRxTimeout(1);
+#endif
 }
 
 

@@ -15,10 +15,9 @@
 #define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
 
 
-void hal_init(void)
-{
-    // nothing to do
-}
+void __disable_irq(void) {}
+void __enable_irq(void) {}
+
 
 
 // setup(), loop() streamlining between Arduino/STM code

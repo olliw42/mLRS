@@ -30,9 +30,10 @@ typedef enum {
     EE_STATUS_OK
 } EE_STATUS_ENUM;
 
-// ESP8266 has 4kb available for EEPROM. We need 3 pages, 2 for setup and 
-// 1 for the powerup counter. So best to keep page size to 3kb to let it 
-// fit in. 
+// ESP8266 has 4kb available for EEPROM. We need 3 pages, 2 for setup and
+// 1 for the powerup counter. So best to keep page size to 3kb to let it
+// fit in.
+#define EE_START_PAGE 0
 #define EE_PAGE_SIZE  0x0400 // Page size = 1 KByte
 
 // EEPROM start address in Flash
@@ -145,17 +146,15 @@ uint32_t ToPageBaseAddress, ToPageEndAddress, FromPageBaseAddress, PageNo, adr;
         }
     }
     if (!EEPROM.commit()) {
-         status = EE_STATUS_FLASH_FAIL; 
+         status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     // Set ToPage status to EE_VALID_PAGE status
     ee_hal_programword(ToPageBaseAddress, EE_VALID_PAGE);
     if (!EEPROM.commit()) {
-         status = EE_STATUS_FLASH_FAIL; 
+         status = EE_STATUS_FLASH_FAIL;
          goto QUICK_EXIT;
     }
-    delay_ms(20);
     status = EE_STATUS_OK;
 QUICK_EXIT:
     ee_hal_lock();
@@ -182,15 +181,23 @@ EE_STATUS_ENUM ee_writedata(void* data, uint16_t datalen)
 EE_STATUS_ENUM status;
 
     // Write data to page0
+#ifdef ESP8266
     noInterrupts();
+#endif
     status = _ee_write_to(EE_PAGE0, data, datalen);
+#ifdef ESP8266
     interrupts();
+#endif
     if (status != EE_STATUS_OK) return status;
 
     // Write data to page1
+#ifdef ESP8266
     noInterrupts();
+#endif
     status = _ee_write_to(EE_PAGE1, data, datalen);
+#ifdef ESP8266
     interrupts();
+#endif
     if (status != EE_STATUS_OK) return status;
 
     return status;
@@ -203,7 +210,7 @@ EE_STATUS_ENUM status;
 
 EE_STATUS_ENUM ee_format(void)
 {
-  EE_STATUS_ENUM status;
+EE_STATUS_ENUM status;
 
     //ee_hal_unlock();
 
@@ -221,7 +228,6 @@ QUICK_EXIT:
 
 EE_STATUS_ENUM ee_init(void)
 {
-
     EEPROM.begin(EE_PAGE_SIZE*2);
     EE_STATUS_ENUM status;
     uint32_t Page0Status, Page1Status;

@@ -71,7 +71,7 @@
 #define SX_BUSY                   IO_PB1
 //#define SX_AMP_CTX
 //#define SX_ANT_SELECT
-//#define SX_USE_DCDC
+//#define SX_USE_REGULATOR_MODE_DCDC
 
 #define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
 #define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE0
@@ -139,7 +139,7 @@ void sx_dio_exti_isr_clearflag(void)
 //#define SX2_AMP_CTX
 //#define SX2_ANT_SELECT
 
-//#define SX2_USE_DCDC
+//#define SX2_USE_REGULATOR_MODE_DCDC
 
 //#define SX2_POWER_MAX
 

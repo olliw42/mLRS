@@ -6,6 +6,12 @@
 //*******************************************************
 // SX128x Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define LORA_SYNCWORD
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+//*******************************************************
 #ifndef SX128X_DRIVER_H
 #define SX128X_DRIVER_H
 #pragma once
@@ -367,7 +373,7 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         spi_transfer(dataout, datain, len);
     }
-    
+
     void SpiRead(uint8_t* datain, uint8_t len) override
     {
         spi_read(datain, len);
@@ -419,7 +425,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-#ifdef SX_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
@@ -452,7 +458,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -491,6 +497,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         spib_deselect();
     }
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
         spib_transfer(dataout, datain, len);
@@ -505,6 +512,22 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         spib_write(dataout, len);
     }
+#else
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+#endif
 
     //-- RF power interface
 
@@ -532,8 +555,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         Sx128xDriverCommon::Init();
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
         spib_init();
         spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();
@@ -554,7 +581,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 
-#ifdef SX2_USE_DCDC // here ??? ELRS does it as last !!!
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
