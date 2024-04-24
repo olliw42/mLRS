@@ -44,19 +44,31 @@ IRAM_ATTR static inline void spi_deselect(void)
 
 IRAM_ATTR static inline void spi_transfer(const uint8_t* dataout, uint8_t* datain, const uint8_t len)
 {
+#ifdef ESP32
+    spiTransferBytesNL(SPI.bus(), dataout, datain, len);
+#elif defined ESP8266
     SPI.transferBytes(dataout, datain, len);
+#endif
 }
 
 
 IRAM_ATTR static inline void spi_read(uint8_t* datain, const uint8_t len)
 {
+#ifdef ESP32
+    spiTransferBytesNL(SPI.bus(), nullptr, datain, len);
+#elif defined ESP8266
     SPI.transferBytes(nullptr, datain, len);
+#endif
 }
 
 
 IRAM_ATTR static inline void spi_write(const uint8_t* dataout, uint8_t len)
 {
+#ifdef ESP32
+    spiTransferBytesNL(SPI.bus(), dataout, nullptr, len);
+#elif defined ESP8266
     SPI.transferBytes(dataout, nullptr, len);
+#endif
 }
 
 
@@ -76,7 +88,13 @@ void spi_init(void)
     gpio_init(SPI_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
 #endif
 
+#ifdef ESP32
+    spiEndTransaction(SPI.bus());
+    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS_IO);
+    spiSimpleTransaction(SPI.bus());
+#elif defined ESP8266
     SPI.begin();
+#endif
     SPI.setFrequency(SPI_FREQUENCY);
     SPI.setBitOrder(SPI_MSBFIRST);
     SPI.setDataMode(SPI_MODE0);

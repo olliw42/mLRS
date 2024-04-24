@@ -19,11 +19,6 @@ void __disable_irq(void) {}
 void __enable_irq(void) {}
 
 
-void hal_init(void)
-{
-    // nothing to do
-}
-
 
 // setup(), loop() streamlining between Arduino/STM code
 uint8_t restart_controller = 0;

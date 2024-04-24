@@ -78,6 +78,7 @@ In rx-hal files:
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
+#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
@@ -240,6 +241,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
 
 #ifdef TX_ELRS_GENERIC_2400_PA_ESP8285
 #include "esp/tx-hal-generic-2400-pa-esp8285.h"
@@ -255,10 +260,22 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
+#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
+#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
+#endif
+
 // -- DIY
 
 #ifdef RX_DIYBOARD_900_ESP8266
 #include "esp/rx-hal-dev-sx1278-esp8266.h"
+#endif
+
+#ifdef RX_DEV_900_ESP32
+#include "esp/rx-hal-dev-900-esp32.h"
 #endif
 
 
