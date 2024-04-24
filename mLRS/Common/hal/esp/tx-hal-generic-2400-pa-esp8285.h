@@ -22,8 +22,11 @@
 
 //-- UARTS
 // UARTB = serial port
-// UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTC or USB = COM (CLI)
+// UARTD = -
+// UART  = JR bay pin5
+// UARTE = in port, SBus or whatever
+// UARTF = debug port
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -35,6 +38,7 @@
 
 
 //-- SX1: SX12xx & SPI
+
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             16000000L
 #define SX_RESET                  IO_P2
@@ -54,18 +58,18 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-IRAM_ATTR bool sx_busy_read(void)
+IRAM_ATTR static inline bool sx_busy_read(void)
 {
     return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-IRAM_ATTR void sx_amp_transmit(void)
+IRAM_ATTR static inline void sx_amp_transmit(void)
 {
     gpio_low(SX_RX_EN);
     gpio_high(SX_TX_EN);
 }
 
-IRAM_ATTR void sx_amp_receive(void)
+IRAM_ATTR static inline void sx_amp_receive(void)
 {
     gpio_low(SX_TX_EN);
     gpio_high(SX_RX_EN);
@@ -81,6 +85,7 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
+
 #define BUTTON                    IO_P0
 
 void button_init(void)
@@ -95,6 +100,7 @@ IRAM_ATTR bool button_pressed(void)
 
 
 //-- LEDs
+
 #define LED_RED                   IO_P16
 
 void leds_init(void)
@@ -102,12 +108,13 @@ void leds_init(void)
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW);
 }
 
-void led_red_off(void) { gpio_low(LED_RED); }
-void led_red_on(void) { gpio_high(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
+IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
+IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
+
 #define POWER_GAIN_DBM            18 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

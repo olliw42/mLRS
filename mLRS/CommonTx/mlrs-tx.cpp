@@ -28,7 +28,7 @@
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined ESP8266 || defined ESP32
 
 #include "../Common/hal/esp-glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
@@ -97,7 +97,7 @@
 #endif
 #include "../Common/hal/timer.h"
 
-#endif //#if defined(ESP8266) || defined(ESP32)
+#endif //#if defined ESP8266 || defined ESP32
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
