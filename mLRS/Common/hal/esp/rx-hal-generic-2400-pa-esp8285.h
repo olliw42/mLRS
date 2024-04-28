@@ -50,30 +50,31 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-IRAM_ATTR static inline bool sx_busy_read(void)
+IRAM_ATTR bool sx_busy_read(void)
 {
     return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
-IRAM_ATTR static inline void sx_amp_transmit(void)
+IRAM_ATTR void sx_amp_transmit(void)
 {
     gpio_low(SX_RX_EN);
     gpio_high(SX_TX_EN);
 }
 
-IRAM_ATTR static inline void sx_amp_receive(void)
+IRAM_ATTR void sx_amp_receive(void)
 {
     gpio_low(SX_TX_EN);
     gpio_high(SX_RX_EN);
 }
 
-IRAM_ATTR void sx_dio_enable_exti_isr(void)
+void sx_dio_init_exti_isroff(void) {}
+
+void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_init_exti_isroff(void) {}
-void sx_dio_exti_isr_clearflag(void) {}
+IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button

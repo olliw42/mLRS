@@ -50,16 +50,16 @@ void sx_init_gpio(void)
     gpio_init(13, IO_MODE_OUTPUT_PP_LOW);
 }
 
-void sx_amp_transmit(void) {}
-void sx_amp_receive(void) {}
+IRAM_ATTR void sx_amp_transmit(void) {}
+IRAM_ATTR void sx_amp_receive(void) {}
+void sx_dio_init_exti_isroff(void) {}
 
 void sx_dio_enable_exti_isr(void)
 {
     attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
 }
 
-void sx_dio_init_exti_isroff(void) {}
-void sx_dio_exti_isr_clearflag(void) {}
+IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
