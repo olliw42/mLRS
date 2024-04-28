@@ -54,7 +54,7 @@ class tSerialPort : public tSerialBase
 #ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
     void InitOnce(void) override { usb_init(); }
     void Init(void) override { SERORCOM_INIT; }
-    void putc(char c) override { IFNSER(); usb_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { IFNSER(); usb_putbuf(buf, len); }
     bool available(void) override { IFNSER(0); return usb_rx_available(); }
     char getc(void) override { IFNSER(0); return usb_getc(); }
     void flush(void) override { IFNSER(); usb_flush(); }
@@ -62,7 +62,7 @@ class tSerialPort : public tSerialBase
 #else
     void Init(void) override { uartb_init(); SERORCOM_INIT; }
     void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putc(char c) override { IFNSER(); uartb_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { IFNSER(); uartb_putbuf(buf, len); }
     bool available(void) override { IFNSER(0); return uartb_rx_available(); }
     char getc(void) override { IFNSER(0); return uartb_getc(); }
     void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
@@ -79,15 +79,15 @@ class tDebugPort : public tSerialBase
   public:
 #ifdef DEVICE_HAS_DEBUG_SWUART
     void Init(void) { swuart_init(); }
-    void putc(char c) override { swuart_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { swuart_putbuf(buf, len); }
 #else
 #ifdef DEVICE_IS_RECEIVER
     void Init(void) { uartc_init(); }
-    void putc(char c) override { uartc_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { uartc_putbuf(buf, len); }
 #endif
 #ifdef DEVICE_IS_TRANSMITTER
     void Init(void) { uartf_init(); }
-    void putc(char c) override { uartf_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { uartf_putbuf(buf, len); }
 #endif
 #endif
 #endif
@@ -101,12 +101,12 @@ class tComPort : public tSerialBase
   public:
     // we do not initialize it as it is initialized by serial
 #ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
-    void putc(char c) override { IFNCOM(); usb_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { IFNCOM(); usb_putbuf(buf, len); }
     bool available(void) override { IFNCOM(0); return usb_rx_available(); }
     char getc(void) override { IFNCOM(0); return usb_getc(); }
     void flush(void) override { IFNCOM(); usb_flush(); }
 #else
-    void putc(char c) override { IFNCOM(); uartb_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { IFNCOM(); uartb_putbuf(buf, len); }
     bool available(void) override { IFNCOM(0); return uartb_rx_available(); }
     char getc(void) override { IFNCOM(0); return uartb_getc(); }
     void flush(void) override { IFNCOM(); uartb_rx_flush(); uartb_tx_flush(); }
@@ -117,12 +117,12 @@ class tComPort : public tSerialBase
 #ifdef DEVICE_HAS_COM_ON_USB // USE_USB
     void InitOnce(void) override { usb_init(); }
     void Init(void) override { }
-    void putc(char c) override { usb_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { usb_putbuf(buf, len); }
     bool available(void) override { return usb_rx_available(); }
     char getc(void) override { return usb_getc(); }
 #else
     void Init(void) override { uartc_init(); }
-    void putc(char c) override { uartc_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { uartc_putbuf(buf, len); }
     bool available(void) override { return uartc_rx_available(); }
     char getc(void) override { return uartc_getc(); }
 #endif
@@ -137,7 +137,7 @@ class tSerial2Port : public tSerialBase
   public:
     void Init(void) override { uartd_init(); }
     void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putc(char c) override { uartd_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { uartd_putbuf(buf, len); }
     bool available(void) override { return uartd_rx_available(); }
     char getc(void) override { return uartd_getc(); }
     void flush(void) override { uartd_rx_flush(); uartd_tx_flush(); }

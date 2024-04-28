@@ -78,7 +78,7 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     // front end to communicate with mBridge
     // mimics a serial interface to the main code
     void putc(char c) { tx_fifo.Put(c); }
-    void putbuf(void* buf, uint16_t len) { tx_fifo.PutBuf(buf, len); }
+    void putbuf(uint8_t* buf, uint16_t len) { tx_fifo.PutBuf(buf, len); }
     bool available(void) { return rx_fifo.Available(); }
     char getc(void) { return rx_fifo.Get(); }
     void flush(void) { rx_fifo.Flush(); }

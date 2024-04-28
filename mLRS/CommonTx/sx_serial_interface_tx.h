@@ -19,7 +19,7 @@ class tTxSxSerial : public tSerialBase
 
     bool available(void) override;
     char getc(void) override;
-    void putc(char c) override;
+    void putbuf(uint8_t* buf, uint16_t len) override;
     void flush(void) override;
 
   private:
@@ -76,15 +76,15 @@ char tTxSxSerial::getc(void)
 }
 
 
-void tTxSxSerial::putc(char c)
+void tTxSxSerial::putbuf(uint8_t* buf, uint16_t len)
 {
     if (!connected_and_rx_setup_available()) return;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
-        mavlink.putc(c);
+        for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]);
         return;
     }
-    ser->putc(c);
+    ser->putbuf(buf, len);
 }
 
 
