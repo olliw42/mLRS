@@ -41,8 +41,6 @@ class RxClockBase
 
     void init_isr_off(void);
     void enable_isr(void);
-
-    uint16_t tim_10us(void);
 };
 
 
@@ -98,7 +96,7 @@ void RxClockBase::enable_isr(void)
 }
 
 
-uint16_t RxClockBase::tim_10us(void)
+uint16_t rxclock_tim_10us(void) // just a helper which is sometimes useful, e.g. for dev-ing
 {
     return CLOCK_TIMx->CNT; // return 16 bit even for 32 bit timer
 }
