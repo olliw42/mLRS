@@ -251,6 +251,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "esp/rx-hal-generic-900-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
+#include "esp/rx-hal-radiomaster-br3-900-esp8285.h"
+#endif
+
 #ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
 #include "esp/rx-hal-generic-2400-pa-esp8285.h"
 #endif

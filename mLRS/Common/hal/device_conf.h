@@ -386,6 +386,14 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
+  #define DEVICE_NAME "RadioMaster BR3 900"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 #ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
   #define DEVICE_NAME "SPEEDYBEE NANO 2.4G"
   #define DEVICE_IS_RECEIVER
