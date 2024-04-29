@@ -10,6 +10,7 @@
 // 5.Sep.2023: jrpin5 and in simultaneously supported
 
 //#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
+//#define MLRS_FEATURE_E77_XTAL
 
 //-------------------------------------------------------
 // TX EByte E77 MBL Kit, STM32WLE5CC
@@ -115,7 +116,9 @@
 #define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#ifdef MLRS_FEATURE_E77_XTAL
 #define SX_USE_CRYSTALOSCILLATOR
+#endif
 
 void sx_init_gpio(void)
 {

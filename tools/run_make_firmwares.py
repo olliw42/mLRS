@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 16.04.2024
+ version 29.04.2024
 ********************************************************
 '''
 import os
@@ -984,6 +984,14 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_DIVERSITY'],
         'appendix' : '-diversity'
     },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-xtal'
+    },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-diversity-xtal'
+    },{
 #-- rx R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : ''
@@ -1028,6 +1036,14 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ'],
         'appendix' : '-400'
     },{
+        'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-900-xtal'
+    },{
+        'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-400-xtal'
+    },{
 
 #TX
 #-- tx diy
@@ -1057,6 +1073,14 @@ TLIST = [
         'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_DIVERSITY'],
         'appendix' : '-diversity'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_NO_DIVERSITY','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-xtal'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_DIVERSITY','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-diversity-xtal'
     },{
 #-- tx R9
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
@@ -1107,6 +1131,14 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
         'appendix' : '-400-sdiode'
     },{
+        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-900-xtal'
+    },{
+        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-400-xtal'
+    },{
 
 #-- easytosolder E77 E28/E22 dualband
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
@@ -1124,6 +1156,23 @@ TLIST = [
         'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : [],
         'appendix' : '-dualband'
+    },{
+    
+        'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-xtal'
+    },{
+        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-xtal'
+    },{
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-dualband-xtal'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-dualband-xtal'
 
     }
     ]

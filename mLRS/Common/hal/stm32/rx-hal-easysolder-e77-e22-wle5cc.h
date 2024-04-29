@@ -9,6 +9,7 @@
 
 //#define MLRS_FEATURE_DIVERSITY
 //#define MLRS_FEATURE_NO_DIVERSITY
+//#define MLRS_FEATURE_E77_XTAL
 
 //-------------------------------------------------------
 // RX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
@@ -86,7 +87,9 @@
 #define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#ifdef MLRS_FEATURE_E77_XTAL
 #define SX_USE_CRYSTALOSCILLATOR
+#endif
 
 void sx_init_gpio(void)
 {
