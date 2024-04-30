@@ -7,7 +7,7 @@
 // hal
 //*******************************************************
 
-//#define MLRS_FEATURE_E77_XTAL
+//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
 
 //-------------------------------------------------------
 // RX EByte E77 MBL Kit, STM32WLE5CC
