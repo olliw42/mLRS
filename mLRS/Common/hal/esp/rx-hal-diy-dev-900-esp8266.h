@@ -5,7 +5,7 @@
 //*******************************************************
 // hal
 //********************************************************
-// ESP8266 DEVBOARD 900 RX
+// ESP8266, DIY DEV BOARD 900 RX
 //
 // Uses a Lolin Node MCU V3 ESP8266 Devboard and a SX1276 module
 //
