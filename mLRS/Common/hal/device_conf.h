@@ -335,7 +335,9 @@ The default selection of frequency bands can be overruled by feature defines.
 // ESP Boards
 //-------------------------------------------------------
 
+#if defined ESP8266 || defined ESP32
 #include "esp/esp-device_conf.h"
+#endif
 
 
 //-------------------------------------------------------

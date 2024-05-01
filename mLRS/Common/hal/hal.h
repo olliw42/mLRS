@@ -221,7 +221,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 // ESP Boards
 //-------------------------------------------------------
 
+#if defined ESP8266 || defined ESP32
 #include "esp/esp-hal.h"
+#endif
 
 
 //-------------------------------------------------------
