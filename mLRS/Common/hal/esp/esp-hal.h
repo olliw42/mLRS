@@ -36,6 +36,10 @@
 #include "rx-hal-generic-2400-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_GENERIC_2400_D_PA_ESP8285
+#include "rx-hal-generic-2400-d-pa-esp8285.h"
+#endif
+
 #ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
