@@ -10,7 +10,7 @@
 // 5.Sep.2023: jrpin5 and in simultaneously supported
 
 //#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
-//#define MLRS_FEATURE_E77_XTAL
+//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
 
 //-------------------------------------------------------
 // TX DIY "easy-to-solder" E77 E28 dualband, STM32WLE5CC

@@ -221,60 +221,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 // ESP Boards
 //-------------------------------------------------------
 
-//-- ELRS 868/915 MHz Generic Devices
-
-#ifdef RX_ELRS_GENERIC_900_ESP8285
-#include "esp/rx-hal-generic-900-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_GENERIC_900_PA_ESP8285
-#include "esp/rx-hal-generic-900-pa-esp8285.h"
-#endif
-
-//-- ELRS 2.4 GHz Generic Devices
-
-#ifdef RX_ELRS_GENERIC_2400_ESP8285
-#include "esp/rx-hal-generic-2400-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_GENERIC_2400_PA_ESP8285
-#include "esp/rx-hal-generic-2400-pa-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
-#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
-#endif
-
-//-- ELRS Selected Devices
-
-#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
-#include "esp/rx-hal-generic-900-pa-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
-#include "esp/rx-hal-radiomaster-br3-900-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
-#include "esp/rx-hal-generic-2400-pa-esp8285.h"
-#endif
-
-#ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
-#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
-#endif
-
-#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
-#include "esp/rx-hal-generic-2400-td-pa-esp32.h"
-#endif
-
-// -- DIY
-
-#ifdef RX_DIYBOARD_900_ESP8266
-#include "esp/rx-hal-dev-sx1278-esp8266.h"
-#endif
-
-#ifdef RX_DEV_900_ESP32
-#include "esp/rx-hal-dev-900-esp32.h"
+#if defined ESP8266 || defined ESP32
+#include "esp/esp-hal.h"
 #endif
 
 

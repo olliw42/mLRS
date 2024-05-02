@@ -52,12 +52,12 @@ This opens the STM32CubeMX "Pinout & Configuration" page (inside STM32CubeIDE).
   - -> System Core -> SYS -> Debug: select "Serial Wire"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
 
-- STM32WLE5CC in E77 module
+- STM32WLE5CC in "old" E77 module (E77 module with xtal, not TCXO)
   - -> System Core -> SYS -> Timebase Source: select "SysTick"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "Crystal/Ceramic Resonator"
   - -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"
 
-- STM32WLE5JC in WioE5 module
+- STM32WLE5JC in WioE5 module or STM32WLE5CC in "new" E77 module (E77 module with TCXO)
   - -> System Core -> SYS -> Timebase Source: select "SysTick"
   - -> System Core -> RCC -> High Speed Clock (HSE): select "TCXO"
   - -> Trace and Debug -> DEBUG -> JTAG and Trace: select "Serial Wire"

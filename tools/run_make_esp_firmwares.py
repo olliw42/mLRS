@@ -175,9 +175,6 @@ if __name__ == "__main__":
             if sys.argv[cmd_pos+1] != '':
                 cmdline_version = sys.argv[cmd_pos+1]
 
-    #cmdline_target = 'tx-diy-e22dual-module02-g491re'
-    #cmdline_target = 'tx-diy-sxdualXXX'
-
     if cmdline_version == '':
         mlrs_set_version()
         mlrs_set_branch_hash(VERSIONONLYSTR)

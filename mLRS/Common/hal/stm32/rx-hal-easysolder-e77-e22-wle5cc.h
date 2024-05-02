@@ -9,7 +9,7 @@
 
 //#define MLRS_FEATURE_DIVERSITY
 //#define MLRS_FEATURE_NO_DIVERSITY
-//#define MLRS_FEATURE_E77_XTAL
+//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
 
 //-------------------------------------------------------
 // RX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC

@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 29.04.2024
+ version 1.05.2024
 ********************************************************
 '''
 import os
@@ -997,13 +997,15 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'appendix' : '-elrs-bl'
     },{
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'appendix' : '-elrs-bl'
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
         'package' : 'yx',
@@ -1011,7 +1013,8 @@ TLIST = [
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
         'package' : 'yx',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'appendix' : '-elrs-bl'
     },{
         'target' : 'rx-R9MLitePro-v15-f303cc',          'target_D' : 'RX_R9MLITEPRO_F303CC',
         'extra_D_list' : [], 'appendix' : ''
@@ -1087,7 +1090,8 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'appendix' : '-elrs-bl'
     },{
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
         'package' : 'ux',
@@ -1095,7 +1099,8 @@ TLIST = [
     },{
         'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
         'package' : 'ux',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 'appendix' : '-elrs-bl'
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'appendix' : '-elrs-bl'
     },{
 #-- rx FRM303
         'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
@@ -1112,7 +1117,7 @@ TLIST = [
     },{
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : ['MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-        'appendix' : '-sdiode'
+        'appendix' : '-sdiode' # just for RAVI :)
     },{
 #-- tx E77 MBL
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
@@ -1122,14 +1127,14 @@ TLIST = [
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ'],
         'appendix' : '-400'
-    },{
-        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-        'appendix' : '-900-sdiode'
-    },{
-        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-        'appendix' : '-400-sdiode'
+#    },{
+#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+#        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
+#        'appendix' : '-900-sdiode'
+#    },{
+#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
+#        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
+#        'appendix' : '-400-sdiode'
     },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
@@ -1142,33 +1147,31 @@ TLIST = [
 
 #-- easytosolder E77 E28/E22 dualband
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : [],
-        'appendix' : ''
+        'extra_D_list' : [], 'appendix' : ''
     },{
-        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : [],
-        'appendix' : ''
-    },{
-        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
-        'extra_D_list' : [],
-        'appendix' : '-dualband'
-    },{
-        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
-        'extra_D_list' : [],
-        'appendix' : '-dualband'
-    },{
-    
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-xtal'
     },{
-        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
-        'appendix' : '-xtal'
+        'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : '-dualband'
     },{
         'target' : 'rx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'RX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-dualband-xtal'
+
+    },{
+        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : [], 'appendix' : ''
+    },{
+        'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
+        'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
+        'appendix' : '-xtal'
+    },{
+        'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
+        'extra_D_list' : [],
+        'appendix' : '-dualband'
     },{
         'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
