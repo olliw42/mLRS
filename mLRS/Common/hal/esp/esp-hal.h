@@ -21,6 +21,10 @@
 #include "rx-hal-generic-900-pa-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
+#include "rx-hal-radiomaster-br3-900-esp8285.h"
+#endif
+
 
 //-- ELRS 2.4 GHz Generic Devices
 
