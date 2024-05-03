@@ -147,6 +147,7 @@ void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 
 void uartb_init(void)
 {
+    UARTB_SERIAL_NO.end();
     _uartb_initit(UARTB_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 

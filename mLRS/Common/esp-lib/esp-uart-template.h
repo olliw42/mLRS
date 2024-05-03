@@ -147,6 +147,7 @@ void uart$_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 
 void uart$_init(void)
 {
+    UART$_SERIAL_NO.end();
     _uart$_initit(UART$_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
