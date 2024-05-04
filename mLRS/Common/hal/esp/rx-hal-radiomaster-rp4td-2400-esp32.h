@@ -12,7 +12,9 @@
 
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 
+
 #define DEVICE_HAS_OUT_NORMAL
+
 
 //-- UARTS
 // UART = output port, SBus or whatever
