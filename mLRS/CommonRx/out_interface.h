@@ -23,7 +23,11 @@ extern tRxStats rxstats;
 //-------------------------------------------------------
 // Interface Implementation
 
+#ifdef ESP32
+#include "../Common/esp-lib/esp-uart.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
+#endif
 
 
 class tOut : public OutBase
@@ -33,7 +37,9 @@ class tOut : public OutBase
     {
         OutBase::Init(&Setup.Rx);
         out_init_gpio();
+#ifndef ESP32
         uart_init_isroff();
+#endif
     }
 
 #if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL

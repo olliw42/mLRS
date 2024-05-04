@@ -56,7 +56,7 @@
 #endif
 
 #ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
-#include "rx-hal-generic-2400-td-pa-esp32.h"
+#include "rx-hal-radiomaster-rp4td-2400-esp32.h"
 #endif
 
 #ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32

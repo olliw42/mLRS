@@ -18,7 +18,7 @@ def generate(code, periphname):
     F.write(code3)
     F.close() 
 
-#generate(templatecode, 'uart')
+generate(templatecode, 'uart')
 generate(templatecode, 'uartb')
 generate(templatecode, 'uartc')
 #generate(templatecode, 'uartd')
