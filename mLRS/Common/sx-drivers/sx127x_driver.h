@@ -123,6 +123,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         // 5 OcpOn, 4-0 OcpTrim
         ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
 #ifdef SX_USE_RFO
+        // was SX1276_MAX_POWER_15_DBM before
         SetPowerParams(SX1276_PA_SELECT_RFO, SX1276_MAX_POWER_11p4_DBM, sx_power, SX1276_PA_RAMP_40_US);
 #else
         SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
