@@ -96,13 +96,13 @@ IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
-#define POWER_GAIN_DBM            19 // gain of a PA stage if present
+#define POWER_GAIN_DBM            16 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },  // really about 24 dBm
-    { .dbm = POWER_27_DBM, .mW = 500 },
+    { .dbm = POWER_MIN, .mW = INT8_MIN },  // really about 21 dBm
+    { .dbm = POWER_27_DBM, .mW = 500 },    // 27 dBm
 };
