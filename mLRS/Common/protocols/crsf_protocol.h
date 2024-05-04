@@ -195,6 +195,21 @@ typedef union
     });
 } tCrsfChannelBuffer;
 
+#define CRSF_CHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+
+
+// adr, len, frame id, data, crc
+CRSF_PACKED(
+typedef struct {
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfChannelBuffer ch;
+    uint8_t crc;
+}) tCrsfChannelFrame;
+
+#define CRSF_CHANNELPACKET_FRAME_LEN  (CRSF_CHANNELPACKET_LEN + 4)
+
 
 //-- Link statistics frames
 
@@ -227,6 +242,19 @@ typedef struct
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
+
+
+// adr, len, frame id, data, crc
+CRSF_PACKED(
+typedef struct {
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfLinkStatistics ls;
+    uint8_t crc;
+}) tCrsfLinkStatisticsFrame;
+
+#define CRSF_LINK_STATISTICS_FRAME_LEN  (CRSF_LINK_STATISTICS_LEN + 4)
 
 
 /* 0x1D Link Statistics TX

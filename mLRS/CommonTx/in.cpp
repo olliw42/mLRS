@@ -124,24 +124,6 @@ void InBase::get_sbus_data(tRcData* rc)
 tSBusChannelBuffer sbus_buf;
 
     memcpy(sbus_buf.c, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
-/*
-    rc->ch[0] = clip_rc( (((int32_t)(sbus_buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
-    rc->ch[1] = clip_rc( (((int32_t)(sbus_buf.ch1) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[2] = clip_rc( (((int32_t)(sbus_buf.ch2) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[3] = clip_rc( (((int32_t)(sbus_buf.ch3) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[4] = clip_rc( (((int32_t)(sbus_buf.ch4) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[5] = clip_rc( (((int32_t)(sbus_buf.ch5) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[6] = clip_rc( (((int32_t)(sbus_buf.ch6) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[7] = clip_rc( (((int32_t)(sbus_buf.ch7) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[8] = clip_rc( (((int32_t)(sbus_buf.ch8) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[9] = clip_rc( (((int32_t)(sbus_buf.ch9) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[10] = clip_rc( (((int32_t)(sbus_buf.ch10) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[11] = clip_rc( (((int32_t)(sbus_buf.ch11) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[12] = clip_rc( (((int32_t)(sbus_buf.ch12) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[13] = clip_rc( (((int32_t)(sbus_buf.ch13) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[14] = clip_rc( (((int32_t)(sbus_buf.ch14) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[15] = clip_rc( (((int32_t)(sbus_buf.ch15) - 992) * 2047) / 1966 + 1024 );
-*/
     rc->ch[0] = rc_from_sbus(sbus_buf.ch0);
     rc->ch[1] = rc_from_sbus(sbus_buf.ch1);
     rc->ch[2] = rc_from_sbus(sbus_buf.ch2);

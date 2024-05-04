@@ -67,7 +67,7 @@ class tOut : public OutBase
     }
 #endif
 
-    void putc(char c) override { uart_putc(c); }
+    void putbuf(uint8_t* buf, uint16_t len) override { uart_putbuf(buf, len); }
 
     void SendLinkStatistics(void)
     {

@@ -28,7 +28,8 @@
 #endif
 
 
-#define SBUS_FRAME_SIZE   25 // stx + 22 bytes channels + flag + end
+#define SBUS_CHANNELPACKET_SIZE   22 // 22 bytes channels
+#define SBUS_FRAME_SIZE           25 // stx + 22 bytes channels + flag + end
 
 
 typedef enum {
@@ -46,8 +47,6 @@ typedef enum {
 
 
 //-- Channel frame
-
-#define SBUS_CHANNELPACKET_SIZE  22
 
 typedef union
 {
@@ -72,6 +71,15 @@ typedef union
         uint16_t ch15 : 11;
     });
 } tSBusChannelBuffer;
+
+
+SBUS_PACKED(
+typedef struct {
+    uint8_t stx;
+    tSBusChannelBuffer ch;
+    uint8_t flags;
+    uint8_t end_stx;
+}) tSBusFrame;
 
 
 #endif // SBUS_PROTOCOL_H
