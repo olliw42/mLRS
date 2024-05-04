@@ -50,7 +50,7 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
 {
 #ifdef SX_USE_RFO
     // Pout = OutputPower if PaSelect = 0 (RFO pin)
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
+    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM + 3;
 #else
     // Pout = 17 - (15 - OutputPower) if PaSelect = 1 (PA_BOOST pin)
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM - 2;
@@ -63,7 +63,7 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     *sx_power = power_sx;
 
 #ifdef SX_USE_RFO
-    *actual_power_dbm = power_sx + GAIN_DBM;
+    *actual_power_dbm = power_sx + GAIN_DBM - 3;
 #else
     *actual_power_dbm = power_sx + GAIN_DBM + 2;
 #endif
