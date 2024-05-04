@@ -13,7 +13,7 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 
 
-#define DEVICE_HAS_OUT_NORMAL
+#define DEVICE_HAS_OUT
 
 
 //-- UARTS
@@ -29,5 +29,14 @@
 //-- Out port
 
 void out_init_gpio(void) {}
-void out_set_normal(void) {}
-void out_set_inverted(void) {}
+
+void out_set_normal(void)
+{
+    // https://github.com/espressif/esp-idf/blob/release/v4.4/components/esp_rom/include/esp32/rom/gpio.h#L228-L242
+    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, false, false);
+}
+
+void out_set_inverted(void) 
+{
+    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
+}

@@ -151,5 +151,11 @@ void uartc_init(void)
     _uartc_initit(UARTC_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
+void uartc_init_isroff(void)
+{
+    UARTC_SERIAL_NO.end();
+    _uartc_initit(UARTC_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
+}
+
 
 #endif // ESPLIB_UARTC_H

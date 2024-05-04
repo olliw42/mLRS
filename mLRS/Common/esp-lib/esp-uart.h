@@ -151,5 +151,11 @@ void uart_init(void)
     _uart_initit(UART_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
+void uart_init_isroff(void)
+{
+    UART_SERIAL_NO.end();
+    _uart_initit(UART_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
+}
+
 
 #endif // ESPLIB_UART_H
