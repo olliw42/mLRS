@@ -247,6 +247,9 @@ void tTxEspWifiBridge::passthrough_do(void)
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
+#ifdef DEVICE_HAS_SERIAL_OR_COM
+    ser_or_com_set_to_com();
+#endif
 
     leds.InitPassthrough();
 
