@@ -469,6 +469,7 @@ void tTxDisp::SetBind(void)
 void tTxDisp::DrawNotify(const char* s)
 {
     if (!initialized) return;
+    page_modified = true;
     draw_page_notify(s);
     gdisp_update();
     page_modified = false;
