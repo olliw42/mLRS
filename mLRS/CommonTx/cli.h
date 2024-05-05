@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 #include "setup_tx.h"
 
 
@@ -313,9 +314,14 @@ class tTxCli
     bool is_cmd_param_set(char* name, char* svalue);
     bool is_cmd_set_value(const char* cmd, int32_t* value);
 
-    void putc(char c) { com->putc(c); }
-    void puts(const char* s) { com->puts(s); }
-    void putsn(const char* s) { com->puts(s); com->puts(ret); }
+    uint16_t put_cnt;
+    void delay_off(void) { put_cnt = 0; }
+    void delay_clear(void) { put_cnt = 1; }
+    void delay(void) { if (put_cnt > 512) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+
+    void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; }
+    void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); }
+    void putsn(const char* s) { com->puts(s); com->puts(ret); if (put_cnt) put_cnt += strlen(s)+strlen(ret); }
 
     void print_config_id(void);
 
@@ -353,6 +359,8 @@ void tTxCli::Init(tSerialBase* _comport)
     task_pending = CLI_TASK_NONE;
 
     state = CLI_STATE_NORMAL;
+
+    put_cnt = 0;
 }
 
 
@@ -568,7 +576,7 @@ void tTxCli::print_param_list(uint8_t flag)
         if ((flag == 0 || flag == 3) && !connected() && setup_param_is_rx(idx)) continue;
 
         print_param(idx);
-        delay_ms(10);
+        //delay_ms(10);
     }
 }
 
@@ -644,7 +652,7 @@ char s[32];
 #else
         putsn(" MHz");
 #endif
-        delay_ms(20);
+        //delay_ms(20);
     }
 }
 
@@ -657,17 +665,17 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
-    delay_ms(10);
+    //delay_ms(10);
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
-    delay_ms(10);
+    //delay_ms(10);
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
     putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-    delay_ms(10);
+    //delay_ms(10);
 
     putsn("  systemboot  -> call system bootloader");
 
@@ -695,8 +703,11 @@ bool rx_param_changed;
 
     if (state != CLI_STATE_NORMAL) {
         if (com->available()) { com->getc(); state = CLI_STATE_NORMAL; putsn("  streaming stats stopped"); return; }
+        delay_off();
         stream();
     }
+
+    delay_clear();
 
     while (com->available()) {
         char c = com->getc();
