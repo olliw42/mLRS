@@ -21,6 +21,6 @@ def generate(code, periphname):
 generate(templatecode, 'uart')
 generate(templatecode, 'uartb')
 generate(templatecode, 'uartc')
-#generate(templatecode, 'uartd')
+generate(templatecode, 'uartd')
 #generate(templatecode, 'uarte')
 generate(templatecode, 'uartf')
