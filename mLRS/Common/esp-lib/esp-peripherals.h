@@ -9,7 +9,7 @@
 #define ESPLIB_PERIPHERALS_H
 
 
-#define GPIO_INLINE_FORCED  IRAM_ATTR static inline __attribute__ ((always_inline))
+#define GPIO_INLINE_FORCED  IRAM_ATTR
 
 // note: ESP32 does not break out every pin, hence the gaps
 
@@ -61,6 +61,43 @@ typedef enum {
 
 void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 {
+#ifdef ESP32
+    // special handling for pins >= 32
+    // pinMode(), digitalWrite() do not work
+    if (GPIO_Pin >= 32) {
+        gpio_config_t io_conf;
+        io_conf.pin_bit_mask = 1ULL << GPIO_Pin;
+        io_conf.mode = GPIO_MODE_OUTPUT;
+        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.intr_type = GPIO_INTR_DISABLE;
+        switch (mode) {
+        case IO_MODE_Z:
+        case IO_MODE_INPUT_ANALOG:
+            io_conf.mode = GPIO_MODE_INPUT;
+            break;
+        case IO_MODE_INPUT_PU:
+            io_conf.mode = GPIO_MODE_INPUT;
+            io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+            break;
+        case IO_MODE_OUTPUT_PP:
+        case IO_MODE_OUTPUT_PP_LOW:
+        case IO_MODE_OUTPUT_PP_HIGH:
+            io_conf.mode = GPIO_MODE_OUTPUT;
+            break;
+        }
+        gpio_config(&io_conf);
+        switch (mode) {
+        case IO_MODE_OUTPUT_PP_LOW:
+            GPIO.out1_w1tc.data = ((uint32_t)1 << (GPIO_Pin - 32));
+            break;
+        case IO_MODE_OUTPUT_PP_HIGH:
+            GPIO.out1_w1ts.data = ((uint32_t)1 << (GPIO_Pin - 32));
+            break;
+        }
+        return;
+    }
+#endif
     switch (mode) {
     case IO_MODE_Z:
         pinMode(GPIO_Pin, INPUT);
@@ -89,7 +126,11 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
 #ifdef ESP32
-    GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
+    if (GPIO_Pin < 32) {
+        GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
+    } else {
+        GPIO.out1_w1tc.data = ((uint32_t)1 << (GPIO_Pin - 32));
+    }
 #elif defined ESP8266
     if (GPIO_Pin < 16) {
         GPOC = (1 << GPIO_Pin);
@@ -103,7 +144,11 @@ GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
 #ifdef ESP32
-    GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
+    if (GPIO_Pin < 32) {
+        GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
+    } else {
+        GPIO.out1_w1ts.data = ((uint32_t)1 << (GPIO_Pin - 32));
+    }
 #elif defined ESP8266
     if (GPIO_Pin < 16) {
         GPOS = (1 << GPIO_Pin);
