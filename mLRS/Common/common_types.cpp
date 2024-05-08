@@ -80,7 +80,7 @@ uint8_t rssi_i8_to_mavradio(int8_t rssi_i8, bool connected)
 
 
 // -120 ... -50 -> 172 .. 1877
-uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
+uint16_t rssi_i8_to_rc(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
     if (rssi_i8 > -50) return 1877; // max value
@@ -93,12 +93,12 @@ uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8)
 }
 
 
-// 0 ... 100 -> 191 .. 1792 = 1000 .. 2000 us
-uint16_t lq_to_sbus_crsf(uint8_t lq)
+// 0 ... 100 -> 172 .. 1877 = 1000 .. 2000 us
+uint16_t lq_to_rc(uint8_t lq)
 {
-    if (lq >= 100) return 1792; // max value
+    if (lq >= 100) return 1877; // max value
 
-    return ((uint32_t)lq * 1601 + 50) / 100 + 191;
+    return ((uint32_t)lq * 1705 + 50) / 100 + 172;
 }
 
 
