@@ -121,9 +121,9 @@ uint8_t rssi_u7_from_i8(int8_t rssi_i8);
 int8_t rssi_i8_from_u7(uint8_t rssi_u7);
 uint8_t rssi_i8_to_ap(int8_t rssi_i8);
 uint8_t rssi_i8_to_mavradio(int8_t rssi_i8, bool connected);
-uint16_t rssi_i8_to_ap_sbus(int8_t rssi_i8);
+uint16_t rssi_i8_to_rc(int8_t rssi_i8);
 
-uint16_t lq_to_sbus_crsf(uint8_t lq);
+uint16_t lq_to_rc(uint8_t lq);
 
 
 //-- rc data

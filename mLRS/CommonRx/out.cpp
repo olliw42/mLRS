@@ -147,12 +147,12 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int
 
     if (setup->OutRssiChannelMode >= OUT_RSSI_LQ_CHANNEL_CH5 && setup->OutRssiChannelMode <= OUT_RSSI_LQ_CHANNEL_CH16) {
         uint8_t rssi_channel = setup->OutRssiChannelMode + 4;
-        rc.ch[rssi_channel - 1] = rssi_i8_to_ap_sbus(rssi);
+        rc.ch[rssi_channel - 1] = rssi_i8_to_rc(rssi);
     }
 
     if (setup->OutLqChannelMode >= OUT_RSSI_LQ_CHANNEL_CH5 && setup->OutLqChannelMode <= OUT_RSSI_LQ_CHANNEL_CH16) {
         uint8_t lq_channel = setup->OutLqChannelMode + 4;
-        rc.ch[lq_channel - 1] = lq_to_sbus_crsf(lq);
+        rc.ch[lq_channel - 1] = lq_to_rc(lq);
     }
 
     if (!initialized) return;
