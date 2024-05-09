@@ -79,7 +79,7 @@ uint8_t rssi_i8_to_mavradio(int8_t rssi_i8, bool connected)
 }
 
 
-// -120 ... -50 -> 172 .. 1877
+// convert rssi to internal rc range, then further converted to output, -120 ... -50 -> 172 .. 1877
 uint16_t rssi_i8_to_rc(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
@@ -93,7 +93,7 @@ uint16_t rssi_i8_to_rc(int8_t rssi_i8)
 }
 
 
-// 0 ... 100 -> 172 .. 1877 = 1000 .. 2000 us
+// convert lq to internal rc range, then further converted to output, 0 ... 100 -> 172 .. 1877 = 1000 .. 2000 us
 uint16_t lq_to_rc(uint8_t lq)
 {
     if (lq >= 100) return 1877; // max value
