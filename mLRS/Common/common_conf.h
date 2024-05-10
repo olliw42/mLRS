@@ -49,7 +49,7 @@
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 
-#define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_ETAR
+#define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
