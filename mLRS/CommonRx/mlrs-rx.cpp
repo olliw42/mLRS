@@ -112,12 +112,16 @@ void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
-// Mavlink
+// Mavlink & MSP
 //-------------------------------------------------------
 
 #include "mavlink_interface_rx.h"
 
 tRxMavlink mavlink;
+
+#include "msp_interface_rx.h"
+
+tRxMsp msp;
 
 #include "sx_serial_interface_rx.h"
 
@@ -540,6 +544,7 @@ RESTARTCONTROLLER
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
+    msp.Init();
     sx_serial.Init();
     fan.SetPower(sx.RfPower_dbm());
 
@@ -731,6 +736,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
         if (!valid_frame_received) {
             mavlink.FrameLost();
+            msp.FrameLost();
         }
 
         if (valid_frame_received) { // valid frame received
@@ -862,9 +868,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
     out.Do();
 
-    //-- Do mavlink
+    //-- Do mavlink & msp
 
     mavlink.Do();
+    msp.Do();
 
     //-- Store parameters
 

@@ -20,6 +20,8 @@
 #include "../Common/protocols/ardupilot_protocol.h"
 #include "jr_pin5_interface.h"
 
+#define MSP_PAYLOAD_LEN_MAX  512 // INAV7.1 uses up to 340 !!!
+#include "../Common/protocols/msp_protocol.h"
 
 extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
@@ -62,6 +64,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
+    void TelemetryHandleMspMsg(msp_message_t* msg);
     void SendTelemetryFrame(void);
 
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
@@ -826,6 +829,24 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 
 //-------------------------------------------------------
+// CRSF Telemetry MSP Handling
+
+void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
+{
+    switch (msg->function) {
+    case MSP_ATTITUDE: {
+        tMspAttitude* payload = (tMspAttitude*)(msg->payload);
+        attitude.pitch = payload->pitch;
+        attitude.roll = payload->roll;
+        attitude.yaw = payload->yaw;
+        attitude_updated = true;
+        }break;
+
+    }
+}
+
+
+//-------------------------------------------------------
 // convenience helper
 
 uint8_t crsf_cvt_rssi_percent(int8_t rssi)
@@ -912,6 +933,7 @@ class tTxCrsfDummy
     void TelemetryTick_ms(void) {}
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
+    void TelemetryHandleMspMsg(msp_message_t* msg) {}
 };
 
 tTxCrsfDummy crsf;
