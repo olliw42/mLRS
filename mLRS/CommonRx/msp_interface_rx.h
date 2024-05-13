@@ -12,7 +12,6 @@
 
 
 #ifdef USE_FEATURE_MAVLINKX
-#if 1
 #include "../Common/libs/fifo.h"
 #include "../Common/thirdparty/mspx.h"
 
@@ -148,7 +147,8 @@ void tRxMsp::flush(void)
 }
 
 
-#else
+#else //!USE_FEATURE_MAVLINKX
+
 class tRxMsp
 {
   public:
@@ -156,13 +156,11 @@ class tRxMsp
     void Do(void) {}
     void FrameLost(void) {}
 
-    void putc(char c) { serial.putc(c); }
-    bool available(void) { return serial.available(); }
-    uint8_t getc(void) { return serial.getc(); }
+    void putc(char c) {}
+    bool available(void) { return false; }
+    uint8_t getc(void) { return 0; }
     void flush(void) {}
 };
-#endif
-#else //!USE_FEATURE_MAVLINKX
 
 #endif //USE_FEATURE_MAVLINKX
 

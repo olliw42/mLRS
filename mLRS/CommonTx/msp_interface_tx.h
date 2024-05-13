@@ -12,7 +12,6 @@
 
 
 #ifdef USE_FEATURE_MAVLINKX
-#if 1
 #include "../Common/thirdparty/mspx.h"
 
 
@@ -166,20 +165,6 @@ void tTxMsp::flush(void)
 }
 
 
-#else
-class tTxMsp
-{
-  public:
-    void Init(tSerialBase* _serialport, tSerialBase* _serial2port) {}
-    void Do(void) {}
-    void FrameLost(void) {}
-
-    void putc(char c) { serial.putc(c); }
-    bool available(void) { return serial.available(); }
-    uint8_t getc(void) { return serial.getc(); }
-    void flush(void) {}
-};
-#endif
 #else // !USE_FEATURE_MAVLINKX
 
 class tTxMsp
