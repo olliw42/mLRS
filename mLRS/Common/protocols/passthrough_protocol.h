@@ -150,13 +150,6 @@ class tPassThrough
     void handle_mavlink_msg_home_position(fmav_home_position_t* payload);   // #242
     void handle_mavlink_msg_statustext(fmav_statustext_t* payload);         // #253
 
-    // these read a msp message and convert data into passthrough data fields
-
-    void handle_msp_msg_attitude(tMspAttitude* payload);
-    void handle_msp_inav_status(tMspInavStatus* payload);
-    void handle_msp_inav_analog(tMspInavAnalog* payload);
-    void handle_msp_inav_misc2(tMspInavMisc2* payload);
-
     // methods to convert mavlink data to passthrough (OpenTX) format
 
     bool get_GpsLat_0x800(uint32_t* data);
@@ -452,44 +445,6 @@ void tPassThrough::handle_mavlink_msg_statustext(fmav_statustext_t* payload) // 
 {
     memcpy(&statustext, payload, sizeof(fmav_statustext_t));
     pt_update[TEXT_0x5000] = true;
-}
-
-
-//-------------------------------------------------------
-// Msp Handlers
-
-void tPassThrough::handle_msp_msg_attitude(tMspAttitude* payload)
-{
-    // only roll, pitch is used in AttitudeRange_0x5006
-    attitude.pitch = (DEG2RADF * 0.1f) * payload->pitch; // cdeg -> rad
-    attitude.roll = (DEG2RADF * 0.1f) * payload->roll; // cdeg -> rad
-    pt_update[ATTITUDE_RANGE_0x5006] = true;
-
-    vfr_hud.heading = payload->yaw; // deg -> deg
-    pt_update[VEL_YAW_0x5005] = true;
-}
-
-
-void tPassThrough::handle_msp_inav_status(tMspInavStatus* payload)
-{
-    vehicle_is_armed = (payload->arming_flags & MSP_INAV_STATUS_ARMING_FLAGS_ARMED);
-    pt_update[AP_STATUS_0x5001] = true;
-}
-
-
-void tPassThrough::handle_msp_inav_analog(tMspInavAnalog* payload)
-{
-    //int32_t voltage = mav_battery_voltage(&battery_status_id0);
-    battery_status_id0.current_battery = payload->amperage; // 0.01 A ->
-    battery_status_id0.current_consumed = payload->mAh_drawn; // mAh ->
-    pt_update[BATT_1_0x5003] = true;
-}
-
-
-void tPassThrough::handle_msp_inav_misc2(tMspInavMisc2* payload)
-{
-    vfr_hud.throttle = payload->throttle_percent;
-    pt_update[VFR_HUD_0x50F2] = true;
 }
 
 
