@@ -13,8 +13,6 @@
 
 #ifdef USE_FEATURE_MAVLINKX
 #if 1
-//#define MSP_PAYLOAD_LEN_MAX  511 // INAV7.1 uses up to 340 !!!
-//#include "../Common/protocols/msp_protocol.h"
 #include "../Common/thirdparty/mspx.h"
 
 
@@ -22,7 +20,7 @@ extern volatile uint32_t millis32(void);
 static inline bool connected_and_rx_setup_available(void);
 
 
-#define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) //300 // needs to be larger than max supported msp frame size
+#define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
 
 
 class tTxMsp
@@ -42,6 +40,7 @@ class tTxMsp
 
     tSerialBase* ser;
 
+    // fields for link in -> parser -> serial out
     msp_status_t status_link_in;
     msp_message_t msp_msg_link_in;
 
@@ -73,6 +72,7 @@ void tTxMsp::Init(tSerialBase* _serialport, tSerialBase* _serial2port)
 
 void tTxMsp::FrameLost(void)
 {
+    msp_parse_reset(&status_link_in);
 }
 
 
@@ -107,9 +107,16 @@ void tTxMsp::putc(char c)
 */
         //dbg.puts(" ");
         dbg.puts("\n");
-        char s[32]; msp_function_str(s, &msp_msg_link_in); dbg.puts(s);
-        //dbg.puts(" ");
-        //dbg.puts(u16toBCD_s(msp_msg_link_in.len));
+        dbg.putc(msp_msg_link_in.type);
+        char s[32]; msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
+        dbg.puts(" ");
+        dbg.puts(u16toBCD_s(msp_msg_link_in.len));
+        dbg.puts(" ");
+        dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
+        uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
+        uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
+        dbg.puts(" ");
+        dbg.puts(u8toHEX_s(crc8));
 
     }
 }

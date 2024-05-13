@@ -20,8 +20,6 @@
 #include "../Common/protocols/ardupilot_protocol.h"
 #include "jr_pin5_interface.h"
 
-#define MSP_PAYLOAD_LEN_MAX  512 // INAV7.1 uses up to 340 !!!
-#include "../Common/protocols/msp_protocol.h"
 
 extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
@@ -831,17 +829,36 @@ void tTxCrsf::SendTelemetryFrame(void)
 //-------------------------------------------------------
 // CRSF Telemetry MSP Handling
 
+#define DEG2RADF                    1.745329252E-02f
+
+
 void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
 {
     switch (msg->function) {
     case MSP_ATTITUDE: {
         tMspAttitude* payload = (tMspAttitude*)(msg->payload);
-        attitude.pitch = payload->pitch;
-        attitude.roll = payload->roll;
-        attitude.yaw = payload->yaw;
+        attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * payload->pitch); // cdeg -> rad * 1e4
+        attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * payload->roll); // cdeg -> rad * 1e4
+        attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * payload->yaw); // deg -> rad * 1e4
         attitude_updated = true;
+        passthrough.handle_msp_msg_attitude(payload); // this is to make yappu find telemetry data, with it alone it jumps
         }break;
 
+    case MSP_INAV_ANALOG: {
+        tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
+/*
+        battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
+        battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
+        uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
+        if (capacity > 8388607) capacity = 8388607; // int 24 bit
+        battery.capacity[0] = (capacity >> 16);
+        battery.capacity[1] = (capacity >> 8);
+        battery.capacity[2] = capacity;
+        battery.remaining = (payload->battery_remaining == -1) ? 0 : payload->battery_remaining;
+        battery_updated = true;
+  */
+        passthrough.handle_msp_inav_analog(payload);
+        }break;
     }
 }
 

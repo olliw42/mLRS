@@ -35,7 +35,7 @@
 
 
 #ifndef MSP_PAYLOAD_LEN_MAX
-#define MSP_PAYLOAD_LEN_MAX       512
+#define MSP_PAYLOAD_LEN_MAX       512 // INAV uses some quite big messages
 #endif
 
 

@@ -154,5 +154,14 @@
 #define RX_BIND_MODE_AFTER_POWERUP_TIME_SEC   60
 
 
+//-------------------------------------------------------
+// Protocol Configs
+//-------------------------------------------------------
+// sets various internal values
+// user must not modify
+
+#define MSP_PAYLOAD_LEN_MAX             512 // INAV7.1 uses up to 340 !!!
+
+
 #endif // COMMON_CONFIG_H
 

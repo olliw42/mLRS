@@ -57,7 +57,6 @@ typedef enum {
 typedef struct {
     uint8_t state;
     uint16_t cnt;
-    uint16_t frame_len;
 } msp_status_t;
 
 
@@ -65,7 +64,12 @@ void msp_status_reset(msp_status_t* status)
 {
     status->state = MSP_PARSE_STATE_IDLE;
     status->cnt = 0;
-    status->frame_len = 0;
+}
+
+
+void msp_parse_reset(msp_status_t* status)
+{
+    status->state = MSP_PARSE_STATE_IDLE;
 }
 
 
@@ -189,6 +193,30 @@ uint16_t msp_msg_to_frame_buf(uint8_t* buf, msp_message_t* msg)
 }
 
 
+uint16_t msp_frame_buf_to_msg(msp_message_t* msg, uint8_t* buf)
+{
+    msg->magic2 = buf[1];
+    msg->type = buf[2];
+    msg->flag = 0; // buf[3]
+    msg->function = (uint16_t)(buf[4]) + ((uint16_t)(buf[5]) << 8);
+    msg->len = (uint16_t)(buf[6]) + ((uint16_t)(buf[7]) << 8);
+
+    if (msg->len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
+        return 0;
+    }
+
+    uint16_t pos = 8;
+
+    for (uint16_t i = 0; i < msg->len; i++) msg->payload[i] = buf[pos++];
+
+    msg->checksum = buf[pos];
+
+    return msg->len + 8 + 1;
+}
+
+
+
+
 
 uint8_t msp_parse_to_msgX(msp_message_t* msg, msp_status_t* status, char c)
 {
@@ -234,12 +262,52 @@ void msp_init(void)
 
 
 
-
-
-
-void msp_function_str(char* s, msp_message_t* msg)
+uint16_t msp_generate_request_to_msg(msp_message_t* msg, uint8_t type, uint16_t function)
 {
-    switch (msg->function) {
+    msg->magic2 = MSP_MAGIC_2_V2;
+    msg->type = type;
+    msg->flag = 0;
+    msg->function = function;
+    msg->len = 0;
+    msg->checksum = crsf_crc8_calc(0, msg->flag);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
+    return 8 + 1;
+}
+
+
+uint16_t msp_generate_request_to_frame_buf(uint8_t* buf, uint8_t type, uint16_t function)
+{
+    buf[0] = MSP_MAGIC_1;
+    buf[1] = MSP_MAGIC_2_V2;
+    buf[2] = type;
+    buf[3] = 0;
+    buf[4] = function;
+    buf[5] = function >> 8;
+    buf[6] = 0;
+    buf[7] = 0;
+    buf[8] = crsf_crc8_update(0, &(buf[3]), 5);
+    return 8 + 1;
+}
+
+
+void msp_type_str(char* s, msp_message_t* msg)
+{
+    switch (msg->type) {
+    case MSP_TYPE_REQUEST: strcpy(s, "req"); break;
+    case MSP_TYPE_RESPONSE: strcpy(s, "rsp"); break;
+    case MSP_TYPE_ERROR: strcpy(s, "err"); break;
+    default:
+        strcpy(s, u8toBCD_s(msg->type));
+    }
+}
+
+
+void msp_function_str(char* s, uint16_t function)
+{
+    switch (function) {
 
     case MSP_STATUS: strcpy(s, "STATUS"); break;
     case 102: strcpy(s, "RAW_IMU"); break;
@@ -267,10 +335,14 @@ void msp_function_str(char* s, msp_message_t* msg)
     case 0x1F06: strcpy(s, "AIRSPEED"); break;
 
     default:
-        strcpy(s, u16toBCD_s(msg->function));
+        strcpy(s, u16toBCD_s(function));
     }
 }
 
+void msp_function_str_from_msg(char* s, msp_message_t* msg)
+{
+    msp_function_str(s, msg->function);
+}
 
 
 
