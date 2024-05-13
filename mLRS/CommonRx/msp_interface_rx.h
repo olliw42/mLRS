@@ -90,10 +90,9 @@ void tRxMsp::Do(void)
                 fifo_link_out.PutBuf(_buf, len);
 
 /*
-char s[32];
 dbg.puts("\n");
 dbg.putc(msp_msg_ser_in.type);
-msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
+char s[32]; msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
 dbg.puts(" ");
 dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 */
@@ -102,7 +101,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
         }
     }
 
-/*
+
     uint32_t tnow_ms = millis32();
     bool ticked = false;
     if ((tnow_ms - tick_tlast_ms) >= 100) {
@@ -121,16 +120,16 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
         }break;
 
     case 2: case 6: case 11: case 16: {
-        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ALTITUDE);
-        serial.putbuf(_buf, len);
-        }break;
-
-    case 3: case 7: case 12: case 17: {
         uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_INAV_STATUS);
         serial.putbuf(_buf, len);
         }break;
 
-    } */
+    case 3: case 7: case 12: case 17: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ALTITUDE);
+        serial.putbuf(_buf, len);
+        }break;
+
+    }
 }
 
 
@@ -155,11 +154,10 @@ void tRxMsp::putc(char c)
             msp_request_tlast_ms = millis32();
         }
 
-
-char s[32];
+/*
 dbg.puts("\n");
 dbg.putc(msp_msg_link_in.type);
-msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
+char s[32]; msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
 dbg.puts(" ");
 dbg.puts(u16toBCD_s(msp_msg_link_in.len));
 dbg.puts(" ");
@@ -167,7 +165,7 @@ dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
 uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
 dbg.puts(" ");
 dbg.puts(u8toHEX_s(crc8));
-
+*/
     }
 }
 

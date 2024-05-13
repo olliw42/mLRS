@@ -153,7 +153,9 @@ class tPassThrough
     // these read a msp message and convert data into passthrough data fields
 
     void handle_msp_msg_attitude(tMspAttitude* payload);
+    void handle_msp_inav_status(tMspInavStatus* payload);
     void handle_msp_inav_analog(tMspInavAnalog* payload);
+    void handle_msp_inav_misc2(tMspInavMisc2* payload);
 
     // methods to convert mavlink data to passthrough (OpenTX) format
 
@@ -468,14 +470,26 @@ void tPassThrough::handle_msp_msg_attitude(tMspAttitude* payload)
 }
 
 
+void tPassThrough::handle_msp_inav_status(tMspInavStatus* payload)
+{
+    vehicle_is_armed = (payload->arming_flags & MSP_INAV_STATUS_ARMING_FLAGS_ARMED);
+    pt_update[AP_STATUS_0x5001] = true;
+}
+
+
 void tPassThrough::handle_msp_inav_analog(tMspInavAnalog* payload)
 {
+    //int32_t voltage = mav_battery_voltage(&battery_status_id0);
+    battery_status_id0.current_battery = payload->amperage; // 0.01 A ->
+    battery_status_id0.current_consumed = payload->mAh_drawn; // mAh ->
+    pt_update[BATT_1_0x5003] = true;
+}
 
-  //int32_t voltage = mav_battery_voltage(&battery_status_id0);
-  battery_status_id0.current_battery = payload->amperage; // 0.01 A ->
-  battery_status_id0.current_consumed = payload->mAh_drawn; // mAh ->
-  pt_update[BATT_1_0x5003] = true;
 
+void tPassThrough::handle_msp_inav_misc2(tMspInavMisc2* payload)
+{
+    vfr_hud.throttle = payload->throttle_percent;
+    pt_update[VFR_HUD_0x50F2] = true;
 }
 
 

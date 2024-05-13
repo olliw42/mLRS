@@ -841,7 +841,12 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * payload->roll); // cdeg -> rad * 1e4
         attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * payload->yaw); // deg -> rad * 1e4
         attitude_updated = true;
-        passthrough.handle_msp_msg_attitude(payload); // this is to make yappu find telemetry data, with it alone it jumps
+        passthrough.handle_msp_msg_attitude(payload);
+        }break;
+
+    case MSP_INAV_STATUS: {
+        tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
+        passthrough.handle_msp_inav_status(payload);
         }break;
 
     case MSP_INAV_ANALOG: {
@@ -859,6 +864,12 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
   */
         passthrough.handle_msp_inav_analog(payload);
         }break;
+
+    case MSP_INAV_MISC2: {
+        tMspInavMisc2* payload = (tMspInavMisc2*)(msg->payload);
+        passthrough.handle_msp_inav_misc2(payload);
+        }break;
+
     }
 }
 
