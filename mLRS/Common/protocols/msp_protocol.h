@@ -62,8 +62,6 @@ typedef struct {
 } msp_message_t;
 
 
-
-
 typedef enum {
     MSP_STATUS                    = 101,
     MSP_RAW_IMU                   = 102,

@@ -45,8 +45,6 @@ class tRxMsp
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
-    msp_status_t status_link_out;
-    msp_message_t msp_msg_link_out;
     FifoBase<char,2*512> fifo_link_out; // needs to be at least ??
 
     // to inject requests if no requests from a gcs
@@ -63,10 +61,7 @@ void tRxMsp::Init(void)
     msp_init();
 
     status_link_in = {};
-
     status_ser_in = {};
-    status_link_out = {};
-
     fifo_link_out.Init();
 
     msp_request_tlast_ms = 0;
@@ -77,43 +72,38 @@ void tRxMsp::Init(void)
 
 void tRxMsp::Do(void)
 {
-    uint32_t tnow_ms = millis32();
-
     if (!connected()) {
         fifo_link_out.Flush();
     }
 
+    // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (serial.available()) {
             char c = serial.getc();
-//            fifo_link_out.Put(c);
-
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
+#ifdef USE_MSPX
+                uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
+#else
                 uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
+#endif
+
                 fifo_link_out.PutBuf(_buf, len);
 
 /*
-                dbg.puts("\nMSP: ");
-                dbg.putc(msp_msg_ser_in.magic2);
-                dbg.putc(msp_msg_ser_in.type);
-                dbg.puts(" ");
-                dbg.puts(u16toBCD_s(msp_msg_ser_in.function));
-                dbg.puts(" ");
-                dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
+char s[32];
+dbg.puts("\n");
+dbg.putc(msp_msg_ser_in.type);
+msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
+dbg.puts(" ");
+dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 */
-
-                char s[32];
-                dbg.puts("\ndo");
-                dbg.putc(msp_msg_ser_in.type);
-                msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
-
-
             }
 
         }
     }
 
-
+/*
+    uint32_t tnow_ms = millis32();
     bool ticked = false;
     if ((tnow_ms - tick_tlast_ms) >= 100) {
         tick_tlast_ms = tnow_ms;
@@ -121,52 +111,26 @@ void tRxMsp::Do(void)
         ticked = true;
     }
 
-    if ((tnow_ms - msp_request_tlast_ms) > 1500) { // didn't got a request for a while
-        if (ticked)
-        switch (tick) {
-        case 0: case 5: case 10: case 15: {
-            uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ATTITUDE);
-//            msp_message_t msg1;
-//            msp_generate_request_to_msg(&msg1, MSP_TYPE_REQUEST, MSP_ATTITUDE);
-//            uint16_t len = msp_msg_to_frame_buf(_buf, &msg1);
+    if ((tnow_ms - msp_request_tlast_ms) < 1500) return; // got a request recently
 
-            serial.putbuf(_buf, len);
+    if (ticked)
+    switch (tick) {
+    case 0: case 5: case 10: case 15: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ATTITUDE);
+        serial.putbuf(_buf, len);
+        }break;
 
-//char s[32]; dbg.puts("\n"); msp_function_str(s, MSP_ATTITUDE); dbg.puts(s);
-/*
-msp_message_t msg;
-msp_frame_buf_to_msg(&msg, _buf);
+    case 2: case 6: case 11: case 16: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ALTITUDE);
+        serial.putbuf(_buf, len);
+        }break;
 
-char s[32];
-dbg.puts("\n");
-dbg.putc(msg.type);
-msp_function_str_from_msg(s, &msg); dbg.puts(s);
-dbg.puts(" ");
-dbg.puts(u16toBCD_s(msg.len));
-dbg.puts(" ");
-dbg.puts(u8toHEX_s(msg.checksum));
-uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
-dbg.puts(" ");
-dbg.puts(u8toHEX_s(crc8));
-*/
+    case 3: case 7: case 12: case 17: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_INAV_STATUS);
+        serial.putbuf(_buf, len);
+        }break;
 
-            }break;
-
-        case 2: case 6: case 11: case 16: {
-            uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ALTITUDE);
-            serial.putbuf(_buf, len);
-char s[32]; dbg.puts("\n"); msp_function_str(s, MSP_ALTITUDE); dbg.puts(s);
-            }break;
-
-        case 3: case 7: case 12: case 17: {
-            uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_INAV_STATUS);
-            serial.putbuf(_buf, len);
-char s[32]; dbg.puts("\n"); msp_function_str(s, MSP_INAV_STATUS); dbg.puts(s);
-            }break;
-
-        }
-    }
-
+    } */
 }
 
 
@@ -178,10 +142,12 @@ void tRxMsp::FrameLost(void)
 
 void tRxMsp::putc(char c)
 {
-    //serial.putc(c);
-
     // parse link in -> serial out
+#ifdef USE_MSPX
+    if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
+#else
     if (msp_parse_to_msg(&msp_msg_link_in, &status_link_in, c)) {
+#endif
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         serial.putbuf(_buf, len);
 
@@ -189,17 +155,18 @@ void tRxMsp::putc(char c)
             msp_request_tlast_ms = millis32();
         }
 
-        char s[32];
-        dbg.puts("\nputc");
-        dbg.putc(msp_msg_link_in.type);
-        msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
-        //dbg.puts(" ");
-        //dbg.puts(u16toBCD_s(msp_msg_link_in.len));
-        //dbg.puts(" ");
-        //dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
-        //uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
-        //dbg.puts(" ");
-        //dbg.puts(u8toHEX_s(crc8));
+
+char s[32];
+dbg.puts("\n");
+dbg.putc(msp_msg_link_in.type);
+msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
+dbg.puts(" ");
+dbg.puts(u16toBCD_s(msp_msg_link_in.len));
+dbg.puts(" ");
+dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
+uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
+dbg.puts(" ");
+dbg.puts(u8toHEX_s(crc8));
 
     }
 }
