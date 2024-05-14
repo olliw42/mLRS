@@ -45,12 +45,6 @@ typedef enum {
     MSP_PARSE_STATE_LEN_2,
     MSP_PARSE_STATE_PAYLOAD,
     MSP_PARSE_STATE_CHECKSUM,
-
-// mspX
-    MSP_PARSE_STATE_FLAGS,
-    MSP_PARSE_STATE_CRC8,
-    MSP_PARSE_STATE_CRC16_1,
-    MSP_PARSE_STATE_CRC16_2,
 } msp_parse_state_e;
 
 
@@ -227,8 +221,24 @@ uint16_t msp_frame_buf_to_msg(msp_message_t* msg, uint8_t* buf)
 // MspX
 //-------------------------------------------------------
 
+typedef enum {
+    MSP_PARSE_STATE_FLAGS = 100,
+    MSP_PARSE_STATE_CRC8,
+    MSP_PARSE_STATE_CRC16_1,
+    MSP_PARSE_STATE_CRC16_2,
+} mspx_parse_state_e;
+
+
+typedef enum {
+    MSP_FLAGS_REQUEST   = 0x01,
+    MSP_FLAGS_ERROR     = 0x02,
+} mspx_flags_e;
+
+
 typedef struct
 {
+    uint8_t flags;
+    uint8_t crc8;
     uint16_t crc16;
 } mspx_status_t;
 
@@ -264,8 +274,16 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
         return 0;
 
     case MSP_PARSE_STATE_FLAGS:
+        mspx_status.flags = c;
+        // fake correct msp header
         msg->magic2 = MSP_MAGIC_2_V2;
-        msg->type = c; // we currently use the same
+        if (mspx_status.flags & MSP_FLAGS_REQUEST) {
+            msg->type = MSP_TYPE_REQUEST;
+        } else if (mspx_status.flags & MSP_FLAGS_ERROR) {
+            msg->type = MSP_TYPE_ERROR;
+        } else {
+            msg->type = MSP_TYPE_RESPONSE;
+        }
         msg->flag = 0;
         status->state = MSP_PARSE_STATE_FUNCTION_1;
         msg->res = MSP_PARSE_RESULT_NONE;
@@ -295,9 +313,14 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
         msg->res = MSP_PARSE_RESULT_NONE;
         return 0;
 
-    case MSP_PARSE_STATE_CRC8:
-        // TODO: check crc8
-        if (c != 123) {
+    case MSP_PARSE_STATE_CRC8: {
+        mspx_status.crc8 = c;
+        uint8_t crc8 = crsf_crc8_calc(0, mspx_status.flags);
+        crc8 = crsf_crc8_calc(crc8, msg->function);
+        crc8 = crsf_crc8_calc(crc8, msg->function >> 8);
+        crc8 = crsf_crc8_calc(crc8, msg->len);
+        crc8 = crsf_crc8_calc(crc8, msg->len >> 8);
+        if (mspx_status.crc8 != crc8) {
             msp_status_reset(status);
             msg->res = MSP_PARSE_RESULT_CRC_ERROR;
             return 0;
@@ -312,7 +335,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
         if (msg->len > MSP_PAYLOAD_LEN_MAX) {
             msp_status_reset(status);
         }
-        return 0;
+        return 0; }
 
     case MSP_PARSE_STATE_PAYLOAD:
         if (status->cnt < MSP_PAYLOAD_LEN_MAX) msg->payload[status->cnt] = c; // payload
@@ -329,10 +352,18 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
         msg->res = MSP_PARSE_RESULT_HAS_HEADER;
         return 0;
 
-    case MSP_PARSE_STATE_CRC16_2:
+    case MSP_PARSE_STATE_CRC16_2: {
         mspx_status.crc16 += ((uint16_t)c << 8);
-        // TODO: check crc16
-        if (mspx_status.crc16 != 54321) {
+        uint16_t crc16;
+        fmav_crc_init(&crc16);
+        fmav_crc_accumulate(&crc16, mspx_status.flags);
+        fmav_crc_accumulate(&crc16, msg->function);
+        fmav_crc_accumulate(&crc16, msg->function >> 8);
+        fmav_crc_accumulate(&crc16, msg->len);
+        fmav_crc_accumulate(&crc16, msg->len >> 8);
+        fmav_crc_accumulate(&crc16, mspx_status.crc8);
+        fmav_crc_accumulate_buf(&crc16, msg->payload, msg->len);
+        if (mspx_status.crc16 != crc16) {
             msp_status_reset(status);
             msg->res = MSP_PARSE_RESULT_CRC_ERROR;
             return 0;
@@ -348,7 +379,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 
         msp_status_reset(status);
         msg->res = MSP_PARSE_RESULT_OK;
-        return 1;
+        return 1; }
     }
 
     // should never get to here
@@ -364,21 +395,27 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
         return 0;
     }
 
+    uint8_t flags = 0;
+    if (msg->type == MSP_TYPE_REQUEST) {
+        flags |= MSP_FLAGS_REQUEST;
+    } else if (msg->type == MSP_TYPE_ERROR) {
+        flags |= MSP_FLAGS_ERROR;
+    }
+
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSPX_MAGIC_2;
-    buf[2] = msg->type; //we currently use the same
+    buf[2] = flags;
     buf[3] = msg->function;
     buf[4] = msg->function >> 8;
     buf[5] = msg->len;
     buf[6] = msg->len >> 8;
-    uint8_t crc8 = 123; // crsf_crc8_update(0, &(buf[2]), 5);
-    buf[7] = crc8;
+    buf[7] = crsf_crc8_update(0, &(buf[2]), 5);
 
     uint16_t pos = 8;
 
     for (uint16_t i = 0; i < msg->len; i++) buf[pos++] = msg->payload[i];
 
-    uint16_t crc16 = 54321; //fmav_crc_calculate(&(buf[2]), msg->len + 6);
+    uint16_t crc16 = fmav_crc_calculate(&(buf[2]), msg->len + 6);
     buf[pos++] = crc16;
     buf[pos++] = crc16 >> 8;
 

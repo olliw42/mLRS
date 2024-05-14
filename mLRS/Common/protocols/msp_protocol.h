@@ -17,7 +17,7 @@
 // len_1          LSB
 // len_2          MSB
 // payload
-// crc8           starting from flag (or function_1??) up to inclusive payload
+// crc8           starting from flag up to inclusive payload
 //
 //  https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp.c
 //
