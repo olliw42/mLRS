@@ -315,11 +315,13 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 
     case MSP_PARSE_STATE_CRC8: {
         mspx_status.crc8 = c;
-        uint8_t crc8 = crsf_crc8_calc(0, mspx_status.flags);
-        crc8 = crsf_crc8_calc(crc8, msg->function);
-        crc8 = crsf_crc8_calc(crc8, msg->function >> 8);
-        crc8 = crsf_crc8_calc(crc8, msg->len);
-        crc8 = crsf_crc8_calc(crc8, msg->len >> 8);
+        uint8_t crc8;
+        fmavX_crc8_init(&crc8);
+        fmavX_crc8_accumulate(&crc8, mspx_status.flags);
+        fmavX_crc8_accumulate(&crc8, msg->function);
+        fmavX_crc8_accumulate(&crc8, msg->function >> 8);
+        fmavX_crc8_accumulate(&crc8, msg->len);
+        fmavX_crc8_accumulate(&crc8, msg->len >> 8);
         if (mspx_status.crc8 != crc8) {
             msp_status_reset(status);
             msg->res = MSP_PARSE_RESULT_CRC_ERROR;
@@ -409,7 +411,7 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
     buf[4] = msg->function >> 8;
     buf[5] = msg->len;
     buf[6] = msg->len >> 8;
-    buf[7] = crsf_crc8_update(0, &(buf[2]), 5);
+    buf[7] = fmavX_crc8_calculate(&(buf[2]), 5);
 
     uint16_t pos = 8;
 

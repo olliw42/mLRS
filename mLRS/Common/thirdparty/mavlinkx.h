@@ -302,6 +302,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_crc8_calculate(const uint8_t* buf, 
 #endif
 
 
+FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
+{
+    *crc = MAVLINKX_CRC8_INIT;
+}
+
+
 //-------------------------------------------------------
 // Converter
 //-------------------------------------------------------
