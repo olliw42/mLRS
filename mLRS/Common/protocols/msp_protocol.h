@@ -78,6 +78,8 @@ typedef enum {
     MSP_STATUS_EX                 = 150,
     MSP_SENSOR_STATUS             = 151,
 
+    MSP_SET_RAW_RC                = 200,
+
     MSP_INAV_STATUS               = 0x2000,
     MSP_INAV_ANALOG               = 0x2002,
     MSP_INAV_MISC                 = 0x2003,
@@ -298,6 +300,17 @@ typedef struct
 #define MSP_INAV_MISC2_LEN  10
 
 
+//-- Control/Command data frames
+
+// MSP_SET_RAW_RC  200
+MSP_PACKED(
+typedef struct
+{
+    uint16_t rc[16];                            // range [1000;2000]
+}) tMspSetRawRc; // 32 bytes
+
+#define MSP_SET_RAW_RC_LEN  32
+
 
 #endif // MSP_PROTOCOL_H
 
@@ -442,5 +455,15 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
 #endif
         break;
 
+
+
+
+
+
+MSP_SET_RAW_RC  200   → FC  rcData[RC_CHANS]  16 x UINT 16  Range [1000;2000]
+
+ROLL/PITCH/YAW/THROTTLE/AUX1/AUX2/AUX3AUX4
+
+This request is used to inject RC channel via MSP. Each chan overrides legacy RX as long as it is refreshed at least every second. See UART radio projects for more details.
 
 */

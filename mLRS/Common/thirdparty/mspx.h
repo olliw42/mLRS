@@ -14,8 +14,6 @@
 
 #define USE_MSPX
 
-// https://github.com/iNavFlight/inav/wiki/MSP-V2
-
 // STX1                       '$'
 // STX2                       'X', 'M'
 // flags                      type '<', '>', '!'
@@ -463,6 +461,27 @@ uint16_t msp_generate_request_to_frame_buf(uint8_t* buf, uint8_t type, uint16_t 
     buf[7] = 0;
     buf[8] = crsf_crc8_update(0, &(buf[3]), 5);
     return 8 + 1;
+}
+
+
+uint16_t msp_generate_frame_buf(uint8_t* buf, uint8_t type, uint16_t function, uint8_t* payload, uint16_t len)
+{
+    buf[0] = MSP_MAGIC_1;
+    buf[1] = MSP_MAGIC_2_V2;
+    buf[2] = type;
+    buf[3] = 0;
+    buf[4] = function;
+    buf[5] = function >> 8;
+    buf[6] = len;
+    buf[7] = len >> 8;
+
+    uint16_t pos = 8;
+
+    for (uint16_t i = 0; i < len; i++) buf[pos++] = payload[i];
+
+    buf[pos] = crsf_crc8_update(0, &(buf[3]), len + 5);
+
+    return len + 8 + 1;
 }
 
 

@@ -28,6 +28,7 @@ class tRxMsp
   public:
     void Init(void);
     void Do(void);
+    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe);
     void FrameLost(void);
 
     void putc(char c);
@@ -46,6 +47,10 @@ class tRxMsp
     msp_message_t msp_msg_ser_in;
     FifoBase<char,2*512> fifo_link_out; // needs to be at least ??
 
+    // to inject MSP_SET_RAW_RC
+    bool inject_rc_channels;
+    uint16_t rc_chan[16]; // holds the rc data in MSP format
+
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
@@ -57,6 +62,33 @@ void tRxMsp::Init(void)
     status_link_in = {};
     status_ser_in = {};
     fifo_link_out.Init();
+
+    inject_rc_channels = false;
+}
+
+
+void tRxMsp::SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe)
+{
+    if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
+
+    uint8_t failsafe_mode = Setup.Rx.FailsafeMode;
+
+    if (failsafe) {
+        switch (failsafe_mode) {
+        case FAILSAFE_MODE_NO_SIGNAL:
+            // do not output anything, so jump out
+            return;
+        case FAILSAFE_MODE_CH1CH4_CENTER:
+            // in this mode do not report bad signal
+            break;
+        }
+    }
+
+    for (uint8_t i = 0; i < 16; i++) {
+        rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+    }
+
+    inject_rc_channels = true;
 }
 
 
@@ -88,6 +120,19 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 */
             }
 
+        }
+    }
+
+    // inject radio rc channels
+
+    if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
+        inject_rc_channels = false;
+        switch (Setup.Rx.SendRcChannels) {
+        case SEND_RC_CHANNELS_RCCHANNELSOVERRIDE:
+        case SEND_RC_CHANNELS_RADIORCCHANNELS: {
+            uint16_t len = msp_generate_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
+            serial.putbuf(_buf, len);
+            return; }
         }
     }
 }
@@ -154,6 +199,7 @@ class tRxMsp
   public:
     void Init(void) {}
     void Do(void) {}
+    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe) {}
     void FrameLost(void) {}
 
     void putc(char c) {}
