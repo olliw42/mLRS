@@ -572,5 +572,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
     }
 };
 
-#endif
+#endif // defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+
+
 #endif // SX1276_DRIVER_H
