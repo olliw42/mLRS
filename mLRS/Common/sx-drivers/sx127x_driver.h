@@ -518,11 +518,15 @@ class Sx127xDriver2 : public Sx127xDriverCommon
     {
         Sx127xDriverCommon::Init();
 
-        spi_init();
-        spi_setnop(0x00); // 0x00 = NOP
-        sx_init_gpio();
-        sx_dio_exti_isr_clearflag();
-        sx_dio_init_exti_isroff();
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+        spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
+        sx2_init_gpio();
+        sx2_dio_exti_isr_clearflag();
+        sx2_dio_init_exti_isroff();
 
         // no idea how long the SX1276 takes to boot up, so give it some good time
         delay_ms(300);
@@ -552,21 +556,21 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         Configure(global_config);
         delay_us(125); // may not be needed
 
-        sx_dio_enable_exti_isr();
+        sx2_dio_enable_exti_isr();
     }
 
     //-- this are the API functions used in the loop
 
     void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
     {
-        sx_amp_transmit();
+        sx2_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(uint16_t tmo_ms = 0)
     {
-        sx_amp_receive();
+        sx2_amp_receive();
         Sx127xDriverCommon::SetToRx(tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
