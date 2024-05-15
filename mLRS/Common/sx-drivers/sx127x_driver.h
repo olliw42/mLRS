@@ -430,7 +430,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
 #ifndef SX2_RESET
   #error SX2 must have a RESET pin!
@@ -572,7 +572,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
     }
 };
 
-#endif // defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#endif // defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
 
 #endif // SX1276_DRIVER_H
