@@ -508,9 +508,9 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     void _reset(void)
     {
-        gpio_low(SX_RESET);
+        gpio_low(SX2_RESET);
         delay_ms(5); // datasheet says > 100 us
-        gpio_high(SX_RESET);
+        gpio_high(SX2_RESET);
         delay_ms(50); // datasheet says 5 ms
     }
 
