@@ -36,7 +36,7 @@
 #define SPI_MISO                  IO_P33
 #define SPI_MOSI                  IO_P32
 #define SPI_SCK                   IO_P25
-#define SPI_FREQUENCY             18000000L
+#define SPI_FREQUENCY             10000000L
 #define SX_DIO0                   IO_P36
 #define SX_DIO1                   IO_P37
 #define SX_RESET                  IO_P26
