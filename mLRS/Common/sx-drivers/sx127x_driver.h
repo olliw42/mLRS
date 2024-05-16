@@ -545,17 +545,8 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     void StartUp(tSxGlobalConfig* global_config)
     {
-//XX        // this is not nice, figure out where to place
-//XX#ifdef DEVICE_HAS_I2C_DAC
-//XX        dac.Init();
-//XX#endif
-
-//XX        SetStandby(); // should be in STDBY after reset
-//XX        delay_us(1000); // is this needed ????
-
         Configure(global_config);
         delay_us(125); // may not be needed
-
         sx2_dio_enable_exti_isr();
     }
 
