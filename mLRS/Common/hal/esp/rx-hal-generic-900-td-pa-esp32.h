@@ -238,6 +238,6 @@ IRAM_ATTR void led_blue_toggle(void)
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },  // really about 17 dBm?
+    { .dbm = POWER_MIN, .mW = INT8_MIN },  // really about 19 dBm?
     { .dbm = POWER_27_DBM, .mW = 500 },    // 27 dBm
 };
