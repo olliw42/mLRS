@@ -120,6 +120,9 @@ void tTxMsp::putc(char c)
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         ser->putbuf(_buf, len);
 
+        // allow crsf to capture it
+        crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
+
 /*
 dbg.puts("\n");
 dbg.putc(msp_msg_link_in.type);

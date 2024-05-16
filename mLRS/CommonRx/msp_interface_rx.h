@@ -51,6 +51,11 @@ class tRxMsp
     bool inject_rc_channels;
     uint16_t rc_chan[16]; // holds the rc data in MSP format
 
+    // to inject requests if no there are requests from a gcs
+    uint32_t msp_request_tlast_ms;
+    uint32_t tick_tlast_ms;
+    uint8_t tick;
+
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
 
@@ -64,6 +69,10 @@ void tRxMsp::Init(void)
     fifo_link_out.Init();
 
     inject_rc_channels = false;
+
+    msp_request_tlast_ms = 0;
+    tick_tlast_ms = 0;
+    tick = 0;
 }
 
 
@@ -131,6 +140,37 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
         serial.putbuf(_buf, len);
         return;
     }
+
+    // inject msp requests for telemetry data as needed
+/*
+    uint32_t tnow_ms = millis32();
+    bool ticked = false;
+    if ((tnow_ms - tick_tlast_ms) >= 100) {
+        tick_tlast_ms = tnow_ms;
+        INCc(tick, 20);
+        ticked = true;
+    }
+
+    if ((tnow_ms - msp_request_tlast_ms) < 1500) return; // got a request recently, no need to send ourselves
+
+    if (ticked)
+    switch (tick) {
+    case 0: case 5: case 10: case 15: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ATTITUDE);
+        serial.putbuf(_buf, len);
+        }break;
+
+    case 2: case 6: case 11: case 16: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_INAV_STATUS);
+        serial.putbuf(_buf, len);
+        }break;
+
+    case 3: case 7: case 12: case 17: {
+        uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_ALTITUDE);
+        serial.putbuf(_buf, len);
+        }break;
+
+    } */
 }
 
 
@@ -150,6 +190,10 @@ void tRxMsp::putc(char c)
 #endif
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         serial.putbuf(_buf, len);
+
+        if (msp_msg_link_in.type == MSP_TYPE_REQUEST) { // to indicate there are requests from a gcs
+            msp_request_tlast_ms = millis32();
+        }
 
 /*
 dbg.puts("\n");

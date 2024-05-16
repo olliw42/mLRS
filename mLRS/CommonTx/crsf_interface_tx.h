@@ -62,6 +62,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
+    void TelemetryHandleMspMsg(msp_message_t* msg);
     void SendTelemetryFrame(void);
 
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
@@ -826,6 +827,50 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 
 //-------------------------------------------------------
+// CRSF Telemetry MSP Handling
+
+#define DEG2RADF                    1.745329252E-02f
+
+
+void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
+{
+    switch (msg->function) {
+    case MSP_ATTITUDE: {
+        tMspAttitude* payload = (tMspAttitude*)(msg->payload);
+        attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * payload->pitch); // cdeg -> rad * 1e4
+        attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * payload->roll); // cdeg -> rad * 1e4
+        attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * payload->yaw); // deg -> rad * 1e4
+        attitude_updated = true;
+        }break;
+
+    case MSP_INAV_STATUS: {
+        tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
+        }break;
+
+    case MSP_INAV_ANALOG: {
+        tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
+/*
+        battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
+        battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
+        uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
+        if (capacity > 8388607) capacity = 8388607; // int 24 bit
+        battery.capacity[0] = (capacity >> 16);
+        battery.capacity[1] = (capacity >> 8);
+        battery.capacity[2] = capacity;
+        battery.remaining = (payload->battery_remaining == -1) ? 0 : payload->battery_remaining;
+        battery_updated = true;
+  */
+        }break;
+
+    case MSP_INAV_MISC2: {
+        tMspInavMisc2* payload = (tMspInavMisc2*)(msg->payload);
+        }break;
+
+    }
+}
+
+
+//-------------------------------------------------------
 // convenience helper
 
 uint8_t crsf_cvt_rssi_percent(int8_t rssi)
@@ -912,6 +957,7 @@ class tTxCrsfDummy
     void TelemetryTick_ms(void) {}
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
+    void TelemetryHandleMspMsg(msp_message_t* msg) {}
 };
 
 tTxCrsfDummy crsf;
