@@ -127,13 +127,9 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
-        switch (Setup.Rx.SendRcChannels) {
-        case SEND_RC_CHANNELS_RCCHANNELSOVERRIDE:
-        case SEND_RC_CHANNELS_RADIORCCHANNELS: {
-            uint16_t len = msp_generate_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
-            serial.putbuf(_buf, len);
-            return; }
-        }
+        uint16_t len = msp_generate_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
+        serial.putbuf(_buf, len);
+        return;
     }
 }
 
