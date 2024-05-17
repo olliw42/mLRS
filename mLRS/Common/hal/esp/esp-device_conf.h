@@ -37,6 +37,14 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_ELRS_GENERIC_900_TD_PA_ESP32
+  #define DEVICE_NAME "GENERIC 900 TD PA"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 
 //-- ELRS 2.4 GHz Generic Devices
 

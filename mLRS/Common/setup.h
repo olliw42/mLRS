@@ -180,6 +180,14 @@ void setup_configure_metadata(void)
 // Setup
 //-------------------------------------------------------
 
+// override default setup setting from common_conf.h
+// TODO: when AP4.6 is out, it should become SEND_RC_CHANNELS_RADIORCCHANNELS
+#if !defined USE_OUT || defined ESP32 || defined ESP8266
+  #undef SETUP_RX_SEND_RC_CHANNELS
+  #define SETUP_RX_SEND_RC_CHANNELS  SEND_RC_CHANNELS_RCCHANNELSOVERRIDE
+#endif
+
+
 void inc_bindphrase_char(char* s, uint8_t pos)
 {
     char* cptr = strchr(bindphrase_chars, s[pos]);

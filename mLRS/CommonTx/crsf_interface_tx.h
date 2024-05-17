@@ -51,23 +51,23 @@ class tTxCrsf : public tPin5BridgeBase
     bool TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms);
 
     bool CommandReceived(uint8_t* cmd);
-    uint8_t* GetCmdDataPtr(void);
     uint8_t* GetPayloadPtr(void);
     uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
-
-    void SendLinkStatistics(tCrsfLinkStatistics* payload); // in OpenTx this triggers telemetryStreaming
-    void SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload);
-    void SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload);
-    void SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
     void TelemetryHandleMspMsg(msp_message_t* msg);
     void SendTelemetryFrame(void);
 
+    void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
+    void SendLinkStatisticsTx(void);
+    void SendLinkStatisticsRx(void);
+
     void SendMBridgeFrame(void* payload, const uint8_t payload_len);
 
     // helper
+    void send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
+
     uint8_t crc8(const uint8_t* buf);
     void fill_rcdata(tRcData* rc);
 
@@ -403,12 +403,6 @@ bool tTxCrsf::CommandReceived(uint8_t* cmd)
 }
 
 
-uint8_t* tTxCrsf::GetCmdDataPtr(void)
-{
-    return ((tCrsfFrameHeader*)frame)->cmd_data;
-}
-
-
 uint8_t* tTxCrsf::GetPayloadPtr(void)
 {
     return ((tCrsfFrameHeader*)frame)->payload;
@@ -427,10 +421,16 @@ uint8_t tTxCrsf::GetCmdModelId(void)
 }
 
 
-//-------------------------------------------------------
-// CRSF Bridge
+void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
+{
+    send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, payload_len);
+}
 
-void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
+
+//-------------------------------------------------------
+// helper
+
+void tTxCrsf::send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO; // correct? OpenTx accepts CRSF_ADDRESS_RADIO or CRSF_OPENTX_SYNC, so correct
     tx_frame[1] = (4-2) + payload_len;
@@ -442,27 +442,71 @@ void tTxCrsf::SendFrame(const uint8_t frame_id, void* payload, const uint8_t pay
 }
 
 
-void tTxCrsf::SendLinkStatistics(tCrsfLinkStatistics* payload)
+//-------------------------------------------------------
+// CRSF Telemetry Handler
+
+// called in main loop, when crsf.TelemetryUpdate() true
+void tTxCrsf::SendTelemetryFrame(void)
 {
-    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS, payload, CRSF_LINK_STATISTICS_LEN);
-}
+    // native crsf
 
+    uint32_t tnow_ms = millis32();
 
-void tTxCrsf::SendLinkStatisticsTx(tCrsfLinkStatisticsTx* payload)
-{
-    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_TX, payload, CRSF_LINK_STATISTICS_TX_LEN);
-}
+    #define CRSF_REFRESH_TIME_MS  2500 // what is actually a proper value ??
 
+    if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
+    if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
+    if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
+    if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
+    if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
+    if (baro_send_tlast_ms && (tnow_ms - baro_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
 
-void tTxCrsf::SendLinkStatisticsRx(tCrsfLinkStatisticsRx* payload)
-{
-    SendFrame(CRSF_FRAME_ID_LINK_STATISTICS_RX, payload, CRSF_LINK_STATISTICS_RX_LEN);
-}
+    if (flightmode_updated) {
+        flightmode_updated = false;
+        flightmode_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
+        return; // only send one per slot
+    }
+    if (battery_updated) {
+        battery_updated = false;
+        battery_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
+        return; // only send one per slot
+    }
+    if (gps_updated) {
+        gps_updated = false;
+        gps_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
+        return; // only send one per slot
+    }
+    if (vario_updated) {
+        vario_updated = false;
+        vario_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
+        return; // only send one per slot
+    }
+    if (attitude_updated) {
+        attitude_updated = false;
+        attitude_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
+        return; // only send one per slot
+    }
+    if (baro_altitude_updated) {
+        baro_altitude_updated = false;
+        baro_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
+        return; // only send one per slot
+    }
 
+    // passthrough
 
-void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
-{
-    SendFrame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, payload_len);
+    uint8_t data[64+10];
+    uint8_t len;
+
+    if (passthrough.GetTelemetryFrameMulti(data, &len)) {
+        send_frame(CRSF_FRAME_ID_AP_CUSTOM_TELEM, data, len);
+        return;
+    }
 }
 
 
@@ -761,71 +805,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 }
 
 
-// called in main loop, when crsf.TelemetryUpdate() true
-void tTxCrsf::SendTelemetryFrame(void)
-{
-    // native crsf
-
-    uint32_t tnow_ms = millis32();
-
-    #define CRSF_REFRESH_TIME_MS  2500 // what is actually a proper value ??
-
-    if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
-    if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
-    if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
-    if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
-    if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
-    if (baro_send_tlast_ms && (tnow_ms - baro_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
-
-    if (flightmode_updated) {
-        flightmode_updated = false;
-        flightmode_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
-        return; // only send one per slot
-    }
-    if (battery_updated) {
-        battery_updated = false;
-        battery_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
-        return; // only send one per slot
-    }
-    if (gps_updated) {
-        gps_updated = false;
-        gps_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
-        return; // only send one per slot
-    }
-    if (vario_updated) {
-        vario_updated = false;
-        vario_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
-        return; // only send one per slot
-    }
-    if (attitude_updated) {
-        attitude_updated = false;
-        attitude_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
-        return; // only send one per slot
-    }
-    if (baro_altitude_updated) {
-        baro_altitude_updated = false;
-        baro_send_tlast_ms = tnow_ms;
-        SendFrame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
-        return; // only send one per slot
-    }
-
-    // passthrough
-
-    uint8_t data[64+10];
-    uint8_t len;
-
-    if (passthrough.GetTelemetryFrameMulti(data, &len)) {
-        SendFrame(CRSF_FRAME_ID_AP_CUSTOM_TELEM, data, len);
-        return;
-    }
-}
-
-
 //-------------------------------------------------------
 // CRSF Telemetry MSP Handling
 
@@ -871,7 +850,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
 
 
 //-------------------------------------------------------
-// convenience helper
+// CRSF Link Statistics
 
 uint8_t crsf_cvt_rssi_percent(int8_t rssi)
 {
@@ -900,7 +879,7 @@ uint8_t crsf_cvt_rssi_percent(int8_t rssi)
 // somehow the OpenTx naming/usage doesn't make fully sense
 // so we "correct" things here such that the names make sense, irrespective of uplink/downlink notation
 
-void crsf_send_LinkStatistics(void)
+void tTxCrsf::SendLinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
@@ -915,11 +894,12 @@ tCrsfLinkStatistics clstats;
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());          // OpenTx -> "TRSS"
     clstats.downlink_LQ = txstats.GetLQ_serial();                           // OpenTx -> "TQly"
     clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
-    crsf.SendLinkStatistics(&clstats);
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS, &clstats, CRSF_LINK_STATISTICS_LEN);
 }
 
 
-void crsf_send_LinkStatisticsTx(void)
+void tTxCrsf::SendLinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx clstats;
 
@@ -929,11 +909,12 @@ tCrsfLinkStatisticsTx clstats;
     clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
     clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
-    crsf.SendLinkStatisticsTx(&clstats);
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
 }
 
 
-void crsf_send_LinkStatisticsRx(void)
+void tTxCrsf::SendLinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
@@ -942,7 +923,8 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_LQ = stats.received_LQ_rc;                                   // ignored by OpenTx
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
     clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
-    crsf.SendLinkStatisticsRx(&clstats);
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_RX, &clstats, CRSF_LINK_STATISTICS_RX_LEN);
 }
 
 
@@ -958,13 +940,13 @@ class tTxCrsfDummy
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
     void TelemetryHandleMspMsg(msp_message_t* msg) {}
+
+    void SendLinkStatistics(void) {}
+    void SendLinkStatisticsTx(void) {}
+    void SendLinkStatisticsRx(void) {}
 };
 
 tTxCrsfDummy crsf;
-
-void crsf_send_LinkStatistics(void) {}
-void crsf_send_LinkStatisticsTx(void) {}
-void crsf_send_LinkStatisticsRx(void) {}
 
 #endif // if (defined DEVICE_HAS_JRPIN5)
 
