@@ -823,11 +823,11 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         }break;
 
     case MSP_INAV_STATUS: {
-        tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
+        //tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
         }break;
 
     case MSP_INAV_ANALOG: {
-        tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
+        //tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
 /*
         battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
         battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
@@ -842,7 +842,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         }break;
 
     case MSP_INAV_MISC2: {
-        tMspInavMisc2* payload = (tMspInavMisc2*)(msg->payload);
+        //tMspInavMisc2* payload = (tMspInavMisc2*)(msg->payload);
         }break;
 
     }
