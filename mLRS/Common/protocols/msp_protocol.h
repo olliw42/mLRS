@@ -73,6 +73,8 @@ typedef enum {
     MSP_ANALOG                    = 110, // better use MSP_INAV_ANALOG
     MSP_ACTIVEBOXES               = 113,
     MSP_MISC                      = 114, // better use MSP_INAV_MISC
+    MSP_BOXNAMES                  = 116,
+    MSP_BOXIDS                    = 119,
     MSP_NAV_STATUS                = 121,
     MSP_BATTERY_STATE             = 130, // DJI googles fc battery info
     MSP_STATUS_EX                 = 150,
@@ -93,7 +95,6 @@ typedef enum {
     MSP_SENSOR_BAROMETER          = 0x1F05,
     MSP_SENSOR_AIRSPEED           = 0x1F06,
 } MSP_FUNCTION_ENUM;
-
 
 
 //-- Telemetry data frames
@@ -227,6 +228,22 @@ typedef struct
 #define MSP_ANALOG_LEN  7
 
 
+// MSP_ACTIVEBOXES  113
+MSP_PACKED(
+typedef struct
+{
+    uint8_t msp_box_mode_flags[1]; // to have a reference pointer
+}) tMspActiveBoxes;
+
+
+// MSP_BOXIDS  119
+MSP_PACKED(
+typedef struct
+{
+    uint8_t msp_box_ids[1]; // to have a reference pointer
+}) tMspBoxIds;
+
+
 // MSP_SENSOR_STATUS  151
 MSP_PACKED(
 typedef struct
@@ -262,28 +279,6 @@ typedef enum {
     INAV_SENSOR_STATUS_TEMP         = 7,
     INAV_SENSOR_STATUS_HW_FAILURE   = 15,
 } INAV_SENSOR_STATUS_FLAGS_ENUM;
-
-// box id numbering is from src/main/fc/rc_modes.h, boxId_e
-// relation with flight mode is from src/main/fc/fc_msp_box.c, packBoxModeFlags()
-typedef enum {
-    INAV_BOX_ARM            = 0,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(ARMING_FLAG(ARMED))
-    INAV_BOX_ANGLE          = 1,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(ANGLE_MODE))
-    INAV_BOX_HORIZON        = 2,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HORIZON_MODE))
-    INAV_BOX_NAV_ALTHOLD    = 3,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE))
-    INAV_BOX_HEADINGHOLD    = 4,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADING_MODE))
-    INAV_BOX_HEADFREE       = 5,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE))
-    INAV_BOX_NAV_RTH        = 8,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE))
-    INAV_BOX_NAV_POSHOLD    = 9,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE))
-    INAV_BOX_MANUAL         = 10,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(MANUAL_MODE))
-    INAV_BOX_NAV_LAUNCH     = 14,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE))
-    INAV_BOX_FAILSAFE       = 18,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE))
-    INAV_BOX_NAV_WP         = 19,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE))
-    INAV_BOX_FLAPERON       = 25,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FLAPERON))
-    INAV_BOX_TURNASSIST     = 26,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT))
-    INAV_BOX_AUTOTUNE       = 28,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(AUTO_TUNE))
-    INAV_BOX_NAV_COURSEHOLD = 35,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_COURSE_HOLD_MODE))
-    INAV_BOX_NAV_CRUISE     = 44,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_COURSE_HOLD_MODE)) && IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE))
-} INAV_BOX_ID_FLAGS_ENUM;
 
 MSP_PACKED(
 typedef struct
@@ -347,6 +342,69 @@ typedef struct
 }) tMspSetRawRc; // 32 bytes
 
 #define MSP_SET_RAW_RC_LEN  32
+
+
+//-------------------------------------------------------
+// MspX Messages
+//-------------------------------------------------------
+
+typedef enum {
+    MSPX_STATUS = 0x2FFF,
+} MSPX_FUNCTION_ENUM;
+
+
+typedef struct {
+    const char *boxName;
+    uint8_t boxModeFlag;
+    const char *telName;
+} tMspBoxArray;
+
+
+typedef enum {
+    MSP_BOXARRAY_ARM = 0,
+    MSP_BOXARRAY_FAILSAFE, // put it first so it has priority
+    MSP_BOXARRAY_ANGLE,
+    MSP_BOXARRAY_HORIZON,
+    MSP_BOXARRAY_NAV_ALTHOLD,
+    MSP_BOXARRAY_HEADING_HOLD,
+    MSP_BOXARRAY_HEADFREE,
+    MSP_BOXARRAY_NAV_RTH,
+    MSP_BOXARRAY_NAV_POSHOLD,
+    MSP_BOXARRAY_MANUAL,
+    MSP_BOXARRAY_AUTO_TUNE,
+    MSP_BOXARRAY_NAV_WP,
+    MSP_BOXARRAY_AIR_MODE,
+    MSP_BOXARRAY_FLAPERON,
+    MSP_BOXARRAY_TURN_ASSIST,
+    MSP_BOXARRAY_NAV_LAUNCH,
+    MSP_BOXARRAY_NAV_COURSE_HOLD,
+    MSP_BOXARRAY_NAV_CRUISE,
+    MSP_BOXARRAY_ANGLE_HOLD,
+    MSP_BOXARRAY_COUNT,
+} MSP_BOXARRAY_ENUM;
+
+
+static tMspBoxArray boxarray[MSP_BOXARRAY_COUNT] = {
+    { .boxName = "ARM",               .boxModeFlag = 255,   .telName = "ARM" },
+    { .boxName = "FAILSAFE",          .boxModeFlag = 255,   .telName = "!FS!" },
+    { .boxName = "ANGLE",             .boxModeFlag = 255,   .telName = "ANGL" },
+    { .boxName = "HORIZON",           .boxModeFlag = 255,   .telName = "HOR" },
+    { .boxName = "NAV ALTHOLD",       .boxModeFlag = 255,   .telName = "ALTH" },
+    { .boxName = "HEADING HOLD",      .boxModeFlag = 255,   .telName = "HHLD" },
+    { .boxName = "HEADFREE",          .boxModeFlag = 255,   .telName = "HFRE" },
+    { .boxName = "NAV RTH",           .boxModeFlag = 255,   .telName = "RTH" },
+    { .boxName = "NAV POSHOLD",       .boxModeFlag = 255,   .telName = "HOLD" },
+    { .boxName = "MANUAL",            .boxModeFlag = 255,   .telName = "MAN" },
+    { .boxName = "AUTO TUNE",         .boxModeFlag = 255,   .telName = "ATUN" },
+    { .boxName = "NAV WP",            .boxModeFlag = 255,   .telName = "WP" },
+    { .boxName = "AIR MODE",          .boxModeFlag = 255,   .telName = "AIR" },
+    { .boxName = "FLAPERON",          .boxModeFlag = 255,   .telName = "FLAP" },
+    { .boxName = "TURN ASSIST",       .boxModeFlag = 255,   .telName = "TURN" },
+    { .boxName = "NAV LAUNCH",        .boxModeFlag = 255,   .telName = "LNCH" },
+    { .boxName = "NAV COURSE HOLD",   .boxModeFlag = 255,   .telName = "CRSH" },
+    { .boxName = "NAV CRUISE",        .boxModeFlag = 255,   .telName = "CRUS" },
+    { .boxName = "ANGLE HOLD",        .boxModeFlag = 255,   .telName = "ANGH" },
+};
 
 
 #endif // MSP_PROTOCOL_H

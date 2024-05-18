@@ -423,6 +423,40 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
 }
 
 
+uint16_t msp_generate_frame_bufX(uint8_t* buf, uint8_t type, uint16_t function, uint8_t* payload, uint16_t len)
+{
+    if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
+        return 0;
+    }
+
+    uint8_t flags = 0;
+    if (type == MSP_TYPE_REQUEST) {
+        flags |= MSP_FLAGS_REQUEST;
+    } else if (type == MSP_TYPE_ERROR) {
+        flags |= MSP_FLAGS_ERROR;
+    }
+
+    buf[0] = MSP_MAGIC_1;
+    buf[1] = MSPX_MAGIC_2;
+    buf[2] = flags;
+    buf[3] = function;
+    buf[4] = function >> 8;
+    buf[5] = len;
+    buf[6] = len >> 8;
+    buf[7] = fmavX_crc8_calculate(&(buf[2]), 5);
+
+    uint16_t pos = 8;
+
+    for (uint16_t i = 0; i < len; i++) buf[pos++] = payload[i];
+
+    uint16_t crc16 = fmav_crc_calculate(&(buf[2]), len + 6);
+    buf[pos++] = crc16;
+    buf[pos++] = crc16 >> 8;
+
+    return len + 8 + 2;
+}
+
+
 //-------------------------------------------------------
 // Helper
 //-------------------------------------------------------
@@ -466,6 +500,10 @@ uint16_t msp_generate_request_to_frame_buf(uint8_t* buf, uint8_t type, uint16_t 
 
 uint16_t msp_generate_frame_buf(uint8_t* buf, uint8_t type, uint16_t function, uint8_t* payload, uint16_t len)
 {
+    if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
+        return 0;
+    }
+
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSP_MAGIC_2_V2;
     buf[2] = type;

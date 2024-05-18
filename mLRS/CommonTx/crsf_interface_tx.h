@@ -887,60 +887,34 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
         // report it
         msp_inav_status_sensor_status = payload->sensor_status;
-
-        // in my case msg len = 22, box flags len = msg len - 14 => box flags len = 8 bytes
-        // max INAV_BOX_ID we check is 44 => is located in 6th byte
-        uint8_t* boxflags = payload->msp_box_mode_flags;
-/*
-dbg.puts("\nx");
-//dbg.puts(u32toHEX_s( *((uint32_t*)boxflags) ));
-dbg.puts(u8toHEX_s(boxflags[0]));
-dbg.puts(u8toHEX_s(boxflags[1]));
-dbg.puts(u8toHEX_s(boxflags[2]));
-dbg.puts(u8toHEX_s(boxflags[3]));
-*/
-        #define INAV_CHECK_BOXFLAG(f)  (boxflags[f/8] & (1 << (f%8)))
-
-        memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
-
-        if (INAV_CHECK_BOXFLAG(INAV_BOX_FAILSAFE)) {
-            strcpy(flightmode.flight_mode, "!FS!");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_MANUAL)) {
-             strcpy(flightmode.flight_mode, "MAN");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_RTH)) {
-            strcpy(flightmode.flight_mode, "RTH");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_POSHOLD)) {
-            strcpy(flightmode.flight_mode, "HOLD");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_COURSEHOLD) && INAV_CHECK_BOXFLAG(INAV_BOX_NAV_ALTHOLD)) {
-            strcpy(flightmode.flight_mode, "CRUZ");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_COURSEHOLD)) {
-            strcpy(flightmode.flight_mode, "CRSH");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_WP)) {
-            strcpy(flightmode.flight_mode, "WP");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_NAV_ALTHOLD)) {
-            strcpy(flightmode.flight_mode, "ALTH");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_ANGLE)) {
-            strcpy(flightmode.flight_mode, "ANGL");
-        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_HORIZON)) {
-            strcpy(flightmode.flight_mode, "HOR");
-//??        } else if (INAV_CHECK_BOXFLAG(INAV_BOX_ANGLEHOLD)) {
-//            strcpy(flightmode.flight_mode, "ANGH");
-        } else {
-            strcpy(flightmode.flight_mode, "ACRO");
-        }
-
-        bool armed1 = (payload->arming_flags & MSP_INAV_STATUS_ARMING_FLAGS_ARMED);
-        strcat(flightmode.flight_mode, (armed1) ? "*" : "-");
-        // arm, INAV_BOXARM = 0
-        bool armed2 = INAV_CHECK_BOXFLAG(INAV_BOX_ARM);
-        strcat(flightmode.flight_mode, (armed2) ? "*" : "-");
-
-//        if (armed)
-//            strcat(flightmode.flight_mode, "*");
-//        }
-        flightmode_updated = true;
         }break;
 
+    case MSPX_STATUS: {
+        uint32_t flight_mode = *(uint32_t*)(msg->payload);
+/*
+dbg.puts("\nMS ");
+dbg.puts(u16toBCD_s(msg->len));
+dbg.puts(" ");
+dbg.puts(u32toHEX_s(flight_mode));
+*/
+        memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
+        strcpy(flightmode.flight_mode, "ACRO");
+        for (uint8_t n = 1; n < MSP_BOXARRAY_COUNT; n++) {
+            if (flight_mode & ((uint32_t)1 << n)) {
+                strcpy(flightmode.flight_mode, boxarray[n].telName);
+                break;
+            }
+        }
+        if (flight_mode & ((uint32_t)1 << MSP_BOXARRAY_ARM)) {
+            strcat(flightmode.flight_mode, "*");
+        }
+        flightmode_updated = true;
+        }break;
+/*
+default:
+dbg.puts("\nX "); dbg.puts(u16toBCD_s(msg->function));
+dbg.puts(" ");dbg.puts(u16toBCD_s(msg->len));
+*/
     }
 }
 

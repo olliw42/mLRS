@@ -54,7 +54,7 @@ class tRxMsp
     // to inject MSP requests if there are no requests from a gcs
     uint32_t tick_tlast_ms;
 
-    #define MSP_TELM_COUNT  5
+    #define MSP_TELM_COUNT  6
 
     const uint16_t telm_function[MSP_TELM_COUNT] = {
         MSP_INAV_STATUS,
@@ -62,6 +62,7 @@ class tRxMsp
         MSP_INAV_ANALOG,
         MSP_RAW_GPS,
         MSP_ALTITUDE,
+        MSP_BOXNAMES, // MSP_BOXIDS, seems to hold incorrect flags ??
     };
 
     typedef struct {
@@ -77,7 +78,12 @@ class tRxMsp
         1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
         2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
         2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
+        1,
     };
+
+    bool boxarray_available;
+    uint16_t boxarray_crc;
+    uint8_t boxnames_force_send;
 
     // miscellaneous
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -100,6 +106,9 @@ void tRxMsp::Init(void)
         telm[n].cnt = 0;
         telm[n].tlast_ms = 0;
     }
+    boxarray_available = false;
+    boxarray_crc = 0;
+    boxnames_force_send = 0;
 }
 
 
@@ -145,7 +154,64 @@ void tRxMsp::Do(void)
                 uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
 #endif
 
-                fifo_link_out.PutBuf(_buf, len);
+                //fifo_link_out.PutBuf(_buf, len);
+
+                if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
+                    if (msp_msg_ser_in.function == MSP_INAV_STATUS && boxarray_available) {
+                        // send the original message
+                        fifo_link_out.PutBuf(_buf, len);
+
+                        // send out our home-brewed SMP message in addition
+                        uint32_t flight_mode = 0;
+                        tMspInavStatus* payload = (tMspInavStatus*)(msp_msg_ser_in.payload);
+                        uint8_t* boxflags = payload->msp_box_mode_flags;
+                        for (uint8_t n = 0; n < MSP_BOXARRAY_COUNT; n++) {
+                            if (boxarray[n].boxModeFlag == 255) continue; // is empty
+                            if (boxflags[boxarray[n].boxModeFlag / 8] & (1 << (boxarray[n].boxModeFlag % 8))) {
+                                flight_mode |= ((uint32_t)1 << n);
+                            }
+                        }
+                        len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
+                        fifo_link_out.PutBuf(_buf, len);
+                        len = 0; // mark as handled
+                    }
+                    if (msp_msg_ser_in.function == MSP_BOXNAMES) {
+                        if (boxnames_force_send) {
+                            boxnames_force_send--;
+                            fifo_link_out.PutBuf(_buf, len);
+                        }
+
+                        uint16_t crc16 = fmav_crc_calculate(msp_msg_ser_in.payload, msp_msg_ser_in.len);
+                        if (!boxarray_available || boxarray_crc != crc16) {
+                            char s[48];
+                            uint8_t pos = 0;
+                            uint8_t box = 0;
+                            for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
+                                char c = msp_msg_ser_in.payload[i];
+                                if (c != ';') {
+                                    s[pos++] = c;
+                                    if (pos >= 32) pos = 0;
+                                } else {
+                                    s[pos++] = '\0';
+                                    for (uint8_t n = 0; n < MSP_BOXARRAY_COUNT; n++) {
+                                        if (boxarray[n].boxModeFlag != 255) continue; // has been set already
+                                        if (!strcmp(s, boxarray[n].boxName)) {
+                                            boxarray[n].boxModeFlag = box;
+                                            break; // found, no need to look further
+                                        }
+                                    }
+                                    pos = 0;
+                                    box++;
+                                }
+                            }
+                            boxarray_available = true;
+                            boxarray_crc = crc16;
+                        }
+                        len = 0; // mark as handled
+                    }
+                }
+
+                if (len) fifo_link_out.PutBuf(_buf, len);
 /*
 dbg.puts("\n");
 dbg.putc(msp_msg_ser_in.type);
@@ -216,6 +282,9 @@ void tRxMsp::putc(char c)
                 if (msp_msg_link_in.function == telm_function[n]) { // to indicate we got this request from a gcs
                     telm[n].tlast_ms = millis32();
                 }
+            }
+            if (msp_msg_link_in.function == MSP_BOXNAMES) {
+                boxnames_force_send = 3;
             }
         }
 /*
