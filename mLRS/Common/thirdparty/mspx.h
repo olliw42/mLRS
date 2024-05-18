@@ -515,6 +515,8 @@ void msp_function_str(char* s, uint16_t function)
     case 150: strcpy(s, "STATUS_EX"); break;
     case 151: strcpy(s, "SENSOR_STATUS"); break;
 
+    case MSP_SET_RAW_RC: strcpy(s, "SET_RAW_RC"); break;
+
     case 0x2000: strcpy(s, "INAV_STATUS"); break;
     case 0x2002: strcpy(s, "INAV_ANALOG"); break;
     case 0x2003: strcpy(s, "INAV_MISC"); break;

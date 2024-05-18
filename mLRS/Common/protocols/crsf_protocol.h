@@ -312,7 +312,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    int16_t climb_rate; // units ??? m/s / 100 indirectly concluded from otx    // OpenTx -> "VSpd"
+    int16_t climb_rate; // cm/s, m/s / 100 indirectly concluded from otx    // OpenTx -> "VSpd"
 }) tCrsfVario;
 
 #define CRSF_VARIO_LEN  2

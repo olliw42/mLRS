@@ -57,7 +57,7 @@ typedef struct {
     uint16_t len;
     uint8_t payload[MSP_PAYLOAD_LEN_MAX];
     uint8_t checksum;
-//helper fields
+// helper fields
     uint8_t res; // see MSP_PARSE_RESULT
 } msp_message_t;
 
@@ -159,7 +159,7 @@ typedef struct
     uint32_t lon;             // 1 / 10 000 000 deg
     uint16_t alt;             // meters
     uint16_t ground_speed;    // cm/s
-    uint16_t ground_course;   // degree*10
+    uint16_t ground_course;   // degree*10 // gpsSol.groundCourse is 0.1 degrees
     uint16_t hdop;
 }) tMspRawGps; // 18 bytes
 
@@ -245,10 +245,45 @@ typedef struct
 #define MSP_SENSOR_STATUS_LEN  9
 
 
-// MSP_INAV_STATUS_ARMING_FLAGS
+// MSP_INAV_STATUS  0x2000
 typedef enum {
     MSP_INAV_STATUS_ARMING_FLAGS_ARMED  = (uint32_t)0x04,
 } MSP_INAV_STATUS_ARMING_FLAGS_ENUM;
+
+// see src/main/fc_fc_masp_box.c, uint16_t packSensorStatus(void)
+typedef enum {
+    INAV_SENSOR_STATUS_ACC          = 0,
+    INAV_SENSOR_STATUS_BARO         = 1,
+    INAV_SENSOR_STATUS_MAG          = 2,
+    INAV_SENSOR_STATUS_GPS          = 3,
+    INAV_SENSOR_STATUS_RANGEFINDER  = 4,
+    INAV_SENSOR_STATUS_OPFLOW       = 5,
+    INAV_SENSOR_STATUS_PITOT        = 6,
+    INAV_SENSOR_STATUS_TEMP         = 7,
+    INAV_SENSOR_STATUS_HW_FAILURE   = 15,
+} INAV_SENSOR_STATUS_FLAGS_ENUM;
+
+// box id numbering is from src/main/fc/rc_modes.h, boxId_e
+// relation with flight mode is from src/main/fc/fc_msp_box.c, packBoxModeFlags()
+typedef enum {
+    INAV_BOX_ARM            = 0,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(ARMING_FLAG(ARMED))
+    INAV_BOX_ANGLE          = 1,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(ANGLE_MODE))
+    INAV_BOX_HORIZON        = 2,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HORIZON_MODE))
+    INAV_BOX_NAV_ALTHOLD    = 3,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE))
+    INAV_BOX_HEADINGHOLD    = 4,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADING_MODE))
+    INAV_BOX_HEADFREE       = 5,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE))
+    INAV_BOX_NAV_RTH        = 8,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE))
+    INAV_BOX_NAV_POSHOLD    = 9,    // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE))
+    INAV_BOX_MANUAL         = 10,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(MANUAL_MODE))
+    INAV_BOX_NAV_LAUNCH     = 14,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE))
+    INAV_BOX_FAILSAFE       = 18,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE))
+    INAV_BOX_NAV_WP         = 19,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE))
+    INAV_BOX_FLAPERON       = 25,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(FLAPERON))
+    INAV_BOX_TURNASSIST     = 26,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT))
+    INAV_BOX_AUTOTUNE       = 28,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(AUTO_TUNE))
+    INAV_BOX_NAV_COURSEHOLD = 35,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_COURSE_HOLD_MODE))
+    INAV_BOX_NAV_CRUISE     = 44,   // -> CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(NAV_COURSE_HOLD_MODE)) && IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE))
+} INAV_BOX_ID_FLAGS_ENUM;
 
 MSP_PACKED(
 typedef struct
@@ -260,7 +295,9 @@ typedef struct
     uint8_t config_profile : 4;
     uint8_t config_battery_profile : 4;
     uint32_t arming_flags;
+    uint8_t msp_box_mode_flags[1]; // to have a reference pointer
     // sbufWriteData(dst, &mspBoxModeFlags, sizeof(mspBoxModeFlags));
+    // the length of the box mode flags can be determined form the length of the payload, = len - 14
     // uint8_t getConfigMixerProfile;
 }) tMspInavStatus; // >= 13 bytes
 
@@ -274,7 +311,7 @@ typedef struct
     uint8_t battery_uses_capacity_thresholds : 1;
     uint8_t battery_state : 2;
     uint8_t battery_cell_count : 4;
-    uint16_t battery_voltage;
+    uint16_t battery_voltage;             // seems to be in 0.01 V steps ???
     uint16_t amperage;                    // send amperage in 0.01 A steps
     uint32_t power;                       // power draw
     uint32_t mAh_drawn;                   // milliamp hours drawn from battery

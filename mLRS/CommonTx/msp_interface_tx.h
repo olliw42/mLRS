@@ -19,7 +19,7 @@ extern volatile uint32_t millis32(void);
 static inline bool connected_and_rx_setup_available(void);
 
 
-#define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
+#define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported MSP frame size
 
 
 class tTxMsp
@@ -81,7 +81,6 @@ void tTxMsp::FrameLost(void)
 }
 
 
-
 void tTxMsp::Do(void)
 {
     if (!connected_and_rx_setup_available()) {
@@ -113,14 +112,14 @@ void tTxMsp::putc(char c)
 
     // parse link in -> serial out
 #ifdef USE_MSPX
-    if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from maspX
+    if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
 #else
     if (msp_parse_to_msg(&msp_msg_link_in, &status_link_in, c)) {
 #endif
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         ser->putbuf(_buf, len);
 
-        // allow crsf to capture it
+        // allow crsf class to capture it
         crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
 
 /*
@@ -131,8 +130,8 @@ dbg.puts(" ");
 dbg.puts(u16toBCD_s(msp_msg_link_in.len));
 dbg.puts(" ");
 dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
-uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), len - 4);
+uint16_t _len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
+uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), _len - 4);
 dbg.puts(" ");
 dbg.puts(u8toHEX_s(crc8));
 */
