@@ -302,7 +302,7 @@ typedef struct
     int32_t longitude; // degree / 1e7                // OpenTx -> "GPS"
     uint16_t groundspeed; // km/h / 100               // OpenTx -> "GSpd"
     uint16_t gps_heading; // degree / 100             // OpenTx -> "Hdg"
-    uint16_t altitude; // meter - 1000m offset        // OpenTx -> "GAlt"
+    uint16_t altitude; // meter - 1000m offset        // OpenTx -> "GAlt" NO: OTX2.15 has a bug, shows it also as "Alt"!!
     uint8_t satellites;                               // OpenTx -> "Sats"
 }) tCrsfGps;
 
@@ -353,7 +353,7 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    uint16_t altitude; // units ??? message ???       // OpenTx -> "Alt"
+    uint16_t altitude; // dm -1000m if 0x8000 not set, else in m    // OpenTx -> "Alt"
 }) tCrsfBaroAltitude;
 
 #define CRSF_BARO_ALTITUDE_LEN  2

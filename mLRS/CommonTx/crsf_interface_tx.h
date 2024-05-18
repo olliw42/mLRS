@@ -875,7 +875,10 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         vario_updated = true;
         // tCrsfBaroAltitude, CRSF_FRAME_ID_BARO_ALTITUDE = 0x09
         if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO)) {
-            baro_altitude.altitude = payload->baro_altitude; // uint16_t units ??? message ???        // uint32_t ?????
+            int32_t alt = payload->baro_altitude / 10 + 10000; // uint32_t seems to be cm, convert to dm - 1000m
+            if (alt < 0) alt = 0;
+            if (alt > 0x7FFF) alt = 0x7FFF; // 0x7FFF = 32767
+            baro_altitude.altitude = CRSF_REV_U16(alt); // uint16_t dm -1000m if 0x8000 not set
             baro_altitude_updated = true;
         }
         }break;

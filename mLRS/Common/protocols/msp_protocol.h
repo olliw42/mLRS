@@ -204,7 +204,7 @@ typedef struct
 {
     int32_t estimated_position_z; // cm
     int16_t estimated_velocity_z; // cm/s
-    uint32_t baro_altitude;
+    int32_t baro_altitude;
 }) tMspAltitude; // 10 bytes
 
 #define MSP_ALTIFUDE_LEN  10
