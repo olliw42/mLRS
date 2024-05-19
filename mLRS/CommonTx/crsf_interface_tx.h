@@ -899,13 +899,13 @@ dbg.puts(u32toHEX_s(flight_mode));
 */
         memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
         strcpy(flightmode.flight_mode, "ACRO");
-        for (uint8_t n = 1; n < MSP_BOXARRAY_COUNT; n++) {
+        for (uint8_t n = 1; n < INAV_FLIGHT_MODES_COUNT; n++) { // start at 1 to skip ARM
             if (flight_mode & ((uint32_t)1 << n)) {
-                strcpy(flightmode.flight_mode, boxarray[n].telName);
+                strcpy(flightmode.flight_mode, inavFlightModes[n].telName);
                 break;
             }
         }
-        if (flight_mode & ((uint32_t)1 << MSP_BOXARRAY_ARM)) {
+        if (flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM)) {
             strcat(flightmode.flight_mode, "*");
         }
         flightmode_updated = true;

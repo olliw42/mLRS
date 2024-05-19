@@ -354,56 +354,122 @@ typedef enum {
 
 
 typedef struct {
-    const char *boxName;
     uint8_t boxModeFlag;
-    const char *telName;
-} tMspBoxArray;
+    const char* telName;
+} tMspFlightModeArray;
 
 
 typedef enum {
-    MSP_BOXARRAY_ARM = 0,
-    MSP_BOXARRAY_FAILSAFE, // put it first so it has priority
-    MSP_BOXARRAY_ANGLE,
-    MSP_BOXARRAY_HORIZON,
-    MSP_BOXARRAY_NAV_ALTHOLD,
-    MSP_BOXARRAY_HEADING_HOLD,
-    MSP_BOXARRAY_HEADFREE,
-    MSP_BOXARRAY_NAV_RTH,
-    MSP_BOXARRAY_NAV_POSHOLD,
-    MSP_BOXARRAY_MANUAL,
-    MSP_BOXARRAY_AUTO_TUNE,
-    MSP_BOXARRAY_NAV_WP,
-    MSP_BOXARRAY_AIR_MODE,
-    MSP_BOXARRAY_FLAPERON,
-    MSP_BOXARRAY_TURN_ASSIST,
-    MSP_BOXARRAY_NAV_LAUNCH,
-    MSP_BOXARRAY_NAV_COURSE_HOLD,
-    MSP_BOXARRAY_NAV_CRUISE,
-    MSP_BOXARRAY_ANGLE_HOLD,
-    MSP_BOXARRAY_COUNT,
-} MSP_BOXARRAY_ENUM;
+    INAV_FLIGHT_MODES_ARM = 0,
+    INAV_FLIGHT_MODES_FAILSAFE, // put it first so it has priority
+    INAV_FLIGHT_MODES_ANGLE,
+    INAV_FLIGHT_MODES_HORIZON,
+    INAV_FLIGHT_MODES_NAV_ALTHOLD,
+    INAV_FLIGHT_MODES_HEADING_HOLD,
+    INAV_FLIGHT_MODES_HEADFREE,
+    INAV_FLIGHT_MODES_NAV_RTH,
+    INAV_FLIGHT_MODES_NAV_POSHOLD,
+    INAV_FLIGHT_MODES_MANUAL,
+    INAV_FLIGHT_MODES_AUTO_TUNE,
+    INAV_FLIGHT_MODES_NAV_WP,
+    INAV_FLIGHT_MODES_AIR_MODE,
+    INAV_FLIGHT_MODES_FLAPERON,
+    INAV_FLIGHT_MODES_TURN_ASSIST,
+    INAV_FLIGHT_MODES_NAV_LAUNCH,
+    INAV_FLIGHT_MODES_NAV_COURSE_HOLD,
+    INAV_FLIGHT_MODES_NAV_CRUISE,
+    INAV_FLIGHT_MODES_ANGLE_HOLD,
+    INAV_FLIGHT_MODES_COUNT,
+} MSP_INAV_FLIGHT_MODES_ENUM;
 
 
-static tMspBoxArray boxarray[MSP_BOXARRAY_COUNT] = {
-    { .boxName = "ARM",               .boxModeFlag = 255,   .telName = "ARM" },
-    { .boxName = "FAILSAFE",          .boxModeFlag = 255,   .telName = "!FS!" },
-    { .boxName = "ANGLE",             .boxModeFlag = 255,   .telName = "ANGL" },
-    { .boxName = "HORIZON",           .boxModeFlag = 255,   .telName = "HOR" },
-    { .boxName = "NAV ALTHOLD",       .boxModeFlag = 255,   .telName = "ALTH" },
-    { .boxName = "HEADING HOLD",      .boxModeFlag = 255,   .telName = "HHLD" },
-    { .boxName = "HEADFREE",          .boxModeFlag = 255,   .telName = "HFRE" },
-    { .boxName = "NAV RTH",           .boxModeFlag = 255,   .telName = "RTH" },
-    { .boxName = "NAV POSHOLD",       .boxModeFlag = 255,   .telName = "HOLD" },
-    { .boxName = "MANUAL",            .boxModeFlag = 255,   .telName = "MAN" },
-    { .boxName = "AUTO TUNE",         .boxModeFlag = 255,   .telName = "ATUN" },
-    { .boxName = "NAV WP",            .boxModeFlag = 255,   .telName = "WP" },
-    { .boxName = "AIR MODE",          .boxModeFlag = 255,   .telName = "AIR" },
-    { .boxName = "FLAPERON",          .boxModeFlag = 255,   .telName = "FLAP" },
-    { .boxName = "TURN ASSIST",       .boxModeFlag = 255,   .telName = "TURN" },
-    { .boxName = "NAV LAUNCH",        .boxModeFlag = 255,   .telName = "LNCH" },
-    { .boxName = "NAV COURSE HOLD",   .boxModeFlag = 255,   .telName = "CRSH" },
-    { .boxName = "NAV CRUISE",        .boxModeFlag = 255,   .telName = "CRUS" },
-    { .boxName = "ANGLE HOLD",        .boxModeFlag = 255,   .telName = "ANGH" },
+tMspFlightModeArray inavFlightModes[INAV_FLIGHT_MODES_COUNT] = {
+    { .boxModeFlag = 255,   .telName = "ARM" },
+    { .boxModeFlag = 255,   .telName = "!FS!" },
+    { .boxModeFlag = 255,   .telName = "ANGL" },
+    { .boxModeFlag = 255,   .telName = "HOR" },
+    { .boxModeFlag = 255,   .telName = "ALTH" },
+    { .boxModeFlag = 255,   .telName = "HHLD" },
+    { .boxModeFlag = 255,   .telName = "HFRE" },
+    { .boxModeFlag = 255,   .telName = "RTH" },
+    { .boxModeFlag = 255,   .telName = "HOLD" },
+    { .boxModeFlag = 255,   .telName = "MAN" },
+    { .boxModeFlag = 255,   .telName = "ATUN" },
+    { .boxModeFlag = 255,   .telName = "WP" },
+    { .boxModeFlag = 255,   .telName = "AIR" },
+    { .boxModeFlag = 255,   .telName = "FLAP" },
+    { .boxModeFlag = 255,   .telName = "TURN" },
+    { .boxModeFlag = 255,   .telName = "LNCH" },
+    { .boxModeFlag = 255,   .telName = "CRSH" },
+    { .boxModeFlag = 255,   .telName = "CRUS" },
+    { .boxModeFlag = 255,   .telName = "ANGH" },
+};
+
+
+typedef struct {
+    const char* boxName;
+    uint8_t flightModeFlag;
+} tMspBoxArray;
+
+
+#define INAV_BOXES_COUNT  55
+
+const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
+    { .boxName = "ARM",               .flightModeFlag = INAV_FLIGHT_MODES_ARM }, // 0
+    { .boxName = "ANGLE",             .flightModeFlag = INAV_FLIGHT_MODES_ANGLE },
+    { .boxName = "HORIZON",           .flightModeFlag = INAV_FLIGHT_MODES_HORIZON },
+    { .boxName = "NAV ALTHOLD",       .flightModeFlag = INAV_FLIGHT_MODES_NAV_ALTHOLD },
+    { .boxName = "HEADING HOLD",      .flightModeFlag = INAV_FLIGHT_MODES_HEADING_HOLD },
+    { .boxName = "HEADFREE",          .flightModeFlag = INAV_FLIGHT_MODES_HEADFREE },
+    { .boxName = "HEADADJ",           .flightModeFlag = 255 },
+    { .boxName = "CAMSTAB",           .flightModeFlag = 255 },
+    { .boxName = "NAV RTH",           .flightModeFlag = INAV_FLIGHT_MODES_NAV_RTH },
+    { .boxName = "NAV POSHOLD",       .flightModeFlag = INAV_FLIGHT_MODES_NAV_POSHOLD },
+    { .boxName = "MANUAL",            .flightModeFlag = INAV_FLIGHT_MODES_MANUAL }, // 10
+    { .boxName = "BEEPER",            .flightModeFlag = 255 },
+    { .boxName = "LEDS OFF",          .flightModeFlag = 255 },
+    { .boxName = "LIGHTS",            .flightModeFlag = 255 },
+    { .boxName = "OSD OFF",           .flightModeFlag = 255 },
+    { .boxName = "TELEMETRY",         .flightModeFlag = 255 },
+    { .boxName = "AUTO TUNE",         .flightModeFlag = INAV_FLIGHT_MODES_AUTO_TUNE },
+    { .boxName = "BLACKBOX",          .flightModeFlag = 255 },
+    { .boxName = "FAILSAFE",          .flightModeFlag = INAV_FLIGHT_MODES_FAILSAFE },
+    { .boxName = "NAV WP",            .flightModeFlag = INAV_FLIGHT_MODES_NAV_WP },
+    { .boxName = "AIR MODE",          .flightModeFlag = INAV_FLIGHT_MODES_AIR_MODE }, // 20
+    { .boxName = "HOME RESET",        .flightModeFlag = 255 },
+    { .boxName = "GCS NAV",           .flightModeFlag = 255 },
+    { .boxName = "FPV ANGLE MIX",     .flightModeFlag = 255 },
+    { .boxName = "SURFACE",           .flightModeFlag = 255 },
+    { .boxName = "FLAPERON",          .flightModeFlag = INAV_FLIGHT_MODES_FLAPERON },
+    { .boxName = "TURN ASSIST",       .flightModeFlag = INAV_FLIGHT_MODES_TURN_ASSIST },
+    { .boxName = "NAV LAUNCH",        .flightModeFlag = INAV_FLIGHT_MODES_NAV_LAUNCH },
+    { .boxName = "SERVO AUTOTRIM",    .flightModeFlag = 255 },
+    { .boxName = "CAMERA CONTROL 1",  .flightModeFlag = 255 },
+    { .boxName = "CAMERA CONTROL 2",  .flightModeFlag = 255 }, // 30
+    { .boxName = "CAMERA CONTROL 3",  .flightModeFlag = 255 },
+    { .boxName = "OSD ALT 1",         .flightModeFlag = 255 },
+    { .boxName = "OSD ALT 2",         .flightModeFlag = 255 },
+    { .boxName = "OSD ALT 3",         .flightModeFlag = 255 },
+    { .boxName = "NAV COURSE HOLD",   .flightModeFlag = INAV_FLIGHT_MODES_NAV_COURSE_HOLD },
+    { .boxName = "MC BRAKING",        .flightModeFlag = 255 },
+    { .boxName = "USER1",             .flightModeFlag = 255 },
+    { .boxName = "USER2",             .flightModeFlag = 255 },
+    { .boxName = "USER3",             .flightModeFlag = 255 },
+    { .boxName = "USER4",             .flightModeFlag = 255 }, // 40
+    { .boxName = "LOITER CHANGE",     .flightModeFlag = 255 },
+    { .boxName = "MSP RC OVERRIDE",   .flightModeFlag = 255 },
+    { .boxName = "PREARM",            .flightModeFlag = 255 },
+    { .boxName = "TURTLE",            .flightModeFlag = 255 },
+    { .boxName = "NAV CRUISE",        .flightModeFlag = INAV_FLIGHT_MODES_NAV_CRUISE },
+    { .boxName = "AUTO LEVEL TRIM",   .flightModeFlag = 255 },
+    { .boxName = "WP PLANNER",        .flightModeFlag = 255 },
+    { .boxName = "SOARING",           .flightModeFlag = 255 },
+    { .boxName = "MISSION CHANGE",    .flightModeFlag = 255 },
+    { .boxName = "BEEPER MUTE",       .flightModeFlag = 255 }, // 50
+    { .boxName = "MULTI FUNCTION",    .flightModeFlag = 255 },
+    { .boxName = "MIXER PROFILE 2",   .flightModeFlag = 255 },
+    { .boxName = "MIXER TRANSITION",  .flightModeFlag = 255 },
+    { .boxName = "ANGLE HOLD",        .flightModeFlag = INAV_FLIGHT_MODES_ANGLE_HOLD },
 };
 
 

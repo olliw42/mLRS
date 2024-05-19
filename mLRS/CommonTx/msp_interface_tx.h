@@ -113,9 +113,42 @@ void tTxMsp::putc(char c)
     // parse link in -> serial out
 #ifdef USE_MSPX
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
+
+        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE && msp_msg_link_in.function == MSP_BOXNAMES) {
+//dbg.puts("\nMBC "); for(uint16_t i= 0; i< msp_msg_link_in.len; i++) dbg.puts(u8toHEX_s(msp_msg_link_in.payload[i]));
+            // decompress
+            uint8_t payload_len = msp_msg_link_in.len;
+            memcpy(_buf, msp_msg_link_in.payload, msp_msg_link_in.len); // we can use the buffer
+            msp_msg_link_in.len = 0;
+            uint8_t state = 0;
+            for (uint16_t i = 0; i <payload_len; i++) {
+                uint8_t c = _buf[i];
+                if (c == 0xFF) {
+                    state = 0xFF;
+                } else
+                if (c == 0xFE) {
+                    state = 0xFE;
+                } else
+                if (state == 0xFF) {
+                    if (c < INAV_BOXES_COUNT) { // protect against nonsense
+                        for (uint8_t n = 0; n < strlen(inavBoxes[c].boxName); n++)
+                            msp_msg_link_in.payload[msp_msg_link_in.len++] = (inavBoxes[c].boxName)[n];
+                        msp_msg_link_in.payload[msp_msg_link_in.len++] = ';';
+                    }
+                } else
+                if (state == 0xFE) {
+                    msp_msg_link_in.payload[msp_msg_link_in.len++] = c;
+                }
+            }
+            // we now need to recalculate the crc
+            msp_msg_recalculate_crc(&msp_msg_link_in);
+//dbg.puts("\nMB ");for(uint16_t i = 0; i < msp_msg_link_in.len; i++) dbg.putc(msp_msg_link_in.payload[i]);
+        }
+
 #else
     if (msp_parse_to_msg(&msp_msg_link_in, &status_link_in, c)) {
 #endif
+
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         ser->putbuf(_buf, len);
 

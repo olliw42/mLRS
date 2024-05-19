@@ -55,6 +55,7 @@ class tRxMsp
     uint32_t tick_tlast_ms;
 
     #define MSP_TELM_COUNT  6
+    #define MSP_TELM_BOXNAMES_ID  5
 
     const uint16_t telm_function[MSP_TELM_COUNT] = {
         MSP_INAV_STATUS,
@@ -65,6 +66,15 @@ class tRxMsp
         MSP_BOXNAMES, // MSP_BOXIDS, seems to hold incorrect flags ??
     };
 
+    const uint8_t telm_freq[MSP_TELM_COUNT] = {
+        2,  // 2 Hz = 5*100 ms, MSP_INAV_STATUS
+        5,  // 5 Hz = 2*100 ms, MSP_ATTITUDE
+        1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
+        2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
+        2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
+        1,  // this is set to zero once it is gotten once
+    };
+
     typedef struct {
         uint8_t rate;
         uint8_t cnt;
@@ -72,18 +82,7 @@ class tRxMsp
     } tMspTelm;
     tMspTelm telm[MSP_TELM_COUNT];
 
-    const uint8_t telm_freq[MSP_TELM_COUNT] = {
-        2,  // 2 Hz = 5*100 ms, MSP_INAV_STATUS
-        5,  // 5 Hz = 2*100 ms, MSP_ATTITUDE
-        1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
-        2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
-        2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
-        1,
-    };
-
-    bool boxarray_available;
-    uint16_t boxarray_crc;
-    uint8_t boxnames_force_send;
+    void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; } // 0 = off, do not send
 
     // miscellaneous
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -102,13 +101,10 @@ void tRxMsp::Init(void)
 
     tick_tlast_ms = 0;
     for (uint8_t n = 0; n < MSP_TELM_COUNT; n ++) {
-        telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; // 0 = off, do not send
+        telm_set_default_rate(n); // telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; // 0 = off, do not send
         telm[n].cnt = 0;
         telm[n].tlast_ms = 0;
     }
-    boxarray_available = false;
-    boxarray_crc = 0;
-    boxnames_force_send = 0;
 }
 
 
@@ -141,6 +137,7 @@ void tRxMsp::Do(void)
 {
     if (!connected()) {
         fifo_link_out.Flush();
+        telm_set_default_rate(MSP_TELM_BOXNAMES_ID);
     }
 
     // parse serial in -> link out
@@ -149,69 +146,81 @@ void tRxMsp::Do(void)
             char c = serial.getc();
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
 #ifdef USE_MSPX
-                uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
-#else
-                uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
-#endif
-
-                //fifo_link_out.PutBuf(_buf, len);
+                bool send = true;
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    if (msp_msg_ser_in.function == MSP_INAV_STATUS && boxarray_available) {
-                        // send the original message
-                        fifo_link_out.PutBuf(_buf, len);
-
+                    if (msp_msg_ser_in.function == MSP_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
                         // send out our home-brewed SMP message in addition
+                        // is being send before original message
                         uint32_t flight_mode = 0;
-                        tMspInavStatus* payload = (tMspInavStatus*)(msp_msg_ser_in.payload);
-                        uint8_t* boxflags = payload->msp_box_mode_flags;
-                        for (uint8_t n = 0; n < MSP_BOXARRAY_COUNT; n++) {
-                            if (boxarray[n].boxModeFlag == 255) continue; // is empty
-                            if (boxflags[boxarray[n].boxModeFlag / 8] & (1 << (boxarray[n].boxModeFlag % 8))) {
+                        uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
+                        for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
+                            if (inavFlightModes[n].boxModeFlag == 255) continue; // is empty
+                            if (boxflags[inavFlightModes[n].boxModeFlag / 8] & (1 << (inavFlightModes[n].boxModeFlag % 8))) {
                                 flight_mode |= ((uint32_t)1 << n);
                             }
                         }
-                        len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
+                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
                         fifo_link_out.PutBuf(_buf, len);
-                        len = 0; // mark as handled
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
-                        if (boxnames_force_send) {
-                            boxnames_force_send--;
-                            fifo_link_out.PutBuf(_buf, len);
-                        }
+                        // compress
+                        // and also set inavFlightModes[] boxModeFlag
+                        uint8_t new_payload[512];
+                        uint16_t p_pos = 0;
+                        char s[48];
+                        uint8_t pos = 0;
+                        uint8_t state = 0;
+                        uint8_t box = 0; // inavFlightModes.boxModeFlag handling
+                        for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
+                            if (msp_msg_ser_in.payload[i] != ';') {
+                                s[pos++] = msp_msg_ser_in.payload[i];
+                                if (pos >= 32) pos = 0;
+                            } else {
+                                s[pos++] = '\0';
+                                bool found = false;
+                                for (uint8_t n = 0; n < INAV_BOXES_COUNT; n++) {
+                                    if (!strcmp(s, inavBoxes[n].boxName)) {
+                                        if (state != 0xFF) { state = 0xFF; new_payload[p_pos++] = 0xFF; }
+                                        new_payload[p_pos++] = n;
+                                        found = true;
 
-                        uint16_t crc16 = fmav_crc_calculate(msp_msg_ser_in.payload, msp_msg_ser_in.len);
-                        if (!boxarray_available || boxarray_crc != crc16) {
-                            char s[48];
-                            uint8_t pos = 0;
-                            uint8_t box = 0;
-                            for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
-                                char c = msp_msg_ser_in.payload[i];
-                                if (c != ';') {
-                                    s[pos++] = c;
-                                    if (pos >= 32) pos = 0;
-                                } else {
-                                    s[pos++] = '\0';
-                                    for (uint8_t n = 0; n < MSP_BOXARRAY_COUNT; n++) {
-                                        if (boxarray[n].boxModeFlag != 255) continue; // has been set already
-                                        if (!strcmp(s, boxarray[n].boxName)) {
-                                            boxarray[n].boxModeFlag = box;
-                                            break; // found, no need to look further
+                                        if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) {
+                                            inavFlightModes[inavBoxes[n].flightModeFlag].boxModeFlag = box; // inavFlightModes.boxModeFlag handling
                                         }
+
+                                        break; // found, no need to look further
                                     }
-                                    pos = 0;
-                                    box++;
                                 }
+                                if (!found) {
+                                    if (state != 0xFE) { state = 0xFE; new_payload[p_pos++] = 0xFE; }
+                                    for (uint8_t n = 0; n < strlen(s); n++) new_payload[p_pos++] = s[n];
+                                    new_payload[p_pos++] = ';';
+                                }
+                                pos = 0;
+
+                                box++; // inavFlightModes.boxModeFlag handling
                             }
-                            boxarray_available = true;
-                            boxarray_crc = crc16;
                         }
-                        len = 0; // mark as handled
+                        telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
+
+                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, p_pos);
+                        fifo_link_out.PutBuf(_buf, len);
+
+                        send = false; // mark as handled
                     }
                 }
 
-                if (len) fifo_link_out.PutBuf(_buf, len);
+                if (send) {
+                    uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
+                    fifo_link_out.PutBuf(_buf, len);
+                }
+
+#else
+                uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
+                fifo_link_out.PutBuf(_buf, len);
+#endif
+
 /*
 dbg.puts("\n");
 dbg.putc(msp_msg_ser_in.type);
@@ -248,7 +257,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
     if (ticked) {
 //dbg.puts("\nSend ");
         for (uint8_t n = 0; n < MSP_TELM_COUNT; n++) {
-            if (telm[n].rate == 0) continue;
+            if (telm[n].rate == 0) continue; // disabled
             INCc(telm[n].cnt, telm[n].rate);
             if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 1500) { // we want to send and did not got a request recently
                 uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
@@ -282,9 +291,6 @@ void tRxMsp::putc(char c)
                 if (msp_msg_link_in.function == telm_function[n]) { // to indicate we got this request from a gcs
                     telm[n].tlast_ms = millis32();
                 }
-            }
-            if (msp_msg_link_in.function == MSP_BOXNAMES) {
-                boxnames_force_send = 3;
             }
         }
 /*

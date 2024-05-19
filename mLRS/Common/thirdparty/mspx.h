@@ -458,12 +458,27 @@ uint16_t msp_generate_frame_bufX(uint8_t* buf, uint8_t type, uint16_t function, 
 
 
 //-------------------------------------------------------
-// Helper
+// Init
 //-------------------------------------------------------
 
 void msp_init(void)
 {
     // empty, nothing to do
+}
+
+
+//-------------------------------------------------------
+// Helper
+//-------------------------------------------------------
+
+void msp_msg_recalculate_crc(msp_message_t* msg)
+{
+    msg->checksum = crsf_crc8_calc(0, msg->flag);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
+    msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
+    for (uint16_t i = 0; i < msg->len; i++) msg->checksum = crsf_crc8_calc(msg->checksum, msg->payload[i]);
 }
 
 
