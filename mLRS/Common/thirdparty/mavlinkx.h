@@ -729,7 +729,7 @@ Copyright (c) OlliW, OlliW42, www.olliw.eu
 For terms of use/license see above permission notice.
 
 The concept developed here is based on observations of the distribution of the bytes in the payload of
-mavlink messages. If the actual distribution is very different, the scheme becomes less effective, obviously.
+MAVLink messages. If the actual distribution is very different, the scheme becomes less effective, obviously.
 The observations are:
 - ca. 20% - 25% of the bytes in the payload are 0 (after trailing zero removal in v2)
 - ca. 3% - 4% of the bytes in the payload are 255

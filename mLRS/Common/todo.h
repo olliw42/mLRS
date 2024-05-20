@@ -26,15 +26,15 @@ ISSUES:
 - for dual sx avoid that both sx.Init wait 300ms
 - allow a missing 2nd sx for diversity boards
 
-- crsf baro alt item, can we add more of our own?
+- CRSF baro alt item, can we add more of our own?
 
 - rx R9MM R9MX, why buzzer behaves different for R9MX?
 
 - don't allow bind, save, reload, param changes, etc, when vehicle is armed/flying
   => this requires the tx&rx to know if the vehicle is in this state
-  that's possible for when mavlink mode is used, but else?
+  that's possible for when MAVLink mode is used, but else?
   => two bits, one to indicate available, one to indicate armed/disarmed
-  do it on rx side by parsing mavlink, most robust
+  do it on rx side by parsing MAVLink, most robust
 - don't allow bind, save, reload, param changes, etc, when connection is too weak, e.g. rssi too low
 
 - buzzer: work out what to do to account for active-low and active-high, so that buzzer isn't permanently "on"

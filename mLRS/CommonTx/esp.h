@@ -197,7 +197,7 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
 }
 
 
-// enter esp flashing, can only be exited by re-powering
+// enter ESP flashing, can only be exited by re-powering
 void tTxEspWifiBridge::EnterFlash(void)
 {
     if (!initialized) return;
@@ -218,7 +218,7 @@ void tTxEspWifiBridge::EnterFlash(void)
 }
 
 
-// enter esp passthrough, can only be exited by re-powering
+// enter ESP passthrough, can only be exited by re-powering
 void tTxEspWifiBridge::EnterPassthrough(void)
 {
     if (!initialized) return;
@@ -227,7 +227,7 @@ void tTxEspWifiBridge::EnterPassthrough(void)
 }
 
 
-// enter esp cli, can only be exited by re-powering
+// enter ESP CLI, can only be exited by re-powering
 void tTxEspWifiBridge::EnterCli(void)
 {
     if (!initialized) return;

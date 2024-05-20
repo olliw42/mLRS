@@ -127,7 +127,7 @@ class tPin5BridgeBase
         STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
         STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
 
-        // crsf receive states
+        // CRSF receive states
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,

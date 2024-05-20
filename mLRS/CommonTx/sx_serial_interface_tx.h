@@ -59,10 +59,10 @@ bool tTxSxSerial::available(void)
     if (!connected_and_rx_setup_available()) return 0;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.available(); // get from serial via mavlink parser
+        return mavlink.available(); // get from serial via MAVLink parser
     }
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
-        return msp.available(); // get from serial via msp parser
+        return msp.available(); // get from serial via MSP parser
     }
     return ser->available(); // get from serial
 }
@@ -73,10 +73,10 @@ char tTxSxSerial::getc(void)
     if (!connected_and_rx_setup_available()) return 0;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.getc(); // get from serial via mavlink parser
+        return mavlink.getc(); // get from serial via MAVLink parser
     }
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
-        return msp.getc(); // get from serial via msp parser
+        return msp.getc(); // get from serial via MSP parser
     }
     return ser->getc(); // get from serial
 }
@@ -100,8 +100,8 @@ void tTxSxSerial::putbuf(uint8_t* buf, uint16_t len)
 
 void tTxSxSerial::flush(void)
 {
-    mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
-    msp.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
+    mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
+    msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
     ser->flush();
 }
 

@@ -95,9 +95,9 @@ void setup_configure_metadata(void)
 
     // Tx ChannelSource: "none,crsf,in,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // only none, crsf, in, mbridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // only none, crsf, in, mBridge
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, crsf, mbridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, crsf, mBridge
 #elif defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
 #else
@@ -355,9 +355,9 @@ void setup_sanitize_config(uint8_t config_id)
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
     // -------------------------------------------------
-    //  SERIAL  |  -      | crsf    | -       | mbridge
-    //  SERIAL2 |  -      | crsf    | -       | mbridge
-    //  MBRDIGE | mbridge | crsf !! | mbridge | mbridge
+    //  SERIAL  |  -      | CRSF    | -       | mBridge
+    //  SERIAL2 |  -      | CRSF    | -       | mBridge
+    //  MBRDIGE | mBridge | CRSF !! | mBridge | mBridge
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
         (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
         Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;

@@ -14,7 +14,7 @@
 #include <inttypes.h>
 
 
-// simple rate filter for mavlink interface
+// simple rate filter for MAVLink interface
 class LPFilterRate
 {
   public:

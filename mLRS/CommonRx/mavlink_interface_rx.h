@@ -27,7 +27,7 @@ static inline bool connected(void);
 #define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC
 #define REBOOT_SHUTDOWN_MAGIC       1234321
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 280 bytes
+#define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 280 bytes
 
 #define MAVLINK_OPT_FAKE_PARAMFTP   2 // 0: off, 1: always, 2: determined from mode & baudrate
 

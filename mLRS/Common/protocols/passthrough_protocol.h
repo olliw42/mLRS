@@ -84,7 +84,7 @@
 // Interface Implementation
 
 // TODO:
-// for passthrough messages which involve date from several mavlink messages, we need to avoid that invalid data is used
+// for passthrough messages which involve date from several MAVLink messages, we need to avoid that invalid data is used
 
 #define RAD2DEGF                    5.729577951E+01f
 #define DEG2RADF                    1.745329252E-02f
@@ -126,7 +126,7 @@ class tPassThrough
         PASSTHROUGH_PACKET_TYPE_NUM
     } PASSTHROUGHPACKETTYPEENUM;
 
-    // these read a mavlink message and convert data into passthrough data fields
+    // these read a MAVLink message and convert data into passthrough data fields
     
     void handle_mavlink_msg_passthrough_array(fmav_frsky_passthrough_array_t* payload);
     void handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* payload);
@@ -150,7 +150,7 @@ class tPassThrough
     void handle_mavlink_msg_home_position(fmav_home_position_t* payload);   // #242
     void handle_mavlink_msg_statustext(fmav_statustext_t* payload);         // #253
 
-    // methods to convert mavlink data to passthrough (OpenTX) format
+    // methods to convert MAVLink data to passthrough (OpenTX) format
 
     bool get_GpsLat_0x800(uint32_t* data);
     bool get_GpsLon_0x800(uint32_t* data);

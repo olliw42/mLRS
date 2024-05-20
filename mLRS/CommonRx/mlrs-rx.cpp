@@ -113,7 +113,7 @@ void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
-// Mavlink & MSP
+// MAVLink & MSP
 //-------------------------------------------------------
 
 #include "mavlink_interface_rx.h"
@@ -871,7 +871,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
     out.Do();
 
-    //-- Do mavlink & msp
+    //-- Do MAVLink & MSP
 
     mavlink.Do();
     msp.Do();
