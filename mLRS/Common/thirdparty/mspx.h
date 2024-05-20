@@ -245,8 +245,8 @@ typedef struct
 mspx_status_t mspx_status = {};
 
 
-// converting from mspX
-// result in msg needs to be correct msp message
+// converting from MSP X
+// result in msg needs to be correct MSP message
 uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 {
     if (status->cnt >= MSP_FRAME_LEN_MAX) { // this should never happen, but play it safe
@@ -273,7 +273,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 
     case MSP_PARSE_STATE_FLAGS:
         mspx_status.flags = c;
-        // fake correct msp header
+        // fake correct MSP header
         msg->magic2 = MSP_MAGIC_2_V2;
         if (mspx_status.flags & MSP_FLAGS_REQUEST) {
             msg->type = MSP_TYPE_REQUEST;
@@ -369,7 +369,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
             return 0;
         }
 
-        // fake correct msp checksum
+        // fake correct MSP checksum
         msg->checksum = crsf_crc8_calc(0, msg->flag);
         msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
         msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
@@ -388,7 +388,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 }
 
 
-// converting to mspX !!
+// converting to MSP X !
 uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
 {
     if (msg->len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
@@ -591,7 +591,6 @@ void msp_function_str_from_msg(char* s, msp_message_t* msg)
 {
     msp_function_str(s, msg->function);
 }
-
 
 
 #endif // MSPX_H
