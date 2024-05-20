@@ -160,7 +160,7 @@ void tMBridge::send_command(void)
 #define MBRIDGE_TMO_US  250
 
 
-// is called in isr context, or in ParseCrsfFrame() in case of crsf emulatiom
+// is called in isr context, or in ParseCrsfFrame() in case of CRSF emulatiom
 void tMBridge::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros16();
@@ -654,7 +654,7 @@ void mbridge_start_ParamRequestList(void)
 void mbridge_send_ParamItem(void)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) {
-        // we send a mbridge message, but don't put a MBRIDGE_CMD_PARAM_ITEM into the fifo, this stops it
+        // we send a mBridge message, but don't put a MBRIDGE_CMD_PARAM_ITEM into the fifo, this stops it
         tMBridgeParamItem item = {};
         item.index = UINT8_MAX; // indicates end of list
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);

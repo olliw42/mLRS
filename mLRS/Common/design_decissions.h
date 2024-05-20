@@ -29,7 +29,7 @@ possibly uart BT module
 b) standard JR bay module
 
 rc channels via JR-Pin1
-uart for mavlink
+uart for MAVLink
 uart for BT module
 possibly mimic telemetry via JR-Pin5
 usb for config, upgrade
@@ -37,8 +37,8 @@ possibly LED for config
 
 c) mBridge JR bay
 
-rc channels & mavlink via Pin5
-uart for mavlink
+rc channels & MAVLink via Pin5
+uart for MAVLink
 uart for BT module
 usb for config, upgrade
 possibly LED for config
@@ -490,7 +490,7 @@ ArduPilot
 
 rssi goes from 0 - 255
 
-crsf rssi handling:
+CRSF rssi handling:
 AP converts it as follows into its own rssi value
 LINK_STATISTICS:
 50 - 120 -> 255 - 0
@@ -523,7 +523,7 @@ so:   1 ... 172 ... 1024 .. 1876 ... 2047
 100% = 852 span
 120% = 1023 span
 
-sbus/crsf:
+sBus/CRSF:
 11 bit
 +-100% = 173 ... 992 .. 1811
 
@@ -570,20 +570,20 @@ old 0..2047 = +-100% scaling:
 
  ArduPilot handles incoming rc data as
 
- crsf:
+ CRSF:
  https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L351
  decode_11bit_channels((const uint8_t*)(&_frame.payload), CRSF_MAX_CHANNELS, _channels, 5U, 8U, 880U)
    rc = x * 5 / 8 + 880  = (x - 992) * 5 / 8 + 1500
         [880 ... 2159]
 
- sbus:
+ sBus:
  https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_SBUS.cpp#L118-L119
  decode_11bit_channels((const uint8_t*)(&frame[1]), SBUS_INPUT_CHANNELS, values, SBUS_TARGET_RANGE, SBUS_RANGE_RANGE, SBUS_SCALE_OFFSET)
                                                                                  1000,              1600,             875
    rc = x * 1000 / 1600 + 875  = (x - 1000) * 5 / 8 + 1500
         [875 ... 2154]
 
-=> for ArduPilot crsf is larger by 8*5/8 = 5 units than sbus for the same x
+=> for ArduPilot CRSF is larger by 8*5/8 = 5 units than sbus for the same x
 
  RC_CHANNELS_OVERRIDE:
    rc = chanX_raw

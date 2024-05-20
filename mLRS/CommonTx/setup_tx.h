@@ -45,7 +45,7 @@ typedef enum {
     SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer
     SETUP_PARAM_TYPE_INT16  = 4, // 16-bit signed integer
 
-    // our extensions, cannot be handled with mavlink!
+    // our extensions, cannot be handled with MAVLink!
     SETUP_PARAM_TYPE_LIST   = 254,
     SETUP_PARAM_TYPE_STR6   = 255,
 } SETUP_PARAM_TYPE;

@@ -86,7 +86,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
-    // crsf telemetry
+    // CRSF telemetry
 
     tCrsfFlightMode flightmode; // collected from HEARTBEAT
     bool flightmode_updated;
@@ -111,11 +111,11 @@ class tTxCrsf : public tPin5BridgeBase
     bool vario_updated;
     uint32_t vario_send_tlast_ms;
 
-    tCrsfBaroAltitude baro_altitude; // not yet populated from a mavlink message, AP does not appear to provide baro alt at all
+    tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message, AP does not appear to provide baro alt at all
     bool baro_altitude_updated;
     uint32_t baro_send_tlast_ms;
 
-    // mavlink handlers
+    // MAVLink handlers
 
     void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload);
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
@@ -127,7 +127,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     uint8_t vehicle_sysid;
 
-    // crsf passthrough telemetry
+    // CRSF passthrough telemetry
 
     tPassThrough passthrough;
 };
@@ -136,7 +136,7 @@ tTxCrsf crsf;
 
 
 //-------------------------------------------------------
-// Crsf half-duplex interface, used for radio <-> mLRS tx module
+// CRSF half-duplex interface, used for radio <-> mLRS tx module
 
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
 void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
@@ -268,7 +268,7 @@ uint8_t tTxCrsf::crc8(const uint8_t* buf)
 
 
 //-------------------------------------------------------
-// Crsf user interface
+// CRSF user interface
 
 void tTxCrsf::Init(bool enable_flag)
 {
@@ -447,12 +447,13 @@ void tTxCrsf::send_frame(const uint8_t frame_id, void* payload, const uint8_t pa
 // called in main loop, when crsf.TelemetryUpdate() true
 void tTxCrsf::SendTelemetryFrame(void)
 {
-    // native crsf
+    // native CRSF
 
     uint32_t tnow_ms = millis32();
 
     #define CRSF_REFRESH_TIME_MS  2500 // what is actually a proper value ??
 
+    // auto update to prevent OTX telemetry/sensor lost message, do only if at least once seen
     if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
     if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
     if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
@@ -561,7 +562,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
     if (payload->id != 0) return;
 
     battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
-    battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // crsf is in 0.1 A, mavlink is in 0.01 A
+    battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // CRSF is in 0.1 A, MAVLink is in 0.01 A
     uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
     if (capacity > 8388607) capacity = 8388607; // int 24 bit
     battery.capacity[0] = (capacity >> 16);
@@ -634,7 +635,7 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 }
 
 
-// called by mavlink interface, when a mavlink frame has been received
+// called by MAVLink interface, when a MAVLink frame has been received
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 {
     if (msg->sysid == 0) return; // this can't be anything meaningful
@@ -656,11 +657,11 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
     if (msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
 
-    // from here on we only see the mavlink messages from our vehicle
+    // from here on we only see the MAVLink messages from our vehicle
 
     switch (msg->msgid) {
 
-    // these are for crsf telemetry, some are also for passthrough
+    // these are for CRSF telemetry, some are also for passthrough
 
     case FASTMAVLINK_MSG_ID_FRSKY_PASSTHROUGH_ARRAY: {
         fmav_frsky_passthrough_array_t payload;
@@ -794,7 +795,7 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         }break;
 
     case FASTMAVLINK_MSG_ID_STATUSTEXT: {
-        //NO, we always take it from statustext and ignore passthrough_array if (passthrough.passthrough_array_is_receiving) break;
+        // NO, we always take it from statustext and ignore passthrough_array if (passthrough.passthrough_array_is_receiving) break;
         fmav_statustext_t payload;
         fmav_msg_statustext_decode(&payload, msg);
         passthrough.handle_mavlink_msg_statustext(&payload);
@@ -820,7 +821,7 @@ uint8_t crsf_cvt_rssi_percent(int8_t rssi)
 }
 
 
-// on crsf rssi
+// on CRSF rssi
 // rssi = 255 -> red in otx
 //      = 130 -> -126 dB
 //      = 129 -> -127 dB
@@ -906,61 +907,3 @@ tTxCrsfDummy crsf;
 
 #endif // CRSF_INTERFACE_TX_H
 
-
-
-
-
-
-
-
-/*
-
-void tTxCrsf::SpinOnce(void)
-{
-uint8_t c;
-
-  if ((state != STATE_IDLE)) {
-    uint16_t dt = tim_us() - tlast_us;
-    if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
-  }
-
-  switch (state) {
-  case STATE_IDLE:
-    if (!mb_rx_available()) break;
-    tlast_us = tim_us();
-    c = mb_getc();
-    if (c == CRSF_ADDRESS_MODULE) {
-      cnt = 0;
-      frame[cnt++] = c;
-      state = STATE_RECEIVE_CRSF_LEN;
-    }
-    break;
-  case STATE_RECEIVE_CRSF_LEN:
-    if (!mb_rx_available()) break;
-    tlast_us = tim_us();
-    c = mb_getc();
-    frame[cnt++] = c;
-    len = c;
-    state = STATE_RECEIVE_CRSF_PAYLOAD;
-    break;
-  case STATE_RECEIVE_CRSF_PAYLOAD:
-    if (!mb_rx_available()) break;
-    tlast_us = tim_us();
-    c = mb_getc();
-    frame[cnt++] = c;
-    if (cnt >= len + 1) {
-      state = STATE_RECEIVE_CRSF_CRC;
-    }
-    break;
-  case STATE_RECEIVE_CRSF_CRC:
-    if (!mb_rx_available()) break;
-    tlast_us = tim_us();
-    c = mb_getc();
-    frame[cnt++] = c;
-    updated = true;
-    state = STATE_IDLE;
-    break;
-  }
-}
-
- */

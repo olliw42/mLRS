@@ -29,7 +29,7 @@ static inline bool connected_and_rx_setup_available(void);
 
 #define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max mavlink frame size = 286 bytes
+#define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 286 bytes
 
 
 class tTxMavlink
@@ -279,7 +279,7 @@ if (!do_router()) {
 
         fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
 
-        // allow crsf to capture it
+        // allow CRSF to capture it
         crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
 
         // we also want to capture it to extract some info

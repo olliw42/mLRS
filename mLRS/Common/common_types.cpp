@@ -149,7 +149,7 @@ int16_t rc_to_mavlink_13bcentered(uint16_t rc_ch)
 }
 
 
-//-- crsf
+//-- CRSF
 
 uint8_t crsf_cvt_power(int8_t power_dbm)
 {
