@@ -531,7 +531,7 @@ void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload)
         ap_flight_mode_name4(flightmode.flight_mode, ap_vehicle_from_mavtype(payload->type), payload->custom_mode);
 
         if ((payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) == 0) {
-            if (flightmode.flight_mode[3] == ' ') flightmode.flight_mode[3] = '\0';
+            // if (flightmode.flight_mode[3] == ' ') flightmode.flight_mode[3] = '\0';
             strcat(flightmode.flight_mode, "*");
         }
     }
