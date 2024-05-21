@@ -48,6 +48,14 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
+#ifdef RX_ELRS_IFLIGHT_ELRS_TD_2400_ESP32
+#include "rx-hal-iflight-elrs-td-2400-esp32.h"
+#endif
+
+#ifdef RX_ELRS_IFLIGHT_ELRS_2400_ESP8285
+#include "rx-hal-iflight-elrs-2400-esp8285.h"
+#endif
+
 
 //-- ELRS Selected Devices
 
