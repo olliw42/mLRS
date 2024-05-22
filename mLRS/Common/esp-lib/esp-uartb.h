@@ -8,6 +8,8 @@
 #ifndef ESPLIB_UARTB_H
 #define ESPLIB_UARTB_H
 
+#include "driver/uart.h"
+#include "hal/uart_ll.h"
 
 #ifndef ESPLIB_UART_ENUMS
 #define ESPLIB_UART_ENUMS
@@ -28,11 +30,21 @@ typedef enum {
 
 
 #ifdef UARTB_USE_SERIAL
+#ifdef ESP32
+  #define UARTB_SERIAL_NO       UART_NUM_0
+#elif
   #define UARTB_SERIAL_NO       Serial
+#endif
 #elif defined UARTB_USE_SERIAL1
+#ifdef ESP32
+  #define UARTB_SERIAL_NO       UART_NUM_1
+#elif
   #define UARTB_SERIAL_NO       Serial1
+#endif
 #elif defined UARTB_USE_SERIAL2
-  #define UARTB_SERIAL_NO       Serial2
+#ifdef ESP32
+  #define UARTB_SERIAL_NO       UART_NUM_2
+#endif
 #else
   #error UARTB_SERIAL_NO must be defined!
 #endif
@@ -47,37 +59,67 @@ typedef enum {
 
 IRAM_ATTR void uartb_putbuf(uint8_t* buf, uint16_t len)
 {
+#ifdef ESP32
+    uart_write_bytes(UARTB_SERIAL_NO, (uint8_t*)buf, len);
+#elif
     UARTB_SERIAL_NO.write((uint8_t*)buf, len);
+#endif
 }
 
 
 IRAM_ATTR char uartb_getc(void)
 {
+#ifdef ESP32
+    uint8_t c = 0;
+    uart_read_bytes(UARTB_SERIAL_NO, &c, 1, 0);
+    return (char)c;
+#elif
     return (char)UARTB_SERIAL_NO.read();
+#endif
 }
 
 
 IRAM_ATTR void uartb_rx_flush(void)
 {
+#ifdef ESP32
+    uart_flush(UARTB_SERIAL_NO);
+#elif
     while (UARTB_SERIAL_NO.available() > 0) UARTB_SERIAL_NO.read();
+#endif
 }
 
 
 IRAM_ATTR void uartb_tx_flush(void)
 {
+#ifdef ESP32
+    uart_wait_tx_done(UARTB_SERIAL_NO, 100);  // 100 ms - what should be used?
+#elif
     UARTB_SERIAL_NO.flush();
+#endif
 }
 
 
 IRAM_ATTR uint16_t uartb_rx_bytesavailable(void)
 {
+#ifdef ESP32
+    uint32_t bytesAvailable = 0;
+    uart_get_buffered_data_len(UARTB_SERIAL_NO, &bytesAvailable);
+    return (uint16_t)bytesAvailable;
+#elif
     return (UARTB_SERIAL_NO.available() > 0) ? UARTB_SERIAL_NO.available() : 0;
+#endif
 }
 
 
 IRAM_ATTR uint16_t uartb_rx_available(void)
 {
+#ifdef ESP32
+    uint32_t bytesAvailable = 0;
+    uart_get_buffered_data_len(UARTB_SERIAL_NO, &bytesAvailable);
+    return ((uint16_t)bytesAvailable > 0) ? 1 : 0;
+#elif
     return (UARTB_SERIAL_NO.available() > 0) ? 1 : 0;
+#endif
 }
 
 
@@ -91,38 +133,45 @@ IRAM_ATTR uint16_t uartb_rx_available(void)
 void _uartb_initit(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
 #ifdef ESP32
-    UARTB_SERIAL_NO.setTxBufferSize(UARTB_TXBUFSIZE);
-    UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
 
-    uint32_t config = SERIAL_8N1;
+    uart_parity_t _parity = UART_PARITY_DISABLE;
     switch (parity) {
         case XUART_PARITY_NO:
-            switch (stopbits) {
-                case UART_STOPBIT_1: config = SERIAL_8N1; break;
-                case UART_STOPBIT_2: config = SERIAL_8N2; break;
-            }
-            break;
+            _parity = UART_PARITY_DISABLE; break;
         case XUART_PARITY_EVEN:
-            switch (stopbits) {
-                case UART_STOPBIT_1: config = SERIAL_8E1; break;
-                case UART_STOPBIT_2: config = SERIAL_8E2; break;
-            }
-            break;
+            _parity = UART_PARITY_EVEN; break;        
         case XUART_PARITY_ODD:
-            switch (stopbits) {
-                case UART_STOPBIT_1: config = SERIAL_8O1; break;
-                case UART_STOPBIT_2: config = SERIAL_8O2; break;
-            }
-            break;
+            _parity = UART_PARITY_ODD; break;
     }
+
+    uart_stop_bits_t _stopbits = UART_STOP_BITS_1;
+    switch (stopbits) {
+        case UART_STOPBIT_1:
+            _stopbits = UART_STOP_BITS_1; break;
+        case UART_STOPBIT_2:
+            _stopbits = UART_STOP_BITS_2; break;        
+    }
+
+    uart_config_t uart_config = {
+        .baud_rate  = (int)baud,
+        .data_bits  = UART_DATA_8_BITS,
+        .parity     = _parity,
+        .stop_bits  = _stopbits,
+        .flow_ctrl  = UART_HW_FLOWCTRL_DISABLE
+    };
+
+    ESP_ERROR_CHECK(uart_param_config(UARTB_SERIAL_NO, &uart_config));
+
 #if defined UARTB_USE_TX_IO || defined UARTB_USE_RX_IO // both need to be defined
-    UARTB_SERIAL_NO.begin(baud, config, UARTB_USE_RX_IO, UARTB_USE_TX_IO);
+    ESP_ERROR_CHECK(uart_set_pin(UARTB_SERIAL_NO, UARTB_USE_TX_IO, UARTB_USE_RX_IO, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 #else
-    UARTB_SERIAL_NO.begin(baud, config);
+    ESP_ERROR_CHECK(uart_set_pin(UARTB_SERIAL_NO, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 #endif
 
-    UARTB_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
-    UARTB_SERIAL_NO.setRxTimeout(1);   // wait for 1 symbol (~11 bits) to trigger Rx ISR, default 2
+    ESP_ERROR_CHECK(uart_driver_install(UARTB_SERIAL_NO, UARTB_RXBUFSIZE, UARTB_TXBUFSIZE, 0, NULL, 0));  // rx buf size needs to be > 128
+    ESP_ERROR_CHECK(uart_set_rx_full_threshold(UARTB_SERIAL_NO, 8)); // default is 120 which is too much, buffer only 128 bytes
+    ESP_ERROR_CHECK(uart_set_rx_timeout(UARTB_SERIAL_NO, 1));        // wait for 1 symbol (~11 bits) to trigger Rx ISR, default 2
+
 
 #elif defined ESP8266
     UARTB_SERIAL_NO.setRxBufferSize(UARTB_RXBUFSIZE);
@@ -133,27 +182,43 @@ void _uartb_initit(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbit
 
 void uartb_setbaudrate(uint32_t baud)
 {
+#ifdef ESP32
+    ESP_ERROR_CHECK(uart_driver_delete(UARTB_SERIAL_NO));
+#elif
     UARTB_SERIAL_NO.end();
+#endif
     _uartb_initit(baud, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
 
 void uartb_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbits)
 {
+#ifdef ESP32
+    ESP_ERROR_CHECK(uart_driver_delete(UARTB_SERIAL_NO));
+#elif
     UARTB_SERIAL_NO.end();
+#endif
     _uartb_initit(baud, parity, stopbits);
 }
 
 
 void uartb_init(void)
 {
+#ifdef ESP32
+    ESP_ERROR_CHECK(uart_driver_delete(UARTB_SERIAL_NO));
+#elif
     UARTB_SERIAL_NO.end();
+#endif
     _uartb_initit(UARTB_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
 void uartb_init_isroff(void)
 {
+#ifdef ESP32
+    ESP_ERROR_CHECK(uart_driver_delete(UARTB_SERIAL_NO));
+#elif
     UARTB_SERIAL_NO.end();
+#endif
     _uartb_initit(UARTB_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
