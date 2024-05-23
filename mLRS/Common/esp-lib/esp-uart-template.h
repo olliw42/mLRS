@@ -8,8 +8,10 @@
 #ifndef ESPLIB_UART$_H
 #define ESPLIB_UART$_H
 
+#ifdef ESP32
 #include "driver/uart.h"
 #include "hal/uart_ll.h"
+#endif
 
 #ifndef ESPLIB_UART_ENUMS
 #define ESPLIB_UART_ENUMS
@@ -32,13 +34,13 @@ typedef enum {
 #ifdef UART$_USE_SERIAL
 #ifdef ESP32
   #define UART$_SERIAL_NO       UART_NUM_0
-#elif
+#elif defined ESP8266
   #define UART$_SERIAL_NO       Serial
 #endif
 #elif defined UART$_USE_SERIAL1
 #ifdef ESP32
   #define UART$_SERIAL_NO       UART_NUM_1
-#elif
+#elif defined ESP8266
   #define UART$_SERIAL_NO       Serial1
 #endif
 #elif defined UART$_USE_SERIAL2
@@ -61,7 +63,7 @@ IRAM_ATTR void uart$_putbuf(uint8_t* buf, uint16_t len)
 {
 #ifdef ESP32
     uart_write_bytes(UART$_SERIAL_NO, (uint8_t*)buf, len);
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.write((uint8_t*)buf, len);
 #endif
 }
@@ -73,7 +75,7 @@ IRAM_ATTR char uart$_getc(void)
     uint8_t c = 0;
     uart_read_bytes(UART$_SERIAL_NO, &c, 1, 0);
     return (char)c;
-#elif
+#elif defined ESP8266
     return (char)UART$_SERIAL_NO.read();
 #endif
 }
@@ -83,7 +85,7 @@ IRAM_ATTR void uart$_rx_flush(void)
 {
 #ifdef ESP32
     uart_flush(UART$_SERIAL_NO);
-#elif
+#elif defined ESP8266
     while (UART$_SERIAL_NO.available() > 0) UART$_SERIAL_NO.read();
 #endif
 }
@@ -93,7 +95,7 @@ IRAM_ATTR void uart$_tx_flush(void)
 {
 #ifdef ESP32
     uart_wait_tx_done(UART$_SERIAL_NO, 100);  // 100 ms - what should be used?
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.flush();
 #endif
 }
@@ -105,7 +107,7 @@ IRAM_ATTR uint16_t uart$_rx_bytesavailable(void)
     uint32_t bytesAvailable = 0;
     uart_get_buffered_data_len(UART$_SERIAL_NO, &bytesAvailable);
     return (uint16_t)bytesAvailable;
-#elif
+#elif defined ESP8266
     return (UART$_SERIAL_NO.available() > 0) ? UART$_SERIAL_NO.available() : 0;
 #endif
 }
@@ -117,7 +119,7 @@ IRAM_ATTR uint16_t uart$_rx_available(void)
     uint32_t bytesAvailable = 0;
     uart_get_buffered_data_len(UART$_SERIAL_NO, &bytesAvailable);
     return ((uint16_t)bytesAvailable > 0) ? 1 : 0;
-#elif
+#elif defined ESP8266
     return (UART$_SERIAL_NO.available() > 0) ? 1 : 0;
 #endif
 }
@@ -184,7 +186,7 @@ void uart$_setbaudrate(uint32_t baud)
 {
 #ifdef ESP32
     ESP_ERROR_CHECK(uart_driver_delete(UART$_SERIAL_NO));
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.end();
 #endif
     _uart$_initit(baud, XUART_PARITY_NO, UART_STOPBIT_1);
@@ -195,7 +197,7 @@ void uart$_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 {
 #ifdef ESP32
     ESP_ERROR_CHECK(uart_driver_delete(UART$_SERIAL_NO));
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.end();
 #endif
     _uart$_initit(baud, parity, stopbits);
@@ -206,7 +208,7 @@ void uart$_init(void)
 {
 #ifdef ESP32
     ESP_ERROR_CHECK(uart_driver_delete(UART$_SERIAL_NO));
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.end();
 #endif
     _uart$_initit(UART$_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
@@ -216,7 +218,7 @@ void uart$_init_isroff(void)
 {
 #ifdef ESP32
     ESP_ERROR_CHECK(uart_driver_delete(UART$_SERIAL_NO));
-#elif
+#elif defined ESP8266
     UART$_SERIAL_NO.end();
 #endif
     _uart$_initit(UART$_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
