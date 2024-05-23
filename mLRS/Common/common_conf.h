@@ -160,7 +160,7 @@
 // sets various internal values
 // user must not modify
 
-#define MSP_PAYLOAD_LEN_MAX             512 // INAV7.1 uses up to 340 !!!
+#define MSP_PAYLOAD_LEN_MAX             512 // INAV7.1 uses up to 640 !!!
 
 
 #endif // COMMON_CONFIG_H
