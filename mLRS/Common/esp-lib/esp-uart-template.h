@@ -23,7 +23,6 @@ typedef enum {
 } UARTPARITYENUM;
 
 typedef enum {
-//    UART_STOPBIT_0_5 = 0, // not supported by ESP
     UART_STOPBIT_1 = 0,
     UART_STOPBIT_2,
 } UARTSTOPBITENUM;
@@ -94,7 +93,7 @@ IRAM_ATTR void uart$_rx_flush(void)
 IRAM_ATTR void uart$_tx_flush(void)
 {
 #ifdef ESP32
-    uart_wait_tx_done(UART$_SERIAL_NO, 100);  // 100 ms - what should be used?
+    //uart_wait_tx_done(UART$_SERIAL_NO, 100);  // 100 ms - what should be used?
 #elif defined ESP8266
     UART$_SERIAL_NO.flush();
 #endif
