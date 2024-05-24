@@ -55,10 +55,8 @@ class tTransmitArq
 void tTransmitArq::Init(void)
 {
     status = ARQ_TX_IDLE;
-
     payload_seq_no = 0;
     bytes_in_payload = 0;
-
     payload_len = 0;
 }
 
@@ -114,7 +112,6 @@ void tTransmitArq::PutC(char c)
 }
 
 
-
 uint8_t tTransmitArq::SeqNo(void)
 {
     return payload_seq_no;
@@ -145,8 +142,10 @@ class tReceiveArq
     uint8_t Ack(void);
 
     uint8_t status;
+
     uint8_t received_seq_no_last;
     uint8_t received_seq_no;
+
     uint8_t ack;
 };
 
@@ -154,10 +153,8 @@ class tReceiveArq
 void tReceiveArq::Init(void)
 {
     status = ARQ_RX_IDLE;
-
     received_seq_no = 0;
     received_seq_no_last = 0;
-
     ack = 1;
 }
 
