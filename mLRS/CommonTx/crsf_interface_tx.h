@@ -844,7 +844,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         attitude_updated = true;
         }break;
 
-    case MSP_INAV_ANALOG: { // tCrsfBattery, CRSF_FRAME_ID_BATTERY = 0x08
+    case MSP2_INAV_ANALOG: { // tCrsfBattery, CRSF_FRAME_ID_BATTERY = 0x08
         tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
         battery.voltage = CRSF_REV_U16(payload->battery_voltage / 10);  // uint16_t mV * 100      // uint16_t  seems to be 0.01 V
         battery.current = CRSF_REV_U16(payload->amperage / 10);         // uint16_t mA * 100      // uint16_t  send amperage in 0.01 A steps
@@ -883,7 +883,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         }
         }break;
 
-    case MSP_INAV_STATUS: {
+    case MSP2_INAV_STATUS: {
         tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
         // report it
         msp_inav_status_sensor_status = payload->sensor_status;

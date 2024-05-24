@@ -63,6 +63,8 @@ typedef struct {
 
 
 typedef enum {
+    MSP_MODE_RANGES               = 34, // len = 160
+    MSP_ADJUSTMENT_RANGES         = 52, // len = 120
     MSP_SONAR_ALTITUDE            = 58,
     MSP_STATUS                    = 101,
     MSP_RAW_IMU                   = 102,
@@ -73,27 +75,36 @@ typedef enum {
     MSP_ANALOG                    = 110, // better use MSP_INAV_ANALOG
     MSP_ACTIVEBOXES               = 113,
     MSP_MISC                      = 114, // better use MSP_INAV_MISC
-    MSP_BOXNAMES                  = 116,
+    MSP_BOXNAMES                  = 116, // len = 340
     MSP_BOXIDS                    = 119,
+    MSP_SERVO_CONFIGURATIONS      = 120, // len = 224
     MSP_NAV_STATUS                = 121,
     MSP_BATTERY_STATE             = 130, // DJI googles fc battery info
     MSP_STATUS_EX                 = 150,
     MSP_SENSOR_STATUS             = 151,
-
     MSP_SET_RAW_RC                = 200,
 
-    MSP_INAV_STATUS               = 0x2000,
-    MSP_INAV_ANALOG               = 0x2002,
-    MSP_INAV_MISC                 = 0x2003,
-    MSP_INAV_AIR_SPEED            = 0x2009,
-    MSP_INAV_MISC2                = 0x203A,
+    // MSP2
 
-    MSP_SENSOR_RANGEFINDER        = 0x1F01,
-    MSP_SENSOR_OPTIC_FLOW         = 0x1F02,
-    MSP_SENSOR_GPS                = 0x1F03,
-    MSP_SENSOR_COMPASS            = 0x1F04,
-    MSP_SENSOR_BAROMETER          = 0x1F05,
-    MSP_SENSOR_AIRSPEED           = 0x1F06,
+    MSP2_COMMON_MOTOR_MIXER             = 0x1005, // 4101, len = 192
+    MSP2_COMMON_SETTING_INFO            = 0x1007, // 4103, len = large, varies
+
+    MSP2_INAV_STATUS                    = 0x2000,
+    MSP2_INAV_ANALOG                    = 0x2002,
+    MSP2_INAV_MISC                      = 0x2003,
+    MSP2_INAV_AIR_SPEED                 = 0x2009,
+    MSP2_INAV_OSD_LAYOUTS               = 0x2012, // 8120, len = 340
+    MSP2_INAV_SERVO_MIXER               = 0x2020, // 8224, len = 384
+    MSP2_INAV_LOGIC_CONDITIONS_STATUS   = 0x2026, // 8230, len = 256
+    MSP2_INAV_MISC2                     = 0x203A,
+    MSP2_INAV_LED_STRIP_CONFIG_EX       = 0x2048, // 8264, len = 640
+
+    MSP2_SENSOR_RANGEFINDER             = 0x1F01,
+    MSP2_SENSOR_OPTIC_FLOW              = 0x1F02,
+    MSP2_SENSOR_GPS                     = 0x1F03,
+    MSP2_SENSOR_COMPASS                 = 0x1F04,
+    MSP2_SENSOR_BAROMETER               = 0x1F05,
+    MSP2_SENSOR_AIRSPEED                = 0x1F06,
 } MSP_FUNCTION_ENUM;
 
 

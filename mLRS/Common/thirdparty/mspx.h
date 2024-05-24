@@ -594,3 +594,68 @@ void msp_function_str_from_msg(char* s, msp_message_t* msg)
 
 
 #endif // MSPX_H
+
+/*
+INAV7.1
+fc -> gcs:
+
+connect:
+-          116: len = 340     MSP_BOXNAMES  all chars, compressed to ca 45
+
+MIXER
+- x2020 / 8224: len = 384     MSP2_INAV_SERVO_MIXER               2*16 * 6 = 192 + 2*16 * 6 = 192 = 384
+
+- x1005 / 4101: len = 192     MSP2_COMMON_MOTOR_MIXER
+
+- x2026 / 8230: len = 256     MSP2_INAV_LOGIC_CONDITIONS_STATUS   64*4 = 256
+
+OUTPUTS
+- x2020 / 8224: len = 384
+
+- x1005 / 4101: len = 192
+
+-          120: len = 224     MSP_SERVO_CONFIGURATIONS
+
+PORTS:
+CONFIGURATION:
+- x1007 / 4103: len = varies  MSP2_COMMON_SETTING_INFO            contains chars
+
+FAILSAFE:
+- x1007 / 4103: len = varies
+
+PID TUNING
+- x1007 / 4103: len = varies
+
+ADVANCED TUNNING:
+- x1007 / 4103: len = varies
+
+PROGRAMMING:
+- x2026 / 8230: len = 256
+
+RECEIVER:
+- x1007 / 4103: len = varies
+
+MODES:
+-          116: len = 340
+
+-           34: len = 160     MSP_MODE_RANGES
+
+ADJUSTMENTS:
+-          116: len = 340
+
+-           52: len = 120
+
+GPS:
+ALIGNMENT TOOL:
+MISSION CONTROL:
+
+OSD
+- x2012 / 8120: len = 340     MSP2_INAV_OSD_LAYOUTS
+- x1007 / 4103: len = varies
+- x2020 / 8224: len = 384
+LED STRIP
+- x2048 / 8264: len = 510     MSP2_INAV_LED_STRIP_CONFIG_EX     128*5 = 640
+
+
+
+*/
