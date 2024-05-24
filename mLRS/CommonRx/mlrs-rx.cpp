@@ -94,6 +94,7 @@
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/diversity.h"
+#include "../Common/arq.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "rxstats.h"
@@ -105,6 +106,7 @@ PowerupCounterBase powerup;
 tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
+tTransmitArq tarq;
 
 
 // is required in bind.h
@@ -274,25 +276,42 @@ void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 
 
 //-- normal Tx, Rx frames handling
+// receive
+//   isr:        -> irq2_status
+//   isr loop:   -> do_receive()
+//               -> link_rx1_status
+//   post loop:  -> handle_receive() or handle_receive_none()
+//                   if valid -> process_received_frame()
+// transmit
+//   -> do_transmit()
+//       -> prepare_transmit_frame()
 
-void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
+void prepare_transmit_frame(uint8_t antenna)
 {
-uint8_t payload[FRAME_RX_PAYLOAD_LEN];
-uint8_t payload_len = 0;
+//uint8_t payload[FRAME_RX_PAYLOAD_LEN];
+//uint8_t payload_len = 0;
+    tarq.Clear();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
 
         // read data from serial
         if (connected()) {
+
+if (tarq.GetFreshPayload()) {
+
             for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
                 if (!sx_serial.available()) break;
-                payload[payload_len] = sx_serial.getc();
+                //payload[payload_len] = sx_serial.getc();
 //dbg.putc(payload[payload_len]);
-                payload_len++;
+                //payload_len++;
+                tarq.PutC(sx_serial.getc());
             }
 
-            stats.bytes_transmitted.Add(payload_len);
+            //stats.bytes_transmitted.Add(payload_len);
+            stats.bytes_transmitted.Add(tarq.payload_len);
             stats.serial_data_transmitted.Inc();
+}
+
         } else {
             sx_serial.flush();
         }
@@ -301,8 +320,8 @@ uint8_t payload_len = 0;
     stats.last_transmit_antenna = antenna;
 
     tFrameStats frame_stats;
-    frame_stats.seq_no = stats.transmit_seq_no;
-    frame_stats.ack = ack;
+    frame_stats.seq_no = tarq.SeqNo();
+    frame_stats.ack = 1; // TODO
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
@@ -310,7 +329,8 @@ uint8_t payload_len = 0;
     frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
+        //pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
+        pack_rxframe(&rxFrame, &frame_stats, tarq.payload, tarq.payload_len);
     } else {
         pack_rxcmdframe(&rxFrame, &frame_stats);
     }
@@ -358,7 +378,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
 //-- receive/transmit handling api
 
-void handle_receive(uint8_t antenna)
+void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
 tTxFrame* frame;
@@ -380,6 +400,13 @@ tTxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
+    // transmit ARQ
+    if (rx_status == RX_STATUS_VALID) {
+         if (frame->status.ack) tarq.Ack(); else tarq.NAck();
+    } else {
+        tarq.FrameMissed();
+    }
+
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
@@ -389,12 +416,12 @@ tTxFrame* frame;
         rxstats.doValidCrc1FrameReceived();
         if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
 
-        stats.received_seq_no = frame->status.seq_no;
-        stats.received_ack = frame->status.ack;
+        //stats.received_seq_no = frame->status.seq_no;
+        //stats.received_ack = frame->status.ack;
 
     } else { // RX_STATUS_INVALID
-        stats.received_seq_no = UINT8_MAX;
-        stats.received_ack = 0;
+        //stats.received_seq_no = UINT8_MAX;
+        //stats.received_ack = 0;
     }
 
     // we set it for all received frames
@@ -407,23 +434,23 @@ tTxFrame* frame;
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    stats.received_seq_no = UINT8_MAX;
-    stats.received_ack = 0;
+    //stats.received_seq_no = UINT8_MAX;
+    //stats.received_ack = 0;
+
+    tarq.FrameMissed();
 }
 
 
 void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
-uint8_t ack = 1;
-
     if (bind.IsInBind()) {
         bind.do_transmit(antenna);
         return;
     }
 
-    stats.transmit_seq_no++;
+    //stats.transmit_seq_no++;
 
-    prepare_transmit_frame(antenna, ack);
+    prepare_transmit_frame(antenna);
 
     // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
     sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10ms tmo
@@ -537,6 +564,7 @@ RESTARTCONTROLLER
     rxstats.Init(Config.LQAveragingPeriod);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
+    tarq.Init();
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
@@ -794,6 +822,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             sx.SetToIdle();
             sx2.SetToIdle();
         }
+
+        if (!connected()) tarq.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

@@ -74,6 +74,7 @@
 #include "../Common/common.h"
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
+#include "../Common/arq.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "txstats.h"
@@ -87,6 +88,7 @@
 tTxStats txstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
+tReceiveArq rarq;
 ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxCli cli;
@@ -400,8 +402,17 @@ void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 
 
 //-- normal Tx, Rx frames handling
+// transmit
+//   -> do_transmit()
+//       -> prepare_transmit_frame()
+// receive
+//   isr:        -> irq2_status
+//   isr loop:   -> do_receive()
+//               -> link_rx1_status
+//   post loop:  -> handle_receive() or handle_receive_none()
+//                   if valid -> process_received_frame()
 
-void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
+void prepare_transmit_frame(uint8_t antenna)
 {
 uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
@@ -429,7 +440,7 @@ uint8_t payload_len = 0;
 
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
-    frame_stats.ack = ack;
+    frame_stats.ack = rarq.Ack();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
@@ -459,6 +470,8 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
         return;
     }
 
+if (rarq.AcceptPayload()) {
+
     // output data on serial
     if (sx_serial.IsEnabled()) {
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
@@ -469,12 +482,14 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 
     stats.bytes_received.Add(frame->status.payload_len);
     stats.serial_data_received.Inc();
+
+}
 }
 
 
 //-- receive/transmit handling api
 
-void handle_receive(uint8_t antenna)
+void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
 tRxFrame* frame;
@@ -496,6 +511,13 @@ tRxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
+    // receive ARQ, must come before process_received_frame()
+    if (rx_status == RX_STATUS_VALID) {
+         rarq.Received(frame->status.seq_no);
+    } else {
+        rarq.FrameMissed();
+    }
+
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
         bool do_payload = true;
 
@@ -503,12 +525,12 @@ tRxFrame* frame;
 
         txstats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
 
-        stats.received_seq_no = frame->status.seq_no;
-        stats.received_ack = frame->status.ack;
+        //stats.received_seq_no = frame->status.seq_no;
+        //stats.received_ack = frame->status.ack;
 
     } else { // RX_STATUS_INVALID
-        stats.received_seq_no = UINT8_MAX;
-        stats.received_ack = 0;
+        //stats.received_seq_no = UINT8_MAX;
+        //stats.received_ack = 0;
     }
 
     // we set it for all received frames
@@ -521,15 +543,15 @@ tRxFrame* frame;
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    stats.received_seq_no = UINT8_MAX;
-    stats.received_ack = 0;
+    //stats.received_seq_no = UINT8_MAX;
+    //stats.received_ack = 0;
+
+    rarq.FrameMissed();
 }
 
 
 void do_transmit(uint8_t antenna) // we send a TX frame to receiver
 {
-uint8_t ack = 1;
-
     if (bind.IsInBind()) {
         bind.do_transmit(antenna);
         return;
@@ -537,7 +559,7 @@ uint8_t ack = 1;
 
     stats.transmit_seq_no++;
 
-    prepare_transmit_frame(antenna, ack);
+    prepare_transmit_frame(antenna);
 
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
 }
@@ -649,6 +671,7 @@ RESTARTCONTROLLER
     txstats.Init(Config.LQAveragingPeriod);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
+    rarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
@@ -912,6 +935,8 @@ IF_SX2(
         link_state = LINK_STATE_TRANSMIT;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
+
+        if (!connected()) rarq.Disconnected();
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
