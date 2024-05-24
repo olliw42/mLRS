@@ -10,8 +10,11 @@
 #define ARQ_H
 #pragma once
 
+#define USE_ARQ
+#define USE_ARQ_TX_SIM_MISS 0 //9
+#define USE_ARQ_RX_SIM_MISS 0 //5
 
-#if 0
+#ifdef USE_ARQ
 
 //-------------------------------------------------------
 // Transmit
@@ -92,8 +95,6 @@ void tTransmitArq::Clear(void)
 
 bool tTransmitArq::GetFreshPayload(void)
 {
-    //return true;
-
     if (status == ARQ_TX_IDLE) { while(1); } // must not happen, should have been called after Missed,NAck,Ack
 
     if (status == ARQ_TX_ACK) {
@@ -144,7 +145,6 @@ class tReceiveArq
     uint8_t Ack(void);
 
     uint8_t status;
-    uint8_t status_last;
     uint8_t received_seq_no_last;
     uint8_t received_seq_no;
     uint8_t ack;
@@ -185,8 +185,6 @@ void tReceiveArq::Received(uint8_t _seq_no)
 
 bool tReceiveArq::AcceptPayload(void)
 {
-    return true;
-
     if (status == ARQ_RX_IDLE) { while(1); } // must not happen, should have been called after Missed,Received
 
     switch (status) {

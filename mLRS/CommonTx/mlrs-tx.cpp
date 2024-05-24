@@ -438,6 +438,11 @@ uint8_t payload_len = 0;
 
     stats.last_transmit_antenna = antenna;
 
+#ifdef USE_ARQ
+dbg.puts("\ntrs ");
+dbg.puts((rarq.Ack()) ? "ack" : "NACK");
+#endif
+
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
     frame_stats.ack = rarq.Ack();
@@ -470,20 +475,23 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
         return;
     }
 
-if (rarq.AcceptPayload()) {
+    if (rarq.AcceptPayload()) {
 
-    // output data on serial
-    if (sx_serial.IsEnabled()) {
-        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-            uint8_t c = frame->payload[i];
-            sx_serial.putc(c);
+#ifdef USE_ARQ
+dbg.puts(" TRUE");
+#endif
+
+        // output data on serial
+        if (sx_serial.IsEnabled()) {
+            for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+                uint8_t c = frame->payload[i];
+                sx_serial.putc(c);
+            }
         }
+
+        stats.bytes_received.Add(frame->status.payload_len);
+        stats.serial_data_received.Inc();
     }
-
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.serial_data_received.Inc();
-
-}
 }
 
 
@@ -518,6 +526,15 @@ tRxFrame* frame;
         rarq.FrameMissed();
     }
 
+#ifdef USE_ARQ
+dbg.puts("\nrec ");
+if(rarq.status==tReceiveArq::ARQ_RX_FRAME_MISSED) dbg.puts("FM"); else
+if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED_WAS_IDLE) dbg.puts("RI"); else
+if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED) dbg.puts("R ");
+dbg.puts(" seq_last ");dbg.puts(u8toBCD_s(rarq.received_seq_no_last));
+dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
+#endif
+
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
         bool do_payload = true;
 
@@ -525,12 +542,7 @@ tRxFrame* frame;
 
         txstats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
 
-        //stats.received_seq_no = frame->status.seq_no;
-        //stats.received_ack = frame->status.ack;
-
     } else { // RX_STATUS_INVALID
-        //stats.received_seq_no = UINT8_MAX;
-        //stats.received_ack = 0;
     }
 
     // we set it for all received frames
@@ -543,10 +555,11 @@ tRxFrame* frame;
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    //stats.received_seq_no = UINT8_MAX;
-    //stats.received_ack = 0;
-
     rarq.FrameMissed();
+
+#ifdef USE_ARQ
+dbg.puts("\nrec FMISSED");
+#endif
 }
 
 
@@ -847,6 +860,12 @@ IF_SX2(
 
         sx.SetToIdle();
         sx2.SetToIdle();
+
+#if USE_ARQ_TX_SIM_MISS > 0 && defined USE_ARQ
+static uint8_t miss_cnt = 0;
+DECc(miss_cnt,USE_ARQ_TX_SIM_MISS);
+if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+#endif
 
         bool frame_received, valid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {

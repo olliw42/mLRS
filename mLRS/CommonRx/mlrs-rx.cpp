@@ -288,8 +288,6 @@ void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
-//uint8_t payload[FRAME_RX_PAYLOAD_LEN];
-//uint8_t payload_len = 0;
     tarq.Clear();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
@@ -297,20 +295,22 @@ void prepare_transmit_frame(uint8_t antenna)
         // read data from serial
         if (connected()) {
 
-if (tarq.GetFreshPayload()) {
+            if (tarq.GetFreshPayload()) {
 
-            for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-                if (!sx_serial.available()) break;
-                //payload[payload_len] = sx_serial.getc();
-//dbg.putc(payload[payload_len]);
-                //payload_len++;
-                tarq.PutC(sx_serial.getc());
+#ifdef USE_ARQ
+dbg.puts("TRUE ");
+#endif
+
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                    if (!sx_serial.available()) break;
+                    uint8_t c = sx_serial.getc();
+                    tarq.PutC(c);
+//dbg.putc(c);
+                }
+
+                stats.bytes_transmitted.Add(tarq.payload_len);
+                stats.serial_data_transmitted.Inc();
             }
-
-            //stats.bytes_transmitted.Add(payload_len);
-            stats.bytes_transmitted.Add(tarq.payload_len);
-            stats.serial_data_transmitted.Inc();
-}
 
         } else {
             sx_serial.flush();
@@ -329,11 +329,15 @@ if (tarq.GetFreshPayload()) {
     frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        //pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
         pack_rxframe(&rxFrame, &frame_stats, tarq.payload, tarq.payload_len);
     } else {
         pack_rxcmdframe(&rxFrame, &frame_stats);
     }
+
+#ifdef USE_ARQ
+dbg.puts("\ntrs seq ");
+dbg.puts(u8toBCD_s(rxFrame.status.seq_no));
+#endif
 }
 
 
@@ -407,6 +411,13 @@ tTxFrame* frame;
         tarq.FrameMissed();
     }
 
+#ifdef USE_ARQ
+dbg.puts("\nrec ");
+if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts("FM  "); else
+if(tarq.status==tTransmitArq::ARQ_TX_NACK) dbg.puts("NACK"); else
+if(tarq.status==tTransmitArq::ARQ_TX_ACK) dbg.puts("ACK ");
+#endif
+
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
@@ -416,12 +427,7 @@ tTxFrame* frame;
         rxstats.doValidCrc1FrameReceived();
         if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
 
-        //stats.received_seq_no = frame->status.seq_no;
-        //stats.received_ack = frame->status.ack;
-
     } else { // RX_STATUS_INVALID
-        //stats.received_seq_no = UINT8_MAX;
-        //stats.received_ack = 0;
     }
 
     // we set it for all received frames
@@ -434,10 +440,11 @@ tTxFrame* frame;
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    //stats.received_seq_no = UINT8_MAX;
-    //stats.received_ack = 0;
-
     tarq.FrameMissed();
+
+#ifdef USE_ARQ
+dbg.puts("\nrec FMISSED");
+#endif
 }
 
 
@@ -447,8 +454,6 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
         bind.do_transmit(antenna);
         return;
     }
-
-    //stats.transmit_seq_no++;
 
     prepare_transmit_frame(antenna);
 
@@ -714,6 +719,12 @@ IF_SX2(
 
     if (doPostReceive) {
         doPostReceive = false;
+
+#if USE_ARQ_RX_SIM_MISS > 0 && defined USE_ARQ
+static uint8_t miss_cnt = 0;
+DECc(miss_cnt,USE_ARQ_RX_SIM_MISS);
+if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+#endif
 
         bool frame_received, valid_frame_received, invalid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
