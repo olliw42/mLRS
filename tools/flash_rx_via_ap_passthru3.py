@@ -12,7 +12,7 @@
  - determines required baud rate
  - opens serial passthrough in ArduPilot flight controller
  - sets receiver into bootloader mode
- - flashes firmware if firmware file specified
+ - flashes firmware if firmware file specified (if os = Win)
 '''
 
 import os
@@ -204,7 +204,7 @@ def mlrs_run_all(uart, serialx, passthru_tmo_s = 0):
 # STM32CubeProgrammer
 #--------------------------------------------------
 
-def mlrs_flash_frimware_file(uart, baud, file, full_erase_flag):
+def mlrs_flash_firmware_file(uart, baud, file, full_erase_flag):
     print('')
     print('------------------------------------------------------------')
     print('flashing firmware file...')
@@ -269,7 +269,7 @@ else:
             self.usbport_menu = OptionMenu(self, self.usbport_value, *self.usbport_choices)
             self.usbport_menu.config(width = 10)
             self.usbport_menu.grid(row = row, column = 1, sticky = W)
-            row = 1
+            row += 1
             self.serial_value = StringVar()
             self.serial_choices = ['1','2','3','4','5','6','7','8']
             self.serial_value.set('1')
@@ -278,23 +278,24 @@ else:
             self.serial_menu = OptionMenu(self, self.serial_value, *self.serial_choices)
             self.serial_menu.config(width = 10)
             self.serial_menu.grid(row = row, column = 1, sticky = W)
-            row = 3
-            self.firmware_file = StringVar()
-            self.firmware_file.set('')
-            self.firmware_file_label = Label(self, text = "Firmware binary")
-            self.firmware_file_label.grid(row = row, column = 0, sticky = W)
-            self.firmware_file_entry = Entry(self, width = 80, textvariable = self.firmware_file)
-            self.firmware_file_entry.grid(row = row, column = 1)
-            self.firmware_file_button = Button(self, text="Browse", command = self.browseFirmwareFile)
-            self.firmware_file_button.grid(row = row, column = 2)
-            row = 4
-            self.full_erase_value = BooleanVar()
-            self.full_erase_label = Label(self, text = "Full erase")
-            self.full_erase_label.grid(row = row, column = 0)
-            self.full_erase_button = Checkbutton(self, variable = self.full_erase_value, onvalue = True, offvalue = False)
-            self.full_erase_value.set(False)
-            self.full_erase_button.grid(row = row, column = 1, sticky = W)
-            row = 5
+            if os.name != 'posix': # install paths are os dependent
+                row += 1
+                self.firmware_file = StringVar()
+                self.firmware_file.set('')
+                self.firmware_file_label = Label(self, text = "Firmware binary")
+                self.firmware_file_label.grid(row = row, column = 0, sticky = W)
+                self.firmware_file_entry = Entry(self, width = 80, textvariable = self.firmware_file)
+                self.firmware_file_entry.grid(row = row, column = 1)
+                self.firmware_file_button = Button(self, text="Browse", command = self.browseFirmwareFile)
+                self.firmware_file_button.grid(row = row, column = 2)
+                row += 1
+                self.full_erase_value = BooleanVar()
+                self.full_erase_label = Label(self, text = "Full erase")
+                self.full_erase_label.grid(row = row, column = 0)
+                self.full_erase_button = Checkbutton(self, variable = self.full_erase_value, onvalue = True, offvalue = False)
+                self.full_erase_value.set(False)
+                self.full_erase_button.grid(row = row, column = 1, sticky = W)
+            row += 1
             self.ok_button = Button(self, text = "OK", command = self.okRun)
             self.ok_button.config(width = 10)
             self.ok_button.grid(row = row, column = 1, sticky = W)
@@ -308,6 +309,8 @@ else:
             uart = self.usbport_value.get()
             serialx = self.serial_value.get()
             link, baud = mlrs_run_all(uart, serialx, passthru_tmo_s = 30)
+            if os.name == 'posix': 
+                return
             binary = self.firmware_file.get()
             full_erase_flag = self.full_erase_value.get()
             if binary != '':
@@ -315,7 +318,7 @@ else:
                 print('waiting...')
                 link.close()    
                 time.sleep(5.0)
-                mlrs_flash_frimware_file(uart, str(baud), binary, full_erase_flag)
+                mlrs_flash_firmware_file(uart, str(baud), binary, full_erase_flag)
             #exit(0)
 
     #if __name__ == '__main__':
