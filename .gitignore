@@ -54,3 +54,8 @@ mLRS/*/Drivers/STM32_USB_Device_Library/*
 # Platformio
 .pio/
 .vscode/
+
+# keep these
+!tools/st-programmer/*
+!tools/st-programmer/bin/*
+
