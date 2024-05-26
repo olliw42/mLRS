@@ -56,6 +56,5 @@ mLRS/*/Drivers/STM32_USB_Device_Library/*
 .vscode/
 
 # keep these
-!tools/st-programmer/*
-!tools/st-programmer/bin/*
+!tools/zmodules/STM32CubeProgrammer/bin/*
 
