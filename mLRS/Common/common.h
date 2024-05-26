@@ -67,6 +67,7 @@ class tSerialPort : public tSerialBase
     char getc(void) override { IFNSER(0); return uartb_getc(); }
     void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
     uint16_t bytes_available(void) override { IFNSER(0); return uartb_rx_bytesavailable(); }
+    bool has_systemboot(void) override { return uartb_has_systemboot(); }
 #endif
 #endif
 };
@@ -142,6 +143,7 @@ class tSerial2Port : public tSerialBase
     char getc(void) override { return uartd_getc(); }
     void flush(void) override { uartd_rx_flush(); uartd_tx_flush(); }
     uint16_t bytes_available(void) override { return uartd_rx_bytesavailable(); }
+    bool has_systemboot(void) override { return uartd_has_systemboot(); }
 #endif
 };
 

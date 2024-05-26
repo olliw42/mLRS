@@ -23,13 +23,18 @@ extern volatile uint32_t millis32(void);
 static inline bool connected(void);
 
 
-#define RADIO_LINK_SYSTEM_ID        51 // SiK uses 51, 68
-#define GCS_SYSTEM_ID               255 // default of MissionPlanner, QGC
-#define REBOOT_SHUTDOWN_MAGIC       1234321
+#define RADIO_LINK_SYSTEM_ID          51 // SiK uses 51, 68
+#define GCS_SYSTEM_ID                 255 // default of MissionPlanner, QGC
+#define REBOOT_SHUTDOWN_MAGIC         1234321
+#if defined ESP8266 || defined ESP32
+  #define REBOOT_SHUTDOWN_MAGIC_ACK   (REBOOT_SHUTDOWN_MAGIC + 1) // to indicate ESP
+#else
+  #define REBOOT_SHUTDOWN_MAGIC_ACK   REBOOT_SHUTDOWN_MAGIC
+#endif
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 280 bytes
+#define MAVLINK_BUF_SIZE              300 // needs to be larger than max MAVLink frame size = 280 bytes
 
-#define MAVLINK_OPT_FAKE_PARAMFTP   2 // 0: off, 1: always, 2: determined from mode & baudrate
+#define MAVLINK_OPT_FAKE_PARAMFTP     2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
 class tRxMavlink
@@ -863,13 +868,18 @@ void tRxMavlink::generate_radio_link_information(void)
 
 void tRxMavlink::generate_cmd_ack(void)
 {
+    uint8_t result = MAV_RESULT_ACCEPTED;
+    if (cmd_ack.command == MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN) {
+        if (!serial.has_systemboot()) result = MAV_RESULT_DENIED;
+    }
+
     fmav_msg_command_ack_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         cmd_ack.command,
-        (cmd_ack.state) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, // result
+        result, // result
         cmd_ack.state, // progress
-        REBOOT_SHUTDOWN_MAGIC, // result_param2, set it to magic value
+        REBOOT_SHUTDOWN_MAGIC_ACK, // result_param2, set it to magic value
         cmd_ack.cmd_src_sysid,
         cmd_ack.cmd_src_compid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
@@ -907,6 +917,7 @@ fmav_command_long_t payload;
     bool cmd_valid = false;
     switch (payload.command) {
         case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            if (!serial.has_systemboot()) break; // can't do uart flashing on this serial
             cmd_valid = (payload.param3 == 3.0f &&
                          payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
                          payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
