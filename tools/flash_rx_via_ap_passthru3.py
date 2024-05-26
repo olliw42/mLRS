@@ -75,15 +75,15 @@ def ardupilot_read_baud(link, serialx):
     baud = int(msg.param_value)
     if baud == 19:
         baud = 19200
-    elif baud == 38:    
+    elif baud == 38:
         baud = 38400
-    elif baud == 57:    
+    elif baud == 57:
         baud = 57600
-    elif baud == 115:    
+    elif baud == 115:
         baud = 115200
-    elif baud == 230:    
+    elif baud == 230:
         baud = 230400
-    elif baud == 460:    
+    elif baud == 460:
         baud = 460800
     return baud
 
@@ -92,7 +92,7 @@ def ardupilot_connect(uart, serialx):
     print('connect to flight controller...')
     try:
         link = mavutil.mavlink_connection(uart, 115200)
-    except PermissionError:    
+    except PermissionError:
         printError('ERROR: COM port not available!')
         exit(1)
     except:
@@ -100,7 +100,7 @@ def ardupilot_connect(uart, serialx):
         exit(1)
 
     print('  wait for heartbeat...')
-    
+
     msg = link.recv_match(type = 'HEARTBEAT', blocking = True, timeout=7)
     print(msg)
     if not msg:
@@ -129,7 +129,7 @@ def ardupilot_connect(uart, serialx):
                 serialx_in_list = True
 
     if not serialx_in_list:
-        printError('ERROR: SERIAL'+str(serialx)+' is not MAVlink2 protocol!')
+        printError('ERROR: SERIAL'+str(serialx)+' is not MAVLink2 protocol!')
         exit(1)
 
     baud = ardupilot_read_baud(link, 2)
@@ -151,14 +151,14 @@ def ardupilot_connect(uart, serialx):
 
 def ardupilot_open_passthrough(link, serialx, passthru_tmo_s):
     print('open serial passthrough...')
-    
+
     # Set up passthrough with no timeout, power cycle to end
     print('  set SERIAL_PASSTIMO =', passthru_tmo_s)
     mavparm.MAVParmDict().mavset(link, "SERIAL_PASSTIMO", passthru_tmo_s)
-    
+
     print('  set SERIAL_PASS2 =', serialx)
     mavparm.MAVParmDict().mavset(link, "SERIAL_PASS2", serialx)
-    
+
     # Wait for passthrough to start
     time.sleep(1.5)
     print('serial passthrough opened')
@@ -183,17 +183,17 @@ def mlrs_cmd_preflight_reboot_shutdown(link, cmd_confirmation, cmd_action, sysid
     cmd_tmo_counter = 10 # don't do more than that many attempts
     while True:
         time.sleep(0.01)
-        # Check for ACK 
+        # Check for ACK
         msg = link.recv_match(type = 'COMMAND_ACK')
         if msg is not None and msg.get_type() != 'BAD_DATA':
             msgd = msg.to_dict()
             if (msgd['mavpackettype'] == 'COMMAND_ACK' and
                 msgd['command'] == mavutil.mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN and
-                msgd['result_param2'] == 1234321):
-                print('  ACK') 
+                (msgd['result_param2'] >= 1234321 and msgd['result_param2'] <= 1234321+255)):
+                print('  ACK')
                 #print('  ACK:', msgd)
                 #print(mavutil.mavlink.enums['MAV_RESULT'][msgd['result']].description)
-                return True
+                return True, (msgd['result_param2'] - 1234321), msgd['result'] # 0 = MAV_RESULT_ACCEPTED, 2 = MAV_RESULT_DENIED
         # Send COMMAND
         tnow = time.time()
         if tnow - cmd_tlast >= 0.5:
@@ -204,34 +204,37 @@ def mlrs_cmd_preflight_reboot_shutdown(link, cmd_confirmation, cmd_action, sysid
                 mavutil.mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
                 cmd_confirmation, # confirmation, send 0 to ping, send 1 to arm, then 2 to execute
                 0, 0,
-                cmd_action, # param 3: Component action
-                compid, # param 4: Component ID
+                cmd_action, # param 3: Component action = 3.0 for valid
+                compid, # param 4: Component ID = 68 for valid
                 0, 0,
-                1234321)
+                1234321) # param 7: REBOOT_SHUTDOWN_MAGIC
             cmd_tmo_counter -= 1
-            if cmd_tmo_counter <= 0: return False            
+            if cmd_tmo_counter <= 0: return False,0,4 # 4 = MAV_RESULT_FAILED
 
 
 def mlrs_put_into_systemboot(link, sysid=51, compid=68):
     print('check connection to mLRS receiver...')
-    res = mlrs_cmd_preflight_reboot_shutdown(link, 0, 0, sysid=sysid, compid=compid)
+    res,ack_flags,ack_result = mlrs_cmd_preflight_reboot_shutdown(link, 0, 0, sysid=sysid, compid=compid)
     if not res:
-        print('ERROR: Could not connect to mLRS receiver!')
+        printError('ERROR: Could not connect to mLRS receiver!')
+        exit(1)
+    if ack_result != 0:
+        printError('ERROR: The connected mLRS receiver does not support being flashed via serial!')
         exit(1)
     print('mLRS receiver connected')
     # Arm receiver to allow reboot
     print('arm mLRS receiver for reboot shutdown...')
-    res = mlrs_cmd_preflight_reboot_shutdown(link, 1, 3, sysid=sysid, compid=compid)
+    res,ack_flags,ack_result = mlrs_cmd_preflight_reboot_shutdown(link, 1, 3, sysid=sysid, compid=compid)
     if not res:
         print('ERROR: Could not arm mLRS receiver for reboot shutdown!')
         exit(1)
     print('mLRS receiver armed for reboot shutdown')
     # Reboot shutdown
     print('mLRS receiver reboot shutdown...')
-    res = mlrs_cmd_preflight_reboot_shutdown(link, 2, 3, sysid=sysid, compid=compid)
+    res,ack_flags,ack_result = mlrs_cmd_preflight_reboot_shutdown(link, 2, 3, sysid=sysid, compid=compid)
     # sometimes we don't get an ACK, usually receiver is nevertheless in system boot, so just ignore
     print('mLRS receiver reboot shutdown DONE')
-    # Done    
+    # Done
     print('mLRS receiver jumps to system bootloader in 5 seconds')
 
 
@@ -299,7 +302,7 @@ args_esp = False
 
 if len(sys.argv) <= 1:
     run_gui = True
-    
+
 if len(sys.argv) == 2 and sys.argv[1] == '-esp':
     run_gui = True
     args_esp = True
@@ -325,7 +328,7 @@ if run_gui:
     import tkinter.messagebox
 
     app_title = "mLRS Receiver Flash Tool"
-    
+
     import serial.tools.list_ports
     coms = serial.tools.list_ports.comports(include_links = False)
     comport_list = []
@@ -404,14 +407,14 @@ if run_gui:
                 link, baud,_ = mlrs_run_esp(uart, serialx)
                 return 0
             link, baud,_ = mlrs_run_all(uart, serialx, passthru_tmo_s = 30)
-            if os.name == 'posix': 
+            if os.name == 'posix':
                 return 0
             binary = self.firmware_file.get()
             full_erase_flag = self.full_erase_value.get()
             if binary != '':
                 print('')
                 print('waiting...')
-                link.close()    
+                link.close()
                 time.sleep(5.0)
                 mlrs_flash_firmware_file(uart, baud, binary, full_erase_flag)
                 print('DONE')
