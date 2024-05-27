@@ -288,19 +288,13 @@ void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
-    tarq.Clear();
+    bool get_fresh_payload = tarq.GetFreshPayload();
+    if (get_fresh_payload) tarq.Clear();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-
         // read data from serial
         if (connected()) {
-
-            if (tarq.GetFreshPayload()) {
-
-#ifdef USE_ARQ
-dbg.puts("TRUE ");
-#endif
-
+            if (get_fresh_payload) {
                 for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
@@ -331,10 +325,17 @@ dbg.puts("TRUE ");
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_rxframe(&rxFrame, &frame_stats, tarq.payload, tarq.payload_len);
     } else {
-        pack_rxcmdframe(&rxFrame, &frame_stats);
+        if (get_fresh_payload) {
+            pack_rxcmdframe(&rxFrame, &frame_stats);
+            tarq.Clear();
+            for (uint8_t i = 0; i < rxFrame.status.payload_len; i++) tarq.PutC(rxFrame.payload[i]);
+        } else {
+            pack_rxframe(&rxFrame, &frame_stats, tarq.payload, tarq.payload_len);
+        }
     }
 
 #ifdef USE_ARQ
+dbg.puts(get_fresh_payload?" TRUE":" FALSE");
 dbg.puts("\ntrs seq ");
 dbg.puts(u8toBCD_s(rxFrame.status.seq_no));
 #endif
@@ -404,18 +405,17 @@ tTxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
-    // transmit ARQ
-    if (rx_status == RX_STATUS_VALID) {
-         if (frame->status.ack) tarq.Ack(); else tarq.NAck();
+    // handle transmit ARQ
+    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
+         tarq.Received(frame->status.ack);
     } else {
         tarq.FrameMissed();
     }
 
 #ifdef USE_ARQ
-dbg.puts("\nrec ");
-if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts("FM  "); else
-if(tarq.status==tTransmitArq::ARQ_TX_NACK) dbg.puts("NACK"); else
-if(tarq.status==tTransmitArq::ARQ_TX_ACK) dbg.puts("ACK ");
+dbg.puts("\nrec");
+if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts(" FM"); else
+if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8toBCD_s(tarq.received_seq_no)); }
 #endif
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID

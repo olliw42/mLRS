@@ -438,14 +438,9 @@ uint8_t payload_len = 0;
 
     stats.last_transmit_antenna = antenna;
 
-#ifdef USE_ARQ
-dbg.puts("\ntrs ");
-dbg.puts((rarq.Ack()) ? "ack" : "NACK");
-#endif
-
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
-    frame_stats.ack = rarq.Ack();
+    frame_stats.ack = rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
@@ -457,41 +452,47 @@ dbg.puts((rarq.Ack()) ? "ack" : "NACK");
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
     }
+
+#ifdef USE_ARQ
+dbg.puts("\ntrs ");
+dbg.puts(u8toBCD_s(rarq.AckSeqNo()));
+#endif
 }
 
 
 void process_received_frame(bool do_payload, tRxFrame* frame)
 {
+    bool accept_payload = rarq.AcceptPayload();
+
+#ifdef USE_ARQ
+dbg.puts(accept_payload?" TRUE":" FALSE");
+#endif
+
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
     stats.received_LQ_rc = frame->status.LQ_rc;
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    if (!do_payload) return;
+    if (!do_payload) return; // always true
+
+    if (!accept_payload) return;
 
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
 
-    if (rarq.AcceptPayload()) {
-
-#ifdef USE_ARQ
-dbg.puts(" TRUE");
-#endif
-
-        // output data on serial
-        if (sx_serial.IsEnabled()) {
-            for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-                uint8_t c = frame->payload[i];
-                sx_serial.putc(c);
-            }
+    // output data on serial
+    if (sx_serial.IsEnabled()) {
+        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+            uint8_t c = frame->payload[i];
+            sx_serial.putc(c);
         }
-
-        stats.bytes_received.Add(frame->status.payload_len);
-        stats.serial_data_received.Inc();
     }
+
+    stats.bytes_received.Add(frame->status.payload_len);
+    stats.serial_data_received.Inc();
 }
 
 
@@ -527,10 +528,10 @@ tRxFrame* frame;
     }
 
 #ifdef USE_ARQ
-dbg.puts("\nrec ");
-if(rarq.status==tReceiveArq::ARQ_RX_FRAME_MISSED) dbg.puts("FM"); else
-if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED_WAS_IDLE) dbg.puts("RI"); else
-if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED) dbg.puts("R ");
+dbg.puts("\nrec");
+if(rarq.status==tReceiveArq::ARQ_RX_FRAME_MISSED) dbg.puts(" FM"); else
+if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED_WAS_IDLE) dbg.puts(" RI"); else
+if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED) dbg.puts(" R");
 dbg.puts(" seq_last ");dbg.puts(u8toBCD_s(rarq.received_seq_no_last));
 dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
 #endif

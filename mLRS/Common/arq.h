@@ -11,8 +11,8 @@
 #pragma once
 
 #define USE_ARQ
-#define USE_ARQ_TX_SIM_MISS 0 //9
-#define USE_ARQ_RX_SIM_MISS 0 //5
+#define USE_ARQ_TX_SIM_MISS 9 //9
+#define USE_ARQ_RX_SIM_MISS 5 //5
 
 #ifdef USE_ARQ
 
@@ -28,35 +28,32 @@ class tTransmitArq
     typedef enum {
         ARQ_TX_IDLE = 0,
         ARQ_TX_FRAME_MISSED,
-        ARQ_TX_NACK,
-        ARQ_TX_ACK,
+        ARQ_TX_RECEIVED,
     } ARQ_TX_ENUM;
 
     void Disconnected(void);
     void FrameMissed(void);
-    void NAck(void);
-    void Ack(void);
+    void Received(uint8_t seq_no);
 
-    void Clear(void);
     bool GetFreshPayload(void);
+    void Clear(void);
     void PutC(char c);
+
     uint8_t SeqNo(void);
 
     uint8_t status;
-
+    uint8_t received_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
-    uint8_t bytes_in_payload;
-    uint8_t payload[FRAME_RX_PAYLOAD_LEN];
-
     uint8_t payload_len; // not necessarily the same as bytes_in_payload
+    uint8_t payload[FRAME_RX_PAYLOAD_LEN]; // should be the larger of the two !
 };
 
 
 void tTransmitArq::Init(void)
 {
     status = ARQ_TX_IDLE;
+    received_seq_no = 0;
     payload_seq_no = 0;
-    bytes_in_payload = 0;
     payload_len = 0;
 }
 
@@ -73,31 +70,20 @@ void tTransmitArq::FrameMissed(void)
 }
 
 
-void tTransmitArq::NAck(void)
+void tTransmitArq::Received(uint8_t seq_no)
 {
-    status = ARQ_TX_NACK;
+    received_seq_no = seq_no; // not really used, Q: what should we do if this isn't the expected? Maybe IDLE to recover?
+    status = ARQ_TX_RECEIVED;
 }
 
 
-void tTransmitArq::Ack(void)
-{
-    status = ARQ_TX_ACK;
-}
-
-
-void tTransmitArq::Clear(void)
-{
-    payload_len = 0;
-}
-
-
+// called at begin of prepare_transmit_frame()
 bool tTransmitArq::GetFreshPayload(void)
 {
-    if (status == ARQ_TX_IDLE) { while(1); } // must not happen, should have been called after Missed,NAck,Ack
+    //if (status == ARQ_TX_IDLE) { while(1); } // must not happen, should have been called after Missed,NAck,Ack
 
-    if (status == ARQ_TX_ACK) {
+    if (status == ARQ_TX_RECEIVED || status == ARQ_TX_IDLE) {
         payload_seq_no++; // give this payload the next seq_no
-        bytes_in_payload = 0; // to prepare for PutC()
         return true;
     }
 
@@ -105,16 +91,22 @@ bool tTransmitArq::GetFreshPayload(void)
 }
 
 
+// call before PutC()
+void tTransmitArq::Clear(void)
+{
+    payload_len = 0;
+}
+
+
 void tTransmitArq::PutC(char c)
 {
-    payload[bytes_in_payload++] = c;
-    payload_len = bytes_in_payload;
+    payload[payload_len++] = c;
 }
 
 
 uint8_t tTransmitArq::SeqNo(void)
 {
-    return payload_seq_no;
+    return payload_seq_no; // will be converted by 3 bit to 0...7
 }
 
 
@@ -136,17 +128,16 @@ class tReceiveArq
 
     void Disconnected(void);
     void FrameMissed(void);
-    void Received(uint8_t _seq_no);
+    void Received(uint8_t seq_no);
+
     bool AcceptPayload(void);
 
-    uint8_t Ack(void);
+    uint8_t AckSeqNo(void);
 
     uint8_t status;
-
-    uint8_t received_seq_no_last;
+    uint8_t received_seq_no_last; // attention: the seq no here are all 3 bit,  0..7
     uint8_t received_seq_no;
-
-    uint8_t ack;
+    uint8_t ack_seq_no;
 };
 
 
@@ -155,7 +146,7 @@ void tReceiveArq::Init(void)
     status = ARQ_RX_IDLE;
     received_seq_no = 0;
     received_seq_no_last = 0;
-    ack = 1;
+    ack_seq_no = 0;
 }
 
 
@@ -168,13 +159,12 @@ void tReceiveArq::Disconnected(void)
 void tReceiveArq::FrameMissed(void)
 {
     status = ARQ_RX_FRAME_MISSED;
-    ack = 0; // AcceptPayload() is not called if FRAME_MISSED
 }
 
 
-void tReceiveArq::Received(uint8_t _seq_no)
+void tReceiveArq::Received(uint8_t seq_no)
 {
-    received_seq_no = _seq_no;
+    received_seq_no = seq_no;
     status = (status == ARQ_RX_IDLE) ? ARQ_RX_RECEIVED_WAS_IDLE : ARQ_RX_RECEIVED;
     // AcceptPayload() is called
 }
@@ -185,28 +175,26 @@ bool tReceiveArq::AcceptPayload(void)
     if (status == ARQ_RX_IDLE) { while(1); } // must not happen, should have been called after Missed,Received
 
     switch (status) {
-    case ARQ_RX_RECEIVED_WAS_IDLE:
-        ack = 1;
+    case ARQ_RX_RECEIVED_WAS_IDLE: {
+        bool accept = true;
         received_seq_no_last = received_seq_no;
-        return true;
-    case ARQ_RX_RECEIVED:
-        ack = 1; // we always need to ack when we received a frame, to tell sender we want a new frame
-        if (received_seq_no == received_seq_no_last) { // that's the same as before, reject
-            return false;
-        }
+        ack_seq_no = received_seq_no;
+        return accept; }
+    case ARQ_RX_RECEIVED: {
+        bool accept = (received_seq_no != received_seq_no_last); // new seq no received, so accept it
         received_seq_no_last = received_seq_no;
-        return true;
-    case ARQ_RX_FRAME_MISSED: // is not called if FRAME_MISSED !!
+        ack_seq_no = received_seq_no;
+        return accept; }
+    case ARQ_RX_FRAME_MISSED: // is not called if handle_receive_none(), RX_STATUS_NONE !
     default:
-        ack = 0; // respond with NAck
         return false;
     }
 }
 
 
-uint8_t tReceiveArq::Ack(void)
+uint8_t tReceiveArq::AckSeqNo(void)
 {
-    return ack;
+    return ack_seq_no; // will be converted by 1 bit to 0/1
 }
 
 
@@ -220,11 +208,10 @@ class tTransmitArq
 
     void Disconnected(void) {}
     void FrameMissed(void) {}
-    void NAck(void) {}
-    void Ack(void) {}
+    void Received(uint8_t seq_no) {}
 
-    void Clear(void) { payload_len = 0; }
     bool GetFreshPayload(void) { return true; }
+    void Clear(void) { payload_len = 0; }
     void PutC(char c) { payload[payload_len++] = c; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
 
@@ -244,7 +231,7 @@ class tReceiveArq
     void Received(uint8_t _seq_no) {}
     bool AcceptPayload(void) { return true; }
 
-    uint8_t Ack(void) { return 1; }
+    uint8_t AckSeqNo(void) { return 1; }
 };
 
 #endif
