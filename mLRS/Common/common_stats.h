@@ -53,10 +53,7 @@ class Stats
     uint8_t received_transmit_antenna;
 
     // transmission/retransmission handling
-    uint8_t received_seq_no;
-    uint8_t received_ack;
     uint8_t transmit_seq_no; // seq no in the last transmitted frame
-    uint8_t retransmit_cnt;
 
     void Init(void)
     {
@@ -90,10 +87,7 @@ class Stats
         received_antenna = UINT8_MAX;
         received_transmit_antenna = UINT8_MAX;
 
-        received_seq_no = UINT8_MAX;
-        received_ack = 0;
         transmit_seq_no = 0;
-        retransmit_cnt = 0;
     }
 
     void Update1Hz(void)
