@@ -36,16 +36,12 @@ class tTransmitArq
     void Received(uint8_t seq_no);
 
     bool GetFreshPayload(void);
-    void Clear(void);
-    void PutC(char c);
 
     uint8_t SeqNo(void);
 
     uint8_t status;
     uint8_t received_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
-    uint8_t payload_len;
-    uint8_t payload[FRAME_RX_PAYLOAD_LEN]; // should be the larger of the two !
 };
 
 
@@ -54,7 +50,6 @@ void tTransmitArq::Init(void)
     status = ARQ_TX_IDLE;
     received_seq_no = 0;
     payload_seq_no = 0;
-    payload_len = 0;
 }
 
 
@@ -95,19 +90,6 @@ bool tTransmitArq::GetFreshPayload(void)
         return false;
     }
     return false;
-}
-
-
-// call before PutC()
-void tTransmitArq::Clear(void)
-{
-    payload_len = 0;
-}
-
-
-void tTransmitArq::PutC(char c)
-{
-    payload[payload_len++] = c;
 }
 
 
@@ -218,12 +200,8 @@ class tTransmitArq
     void Received(uint8_t seq_no) {}
 
     bool GetFreshPayload(void) { return true; }
-    void Clear(void) { payload_len = 0; }
-    void PutC(char c) { payload[payload_len++] = c; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
 
-    uint8_t payload_len;
-    uint8_t payload[FRAME_RX_PAYLOAD_LEN];
     uint8_t seq_no;
 };
 
