@@ -274,8 +274,17 @@ void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
 
 
 //-- normal Tx, Rx frames handling
+// receive
+//   isr:        -> irq2_status
+//   isr loop:   -> do_receive()
+//               -> link_rx1_status
+//   post loop:  -> handle_receive() or handle_receive_none()
+//                   if valid -> process_received_frame()
+// transmit
+//   -> do_transmit()
+//       -> prepare_transmit_frame()
 
-void prepare_transmit_frame(uint8_t antenna, uint8_t ack)
+void prepare_transmit_frame(uint8_t antenna)
 {
 uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
@@ -287,7 +296,6 @@ uint8_t payload_len = 0;
             for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
                 if (!sx_serial.available()) break;
                 payload[payload_len] = sx_serial.getc();
-//dbg.putc(payload[payload_len]);
                 payload_len++;
             }
 
@@ -358,7 +366,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
 //-- receive/transmit handling api
 
-void handle_receive(uint8_t antenna)
+void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
 tTxFrame* frame;
