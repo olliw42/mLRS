@@ -301,9 +301,8 @@ if (get_fresh_payload) {
         if (connected()) {
             for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
                 if (!sx_serial.available()) break;
-                uint8_t c = sx_serial.getc();
-                payload[payload_len++] = c;
-//dbg.putc(c);
+                payload[payload_len] = sx_serial.getc();
+                payload_len++;
             }
 
             stats.bytes_transmitted.Add(payload_len);
