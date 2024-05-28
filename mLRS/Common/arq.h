@@ -11,7 +11,7 @@
 #pragma once
 
 #define USE_ARQ
-#define USE_ARQ_TX_SIM_MISS 9 //9
+#define USE_ARQ_TX_SIM_MISS 4 //9
 #define USE_ARQ_RX_SIM_MISS 5 //5
 
 #ifdef USE_ARQ
@@ -82,6 +82,7 @@ bool tTransmitArq::GetFreshPayload(void)
     case ARQ_TX_RECEIVED:
         // keep previous payload if received_seq_no != payload_seq_no
         // attention: received_seq_no is 1 bit!
+        // next = (received_seq_no & 0x01) == (payload_seq_no & 0x01)
         if ((received_seq_no & 0x01) != (payload_seq_no & 0x01)) return false;
 
         payload_seq_no++; // give this payload the next seq_no

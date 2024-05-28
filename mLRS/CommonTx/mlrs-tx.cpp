@@ -902,7 +902,7 @@ if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
         if (!valid_frame_received) {
-            mavlink.FrameLost();
+//            mavlink.FrameLost(); // TODO: we need to get proper info from ARQ, when we don't do infinite retransmissions !!
         }
 
         txstats.fhss_curr_i = fhss.CurrI();
