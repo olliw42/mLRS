@@ -11,8 +11,9 @@
 #pragma once
 
 #define USE_ARQ
-#define USE_ARQ_TX_SIM_MISS 4 //9
-#define USE_ARQ_RX_SIM_MISS 5 //5
+#define USE_ARQ_DBG
+#define USE_ARQ_TX_SIM_MISS 4 //9 // 0 = off
+#define USE_ARQ_RX_SIM_MISS 5 //5 // 0 = off
 
 #ifdef USE_ARQ
 
@@ -53,6 +54,12 @@ void tTransmitArq::Init(void)
 }
 
 
+// methods called upon receive or expected receive (in doPostReceive)
+// the calling sequence is:
+// 1. Received(seq_no) or FrameMissed() (in handle_receive() or handle_receive_none())
+// 2. GetFreshPayload() (in prepare_transmit_frame())
+// 3. Disconnected()
+
 void tTransmitArq::Disconnected(void)
 {
     status = ARQ_TX_IDLE;
@@ -67,7 +74,7 @@ void tTransmitArq::FrameMissed(void)
 
 void tTransmitArq::Received(uint8_t seq_no)
 {
-    received_seq_no = seq_no;
+    received_seq_no = seq_no; // is 0/1
     status = ARQ_TX_RECEIVED;
 }
 
@@ -94,9 +101,11 @@ bool tTransmitArq::GetFreshPayload(void)
 }
 
 
+// methods called for transmit
+
 uint8_t tTransmitArq::SeqNo(void)
 {
-    return payload_seq_no; // will be converted by 3 bit to 0...7
+    return payload_seq_no; // will be converted to 3 bit or 0...7
 }
 
 
@@ -121,13 +130,18 @@ class tReceiveArq
     void Received(uint8_t seq_no);
 
     bool AcceptPayload(void);
+    bool FrameLost(void);
 
     uint8_t AckSeqNo(void);
 
     uint8_t status;
-    uint8_t received_seq_no_last; // attention: the seq no here are all 3 bit,  0..7
+    uint8_t received_seq_no_last; // all seq_no here are 3 bit,  0..7
     uint8_t received_seq_no;
     uint8_t ack_seq_no;
+    bool accept_received_payload; // maybe a state?
+    bool frame_lost; // maybe a state?
+
+    void spin(void);
 };
 
 
@@ -136,9 +150,18 @@ void tReceiveArq::Init(void)
     status = ARQ_RX_IDLE;
     received_seq_no = 0;
     received_seq_no_last = 0;
+    accept_received_payload = false;
+    frame_lost = false;
     ack_seq_no = 0;
 }
 
+
+// methods called upon receive or expected receive (in doPreTransmit)
+// the calling sequence is:
+// 1. Received(seq_no) or FrameMissed() (in handle_receive() or handle_receive_none())
+// 2. AcceptPayload() (in process_received_frame())
+// 3. FrameLost()
+// 4. Disconnected()
 
 void tReceiveArq::Disconnected(void)
 {
@@ -146,9 +169,36 @@ void tReceiveArq::Disconnected(void)
 }
 
 
+void tReceiveArq::spin(void)
+{
+    if (status == ARQ_RX_IDLE) { while(1); } // must not happen, should have been called after Missed,Received
+
+    switch (status) {
+    case ARQ_RX_RECEIVED_WAS_IDLE:
+        accept_received_payload = true;
+        received_seq_no_last = received_seq_no;
+        ack_seq_no = received_seq_no;
+        break;
+    case ARQ_RX_RECEIVED:
+        accept_received_payload = (received_seq_no != received_seq_no_last); // new seq no received, so accept it
+        received_seq_no_last = received_seq_no;
+        ack_seq_no = received_seq_no;
+        break;
+    case ARQ_RX_FRAME_MISSED: // is not called if handle_receive_none(), RX_STATUS_NONE !
+        accept_received_payload = false;
+        break;
+    default:
+        accept_received_payload = false;
+    }
+
+    frame_lost = false;
+}
+
+
 void tReceiveArq::FrameMissed(void)
 {
     status = ARQ_RX_FRAME_MISSED;
+    spin();
 }
 
 
@@ -156,31 +206,23 @@ void tReceiveArq::Received(uint8_t seq_no)
 {
     received_seq_no = seq_no;
     status = (status == ARQ_RX_IDLE) ? ARQ_RX_RECEIVED_WAS_IDLE : ARQ_RX_RECEIVED;
-    // AcceptPayload() is called
+    spin();
 }
 
 
 bool tReceiveArq::AcceptPayload(void)
 {
-    if (status == ARQ_RX_IDLE) { while(1); } // must not happen, should have been called after Missed,Received
-
-    switch (status) {
-    case ARQ_RX_RECEIVED_WAS_IDLE: {
-        bool accept = true;
-        received_seq_no_last = received_seq_no;
-        ack_seq_no = received_seq_no;
-        return accept; }
-    case ARQ_RX_RECEIVED: {
-        bool accept = (received_seq_no != received_seq_no_last); // new seq no received, so accept it
-        received_seq_no_last = received_seq_no;
-        ack_seq_no = received_seq_no;
-        return accept; }
-    case ARQ_RX_FRAME_MISSED: // is not called if handle_receive_none(), RX_STATUS_NONE !
-        return false;
-    }
-    return false;
+    return accept_received_payload;
 }
 
+
+bool tReceiveArq::FrameLost(void) // called to check if parsers need to be reset
+{
+    return frame_lost;
+}
+
+
+// methods called for transmit
 
 uint8_t tReceiveArq::AckSeqNo(void)
 {
@@ -216,10 +258,12 @@ class tReceiveArq
     void FrameMissed(void) {}
     void Received(uint8_t _seq_no) {}
     bool AcceptPayload(void) { return true; }
+    bool FrameLost(void) { return false; }
 
     uint8_t AckSeqNo(void) { return 1; }
 };
 
+#undef USE_ARQ_DBG
 #endif
 
 #endif // ARQ_H

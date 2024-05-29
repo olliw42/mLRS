@@ -351,7 +351,7 @@ if (get_fresh_payload) {
     _update_rxframe_stats(&rxFrame, &frame_stats);
 }
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts(get_fresh_payload?" TRUE":" FALSE");
 dbg.puts("\ntrs seq ");
 dbg.puts(u8toBCD_s(rxFrame.status.seq_no));
@@ -429,7 +429,7 @@ tTxFrame* frame;
         tarq.FrameMissed();
     }
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts("\nrec");
 if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts(" FM"); else
 if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8toBCD_s(tarq.received_seq_no)); }
@@ -459,7 +459,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 {
     tarq.FrameMissed();
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts("\nrec FMISSED");
 #endif
 }

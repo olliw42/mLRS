@@ -453,7 +453,7 @@ uint8_t payload_len = 0;
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
     }
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts("\ntrs ");
 dbg.puts(u8toBCD_s(rarq.AckSeqNo()));
 #endif
@@ -464,7 +464,7 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
 {
     bool accept_payload = rarq.AcceptPayload();
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts(accept_payload?" TRUE":" FALSE");
 #endif
 
@@ -527,7 +527,7 @@ tRxFrame* frame;
         rarq.FrameMissed();
     }
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts("\nrec");
 if(rarq.status==tReceiveArq::ARQ_RX_FRAME_MISSED) dbg.puts(" FM"); else
 if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED_WAS_IDLE) dbg.puts(" RI"); else
@@ -558,7 +558,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 {
     rarq.FrameMissed();
 
-#ifdef USE_ARQ
+#ifdef USE_ARQ_DBG
 dbg.puts("\nrec FMISSED");
 #endif
 }
@@ -901,8 +901,10 @@ if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         }
 
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
-        if (!valid_frame_received) {
-//            mavlink.FrameLost(); // TODO: we need to get proper info from ARQ, when we don't do infinite retransmissions !!
+        // valid_frame/frame lost logic is modified by ARQ, so get proper info from ARQ
+        // rarq.FrameLost()
+        if (rarq.FrameLost()) {
+            mavlink.FrameLost();
         }
 
         txstats.fhss_curr_i = fhss.CurrI();
