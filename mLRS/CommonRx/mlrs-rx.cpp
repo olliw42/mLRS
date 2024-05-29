@@ -328,8 +328,9 @@ if (get_fresh_payload) {
     } else {
         pack_rxcmdframe(&rxFrame, &frame_stats);
     }
-
     rxFrame_valid = true;
+
+    tarq.SetRetryCnt(1);
 
 } else {
 
@@ -349,6 +350,9 @@ if (get_fresh_payload) {
     frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
     _update_rxframe_stats(&rxFrame, &frame_stats);
+    rxFrame_valid = true;
+
+    tarq.SetRetryCnt(1);
 }
 
 #ifdef USE_ARQ_DBG
@@ -432,7 +436,7 @@ tTxFrame* frame;
 #ifdef USE_ARQ_DBG
 dbg.puts("\nrec");
 if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts(" FM"); else
-if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8toBCD_s(tarq.received_seq_no)); }
+if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8toBCD_s(tarq.received_ack_seq_no)); }
 #endif
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID

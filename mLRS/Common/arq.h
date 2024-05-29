@@ -34,31 +34,32 @@ class tTransmitArq
 
     void Disconnected(void);
     void FrameMissed(void);
-    void Received(uint8_t seq_no);
+    void Received(uint8_t ack_seq_no);
 
     bool GetFreshPayload(void);
-
     uint8_t SeqNo(void);
+    void SetRetryCnt(uint8_t retry_cnt);
 
     uint8_t status;
-    uint8_t received_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
+    uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
+    uint8_t payload_retry_cnt; // the retry counts for this payload
 };
 
 
 void tTransmitArq::Init(void)
 {
     status = ARQ_TX_IDLE;
-    received_seq_no = 0;
+    received_ack_seq_no = 0;
     payload_seq_no = 0;
+    payload_retry_cnt = UINT8_MAX; // 255 = infinite
 }
 
 
 // methods called upon receive or expected receive (in doPostReceive)
 // the calling sequence is:
 // 1. Received(seq_no) or FrameMissed() (in handle_receive() or handle_receive_none())
-// 2. GetFreshPayload() (in prepare_transmit_frame())
-// 3. Disconnected()
+// 2. Disconnected()
 
 void tTransmitArq::Disconnected(void)
 {
@@ -72,12 +73,14 @@ void tTransmitArq::FrameMissed(void)
 }
 
 
-void tTransmitArq::Received(uint8_t seq_no)
+void tTransmitArq::Received(uint8_t ack_seq_no)
 {
-    received_seq_no = seq_no; // is 0/1
+    received_ack_seq_no = ack_seq_no; // is 0/1
     status = ARQ_TX_RECEIVED;
 }
 
+
+// methods called for transmit
 
 // called at begin of prepare_transmit_frame()
 bool tTransmitArq::GetFreshPayload(void)
@@ -90,7 +93,7 @@ bool tTransmitArq::GetFreshPayload(void)
         // keep previous payload if received_seq_no != payload_seq_no
         // attention: received_seq_no is 1 bit!
         // next = (received_seq_no & 0x01) == (payload_seq_no & 0x01)
-        if ((received_seq_no & 0x01) != (payload_seq_no & 0x01)) return false;
+        if ((received_ack_seq_no & 0x01) != (payload_seq_no & 0x01)) return false;
 
         payload_seq_no++; // give this payload the next seq_no
         return true;
@@ -101,11 +104,15 @@ bool tTransmitArq::GetFreshPayload(void)
 }
 
 
-// methods called for transmit
-
 uint8_t tTransmitArq::SeqNo(void)
 {
     return payload_seq_no; // will be converted to 3 bit or 0...7
+}
+
+
+void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
+{
+    payload_retry_cnt = UINT8_MAX; // 255 = infinite
 }
 
 
@@ -240,10 +247,11 @@ class tTransmitArq
 
     void Disconnected(void) {}
     void FrameMissed(void) {}
-    void Received(uint8_t seq_no) {}
+    void Received(uint8_t ack_seq_no) {}
 
     bool GetFreshPayload(void) { return true; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
+    void SetRetryCnt(uint8_t retry_cnt) {}
 
     uint8_t seq_no;
 };
