@@ -6,11 +6,18 @@
 //*******************************************************
 // ARQ Transmit/Receive
 //*******************************************************
+/* TODOs:
+ - how does it behave with approaching link loss?
+ - all well with flow control?
+ - double check that it doesn't break TRANSMIT_FRAME_TYPE_CMD communication
+ - is rxLQ correct?
+*/
 #ifndef ARQ_H
 #define ARQ_H
 #pragma once
 
 #define USE_ARQ
+#define USE_ARQ_RETRY_CNT   1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
 #define USE_ARQ_DBG
 #define USE_ARQ_TX_SIM_MISS 4 //9 // 0 = off
 #define USE_ARQ_RX_SIM_MISS 5 //5 // 0 = off
@@ -43,7 +50,8 @@ class tTransmitArq
     uint8_t status;
     uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
-    uint8_t payload_retry_cnt; // the retry counts for this payload
+    uint8_t payload_retry_cnt; // retry count for this payload
+    uint8_t payload_retries; // number of retries for this payload
 
     bool SimulateMiss(void);
 };
@@ -54,7 +62,8 @@ void tTransmitArq::Init(void)
     status = ARQ_TX_IDLE;
     received_ack_seq_no = 0;
     payload_seq_no = 0;
-    payload_retry_cnt = UINT8_MAX; // 255 = infinite
+    payload_retry_cnt = UINT8_MAX; // 0 = off, 255 = infinite
+    payload_retries = 0;
 }
 
 
@@ -87,21 +96,53 @@ void tTransmitArq::Received(uint8_t ack_seq_no)
 // called at begin of prepare_transmit_frame()
 bool tTransmitArq::GetFreshPayload(void)
 {
+    if (payload_retry_cnt == 0) { // ARQ disabled, new payload each time
+        payload_seq_no++;
+        payload_retries = 0;
+        return true;
+    }
+
     switch (status) {
     case ARQ_TX_IDLE:
+        // send new payload
         payload_seq_no++;
+        payload_retries = 0;
         return true;
+
     case ARQ_TX_RECEIVED:
         // keep previous payload if received_seq_no != payload_seq_no
         // attention: received_seq_no is 1 bit!
         // next = (received_seq_no & 0x01) == (payload_seq_no & 0x01)
-        if ((received_ack_seq_no & 0x01) != (payload_seq_no & 0x01)) return false;
-
+        if ((received_ack_seq_no & 0x01) != (payload_seq_no & 0x01)) {
+            if (payload_retry_cnt == UINT8_MAX) { // ARQ with infinite retries, so never next
+                payload_retries = 0;
+                return false;
+            } else { // ARQ with finite retries
+                payload_retries++;
+                if (payload_retries <= payload_retry_cnt) { // we still can retry
+                    return false;
+                }
+            }
+        }
         payload_seq_no++; // give this payload the next seq_no
+        payload_retries = 0;
         return true;
+
     case ARQ_TX_FRAME_MISSED:
+        if (payload_retry_cnt == UINT8_MAX) { // ARQ with infinite retries, so never next
+            payload_retries = 0;
+            return false;
+        } else { // ARQ with finite retries
+            payload_retries++;
+            if (payload_retries > payload_retry_cnt) { // no further retry, send new payload
+                payload_seq_no++;
+                payload_retries = 0;
+                return true;
+            }
+        }
         return false;
     }
+
     return false;
 }
 
@@ -114,7 +155,12 @@ uint8_t tTransmitArq::SeqNo(void)
 
 void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
 {
-    payload_retry_cnt = UINT8_MAX; // 255 = infinite
+#if USE_ARQ_RETRY_CNT < 0
+    payload_retry_cnt = retry_cnt;
+#else
+    payload_retry_cnt = USE_ARQ_RETRY_CNT;
+#endif
+    // payload_retries = 0; ?? I think to better not do this, allows to shorten retry cnt and the ARQ to react immediately
 }
 
 
@@ -125,7 +171,7 @@ bool tTransmitArq::SimulateMiss(void)
 #if USE_ARQ_RX_SIM_MISS
     static uint8_t miss_cnt = 0;
     DECc(miss_cnt, USE_ARQ_RX_SIM_MISS);
-    return (miss_cnt == 0) ? true : false;
+    if (miss_cnt == 0) return true;
 #endif
     return false;
 }
@@ -203,14 +249,17 @@ void tReceiveArq::spin(void)
         received_seq_no_last = received_seq_no;
         ack_seq_no = received_seq_no;
         break;
+
     case ARQ_RX_RECEIVED:
         accept_received_payload = (received_seq_no != received_seq_no_last); // new seq no received, so accept it
         received_seq_no_last = received_seq_no;
         ack_seq_no = received_seq_no;
         break;
+
     case ARQ_RX_FRAME_MISSED: // is not called if handle_receive_none(), RX_STATUS_NONE !
         accept_received_payload = false;
         break;
+
     default:
         accept_received_payload = false;
     }
@@ -261,7 +310,7 @@ bool tReceiveArq::SimulateMiss(void)
 #if USE_ARQ_TX_SIM_MISS
     static uint8_t miss_cnt = 0;
     DECc(miss_cnt, USE_ARQ_TX_SIM_MISS);
-    return (miss_cnt == 0) ? true : false;
+    if (miss_cnt == 0) return true;
 #endif
     return false;
 }
