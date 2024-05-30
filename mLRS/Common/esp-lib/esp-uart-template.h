@@ -80,6 +80,11 @@ IRAM_ATTR uint16_t uart$_rx_available(void)
     return (UART$_SERIAL_NO.available() > 0) ? 1 : 0;
 }
 
+IRAM_ATTR uint8_t uart$_has_systemboot(void)
+{
+    return 0;  // ESP8266, ESP32 can't reboot into system bootloader
+}
+
 
 //-------------------------------------------------------
 // INIT routines
