@@ -80,6 +80,11 @@ IRAM_ATTR uint16_t uartb_rx_available(void)
     return (UARTB_SERIAL_NO.available() > 0) ? 1 : 0;
 }
 
+IRAM_ATTR uint8_t uartb_has_systemboot(void)
+{
+    return 0;  // ESP can't reboot into system bootloader
+}
+
 
 //-------------------------------------------------------
 // INIT routines
