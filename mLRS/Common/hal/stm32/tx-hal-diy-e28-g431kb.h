@@ -24,6 +24,8 @@
 
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
+#define MICROS_TIMx               TIM3
+
 
 //-- UARTS
 // UARTB = serial port
@@ -33,7 +35,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = -
 
-#define UARTB_USE_UART1 // serial
+#define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -41,7 +43,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_LPUART1 // com USB/CLI
+#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -49,7 +51,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_REMAPPED2 // JR pin5, MBridge
+#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -61,7 +63,7 @@
 //#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
 #define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
-#define UARTE_USE_UART2_REMAPPED2 // in pin
+#define UARTE_USE_UART2_PB3PB4 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
