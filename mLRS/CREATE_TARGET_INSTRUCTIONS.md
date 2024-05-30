@@ -150,7 +150,7 @@ This starts the compiler. Let it run, don't worry about the errors which result.
 
 ### 11. Right-mouse click on newly created target (e.g. "tx-diy-e22-g431kb") -> New -> Folder
 
-This opens the "New Folder/Folder" dialog.
+This opens the "New Folder" dialog.
 
 -> Advanced -> check "Link to alternate folder (Linked Folder)"
 -> hit "Browse"
