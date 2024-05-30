@@ -6,11 +6,14 @@
 //*******************************************************
 // ARQ Transmit/Receive
 //*******************************************************
-/* TODOs:
+/*
+TODOs:
  - how does it behave with approaching link loss?
  - all well with flow control?
  - double check that it doesn't break TRANSMIT_FRAME_TYPE_CMD communication
  - is rxLQ correct?
+Notes:
+ - Lua script load/reload leads to few packet losses with 1/4/5
 */
 #ifndef ARQ_H
 #define ARQ_H
