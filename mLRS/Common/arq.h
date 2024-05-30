@@ -44,6 +44,8 @@ class tTransmitArq
     uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
     uint8_t payload_retry_cnt; // the retry counts for this payload
+
+    bool SimulateMiss(void);
 };
 
 
@@ -116,6 +118,19 @@ void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
 }
 
 
+// miscellaneous
+
+bool tTransmitArq::SimulateMiss(void)
+{
+#if USE_ARQ_RX_SIM_MISS
+    static uint8_t miss_cnt = 0;
+    DECc(miss_cnt, USE_ARQ_RX_SIM_MISS);
+    return (miss_cnt == 0) ? true : false;
+#endif
+    return false;
+}
+
+
 //-------------------------------------------------------
 // Receive
 //-------------------------------------------------------
@@ -149,6 +164,8 @@ class tReceiveArq
     bool frame_lost; // maybe a state?
 
     void spin(void);
+
+    bool SimulateMiss(void);
 };
 
 
@@ -234,6 +251,19 @@ bool tReceiveArq::FrameLost(void) // called to check if parsers need to be reset
 uint8_t tReceiveArq::AckSeqNo(void)
 {
     return ack_seq_no; // will be converted by 1 bit to 0/1
+}
+
+
+// miscellaneous
+
+bool tReceiveArq::SimulateMiss(void)
+{
+#if USE_ARQ_TX_SIM_MISS
+    static uint8_t miss_cnt = 0;
+    DECc(miss_cnt, USE_ARQ_TX_SIM_MISS);
+    return (miss_cnt == 0) ? true : false;
+#endif
+    return false;
 }
 
 

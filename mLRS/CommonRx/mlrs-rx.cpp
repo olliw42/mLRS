@@ -741,10 +741,8 @@ IF_SX2(
     if (doPostReceive) {
         doPostReceive = false;
 
-#if USE_ARQ_RX_SIM_MISS > 0 && defined USE_ARQ
-static uint8_t miss_cnt = 0;
-DECc(miss_cnt,USE_ARQ_RX_SIM_MISS);
-if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+#ifdef USE_ARQ
+if (tarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 #endif
 
         bool frame_received, valid_frame_received, invalid_frame_received;

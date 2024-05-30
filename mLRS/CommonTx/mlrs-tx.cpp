@@ -862,10 +862,8 @@ IF_SX2(
         sx.SetToIdle();
         sx2.SetToIdle();
 
-#if USE_ARQ_TX_SIM_MISS > 0 && defined USE_ARQ
-static uint8_t miss_cnt = 0;
-DECc(miss_cnt,USE_ARQ_TX_SIM_MISS);
-if(!miss_cnt) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+#ifdef USE_ARQ
+if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 #endif
 
         bool frame_received, valid_frame_received;
