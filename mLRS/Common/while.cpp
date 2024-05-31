@@ -26,13 +26,14 @@ void WhileBase::Trigger(void)
 {
     do_cnt = 10; // postpone action by few loops
     tstart_us = micros16();
-    tremaining_us = dtmax_us(); // this starts it
+    uint32_t dtmax = dtmax_us();
+    tremaining_us = (dtmax < (UINT16_MAX - 2000)) ? dtmax : UINT16_MAX - 2000; // this starts it
 }
 
 
 void WhileBase::Do(void)
 {
-    if (tremaining_us <= 0) return;
+    if (tremaining_us == 0) return;
 
     if (do_cnt) { // count down
         do_cnt--;
@@ -40,8 +41,11 @@ void WhileBase::Do(void)
         return;
     }
 
-    tremaining_us = dtmax_us() - (int32_t)(micros16() - tstart_us);
-    if (tremaining_us <= 0) return;
+    uint16_t dt = micros16() - tstart_us;
+    if (dt > tremaining_us) {
+        tremaining_us = 0;
+        return;
+    }
 
     handle();
 }

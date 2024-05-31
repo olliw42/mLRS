@@ -142,7 +142,7 @@ tTxEspWifiBridge esp;
 class WhileTransmit : public WhileBase
 {
   public:
-    int32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
+    uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
 };
 
