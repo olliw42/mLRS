@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY E28 v007 STM32G431KB
+// TX DIY E22 v007 STM32G431KB
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
@@ -63,7 +63,7 @@
 //#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
 #define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
-#define UARTE_USE_UART2_REMAPPED2 // in pin
+#define UARTE_USE_UART2_PB3PB4 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512

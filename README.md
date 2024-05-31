@@ -86,14 +86,14 @@ The FLRC and FSK modes are not intended for long range.
 
 ## Hardware ##
 
-Hardware is still a problem. Off-the-shelf hardware which is taylored at mLRS and exploits its full potential is not available. One could think that the commercial ExpressLRS hardware available since a while should be good platforms, but this is unfortunately not entirely so. The ESP chipsets which they use do not offer the peripherals which are desired for mLRS transmitters, and STM32s were hence chosen as main platform. A good number of STM32 based devices as well as some ExpressLRS hardware are supported.
+Hardware is still a problem. Off-the-shelf hardware which is taylored at mLRS and exploits its full potential is not available. One could think that the ExpressLRS hardware available commercially since a while should be good platforms, but this is unfortunately not entirely so. The ESP chipsets which they use has several restrictions and lack peripherals which are desired for mLRS transmitters, and STM32 was hence chosen as main platform. A good number of STM32 based devices as well as some ExpressLRS hardware are supported.
 
 The code currently supports:
-- Flysky FRM303 transmitter module (2.4 GHz)
 - Frsky R9M and R9M Lite Pro transmitter modules and R9 MX, R9 MM and R9 Mini receivers (868/915 MHz)
+- Flysky FRM303 transmitter module (2.4 GHz)
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards (868/915 MHz, 433 MHz/70 cm)
 - EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
-- ExpressLRS receivers (2.4 GHz and 868/915 MHz) (support for ExpressLRS Tx modules is in development)
+- ExpressLRS receivers (2.4 GHz and 868/915 MHz) (support for ExpressLRS transmitter modules is in development)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 In the 915/868 MHz range, the Frsky R9 system and ExpressLRS receivers provide a simple and readily available entry into mLRS. The disadvantage of the R9 receivers is their low transmission power (50 mW). This can be mitigated by using the R9M Lite Pro or R9M transmitter modules as receivers, which offer 1 W. The R9 receivers can also be cumbersome to flash. A better option is often the various ExpressLRS receivers, some of which provide up to 500 mW transmission power, and some of which are cheaply available. The combination of a Frsky R9M transmitter module and a ExpressLRS receiver is probably the best option available currently in the 900 MHz range. The downside of all these gear is that they only support the 19 Hz mode.
@@ -114,29 +114,29 @@ mLRS uses STM32CubeIDE for STM32 targets, and PlatformIO with VSCode for ESP tar
 
 Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
  
-**1. Clone and setup the project files**
-- open a command line processor
-- cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
-- `git clone https://github.com/olliw42/mLRS.git mlrs`
-- `cd mlrs`
-- run `run_setup.py`. This does three steps: initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the targets, and generates mavlink library files.
-  - ***Note***: Ensure that all three steps are executed completely.
+**I. Clone and setup the project files**
+1. open a command line processor
+2. cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
+3. `git clone https://github.com/olliw42/mLRS.git mlrs`
+4. `cd mlrs`
+5. run `run_setup.py`. This does three steps: Initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the target folders, and generates the MAVLink library files.
+    - ***Note***: Ensure that all three steps are executed completely.
 
 For cloning you of course can use any other tool you like.
 
-**2. STM32CubeIDE (for STM32 targets)**
-- download and install STM32CubeIDE.
-  - ***Note***: Install into the default folder if possible.
-- start STM32CubeIDE
-- in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button.
-  - ***Note***: it is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
-- in the IDE's top bar go to `File->Open Projects from File System`
-- in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
-- change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`.
-  - ***Note***: if you don't do that then there will be a compile error "undefined reference to main_main()"!
-- open the file `mlrs-rx.cpp` or `mlrs-tx.cpp` into the editor
-- compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
-- Repeat the last five steps for each board you are interested in
+**II. STM32CubeIDE (for STM32 targets)**
+1. download and install STM32CubeIDE
+    - ***Note***: Install into the default folder if possible.
+2. start STM32CubeIDE
+3. in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button.
+    - ***Note***: It is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
+4. in the IDE's top bar go to `File->Open Projects from File System`
+5. in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
+6. change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`.
+    - ***Note***: If you don't do that then there will be a compile error "undefined reference to main_main()"!
+7. open the file `mlrs-rx.cpp` or `mlrs-tx.cpp` into the editor
+8. compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
+9. repeat steps 4. - 8. for each board you are interested in
 
 <img src="https://user-images.githubusercontent.com/6089567/154903396-25f62bf6-573a-4b80-9720-a0ad4a21f291.jpg" width="480">
 
