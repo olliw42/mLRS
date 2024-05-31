@@ -82,7 +82,7 @@ typedef enum {
 #ifdef USE_ESP_WIFI_BRIDGE
     DISP_ACTION_FLASH_ESP,
 #endif        
-    DISP_ACTION_COUNT,
+    DISP_ACTION_NUM,
 } DISP_ACTION_ENUM;
 
 
@@ -424,7 +424,7 @@ void tTxDisp::page_init(void)
         case PAGE_COMMON: idx_max = common_list.num - 1; break;
         case PAGE_TX: idx_max = tx_list.num - 1; break;
         case PAGE_RX: idx_max = rx_list.num - 1; break;
-        case PAGE_ACTIONS: idx_max = DISP_ACTION_COUNT - 1; break;
+        case PAGE_ACTIONS: idx_max = DISP_ACTION_NUM - 1; break;
     }
 
     subpage = SUBPAGE_DEFAULT;
