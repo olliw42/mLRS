@@ -294,21 +294,21 @@ static bool rxFrame_valid = false;
 
     bool get_fresh_payload = tarq.GetFreshPayload();
 
-if (get_fresh_payload) {
+    if (get_fresh_payload) {
+        if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+            // read data from serial
+            if (connected()) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                    if (!sx_serial.available()) break;
+                    payload[payload_len] = sx_serial.getc();
+                    payload_len++;
+                }
 
-    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        // read data from serial
-        if (connected()) {
-            for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
-                if (!sx_serial.available()) break;
-                payload[payload_len] = sx_serial.getc();
-                payload_len++;
+                stats.bytes_transmitted.Add(payload_len);
+                stats.serial_data_transmitted.Inc();
+            } else {
+              sx_serial.flush();
             }
-
-            stats.bytes_transmitted.Add(payload_len);
-            stats.serial_data_transmitted.Inc();
-        } else {
-            sx_serial.flush();
         }
     }
 
@@ -323,37 +323,25 @@ if (get_fresh_payload) {
     frame_stats.LQ_rc = rxstats.GetLQ_rc();
     frame_stats.LQ_serial = rxstats.GetLQ_serial();
 
-    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
+    if (get_fresh_payload) {
+        if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+            pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
+        } else {
+            pack_rxcmdframe(&rxFrame, &frame_stats);
+        }
+        rxFrame_valid = true;
+
+        tarq.SetRetryCnt(1);
+
     } else {
-        pack_rxcmdframe(&rxFrame, &frame_stats);
+        // rxFrame should still hold the previous data
+        if (!rxFrame_valid) while(1){} // should not happen
+
+        update_rxframe_stats(&rxFrame, &frame_stats);
+        rxFrame_valid = true;
+
+        tarq.SetRetryCnt(1);
     }
-    rxFrame_valid = true;
-
-    tarq.SetRetryCnt(1);
-
-} else {
-
-    // rxFrame should still hold the previous data
-
-    if (!rxFrame_valid) while(1){} // should not happen
-
-    stats.last_transmit_antenna = antenna;
-
-    tFrameStats frame_stats;
-    frame_stats.seq_no = tarq.SeqNo(); // should be equal to rxFrame_last.status.seq_no
-    frame_stats.ack = 1; // TODO
-    frame_stats.antenna = stats.last_antenna;
-    frame_stats.transmit_antenna = antenna;
-    frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ_rc = rxstats.GetLQ_rc();
-    frame_stats.LQ_serial = rxstats.GetLQ_serial();
-
-    _update_rxframe_stats(&rxFrame, &frame_stats);
-    rxFrame_valid = true;
-
-    tarq.SetRetryCnt(1);
-}
 
 #ifdef USE_ARQ_DBG
 dbg.puts(get_fresh_payload?" TRUE":" FALSE");

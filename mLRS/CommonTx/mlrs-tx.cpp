@@ -418,7 +418,6 @@ uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-
         // read data from serial port
         if (connected()) {
             if (sx_serial.IsEnabled()) {

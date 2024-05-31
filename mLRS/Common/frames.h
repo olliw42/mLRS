@@ -157,7 +157,7 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
-void _update_rxframe_stats(tRxFrame* frame, tFrameStats* frame_stats)
+void update_rxframe_stats(tRxFrame* frame, tFrameStats* frame_stats)
 {
 uint16_t crc;
 
@@ -353,17 +353,6 @@ tTxCmdFrameRxParams rx_params = {};
 
 #endif
 #ifdef DEVICE_IS_RECEIVER
-
-// Rx: send cmd to Tx
-void pack_rxcmdframe_cmd(tRxFrame* frame, tFrameStats* frame_stats, uint8_t cmd)
-{
-uint8_t payload[1];
-
-    payload[0] = cmd;
-
-    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, payload, 1);
-}
-
 
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
 void pack_rxcmdframe_rxsetupdata(tRxFrame* frame, tFrameStats* frame_stats)
