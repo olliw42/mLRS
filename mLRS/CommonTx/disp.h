@@ -19,10 +19,10 @@
 class tTxDisp
 {
   public:
-    void Init(void) {};
-    void Tick_ms(void) {};
-    uint8_t Task(void) { return 0; };
-    void DrawBoot(void) {};
+    void Init(void) {}
+    void Tick_ms(void) {}
+    uint8_t Task(void) { return 0; }
+    void DrawBoot(void) {}
 };
 
 #else
@@ -75,6 +75,17 @@ typedef enum {
 } SUBPAGE_ENUM;
 
 
+typedef enum {
+    DISP_ACTION_STORE = 0,
+    DISP_ACTION_BIND,
+    DISP_ACTION_BOOT,
+#ifdef USE_ESP_WIFI_BRIDGE
+    DISP_ACTION_FLASH_ESP,
+#endif        
+    DISP_ACTION_COUNT,
+} DISP_ACTION_ENUM;
+
+
 class tTxDisp
 {
   public:
@@ -86,7 +97,6 @@ class tTxDisp
     uint8_t Task(void);
     void DrawNotify(const char* s);
     void DrawBoot(void);
-    void DrawFlashEsp(void);
 
     typedef struct {
         uint8_t list[SETUP_PARAMETER_NUM];
@@ -414,12 +424,7 @@ void tTxDisp::page_init(void)
         case PAGE_COMMON: idx_max = common_list.num - 1; break;
         case PAGE_TX: idx_max = tx_list.num - 1; break;
         case PAGE_RX: idx_max = rx_list.num - 1; break;
-        case PAGE_ACTIONS: 
-            idx_max = 2; 
-#ifdef USE_ESP_WIFI_BRIDGE
-            idx_max++;
-#endif
-            break;
+        case PAGE_ACTIONS: idx_max = DISP_ACTION_COUNT - 1; break;
     }
 
     subpage = SUBPAGE_DEFAULT;
@@ -433,20 +438,22 @@ void tTxDisp::page_init(void)
 void tTxDisp::run_action(void)
 {
     switch (idx_focused) {
-    case 0: // STORE
+    case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
         task_pending = CLI_TASK_PARAM_STORE;
         break;
-    case 1: // BIND
+    case DISP_ACTION_BIND:
         task_pending = CLI_TASK_BIND;
         break;
-    case 2: // BOOT
+    case DISP_ACTION_BOOT:
         task_pending = CLI_TASK_BOOT;
         break;
-    case 3: // FLASH ESP
+#ifdef USE_ESP_WIFI_BRIDGE
+    case DISP_ACTION_FLASH_ESP:
         task_pending = CLI_TASK_FLASH_ESP;
         break;
+#endif        
     }
 }
 
