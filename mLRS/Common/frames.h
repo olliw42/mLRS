@@ -37,7 +37,7 @@ uint16_t crc;
 
     if (payload_len > FRAME_TX_PAYLOAD_LEN) payload_len = FRAME_TX_PAYLOAD_LEN; // should never occur, but play it safe
 
-    memset(frame, 0, sizeof(tTxFrame));
+    memset((uint8_t*)frame, 0, sizeof(tTxFrame));
 
     // generate header
     frame->sync_word = Config.FrameSyncWord;
@@ -184,7 +184,7 @@ uint16_t crc;
 
     if (payload_len > FRAME_RX_PAYLOAD_LEN) payload_len = FRAME_RX_PAYLOAD_LEN; // should never occur, but play it safe
 
-    memset(frame, 0, sizeof(tRxFrame));
+    memset((uint8_t*)frame, 0, sizeof(tRxFrame));
 
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
