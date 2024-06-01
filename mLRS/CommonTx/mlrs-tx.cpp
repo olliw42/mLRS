@@ -165,8 +165,11 @@ void WhileTransmit::handle_once(void)
 
     if (bind.IsInBind()) disp.SetBind();
 
+    // postpone to next cycle if just updated and it's a short time slot
+    bool allow_draw = (dtmax_us() > 2000) || (main_tlast_ms != tnow_ms);
+
     static uint32_t draw_tlast_ms = 0;
-    if (tnow_ms - draw_tlast_ms >= 40) { // effectively slows down (drawing takes time, ca 30 ms on G4, slower on other mcu)
+    if (allow_draw && (tnow_ms - draw_tlast_ms >= 50)) { // effectively slows down (drawing takes time, ca 30 ms on G4, slower on other mcu)
         draw_tlast_ms = tnow_ms;
         disp.Draw();
     }

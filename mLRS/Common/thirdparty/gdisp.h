@@ -109,12 +109,8 @@ typedef struct
     GFXfont* font;
     uint16_t font_background;
 
-    // to catch the rectangle which needs to be updated
-    uint16_t needsupdate; // we could use 0,0,0,0 to indicate that nothing needs to be updated, but it's convenient so
-    int16_t minx;
-    int16_t maxx;
-    int16_t miny;
-    int16_t maxy;
+    // to catch that it needs to be updated
+    uint16_t needsupdate;
 
     uint8_t buf[GDISPLAY_BUFSIZE] ALIGNED8_ATTR;
 } tGDisplay;

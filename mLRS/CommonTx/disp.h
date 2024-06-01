@@ -79,11 +79,23 @@ typedef enum {
     DISP_ACTION_STORE = 0,
     DISP_ACTION_BIND,
     DISP_ACTION_BOOT,
+    DISP_ACTION_FLASH_ESP,
+} DISP_ACTION_ENUM;
+
+
+const uint8_t disp_actions[] = {
+    DISP_ACTION_STORE,
+    DISP_ACTION_BIND,
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
+    DISP_ACTION_BOOT,
+#endif
 #ifdef USE_ESP_WIFI_BRIDGE
     DISP_ACTION_FLASH_ESP,
-#endif        
-    DISP_ACTION_NUM,
-} DISP_ACTION_ENUM;
+#endif
+};
+
+
+#define DISP_ACTION_NUM  sizeof(disp_actions)
 
 
 class tTxDisp
@@ -437,7 +449,9 @@ void tTxDisp::page_init(void)
 
 void tTxDisp::run_action(void)
 {
-    switch (idx_focused) {
+    if (idx_focused >= DISP_ACTION_NUM) while(1){}; // should never happen
+
+    switch (disp_actions[idx_focused]) {
     case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
@@ -449,11 +463,9 @@ void tTxDisp::run_action(void)
     case DISP_ACTION_BOOT:
         task_pending = CLI_TASK_BOOT;
         break;
-#ifdef USE_ESP_WIFI_BRIDGE
     case DISP_ACTION_FLASH_ESP:
         task_pending = CLI_TASK_FLASH_ESP;
         break;
-#endif        
     }
 }
 
@@ -975,38 +987,42 @@ void tTxDisp::draw_page_actions(void)
     gdisp_setfont(&FreeMono9pt7b);
 
     uint8_t idx = 0;
+
     gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("STORE");
     gdisp_unsetinverted();
+    idx++;
 
-/*    idx++;
-    gdisp_setcurXY(5, idx * 16 + 25);
+/*    gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("RELOAD");
-    gdisp_unsetinverted(); */
+    gdisp_unsetinverted();
+    idx++; */
 
-    idx++;
     gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("BIND");
     gdisp_unsetinverted();
+    idx++;
 
     gdisp_unsetfont();
 
-    idx++;
-    gdisp_setcurXY(75, (idx - 2) * 11 + 20);
-    if (idx == idx_focused) gdisp_setinverted();
-    gdisp_puts("BOOT");
-    gdisp_unsetinverted();
+    if (disp_actions[idx] == DISP_ACTION_BOOT) {
+        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        if (idx == idx_focused) gdisp_setinverted();
+        gdisp_puts("BOOT");
+        gdisp_unsetinverted();
+        idx++;
+    }
 
-#ifdef USE_ESP_WIFI_BRIDGE
-    idx++;
-    gdisp_setcurXY(75, (idx - 2) * 11 + 20);
-    if (idx == idx_focused) gdisp_setinverted();
-    gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
-    gdisp_unsetinverted();
-#endif
+    if (disp_actions[idx] == DISP_ACTION_FLASH_ESP) {
+        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        if (idx == idx_focused) gdisp_setinverted();
+        gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
+        gdisp_unsetinverted();
+        idx++;
+    }
 }
 
 
