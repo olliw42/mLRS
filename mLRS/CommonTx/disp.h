@@ -19,10 +19,10 @@
 class tTxDisp
 {
   public:
-    void Init(void) {};
-    void Tick_ms(void) {};
-    uint8_t Task(void) { return 0; };
-    void DrawBoot(void) {};
+    void Init(void) {}
+    void Tick_ms(void) {}
+    uint8_t Task(void) { return 0; }
+    void DrawBoot(void) {}
 };
 
 #else
@@ -75,6 +75,29 @@ typedef enum {
 } SUBPAGE_ENUM;
 
 
+typedef enum {
+    DISP_ACTION_STORE = 0,
+    DISP_ACTION_BIND,
+    DISP_ACTION_BOOT,
+    DISP_ACTION_FLASH_ESP,
+} DISP_ACTION_ENUM;
+
+
+const uint8_t disp_actions[] = {
+    DISP_ACTION_STORE,
+    DISP_ACTION_BIND,
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
+    DISP_ACTION_BOOT,
+#endif
+#ifdef USE_ESP_WIFI_BRIDGE
+    DISP_ACTION_FLASH_ESP,
+#endif
+};
+
+
+#define DISP_ACTION_NUM  sizeof(disp_actions)
+
+
 class tTxDisp
 {
   public:
@@ -86,7 +109,6 @@ class tTxDisp
     uint8_t Task(void);
     void DrawNotify(const char* s);
     void DrawBoot(void);
-    void DrawFlashEsp(void);
 
     typedef struct {
         uint8_t list[SETUP_PARAMETER_NUM];
@@ -414,12 +436,7 @@ void tTxDisp::page_init(void)
         case PAGE_COMMON: idx_max = common_list.num - 1; break;
         case PAGE_TX: idx_max = tx_list.num - 1; break;
         case PAGE_RX: idx_max = rx_list.num - 1; break;
-        case PAGE_ACTIONS: 
-            idx_max = 2; 
-#ifdef USE_ESP_WIFI_BRIDGE
-            idx_max++;
-#endif
-            break;
+        case PAGE_ACTIONS: idx_max = DISP_ACTION_NUM - 1; break;
     }
 
     subpage = SUBPAGE_DEFAULT;
@@ -432,19 +449,21 @@ void tTxDisp::page_init(void)
 
 void tTxDisp::run_action(void)
 {
-    switch (idx_focused) {
-    case 0: // STORE
+    if (idx_focused >= DISP_ACTION_NUM) while(1){}; // should never happen
+
+    switch (disp_actions[idx_focused]) {
+    case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
         task_pending = CLI_TASK_PARAM_STORE;
         break;
-    case 1: // BIND
+    case DISP_ACTION_BIND:
         task_pending = CLI_TASK_BIND;
         break;
-    case 2: // BOOT
+    case DISP_ACTION_BOOT:
         task_pending = CLI_TASK_BOOT;
         break;
-    case 3: // FLASH ESP
+    case DISP_ACTION_FLASH_ESP:
         task_pending = CLI_TASK_FLASH_ESP;
         break;
     }
@@ -968,38 +987,42 @@ void tTxDisp::draw_page_actions(void)
     gdisp_setfont(&FreeMono9pt7b);
 
     uint8_t idx = 0;
+
     gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("STORE");
     gdisp_unsetinverted();
+    idx++;
 
-/*    idx++;
-    gdisp_setcurXY(5, idx * 16 + 25);
+/*    gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("RELOAD");
-    gdisp_unsetinverted(); */
+    gdisp_unsetinverted();
+    idx++; */
 
-    idx++;
     gdisp_setcurXY(5, idx * 16 + 25);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("BIND");
     gdisp_unsetinverted();
+    idx++;
 
     gdisp_unsetfont();
 
-    idx++;
-    gdisp_setcurXY(75, (idx - 2) * 11 + 20);
-    if (idx == idx_focused) gdisp_setinverted();
-    gdisp_puts("BOOT");
-    gdisp_unsetinverted();
+    if (disp_actions[idx] == DISP_ACTION_BOOT) {
+        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        if (idx == idx_focused) gdisp_setinverted();
+        gdisp_puts("BOOT");
+        gdisp_unsetinverted();
+        idx++;
+    }
 
-#ifdef USE_ESP_WIFI_BRIDGE
-    idx++;
-    gdisp_setcurXY(75, (idx - 2) * 11 + 20);
-    if (idx == idx_focused) gdisp_setinverted();
-    gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
-    gdisp_unsetinverted();
-#endif
+    if (disp_actions[idx] == DISP_ACTION_FLASH_ESP) {
+        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        if (idx == idx_focused) gdisp_setinverted();
+        gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
+        gdisp_unsetinverted();
+        idx++;
+    }
 }
 
 
