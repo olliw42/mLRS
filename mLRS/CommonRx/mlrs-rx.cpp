@@ -100,8 +100,8 @@
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
 
 
-RxClockBase rxclock;
-PowerupCounterBase powerup;
+tRxClock rxclock;
+tPowerupCounter powerup;
 tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;

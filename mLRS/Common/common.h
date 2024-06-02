@@ -177,7 +177,7 @@ tStats stats;
 
 tFhss fhss;
 
-BindBase bind;
+tBindBase bind;
 
 tBuzzer buzzer;
 tFan fan;

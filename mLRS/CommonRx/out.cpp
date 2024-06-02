@@ -18,7 +18,7 @@ extern uint16_t micros16(void);
 
 
 OutBase::OutBase(void)
-    : channel_order(ChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
+    : channel_order(tChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
 {
 }
 

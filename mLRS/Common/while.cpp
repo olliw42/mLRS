@@ -14,7 +14,7 @@
 extern uint16_t micros16(void);
 
 
-void WhileBase::Init(void)
+void tWhileBase::Init(void)
 {
     do_cnt = 0;
     tstart_us = 0;
@@ -22,7 +22,7 @@ void WhileBase::Init(void)
 }
 
 
-void WhileBase::Trigger(void)
+void tWhileBase::Trigger(void)
 {
     do_cnt = 10; // postpone action by few loops
     tstart_us = micros16();
@@ -31,7 +31,7 @@ void WhileBase::Trigger(void)
 }
 
 
-void WhileBase::Do(void)
+void tWhileBase::Do(void)
 {
     if (tremaining_us == 0) return;
 

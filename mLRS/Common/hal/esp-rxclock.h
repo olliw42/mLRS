@@ -62,7 +62,7 @@ void CLOCK_IRQHandler(void)
 // RxClock Class
 //-------------------------------------------------------
 
-class RxClockBase
+class tRxClock
 {
   public:
     void Init(uint16_t period_ms);
@@ -74,7 +74,7 @@ class RxClockBase
 };
 
 
-void RxClockBase::Init(uint16_t period_ms)
+void tRxClock::Init(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
     doPostReceive = false;
@@ -102,13 +102,13 @@ void RxClockBase::Init(uint16_t period_ms)
 }
 
 
-IRAM_ATTR void RxClockBase::SetPeriod(uint16_t period_ms)
+IRAM_ATTR void tRxClock::SetPeriod(uint16_t period_ms)
 {
     CLOCK_PERIOD_10US = period_ms * 100;
 }
 
 
-IRAM_ATTR void RxClockBase::Reset(void)
+IRAM_ATTR void tRxClock::Reset(void)
 {
     if (!CLOCK_PERIOD_10US) while (1) {}
 

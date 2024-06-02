@@ -71,7 +71,7 @@ class OutBase
     virtual bool config_crsf(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
-    ChannelOrder channel_order;
+    tChannelOrder channel_order;
     tRxSetup* setup;
     uint8_t config;
     bool initialized;

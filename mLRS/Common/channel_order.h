@@ -14,7 +14,7 @@
 #include "../Common/common_types.h"
 
 
-class ChannelOrder
+class tChannelOrder
 {
   public:
     enum {
@@ -22,7 +22,7 @@ class ChannelOrder
         DIRECTION_MLRS_TO_RX,
     };
 
-    ChannelOrder(uint8_t direction);
+    tChannelOrder(uint8_t direction);
 
     void Set(uint8_t new_channel_order);
     void Apply(tRcData* rc);

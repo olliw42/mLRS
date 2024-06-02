@@ -15,7 +15,7 @@
 // While transmit/receive tasks
 //-------------------------------------------------------
 
-class WhileBase
+class tWhileBase
 {
   public:
     void Init(void);
