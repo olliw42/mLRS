@@ -167,7 +167,7 @@ void _fmavX_payload_decompress(uint8_t* payload_out, uint8_t* len_out, uint8_t l
 // call it once before using the library
 FASTMAVLINK_FUNCTION_DECORATOR void fmavX_init(void)
 {
-    memset(&fmavx_status, 0, sizeof(fmavx_status));
+    memset((uint8_t*)&fmavx_status, 0, sizeof(fmavx_status));
 
     fmavx_config_g.compression_enabled = 0; // disable it per default
 }

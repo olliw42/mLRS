@@ -206,7 +206,7 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 
 void tBindBase::do_transmit(uint8_t antenna)
 {
-    memset(&txBindFrame, 0, sizeof(txBindFrame));
+    memset((uint8_t*)&txBindFrame, 0, sizeof(txBindFrame));
     txBindFrame.bind_signature = TxSignature;
 
     txBindFrame.connected = connected();
@@ -258,7 +258,7 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 
 void tBindBase::do_transmit(uint8_t antenna)
 {
-    memset(&rxBindFrame, 0, sizeof(rxBindFrame));
+    memset((uint8_t*)&rxBindFrame, 0, sizeof(rxBindFrame));
     rxBindFrame.bind_signature = RxSignature;
 
     rxBindFrame.connected = connected();

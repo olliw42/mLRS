@@ -756,7 +756,7 @@ void setup_configure_config(uint8_t config_id)
 
 void setup_clear(void)
 {
-    memset(&Setup, 0xff, sizeof(tSetup));
+    memset((uint8_t*)&Setup, 0xff, sizeof(tSetup));
 }
 
 
