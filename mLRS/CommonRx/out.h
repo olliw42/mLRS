@@ -41,10 +41,10 @@ typedef struct
 } tOutLinkStats;
 
 
-class OutBase
+class tOutBase
 {
   public:
-    OutBase(void);
+    tOutBase(void);
 
     void Init(tRxSetup* _setup);
 

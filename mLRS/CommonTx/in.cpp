@@ -22,7 +22,7 @@ typedef enum {
 } IN_STATE_ENUM;
 
 
-void InBase::Init(bool enable_flag)
+void tInBase::Init(bool enable_flag)
 {
     enabled = enable_flag;
 
@@ -34,7 +34,7 @@ void InBase::Init(bool enable_flag)
 }
 
 
-void InBase::Configure(uint8_t new_config)
+void tInBase::Configure(uint8_t new_config)
 {
     if (!enabled) return;
     if (new_config == config) return;
@@ -64,7 +64,7 @@ void InBase::Configure(uint8_t new_config)
 }
 
 
-bool InBase::Update(tRcData* rc)
+bool tInBase::Update(tRcData* rc)
 {
     if (!initialized) return false;
 
@@ -82,7 +82,7 @@ bool InBase::Update(tRcData* rc)
 // SBus
 //-------------------------------------------------------
 
-bool InBase::parse_sbus(tRcData* rc)
+bool tInBase::parse_sbus(tRcData* rc)
 {
     uint16_t tnow_us = micros16();
     bool updated = false;
@@ -119,7 +119,7 @@ bool InBase::parse_sbus(tRcData* rc)
 }
 
 
-void InBase::get_sbus_data(tRcData* rc)
+void tInBase::get_sbus_data(tRcData* rc)
 {
 tSBusChannelBuffer sbus_buf;
 

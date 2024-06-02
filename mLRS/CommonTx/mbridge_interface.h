@@ -89,11 +89,11 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool serial_rx_available(void) { return tx_fifo.Available(); }
     char serial_getc(void) { return tx_fifo.Get(); }
 
-    FifoBase<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo; // TODO: how large do they really need to be?
-    FifoBase<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
+    tFifo<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
-    FifoBase<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
+    tFifo<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
     uint8_t cmd_in_process;
     uint8_t ack_cmd;
     bool ack_ok;

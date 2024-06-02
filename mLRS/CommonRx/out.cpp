@@ -17,13 +17,13 @@
 extern uint16_t micros16(void);
 
 
-OutBase::OutBase(void)
+tOutBase::tOutBase(void)
     : channel_order(tChannelOrder::DIRECTION_MLRS_TO_RX) // needed to construct channel_order properly
 {
 }
 
 
-void OutBase::Init(tRxSetup* _setup)
+void tOutBase::Init(tRxSetup* _setup)
 {
     config = UINT8_MAX;
     initialized = false;
@@ -38,7 +38,7 @@ void OutBase::Init(tRxSetup* _setup)
 }
 
 
-void OutBase::Configure(uint8_t new_config)
+void tOutBase::Configure(uint8_t new_config)
 {
     if (new_config == config) return;
 
@@ -73,7 +73,7 @@ void OutBase::Configure(uint8_t new_config)
 }
 
 
-void OutBase::Do(void)
+void tOutBase::Do(void)
 {
     if (!initialized) return;
 
@@ -89,13 +89,13 @@ void OutBase::Do(void)
 }
 
 
-void OutBase::SetChannelOrder(uint8_t new_channel_order)
+void tOutBase::SetChannelOrder(uint8_t new_channel_order)
 {
     channel_order.Set(new_channel_order);
 }
 
 
-void OutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
+void tOutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
     channel_order.Apply(&rc);
@@ -169,7 +169,7 @@ void OutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int
 }
 
 
-void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
+void tOutBase::SendLinkStatistics(tOutLinkStats* lstats)
 {
     switch (config) {
     case OUT_CONFIG_SBUS:
@@ -185,7 +185,7 @@ void OutBase::SendLinkStatistics(tOutLinkStats* lstats)
 }
 
 
-void OutBase::SendLinkStatisticsDisconnected(void)
+void tOutBase::SendLinkStatisticsDisconnected(void)
 {
     switch (config) {
     case OUT_CONFIG_SBUS:
@@ -216,7 +216,7 @@ void OutBase::SendLinkStatisticsDisconnected(void)
 // SBus
 //-------------------------------------------------------
 
-void OutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
+void tOutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
 {
 tSBusFrame sbus_buf;
 
@@ -257,7 +257,7 @@ tSBusFrame sbus_buf;
 // Crsf
 //-------------------------------------------------------
 
-void OutBase::send_crsf_rcdata(tRcData* rc)
+void tOutBase::send_crsf_rcdata(tRcData* rc)
 {
 tCrsfChannelFrame crsf_buf;
 
@@ -289,7 +289,7 @@ tCrsfChannelFrame crsf_buf;
 }
 
 
-void OutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
+void tOutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
 {
 tCrsfLinkStatisticsFrame crsf_buf;
 
@@ -322,7 +322,7 @@ tCrsfLinkStatisticsFrame crsf_buf;
 }
 
 
-void OutBase::do_crsf(void)
+void tOutBase::do_crsf(void)
 {
     if (!link_stats_available) return;
 

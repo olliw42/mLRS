@@ -18,7 +18,7 @@
 // Generic In Class
 //-------------------------------------------------------
 
-class InBase
+class tInBase
 {
   public:
     void Init(bool enable_flag);

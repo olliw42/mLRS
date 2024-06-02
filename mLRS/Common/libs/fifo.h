@@ -14,10 +14,10 @@
 #include <inttypes.h>
 
 template <class T, uint16_t FIFO_SIZE>
-class FifoBase
+class tFifo
 {
   public:
-    FifoBase() // constructor
+    tFifo() // constructor
     {
         Init();
     }
