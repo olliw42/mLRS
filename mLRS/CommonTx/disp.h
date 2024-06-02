@@ -1008,7 +1008,7 @@ void tTxDisp::draw_page_actions(void)
 
     gdisp_unsetfont();
 
-    if (disp_actions[idx] == DISP_ACTION_BOOT) {
+    if ((idx < DISP_ACTION_NUM) && (disp_actions[idx] == DISP_ACTION_BOOT)) {
         gdisp_setcurXY(75, (idx - 2) * 11 + 20);
         if (idx == idx_focused) gdisp_setinverted();
         gdisp_puts("BOOT");
@@ -1016,7 +1016,7 @@ void tTxDisp::draw_page_actions(void)
         idx++;
     }
 
-    if (disp_actions[idx] == DISP_ACTION_FLASH_ESP) {
+    if ((idx < DISP_ACTION_NUM) && (disp_actions[idx] == DISP_ACTION_FLASH_ESP)) {
         gdisp_setcurXY(75, (idx - 2) * 11 + 20);
         if (idx == idx_focused) gdisp_setinverted();
         gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
