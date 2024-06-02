@@ -11,6 +11,7 @@
 #pragma once
 
 
+extern tStats stats;
 static inline bool connected(void);
 
 
@@ -20,10 +21,10 @@ static inline bool connected(void);
 class tRxStats
 {
   public:
-    void Init(uint8_t _period);
+    void Init(uint8_t _maverage_period, uint16_t _frame_rate_hz);
 
     void Update1Hz(void); // called at 1 Hz
-    void Next(void); // called at each cycle
+    void Next(void); // called at each cycle, is called when transmit starts, or shortly after
     void Clear(void); // called then not connected
 
     void doFrameReceived(void);
@@ -34,19 +35,19 @@ class tRxStats
     uint8_t GetLQ_serial(void);
 
   private:
-    LqCounterBase LQma_received;
-    LqCounterBase LQma_valid_crc1;
-    LqCounterBase LQma_valid;
+//    tLqCounterBase LQma_received;
+//    tLqCounterBase LQma_valid_crc1;
+//    tLqCounterBase LQma_valid;
 };
 
 
-void tRxStats::Init(uint8_t _period)
+void tRxStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
 {
-    stats.Init();
+    stats.Init(_frame_rate_hz);
 
-    LQma_valid_crc1.Init(_period);
-    LQma_valid.Init(_period);
-    LQma_received.Init(_period);
+//    LQma_valid_crc1.Init(_maverage_period);
+//    LQma_valid.Init(_maverage_period);
+//    LQma_received.Init(_maverage_period);
 }
 
 
@@ -56,11 +57,11 @@ void tRxStats::Update1Hz(void)
 }
 
 
-void tRxStats::Next(void) // this is called when transmit starts, or shortly after
+void tRxStats::Next(void)
 {
-    LQma_valid_crc1.Next();
-    LQma_valid.Next();
-    LQma_received.Next();
+//    LQma_valid_crc1.Next();
+//    LQma_valid.Next();
+//    LQma_received.Next();
 }
 
 
@@ -68,30 +69,33 @@ void tRxStats::Clear(void)
 {
     stats.Clear();
 
-    LQma_valid_crc1.Reset(); // start with 100% if not connected
-    LQma_valid.Reset();
-    LQma_received.Reset();
+//    LQma_valid_crc1.Reset(); // start with 100% if not connected
+//    LQma_valid.Reset();
+//    LQma_received.Reset();
 }
 
 
 void tRxStats::doFrameReceived(void)
 {
-    LQma_received.Set();
     stats.frames_received.Inc();
+
+//    LQma_received.Set();
 }
 
 
 void tRxStats::doValidCrc1FrameReceived(void)
 {
-    LQma_valid_crc1.Set();
     stats.valid_crc1_received.Inc();
+
+//    LQma_valid_crc1.Set();
 }
 
 
 void tRxStats::doValidFrameReceived(void)
 {
-    LQma_valid.Set();
     stats.valid_frames_received.Inc();
+
+//    LQma_valid.Set();
 }
 
 
@@ -109,7 +113,7 @@ uint8_t tRxStats::GetLQ_serial(void)
 {
     if (!connected()) return 0;
 
-    uint8_t LQser = stats.serial_data_received.GetLQ(); // stats.valid_frames_received.GetLQ();
+    uint8_t LQser = stats.serial_data_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;
 }

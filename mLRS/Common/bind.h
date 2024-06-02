@@ -27,9 +27,9 @@ extern SX2_DRIVER sx2;
 
 void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
 void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms);
-void sxGetPacketStatus(uint8_t antenna, Stats* stats);
+void sxGetPacketStatus(uint8_t antenna, tStats* stats);
 
-extern Stats stats;
+extern tStats stats;
 
 
 //-------------------------------------------------------

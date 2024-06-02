@@ -649,7 +649,7 @@ RESTARTCONTROLLER
     link_task_init();
     link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
-    txstats.Init(Config.LQAveragingPeriod);
+    txstats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
 

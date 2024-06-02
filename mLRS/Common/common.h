@@ -173,7 +173,7 @@ tRxFrame rxFrame, rxFrame2;
 SX_DRIVER sx;
 SX2_DRIVER sx2;
 
-Stats stats;
+tStats stats;
 
 tFhss fhss;
 
@@ -215,7 +215,7 @@ void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
 }
 
 
-void sxGetPacketStatus(uint8_t antenna, Stats* stats)
+void sxGetPacketStatus(uint8_t antenna, tStats* stats)
 {
     if (antenna == ANTENNA_1) {
         sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));

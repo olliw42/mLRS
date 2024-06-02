@@ -533,7 +533,7 @@ RESTARTCONTROLLER
     doPostReceive2 = false;
     frame_missed = false;
 
-    rxstats.Init(Config.LQAveragingPeriod);
+    rxstats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
 
