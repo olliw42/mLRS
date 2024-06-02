@@ -25,12 +25,12 @@
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
 
 
-class tIn : public InBase
+class tIn : public tInBase
 {
   public:
     void Init(bool enable_flag)
     {
-        InBase::Init(enable_flag);
+        tInBase::Init(enable_flag);
         if (!enable_flag) return;
 
         in_init_gpio();
@@ -73,12 +73,12 @@ class tIn : public InBase
 #include "jr_pin5_interface.h" // in case DEVICE_HAS_JRPIN5 was not defined
 
 
-class tIn : public InBase
+class tIn : public tInBase
 {
   public:
     void Init(bool enable_flag)
     {
-        InBase::Init(enable_flag);
+        tInBase::Init(enable_flag);
         if (!enable_flag) return;
 
         uart_rx_callback_ptr = &uart_rx_putc_torxbuf;
@@ -158,7 +158,7 @@ tIn in;
 
 #else
 
-class tIn : public InBase
+class tIn : public tInBase
 {
 };
 

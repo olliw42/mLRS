@@ -12,7 +12,7 @@
 
 //-- simple rate filter for MAVLink interface
 
-void LPFilterRate::Reset(void)
+void tLPFilterRate::Reset(void)
 {
     xlast = 0;
     tlast_ms = 0;
@@ -21,7 +21,7 @@ void LPFilterRate::Reset(void)
 }
 
 
-void LPFilterRate::Update(int32_t tnow_ms, int32_t x, int32_t T_ms)
+void tLPFilterRate::Update(int32_t tnow_ms, int32_t x, int32_t T_ms)
 {
     Tfilt_ms = T_ms;
     if (state > 1) {

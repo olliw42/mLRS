@@ -30,12 +30,12 @@ extern tRxStats rxstats;
 #endif
 
 
-class tOut : public OutBase
+class tOut : public tOutBase
 {
   public:
     void Init(void)
     {
-        OutBase::Init(&Setup.Rx);
+        tOutBase::Init(&Setup.Rx);
         out_init_gpio();
         uart_init_isroff();
     }
@@ -97,7 +97,7 @@ class tOut : public OutBase
         } else {
             lstats.antenna_config = 1;
         }
-        OutBase::SendLinkStatistics(&lstats);
+        tOutBase::SendLinkStatistics(&lstats);
     }
 };
 
@@ -106,12 +106,12 @@ tOut out;
 
 #else
 
-class tOut : public OutBase
+class tOut : public tOutBase
 {
   public:
     void Init(void) 
     {
-        OutBase::Init(&Setup.Rx);
+        tOutBase::Init(&Setup.Rx);
     }
 
     void SendLinkStatistics(void) {}

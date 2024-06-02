@@ -74,7 +74,7 @@ class tRxMavlink
     fmav_status_t status_serial_in;
     uint8_t buf_serial_in[MAVLINK_BUF_SIZE]; // buffer for serial in parser
     fmav_message_t msg_link_out; // could be avoided by more efficient coding, is used only momentarily/locally
-    FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
+    tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
     uint32_t bytes_parser_in; // bytes in the parser
 #endif
 
@@ -84,7 +84,7 @@ class tRxMavlink
     uint8_t radio_status_txbuf;
 
     uint32_t bytes_link_out_cnt; // for rate filter
-    LPFilterRate bytes_link_out_rate_filt;
+    tLPFilterRate bytes_link_out_rate_filt;
 
     typedef enum {
         TXBUF_STATE_NORMAL = 0,

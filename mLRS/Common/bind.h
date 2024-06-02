@@ -27,9 +27,9 @@ extern SX2_DRIVER sx2;
 
 void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
 void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms);
-void sxGetPacketStatus(uint8_t antenna, Stats* stats);
+void sxGetPacketStatus(uint8_t antenna, tStats* stats);
 
-extern Stats stats;
+extern tStats stats;
 
 
 //-------------------------------------------------------
@@ -49,7 +49,7 @@ typedef enum {
 } BIND_TASK_ENUM;
 
 
-class BindBase
+class tBindBase
 {
   public:
     void Init(void);
@@ -82,7 +82,7 @@ class BindBase
 };
 
 
-void BindBase::Init(void)
+void tBindBase::Init(void)
 {
     is_in_binding = false;
     binding_requested = false;
@@ -101,7 +101,7 @@ void BindBase::Init(void)
 }
 
 
-void BindBase::ConfigForBind(void)
+void tBindBase::ConfigForBind(void)
 {
     // switch to 19 Mode, select lowest possible power
     configure_mode(MODE_19HZ);
@@ -118,7 +118,7 @@ void BindBase::ConfigForBind(void)
 
 
 // called in each doPreTransmit or doPostReceive cycle
-void BindBase::Do(void)
+void tBindBase::Do(void)
 {
     uint32_t tnow = millis32();
 
@@ -160,7 +160,7 @@ void BindBase::Do(void)
 
 
 // called directly after bind.Do()
-uint8_t BindBase::Task(void)
+uint8_t tBindBase::Task(void)
 {
     switch (task) {
     case BIND_TASK_TX_RESTART_CONTROLLER:
@@ -176,7 +176,7 @@ uint8_t BindBase::Task(void)
 }
 
 
-void BindBase::AutoBind(void) // only for receiver, call every ms
+void tBindBase::AutoBind(void) // only for receiver, call every ms
 {
 #if defined DEVICE_IS_RECEIVER && defined RX_BIND_MODE_AFTER_POWERUP
     if (!auto_bind_tmo_ms) return;
@@ -196,7 +196,7 @@ tRxBindFrame rxBindFrame;
 
 #ifdef DEVICE_IS_TRANSMITTER
 
-void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
+void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
@@ -204,7 +204,7 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 }
 
 
-void BindBase::do_transmit(uint8_t antenna)
+void tBindBase::do_transmit(uint8_t antenna)
 {
     memset((uint8_t*)&txBindFrame, 0, sizeof(txBindFrame));
     txBindFrame.bind_signature = TxSignature;
@@ -221,7 +221,7 @@ void BindBase::do_transmit(uint8_t antenna)
 }
 
 
-uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
+uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
     sxReadFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN);
 
@@ -241,7 +241,7 @@ uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 #endif
 #ifdef DEVICE_IS_RECEIVER
 
-void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
+void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
@@ -256,7 +256,7 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 }
 
 
-void BindBase::do_transmit(uint8_t antenna)
+void tBindBase::do_transmit(uint8_t antenna)
 {
     memset((uint8_t*)&rxBindFrame, 0, sizeof(rxBindFrame));
     rxBindFrame.bind_signature = RxSignature;
@@ -271,7 +271,7 @@ void BindBase::do_transmit(uint8_t antenna)
 }
 
 
-uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
+uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
     sxReadFrame(antenna, &txBindFrame, &txBindFrame, FRAME_TX_RX_LEN);
 

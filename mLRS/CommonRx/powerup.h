@@ -69,7 +69,7 @@ typedef enum {
 } POWERUPCNT_TASK_ENUM;
 
 
-class PowerupCounterBase
+class tPowerupCounter
 {
   public:
     void Init(void);
@@ -86,7 +86,7 @@ class PowerupCounterBase
 };
 
 
-void PowerupCounterBase::Init(void)
+void tPowerupCounter::Init(void)
 {
     powerup_do = true;
     task = POWERUPCNT_TASK_NONE;
@@ -155,7 +155,7 @@ void PowerupCounterBase::Init(void)
 }
 
 
-void PowerupCounterBase::Do(void)
+void tPowerupCounter::Do(void)
 {
     if (!powerup_do) return;
 
@@ -170,7 +170,7 @@ void PowerupCounterBase::Do(void)
 }
 
 
-uint8_t PowerupCounterBase::Task(void)
+uint8_t tPowerupCounter::Task(void)
 {
     switch (task) {
     case POWERUPCNT_TASK_BIND:
@@ -231,7 +231,7 @@ QUICK_EXIT:
 }
 
 
-void PowerupCounterBase::ee_program_val(uint32_t adr, uint32_t* data, uint8_t datalen)
+void tPowerupCounter::ee_program_val(uint32_t adr, uint32_t* data, uint8_t datalen)
 {
     ee_program_u32(adr, data, datalen);
 }
@@ -292,7 +292,7 @@ QUICK_EXIT:
 }
 
 
-void PowerupCounterBase::ee_program_val(uint32_t adr, uint64_t* data, uint8_t datalen)
+void tPowerupCounter::ee_program_val(uint32_t adr, uint64_t* data, uint8_t datalen)
 {
     ee_program_u64(adr, data, datalen);
 }

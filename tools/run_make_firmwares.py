@@ -452,10 +452,12 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','thirdparty','thirdparty.cpp'),
     os.path.join('Common','libs','filters.cpp'),
     os.path.join('Common','channel_order.cpp'),
+    os.path.join('Common','common_stats.cpp'),
     os.path.join('Common','common_types.cpp'),
     os.path.join('Common','diversity.cpp'),
     os.path.join('Common','fhss.cpp'),
     os.path.join('Common','link_types.cpp'),
+    os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
     ]
 

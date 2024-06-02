@@ -67,7 +67,7 @@ class tTxMavlink
     uint8_t buf_ser_in[MAVLINK_BUF_SIZE]; // buffer for ser in parser
     fmav_status_t status_ser2_in;
     uint8_t buf_ser2_in[MAVLINK_BUF_SIZE];
-    FifoBase<char,512> fifo_link_out; // needs to be at least 82 + 280
+    tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
 #endif
 
     // to inject RADIO_STATUS messages

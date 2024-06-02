@@ -23,7 +23,7 @@ typedef enum {
 
 
 
-class PowerupCounterBase
+class tPowerupCounter
 {
   public:
     void Init(void) {}

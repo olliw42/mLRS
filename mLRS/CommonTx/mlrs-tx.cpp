@@ -89,7 +89,7 @@ tTxStats txstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
-ChannelOrder channelOrder(ChannelOrder::DIRECTION_TX_TO_MLRS);
+tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxCli cli;
 
@@ -141,17 +141,17 @@ tTxEspWifiBridge esp;
 #include "../Common/while.h"
 
 
-class WhileTransmit : public WhileBase
+class tWhileTransmit : public tWhileBase
 {
   public:
     uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
 };
 
-WhileTransmit whileTransmit;
+tWhileTransmit whileTransmit;
 
 
-void WhileTransmit::handle_once(void)
+void tWhileTransmit::handle_once(void)
 {
     cli.Set(Setup.Tx[Config.ConfigId].CliLineEnd);
     cli.Do();
@@ -684,7 +684,7 @@ RESTARTCONTROLLER
     link_task_init();
     link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
-    txstats.Init(Config.LQAveragingPeriod);
+    txstats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();

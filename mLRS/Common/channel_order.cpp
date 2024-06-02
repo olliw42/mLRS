@@ -11,7 +11,7 @@
 #include "channel_order.h"
 
 
-ChannelOrder::ChannelOrder(uint8_t direction)
+tChannelOrder::tChannelOrder(uint8_t direction)
 {
     direction_is_tx = (direction == DIRECTION_TX_TO_MLRS);
     channel_order = CHANNEL_ORDER_AETR;
@@ -19,7 +19,7 @@ ChannelOrder::ChannelOrder(uint8_t direction)
 }
 
 
-void ChannelOrder::Set(uint8_t new_channel_order)
+void tChannelOrder::Set(uint8_t new_channel_order)
 {
     if (new_channel_order == channel_order) return;
     channel_order = new_channel_order;
@@ -60,7 +60,7 @@ void ChannelOrder::Set(uint8_t new_channel_order)
 }
 
 
-void ChannelOrder::Apply(tRcData* rc)
+void tChannelOrder::Apply(tRcData* rc)
 {
     uint16_t ch[4] = { // take a copy to swap
         rc->ch[0],
@@ -75,7 +75,7 @@ void ChannelOrder::Apply(tRcData* rc)
 }
 
 
-uint8_t ChannelOrder::ChannelMap(uint8_t n)
+uint8_t tChannelOrder::ChannelMap(uint8_t n)
 {
     return channel_map[n];
 }
