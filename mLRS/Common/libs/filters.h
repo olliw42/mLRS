@@ -30,4 +30,20 @@ class tLPFilterRate
 };
 
 
+// simple LPF filter
+
+class tLpFilter
+{
+  public:
+    void Init(uint32_t _T_ms, int32_t _dt_ms, int32_t _yn_start = 0);
+    void Clear(void);
+    void Put(int32_t x);
+    int32_t Get(void);
+
+    float alpha;
+    int32_t yn_start;
+    float yn;
+};
+
+
 #endif // FILTERS_H

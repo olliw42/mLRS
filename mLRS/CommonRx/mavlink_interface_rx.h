@@ -490,8 +490,21 @@ bool tRxMavlink::handle_txbuf_ardupilot(uint32_t tnow_ms)
 
     // method C, with improvements
     // assumes 1 sec delta time
-    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    // was uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    int32_t frame_cnt_filtered = rxstats.cntFrameGet();
+    static int32_t frame_cnt = 0;
+    static int32_t hysteresis = 10;
+    if ((frame_cnt_filtered - frame_cnt) < -hysteresis || (frame_cnt_filtered - frame_cnt) > hysteresis) {
+        frame_cnt = frame_cnt_filtered;
+        hysteresis = 10;
+    } else if (hysteresis > 0) {
+        hysteresis--;
+    }
+    if (frame_cnt < 500) frame_cnt = 500;
+    uint32_t rate_max = (frame_cnt * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
     uint32_t rate_percentage = (bytes_link_out * 100) / rate_max;
+
+dbg.puts("\nMa: ");dbg.puts(u16toBCD_s(frame_cnt_filtered));dbg.puts(" , ");dbg.puts(u16toBCD_s(frame_cnt));
 
     // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
     // aim at 75%..85% rate usage in steady state
@@ -655,9 +668,9 @@ if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
 if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 #endif
-    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100ms
+    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100 ms
     if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
-        radio_status_tlast_ms -= 800; // do again in 200ms
+        radio_status_tlast_ms -= 800; // do again in 200 ms
         bytes_link_out = (bytes_link_out * 4)/5; // rolling average
     } else {
         bytes_link_out = 0; // reset, to restart rate measurement

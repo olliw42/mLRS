@@ -331,7 +331,10 @@ static bool rxFrame_valid = false;
         }
         rxFrame_valid = true;
 
-        tarq.SetRetryCnt(1);
+        //tarq.SetRetryCnt(1);
+        tarq.SetRetryCntAuto(rxstats.cntFrameGet());
+
+        rxstats.cntFrameTransmitted();
 
     } else {
         // rxFrame should still hold the previous data
@@ -340,7 +343,10 @@ static bool rxFrame_valid = false;
         update_rxframe_stats(&rxFrame, &frame_stats);
         rxFrame_valid = true;
 
-        tarq.SetRetryCnt(1);
+        //tarq.SetRetryCnt(1);
+        tarq.SetRetryCntAuto(rxstats.cntFrameGet());
+
+        rxstats.cntFrameSkipped();
     }
 
 #ifdef USE_ARQ_DBG

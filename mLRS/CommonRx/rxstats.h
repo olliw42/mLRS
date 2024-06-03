@@ -10,6 +10,7 @@
 #define RXSTATS_H
 #pragma once
 
+#include "../Common/libs/filters.h"
 
 extern tStats stats;
 static inline bool connected(void);
@@ -38,12 +39,41 @@ class tRxStats
 //    tLqCounterBase LQma_received;
 //    tLqCounterBase LQma_valid_crc1;
 //    tLqCounterBase LQma_valid;
+
+
+  public:
+    // statistics for ARQ
+    // TODO: once proven out move it to tStats class
+
+    tLpFilter cnt_frame;
+
+    void cntFrameTransmitted(void)
+    {
+        cnt_frame.Put(1000);
+//dbg.puts("1");
+    }
+
+    void cntFrameSkipped(void)
+    {
+        cnt_frame.Put(0);
+//dbg.puts("0");
+    }
+
+    int32_t cntFrameGet(void)
+    {
+//dbg.puts("!");dbg.puts(u32toBCD_s(cnt_frame.Get()));dbg.puts("!");
+
+        int32_t fn = cnt_frame.Get();
+        return (fn < 0) ? 0 : (fn > 1000) ? 1000 : fn; // limit to [0, 1000]
+    }
 };
 
 
 void tRxStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
 {
     stats.Init(_frame_rate_hz);
+
+    cnt_frame.Init(2000, Config.frame_rate_ms, 500);
 
 //    LQma_valid_crc1.Init(_maverage_period);
 //    LQma_valid.Init(_maverage_period);
@@ -68,6 +98,8 @@ void tRxStats::Next(void)
 void tRxStats::Clear(void)
 {
     stats.Clear();
+
+    cnt_frame.Clear();
 
 //    LQma_valid_crc1.Reset(); // start with 100% if not connected
 //    LQma_valid.Reset();

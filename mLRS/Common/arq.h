@@ -20,10 +20,10 @@ Notes:
 #pragma once
 
 #define USE_ARQ
-#define USE_ARQ_RETRY_CNT   1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
-#define USE_ARQ_DBG
-#define USE_ARQ_TX_SIM_MISS 4 //9 // 0 = off
-#define USE_ARQ_RX_SIM_MISS 5 //5 // 0 = off
+#define USE_ARQ_RETRY_CNT   -1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
+//#define USE_ARQ_DBG
+//#define USE_ARQ_TX_SIM_MISS 4 //9 // 0 = off
+//#define USE_ARQ_RX_SIM_MISS 3 //5 //5 // 0 = off
 
 #ifdef USE_ARQ
 
@@ -49,6 +49,8 @@ class tTransmitArq
     bool GetFreshPayload(void);
     uint8_t SeqNo(void);
     void SetRetryCnt(uint8_t retry_cnt);
+
+    void SetRetryCntAuto(int32_t _frame_cnt);
 
     uint8_t status;
     uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
@@ -164,6 +166,12 @@ void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
     payload_retry_cnt = USE_ARQ_RETRY_CNT;
 #endif
     // payload_retries = 0; ?? I think to better not do this, allows to shorten retry cnt and the ARQ to react immediately
+}
+
+
+void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt)
+{
+    SetRetryCnt((_frame_cnt >= 800) ? 2 : 1);
 }
 
 
@@ -334,6 +342,7 @@ class tTransmitArq
     bool GetFreshPayload(void) { return true; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
     void SetRetryCnt(uint8_t retry_cnt) {}
+    void SetRetryCntAuto(int32_t _frame_cnt) {}
 
     uint8_t seq_no;
 };
