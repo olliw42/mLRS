@@ -11,6 +11,9 @@
 #pragma once
 
 
+static inline bool connected_and_rx_setup_available(void);
+
+
 class tTxSxSerial : public tSerialBase
 {
   public:

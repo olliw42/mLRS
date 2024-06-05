@@ -20,6 +20,7 @@
 
 
 extern uint16_t micros16(void);
+static inline bool connected(void);
 extern uint8_t mavlink_vehicle_state(void);
 extern tTxStats txstats;
 

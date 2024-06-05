@@ -35,6 +35,9 @@ class tTxDisp
 #include "../Common/thirdparty/gdisp.h"
 
 
+static inline bool connected(void);
+static inline bool connected_and_rx_setup_available(void);
+extern tTxStats txstats;
 extern tGDisplay gdisp;
 
 
