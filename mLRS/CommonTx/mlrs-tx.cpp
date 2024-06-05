@@ -968,6 +968,7 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
             txstats.Update1Hz();
+            mavlink.StatsUpdate1Hz();
         }
         txstats.Next();
         if (!connected()) txstats.Clear();

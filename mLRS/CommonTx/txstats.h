@@ -37,6 +37,8 @@ class tTxStats
     bool rx2_valid;
     uint8_t fhss_curr_i;
 
+    uint8_t mav_msg_seq_lq;
+
   private:
 //    tLqCounterBase LQma_received;
 //    tLqCounterBase LQma_valid;
@@ -50,6 +52,8 @@ void tTxStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
     rx1_valid = false;
     rx2_valid = false;
     fhss_curr_i = UINT8_MAX;
+
+    mav_msg_seq_lq = 0;
 
 //    LQma_received.Init(_maverage_period);
 //    LQma_valid.Init(_maverage_period);

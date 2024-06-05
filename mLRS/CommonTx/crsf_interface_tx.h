@@ -851,6 +851,9 @@ tCrsfLinkStatistics clstats;
     clstats.downlink_LQ = txstats.GetLQ_serial();                           // OpenTx -> "TQly"
     clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
 
+    // misuse it
+    clstats.uplink_rssi2 = txstats.mav_msg_seq_lq;
+
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS, &clstats, CRSF_LINK_STATISTICS_LEN);
 }
 

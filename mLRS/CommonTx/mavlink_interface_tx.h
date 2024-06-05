@@ -25,6 +25,7 @@
 
 extern volatile uint32_t millis32(void);
 static inline bool connected_and_rx_setup_available(void);
+extern tTxStats txstats;
 
 
 #define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
@@ -44,6 +45,8 @@ class tTxMavlink
     bool available(void);
     uint8_t getc(void);
     void flush(void);
+
+    void StatsUpdate1Hz(void);
 
   private:
     void send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in);
@@ -80,6 +83,13 @@ class tTxMavlink
     uint8_t vehicle_flight_mode;
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+
+    // MissonPlanner style link quality
+    bool msg_seq_initialized;
+    uint32_t msg_received_cnt;
+    uint32_t msg_received_in_seq_cnt;
+    uint8_t msg_seq_last;
+    void msg_seq_reset(void);
 };
 
 
@@ -130,6 +140,8 @@ void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBa
     vehicle_is_flying = UINT8_MAX;
     vehicle_type = UINT8_MAX;
     vehicle_flight_mode = UINT8_MAX;
+
+    msg_seq_reset();
 }
 
 
@@ -161,6 +173,7 @@ void tTxMavlink::Do(void)
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
+        msg_seq_reset();
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
@@ -392,13 +405,52 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
 
     if (!vehicle_sysid) return;
 
+    // continue only for autopilot
+    if (msg->sysid != vehicle_sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
+
     switch (msg->msgid) {
-    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
+    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE: {
         fmav_extended_sys_state_t payload;
         fmav_msg_extended_sys_state_decode(&payload, msg);
         vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
-        }break;
+        } break;
     }
+
+    // MissonPlanner style link quality, for autopilot only
+    if (msg_seq_initialized) {
+        msg_received_cnt++;
+        uint8_t seq_expected = msg_seq_last + 1;
+        if (seq_expected == msg->seq) msg_received_in_seq_cnt++;
+    }
+    msg_seq_initialized = true;
+    msg_seq_last = msg->seq;
+}
+
+
+//-------------------------------------------------------
+// MAVLink Stats
+//-------------------------------------------------------
+
+void tTxMavlink::msg_seq_reset(void)
+{
+    msg_seq_initialized = false;
+    msg_received_cnt = 0;
+    msg_received_in_seq_cnt = 0;
+    msg_seq_last = 0;
+
+    txstats.mav_msg_seq_lq = 0;
+}
+
+
+void tTxMavlink::StatsUpdate1Hz(void)
+{
+    txstats.mav_msg_seq_lq = 0;
+    if (connected_and_rx_setup_available() && msg_seq_initialized) {
+        txstats.mav_msg_seq_lq = (msg_received_in_seq_cnt * 100) / msg_received_cnt;
+    }
+
+    msg_received_cnt = 0;
+    msg_received_in_seq_cnt = 0;
 }
 
 
