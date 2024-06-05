@@ -392,6 +392,9 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
 
     if (!vehicle_sysid) return;
 
+    // continue only for autopilot
+    if (msg->sysid != vehicle_sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
+
     switch (msg->msgid) {
     case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
         fmav_extended_sys_state_t payload;
