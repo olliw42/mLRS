@@ -61,7 +61,7 @@ Further features:
     - MavlinkX for reduced packet loss and data compression
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
-- support of ESP32 modules for wireless connection to a ground control station.
+- support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
 
 ## Community ##
