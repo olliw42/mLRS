@@ -21,6 +21,7 @@
 
 extern volatile uint32_t millis32(void);
 static inline bool connected(void);
+extern tRxStats rxstats;
 
 
 #define RADIO_LINK_SYSTEM_ID          51 // SiK uses 51, 68
