@@ -33,6 +33,7 @@ class tTxDisp
 #include "../Common/thirdparty/gfxfontFreeMono12pt7b.h"
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
 #include "../Common/thirdparty/gdisp.h"
+#include "../Common/thirdparty/mlrs-logo.h"
 
 
 extern bool connected(void);
@@ -655,12 +656,17 @@ void tTxDisp::draw_page_startup(void)
     if (!page_modified) return;
 
     gdisp_clear();
+/*
     gdisp_setcurXY(0, 6);
     gdisp_setfont(&FreeMono12pt7b);
     gdisp_setcurY(33-10); gdisp_puts_XCentered("mLRS");
     gdisp_unsetfont();
     gdisp_setcurY(48); gdisp_puts_XCentered(DEVICE_NAME);
     gdisp_setcurY(60); gdisp_puts_XCentered(VERSIONONLYSTR);
+*/
+    gdisp_drawbitmap(23, 0, mlrs_logo_91x38_bw, 91, 38, 1);
+    gdisp_setcurY(52); gdisp_puts_XCentered(DEVICE_NAME);
+    gdisp_setcurY(63); gdisp_puts_XCentered(VERSIONONLYSTR);
 }
 
 
