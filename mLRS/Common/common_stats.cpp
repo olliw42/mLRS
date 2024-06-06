@@ -14,7 +14,7 @@
 // Common stats
 //-------------------------------------------------------
 
-void tStats::Init(uint16_t _frame_rate_hz)
+void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
 {
     frame_rate_hz = _frame_rate_hz;
 
@@ -29,6 +29,16 @@ void tStats::Init(uint16_t _frame_rate_hz)
     bytes_received.Init(frame_rate_hz);
 
     Clear();
+
+#ifdef DEVICE_IS_TRANSMITTER
+    rx1_valid = false;
+    rx2_valid = false;
+    fhss_curr_i = UINT8_MAX;
+#endif
+
+//    LQma_valid_crc1.Init(_maverage_period);
+//    LQma_valid.Init(_maverage_period);
+//    LQma_received.Init(_maverage_period);
 }
 
 
@@ -67,6 +77,40 @@ void tStats::Update1Hz(void)
 }
 
 
+void tStats::Next(void)
+{
+//    LQma_valid_crc1.Next();
+//    LQma_valid.Next();
+//    LQma_received.Next();
+}
+
+
+void tStats::doFrameReceived(void)
+{
+    frames_received.Inc();
+
+//    LQma_received.Set();
+}
+
+
+#ifdef DEVICE_IS_RECEIVER
+void tStats::doValidCrc1FrameReceived(void)
+{
+    valid_crc1_received.Inc();
+
+//    LQma_valid_crc1.Set();
+}
+#endif
+
+
+void tStats::doValidFrameReceived(void)
+{
+    valid_frames_received.Inc();
+
+//    LQma_valid.Set();
+}
+
+
 uint8_t tStats::GetTransmitBandwidthUsage(void)
 {
     // just simply scale it always to the largest theoretical bandwidth
@@ -100,4 +144,25 @@ int8_t tStats::GetLastSnr(void)
     return (last_antenna == ANTENNA_1) ? last_snr1 : last_snr2;
 }
 
+
+#ifdef DEVICE_IS_RECEIVER
+uint8_t tStats::GetLQ_rc(void)
+{
+    if (!connected()) return 0;
+
+    uint8_t LQ = valid_crc1_received.GetLQ();
+    if (LQ == 0) return 1;
+    return LQ;
+}
+#endif
+
+
+uint8_t tStats::GetLQ_serial(void)
+{
+    if (!connected()) return 0;
+
+    uint8_t LQser = serial_data_received.GetLQ();
+    if (LQser == 0) return 1;
+    return LQser;
+}
 

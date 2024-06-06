@@ -24,7 +24,8 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected_and_rx_setup_available(void);
+extern bool connected_and_rx_setup_available(void);
+extern tStats stats;
 
 
 #define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68

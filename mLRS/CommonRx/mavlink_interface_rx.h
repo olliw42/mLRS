@@ -20,8 +20,8 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected(void);
-extern tRxStats rxstats;
+extern bool connected(void);
+extern tStats stats;
 
 
 #define RADIO_LINK_SYSTEM_ID          51 // SiK uses 51, 68
@@ -786,8 +786,8 @@ int8_t rx_snr1, rx_snr2;
         flags,
 
         // rx stats
-        rxstats.GetLQ_rc(), // uint8_t rx_LQ_rc
-        rxstats.GetLQ_serial(), // uint8_t rx_LQ_ser
+        stats.GetLQ_rc(), // uint8_t rx_LQ_rc
+        stats.GetLQ_serial(), // uint8_t rx_LQ_ser
         rx_rssi1, // uint8_t rx_rssi1
         rx_snr1, // int8_t rx_snr1
         rx_rssi2, // uint8_t rx_rssi2

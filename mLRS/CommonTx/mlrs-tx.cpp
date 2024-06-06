@@ -76,7 +76,6 @@
 #include "../Common/diversity.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "txstats.h"
 #include "config_id.h"
 #include "cli.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
@@ -84,7 +83,6 @@
 #include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
-tTxStats txstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
@@ -445,7 +443,7 @@ uint8_t payload_len = 0;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
     frame_stats.LQ_rc = UINT8_MAX; // Tx has no valid value
-    frame_stats.LQ_serial = txstats.GetLQ_serial();
+    frame_stats.LQ_serial = stats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
@@ -512,7 +510,7 @@ tRxFrame* frame;
 
         process_received_frame(do_payload, frame);
 
-        txstats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
+        stats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
 
     } else { // RX_STATUS_INVALID
     }
@@ -521,7 +519,7 @@ tRxFrame* frame;
     stats.last_antenna = antenna;
 
     // we count all received frames
-    txstats.doFrameReceived();
+    stats.doFrameReceived();
 }
 
 
@@ -595,12 +593,12 @@ uint8_t connect_sync_cnt;
 bool connect_occured_once;
 
 
-static inline bool connected(void)
+bool connected(void)
 {
     return (connect_state == CONNECT_STATE_CONNECTED);
 }
 
-static inline bool connected_and_rx_setup_available(void)
+bool connected_and_rx_setup_available(void)
 {
     return (connected() && SetupMetaData.rx_available);
 }
@@ -648,7 +646,7 @@ RESTARTCONTROLLER
     link_task_init();
     link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
-    txstats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
+    stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
 
@@ -864,9 +862,9 @@ IF_SX2(
             mavlink.FrameLost();
         }
 
-        txstats.fhss_curr_i = fhss.CurrI();
-        txstats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
-        txstats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
+        stats.fhss_curr_i = fhss.CurrI();
+        stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
+        stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
@@ -922,10 +920,10 @@ IF_SX2(
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
-            txstats.Update1Hz();
+            stats.Update1Hz();
         }
-        txstats.Next();
-        if (!connected()) txstats.Clear();
+        stats.Next();
+        if (!connected()) stats.Clear();
 
         if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
             if (!valid_frame_received) buzzer.BeepLP();

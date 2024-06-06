@@ -17,6 +17,9 @@
 #include "common_types.h"
 
 
+extern bool connected(void);
+
+
 //-------------------------------------------------------
 // Common stats
 //-------------------------------------------------------
@@ -24,14 +27,27 @@
 class tStats
 {
   public:
-    void Init(uint16_t _frame_rate_hz);
-    void Clear(void);                 // called then not connected
+    void Init(uint8_t _maverage_period, uint16_t _frame_rate_hz);
+
     void Update1Hz(void);             // called at 1 Hz
+    void Next(void);                  // called at each cycle, is called when transmit starts, or shortly after
+    void Clear(void);                 // called then not connected
+
+    void doFrameReceived(void);
+#ifdef DEVICE_IS_RECEIVER
+    void doValidCrc1FrameReceived(void);
+#endif
+    void doValidFrameReceived(void);
 
     uint8_t GetTransmitBandwidthUsage(void);
     uint8_t GetReceiveBandwidthUsage(void);
     int8_t GetLastRssi(void);
     int8_t GetLastSnr(void);
+
+#ifdef DEVICE_IS_RECEIVER
+    uint8_t GetLQ_rc(void);           // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
+#endif
+    uint8_t GetLQ_serial(void);
 
     // statistics for our device
 
@@ -73,6 +89,19 @@ class tStats
     // private fields
 
     uint16_t frame_rate_hz;
+
+    // extra stats available with mBridge
+#ifdef DEVICE_IS_TRANSMITTER
+    bool rx1_valid;
+    bool rx2_valid;
+    uint8_t fhss_curr_i;
+#endif
+
+    // moving average fields
+
+//    tLqCounterBase LQma_received;
+//    tLqCounterBase LQma_valid_crc1;
+//    tLqCounterBase LQma_valid;
 };
 
 

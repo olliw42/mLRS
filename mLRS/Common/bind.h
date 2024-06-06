@@ -17,7 +17,7 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected(void);
+extern bool connected(void);
 #ifdef DEVICE_IS_RECEIVER
 extern void clock_reset(void);
 #endif

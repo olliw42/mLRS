@@ -20,9 +20,9 @@
 
 
 extern uint16_t micros16(void);
-static inline bool connected(void);
+extern bool connected(void);
 extern uint8_t mavlink_vehicle_state(void);
-extern tTxStats txstats;
+extern tStats stats;
 
 
 //-------------------------------------------------------
@@ -518,15 +518,15 @@ void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {};
 
-    lstats.LQ_serial = txstats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
+    lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
     lstats.rssi1_instantaneous = stats.last_rssi1;
     lstats.rssi2_instantaneous = stats.last_rssi2;
     lstats.snr_instantaneous = stats.GetLastSnr();
     lstats.receive_antenna = stats.last_antenna;
     lstats.transmit_antenna = stats.last_transmit_antenna;
     lstats._diversity = 0; // pretty useless, so deprecated
-    lstats.rx1_valid = txstats.rx1_valid;
-    lstats.rx2_valid = txstats.rx2_valid;
+    lstats.rx1_valid = stats.rx1_valid;
+    lstats.rx2_valid = stats.rx2_valid;
 
     lstats.rssi1_filtered = RSSI_INVALID;
     lstats.rssi2_filtered = RSSI_INVALID;
@@ -554,7 +554,7 @@ tMBridgeLinkStats lstats = {};
 
     lstats._LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
 
-    lstats.fhss_curr_i = txstats.fhss_curr_i;
+    lstats.fhss_curr_i = stats.fhss_curr_i;
     lstats.fhss_cnt = fhss.Cnt();
 
     lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid

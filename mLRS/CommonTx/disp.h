@@ -35,9 +35,9 @@ class tTxDisp
 #include "../Common/thirdparty/gdisp.h"
 
 
-static inline bool connected(void);
-static inline bool connected_and_rx_setup_available(void);
-extern tTxStats txstats;
+extern bool connected(void);
+extern bool connected_and_rx_setup_available(void);
+extern tStats stats;
 extern tGDisplay gdisp;
 
 
@@ -735,7 +735,7 @@ int8_t power;
     if (connected()) gdisp_puts(s);
 
     gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
-    stoBCDstr(txstats.GetLQ_serial(), s);
+    stoBCDstr(stats.GetLQ_serial(), s);
     gdisp_puts(s);
     gdisp_setcurX(60 + 11);
     if (connected()) {
