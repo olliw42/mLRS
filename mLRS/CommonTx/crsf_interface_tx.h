@@ -23,7 +23,7 @@
 
 extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
-extern tTxStats txstats;
+extern tStats stats;
 
 
 //-------------------------------------------------------
@@ -848,11 +848,11 @@ tCrsfLinkStatistics clstats;
     clstats.uplink_transmit_power = crsf_cvt_power(sx.RfPower_dbm());       // OpenTx -> "TPw2"
 
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());          // OpenTx -> "TRSS"
-    clstats.downlink_LQ = txstats.GetLQ_serial();                           // OpenTx -> "TQly"
+    clstats.downlink_LQ = stats.GetLQ_serial();                             // OpenTx -> "TQly"
     clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
 
     // misuse it
-    clstats.uplink_rssi2 = txstats.mav_msg_seq_lq;
+    clstats.uplink_rssi2 = stats.mav_msg_seq_lq;
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS, &clstats, CRSF_LINK_STATISTICS_LEN);
 }
@@ -864,7 +864,7 @@ tCrsfLinkStatisticsTx clstats;
 
     clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
     clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRssi());     // OpenTx -> "TRSP" // ??? uplink but "T" ??
-    clstats.uplink_LQ = txstats.GetLQ_serial();                                   // ignored by OpenTx
+    clstats.uplink_LQ = stats.GetLQ_serial();                                     // ignored by OpenTx
     clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
     clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"

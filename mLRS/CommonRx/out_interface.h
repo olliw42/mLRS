@@ -15,7 +15,7 @@
 #include "out.h"
 
 
-extern tRxStats rxstats;
+extern tStats stats;
 
 
 #ifdef USE_OUT
@@ -78,7 +78,7 @@ class tOut : public tOutBase
         tOutLinkStats lstats = {
           .receiver_rssi1 = stats.last_rssi1,
           .receiver_rssi2 = stats.last_rssi2,
-          .receiver_LQ = rxstats.GetLQ_rc(),
+          .receiver_LQ = stats.GetLQ_rc(),
           .receiver_snr = stats.GetLastSnr(),
           .receiver_antenna = stats.last_antenna,
           .receiver_transmit_antenna = stats.last_transmit_antenna,

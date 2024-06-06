@@ -24,8 +24,8 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected_and_rx_setup_available(void);
-extern tTxStats txstats;
+extern bool connected_and_rx_setup_available(void);
+extern tStats stats;
 
 
 #define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
@@ -438,15 +438,15 @@ void tTxMavlink::msg_seq_reset(void)
     msg_received_in_seq_cnt = 0;
     msg_seq_last = 0;
 
-    txstats.mav_msg_seq_lq = 0;
+    stats.mav_msg_seq_lq = 0;
 }
 
 
 void tTxMavlink::StatsUpdate1Hz(void)
 {
-    txstats.mav_msg_seq_lq = 0;
+    stats.mav_msg_seq_lq = 0;
     if (connected_and_rx_setup_available() && msg_seq_initialized) {
-        txstats.mav_msg_seq_lq = (msg_received_in_seq_cnt * 100) / msg_received_cnt;
+        stats.mav_msg_seq_lq = (msg_received_in_seq_cnt * 100) / msg_received_cnt;
     }
 
     msg_received_cnt = 0;

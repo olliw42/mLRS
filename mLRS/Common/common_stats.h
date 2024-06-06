@@ -13,8 +13,12 @@
 #include <stdint.h>
 #include "common_conf.h"
 #include "hal/device_conf.h"
+#include "libs/filters.h"
 #include "lq_counter.h"
 #include "common_types.h"
+
+
+extern bool connected(void);
 
 
 //-------------------------------------------------------
@@ -24,14 +28,27 @@
 class tStats
 {
   public:
-    void Init(uint16_t _frame_rate_hz);
-    void Clear(void);                 // called then not connected
+    void Init(uint8_t _maverage_period, uint16_t _frame_rate_hz, uint16_t _frame_rate_ms);
+
     void Update1Hz(void);             // called at 1 Hz
+    void Next(void);                  // called at each cycle, is called when transmit starts, or shortly after
+    void Clear(void);                 // called then not connected
+
+    void doFrameReceived(void);
+#ifdef DEVICE_IS_RECEIVER
+    void doValidCrc1FrameReceived(void);
+#endif
+    void doValidFrameReceived(void);
 
     uint8_t GetTransmitBandwidthUsage(void);
     uint8_t GetReceiveBandwidthUsage(void);
     int8_t GetLastRssi(void);
     int8_t GetLastSnr(void);
+
+#ifdef DEVICE_IS_RECEIVER
+    uint8_t GetLQ_rc(void);           // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
+#endif
+    uint8_t GetLQ_serial(void);
 
     // statistics for our device
 
@@ -73,6 +90,45 @@ class tStats
     // private fields
 
     uint16_t frame_rate_hz;
+
+    // extra stats available with mBridge
+#ifdef DEVICE_IS_TRANSMITTER
+    bool rx1_valid;
+    bool rx2_valid;
+    uint8_t fhss_curr_i;
+#endif
+
+    uint8_t mav_msg_seq_lq;
+
+    // moving average fields
+
+//    tLqCounterBase LQma_received;
+//    tLqCounterBase LQma_valid_crc1;
+//    tLqCounterBase LQma_valid;
+
+
+    // statistics for ARQ
+
+    tLpFilter cnt_frame;
+
+    void cntFrameTransmitted(void)
+    {
+        cnt_frame.Put(1000);
+//dbg.puts("1");
+    }
+
+    void cntFrameSkipped(void)
+    {
+        cnt_frame.Put(0);
+//dbg.puts("0");
+    }
+
+    int32_t cntFrameGet(void)
+    {
+//dbg.puts("!");dbg.puts(u32toBCD_s(cnt_frame.Get()));dbg.puts("!");
+        int32_t fn = cnt_frame.Get();
+        return (fn < 0) ? 0 : (fn > 1000) ? 1000 : fn; // limit to [0, 1000]
+    }
 };
 
 

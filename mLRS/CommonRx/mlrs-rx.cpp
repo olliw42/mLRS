@@ -97,13 +97,11 @@
 #include "../Common/arq.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
-#include "rxstats.h"
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
 
 
 tRxClock rxclock;
 tPowerupCounter powerup;
-tRxStats rxstats;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
@@ -320,8 +318,8 @@ static bool rxFrame_valid = false;
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ_rc = rxstats.GetLQ_rc();
-    frame_stats.LQ_serial = rxstats.GetLQ_serial();
+    frame_stats.LQ_rc = stats.GetLQ_rc();
+    frame_stats.LQ_serial = stats.GetLQ_serial();
 
     if (get_fresh_payload) {
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
@@ -332,9 +330,9 @@ static bool rxFrame_valid = false;
         rxFrame_valid = true;
 
         //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(rxstats.cntFrameGet());
+        tarq.SetRetryCntAuto(stats.cntFrameGet());
 
-        rxstats.cntFrameTransmitted();
+        stats.cntFrameTransmitted();
 
     } else {
         // rxFrame should still hold the previous data
@@ -344,9 +342,9 @@ static bool rxFrame_valid = false;
         rxFrame_valid = true;
 
         //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(rxstats.cntFrameGet());
+        tarq.SetRetryCntAuto(stats.cntFrameGet());
 
-        rxstats.cntFrameSkipped();
+        stats.cntFrameSkipped();
     }
 
 #ifdef USE_ARQ_DBG
@@ -439,8 +437,8 @@ if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8to
 
         process_received_frame(do_payload, frame);
 
-        rxstats.doValidCrc1FrameReceived();
-        if (rx_status == RX_STATUS_VALID) rxstats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
+        stats.doValidCrc1FrameReceived();
+        if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
 
     } else { // RX_STATUS_INVALID
     }
@@ -449,7 +447,7 @@ if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8to
     stats.last_antenna = antenna;
 
     // we count all received frames
-    rxstats.doFrameReceived();
+    stats.doFrameReceived();
 }
 
 
@@ -534,7 +532,7 @@ bool doPostReceive2;
 bool frame_missed;
 
 
-static inline bool connected(void)
+bool connected(void)
 {
     return (connect_state == CONNECT_STATE_CONNECTED);
 }
@@ -581,7 +579,7 @@ RESTARTCONTROLLER
     doPostReceive2 = false;
     frame_missed = false;
 
-    rxstats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz);
+    stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
@@ -851,10 +849,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
-            rxstats.Update1Hz();
+            stats.Update1Hz();
         }
-        rxstats.Next();
-        if (!connected()) rxstats.Clear();
+        stats.Next();
+        if (!connected()) stats.Clear();
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset();
@@ -901,7 +899,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), rxstats.GetLQ_rc());
+            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), stats.GetLQ_rc());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {

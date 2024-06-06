@@ -18,8 +18,8 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected(void);
-extern tTxStats txstats;
+extern bool connected(void);
+extern tStats stats;
 extern tConfigId config_id;
 
 
@@ -590,7 +590,7 @@ void tTxCli::stream(void)
         if (tnow_ms - tlast_ms >= 500) {
             tlast_ms = tnow_ms;
 
-            puts(u8toBCD_s(txstats.GetLQ_serial()));
+            puts(u8toBCD_s(stats.GetLQ_serial()));
             puts("(");
             puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             puts("),");
