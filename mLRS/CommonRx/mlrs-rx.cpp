@@ -612,8 +612,8 @@ INITCONTROLLER_END
         if (!tick_1hz) {
             dbg.puts(".");
 /*            dbg.puts("\nRX: ");
-            dbg.puts(u8toBCD_s(rxstats.GetLQ_rc())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(rxstats.GetLQ_serial()));
+            dbg.puts(u8toBCD_s(stats.GetLQ_rc())); dbg.putc(',');
+            dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
             dbg.puts(" (");
             dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
             dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
