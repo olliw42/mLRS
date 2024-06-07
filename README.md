@@ -1,4 +1,4 @@
-<p align="left"><a href="https://github.com/olliw42/mLRS-docu/blob/left-justify/logos/mLRS_logo_long_w_slogan_1280x768.png"><img src="https://github.com/olliw42/mLRS-docu/blob/left-justify/logos/mLRS_logo_long_w_slogan_1280x768.png" align="center" height="153" width="256" ></a>
+<p align="left"><a href="https://raw.githubusercontent.com/olliw42/mLRS-docu/master/logos/mLRS_logo_long_w_slogan_1280x768.png"><img src="https://raw.githubusercontent.com/olliw42/mLRS-docu/master/logos/mLRS_logo_long_w_slogan_1280x768.png" align="center" height="153" width="256" ></a>
 
 # mLRS #
 
