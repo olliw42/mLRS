@@ -330,7 +330,7 @@ static bool rxFrame_valid = false;
         rxFrame_valid = true;
 
         //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(stats.cntFrameGet());
+        tarq.SetRetryCntAuto(stats.cntFrameGet(), Config.Mode);
 
         stats.cntFrameTransmitted();
 
@@ -342,7 +342,7 @@ static bool rxFrame_valid = false;
         rxFrame_valid = true;
 
         //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(stats.cntFrameGet());
+        tarq.SetRetryCntAuto(stats.cntFrameGet(), Config.Mode);
 
         stats.cntFrameSkipped();
     }

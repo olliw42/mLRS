@@ -50,7 +50,7 @@ class tTransmitArq
     uint8_t SeqNo(void);
     void SetRetryCnt(uint8_t retry_cnt);
 
-    void SetRetryCntAuto(int32_t _frame_cnt);
+    void SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode);
 
     uint8_t status;
     uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
@@ -169,9 +169,25 @@ void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
 }
 
 
-void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt)
+void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode)
 {
-    SetRetryCnt((_frame_cnt >= 800) ? 2 : 1);
+    switch (mode) {
+    case MODE_FLRC_111HZ:
+        if (_frame_cnt >= 800) {
+            SetRetryCnt(3);
+        } else if (_frame_cnt >= 700) {
+            SetRetryCnt(2);
+        } else {
+            SetRetryCnt(1);
+        }
+        break;
+    case MODE_FSK_50HZ:
+    case MODE_50HZ:
+    case MODE_31HZ:
+    case MODE_19HZ:
+        SetRetryCnt((_frame_cnt >= 800) ? 2 : 1);
+    }
+    SetRetryCnt(1);
 }
 
 
@@ -342,7 +358,7 @@ class tTransmitArq
     bool GetFreshPayload(void) { return true; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
     void SetRetryCnt(uint8_t retry_cnt) {}
-    void SetRetryCntAuto(int32_t _frame_cnt) {}
+    void SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode) {}
 
     uint8_t seq_no;
 };
