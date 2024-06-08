@@ -45,7 +45,7 @@ void tInBase::Configure(uint8_t new_config)
         config_sbus(false);
         break;
     case IN_CONFIG_SBUS_INVERTED:
-        config_sbus(false);
+        config_sbus_inverted(false);
         break;
     }
 
@@ -58,7 +58,7 @@ void tInBase::Configure(uint8_t new_config)
         initialized = config_sbus(true);
         break;
     case IN_CONFIG_SBUS_INVERTED:
-        initialized = config_sbus(true);
+        initialized = config_sbus_inverted(true);
         break;
     }
 }
