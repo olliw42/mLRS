@@ -522,7 +522,7 @@ tRxFrame* frame;
 
     // receive ARQ, must come before process_received_frame()
     if (rx_status == RX_STATUS_VALID) {
-         rarq.Received(frame->status.seq_no);
+        rarq.Received(frame->status.seq_no);
     } else {
         rarq.FrameMissed();
     }
@@ -900,7 +900,9 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
         // valid_frame/frame lost logic is modified by ARQ, so get proper info from ARQ
-        // rarq.FrameLost()
+#ifndef USE_ARQ
+        if (!valid_frame_received != rarq.FrameLost()) { while(1){} } // let's do a check that we got it right
+#endif
         if (rarq.FrameLost()) {
             mavlink.FrameLost();
         }

@@ -55,7 +55,7 @@ class tTransmitArq
     uint8_t status;
     uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
     uint8_t payload_seq_no; // the seq_no associated to this payload
-    uint8_t payload_retry_cnt; // retry count for this payload
+    uint8_t payload_retry_cnt; // maximum number of allowed retries for this payload
     uint8_t payload_retries; // number of retries for this payload
 
     bool SimulateMiss(void);
@@ -268,8 +268,6 @@ void tReceiveArq::Disconnected(void)
 
 void tReceiveArq::spin(void)
 {
-    if (status == ARQ_RX_IDLE) { while(1); } // must not happen, should have been called after Missed,Received
-
     switch (status) {
     case ARQ_RX_RECEIVED_WAS_IDLE:
         accept_received_payload = true;
@@ -287,8 +285,8 @@ void tReceiveArq::spin(void)
         accept_received_payload = false;
         break;
 
-    default:
-        accept_received_payload = false;
+    default: // ARQ_RX_IDLE
+        while(1); // must not happen, should have been called after Missed,Received
     }
 
     frame_lost = false;
@@ -367,15 +365,17 @@ class tTransmitArq
 class tReceiveArq
 {
   public:
-    void Init(void) {}
+    void Init(void) { frame_lost = false; }
 
     void Disconnected(void) {}
-    void FrameMissed(void) {}
-    void Received(uint8_t _seq_no) {}
+    void FrameMissed(void) { frame_lost = true; }
+    void Received(uint8_t _seq_no) { frame_lost = false; }
     bool AcceptPayload(void) { return true; }
-    bool FrameLost(void) { return false; }
+    bool FrameLost(void) { return frame_lost; }
 
     uint8_t AckSeqNo(void) { return 1; }
+
+    bool frame_lost;
 };
 
 #undef USE_ARQ_DBG
