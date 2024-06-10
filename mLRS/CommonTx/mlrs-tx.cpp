@@ -526,6 +526,10 @@ tRxFrame* frame;
     } else {
         rarq.FrameMissed();
     }
+    // check this before received data may be passed to parsers
+    if (rarq.FrameLost()) {
+        mavlink.FrameLost();
+    }
 
 #ifdef USE_ARQ_DBG
 dbg.puts("\nrec");
@@ -899,13 +903,12 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         }
 
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
-        // valid_frame/frame lost logic is modified by ARQ, so get proper info from ARQ
+        // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
-        if (!valid_frame_received != rarq.FrameLost()) { while(1){} } // let's do a check that we got it right
-#endif
-        if (rarq.FrameLost()) {
+        if (!valid_frame_received) {
             mavlink.FrameLost();
         }
+#endif
 
         stats.fhss_curr_i = fhss.CurrI();
         stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
