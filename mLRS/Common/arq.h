@@ -58,8 +58,6 @@ class tTransmitArq
     uint8_t payload_retry_cnt; // maximum number of allowed retries for this payload
     uint8_t payload_retries; // number of retries for this payload
 
-    uint8_t last_acked_payload_seq_no;
-
     bool SimulateMiss(void);
 };
 
@@ -71,8 +69,6 @@ void tTransmitArq::Init(void)
     payload_seq_no = 0;
     payload_retry_cnt = UINT8_MAX; // 0 = off, 255 = infinite
     payload_retries = 0;
-
-    last_acked_payload_seq_no = payload_seq_no - 1;
 }
 
 
@@ -108,7 +104,6 @@ void tTransmitArq::Received(uint8_t ack_seq_no)
 bool tTransmitArq::GetFreshPayload(void)
 {
     if (payload_retry_cnt == 0) { // ARQ disabled, new payload each time
-        last_acked_payload_seq_no = payload_seq_no;
         payload_seq_no++;
         payload_retries = 0;
         return true;
@@ -118,7 +113,6 @@ bool tTransmitArq::GetFreshPayload(void)
     case ARQ_TX_IDLE:
         // we have no history info
         // so send new payload
-        last_acked_payload_seq_no = payload_seq_no;
         payload_seq_no++;
         payload_retries = 0;
         return true;
@@ -142,14 +136,8 @@ bool tTransmitArq::GetFreshPayload(void)
                     return false;
                 }
             }
-            // too many retries, shall send new payload
-            // advance seq_no only if not already too far ahead
-            if (((payload_seq_no - last_acked_payload_seq_no) & 0x07) < 7) payload_seq_no++;
-            payload_retries = 0;
-            return true;
         }
-        // recipient acked the previous payload
-        last_acked_payload_seq_no = payload_seq_no;
+        // recipient acked the previous payload or too many retries, shall send new payload
         payload_seq_no++; // give this payload the next seq_no
         payload_retries = 0;
         return true;
@@ -164,7 +152,7 @@ bool tTransmitArq::GetFreshPayload(void)
         } else { // ARQ with finite retries
             payload_retries++;
             if (payload_retries > payload_retry_cnt) { // too many retries, send new payload
-                if (((payload_seq_no - last_acked_payload_seq_no) & 0x07) < 7) payload_seq_no++;
+                payload_seq_no++;
                 payload_retries = 0;
                 return true;
             }
@@ -305,18 +293,19 @@ void tReceiveArq::spin(void)
         ack_seq_no = received_seq_no;
         break;
 
-    case ARQ_RX_RECEIVED: {
+    case ARQ_RX_RECEIVED:
         // we got a frame with valid payload
         // if payload's seq_no is different from the last => we got a new payload
         accept_received_payload = (received_seq_no != received_seq_no_last); // new seq no received, so accept it
 
         // the received seq_no is 3 bits
         // we can check if we lost a frame if the received seq no is larger than just +1
+        // this fails if it had been 8-1 = 7 missed frames
         if (((received_seq_no - received_seq_no_last) & 0x07) > 1) frame_lost = true;
 
         received_seq_no_last = received_seq_no;
         ack_seq_no = received_seq_no;
-        break; }
+        break;
 
     case ARQ_RX_FRAME_MISSED:
         // no frame or invalid frame received, hence no new payload received
