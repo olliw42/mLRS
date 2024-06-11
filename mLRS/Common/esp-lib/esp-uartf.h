@@ -5,10 +5,17 @@
 //*******************************************************
 // ESP UARTF
 //********************************************************
+// For ESP32:
+// usefull resource
+// - https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/uart.html
+//********************************************************
 #ifndef ESPLIB_UARTF_H
 #define ESPLIB_UARTF_H
 
 
+//-------------------------------------------------------
+// Enums
+//-------------------------------------------------------
 #ifndef ESPLIB_UART_ENUMS
 #define ESPLIB_UART_ENUMS
 
@@ -27,6 +34,10 @@ typedef enum {
 #endif
 
 
+//-------------------------------------------------------
+// Defines
+//-------------------------------------------------------
+
 #ifdef UARTF_USE_SERIAL
   #define UARTF_SERIAL_NO       Serial
 #elif defined UARTF_USE_SERIAL1
@@ -44,12 +55,39 @@ typedef enum {
   #define UARTF_RXBUFSIZE       256 // MUST be 2^N
 #endif
 
+#ifdef ESP32
+  #if (UARTF_TXBUFSIZE > 0) && (UARTF_TXBUFSIZE < 256)
+    #error UARTF_TXBUFSIZE must be 0 or >= 256
+  #endif
+  #if (UARTF_RXBUFSIZE < 256)
+    #error UARTF_RXBUFSIZE must be >= 256
+  #endif
+#endif
+
+
+//-------------------------------------------------------
+// TX routines
+//-------------------------------------------------------
 
 IRAM_ATTR void uartf_putbuf(uint8_t* buf, uint16_t len)
 {
     UARTF_SERIAL_NO.write((uint8_t*)buf, len);
 }
 
+
+IRAM_ATTR void uartf_tx_flush(void)
+{
+#ifdef ESP32
+    // flush of tx buffer not available
+#elif defined ESP8266
+    UARTF_SERIAL_NO.flush();
+#endif
+}
+
+
+//-------------------------------------------------------
+// RX routines
+//-------------------------------------------------------
 
 IRAM_ATTR char uartf_getc(void)
 {
@@ -63,12 +101,6 @@ IRAM_ATTR void uartf_rx_flush(void)
 }
 
 
-IRAM_ATTR void uartf_tx_flush(void)
-{
-    UARTF_SERIAL_NO.flush();
-}
-
-
 IRAM_ATTR uint16_t uartf_rx_bytesavailable(void)
 {
     return (UARTF_SERIAL_NO.available() > 0) ? UARTF_SERIAL_NO.available() : 0;
@@ -78,11 +110,6 @@ IRAM_ATTR uint16_t uartf_rx_bytesavailable(void)
 IRAM_ATTR uint16_t uartf_rx_available(void)
 {
     return (UARTF_SERIAL_NO.available() > 0) ? 1 : 0;
-}
-
-IRAM_ATTR uint8_t uartf_has_systemboot(void)
-{
-    return 0;  // ESP can't reboot into system bootloader
 }
 
 
@@ -126,7 +153,7 @@ void _uartf_initit(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM stopbit
     UARTF_SERIAL_NO.begin(baud, config);
 #endif
 
-    UARTF_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 127 bytes
+    UARTF_SERIAL_NO.setRxFIFOFull(8);  // > 57600 baud sets to 120 which is too much, buffer only 128 bytes
     UARTF_SERIAL_NO.setRxTimeout(1);   // wait for 1 symbol (~11 bits) to trigger Rx ISR, default 2
 
 #elif defined ESP8266
@@ -150,16 +177,28 @@ void uartf_setprotocol(uint32_t baud, UARTPARITYENUM parity, UARTSTOPBITENUM sto
 }
 
 
-void uartf_init(void)
+void uartf_init_isroff(void)
 {
     UARTF_SERIAL_NO.end();
     _uartf_initit(UARTF_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
 }
 
-void uartf_init_isroff(void)
+
+void uartf_init(void)
 {
-    UARTF_SERIAL_NO.end();
-    _uartf_initit(UARTF_BAUD, XUART_PARITY_NO, UART_STOPBIT_1);
+    uartf_init_isroff();
+    // isr is enabled !
+}
+
+
+//-------------------------------------------------------
+// System bootloader
+//-------------------------------------------------------
+// ESP8266, ESP32 can't reboot into system bootloader
+
+IRAM_ATTR uint8_t uartf_has_systemboot(void)
+{
+    return 0;
 }
 
 

@@ -314,7 +314,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
 // convert fmav msg structure into fmavX packet
 // fmav_message_t has all info on the packet which we need, so it's quite straightforward to do
 
-FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fmav_message_t* msg)
+FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* buf, fmav_message_t* msg)
 {
     uint16_t pos = 0;
     uint8_t flags_ext = 0;
@@ -440,7 +440,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_buf(uint8_t* buf, fma
 // parse the fmavX stream into regular fmav frame_buf
 // returns NONE, HAS_HEADER, or OK
 
-FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* buf, fmav_status_t* status, uint8_t c)
+FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
     fmavx_status.header[fmavx_status.pos++] = c; // memorize
 
@@ -589,7 +589,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_header_to_frame_buf(uint8_t* bu
 }
 
 
-FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
+FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
     if (status->rx_cnt >= MAVLINKX_FRAME_LEN_MAX) { // this should never happen, but play it safe
         status->rx_state = FASTMAVLINK_PARSE_STATE_IDLE;
@@ -619,7 +619,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
     case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
-        _fmavX_parse_header_to_frame_buf(buf, status, c);
+        _fmavX_parse_headerX_to_frame_buf(buf, status, c);
         result->res = FASTMAVLINK_PARSE_RESULT_NONE;
         return FASTMAVLINK_PARSE_RESULT_NONE;
 
@@ -648,7 +648,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
                 status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
 
                 for (uint8_t n = next_magic_pos + 1; n < len; n++) {
-                    _fmavX_parse_header_to_frame_buf(buf, status, head[n]);
+                    _fmavX_parse_headerX_to_frame_buf(buf, status, head[n]);
                 }
             }
 
@@ -702,11 +702,11 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_to_frame_buf(fmav_result_t* r
 
 // convenience wrapper
 // returns 0, or 1
-FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_check_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
+FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_checkX_to_frame_buf(fmav_result_t* result, uint8_t* buf, fmav_status_t* status, uint8_t c)
 {
 uint8_t res;
 
-    res = fmavX_parse_to_frame_buf(result, buf, status, c);
+    res = fmavX_parseX_to_frame_buf(result, buf, status, c);
     // result can be NONE, HAS_HEADER, or OK
     if (res != FASTMAVLINK_PARSE_RESULT_OK) return 0;
 

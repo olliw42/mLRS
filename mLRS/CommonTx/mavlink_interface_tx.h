@@ -261,7 +261,7 @@ void tTxMavlink::putc(char c)
     fmav_result_t result;
 #ifdef USE_FEATURE_MAVLINKX
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        fmavX_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
     } else {
         fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
     }
@@ -317,7 +317,7 @@ void tTxMavlink::send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in)
 
     uint16_t len;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        len = fmavX_msg_to_frame_buf(_buf, &msg_serial_out);
+        len = fmavX_msg_to_frame_bufX(_buf, &msg_serial_out);
     } else {
         len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
     }
