@@ -485,6 +485,9 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
 
     // output data on serial
     if (sx_serial.IsEnabled()) {
+        // check if the mavlink parser needs reset
+        mavlink.CheckReset(frame->payload, frame->status.payload_len);
+
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
             sx_serial.putc(c);

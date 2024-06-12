@@ -40,6 +40,7 @@ class tTxMavlink
     void Do(void);
     uint8_t VehicleState(void);
     void FrameLost(void);
+    void CheckReset(uint8_t* payload, uint16_t payload_len);
 
     void putc(char c);
     bool available(void);
@@ -158,6 +159,71 @@ void tTxMavlink::FrameLost(void)
 #ifdef USE_FEATURE_MAVLINKX
     // reset parser link in -> serial out
     fmav_parse_reset(&status_link_in);
+#endif
+}
+
+
+uint16_t fmavX_search_marker(uint8_t* payload, uint16_t payload_len)
+{
+    for (uint16_t n = 1; n < payload_len; n++) {
+      if (payload[n-1] == MAVLINKX_MAGIC_1 && payload[n] == MAVLINKX_MAGIC_2) { return n - 1; }
+    }
+    return UINT16_MAX; // not found
+}
+
+
+void tTxMavlink::CheckReset(uint8_t* payload, uint16_t payload_len)
+{
+#ifdef USE_FEATURE_MAVLINKX
+    switch (status_link_in.rx_state) {
+    case FASTMAVLINK_PARSE_STATE_IDLE:
+        // we expect marker at begin of payload
+        // if not, we should reset
+        // however, since IDLE, it is already in reset state
+        // => nothing to do
+        break;
+    case FASTMAVLINK_PARSE_STATE_MAGIC_2:
+    case FASTMAVLINK_PARSE_STATE_FLAGS:
+    case FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION:
+    case FASTMAVLINK_PARSE_STATE_LEN:
+    case FASTMAVLINK_PARSE_STATE_SEQ:
+    case FASTMAVLINK_PARSE_STATE_SYSID:
+    case FASTMAVLINK_PARSE_STATE_COMPID:
+    case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
+    case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
+    case FASTMAVLINK_PARSE_STATE_MSGID_1:
+    case FASTMAVLINK_PARSE_STATE_MSGID_2:
+    case FASTMAVLINK_PARSE_STATE_MSGID_3:
+    case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
+    case FASTMAVLINK_PARSE_STATE_CRC8:
+        // parser is parsing the header
+        // since the parser retracts if header is not valid, we don't have to do anything, the parser will account for
+        // => nothing to do
+        break;
+    case FASTMAVLINK_PARSE_STATE_PAYLOAD: {
+        // parser is in the process of parsing the payload
+        // => we do know the expected position of the next marker, and can compare to the actual position
+        // so search for the next marker
+        uint16_t pos = fmavX_search_marker(payload, payload_len);
+        uint16_t expected_pos = status_link_in.rx_header_len + fmavx_status.rx_payload_len + 2 - status_link_in.rx_cnt;
+        if (pos == UINT16_MAX) {
+            // no marker in payload
+            // could be because mavlink frame is very long
+            if (expected_pos < (FRAME_RX_PAYLOAD_LEN - 2)) {
+                // ARGH, we missed a frame
+            }
+        } else {
+            // marker in payload
+            // let's see it is where we expect
+            if (expected_pos != pos) {
+                // ARGH, we missed a frame
+            }
+        }
+        break; }
+    case FASTMAVLINK_FASTPARSE_STATE_FRAME:
+        // parser is in the process of parsing the end crc16
+        break;
+    };
 #endif
 }
 
