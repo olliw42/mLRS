@@ -76,6 +76,11 @@
 #endif
 
 
+#ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+#include "tx-hal-radiomaster-rp4td-2400-esp32.h"
+#endif
+
+
 // -- DIY
 
 #ifdef RX_DIY_DEV_900_ESP8266
