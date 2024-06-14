@@ -10,8 +10,6 @@
 // ESP8285, ELRS iFlight 2400 PA RX
 //-------------------------------------------------------
 
-#define POWER_OVERLAY
-
 #include "rx-hal-generic-2400-pa-esp8285.h"
 
 

@@ -10,8 +10,6 @@
 // ESP32, ELRS iFlight 2400 True Diversity PA RX
 //-------------------------------------------------------
 
-#define POWER_OVERLAY
-
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 
 
