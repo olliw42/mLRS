@@ -81,7 +81,7 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- SX2: SX12xx & SPI
-// antenna1 = right ufl
+// antenna2 = right ufl
 
 #define SX2_CS_IO                 IO_P27
 #define SX2_DIO0                  IO_P36
