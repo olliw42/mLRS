@@ -217,6 +217,17 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
+//-- Abhi Boards
+
+#ifdef TX_DIY_G484RE
+#include "stm32/tx-hal-diy-abhi-g484re.h"
+#endif
+
+#ifdef RX_DIY_G484RE
+#include "stm32/rx-hal-diy-abhi-g484re.h"
+#endif
+
+
 //-------------------------------------------------------
 // ESP Boards
 //-------------------------------------------------------

@@ -331,6 +331,24 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
+//-- Abhi Boards
+
+#ifdef TX_DIY_G484RE
+  #define DEVICE_NAME "DIY G484RE"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_DIY_G484RE
+  #define DEVICE_NAME "DIY RX G484RE"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX126x
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  //#define FREQUENCY_BAND_866_MHZ_IN
+#endif
+
+
 //-------------------------------------------------------
 // ESP Boards
 //-------------------------------------------------------
