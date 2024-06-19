@@ -12,8 +12,8 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
-#define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
-#define DEVICE_HAS_IN_ON_JRPIN5_RX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
+//#define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
+#define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
 // #define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
 // #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 //#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
@@ -52,15 +52,16 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART5_PC12PD2 // JR pin5, MBridge
+#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
+#define UART_USE_RX_IO            IO_PA15
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
+#define JRPIN5_FULL_INTERNAL_ON_TX
 
 #define UARTF_USE_LPUART1_PC1PC0 // debug
 #define UARTF_BAUD                115200
@@ -70,7 +71,7 @@
 #define UARTF_USE_RX
 #define UARTF_RXBUFSIZE           512
 
-#define UARTE_USE_UART2_PB3PB4 // in pin
+#define UART_USE_UART5_PC12PD2 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
@@ -173,15 +174,14 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PC0
-#define LED_RED                   IO_PC1
-#define LED_RIGHT_GREEN           IO_PA0
+#define LED_GREEN                 IO_PA10
+#define LED_RED                   IO_PB5
 
 void leds_init(void)
 {
     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+//    gpio_init(LED_RIGHT_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
 }
 
 void led_green_off(void) { gpio_low(LED_GREEN); }
