@@ -15,7 +15,7 @@
 
 
 // simple rate filter for MAVLink interface
-class tLPFilterRate
+class tLpFilterRate
 {
   public:
     void Reset(void);

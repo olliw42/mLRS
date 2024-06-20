@@ -85,7 +85,7 @@ class tRxMavlink
     uint8_t radio_status_txbuf;
 
     uint32_t bytes_link_out_cnt; // for rate filter
-    tLPFilterRate bytes_link_out_rate_filt;
+    tLpFilterRate bytes_link_out_rate_filt;
 
     typedef enum {
         TXBUF_STATE_NORMAL = 0,
@@ -521,7 +521,7 @@ bool tRxMavlink::handle_txbuf_ardupilot(uint32_t tnow_ms)
 
     // only for "educational" purposes currently
     bytes_link_out_rate_filt.Update(tnow_ms, bytes_link_out_cnt, 1000);
-#if 0 // Debug
+#if 0 // debug
 static uint32_t t_last = 0;
 uint32_t t = millis32(), dt = t - t_last; t_last = t;
 dbg.puts("\nMa: ");
@@ -656,9 +656,9 @@ if(txbuf<25) dbg.puts("*0.8 "); else
 if(txbuf<35) dbg.puts("*0.975 "); else
 if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 #endif
-    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100ms
+    // increase rate faster after transient traffic since PX4 currently has no fast recovery. Could also try 100 ms
     if ((txbuf_state == TXBUF_STATE_NORMAL) && (txbuf == 100)) {
-        radio_status_tlast_ms -= 800; // do again in 200ms
+        radio_status_tlast_ms -= 800; // do again in 200 ms
         bytes_link_out = (bytes_link_out * 4)/5; // rolling average
     } else {
         bytes_link_out = 0; // reset, to restart rate measurement

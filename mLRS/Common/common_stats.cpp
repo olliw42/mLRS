@@ -16,17 +16,15 @@
 
 void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
 {
-    frame_rate_hz = _frame_rate_hz;
-
-    frames_received.Init(frame_rate_hz);
+    frames_received.Init(_frame_rate_hz);
 #ifdef DEVICE_IS_RECEIVER
-    valid_crc1_received.Init(frame_rate_hz);
+    valid_crc1_received.Init(_frame_rate_hz);
 #endif
-    valid_frames_received.Init(frame_rate_hz);
-    serial_data_transmitted.Init(frame_rate_hz);
-    serial_data_received.Init(frame_rate_hz);
-    bytes_transmitted.Init(frame_rate_hz);
-    bytes_received.Init(frame_rate_hz);
+    valid_frames_received.Init(_frame_rate_hz);
+    serial_data_transmitted.Init(_frame_rate_hz);
+    serial_data_received.Init(_frame_rate_hz);
+    bytes_transmitted.Init(_frame_rate_hz);
+    bytes_received.Init(_frame_rate_hz);
 
     Clear();
 

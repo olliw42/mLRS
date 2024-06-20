@@ -86,10 +86,6 @@ class tStats
 
     uint8_t transmit_seq_no;
 
-    // private fields
-
-    uint16_t frame_rate_hz;
-
     // extra stats available with mBridge
 #ifdef DEVICE_IS_TRANSMITTER
     bool rx1_valid;
