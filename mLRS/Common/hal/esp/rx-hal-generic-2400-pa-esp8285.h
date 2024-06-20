@@ -107,6 +107,7 @@ IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- POWER
+#ifndef POWER_OVERLAY
 
 #define POWER_GAIN_DBM            18 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM  // maximum allowed sx power
@@ -120,3 +121,5 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
 };
+
+#endif // !POWER_OVERLAY

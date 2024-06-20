@@ -29,6 +29,16 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_ELRS_GENERIC_900_TD_PA_ESP32
+  #define DEVICE_NAME "GENERIC 900 TD PA"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+//-- Generic 868/915 MHz ELRS devices with overlays or other variations
+
 #ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
   #define DEVICE_NAME "RM BR3 900"
   #define DEVICE_IS_RECEIVER
@@ -37,8 +47,8 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_ELRS_GENERIC_900_TD_PA_ESP32
-  #define DEVICE_NAME "GENERIC 900 TD PA"
+#ifdef RX_ELRS_IFLIGHT_ELRS_TD_900_ESP32
+  #define DEVICE_NAME "IFLIGHT 900 TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -76,15 +86,17 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+//-- Generic 2.4 GHz ELRS boards with overlays or other variations
+
 #ifdef RX_ELRS_IFLIGHT_ELRS_TD_2400_ESP32
-  #define DEVICE_NAME "IFLIGHT 2400 TD PA"
+  #define DEVICE_NAME "IFLIGHT 2400 TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef RX_ELRS_IFLIGHT_ELRS_2400_ESP8285
-  #define DEVICE_NAME "IFLIGHT 2400 PA"
+  #define DEVICE_NAME "IFLIGHT 2400"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ

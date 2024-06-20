@@ -31,17 +31,18 @@
 
 
 //-- SX1: SX12xx & SPI
+// antenna1 = left ufl
 
-#define SPI_CS_IO                 IO_P27
+#define SPI_CS_IO                 IO_P13
 #define SPI_MISO                  IO_P33
 #define SPI_MOSI                  IO_P32
 #define SPI_SCK                   IO_P25
 #define SPI_FREQUENCY             10000000L
-#define SX_DIO0                   IO_P36
-#define SX_DIO1                   IO_P37
-#define SX_RESET                  IO_P26
-#define SX_RX_EN                  IO_P10
-#define SX_TX_EN                  IO_P14
+#define SX_DIO0                   IO_P39
+#define SX_DIO1                   IO_P34
+#define SX_RESET                  IO_P21
+#define SX_RX_EN                  IO_P9
+#define SX_TX_EN                  IO_P15
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
@@ -80,13 +81,14 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- SX2: SX12xx & SPI
+// antenna2 = right ufl
 
-#define SX2_CS_IO                 IO_P13
-#define SX2_DIO0                  IO_P39
-#define SX2_DIO1                  IO_P34
-#define SX2_RESET                 IO_P21
-#define SX2_RX_EN                 IO_P9
-#define SX2_TX_EN                 IO_P15
+#define SX2_CS_IO                 IO_P27
+#define SX2_DIO0                  IO_P36
+#define SX2_DIO1                  IO_P37
+#define SX2_RESET                 IO_P26
+#define SX2_RX_EN                 IO_P10
+#define SX2_TX_EN                 IO_P14
 
 IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
 
@@ -231,13 +233,14 @@ IRAM_ATTR void led_blue_toggle(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            14 // gain of a PA stage if present
+#define POWER_GAIN_DBM            16 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },  // really about 19 dBm?
-    { .dbm = POWER_27_DBM, .mW = 500 },    // 27 dBm
+    { .dbm = POWER_20_DBM, .mW = 100 }, // PA=14 gives ~22.5 dBm, 176 mW, PA=16 ~20.5 dBm, 111 mW,
+    { .dbm = POWER_24_DBM, .mW = 250 }, // PA=14 gives ~25 dBm, 330 mW, PA=16 ~24.2 dBm, 256 mW
+    { .dbm = POWER_27_DBM, .mW = 500 }, // PA=14 gives ~26.3 dBm, 420 mW, PA=16 ~25.7 dBm, 370 mW
 };
