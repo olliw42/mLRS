@@ -424,8 +424,8 @@ uint8_t payload_len = 0;
             if (sx_serial.IsEnabled()) {
                 for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
                     if (!sx_serial.available()) break;
-                    payload[payload_len] = sx_serial.getc();
-                    payload_len++;
+                    uint8_t c = sx_serial.getc();
+                    payload[payload_len++] = c;
                 }
             }
 
@@ -476,7 +476,7 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
 
     if (!do_payload) return; // always true
 
-    if (!accept_payload) return;
+    if (!accept_payload) return; // frame has no fresh payload
 
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
@@ -485,9 +485,6 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
 
     // output data on serial
     if (sx_serial.IsEnabled()) {
-        // check if the mavlink parser needs reset
-        mavlink.CheckReset(frame->payload, frame->status.payload_len);
-
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
             sx_serial.putc(c);
@@ -974,7 +971,6 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
             stats.Update1Hz();
-            mavlink.StatsUpdate1Hz();
         }
         stats.Next();
         if (!connected()) stats.Clear();

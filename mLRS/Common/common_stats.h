@@ -50,6 +50,9 @@ class tStats
 #endif
     uint8_t GetLQ_serial(void);
 
+    void doMavlinkCnt(bool valid);
+    uint8_t GetMavlinkLQ(void);
+
     // statistics for our device
 
     tStatsLQ frames_received;         // number of frames received, practically not very relevant
@@ -63,6 +66,8 @@ class tStats
 
     tStatsBytes bytes_transmitted;    // retransmissions are not counted
     tStatsBytes bytes_received;       // retransmissions are not counted
+
+    tStatsMavlinkLQ mav_packets_received;   // number of MAVLink packets received
 
     // RF statistics for our device
 
@@ -83,13 +88,16 @@ class tStats
     uint8_t received_antenna;
     uint8_t received_transmit_antenna;
 
-    // seq no in the last transmitted frame
+    // statistics for ARQ, LPF filter for the number of frames with fresh payload
+
+    tLpFilter frame_cnt;
+    void cntFrameTransmitted(void);
+    void cntFrameSkipped(void);
+    int32_t GetFrameCnt(void);
+
+    // seq no in the last transmitted frame, only tx
 
     uint8_t transmit_seq_no;
-
-    // private fields
-
-    uint16_t frame_rate_hz;
 
     // extra stats available with mBridge
 #ifdef DEVICE_IS_TRANSMITTER
@@ -98,37 +106,11 @@ class tStats
     uint8_t fhss_curr_i;
 #endif
 
-    uint8_t mav_msg_seq_lq;
-
     // moving average fields
 
 //    tLqCounterBase LQma_received;
 //    tLqCounterBase LQma_valid_crc1;
 //    tLqCounterBase LQma_valid;
-
-
-    // statistics for ARQ
-
-    tLpFilter cnt_frame;
-
-    void cntFrameTransmitted(void)
-    {
-        cnt_frame.Put(1000);
-//dbg.puts("1");
-    }
-
-    void cntFrameSkipped(void)
-    {
-        cnt_frame.Put(0);
-//dbg.puts("0");
-    }
-
-    int32_t cntFrameGet(void)
-    {
-//dbg.puts("!");dbg.puts(u32toBCD_s(cnt_frame.Get()));dbg.puts("!");
-        int32_t fn = cnt_frame.Get();
-        return (fn < 0) ? 0 : (fn > 1000) ? 1000 : fn; // limit to [0, 1000]
-    }
 };
 
 

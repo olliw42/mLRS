@@ -851,8 +851,8 @@ tCrsfLinkStatistics clstats;
     clstats.downlink_LQ = stats.GetLQ_serial();                             // OpenTx -> "TQly"
     clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
 
-    // misuse it
-    clstats.uplink_rssi2 = stats.mav_msg_seq_lq;
+    // misuse 2RSS for reporting the MAVLink packet link quality
+    clstats.uplink_rssi2 = stats.GetMavlinkLQ();
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS, &clstats, CRSF_LINK_STATISTICS_LEN);
 }

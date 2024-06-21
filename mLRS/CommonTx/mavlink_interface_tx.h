@@ -40,14 +40,11 @@ class tTxMavlink
     void Do(void);
     uint8_t VehicleState(void);
     void FrameLost(void);
-    void CheckReset(uint8_t* payload, uint16_t payload_len);
 
     void putc(char c);
     bool available(void);
     uint8_t getc(void);
     void flush(void);
-
-    void StatsUpdate1Hz(void);
 
   private:
     void send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in);
@@ -85,12 +82,9 @@ class tTxMavlink
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 
-    // MissonPlanner style link quality
+    // MAVLink packet link quality
     bool msg_seq_initialized;
-    uint32_t msg_received_cnt;
-    uint32_t msg_received_in_seq_cnt;
     uint8_t msg_seq_last;
-    void msg_seq_reset(void);
 };
 
 
@@ -142,7 +136,8 @@ void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBa
     vehicle_type = UINT8_MAX;
     vehicle_flight_mode = UINT8_MAX;
 
-    msg_seq_reset();
+    msg_seq_initialized = false;
+    msg_seq_last = 0;
 }
 
 
@@ -163,71 +158,6 @@ void tTxMavlink::FrameLost(void)
 }
 
 
-uint16_t fmavX_search_marker(uint8_t* payload, uint16_t payload_len)
-{
-    for (uint16_t n = 1; n < payload_len; n++) {
-      if (payload[n-1] == MAVLINKX_MAGIC_1 && payload[n] == MAVLINKX_MAGIC_2) { return n - 1; }
-    }
-    return UINT16_MAX; // not found
-}
-
-
-void tTxMavlink::CheckReset(uint8_t* payload, uint16_t payload_len)
-{
-#ifdef USE_FEATURE_MAVLINKX
-    switch (status_link_in.rx_state) {
-    case FASTMAVLINK_PARSE_STATE_IDLE:
-        // we expect marker at begin of payload
-        // if not, we should reset
-        // however, since IDLE, it is already in reset state
-        // => nothing to do
-        break;
-    case FASTMAVLINK_PARSE_STATE_MAGIC_2:
-    case FASTMAVLINK_PARSE_STATE_FLAGS:
-    case FASTMAVLINK_PARSE_STATE_FLAGS_EXTENSION:
-    case FASTMAVLINK_PARSE_STATE_LEN:
-    case FASTMAVLINK_PARSE_STATE_SEQ:
-    case FASTMAVLINK_PARSE_STATE_SYSID:
-    case FASTMAVLINK_PARSE_STATE_COMPID:
-    case FASTMAVLINK_PARSE_STATE_TARGET_SYSID:
-    case FASTMAVLINK_PARSE_STATE_TARGET_COMPID:
-    case FASTMAVLINK_PARSE_STATE_MSGID_1:
-    case FASTMAVLINK_PARSE_STATE_MSGID_2:
-    case FASTMAVLINK_PARSE_STATE_MSGID_3:
-    case FASTMAVLINK_PARSE_STATE_CRC_EXTRA:
-    case FASTMAVLINK_PARSE_STATE_CRC8:
-        // parser is parsing the header
-        // since the parser retracts if header is not valid, we don't have to do anything, the parser will account for
-        // => nothing to do
-        break;
-    case FASTMAVLINK_PARSE_STATE_PAYLOAD: {
-        // parser is in the process of parsing the payload
-        // => we do know the expected position of the next marker, and can compare to the actual position
-        // so search for the next marker
-        uint16_t pos = fmavX_search_marker(payload, payload_len);
-        uint16_t expected_pos = status_link_in.rx_header_len + fmavx_status.rx_payload_len + 2 - status_link_in.rx_cnt;
-        if (pos == UINT16_MAX) {
-            // no marker in payload
-            // could be because mavlink frame is very long
-            if (expected_pos < (FRAME_RX_PAYLOAD_LEN - 2)) {
-                // ARGH, we missed a frame
-            }
-        } else {
-            // marker in payload
-            // let's see it is where we expect
-            if (expected_pos != pos) {
-                // ARGH, we missed a frame
-            }
-        }
-        break; }
-    case FASTMAVLINK_FASTPARSE_STATE_FRAME:
-        // parser is in the process of parsing the end crc16
-        break;
-    };
-#endif
-}
-
-
 void tTxMavlink::Do(void)
 {
     uint32_t tnow_ms = millis32();
@@ -239,7 +169,7 @@ void tTxMavlink::Do(void)
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
-        msg_seq_reset();
+        msg_seq_initialized = false;
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
@@ -475,48 +405,20 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
     if (msg->sysid != vehicle_sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
 
     switch (msg->msgid) {
-    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE: {
+    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
         fmav_extended_sys_state_t payload;
         fmav_msg_extended_sys_state_decode(&payload, msg);
         vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
-        } break;
+        }break;
     }
 
-    // MissonPlanner style link quality, for autopilot only
+    // MAVLink packet link quality, for stream from autopilot only
     if (msg_seq_initialized) {
-        msg_received_cnt++;
-        uint8_t seq_expected = msg_seq_last + 1;
-        if (seq_expected == msg->seq) msg_received_in_seq_cnt++;
+        uint8_t expected_seq = msg_seq_last + 1;
+        stats.doMavlinkCnt(msg->seq == expected_seq);
     }
     msg_seq_initialized = true;
     msg_seq_last = msg->seq;
-}
-
-
-//-------------------------------------------------------
-// MAVLink Stats
-//-------------------------------------------------------
-
-void tTxMavlink::msg_seq_reset(void)
-{
-    msg_seq_initialized = false;
-    msg_received_cnt = 0;
-    msg_received_in_seq_cnt = 0;
-    msg_seq_last = 0;
-
-    stats.mav_msg_seq_lq = 0;
-}
-
-
-void tTxMavlink::StatsUpdate1Hz(void)
-{
-    stats.mav_msg_seq_lq = 0;
-    if (connected_and_rx_setup_available() && msg_seq_initialized) {
-        stats.mav_msg_seq_lq = (msg_received_in_seq_cnt * 100) / msg_received_cnt;
-    }
-
-    msg_received_cnt = 0;
-    msg_received_in_seq_cnt = 0;
 }
 
 

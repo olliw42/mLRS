@@ -76,6 +76,36 @@ uint32_t tStatsBytes::GetBytesPerSec(void) // this make a presumption about its 
 
 
 //-------------------------------------------------------
+// StatsMavlinkLQ
+//-------------------------------------------------------
+// targeted at MAVLink packet LQ
+
+void tStatsMavlinkLQ::Update1Hz(void)
+{
+    if (count) {
+        LQ = (counts_per_sec * 100) / count;
+    } else {
+        LQ = 0;
+    }
+
+    count = counts_per_sec = 0;
+}
+
+
+void tStatsMavlinkLQ::Cnt(bool valid)
+{
+    if (valid) counts_per_sec++;
+    count++;
+}
+
+
+uint8_t tStatsMavlinkLQ::GetLQ(void)
+{
+    return LQ;
+}
+
+
+//-------------------------------------------------------
 // Moving window statistics
 // LqCounterBase
 //-------------------------------------------------------

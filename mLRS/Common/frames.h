@@ -157,6 +157,7 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
+// update header info with new data, keep payload
 void update_rxframe_stats(tRxFrame* frame, tFrameStats* frame_stats)
 {
 uint16_t crc;

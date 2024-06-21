@@ -288,7 +288,6 @@ void prepare_transmit_frame(uint8_t antenna)
 {
 uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
-static bool rxFrame_valid = false;
 
     bool get_fresh_payload = tarq.GetFreshPayload();
 
@@ -298,14 +297,14 @@ static bool rxFrame_valid = false;
             if (connected()) {
                 for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
                     if (!sx_serial.available()) break;
-                    payload[payload_len] = sx_serial.getc();
-                    payload_len++;
+                    uint8_t c = sx_serial.getc();
+                    payload[payload_len++] = c;
                 }
 
                 stats.bytes_transmitted.Add(payload_len);
                 stats.serial_data_transmitted.Inc();
             } else {
-              sx_serial.flush();
+                sx_serial.flush();
             }
         }
     }
@@ -321,6 +320,7 @@ static bool rxFrame_valid = false;
     frame_stats.LQ_rc = stats.GetLQ_rc();
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
+    static bool rxFrame_valid = false; // just for now
     if (get_fresh_payload) {
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
@@ -329,10 +329,9 @@ static bool rxFrame_valid = false;
         }
         rxFrame_valid = true;
 
-        //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(stats.cntFrameGet(), Config.Mode);
-
         stats.cntFrameTransmitted();
+        //tarq.SetRetryCnt(1);
+        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
 
     } else {
         // rxFrame should still hold the previous data
@@ -341,10 +340,9 @@ static bool rxFrame_valid = false;
         update_rxframe_stats(&rxFrame, &frame_stats);
         rxFrame_valid = true;
 
-        //tarq.SetRetryCnt(1);
-        tarq.SetRetryCntAuto(stats.cntFrameGet(), Config.Mode);
-
         stats.cntFrameSkipped();
+        //tarq.SetRetryCnt(1);
+        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
     }
 
 #ifdef USE_ARQ_DBG
@@ -385,7 +383,6 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
             sx_serial.putc(c);
-//dbg.putc(c);
         }
 
         stats.bytes_received.Add(frame->status.payload_len);

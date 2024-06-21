@@ -16,17 +16,19 @@
 
 void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz, uint16_t _frame_rate_ms)
 {
-    frame_rate_hz = _frame_rate_hz;
-
-    frames_received.Init(frame_rate_hz);
+    frames_received.Init(_frame_rate_hz);
 #ifdef DEVICE_IS_RECEIVER
-    valid_crc1_received.Init(frame_rate_hz);
+    valid_crc1_received.Init(_frame_rate_hz);
 #endif
-    valid_frames_received.Init(frame_rate_hz);
-    serial_data_transmitted.Init(frame_rate_hz);
-    serial_data_received.Init(frame_rate_hz);
-    bytes_transmitted.Init(frame_rate_hz);
-    bytes_received.Init(frame_rate_hz);
+    valid_frames_received.Init(_frame_rate_hz);
+    serial_data_transmitted.Init(_frame_rate_hz);
+    serial_data_received.Init(_frame_rate_hz);
+    bytes_transmitted.Init(_frame_rate_hz);
+    bytes_received.Init(_frame_rate_hz);
+
+    mav_packets_received.Init(_frame_rate_hz);
+
+    frame_cnt.Init(2000, _frame_rate_ms, 500);
 
     Clear();
 
@@ -39,8 +41,6 @@ void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz, uint16_t _f
 //    LQma_valid_crc1.Init(_maverage_period);
 //    LQma_valid.Init(_maverage_period);
 //    LQma_received.Init(_maverage_period);
-
-    cnt_frame.Init(2000, _frame_rate_ms, 500);
 }
 
 
@@ -61,13 +61,8 @@ void tStats::Clear(void) // called then not connected
     received_antenna = UINT8_MAX;
     received_transmit_antenna = UINT8_MAX;
 
+    frame_cnt.Clear();
     transmit_seq_no = 0;
-
-//    LQma_valid_crc1.Reset(); // start with 100% if not connected
-//    LQma_valid.Reset();
-//    LQma_received.Reset();
-
-    cnt_frame.Clear();
 }
 
 
@@ -82,6 +77,11 @@ void tStats::Update1Hz(void)
     serial_data_received.Update1Hz();
     bytes_transmitted.Update1Hz();
     bytes_received.Update1Hz();
+
+#ifdef DEVICE_IS_TRANSMITTER
+    mav_packets_received.Update1Hz();
+#endif
+
 }
 
 
@@ -174,3 +174,33 @@ uint8_t tStats::GetLQ_serial(void)
     return LQser;
 }
 
+
+void tStats::doMavlinkCnt(bool valid)
+{
+    mav_packets_received.Cnt(valid);
+}
+
+
+uint8_t tStats::GetMavlinkLQ(void)
+{
+    return mav_packets_received.GetLQ();
+}
+
+
+void tStats::cntFrameTransmitted(void)
+{
+    frame_cnt.Put(1000);
+}
+
+
+void tStats::cntFrameSkipped(void)
+{
+    frame_cnt.Put(0);
+}
+
+
+int32_t tStats::GetFrameCnt(void)
+{
+    int32_t fn = frame_cnt.Get();
+    return (fn < 0) ? 0 : (fn > 1000) ? 1000 : fn; // limit to [0, 1000]
+}

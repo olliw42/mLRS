@@ -15,7 +15,7 @@
 
 
 // simple rate filter for MAVLink interface
-class tLPFilterRate
+class tLpFilterRate
 {
   public:
     void Reset(void);
@@ -30,12 +30,12 @@ class tLPFilterRate
 };
 
 
-// simple LPF filter
+// simple LP filter
 
 class tLpFilter
 {
   public:
-    void Init(uint32_t _T_ms, int32_t _dt_ms, int32_t _yn_start = 0);
+    void Init(uint32_t _T_ms, uint32_t _dt_ms, int32_t _yn_start = 0);
     void Clear(void);
     void Put(int32_t x);
     int32_t Get(void);
