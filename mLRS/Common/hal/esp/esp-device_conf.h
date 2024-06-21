@@ -135,6 +135,14 @@
 #endif
 
 
+#ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+  #define DEVICE_NAME "RM RP4TD 2.4G"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+
 // -- DIY
 
 #ifdef RX_DIY_DEV_900_ESP8266
