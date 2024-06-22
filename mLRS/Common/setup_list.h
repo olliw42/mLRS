@@ -60,8 +60,8 @@
 #define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink"
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink"
 #else
-#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink,mavlinkX"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink,mavlnkX"
+#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink,mavlinkX,mspX"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink,mavlnkX,mspX"
 #endif
 
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
