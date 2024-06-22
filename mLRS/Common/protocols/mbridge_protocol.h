@@ -153,9 +153,9 @@ typedef struct
     int8_t rssi2_instantaneous;
     int8_t snr_instantaneous;
 
-    int8_t rssi1_filtered;
-    int8_t rssi2_filtered;
-    int8_t snr_filtered;
+    int8_t __rssi1_filtered; // not used at all, appears pretty useless, so deprecate
+    int8_t __rssi2_filtered;
+    int8_t __snr_filtered;
 
     // receiver side of things
 
@@ -163,7 +163,7 @@ typedef struct
     uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
     int8_t receiver_rssi_instantaneous;
 
-    int8_t receiver_rssi_filtered;
+    int8_t __receiver_rssi_filtered; // not used at all, appears pretty useless, so deprecate
 
     // both
 
@@ -172,8 +172,8 @@ typedef struct
     uint8_t transmit_antenna : 1;
     uint8_t receiver_receive_antenna : 1;
     uint8_t receiver_transmit_antenna : 1;
-    uint8_t _diversity : 1; // pretty useless, so deprecate
-    uint8_t _receiver_diversity : 1; // pretty useless, so deprecate
+    uint8_t __diversity : 1; // pretty useless, so deprecate
+    uint8_t __receiver_diversity : 1; // pretty useless, so deprecate
     uint8_t rx1_valid : 1;
     uint8_t rx2_valid : 1;
 
@@ -194,7 +194,7 @@ typedef struct
     uint8_t LQ_fresh_serial_packets_received;
     uint8_t bytes_per_sec_received;
 
-    uint8_t _LQ_received; // pretty useless, so deprecate // number of packets received per sec, not practically relevant
+    uint8_t mavlink_packet_LQ_received; // MAVLink packet LQ
 
     uint8_t fhss_curr_i;
     uint8_t fhss_cnt;

@@ -524,13 +524,13 @@ tMBridgeLinkStats lstats = {};
     lstats.snr_instantaneous = stats.GetLastSnr();
     lstats.receive_antenna = stats.last_antenna;
     lstats.transmit_antenna = stats.last_transmit_antenna;
-    lstats._diversity = 0; // pretty useless, so deprecated
+    lstats.__diversity = 0; // pretty useless, so deprecated
     lstats.rx1_valid = stats.rx1_valid;
     lstats.rx2_valid = stats.rx2_valid;
 
-    lstats.rssi1_filtered = RSSI_INVALID;
-    lstats.rssi2_filtered = RSSI_INVALID;
-    lstats.snr_filtered = SNR_INVALID;
+    lstats.__rssi1_filtered = RSSI_INVALID; // pretty useless, so deprecated
+    lstats.__rssi2_filtered = RSSI_INVALID;
+    lstats.__snr_filtered = SNR_INVALID;
 
     // receiver side of things
 
@@ -539,9 +539,9 @@ tMBridgeLinkStats lstats = {};
     lstats.receiver_rssi_instantaneous = stats.received_rssi;
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-    lstats._receiver_diversity = 0; // pretty useless, so deprecated
+    lstats.__receiver_diversity = 0; // pretty useless, so deprecated
 
-    lstats.receiver_rssi_filtered = RSSI_INVALID;
+    lstats.__receiver_rssi_filtered = RSSI_INVALID; // pretty useless, so deprecated
 
     // further stats acquired on transmitter side
 
@@ -552,7 +552,8 @@ tMBridgeLinkStats lstats = {};
     lstats.LQ_fresh_serial_packets_received = stats.serial_data_received.GetLQ();
     lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
 
-    lstats._LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, not practically relevant
+    //lstats.__LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, pretty useless, so deprecated
+    lstats.mavlink_packet_LQ_received = stats.GetMavlinkLQ();
 
     lstats.fhss_curr_i = stats.fhss_curr_i;
     lstats.fhss_cnt = fhss.Cnt();
