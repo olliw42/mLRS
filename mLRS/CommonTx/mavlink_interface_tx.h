@@ -81,6 +81,10 @@ class tTxMavlink
     uint8_t vehicle_flight_mode;
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+
+    // MAVLink packet link quality
+    bool msg_seq_initialized;
+    uint8_t msg_seq_last;
 };
 
 
@@ -131,6 +135,9 @@ void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBa
     vehicle_is_flying = UINT8_MAX;
     vehicle_type = UINT8_MAX;
     vehicle_flight_mode = UINT8_MAX;
+
+    msg_seq_initialized = false;
+    msg_seq_last = 0;
 }
 
 
@@ -162,6 +169,7 @@ void tTxMavlink::Do(void)
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
+        msg_seq_initialized = false;
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
@@ -403,6 +411,14 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
         vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
         }break;
     }
+
+    // MAVLink packet link quality, for stream from autopilot only
+    if (msg_seq_initialized) {
+        uint8_t expected_seq = msg_seq_last + 1;
+        stats.doMavlinkCnt(msg->seq == expected_seq);
+    }
+    msg_seq_initialized = true;
+    msg_seq_last = msg->seq;
 }
 
 

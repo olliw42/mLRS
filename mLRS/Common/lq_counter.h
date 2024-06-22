@@ -54,6 +54,16 @@ class tStatsBytes : public tStatsCount
 };
 
 
+// targeted at MAVLink packet LQ
+class tStatsMavlinkLQ : public tStatsCount
+{
+  public:
+    void Update1Hz(void) override;
+    void Cnt(bool valid);
+    uint8_t GetLQ(void);
+};
+
+
 //-------------------------------------------------------
 // Moving window statistics
 //-------------------------------------------------------

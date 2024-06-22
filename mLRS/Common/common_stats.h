@@ -49,6 +49,9 @@ class tStats
 #endif
     uint8_t GetLQ_serial(void);
 
+    void doMavlinkCnt(bool valid);
+    uint8_t GetMavlinkLQ(void);
+
     // statistics for our device
 
     tStatsLQ frames_received;         // number of frames received, practically not very relevant
@@ -62,6 +65,8 @@ class tStats
 
     tStatsBytes bytes_transmitted;    // retransmissions are not counted
     tStatsBytes bytes_received;       // retransmissions are not counted
+
+    tStatsMavlinkLQ mav_packets_received;   // number of MAVLink packets received
 
     // RF statistics for our device
 

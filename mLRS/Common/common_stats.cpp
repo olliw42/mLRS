@@ -26,6 +26,8 @@ void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
     bytes_transmitted.Init(_frame_rate_hz);
     bytes_received.Init(_frame_rate_hz);
 
+    mav_packets_received.Init(_frame_rate_hz);
+
     Clear();
 
 #ifdef DEVICE_IS_TRANSMITTER
@@ -72,6 +74,11 @@ void tStats::Update1Hz(void)
     serial_data_received.Update1Hz();
     bytes_transmitted.Update1Hz();
     bytes_received.Update1Hz();
+
+#ifdef DEVICE_IS_TRANSMITTER
+    mav_packets_received.Update1Hz();
+#endif
+
 }
 
 
@@ -163,4 +170,17 @@ uint8_t tStats::GetLQ_serial(void)
     if (LQser == 0) return 1;
     return LQser;
 }
+
+
+void tStats::doMavlinkCnt(bool valid)
+{
+    mav_packets_received.Cnt(valid);
+}
+
+
+uint8_t tStats::GetMavlinkLQ(void)
+{
+    return mav_packets_received.GetLQ();
+}
+
 
