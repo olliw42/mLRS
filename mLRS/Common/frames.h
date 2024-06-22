@@ -157,6 +157,28 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
+// update header info with new data, keep payload
+void update_rxframe_stats(tRxFrame* frame, tFrameStats* frame_stats)
+{
+uint16_t crc;
+
+    frame->sync_word = Config.FrameSyncWord;
+    // keep !! frame->status.seq_no = frame_stats->seq_no;
+    frame->status.ack = frame_stats->ack;
+    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    frame->status.antenna = frame_stats->antenna;
+    frame->status.transmit_antenna = frame_stats->transmit_antenna;
+    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
+    frame->status.LQ_rc = frame_stats->LQ_rc;
+    frame->status.LQ_serial = frame_stats->LQ_serial;
+    // keep !! frame->status.payload_len = payload_len;
+
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
+    frame->crc = crc;
+}
+
+
 void _pack_rxframe_w_type(tRxFrame* frame, uint8_t type, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;

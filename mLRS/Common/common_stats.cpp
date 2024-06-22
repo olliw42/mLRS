@@ -14,7 +14,7 @@
 // Common stats
 //-------------------------------------------------------
 
-void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
+void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz, uint16_t _frame_rate_ms)
 {
     frames_received.Init(_frame_rate_hz);
 #ifdef DEVICE_IS_RECEIVER
@@ -27,6 +27,8 @@ void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz)
     bytes_received.Init(_frame_rate_hz);
 
     mav_packets_received.Init(_frame_rate_hz);
+
+    frame_cnt.Init(2000, _frame_rate_ms, 500);
 
     Clear();
 
@@ -59,6 +61,7 @@ void tStats::Clear(void) // called then not connected
     received_antenna = UINT8_MAX;
     received_transmit_antenna = UINT8_MAX;
 
+    frame_cnt.Clear();
     transmit_seq_no = 0;
 }
 
@@ -184,3 +187,20 @@ uint8_t tStats::GetMavlinkLQ(void)
 }
 
 
+void tStats::cntFrameTransmitted(void)
+{
+    frame_cnt.Put(1000);
+}
+
+
+void tStats::cntFrameSkipped(void)
+{
+    frame_cnt.Put(0);
+}
+
+
+int32_t tStats::GetFrameCnt(void)
+{
+    int32_t fn = frame_cnt.Get();
+    return (fn < 0) ? 0 : (fn > 1000) ? 1000 : fn; // limit to [0, 1000]
+}

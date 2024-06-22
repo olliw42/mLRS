@@ -491,9 +491,22 @@ bool tRxMavlink::handle_txbuf_ardupilot(uint32_t tnow_ms)
 
     // method C, with improvements
     // assumes 1 sec delta time
-    uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    // was uint32_t rate_max = ((uint32_t)1000 * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
+    int32_t frame_cnt_filtered = stats.GetFrameCnt();
+    static int32_t frame_cnt = 0;
+    static int32_t hysteresis = 10;
+    if ((frame_cnt_filtered - frame_cnt) < -hysteresis || (frame_cnt_filtered - frame_cnt) > hysteresis) {
+        frame_cnt = frame_cnt_filtered;
+        hysteresis = 10;
+    } else if (hysteresis > 0) {
+        hysteresis--;
+    }
+    if (frame_cnt < 500) frame_cnt = 500;
+    uint32_t rate_max = (frame_cnt * FRAME_RX_PAYLOAD_LEN) / Config.frame_rate_ms; // theoretical rate, bytes per sec
     uint32_t rate_percentage = (bytes_link_out * 100) / rate_max;
-
+#if 0 // debug
+dbg.puts("\nMa: ");dbg.puts(u16toBCD_s(frame_cnt_filtered));dbg.puts(" , ");dbg.puts(u16toBCD_s(frame_cnt));
+#endif
     // https://github.com/ArduPilot/ardupilot/blob/fa6441544639bd5dc84c3e6e3d2f7bfd2aecf96d/libraries/GCS_MAVLink/GCS_Common.cpp#L782-L801
     // aim at 75%..85% rate usage in steady state
     if (rate_percentage > 95) {
