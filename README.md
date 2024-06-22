@@ -50,16 +50,17 @@ It provides these operation modes:
 
 Further features:
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
-- dual band: mLRS transmitters and receivers with two Semtech Lora chips working in different RF bands are supported (e.g. 2.4 GHz and 915/868 MHz). These provide full diversity, where in addition transmission is simultaneously on both RF bands. 
+- dual band: mLRS transmitters and receivers with two Semtech Lora chips working in different RF bands are supported (e.g. 2.4 GHz and 915/868 MHz). These provide full diversity, with simultaneous transmission on both RF bands in addition. 
 - the receiver parameters can be set from the mLRS transmitter or radio; no need to mess with the receiver for configuration in any way.
 - the transmitter and receiver parameters can be set via a Lua script, CLI, or an OLED display. There is no need to recompile or reflash the firmware in order to change an option or parameter setting. 
+- adaptive ARQ/retransmission
 - bind mode for binding "unknown" receivers to a transmitter.
 - the mLRS system can be configured through the parameters for a wide range of applications and use cases, for details see [Documentation](https://github.com/olliw42/mLRS-docu).
 - 10 model configurations stored in the mLRS transmitter, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles!).
 - optimizations for ArduPilot and PX4 autopilot systems.
 - technologies introduced by mLRS:
-    - innovative flow control for smoother and robust data flow 
+    - innovative flow control for MAVLink for smoother and more robust data flow 
     - MavlinkX for reduced packet loss and data compression
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 

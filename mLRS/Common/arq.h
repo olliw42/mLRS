@@ -6,24 +6,15 @@
 //*******************************************************
 // ARQ Transmit/Receive
 //*******************************************************
-/*
-TODOs:
- - how does it behave with approaching link loss?
- - all well with flow control?
- - double check that it doesn't break TRANSMIT_FRAME_TYPE_CMD communication
- - is rxLQ correct?
-Notes:
- - Lua script load/reload leads to few packet losses with 1/4/5
-*/
 #ifndef ARQ_H
 #define ARQ_H
 #pragma once
 
-#define USE_ARQ
-#define USE_ARQ_RETRY_CNT   -1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
+#define USE_ARQ // just for the moment, eventually should go
 //#define USE_ARQ_DBG
-//#define USE_ARQ_TX_SIM_MISS 4 //9 // 0 = off
-//#define USE_ARQ_RX_SIM_MISS 3 //5 //5 // 0 = off
+#define USE_ARQ_RETRY_CNT     -1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
+#define USE_ARQ_TX_SIM_MISS   4 //9 // 0 = off
+#define USE_ARQ_RX_SIM_MISS   3 //5 //5 // 0 = off
 
 #ifdef USE_ARQ
 
@@ -53,10 +44,10 @@ class tTransmitArq
     void SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode);
 
     uint8_t status;
-    uint8_t received_ack_seq_no; // attention: is 0/1 only, 0 = even, 1 = odd
-    uint8_t payload_seq_no; // the seq_no associated to this payload
-    uint8_t payload_retry_cnt; // maximum number of allowed retries for this payload
-    uint8_t payload_retries; // number of retries for this payload
+    uint8_t received_ack_seq_no;  // attention: is 0/1 only, 0 = even, 1 = odd
+    uint8_t payload_seq_no;       // the seq_no associated to this payload
+    uint8_t payload_retry_cnt;    // maximum number of allowed retries for this payload, 0 = off, 255 = infinite
+    uint8_t payload_retries;      // number of retries for this payload
 
     bool SimulateMiss(void);
 };
@@ -172,19 +163,22 @@ uint8_t tTransmitArq::SeqNo(void)
 
 void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
 {
-#if USE_ARQ_RETRY_CNT < 0
+#ifndef USE_ARQ_DBG
     payload_retry_cnt = retry_cnt;
 #else
+  #if USE_ARQ_RETRY_CNT < 0
+    payload_retry_cnt = retry_cnt;
+  #else
     payload_retry_cnt = USE_ARQ_RETRY_CNT;
+  #endif
 #endif
-    // payload_retries = 0; ?? I think to better not do this, allows to shorten retry cnt and the ARQ to react immediately
 }
 
 
 void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode)
 {
     switch (mode) {
-    case MODE_FLRC_111HZ:
+    case MODE_FLRC_111HZ: // 3 -> 2 -> 1
         if (_frame_cnt >= 800) {
             SetRetryCnt(3);
         } else if (_frame_cnt >= 700) {
@@ -193,13 +187,14 @@ void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode)
             SetRetryCnt(1);
         }
         break;
-    case MODE_FSK_50HZ:
+    case MODE_FSK_50HZ: // 2 -> 1
     case MODE_50HZ:
     case MODE_31HZ:
     case MODE_19HZ:
         SetRetryCnt((_frame_cnt >= 800) ? 2 : 1);
     }
-    SetRetryCnt(1);
+
+    SetRetryCnt(1); // should never be called
 }
 
 
@@ -207,7 +202,7 @@ void tTransmitArq::SetRetryCntAuto(int32_t _frame_cnt, uint8_t mode)
 
 bool tTransmitArq::SimulateMiss(void)
 {
-#if USE_ARQ_RX_SIM_MISS
+#if defined USE_ARQ_DBG && USE_ARQ_RX_SIM_MISS > 0
     static uint8_t miss_cnt = 0;
     DECc(miss_cnt, USE_ARQ_RX_SIM_MISS);
     if (miss_cnt == 0) return true;
@@ -242,11 +237,11 @@ class tReceiveArq
     uint8_t AckSeqNo(void);
 
     uint8_t status;
-    uint8_t received_seq_no_last; // all seq_no here are 3 bit,  0..7
+    uint8_t received_seq_no_last;   // all seq_no here are 3 bit,  0..7
     uint8_t received_seq_no;
     uint8_t ack_seq_no;
-    bool accept_received_payload; // maybe a state?
-    bool frame_lost; // maybe a state?
+    bool accept_received_payload;   // maybe a state?
+    bool frame_lost;                // maybe a state?
 
     void spin(void);
 
@@ -313,7 +308,7 @@ void tReceiveArq::spin(void)
         break;
 
     default: // ARQ_RX_IDLE
-        while(1); // must not happen, should have been called after FrameMissed(), Received()
+        while(1) {} // must not happen, should have been called after FrameMissed(), Received()
     }
 }
 
@@ -359,7 +354,7 @@ uint8_t tReceiveArq::AckSeqNo(void)
 
 bool tReceiveArq::SimulateMiss(void)
 {
-#if USE_ARQ_TX_SIM_MISS
+#if defined USE_ARQ_DBG && USE_ARQ_TX_SIM_MISS > 0
     static uint8_t miss_cnt = 0;
     DECc(miss_cnt, USE_ARQ_TX_SIM_MISS);
     if (miss_cnt == 0) return true;

@@ -23,7 +23,11 @@
 #if !(defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX)
 // DEVICE_HAS_IN or DEVICE_HAS_IN_NORMAL or DEVICE_HAS_IN_INVERTED
 
+#if defined ESP8266 || defined ESP32
+#include "../Common/esp-lib/esp-uarte.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
+#endif
 
 
 class tIn : public tInBase
@@ -73,7 +77,11 @@ class tIn : public tInBase
 #else
 // DEVICE_HAS_IN_ON_JRPIN5_RX or DEVICE_HAS_IN_ON_JRPIN5_TX
 
+#if defined ESP8266 || defined ESP32
+#error DEVICE_HAS_IN_ON_JRPIN5_RX, DEVICE_HAS_IN_ON_JRPIN5_TX not supported for ESP targets!
+#else
 #include "jr_pin5_interface.h" // in case DEVICE_HAS_JRPIN5 was not defined
+#endif
 
 
 class tIn : public tInBase
