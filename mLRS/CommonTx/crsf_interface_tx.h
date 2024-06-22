@@ -808,19 +808,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 //-------------------------------------------------------
 // CRSF Link Statistics
 
-uint8_t crsf_cvt_rssi_percent(int8_t rssi)
-{
-    if (rssi == RSSI_INVALID) return 255;
-    if (rssi >= -50) return 100;
-    if (rssi <= sx.ReceiverSensitivity_dbm()) return 0;
-
-    int32_t r = (int32_t)rssi - sx.ReceiverSensitivity_dbm();
-    int32_t m = (int32_t)(-50) - sx.ReceiverSensitivity_dbm();
-
-    return (100 * r + 49)/m;
-}
-
-
 // on CRSF rssi
 // rssi = 255 -> red in otx
 //      = 130 -> -126 dB
@@ -863,7 +850,8 @@ void tTxCrsf::SendLinkStatisticsTx(void)
 tCrsfLinkStatisticsTx clstats;
 
     clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRssi());     // OpenTx -> "TRSP" // ??? uplink but "T" ??
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(),      // OpenTx -> "TRSP" // ??? uplink but "T" ??
+                                                sx.ReceiverSensitivity_dbm());
     clstats.uplink_LQ = stats.GetLQ_serial();                                     // ignored by OpenTx
     clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
     clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
@@ -878,7 +866,8 @@ void tTxCrsf::SendLinkStatisticsRx(void)
 tCrsfLinkStatisticsRx clstats;
 
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi);   // OpenTx -> "RRSP" // ??? downlink but "R" ??
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi,    // OpenTx -> "RRSP" // ??? downlink but "R" ??
+                                                  sx.ReceiverSensitivity_dbm());
     clstats.downlink_LQ = stats.received_LQ_rc;                                   // ignored by OpenTx
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
     clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"

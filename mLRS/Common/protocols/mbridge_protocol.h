@@ -153,9 +153,10 @@ typedef struct
     int8_t rssi2_instantaneous;
     int8_t snr_instantaneous;
 
-    int8_t __rssi1_filtered; // not used at all, appears pretty useless, so deprecate
-    int8_t __rssi2_filtered;
-    int8_t __snr_filtered;
+    uint8_t rssi_instantaneous_percent; // was rssi1_filtered; // not used at all, appears pretty useless, so deprecate
+
+    int8_t spare1; // was rssi2_filtered;
+    int8_t spare2; // was snr_filtered;
 
     // receiver side of things
 
@@ -163,7 +164,7 @@ typedef struct
     uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
     int8_t receiver_rssi_instantaneous;
 
-    int8_t __receiver_rssi_filtered; // not used at all, appears pretty useless, so deprecate
+    uint8_t receiver_rssi_instantaneous_percent; // was receiver_rssi_filtered; // not used at all, appears pretty useless, so deprecate
 
     // both
 
@@ -172,8 +173,8 @@ typedef struct
     uint8_t transmit_antenna : 1;
     uint8_t receiver_receive_antenna : 1;
     uint8_t receiver_transmit_antenna : 1;
-    uint8_t __diversity : 1; // pretty useless, so deprecate
-    uint8_t __receiver_diversity : 1; // pretty useless, so deprecate
+    uint8_t spare3 : 1; // was diversity, pretty useless, so deprecate
+    uint8_t spare4 : 1; // was receiver_diversity, pretty useless, so deprecate
     uint8_t rx1_valid : 1;
     uint8_t rx2_valid : 1;
 
@@ -194,17 +195,17 @@ typedef struct
     uint8_t LQ_fresh_serial_packets_received;
     uint8_t bytes_per_sec_received;
 
-    uint8_t mavlink_packet_LQ_received; // MAVLink packet LQ
+    uint8_t mavlink_packet_LQ_received; // MAVLink packet LQ, was LQ_received
 
     uint8_t fhss_curr_i;
     uint8_t fhss_cnt;
 
     uint8_t vehicle_state : 2; // 0 = disarmed, 1 = armed 2 = flying, 3 = invalid/unknown
-    uint8_t spare : 6;
+    uint8_t spare5 : 6;
 
     uint8_t link_state_connected : 1;
     uint8_t link_state_binding : 1;
-    uint8_t spare2 : 6;
+    uint8_t spare6 : 6;
 }) tMBridgeLinkStats; // 22 bytes
 
 

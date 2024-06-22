@@ -524,13 +524,10 @@ tMBridgeLinkStats lstats = {};
     lstats.snr_instantaneous = stats.GetLastSnr();
     lstats.receive_antenna = stats.last_antenna;
     lstats.transmit_antenna = stats.last_transmit_antenna;
-    lstats.__diversity = 0; // pretty useless, so deprecated
     lstats.rx1_valid = stats.rx1_valid;
     lstats.rx2_valid = stats.rx2_valid;
 
-    lstats.__rssi1_filtered = RSSI_INVALID; // pretty useless, so deprecated
-    lstats.__rssi2_filtered = RSSI_INVALID;
-    lstats.__snr_filtered = SNR_INVALID;
+    lstats.rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
 
     // receiver side of things
 
@@ -539,9 +536,8 @@ tMBridgeLinkStats lstats = {};
     lstats.receiver_rssi_instantaneous = stats.received_rssi;
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-    lstats.__receiver_diversity = 0; // pretty useless, so deprecated
 
-    lstats.__receiver_rssi_filtered = RSSI_INVALID; // pretty useless, so deprecated
+    lstats.receiver_rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.received_rssi, sx.ReceiverSensitivity_dbm());
 
     // further stats acquired on transmitter side
 
