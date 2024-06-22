@@ -16,7 +16,7 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected_and_rx_setup_available(void);
+extern bool connected_and_rx_setup_available(void);
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported MSP frame size
@@ -45,7 +45,7 @@ class tTxMsp
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
-    FifoBase<char,2*512> fifo_link_out; // needs to be at least ??
+    tFifo<char,2*512> fifo_link_out; // needs to be at least ??
 
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
 };

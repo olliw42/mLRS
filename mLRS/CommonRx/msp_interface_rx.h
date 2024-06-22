@@ -17,7 +17,7 @@
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected(void);
+extern bool connected(void);
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
@@ -45,7 +45,7 @@ class tRxMsp
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
-    FifoBase<char,2*512> fifo_link_out; // needs to be at least ??
+    tFifo<char,2*512> fifo_link_out; // needs to be at least ??
 
     // to inject MSP_SET_RAW_RC
     bool inject_rc_channels;
@@ -58,9 +58,9 @@ class tRxMsp
     #define MSP_TELM_BOXNAMES_ID  5
 
     const uint16_t telm_function[MSP_TELM_COUNT] = {
-        MSP_INAV_STATUS,
+        MSP2_INAV_STATUS,
         MSP_ATTITUDE,
-        MSP_INAV_ANALOG,
+        MSP2_INAV_ANALOG,
         MSP_RAW_GPS,
         MSP_ALTITUDE,
         MSP_BOXNAMES, // MSP_BOXIDS, seems to hold incorrect flags ??
@@ -149,7 +149,7 @@ void tRxMsp::Do(void)
                 bool send = true;
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    if (msp_msg_ser_in.function == MSP_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
+                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
                         // send out our home-brewed SMP message in addition
                         // is being send before original message
                         uint32_t flight_mode = 0;

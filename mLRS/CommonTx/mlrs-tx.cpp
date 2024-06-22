@@ -563,6 +563,7 @@ tRxFrame* frame;
     // check this before received data may be passed to parsers
     if (rarq.FrameLost()) {
         mavlink.FrameLost();
+        msp.FrameLost();
     }
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
