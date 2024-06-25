@@ -87,7 +87,7 @@
 #include "powerup.h"
 #include "rxclock.h"
 
-#endif
+#endif //#if defined ESP8266 || defined ESP32
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"

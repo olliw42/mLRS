@@ -46,7 +46,6 @@ The 3 MAIN topics TODO:
 
 1) Link
 - AFC
-- retransmissions, resend last one time to make it more robust
 - reconnect by choosing frequency based on rssi map
 
 2) Parameters, usability
@@ -69,7 +68,7 @@ Longterm TODO:
 - when we eventually do OTA update of the rx, the rx firmware must be universal in the sense that it supports all possible
   rx boards. Gladly, rx modules are relatively simple. But: Craft a concept which hopefully will last for a long time.
   It won't work for different hardware platforms!?
-  Ultimately I think it should be all G4 (and maybe ESP32)
+  Ultimately I think it should be all G4
   alternatively: the receiver is not automatically updated together with the tx, but simply through the tx module
   yes, that's in view of the growing targets the only way to go, and it is sufficiently user friendly
 
