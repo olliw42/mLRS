@@ -559,7 +559,11 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         spib_init();
         spib_setnop(0x00); // 0x00 = NOP
 #else
-        // spi init done already by driver1
+        // spi init only necessary when only antenna 2 selected, otherwise handled by driver1
+        if (Config.Diversity == DIVERSITY_ANTENNA2) {
+            spi_init();
+            spi_setnop(0x00); // 0x00 = NOP
+        }
 #endif
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
