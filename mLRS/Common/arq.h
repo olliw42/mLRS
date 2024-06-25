@@ -18,6 +18,20 @@
 
 #ifdef USE_ARQ
 
+/*
+theory of operation
+- data frame has a seq_no field of 3 bits
+  seq_no numbers the serial data payload
+  this allows the recipient to identify which payload it got, and decide if it is a
+  fresh payload or an old
+- response frame has an ack field of 1 bit
+  ack holds the seq_no of the last received payload
+  this allows the sender to determine if the current payload has been successfully
+  delivered
+
+a diagram showing the communication is here https://github.com/olliw42/mLRS/pull/185#issuecomment-2134020873
+*/
+
 //-------------------------------------------------------
 // Transmit
 //-------------------------------------------------------
