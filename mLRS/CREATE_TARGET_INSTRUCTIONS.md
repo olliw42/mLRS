@@ -12,6 +12,7 @@ Notation:
 - 'part' refers to the STM32 chip family and version. Example: STM32G431KB.
 - 'target' refers to the code folder specific for the board/device. Example: tx-diy-E22-g431kb. The target thus also implies a specific part.
 
+It is assumed that the build environment for mLRS was set up as described in [Software: Installation Bits and Bops](https://github.com/olliw42/mLRS#software-installation-bits-and-bops).
 
 ## I. Create Target: Cube MX
 
