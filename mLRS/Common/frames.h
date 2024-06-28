@@ -34,6 +34,42 @@ typedef enum {
 // update header info and rcdata with new data, keep payload
 void update_txframe_stats_and_rcdata(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
 {
+uint16_t crc;
+
+      frame->sync_word = Config.FrameSyncWord;
+      // keep !! frame->status.seq_no = frame_stats->seq_no;
+      frame->status.ack = frame_stats->ack;
+      // keep !! frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
+      frame->status.antenna = frame_stats->antenna;
+      frame->status.transmit_antenna = frame_stats->transmit_antenna;
+      frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
+      frame->status.LQ_rc = frame_stats->LQ_rc;
+      frame->status.LQ_serial = frame_stats->LQ_serial;
+      // keep !! frame->status.payload_len = payload_len;
+
+      frame->rc1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
+      frame->rc1.ch1  = rc->ch[1];
+      frame->rc1.ch2  = rc->ch[2];
+      frame->rc1.ch3  = rc->ch[3];
+      frame->rc2.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
+      frame->rc2.ch5  = rc->ch[5];
+      frame->rc2.ch6  = rc->ch[6];
+      frame->rc2.ch7  = rc->ch[7];
+      frame->rc2.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
+      frame->rc2.ch9  = rc->ch[9] / 8;
+      frame->rc2.ch10 = rc->ch[10] / 8;
+      frame->rc2.ch11 = rc->ch[11] / 8;
+      frame->rc1.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+      frame->rc1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
+      frame->rc2.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
+      frame->rc2.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+
+      fmav_crc_init(&crc);
+      fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+      frame->crc1 = crc;
+
+      fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+      frame->crc = crc;
 }
 
 
