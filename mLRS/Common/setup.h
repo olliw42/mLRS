@@ -85,8 +85,10 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#if defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
+#elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b11011; // TODO: no antenna2 for the moment
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else
@@ -138,8 +140,10 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#if defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
+#elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b11011; // TODO: no antenna2 for the moment
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else

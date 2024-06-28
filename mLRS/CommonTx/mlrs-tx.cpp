@@ -533,7 +533,7 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
     stats.received_LQ_serial = frame->status.LQ_serial;
 
     if (!do_payload) {
-        return; // has no rc data, so always true
+        return;
     }
 
     if (!accept_payload) return; // frame has no fresh payload
@@ -609,7 +609,8 @@ dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
 #endif
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
-        bool do_payload = true;
+
+        bool do_payload = true; // has no rc data, so do_payload is always
 
         process_received_frame(do_payload, frame);
 
