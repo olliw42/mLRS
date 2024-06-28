@@ -124,6 +124,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tTransmitArq tarq;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxCli cli;
@@ -455,6 +456,9 @@ void prepare_transmit_frame(uint8_t antenna)
 uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
 
+    bool get_fresh_payload = tarq.GetFreshPayload();
+
+    if (get_fresh_payload) {
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
@@ -472,11 +476,12 @@ uint8_t payload_len = 0;
             sx_serial.flush();
         }
     }
+    }
 
     stats.last_transmit_antenna = antenna;
 
     tFrameStats frame_stats;
-    frame_stats.seq_no = stats.transmit_seq_no;
+    frame_stats.seq_no = tarq.SeqNo();; //stats.transmit_seq_no;
     frame_stats.ack = rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
@@ -484,10 +489,26 @@ uint8_t payload_len = 0;
     frame_stats.LQ_rc = UINT8_MAX; // Tx has no valid value
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
+    static bool txFrame_valid = false; // just for now
+    if (get_fresh_payload) {
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
+    }
+        txFrame_valid = true;
+
+        stats.cntFrameTransmitted();
+        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
+    } else {
+        // txFrame should still hold the previous data
+        if (!txFrame_valid) while(1){} // should not happen
+
+        update_txframe_stats_and_rcdata(&txFrame, &frame_stats, &rcData);
+        txFrame_valid = true;
+
+        stats.cntFrameSkipped();
+        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
     }
 
 #ifdef USE_ARQ_DBG
@@ -511,10 +532,13 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
     stats.received_LQ_rc = frame->status.LQ_rc;
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    if (!do_payload) return; // always true
+    if (!do_payload) {
+        return; // has no rc data, so always true
+    }
 
     if (!accept_payload) return; // frame has no fresh payload
 
+    // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
         return;
@@ -555,6 +579,13 @@ tRxFrame* frame;
 
     if (rx_status < RX_STATUS_INVALID) { // must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
+    }
+
+    // handle transmit ARQ
+    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
+        tarq.Received(frame->status.ack);
+    } else {
+        tarq.FrameMissed();
     }
 
     // receive ARQ, must come before process_received_frame()
@@ -598,6 +629,7 @@ dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     rarq.FrameMissed();
+    tarq.FrameMissed();
 
 #ifdef USE_ARQ_DBG
 dbg.puts("\nrec FMISSED");
@@ -727,6 +759,7 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    tarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
@@ -999,6 +1032,7 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         link_rx2_status = RX_STATUS_NONE;
 
         if (!connected()) rarq.Disconnected();
+        if (!connected()) tarq.Disconnected();
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced

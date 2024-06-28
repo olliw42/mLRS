@@ -105,6 +105,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tReceiveArq rarq;
 
 
 // is required in bind.h
@@ -313,7 +314,7 @@ uint8_t payload_len = 0;
 
     tFrameStats frame_stats;
     frame_stats.seq_no = tarq.SeqNo();
-    frame_stats.ack = 1; // TODO
+    frame_stats.ack = rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
@@ -330,7 +331,6 @@ uint8_t payload_len = 0;
         rxFrame_valid = true;
 
         stats.cntFrameTransmitted();
-        //tarq.SetRetryCnt(1);
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
 
     } else {
@@ -341,7 +341,6 @@ uint8_t payload_len = 0;
         rxFrame_valid = true;
 
         stats.cntFrameSkipped();
-        //tarq.SetRetryCnt(1);
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
     }
 
@@ -355,6 +354,8 @@ dbg.puts(u8toBCD_s(rxFrame.status.seq_no));
 
 void process_received_frame(bool do_payload, tTxFrame* frame)
 {
+    bool accept_payload = rarq.AcceptPayload();
+
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
@@ -370,6 +371,8 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
     rcdata_from_txframe(&rcData, frame);
 
+    if (!accept_payload) return; // frame has no fresh payload
+
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_txcmdframe(frame);
@@ -379,7 +382,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
-    if (connected()) {
+    if (!connected()) return;
         for (uint8_t i = 0; i < frame->status.payload_len; i++) {
             uint8_t c = frame->payload[i];
             sx_serial.putc(c);
@@ -387,7 +390,6 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
         stats.bytes_received.Add(frame->status.payload_len);
         stats.serial_data_received.Inc();
-    }
 }
 
 
@@ -422,6 +424,17 @@ tTxFrame* frame;
         tarq.FrameMissed();
     }
 
+    // receive ARQ, must come before process_received_frame()
+    if (rx_status == RX_STATUS_VALID) {
+        rarq.Received(frame->status.seq_no);
+    } else {
+        rarq.FrameMissed();
+    }
+    // check this before received data may be passed to parsers
+    if (rarq.FrameLost()) {
+        mavlink.FrameLost();
+    }
+
 #ifdef USE_ARQ_DBG
 dbg.puts("\nrec");
 if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts(" FM"); else
@@ -451,6 +464,7 @@ if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8to
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     tarq.FrameMissed();
+    rarq.FrameMissed();
 
 #ifdef USE_ARQ_DBG
 dbg.puts("\nrec FMISSED");
@@ -580,6 +594,7 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    rarq.Init();
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
@@ -843,6 +858,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
+        if (!connected()) rarq.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

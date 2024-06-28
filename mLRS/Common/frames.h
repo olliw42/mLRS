@@ -31,6 +31,12 @@ typedef enum {
 } CHECK_ENUM;
 
 
+// update header info and rcdata with new data, keep payload
+void update_txframe_stats_and_rcdata(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+{
+}
+
+
 void _pack_txframe_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;
