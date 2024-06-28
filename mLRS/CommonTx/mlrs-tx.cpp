@@ -502,10 +502,13 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     stats.received_LQ_rc = frame->status.LQ_rc;
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    if (!do_payload) return; // always true
+    if (!do_payload) {
+        return;
+    }
 
     if (!accept_payload) return; // frame has no fresh payload
 
+    // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
         return;
@@ -560,7 +563,8 @@ tRxFrame* frame;
     }
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
-        bool do_payload = true;
+
+        bool do_payload = true; // has no rc data, so do_payload is always
 
         process_received_frame(do_payload, frame);
 

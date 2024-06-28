@@ -330,7 +330,6 @@ uint8_t payload_len = 0;
         rxFrame_valid = true;
 
         stats.cntFrameTransmitted();
-        //tarq.SetRetryCnt(1);
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
 
     } else {
@@ -341,7 +340,6 @@ uint8_t payload_len = 0;
         rxFrame_valid = true;
 
         stats.cntFrameSkipped();
-        //tarq.SetRetryCnt(1);
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
     }
 }
@@ -373,15 +371,14 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
-    if (connected()) {
-        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-            uint8_t c = frame->payload[i];
-            sx_serial.putc(c);
-        }
-
-        stats.bytes_received.Add(frame->status.payload_len);
-        stats.serial_data_received.Inc();
+    if (!connected()) return;
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+        uint8_t c = frame->payload[i];
+        sx_serial.putc(c);
     }
+
+    stats.bytes_received.Add(frame->status.payload_len);
+    stats.serial_data_received.Inc();
 }
 
 
