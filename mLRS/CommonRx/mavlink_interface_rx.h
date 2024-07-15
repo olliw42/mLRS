@@ -113,7 +113,7 @@ class tRxMavlink
         uint32_t texe_ms;
     } cmd_ack;
 
-    void handle_cmd_long(void);
+    void handle_msg(fmav_message_t* msg);
     void generate_cmd_ack(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -233,9 +233,7 @@ void tRxMavlink::Do(void)
                 fifo_link_out.PutBuf(_buf, len);
                 bytes_parser_in = 0;
 
-                if (msg_link_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG) {
-                    handle_cmd_long();
-                }
+                handle_msg(&msg_link_out);
 
                 break; // give the loop a chance before handling a further message
             }
@@ -902,12 +900,14 @@ void tRxMavlink::generate_cmd_ack(void)
 }
 
 
-void tRxMavlink::handle_cmd_long(void)
+void tRxMavlink::handle_msg(fmav_message_t* msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
 fmav_command_long_t payload;
 
-    fmav_msg_command_long_decode(&payload, &msg_link_out);
+    if (msg->msgid != FASTMAVLINK_MSG_ID_COMMAND_LONG) return;
+
+    fmav_msg_command_long_decode(&payload, msg);
 
     // check if it is for us, only allow targeted commands
     if (payload.target_system != RADIO_LINK_SYSTEM_ID) return;
@@ -925,8 +925,8 @@ fmav_command_long_t payload;
 
     inject_cmd_ack = true;
     cmd_ack.command = payload.command;
-    cmd_ack.cmd_src_sysid = msg_link_out.sysid;
-    cmd_ack.cmd_src_compid = msg_link_out.compid;
+    cmd_ack.cmd_src_sysid = msg->sysid;
+    cmd_ack.cmd_src_compid = msg->compid;
 
     bool cmd_valid = false;
     switch (payload.command) {
