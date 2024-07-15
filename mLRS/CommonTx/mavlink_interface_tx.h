@@ -47,7 +47,7 @@ class tTxMavlink
     void flush(void);
 
   private:
-    void send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in);
+    void send_msg_fifo_link_out(fmav_message_t* msg);
     void handle_msg_serial_out(fmav_message_t* msg);
     void generate_radio_status(void);
     void send_msg_serial_out(void);
@@ -60,7 +60,6 @@ class tTxMavlink
     fmav_status_t status_link_in; // status for link in parser
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // status for serial out (ser and ser2) messages
-    fmav_message_t msg_serial_out; // essentially a temporary working buffer, to not burden stack
 
     // fields for ser/ser2 in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
@@ -71,6 +70,9 @@ class tTxMavlink
     tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
 #endif
 
+    fmav_message_t msg_buf; // temporary working buffer, to not burden stack
+    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
 
@@ -79,8 +81,6 @@ class tTxMavlink
     uint8_t vehicle_is_flying;
     uint8_t vehicle_type;
     uint8_t vehicle_flight_mode;
-
-    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 
     // MAVLink packet link quality
     bool msg_seq_initialized;
@@ -178,18 +178,19 @@ void tTxMavlink::Do(void)
 #ifdef USE_FEATURE_MAVLINKX
     fmav_result_t result;
 if (!do_router()) {
-    // without router
+    // without router, parse ser in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (ser->available()) {
             char c = ser->getc();
             fmav_parse_and_check_to_frame_buf(&result, buf_ser_in, &status_ser_in, c);
             if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-                send_msg_fifo_link_out(&result, buf_ser_in); // requires RESULT_OK
+                fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser_in); // requires RESULT_OK
+                send_msg_fifo_link_out(&msg_buf);
             }
         }
     }
 } else {
-    // with router
+    // with router, parse ser in, ser2 in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         // link 0 = sx_serial
         // link 1 = ser
@@ -197,8 +198,8 @@ if (!do_router()) {
 
         static uint8_t scheduled_ser = 0;
         INCc(scheduled_ser, 2);
-        if ((scheduled_ser == 0) && !ser->available()) scheduled_ser = 1;
-        if ((scheduled_ser == 1) && !ser2->available()) scheduled_ser = 0;
+        if ((scheduled_ser == 0) && !ser->available()) scheduled_ser = 1; // take next if nothing to do
+        if ((scheduled_ser == 1) && !ser2->available()) scheduled_ser = 0; // take next if nothing to do
 
         while ((scheduled_ser == 0) && ser->available()) {
             char c = ser->getc();
@@ -209,7 +210,8 @@ if (!do_router()) {
                     ser2->putbuf(buf_ser_in, result.frame_len);
                 }
                 if (fmav_router_send_to_link(0) && (result.res == FASTMAVLINK_PARSE_RESULT_OK)) {
-                    send_msg_fifo_link_out(&result, buf_ser_in); // requires RESULT_OK
+                    fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser_in); // requires RESULT_OK
+                    send_msg_fifo_link_out(&msg_buf);
                 }
                 break; // do only one message per loop
             }
@@ -224,7 +226,8 @@ if (!do_router()) {
                 }
                 if (fmav_router_send_to_link(2)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
                 if (fmav_router_send_to_link(0) && (result.res == FASTMAVLINK_PARSE_RESULT_OK)) {
-                    send_msg_fifo_link_out(&result, buf_ser2_in); // requires RESULT_OK
+                    fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser2_in); // requires RESULT_OK
+                    send_msg_fifo_link_out(&msg_buf);
                 }
                 break; // do only one message per loop
             }
@@ -232,7 +235,7 @@ if (!do_router()) {
 
     }
 } // end if(do_router())
-#endif
+#endif // USE_FEATURE_MAVLINKX
 
     if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
         if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
@@ -284,19 +287,17 @@ if (!do_router()) {
         ser->putbuf(buf_link_in, result.frame_len);
 #endif
 
-        // we misuse msg_serial_out as temporary message buffer
-
-        fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
+        fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
 
         // allow CRSF to capture it
-        crsf.TelemetryHandleMavlinkMsg(&msg_serial_out);
+        crsf.TelemetryHandleMavlinkMsg(&msg_buf);
 
         // we also want to capture it to extract some info
-        handle_msg_serial_out(&msg_serial_out);
+        handle_msg_serial_out(&msg_buf);
 
 #ifdef DEBUG_ENABLED
 // test if _buf = buf_link_in
-uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out); // _buf should be equal buf_link_in !?!
+uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf); // _buf should be equal buf_link_in !?!
 if (len != result.frame_len) while(1) {}
 for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1) {}
 #endif
@@ -304,18 +305,14 @@ for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1) {}
 }
 
 
-void tTxMavlink::send_msg_fifo_link_out(fmav_result_t* result, uint8_t* buf_in)
+void tTxMavlink::send_msg_fifo_link_out(fmav_message_t* msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
-    // we misuse msg_serial_out as temporary message buffer
-
-    fmav_frame_buf_to_msg(&msg_serial_out, result, buf_in); // requires RESULT_OK
-
     uint16_t len;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        len = fmavX_msg_to_frame_bufX(_buf, &msg_serial_out);
+        len = fmavX_msg_to_frame_bufX(_buf, msg);
     } else {
-        len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+        len = fmav_msg_to_frame_buf(_buf, msg);
     }
 
     fifo_link_out.PutBuf(_buf, len);
@@ -328,7 +325,7 @@ void tTxMavlink::send_msg_serial_out(void)
     // TODO: this could be be done more efficiently by not going via msg_serial_out
     // but by generating directly into _buf
 
-    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf);
 
     ser->putbuf(_buf, len);
 
@@ -442,7 +439,7 @@ uint8_t rssi, remrssi, txbuf, noise;
     txbuf = 100;
 
     fmav_msg_radio_status_pack(
-        &msg_serial_out,
+        &msg_buf,
         RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
         MAV_COMP_ID_TELEMETRY_RADIO,
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
