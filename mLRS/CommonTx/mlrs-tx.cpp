@@ -466,29 +466,29 @@ uint8_t payload_len = 0;
     bool get_fresh_payload = tarq.GetFreshPayload();
 
     if (get_fresh_payload) {
-    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        // read data from serial port
-        if (connected()) {
-            if (sx_serial.IsEnabled()) {
-                for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-                    if (!sx_serial.available()) break;
-                    uint8_t c = sx_serial.getc();
-                    payload[payload_len++] = c;
+        if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+            // read data from serial port
+            if (connected()) {
+                if (sx_serial.IsEnabled()) {
+                    for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+                        if (!sx_serial.available()) break;
+                        uint8_t c = sx_serial.getc();
+                        payload[payload_len++] = c;
+                    }
                 }
-            }
 
-            stats.bytes_transmitted.Add(payload_len);
-            stats.serial_data_transmitted.Inc();
-        } else {
-            sx_serial.flush();
+                stats.bytes_transmitted.Add(payload_len);
+                stats.serial_data_transmitted.Inc();
+            } else {
+                sx_serial.flush();
+            }
         }
-    }
     }
 
     stats.last_transmit_antenna = antenna;
 
     tFrameStats frame_stats;
-    frame_stats.seq_no = tarq.SeqNo();; //stats.transmit_seq_no;
+    frame_stats.seq_no = tarq.SeqNo(); //stats.transmit_seq_no;
     frame_stats.ack = rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
@@ -498,11 +498,11 @@ uint8_t payload_len = 0;
 
     static bool txFrame_valid = false; // just for now
     if (get_fresh_payload) {
-    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
-    } else {
-        pack_txcmdframe(&txFrame, &frame_stats, &rcData);
-    }
+        if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+            pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
+        } else {
+            pack_txcmdframe(&txFrame, &frame_stats, &rcData);
+        }
         txFrame_valid = true;
 
         stats.cntFrameTransmitted();
