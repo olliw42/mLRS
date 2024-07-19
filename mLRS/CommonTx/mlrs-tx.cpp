@@ -5,7 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // mLRS TX
-//********************************************************
+//*******************************************************
 
 
 #define DBG_MAIN(x)
@@ -1144,17 +1144,17 @@ IF_IN(
 
     //-- Handle display or CLI task
 
-    uint8_t cli_task = disp.Task();
-    if (cli_task == CLI_TASK_NONE) cli_task = cli.Task();
+    uint8_t tx_task = disp.Task();
+    if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
 
-    switch (cli_task) {
-    case CLI_TASK_RX_PARAM_SET:
+    switch (tx_task) {
+    case TX_TASK_RX_PARAM_SET:
         if (connected()) {
             link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case CLI_TASK_PARAM_STORE:
+    case TX_TASK_PARAM_STORE:
         if (connected()) {
             link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
             mbridge.Lock(); // lock mBridge
@@ -1162,26 +1162,26 @@ IF_IN(
             doParamsStore = true;
         }
         break;
-    case CLI_TASK_PARAM_RELOAD:
+    case TX_TASK_PARAM_RELOAD:
         setup_reload();
         if (connected()) {
             link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case CLI_TASK_BIND: start_bind(); break;
-    case CLI_TASK_BOOT: enter_system_bootloader(); break;
-    case CLI_TASK_FLASH_ESP: esp.EnterFlash(); break;
-    case CLI_TASK_ESP_CLI: esp.EnterCli(); break;
-    case CLI_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-    case CLI_TASK_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_BIND: start_bind(); break;
+    case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
+    case TX_TASK_ESP_CLI: esp.EnterCli(); break;
+    case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
+    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge
 
     esp.Do();
     uint8_t esp_task = esp.Task();
-    if (esp_task == ESP_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+    if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- more
 

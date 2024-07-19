@@ -43,12 +43,6 @@ void esp_enable(uint8_t serial_destination)
 #define ESP_PASSTHROUGH_TMO_MS  3000
 
 
-typedef enum {
-    ESP_TASK_NONE = 0,
-    ESP_TASK_RESTART_CONTROLLER,
-} ESP_TASK_ENUM;
-
-
 #ifndef USE_ESP_WIFI_BRIDGE
 
 class tTxEspWifiBridge
@@ -88,7 +82,7 @@ class tTxEspWifiBridge
     tSerialBase* ser;
 
     bool initialized;
-    uint8_t task;
+    uint8_t task_pending;
 
     bool passthrough_is_running;
     uint8_t dtr_rts_last;
@@ -102,7 +96,7 @@ void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
 
     initialized = (com != nullptr && ser != nullptr) ? true : false;
 
-    task = ESP_TASK_NONE;
+    task_pending = TX_TASK_NONE;
 
     passthrough_is_running = false;
     dtr_rts_last = 0;
@@ -111,6 +105,8 @@ void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
 
 uint8_t tTxEspWifiBridge::Task(void)
 {
+    uint8_t task = task_pending;
+    task_pending = TX_TASK_NONE;
     return task;
 }
 
@@ -128,7 +124,7 @@ void tTxEspWifiBridge::Do(void)
 
         passthrough_do_rts_cts();
 
-        task = ESP_TASK_RESTART_CONTROLLER;
+        task_pending = TX_TASK_RESTART_CONTROLLER;
 
         //dbg.puts("\nend");delay_ms(500);
     }

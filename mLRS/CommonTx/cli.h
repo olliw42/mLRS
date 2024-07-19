@@ -272,20 +272,6 @@ bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_i
 // CLI class
 //-------------------------------------------------------
 
-typedef enum {
-    CLI_TASK_NONE = 0,
-    CLI_TASK_RX_PARAM_SET,
-    CLI_TASK_PARAM_STORE,
-    CLI_TASK_BIND,
-    CLI_TASK_PARAM_RELOAD,
-    CLI_TASK_BOOT,
-    CLI_TASK_FLASH_ESP,
-    CLI_TASK_ESP_PASSTHROUGH,
-    CLI_TASK_ESP_CLI,
-    CLI_TASK_CHANGE_CONFIG_ID,
-} CLI_TASK_ENUM;
-
-
 class tTxCli
 {
   public:
@@ -357,7 +343,8 @@ void tTxCli::Init(tSerialBase* _comport)
     buf[pos] = '\0';
     tlast_ms = 0;
 
-    task_pending = CLI_TASK_NONE;
+    task_pending = TX_TASK_NONE;
+    task_value = 0;
 
     state = CLI_STATE_NORMAL;
 
@@ -382,7 +369,7 @@ void tTxCli::Set(uint8_t new_line_end)
 uint8_t tTxCli::Task(void)
 {
     uint8_t task = task_pending;
-    task_pending = 0;
+    task_pending = TX_TASK_NONE;
     return task;
 }
 
@@ -748,12 +735,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
+                if (rx_param_changed) task_pending = TX_TASK_RX_PARAM_SET;
             }
 
         } else
         if (is_cmd("pstore")) {
-            task_pending = CLI_TASK_PARAM_STORE;
+            task_pending = TX_TASK_PARAM_STORE;
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -764,12 +751,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            task_pending = CLI_TASK_BIND;
+            task_pending = TX_TASK_BIND;
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            task_pending = CLI_TASK_PARAM_RELOAD;
+            task_pending = TX_TASK_PARAM_RELOAD;
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -784,7 +771,7 @@ bool rx_param_changed;
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                task_pending = CLI_TASK_CHANGE_CONFIG_ID;
+                task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
                 task_value = value;
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
@@ -803,22 +790,22 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (is_cmd("systemboot")) {
-            task_pending = CLI_TASK_BOOT;
+            task_pending = TX_TASK_SYSTEM_BOOT;
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_PASSTHROUGH;
+            task_pending = TX_TASK_ESP_PASSTHROUGH;
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            task_pending = CLI_TASK_FLASH_ESP;
+            task_pending = TX_TASK_FLASH_ESP;
         } else
         if (is_cmd("espcli")) {
             // enter esp cli, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_CLI;
+            task_pending = TX_TASK_ESP_CLI;
 #endif
 
         //-- invalid command
