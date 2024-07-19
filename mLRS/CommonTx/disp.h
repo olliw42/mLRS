@@ -194,7 +194,7 @@ void tTxDisp::Init(void)
 #endif
     }
 
-    task_pending = CLI_TASK_NONE;
+    task_pending = TX_TASK_NONE;
     connected_last = false;
     setupmetadata_rx_available_last = false;
 
@@ -234,14 +234,14 @@ void tTxDisp::Init(void)
     idx_max = 0;
     idx_focused_in_edit = false;
     idx_focused_pos = 0;
-    idx_focused_task_pending = CLI_TASK_NONE;
+    idx_focused_task_pending = TX_TASK_NONE;
 }
 
 
 uint8_t tTxDisp::Task(void)
 {
     uint8_t task = task_pending;
-    task_pending = 0;
+    task_pending = TX_TASK_NONE;
     return task;
 }
 
@@ -421,8 +421,8 @@ if(!idx_focused_in_edit){
     if (edit_setting()) { // edit, and finish if true
         idx_focused_in_edit = false;
         page_modified = true;
-        if (idx_focused_task_pending != CLI_TASK_NONE) task_pending = idx_focused_task_pending;
-        idx_focused_task_pending = CLI_TASK_NONE;
+        if (idx_focused_task_pending != TX_TASK_NONE) task_pending = idx_focused_task_pending;
+        idx_focused_task_pending = TX_TASK_NONE;
     }
 
 }
@@ -459,16 +459,16 @@ void tTxDisp::run_action(void)
     case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
-        task_pending = CLI_TASK_PARAM_STORE;
+        task_pending = TX_TASK_PARAM_STORE;
         break;
     case DISP_ACTION_BIND:
-        task_pending = CLI_TASK_BIND;
+        task_pending = TX_TASK_BIND;
         break;
     case DISP_ACTION_BOOT:
-        task_pending = CLI_TASK_BOOT;
+        task_pending = TX_TASK_SYSTEM_BOOT;
         break;
     case DISP_ACTION_FLASH_ESP:
-        task_pending = CLI_TASK_FLASH_ESP;
+        task_pending = TX_TASK_FLASH_ESP;
         break;
     }
 }
@@ -1129,7 +1129,7 @@ bool tTxDisp::edit_setting(void)
 
     }
 
-    if (rx_param_changed) idx_focused_task_pending = CLI_TASK_RX_PARAM_SET;
+    if (rx_param_changed) idx_focused_task_pending = TX_TASK_RX_PARAM_SET;
     return false; // keep on editing
 }
 

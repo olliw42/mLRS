@@ -115,6 +115,14 @@ typedef enum {
     TX_SEND_RADIO_STATUS_NUM,
 } TX_SEND_RADIO_STATUS_ENUM;
 
+
+typedef enum {
+    TX_MAVLINK_COMPONENT_OFF = 0,
+    TX_MAVLINK_COMPONENT_ENABLED,
+    TX_MAVLINK_COMPONENT_NUM,
+} TX_MAVLINK_COMPONENT_ENUM;
+
+
 typedef enum {
     RX_SEND_RADIO_STATUS_OFF = 0,
     RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1,
@@ -279,8 +287,9 @@ typedef struct
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
     uint8_t CliLineEnd;
+    uint8_t MavlinkComponent;
 
-    uint8_t spare[9];
+    uint8_t spare[8];
 } tTxSetup; // 20 bytes
 
 
