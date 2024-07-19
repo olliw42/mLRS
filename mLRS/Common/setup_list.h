@@ -78,8 +78,10 @@
 // a LIST can have only 16 options at most
 // a LIST option string list is limited to 67 chars max
 // a LIST option string should not exceed 10 chars
-#define SETUP_PARAMETER_LIST_COMMON \
+#define SETUP_PARAMETER_LIST_COMMON_BINDPHRASE \
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)\
+
+#define SETUP_PARAMETER_LIST_COMMON_FURTHER \
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz,FLRC,FSK", SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
   X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )\
@@ -93,6 +95,7 @@
   X( Setup.Tx[0].SerialDestination, LIST, "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,serial2,mbridge", SETUP_MSK_TX_SER_DEST )\
   X( Setup.Tx[0].SerialBaudrate,    LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx[0].SendRadioStatus,   LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
+  X( Setup.Tx[0].MavlinkComponent,  LIST, "Tx Mav Component", "TX_MAV_COMPONENT", 0,0,0,"", "off,enabled", MSK_ALL )\
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\
   X( Setup.Tx[0].CliLineEnd,        LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CR,LF,CRLF", MSK_ALL )\
 

@@ -351,6 +351,13 @@ void link_task_init(void)
 }
 
 
+bool link_task_free(void)
+{
+    if (link_task != LINK_TASK_NONE) return false; // a task is running
+    return true;
+}
+
+
 bool link_task_set(uint8_t task)
 {
     if (link_task != LINK_TASK_NONE) return false; // a task is running
@@ -1142,9 +1149,10 @@ IF_IN(
 
     whileTransmit.Do();
 
-    //-- Handle display or CLI task
+    //-- Handle display or CLI or MAVLink task
 
     uint8_t tx_task = disp.Task();
+    if (tx_task == TX_TASK_NONE) tx_task = mavlink.Task();
     if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
 
     switch (tx_task) {

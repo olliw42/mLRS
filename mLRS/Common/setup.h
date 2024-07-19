@@ -247,6 +247,7 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
     Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
     Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
+    Setup.Tx[config_id].MavlinkComponent = SETUP_TX_MAV_COMPONENT;
 
     Setup.Rx.Power = SETUP_RX_POWER;
     Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
@@ -350,6 +351,7 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
 
     SANITIZE(Tx[config_id].SendRadioStatus, TX_SEND_RADIO_STATUS_NUM, SETUP_TX_SEND_RADIO_STATUS, TX_SEND_RADIO_STATUS_OFF);
+    SANITIZE(Tx[config_id].MavlinkComponent, TX_MAVLINK_COMPONENT_NUM, SETUP_TX_MAV_COMPONENT, TX_MAVLINK_COMPONENT_OFF);
 
     SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
     TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);

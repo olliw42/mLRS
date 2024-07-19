@@ -174,6 +174,7 @@ bool is_valid_bindphrase_char(char c);
 void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default);
 uint32_t u32_from_bindphrase(char* bindphrase);
 uint8_t except_from_bindphrase(char* bindphrase);
+void bindphrase_from_u32(char* bindphrase, uint32_t bindphrase_u32);
 
 void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen);
 void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t num, uint8_t slen);
