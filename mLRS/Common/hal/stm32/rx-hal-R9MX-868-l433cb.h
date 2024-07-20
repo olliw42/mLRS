@@ -211,17 +211,8 @@ void systembootloader_init(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_17_DBM, .mW = 50 },
-};
+#define POWER_PA_NONE_SX127X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

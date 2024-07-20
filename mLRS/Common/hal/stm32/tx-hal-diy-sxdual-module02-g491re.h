@@ -302,18 +302,8 @@ uint8_t fiveway_read(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_12p5_DBM, .mW = 18 },
-};
+#define POWER_PA_NONE_SX128X
+#include "../hal-power-pa.h"
 
 
 //-- TEST
