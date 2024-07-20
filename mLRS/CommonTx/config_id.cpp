@@ -24,8 +24,8 @@ void tConfigId::Init(void)
 
 void tConfigId::Change(uint8_t config_id)
 {
-    if (config_id >= SETUP_CONFIG_LEN) {
-        config_id = SETUP_CONFIG_LEN - 1;
+    if (config_id >= SETUP_CONFIG_NUM) {
+        config_id = SETUP_CONFIG_NUM - 1;
     }
 
     if (config_id == Config.ConfigId) {

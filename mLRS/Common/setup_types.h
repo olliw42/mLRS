@@ -259,7 +259,7 @@ typedef enum {
 
 
 //-------------------------------------------------------
-// Setup and Config Types
+// Setup Types
 // ATTENTION: only extend/append, never change sequence
 //-------------------------------------------------------
 
@@ -319,7 +319,7 @@ typedef struct
 #define SETUP_MARKER_STR      "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
-#define SETUP_CONFIG_LEN      10 // not more, so it's only one char
+#define SETUP_CONFIG_NUM      10 // not more, so it's only one char '0'...'9'
 
 
 // user setable parameter values, stored in EEPROM
@@ -345,15 +345,19 @@ typedef struct
 
     // parameters specific to Tx, can be changed on the fly
     // not used by receivers
-    tTxSetup Tx[SETUP_CONFIG_LEN];
+    tTxSetup Tx[SETUP_CONFIG_NUM];
 
     // parameters common to both Tx and Rx
     // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
-    tCommonSetup Common[SETUP_CONFIG_LEN];
+    tCommonSetup Common[SETUP_CONFIG_NUM];
 
     char MarkerEnd[8];
 } tSetup;
 
+
+//-------------------------------------------------------
+// MetaData and Config Types
+//-------------------------------------------------------
 
 typedef struct
 {

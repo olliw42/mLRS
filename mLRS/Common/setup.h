@@ -820,11 +820,11 @@ bool doEEPROMwrite;
             strstrbufcpy(Setup.Common[0].BindPhrase, Setup.__BindPhrase, 6);
             Setup.Common[0].FrequencyBand = Setup.__FrequencyBand;
             Setup.Common[0].Mode = Setup.__Mode;
-            for (uint8_t id = 1; id < SETUP_CONFIG_LEN; id++) setup_default(id); // default all other tables
+            for (uint8_t id = 1; id < SETUP_CONFIG_NUM; id++) setup_default(id); // default all other tables
             Setup._ConfigId = 0;
         } else
         if (Setup.Layout < SETUPLAYOUT_L0_3_35) {
-            for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) {
+            for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
                 // Tx ChannelSource rearranged
                 uint8_t tx_channel_source = Setup.Tx[id].ChannelsSource;
                 switch (tx_channel_source) {
@@ -839,7 +839,7 @@ bool doEEPROMwrite;
                 }
             }
         } else {
-            for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) setup_default(id);
+            for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
         }
         Setup.Layout = SETUPLAYOUT;
@@ -859,13 +859,13 @@ bool doEEPROMwrite;
     }
 
 #ifdef DEVICE_IS_TRANSMITTER
-    if (Setup._ConfigId >= SETUP_CONFIG_LEN) Setup._ConfigId = 0;
+    if (Setup._ConfigId >= SETUP_CONFIG_NUM) Setup._ConfigId = 0;
 
     if (Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE ||
         Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
         // config id is supported
         // ensure that they all have the same channel_source
-        for (uint8_t id = 0; id < SETUP_CONFIG_LEN; id++) {
+        for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
             Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
         }
     } else {
