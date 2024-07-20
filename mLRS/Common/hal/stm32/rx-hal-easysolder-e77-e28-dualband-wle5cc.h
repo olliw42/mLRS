@@ -7,7 +7,7 @@
 // hal
 //*******************************************************
 
-//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
+//#define MLRS_FEATURE_E77_XTAL // must be defined high up, not here, affects main !
 
 //-------------------------------------------------------
 // RX DIY "easy-to-solder" E77 E28 dualband, STM32WLE5CC

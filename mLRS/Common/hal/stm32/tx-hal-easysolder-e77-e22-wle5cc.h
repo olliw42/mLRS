@@ -12,7 +12,7 @@
 //#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
 //#define MLRS_FEATURE_DIVERSITY
 //#define MLRS_FEATURE_NO_DIVERSITY
-//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
+//#define MLRS_FEATURE_E77_XTAL // must be defined high up, not here, affects main !
 
 //-------------------------------------------------------
 // TX DIY "easy-to-solder" E77 E22 dual, STM32WLE5CC
