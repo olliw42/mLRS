@@ -12,7 +12,6 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-//#define DEVICE_HAS_BUZZER // TODO: do not use
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -189,33 +188,10 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Buzzer
-// Buzzer is active high // TODO: needs pin and AF check! do not use
-
-#define BUZZER                    IO_PB9XXX
-#define BUZZER_IO_AF              IO_AF_12
-#define BUZZER_TIMx               TIM1
-#define BUZZER_IRQn               TIM1_UP_IRQn
-#define BUZZER_IRQHandler         TIM1_UP_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
-//#define BUZZER_TIM_IRQ_PRIORITY   14
-
-
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

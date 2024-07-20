@@ -41,7 +41,6 @@
 
 // Rx only
 #define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
-#define SETUP_MSK_RX_BUZZER           &SetupMetaData.Rx_Buzzer_allowed_mask // this we get from the receiver
 
 
 // for Tx,Rx, option strings
@@ -109,7 +108,6 @@
   X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
-  X( Setup.Rx.Buzzer,             LIST, "Rx Buzzer",        "RX_BUZZER",        0,0,0,"", "off,LP", SETUP_MSK_RX_BUZZER )\
   X( Setup.Rx.OutRssiChannelMode, LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   X( Setup.Rx.OutLqChannelMode,   LIST, "Rx Out LQ Ch",     "RX_OUT_LQ_CH",     0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   \

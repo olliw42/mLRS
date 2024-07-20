@@ -12,7 +12,6 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT_INVERTED
-#define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
 
 
@@ -183,17 +182,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Buzzer
-// Buzzer is active high
-
-#define BUZZER                    IO_PB1
-#define BUZZER_TIMx               TIM1
-#define BUZZER_IRQn               TIM1_UP_IRQn
-#define BUZZER_IRQHandler         TIM1_UP_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
-//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- Cooling Fan

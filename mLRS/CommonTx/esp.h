@@ -50,7 +50,7 @@ class tTxEspWifiBridge
   public:
     void Init(tSerialBase* _comport, tSerialBase* _serialport) {}
     void Do(void) {}
-    uint8_t Task(void) { return ESP_TASK_NONE; }
+    uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterFlash(void) {}
     void EnterCli(void) {}
