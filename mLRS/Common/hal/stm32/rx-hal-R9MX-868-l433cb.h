@@ -19,14 +19,13 @@
 //   Pin4 Inv SPort   PB11
 //   Pin5 SBusOut     PA2 / U2_Tx inverted
 //   Pin6 SBusIn      ???
-//   Ch1    PA8           -> Buzzer (TIM1)
+//   Ch1    PA8           -> unused (TIM1)
 //   Ch2    PA9 / U1Tx    -> Serial Tx
 //   Ch3    PA10 / U1Rx   -> Serial Rx
 //   Ch4    PA11          -> Debug Tx (TIM15)
 
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SYSTEMBOOT
 
 
@@ -191,17 +190,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Buzzer
-
-#define BUZZER                    IO_PA8
-#define BUZZER_IO_AF              IO_AF_1
-#define BUZZER_TIMx               TIM1
-#define BUZZER_IRQn               TIM1_UP_TIM16_IRQn
-#define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH1
-//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- SystemBootLoader

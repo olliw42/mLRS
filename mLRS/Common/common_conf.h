@@ -86,8 +86,6 @@
 #define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 16: CH16
 #define SETUP_RX_OUT_LQ_CHANNEL         0 // 0: off, 5: CH5, 16: CH16
 
-#define SETUP_RX_BUZZER                 0 // 0: off, 1: LP
-
 
 #define BIND_PHRASE                     "mlrs.0" // string of 6 characters, allowed are 'a'-'z','0'-'9','_','-','#','.'
 

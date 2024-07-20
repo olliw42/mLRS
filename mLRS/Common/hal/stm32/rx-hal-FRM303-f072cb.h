@@ -15,7 +15,6 @@
 // T1, T2 (32b), T3, T14, T15, T16, T17, internal T6, T7
 
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_BUZZER
 //#define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SYSTEMBOOT
@@ -233,18 +232,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Buzzer
-// Buzzer is active high
-
-#define BUZZER                    IO_PB11
-#define BUZZER_IO_AF              IO_AF_2
-#define BUZZER_TIMx               TIM2
-#define BUZZER_IRQn               TIM2_IRQn
-#define BUZZER_IRQHandler         TIM2_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH4
-//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- SystemBootLoader

@@ -16,7 +16,6 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_BUZZER
 
 
 #ifdef MLRS_FEATURE_DIVERSITY
@@ -271,16 +270,6 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
-
-
-//-- Buzzer
-
-#define BUZZER                    IO_PB7
-#define BUZZER_TIMx               TIM4
-#define BUZZER_IRQn               TIM4_IRQn
-#define BUZZER_IRQHandler         TIM4_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH2
-//#define BUZZER_TIM_IRQ_PRIORITY   14
 
 
 //-- POWER

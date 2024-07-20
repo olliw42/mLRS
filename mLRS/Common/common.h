@@ -179,7 +179,9 @@ tFhss fhss;
 
 tBindBase bind;
 
+#ifdef DEVICE_IS_TRANSMITTER
 tBuzzer buzzer;
+#endif
 tFan fan;
 tLEDs leds;
 

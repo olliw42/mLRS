@@ -161,13 +161,6 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_OutMode_allowed_mask = 0;  // not available, do not display
 #endif
 
-    // Rx Buzzer: ""off,LP"
-#ifdef DEVICE_HAS_BUZZER
-    SetupMetaData.Rx_Buzzer_allowed_mask = UINT16_MAX; // all
-#else
-    SetupMetaData.Rx_Buzzer_allowed_mask = 0; // not available, do not display
-#endif
-
     //-- Tx: Receiver setup meta data
 
     SetupMetaData.rx_available = false;
@@ -258,7 +251,6 @@ void setup_default(uint8_t config_id)
     Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
-    Setup.Rx.Buzzer = SETUP_RX_BUZZER;
     Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
@@ -387,9 +379,6 @@ void setup_sanitize_config(uint8_t config_id)
 
     SANITIZE(Rx.FailsafeMode, FAILSAFE_MODE_NUM, SETUP_RX_FAILSAFE_MODE, FAILSAFE_MODE_NO_SIGNAL);
 
-    SANITIZE(Rx.Buzzer, BUZZER_LOST_PACKETS + 1, SETUP_RX_BUZZER, BUZZER_OFF);
-    TST_NOTALLOWED(Rx_Buzzer_allowed_mask, Rx.Buzzer, BUZZER_OFF);
-
     for (uint8_t ch = 0; ch < 12; ch++) {
         if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] < -120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
         if (Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] > 120) Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0;
@@ -410,6 +399,7 @@ void setup_sanitize_config(uint8_t config_id)
     // should be 0xFF'ed
 
     Setup.Tx[config_id].__SerialLinkMode = 0xFF;
+    Setup.Rx.__Buzzer = 0xFF;
     Setup.Rx.__RadioStatusMethod = 0xFF;
 
     for (uint8_t n = 0; n < sizeof(Setup.spare)/sizeof(Setup.spare[0]); n++) Setup.spare[n] = 0xFF;

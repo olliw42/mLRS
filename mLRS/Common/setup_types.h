@@ -304,7 +304,7 @@ typedef struct
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
-    uint8_t Buzzer;
+    uint8_t __Buzzer; // deprecated
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
     uint8_t OutLqChannelMode;
@@ -375,7 +375,6 @@ typedef struct
     char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
-    uint16_t Rx_Buzzer_allowed_mask;
 
     bool rx_available;
 
