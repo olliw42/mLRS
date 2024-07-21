@@ -554,7 +554,7 @@ tRxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
-    // receive ARQ, must come before process_received_frame()
+    // handle receive ARQ, must come before process_received_frame()
     if (rx_status == RX_STATUS_VALID) {
         rarq.Received(frame->status.seq_no);
     } else {

@@ -352,7 +352,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    // copy rc data
+    // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
