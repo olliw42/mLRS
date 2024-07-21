@@ -104,7 +104,6 @@ tRxClock rxclock;
 tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
-tTransmitArq tarq;
 tReceiveArq rarq;
 
 
@@ -289,9 +288,7 @@ void prepare_transmit_frame(uint8_t antenna)
 uint8_t payload[FRAME_RX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
 
-    bool get_fresh_payload = tarq.GetFreshPayload();
 
-    if (get_fresh_payload) {
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
@@ -307,12 +304,11 @@ uint8_t payload_len = 0;
                 sx_serial.flush();
             }
         }
-    }
 
     stats.last_transmit_antenna = antenna;
 
     tFrameStats frame_stats;
-    frame_stats.seq_no = tarq.SeqNo();
+    frame_stats.seq_no = stats.transmit_seq_no; // tarq.SeqNo();
     frame_stats.ack = rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
@@ -320,41 +316,17 @@ uint8_t payload_len = 0;
     frame_stats.LQ_rc = stats.GetLQ_rc();
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
-    static bool rxFrame_valid = false; // just for now
-    if (get_fresh_payload) {
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             pack_rxframe(&rxFrame, &frame_stats, payload, payload_len);
         } else {
             pack_rxcmdframe(&rxFrame, &frame_stats);
         }
-        rxFrame_valid = true;
 
-        stats.cntFrameTransmitted();
-        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
-
-    } else {
-        // rxFrame should still hold the previous data
-        if (!rxFrame_valid) while(1){} // should not happen
-
-        update_rxframe_stats(&rxFrame, &frame_stats);
-        rxFrame_valid = true;
-
-        stats.cntFrameSkipped();
-        tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
-    }
-
-#ifdef USE_ARQ_DBG
-dbg.puts(get_fresh_payload?" TRUE":" FALSE");
-dbg.puts("\ntrs seq ");
-dbg.puts(u8toBCD_s(rxFrame.status.seq_no));
-#endif
 }
 
 
 void process_received_frame(bool do_payload, tTxFrame* frame)
 {
-    bool accept_payload = rarq.AcceptPayload();
-
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
@@ -370,6 +342,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
 
     rcdata_from_txframe(&rcData, frame);
 
+    bool accept_payload = rarq.AcceptPayload();
     if (!accept_payload) return; // frame has no fresh payload
 
     // handle cmd frame
@@ -416,13 +389,6 @@ tTxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
-    // handle transmit ARQ
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.AckReceived(frame->status.ack);
-    } else {
-        tarq.FrameMissed();
-    }
-
     // handle receive ARQ, must come before process_received_frame()
     if (rx_status == RX_STATUS_VALID) {
         rarq.Received(frame->status.seq_no);
@@ -433,12 +399,6 @@ tTxFrame* frame;
     if (rarq.FrameLost()) {
         mavlink.FrameLost();
     }
-
-#ifdef USE_ARQ_DBG
-dbg.puts("\nrec");
-if(tarq.status==tTransmitArq::ARQ_TX_FRAME_MISSED) dbg.puts(" FM"); else
-if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8toBCD_s(tarq.received_ack_seq_no)); }
-#endif
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
@@ -462,7 +422,6 @@ if(tarq.status==tTransmitArq::ARQ_TX_RECEIVED) { dbg.puts(" RC "); dbg.puts(u8to
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    tarq.FrameMissed();
     rarq.FrameMissed();
 
 #ifdef USE_ARQ_DBG
@@ -477,6 +436,8 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
         bind.do_transmit(antenna);
         return;
     }
+
+    stats.transmit_seq_no++;
 
     prepare_transmit_frame(antenna);
 
@@ -592,7 +553,6 @@ RESTARTCONTROLLER
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
-    tarq.Init();
     rarq.Init();
 
     out.Configure(Setup.Rx.OutMode);
@@ -745,7 +705,7 @@ IF_SX2(
         doPostReceive = false;
 
 #ifdef USE_ARQ
-if (tarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 #endif
 
         bool frame_received, valid_frame_received, invalid_frame_received;
@@ -856,7 +816,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             sx2.SetToIdle();
         }
 
-        if (!connected()) tarq.Disconnected();
         if (!connected()) rarq.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);

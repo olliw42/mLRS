@@ -123,7 +123,6 @@
 
 tRDiversity rdiversity;
 tTDiversity tdiversity;
-tReceiveArq rarq;
 tTransmitArq tarq;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
@@ -469,12 +468,10 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial port
             if (connected()) {
-                if (sx_serial.IsEnabled()) {
-                    for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-                        if (!sx_serial.available()) break;
-                        uint8_t c = sx_serial.getc();
-                        payload[payload_len++] = c;
-                    }
+                for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+                    if (!sx_serial.available()) break;
+                    uint8_t c = sx_serial.getc();
+                    payload[payload_len++] = c;
                 }
 
                 stats.bytes_transmitted.Add(payload_len);
@@ -489,7 +486,7 @@ uint8_t payload_len = 0;
 
     tFrameStats frame_stats;
     frame_stats.seq_no = tarq.SeqNo(); //stats.transmit_seq_no;
-    frame_stats.ack = rarq.AckSeqNo();
+    frame_stats.ack = 1; // rarq.AckSeqNo();
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
@@ -507,6 +504,7 @@ uint8_t payload_len = 0;
 
         stats.cntFrameTransmitted();
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
+
     } else {
         // txFrame should still hold the previous data
         if (!txFrame_valid) while(1){} // should not happen
@@ -518,21 +516,11 @@ uint8_t payload_len = 0;
         tarq.SetRetryCntAuto(stats.GetFrameCnt(), Config.Mode);
     }
 
-#ifdef USE_ARQ_DBG
-dbg.puts("\ntrs ");
-dbg.puts(u8toBCD_s(rarq.AckSeqNo()));
-#endif
 }
 
 
 void process_received_frame(bool do_payload, tRxFrame* frame)
 {
-    bool accept_payload = rarq.AcceptPayload();
-
-#ifdef USE_ARQ_DBG
-dbg.puts(accept_payload?" TRUE":" FALSE");
-#endif
-
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
@@ -543,8 +531,6 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
         return;
     }
 
-    if (!accept_payload) return; // frame has no fresh payload
-
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
@@ -552,11 +538,9 @@ dbg.puts(accept_payload?" TRUE":" FALSE");
     }
 
     // output data on serial
-    if (sx_serial.IsEnabled()) {
-        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-            uint8_t c = frame->payload[i];
-            sx_serial.putc(c);
-        }
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+        uint8_t c = frame->payload[i];
+        sx_serial.putc(c);
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -595,29 +579,9 @@ tRxFrame* frame;
         tarq.FrameMissed();
     }
 
-    // handle receive ARQ, must come before process_received_frame()
-    if (rx_status == RX_STATUS_VALID) {
-        rarq.Received(frame->status.seq_no);
-    } else {
-        rarq.FrameMissed();
-    }
-    // check this before received data may be passed to parsers
-    if (rarq.FrameLost()) {
-        mavlink.FrameLost();
-    }
-
-#ifdef USE_ARQ_DBG
-dbg.puts("\nrec");
-if(rarq.status==tReceiveArq::ARQ_RX_FRAME_MISSED) dbg.puts(" FM"); else
-if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED_WAS_IDLE) dbg.puts(" RI"); else
-if(rarq.status==tReceiveArq::ARQ_RX_RECEIVED) dbg.puts(" R");
-dbg.puts(" seq_last ");dbg.puts(u8toBCD_s(rarq.received_seq_no_last));
-dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
-#endif
-
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
 
-        bool do_payload = true; // has no rc data, so do_payload is always
+        bool do_payload = true; // has no rc data, so do_payload is always true
 
         process_received_frame(do_payload, frame);
 
@@ -636,7 +600,6 @@ dbg.puts(" seq ");dbg.puts(u8toBCD_s(rarq.received_seq_no));
 
 void handle_receive_none(void) // RX_STATUS_NONE
 {
-    rarq.FrameMissed();
     tarq.FrameMissed();
 
 #ifdef USE_ARQ_DBG
@@ -766,7 +729,6 @@ RESTARTCONTROLLER
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
-    rarq.Init();
     tarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
@@ -945,7 +907,7 @@ IF_SX2(
         sx2.SetToIdle();
 
 #ifdef USE_ARQ
-if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
+if (tarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
 #endif
 
         bool frame_received, valid_frame_received;
@@ -980,7 +942,7 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD
         // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
         if (!valid_frame_received) {
@@ -1039,7 +1001,6 @@ if (rarq.SimulateMiss()) { link_rx1_status = link_rx2_status = RX_STATUS_NONE; }
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
 
-        if (!connected()) rarq.Disconnected();
         if (!connected()) tarq.Disconnected();
 
         if (connect_state == CONNECT_STATE_LISTEN) {
