@@ -49,7 +49,7 @@ class tTransmitArq
 
     void Disconnected(void);
     void FrameMissed(void);
-    void Received(uint8_t ack_seq_no);
+    void AckReceived(uint8_t ack_seq_no);
 
     bool GetFreshPayload(void);
     uint8_t SeqNo(void);
@@ -94,7 +94,7 @@ void tTransmitArq::FrameMissed(void)
 }
 
 
-void tTransmitArq::Received(uint8_t ack_seq_no)
+void tTransmitArq::AckReceived(uint8_t ack_seq_no)
 {
     received_ack_seq_no = ack_seq_no; // is 0/1
     status = ARQ_TX_RECEIVED;
@@ -387,7 +387,7 @@ class tTransmitArq
 
     void Disconnected(void) {}
     void FrameMissed(void) {}
-    void Received(uint8_t ack_seq_no) {}
+    void AckReceived(uint8_t ack_seq_no) {}
 
     bool GetFreshPayload(void) { return true; }
     uint8_t SeqNo(void) { seq_no++; return seq_no; }
@@ -431,7 +431,7 @@ process_received_frame()
     accept_payload = AcceptPayload()
 
 handle_receive()                        handle_receive()
-    Received()                              Received()
+    Received()                              AckReceived()
     or FrameMissed()                        or FrameMissed()
     FrameLost() -> reset parsers
 

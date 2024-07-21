@@ -361,7 +361,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    // copy rc data
+    // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
@@ -418,12 +418,12 @@ tTxFrame* frame;
 
     // handle transmit ARQ
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.Received(frame->status.ack);
+        tarq.AckReceived(frame->status.ack);
     } else {
         tarq.FrameMissed();
     }
 
-    // receive ARQ, must come before process_received_frame()
+    // handle receive ARQ, must come before process_received_frame()
     if (rx_status == RX_STATUS_VALID) {
         rarq.Received(frame->status.seq_no);
     } else {
