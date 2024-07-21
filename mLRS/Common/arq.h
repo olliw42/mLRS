@@ -416,3 +416,26 @@ class tReceiveArq
 #endif
 
 #endif // ARQ_H
+
+/* some sort of documentation
+for the Rx -> Tx transmission direction:
+
+Tx                                      Rx
+rarq                                    tarq
+
+prepare_transmit_frame()                prepare_transmit_frame()
+    ack = AckSeqNo()                        get_fresh_payload = GetFreshPayload()
+                                            seq_no = SeqNo()
+                                            SetRetryCntAuto()
+process_received_frame()
+    accept_payload = AcceptPayload()
+
+handle_receive()                        handle_receive()
+    Received()                              Received()
+    or FrameMissed()                        or FrameMissed()
+    FrameLost() -> reset parsers
+
+handle_receive_none()                   handle_receive_none()
+    FrameMissed()                           FrameMissed()
+
+*/
