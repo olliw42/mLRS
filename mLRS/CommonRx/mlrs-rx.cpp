@@ -407,7 +407,7 @@ tTxFrame* frame;
 
     // handle transmit ARQ
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.Received(frame->status.ack);
+        tarq.AckReceived(frame->status.ack);
     } else {
         tarq.FrameMissed();
     }
