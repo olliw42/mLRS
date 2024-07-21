@@ -465,12 +465,10 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            if (sx_serial.IsEnabled()) {
-                for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-                    if (!sx_serial.available()) break;
-                    uint8_t c = sx_serial.getc();
-                    payload[payload_len++] = c;
-                }
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+                if (!sx_serial.available()) break;
+                uint8_t c = sx_serial.getc();
+                payload[payload_len++] = c;
             }
 
             stats.bytes_transmitted.Add(payload_len);
@@ -522,11 +520,9 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     }
 
     // output data on serial
-    if (sx_serial.IsEnabled()) {
-        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-            uint8_t c = frame->payload[i];
-            sx_serial.putc(c);
-        }
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+        uint8_t c = frame->payload[i];
+        sx_serial.putc(c);
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
