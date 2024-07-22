@@ -8,6 +8,7 @@
 *******************************************************
  run_replace_names_by_variables.py
  goes through STM32CubeIDE configuration files and adapts them as needed to work
+ version 23.07.2024
 ********************************************************
 '''
 import os
@@ -30,8 +31,9 @@ def call_replace(filename):
     #F.close()
 
     # U can use STM32CUBEIDE's PATH Variables(like: WORKSPACE_LOC, PROJECT_LOC ....) in the path
-    content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs/mLRS',"WORKSPACE_LOC") #TODO: use a regex
-
+    #content1 = content.replace('C:/Users/Olli/Documents/GitHub/mlrs/mLRS',"WORKSPACE_LOC") #TODO: use a regex
+    content1 = re.sub('[A-Z]:/[\w/]+/mlrs/mLRS',"WORKSPACE_LOC", content)
+    
     F = open(filename, mode='w')
     F.write(content1)
     F.close()
@@ -40,6 +42,7 @@ def correct_folders_in_project_files():
     print('----------------------------------------')
     print(' correct .project and .mxproject files for folders')
     print('----------------------------------------')
+    print(mLRSdirectory)
     dirlist = os.listdir(mLRSdirectory)
     for f in dirlist:
         print('*', f)

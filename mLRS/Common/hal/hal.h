@@ -86,6 +86,29 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "device_conf.h"
 
 
+//-- MATEKSYS mLRS devices
+
+#ifdef RX_MATEK_MR24_30_G431KB
+#include "matek/rx-hal-matek-mr24-30-g431kb.h"
+#endif
+
+#ifdef TX_MATEK_MR24_30_G431KB
+#include "matek/tx-hal-matek-mr24-30-g431kb.h"
+#endif
+
+#ifdef RX_MATEK_MR900_30_G431KB
+#include "matek/rx-hal-matek-mr900-30-g431kb.h"
+#endif
+
+#ifdef TX_MATEK_MR900_30_G431KB
+#include "matek/tx-hal-matek-mr900-30-g431kb.h"
+#endif
+
+#ifdef RX_MATEK_MR900_22_WLE5CC
+#include "matek/rx-hal-matek-mr900-22-wle5cc.h"
+#endif
+
+
 //-- FrsKy R9 system
 
 #ifdef RX_R9MX_868_L433CB
