@@ -89,7 +89,7 @@ The FLRC and FSK modes are not intended for long range.
 
 ## Hardware ##
 
-STM32 chipsets were chosen as main platform, and a good number of STM32 based devices are supported. The widely available ExpressLRS hardware, which uses ESP chipsets, is not ideal for mLRS, but ExpressLRS devices are supported.
+The STM32 chipsets were chosen as main platform, and a good number of STM32 based devices are supported. The widely available ExpressLRS hardware, which uses ESP chipsets, is not ideal for mLRS, but ExpressLRS devices are supported.
 
 The code currently supports:
 - MatekSys mLRS boards (2.4 GHz, 868/915 MHz)
@@ -106,7 +106,7 @@ In the 915/868 MHz range, the Frsky R9 system and ExpressLRS receivers provide a
 
 The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available and reasonable options for entering mLRS. The "easy-to-solder" board, which uses an EByte E77 module, is a simple DIY option for building mLRS receivers and transmitters. It can also be used to build mLRS full diversity devices, as well as dual-band devices, working e.g. in the 868/915 MHZ and 2.4 GHz ranges. All these boards are based on the STM32WL5E chip and thus provide all advantages of the SX126x chipset, such as the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges. 
 
-In the 2.4 GHz range, the Flysky FRM303 transmitter module excels in its transmit power, but is quite expensive and also somewhat limited feature-wise. mLRS supports using it as transmitter as well as receiver. The ExpressLRS 2.4 GHz receivers can provide up to 100 mW power, and some support full diversity. If the full potential of mLRS is however desired, the MatekSys or DIY options are the way to go. For instance, they offer the most capable mLRS transmitters available.
+In the 2.4 GHz range, the Flysky FRM303 transmitter module excels in its transmit power, but is quite expensive and also somewhat limited feature-wise. mLRS supports using it as transmitter as well as receiver. The ExpressLRS 2.4 GHz receivers can provide up to 100 mW power, and some support full diversity. If the full potential of mLRS is however desired, the MatekSys or DIY options are the way to go. For instance, the DIY options offer the most feature-rich mLRS transmitters available.
 
 Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 

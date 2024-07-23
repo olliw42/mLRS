@@ -15,19 +15,19 @@
 pins which are available for free use, i.e., are not used for LoRa
 they are all broken out on the modules
 
-label	location		pin			functions	alternative functions
-Tx1		pin header		PA9			U1_TX		I2C2_SCL / T2_CH3
-Rx1		pin header		PA10		U1_RX		T1_CH3 / T2_CH4
-Tx2		pin header		PB3			U2_TX		T2_CH2
-Rx2		pin header		PB4			U2_RX       T3_CH1 / T16_CH1
-LT1		pin header		PA2			LPU1_TX		U2_TX / T2_CH3 / T15_CH1 / ADC1_IN3
-LR1		pin header		PA3 		LPU1_RX		U2_RX / T2_CH4 / T15_CH2 / ADC1_IN4
+label   location        pin         functions   alternative functions
+Tx1     pin header      PA9         U1_TX       I2C2_SCL / T1_CH2 / T2_CH3
+Rx1     pin header      PA10        U1_RX       T1_CH3 / T2_CH4
+Tx2     pin header      PB3         U2_TX       T2_CH2
+Rx2     pin header      PB4         U2_RX       T3_CH1 / T16_CH1
+LT1     pin header      PA2         LPU1_TX     U2_TX / T2_CH3 / T15_CH1 / ADC1_IN3
+LR1     pin header      PA3         LPU1_RX     U2_RX / T2_CH4 / T15_CH2 / ADC1_IN4
 
-FAN		solder pad		PA8			GPIO    	I2C2_SDA, T1_CH1
-D-		solder pad		PA11		USB DM		T1_CH4 / T4_CH1 / FDCAN1_RX
-D+		solder pad		PA12		USB DP		T4_CH2 / T16_CH1 / FDCAN1_TX
-SWD		solder pad		PA13		SWDIO		I2C1_SCL / T4_CH3
-SWC		solder pad		PA14 		SWDCLK		I2C1_SDA / T8_CH2
+FAN     solder pad      PA8         GPIO        I2C2_SDA / T1_CH1
+D-      solder pad      PA11        USB DM      T1_CH4 / T4_CH1 / FDCAN1_RX
+D+      solder pad      PA12        USB DP      T4_CH2 / T16_CH1 / FDCAN1_TX
+SWD     solder pad      PA13        SWDIO       I2C1_SCL / T4_CH3
+SWC     solder pad      PA14        SWDCLK      I2C1_SDA / T8_CH2
 */
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -132,8 +132,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN 		          IO_PA1
-#define LED_RED		              IO_PA0
+#define LED_GREEN                 IO_PA1
+#define LED_RED                   IO_PA0
 
 void leds_init(void)
 {
