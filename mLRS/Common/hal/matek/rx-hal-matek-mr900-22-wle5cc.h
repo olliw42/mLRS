@@ -10,6 +10,24 @@
 // MATEKSYS mR900-22 STM32WLE5CC, as receiver
 //-------------------------------------------------------
 
+/*
+pins which are available for free use, i.e., are not used for LoRa
+they are all broken out on the modules
+
+label   location        pin         functions   alternative functions
+Tx1     pin header      PB6         U1_TX       I2C1_SCL
+Rx1     pin header      PB7         U1_RX
+Tx2     pin header      PA2         U2_TX       LPU1_TX / T2_CH3
+Rx2     pin header      PA3         U2_RX       LPU1_RX / T2_CH4
+
+Bind    solder pad      PA0                     T2_CH1
+debug   solder pad      PA5                     T2_CH1
+SCL     solder pad      PA9         I2C1_SCL    U1_TX / T2_CH2
+SDA     solder pad      PA10        I2C1_SDA    U1_RX / T1_CH3 / ADC_IN6
+SWD     solder pad      PA13        SWDIO       ADC_IN9
+SWC     solder pad      PA14        SWDCLK      ADC_IN10
+*/
+
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
 
@@ -187,15 +205,14 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //-- TEST
 
 uint32_t porta[] = {
-    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_5,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_5,
     LL_GPIO_PIN_9, LL_GPIO_PIN_10,
 };
 
 uint32_t portb[] = {
-    LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_6, LL_GPIO_PIN_7,
 };
 
 uint32_t portc[] = {
 };
-
 
