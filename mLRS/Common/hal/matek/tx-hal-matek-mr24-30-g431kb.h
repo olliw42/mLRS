@@ -122,7 +122,7 @@ void in_set_inverted(void)
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
