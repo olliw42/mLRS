@@ -26,8 +26,13 @@ extern "C" {
 // can we pl somehow do this elsewhere, better?
 // USB_RXBUFSIZE, USB_TXBUFSIZE we can do in stdstm32-usb-vcp.h, but not USBD_IRQ_PRIORITY
 // so we do all here to have them together, but not nice
+#if defined STM32F072xB
 #define USB_RXBUFSIZE       256
 #define USB_TXBUFSIZE       256
+#else
+#define USB_RXBUFSIZE       512 // 256
+#define USB_TXBUFSIZE       512 // 256
+#endif
 #define USBD_IRQ_PRIORITY   0
 
 

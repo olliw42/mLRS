@@ -304,7 +304,8 @@ class tTxCli
     uint16_t put_cnt;
     void delay_off(void) { put_cnt = 0; }
     void delay_clear(void) { put_cnt = 1; }
-    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+//    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+    void delay(void) { if (put_cnt > 256) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
