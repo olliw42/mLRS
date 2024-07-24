@@ -6,6 +6,9 @@
 // hal
 //*******************************************************
 
+//#define MLRS_FEATURE_COM_ON_USB // this MLRS_FEATURE define can be used locally here
+
+
 //-------------------------------------------------------
 // MATEKSYS mR900-30 STM32G431KB, as Tx module
 //-------------------------------------------------------
@@ -17,6 +20,10 @@
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF
+
+#ifdef MLRS_FEATURE_COM_ON_USB
+#define DEVICE_HAS_COM_ON_USB
+#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -37,6 +44,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
+#ifndef DEVICE_HAS_COM_ON_USB
 #define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
@@ -44,6 +52,7 @@
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#endif
 
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
