@@ -469,6 +469,7 @@ void configure_mode(uint8_t mode)
 
     }
 
+    // Sx2
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x

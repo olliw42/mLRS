@@ -89,15 +89,36 @@ void out_set_inverted(void)
 
 
 //-- POWER
+// SX126X power setting can vary from -9 .. 22 for -9 dBm ... 22 dBm
+#include "../../setup_types.h"
 
-#define POWER_GAIN_DBM            28
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
+void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+{
+    if (power_dbm >= POWER_30_DBM) {
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
+        *actual_power_dbm = 30;
+    } else
+    if (power_dbm >= POWER_27_DBM) {
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -7 : -4;
+        *actual_power_dbm = 27;
+    } else
+    if (power_dbm >= POWER_24_DBM) {
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -7;
+        *actual_power_dbm = 24;
+    } else
+    if (power_dbm >= POWER_20_DBM) {
+        *sx_power = -9;
+        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
+    } else {
+        *sx_power = -9;
+        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
+    }
+}
 
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
+    { .dbm = POWER_MIN, .mW = INT8_MIN }, // doesn't make sense IMHO
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
