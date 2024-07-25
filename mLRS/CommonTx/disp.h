@@ -22,6 +22,7 @@ class tTxDisp
     void Init(void) {}
     void Tick_ms(void) {}
     uint8_t Task(void) { return 0; }
+    void DrawNotify(const char* s) {}
     void DrawBoot(void) {}
 };
 
