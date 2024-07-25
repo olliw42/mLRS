@@ -168,6 +168,10 @@ tTxDisp disp;
 
 tTxEspWifiBridge esp;
 
+#include "hc04.h"
+
+tTxHc04Bridge hc04;
+
 
 //-------------------------------------------------------
 // While transmit/receive tasks
@@ -718,10 +722,15 @@ RESTARTCONTROLLER
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    esp.Init(&comport, &serial);
-#else
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
     esp.Init(&comport, &serial2);
+#else
+    esp.Init(&comport, &serial);
+#endif
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+    hc04.Init(&comport, &serial2, Config.SerialBaudrate);
+#else
+    hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
@@ -1186,6 +1195,9 @@ IF_IN(
     esp.Do();
     uint8_t esp_task = esp.Task();
     if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+
+    //-- Handle HC04 bridge
+    hc04.Do();
 
     //-- more
 
