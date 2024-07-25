@@ -7,6 +7,7 @@
 //*******************************************************
 
 //#define MLRS_FEATURE_COM_ON_USB // this MLRS_FEATURE define can be used locally here
+//#define MLRS_FEATURE_HC04_MODULE // this MLRS_FEATURE define can be used locally here
 
 
 //-------------------------------------------------------
@@ -20,7 +21,10 @@
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF
+
+#ifdef MLRS_FEATURE_HC04_MODULE
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL
+#endif
 
 #ifdef MLRS_FEATURE_COM_ON_USB
 #define DEVICE_HAS_COM_ON_USB
