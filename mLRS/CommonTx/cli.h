@@ -417,11 +417,14 @@ uint8_t n;
     }
     s[n] = '\0';
 
-    if (n != 2) return false;
+    if (n < 1) return false;
     if (s[0] != '=') return false;
-    if (s[1] < '0' || s[1] > '9') return false;
 
-    *value = s[1] - '0';
+    // cleanify: extract 'number'
+    s[0] = '0'; // trick to make it easy
+    for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
+
+    *value = atoi(s);
 
     return true;
 }
@@ -654,17 +657,17 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
-    //delay_ms(10);
+
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
-    //delay_ms(10);
+
+    putsn("  setconfigid -> select config id");
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
     putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-    //delay_ms(10);
 
     putsn("  systemboot  -> call system bootloader");
 
@@ -768,13 +771,17 @@ bool rx_param_changed;
 
         } else
         if (is_cmd_set_value("setconfigid", &value)) { // setconfigid = value
-            print_config_id();
-            if (value == Config.ConfigId) {
-                putsn("  no change required");
+            if (value < 0 || value > 9) {
+                putsn("err: invalid config id number (0-9)");
             } else {
-                task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
-                task_value = value;
-                puts("  change ConfigId to ");putc('0'+value);putsn("");
+                print_config_id();
+                if (value == Config.ConfigId) {
+                    putsn("  no change required");
+                } else {
+                    task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
+                    task_value = value;
+                    puts("  change ConfigId to ");putc('0'+value);putsn("");
+                }
             }
 
         } else
