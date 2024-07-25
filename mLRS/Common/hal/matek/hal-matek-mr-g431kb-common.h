@@ -153,13 +153,22 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Cooling Fan
+extern "C" { void delay_us(uint32_t us); }
 
 #define FAN_IO                    IO_PA8
+#define FAN_TEMPSENS_ADCx         ADC1
+#include "../../thirdparty/stdstm32-adc-ext.h"
 
 void fan_init(void)
 {
-    gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // high = on
     gpio_low(FAN_IO);
+    adc_init_begin(FAN_TEMPSENS_ADCx);
+    adc_init_one_channel(FAN_TEMPSENS_ADCx);
+    adc_config_channel_tempsensor(FAN_TEMPSENS_ADCx, LL_ADC_REG_RANK_1);
+    adc_enable(FAN_TEMPSENS_ADCx);
+    delay_us(100);
+    adc_start_conversion(FAN_TEMPSENS_ADCx);
 }
 
 void fan_set_power(int8_t power_dbm)
@@ -169,6 +178,14 @@ void fan_set_power(int8_t power_dbm)
     } else {
         gpio_low(FAN_IO);
     }
+}
+
+void fan_off(void) { gpio_low(FAN_IO); }
+void fan_on(void) { gpio_high(FAN_IO); }
+
+uint16_t fan_tempsensor_read_C(void)
+{
+    return adc_tempsensor_convert(LL_ADC_REG_ReadConversionData12(FAN_TEMPSENS_ADCx));
 }
 
 

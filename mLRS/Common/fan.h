@@ -24,6 +24,7 @@ class tFan
     void Init(void) {}
 
     void SetPower(int8_t power_dbm) {}
+    void Tick_ms(void) {}
 };
 
 #else
@@ -34,6 +35,7 @@ class tFan
     void Init(void);
 
     void SetPower(int8_t power_dbm);
+    void Tick_ms(void);
 
   private:
     bool initialized;
@@ -61,10 +63,19 @@ void tFan::SetPower(int8_t power_dbm)
 }
 
 
-//-------------------------------------------------------
-// Low-level beep implementation
-//-------------------------------------------------------
+void tFan::Tick_ms(void)
+{
+#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+    int16_t temp_C = fan_tempsensor_read_C();
 
+    if (temp_C > 50) {
+        fan_on();
+    } else
+    if (temp_C < 40) {
+        fan_off();
+    }
+#endif
+}
 
 
 #endif // DEVICE_HAS_FAN
