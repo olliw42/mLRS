@@ -676,6 +676,10 @@ void tTxCli::print_help(void)
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
     putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
+#ifdef USE_HC04_MODULE
+    putsn("  hc04 pt       -> enter serial passthrough");
+    putsn("  hc04 setpin   -> set pin of HC04");
+#endif
 }
 
 
@@ -814,6 +818,26 @@ bool rx_param_changed;
         if (is_cmd("espcli")) {
             // enter esp cli, can only be exited by re-powering
             task_pending = TX_TASK_ESP_CLI;
+#endif
+
+        //-- HC04 module handling
+#ifdef USE_HC04_MODULE
+        } else
+        if (is_cmd("hc04 pt")) {
+            // enter hc04 passthrough, can only be exited by re-powering
+            task_pending = TX_TASK_HC04_PASSTHROUGH;
+        } else
+        if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
+            if (value < 1000 || value > 9999) {
+                putsn("err: invalid pin number");
+            } else {
+                char pin_str[32];
+                u16toBCDstr(value, pin_str);
+                remove_leading_zeros(pin_str);
+                puts("HC04 Pin: ");putsn(pin_str);
+                task_pending = TX_TASK_CLI_HC04_SETPIN;
+                task_value = value;
+            }
 #endif
 
         //-- invalid command

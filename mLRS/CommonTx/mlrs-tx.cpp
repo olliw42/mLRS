@@ -1188,6 +1188,8 @@ IF_IN(
     case TX_TASK_ESP_CLI: esp.EnterCli(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+    case TX_TASK_CLI_HC04_SETPIN: hc04.SepPin(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge
@@ -1195,9 +1197,6 @@ IF_IN(
     esp.Do();
     uint8_t esp_task = esp.Task();
     if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
-
-    //-- Handle HC04 bridge
-    hc04.Do();
 
     //-- more
 

@@ -19,19 +19,16 @@
 // HC04 Bridge class
 //-------------------------------------------------------
 
-#define HC04_PASSTHROUGH_TMO_MS  3000
-
-
 #ifndef USE_HC04_MODULE
 
 class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate) {}
-    void Do(void) {}
     uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterPassthrough(void) {}
+    void SepPin(uint16_t pin) {}
 };
 
 #else
@@ -44,10 +41,10 @@ class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate);
-    void Do(void);
     uint8_t Task(void);
 
     void EnterPassthrough(void);
+    void SepPin(uint16_t pin);
 
   private:
     void run_autoconfigure(void);
@@ -83,11 +80,6 @@ uint8_t tTxHc04Bridge::Task(void)
 }
 
 
-void tTxHc04Bridge::Do(void)
-{
-}
-
-
 // enter HC04 passthrough, can only be exited by re-powering
 void tTxHc04Bridge::EnterPassthrough(void)
 {
@@ -96,6 +88,27 @@ void tTxHc04Bridge::EnterPassthrough(void)
     passthrough_do();
 }
 
+
+void tTxHc04Bridge::SepPin(uint16_t pin)
+{
+uint8_t s[34];
+uint8_t len;
+
+    if (pin < 1000) pin = 1000;
+    if (pin > 9999) pin = 9999;
+
+    char pin_str[16];
+    u16toBCDstr(pin, pin_str);
+    remove_leading_zeros(pin_str);
+    char cmd_str[16];
+    strcpy(cmd_str, "AT+PIN=");
+    strcat(cmd_str, pin_str);
+
+    hc04_read(cmd_str, s, &len);
+    if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) {
+        delay_ms(1500);
+    }
+}
 
 
 void tTxHc04Bridge::passthrough_do(void)
@@ -107,6 +120,7 @@ void tTxHc04Bridge::passthrough_do(void)
 #endif
 
     leds.InitPassthrough();
+    disp.DrawNotify("HC04\nPASSTHRU");
 
     while (1) {
         if (doSysTask) {
