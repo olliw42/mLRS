@@ -153,6 +153,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Cooling Fan
+#ifdef DEVICE_IS_TRANSMITTER
 extern "C" { void delay_us(uint32_t us); }
 
 #define FAN_IO                    IO_PA8
@@ -187,6 +188,7 @@ int16_t fan_tempsensor_read_C(void)
 {
     return adc_tempsensor_convert(LL_ADC_REG_ReadConversionData12(FAN_TEMPSENS_ADCx));
 }
+#endif
 
 
 //-- POWER
