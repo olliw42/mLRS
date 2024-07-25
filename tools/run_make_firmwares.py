@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 25.07.2024
+ version 26.07.2024
 ********************************************************
 '''
 import os
@@ -1000,6 +1000,13 @@ TLIST = [
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule-com_on_usb'
+    },{
+
+        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
+    },{
+        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
     },{
    
     

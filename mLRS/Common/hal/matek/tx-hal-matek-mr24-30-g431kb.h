@@ -8,6 +8,7 @@
 
 //#define MLRS_FEATURE_COM_ON_USB // this MLRS_FEATURE define can be used locally here
 //#define MLRS_FEATURE_HC04_MODULE // this MLRS_FEATURE define can be used locally here
+//#define MLRS_FEATURE_OLED // this MLRS_FEATURE define can be used locally here
 
 
 //-------------------------------------------------------
@@ -30,6 +31,14 @@
 #ifdef MLRS_FEATURE_COM_ON_USB
 #define DEVICE_HAS_COM_ON_USB
 #define DEVICE_HAS_SERIAL2
+#endif
+
+#ifdef MLRS_FEATURE_OLED
+#define DEVICE_HAS_COM_ON_USB
+#undef DEVICE_HAS_SERIAL2
+#undef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#define DEVICE_HAS_FAN_ONOFF
+#define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
 
 
@@ -133,6 +142,51 @@ void in_set_inverted(void)
 //-- Cooling Fan
 
 
+//-- Display I2C
+
+#define I2C_USE_I2C1              // PA13, PA14
+#define I2C_CLOCKSPEED_400KHZ     // not all displays seem to work well with I2C_CLOCKSPEED_1000KHZ
+#define I2C_USE_DMAMODE
+
+
+//-- 5 Way Switch
+
+#define FIVEWAY_ADCx              ADC1
+#define FIVEWAY_ADC_IO            IO_PA2 // ADC1_IN3
+#define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_3
+
+#define KEY_UP_THRESH             3230 // BetaFPV 1W Micro scheme
+#define KEY_DOWN_THRESH           0
+#define KEY_LEFT_THRESH           1890
+#define KEY_RIGHT_THRESH          2623
+#define KEY_CENTER_THRESH         1205
+
+#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
+extern "C" { void delay_us(uint32_t us); }
+
+void fiveway_init(void)
+{
+    adc_init_begin(FIVEWAY_ADCx);
+    adc_init_one_channel(FIVEWAY_ADCx);
+    adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
+    adc_enable(FIVEWAY_ADCx);
+    delay_us(100);
+    adc_start_conversion(FIVEWAY_ADCx);
+}
+
+uint8_t fiveway_read(void)
+{
+    int16_t adc = LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
+    if (adc > (KEY_CENTER_THRESH-250) && adc < (KEY_CENTER_THRESH+250)) return (1 << KEY_CENTER);
+    if (adc > (KEY_LEFT_THRESH-250) && adc < (KEY_LEFT_THRESH+250)) return (1 << KEY_LEFT);
+    if (adc > (KEY_DOWN_THRESH-250) && adc < (KEY_DOWN_THRESH+250)) return (1 << KEY_DOWN);
+    if (adc > (KEY_UP_THRESH-250) && adc < (KEY_UP_THRESH+250)) return (1 << KEY_UP);
+    if (adc > (KEY_RIGHT_THRESH-250) && adc < (KEY_RIGHT_THRESH+250)) return (1 << KEY_RIGHT);
+    return 0;
+}
+#endif
+
+
 //-- POWER
 
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
@@ -150,29 +204,3 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };
 
-
-
-
-//-- Display I2C, OLED
-
-/*#define I2C_USE_I2C1     // G431 PA13, PA14
-#define I2C_CLOCKSPEED_400KHZ     // not all displays seem to work well with I2C_CLOCKSPEED_1000KHZ
-#define I2C_USE_DMAMODE
-#define MLRS_FEATURE_OLED
-#define DEVICE_HAS_I2C_DISPLAY
-
-  #define I2C_SCL_IO             IO_PA13
-  #define I2C_SDA_IO             IO_PA14
-  #define I2C_SCL_IO_AF          IO_AF_4
-  #define I2C_SDA_IO_AF          IO_AF_4
-
-  #define I2C_EV_IRQn            I2C1_EV_IRQn
-  #define I2C_ER_IRQn            I2C1_ER_IRQn
-  #define I2C_EV_IRQHandler      I2C1_EV_IRQHandler
-  #define I2C_ER_IRQHandler      I2C1_ER_IRQHandler
-
-  #define I2C_TX_DMAx_Channely_IRQn        DMA1_Channel2_IRQn
-  #define I2C_RX_DMAx_Channely_IRQn        DMA1_Channel1_IRQn
-  #define I2C_TX_DMAx_Channely_IRQHandler  DMA1_Channel2_IRQHandler
-  #define I2C_RX_DMAx_Channely_IRQHandler  DMA1_Channel1_IRQHandler
-*/
