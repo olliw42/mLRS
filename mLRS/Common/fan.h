@@ -66,12 +66,12 @@ void tFan::SetPower(int8_t power_dbm)
 void tFan::Tick_ms(void)
 {
 #ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
-    int16_t temp_C = fan_tempsensor_read_C();
+    int16_t temp_dC = fan_tempsensor_read_dC();
 
-    if (temp_C > 50) {
+    if (temp_dC > 500) { // 50.0 C
         fan_on();
     } else
-    if (temp_C < 40) {
+    if (temp_dC < 400) { // 40.0 C
         fan_off();
     }
 #endif

@@ -184,9 +184,9 @@ void fan_set_power(int8_t power_dbm)
 void fan_off(void) { gpio_low(FAN_IO); }
 void fan_on(void) { gpio_high(FAN_IO); }
 
-int16_t fan_tempsensor_read_C(void)
+int16_t fan_tempsensor_read_dC(void)
 {
-    return adc_tempsensor_convert(LL_ADC_REG_ReadConversionData12(FAN_TEMPSENS_ADCx));
+    return adc_tempsensor_convert_dC(LL_ADC_REG_ReadConversionData12(FAN_TEMPSENS_ADCx));
 }
 #endif
 
