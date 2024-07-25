@@ -29,6 +29,7 @@
 
 #ifdef MLRS_FEATURE_COM_ON_USB
 #define DEVICE_HAS_COM_ON_USB
+#define DEVICE_HAS_SERIAL2
 #endif
 
 
@@ -77,6 +78,16 @@
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
+
+#ifdef DEVICE_HAS_SERIAL2
+#define UARTD_USE_LPUART1_PA2PA3 // serial2
+#define UARTD_BAUD                115200
+#define UARTD_USE_TX
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_USE_TX_ISR
+#define UARTD_USE_RX
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#endif
 
 
 //-- SX1: SX12xx & SPI
