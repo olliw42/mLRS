@@ -304,7 +304,8 @@ class tTxCli
     uint16_t put_cnt;
     void delay_off(void) { put_cnt = 0; }
     void delay_clear(void) { put_cnt = 1; }
-    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+//    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+    void delay(void) { if (put_cnt > 256) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
@@ -416,11 +417,14 @@ uint8_t n;
     }
     s[n] = '\0';
 
-    if (n != 2) return false;
+    if (n < 1) return false;
     if (s[0] != '=') return false;
-    if (s[1] < '0' || s[1] > '9') return false;
 
-    *value = s[1] - '0';
+    // cleanify: extract 'number'
+    s[0] = '0'; // trick to make it easy
+    for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
+
+    *value = atoi(s);
 
     return true;
 }
@@ -653,24 +657,23 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
-    //delay_ms(10);
+
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
-    //delay_ms(10);
+
+    putsn("  setconfigid -> select config id");
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
     putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-    //delay_ms(10);
 
     putsn("  systemboot  -> call system bootloader");
 
 #ifdef USE_ESP_WIFI_BRIDGE
     putsn("  esppt       -> enter serial passthrough");
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
-    putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
 #endif
 }
 
@@ -767,6 +770,9 @@ bool rx_param_changed;
 
         } else
         if (is_cmd_set_value("setconfigid", &value)) { // setconfigid = value
+            if (value < 0 || value > 9) {
+                putsn("err: invalid config id number (0-9)");
+            } else {
             print_config_id();
             if (value == Config.ConfigId) {
                 putsn("  no change required");
@@ -774,6 +780,7 @@ bool rx_param_changed;
                 task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
                 task_value = value;
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
+            }
             }
 
         } else
@@ -802,10 +809,6 @@ bool rx_param_changed;
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
             task_pending = TX_TASK_FLASH_ESP;
-        } else
-        if (is_cmd("espcli")) {
-            // enter esp cli, can only be exited by re-powering
-            task_pending = TX_TASK_ESP_CLI;
 #endif
 
         //-- invalid command
