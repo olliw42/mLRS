@@ -718,10 +718,10 @@ RESTARTCONTROLLER
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    esp.Init(&comport, &serial);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    esp.Init(&comport, &serial2, Config.SerialBaudrate);
 #else
-    esp.Init(&comport, &serial2);
+    esp.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
@@ -1176,7 +1176,6 @@ IF_IN(
     case TX_TASK_BIND: start_bind(); break;
     case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
-    case TX_TASK_ESP_CLI: esp.EnterCli(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     }

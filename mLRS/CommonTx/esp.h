@@ -48,12 +48,11 @@ void esp_enable(uint8_t serial_destination)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport) {}
+    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate) {}
     void Do(void) {}
     uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterFlash(void) {}
-    void EnterCli(void) {}
     void EnterPassthrough(void) {}
 };
 
@@ -66,12 +65,11 @@ extern tTxDisp disp;
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport);
+    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate);
     void Do(void);
     uint8_t Task(void);
 
     void EnterFlash(void);
-    void EnterCli(void);
     void EnterPassthrough(void);
 
   private:
@@ -80,6 +78,7 @@ class tTxEspWifiBridge
 
     tSerialBase* com;
     tSerialBase* ser;
+    uint32_t ser_baud;
 
     bool initialized;
     uint8_t task_pending;
@@ -89,10 +88,11 @@ class tTxEspWifiBridge
 };
 
 
-void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
+void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate)
 {
     com = _comport;
     ser = _serialport;
+    ser_baud = _serial_baudrate;
 
     initialized = (com != nullptr && ser != nullptr) ? true : false;
 
@@ -223,27 +223,12 @@ void tTxEspWifiBridge::EnterPassthrough(void)
 }
 
 
-// enter ESP CLI, can only be exited by re-powering
-void tTxEspWifiBridge::EnterCli(void)
-{
-    if (!initialized) return;
-
-    // set GPIO0 to low, but don't do RESET, allows ESP to detect it should go into CLI mode
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-    esp_gpio0_low();
-    delay_ms(100);
-#endif
-
-    passthrough_do();
-}
-
-
 void tTxEspWifiBridge::passthrough_do(void)
 {
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
-#ifdef DEVICE_HAS_SERIAL_OR_COM
+#if defined DEVICE_HAS_SERIAL_OR_COM && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
     ser_or_com_set_to_com();
 #endif
 
