@@ -61,12 +61,6 @@ void tFan::SetPower(int8_t power_dbm)
 }
 
 
-//-------------------------------------------------------
-// Low-level beep implementation
-//-------------------------------------------------------
-
-
-
 #endif // DEVICE_HAS_FAN
 
 #endif // FAN_H
