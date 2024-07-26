@@ -11,7 +11,7 @@
 #pragma once
 
 #define USE_ARQ // just for the moment, eventually should go
-//#define USE_ARQ_DBG
+#define USE_ARQ_DBG
 #define USE_ARQ_RETRY_CNT     -1 // -1: set by SetRetryCnt(), 0 = off, 255 = infinite,
 #define USE_ARQ_TX_SIM_MISS   4 //9 // 0 = off
 #define USE_ARQ_RX_SIM_MISS   3 //5 //5 // 0 = off
@@ -177,6 +177,9 @@ uint8_t tTransmitArq::SeqNo(void)
 
 void tTransmitArq::SetRetryCnt(uint8_t retry_cnt)
 {
+//payload_retry_cnt = 0; return;
+payload_retry_cnt = UINT8_MAX; return;
+
 #ifndef USE_ARQ_DBG
     payload_retry_cnt = retry_cnt;
 #else
@@ -416,3 +419,26 @@ class tReceiveArq
 #endif
 
 #endif // ARQ_H
+
+/* some sort of documentation
+for the Rx -> Tx transmission direction:
+
+Tx                                      Rx
+rarq                                    tarq
+
+prepare_transmit_frame()                prepare_transmit_frame()
+    ack = AckSeqNo()                        get_fresh_payload = GetFreshPayload()
+                                            seq_no = SeqNo()
+                                            SetRetryCntAuto()
+process_received_frame()
+    accept_payload = AcceptPayload()
+
+handle_receive()                        handle_receive()
+    Received()                              AckReceived()
+    or FrameMissed()                        or FrameMissed()
+    FrameLost() -> reset parsers
+
+handle_receive_none()                   handle_receive_none()
+    FrameMissed()                           FrameMissed()
+
+*/
