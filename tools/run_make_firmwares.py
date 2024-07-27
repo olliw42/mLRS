@@ -993,17 +993,16 @@ TLIST = [
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule'
     },{
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule-com_on_usb'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-txmodule-com_on_usb'
+    },{
+        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule-com_on_usb'
-    },{
-
-        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-txmodule-com_on_usb'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
