@@ -147,7 +147,7 @@ void tTxHc04Bridge::hc04_read(const char* cmd, uint8_t* res, uint8_t* len)
     *len = 0;
     uint32_t tnow_ms = millis32();
     char c = 0x00;
-    while (*len < 32 && (millis32() - tnow_ms) < 100) {
+    while (*len < 32 && (millis32() - tnow_ms) < 100) { // TODO: check timing, to see if this can be shortened
         if (ser->available()) {
             c = ser->getc();
             res[(*len)++] = c;
@@ -203,9 +203,9 @@ uint8_t len;
 
     if (ser == nullptr) return; // we need a serial
 
-    uint32_t bauds[5] = { ser_baud, 9600, 57600, 115200, 230400 }; // baud rates to test, don't support 19200, 38400
+    uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
 
-    for (uint8_t baud_idx = 0; baud_idx < 5; baud_idx++) {
+    for (uint8_t baud_idx = 0; baud_idx < 7; baud_idx++) {
         ser->SetBaudRate(bauds[baud_idx]);
         ser->flush();
 
