@@ -193,31 +193,31 @@ uint8_t fiveway_read(void)
 void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (power_dbm >= POWER_30_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 12 : 12;
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -7 : -4;
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -6 : -3;
         *actual_power_dbm = 27;
     } else
     if (power_dbm >= POWER_24_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -7;
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -6;
         *actual_power_dbm = 24;
     } else
-    if (power_dbm >= POWER_20_DBM) {
-        *sx_power = -9;
+    if (power_dbm >= POWER_22_DBM) {
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -8;
         *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
     } else {
         *sx_power = -9;
-        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
+        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 21;
     }
 }
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN }, // doesn't make sense IMHO
-    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
+    { .dbm = POWER_22_DBM, .mW = 150 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
