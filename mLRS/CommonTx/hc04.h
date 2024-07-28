@@ -214,7 +214,8 @@ uint8_t len;
             s[len-2] = '\0';
             if (!strcmp((char*)s, "OK+NAME=Matek-mLRS-BT") && bauds[baud_idx] == ser_baud) { // is correct name and baud rate
                 return;
-            } else {
+            } else
+            if (!strncmp((char*)s, "OK+NAME=", 8)) {
                 hc04_configure();
                 ser->SetBaudRate(ser_baud);
                 ser->flush();
