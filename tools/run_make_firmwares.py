@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 26.07.2024
+ version 28.07.2024
 ********************************************************
 '''
 import os
@@ -977,37 +977,25 @@ TLIST = [
 
     },{
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : ''
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_DEFAULT'], 'appendix' : '-default'
     },{
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-com_on_usb'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem'
     },{
-        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : ''
-    },{
-        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-com_on_usb'
-    },{
+        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 'appendix' : '-oled'
 
-        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule'
-    },{
-        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-txmodule-com_on_usb'
-    },{
-        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE'], 'appendix' : '-txmodule'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_DEFAULT'], 'appendix' : '-default'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB'], 'appendix' : '-txmodule-com_on_usb'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem'
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_OLED'], 'appendix' : '-txmodule-oled'
+        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 'appendix' : '-oled'
     },{
-   
+  
     
 #RX
 #-- rx diy
