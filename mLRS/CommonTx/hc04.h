@@ -224,7 +224,7 @@ uint8_t len;
         }
     }
 
-    // not found, ensure serial has correct baudrate
+    // not found, ensure serial has correct baud rate
     ser->SetBaudRate(ser_baud);
     ser->flush();
 }
