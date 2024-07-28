@@ -9,7 +9,7 @@
 // MLRS_FEATURE defines usually must be defined very high up,
 // the following can however be used defined locally here
 
-#define MLRS_FEATURE_MATEK_TXMODULE_DEFAULT
+//#define MLRS_FEATURE_MATEK_TXMODULE_DEFAULT
 //#define MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM
 
 //#define MLRS_FEATURE_COM_ON_USB
