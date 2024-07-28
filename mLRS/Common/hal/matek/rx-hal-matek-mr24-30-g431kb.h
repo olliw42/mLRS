@@ -9,10 +9,12 @@
 //-------------------------------------------------------
 // MATEKSYS mR24-30 STM32G431KB, as receiver
 //-------------------------------------------------------
-#include "hal-matek-mr-g431kb-common.h"
-
 
 #define DEVICE_HAS_OUT
+#define DEVICE_HAS_FAN_ONOFF
+
+
+#include "hal-matek-mr-g431kb-common.h"
 
 
 //-- Timers, Timing, EEPROM, and such stuff

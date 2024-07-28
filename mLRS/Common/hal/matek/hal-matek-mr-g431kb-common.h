@@ -153,23 +153,16 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Cooling Fan
-#ifdef DEVICE_IS_TRANSMITTER
-extern "C" { void delay_us(uint32_t us); }
 
 #define FAN_IO                    IO_PA8
-#define FAN_TEMPSENS_ADCx         ADC1
-#include "../../thirdparty/stdstm32-adc-ext.h"
 
 void fan_init(void)
 {
     gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // high = on
     gpio_low(FAN_IO);
-    adc_init_begin(FAN_TEMPSENS_ADCx);
-    adc_init_one_channel(FAN_TEMPSENS_ADCx);
-    adc_config_channel_tempsensor(FAN_TEMPSENS_ADCx, LL_ADC_REG_RANK_1);
-    adc_enable(FAN_TEMPSENS_ADCx);
-    delay_us(100);
-    adc_start_conversion(FAN_TEMPSENS_ADCx);
+#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+    fan_adc_init();
+#endif
 }
 
 void fan_set_power(int8_t power_dbm)
@@ -179,6 +172,21 @@ void fan_set_power(int8_t power_dbm)
     } else {
         gpio_low(FAN_IO);
     }
+}
+
+#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#define FAN_TEMPSENS_ADCx         ADC1
+#include "../../thirdparty/stdstm32-adc-ext.h"
+extern "C" { void delay_us(uint32_t us); }
+
+void fan_adc_init(void)
+{
+    adc_init_begin(FAN_TEMPSENS_ADCx);
+    adc_init_one_channel(FAN_TEMPSENS_ADCx);
+    adc_config_channel_tempsensor(FAN_TEMPSENS_ADCx, LL_ADC_REG_RANK_1);
+    adc_enable(FAN_TEMPSENS_ADCx);
+    delay_us(100);
+    adc_start_conversion(FAN_TEMPSENS_ADCx);
 }
 
 void fan_off(void) { gpio_low(FAN_IO); }

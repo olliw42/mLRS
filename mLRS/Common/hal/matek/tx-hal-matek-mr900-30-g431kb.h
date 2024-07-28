@@ -14,15 +14,12 @@
 //-------------------------------------------------------
 // MATEKSYS mR900-30 STM32G431KB, as Tx module
 //-------------------------------------------------------
-#include "hal-matek-mr-g431kb-common.h"
-
 
 #define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#define DEVICE_HAS_FAN_ONOFF // see https://discord.com/channels/1245730151141085265/1245730152135266326/1266989729988214884
 
 #ifdef MLRS_FEATURE_HC04_MODULE
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL
@@ -40,6 +37,9 @@
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
+
+
+#include "hal-matek-mr-g431kb-common.h"
 
 
 //-- Timers, Timing, EEPROM, and such stuff

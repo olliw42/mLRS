@@ -792,10 +792,6 @@ INITCONTROLLER_END
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
             dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-
-/*uint16_t temp_raw = LL_ADC_REG_ReadConversionData12(FAN_TEMPSENS_ADCx);
-int16_t temp_dC = fan_tempsensor_read_dC();
-comport.puts(u16toBCD_s(temp_raw));comport.puts(",");comport.puts(s16toBCD_s(temp_dC));comport.puts("\n");*/
         }
     }
 
