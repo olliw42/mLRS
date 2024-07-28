@@ -1190,7 +1190,7 @@ IF_IN(
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
     case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
-    case TX_TASK_CLI_HC04_SETPIN: hc04.SepPin(cli.GetTaskValue()); break;
+    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge

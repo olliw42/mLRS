@@ -28,7 +28,7 @@ class tTxHc04Bridge
     uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterPassthrough(void) {}
-    void SepPin(uint16_t pin) {}
+    void SetPin(uint16_t pin) {}
 };
 
 #else
@@ -44,7 +44,7 @@ class tTxHc04Bridge
     uint8_t Task(void);
 
     void EnterPassthrough(void);
-    void SepPin(uint16_t pin);
+    void SetPin(uint16_t pin);
 
   private:
     void run_autoconfigure(void);
@@ -89,7 +89,7 @@ void tTxHc04Bridge::EnterPassthrough(void)
 }
 
 
-void tTxHc04Bridge::SepPin(uint16_t pin)
+void tTxHc04Bridge::SetPin(uint16_t pin)
 {
 uint8_t s[34];
 uint8_t len;
@@ -222,6 +222,10 @@ uint8_t len;
             }
         }
     }
+
+    // not found, ensure serial has correct baudrate
+    ser->SetBaudRate(ser_baud);
+    ser->flush();
 }
 
 
