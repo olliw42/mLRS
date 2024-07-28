@@ -308,8 +308,15 @@ void setup_sanitize_config(uint8_t config_id)
     }
     TST_NOTALLOWED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default);
 
-    SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, MODE_19HZ);
-    TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode, MODE_19HZ);
+#ifdef DEVICE_HAS_SX128x
+    constexpr uint8_t fallback_mode = MODE_50HZ;
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined DEVICE_HAS_SX126x
+    constexpr uint8_t fallback_mode = MODE_31HZ;
+#elif defined DEVICE_HAS_SX127x
+    constexpr uint8_t fallback_mode = MODE_19HZ;
+#endif
+    SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, fallback_mode); // MODE_19HZ
+    TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode, fallback_mode); // MODE_19HZ
 
     SANITIZE(Common[config_id].Ortho, ORTHO_NUM, SETUP_RF_ORTHO, ORTHO_NONE);
     TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho, ORTHO_NONE);
