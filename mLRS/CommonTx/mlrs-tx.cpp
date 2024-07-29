@@ -168,6 +168,10 @@ tTxDisp disp;
 
 tTxEspWifiBridge esp;
 
+#include "hc04.h"
+
+tTxHc04Bridge hc04;
+
 
 //-------------------------------------------------------
 // While transmit/receive tasks
@@ -723,6 +727,11 @@ RESTARTCONTROLLER
 #else
     esp.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+    hc04.Init(&comport, &serial2, Config.SerialBaudrate);
+#else
+    hc04.Init(&comport, &serial, Config.SerialBaudrate);
+#endif
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
     disp.Init();
@@ -1179,6 +1188,8 @@ IF_IN(
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge
