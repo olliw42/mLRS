@@ -765,6 +765,7 @@ INITCONTROLLER_END
         link_task_tick_ms();
 
         disp.Tick_ms();
+        fan.Tick_ms();
 
         if (!tick_1hz) {
             dbg.puts(".");

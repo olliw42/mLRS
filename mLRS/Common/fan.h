@@ -24,6 +24,7 @@ class tFan
     void Init(void) {}
 
     void SetPower(int8_t power_dbm) {}
+    void Tick_ms(void) {}
 };
 
 #else
@@ -34,6 +35,7 @@ class tFan
     void Init(void);
 
     void SetPower(int8_t power_dbm);
+    void Tick_ms(void);
 
   private:
     bool initialized;
@@ -56,6 +58,21 @@ void tFan::SetPower(int8_t power_dbm)
         initialized = true;
         fan_set_power(power_dbm);
         power_dbm_curr = power_dbm;
+    }
+#endif
+}
+
+
+void tFan::Tick_ms(void)
+{
+#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+    int16_t temp_dC = fan_tempsensor_read_dC();
+
+    if (temp_dC > 500) { // 50.0 C
+        fan_on();
+    } else
+    if (temp_dC < 400) { // 40.0 C
+        fan_off();
     }
 #endif
 }
