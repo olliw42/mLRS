@@ -97,7 +97,7 @@ void out_set_inverted(void)
 void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (power_dbm >= POWER_30_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 12 : 12;
+        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
