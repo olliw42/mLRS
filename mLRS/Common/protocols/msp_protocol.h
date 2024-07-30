@@ -404,7 +404,7 @@ tMspFlightModeArray inavFlightModes[INAV_FLIGHT_MODES_COUNT] = {
     { .boxModeFlag = 255,   .telName = "HFRE" },
     { .boxModeFlag = 255,   .telName = "RTH" },
     { .boxModeFlag = 255,   .telName = "HOLD" },
-    { .boxModeFlag = 255,   .telName = "MAN" },
+    { .boxModeFlag = 255,   .telName = "MANU" },
     { .boxModeFlag = 255,   .telName = "ATUN" },
     { .boxModeFlag = 255,   .telName = "WP" },
     { .boxModeFlag = 255,   .telName = "AIR" },
