@@ -905,7 +905,7 @@ dbg.puts(u32toHEX_s(flight_mode));
                 break;
             }
         }
-        if (flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM)) {
+        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
             strcat(flightmode.flight_mode, "*");
         }
         flightmode_updated = true;
