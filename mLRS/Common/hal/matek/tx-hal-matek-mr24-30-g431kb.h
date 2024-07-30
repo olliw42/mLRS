@@ -9,8 +9,8 @@
 // MLRS_FEATURE defines usually must be defined very high up,
 // the following can however be used/defined locally here
 
-//#define MLRS_FEATURE_MATEK_TXMODULE_DEFAULT
 //#define MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM
+//#define MLRS_FEATURE_MATEK_TXMODULE_MOD
 
 //#define MLRS_FEATURE_COM_ON_USB
 //#define MLRS_FEATURE_HC04_MODULE
@@ -26,26 +26,33 @@
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF // FAN_TEMPCONTROLLED_ONOFF was tested to work not so well
 
-#ifdef MLRS_FEATURE_MATEK_TXMODULE_DEFAULT
 // factory default for Tx module
 // USB-C = com, Tx1/Rx1 = serial w HC04, LPTx1/LPRx1 = serial2
-
 #define DEVICE_HAS_COM_ON_USB
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL
 #define DEVICE_HAS_SERIAL2
 #define UARTD_USE_LPUART1_PA2PA3 // serial2
 
-#elif defined MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM
+#ifdef MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM
 // default for using mR900-30 as telemetry module (SiK replacement)
 // USB-C = serial, Tx1/Rx1 = serial2, LPTx1/LPRx1 = com
+#undef DEVICE_HAS_COM_ON_USB
+#undef UARTB_USE_UART1_PA9PA10 // serial
+#undef DEVICE_HAS_HC04_MODULE_ON_SERIAL
+#undef DEVICE_HAS_SERIAL2
 
 #define DEVICE_HAS_SERIAL_ON_USB
 #define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define DEVICE_HAS_SERIAL2
 #define UARTD_USE_UART1_PA9PA10 // serial2
 
-#else
+#elif defined MLRS_FEATURE_MATEK_TXMODULE_MOD
+// for Tx module mods
+// USB-C = --, Tx1/Rx1 = serial, LPTx1/LPRx1 = com
+#undef DEVICE_HAS_COM_ON_USB
+#undef DEVICE_HAS_HC04_MODULE_ON_SERIAL
+#undef DEVICE_HAS_SERIAL2
 
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
