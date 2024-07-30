@@ -113,6 +113,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint32_t vario_send_tlast_ms;
 
     tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message, AP does not appear to provide baro alt at all
+    int32_t inav_baro_altitude; // needed to make INAV happy
     bool baro_altitude_updated;
     uint32_t baro_send_tlast_ms;
 
@@ -863,7 +864,9 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
         gps.longitude = CRSF_REV_U32(payload->lon);                   // int32_t degree / 1e7           // uint32_t 1 / 10 000 000 deg
         gps.groundspeed = CRSF_REV_U16((payload->ground_speed * 36 + 50) / 100);  // uint16_t km/h / 100            // uint16_t  cm/s
         gps.gps_heading = CRSF_REV_U16(payload->ground_course * 10);  // uint16_t degree / 100          // uint16_t  degree*10
-        gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
+        // INAV wants the baro alt in the gps alt field
+        //gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
+        gps.altitude = CRSF_REV_U16(inav_baro_altitude / 100 + 1000);
         gps.satellites = payload->numSat;                             // uint8_t                        // uint8_t
         gps_updated = true;
         }break;
@@ -879,7 +882,11 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
             if (alt < 0) alt = 0;
             if (alt > 0x7FFF) alt = 0x7FFF; // 0x7FFF = 32767
             baro_altitude.altitude = CRSF_REV_U16(alt); // uint16_t dm -1000m if 0x8000 not set
-            baro_altitude_updated = true;
+            // INAV wants the baro alt in the gps alt field
+            // so we store the baro altitude, and tell that gps is updated
+            //baro_altitude_updated = true;
+            inav_baro_altitude = payload->baro_altitude;
+            gps_updated = true;
         }
         }break;
 
