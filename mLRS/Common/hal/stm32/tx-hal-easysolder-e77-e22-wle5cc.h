@@ -55,7 +55,11 @@
 // UARTF = --
 // SWUART= debug port
 
-#define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
+// define this if you want to be be able to access the cli after bootup
+#define COM_CLI_SWITCH_PIN IO_PA9 //IO_PB7 // // pulled low this pin switches the serial port to CLI mode
+
+//#define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
+#define UARTB_USE_UART2_PA2PA3
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -63,7 +67,8 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
+//#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
+#define UARTC_USE_UART2_PA2PA3 //change here EC 210724 was #define UARTB_USE_UART2_PA2PA3
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
@@ -71,7 +76,8 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_PA2PA3 // JR pin5, MBridge // PA2
+//#define UART_USE_UART2_PA2PA3 // JR pin5, MBridge // PA2
+#define UART_USE_UART1_PB6PB7
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -318,6 +324,9 @@ bool easysolder_ser_or_com_serial = true; // we use serial as default
 void ser_or_com_init(void)
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+#ifdef COM_CLI_SWITCH_PIN
+    gpio_init(COM_CLI_SWITCH_PIN, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+#endif
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
@@ -325,9 +334,16 @@ void ser_or_com_init(void)
     easysolder_ser_or_com_serial = !(cnt > 8);
 }
 
+// serial is true
+// com is false
+
 bool ser_or_com_serial(void)
 {
+#ifdef COM_CLI_SWITCH_PIN
+    return gpio_read_activelow(COM_CLI_SWITCH_PIN) ? false : easysolder_ser_or_com_serial;
+#else
     return easysolder_ser_or_com_serial;
+#endif
 }
 
 
