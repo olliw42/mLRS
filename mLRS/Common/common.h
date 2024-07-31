@@ -179,7 +179,9 @@ tFhss fhss;
 
 tBindBase bind;
 
+#ifdef DEVICE_IS_TRANSMITTER
 tBuzzer buzzer;
+#endif
 tFan fan;
 tLEDs leds;
 
@@ -308,7 +310,7 @@ STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFra
 STATIC_ASSERT(sizeof(tRxSetup) == 36, "tRxSetup len missmatch")
 STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
-STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_LEN+8+2, "tSetup len missmatch")
+STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup len missmatch")
 
 STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * FHSS_CONFIG_NUM, "fhss_config size missmatch")
 

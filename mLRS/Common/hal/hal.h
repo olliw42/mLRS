@@ -61,6 +61,8 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
+#define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
+#define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 
@@ -74,17 +76,40 @@ In rx-hal files:
 #define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
+#define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
 
 
 #include "device_conf.h"
+
+
+//-- MATEKSYS mLRS devices
+
+#ifdef RX_MATEK_MR24_30_G431KB
+#include "matek/rx-hal-matek-mr24-30-g431kb.h"
+#endif
+
+#ifdef TX_MATEK_MR24_30_G431KB
+#include "matek/tx-hal-matek-mr24-30-g431kb.h"
+#endif
+
+#ifdef RX_MATEK_MR900_30_G431KB
+#include "matek/rx-hal-matek-mr900-30-g431kb.h"
+#endif
+
+#ifdef TX_MATEK_MR900_30_G431KB
+#include "matek/tx-hal-matek-mr900-30-g431kb.h"
+#endif
+
+#ifdef RX_MATEK_MR900_22_WLE5CC
+#include "matek/rx-hal-matek-mr900-22-wle5cc.h"
+#endif
 
 
 //-- FrsKy R9 system
@@ -277,7 +302,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #endif
 #endif
 
-#if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
   #define USE_SERIAL2
 #endif
 #endif // DEVICE_IS_TRANSMITTER
@@ -307,7 +332,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_FAN_ONOFF
+#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
   #define USE_FAN
 #endif
 
@@ -320,6 +345,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #if defined ESP_DTR && defined ESP_RTS
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
+#endif
+
+#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+  #define USE_HC04_MODULE
 #endif
 
 

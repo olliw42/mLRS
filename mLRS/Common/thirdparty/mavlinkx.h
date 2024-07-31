@@ -824,7 +824,7 @@ uint8_t _fmavX_payload_compress(uint8_t* payload_out, uint8_t* len_out, uint8_t*
 {
 uint16_t code; // can be 2 - 13 bits
 uint8_t is_in_RLE;
-uint8_t RLE_char;
+uint8_t RLE_char = 0; // to make gcc12 happy, avoid warning may be used uninitialized
 uint8_t RLE_cnt;
 
     *len_out = 0;

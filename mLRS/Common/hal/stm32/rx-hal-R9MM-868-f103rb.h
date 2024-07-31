@@ -18,14 +18,13 @@
 //   Pin3 GND
 //   Pin4 SPort/FPort PA5  (??, looks strange, something is inbetween)
 //   Pin5 SBusOut     PA2 / U2Tx inverted
-//   Ch1    PA8           -> Buzzer (TIM1)
+//   Ch1    PA8           -> unused (TIM1)
 //   Ch2    PA11          -> Debug Tx (TIM4)
 //   Ch3    PA9 / U1Tx    -> Serial Tx
 //   Ch4    PA10 / U1Rx   -> Serial Rx
 
 #define DEVICE_HAS_OUT_INVERTED
 #define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SYSTEMBOOT
 
 
@@ -194,16 +193,6 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Buzzer
-
-#define BUZZER                    IO_PA8
-#define BUZZER_TIMx               TIM1
-#define BUZZER_IRQn               TIM1_UP_TIM16_IRQn
-#define BUZZER_IRQHandler         TIM1_UP_TIM16_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH1
-//#define BUZZER_TIM_IRQ_PRIORITY   14
-
-
 //-- SystemBootLoader
 
 #define BOOT_BUTTON               BUTTON
@@ -223,17 +212,8 @@ void systembootloader_init(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_17_DBM, .mW = 50 },
-};
+#define POWER_PA_NONE_SX127X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

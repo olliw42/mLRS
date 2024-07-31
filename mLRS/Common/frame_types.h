@@ -205,7 +205,7 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t Buzzer : 4;
+    uint8_t __Buzzer : 4; // deprecated
     uint8_t SendRcChannels : 4;
     uint8_t __RadioStatusMethod : 4; // deprecated
     uint8_t OutLqChannelMode : 4;
@@ -248,7 +248,7 @@ typedef struct
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
-    uint8_t Buzzer_allowed_mask;
+    uint8_t __Buzzer_allowed_mask; // deprecated
 
     uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes

@@ -5,7 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // mLRS RX
-//********************************************************
+//*******************************************************
 
 
 #define DBG_MAIN(x)
@@ -140,7 +140,6 @@ void init_hw(void)
     serial.Init();
     out.Init();
 
-    buzzer.Init();
     fan.Init();
     dbg.Init();
 
@@ -353,7 +352,7 @@ void process_received_frame(bool do_payload, tTxFrame* frame)
     // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
     stats.received_LQ_serial = frame->status.LQ_serial;
 
-    // copy rc data
+    // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
@@ -408,7 +407,7 @@ tTxFrame* frame;
 
     // handle transmit ARQ
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.Received(frame->status.ack);
+        tarq.AckReceived(frame->status.ack);
     } else {
         tarq.FrameMissed();
     }
@@ -586,6 +585,7 @@ INITCONTROLLER_END
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
+        fan.Tick_ms();
 
         if (!tick_1hz) {
             dbg.puts(".");
@@ -831,10 +831,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset();
             link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
-        }
-
-        if (Setup.Rx.Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
-            if (!valid_frame_received) buzzer.BeepLP();
         }
 
         powerup.Do();

@@ -115,6 +115,14 @@ typedef enum {
     TX_SEND_RADIO_STATUS_NUM,
 } TX_SEND_RADIO_STATUS_ENUM;
 
+
+typedef enum {
+    TX_MAVLINK_COMPONENT_OFF = 0,
+    TX_MAVLINK_COMPONENT_ENABLED,
+    TX_MAVLINK_COMPONENT_NUM,
+} TX_MAVLINK_COMPONENT_ENUM;
+
+
 typedef enum {
     RX_SEND_RADIO_STATUS_OFF = 0,
     RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1,
@@ -251,7 +259,7 @@ typedef enum {
 
 
 //-------------------------------------------------------
-// Setup and Config Types
+// Setup Types
 // ATTENTION: only extend/append, never change sequence
 //-------------------------------------------------------
 
@@ -279,8 +287,9 @@ typedef struct
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
     uint8_t CliLineEnd;
+    uint8_t MavlinkComponent;
 
-    uint8_t spare[9];
+    uint8_t spare[8];
 } tTxSetup; // 20 bytes
 
 
@@ -295,7 +304,7 @@ typedef struct
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
-    uint8_t Buzzer;
+    uint8_t __Buzzer; // deprecated
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
     uint8_t OutLqChannelMode;
@@ -310,7 +319,7 @@ typedef struct
 #define SETUP_MARKER_STR      "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
-#define SETUP_CONFIG_LEN      10 // not more, so it's only one char
+#define SETUP_CONFIG_NUM      10 // not more, so it's only one char '0'...'9'
 
 
 // user setable parameter values, stored in EEPROM
@@ -336,15 +345,19 @@ typedef struct
 
     // parameters specific to Tx, can be changed on the fly
     // not used by receivers
-    tTxSetup Tx[SETUP_CONFIG_LEN];
+    tTxSetup Tx[SETUP_CONFIG_NUM];
 
     // parameters common to both Tx and Rx
     // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
-    tCommonSetup Common[SETUP_CONFIG_LEN];
+    tCommonSetup Common[SETUP_CONFIG_NUM];
 
     char MarkerEnd[8];
 } tSetup;
 
+
+//-------------------------------------------------------
+// MetaData and Config Types
+//-------------------------------------------------------
 
 typedef struct
 {
@@ -362,7 +375,6 @@ typedef struct
     char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
-    uint16_t Rx_Buzzer_allowed_mask;
 
     bool rx_available;
 

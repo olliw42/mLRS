@@ -18,7 +18,6 @@ class tTxSxSerial : public tSerialBase
 {
   public:
     void Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port);
-    bool IsEnabled(void);
 
     bool available(void) override;
     char getc(void) override;
@@ -48,12 +47,6 @@ void tTxSxSerial::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialB
         while (1) {} // must not happen
     }
     if (!ser) while (1) {} // must not happen
-}
-
-
-bool tTxSxSerial::IsEnabled(void)
-{
-    return true;
 }
 
 

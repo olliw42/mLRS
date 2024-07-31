@@ -43,23 +43,16 @@ void esp_enable(uint8_t serial_destination)
 #define ESP_PASSTHROUGH_TMO_MS  3000
 
 
-typedef enum {
-    ESP_TASK_NONE = 0,
-    ESP_TASK_RESTART_CONTROLLER,
-} ESP_TASK_ENUM;
-
-
 #ifndef USE_ESP_WIFI_BRIDGE
 
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport) {}
+    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate) {}
     void Do(void) {}
-    uint8_t Task(void) { return ESP_TASK_NONE; }
+    uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterFlash(void) {}
-    void EnterCli(void) {}
     void EnterPassthrough(void) {}
 };
 
@@ -72,12 +65,11 @@ extern tTxDisp disp;
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport);
+    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate);
     void Do(void);
     uint8_t Task(void);
 
     void EnterFlash(void);
-    void EnterCli(void);
     void EnterPassthrough(void);
 
   private:
@@ -86,23 +78,25 @@ class tTxEspWifiBridge
 
     tSerialBase* com;
     tSerialBase* ser;
+    uint32_t ser_baud;
 
     bool initialized;
-    uint8_t task;
+    uint8_t task_pending;
 
     bool passthrough_is_running;
     uint8_t dtr_rts_last;
 };
 
 
-void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
+void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate)
 {
     com = _comport;
     ser = _serialport;
+    ser_baud = _serial_baudrate;
 
     initialized = (com != nullptr && ser != nullptr) ? true : false;
 
-    task = ESP_TASK_NONE;
+    task_pending = TX_TASK_NONE;
 
     passthrough_is_running = false;
     dtr_rts_last = 0;
@@ -111,6 +105,8 @@ void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport)
 
 uint8_t tTxEspWifiBridge::Task(void)
 {
+    uint8_t task = task_pending;
+    task_pending = TX_TASK_NONE;
     return task;
 }
 
@@ -128,7 +124,7 @@ void tTxEspWifiBridge::Do(void)
 
         passthrough_do_rts_cts();
 
-        task = ESP_TASK_RESTART_CONTROLLER;
+        task_pending = TX_TASK_RESTART_CONTROLLER;
 
         //dbg.puts("\nend");delay_ms(500);
     }
@@ -227,27 +223,12 @@ void tTxEspWifiBridge::EnterPassthrough(void)
 }
 
 
-// enter ESP CLI, can only be exited by re-powering
-void tTxEspWifiBridge::EnterCli(void)
-{
-    if (!initialized) return;
-
-    // set GPIO0 to low, but don't do RESET, allows ESP to detect it should go into CLI mode
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-    esp_gpio0_low();
-    delay_ms(100);
-#endif
-
-    passthrough_do();
-}
-
-
 void tTxEspWifiBridge::passthrough_do(void)
 {
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
-#ifdef DEVICE_HAS_SERIAL_OR_COM
+#if defined DEVICE_HAS_SERIAL_OR_COM && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
     ser_or_com_set_to_com();
 #endif
 

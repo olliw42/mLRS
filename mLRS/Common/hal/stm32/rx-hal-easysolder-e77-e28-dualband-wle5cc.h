@@ -7,7 +7,7 @@
 // hal
 //*******************************************************
 
-//#define MLRS_FEATURE_E77_XTAL // must be defined high, not here, affects main !
+//#define MLRS_FEATURE_E77_XTAL // must be defined high up, not here, affects main !
 
 //-------------------------------------------------------
 // RX DIY "easy-to-solder" E77 E28 dualband, STM32WLE5CC
@@ -341,29 +341,13 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Buzzer
-// has none
-
-
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 #define POWER2_GAIN_DBM           27 // gain of a PA stage if present
 #define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
-
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
 
 
 //-- TEST

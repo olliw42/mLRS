@@ -5,7 +5,7 @@
 // OlliW @ www.olliw.eu
 //*******************************************************
 // mLRS TX
-//********************************************************
+//*******************************************************
 
 
 #define DBG_MAIN(x)
@@ -167,6 +167,10 @@ tTxDisp disp;
 #include "esp.h"
 
 tTxEspWifiBridge esp;
+
+#include "hc04.h"
+
+tTxHc04Bridge hc04;
 
 
 //-------------------------------------------------------
@@ -351,6 +355,13 @@ void link_task_init(void)
 }
 
 
+bool link_task_free(void)
+{
+    if (link_task != LINK_TASK_NONE) return false; // a task is running
+    return true;
+}
+
+
 bool link_task_set(uint8_t task)
 {
     if (link_task != LINK_TASK_NONE) return false; // a task is running
@@ -458,12 +469,10 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            if (sx_serial.IsEnabled()) {
-                for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-                    if (!sx_serial.available()) break;
-                    uint8_t c = sx_serial.getc();
-                    payload[payload_len++] = c;
-                }
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+                if (!sx_serial.available()) break;
+                uint8_t c = sx_serial.getc();
+                payload[payload_len++] = c;
             }
 
             stats.bytes_transmitted.Add(payload_len);
@@ -515,11 +524,9 @@ void process_received_frame(bool do_payload, tRxFrame* frame)
     }
 
     // output data on serial
-    if (sx_serial.IsEnabled()) {
-        for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-            uint8_t c = frame->payload[i];
-            sx_serial.putc(c);
-        }
+    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
+        uint8_t c = frame->payload[i];
+        sx_serial.putc(c);
     }
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -551,7 +558,7 @@ tRxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
-    // receive ARQ, must come before process_received_frame()
+    // handle receive ARQ, must come before process_received_frame()
     if (rx_status == RX_STATUS_VALID) {
         rarq.Received(frame->status.seq_no);
     } else {
@@ -715,10 +722,15 @@ RESTARTCONTROLLER
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    esp.Init(&comport, &serial);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    esp.Init(&comport, &serial2, Config.SerialBaudrate);
 #else
-    esp.Init(&comport, &serial2);
+    esp.Init(&comport, &serial, Config.SerialBaudrate);
+#endif
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+    hc04.Init(&comport, &serial2, Config.SerialBaudrate);
+#else
+    hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
@@ -762,6 +774,7 @@ INITCONTROLLER_END
         link_task_tick_ms();
 
         disp.Tick_ms();
+        fan.Tick_ms();
 
         if (!tick_1hz) {
             dbg.puts(".");
@@ -1142,19 +1155,20 @@ IF_IN(
 
     whileTransmit.Do();
 
-    //-- Handle display or CLI task
+    //-- Handle display or CLI or MAVLink task
 
-    uint8_t cli_task = disp.Task();
-    if (cli_task == CLI_TASK_NONE) cli_task = cli.Task();
+    uint8_t tx_task = disp.Task();
+    if (tx_task == TX_TASK_NONE) tx_task = mavlink.Task();
+    if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
 
-    switch (cli_task) {
-    case CLI_TASK_RX_PARAM_SET:
+    switch (tx_task) {
+    case TX_TASK_RX_PARAM_SET:
         if (connected()) {
             link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case CLI_TASK_PARAM_STORE:
+    case TX_TASK_PARAM_STORE:
         if (connected()) {
             link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
             mbridge.Lock(); // lock mBridge
@@ -1162,26 +1176,27 @@ IF_IN(
             doParamsStore = true;
         }
         break;
-    case CLI_TASK_PARAM_RELOAD:
+    case TX_TASK_PARAM_RELOAD:
         setup_reload();
         if (connected()) {
             link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case CLI_TASK_BIND: start_bind(); break;
-    case CLI_TASK_BOOT: enter_system_bootloader(); break;
-    case CLI_TASK_FLASH_ESP: esp.EnterFlash(); break;
-    case CLI_TASK_ESP_CLI: esp.EnterCli(); break;
-    case CLI_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-    case CLI_TASK_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_BIND: start_bind(); break;
+    case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
+    case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
+    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge
 
     esp.Do();
     uint8_t esp_task = esp.Task();
-    if (esp_task == ESP_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+    if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- more
 

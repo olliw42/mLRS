@@ -174,6 +174,7 @@ bool is_valid_bindphrase_char(char c);
 void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default);
 uint32_t u32_from_bindphrase(char* bindphrase);
 uint8_t except_from_bindphrase(char* bindphrase);
+void bindphrase_from_u32(char* bindphrase, uint32_t bindphrase_u32);
 
 void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen);
 void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t num, uint8_t slen);
@@ -181,6 +182,24 @@ void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower
 uint16_t version_to_u16(uint32_t version);
 uint32_t version_from_u16(uint16_t version_u16);
 void version_to_str(char* s, uint32_t version);
+
+
+//-- tx tasks
+
+typedef enum {
+    TX_TASK_NONE = 0,
+    TX_TASK_RX_PARAM_SET,
+    TX_TASK_PARAM_STORE,
+    TX_TASK_BIND,
+    TX_TASK_PARAM_RELOAD,
+    TX_TASK_SYSTEM_BOOT,
+    TX_TASK_RESTART_CONTROLLER,
+    TX_TASK_FLASH_ESP,
+    TX_TASK_ESP_PASSTHROUGH,
+    TX_TASK_CLI_CHANGE_CONFIG_ID,
+    TX_TASK_HC04_PASSTHROUGH,
+    TX_TASK_CLI_HC04_SETPIN,
+} TX_TASK_ENUM;
 
 
 //-- display & keys

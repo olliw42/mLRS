@@ -272,20 +272,6 @@ bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_i
 // CLI class
 //-------------------------------------------------------
 
-typedef enum {
-    CLI_TASK_NONE = 0,
-    CLI_TASK_RX_PARAM_SET,
-    CLI_TASK_PARAM_STORE,
-    CLI_TASK_BIND,
-    CLI_TASK_PARAM_RELOAD,
-    CLI_TASK_BOOT,
-    CLI_TASK_FLASH_ESP,
-    CLI_TASK_ESP_PASSTHROUGH,
-    CLI_TASK_ESP_CLI,
-    CLI_TASK_CHANGE_CONFIG_ID,
-} CLI_TASK_ENUM;
-
-
 class tTxCli
 {
   public:
@@ -318,7 +304,8 @@ class tTxCli
     uint16_t put_cnt;
     void delay_off(void) { put_cnt = 0; }
     void delay_clear(void) { put_cnt = 1; }
-    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+//    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
+    void delay(void) { if (put_cnt > 256) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
@@ -357,7 +344,8 @@ void tTxCli::Init(tSerialBase* _comport)
     buf[pos] = '\0';
     tlast_ms = 0;
 
-    task_pending = CLI_TASK_NONE;
+    task_pending = TX_TASK_NONE;
+    task_value = 0;
 
     state = CLI_STATE_NORMAL;
 
@@ -382,7 +370,7 @@ void tTxCli::Set(uint8_t new_line_end)
 uint8_t tTxCli::Task(void)
 {
     uint8_t task = task_pending;
-    task_pending = 0;
+    task_pending = TX_TASK_NONE;
     return task;
 }
 
@@ -429,11 +417,14 @@ uint8_t n;
     }
     s[n] = '\0';
 
-    if (n != 2) return false;
+    if (n < 1) return false;
     if (s[0] != '=') return false;
-    if (s[1] < '0' || s[1] > '9') return false;
 
-    *value = s[1] - '0';
+    // cleanify: extract 'number'
+    s[0] = '0'; // trick to make it easy
+    for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
+
+    *value = atoi(s);
 
     return true;
 }
@@ -666,24 +657,27 @@ void tTxCli::print_help(void)
     putsn("  pl c        -> list common parameters");
     putsn("  pl tx       -> list Tx parameters");
     putsn("  pl rx       -> list Rx parameters");
-    //delay_ms(10);
+
     putsn("  p name          -> get parameter value");
     putsn("  p name = value  -> set parameter value");
     putsn("  p name = ?      -> get parameter value and list of allowed values");
     putsn("  pstore      -> store parameters");
-    //delay_ms(10);
+
+    putsn("  setconfigid -> select config id");
     putsn("  bind        -> start binding");
     putsn("  reload      -> reload all parameter settings");
     putsn("  stats       -> starts streaming statistics");
     putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-    //delay_ms(10);
 
     putsn("  systemboot  -> call system bootloader");
 
 #ifdef USE_ESP_WIFI_BRIDGE
     putsn("  esppt       -> enter serial passthrough");
     putsn("  espboot     -> reboot ESP and enter serial passthrough");
-    putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
+#endif
+#ifdef USE_HC04_MODULE
+    putsn("  hc04 pt       -> enter serial passthrough");
+    putsn("  hc04 setpin   -> set pin of HC04");
 #endif
 }
 
@@ -748,12 +742,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
+                if (rx_param_changed) task_pending = TX_TASK_RX_PARAM_SET;
             }
 
         } else
         if (is_cmd("pstore")) {
-            task_pending = CLI_TASK_PARAM_STORE;
+            task_pending = TX_TASK_PARAM_STORE;
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -764,12 +758,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            task_pending = CLI_TASK_BIND;
+            task_pending = TX_TASK_BIND;
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            task_pending = CLI_TASK_PARAM_RELOAD;
+            task_pending = TX_TASK_PARAM_RELOAD;
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -780,13 +774,17 @@ bool rx_param_changed;
 
         } else
         if (is_cmd_set_value("setconfigid", &value)) { // setconfigid = value
+            if (value < 0 || value > 9) {
+                putsn("err: invalid config id number (0-9)");
+            } else {
             print_config_id();
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                task_pending = CLI_TASK_CHANGE_CONFIG_ID;
+                task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
                 task_value = value;
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
+            }
             }
 
         } else
@@ -803,22 +801,38 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (is_cmd("systemboot")) {
-            task_pending = CLI_TASK_BOOT;
+            task_pending = TX_TASK_SYSTEM_BOOT;
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_PASSTHROUGH;
+            task_pending = TX_TASK_ESP_PASSTHROUGH;
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            task_pending = CLI_TASK_FLASH_ESP;
+            task_pending = TX_TASK_FLASH_ESP;
+#endif
+
+        //-- HC04 module handling
+#ifdef USE_HC04_MODULE
         } else
-        if (is_cmd("espcli")) {
-            // enter esp cli, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_CLI;
+        if (is_cmd("hc04 pt")) {
+            // enter hc04 passthrough, can only be exited by re-powering
+            task_pending = TX_TASK_HC04_PASSTHROUGH;
+        } else
+        if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
+            if (value < 1000 || value > 9999) {
+                putsn("err: invalid pin number");
+            } else {
+                char pin_str[32];
+                u16toBCDstr(value, pin_str);
+                remove_leading_zeros(pin_str);
+                puts("HC04 Pin: ");putsn(pin_str);
+                task_pending = TX_TASK_CLI_HC04_SETPIN;
+                task_value = value;
+            }
 #endif
 
         //-- invalid command
