@@ -91,6 +91,7 @@
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
+#include "../Common/protocols/msp_protocol.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/diversity.h"
@@ -112,12 +113,16 @@ void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
-// MAVLink
+// MAVLink & MSP
 //-------------------------------------------------------
 
 #include "mavlink_interface_rx.h"
 
 tRxMavlink mavlink;
+
+#include "msp_interface_rx.h"
+
+tRxMsp msp;
 
 #include "sx_serial_interface_rx.h"
 
@@ -563,6 +568,7 @@ RESTARTCONTROLLER
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
+    msp.Init();
     sx_serial.Init();
     fan.SetPower(sx.RfPower_dbm());
 
@@ -755,6 +761,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
         if (!valid_frame_received) {
             mavlink.FrameLost();
+            msp.FrameLost();
         }
 
         if (valid_frame_received) { // valid frame received
@@ -872,21 +879,24 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), stats.GetLQ_rc());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
+            msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
                 out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
                 out.SendLinkStatisticsDisconnected();
                 mavlink.SendRcData(out.GetRcDataPtr(), true, true);
+                msp.SendRcData(out.GetRcDataPtr(), true, true);
             }
         }
     }//end of if(doPostReceive2)
 
     out.Do();
 
-    //-- Do MAVLink
+    //-- Do MAVLink & MSP
 
     mavlink.Do();
+    msp.Do();
 
     //-- Store parameters
 

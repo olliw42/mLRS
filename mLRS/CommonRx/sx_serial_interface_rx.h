@@ -24,6 +24,9 @@ class tRxSxSerial : public tSerialBase
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
             return mavlink.available(); // get from serial via MAVLink parser
         }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            return msp.available(); // get from serial via MSP parser
+        }
         return serial.available(); // get from serial
     }
 
@@ -31,6 +34,9 @@ class tRxSxSerial : public tSerialBase
     {
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
             return mavlink.getc(); // get from serial via MAVLink parser
+        }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            return msp.getc(); // get from serial via MSP parser
         }
         return serial.getc(); // get from serial
     }
@@ -41,12 +47,17 @@ class tRxSxSerial : public tSerialBase
             for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]); // send to serial via MAVLink parser
             return;
         }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            for (uint16_t i = 0; i < len; i++) msp.putc(buf[i]); // send to serial via MSP parser
+            return;
+        }
         serial.putbuf(buf, len); // send to serial
     }
 
     void flush(void) override
     {
-        mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
+        mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLiink handler
+        msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
         serial.flush();
     }
 };
