@@ -147,6 +147,8 @@ void tRxMsp::Do(void)
         telm_set_default_rate(MSP_TELM_BOXNAMES_ID);
     }
 
+    if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
+
     // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (serial.available()) {
