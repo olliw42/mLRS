@@ -11,7 +11,10 @@
 #pragma once
 
 
-#if (defined DEVICE_HAS_JRPIN5)
+#include "../Common/protocols/msp_protocol.h"
+
+
+#ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
@@ -113,7 +116,6 @@ class tTxCrsf : public tPin5BridgeBase
     uint32_t vario_send_tlast_ms;
 
     tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message, AP does not appear to provide baro alt at all
-    int32_t inav_baro_altitude; // needed to make INAV happy
     bool baro_altitude_updated;
     uint32_t baro_send_tlast_ms;
 
@@ -135,6 +137,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     // MSP handlers
 
+    int32_t inav_baro_altitude; // needed to make INAV happy
     uint16_t msp_inav_status_sensor_status;
 };
 
@@ -306,6 +309,8 @@ void tTxCrsf::Init(bool enable_flag)
 
     vehicle_sysid = 0;
     passthrough.Init();
+
+    inav_baro_altitude = 0;
     msp_inav_status_sensor_status = 0;
 
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
@@ -898,23 +903,12 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
 
     case MSPX_STATUS: {
         uint32_t flight_mode = *(uint32_t*)(msg->payload);
-/*
-dbg.puts("\nMS ");
-dbg.puts(u16toBCD_s(msg->len));
-dbg.puts(" ");
-dbg.puts(u32toHEX_s(flight_mode));
-*/
         inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
         if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
             strcat(flightmode.flight_mode, "*");
         }
         flightmode_updated = true;
         }break;
-/*
-default:
-dbg.puts("\nX "); dbg.puts(u16toBCD_s(msg->function));
-dbg.puts(" ");dbg.puts(u16toBCD_s(msg->len));
-*/
     }
 }
 
@@ -1010,7 +1004,7 @@ class tTxCrsfDummy
 
 tTxCrsfDummy crsf;
 
-#endif // if (defined DEVICE_HAS_JRPIN5)
+#endif // ifdef DEVICE_HAS_JRPIN5
 
 #endif // CRSF_INTERFACE_TX_H
 

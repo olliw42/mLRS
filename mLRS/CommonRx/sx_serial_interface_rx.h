@@ -56,7 +56,7 @@ class tRxSxSerial : public tSerialBase
 
     void flush(void) override
     {
-        mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLiink handler
+        mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
         msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
         serial.flush();
     }

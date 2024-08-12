@@ -15,6 +15,7 @@
 
 
 #ifdef USE_FEATURE_MAVLINKX
+#include "../Common/protocols/msp_protocol.h"
 #include "../Common/thirdparty/mspx.h"
 
 
@@ -150,15 +151,15 @@ void tTxMsp::putc(char c)
         // allow crsf class to capture it
         crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
 
-
+/*
 dbg.puts("\n");
 dbg.putc(msp_msg_link_in.type);
 char s[32]; msp_function_str_from_msg(s, &msp_msg_link_in); dbg.puts(s);
 dbg.puts(" ");
 dbg.puts(u16toBCD_s(msp_msg_link_in.len));
 if(msp_msg_link_in.len>64){
-dbg.puts(" ");for (uint16_t n=0;n<((msp_msg_link_in.len<100)?msp_msg_link_in.len:50); n++) dbg.putc(msp_msg_link_in.payload[n]);
-}
+dbg.puts(" ");for (uint16_t n=0;n<((msp_msg_link_in.len<100)?msp_msg_link_in.len:50); n++) dbg.putc(msp_msg_link_in.payload[n]);}
+*/
 /*dbg.puts(" ");
 dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
 uint16_t _len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);

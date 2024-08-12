@@ -107,7 +107,6 @@
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
-#include "../Common/protocols/msp_protocol.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/channel_order.h"
@@ -727,7 +726,7 @@ RESTARTCONTROLLER
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     msp.Init(&serial, &serial2); // ports selected by SerialDestination
-    sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination
+    sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2

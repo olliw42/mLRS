@@ -91,7 +91,6 @@
 
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
-#include "../Common/protocols/msp_protocol.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
 #include "../Common/diversity.h"

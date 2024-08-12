@@ -16,6 +16,7 @@
 
 #ifdef USE_FEATURE_MAVLINKX
 #include "../Common/libs/fifo.h"
+#include "../Common/protocols/msp_protocol.h"
 #include "../Common/thirdparty/mspx.h"
 
 
