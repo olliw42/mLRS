@@ -337,8 +337,8 @@ void tTxCli::Init(tSerialBase* _comport)
 
     initialized = (com != nullptr) ? true : false;
 
-    line_end = CLI_LINE_END_CR;
-    strcpy(ret, "\r");
+    line_end = CLI_LINE_END_CRLF;
+    strcpy(ret, "\r\n");
 
     pos = 0;
     buf[pos] = '\0';
@@ -360,9 +360,9 @@ void tTxCli::Set(uint8_t new_line_end)
     line_end = new_line_end;
 
     switch (line_end) {
-    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
-    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
     case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
+    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
+    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
     }
 }
 

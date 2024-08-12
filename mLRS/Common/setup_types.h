@@ -171,9 +171,9 @@ typedef enum {
 
 
 typedef enum {
-    CLI_LINE_END_CR = 0,
+    CLI_LINE_END_CRLF = 0, // changed 12.Aug.24, was CR before
     CLI_LINE_END_LF,
-    CLI_LINE_END_CRLF,
+    CLI_LINE_END_CR, // changed 12.Aug.24, was CRLF before
     CLI_LINE_END_NUM,
 } TX_CLI_LINE_END_ENUM;
 
