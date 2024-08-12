@@ -71,7 +71,9 @@ Further features:
 
 Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?4037943-mLRS-Lora-based-Mavlink-oriented-open-source-radio-link
 
-Discord server by LELE2022: https://discord.gg/vwjzCD6ws5
+Discord server: https://discord.gg/vwjzCD6ws5
+
+Facebook group: https://www.facebook.com/groups/mlrslink/
 
 ## Range ##
 

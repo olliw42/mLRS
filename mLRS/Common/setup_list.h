@@ -96,7 +96,7 @@
   X( Setup.Tx[0].SendRadioStatus,   LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx[0].MavlinkComponent,  LIST, "Tx Mav Component", "TX_MAV_COMPONENT", 0,0,0,"", "off,enabled", MSK_ALL )\
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )\
-  X( Setup.Tx[0].CliLineEnd,        LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CR,LF,CRLF", MSK_ALL )\
+  X( Setup.Tx[0].CliLineEnd,        LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CRLF,LF,CR", MSK_ALL )\
 
 #define SETUP_PARAMETER_LIST_RX \
   X( Setup.Rx.Power,              LIST, "Rx Power",         "RX_POWER",         0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
