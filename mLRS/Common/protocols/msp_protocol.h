@@ -463,6 +463,45 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
 };
 
 
+void inav_flight_mode_name4(char* name4, uint32_t flight_mode)
+{
+    #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
+
+    // follow INAV's static void crsfFrameFlightMode()
+    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
+    // we don't do "HRST" and "LAND"
+    if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AIR_MODE)) {
+        strcpy(name4, "AIR"); // not shown in OSD
+    } else {
+        strcpy(name4, "ACRO");
+    }
+
+    if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
+        strcpy(name4, "!FS!");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
+        strcpy(name4, "MANU");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH)) {
+        strcpy(name4, "RTH"); // shown as "WRTH" in OSD if waypoint mission RTH is active
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_POSHOLD)) {
+        strcpy(name4, "HOLD"); // shown as "LOTR" in OSD if it is an airplane
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD) && MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
+        strcpy(name4, "CRUZ");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD)) {
+        strcpy(name4, "CRSH");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_WP)) {
+        strcpy(name4, "WP");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
+        strcpy(name4, "AH");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE)) {
+        strcpy(name4, "ANGL");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_HORIZON)) {
+        strcpy(name4, "HOR");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
+        strcpy(name4, "ANGH");
+    }
+}
+
+
 //-- check some sizes
 
 STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many flight modes")

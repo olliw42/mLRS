@@ -904,45 +904,10 @@ dbg.puts(u16toBCD_s(msg->len));
 dbg.puts(" ");
 dbg.puts(u32toHEX_s(flight_mode));
 */
-        #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
-
-        // follow INAV's static void crsfFrameFlightMode()
-        // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
-        // we don't do "HRST" and "LAND"
-        if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AIR_MODE)) {
-            strcpy(flightmode.flight_mode, "AIR");
-        } else {
-            strcpy(flightmode.flight_mode, "ACRO");
-        }
-
-        if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
-            strcpy(flightmode.flight_mode, "!FS!");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
-            strcpy(flightmode.flight_mode, "MANU");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH)) {
-            strcpy(flightmode.flight_mode, "RTH");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_POSHOLD)) {
-            strcpy(flightmode.flight_mode, "HOLD");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD) && MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
-            strcpy(flightmode.flight_mode, "CRUZ");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD)) {
-            strcpy(flightmode.flight_mode, "CRSH");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_WP)) {
-            strcpy(flightmode.flight_mode, "WP");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
-            strcpy(flightmode.flight_mode, "AH");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE)) {
-            strcpy(flightmode.flight_mode, "ANGL");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_HORIZON)) {
-            strcpy(flightmode.flight_mode, "HOR");
-        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
-            strcpy(flightmode.flight_mode, "ANGH");
-        }
-
-        if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ARM)) {
+        inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
+        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
             strcat(flightmode.flight_mode, "*");
         }
-
         flightmode_updated = true;
         }break;
 /*

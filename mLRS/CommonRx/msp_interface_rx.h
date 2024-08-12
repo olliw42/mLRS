@@ -174,44 +174,14 @@ void tRxMsp::Do(void)
                         // compress
                         // and also set inav_flight_modes_box_mode_flags[]
                         uint8_t new_payload[512];
-                        uint16_t p_pos = 0;
-                        char s[48];
-                        uint8_t pos = 0;
-                        uint8_t state = 0;
-                        uint8_t box = 0; // inavFlightModes.boxModeFlag handling
-                        for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
-                            if (msp_msg_ser_in.payload[i] != ';') {
-                                s[pos++] = msp_msg_ser_in.payload[i];
-                                if (pos >= 32) pos = 0;
-                            } else {
-                                s[pos++] = '\0';
-                                bool found = false;
-                                for (uint8_t n = 0; n < INAV_BOXES_COUNT; n++) {
-                                    if (!strcmp(s, inavBoxes[n].boxName)) {
-                                        if (state != 0xFF) { state = 0xFF; new_payload[p_pos++] = 0xFF; }
-                                        new_payload[p_pos++] = n;
-                                        found = true;
+                        uint16_t new_len = 0;
+                        mspX_boxnames_payload_compress(
+                            new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
+                            inav_flight_modes_box_mode_flags);
 
-                                        if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want  to record im MSPX_STATUS
-                                            inav_flight_modes_box_mode_flags[inavBoxes[n].flightModeFlag] = box; // inav_flight_modes_box_mode_flag handling
-                                        }
-
-                                        break; // found, no need to look further
-                                    }
-                                }
-                                if (!found) {
-                                    if (state != 0xFE) { state = 0xFE; new_payload[p_pos++] = 0xFE; }
-                                    for (uint8_t n = 0; n < strlen(s); n++) new_payload[p_pos++] = s[n];
-                                    new_payload[p_pos++] = ';';
-                                }
-                                pos = 0;
-
-                                box++; // inav_flight_modes_box_mode_flags handling
-                            }
-                        }
                         telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
 
-                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, p_pos);
+                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, new_len);
                         fifo_link_out.PutBuf(_buf, len);
 
                         send = false; // mark as handled
