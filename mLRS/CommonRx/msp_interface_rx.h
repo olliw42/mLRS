@@ -11,6 +11,9 @@
 #pragma once
 
 
+// TODO: share fixed buffers with mavlink interface
+
+
 #ifdef USE_FEATURE_MAVLINKX
 #include "../Common/libs/fifo.h"
 #include "../Common/thirdparty/mspx.h"
@@ -72,17 +75,19 @@ class tRxMsp
         1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
         2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
         2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
-        1,  // this is set to zero once it is gotten once
+        1,  // this is set to zero once it is gotten once, disables request
     };
 
     typedef struct {
         uint8_t rate;
         uint8_t cnt;
-        uint32_t tlast_ms; // time of last request received form a gcs
+        uint32_t tlast_ms; // time of last request received from a gcs
     } tMspTelm;
     tMspTelm telm[MSP_TELM_COUNT];
 
     void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; } // 0 = off, do not send
+
+    uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXNAMES
 
     // miscellaneous
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -105,6 +110,8 @@ void tRxMsp::Init(void)
         telm[n].cnt = 0;
         telm[n].tlast_ms = 0;
     }
+
+    memset(inav_flight_modes_box_mode_flags, INAV_FLIGHT_MODES_COUNT, 255); // 255 = is empty
 }
 
 
@@ -150,13 +157,13 @@ void tRxMsp::Do(void)
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
                     if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
-                        // send out our home-brewed SMP message in addition
+                        // send out our home-brewed MSPX_STATUS message in addition
                         // is being send before original message
                         uint32_t flight_mode = 0;
                         uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
                         for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
-                            if (inavFlightModes[n].boxModeFlag == 255) continue; // is empty
-                            if (boxflags[inavFlightModes[n].boxModeFlag / 8] & (1 << (inavFlightModes[n].boxModeFlag % 8))) {
+                            if (inav_flight_modes_box_mode_flags[n] == 255) continue; // is empty
+                            if (boxflags[inav_flight_modes_box_mode_flags[n] / 8] & (1 << (inav_flight_modes_box_mode_flags[n] % 8))) {
                                 flight_mode |= ((uint32_t)1 << n);
                             }
                         }
@@ -185,8 +192,8 @@ void tRxMsp::Do(void)
                                         new_payload[p_pos++] = n;
                                         found = true;
 
-                                        if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) {
-                                            inavFlightModes[inavBoxes[n].flightModeFlag].boxModeFlag = box; // inavFlightModes.boxModeFlag handling
+                                        if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want  to record im MSPX_STATUS
+                                            inav_flight_modes_box_mode_flags[inavBoxes[n].flightModeFlag] = box; // inav_flight_modes_box_mode_flag handling
                                         }
 
                                         break; // found, no need to look further

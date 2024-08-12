@@ -121,7 +121,7 @@ void tTxMsp::putc(char c)
             memcpy(_buf, msp_msg_link_in.payload, msp_msg_link_in.len); // we can use the buffer
             msp_msg_link_in.len = 0;
             uint8_t state = 0;
-            for (uint16_t i = 0; i <payload_len; i++) {
+            for (uint16_t i = 0; i < payload_len; i++) {
                 uint8_t c = _buf[i];
                 if (c == 0xFF) {
                     state = 0xFF;
@@ -131,8 +131,9 @@ void tTxMsp::putc(char c)
                 } else
                 if (state == 0xFF) {
                     if (c < INAV_BOXES_COUNT) { // protect against nonsense
-                        for (uint8_t n = 0; n < strlen(inavBoxes[c].boxName); n++)
+                        for (uint8_t n = 0; n < strlen(inavBoxes[c].boxName); n++) {
                             msp_msg_link_in.payload[msp_msg_link_in.len++] = (inavBoxes[c].boxName)[n];
+                        }
                         msp_msg_link_in.payload[msp_msg_link_in.len++] = ';';
                     }
                 } else

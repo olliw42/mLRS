@@ -364,15 +364,13 @@ typedef enum {
 } MSPX_FUNCTION_ENUM;
 
 
-typedef struct {
-    uint8_t boxModeFlag;
-    const char* telName;
-} tMspFlightModeArray;
-
-
+// essentially mirrors INAV's flightModeFlags_e enum
+// https://github.com/iNavFlight/inav/blob/master/src/main/fc/runtime_config.h#L89-L109
+// includes all and more but misses
+//    NAV_FW_AUTOLAND
 typedef enum {
     INAV_FLIGHT_MODES_ARM = 0,
-    INAV_FLIGHT_MODES_FAILSAFE, // put it first so it has priority
+    INAV_FLIGHT_MODES_FAILSAFE,
     INAV_FLIGHT_MODES_ANGLE,
     INAV_FLIGHT_MODES_HORIZON,
     INAV_FLIGHT_MODES_NAV_ALTHOLD,
@@ -388,33 +386,12 @@ typedef enum {
     INAV_FLIGHT_MODES_TURN_ASSIST,
     INAV_FLIGHT_MODES_NAV_LAUNCH,
     INAV_FLIGHT_MODES_NAV_COURSE_HOLD,
+    INAV_FLIGHT_MODES_TURTLE,
     INAV_FLIGHT_MODES_NAV_CRUISE,
+    INAV_FLIGHT_MODES_SOARING,
     INAV_FLIGHT_MODES_ANGLE_HOLD,
     INAV_FLIGHT_MODES_COUNT,
 } MSP_INAV_FLIGHT_MODES_ENUM;
-
-
-tMspFlightModeArray inavFlightModes[INAV_FLIGHT_MODES_COUNT] = {
-    { .boxModeFlag = 255,   .telName = "ARM" },
-    { .boxModeFlag = 255,   .telName = "!FS!" },
-    { .boxModeFlag = 255,   .telName = "ANGL" },
-    { .boxModeFlag = 255,   .telName = "HOR" },
-    { .boxModeFlag = 255,   .telName = "ALTH" },
-    { .boxModeFlag = 255,   .telName = "HHLD" },
-    { .boxModeFlag = 255,   .telName = "HFRE" },
-    { .boxModeFlag = 255,   .telName = "RTH" },
-    { .boxModeFlag = 255,   .telName = "HOLD" },
-    { .boxModeFlag = 255,   .telName = "MANU" },
-    { .boxModeFlag = 255,   .telName = "ATUN" },
-    { .boxModeFlag = 255,   .telName = "WP" },
-    { .boxModeFlag = 255,   .telName = "AIR" },
-    { .boxModeFlag = 255,   .telName = "FLAP" },
-    { .boxModeFlag = 255,   .telName = "TURN" },
-    { .boxModeFlag = 255,   .telName = "LNCH" },
-    { .boxModeFlag = 255,   .telName = "CRSH" },
-    { .boxModeFlag = 255,   .telName = "CRUS" },
-    { .boxModeFlag = 255,   .telName = "ANGH" },
-};
 
 
 typedef struct {
@@ -425,6 +402,8 @@ typedef struct {
 
 #define INAV_BOXES_COUNT  55
 
+// mirrors INAV's static const box_t boxes[]
+// https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp_box.c
 const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
     { .boxName = "ARM",               .flightModeFlag = INAV_FLIGHT_MODES_ARM }, // 0
     { .boxName = "ANGLE",             .flightModeFlag = INAV_FLIGHT_MODES_ANGLE },
@@ -470,11 +449,11 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
     { .boxName = "LOITER CHANGE",     .flightModeFlag = 255 },
     { .boxName = "MSP RC OVERRIDE",   .flightModeFlag = 255 },
     { .boxName = "PREARM",            .flightModeFlag = 255 },
-    { .boxName = "TURTLE",            .flightModeFlag = 255 },
+    { .boxName = "TURTLE",            .flightModeFlag = INAV_FLIGHT_MODES_TURTLE },
     { .boxName = "NAV CRUISE",        .flightModeFlag = INAV_FLIGHT_MODES_NAV_CRUISE },
     { .boxName = "AUTO LEVEL TRIM",   .flightModeFlag = 255 },
     { .boxName = "WP PLANNER",        .flightModeFlag = 255 },
-    { .boxName = "SOARING",           .flightModeFlag = 255 },
+    { .boxName = "SOARING",           .flightModeFlag = INAV_FLIGHT_MODES_SOARING },
     { .boxName = "MISSION CHANGE",    .flightModeFlag = 255 },
     { .boxName = "BEEPER MUTE",       .flightModeFlag = 255 }, // 50
     { .boxName = "MULTI FUNCTION",    .flightModeFlag = 255 },
@@ -482,6 +461,11 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
     { .boxName = "MIXER TRANSITION",  .flightModeFlag = 255 },
     { .boxName = "ANGLE HOLD",        .flightModeFlag = INAV_FLIGHT_MODES_ANGLE_HOLD },
 };
+
+
+//-- check some sizes
+
+STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many flight modes")
 
 
 #endif // MSP_PROTOCOL_H
@@ -637,5 +621,10 @@ MSP_SET_RAW_RC  200   → FC  rcData[RC_CHANS]  16 x UINT 16  Range [1000;2000]
 ROLL/PITCH/YAW/THROTTLE/AUX1/AUX2/AUX3AUX4
 
 This request is used to inject RC channel via MSP. Each chan overrides legacy RX as long as it is refreshed at least every second. See UART radio projects for more details.
+
+
+
+https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
+
 
 */
