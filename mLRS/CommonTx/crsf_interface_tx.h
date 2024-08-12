@@ -908,6 +908,7 @@ dbg.puts(u32toHEX_s(flight_mode));
 
         // follow INAV's static void crsfFrameFlightMode()
         // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
+        // we don't do "HRST" and "LAND"
         if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AIR_MODE)) {
             strcpy(flightmode.flight_mode, "AIR");
         } else {
@@ -916,9 +917,6 @@ dbg.puts(u32toHEX_s(flight_mode));
 
         if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
             strcpy(flightmode.flight_mode, "!FS!");
-//??        } else if (IS_RC_MODE_ACTIVE(BOXHOMERESET) && !FLIGHT_MODE(NAV_RTH_MODE) && !FLIGHT_MODE(NAV_WP_MODE)) {
-//        } else if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH) && !MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_WP)) {
-//            strcpy(flightmode.flight_mode, "HRST");
         } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
             strcpy(flightmode.flight_mode, "MANU");
         } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH)) {
@@ -939,8 +937,6 @@ dbg.puts(u32toHEX_s(flight_mode));
             strcpy(flightmode.flight_mode, "HOR");
         } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
             strcpy(flightmode.flight_mode, "ANGH");
-//??        } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_FW_AUTO_LAND)) {
-//??            strcpy(flightmode.flight_mode, "LAND";
         }
 
         if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ARM)) {

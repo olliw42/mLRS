@@ -172,7 +172,7 @@ void tRxMsp::Do(void)
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
                         // compress
-                        // and also set inavFlightModes[] boxModeFlag
+                        // and also set inav_flight_modes_box_mode_flags[]
                         uint8_t new_payload[512];
                         uint16_t p_pos = 0;
                         char s[48];
@@ -206,7 +206,7 @@ void tRxMsp::Do(void)
                                 }
                                 pos = 0;
 
-                                box++; // inavFlightModes.boxModeFlag handling
+                                box++; // inav_flight_modes_box_mode_flags handling
                             }
                         }
                         telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting

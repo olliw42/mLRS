@@ -11,6 +11,9 @@
 #pragma once
 
 
+// TODO: share fixed buffers with mavlink interface
+
+
 #ifdef USE_FEATURE_MAVLINKX
 #include "../Common/thirdparty/mspx.h"
 
