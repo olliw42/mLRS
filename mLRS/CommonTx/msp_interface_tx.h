@@ -97,11 +97,7 @@ void tTxMsp::Do(void)
         while (ser->available()) {
             char c = ser->getc();
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
-#ifdef USE_MSPX
                 uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
-#else
-                uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
-#endif
                 fifo_link_out.PutBuf(_buf, len);
             }
         }
@@ -114,7 +110,6 @@ void tTxMsp::putc(char c)
     if (!ser) return;
 
     // parse link in -> serial out
-#ifdef USE_MSPX
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
 
         if (msp_msg_link_in.type == MSP_TYPE_RESPONSE && msp_msg_link_in.function == MSP_BOXNAMES) {
@@ -148,10 +143,6 @@ void tTxMsp::putc(char c)
             msp_msg_recalculate_crc(&msp_msg_link_in);
 //dbg.puts("\nMB ");for(uint16_t i = 0; i < msp_msg_link_in.len; i++) dbg.putc(msp_msg_link_in.payload[i]);
         }
-
-#else
-    if (msp_parse_to_msg(&msp_msg_link_in, &status_link_in, c)) {
-#endif
 
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         ser->putbuf(_buf, len);

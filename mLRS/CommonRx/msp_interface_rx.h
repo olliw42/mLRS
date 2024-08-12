@@ -154,7 +154,6 @@ void tRxMsp::Do(void)
         while (serial.available()) {
             char c = serial.getc();
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
-#ifdef USE_MSPX
                 bool send = true;
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
@@ -225,11 +224,6 @@ void tRxMsp::Do(void)
                     fifo_link_out.PutBuf(_buf, len);
                 }
 
-#else
-                uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_ser_in);
-                fifo_link_out.PutBuf(_buf, len);
-#endif
-
 /*
 dbg.puts("\n");
 dbg.putc(msp_msg_ser_in.type);
@@ -287,11 +281,7 @@ void tRxMsp::FrameLost(void)
 void tRxMsp::putc(char c)
 {
     // parse link in -> serial out
-#ifdef USE_MSPX
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
-#else
-    if (msp_parse_to_msg(&msp_msg_link_in, &status_link_in, c)) {
-#endif
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         serial.putbuf(_buf, len);
 

@@ -12,8 +12,6 @@
 #ifndef MSPX_H
 #define MSPX_H
 
-#define USE_MSPX
-
 // STX1                       '$'
 // STX2                       'X', 'M'
 // flags                      type '<', '>', '!'
