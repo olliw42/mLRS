@@ -58,20 +58,20 @@ typedef struct {
 } msp_status_t;
 
 
-void msp_status_reset(msp_status_t* status)
+void msp_status_reset(msp_status_t* const status)
 {
     status->state = MSP_PARSE_STATE_IDLE;
     status->cnt = 0;
 }
 
 
-void msp_parse_reset(msp_status_t* status)
+void msp_parse_reset(msp_status_t* const status)
 {
     status->state = MSP_PARSE_STATE_IDLE;
 }
 
 
-uint8_t msp_parse_to_msg(msp_message_t* msg, msp_status_t* status, char c)
+uint8_t msp_parse_to_msg(msp_message_t* const msg, msp_status_t* const status, char c)
 {
     if (status->cnt >= MSP_FRAME_LEN_MAX) { // this should never happen, but play it safe
         status->state = MSP_PARSE_STATE_IDLE;
@@ -166,7 +166,7 @@ uint8_t msp_parse_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 }
 
 
-uint16_t msp_msg_to_frame_buf(uint8_t* buf, msp_message_t* msg)
+uint16_t msp_msg_to_frame_buf(uint8_t* const buf, msp_message_t* const msg)
 {
     if (msg->len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
@@ -191,7 +191,7 @@ uint16_t msp_msg_to_frame_buf(uint8_t* buf, msp_message_t* msg)
 }
 
 
-uint16_t msp_frame_buf_to_msg(msp_message_t* msg, uint8_t* buf)
+uint16_t msp_frame_buf_to_msg(msp_message_t* const msg, uint8_t* const buf)
 {
     msg->magic2 = buf[1];
     msg->type = buf[2];
@@ -245,7 +245,7 @@ mspx_status_t mspx_status = {};
 
 // converting from MSP X
 // result in msg needs to be correct MSP message
-uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
+uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, char c)
 {
     if (status->cnt >= MSP_FRAME_LEN_MAX) { // this should never happen, but play it safe
         status->state = MSP_PARSE_STATE_IDLE;
@@ -387,7 +387,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* msg, msp_status_t* status, char c)
 
 
 // converting to MSP X !
-uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
+uint16_t msp_msg_to_frame_bufX(uint8_t* const buf, msp_message_t* const msg)
 {
     if (msg->len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
@@ -421,7 +421,7 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* buf, msp_message_t* msg)
 }
 
 
-uint16_t msp_generate_frame_bufX(uint8_t* buf, uint8_t type, uint16_t function, uint8_t* payload, uint16_t len)
+uint16_t msp_generate_frame_bufX(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
 {
     if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
@@ -469,7 +469,7 @@ void msp_init(void)
 // Helper
 //-------------------------------------------------------
 
-void msp_msg_recalculate_crc(msp_message_t* msg)
+void msp_msg_recalculate_crc(msp_message_t* const msg)
 {
     msg->checksum = crsf_crc8_calc(0, msg->flag);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
@@ -480,7 +480,7 @@ void msp_msg_recalculate_crc(msp_message_t* msg)
 }
 
 
-uint16_t msp_generate_request_to_msg(msp_message_t* msg, uint8_t type, uint16_t function)
+uint16_t msp_generate_request_to_msg(msp_message_t* const msg, uint8_t type, uint16_t function)
 {
     msg->magic2 = MSP_MAGIC_2_V2;
     msg->type = type;
@@ -496,7 +496,7 @@ uint16_t msp_generate_request_to_msg(msp_message_t* msg, uint8_t type, uint16_t 
 }
 
 
-uint16_t msp_generate_request_to_frame_buf(uint8_t* buf, uint8_t type, uint16_t function)
+uint16_t msp_generate_request_to_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function)
 {
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSP_MAGIC_2_V2;
@@ -511,7 +511,7 @@ uint16_t msp_generate_request_to_frame_buf(uint8_t* buf, uint8_t type, uint16_t 
 }
 
 
-uint16_t msp_generate_frame_buf(uint8_t* buf, uint8_t type, uint16_t function, uint8_t* payload, uint16_t len)
+uint16_t msp_generate_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
 {
     if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
@@ -536,7 +536,7 @@ uint16_t msp_generate_frame_buf(uint8_t* buf, uint8_t type, uint16_t function, u
 }
 
 
-void msp_type_str(char* s, msp_message_t* msg)
+void msp_type_str(char* s, msp_message_t* const msg)
 {
     switch (msg->type) {
     case MSP_TYPE_REQUEST: strcpy(s, "req"); break;
@@ -585,9 +585,92 @@ void msp_function_str(char* s, uint16_t function)
 }
 
 
-void msp_function_str_from_msg(char* s, msp_message_t* msg)
+void msp_function_str_from_msg(char* s, msp_message_t* const msg)
 {
     msp_function_str(s, msg->function);
+}
+
+
+//-------------------------------------------------------
+// Compression
+//-------------------------------------------------------
+
+// compress
+// also set inav_flight_modes_box_mode_flags[]
+void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, uint8_t* const payload, uint16_t len, uint8_t* const inav_flight_modes_box_mode_flags)
+{
+    char s[48];
+    uint8_t pos = 0;
+    uint8_t state = 0;
+    uint8_t box = 0; // inavFlightModes.boxModeFlag handling
+
+    *len_out = 0;
+
+    for (uint16_t i = 0; i < len; i++) {
+        if (payload[i] != ';') {
+            s[pos++] = payload[i];
+            if (pos >= 32) pos = 0;
+        } else {
+            s[pos++] = '\0';
+            bool found = false;
+            for (uint8_t n = 0; n < INAV_BOXES_COUNT; n++) {
+                if (!strcmp(s, inavBoxes[n].boxName)) {
+                    if (state != 0xFF) { state = 0xFF; payload_out[(*len_out)++] = 0xFF; }
+                    payload_out[(*len_out)++] = n;
+                    found = true;
+
+                    if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want  to record im MSPX_STATUS
+                        inav_flight_modes_box_mode_flags[inavBoxes[n].flightModeFlag] = box; // inav_flight_modes_box_mode_flag handling
+                    }
+
+                    break; // found, no need to look further
+                }
+            }
+            if (!found) {
+                if (state != 0xFE) { state = 0xFE; payload_out[(*len_out)++] = 0xFE; }
+                for (uint8_t n = 0; n < strlen(s); n++) payload_out[(*len_out)++] = s[n];
+                payload_out[(*len_out)++] = ';';
+            }
+            pos = 0;
+
+            box++; // inav_flight_modes_box_mode_flags handling
+        }
+    }
+}
+
+
+// decompress
+void mspX_boxnames_payload_decompress(msp_message_t* const msg, uint8_t* const buf)
+{
+    uint8_t payload_len = msg->len;
+    memcpy(buf, msg->payload, msg->len);
+
+    msg->len = 0;
+    uint8_t state = 0;
+
+    for (uint16_t i = 0; i < payload_len; i++) {
+        uint8_t c = buf[i];
+        if (c == 0xFF) {
+            state = 0xFF;
+        } else
+        if (c == 0xFE) {
+            state = 0xFE;
+        } else
+        if (state == 0xFF) {
+            if (c < INAV_BOXES_COUNT) { // protect against nonsense
+                for (uint8_t n = 0; n < strlen(inavBoxes[c].boxName); n++) {
+                    msg->payload[msg->len++] = (inavBoxes[c].boxName)[n];
+                }
+                msg->payload[msg->len++] = ';';
+            }
+        } else
+        if (state == 0xFE) {
+            msg->payload[msg->len++] = c;
+        }
+    }
+
+    // we now need to recalculate the crc
+    msp_msg_recalculate_crc(msg);
 }
 
 
