@@ -167,7 +167,7 @@ typedef struct
     uint8_t numSat;
     uint32_t lat;             // 1 / 10 000 000 deg
     uint32_t lon;             // 1 / 10 000 000 deg
-    uint16_t alt;             // meters
+    uint16_t alt;             // meters // ATTENTION: INAV wants the baro altitude in this field !
     uint16_t ground_speed;    // cm/s
     uint16_t ground_course;   // degree*10 // gpsSol.groundCourse is 0.1 degrees
     uint16_t hdop;

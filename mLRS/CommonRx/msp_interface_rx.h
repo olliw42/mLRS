@@ -221,7 +221,7 @@ void tRxMsp::Do(void)
                 }
 
                 if (send) {
-                    uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
+                    uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
                     fifo_link_out.PutBuf(_buf, len);
                 }
 

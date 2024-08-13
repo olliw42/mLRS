@@ -98,7 +98,7 @@ void tTxMsp::Do(void)
         while (ser->available()) {
             char c = ser->getc();
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
-                uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX !!
+                uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
                 fifo_link_out.PutBuf(_buf, len);
             }
         }
