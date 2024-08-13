@@ -4,7 +4,7 @@
 
 The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides bidirectional serial connection combined with full remote control.
 
-The 'm' in the project name alludes to 'MAVLink', as it has features which optimizes performance for MAVLink systems. However, it always will also provide a transparent serial link and hence will be of wider use and not be limited to MAVLink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to a minimum, at the cost of the resulting compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
+The 'm' in the project name alludes to 'MAVLink', as it has features which optimizes performance for MAVLink systems. However, it also supports other systems such as INAV/MSP, and it always will provide a transparent serial link and hence will be of wider use and not be limited to specific systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to a minimum, at the cost of the resulting compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
 Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
 
@@ -62,7 +62,7 @@ Further features:
 - technologies introduced by mLRS:
     - innovative flow control for MAVLink for smoother and more robust data flow 
     - MavlinkX for reduced packet loss and data compression
-- support of MSP and optimizations for INAV autopilot systems. Enables using the INAV telemetry widget and in-flight connection to the INAV configurator, supports MSP-RC, MspX for reduced packet loss.
+- support of MSP and optimizations for INAV autopilot systems. Enables using the INAV telemetry widget, in-flight connection to the INAV configurator, supports MSP-RC, and introduces MspX for reduced packet loss.
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
