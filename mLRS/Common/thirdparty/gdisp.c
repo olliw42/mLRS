@@ -210,11 +210,12 @@ HAL_StatusTypeDef ssd1306_put(uint8_t* buf, uint16_t len)
 } */
 
 
+/* not used
 HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len)
 {
     ssd1306_cmdhome();
     return i2c_put(SSD1306_DATA, buf, len);
-}
+} */
 
 
 //-------------------------------------------------------
@@ -222,6 +223,36 @@ HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len)
 //-------------------------------------------------------
 
 tGDisplay gdisp;
+
+
+struct {
+    uint8_t reg_adr;
+    uint16_t pos;
+    uint16_t len;
+} i2c_buf = { 0, 0, 0 };
+
+
+void i2c_spin(uint16_t chunksize)
+{
+    if (!i2c_buf.len) return; // nothing to do
+
+    if (i2c_device_ready() == HAL_BUSY) return;
+
+    if (i2c_buf.pos + chunksize > i2c_buf.len) chunksize = i2c_buf.len - i2c_buf.pos;
+
+    if (chunksize) {
+        i2c_put(i2c_buf.reg_adr, &(gdisp.buf[i2c_buf.pos]), chunksize);
+    }
+
+    i2c_buf.pos += chunksize;
+    if (i2c_buf.pos >= i2c_buf.len) i2c_buf.len = 0; // done
+}
+
+
+static HAL_StatusTypeDef i2c_spin_ready(void)
+{
+    return (i2c_buf.len) ? HAL_BUSY : HAL_OK;
+}
 
 
 //-------------------------------------------------------
@@ -251,8 +282,15 @@ void gdisp_hal_cmdhome(void)
 HAL_StatusTypeDef gdisp_hal_put(uint8_t* buf, uint16_t len)
 {
     switch (gdisp.type) {
-        case GDISPLAY_TYPE_SSD1306: return ssd1306_put_noblock(buf, len);
-        case GDISPLAY_TYPE_SH1106: return HAL_OK;
+        case GDISPLAY_TYPE_SSD1306:
+            ssd1306_cmdhome();
+            i2c_buf.reg_adr = SSD1306_DATA;
+            i2c_buf.len = GDISPLAY_BUFSIZE;
+            i2c_buf.pos = 0;
+            return HAL_OK;
+            //return ssd1306_put_noblock(buf, len);
+        case GDISPLAY_TYPE_SH1106:
+            return HAL_OK;
     }
     return HAL_OK;
 }
@@ -315,6 +353,8 @@ void gdisp_update(void)
 
 uint8_t gdisp_update_completed(void)
 {
+    if (i2c_spin_ready() != HAL_OK) return HAL_BUSY;
+
     return (i2c_device_ready() != HAL_BUSY) ? 1 : 0;
 }
 

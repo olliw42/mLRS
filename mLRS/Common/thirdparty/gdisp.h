@@ -134,6 +134,8 @@ void gdisp_hal_contrast(uint8_t c);
 // can be called by the user
 //-------------------------------------------------------
 
+void i2c_spin(uint16_t chunksize);
+
 void gdisp_update(void);
 uint8_t gdisp_update_completed(void);
 void gdisp_setrotation(uint16_t rotation);

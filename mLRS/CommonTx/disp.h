@@ -115,6 +115,8 @@ class tTxDisp
     void DrawNotify(const char* s);
     void DrawBoot(void);
 
+    void SpinI2C(void);
+
     typedef struct {
         uint8_t list[SETUP_PARAMETER_NUM];
         uint8_t num;
@@ -542,6 +544,12 @@ void tTxDisp::Draw(void)
 //t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\nupda ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
     }
+}
+
+
+void tTxDisp::SpinI2C(void)
+{
+    i2c_spin(256); // ESP32: 64
 }
 
 
