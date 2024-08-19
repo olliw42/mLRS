@@ -163,6 +163,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
+        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
+        delay_us(1000); // seems ok without, but do it
+        SetPacketType(SX126X_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
