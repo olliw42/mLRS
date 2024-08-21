@@ -87,8 +87,8 @@ void leds_init(void)
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-IRAM_ATTR void led_red_off(void) { gpio_high(LED_RED); }
-IRAM_ATTR void led_red_on(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
+IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
 IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
