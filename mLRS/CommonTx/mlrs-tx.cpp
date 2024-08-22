@@ -130,7 +130,7 @@ tTxCli cli;
 
 
 //-------------------------------------------------------
-// MAVLink
+// MAVLink & MSP
 //-------------------------------------------------------
 
 #include "mavlink_interface_tx.h"
@@ -142,6 +142,11 @@ uint8_t mavlink_vehicle_state(void)
 {
     return mavlink.VehicleState();
 }
+
+
+#include "msp_interface_tx.h"
+
+tTxMsp msp;
 
 
 #include "sx_serial_interface_tx.h"
@@ -567,6 +572,7 @@ tRxFrame* frame;
     // check this before received data may be passed to parsers
     if (rarq.FrameLost()) {
         mavlink.FrameLost();
+        msp.FrameLost();
     }
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
@@ -719,6 +725,7 @@ RESTARTCONTROLLER
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
+    msp.Init(&serial, &serial2); // ports selected by SerialDestination
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
@@ -935,6 +942,7 @@ IF_SX2(
 #ifndef USE_ARQ
         if (!valid_frame_received) {
             mavlink.FrameLost();
+            msp.FrameLost();
         }
 #endif
 
@@ -1119,7 +1127,8 @@ IF_CRSF(
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
-            if (connected_and_rx_setup_available() && SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            if (connected_and_rx_setup_available() &&
+                (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode) || SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode))) {
                 crsf.SendTelemetryFrame();
             }
             INCc(do_cnt, 3);
@@ -1147,9 +1156,10 @@ IF_IN(
     }
 );
 
-    //-- Do MAVLink
+    //-- Do MAVLink & MSP
 
     mavlink.Do();
+    msp.Do();
 
     //-- Do WhileTransmit stuff
 

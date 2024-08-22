@@ -11,7 +11,10 @@
 #pragma once
 
 
-#if (defined DEVICE_HAS_JRPIN5)
+#include "../Common/protocols/msp_protocol.h"
+
+
+#ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
@@ -56,6 +59,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t GetCmdModelId(void);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
+    void TelemetryHandleMspMsg(msp_message_t* msg);
     void SendTelemetryFrame(void);
 
     void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
@@ -130,6 +134,11 @@ class tTxCrsf : public tPin5BridgeBase
     // CRSF passthrough telemetry
 
     tPassThrough passthrough;
+
+    // MSP handlers
+
+    int32_t inav_baro_altitude; // needed to make INAV happy
+    uint16_t msp_inav_status_sensor_status;
 };
 
 tTxCrsf crsf;
@@ -300,6 +309,9 @@ void tTxCrsf::Init(bool enable_flag)
 
     vehicle_sysid = 0;
     passthrough.Init();
+
+    inav_baro_altitude = 0;
+    msp_inav_status_sensor_status = 0;
 
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
     uart_tc_callback_ptr = &crsf_uart_tc_callback;
@@ -806,6 +818,102 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
 
 //-------------------------------------------------------
+// CRSF Telemetry MSP Handling
+
+#define DEG2RADF  1.745329252E-02f
+
+int16_t wrap180_cdeg(int16_t angle_cdeg)
+{
+    while (angle_cdeg > 1800) { angle_cdeg -= 3600; }
+    while (angle_cdeg < -1800) { angle_cdeg += 3600; }
+    return angle_cdeg;
+}
+
+
+void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
+{
+    // conversions deduced from comparing
+    //  src/main/fc/fc_msp.c for MSP units
+    //  src/main/telemetry/crsf.c for CRSF telemetry units
+
+    // to suppress sensor auto updating
+    // assumes that this function is being called within 1500 ms
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) gps_send_tlast_ms = 0;
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
+
+    switch (msg->function) {
+    case MSP_ATTITUDE: { // tCrsfAttitude, CRSF_FRAME_ID_ATTITUDE = 0x1E
+        tMspAttitude* payload = (tMspAttitude*)(msg->payload);
+        attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->pitch)); // int16_t rad * 1e4  // cdeg -> rad * 1e4
+        attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->roll));   // int16_t rad * 1e4  // cdeg -> rad * 1e4
+        attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * wrap180_cdeg(payload->yaw));    // int16_t rad * 1e4  // deg -> rad * 1e4
+        attitude_updated = true;
+        }break;
+
+    case MSP2_INAV_ANALOG: { // tCrsfBattery, CRSF_FRAME_ID_BATTERY = 0x08
+        tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
+        battery.voltage = CRSF_REV_U16(payload->battery_voltage / 10);  // uint16_t mV * 100      // uint16_t  seems to be 0.01 V
+        battery.current = CRSF_REV_U16(payload->amperage / 10);         // uint16_t mA * 100      // uint16_t  send amperage in 0.01 A steps
+        uint32_t capacity = payload->mAh_drawn;                         // uint8_t[3] mAh         // uint32_t  milliamp hours drawn from battery
+        battery.capacity[0] = (capacity >> 16);
+        battery.capacity[1] = (capacity >> 8);
+        battery.capacity[2] = capacity;
+        battery.remaining = payload->battery_percentage;                // uint8_t percent        // uint8_t
+        battery_updated = true;
+        }break;
+
+    case MSP_RAW_GPS: { // tCrsfGps, CRSF_FRAME_ID_GPS = 0x02
+        if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) break;
+        tMspRawGps* payload = (tMspRawGps*)(msg->payload);
+        gps.latitude = CRSF_REV_U32(payload->lat);                    // int32_t degree / 1e7           // uint32_t  1 / 10 000 000 deg
+        gps.longitude = CRSF_REV_U32(payload->lon);                   // int32_t degree / 1e7           // uint32_t 1 / 10 000 000 deg
+        gps.groundspeed = CRSF_REV_U16((payload->ground_speed * 36 + 50) / 100);  // uint16_t km/h / 100            // uint16_t  cm/s
+        gps.gps_heading = CRSF_REV_U16(payload->ground_course * 10);  // uint16_t degree / 100          // uint16_t  degree*10
+        // INAV wants the baro alt in the gps alt field
+        //gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
+        gps.altitude = CRSF_REV_U16(inav_baro_altitude / 100 + 1000);
+        gps.satellites = payload->numSat;                             // uint8_t                        // uint8_t
+        gps_updated = true;
+        }break;
+
+    case MSP_ALTITUDE: {
+        tMspAltitude* payload = (tMspAltitude*)(msg->payload);
+        // tCrsfVario, CRSF_FRAME_ID_VARIO = 0x07
+        vario.climb_rate = CRSF_REV_I16(payload->estimated_velocity_z);   // int16_t cm/s    // int16_t  cm/s
+        vario_updated = true;
+        // tCrsfBaroAltitude, CRSF_FRAME_ID_BARO_ALTITUDE = 0x09
+        if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO)) {
+            int32_t alt = payload->baro_altitude / 10 + 10000; // uint32_t seems to be cm, convert to dm - 1000m
+            if (alt < 0) alt = 0;
+            if (alt > 0x7FFF) alt = 0x7FFF; // 0x7FFF = 32767
+            baro_altitude.altitude = CRSF_REV_U16(alt); // uint16_t dm -1000m if 0x8000 not set
+            // INAV wants the baro alt in the gps alt field
+            // so we store the baro altitude, and tell that gps is updated
+            //baro_altitude_updated = true;
+            inav_baro_altitude = payload->baro_altitude;
+            gps_updated = true;
+        }
+        }break;
+
+    case MSP2_INAV_STATUS: {
+        tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
+        // report it
+        msp_inav_status_sensor_status = payload->sensor_status;
+        }break;
+
+    case MSPX_STATUS: {
+        uint32_t flight_mode = *(uint32_t*)(msg->payload);
+        inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
+        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
+            strcat(flightmode.flight_mode, "*");
+        }
+        flightmode_updated = true;
+        }break;
+    }
+}
+
+
+//-------------------------------------------------------
 // CRSF Link Statistics
 
 // on CRSF rssi
@@ -887,6 +995,7 @@ class tTxCrsfDummy
     void TelemetryTick_ms(void) {}
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
+    void TelemetryHandleMspMsg(msp_message_t* msg) {}
 
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsTx(void) {}
@@ -895,7 +1004,7 @@ class tTxCrsfDummy
 
 tTxCrsfDummy crsf;
 
-#endif // if (defined DEVICE_HAS_JRPIN5)
+#endif // ifdef DEVICE_HAS_JRPIN5
 
 #endif // CRSF_INTERFACE_TX_H
 
