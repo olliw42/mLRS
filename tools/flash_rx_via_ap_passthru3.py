@@ -132,7 +132,7 @@ def ardupilot_connect(uart, serialx):
         printError('ERROR: SERIAL'+str(serialx)+' is not MAVLink2 protocol!')
         exit(1)
 
-    baud = ardupilot_read_baud(link, 2)
+    baud = ardupilot_read_baud(link, serialx)
     if baud != 115200:
         link.close()
         link = mavutil.mavlink_connection(uart, baud)
@@ -285,9 +285,14 @@ def mlrs_flash_firmware_file(uart, baud, file, full_erase_flag):
     arg += ' -w "' + file + '"'
     arg += ' -v'
     arg += ' -g'
-    res = os.system(os.path.join('zmodules','STM32CubeProgrammer','bin','STM32_Programmer_CLI.exe') + ' ' + arg)
+    st_path = os.path.join('zmodules','STM32CubeProgrammer','bin','STM32_Programmer_CLI.exe')
+    if os.name == 'posix': # Assume local install
+        st_path = os.path.join("~",'STMicroelectronics','STM32Cube','STM32CubeProgrammer','bin','STM32_Programmer_CLI')
+
+    res = os.system(st_path + ' ' + arg)
     if res > 0:
         print('ERROR: Flashing firmware failed!')
+        print('Please flash manually and then power cycle')
         exit(1)
     print('------------------------------------------------------------')
     print('firmware flashed')
@@ -334,6 +339,9 @@ if run_gui:
     comport_list = []
     for com in sorted(coms):
         comport_list.append(com.device)
+    if not comport_list:
+        comport_list.append('None Found')
+        print('ERROR: No serial ports found. Please connect your FC')
 
     class Application(Frame):
         def __init__(self, master=None):
@@ -373,7 +381,7 @@ if run_gui:
             else:
                 self.systemboot_value = BooleanVar()
                 self.systemboot_value.set(False)
-            if os.name != 'posix' and not args_esp:
+            if not args_esp:
                 row += 1
                 self.firmware_file = StringVar()
                 self.firmware_file.set('')
@@ -406,9 +414,7 @@ if run_gui:
             if not self.systemboot_value.get():
                 link, baud,_ = mlrs_run_esp(uart, serialx)
                 return 0
-            link, baud,_ = mlrs_run_all(uart, serialx, passthru_tmo_s = 30)
-            if os.name == 'posix':
-                return 0
+            link, baud,_ = mlrs_run_all(uart, serialx, passthru_tmo_s = 0)
             binary = self.firmware_file.get()
             full_erase_flag = self.full_erase_value.get()
             if binary != '':
@@ -417,7 +423,7 @@ if run_gui:
                 link.close()
                 time.sleep(5.0)
                 mlrs_flash_firmware_file(uart, baud, binary, full_erase_flag)
-                print('DONE')
+                print('DONE - Please power cycle')
             #exit(0)
 
     #if __name__ == '__main__':
