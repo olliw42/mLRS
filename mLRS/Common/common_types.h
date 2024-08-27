@@ -65,7 +65,7 @@ class tSerialBase
     virtual void InitOnce(void) {}
     virtual void Init(void) {}
     virtual void SetBaudRate(uint32_t baud) {}
-    virtual void putbuf(uint8_t* buf, uint16_t len) {}
+    virtual void putbuf(uint8_t* const buf, uint16_t len) {}
     virtual bool available(void) { return false; }
     virtual char getc(void) { return '\0'; }
     virtual void flush(void) {}

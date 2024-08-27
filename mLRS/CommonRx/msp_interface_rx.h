@@ -32,7 +32,7 @@ class tRxMsp
   public:
     void Init(void);
     void Do(void);
-    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe);
+    void SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe);
     void FrameLost(void);
 
     void putc(char c);
@@ -116,7 +116,7 @@ void tRxMsp::Init(void)
 }
 
 
-void tRxMsp::SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe)
+void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
 
@@ -306,7 +306,7 @@ class tRxMsp
   public:
     void Init(void) {}
     void Do(void) {}
-    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe) {}
+    void SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe) {}
     void FrameLost(void) {}
 
     void putc(char c) {}

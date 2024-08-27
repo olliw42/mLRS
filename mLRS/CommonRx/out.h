@@ -52,7 +52,7 @@ class tOutBase
 
     void Do(void);
 
-    void SendRcData(tRcData* rc, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
+    void SendRcData(tRcData* const rc, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
     void SendLinkStatistics(tOutLinkStats* lstats);
     void SendLinkStatisticsDisconnected(void);
 
@@ -61,12 +61,12 @@ class tOutBase
     tRcData* GetRcDataPtr(void) { return &rc; }
 
   private:
-    void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
-    void send_crsf_rcdata(tRcData* rc);
+    void send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe);
+    void send_crsf_rcdata(tRcData* const rc);
     void send_crsf_linkstatistics(tOutLinkStats* lstats);
     void do_crsf(void);
 
-    virtual void putbuf(uint8_t* buf, uint16_t len) {}
+    virtual void putbuf(uint8_t* const buf, uint16_t len) {}
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_crsf(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }

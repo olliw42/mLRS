@@ -64,7 +64,7 @@ void tInBase::Configure(uint8_t new_config)
 }
 
 
-bool tInBase::Update(tRcData* rc)
+bool tInBase::Update(tRcData* const rc)
 {
     if (!initialized) return false;
 
@@ -82,7 +82,7 @@ bool tInBase::Update(tRcData* rc)
 // SBus
 //-------------------------------------------------------
 
-bool tInBase::parse_sbus(tRcData* rc)
+bool tInBase::parse_sbus(tRcData* const rc)
 {
     uint16_t tnow_us = micros16();
     bool updated = false;
@@ -119,7 +119,7 @@ bool tInBase::parse_sbus(tRcData* rc)
 }
 
 
-void tInBase::get_sbus_data(tRcData* rc)
+void tInBase::get_sbus_data(tRcData* const rc)
 {
 tSBusChannelBuffer sbus_buf;
 

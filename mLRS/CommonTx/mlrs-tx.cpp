@@ -435,7 +435,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 }
 
 
-void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* const rc)
 {
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:

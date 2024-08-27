@@ -31,7 +31,7 @@ typedef enum {
 } CHECK_ENUM;
 
 
-void _pack_txframe_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void _pack_txframe_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* const rc, uint8_t* payload, uint8_t payload_len)
 {
 uint16_t crc;
 
@@ -88,7 +88,7 @@ uint16_t crc;
 }
 
 
-void pack_txframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void pack_txframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* const rc, uint8_t* payload, uint8_t payload_len)
 {
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
@@ -118,7 +118,7 @@ uint16_t crc;
 }
 
 
-void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
+void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* frame)
 {
     rc->ch[0] = frame->rc1.ch0;
     rc->ch[1] = frame->rc1.ch1;
@@ -130,7 +130,7 @@ void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
-void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
+void rcdata_from_txframe(tRcData* const rc, tTxFrame* frame)
 {
     rc->ch[0] = frame->rc1.ch0;
     rc->ch[1] = frame->rc1.ch1;
@@ -294,7 +294,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
 #ifdef DEVICE_IS_TRANSMITTER
 
 // Tx: send cmd to Rx
-void pack_txcmdframe_cmd(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t cmd)
+void pack_txcmdframe_cmd(tTxFrame* frame, tFrameStats* frame_stats, tRcData* const rc, uint8_t cmd)
 {
 uint8_t payload[1];
 
@@ -335,7 +335,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
 // Tx: send new receiver parameters with FRAME_CMD_SET_RX_PARAMS to Rx
 // we take the values from Tx' Setup.Rx structure
-void pack_txcmdframe_setrxparams(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void pack_txcmdframe_setrxparams(tTxFrame* frame, tFrameStats* frame_stats, tRcData* const rc)
 {
 tTxCmdFrameRxParams rx_params = {};
 

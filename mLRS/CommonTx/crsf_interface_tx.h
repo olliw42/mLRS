@@ -50,7 +50,7 @@ class tTxCrsf : public tPin5BridgeBase
 {
   public:
     void Init(bool enable_flag);
-    bool ChannelsUpdated(tRcData* rc);
+    bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms);
 
     bool CommandReceived(uint8_t* cmd);
@@ -72,7 +72,7 @@ class tTxCrsf : public tPin5BridgeBase
     void send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
 
     uint8_t crc8(const uint8_t* buf);
-    void fill_rcdata(tRcData* rc);
+    void fill_rcdata(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -246,7 +246,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
 // see design_decissions.h
 
-void tTxCrsf::fill_rcdata(tRcData* rc)
+void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
 tCrsfChannelBuffer buf;
 
@@ -321,7 +321,7 @@ void tTxCrsf::Init(bool enable_flag)
 
 
 // polled in main loop
-bool tTxCrsf::ChannelsUpdated(tRcData* rc)
+bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
@@ -990,7 +990,7 @@ class tTxCrsfDummy
 {
   public:
     void Init(bool enable_flag) {}
-    bool Update(tRcData* rc) { return false;}
+    bool Update(tRcData* const rc) { return false;}
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
     bool TelemetryUpdate(uint8_t* packet_idx) { return false; }

@@ -21,7 +21,7 @@ class tTxSxSerial : public tSerialBase
 
     bool available(void) override;
     char getc(void) override;
-    void putbuf(uint8_t* buf, uint16_t len) override;
+    void putbuf(uint8_t* const buf, uint16_t len) override;
     void flush(void) override;
 
   private:
@@ -78,7 +78,7 @@ char tTxSxSerial::getc(void)
 }
 
 
-void tTxSxSerial::putbuf(uint8_t* buf, uint16_t len)
+void tTxSxSerial::putbuf(uint8_t* const buf, uint16_t len)
 {
     if (!connected_and_rx_setup_available()) return;
 
