@@ -25,9 +25,9 @@ extern void clock_reset(void);
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
-void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
-void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms);
-void sxGetPacketStatus(uint8_t antenna, tStats* stats);
+void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len);
+void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms);
+void sxGetPacketStatus(uint8_t antenna, tStats* const stats);
 
 extern tStats stats;
 

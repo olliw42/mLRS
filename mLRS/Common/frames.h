@@ -259,7 +259,7 @@ uint16_t crc;
 // Tx/Rx Cmd Frames
 //-------------------------------------------------------
 
-void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params)
+void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_params)
 {
     rx_params->Power = Setup.Rx.Power;
     rx_params->Diversity = Setup.Rx.Diversity;
@@ -285,7 +285,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
 }
 
 
-void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
+void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_params)
 {
     Setup.Rx.Power = rx_params->Power;
     Setup.Rx.Diversity = rx_params->Diversity;

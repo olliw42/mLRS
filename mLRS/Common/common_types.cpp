@@ -320,7 +320,7 @@ bool is_valid_bindphrase_char(char c)
 }
 
 
-void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default)
+void sanitize_bindphrase(char* const bindphrase, const char* const bindphrase_default)
 {
     uint8_t invalid_cnt = 0;
     for (uint8_t i = 0; i < 6; i++) {
@@ -336,7 +336,7 @@ void sanitize_bindphrase(char* bindphrase, const char* bindphrase_default)
 }
 
 
-uint32_t u32_from_bindphrase(char* bindphrase)
+uint32_t u32_from_bindphrase(char* const bindphrase)
 {
     uint64_t v = 0;
     uint64_t base = 1;
@@ -354,7 +354,7 @@ uint32_t u32_from_bindphrase(char* bindphrase)
 }
 
 
-uint8_t except_from_bindphrase(char* bindphrase)
+uint8_t except_from_bindphrase(char* const bindphrase)
 {
     char c = bindphrase[5]; // take last char
 
@@ -369,7 +369,7 @@ uint8_t except_from_bindphrase(char* bindphrase)
 }
 
 
-void bindphrase_from_u32(char* bindphrase, uint32_t bindphrase_u32)
+void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 {
     uint32_t base = 40*40*40*40*40; // 40^5
 
@@ -384,7 +384,7 @@ void bindphrase_from_u32(char* bindphrase, uint32_t bindphrase_u32)
 }
 
 
-void remove_leading_zeros(char* s)
+void remove_leading_zeros(char* const s)
 {
 uint16_t i, len;
 
@@ -396,7 +396,7 @@ uint16_t i, len;
 }
 
 
-void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8_t num, uint8_t slen)
+void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
     memset(Power_optstr, 0, slen);
 
@@ -434,7 +434,7 @@ void power_optstr_from_power_list(char* Power_optstr, int16_t* power_list, uint8
 }
 
 
-void power_optstr_from_rfpower_list(char* Power_optstr, const rfpower_t* rfpower_list, uint8_t num, uint8_t slen)
+void power_optstr_from_rfpower_list(char* const Power_optstr, const rfpower_t* const rfpower_list, uint8_t num, uint8_t slen)
 {
 int16_t power_list[16];
 
@@ -468,7 +468,7 @@ uint32_t version_from_u16(uint16_t version_u16)
 }
 
 
-void version_to_str(char* s, uint32_t version)
+void version_to_str(char* const s, uint32_t version)
 {
 char ss[32];
 
@@ -495,7 +495,7 @@ char ss[32];
 
 //-- auxiliary functions
 
-void strbufstrcpy(char* res, const char* src, uint16_t len)
+void strbufstrcpy(char* const res, const char* const src, uint16_t len)
 {
     memset(res, '\0', len);
     for (uint16_t i = 0; i < len; i++) {
@@ -505,7 +505,7 @@ void strbufstrcpy(char* res, const char* src, uint16_t len)
 }
 
 
-void strstrbufcpy(char* res, const char* src, uint16_t len)
+void strstrbufcpy(char* const res, const char* const src, uint16_t len)
 {
     memset(res, '\0', len + 1); // this ensures that res is terminated with a '\0'
     for (uint16_t i = 0; i < len; i++) {
@@ -515,7 +515,7 @@ void strstrbufcpy(char* res, const char* src, uint16_t len)
 }
 
 
-bool strbufeq(char* s1, const char* s2, uint16_t len)
+bool strbufeq(char* const s1, const char* const s2, uint16_t len)
 {
     for (uint16_t i = 0; i < len; i++) {
         if (s1[i] == '\0' && s2[i] == '\0') return true;

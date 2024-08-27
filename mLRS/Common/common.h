@@ -190,7 +190,7 @@ tLEDs leds;
 // Sx/Sx2 convenience wrapper
 //-------------------------------------------------------
 
-void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
+void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len)
 {
     if (antenna == ANTENNA_1) {
         sx.ReadFrame((uint8_t*)data, len);
@@ -200,7 +200,7 @@ void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
 }
 
 
-void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
+void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
 {
 #if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
     if (antenna == ANTENNA_1) {
@@ -217,7 +217,7 @@ void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
 }
 
 
-void sxGetPacketStatus(uint8_t antenna, tStats* stats)
+void sxGetPacketStatus(uint8_t antenna, tStats* const stats)
 {
     if (antenna == ANTENNA_1) {
         sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));
@@ -246,13 +246,19 @@ typedef enum {
 } FAIL_ENUM;
 
 
-void FAILALWAYS(uint8_t led_pattern, const char* msg)
+void FAILALWAYS(uint8_t led_pattern, const char* const msg)
 {
     fail(&dbg, led_pattern, msg);
 }
 
 
-void FAILALWAYS_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+void FAILALWAYS_WSTATE(
+    uint8_t led_pattern,
+    const char* const msg,
+    uint16_t irq_status,
+    uint8_t link_state,
+    uint8_t link_rx1_status,
+    uint8_t link_rx2_status)
 {
 char s[64];
 
@@ -269,7 +275,7 @@ char s[64];
 }
 
 
-void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
+void FAIL_WPATTERN(uint8_t led_pattern, const char* const msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -277,7 +283,7 @@ void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL_WMSG(const char* msg)
+void FAIL_WMSG(const char* const msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);
@@ -285,7 +291,13 @@ void FAIL_WMSG(const char* msg)
 }
 
 
-void FAIL_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+void FAIL_WSTATE(
+    uint8_t led_pattern,
+    const char* const msg,
+    uint16_t irq_status,
+    uint8_t link_state,
+    uint8_t link_rx1_status,
+    uint8_t link_rx2_status)
 {
 #ifdef FAIL_ENABLED
     FAILALWAYS_WSTATE(led_pattern, msg, irq_status, link_state, link_rx1_status, link_rx2_status);
