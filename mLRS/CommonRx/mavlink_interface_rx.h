@@ -1064,7 +1064,7 @@ void tRxAutoPilot::Do(void)
     uint32_t tnow_ms = millis32(); // we need to get fresh time, since a HEARTBEAT might be received in the main Do loop
 
     if (sysid && ((tnow_ms - heartbeat_tlast_ms) > 2500)) { // we lost connection to our fc
-dbg.puts("\nlost heartbeat");
+//dbg.puts("\nlost heartbeat");
         Init();
         return;
     }
@@ -1085,7 +1085,7 @@ bool tRxAutoPilot::RequestAutopilotVersion(void)
 {
     if (request_autopilot_version) {
         request_autopilot_version = false;
-dbg.puts("\nsend request");
+//dbg.puts("\nsend request");
         return true;
     }
     return false;
@@ -1108,7 +1108,7 @@ void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
     // check if it could be the heartbeat from ArduPilot
     // we also could check if type is proper, but this is very daunting, so don't do
     if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
-if (!sysid) { dbg.puts("\ngot heartbeat"); }
+//if (!sysid) { dbg.puts("\ngot heartbeat"); }
         sysid = msg->sysid;
         heartbeat_tlast_ms = millis32();
         autopilot = payload.autopilot;
@@ -1126,14 +1126,14 @@ void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
     fmav_msg_autopilot_version_decode(&payload, msg);
 
     flight_sw_version = payload.flight_sw_version;
-dbg.puts("\ngot version ");dbg.puts(u32toHEX_s(flight_sw_version));
 
     uint32_t maj = (flight_sw_version & 0xFF000000) >> 24;
     uint32_t min = (flight_sw_version & 0x00FF0000) >> 16;
     uint32_t pat = (flight_sw_version & 0x0000FF00) >> 8;
     version = maj * 10000 + min * 100 + pat;
 
-dbg.puts(" = ");dbg.puts(u32toBCD_s(version));
+//dbg.puts("\ngot version ");dbg.puts(u32toHEX_s(flight_sw_version));
+//dbg.puts(" = ");dbg.puts(u32toBCD_s(version));
 }
 
 #else
