@@ -51,27 +51,27 @@ class tTxCrsf : public tPin5BridgeBase
   public:
     void Init(bool enable_flag);
     bool ChannelsUpdated(tRcData* const rc);
-    bool TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms);
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
-    bool CommandReceived(uint8_t* cmd);
+    bool CommandReceived(uint8_t* const cmd);
     uint8_t* GetPayloadPtr(void);
     uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
 
-    void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
-    void TelemetryHandleMspMsg(msp_message_t* msg);
+    void TelemetryHandleMavlinkMsg(fmav_message_t* const msg);
+    void TelemetryHandleMspMsg(msp_message_t* const msg);
     void SendTelemetryFrame(void);
 
     void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
 
-    void SendMBridgeFrame(void* payload, const uint8_t payload_len);
+    void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     // helper
-    void send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
+    void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
-    uint8_t crc8(const uint8_t* buf);
+    uint8_t crc8(const uint8_t* const buf);
     void fill_rcdata(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
@@ -121,13 +121,13 @@ class tTxCrsf : public tPin5BridgeBase
 
     // MAVLink handlers
 
-    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload);
-    void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
-    void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
-    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload);
-    void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload);
-    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload);
-    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);
+    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);
+    void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);
+    void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);
+    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);
+    void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload);
+    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);
+    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);
 
     uint8_t vehicle_sysid;
 
@@ -270,7 +270,7 @@ tCrsfChannelBuffer buf;
 }
 
 
-uint8_t tTxCrsf::crc8(const uint8_t* buf)
+uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 {
     return crsf_crc8_update(0, &(buf[2]), buf[1] - 1);
 }
@@ -340,7 +340,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 
 
 // polled in main loop
-bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
+bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
@@ -386,7 +386,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 
 
 // polled in main loop
-bool tTxCrsf::CommandReceived(uint8_t* cmd)
+bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 {
     if (!enabled) return false;
 
@@ -432,7 +432,7 @@ uint8_t tTxCrsf::GetCmdModelId(void)
 }
 
 
-void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
+void tTxCrsf::SendMBridgeFrame(void* const payload, uint8_t payload_len)
 {
     send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, payload_len);
 }
@@ -441,7 +441,7 @@ void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
 //-------------------------------------------------------
 // helper
 
-void tTxCrsf::send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
+void tTxCrsf::send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO; // correct? OpenTx accepts CRSF_ADDRESS_RADIO or CRSF_OPENTX_SYNC, so correct
     tx_frame[1] = (4-2) + payload_len;
@@ -535,7 +535,7 @@ void tTxCrsf::SendTelemetryFrame(void)
 #define CRSF_REV_U32(x)  __REV(x)
 
 
-void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload)
+void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload)
 {
     memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
 
@@ -569,7 +569,7 @@ int32_t mav_battery_voltage(fmav_battery_status_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
+void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload)
 {
     if (payload->id != 0) return;
 
@@ -585,7 +585,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* payload)
+void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* const payload)
 {
     attitude.pitch = CRSF_REV_I16(10000.0f * payload->pitch);
     attitude.roll = CRSF_REV_I16(10000.0f * payload->roll);
@@ -594,19 +594,19 @@ void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload)
+void tTxCrsf::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload)
 {
     gps_raw_int_sat = payload->satellites_visible;
 }
 
 
-void tTxCrsf::handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload)
+void tTxCrsf::handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload)
 {
     gps2_raw_sat = payload->satellites_visible;
 }
 
 
-void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload)
+void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload)
 {
     gps.latitude = CRSF_REV_U32(payload->lat);
     gps.longitude = CRSF_REV_U32(payload->lon);
@@ -638,7 +638,7 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
 }
 
 
-void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
+void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload)
 {
     vfr_hud_groundspd_mps = payload->groundspeed;
 
@@ -648,7 +648,7 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 
 
 // called by MAVLink interface, when a MAVLink frame has been received
-void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
+void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
 {
     if (msg->sysid == 0) return; // this can't be anything meaningful
 
@@ -830,7 +830,7 @@ int16_t wrap180_cdeg(int16_t angle_cdeg)
 }
 
 
-void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* msg)
+void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
 {
     // conversions deduced from comparing
     //  src/main/fc/fc_msp.c for MSP units
@@ -993,9 +993,9 @@ class tTxCrsfDummy
     bool Update(tRcData* const rc) { return false;}
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
-    bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
-    void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
-    void TelemetryHandleMspMsg(msp_message_t* msg) {}
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
+    void TelemetryHandleMavlinkMsg(fmav_message_t* const msg) {}
+    void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsTx(void) {}

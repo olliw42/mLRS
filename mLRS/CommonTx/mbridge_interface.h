@@ -39,20 +39,20 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
   public:
     void Init(bool enable_flag, bool crsf_emulation_flag);
     bool ChannelsUpdated(tRcData* const rc);
-    bool TelemetryUpdate(uint8_t* task);
+    bool TelemetryUpdate(uint8_t* const task);
 
-    bool CommandReceived(uint8_t* cmd);
+    bool CommandReceived(uint8_t* const cmd);
     uint8_t* GetPayloadPtr(void);
     uint8_t GetModelId(void);
-    void SendCommand(uint8_t cmd, uint8_t* payload);
-    bool CommandInFifo(uint8_t* cmd);
+    void SendCommand(uint8_t cmd, uint8_t* const payload);
+    bool CommandInFifo(uint8_t* const cmd);
     void Lock(uint8_t cmd);
     void Unlock(void);
-    uint8_t HandleRequestCmd(uint8_t* payload);
+    uint8_t HandleRequestCmd(uint8_t* const payload);
     uint8_t HandleCmd(uint8_t cmd);
 
-    void ParseCrsfFrame(uint8_t* crsf, uint8_t len);
-    bool CrsfFrameAvailable(uint8_t** buf, uint8_t* len);
+    void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
+    bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
 
     // helper
     void fill_rcdata(tRcData* const rc);
@@ -266,7 +266,7 @@ void tMBridge::fill_rcdata(tRcData* const rc)
 //-------------------------------------------------------
 // CRSF MBridge emulation
 
-void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len)
+void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
 {
     if (!crsf_emulation) return;
 
@@ -286,7 +286,7 @@ void tMBridge::ParseCrsfFrame(uint8_t* crsf, uint8_t len)
 }
 
 
-bool tMBridge::CrsfFrameAvailable(uint8_t** buf, uint8_t* len)
+bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
 {
     if (!crsf_emulation) return false;
 
@@ -351,7 +351,7 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it, should not hap
 
 
 // polled in main loop
-bool tMBridge::TelemetryUpdate(uint8_t* task)
+bool tMBridge::TelemetryUpdate(uint8_t* const task)
 {
 if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
@@ -385,7 +385,7 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it, should not hap
 
 
 // polled in main loop
-bool tMBridge::CommandReceived(uint8_t* cmd)
+bool tMBridge::CommandReceived(uint8_t* const cmd)
 {
     if (!enabled) return false;
     if (!cmd_received) return false;
@@ -419,7 +419,7 @@ uint8_t tMBridge::GetModelId(void)
 } */
 
 
-void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
+void tMBridge::SendCommand(uint8_t cmd, uint8_t* const payload)
 {
     memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
 
@@ -432,7 +432,7 @@ void tMBridge::SendCommand(uint8_t cmd, uint8_t* payload)
 }
 
 
-bool tMBridge::CommandInFifo(uint8_t* cmd)
+bool tMBridge::CommandInFifo(uint8_t* const cmd)
 {
     if (cmd_in_process) return false;
 
@@ -465,7 +465,7 @@ void mbridge_start_ParamRequestList(void);
 void mbridge_start_ParamRequestByIndex(uint8_t idx);
 
 
-uint8_t tMBridge::HandleRequestCmd(uint8_t* payload)
+uint8_t tMBridge::HandleRequestCmd(uint8_t* const payload)
 {
 tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 

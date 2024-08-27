@@ -17,7 +17,7 @@ extern bool connected_and_rx_setup_available(void);
 class tTxSxSerial : public tSerialBase
 {
   public:
-    void Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port);
+    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
 
     bool available(void) override;
     char getc(void) override;
@@ -29,7 +29,7 @@ class tTxSxSerial : public tSerialBase
 };
 
 
-void tTxSxSerial::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port)
+void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
 {
     tSerialBase::Init();
 
