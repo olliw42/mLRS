@@ -43,7 +43,7 @@ class tRxMavlink
   public:
     void Init(void);
     void Do(void);
-    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe);
+    void SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe);
     void FrameLost(void);
 
     void putc(char c);
@@ -113,7 +113,8 @@ class tRxMavlink
         uint32_t texe_ms;
     } cmd_ack;
 
-    void handle_msg(fmav_message_t* msg); // handle messages from the fc
+    void handle_msg(fmav_message_t* const msg); // handle messages from the fc
+    void handle_cmd(fmav_message_t* const msg);
     void generate_cmd_ack(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -161,7 +162,7 @@ void tRxMavlink::Init(void)
 // rc_out is the rc data stored in out class
 // after handling of channel order and failsafes.
 // Need to take care of failsafe flag however.
-void tRxMavlink::SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe)
+void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
 
@@ -902,12 +903,24 @@ void tRxMavlink::generate_cmd_ack(void)
 
 
 // handle messages from the fc
-void tRxMavlink::handle_msg(fmav_message_t* msg)
+void tRxMavlink::handle_msg(fmav_message_t* const msg)
+{
+#ifdef USE_FEATURE_MAVLINKX
+
+    switch (msg->msgid) {
+    case FASTMAVLINK_MSG_ID_COMMAND_LONG:
+        handle_cmd(msg);
+        break;
+    }
+
+#endif
+}
+
+
+void tRxMavlink::handle_cmd(fmav_message_t* const msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
 fmav_command_long_t payload;
-
-    if (msg->msgid != FASTMAVLINK_MSG_ID_COMMAND_LONG) return;
 
     fmav_msg_command_long_decode(&payload, msg);
 
