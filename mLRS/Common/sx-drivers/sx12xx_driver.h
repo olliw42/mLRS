@@ -85,12 +85,12 @@ class SxDriverDummy
   public:
     void Init(void) {}
     bool isOk(void) { return true; }
-    void StartUp(tSxGlobalConfig* global_config) {}
+    void StartUp(tSxGlobalConfig* const global_config) {}
     void SetPacketType(uint8_t PacketType) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) {}
-    void ReadFrame(uint8_t* data, uint8_t len) {}
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr) {}
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) {}
+    void ReadFrame(uint8_t* const data, uint8_t len) {}
     void SetToRx(uint16_t tmo_ms) {}
     void SetToIdle(void) {}
 
