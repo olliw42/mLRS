@@ -15,7 +15,7 @@
 // helper
 //-------------------------------------------------------
 
-void fmav_msg_recalculate_crc(fmav_message_t* msg)
+void fmav_msg_recalculate_crc(fmav_message_t* const msg)
 {
     uint16_t crc = fmav_crc_calculate(&(msg->len), 1);
     fmav_crc_accumulate(&crc, msg->incompat_flags);

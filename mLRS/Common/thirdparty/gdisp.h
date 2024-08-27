@@ -34,8 +34,8 @@ extern "C" {
 
 void i2c_setdeviceadr(uint8_t dev_adr);
 HAL_StatusTypeDef i2c_device_ready(void);
-HAL_StatusTypeDef i2c_put_blocked(uint8_t reg_adr, uint8_t* buf, uint16_t len);
-HAL_StatusTypeDef i2c_put(uint8_t reg_adr, uint8_t* buf, uint16_t len);
+HAL_StatusTypeDef i2c_put_blocked(uint8_t reg_adr, uint8_t* const buf, uint16_t len);
+HAL_StatusTypeDef i2c_put(uint8_t reg_adr, uint8_t* const buf, uint16_t len);
 
 
 //-------------------------------------------------------
@@ -53,7 +53,7 @@ void ssd1306_cmdhome(void);
 void ssd1306_contraststart(void);
 void ssd1306_contrastend(void);
 void ssd1306_contrast(uint8_t c);
-HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len);
+HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* const buf, uint16_t len);
 
 
 //-------------------------------------------------------
@@ -122,7 +122,7 @@ typedef struct
 
 void gdisp_hal_init(uint16_t type);
 void gdisp_hal_cmdhome(void);
-HAL_StatusTypeDef gdisp_hal_put(uint8_t* buf, uint16_t len);
+HAL_StatusTypeDef gdisp_hal_put(uint8_t* const buf, uint16_t len);
 void gdisp_hal_contraststart(void);
 void gdisp_hal_contrastend(void);
 void gdisp_hal_contrast(uint8_t c);
@@ -184,7 +184,7 @@ void gdisp_fillrect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t col
 
 void gdisp_setfontbackground(void);
 void gdisp_unsetfontbackground(void);
-void gdisp_setfont(const GFXfont *f);
+void gdisp_setfont(const GFXfont* const f);
 void gdisp_unsetfont(void);
 void gdisp_setkerning(int16_t k);
 void gdisp_unsetkerning(void);

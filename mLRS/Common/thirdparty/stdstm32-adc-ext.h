@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 
-void adc_config_channel_tempsensor(ADC_TypeDef* ADCx, uint32_t Rank)
+void adc_config_channel_tempsensor(ADC_TypeDef* const ADCx, uint32_t Rank)
 {
 #ifdef STM32G4
     LL_ADC_REG_SetSequencerRanks(ADCx, Rank, LL_ADC_CHANNEL_TEMPSENSOR_ADC1);

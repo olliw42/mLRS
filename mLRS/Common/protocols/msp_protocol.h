@@ -461,7 +461,7 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
 };
 
 
-void inav_flight_mode_name4(char* name4, uint32_t flight_mode)
+void inav_flight_mode_name4(char* const name4, uint32_t flight_mode)
 {
     #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
 
