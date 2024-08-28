@@ -7,7 +7,7 @@
  OlliW @ www.olliw.eu
 *******************************************************
  flash_rx_via_ap_passthru3.py
- 26.05.2024
+ 28.08.2024
 ********************************************************
  Does this:
  - determines required baud rate
@@ -68,6 +68,7 @@ def ardupilot_read_parameter(link, param):
                 link.target_system, 1, #link.target_component,
                 param, #b'SERIAL2_BAUD',
                 -1)
+
 
 def ardupilot_read_baud(link, serialx):
     param = b'SERIAL' + bytes(str(serialx),'ascii') + b'_BAUD'
@@ -285,14 +286,14 @@ def mlrs_flash_firmware_file(uart, baud, file, full_erase_flag):
     arg += ' -w "' + file + '"'
     arg += ' -v'
     arg += ' -g'
-    st_path = os.path.join('zmodules','STM32CubeProgrammer','bin','STM32_Programmer_CLI.exe')
-    if os.name == 'posix': # Assume local install
+    st_path = os.path.join('bin','STM32CubeProgrammer','bin','STM32_Programmer_CLI.exe')
+    if os.name == 'posix': # assume local install for Linux
         st_path = os.path.join("~",'STMicroelectronics','STM32Cube','STM32CubeProgrammer','bin','STM32_Programmer_CLI')
 
     res = os.system(st_path + ' ' + arg)
     if res > 0:
         print('ERROR: Flashing firmware failed!')
-        print('Please flash manually and then power cycle')
+        print('Try flashing manually and then power cycle.')
         exit(1)
     print('------------------------------------------------------------')
     print('firmware flashed')
@@ -341,7 +342,7 @@ if run_gui:
         comport_list.append(com.device)
     if not comport_list:
         comport_list.append('None Found')
-        print('ERROR: No serial ports found. Please connect your FC')
+        print('ERROR: No serial ports found! Please connect your flight controller.')
 
     class Application(Frame):
         def __init__(self, master=None):
@@ -414,7 +415,7 @@ if run_gui:
             if not self.systemboot_value.get():
                 link, baud,_ = mlrs_run_esp(uart, serialx)
                 return 0
-            link, baud,_ = mlrs_run_all(uart, serialx, passthru_tmo_s = 0)
+            link, baud,_ = mlrs_run_all(uart, serialx, passthru_tmo_s = 0) # timeout was 30, set to 0 to allow easier manual use of flash tool
             binary = self.firmware_file.get()
             full_erase_flag = self.full_erase_value.get()
             if binary != '':
@@ -423,7 +424,8 @@ if run_gui:
                 link.close()
                 time.sleep(5.0)
                 mlrs_flash_firmware_file(uart, baud, binary, full_erase_flag)
-                print('DONE - Please power cycle')
+                print('DONE')
+                print('Please power cycle.')
             #exit(0)
 
     #if __name__ == '__main__':
