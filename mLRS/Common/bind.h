@@ -36,9 +36,10 @@ extern tStats stats;
 // Bind Class
 //-------------------------------------------------------
 
-#define BIND_SIGNATURE_TX_STR  "mLRS\x01\x02\x03\x04"
-#define BIND_SIGNATURE_RX_STR  "mLRS\x04\x03\x02\x01"
-#define BIND_BUTTON_TMO_MS     4000
+#define BIND_SIGNATURE_TX_STR     "mLRS\x01\x02\x03\x04"
+#define BIND_SIGNATURE_RX_STR     "mLRS\x04\x03\x02\x01"
+#define BIND_BUTTON_DEBOUNCE_MS   50
+#define BIND_BUTTON_TMO_MS        4000
 
 
 typedef enum {
@@ -57,6 +58,7 @@ class tBindBase
     void StartBind(void) { binding_requested = true; }
     void StopBind(void) { binding_stop_requested = true; }
     void ConfigForBind(void);
+    void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
 
@@ -117,19 +119,24 @@ void tBindBase::ConfigForBind(void)
 }
 
 
+// called each ms
+void tBindBase::Tick_ms(void)
+{
+    // a not so efficient but simple debounce
+    if (!is_pressed) {
+        if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
+        if (pressed_cnt >= BIND_BUTTON_DEBOUNCE_MS) is_pressed = true;
+    } else {
+        if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = BIND_BUTTON_DEBOUNCE_MS; }
+        if (pressed_cnt <= 0) is_pressed = false;
+    }
+}
+
+
 // called in each doPreTransmit or doPostReceive cycle
 void tBindBase::Do(void)
 {
     uint32_t tnow = millis32();
-
-    // a not so efficient but simple debounce
-    if (!is_pressed) {
-        if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
-        if (pressed_cnt >= 4) is_pressed = true;
-    } else {
-        if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = 4; }
-        if (pressed_cnt <= 0) is_pressed = false;
-    }
 
     if (is_pressed) {
         if (tnow - button_tlast_ms > BIND_BUTTON_TMO_MS) {

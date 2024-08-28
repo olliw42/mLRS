@@ -780,6 +780,7 @@ INITCONTROLLER_END
 
         link_task_tick_ms();
 
+        bind.Tick_ms();
         disp.Tick_ms();
         fan.Tick_ms();
 

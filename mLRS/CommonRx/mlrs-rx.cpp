@@ -590,6 +590,7 @@ INITCONTROLLER_END
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
+        bind.Tick_ms();
         fan.Tick_ms();
 
         if (!tick_1hz) {
