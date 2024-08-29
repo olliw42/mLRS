@@ -87,7 +87,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return (firmwareRev == 0x12);
     }
 
-    void SetLoraConfiguration(const tSxLoraConfiguration* config)
+    void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
@@ -130,7 +130,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 #endif
     }
 
-    void Configure(tSxGlobalConfig* global_config)
+    void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
 
@@ -169,7 +169,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     //-- this are the API functions used in the loop
 
-    void ReadFrame(uint8_t* data, uint8_t len)
+    void ReadFrame(uint8_t* const data, uint8_t len)
     {
         uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
@@ -178,7 +178,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX1276_IRQ_ALL);
@@ -203,7 +203,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
         int16_t rssi;
         Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
@@ -393,7 +393,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
 //XX        // this is not nice, figure out where to place
 //XX#ifdef DEVICE_HAS_I2C_DAC
@@ -411,7 +411,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
@@ -543,7 +543,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
         Configure(global_config);
         delay_us(125); // may not be needed
@@ -552,7 +552,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx2_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);

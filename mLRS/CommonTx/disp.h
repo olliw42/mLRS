@@ -22,7 +22,7 @@ class tTxDisp
     void Init(void) {}
     void Tick_ms(void) {}
     uint8_t Task(void) { return 0; }
-    void DrawNotify(const char* s) {}
+    void DrawNotify(const char* const s) {}
     void DrawBoot(void) {}
 };
 
@@ -112,7 +112,7 @@ class tTxDisp
     void SetBind(void);
     void Draw(void);
     uint8_t Task(void);
-    void DrawNotify(const char* s);
+    void DrawNotify(const char* const s);
     void DrawBoot(void);
 
     typedef struct {
@@ -126,7 +126,7 @@ class tTxDisp
     bool key_has_been_pressed(uint8_t key_idx);
 
     void draw_page_startup(void);
-    void draw_page_notify(const char* s);
+    void draw_page_notify(const char* const s);
     void draw_page_main(void);
     void draw_page_common(void);
     void draw_page_tx(void);
@@ -138,8 +138,8 @@ class tTxDisp
     void draw_page_main_sub2(void);
     void draw_page_main_sub3(void);
 
-    void draw_header(const char* s);
-    void draw_options(tParamList* list);
+    void draw_header(const char* const s);
+    void draw_options(tParamList* const list);
 
     bool initialized;
     uint8_t task_pending;
@@ -490,7 +490,7 @@ void tTxDisp::SetBind(void)
 }
 
 
-void tTxDisp::DrawNotify(const char* s)
+void tTxDisp::DrawNotify(const char* const s)
 {
     if (!initialized) return;
     page_modified = true;
@@ -578,7 +578,7 @@ void _draw_dot2(uint8_t x, uint8_t y)
 }
 
 
-void tTxDisp::draw_header(const char* s)
+void tTxDisp::draw_header(const char* const s)
 {
     gdisp_clear();
 
@@ -592,7 +592,7 @@ void tTxDisp::draw_header(const char* s)
 }
 
 
-void tTxDisp::draw_options(tParamList* list)
+void tTxDisp::draw_options(tParamList* const list)
 {
 char s[32];
 
@@ -671,7 +671,7 @@ void tTxDisp::draw_page_startup(void)
 }
 
 
-void tTxDisp::draw_page_notify(const char* s)
+void tTxDisp::draw_page_notify(const char* const s)
 {
     if (!page_modified) return;
 

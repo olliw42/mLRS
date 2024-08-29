@@ -124,7 +124,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return ((firmwareRev != 0) && (firmwareRev != 65535));
     }
 
-    void SetLoraConfiguration(const tSxLoraConfiguration* config)
+    void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
@@ -153,7 +153,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-    void SetFlrcConfiguration(const tSxFlrcConfiguration* config, uint32_t sync_word)
+    void SetFlrcConfiguration(const tSxFlrcConfiguration* const config, uint32_t sync_word)
     {
         SetModulationParamsFLRC(config->Bandwidth,
                                 config->CodingRate,
@@ -184,7 +184,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
     }
 
-    void Configure(tSxGlobalConfig* global_config)
+    void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
 
@@ -223,7 +223,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     //-- this are the API functions used in the loop
 
-    void ReadFrame(uint8_t* data, uint8_t len)
+    void ReadFrame(uint8_t* const data, uint8_t len)
     {
         uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
@@ -235,7 +235,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX1280_IRQ_ALL);
@@ -254,7 +254,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         ClearIrqStatus(SX1280_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
         int16_t rssi;
 
@@ -423,7 +423,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
@@ -437,7 +437,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
@@ -576,7 +576,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
@@ -593,7 +593,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx2_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);

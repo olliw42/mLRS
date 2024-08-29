@@ -41,7 +41,7 @@ class tRxSxSerial : public tSerialBase
         return serial.getc(); // get from serial
     }
 
-    void putbuf(uint8_t* buf, uint16_t len) override
+    void putbuf(uint8_t* const buf, uint16_t len) override
     {
         if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
             for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]); // send to serial via MAVLink parser

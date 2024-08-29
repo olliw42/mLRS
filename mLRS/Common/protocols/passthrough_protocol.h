@@ -95,8 +95,8 @@ class tPassThrough
   public:
     void Init(void);
 
-    bool GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* data, uint8_t* len);
-    bool GetTelemetryFrameMulti(uint8_t* data, uint8_t* len);
+    bool GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* const data, uint8_t* const len);
+    bool GetTelemetryFrameMulti(uint8_t* const data, uint8_t* const len);
 
     enum {
         GPS_LAT_0x800 = 0,        // 0x800 GPS lat
@@ -128,49 +128,49 @@ class tPassThrough
 
     // these read a MAVLink message and convert data into passthrough data fields
     
-    void handle_mavlink_msg_passthrough_array(fmav_frsky_passthrough_array_t* payload);
-    void handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* payload);
-    void decode_passthrough_array(uint8_t count, uint8_t* buf);
+    void handle_mavlink_msg_passthrough_array(fmav_frsky_passthrough_array_t* const payload);
+    void handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* const payload);
+    void decode_passthrough_array(uint8_t count, uint8_t* const buf);
     bool passthrough_array_is_receiving;
 
-    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload);           // #0
-    void handle_mavlink_msg_sys_status(fmav_sys_status_t* payload);         // #1
-    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload);       // #24
-    void handle_mavlink_msg_raw_imu(fmav_raw_imu_t* payload);               // #27
-    void handle_mavlink_msg_attitude(fmav_attitude_t* payload);             // #30
-    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload);     // #33
-    void handle_mavlink_msg_mission_current(fmav_mission_current_t* payload);             // #42
-    void handle_mavlink_msg_nav_controller_output(fmav_nav_controller_output_t* payload); // #62
-    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);               // #74
-    void handle_mavlink_msg_terrain_report(fmav_terrain_report_t* payload); // #136
-    void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload); // #147
-    void handle_mavlink_msg_fence_status(fmav_fence_status_t* payload);     // #162
-    void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* payload);       // #173, ArduPilot dialect specific
-    void handle_mavlink_msg_rpm(fmav_rpm_t* payload);                       // #226, ArduPilot dialect specific
-    void handle_mavlink_msg_home_position(fmav_home_position_t* payload);   // #242
-    void handle_mavlink_msg_statustext(fmav_statustext_t* payload);         // #253
+    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);           // #0
+    void handle_mavlink_msg_sys_status(fmav_sys_status_t* const payload);         // #1
+    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);       // #24
+    void handle_mavlink_msg_raw_imu(fmav_raw_imu_t* const payload);               // #27
+    void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);             // #30
+    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);     // #33
+    void handle_mavlink_msg_mission_current(fmav_mission_current_t* const payload);             // #42
+    void handle_mavlink_msg_nav_controller_output(fmav_nav_controller_output_t* const payload); // #62
+    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);               // #74
+    void handle_mavlink_msg_terrain_report(fmav_terrain_report_t* const payload); // #136
+    void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload); // #147
+    void handle_mavlink_msg_fence_status(fmav_fence_status_t* const payload);     // #162
+    void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload);       // #173, ArduPilot dialect specific
+    void handle_mavlink_msg_rpm(fmav_rpm_t* const payload);                       // #226, ArduPilot dialect specific
+    void handle_mavlink_msg_home_position(fmav_home_position_t* const payload);   // #242
+    void handle_mavlink_msg_statustext(fmav_statustext_t* const payload);         // #253
 
     // methods to convert MAVLink data to passthrough (OpenTX) format
 
-    bool get_GpsLat_0x800(uint32_t* data);
-    bool get_GpsLon_0x800(uint32_t* data);
-    bool get_Text_0x5000(uint32_t* data);
-    bool get_ApStatus_0x5001(uint32_t* data);
-    bool get_GpsStatus_0x5002(uint32_t* data);
-    bool get_Battery1_0x5003(uint32_t* data);
-    bool get_Home_0x5004(uint32_t* data);
-    bool get_VelocityYaw_0x5005(uint32_t* data);
-    bool get_AttitudeRange_0x5006(uint32_t* data);
-    bool get_Param_0x5007(uint32_t* data);
-    bool get_Battery2_0x5008(uint32_t* data);
-    bool get_Rpm_0x500A(uint32_t* data);
-    bool get_Terrain_0x500B(uint32_t* data);
-    bool get_Wind_0x500C(uint32_t* data);
-    bool get_WayPointV2_0x500D(uint32_t* data);
-    bool get_VfrHud_0x50F2(uint32_t* data);
-    bool get_VelocityYaw_0x5005_Air(uint32_t* data);
+    bool get_GpsLat_0x800(uint32_t* const data);
+    bool get_GpsLon_0x800(uint32_t* const data);
+    bool get_Text_0x5000(uint32_t* const data);
+    bool get_ApStatus_0x5001(uint32_t* const data);
+    bool get_GpsStatus_0x5002(uint32_t* const data);
+    bool get_Battery1_0x5003(uint32_t* const data);
+    bool get_Home_0x5004(uint32_t* const data);
+    bool get_VelocityYaw_0x5005(uint32_t* const data);
+    bool get_AttitudeRange_0x5006(uint32_t* const data);
+    bool get_Param_0x5007(uint32_t* const data);
+    bool get_Battery2_0x5008(uint32_t* const data);
+    bool get_Rpm_0x500A(uint32_t* const data);
+    bool get_Terrain_0x500B(uint32_t* const data);
+    bool get_Wind_0x500C(uint32_t* const data);
+    bool get_WayPointV2_0x500D(uint32_t* const data);
+    bool get_VfrHud_0x50F2(uint32_t* const data);
+    bool get_VelocityYaw_0x5005_Air(uint32_t* const data);
 
-    bool get_packet_data(uint8_t packet_type, uint32_t* data);
+    bool get_packet_data(uint8_t packet_type, uint32_t* const data);
 
   private:
 
@@ -240,7 +240,7 @@ void tPassThrough::Init(void)
 //-------------------------------------------------------
 // Mavlink Handlers
 
-void tPassThrough::decode_passthrough_array(uint8_t count, uint8_t* buf)
+void tPassThrough::decode_passthrough_array(uint8_t count, uint8_t* const buf)
 {
     for (uint8_t i = 0; i < count; i++) {
         uint16_t id;
@@ -284,7 +284,7 @@ void tPassThrough::decode_passthrough_array(uint8_t count, uint8_t* buf)
 }
 
 
-void tPassThrough::handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* payload)
+void tPassThrough::handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* const payload)
 {
     if (payload->payload_type != 34567) return;
     passthrough_array_is_receiving = true;
@@ -292,14 +292,14 @@ void tPassThrough::handle_mavlink_msg_passthrough_array_tunnel(fmav_tunnel_t* pa
 }
 
 
-void tPassThrough::handle_mavlink_msg_passthrough_array(fmav_frsky_passthrough_array_t* payload)
+void tPassThrough::handle_mavlink_msg_passthrough_array(fmav_frsky_passthrough_array_t* const payload)
 {
     passthrough_array_is_receiving = true;
     decode_passthrough_array(payload->count, payload->packet_buf);
 }
 
 
-void tPassThrough::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload) // #0 -> 0x5001 AP_STATUS, 0x5007 PARAM
+void tPassThrough::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload) // #0 -> 0x5001 AP_STATUS, 0x5007 PARAM
 {
     memcpy(&heartbeat, payload, sizeof(fmav_heartbeat_t));
     pt_update[AP_STATUS_0x5001] = true;
@@ -309,7 +309,7 @@ void tPassThrough::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload) // #0
 }
 
 
-void tPassThrough::handle_mavlink_msg_sys_status(fmav_sys_status_t* payload) // #1 -> 0x5005 VEL_YAW
+void tPassThrough::handle_mavlink_msg_sys_status(fmav_sys_status_t* const payload) // #1 -> 0x5005 VEL_YAW
 {
     memcpy(&sys_status, payload, sizeof(fmav_sys_status_t));
     // we do not update, VEL_YAW reads sys_status.onboard_sensor flags, but no urgent reason to update
@@ -317,7 +317,7 @@ void tPassThrough::handle_mavlink_msg_sys_status(fmav_sys_status_t* payload) // 
 }
 
 
-void tPassThrough::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload) // #24 -> 0x5002 GPS STATUS
+void tPassThrough::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload) // #24 -> 0x5002 GPS STATUS
 {
     memcpy(&gps_raw_int, payload, sizeof(fmav_gps_raw_int_t));
     // we do not update, GPS_LAT/GPS_LON read gps_raw_int.fix_type, but no urgent reason to update
@@ -327,7 +327,7 @@ void tPassThrough::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload) /
 }
 
 
-void tPassThrough::handle_mavlink_msg_raw_imu(fmav_raw_imu_t* payload) // #27 -> 0x5001 AP_STATUS
+void tPassThrough::handle_mavlink_msg_raw_imu(fmav_raw_imu_t* const payload) // #27 -> 0x5001 AP_STATUS
 {
     memcpy(&raw_imu, payload, sizeof(fmav_raw_imu_t));
     // we do not update, AP_STATUS reads raw_imu.temperature, but no urgent reason to update
@@ -335,14 +335,14 @@ void tPassThrough::handle_mavlink_msg_raw_imu(fmav_raw_imu_t* payload) // #27 ->
 }
 
 
-void tPassThrough::handle_mavlink_msg_attitude(fmav_attitude_t* payload) // #30 -> 0x5006 ATTITUDE_RANGE
+void tPassThrough::handle_mavlink_msg_attitude(fmav_attitude_t* const payload) // #30 -> 0x5006 ATTITUDE_RANGE
 {
     memcpy(&attitude, payload, sizeof(fmav_attitude_t));
     pt_update[ATTITUDE_RANGE_0x5006] = true;
 }
 
 
-void tPassThrough::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload) // #33 -> 0x800 (2x), 0x5004 HOME
+void tPassThrough::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload) // #33 -> 0x800 (2x), 0x5004 HOME
 {
     memcpy(&global_position_int, payload, sizeof(fmav_global_position_int_t));
     pt_update[GPS_LAT_0x800] = true;
@@ -359,7 +359,7 @@ void tPassThrough::handle_mavlink_msg_global_position_int(fmav_global_position_i
 }
 
 
-void tPassThrough::handle_mavlink_msg_mission_current(fmav_mission_current_t* payload) // #42 -> 0x5009 WAYPOINT_V1, 0x500D WAYPOINT V2
+void tPassThrough::handle_mavlink_msg_mission_current(fmav_mission_current_t* const payload) // #42 -> 0x5009 WAYPOINT_V1, 0x500D WAYPOINT V2
 {
     memcpy(&mission_current, payload, sizeof(fmav_mission_current_t));
     // pt_update[WAYPOINT_V1_0x5009] = true; // not supported
@@ -367,7 +367,7 @@ void tPassThrough::handle_mavlink_msg_mission_current(fmav_mission_current_t* pa
 }
 
 
-void tPassThrough::handle_mavlink_msg_nav_controller_output(fmav_nav_controller_output_t* payload) // #62 -> 0x5009 WAYPOINT_V1, 0x500D WAYPOINT V2
+void tPassThrough::handle_mavlink_msg_nav_controller_output(fmav_nav_controller_output_t* const payload) // #62 -> 0x5009 WAYPOINT_V1, 0x500D WAYPOINT V2
 {
     memcpy(&nav_controller_output, payload, sizeof(fmav_nav_controller_output_t));
     // pt_update[WAYPOINT_V1_0x5009] = true; // not supported
@@ -375,7 +375,7 @@ void tPassThrough::handle_mavlink_msg_nav_controller_output(fmav_nav_controller_
 }
 
 
-void tPassThrough::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload) // #74 -> 0x5005 VEL_YAW, 0x5001 AP_STATUS, 0x50F2 VFR_HUD
+void tPassThrough::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload) // #74 -> 0x5005 VEL_YAW, 0x5001 AP_STATUS, 0x50F2 VFR_HUD
 {
     memcpy(&vfr_hud, payload, sizeof(fmav_vfr_hud_t));
     pt_update[VEL_YAW_0x5005] = true;
@@ -390,14 +390,14 @@ void tPassThrough::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload) // #74 ->
 }
 
 
-void tPassThrough::handle_mavlink_msg_terrain_report(fmav_terrain_report_t* payload) // #136 -> 0x500B TERRAIN
+void tPassThrough::handle_mavlink_msg_terrain_report(fmav_terrain_report_t* const payload) // #136 -> 0x500B TERRAIN
 {
     memcpy(&terrain_report, payload, sizeof(fmav_terrain_report_t));
     // pt_update[TERRAIN_0x500B] = true; // TODO
 }
 
 
-void tPassThrough::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload) // #147 -> 0x5003 BATT_1, 0x5008 BATT_2
+void tPassThrough::handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload) // #147 -> 0x5003 BATT_1, 0x5008 BATT_2
 {
     if (payload->id == 0) {
         memcpy(&battery_status_id0, payload, sizeof(fmav_battery_status_t));
@@ -410,7 +410,7 @@ void tPassThrough::handle_mavlink_msg_battery_status(fmav_battery_status_t* payl
 }
 
 
-void tPassThrough::handle_mavlink_msg_fence_status(fmav_fence_status_t* payload) // #162 -> 0x5001 AP_STATUS
+void tPassThrough::handle_mavlink_msg_fence_status(fmav_fence_status_t* const payload) // #162 -> 0x5001 AP_STATUS
 {
     memcpy(&fence_status, payload, sizeof(fmav_fence_status_t));
     // we do not update, AP_STATUS reads vfr_hud.throttle, but no urgent reason to update IS THIS WHAT WE WANT ???
@@ -419,21 +419,21 @@ void tPassThrough::handle_mavlink_msg_fence_status(fmav_fence_status_t* payload)
 }
 
 
-void tPassThrough::handle_mavlink_msg_rangefinder(fmav_rangefinder_t* payload) // #173 -> 0x5006 ATTITUDE_RANGE
+void tPassThrough::handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload) // #173 -> 0x5006 ATTITUDE_RANGE
 {
     memcpy(&rangefinder, payload, sizeof(fmav_rangefinder_t));
     pt_update[ATTITUDE_RANGE_0x5006] = true; // TODO
 }
 
 
-void tPassThrough::handle_mavlink_msg_rpm(fmav_rpm_t* payload) // #226 -> 0x500A RPM
+void tPassThrough::handle_mavlink_msg_rpm(fmav_rpm_t* const payload) // #226 -> 0x500A RPM
 {
     memcpy(&rpm, payload, sizeof(fmav_rpm_t));
     pt_update[RPM_0x500A] = true; // TODO
 }
 
 
-void tPassThrough::handle_mavlink_msg_home_position(fmav_home_position_t* payload) // #242 -> 0x5004 HOME
+void tPassThrough::handle_mavlink_msg_home_position(fmav_home_position_t* const payload) // #242 -> 0x5004 HOME
 {
     memcpy(&home_position, payload, sizeof(fmav_home_position_t));
     pt_update[HOME_0x5004] = true; // TODO
@@ -441,7 +441,7 @@ void tPassThrough::handle_mavlink_msg_home_position(fmav_home_position_t* payloa
 }
 
 
-void tPassThrough::handle_mavlink_msg_statustext(fmav_statustext_t* payload) // #253 -> 0x5000 TEXT
+void tPassThrough::handle_mavlink_msg_statustext(fmav_statustext_t* const payload) // #253 -> 0x5000 TEXT
 {
     memcpy(&statustext, payload, sizeof(fmav_statustext_t));
     pt_update[TEXT_0x5000] = true;
@@ -451,7 +451,7 @@ void tPassThrough::handle_mavlink_msg_statustext(fmav_statustext_t* payload) // 
 //-------------------------------------------------------
 // Passthrough Converters
 
-void pt_pack32(uint32_t* value, uint32_t data, uint8_t pos, uint8_t len)
+void pt_pack32(uint32_t* const value, uint32_t data, uint8_t pos, uint8_t len)
 {
     uint32_t mask = 0;
     for (uint32_t i = 0; i < len; i++) mask |= (1 << i);
@@ -460,7 +460,7 @@ void pt_pack32(uint32_t* value, uint32_t data, uint8_t pos, uint8_t len)
 }
 
 
-bool tPassThrough::get_GpsLat_0x800(uint32_t* data)
+bool tPassThrough::get_GpsLat_0x800(uint32_t* const data)
 {
     if (!pt_update[GPS_LAT_0x800]) return false;
     pt_update[GPS_LAT_0x800] = false;
@@ -482,7 +482,7 @@ bool tPassThrough::get_GpsLat_0x800(uint32_t* data)
 }
 
 
-bool tPassThrough::get_GpsLon_0x800(uint32_t* data)
+bool tPassThrough::get_GpsLon_0x800(uint32_t* const data)
 {
     if (!pt_update[GPS_LON_0x800]) return false;
     pt_update[GPS_LON_0x800] = false;
@@ -505,7 +505,7 @@ bool tPassThrough::get_GpsLon_0x800(uint32_t* data)
 
 // this needs a special treatments as we send it in chunks
 // we double buffer the statustext message
-bool tPassThrough::get_Text_0x5000(uint32_t* data)
+bool tPassThrough::get_Text_0x5000(uint32_t* const data)
 {
 /*// NO: even with passthrough array we do it by reading the statustext, we ignore 0x5000 data from passthrough array
     if (passthrough_array_is_receiving) {
@@ -551,7 +551,7 @@ bool tPassThrough::get_Text_0x5000(uint32_t* data)
 }
 
 
-bool tPassThrough::get_ApStatus_0x5001(uint32_t* data)
+bool tPassThrough::get_ApStatus_0x5001(uint32_t* const data)
 {
     if (!pt_update[AP_STATUS_0x5001]) return false;
     pt_update[AP_STATUS_0x5001] = false;
@@ -606,7 +606,7 @@ bool tPassThrough::get_ApStatus_0x5001(uint32_t* data)
 }
 
 
-bool tPassThrough::get_GpsStatus_0x5002(uint32_t* data)
+bool tPassThrough::get_GpsStatus_0x5002(uint32_t* const data)
 {
     if (!pt_update[GPS_STATUS_0x5002]) return false;
     pt_update[GPS_STATUS_0x5002] = false;
@@ -655,10 +655,10 @@ bool tPassThrough::get_GpsStatus_0x5002(uint32_t* data)
 }
 
 
-int32_t mav_battery_voltage(fmav_battery_status_t* payload);
+int32_t mav_battery_voltage(fmav_battery_status_t* const payload);
 
 
-bool tPassThrough::get_Battery1_0x5003(uint32_t* data)
+bool tPassThrough::get_Battery1_0x5003(uint32_t* const data)
 {
     if (!pt_update[BATT_1_0x5003]) return false;
     pt_update[BATT_1_0x5003] = false;
@@ -682,7 +682,7 @@ bool tPassThrough::get_Battery1_0x5003(uint32_t* data)
 }
 
 
-bool tPassThrough::get_Home_0x5004(uint32_t* data)
+bool tPassThrough::get_Home_0x5004(uint32_t* const data)
 {
     if (!pt_update[HOME_0x5004]) return false;
     pt_update[HOME_0x5004] = false;
@@ -743,7 +743,7 @@ bool tPassThrough::get_Home_0x5004(uint32_t* data)
 // ArduPilotPT sends ahrs().airspeed_estimate_true(airspeed_m) if true&wished or ahrs.groundspeed()
 // so, the vfr_hud's groundspeed is ok
 
-bool tPassThrough::get_VelocityYaw_0x5005(uint32_t* data)
+bool tPassThrough::get_VelocityYaw_0x5005(uint32_t* const data)
 {
     if (!pt_update[VEL_YAW_0x5005]) return false;
     pt_update[VEL_YAW_0x5005] = false;
@@ -763,7 +763,7 @@ bool tPassThrough::get_VelocityYaw_0x5005(uint32_t* data)
     return true;
 }
 
-bool tPassThrough::get_VelocityYaw_0x5005_Air(uint32_t* data)
+bool tPassThrough::get_VelocityYaw_0x5005_Air(uint32_t* const data)
 {
     if (!pt_update[VEL_YAW_0x5005_AIR]) return false;
     pt_update[VEL_YAW_0x5005_AIR] = false;
@@ -784,7 +784,7 @@ bool tPassThrough::get_VelocityYaw_0x5005_Air(uint32_t* data)
 }
 
 
-bool tPassThrough::get_AttitudeRange_0x5006(uint32_t* data)
+bool tPassThrough::get_AttitudeRange_0x5006(uint32_t* const data)
 {
     if (!pt_update[ATTITUDE_RANGE_0x5006]) return false;
     pt_update[ATTITUDE_RANGE_0x5006] = false;
@@ -805,7 +805,7 @@ bool tPassThrough::get_AttitudeRange_0x5006(uint32_t* data)
 
 
 // since it is linked to heartbeat, it is implicitly called every 1 Hz
-bool tPassThrough::get_Param_0x5007(uint32_t* data)
+bool tPassThrough::get_Param_0x5007(uint32_t* const data)
 {
     if (!pt_update[PARAM_0x5007]) return false;
     pt_update[PARAM_0x5007] = false;
@@ -834,7 +834,7 @@ bool tPassThrough::get_Param_0x5007(uint32_t* data)
 }
 
 
-bool tPassThrough::get_Battery2_0x5008(uint32_t* data)
+bool tPassThrough::get_Battery2_0x5008(uint32_t* const data)
 {
     if (!pt_update[BATT_2_0x5008]) return false;
     pt_update[BATT_2_0x5008] = false;
@@ -858,7 +858,7 @@ bool tPassThrough::get_Battery2_0x5008(uint32_t* data)
 }
 
 
-bool tPassThrough::get_Rpm_0x500A(uint32_t* data)
+bool tPassThrough::get_Rpm_0x500A(uint32_t* const data)
 {
     if (!pt_update[RPM_0x500A]) return false;
     pt_update[RPM_0x500A] = false;
@@ -871,7 +871,7 @@ bool tPassThrough::get_Rpm_0x500A(uint32_t* data)
 }
 
 
-bool tPassThrough::get_Terrain_0x500B(uint32_t* data)
+bool tPassThrough::get_Terrain_0x500B(uint32_t* const data)
 {
     if (!pt_update[TERRAIN_0x500B]) return false;
     pt_update[TERRAIN_0x500B] = false;
@@ -884,7 +884,7 @@ bool tPassThrough::get_Terrain_0x500B(uint32_t* data)
 }
 
 
-bool tPassThrough::get_Wind_0x500C(uint32_t* data)
+bool tPassThrough::get_Wind_0x500C(uint32_t* const data)
 {
     if (!pt_update[WIND_0x500C]) return false;
     pt_update[WIND_0x500C] = false;
@@ -897,7 +897,7 @@ bool tPassThrough::get_Wind_0x500C(uint32_t* data)
 }
 
 
-bool tPassThrough::get_WayPointV2_0x500D(uint32_t* data)
+bool tPassThrough::get_WayPointV2_0x500D(uint32_t* const data)
 {
     if (!pt_update[WAYPOINT_V2_0x500D]) return false;
     pt_update[WAYPOINT_V2_0x500D] = false;
@@ -910,7 +910,7 @@ bool tPassThrough::get_WayPointV2_0x500D(uint32_t* data)
 }
 
 
-bool tPassThrough::get_VfrHud_0x50F2(uint32_t* data)
+bool tPassThrough::get_VfrHud_0x50F2(uint32_t* const data)
 {
     if (!pt_update[VFR_HUD_0x50F2]) return false;
     pt_update[VFR_HUD_0x50F2] = false;
@@ -933,7 +933,7 @@ bool tPassThrough::get_VfrHud_0x50F2(uint32_t* data)
 //-------------------------------------------------------
 // Main Functions
 
-bool tPassThrough::get_packet_data(uint8_t packet_type, uint32_t* data)
+bool tPassThrough::get_packet_data(uint8_t packet_type, uint32_t* const data)
 {
     switch (packet_type) {
     case TEXT_0x5000: return get_Text_0x5000(data);
@@ -961,7 +961,7 @@ bool tPassThrough::get_packet_data(uint8_t packet_type, uint32_t* data)
 }
 
 
-bool tPassThrough::GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* data, uint8_t* len)
+bool tPassThrough::GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* const data, uint8_t* const len)
 {
 //pt_updated[packet_type] = true;
 
@@ -982,7 +982,7 @@ bool tPassThrough::GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* data, u
 
 
 // this captures up to nine passthrough frames
-bool tPassThrough::GetTelemetryFrameMulti(uint8_t* data, uint8_t* len)
+bool tPassThrough::GetTelemetryFrameMulti(uint8_t* const data, uint8_t* const len)
 {
     // current stable Yaapu lua script wants to see more than 8 packets in the multi
     // dev version does not

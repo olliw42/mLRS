@@ -25,7 +25,7 @@ class tInBase
 
     void Configure(uint8_t new_config);
 
-    bool Update(tRcData* rc);
+    bool Update(tRcData* const rc);
 
 //XX  private:
     virtual bool available(void) { return false; }
@@ -34,8 +34,8 @@ class tInBase
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
-    bool parse_sbus(tRcData* rc);
-    void get_sbus_data(tRcData* rc);
+    bool parse_sbus(tRcData* const rc);
+    void get_sbus_data(tRcData* const rc);
 
     bool enabled;
     uint8_t config;

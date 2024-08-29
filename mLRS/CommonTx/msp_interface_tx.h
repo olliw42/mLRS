@@ -29,7 +29,7 @@ extern bool connected_and_rx_setup_available(void);
 class tTxMsp
 {
   public:
-    void Init(tSerialBase* _serialport, tSerialBase* _serial2port);
+    void Init(tSerialBase* const _serialport, tSerialBase* const _serial2port);
     void Do(void);
     void FrameLost(void);
 
@@ -55,7 +55,7 @@ class tTxMsp
 };
 
 
-void tTxMsp::Init(tSerialBase* _serialport, tSerialBase* _serial2port)
+void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2port)
 {
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
@@ -178,7 +178,7 @@ void tTxMsp::flush(void)
 class tTxMsp
 {
   public:
-    void Init(tSerialBase* _serialport, tSerialBase* _serial2port) {}
+    void Init(tSerialBase* const _serialport, tSerialBase* const _serial2port) {}
     void Do(void) {}
     void FrameLost(void) {}
 

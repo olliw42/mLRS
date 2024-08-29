@@ -65,7 +65,7 @@ extern tTxDisp disp;
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate);
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
     void Do(void);
     uint8_t Task(void);
 
@@ -88,7 +88,7 @@ class tTxEspWifiBridge
 };
 
 
-void tTxEspWifiBridge::Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate)
+void tTxEspWifiBridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate)
 {
     com = _comport;
     ser = _serialport;

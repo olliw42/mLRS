@@ -95,7 +95,7 @@ void tOutBase::SetChannelOrder(uint8_t new_channel_order)
 }
 
 
-void tOutBase::SendRcData(tRcData* rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
+void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
 {
     memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
     channel_order.Apply(&rc);
@@ -216,7 +216,7 @@ void tOutBase::SendLinkStatisticsDisconnected(void)
 // SBus
 //-------------------------------------------------------
 
-void tOutBase::send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe)
+void tOutBase::send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe)
 {
 tSBusFrame sbus_buf;
 
@@ -257,7 +257,7 @@ tSBusFrame sbus_buf;
 // Crsf
 //-------------------------------------------------------
 
-void tOutBase::send_crsf_rcdata(tRcData* rc)
+void tOutBase::send_crsf_rcdata(tRcData* const rc)
 {
 tCrsfChannelFrame crsf_buf;
 

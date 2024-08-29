@@ -31,7 +31,13 @@ typedef enum {
 } CHECK_ENUM;
 
 
-void _pack_txframe_w_type(tTxFrame* frame, uint8_t type, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void _pack_txframe_w_type(
+    tTxFrame* const frame,
+    uint8_t type,
+    tFrameStats* const frame_stats,
+    tRcData* const rc,
+    uint8_t* const payload,
+    uint8_t payload_len)
 {
 uint16_t crc;
 
@@ -88,14 +94,19 @@ uint16_t crc;
 }
 
 
-void pack_txframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t* payload, uint8_t payload_len)
+void pack_txframe(
+    tTxFrame* const frame,
+    tFrameStats* const frame_stats,
+    tRcData* const rc,
+    uint8_t* const payload,
+    uint8_t payload_len)
 {
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
 
 // returns 0 if OK !!
-uint8_t check_txframe(tTxFrame* frame)
+uint8_t check_txframe(tTxFrame* const frame)
 {
 uint16_t crc;
 
@@ -118,7 +129,7 @@ uint16_t crc;
 }
 
 
-void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
+void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
     rc->ch[1] = frame->rc1.ch1;
@@ -130,7 +141,7 @@ void rcdata_rc1_from_txframe(tRcData* rc, tTxFrame* frame)
 }
 
 
-void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
+void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
     rc->ch[1] = frame->rc1.ch1;
@@ -158,7 +169,7 @@ void rcdata_from_txframe(tRcData* rc, tTxFrame* frame)
 
 
 // update header info with new data, keep payload
-void update_rxframe_stats(tRxFrame* frame, tFrameStats* frame_stats)
+void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
 uint16_t crc;
 
@@ -179,7 +190,12 @@ uint16_t crc;
 }
 
 
-void _pack_rxframe_w_type(tRxFrame* frame, uint8_t type, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
+void _pack_rxframe_w_type(
+    tRxFrame* const frame,
+    uint8_t type,
+    tFrameStats* const frame_stats,
+    uint8_t* const payload,
+    uint8_t payload_len)
 {
 uint16_t crc;
 
@@ -208,13 +224,17 @@ uint16_t crc;
 }
 
 
-void pack_rxframe(tRxFrame* frame, tFrameStats* frame_stats, uint8_t* payload, uint8_t payload_len)
+void pack_rxframe(
+    tRxFrame* const frame,
+    tFrameStats* const frame_stats,
+    uint8_t* const payload,
+    uint8_t payload_len)
 {
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
 // returns 0 if OK !!
-uint8_t check_rxframe(tRxFrame* frame)
+uint8_t check_rxframe(tRxFrame* const frame)
 {
 uint16_t crc;
 
@@ -239,7 +259,7 @@ uint16_t crc;
 // Tx/Rx Cmd Frames
 //-------------------------------------------------------
 
-void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params)
+void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_params)
 {
     rx_params->Power = Setup.Rx.Power;
     rx_params->Diversity = Setup.Rx.Diversity;
@@ -265,7 +285,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* rx_params
 }
 
 
-void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
+void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_params)
 {
     Setup.Rx.Power = rx_params->Power;
     Setup.Rx.Diversity = rx_params->Diversity;
@@ -294,7 +314,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* rx_params)
 #ifdef DEVICE_IS_TRANSMITTER
 
 // Tx: send cmd to Rx
-void pack_txcmdframe_cmd(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc, uint8_t cmd)
+void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
 uint8_t payload[1];
 
@@ -305,7 +325,7 @@ uint8_t payload[1];
 
 
 // Tx: handle FRAME_CMD_RX_SETUPDATA from Rx
-void unpack_rxcmdframe_rxsetupdata(tRxFrame* frame)
+void unpack_rxcmdframe_rxsetupdata(tRxFrame* const frame)
 {
 tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
@@ -335,7 +355,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
 // Tx: send new receiver parameters with FRAME_CMD_SET_RX_PARAMS to Rx
 // we take the values from Tx' Setup.Rx structure
-void pack_txcmdframe_setrxparams(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void pack_txcmdframe_setrxparams(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc)
 {
 tTxCmdFrameRxParams rx_params = {};
 
@@ -355,7 +375,7 @@ tTxCmdFrameRxParams rx_params = {};
 #ifdef DEVICE_IS_RECEIVER
 
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
-void pack_rxcmdframe_rxsetupdata(tRxFrame* frame, tFrameStats* frame_stats)
+void pack_rxcmdframe_rxsetupdata(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
 tRxCmdFrameRxSetupData rx_setupdata = {};
 
@@ -387,7 +407,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
 
 // Rx: handle FRAME_CMD_SET_RX_PARAMS
 // new parameter values are stored in Rx' Setup.Rx fields
-void unpack_txcmdframe_setrxparams(tTxFrame* frame)
+void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 {
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 

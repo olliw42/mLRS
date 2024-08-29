@@ -60,7 +60,7 @@ void tChannelOrder::Set(uint8_t new_channel_order)
 }
 
 
-void tChannelOrder::Apply(tRcData* rc)
+void tChannelOrder::Apply(tRcData* const rc)
 {
     uint16_t ch[4] = { // take a copy to swap
         rc->ch[0],

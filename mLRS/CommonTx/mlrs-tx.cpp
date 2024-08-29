@@ -415,7 +415,7 @@ void link_task_tick_ms(void)
 }
 
 
-void process_received_rxcmdframe(tRxFrame* frame)
+void process_received_rxcmdframe(tRxFrame* const frame)
 {
 tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 
@@ -435,7 +435,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 }
 
 
-void pack_txcmdframe(tTxFrame* frame, tFrameStats* frame_stats, tRcData* rc)
+void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc)
 {
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
@@ -506,7 +506,7 @@ uint8_t payload_len = 0;
 }
 
 
-void process_received_frame(bool do_payload, tRxFrame* frame)
+void process_received_frame(bool do_payload, tRxFrame* const frame)
 {
     bool accept_payload = rarq.AcceptPayload();
 
@@ -780,6 +780,7 @@ INITCONTROLLER_END
 
         link_task_tick_ms();
 
+        bind.Tick_ms();
         disp.Tick_ms();
         fan.Tick_ms();
 

@@ -54,7 +54,7 @@ class tSerialPort : public tSerialBase
 #ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
     void InitOnce(void) override { usb_init(); }
     void Init(void) override { SERORCOM_INIT; }
-    void putbuf(uint8_t* buf, uint16_t len) override { IFNSER(); usb_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { IFNSER(); usb_putbuf(buf, len); }
     bool available(void) override { IFNSER(0); return usb_rx_available(); }
     char getc(void) override { IFNSER(0); return usb_getc(); }
     void flush(void) override { IFNSER(); usb_flush(); }
@@ -62,7 +62,7 @@ class tSerialPort : public tSerialBase
 #else
     void Init(void) override { uartb_init(); SERORCOM_INIT; }
     void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putbuf(uint8_t* buf, uint16_t len) override { IFNSER(); uartb_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { IFNSER(); uartb_putbuf(buf, len); }
     bool available(void) override { IFNSER(0); return uartb_rx_available(); }
     char getc(void) override { IFNSER(0); return uartb_getc(); }
     void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
@@ -80,15 +80,15 @@ class tDebugPort : public tSerialBase
   public:
 #ifdef DEVICE_HAS_DEBUG_SWUART
     void Init(void) { swuart_init(); }
-    void putbuf(uint8_t* buf, uint16_t len) override { swuart_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { swuart_putbuf(buf, len); }
 #else
 #ifdef DEVICE_IS_RECEIVER
     void Init(void) { uartc_init(); }
-    void putbuf(uint8_t* buf, uint16_t len) override { uartc_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartc_putbuf(buf, len); }
 #endif
 #ifdef DEVICE_IS_TRANSMITTER
     void Init(void) { uartf_init(); }
-    void putbuf(uint8_t* buf, uint16_t len) override { uartf_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartf_putbuf(buf, len); }
 #endif
 #endif
 #endif
@@ -102,12 +102,12 @@ class tComPort : public tSerialBase
   public:
     // we do not initialize it as it is initialized by serial
 #ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
-    void putbuf(uint8_t* buf, uint16_t len) override { IFNCOM(); usb_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { IFNCOM(); usb_putbuf(buf, len); }
     bool available(void) override { IFNCOM(0); return usb_rx_available(); }
     char getc(void) override { IFNCOM(0); return usb_getc(); }
     void flush(void) override { IFNCOM(); usb_flush(); }
 #else
-    void putbuf(uint8_t* buf, uint16_t len) override { IFNCOM(); uartb_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { IFNCOM(); uartb_putbuf(buf, len); }
     bool available(void) override { IFNCOM(0); return uartb_rx_available(); }
     char getc(void) override { IFNCOM(0); return uartb_getc(); }
     void flush(void) override { IFNCOM(); uartb_rx_flush(); uartb_tx_flush(); }
@@ -118,12 +118,12 @@ class tComPort : public tSerialBase
 #ifdef DEVICE_HAS_COM_ON_USB // USE_USB
     void InitOnce(void) override { usb_init(); }
     void Init(void) override { }
-    void putbuf(uint8_t* buf, uint16_t len) override { usb_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { usb_putbuf(buf, len); }
     bool available(void) override { return usb_rx_available(); }
     char getc(void) override { return usb_getc(); }
 #else
     void Init(void) override { uartc_init(); }
-    void putbuf(uint8_t* buf, uint16_t len) override { uartc_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartc_putbuf(buf, len); }
     bool available(void) override { return uartc_rx_available(); }
     char getc(void) override { return uartc_getc(); }
 #endif
@@ -138,7 +138,7 @@ class tSerial2Port : public tSerialBase
   public:
     void Init(void) override { uartd_init(); }
     void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putbuf(uint8_t* buf, uint16_t len) override { uartd_putbuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartd_putbuf(buf, len); }
     bool available(void) override { return uartd_rx_available(); }
     char getc(void) override { return uartd_getc(); }
     void flush(void) override { uartd_rx_flush(); uartd_tx_flush(); }
@@ -190,7 +190,7 @@ tLEDs leds;
 // Sx/Sx2 convenience wrapper
 //-------------------------------------------------------
 
-void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
+void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len)
 {
     if (antenna == ANTENNA_1) {
         sx.ReadFrame((uint8_t*)data, len);
@@ -200,7 +200,7 @@ void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len)
 }
 
 
-void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
+void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
 {
 #if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
     if (antenna == ANTENNA_1) {
@@ -217,7 +217,7 @@ void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms)
 }
 
 
-void sxGetPacketStatus(uint8_t antenna, tStats* stats)
+void sxGetPacketStatus(uint8_t antenna, tStats* const stats)
 {
     if (antenna == ANTENNA_1) {
         sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));
@@ -246,13 +246,19 @@ typedef enum {
 } FAIL_ENUM;
 
 
-void FAILALWAYS(uint8_t led_pattern, const char* msg)
+void FAILALWAYS(uint8_t led_pattern, const char* const msg)
 {
     fail(&dbg, led_pattern, msg);
 }
 
 
-void FAILALWAYS_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+void FAILALWAYS_WSTATE(
+    uint8_t led_pattern,
+    const char* const msg,
+    uint16_t irq_status,
+    uint8_t link_state,
+    uint8_t link_rx1_status,
+    uint8_t link_rx2_status)
 {
 char s[64];
 
@@ -269,7 +275,7 @@ char s[64];
 }
 
 
-void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
+void FAIL_WPATTERN(uint8_t led_pattern, const char* const msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, led_pattern, msg);
@@ -277,7 +283,7 @@ void FAIL_WPATTERN(uint8_t led_pattern, const char* msg)
 }
 
 
-void FAIL_WMSG(const char* msg)
+void FAIL_WMSG(const char* const msg)
 {
 #ifdef FAIL_ENABLED
     fail(&dbg, 0, msg);
@@ -285,7 +291,13 @@ void FAIL_WMSG(const char* msg)
 }
 
 
-void FAIL_WSTATE(uint8_t led_pattern, const char* msg, uint16_t irq_status, uint8_t link_state, uint8_t link_rx1_status, uint8_t link_rx2_status)
+void FAIL_WSTATE(
+    uint8_t led_pattern,
+    const char* const msg,
+    uint16_t irq_status,
+    uint8_t link_state,
+    uint8_t link_rx1_status,
+    uint8_t link_rx2_status)
 {
 #ifdef FAIL_ENABLED
     FAILALWAYS_WSTATE(led_pattern, msg, irq_status, link_state, link_rx1_status, link_rx2_status);

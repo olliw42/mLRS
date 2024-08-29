@@ -238,7 +238,7 @@ void link_task_reset(void)
 }
 
 
-void process_received_txcmdframe(tTxFrame* frame)
+void process_received_txcmdframe(tTxFrame* const frame)
 {
 tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 
@@ -265,7 +265,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 }
 
 
-void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
+void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
     switch (link_task) {
     case LINK_TASK_RX_SEND_RX_SETUPDATA:
@@ -348,7 +348,7 @@ uint8_t payload_len = 0;
 }
 
 
-void process_received_frame(bool do_payload, tTxFrame* frame)
+void process_received_frame(bool do_payload, tTxFrame* const frame)
 {
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
@@ -590,6 +590,7 @@ INITCONTROLLER_END
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
+        bind.Tick_ms();
         fan.Tick_ms();
 
         if (!tick_1hz) {
