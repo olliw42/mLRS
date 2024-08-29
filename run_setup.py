@@ -7,10 +7,10 @@
  OlliW @ www.olliw.eu
 *******************************************************
  run_setup.py
-
  1. run git submodule update --init --recursive
  2. calls run_copy_st_drivers.py to populate the target ST Driver folders
- 3. calls fmav_generate_c_library.py to generated mavlink library files
+ 3. calls fmav_generate_c_library.py to generate MAVLink library files
+ version 29.08.2024
 ********************************************************
 '''
 import os
