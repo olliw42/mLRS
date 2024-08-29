@@ -247,28 +247,28 @@ This opens the "Properties for tx-diy-yourtarget-g431cb" dialog.
 
 This brings you to the settings tab.
 
-Three include paths need to be added to each the GCC and G++ compilers. Namely
+Three include paths need to be added to both the GCC and G++ compilers. Namely
 
 - ../Drivers/STM32_USB_Device_Library/Core/Inc
 - ../Drivers/STM32_USB_Device_Library/Class/CDC/Inc
 - "${workspace_loc:/${ProjName}/modules/stm32-usb-device}"
 
--> MCU GCC Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
+-> MCU/MPU GCC Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
 
 repeat this 3 times for each include path
 
--> MCU GCC Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
+-> MCU/MPU G++ Compiler -> Include Paths: select "+" icon, enter path, click down arrow to move it to last position
 
 repeat this 3 times for each include path
 
-The define STDSTM32_USE_USB needs to be added to each the GCC and G++ compilers:
+The define STDSTM32_USE_USB needs to be added to both the GCC and G++ compilers:
 
--> MCU GCC Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
--> MCU G++ Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
+-> MCU/MPU GCC Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
+-> MCU/MPU G++ Compiler -> Preprozessor: select "+" icon, enter STDSTM32_USE_USB, click down arrow to move it to last position
 
 ### 3. Set HAL_PCD_MODULE_ENABLED
 
-In the IDE, unfold the "Core" folder, unfolde the "Inc" folder, and double-click "stm32yyxx_hal_conf.h" to open it in the editor.
+In the IDE, unfold the "Core" folder, unfold the "Inc" folder, and double-click "stm32yyxx_hal_conf.h" to open it in the editor.
 
 Un-comment the line with #define HAL_PCD_MODULE_ENABLED.
 
