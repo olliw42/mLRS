@@ -1,0 +1,379 @@
+{
+    "header": {
+        "version": "v1.3.01",
+        "sha": "9da538c0"
+    },
+    "MatekSys": {
+        "chipset": "STM32",
+        "mR24-30": {
+            "target_id": "matek-mr24-30",
+            "firmwares": [
+                {
+                    "sname": "rx-matek-mr24-30-g431kb",
+                    "ext": ".hex",
+                    "file": "rx-matek-mr24-30-g431kb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr24-30-g431kb-default",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr24-30-g431kb-default-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr24-30-g431kb-oled",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr24-30-g431kb-oled-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr24-30-g431kb-siktelem",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr24-30-g431kb-siktelem-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "mR900-30": {
+            "target_id": "matek-mr900-30",
+            "firmwares": [
+                {
+                    "sname": "rx-matek-mr900-30-g431kb",
+                    "ext": ".hex",
+                    "file": "rx-matek-mr900-30-g431kb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr900-30-g431kb-default",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr900-30-g431kb-default-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr900-30-g431kb-oled",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr900-30-g431kb-oled-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-matek-mr900-30-g431kb-siktelem",
+                    "ext": ".hex",
+                    "file": "tx-matek-mr900-30-g431kb-siktelem-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "mR900-22": {
+            "target_id": "matek-mr900-22",
+            "firmwares": [
+                {
+                    "sname": "rx-matek-mr900-22-wle5cc",
+                    "ext": ".hex",
+                    "file": "rx-matek-mr900-22-wle5cc-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    },
+    "FrSky R9": {
+        "chipset": "STM32",
+        "R9M": {
+            "target_id": "R9M",
+            "firmwares": [
+                {
+                    "sname": "rx-R9M-f103c8-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "rx-R9M-f103c8-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "rx-R9M-f103c8",
+                    "ext": ".hex",
+                    "file": "rx-R9M-f103c8-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-R9MLitePro-v15-f303cc",
+                    "ext": ".hex",
+                    "file": "rx-R9MLitePro-v15-f303cc-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-R9MM-f103rb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "rx-R9MM-f103rb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "rx-R9MM-f103rb",
+                    "ext": ".hex",
+                    "file": "rx-R9MM-f103rb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-R9MX-l433cb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "rx-R9MX-l433cb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "rx-R9MX-l433cb",
+                    "ext": ".hex",
+                    "file": "rx-R9MX-l433cb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-R9M-f103c8-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "tx-R9M-f103c8-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "tx-R9M-f103c8",
+                    "ext": ".hex",
+                    "file": "tx-R9M-f103c8-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-R9MX-l433cb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "tx-R9MX-l433cb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "tx-R9MX-l433cb",
+                    "ext": ".hex",
+                    "file": "tx-R9MX-l433cb-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "R9 MM": {
+            "target_id": "R9MM",
+            "firmwares": [
+                {
+                    "sname": "rx-R9MM-f103rb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "rx-R9MM-f103rb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "rx-R9MM-f103rb",
+                    "ext": ".hex",
+                    "file": "rx-R9MM-f103rb-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "R9 MX": {
+            "target_id": "R9MX",
+            "firmwares": [
+                {
+                    "sname": "rx-R9MX-l433cb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "rx-R9MX-l433cb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "rx-R9MX-l433cb",
+                    "ext": ".hex",
+                    "file": "rx-R9MX-l433cb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-R9MX-l433cb-elrs-bl",
+                    "ext": ".elrs",
+                    "file": "tx-R9MX-l433cb-elrs-bl-v1.3.01-@9da538c0.elrs"
+                },
+                {
+                    "sname": "tx-R9MX-l433cb",
+                    "ext": ".hex",
+                    "file": "tx-R9MX-l433cb-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "R9M Lite Pro": {
+            "target_id": "R9MLitePro-v15",
+            "firmwares": [
+                {
+                    "sname": "rx-R9MLitePro-v15-f303cc",
+                    "ext": ".hex",
+                    "file": "rx-R9MLitePro-v15-f303cc-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    },
+    "FlySky FRM 303": {
+        "chipset": "STM32",
+        "FRM 303": {
+            "target_id": "FRM303",
+            "firmwares": [
+                {
+                    "sname": "rx-FRM303-f072cb",
+                    "ext": ".hex",
+                    "file": "rx-FRM303-f072cb-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-FRM303-f072cb-oled",
+                    "ext": ".hex",
+                    "file": "tx-FRM303-f072cb-oled-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-FRM303-f072cb-usb",
+                    "ext": ".hex",
+                    "file": "tx-FRM303-f072cb-usb-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    },
+    "Wio E5": {
+        "chipset": "STM32",
+        "Wio E5 Mini": {
+            "target_id": "Wio-E5-Mini",
+            "firmwares": [
+                {
+                    "sname": "rx-Wio-E5-Mini-wle5jc",
+                    "ext": ".hex",
+                    "file": "rx-Wio-E5-Mini-wle5jc-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-Wio-E5-Mini-wle5jc-sdiode",
+                    "ext": ".hex",
+                    "file": "tx-Wio-E5-Mini-wle5jc-sdiode-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-Wio-E5-Mini-wle5jc",
+                    "ext": ".hex",
+                    "file": "tx-Wio-E5-Mini-wle5jc-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "Wio E5 Grove": {
+            "target_id": "Wio-E5-Grove",
+            "firmwares": [
+                {
+                    "sname": "rx-Wio-E5-Grove-wle5jc",
+                    "ext": ".hex",
+                    "file": "rx-Wio-E5-Grove-wle5jc-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    },
+    "E77 MBL Kit": {
+        "chipset": "STM32",
+        "E77 MBL Kit": {
+            "target_id": "E77-MBLKit",
+            "firmwares": [
+                {
+                    "sname": "rx-E77-MBLKit-wle5cc-400-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-E77-MBLKit-wle5cc-400-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-E77-MBLKit-wle5cc-400-xtal",
+                    "ext": ".hex",
+                    "file": "rx-E77-MBLKit-wle5cc-400-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-E77-MBLKit-wle5cc-900-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-E77-MBLKit-wle5cc-900-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-E77-MBLKit-wle5cc-900-xtal",
+                    "ext": ".hex",
+                    "file": "rx-E77-MBLKit-wle5cc-900-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-E77-MBLKit-wle5cc-400-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-E77-MBLKit-wle5cc-400-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-E77-MBLKit-wle5cc-400-xtal",
+                    "ext": ".hex",
+                    "file": "tx-E77-MBLKit-wle5cc-400-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-E77-MBLKit-wle5cc-900-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-E77-MBLKit-wle5cc-900-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-E77-MBLKit-wle5cc-900-xtal",
+                    "ext": ".hex",
+                    "file": "tx-E77-MBLKit-wle5cc-900-xtal-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    },
+    "Easysolder": {
+        "chipset": "STM32",
+        "Easysolder E77 E22": {
+            "target_id": "easysolder-E77-E22-dual",
+            "firmwares": [
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-diversity-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-diversity-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-diversity-xtal",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-diversity-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-dualband-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-dualband-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-dualband-xtal",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-dualband-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E22-dual-wle5cc-xtal",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E22-dual-wle5cc-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-diversity-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-diversity-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-diversity-xtal",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-diversity-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-dualband-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-dualband-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-dualband-xtal",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-dualband-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E22-dual-wle5cc-xtal",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E22-dual-wle5cc-xtal-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        },
+        "Easysolder E77 E28": {
+            "target_id": "easysolder-E77-E28-dualband",
+            "firmwares": [
+                {
+                    "sname": "rx-easysolder-E77-E28-dualband-wle5cc-tcxo",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E28-dualband-wle5cc-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "rx-easysolder-E77-E28-dualband-wle5cc-xtal",
+                    "ext": ".hex",
+                    "file": "rx-easysolder-E77-E28-dualband-wle5cc-xtal-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E28-dualband-wle5cc-tcxo",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E28-dualband-wle5cc-tcxo-v1.3.01-@9da538c0.hex"
+                },
+                {
+                    "sname": "tx-easysolder-E77-E28-dualband-wle5cc-xtal",
+                    "ext": ".hex",
+                    "file": "tx-easysolder-E77-E28-dualband-wle5cc-xtal-v1.3.01-@9da538c0.hex"
+                }
+            ]
+        }
+    }
+}
