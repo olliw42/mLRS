@@ -375,5 +375,155 @@
                 }
             ]
         }
+    },
+    "ELRS Generic": {
+        "chipset": "ESP",
+        "2400": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-generic-2400-d-pa",
+                    "ext": ".bin",
+                    "file": "rx-generic-2400-d-pa-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "esp8285",
+                    "sname": "rx-generic-2400-pa",
+                    "ext": ".bin",
+                    "file": "rx-generic-2400-pa-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "pico32",
+                    "sname": "rx-generic-2400-td-pa",
+                    "ext": ".bin",
+                    "file": "rx-generic-2400-td-pa-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "esp8285",
+                    "sname": "rx-generic-2400",
+                    "ext": ".bin",
+                    "file": "rx-generic-2400-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        },
+        "900": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-generic-900-pa",
+                    "ext": ".bin",
+                    "file": "rx-generic-900-pa-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "pico32",
+                    "sname": "rx-generic-900-td-pa",
+                    "ext": ".bin",
+                    "file": "rx-generic-900-td-pa-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "esp8285",
+                    "sname": "rx-generic-900",
+                    "ext": ".bin",
+                    "file": "rx-generic-900-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
+    },
+    "ELRS Bayck": {
+        "chipset": "ESP",
+        "900": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-bayck-nano-pro-900",
+                    "ext": ".bin",
+                    "file": "rx-bayck-nano-pro-900-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
+    },
+    "ELRS BetaFPV": {
+        "chipset": "ESP",
+        "2400": {
+            "firmwares": [
+                {
+                    "board": "pico32",
+                    "sname": "rx-betafpv-superd-2400",
+                    "ext": ".bin",
+                    "file": "rx-betafpv-superd-2400-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
+    },
+    "ELRS iFlight": {
+        "chipset": "ESP",
+        "2400": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-iflight-elrs-2400",
+                    "ext": ".bin",
+                    "file": "rx-iflight-elrs-2400-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "pico32",
+                    "sname": "rx-iflight-elrs-td-2400",
+                    "ext": ".bin",
+                    "file": "rx-iflight-elrs-td-2400-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        },
+        "900": {
+            "firmwares": [
+                {
+                    "board": "pico32",
+                    "sname": "rx-iflight-elrs-td-900",
+                    "ext": ".bin",
+                    "file": "rx-iflight-elrs-td-900-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
+    },
+    "ELRS RadioMaster": {
+        "chipset": "ESP",
+        "2400": {
+            "firmwares": [
+                {
+                    "board": "pico32",
+                    "sname": "rx-radiomaster-rp4td-2400",
+                    "ext": ".bin",
+                    "file": "rx-radiomaster-rp4td-2400-v1.3.01-@9da538c0.bin"
+                },
+                {
+                    "board": "pico32",
+                    "sname": "tx-radiomaster-rp4td-2400",
+                    "ext": ".bin",
+                    "file": "tx-radiomaster-rp4td-2400-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        },
+        "900": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-radiomaster-br3-900",
+                    "ext": ".bin",
+                    "file": "rx-radiomaster-br3-900-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
+    },
+    "ELRS SpeedyBee": {
+        "chipset": "ESP",
+        "2400": {
+            "firmwares": [
+                {
+                    "board": "esp8285",
+                    "sname": "rx-speedybee-nano-2400",
+                    "ext": ".bin",
+                    "file": "rx-speedybee-nano-2400-v1.3.01-@9da538c0.bin"
+                }
+            ]
+        }
     }
 }
