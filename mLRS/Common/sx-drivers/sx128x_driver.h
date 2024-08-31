@@ -92,7 +92,7 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
 };
 
 
-#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+#if defined POWER_USE_DEFAULT_RFPOWER_CALC || defined POWER2_USE_DEFAULT_RFPOWER_CALC
 void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1280_MAX_DBM)
 {
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM + 18;

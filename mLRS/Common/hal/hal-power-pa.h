@@ -51,11 +51,12 @@ const rfpower_t rfpower_list[] = {
 };
 
 #endif
-#ifdef POWER2_PA_SKY85321_11
+#if defined POWER2_PA_SKY85321_11 || defined POWER2_PA_E28_2G4M27SX
 #define POWER_PA_DEFINED
 
 #define POWER2_GAIN_DBM           27 // gain of a PA stage if present
 #define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 #endif
 
@@ -77,6 +78,14 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };
+
+#endif
+#if defined POWER2_PA_SKY68383_11 || defined POWER2_PA_MATEK_MR24_30
+#define POWER_PA_DEFINED
+
+#define POWER2_GAIN_DBM           31 // gain of a PA stage if present
+#define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 #endif
 
