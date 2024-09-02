@@ -44,7 +44,7 @@ extern "C" {
   #include "stm32f1xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
-#elif defined STM32G431xx
+#elif defined STM32G431xx  || defined STM32G474xx
   #include "stm32g4xx.h"
   #include "stm32g4xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
