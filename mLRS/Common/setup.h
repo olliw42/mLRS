@@ -791,6 +791,13 @@ void setup_reload(void)
 #define SETUPLAYOUT_L0_3_29  329 // layout version from v0.3.29 - v0.3.34
 #define SETUPLAYOUT_L0_3_35  335 // layout version from v0.3.35 onwards
 
+#ifdef DEVICE_IS_TRANSMITTER
+#define SETUP_MARKER_NEW_STR  SETUP_MARKER_TX_STR
+#endif
+#ifdef DEVICE_IS_RECEIVER
+#define SETUP_MARKER_NEW_STR  SETUP_MARKER_RX_STR
+#endif
+
 
 void setup_init(void)
 {
@@ -807,7 +814,12 @@ bool doEEPROMwrite;
     }
 
     if (ee_status != EE_STATUS_OK) setup_clear(); // force default
-    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) setup_clear(); // force default
+
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16) != 0) &&
+        (strncmp(Setup.MarkerStr, SETUP_MARKER_OLD_STR, 16) != 0)) {
+        setup_clear(); // force default
+    }
+
 #ifdef SETUP_FORCE_COMMON_CONF
     setup_clear(); // force default
 #endif
@@ -847,8 +859,8 @@ bool doEEPROMwrite;
         Setup.Version = VERSION;
         doEEPROMwrite = true;
     }
-    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) {
-        strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16) != 0)) {
+        strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16);
         strbufstrcpy((char*)Setup.MarkerEnd, SETUP_MARKEREND_STR, 8);
         doEEPROMwrite = true;
     }

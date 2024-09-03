@@ -319,7 +319,9 @@ typedef struct
 } tRxSetup; // 36 bytes
 
 
-#define SETUP_MARKER_STR      "SetupStartMarker"
+#define SETUP_MARKER_RX_STR   "SetupStartStx4Rx"
+#define SETUP_MARKER_TX_STR   "SetupStartStx4Tx"
+#define SETUP_MARKER_OLD_STR  "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
 #define SETUP_CONFIG_NUM      10 // not more, so it's only one char '0'...'9'
