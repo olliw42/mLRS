@@ -45,7 +45,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -64,13 +64,13 @@
 //#define UART_RXBUFSIZE            512
 
 /*
-#define UARTC_USE_UART1_PA9PA10 //3 // debug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_UART1_PA9PA10 //3 // debug
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 */
 
 #define SWUART_USE_TIM4 // debug

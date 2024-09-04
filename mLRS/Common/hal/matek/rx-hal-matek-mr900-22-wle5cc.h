@@ -49,7 +49,7 @@ SWC     solder pad      PA14        SWDCLK      ADC_IN10
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE

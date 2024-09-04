@@ -19,7 +19,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UART_USE_SERIAL1 
 #define UART_BAUD                 416666   // CRSF baud rate

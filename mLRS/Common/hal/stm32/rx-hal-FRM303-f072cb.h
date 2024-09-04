@@ -32,7 +32,7 @@
 #undef CLOCK_IRQ_PRIORITY
 #undef UARTB_IRQ_PRIORITY
 #undef UART_IRQ_PRIORITY
-#undef UARTC_IRQ_PRIORITY
+#undef UARTF_IRQ_PRIORITY
 #undef SX_DIO_EXTI_IRQ_PRIORITY
 #undef SX2_DIO_EXTI_IRQ_PRIORITY
 #undef SWUART_TIM_IRQ_PRIORITY
@@ -40,7 +40,7 @@
 #define CLOCK_IRQ_PRIORITY          0 // 10
 #define UARTB_IRQ_PRIORITY          1 // 11 // serial
 #define UART_IRQ_PRIORITY           2 // 12 // out pin
-#define UARTC_IRQ_PRIORITY          1 // 11 // debug
+#define UARTF_IRQ_PRIORITY          1 // 11 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
 #define SWUART_TIM_IRQ_PRIORITY     0 //  9 // debug on swuart
@@ -66,7 +66,7 @@ static inline void delay_ns(uint32_t ns) {} // LA log shows, no delay needed
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART2_PA2PA3 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
