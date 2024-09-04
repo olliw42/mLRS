@@ -22,7 +22,6 @@
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13 // on single spi diversity systems must be equal to DIO priority
 #define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
-#define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"

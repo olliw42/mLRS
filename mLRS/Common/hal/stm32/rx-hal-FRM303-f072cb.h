@@ -36,7 +36,6 @@
 #undef SX_DIO_EXTI_IRQ_PRIORITY
 #undef SX2_DIO_EXTI_IRQ_PRIORITY
 #undef SWUART_TIM_IRQ_PRIORITY
-#undef BUZZER_TIM_IRQ_PRIORITY
 #define CLOCK_IRQ_PRIORITY          0 // 10
 #define UARTB_IRQ_PRIORITY          1 // 11 // serial
 #define UART_IRQ_PRIORITY           2 // 12 // out pin
@@ -44,7 +43,6 @@
 #define SX_DIO_EXTI_IRQ_PRIORITY    2 // 13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   2 // 13
 #define SWUART_TIM_IRQ_PRIORITY     0 //  9 // debug on swuart
-#define BUZZER_TIM_IRQ_PRIORITY     3 // 14
 
 
 //-- Timers, Timing, EEPROM, and such stuff
