@@ -199,7 +199,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     void SetRfPower_dbm(int8_t power_dbm)
     {
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
+        SetTxParams(sx_power, SX126X_RAMPTIME_40_US); // 7.9.24: was SX126X_RAMPTIME_10_US
     }
 
     void Configure(tSxGlobalConfig* const global_config)
@@ -251,7 +251,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         SetPaConfig_22dbm();
 
-        //SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
         SetRfPower_dbm(gconfig->Power_dbm);
 
         if (gconfig->modeIsLora()) {
