@@ -194,12 +194,14 @@ void inc_bindphrase_char(char* s, uint8_t pos)
 }
 
 
+// make the default bind phrases all different for all config id's
+// this provides a sort of model match per default
 void setup_default_bindphrase(char* s, uint8_t config_id, const char* bindphrase_default)
 {
     strcpy(s, bindphrase_default);
     if (config_id == 0) return;
 
-#ifdef FREQUENCY_BAND_2P4_GHZ
+#ifdef FREQUENCY_BAND_2P4_GHZ // a bit more to do because of the "except" option
     switch (config_id) {
         case 1: s[5] = '5'; break;
         case 2: s[5] = 'a'; break;
@@ -871,17 +873,10 @@ bool doEEPROMwrite;
 #ifdef DEVICE_IS_TRANSMITTER
     if (Setup._ConfigId >= SETUP_CONFIG_NUM) Setup._ConfigId = 0;
 
-    if (Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE ||
-        Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
-        // config id is supported
-        // ensure that they all have the same channel_source
-        for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
-            Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
-        }
-    } else {
-        // config id is not supported, so force config_id = 0 page
-        if (Setup._ConfigId > 0) Setup.Tx[0] = Setup.Tx[Setup._ConfigId]; // copy all settings to page 0
-        Setup._ConfigId = 0;
+    // ensure that all config id's have the same channel_source
+    // otherwise it can be very confusing concerning how to communicate with the module
+    for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
+        Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
     }
 #else
     Setup._ConfigId = 0;
