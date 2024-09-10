@@ -1,15 +1,15 @@
 {
-    "v1.3.00": {
-        "uint": 10300,
-        "type": "release",
-        "commit": "f12d680",
-        "url": "https://github.com/olliw42/mLRS/tree/v1.3/firmware"
-    },
     "v1.3.02": {
         "uint": 10302,
         "type": "pre-release",
         "commit": "ec7a3827a34fa5d4caa05b107a7711884edea580",
         "url": "https://github.com/olliw42/mLRS/tree/ec7a3827a34fa5d4caa05b107a7711884edea580/firmware"
+    },
+    "v1.3.00": {
+        "uint": 10300,
+        "type": "release",
+        "commit": "f12d680",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3/firmware"
     },
     "v1.2.04": {
         "uint": 10204,
