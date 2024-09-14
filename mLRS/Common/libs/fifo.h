@@ -39,7 +39,7 @@ class tFifo
         return false;
     }
 
-    void PutBuf(void* buf, uint16_t len)
+    void PutBuf(void* const buf, uint16_t len)
     {
         for (uint16_t i = 0; i < len; i++) Put(((T*)buf)[i]);
     }

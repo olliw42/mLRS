@@ -97,6 +97,7 @@ typedef enum {
     SERIAL_LINK_MODE_MAVLINK,
 #ifdef USE_FEATURE_MAVLINKX
     SERIAL_LINK_MODE_MAVLINK_X,
+    SERIAL_LINK_MODE_MSP_X,
 #endif
     SERIAL_LINK_MODE_NUM,
 } SERIAL_LINK_MODE_ENUM;
@@ -104,8 +105,10 @@ typedef enum {
 
 #ifndef USE_FEATURE_MAVLINKX
   #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK)
+  #define SERIAL_LINK_MODE_IS_MSP(x)      (false)
 #else
   #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK || (x) == SERIAL_LINK_MODE_MAVLINK_X)
+  #define SERIAL_LINK_MODE_IS_MSP(x)      ((x) == SERIAL_LINK_MODE_MSP_X)
 #endif
 
 
@@ -171,9 +174,9 @@ typedef enum {
 
 
 typedef enum {
-    CLI_LINE_END_CR = 0,
+    CLI_LINE_END_CRLF = 0, // changed 12.Aug.24, was CR before
     CLI_LINE_END_LF,
-    CLI_LINE_END_CRLF,
+    CLI_LINE_END_CR, // changed 12.Aug.24, was CRLF before
     CLI_LINE_END_NUM,
 } TX_CLI_LINE_END_ENUM;
 
@@ -316,7 +319,9 @@ typedef struct
 } tRxSetup; // 36 bytes
 
 
-#define SETUP_MARKER_STR      "SetupStartMarker"
+#define SETUP_MARKER_RX_STR   "SetupStartStx4Rx"
+#define SETUP_MARKER_TX_STR   "SetupStartStx4Tx"
+#define SETUP_MARKER_OLD_STR  "SetupStartMarker"
 #define SETUP_MARKEREND_STR   "!end!"
 
 #define SETUP_CONFIG_NUM      10 // not more, so it's only one char '0'...'9'

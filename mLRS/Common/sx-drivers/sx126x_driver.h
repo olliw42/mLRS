@@ -136,7 +136,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return ((firmwareRev != 0) && (firmwareRev != 65535));
     }
 
-    void SetLoraConfiguration(const tSxLoraConfiguration* config)
+    void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
@@ -163,10 +163,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
+        SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
+        delay_us(1000); // seems ok without, but do it
+        SetPacketType(SX126X_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-    void SetGfskConfiguration(const tSxGfskConfiguration* config, uint16_t sync_word)
+    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
     {
         SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
@@ -196,10 +199,10 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     void SetRfPower_dbm(int8_t power_dbm)
     {
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, SX126X_RAMPTIME_10_US);
+        SetTxParams(sx_power, SX126X_RAMPTIME_40_US); // 7.9.24: was SX126X_RAMPTIME_10_US
     }
 
-    void Configure(tSxGlobalConfig* global_config)
+    void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
 
@@ -248,7 +251,6 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         SetPaConfig_22dbm();
 
-        //SetTxParams(calc_sx_power(Config.Power), SX126X_RAMPTIME_10_US);
         SetRfPower_dbm(gconfig->Power_dbm);
 
         if (gconfig->modeIsLora()) {
@@ -270,7 +272,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     //-- this are the API functions used in the loop
 
-    void ReadFrame(uint8_t* data, uint8_t len)
+    void ReadFrame(uint8_t* const data, uint8_t len)
     {
         uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
@@ -279,7 +281,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ReadBuffer(rxStartBufferPointer, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
@@ -298,7 +300,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         ClearIrqStatus(SX126X_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
         int16_t rssi;
         if (gconfig->modeIsLora()) {
@@ -474,7 +476,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
@@ -488,7 +490,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
@@ -607,7 +609,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
 #ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
@@ -621,7 +623,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
     {
         sx2_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);

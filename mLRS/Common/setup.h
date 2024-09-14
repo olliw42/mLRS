@@ -194,12 +194,14 @@ void inc_bindphrase_char(char* s, uint8_t pos)
 }
 
 
+// make the default bind phrases all different for all config id's
+// this provides a sort of model match per default
 void setup_default_bindphrase(char* s, uint8_t config_id, const char* bindphrase_default)
 {
     strcpy(s, bindphrase_default);
     if (config_id == 0) return;
 
-#ifdef FREQUENCY_BAND_2P4_GHZ
+#ifdef FREQUENCY_BAND_2P4_GHZ // a bit more to do because of the "except" option
     switch (config_id) {
         case 1: s[5] = '5'; break;
         case 2: s[5] = 'a'; break;
@@ -355,7 +357,7 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
     TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);
 
-    SANITIZE(Tx[config_id].CliLineEnd, CLI_LINE_END_NUM, SETUP_TX_CLI_LINE_END, CLI_LINE_END_CR);
+    SANITIZE(Tx[config_id].CliLineEnd, CLI_LINE_END_NUM, SETUP_TX_CLI_LINE_END, CLI_LINE_END_CRLF);
 
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
@@ -791,6 +793,13 @@ void setup_reload(void)
 #define SETUPLAYOUT_L0_3_29  329 // layout version from v0.3.29 - v0.3.34
 #define SETUPLAYOUT_L0_3_35  335 // layout version from v0.3.35 onwards
 
+#ifdef DEVICE_IS_TRANSMITTER
+#define SETUP_MARKER_NEW_STR  SETUP_MARKER_TX_STR
+#endif
+#ifdef DEVICE_IS_RECEIVER
+#define SETUP_MARKER_NEW_STR  SETUP_MARKER_RX_STR
+#endif
+
 
 void setup_init(void)
 {
@@ -807,7 +816,12 @@ bool doEEPROMwrite;
     }
 
     if (ee_status != EE_STATUS_OK) setup_clear(); // force default
-    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) setup_clear(); // force default
+
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16) != 0) &&
+        (strncmp(Setup.MarkerStr, SETUP_MARKER_OLD_STR, 16) != 0)) {
+        setup_clear(); // force default
+    }
+
 #ifdef SETUP_FORCE_COMMON_CONF
     setup_clear(); // force default
 #endif
@@ -847,8 +861,8 @@ bool doEEPROMwrite;
         Setup.Version = VERSION;
         doEEPROMwrite = true;
     }
-    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_STR, 16) != 0)) {
-        strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_STR, 16);
+    if ((strncmp(Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16) != 0)) {
+        strbufstrcpy((char*)Setup.MarkerStr, SETUP_MARKER_NEW_STR, 16);
         strbufstrcpy((char*)Setup.MarkerEnd, SETUP_MARKEREND_STR, 8);
         doEEPROMwrite = true;
     }
@@ -859,17 +873,10 @@ bool doEEPROMwrite;
 #ifdef DEVICE_IS_TRANSMITTER
     if (Setup._ConfigId >= SETUP_CONFIG_NUM) Setup._ConfigId = 0;
 
-    if (Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE ||
-        Setup.Tx[Setup._ConfigId].ChannelsSource == CHANNEL_SOURCE_CRSF) {
-        // config id is supported
-        // ensure that they all have the same channel_source
-        for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
-            Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
-        }
-    } else {
-        // config id is not supported, so force config_id = 0 page
-        if (Setup._ConfigId > 0) Setup.Tx[0] = Setup.Tx[Setup._ConfigId]; // copy all settings to page 0
-        Setup._ConfigId = 0;
+    // ensure that all config id's have the same channel_source
+    // otherwise it can be very confusing concerning how to communicate with the module
+    for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
+        Setup.Tx[id].ChannelsSource = Setup.Tx[Setup._ConfigId].ChannelsSource;
     }
 #else
     Setup._ConfigId = 0;

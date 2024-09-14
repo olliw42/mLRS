@@ -682,7 +682,7 @@ class tFhssBase
 class tFhss : public tFhssBase
 {
   public:
-    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
+    void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         tFhssBase::Init(fhss->Num, fhss->Seed,
                           fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
@@ -699,7 +699,7 @@ class tFhss : public tFhssBase
 class tFhss
 {
   public:
-    void Init(tFhssGlobalConfig* fhss, tFhssGlobalConfig* fhss2)
+    void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         fhss900MHz.Init(fhss->Num, fhss->Seed,
                           fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,

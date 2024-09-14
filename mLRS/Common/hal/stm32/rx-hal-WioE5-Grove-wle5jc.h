@@ -41,7 +41,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7 Grove plug
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -60,13 +60,13 @@
 //#define UART_RXBUFSIZE            512
 #define OUT_UARTx                 LPUART1 // UART_UARTx is not known yet, so define by hand
 
-#define UARTC_USE_UART1_PB6PB7 // debug // also UART1
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_UART1_PB6PB7 // debug // also UART1
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX12xx & SPI

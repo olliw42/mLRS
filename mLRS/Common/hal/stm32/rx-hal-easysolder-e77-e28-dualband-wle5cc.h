@@ -34,7 +34,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE

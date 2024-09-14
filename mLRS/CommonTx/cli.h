@@ -36,7 +36,7 @@ typedef enum {
 
 // helper, extracts value as string from optstr for parameters of type LIST
 // "50 Hz,31 Hz,19 Hz" etc
-bool _param_get_listval_fromoptstr(char* s, uint8_t param_idx, uint8_t value, uint8_t format)
+bool _param_get_listval_fromoptstr(char* const s, uint8_t param_idx, uint8_t value, uint8_t format)
 {
 int8_t seps[24];
 uint8_t nr, n;
@@ -120,7 +120,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 
 
 // helper, finds index from name
-bool param_get_idx(uint8_t* param_idx, char* name)
+bool param_get_idx(uint8_t* const param_idx, char* const name)
 {
 char s[64];
 
@@ -142,7 +142,7 @@ char s[64];
 
 
 // helper, gets parameter value as formatted string, different formats can be specified
-bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
+bool param_get_val_formattedstr(char* const s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
 {
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_UINT8:
@@ -174,7 +174,7 @@ bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PAR
 
 
 // helper, sets parameter value for integer-valued parameters
-bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_idx)
+bool param_set_val_fromint(bool* const rx_param_changed, int32_t value, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
@@ -218,7 +218,7 @@ bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_
 
 
 // helper, sets parameter value from an input string
-bool param_set_str6val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+bool param_set_str6val(bool* const rx_param_changed, char* const svalue, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
@@ -247,7 +247,7 @@ bool param_set_str6val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
 
 
 // helper, sets parameter value from an input string
-bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
@@ -275,7 +275,7 @@ bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_i
 class tTxCli
 {
   public:
-    void Init(tSerialBase* _comport);
+    void Init(tSerialBase* const _comport);
     void Set(uint8_t new_line_end);
     void Do(void);
     uint8_t Task(void);
@@ -297,9 +297,9 @@ class tTxCli
     void print_frequencies(void);
     void stream(void);
 
-    bool is_cmd(const char* cmd);
-    bool is_cmd_param_set(char* name, char* svalue);
-    bool is_cmd_set_value(const char* cmd, int32_t* value);
+    bool is_cmd(const char* const cmd);
+    bool is_cmd_param_set(char* const name, char* const svalue);
+    bool is_cmd_set_value(const char* const cmd, int32_t* const value);
 
     uint16_t put_cnt;
     void delay_off(void) { put_cnt = 0; }
@@ -331,14 +331,14 @@ class tTxCli
 };
 
 
-void tTxCli::Init(tSerialBase* _comport)
+void tTxCli::Init(tSerialBase* const _comport)
 {
     com = _comport;
 
     initialized = (com != nullptr) ? true : false;
 
-    line_end = CLI_LINE_END_CR;
-    strcpy(ret, "\r");
+    line_end = CLI_LINE_END_CRLF;
+    strcpy(ret, "\r\n");
 
     pos = 0;
     buf[pos] = '\0';
@@ -360,9 +360,9 @@ void tTxCli::Set(uint8_t new_line_end)
     line_end = new_line_end;
 
     switch (line_end) {
-    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
-    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
     case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
+    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
+    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
     }
 }
 
@@ -393,14 +393,14 @@ void tTxCli::clear(void)
 
 
 // cmd;
-bool tTxCli::is_cmd(const char* cmd)
+bool tTxCli::is_cmd(const char* const cmd)
 {
     return (strcmp(buf, cmd) == 0) ? true : false;
 }
 
 
 // name = value or p name
-bool tTxCli::is_cmd_set_value(const char* cmd, int32_t* value)
+bool tTxCli::is_cmd_set_value(const char* const cmd, int32_t* const value)
 {
 char s[64];
 uint8_t n;
@@ -439,7 +439,7 @@ void tTxCli::print_config_id(void)
 
 
 // p name = value or p name
-bool tTxCli::is_cmd_param_set(char* name, char* svalue)
+bool tTxCli::is_cmd_param_set(char* const name, char* const svalue)
 {
 char s[64];
 uint8_t sep, n;

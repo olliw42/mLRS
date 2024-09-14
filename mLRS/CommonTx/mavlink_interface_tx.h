@@ -37,7 +37,7 @@ extern tStats stats;
 class tTxMavlink
 {
   public:
-    void Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port);
+    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
     void Do(void);
     uint8_t Task(void);
     uint8_t VehicleState(void);
@@ -49,8 +49,8 @@ class tTxMavlink
     void flush(void);
 
   private:
-    void send_msg_fifo_link_out(fmav_message_t* msg);
-    void handle_msg_serial_out(fmav_message_t* msg);
+    void send_msg_fifo_link_out(fmav_message_t* const msg);
+    void handle_msg_serial_out(fmav_message_t* const msg);
     void generate_radio_status(void);
     void send_msg_serial_out(void);
 
@@ -100,8 +100,8 @@ class tTxMavlink
     void generate_param_value(uint16_t param_idx);
     void component_init(void);
     void component_do(void);
-    bool component_task(uint8_t* task);
-    void component_handle_msg(fmav_message_t* msg);
+    bool component_task(uint8_t* const task);
+    void component_handle_msg(fmav_message_t* const msg);
 
     uint16_t inject_task;
     uint32_t heartbeat_tlast_ms;
@@ -112,7 +112,7 @@ class tTxMavlink
 };
 
 
-void tTxMavlink::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port)
+void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
@@ -368,7 +368,7 @@ for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1) {}
 }
 
 
-void tTxMavlink::send_msg_fifo_link_out(fmav_message_t* msg)
+void tTxMavlink::send_msg_fifo_link_out(fmav_message_t* const msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
     uint16_t len;
@@ -438,7 +438,7 @@ void tTxMavlink::flush(void)
 // Handle Messages
 //-------------------------------------------------------
 
-void tTxMavlink::handle_msg_serial_out(fmav_message_t* msg)
+void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
 {
     if ((msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) && (msg->compid == MAV_COMP_ID_AUTOPILOT1)) {
         fmav_heartbeat_t payload;
@@ -547,6 +547,7 @@ uint32_t bindphrase_u32;
 // we don't put it in flash but ram, since some pointers need to be modified on init
 fmav_param_entry_t fmav_param_list[] = {
     { (uint8_t*)&(pstore_u8), MAV_PARAM_TYPE_UINT8, "PSTORE" },
+    { (uint8_t*)&(Setup._ConfigId), MAV_PARAM_TYPE_UINT8, "CONFIG ID" }, // we don't use config_id class here
     { (uint32_t*)&(bindphrase_u32), MAV_PARAM_TYPE_UINT32, "BIND_PHRASE_U32" },
     #define X(p,t, n,mn, d,mi,ma,u, s, amp) { \
             .ptr = (t*)&(p), \
@@ -559,10 +560,10 @@ fmav_param_entry_t fmav_param_list[] = {
 };
 
 #define MAV_PARAM_PSTORE_IDX      0
-#define MAV_PARAM_BINDPHRASE_IDX  1
+#define MAV_PARAM_BINDPHRASE_IDX  2
 
 #define FASTMAVLINK_PARAM_NUM     sizeof(fmav_param_list)/sizeof(fmav_param_entry_t)
-STATIC_ASSERT(FASTMAVLINK_PARAM_NUM == SETUP_PARAMETER_NUM + 1, "FASTMAVLINK_PARAM_NUM missmatch")
+STATIC_ASSERT(FASTMAVLINK_PARAM_NUM == SETUP_PARAMETER_NUM + MAV_PARAM_BINDPHRASE_IDX, "FASTMAVLINK_PARAM_NUM missmatch")
 #include "../Common/mavlink/out/lib/fastmavlink_parameters.h"
 
 
@@ -631,7 +632,7 @@ void tTxMavlink::generate_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint
 void tTxMavlink::generate_param_value(uint16_t param_idx)
 {
     // if BIND_PHRASE_U32, then do special handling, get bind_phrase_u32 from bind_phrase
-    if (param_idx == 0) {
+    if (param_idx == MAV_PARAM_BINDPHRASE_IDX) {
         bindphrase_u32 = u32_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase);
     }
 
@@ -646,7 +647,7 @@ void tTxMavlink::generate_param_value(uint16_t param_idx)
 }
 
 
-void tTxMavlink::component_handle_msg(fmav_message_t* msg)
+void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) return;
 
@@ -687,7 +688,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* msg)
                     Setup.Rx.SerialLinkMode = SERIAL_LINK_MODE_MAVLINK;
                 }
                 // if BIND_PHRASE_U32 do special handling
-                if (param_idx == 0) {
+                if (param_idx == MAV_PARAM_BINDPHRASE_IDX) {
                     bindphrase_from_u32(Setup.Common[Config.ConfigId].BindPhrase, bindphrase_u32);
                 }
                 // if PSTORE invoke paramstore
@@ -808,7 +809,7 @@ void tTxMavlink::component_do(void)
 }
 
 
-bool tTxMavlink::component_task(uint8_t* task)
+bool tTxMavlink::component_task(uint8_t* const task)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) {
         *task = TX_TASK_NONE;
@@ -858,8 +859,11 @@ void tTxMavlink::component_init(void)
 
     pstore_u8 = 0;
     bindphrase_u32 = u32_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase);
-    for (uint8_t idx = MAV_PARAM_BINDPHRASE_IDX + 1; idx < SETUP_PARAMETER_NUM; idx++) {
-        fmav_param_list[idx].ptr = SetupParameterPtr(idx);
+    // set pointers, taking into account ConfigId
+    // idx points into SetupParameter[], not fmav_param_list
+    // all extra parameters need to come before bind phrase
+    for (uint8_t idx = MAV_PARAM_BINDPHRASE_IDX; idx < SETUP_PARAMETER_NUM; idx++) {
+        fmav_param_list[MAV_PARAM_BINDPHRASE_IDX + idx].ptr = SetupParameterPtr(idx);
     }
 }
 

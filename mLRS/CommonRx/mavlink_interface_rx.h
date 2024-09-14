@@ -24,6 +24,10 @@ extern bool connected(void);
 extern tStats stats;
 
 
+//-------------------------------------------------------
+// RxMavlink class
+//-------------------------------------------------------
+
 #define RADIO_LINK_SYSTEM_ID          51 // SiK uses 51, 68
 #define GCS_SYSTEM_ID                 255 // default of MissionPlanner, QGC
 #define REBOOT_SHUTDOWN_MAGIC         1234321
@@ -38,12 +42,34 @@ extern tStats stats;
 #define MAVLINK_OPT_FAKE_PARAMFTP     2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
+class tRxAutoPilot
+{
+  public:
+    void Init(void);
+    void Do(void);
+    bool RequestAutopilotVersion(void);
+    bool HasMFtpFlowControl(void);
+
+    void handle_heartbeat(fmav_message_t* const msg);
+    void handle_autopilot_version(fmav_message_t* const msg);
+
+    uint8_t sysid;
+  private:
+    uint8_t autopilot; // this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
+    uint32_t flight_sw_version;
+    uint32_t version;
+    uint32_t heartbeat_tlast_ms;
+    uint32_t autopilot_version_request_tlast_ms;
+    bool request_autopilot_version;
+};
+
+
 class tRxMavlink
 {
   public:
     void Init(void);
     void Do(void);
-    void SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe);
+    void SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe);
     void FrameLost(void);
 
     void putc(char c);
@@ -113,8 +139,13 @@ class tRxMavlink
         uint32_t texe_ms;
     } cmd_ack;
 
-    void handle_msg(fmav_message_t* msg);
+    void handle_msg(fmav_message_t* const msg); // handle messages from the fc
+    void handle_cmd(fmav_message_t* const msg);
     void generate_cmd_ack(void);
+
+    // to handle autopilot detection
+    tRxAutoPilot autopilot;
+    void generate_autopilot_version_request(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -155,13 +186,15 @@ void tRxMavlink::Init(void)
     cmd_ack.cmd_src_compid = 0;
     cmd_ack.state = 0;
     cmd_ack.texe_ms = 0;
+
+    autopilot.Init();
 }
 
 
 // rc_out is the rc data stored in out class
 // after handling of channel order and failsafes.
 // Need to take care of failsafe flag however.
-void tRxMavlink::SendRcData(tRcData* rc_out, bool frame_missed, bool failsafe)
+void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
 
@@ -263,6 +296,8 @@ void tRxMavlink::Do(void)
         bytes_link_out_rate_filt.Reset();
     }
 
+    autopilot.Do();
+
     // TODO: either the buffer must be guaranteed to be large, or we need to check filling
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
@@ -317,6 +352,11 @@ void tRxMavlink::Do(void)
         cmd_ack.command = 0;
         cmd_ack.state = 0;
     }
+
+    if (autopilot.RequestAutopilotVersion()) {
+        generate_autopilot_version_request();
+        send_msg_serial_out();
+    }
 }
 
 
@@ -351,29 +391,31 @@ void tRxMavlink::putc(char c)
         fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
 
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
-#if MAVLINK_OPT_FAKE_PARAMFTP > 1
-        bool force_param_list = true;
-        switch (Config.Mode) {
-        case MODE_FLRC_111HZ: force_param_list = (Config.SerialBaudrate > 230400); break; // 230400 bps and lower is ok for mftp
-        case MODE_50HZ:
-        case MODE_FSK_50HZ: force_param_list = (Config.SerialBaudrate > 115200); break; // 115200 bps and lower is ok for mftp
-        case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
-        case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
-        }
-        if (force_param_list)
-#endif
         // if it's a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
         // which will make MissionPlanner (any GCS?) to fallback to normal parameter upload
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_FILE_TRANSFER_PROTOCOL) {
-            uint8_t target_component = msg_serial_out.payload[2];
-            uint8_t opcode = msg_serial_out.payload[6];
-            char* url = (char*)(msg_serial_out.payload + 15);
-            if (((target_component == MAV_COMP_ID_AUTOPILOT1) || (target_component == MAV_COMP_ID_ALL)) &&
-                (opcode == MAVFTP_OPCODE_OpenFileRO)) {
-                if (!strncmp(url, "@PARAM/param.pck", 16)) {
-                    url[1] = url[7] = url[13] = 'x'; // now fake it to "@xARAM/xaram.xck"
-                    fmav_msg_recalculate_crc(&msg_serial_out); // we need to recalculate CRC, requires RESULT_OK
+            bool force_param_list = true;
+#if MAVLINK_OPT_FAKE_PARAMFTP > 1
+            switch (Config.Mode) {
+            case MODE_FLRC_111HZ: force_param_list = (Config.SerialBaudrate > 230400); break; // 230400 bps and lower is ok for mftp
+            case MODE_50HZ:
+            case MODE_FSK_50HZ: force_param_list = (Config.SerialBaudrate > 115200); break; // 115200 bps and lower is ok for mftp
+            case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
+            case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
+            }
+            if (autopilot.HasMFtpFlowControl()) force_param_list = false; // mftp is flow controlled, so always ok
+#endif
+            if (force_param_list) {
+                uint8_t target_component = msg_serial_out.payload[2];
+                uint8_t opcode = msg_serial_out.payload[6];
+                char* url = (char*)(msg_serial_out.payload + 15);
+                if (((target_component == MAV_COMP_ID_AUTOPILOT1) || (target_component == MAV_COMP_ID_ALL)) &&
+                    (opcode == MAVFTP_OPCODE_OpenFileRO)) {
+                    if (!strncmp(url, "@PARAM/param.pck", 16)) {
+                        url[1] = url[7] = url[13] = 'x'; // now fake it to "@xARAM/xaram.xck"
+                        fmav_msg_recalculate_crc(&msg_serial_out); // we need to recalculate CRC, requires RESULT_OK
+                    }
                 }
             }
         }
@@ -900,12 +942,52 @@ void tRxMavlink::generate_cmd_ack(void)
 }
 
 
-void tRxMavlink::handle_msg(fmav_message_t* msg)
+void tRxMavlink::generate_autopilot_version_request(void)
+{
+    fmav_msg_command_long_pack(
+        &msg_serial_out,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+        autopilot.sysid, MAV_COMP_ID_AUTOPILOT1,
+        MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES, // command
+        0,
+        1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, // float param1 - param7
+        //uint8_t target_system, uint8_t target_component,
+        //uint16_t command, uint8_t confirmation,
+        //float param1, float param2, float param3, float param4, float param5, float param6, float param7,
+        &status_serial_out);
+}
+
+
+// handle messages from the fc
+void tRxMavlink::handle_msg(fmav_message_t* const msg)
+{
+#ifdef USE_FEATURE_MAVLINKX
+    switch (msg->msgid) {
+    case FASTMAVLINK_MSG_ID_HEARTBEAT: {
+        if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) break; // we don't do this
+        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from ArduPilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
+        autopilot.handle_heartbeat(msg);
+        break; }
+
+    case FASTMAVLINK_MSG_ID_AUTOPILOT_VERSION: {
+        // we currently do this only if we expect an ArduPilot, TODO: PX4
+        if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) break;
+        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from ArduPilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
+        autopilot.handle_autopilot_version(msg);
+        break; }
+
+    case FASTMAVLINK_MSG_ID_COMMAND_LONG:
+        handle_cmd(msg);
+        break;
+    }
+#endif
+}
+
+
+void tRxMavlink::handle_cmd(fmav_message_t* const msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
 fmav_command_long_t payload;
-
-    if (msg->msgid != FASTMAVLINK_MSG_ID_COMMAND_LONG) return;
 
     fmav_msg_command_long_decode(&payload, msg);
 
@@ -951,6 +1033,118 @@ fmav_command_long_t payload;
     }
 #endif
 }
+
+
+//-------------------------------------------------------
+// AutoPilot class implementation
+//-------------------------------------------------------
+// handle_msg() is never called if MAVLINKX is not enabled
+// so doesn't make any sense then
+
+void tRxAutoPilot::Init(void)
+{
+    sysid = 0; // 0 indicates autopilot not detected
+    autopilot = UINT8_MAX;
+    flight_sw_version = 0; // 0 indicates not known
+
+    version = 0;
+    heartbeat_tlast_ms = 0;
+    autopilot_version_request_tlast_ms = 0;
+    request_autopilot_version = false;
+}
+
+
+#ifdef USE_FEATURE_MAVLINKX
+
+void tRxAutoPilot::Do(void)
+{
+    // we currently do this only if we expect an ArduPilot, TODO: PX4
+    if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) return;
+
+    uint32_t tnow_ms = millis32(); // we need to get fresh time, since a HEARTBEAT might be received in the main Do loop
+
+    if (sysid && ((tnow_ms - heartbeat_tlast_ms) > 2500)) { // we lost connection to our fc
+//dbg.puts("\nlost heartbeat");
+        Init();
+        return;
+    }
+
+    // we want to request for AUTOPILOT_VERSION when
+    // sysid > 0 (which means we see a fc) and
+    // flight_sw_version == 0 (which means we don't know the version)
+    if (sysid && !flight_sw_version) {
+        if ((tnow_ms - autopilot_version_request_tlast_ms) > 250) {
+            autopilot_version_request_tlast_ms = tnow_ms;
+            request_autopilot_version =  true;
+        }
+    }
+}
+
+
+bool tRxAutoPilot::RequestAutopilotVersion(void)
+{
+    if (request_autopilot_version) {
+        request_autopilot_version = false;
+//dbg.puts("\nsend request");
+        return true;
+    }
+    return false;
+}
+
+
+bool tRxAutoPilot::HasMFtpFlowControl(void)
+{
+    if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
+
+    return (version >= 040600);
+}
+
+
+void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
+{
+    fmav_heartbeat_t payload;
+    fmav_msg_heartbeat_decode(&payload, msg);
+
+    // check if it could be the heartbeat from ArduPilot
+    // we also could check if type is proper, but this is very daunting, so don't do
+    if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
+//if (!sysid) { dbg.puts("\ngot heartbeat"); }
+        sysid = msg->sysid;
+        heartbeat_tlast_ms = millis32();
+        autopilot = payload.autopilot;
+    }
+}
+
+
+void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
+{
+    if (!sysid) return; // we don't have seen an autopilot
+
+    if (msg->sysid != sysid) return; // not our autopilot
+
+    fmav_autopilot_version_t payload;
+    fmav_msg_autopilot_version_decode(&payload, msg);
+
+    flight_sw_version = payload.flight_sw_version;
+
+    uint32_t maj = (flight_sw_version & 0xFF000000) >> 24;
+    uint32_t min = (flight_sw_version & 0x00FF0000) >> 16;
+    uint32_t pat = (flight_sw_version & 0x0000FF00) >> 8;
+    version = maj * 10000 + min * 100 + pat;
+
+//dbg.puts("\ngot version ");dbg.puts(u32toHEX_s(flight_sw_version));
+//dbg.puts(" = ");dbg.puts(u32toBCD_s(version));
+}
+
+#else
+
+void tRxAutoPilot::Do(void) {}
+bool tRxAutoPilot::RequestAutopilotVersion(void) { return false; }
+bool tRxAutoPilot::HasMFtpFlowControl(void) { return false; }
+void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg) {}
+void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg) {}
+
+#endif // USE_FEATURE_MAVLINKX
 
 
 #endif // MAVLINK_INTERFACE_RX_H

@@ -35,7 +35,7 @@ typedef enum {
 uint16_t fail_dbg_cnt;
 
 
-void fail_do_dbg(tSerialBase* dbg, const char* msg)
+void fail_do_dbg(tSerialBase* const dbg, const char* const msg)
 {
     fail_dbg_cnt++;
     if (fail_dbg_cnt > 80) {
@@ -46,7 +46,7 @@ void fail_do_dbg(tSerialBase* dbg, const char* msg)
 }
 
 
-void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
+void fail(tSerialBase* const dbg, uint8_t led_pattern, const char* const msg)
 {
     dbg->puts("\n");
     dbg->puts(msg);

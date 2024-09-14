@@ -28,7 +28,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -46,13 +46,13 @@
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
 
-#define UARTC_USE_LPUART1_PA2PA3 // debug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_LPUART1_PA2PA3 // debug
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
@@ -91,39 +91,7 @@ void out_set_inverted(void)
 
 
 //-- POWER
-// SX126X power setting can vary from -9 .. 22 for -9 dBm ... 22 dBm
-#include "../../setup_types.h"
 
-void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
-{
-    if (power_dbm >= POWER_30_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
-        *actual_power_dbm = 30;
-    } else
-    if (power_dbm >= POWER_27_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -6 : -3;
-        *actual_power_dbm = 27;
-    } else
-    if (power_dbm >= POWER_24_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -6;
-        *actual_power_dbm = 24;
-    } else
-    if (power_dbm >= POWER_22_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -8;
-        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
-    } else {
-        *sx_power = -9;
-        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 21;
-    }
-}
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_22_DBM, .mW = 150 },
-    { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
-    { .dbm = POWER_30_DBM, .mW = 1000 },
-};
+#define POWER_PA_MATEK_MR900_30
+#include "../hal-power-pa.h"
 

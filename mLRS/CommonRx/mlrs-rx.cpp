@@ -18,11 +18,10 @@
 #define CLOCK_IRQ_PRIORITY          10
 #define UARTB_IRQ_PRIORITY          11 // serial
 #define UART_IRQ_PRIORITY           12 // out pin
-#define UARTC_IRQ_PRIORITY          11 // debug
+#define UARTF_IRQ_PRIORITY          11 // debug
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13 // on single spi diversity systems must be equal to DIO priority
 #define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
-#define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
@@ -45,7 +44,7 @@
 #ifdef DEVICE_HAS_DEBUG_SWUART
 #include "../Common/esp-lib/esp-uart-sw.h"
 #else
-#include "../Common/esp-lib/esp-uartc.h"
+#include "../Common/esp-lib/esp-uartf.h"
 #endif
 #endif
 #include "../Common/hal/esp-timer.h"
@@ -77,7 +76,7 @@
 #ifdef DEVICE_HAS_DEBUG_SWUART
 #include "../modules/stm32ll-lib/src/stdstm32-uart-sw.h"
 #else
-#include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
+#include "../modules/stm32ll-lib/src/stdstm32-uartf.h"
 #endif
 #endif
 #ifdef USE_I2C
@@ -112,12 +111,16 @@ void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
-// MAVLink
+// MAVLink & MSP
 //-------------------------------------------------------
 
 #include "mavlink_interface_rx.h"
 
 tRxMavlink mavlink;
+
+#include "msp_interface_rx.h"
+
+tRxMsp msp;
 
 #include "sx_serial_interface_rx.h"
 
@@ -234,7 +237,7 @@ void link_task_reset(void)
 }
 
 
-void process_received_txcmdframe(tTxFrame* frame)
+void process_received_txcmdframe(tTxFrame* const frame)
 {
 tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 
@@ -261,7 +264,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
 }
 
 
-void pack_rxcmdframe(tRxFrame* frame, tFrameStats* frame_stats)
+void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
     switch (link_task) {
     case LINK_TASK_RX_SEND_RX_SETUPDATA:
@@ -344,7 +347,7 @@ uint8_t payload_len = 0;
 }
 
 
-void process_received_frame(bool do_payload, tTxFrame* frame)
+void process_received_frame(bool do_payload, tTxFrame* const frame)
 {
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
@@ -563,6 +566,7 @@ RESTARTCONTROLLER
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
+    msp.Init();
     sx_serial.Init();
     fan.SetPower(sx.RfPower_dbm());
 
@@ -585,6 +589,7 @@ INITCONTROLLER_END
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
         if (!connect_occured_once) bind.AutoBind();
+        bind.Tick_ms();
         fan.Tick_ms();
 
         if (!tick_1hz) {
@@ -755,6 +760,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
         if (!valid_frame_received) {
             mavlink.FrameLost();
+            msp.FrameLost();
         }
 
         if (valid_frame_received) { // valid frame received
@@ -872,21 +878,24 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), stats.GetLQ_rc());
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
+            msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
                 out.SendRcData(&rcData, true, true, RSSI_MIN, 0);
                 out.SendLinkStatisticsDisconnected();
                 mavlink.SendRcData(out.GetRcDataPtr(), true, true);
+                msp.SendRcData(out.GetRcDataPtr(), true, true);
             }
         }
     }//end of if(doPostReceive2)
 
     out.Do();
 
-    //-- Do MAVLink
+    //-- Do MAVLink & MSP
 
     mavlink.Do();
+    msp.Do();
 
     //-- Store parameters
 

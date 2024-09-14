@@ -4,7 +4,7 @@
 
 The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides bidirectional serial connection combined with full remote control.
 
-The 'm' in the project name alludes to 'Mavlink', as it will have features which optimizes performance for Mavlink systems. However, it always will also provide a transparent serial link and hence will be of wider use and not be limited to Mavlink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to a minimum, at the cost of the resulting compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
+The 'm' in the project name alludes to 'MAVLink', as it has features which optimizes performance for MAVLink systems. However, it always will also provide a transparent serial link and hence will be of wider use and not be limited to MAVLink systems only. The 'LR' in the project name alludes to 'long range', which however should not be understood in terms of an absolute range, like 100 km, but - of course - as the best possible range under the given conditions. Physical laws simply say that the higher the data rate the shorter the range. So, mLRS cannot compete range-wise with systems which achieve their range by reducing data rate to a minimum, at the cost of the resulting compromises. The goal of mLRS is to achieve a high range under the condition of a relatively high data rate. 
 
 Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
 
@@ -17,7 +17,7 @@ However, while all these systems are truely excellent and achieve their goals, a
 - full-duplex serial link with sufficient data rate
 - plenty full-size RC channels
 - open source
-- rich features and outstanding performance for Mavlink systems
+- rich features and outstanding performance for MAVLink systems
 
 The mLRS project fills this gap.
 
@@ -62,6 +62,7 @@ Further features:
 - technologies introduced by mLRS:
     - innovative flow control for MAVLink for smoother and more robust data flow 
     - MavlinkX for reduced packet loss and data compression
+- support of MSP and optimizations for INAV autopilot systems. Enables using the INAV telemetry widget, in-flight connection to the INAV configurator, supports MSP-RC, and introduces MspX for reduced packet loss.
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
@@ -71,7 +72,9 @@ Further features:
 
 Discussion thread at rcgroups: https://www.rcgroups.com/forums/showthread.php?4037943-mLRS-Lora-based-Mavlink-oriented-open-source-radio-link
 
-Discord server by LELE2022: https://discord.gg/vwjzCD6ws5
+Discord server: https://discord.gg/vwjzCD6ws5
+
+Facebook group: https://www.facebook.com/groups/mlrslink/
 
 ## Range ##
 
@@ -89,7 +92,7 @@ The FLRC and FSK modes are not intended for long range.
 
 ## Hardware ##
 
-The STM32 chipsets were chosen as main platform, and a good number of STM32 based devices are supported. The widely available ExpressLRS hardware, which uses ESP chipsets, is not ideal for mLRS, but also ExpressLRS devices are supported.
+The STM32 chipsets were chosen as main platform, and a good number of STM32 based devices are supported. The widely available ExpressLRS hardware, which uses ESP chipsets, is not ideal for mLRS, but also a good number of ExpressLRS devices are supported.
 
 The code currently supports:
 - MatekSys mLRS boards (2.4 GHz, 868/915 MHz)
@@ -102,17 +105,19 @@ The code currently supports:
 
 MatekSys offers a good selection of high quality mLRS boards, which are currently simply the best option available. They are specifically designed for mLRS exploiting its full potential. They support the 2.4 GHz and 868/915 MHz frequency bands, offer up to 1 W transmit power, and of course employ TCXOs. Furthermore, they use a comparatively beefy STM32 MCU, and are also very well suited for tinkering since all usable pins are broken out and easily accessible.
 
-In the 915/868 MHz range, the Frsky R9 system and ExpressLRS receivers provide a relatively simple and readily available entry into mLRS. The Frsky R9M transmitter module makes a reasonable mLRS Tx module offering up to 1 W (the R9M Lite Pro cannot be used as transmitter). The R9 receivers are good options but provide low transmission power (50 mW). This can be mitigated by using a R9M Lite Pro (or R9M) as receiver (1 W). The various ExpressLRS 900 MHz receivers are often better options; some of them provide up to 500 mW transmission power, and some of them are cheaply available. They are also easier to flash. The combination of a Frsky R9M transmitter module and a ExpressLRS receiver can be a reasonable option in the 900 MHz range. The downside of all these gear is that they only support the 19 Hz mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/master/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
+In the 915/868 MHz range, the Frsky R9 system and ExpressLRS receivers provide a readily available entry into mLRS. The Frsky R9M transmitter module makes a reasonable mLRS Tx module offering up to 1 W (the R9M Lite Pro cannot be used as transmitter). The R9 receivers are good options but provide low transmission power (50 mW). This can be mitigated by using a R9M Lite Pro or R9M as receiver (1 W). The various ExpressLRS 900 MHz receivers are often better options; some of them provide up to 500 mW transmission power, some of them are cheaply available, and they are also easier to flash. The combination of a Frsky R9M transmitter module and a ExpressLRS receiver can be a reasonable option in the 900 MHz range. The downside of all these gear is that they only support the 19 Hz mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/master/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
 
-The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available and reasonable options for entering mLRS. The "easy-to-solder" board, which uses an EByte E77 module, is a simple DIY option for building mLRS receivers and transmitters. It can also be used for building mLRS full diversity devices, as well as dual-band devices working e.g. in the 868/915 MHZ and 2.4 GHz ranges. All these boards are based on the STM32WL5E chip and thus provide all advantages of the SX126x chipset, such as the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges. 
+The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are also readily available and reasonable options for entering mLRS. The "easy-to-solder" board, which uses an EByte E77 module, is a simple DIY option for building mLRS receivers and transmitters. It can also be used for building mLRS full diversity devices, as well as dual-band devices working simultaneously in e.g. the 868/915 MHZ and 2.4 GHz ranges. All these boards are based on the STM32WL5E chip and thus provide all advantages of the SX126x chipset, such as the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges. 
 
-In the 2.4 GHz range, the Flysky FRM303 transmitter module excels in its transmit power, but is quite expensive and also somewhat limited feature-wise. mLRS supports using it as transmitter as well as receiver. The ExpressLRS 2.4 GHz receivers can provide up to 100 mW power, and some support full diversity. If the full potential of mLRS is however desired, the MatekSys or DIY options are the way to go. For instance, the DIY options offer the most feature-rich mLRS transmitters available.
+In the 2.4 GHz range, the Flysky FRM303 transmitter module excels by its build quality, but is quite expensive and also limited feature-wise. mLRS supports using it as transmitter as well as receiver. The ExpressLRS 2.4 GHz receivers can provide up to 100 mW power, and some support full diversity. If the full potential of mLRS is however desired, the MatekSys or DIY options are the way to go.
 
 Don't hesitate to join the discussion thread at rcgroups or the discord channel for more details.
 
 ## Firmware: Flashing ##
 
-Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the binary file appropriate for your board into the device (it is not required to install the software for compiling as described in the next chapter or the docs). The mLRS transmitter can then be configured to your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by first binding it to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
+Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the binary file appropriate for your board into the device (it is not required to install the software for compiling as described in the next chapter or the docs). The mLRS transmitter can then be configured to your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
+
+For the devices which are supported, the easiest way to flash can be the [mLRS Web Flasher](https://mlrs.xyz/flash) (currently only DFU mode is supported).
 
 ## Software: Installation Bits and Bops ##
 

@@ -11,7 +11,10 @@
 #pragma once
 
 
-#if (defined DEVICE_HAS_JRPIN5)
+#include "../Common/protocols/msp_protocol.h"
+
+
+#ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
@@ -47,28 +50,29 @@ class tTxCrsf : public tPin5BridgeBase
 {
   public:
     void Init(bool enable_flag);
-    bool ChannelsUpdated(tRcData* rc);
-    bool TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms);
+    bool ChannelsUpdated(tRcData* const rc);
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
-    bool CommandReceived(uint8_t* cmd);
+    bool CommandReceived(uint8_t* const cmd);
     uint8_t* GetPayloadPtr(void);
     uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
 
-    void TelemetryHandleMavlinkMsg(fmav_message_t* msg);
+    void TelemetryHandleMavlinkMsg(fmav_message_t* const msg);
+    void TelemetryHandleMspMsg(msp_message_t* const msg);
     void SendTelemetryFrame(void);
 
     void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
 
-    void SendMBridgeFrame(void* payload, const uint8_t payload_len);
+    void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     // helper
-    void send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len);
+    void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
-    uint8_t crc8(const uint8_t* buf);
-    void fill_rcdata(tRcData* rc);
+    uint8_t crc8(const uint8_t* const buf);
+    void fill_rcdata(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -117,19 +121,24 @@ class tTxCrsf : public tPin5BridgeBase
 
     // MAVLink handlers
 
-    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload);
-    void handle_mavlink_msg_battery_status(fmav_battery_status_t* payload);
-    void handle_mavlink_msg_attitude(fmav_attitude_t* payload);
-    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload);
-    void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload);
-    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload);
-    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload);
+    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);
+    void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);
+    void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);
+    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);
+    void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload);
+    void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);
+    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);
 
     uint8_t vehicle_sysid;
 
     // CRSF passthrough telemetry
 
     tPassThrough passthrough;
+
+    // MSP handlers
+
+    int32_t inav_baro_altitude; // needed to make INAV happy
+    uint16_t msp_inav_status_sensor_status;
 };
 
 tTxCrsf crsf;
@@ -237,7 +246,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
 // see design_decissions.h
 
-void tTxCrsf::fill_rcdata(tRcData* rc)
+void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
 tCrsfChannelBuffer buf;
 
@@ -261,7 +270,7 @@ tCrsfChannelBuffer buf;
 }
 
 
-uint8_t tTxCrsf::crc8(const uint8_t* buf)
+uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 {
     return crsf_crc8_update(0, &(buf[2]), buf[1] - 1);
 }
@@ -301,6 +310,9 @@ void tTxCrsf::Init(bool enable_flag)
     vehicle_sysid = 0;
     passthrough.Init();
 
+    inav_baro_altitude = 0;
+    msp_inav_status_sensor_status = 0;
+
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
     uart_tc_callback_ptr = &crsf_uart_tc_callback;
 
@@ -309,7 +321,7 @@ void tTxCrsf::Init(bool enable_flag)
 
 
 // polled in main loop
-bool tTxCrsf::ChannelsUpdated(tRcData* rc)
+bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
@@ -328,7 +340,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* rc)
 
 
 // polled in main loop
-bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
+bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
 
@@ -374,7 +386,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* task, uint16_t frame_rate_ms)
 
 
 // polled in main loop
-bool tTxCrsf::CommandReceived(uint8_t* cmd)
+bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 {
     if (!enabled) return false;
 
@@ -420,7 +432,7 @@ uint8_t tTxCrsf::GetCmdModelId(void)
 }
 
 
-void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
+void tTxCrsf::SendMBridgeFrame(void* const payload, uint8_t payload_len)
 {
     send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, payload, payload_len);
 }
@@ -429,7 +441,7 @@ void tTxCrsf::SendMBridgeFrame(void* payload, const uint8_t payload_len)
 //-------------------------------------------------------
 // helper
 
-void tTxCrsf::send_frame(const uint8_t frame_id, void* payload, const uint8_t payload_len)
+void tTxCrsf::send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len)
 {
     tx_frame[0] = CRSF_ADDRESS_RADIO; // correct? OpenTx accepts CRSF_ADDRESS_RADIO or CRSF_OPENTX_SYNC, so correct
     tx_frame[1] = (4-2) + payload_len;
@@ -523,7 +535,7 @@ void tTxCrsf::SendTelemetryFrame(void)
 #define CRSF_REV_U32(x)  __REV(x)
 
 
-void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* payload)
+void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload)
 {
     memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
 
@@ -557,7 +569,7 @@ int32_t mav_battery_voltage(fmav_battery_status_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
+void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload)
 {
     if (payload->id != 0) return;
 
@@ -573,7 +585,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* payload)
+void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* const payload)
 {
     attitude.pitch = CRSF_REV_I16(10000.0f * payload->pitch);
     attitude.roll = CRSF_REV_I16(10000.0f * payload->roll);
@@ -582,19 +594,19 @@ void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* payload)
 }
 
 
-void tTxCrsf::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* payload)
+void tTxCrsf::handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload)
 {
     gps_raw_int_sat = payload->satellites_visible;
 }
 
 
-void tTxCrsf::handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* payload)
+void tTxCrsf::handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload)
 {
     gps2_raw_sat = payload->satellites_visible;
 }
 
 
-void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* payload)
+void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload)
 {
     gps.latitude = CRSF_REV_U32(payload->lat);
     gps.longitude = CRSF_REV_U32(payload->lon);
@@ -626,7 +638,7 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
 }
 
 
-void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
+void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload)
 {
     vfr_hud_groundspd_mps = payload->groundspeed;
 
@@ -636,7 +648,7 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* payload)
 
 
 // called by MAVLink interface, when a MAVLink frame has been received
-void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
+void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
 {
     if (msg->sysid == 0) return; // this can't be anything meaningful
 
@@ -663,23 +675,10 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
 
     // these are for CRSF telemetry, some are also for passthrough
 
-    case FASTMAVLINK_MSG_ID_FRSKY_PASSTHROUGH_ARRAY: {
-        fmav_frsky_passthrough_array_t payload;
-        fmav_msg_frsky_passthrough_array_decode(&payload, msg);
-        passthrough.handle_mavlink_msg_passthrough_array(&payload);
-        }break;
-
-    case FASTMAVLINK_MSG_ID_TUNNEL: {
-        fmav_tunnel_t payload;
-        fmav_msg_tunnel_decode(&payload, msg);
-        passthrough.handle_mavlink_msg_passthrough_array_tunnel(&payload);
-        }break;
-
     case FASTMAVLINK_MSG_ID_HEARTBEAT: {
         fmav_heartbeat_t payload;
         fmav_msg_heartbeat_decode(&payload, msg);
         handle_mavlink_msg_heartbeat(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_heartbeat(&payload);
         }break;
 
@@ -687,7 +686,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_battery_status_t payload;
         fmav_msg_battery_status_decode(&payload, msg);
         handle_mavlink_msg_battery_status(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_battery_status(&payload);
         }break;
 
@@ -695,7 +693,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_attitude_t payload;
         fmav_msg_attitude_decode(&payload, msg);
         handle_mavlink_msg_attitude(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_attitude(&payload);
         }break;
 
@@ -703,7 +700,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_gps_raw_int_t payload;
         fmav_msg_gps_raw_int_decode(&payload, msg);
         handle_mavlink_msg_gps_raw_int(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_gps_raw_int(&payload);
         }break;
 
@@ -717,7 +713,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_vfr_hud_t payload;
         fmav_msg_vfr_hud_decode(&payload, msg);
         handle_mavlink_msg_vfr_hud(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_vfr_hud(&payload);
         }break;
 
@@ -725,82 +720,167 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* msg)
         fmav_global_position_int_t payload;
         fmav_msg_global_position_int_decode(&payload, msg);
         handle_mavlink_msg_global_position_int(&payload);
-        if (passthrough.passthrough_array_is_receiving) break;
         passthrough.handle_mavlink_msg_global_position_int(&payload);
         }break;
 
     // these are for passthrough only
 
     case FASTMAVLINK_MSG_ID_SYS_STATUS: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_sys_status_t payload;
         fmav_msg_sys_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_sys_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RAW_IMU: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_raw_imu_t payload;
         fmav_msg_raw_imu_decode(&payload, msg);
         passthrough.handle_mavlink_msg_raw_imu(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_MISSION_CURRENT: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_mission_current_t payload;
         fmav_msg_mission_current_decode(&payload, msg);
         passthrough.handle_mavlink_msg_mission_current(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_nav_controller_output_t payload;
         fmav_msg_nav_controller_output_decode(&payload, msg);
         passthrough.handle_mavlink_msg_nav_controller_output(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_TERRAIN_REPORT: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_terrain_report_t payload;
         fmav_msg_terrain_report_decode(&payload, msg);
         passthrough.handle_mavlink_msg_terrain_report(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_FENCE_STATUS: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_fence_status_t payload;
         fmav_msg_fence_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_fence_status(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RANGEFINDER: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_rangefinder_t payload;
         fmav_msg_rangefinder_decode(&payload, msg);
         passthrough.handle_mavlink_msg_rangefinder(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RPM: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_rpm_t payload;
         fmav_msg_rpm_decode(&payload, msg);
         passthrough.handle_mavlink_msg_rpm(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_HOME_POSITION: {
-        if (passthrough.passthrough_array_is_receiving) break;
         fmav_home_position_t payload;
         fmav_msg_home_position_decode(&payload, msg);
         passthrough.handle_mavlink_msg_home_position(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_STATUSTEXT: {
-        // NO, we always take it from statustext and ignore passthrough_array if (passthrough.passthrough_array_is_receiving) break;
         fmav_statustext_t payload;
         fmav_msg_statustext_decode(&payload, msg);
         passthrough.handle_mavlink_msg_statustext(&payload);
         }break;
 
+    }
+}
+
+
+//-------------------------------------------------------
+// CRSF Telemetry MSP Handling
+
+#define DEG2RADF  1.745329252E-02f
+
+int16_t wrap180_cdeg(int16_t angle_cdeg)
+{
+    while (angle_cdeg > 1800) { angle_cdeg -= 3600; }
+    while (angle_cdeg < -1800) { angle_cdeg += 3600; }
+    return angle_cdeg;
+}
+
+
+void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
+{
+    // conversions deduced from comparing
+    //  src/main/fc/fc_msp.c for MSP units
+    //  src/main/telemetry/crsf.c for CRSF telemetry units
+
+    // to suppress sensor auto updating
+    // assumes that this function is being called within 1500 ms
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) gps_send_tlast_ms = 0;
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
+
+    switch (msg->function) {
+    case MSP_ATTITUDE: { // tCrsfAttitude, CRSF_FRAME_ID_ATTITUDE = 0x1E
+        tMspAttitude* payload = (tMspAttitude*)(msg->payload);
+        attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->pitch)); // int16_t rad * 1e4  // cdeg -> rad * 1e4
+        attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->roll));   // int16_t rad * 1e4  // cdeg -> rad * 1e4
+        attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * wrap180_cdeg(payload->yaw));    // int16_t rad * 1e4  // deg -> rad * 1e4
+        attitude_updated = true;
+        }break;
+
+    case MSP2_INAV_ANALOG: { // tCrsfBattery, CRSF_FRAME_ID_BATTERY = 0x08
+        tMspInavAnalog* payload = (tMspInavAnalog*)(msg->payload);
+        battery.voltage = CRSF_REV_U16(payload->battery_voltage / 10);  // uint16_t mV * 100      // uint16_t  seems to be 0.01 V
+        battery.current = CRSF_REV_U16(payload->amperage / 10);         // uint16_t mA * 100      // uint16_t  send amperage in 0.01 A steps
+        uint32_t capacity = payload->mAh_drawn;                         // uint8_t[3] mAh         // uint32_t  milliamp hours drawn from battery
+        battery.capacity[0] = (capacity >> 16);
+        battery.capacity[1] = (capacity >> 8);
+        battery.capacity[2] = capacity;
+        battery.remaining = payload->battery_percentage;                // uint8_t percent        // uint8_t
+        battery_updated = true;
+        }break;
+
+    case MSP_RAW_GPS: { // tCrsfGps, CRSF_FRAME_ID_GPS = 0x02
+        if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) break;
+        tMspRawGps* payload = (tMspRawGps*)(msg->payload);
+        gps.latitude = CRSF_REV_U32(payload->lat);                    // int32_t degree / 1e7           // uint32_t  1 / 10 000 000 deg
+        gps.longitude = CRSF_REV_U32(payload->lon);                   // int32_t degree / 1e7           // uint32_t 1 / 10 000 000 deg
+        gps.groundspeed = CRSF_REV_U16((payload->ground_speed * 36 + 50) / 100);  // uint16_t km/h / 100            // uint16_t  cm/s
+        gps.gps_heading = CRSF_REV_U16(payload->ground_course * 10);  // uint16_t degree / 100          // uint16_t  degree*10
+        // INAV wants the baro alt in the gps alt field
+        //gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
+        gps.altitude = CRSF_REV_U16(inav_baro_altitude / 100 + 1000);
+        gps.satellites = payload->numSat;                             // uint8_t                        // uint8_t
+        gps_updated = true;
+        }break;
+
+    case MSP_ALTITUDE: {
+        tMspAltitude* payload = (tMspAltitude*)(msg->payload);
+        // tCrsfVario, CRSF_FRAME_ID_VARIO = 0x07
+        vario.climb_rate = CRSF_REV_I16(payload->estimated_velocity_z);   // int16_t cm/s    // int16_t  cm/s
+        vario_updated = true;
+        // tCrsfBaroAltitude, CRSF_FRAME_ID_BARO_ALTITUDE = 0x09
+        if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO)) {
+            int32_t alt = payload->baro_altitude / 10 + 10000; // uint32_t seems to be cm, convert to dm - 1000m
+            if (alt < 0) alt = 0;
+            if (alt > 0x7FFF) alt = 0x7FFF; // 0x7FFF = 32767
+            baro_altitude.altitude = CRSF_REV_U16(alt); // uint16_t dm -1000m if 0x8000 not set
+            // INAV wants the baro alt in the gps alt field
+            // so we store the baro altitude, and tell that gps is updated
+            //baro_altitude_updated = true;
+            inav_baro_altitude = payload->baro_altitude;
+            gps_updated = true;
+        }
+        }break;
+
+    case MSP2_INAV_STATUS: {
+        tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
+        // report it
+        msp_inav_status_sensor_status = payload->sensor_status;
+        }break;
+
+    case MSPX_STATUS: {
+        uint32_t flight_mode = *(uint32_t*)(msg->payload);
+        inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
+        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
+            strcat(flightmode.flight_mode, "*");
+        }
+        flightmode_updated = true;
+        }break;
     }
 }
 
@@ -882,11 +962,12 @@ class tTxCrsfDummy
 {
   public:
     void Init(bool enable_flag) {}
-    bool Update(tRcData* rc) { return false;}
+    bool Update(tRcData* const rc) { return false;}
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
-    bool TelemetryUpdate(uint8_t* packet_idx) { return false; }
-    void TelemetryHandleMavlinkMsg(fmav_message_t* msg) {}
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
+    void TelemetryHandleMavlinkMsg(fmav_message_t* const msg) {}
+    void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsTx(void) {}
@@ -895,7 +976,7 @@ class tTxCrsfDummy
 
 tTxCrsfDummy crsf;
 
-#endif // if (defined DEVICE_HAS_JRPIN5)
+#endif // ifdef DEVICE_HAS_JRPIN5
 
 #endif // CRSF_INTERFACE_TX_H
 

@@ -19,15 +19,15 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL
-#define UARTC_BAUD                115200
+#define UARTF_USE_SERIAL
+#define UARTF_BAUD                115200
 
 
 //-- SX1: SX12xx & SPI

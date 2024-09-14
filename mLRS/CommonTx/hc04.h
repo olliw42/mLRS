@@ -24,7 +24,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate) {}
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate) {}
     uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterPassthrough(void) {}
@@ -40,7 +40,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate);
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
     uint8_t Task(void);
 
     void EnterPassthrough(void);
@@ -49,7 +49,7 @@ class tTxHc04Bridge
   private:
     void run_autoconfigure(void);
     void passthrough_do(void);
-    void hc04_read(const char* cmd, uint8_t* res, uint8_t* len);
+    void hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(void);
 
     tSerialBase* com;
@@ -60,7 +60,7 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* _comport, tSerialBase* _serialport, uint32_t _serial_baudrate)
+void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate)
 {
     com = _comport;
     ser = _serialport;
@@ -140,7 +140,7 @@ void tTxHc04Bridge::passthrough_do(void)
 }
 
 
-void tTxHc04Bridge::hc04_read(const char* cmd, uint8_t* res, uint8_t* len)
+void tTxHc04Bridge::hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len)
 {
     ser->puts(cmd);
 
