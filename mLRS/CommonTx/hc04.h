@@ -48,9 +48,10 @@ class tTxHc04Bridge
 
   private:
     void run_autoconfigure(void);
-    void passthrough_do(void);
-    void hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
+    bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(void);
+
+    void passthrough_do(void);
 
     tSerialBase* com;
     tSerialBase* ser;
@@ -104,8 +105,7 @@ uint8_t len;
     strcpy(cmd_str, "AT+PIN=");
     strcat(cmd_str, pin_str);
 
-    hc04_read(cmd_str, s, &len);
-    if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) {
+    if (hc04_read(cmd_str, s, &len)) {
         delay_ms(1500);
     }
 }
@@ -140,32 +140,41 @@ void tTxHc04Bridge::passthrough_do(void)
 }
 
 
-void tTxHc04Bridge::hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len)
+#define HC04_DBG(x)
+
+#define HC04_CMDRES_LEN     32
+#define HC04_CMDRES_TMO_MS  100
+
+
+bool tTxHc04Bridge::hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len)
 {
     ser->puts(cmd);
-
+HC04_DBG(dbg.puts("\r\n");dbg.puts(cmd);dbg.puts(" -> ");)
     *len = 0;
     uint32_t tnow_ms = millis32();
     char c = 0x00;
-    while (*len < 32 && (millis32() - tnow_ms) < 100) { // TODO: check timing, to see if this can be shortened
+    while (*len < HC04_CMDRES_LEN && (millis32() - tnow_ms) < HC04_CMDRES_TMO_MS) { // TODO: check timing, to see if this can be shortened
         if (ser->available()) {
             c = ser->getc();
+HC04_DBG(dbg.putc(c);)
             res[(*len)++] = c;
-            if (c == 0x0A) return;
+            if (c == 0x0A) { // '\n'
+HC04_DBG(dbg.puts("!ENDE!");)
+                return (*len > 3 && res[0] == 'O' && res[1] == 'K' && res[*len - 2] == 0x0D); // '\r'
+            }
         }
     }
     *len = 0;
+    return false;
 }
 
 
 void tTxHc04Bridge::hc04_configure(void)
 {
-uint8_t s[34];
+uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;
 
-    hc04_read("AT+NAME=Matek-mLRS-BT", s, &len);
-    if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) {
-    } else {
+    if (!hc04_read("AT+NAME=Matek-mLRS-BT", s, &len)) { // set name
         return;
     }
 
@@ -179,9 +188,7 @@ uint8_t len;
     strcpy(cmd_str, "AT+BAUD=");
     strcat(cmd_str, baud_str);
     strcat(cmd_str, ",N");
-    hc04_read(cmd_str, s, &len); // AT+BAUD seems to send response with "old" baud rate, and only when changes to the new
-    if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) {
-    } else {
+    if (!hc04_read(cmd_str, s, &len)) { // AT+BAUD seems to send response with "old" baud rate, and only when changes to the new
         return;
     }
 
@@ -190,18 +197,19 @@ uint8_t len;
     ser->SetBaudRate(ser_baud);
     ser->flush();
 
-    hc04_read("AT", s, &len);
-    if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) { // found !
+    if (hc04_read("AT", s, &len)) { // found !
     }
 }
 
 
 void tTxHc04Bridge::run_autoconfigure(void)
 {
-uint8_t s[34];
+uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;
 
     if (ser == nullptr) return; // we need a serial
+
+    // we assume the HC04 has not gotten data for enough time so it can respond to AT commands
 
     uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
 
@@ -209,8 +217,7 @@ uint8_t len;
         ser->SetBaudRate(bauds[baud_idx]);
         ser->flush();
 
-        hc04_read("AT+NAME=?", s, &len);
-        if (len > 3 && s[0] == 'O' && s[1] == 'K' && s[len-2] == 0x0D) { // found !
+        if (hc04_read("AT+NAME=?", s, &len)) { // found !
             s[len-2] = '\0';
             if (!strcmp((char*)s, "OK+NAME=Matek-mLRS-BT") && bauds[baud_idx] == ser_baud) { // is correct name and baud rate
                 return;
