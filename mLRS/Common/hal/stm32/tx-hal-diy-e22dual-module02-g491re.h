@@ -334,7 +334,6 @@ uint8_t fiveway_read(void)
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
-//    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp is in reset
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // low -> esp is in reset
     gpio_init(ESP_DTR, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
     gpio_init(ESP_RTS, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
