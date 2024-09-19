@@ -272,11 +272,13 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 // CLI class
 //-------------------------------------------------------
 
+#define CLI_LINEND  "\r\n"
+
+
 class tTxCli
 {
   public:
     void Init(tSerialBase* const _comport);
-    void Set(uint8_t new_line_end);
     void Do(void);
     uint8_t Task(void);
     int32_t GetTaskValue(void) { return task_value; }
@@ -309,16 +311,13 @@ class tTxCli
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
-    void putsn(const char* s) { com->puts(s); com->puts(ret); if (put_cnt) put_cnt += strlen(s)+strlen(ret); delay(); }
+    void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); if (put_cnt) put_cnt += strlen(s)+strlen(CLI_LINEND); delay(); }
 
     void print_config_id(void);
 
     tSerialBase* com;
 
     bool initialized;
-
-    uint8_t line_end;
-    char ret[4];
 
     char buf[128];
     uint8_t pos;
@@ -337,9 +336,6 @@ void tTxCli::Init(tSerialBase* const _comport)
 
     initialized = (com != nullptr) ? true : false;
 
-    line_end = CLI_LINE_END_CRLF;
-    strcpy(ret, "\r\n");
-
     pos = 0;
     buf[pos] = '\0';
     tlast_ms = 0;
@@ -350,20 +346,6 @@ void tTxCli::Init(tSerialBase* const _comport)
     state = CLI_STATE_NORMAL;
 
     put_cnt = 0;
-}
-
-
-void tTxCli::Set(uint8_t new_line_end)
-{
-    if (new_line_end == line_end) return;
-
-    line_end = new_line_end;
-
-    switch (line_end) {
-    case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
-    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
-    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
-    }
 }
 
 
@@ -532,7 +514,7 @@ void tTxCli::print_param(uint8_t idx)
         if (except_str_from_bindphrase(except_str, s, Config.FrequencyBand)) puts(except_str);
         }break;
     }
-    puts(ret);
+    putsn("");
 }
 
 

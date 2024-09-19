@@ -252,7 +252,6 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
     Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
-    Setup.Tx[config_id].CliLineEnd = SETUP_TX_CLI_LINE_END;
     Setup.Tx[config_id].MavlinkComponent = SETUP_TX_MAV_COMPONENT;
 
     Setup.Rx.Power = SETUP_RX_POWER;
@@ -383,8 +382,6 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
     TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);
 
-    SANITIZE(Tx[config_id].CliLineEnd, CLI_LINE_END_NUM, SETUP_TX_CLI_LINE_END, CLI_LINE_END_CRLF);
-
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
     // -------------------------------------------------
@@ -434,6 +431,7 @@ void setup_sanitize_config(uint8_t config_id)
     // should be 0xFF'ed
 
     Setup.Tx[config_id].__SerialLinkMode = 0xFF;
+    Setup.Tx[config_id].__CliLineEnd = 0xFF;
     Setup.Rx.__Buzzer = 0xFF;
     Setup.Rx.__RadioStatusMethod = 0xFF;
 

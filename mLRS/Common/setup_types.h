@@ -174,14 +174,6 @@ typedef enum {
 
 
 typedef enum {
-    CLI_LINE_END_CRLF = 0, // changed 12.Aug.24, was CR before
-    CLI_LINE_END_LF,
-    CLI_LINE_END_CR, // changed 12.Aug.24, was CRLF before
-    CLI_LINE_END_NUM,
-} TX_CLI_LINE_END_ENUM;
-
-
-typedef enum {
     BUZZER_OFF = 0,
     BUZZER_LOST_PACKETS,
     BUZZER_RX_LQ,
@@ -289,7 +281,7 @@ typedef struct
     uint8_t __SerialLinkMode; // deprecated, substituted by Rx.SerialLinkMode
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
-    uint8_t CliLineEnd;
+    uint8_t __CliLineEnd; // deprecated
     uint8_t MavlinkComponent;
 
     uint8_t spare[8];

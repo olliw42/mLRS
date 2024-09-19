@@ -197,7 +197,6 @@ tWhileTransmit whileTransmit;
 
 void tWhileTransmit::handle_once(void)
 {
-    cli.Set(Setup.Tx[Config.ConfigId].CliLineEnd);
     cli.Do();
 
 #ifdef USE_DISPLAY
