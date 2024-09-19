@@ -622,11 +622,55 @@ tMBridgeDeviceItem item = {};
 uint8_t param_idx; // next param index to send
 uint8_t param_itemtype_to_send; // count through sending PARAM_ITEM, PARAM_ITEM2, PARAM_ITEM3
 bool param_by_index; // to indicate sending requested by list or by index
+char param_optstr[96]; // is currently limited to 67 max
 
 
 // we have to send (much) more than SETUP_PARAMETER_NUM PARAM_ITEM messages
 // since all parameters need 2 and some even 3 or 4 of them
 // currently it are about 80 for the 36 parameters => 80 x 20ms = 1600 ms
+
+// shorten parameter's option string, as follows:
+// - each not allowed option is replaced by a '-'
+// - keep however option for the current setting (this handles allowed mask = 0)
+void param_get_opt_shortened_str(char* const out, uint8_t param_idx)
+{
+    const char* optstr = SetupParameter[param_idx].optstr;
+    uint16_t allowed_mask = param_get_allowed_mask(param_idx);
+
+    if (SetupParameter[param_idx].type != SETUP_PARAM_TYPE_LIST || allowed_mask == UINT16_MAX) {
+        strcpy(out, optstr);
+        return;
+    }
+
+    uint8_t val = *(int8_t*)SetupParameterPtr(param_idx);
+
+    // we have something like "50 Hz,31 Hz,19 Hz,FLRC,FSK"
+    uint8_t out_pos = 0;
+    char s[24];
+    uint8_t pos = 0;
+    uint8_t opt_i = 0;
+    for (uint8_t n = 0; n < strlen(optstr) + 1; n++) {
+        s[pos++] = optstr[n];
+        if (optstr[n] == ',' || optstr[n] == '\0') {
+            if (opt_i == val || allowed_mask & (1 << opt_i)) { // is current selection or is allowed option, keep it
+                for (uint8_t i = 0; i < pos; i++) out[out_pos++] = s[i];
+            } else {
+                out[out_pos++] = '-';
+                out[out_pos++] = optstr[n]; // finish with ',' or '\0'
+            }
+            opt_i++;
+            pos = 0;
+            if (out_pos > 80) while (1) {} // must not happen
+        }
+    }
+/*
+dbg.puts("\nparam   ");dbg.puts(SetupParameter[param_idx].name);
+dbg.puts("\n  idx   ");dbg.puts(u8toBCD_s(param_idx));
+dbg.puts("\n  opt   ");dbg.puts(optstr);
+dbg.puts("\n  mask x");dbg.puts(u16toHEX_s(allowed_mask));
+dbg.puts("\n  val   ");dbg.puts(u8toBCD_s(val));
+dbg.puts("\n->      ");dbg.puts(out);*/
+}
 
 
 void mbridge_start_ParamRequestByIndex(uint8_t idx)
@@ -684,6 +728,8 @@ void mbridge_send_ParamItem(void)
 
         param_itemtype_to_send = 1; // send the 2nd ParamItem in the next call
 
+        param_get_opt_shortened_str(param_optstr, param_idx); // set it for the next items
+
     } else
     if (param_itemtype_to_send == 1) {
         tMBridgeParamItem2 item2 = {};
@@ -701,8 +747,8 @@ void mbridge_send_ParamItem(void)
             } else {
                 item2.allowed_mask = UINT16_MAX;
             }
-            strbufstrcpy(item2.options_21, SetupParameter[param_idx].optstr, 21);
-            if (strlen(SetupParameter[param_idx].optstr) >= 21) item3_needed = true;
+            strbufstrcpy(item2.options_21, param_optstr, 21);
+            if (strlen(param_optstr) >= 21) item3_needed = true;
             break;
         }
 
@@ -721,9 +767,8 @@ void mbridge_send_ParamItem(void)
     if (param_itemtype_to_send == 2) {
         tMBridgeParamItem3 item3 = {};
         item3.index = param_idx;
-        strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21, 23);
-
-        if (strlen(SetupParameter[param_idx].optstr) >= 21+23) item3_needed = true; // we need yet another one
+        strbufstrcpy(item3.options2_23, param_optstr + 21, 23);
+        if (strlen(param_optstr) >= 21+23) item3_needed = true; // we need yet another one
 
         mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
 
@@ -741,7 +786,7 @@ void mbridge_send_ParamItem(void)
     if (param_itemtype_to_send >= 3) {
         tMBridgeParamItem3 item3 = {};
         item3.index = param_idx;
-        strbufstrcpy(item3.options2_23, SetupParameter[param_idx].optstr + 21 + 23, 23);
+        strbufstrcpy(item3.options2_23, param_optstr + 21 + 23, 23);
 
         // we would have to match MAVLink4OpenTx code
         // to avoid this let's play foul: set highest bit of index
