@@ -61,8 +61,8 @@ const rfpower_t rfpower_list[] = {
 #endif
 
 
-//-- SKY68383-11
-#if defined POWER_PA_SKY68383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
+//-- SKY65383-11
+#if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
@@ -80,7 +80,7 @@ const rfpower_t rfpower_list[] = {
 };
 
 #endif
-#if defined POWER2_PA_SKY68383_11 || defined POWER2_PA_MATEK_MR24_30
+#if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30
 #define POWER_PA_DEFINED
 
 #define POWER2_GAIN_DBM           31 // gain of a PA stage if present
