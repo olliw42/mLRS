@@ -29,11 +29,16 @@ void setup_configure_metadata(void)
     SetupMetaData = {};
 
     //-- FrequencyBand: "2.4,915 FCC,868,433,70,866 IN"
-#if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    // DUALBAND!
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+  // DUALBAND 2.4 GHz & 868/915 MHz !
+  #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
-#elif defined FREQUENCY_BAND_2P4_GHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000001; // only 2.4 GHz, not editable
+  #endif
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+  // DUALBAND 868/915 MHz & 433 MHz !
+  #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+  #endif
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b011110; // 915 FCC, 868, 433, 70
@@ -43,33 +48,37 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
 #elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b011000; // 433, 70
+#elif defined FREQUENCY_BAND_2P4_GHZ
+    SetupMetaData.FrequencyBand_allowed_mask = 0b000001; // 2.4 GHz, not editable
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000010; // only 915 MHz FCC, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b000010; // 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000100; // only 868 MHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b000100; // 868 MHz, not editable
 #elif defined FREQUENCY_BAND_433_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b001000; // only 433 MHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b001000; // 433 MHz, not editable
 #elif defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // only 70 cm HAM, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // 70 cm HAM, not editable
 #elif defined FREQUENCY_BAND_866_MHZ_IN
-    SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // only 866 MHz IN, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // 866 MHz IN, not editable
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK"
-#ifdef DEVICE_HAS_SX128x
-  #ifdef USE_FEATURE_FLRC
-    SetupMetaData.Mode_allowed_mask = 0b01111; // all except FSK
-  #else
-    SetupMetaData.Mode_allowed_mask = 0b00111; // only 50 Hz, 31 Hz, 19 Hz
-  #endif
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
-    SetupMetaData.Mode_allowed_mask = 0b10110; // only 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+    // DUALBAND 2.4 GHz & 868/915 MHz !
+    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
-    SetupMetaData.Mode_allowed_mask = 0b00110; // only 31 Hz, 19 Hz
+    // DUALBAND 868/915 MHz & 433 MHz !
+    SetupMetaData.Mode_allowed_mask = 0b00110; // 31 Hz, 19 Hz
+#elif defined DEVICE_HAS_SX128x
+  #ifdef USE_FEATURE_FLRC
+    SetupMetaData.Mode_allowed_mask = 0b01111; // 50 Hz, 31 Hz, 19 Hz, FLRC
+  #else
+    SetupMetaData.Mode_allowed_mask = 0b00111; // 50 Hz, 31 Hz, 19 Hz
+  #endif
 #elif defined DEVICE_HAS_SX126x
-    SetupMetaData.Mode_allowed_mask = 0b10110; // only 31 Hz, 19 Hz, FSK
+    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK
 #elif defined DEVICE_HAS_SX127x
-    SetupMetaData.Mode_allowed_mask = 0b00100; // only 19 Hz, not editable
+    SetupMetaData.Mode_allowed_mask = 0b00100; // 19 Hz, not editable
 #endif
 
     //-- Ortho: "off,1/3,2/3,3/3"
@@ -85,34 +94,35 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz !
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
+#elif defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11011; // TODO: no antenna2 for the moment
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else
-    SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // antenna1, not editable
 #endif
 
     // Tx ChannelSource: "none,crsf,in,mbridge"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // only none, crsf, in, mBridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // none, crsf, in, mBridge
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // only none, crsf, mBridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // none, crsf, mBridge
 #elif defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // only none, in
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // none, in
 #else
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // only none, not editable
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // none, not editable
 #endif
 
     // Tx InMode: "sbus,sbus inv"
 #if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX
     SetupMetaData.Tx_InMode_allowed_mask = 0b11; // all
 #elif defined DEVICE_HAS_IN_NORMAL
-    SetupMetaData.Tx_InMode_allowed_mask = 0b10; // only sbus inv, not editable
+    SetupMetaData.Tx_InMode_allowed_mask = 0b10; // sbus inv, not editable
 #elif defined DEVICE_HAS_IN_INVERTED
-    SetupMetaData.Tx_InMode_allowed_mask = 0b01; // only sbus, not editable
+    SetupMetaData.Tx_InMode_allowed_mask = 0b01; // sbus, not editable
 #else
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
@@ -121,11 +131,11 @@ void setup_configure_metadata(void)
 #if defined DEVICE_HAS_JRPIN5 && defined USE_SERIAL2
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b111; // all
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // only serial, mbridge
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // serial, mbridge
 #elif defined USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b011; // only serial, serial2
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b011; // serial, serial2
 #else
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b001; // only serial, not editable
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b001; // serial, not editable
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -140,14 +150,15 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DIVERSITY
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz !
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
+#elif defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11011; // TODO: no antenna2 for the moment
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #else
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // only antenna1, not editable
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // antenna1, not editable
 #endif
 
     // Rx OutMode: "sbus,crsf,sbus inv"
@@ -158,7 +169,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_OUT_INVERTED
     SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus, not editable
 #else
-    SetupMetaData.Rx_OutMode_allowed_mask = 0;  // not available, do not display
+    SetupMetaData.Rx_OutMode_allowed_mask = 0; // not available, do not display
 #endif
 
     //-- Tx: Receiver setup meta data
@@ -282,16 +293,31 @@ void setup_sanitize_config(uint8_t config_id)
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
     sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
 
-#if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_2P4_GHZ
-    // DUALBAND 868/915 MHz & 2.4 GHz!
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+  // DUALBAND 2.4 GHz & 868/915 MHz !
+  #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
-    // DUALBAND 868/915 MHz & 433 MHz!
+  #else
+    #error Unknown Frequencyband !
+  #endif
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+  // DUALBAND 868/915 MHz & 433 MHz !
+  #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+  #else
+    #error Unknown Frequencyband !
+  #endif
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
+      defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_866_MHZ_IN
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
+#elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_433_MHZ;
 #elif defined FREQUENCY_BAND_2P4_GHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ; // my privilege to be in the EU :)
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
 #elif defined FREQUENCY_BAND_868_MHZ
@@ -482,19 +508,23 @@ void configure_mode(uint8_t mode)
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+    // DUALBAND 2.4 GHz & 868/915 MHz !
     switch (Config.Mode) {
     case MODE_31HZ:
         Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
         break;
-  case MODE_19HZ:
+    case MODE_19HZ:
         Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
         break;
-  case MODE_FSK_50HZ: // FSK for SX126x implies 50 Hz mode for SX128x
-      Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
-      break;
+    case MODE_FSK_50HZ: // FSK for SX126x implies 50 Hz mode for SX128x
+        Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
+        break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 868/915 MHz & 433 MHz !
+    // nothing to, is the same as for 868/915
 #endif
 
     // helper for sx drivers
@@ -503,8 +533,12 @@ void configure_mode(uint8_t mode)
     Config.Sx2.is_lora = Config.Sx.is_lora;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
-    // FSK for SX126x implies 50 Hz mode for SX128x
+    // DUALBAND 2.4 GHz & 868/915 MHz !
+    // FSK for SX126x implies 50 Hz mode for SX128x, i.e. LoRa mode
     Config.Sx2.is_lora = true;
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 868/915 MHz & 433 MHz !
+    // nothing to, is the same as for 868/915
 #endif
 }
 
@@ -518,19 +552,16 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
+    //-- SX12xx Config: SyncWord
+
     Config.Sx.FlrcSyncWord = bind_dblword;
+
+    if (Setup.Common[config_id].Ortho > ORTHO_NONE) {
+        Config.FrameSyncWord += 0x1111 * Config.Fhss.Ortho; // modify also FrameSyncWord
+        Config.Sx.FlrcSyncWord += 0x11111111 * Config.Fhss.Ortho;
+    }
+
     Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
-
-    //-- Power
-
-    // note: the actually used power will be determined later when the SX are set up
-#ifdef DEVICE_IS_TRANSMITTER
-    Config.Sx.Power_dbm = rfpower_list[Setup.Tx[config_id].Power].dbm;
-#endif
-#ifdef DEVICE_IS_RECEIVER
-    Config.Sx.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
-#endif
-    Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
   //-- Diversity
 
@@ -580,7 +611,8 @@ void setup_configure_config(uint8_t config_id)
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    Config.Diversity = DIVERSITY_DEFAULT;
+    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz !
+    Config.Diversity = DIVERSITY_DEFAULT; // treat it like diversity
     Config.ReceiveUseAntenna1 = true;
     Config.ReceiveUseAntenna2 = true;
     Config.TransmitUseAntenna1 = true;
@@ -597,22 +629,47 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FrequencyBand = Setup.Common[config_id].FrequencyBand;
 
-    //-- Mode, Mode dependent settings, LoRa configuration
+    //-- Mode, Mode dependent settings
 
-    configure_mode(Setup.Common[config_id].Mode);
+    configure_mode(Setup.Common[config_id].Mode); // sets also Sx.LoraConfigIndex
+
+    //-- Sx12xx
+
+    // note: the actually used power will be determined later when the SX are set up
+#ifdef DEVICE_IS_TRANSMITTER
+    Config.Sx.Power_dbm = rfpower_list[Setup.Tx[config_id].Power].dbm;
+#endif
+#ifdef DEVICE_IS_RECEIVER
+    Config.Sx.Power_dbm = rfpower_list[Setup.Rx.Power].dbm;
+#endif
+    Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
     Config.Sx.FrequencyBand = Config.FrequencyBand;
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
 
+#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+    // DUALBAND 2.4 GHz & 868/915 MHz !
+    switch (Config.FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_2P4_GHZ:
+        Config.Sx2.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
+        break;
+    default:
+        while (1) {}
+    }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 868/915 MHz & 433 MHz !
+    switch (Config.FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_433_MHZ:
+        Config.Sx2.FrequencyBand = SETUP_FREQUENCY_BAND_433_MHZ;
+        break;
+    default:
+        while (1) {}
+    }
+#endif
     //-- Fhss
 
     Config.Fhss.FrequencyBand = Config.FrequencyBand;
     Config.Fhss.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
-
-    //Config.FhssSeed = bind_dblword;
-    // this is much better for narrow bands, like 868 MHz
-    // we could make it dependable with a #ifdef, but what's the point
-    Config.Fhss.Seed = Config.FrameSyncWord;
 
     Config.Fhss.Except = EXCEPT_NONE;
     if (Config.Fhss.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
@@ -620,12 +677,11 @@ void setup_configure_config(uint8_t config_id)
     }
 
     Config.Fhss.Ortho = Setup.Common[config_id].Ortho;
-    // modify also FrameSyncWord
-    if (Config.Fhss.Ortho > ORTHO_NONE) {
-        Config.FrameSyncWord += 0x1111 * Config.Fhss.Ortho;
-        Config.Sx.FlrcSyncWord += 0x11111111 * Config.Fhss.Ortho;
-        Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
-    }
+
+    //Config.FhssSeed = bind_dblword;
+    // this is much better for narrow bands, like 868 MHz
+    // we could make it dependable with a #ifdef, but what's the point
+    Config.Fhss.Seed = Config.FrameSyncWord;
 
     switch (Config.Fhss.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
@@ -665,33 +721,23 @@ void setup_configure_config(uint8_t config_id)
     Config.Fhss2 = Config.Fhss;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+    // DUALBAND 2.4 GHz & 868/915 MHz !
     Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_2P4_GHZ);
-    switch (Config.Fhss2.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_2P4_GHZ:
-        switch (Config.Mode) {
-        case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-        case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-        case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
-        default:
-            while (1) {} // must not happen, should have been resolved in setup_sanitize()
-        }
-        break;
+    switch (Config.Mode) {
+    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
+    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+    case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 868/915 MHz & 433 MHz !
     Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_433_MHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_433_MHZ);
-    switch (Config.Fhss2.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_433_MHZ:
-        switch (Config.Mode) {
-        case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
-        case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
-        default:
-            while (1) {} // must not happen, should have been resolved in setup_sanitize()
-        }
-        break;
+    switch (Config.Mode) {
+    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
+    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
     default:
         while (1) {} // must not happen, should have been resolved in setup_sanitize()
     }
