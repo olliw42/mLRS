@@ -12,6 +12,7 @@
 
 
 #include <stdint.h>
+#include <string.h>
 #include "common_conf.h"
 #include "hal/device_conf.h"
 #include "sx-drivers/sx12xx.h"
@@ -636,13 +637,16 @@ class tFhssBase
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
 
-    uint32_t GetFreq_x1000(uint8_t i)
+    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i)
     {
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        strcpy(unit_str, " kHz");
         return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss_list[i]);
 #elif defined DEVICE_HAS_SX127x
+        strcpy(unit_str, " kHz");
         return (uint32_t)SX127X_REG_TO_FREQ_KHZ(fhss_list[i]);
 #else // DEVICE_HAS_SX128x
+        strcpy(unit_str, " MHz");
         return (uint32_t)SX1280_REG_TO_FREQ_MHZ(fhss_list[i]);
 #endif
     }
@@ -695,6 +699,7 @@ class tFhss : public tFhssBase
 };
 
 #else
+// DUALBAND !
 
 class tFhss
 {
@@ -766,7 +771,7 @@ class tFhss
     // only used by tx cli
     uint8_t ChList(uint8_t i) { return fhss900MHz.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss900MHz.FhssList(i); }
-    uint32_t GetFreq_x1000(uint8_t i) { return fhss900MHz.GetFreq_x1000(i); }
+    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss900MHz.GetFreq_x1000(unit_str, i); }
 
   private:
     tFhssBase fhss900MHz;

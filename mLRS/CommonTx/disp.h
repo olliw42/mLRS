@@ -41,6 +41,9 @@ extern bool connected(void);
 extern bool connected_and_rx_setup_available(void);
 extern tStats stats;
 extern tGDisplay gdisp;
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
 
 
 #define DISP_START_TMO_MS       SYSTICK_DELAY_MS(500)
@@ -949,16 +952,11 @@ void tTxDisp::draw_page_common(void)
     draw_header("Common");
     draw_options(&common_list);
 
-    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+    char except_str[8];
+    if (except_str_from_bindphrase(except_str, Setup.Common[Config.ConfigId].BindPhrase, Config.FrequencyBand)) {
         gdisp_setcurXY(0, 4 * 10 + 20); // last line
         gdisp_puts("except ");
-        switch (except_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase)) {
-        case 1: gdisp_puts("/e1"); break;
-        case 2: gdisp_puts("/e6"); break;
-        case 3: gdisp_puts("/e11"); break;
-        case 4: gdisp_puts("/e13"); break;
-        default: gdisp_puts("/--");
-        }
+        gdisp_puts(except_str);
     }
 }
 

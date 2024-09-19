@@ -665,21 +665,9 @@ void mbridge_send_ParamItem(void)
         tMBridgeParamItem item = {};
         item.index = param_idx;
         switch (SetupParameter[param_idx].type) {
-        case SETUP_PARAM_TYPE_UINT8:
-            item.type = MBRIDGE_PARAM_TYPE_UINT8;
-            item.value.u8 = *(uint8_t*)SetupParameterPtr(param_idx);
-            break;
         case SETUP_PARAM_TYPE_INT8:
             item.type = MBRIDGE_PARAM_TYPE_INT8;
             item.value.i8 = *(int8_t*)SetupParameterPtr(param_idx);
-            break;
-        case SETUP_PARAM_TYPE_UINT16:
-            item.type = MBRIDGE_PARAM_TYPE_UINT16;
-            item.value.u16 = *(uint16_t*)SetupParameterPtr(param_idx);
-            break;
-        case SETUP_PARAM_TYPE_INT16:
-            item.type = MBRIDGE_PARAM_TYPE_INT16;
-            item.value.i16 = *(int16_t*)SetupParameterPtr(param_idx);
             break;
         case SETUP_PARAM_TYPE_LIST:
             item.type = MBRIDGE_PARAM_TYPE_LIST;
@@ -701,28 +689,10 @@ void mbridge_send_ParamItem(void)
         tMBridgeParamItem2 item2 = {};
         item2.index = param_idx;
         switch (SetupParameter[param_idx].type) {
-        case SETUP_PARAM_TYPE_UINT8:
-            item2.dflt.u8 = SetupParameter[param_idx].dflt.UINT8_value;
-            item2.min.u8 = SetupParameter[param_idx].min.UINT8_value;
-            item2.max.u8 = SetupParameter[param_idx].max.UINT8_value;
-            strbufstrcpy(item2.unit_6, SetupParameter[param_idx].unit, 6);
-            break;
         case SETUP_PARAM_TYPE_INT8:
             item2.dflt.i8 = SetupParameter[param_idx].dflt.INT8_value;
             item2.min.i8 = SetupParameter[param_idx].min.INT8_value;
             item2.max.i8 = SetupParameter[param_idx].max.INT8_value;
-            strbufstrcpy(item2.unit_6, SetupParameter[param_idx].unit, 6);
-            break;
-        case SETUP_PARAM_TYPE_UINT16:
-            item2.dflt.u16 = SetupParameter[param_idx].dflt.UINT16_value;
-            item2.min.u16 = SetupParameter[param_idx].min.UINT16_value;
-            item2.max.u16 = SetupParameter[param_idx].max.UINT16_value;
-            strbufstrcpy(item2.unit_6, SetupParameter[param_idx].unit, 6);
-            break;
-        case SETUP_PARAM_TYPE_INT16:
-            item2.dflt.i16 = SetupParameter[param_idx].dflt.INT16_value;
-            item2.min.i16 = SetupParameter[param_idx].min.INT16_value;
-            item2.max.i16 = SetupParameter[param_idx].max.INT16_value;
             strbufstrcpy(item2.unit_6, SetupParameter[param_idx].unit, 6);
             break;
         case SETUP_PARAM_TYPE_LIST:

@@ -56,11 +56,11 @@
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 
 #ifndef USE_FEATURE_MAVLINKX
-#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink"
+#define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink"
 #else
-#define SETUP_OPT_SERIAL_LINK_MODE              "transp.,mavlink,mavlinkX,mspX"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR   "transp.,mavlink,mavlnkX,mspX"
+#define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink,mavlinkX,mspX"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"
 #endif
 
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
@@ -99,17 +99,17 @@
   X( Setup.Tx[0].CliLineEnd,        LIST, "Tx Cli LineEnd",   "TX_CLI_LINEEND",   0,0,0,"", "CRLF,LF,CR", MSK_ALL )
 
 #define SETUP_PARAMETER_LIST_RX \
-  X( Setup.Rx.Power,              LIST, "Rx Power",         "RX_POWER",         0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
-  X( Setup.Rx.Diversity,          LIST, "Rx Diversity",     "RX_DIVERSITY",     0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
-  X( Setup.Rx.ChannelOrder,       LIST, "Rx Ch Order",      "RX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
-  X( Setup.Rx.OutMode,            LIST, "Rx Out Mode",      "RX_OUT_MODE",      0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
-  X( Setup.Rx.FailsafeMode,       LIST, "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
-  X( Setup.Rx.SerialBaudrate,     LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
-  X( Setup.Rx.SerialLinkMode,     LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
-  X( Setup.Rx.SendRadioStatus,    LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
-  X( Setup.Rx.SendRcChannels,     LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
-  X( Setup.Rx.OutRssiChannelMode, LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
-  X( Setup.Rx.OutLqChannelMode,   LIST, "Rx Out LQ Ch",     "RX_OUT_LQ_CH",     0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
+  X( Setup.Rx.Power,                LIST, "Rx Power",         "RX_POWER",         0,0,0,"", SETUP_OPT_RX_POWER, MSK_ALL )\
+  X( Setup.Rx.Diversity,            LIST, "Rx Diversity",     "RX_DIVERSITY",     0,0,0,"", SETUP_OPT_DIVERSITY, SETUP_MSK_RX_DIVERSITY )\
+  X( Setup.Rx.ChannelOrder,         LIST, "Rx Ch Order",      "RX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
+  X( Setup.Rx.OutMode,              LIST, "Rx Out Mode",      "RX_OUT_MODE",      0,0,0,"", "sbus,crsf,sbus inv", SETUP_MSK_RX_OUT_MODE )\
+  X( Setup.Rx.FailsafeMode,         LIST, "Rx FailSafe Mode", "RX_FAILSAFE_MODE", 0,0,0,"", "no sig,low thr,by cnf,low thr cnt,ch1ch4 cnt", MSK_ALL )\
+  X( Setup.Rx.SerialBaudrate,       LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Rx.SerialLinkMode,       LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Rx.SendRadioStatus,      LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
+  X( Setup.Rx.SendRcChannels,       LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
+  X( Setup.Rx.OutRssiChannelMode,   LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
+  X( Setup.Rx.OutLqChannelMode,     LIST, "Rx Out LQ Ch",     "RX_OUT_LQ_CH",     0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   \
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[0],  INT8, "Rx FS Ch1", "RX_FS_CH1", 0, -120, 120, "%", "",0 )\
   X( Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[1],  INT8, "Rx FS Ch2", "RX_FS_CH2", 0, -120, 120, "%", "",0 )\
