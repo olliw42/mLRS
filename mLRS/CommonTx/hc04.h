@@ -49,7 +49,7 @@ class tTxHc04Bridge
   private:
     void run_autoconfigure(void);
     bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
-    void hc04_configure(void);
+    void hc04_configure(char* const ok_device_name);
 
     void passthrough_do(void);
 
@@ -169,16 +169,26 @@ HC04_DBG(dbg.puts("!ENDE!");)
 }
 
 
-void tTxHc04Bridge::hc04_configure(void)
+void tTxHc04Bridge::hc04_configure(char* const ok_device_name)
 {
 uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;
 
-    if (!hc04_read("AT+NAME=Matek-mLRS-BT", s, &len)) { // set name
+    // ok_device_name looks like "OK+NAME=Matek-mLRS-xxxxx BT"
+    // so to set we simply change the first two chars to "AT"
+    // we can do this as we don't need ok_device_name anymore
+    ok_device_name[0] = 'A';
+    ok_device_name[1] = 'T';
+    if (!hc04_read(ok_device_name, s, &len)) { // set name
         return;
     }
 
     delay_ms(1500); // 500 did not work, 1000 did work, so play it safe
+
+/*    if (!hc04_read("AT+PIN=1234", s, &len)) { // set PIN to default
+        return;
+    }
+    delay_ms(1500); */
 
     //hc04_read("AT+BAUD=115200", s, &len);
     char baud_str[32];
@@ -188,7 +198,7 @@ uint8_t len;
     strcpy(cmd_str, "AT+BAUD=");
     strcat(cmd_str, baud_str);
     strcat(cmd_str, ",N");
-    if (!hc04_read(cmd_str, s, &len)) { // AT+BAUD seems to send response with "old" baud rate, and only when changes to the new
+    if (!hc04_read(cmd_str, s, &len)) { // AT+BAUD seems to send response with "old" baud rate, and only when it changes to the new
         return;
     }
 
@@ -213,17 +223,26 @@ uint8_t len;
 
     uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
 
+    char ok_device_name[48];
+    uint8_t uid[STM32_MCU_UID_LEN];
+    mcu_uid(uid);
+    uint16_t device_id = 0;
+    for (uint8_t i = 0; i < STM32_MCU_UID_LEN - 1; i++) device_id += uid[i] + ((uint16_t)uid[i + 1] << 8);
+    strcpy(ok_device_name, "OK+NAME=Matek-mLRS-");
+    strcat(ok_device_name, u16toBCD_s(device_id));
+    strcat(ok_device_name, "-BT");
+
     for (uint8_t baud_idx = 0; baud_idx < 7; baud_idx++) {
         ser->SetBaudRate(bauds[baud_idx]);
         ser->flush();
 
         if (hc04_read("AT+NAME=?", s, &len)) { // found !
             s[len-2] = '\0';
-            if (!strcmp((char*)s, "OK+NAME=Matek-mLRS-BT") && bauds[baud_idx] == ser_baud) { // is correct name and baud rate
+            if (!strcmp((char*)s, ok_device_name) && bauds[baud_idx] == ser_baud) { // is correct name and baud rate
                 return;
             } else
             if (!strncmp((char*)s, "OK+NAME=", 8)) {
-                hc04_configure();
+                hc04_configure(ok_device_name);
                 ser->SetBaudRate(ser_baud);
                 ser->flush();
                 return;
