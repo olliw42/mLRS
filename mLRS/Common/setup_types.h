@@ -23,6 +23,7 @@
 
 //-- common to Tx & Rx
 
+// these are the frequency band options available to the user
 typedef enum {
     SETUP_FREQUENCY_BAND_2P4_GHZ = 0,
     SETUP_FREQUENCY_BAND_915_MHZ_FCC,
@@ -32,6 +33,20 @@ typedef enum {
     SETUP_FREQUENCY_BAND_866_MHZ_IN,
     SETUP_FREQUENCY_BAND_NUM,
 } SETUP_FREQUENCY_BAND_ENUM;
+
+
+// these are the frequency band options available to the hardware
+// used in the SX12xx drivers and FHSS class
+// should not be defined here, but we do here for convenience
+typedef enum {
+    SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ = 0,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM,
+    SX_FHSS_CONFIG_FREQUENCY_BAND_NUM,
+} SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM;
 
 
 typedef enum {
@@ -261,7 +276,7 @@ typedef enum {
 typedef struct
 {
     char BindPhrase[6+1];
-    uint8_t FrequencyBand;
+    SETUP_FREQUENCY_BAND_ENUM FrequencyBand;
     uint8_t Mode;
     uint8_t Ortho;
 
@@ -329,7 +344,7 @@ typedef struct
     // parameters common to both Tx and Rx
     // deprecated
     char __BindPhrase[6+1];
-    uint8_t __FrequencyBand;
+    SETUP_FREQUENCY_BAND_ENUM __FrequencyBand;
     uint8_t __Mode;
 
     uint8_t _ConfigId; // strange name to avoid mistake
@@ -390,7 +405,7 @@ typedef struct
     uint8_t LoraConfigIndex;
     uint32_t FlrcSyncWord;
     int8_t Power_dbm;
-    uint8_t FrequencyBand;
+    SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM FrequencyBand;
     // helper
     bool is_lora;
     bool modeIsLora(void) { return is_lora; }
@@ -401,7 +416,7 @@ typedef struct
 {
     uint8_t Num;
     uint32_t Seed;
-    uint8_t FrequencyBand;
+    SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM FrequencyBand;
     uint8_t Ortho;
     uint8_t Except;
     uint16_t FrequencyBand_allowed_mask; // copy of SetupMetaData for sx1, is modified for sx2

@@ -412,7 +412,7 @@ void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
     strstrbufcpy(Setup.Common[0].BindPhrase, rx_params->BindPhrase_6, 6);
-    Setup.Common[0].FrequencyBand = rx_params->FrequencyBand;
+    Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
 

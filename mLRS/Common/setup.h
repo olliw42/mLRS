@@ -276,6 +276,12 @@ void setup_sanitize_config(uint8_t config_id)
 // we may have to distinguish between not editable and not displayed, but currently
 // not displayed applies only to settings for which the default is ok
 
+#define TST_NOTALLOWED_TYPED(amask,pfield,val,ptype) \
+    if ((SetupMetaData.amask & (1 << Setup.pfield)) == 0) { Setup.pfield = (ptype)val; } \
+    if (SetupMetaData.amask != 0 && (SetupMetaData.amask & (1 << Setup.pfield)) == 0) { \
+      for (uint8_t i = 0; i < 16; i++) { if (SetupMetaData.amask & (1 << i)) { Setup.pfield = (ptype)i; break; } } \
+    }
+
 #define TST_NOTALLOWED(amask,pfield,val) \
     if ((SetupMetaData.amask & (1 << Setup.pfield)) == 0) { Setup.pfield = val; } \
     if (SetupMetaData.amask != 0 && (SetupMetaData.amask & (1 << Setup.pfield)) == 0) { \
@@ -331,9 +337,9 @@ void setup_sanitize_config(uint8_t config_id)
     #error Unknown Frequencyband !
 #endif
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
-        Setup.Common[config_id].FrequencyBand = frequency_band_default;
+        Setup.Common[config_id].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)frequency_band_default;
     }
-    TST_NOTALLOWED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default);
+    TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default, SETUP_FREQUENCY_BAND_ENUM);
 
 #ifdef DEVICE_HAS_SX128x
     constexpr uint8_t fallback_mode = MODE_50HZ;
@@ -642,14 +648,22 @@ void setup_configure_config(uint8_t config_id)
 #endif
     Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
-    Config.Sx.FrequencyBand = Config.FrequencyBand;
+    switch (Config.FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_2P4_GHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ; break;
+    case SETUP_FREQUENCY_BAND_915_MHZ_FCC: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC; break;
+    case SETUP_FREQUENCY_BAND_868_MHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ; break;
+    case SETUP_FREQUENCY_BAND_433_MHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ; break;
+    case SETUP_FREQUENCY_BAND_70_CM_HAM: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM; break;
+    case SETUP_FREQUENCY_BAND_866_MHZ_IN: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN; break;
+    }
+
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz !
     switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
-        Config.Sx2.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
+        Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
         break;
     default:
         while (1) {}
@@ -658,7 +672,7 @@ void setup_configure_config(uint8_t config_id)
     // DUALBAND 868/915 MHz & 433 MHz !
     switch (Config.FrequencyBand) {
     case SETUP_FREQUENCY_BAND_433_MHZ:
-        Config.Sx2.FrequencyBand = SETUP_FREQUENCY_BAND_433_MHZ;
+        Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
         break;
     default:
         while (1) {}
@@ -666,11 +680,29 @@ void setup_configure_config(uint8_t config_id)
 #endif
     //-- Fhss
 
-    Config.Fhss.FrequencyBand = Config.FrequencyBand;
-    Config.Fhss.FrequencyBand_allowed_mask = SetupMetaData.FrequencyBand_allowed_mask;
+    Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand;
+
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_915_MHZ_FCC)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_868_MHZ)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_433_MHZ)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_70_CM_HAM)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN);
+    }
 
     Config.Fhss.Except = EXCEPT_NONE;
-    if (Config.Fhss.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+    if (Config.Fhss.FrequencyBand == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {
         Config.Fhss.Except = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
 
@@ -682,7 +714,7 @@ void setup_configure_config(uint8_t config_id)
     Config.Fhss.Seed = Config.FrameSyncWord;
 
     switch (Config.Fhss.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_2P4_GHZ:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ:
         switch (Config.Mode) {
         case MODE_50HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
         case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
@@ -692,16 +724,16 @@ void setup_configure_config(uint8_t config_id)
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
-    case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
         Config.Fhss.Num = FHSS_NUM_BAND_915_MHZ_FCC;
         break;
-    case SETUP_FREQUENCY_BAND_868_MHZ:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
         Config.Fhss.Num = FHSS_NUM_BAND_868_MHZ;
         break;
-    case SETUP_FREQUENCY_BAND_433_MHZ:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
         Config.Fhss.Num = FHSS_NUM_BAND_433_MHZ;
         break;
-    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
         switch (Config.Mode) {
         case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
         case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
@@ -709,7 +741,7 @@ void setup_configure_config(uint8_t config_id)
             while (1) {} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
-    case SETUP_FREQUENCY_BAND_866_MHZ_IN:
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
         Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
         break;
     default:
@@ -720,8 +752,8 @@ void setup_configure_config(uint8_t config_id)
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz !
-    Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_2P4_GHZ;
-    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_2P4_GHZ);
+    Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
+    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     switch (Config.Mode) {
     case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
     case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
@@ -731,8 +763,8 @@ void setup_configure_config(uint8_t config_id)
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz !
-    Config.Fhss2.FrequencyBand = SETUP_FREQUENCY_BAND_433_MHZ;
-    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SETUP_FREQUENCY_BAND_433_MHZ);
+    Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
+    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
     switch (Config.Mode) {
     case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
     case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
