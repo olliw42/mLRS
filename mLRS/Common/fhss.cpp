@@ -39,8 +39,8 @@ uint16_t tFhssBase::prng(void)
 void tFhssBase::generate(uint32_t seed)
 {
     _seed = seed;
-    _ortho = FHSS_ORTHO_NONE;
-    _except = FHSS_EXCEPT_NONE;
+    _ortho = ORTHO_NONE;
+    _except = EXCEPT_NONE;
 
     bool used_flag[FHSS_FREQ_LIST_MAX_LEN];
     for (uint8_t ch = 0; ch < FHSS_FREQ_LIST_MAX_LEN; ch++) used_flag[ch] = false;
@@ -116,8 +116,8 @@ void tFhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t exce
     uint8_t ch_ofs = 0;
     uint8_t ch_inc = 1;
 
-    if (_ortho >= FHSS_ORTHO_1_3 && _ortho <= FHSS_ORTHO_3_3) {
-        ch_ofs = _ortho - FHSS_ORTHO_1_3; // 0, 1, 2
+    if (_ortho >= ORTHO_1_3 && _ortho <= ORTHO_3_3) {
+        ch_ofs = _ortho - ORTHO_1_3; // 0, 1, 2
         ch_inc = 3;
         freq_len = FREQ_LIST_LEN / 3; // we use only 1/3 of the available channels
     }
@@ -155,19 +155,19 @@ void tFhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t exce
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
         uint32_t freq = fhss_freq_list[ch];
         switch (_except) {
-        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_1:
+        case EXCEPT_2P4_GHZ_WIFIBAND_1:
             // #1, 2.412 GHz +- 11 MHz = ]0 , 17[
             if (SX1280_FREQ_GHZ_TO_REG(2.401) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.423)) continue;
             break;
-        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_6:
+        case EXCEPT_2P4_GHZ_WIFIBAND_6:
             // #6, 2.437 GHz +- 11 MHz = ]20 , 42[
             if (SX1280_FREQ_GHZ_TO_REG(2.426) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.448)) continue;
             break;
-        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_11:
+        case EXCEPT_2P4_GHZ_WIFIBAND_11:
             // #11, 2.462 GHz +- 11 MHz = ]45 , 67[
             if (SX1280_FREQ_GHZ_TO_REG(2.451) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.473)) continue;
             break;
-        case FHSS_EXCEPT_2P4_GHZ_WIFIBAND_13:
+        case EXCEPT_2P4_GHZ_WIFIBAND_13:
             // #13, 2.472 GHz +- 11 MHz = ]55, 67[
             if (SX1280_FREQ_GHZ_TO_REG(2.461) <= freq && freq <= SX1280_FREQ_GHZ_TO_REG(2.483)) continue;
             break;

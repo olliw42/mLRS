@@ -333,22 +333,9 @@ typedef enum {
 } FHSS_CONFIG_ENUM;
 
 
-typedef enum {
-    FHSS_ORTHO_NONE = 0,
-    FHSS_ORTHO_1_3,
-    FHSS_ORTHO_2_3,
-    FHSS_ORTHO_3_3,
-} FHSS_ORTHO_ENUM;
 
-
-typedef enum {
-    FHSS_EXCEPT_NONE = 0,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_1,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_6,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_11,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_13,
-} FHSS_EXCEPT_ENUM;
-
+// no FHSS_ORTHO_ENUM, we use the enum in setup_types.h
+// no FHSS_EXCEPT_ENUM, we use the enum in setup_types.h
 
 typedef struct
 {
@@ -596,7 +583,7 @@ class tFhssBase
     }
 
     // only used by receiver
-    uint8_t GetCurrFrequencyBand(void)
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
         switch (curr_bind_config_i) {
         case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
@@ -607,7 +594,7 @@ class tFhssBase
         case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
         }
         while (1) {} // should not happen, but play it safe
-        return 0;
+        return (SETUP_FREQUENCY_BAND_ENUM)0;
     }
 
     // used by RADIO_LINK_STATS_MLRS
@@ -706,7 +693,7 @@ class tFhss
   public:
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
-        fhss900MHz.Init(fhss->Num, fhss->Seed,
+        fhss1stBand.Init(fhss->Num, fhss->Seed,
                           fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
                           fhss->Ortho, fhss->Except);
         fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
@@ -716,46 +703,46 @@ class tFhss
 
     void Start(void)
     {
-        fhss900MHz.Start();
+        fhss1stBand.Start();
         fhss2ndBand.Start();
     }
 
     uint8_t Cnt(void)
     {
-        return fhss900MHz.Cnt();
+        return fhss1stBand.Cnt();
     }
 
     uint8_t CurrI(void)
     {
-        return fhss900MHz.CurrI();
+        return fhss1stBand.CurrI();
     }
 
-    uint32_t GetCurrFreq(void) { return fhss900MHz.GetCurrFreq(); }
+    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
 
     void HopToNext(void)
     {
-        fhss900MHz.HopToNext();
+        fhss1stBand.HopToNext();
         fhss2ndBand.HopToNext();
     }
 
     void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
-        fhss900MHz.SetToBind(frame_rate_ms);
+        fhss1stBand.SetToBind(frame_rate_ms);
         fhss2ndBand.SetToBind(frame_rate_ms);
     }
 
     // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
     bool HopToNextBind(void)
     {
-        bool hop1 = fhss900MHz.HopToNextBind();
+        bool hop1 = fhss1stBand.HopToNextBind();
         bool hop2 = fhss2ndBand.HopToNextBind();
         return hop1 || hop2;
     }
 
     // only used by receiver
-    uint8_t GetCurrFrequencyBand(void) { return fhss900MHz.GetCurrFrequencyBand(); }
-    float GetCurrFreq_Hz(void) { return fhss900MHz.GetCurrFreq_Hz(); }
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
+    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
 
     float GetCurrFreq2_Hz(void)
     {
@@ -769,12 +756,12 @@ class tFhss
     }
 
     // only used by tx cli
-    uint8_t ChList(uint8_t i) { return fhss900MHz.ChList(i); }
-    uint32_t FhssList(uint8_t i) { return fhss900MHz.FhssList(i); }
-    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss900MHz.GetFreq_x1000(unit_str, i); }
+    uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
+    uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
+    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
 
   private:
-    tFhssBase fhss900MHz;
+    tFhssBase fhss1stBand;
     tFhssBase fhss2ndBand;
 };
 
