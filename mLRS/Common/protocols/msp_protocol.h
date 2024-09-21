@@ -289,6 +289,14 @@ typedef enum {
     INAV_SENSOR_STATUS_HW_FAILURE   = 15,
 } INAV_SENSOR_STATUS_FLAGS_ENUM;
 
+
+// see src/main/fc/runtime_config.h, armingFlag_e
+typedef enum {
+    INAV_ARMING_FLAGS_ARMED           = (1 << 2),
+    INAV_ARMING_FLAGS_WAS_EVER_ARMED  = (1 << 3),
+} INAV_ARMING_FLAGS_ENUM;
+
+
 MSP_PACKED(
 typedef struct
 {
@@ -362,9 +370,11 @@ typedef enum {
 } MSPX_FUNCTION_ENUM;
 
 
-// essentially mirrors INAV's flightModeFlags_e enum
+// modes we can extract from BOX_NAMES, and which are of interest to us
+// this is different to but mostly mirrors INAV's flightModeFlags_e enum
 // https://github.com/iNavFlight/inav/blob/master/src/main/fc/runtime_config.h#L89-L109
-// includes all and more but misses
+// adds ARM mode
+// includes all INAV modes (in different order though), except
 //    NAV_FW_AUTOLAND
 typedef enum {
     INAV_FLIGHT_MODES_ARM = 0,
@@ -461,41 +471,50 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
 };
 
 
-void inav_flight_mode_name4(char* const name4, uint32_t flight_mode)
+void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_flags)
 {
+    if ((arming_flags & ((uint32_t)1 << INAV_ARMING_FLAGS_ARMED)) != 0) { // some arming flags are raised
+        strcpy(s, "!ERR");
+        return;
+    }
+
     #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
 
     // follow INAV's static void crsfFrameFlightMode()
     // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
     // we don't do "HRST" and "LAND"
     if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AIR_MODE)) {
-        strcpy(name4, "AIR"); // not shown in OSD
+        strcpy(s, "AIR"); // not shown in OSD
     } else {
-        strcpy(name4, "ACRO");
+        strcpy(s, "ACRO");
     }
 
     if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
-        strcpy(name4, "!FS!");
+        strcpy(s, "!FS!");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
-        strcpy(name4, "MANU");
+        strcpy(s, "MANU");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH)) {
-        strcpy(name4, "RTH"); // shown as "WRTH" in OSD if waypoint mission RTH is active
+        strcpy(s, "RTH"); // shown as "WRTH" in OSD if waypoint mission RTH is active
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_POSHOLD)) {
-        strcpy(name4, "HOLD"); // shown as "LOTR" in OSD if it is an airplane
+        strcpy(s, "HOLD"); // shown as "LOTR" in OSD if it is an airplane
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD) && MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
-        strcpy(name4, "CRUZ");
+        strcpy(s, "CRUZ");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD)) {
-        strcpy(name4, "CRSH");
+        strcpy(s, "CRSH");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_WP)) {
-        strcpy(name4, "WP");
+        strcpy(s, "WP");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
-        strcpy(name4, "AH");
+        strcpy(s, "AH");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE)) {
-        strcpy(name4, "ANGL");
+        strcpy(s, "ANGL");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_HORIZON)) {
-        strcpy(name4, "HOR");
+        strcpy(s, "HOR");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
-        strcpy(name4, "ANGH");
+        strcpy(s, "ANGH");
+    }
+
+    if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ARM)) {
+        strcat(s, "*");
     }
 }
 

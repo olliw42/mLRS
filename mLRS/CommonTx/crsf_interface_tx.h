@@ -139,6 +139,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     int32_t inav_baro_altitude; // needed to make INAV happy
     uint16_t msp_inav_status_sensor_status;
+    uint32_t msp_inav_status_arming_flags;
 };
 
 tTxCrsf crsf;
@@ -312,6 +313,7 @@ void tTxCrsf::Init(bool enable_flag)
 
     inav_baro_altitude = 0;
     msp_inav_status_sensor_status = 0;
+    msp_inav_status_arming_flags = 0;
 
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
     uart_tc_callback_ptr = &crsf_uart_tc_callback;
@@ -871,14 +873,12 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
         // report it
         msp_inav_status_sensor_status = payload->sensor_status;
+        msp_inav_status_arming_flags = payload->arming_flags;
         }break;
 
-    case MSPX_STATUS: {
+    case MSPX_STATUS: { // this is send by the rx shortly after MSP2_INAV_STATUS
         uint32_t flight_mode = *(uint32_t*)(msg->payload);
-        inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
-        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
-            strcat(flightmode.flight_mode, "*");
-        }
+        inav_flight_mode_str5(flightmode.flight_mode, flight_mode, msp_inav_status_arming_flags);
         flightmode_updated = true;
         }break;
     }
