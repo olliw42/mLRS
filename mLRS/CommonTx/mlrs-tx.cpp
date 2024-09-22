@@ -806,7 +806,6 @@ INITCONTROLLER_END
 
     switch (link_state) {
     case LINK_STATE_IDLE:
-    case LINK_STATE_RECEIVE_DONE:
         break;
 
     case LINK_STATE_TRANSMIT:
