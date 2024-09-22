@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 10.09.2024
+ version 22.09.2024
 ********************************************************
 '''
 import os
@@ -211,6 +211,7 @@ def printError(txt):
 MLRS_SOURCES_HAL_STM32F1 = [
     os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal.c'),
     os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_cortex.c'),
+    os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_can.c'),
     os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_dma.c'),
     os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_flash.c'),
     os.path.join('Drivers','STM32F1xx_HAL_Driver','Src','stm32f1xx_hal_flash_ex.c'),
@@ -242,6 +243,7 @@ MLRS_SOURCES_HAL_STM32G4 = [
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_cortex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_dma_ex.c'),
+    os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_fdcan.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_pcd_ex.c'),
     os.path.join('Drivers','STM32G4xx_HAL_Driver','Src','stm32g4xx_hal_flash.c'),
