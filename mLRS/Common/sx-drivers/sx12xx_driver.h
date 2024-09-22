@@ -96,6 +96,7 @@ class SxDriverDummy
 
     void ResetToLoraConfiguration() {}
     void SetRfPower_dbm(int8_t power_dbm) {}
+    void UpdateRfPower(tSxGlobalConfig* const global_config) {}
     void ClearIrqStatus(uint16_t IrqMask) {}
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }

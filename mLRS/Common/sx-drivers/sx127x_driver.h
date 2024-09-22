@@ -130,6 +130,12 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 #endif
     }
 
+    void UpdateRfPower(tSxGlobalConfig* const global_config)
+    {
+        gconfig->Power_dbm = global_config->Power_dbm;
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
     void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;

@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v0.3.31 and later, mOTX v33
 
-local version = '2023-12-01.00'
+local version = '2024-09-22.00'
 
 local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
 local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
@@ -632,6 +632,13 @@ local function sendParamSet(idx)
         cmdPush(MBRIDGE_CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == MBRIDGE_PARAM_TYPE_LIST then
         cmdPush(MBRIDGE_CMD_PARAM_SET, {idx, p.value})
+        
+        if (string.sub(p.name, 4) == "Power") then -- power potentially changed, so update DEVICE_INFO
+            --cmdPush(MBRIDGE_CMD_REQUEST_INFO, {})
+            cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})
+            cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})
+            cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})
+        end    
     elseif p.typ == MBRIDGE_PARAM_TYPE_STR6 then
         local cmd = {idx}
         for i = 1,6 do

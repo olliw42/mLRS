@@ -94,6 +94,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/rf_power.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "out_interface.h" // this includes uart.h, out.h, declares tOut out
@@ -104,6 +105,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tRfPower rfpower;
 
 
 // is required in bind.h
@@ -543,6 +545,7 @@ RESTARTCONTROLLER
     bind.Init();
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
+    rfpower.Init();
 
     sx.SetRfFrequency(fhss.GetCurrFreq());
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
@@ -631,6 +634,7 @@ INITCONTROLLER_END
         break;
 
     case LINK_STATE_TRANSMIT:
+        rfpower.Update();
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger

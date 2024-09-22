@@ -202,6 +202,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTxParams(sx_power, SX126X_RAMPTIME_40_US); // 7.9.24: was SX126X_RAMPTIME_10_US
     }
 
+    void UpdateRfPower(tSxGlobalConfig* const global_config)
+    {
+        gconfig->Power_dbm = global_config->Power_dbm;
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
     void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
