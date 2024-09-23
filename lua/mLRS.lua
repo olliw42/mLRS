@@ -632,9 +632,8 @@ local function sendParamSet(idx)
         cmdPush(MBRIDGE_CMD_PARAM_SET, {idx, p.value})
     elseif p.typ == MBRIDGE_PARAM_TYPE_LIST then
         cmdPush(MBRIDGE_CMD_PARAM_SET, {idx, p.value})
-        
         if (string.sub(p.name, 4) == "Power") then -- power potentially changed, so update DEVICE_INFO
-            --cmdPush(MBRIDGE_CMD_REQUEST_INFO, {})
+            -- simpliy send it 3 times so we get it reliably
             cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})
             cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})
             cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_INFO})

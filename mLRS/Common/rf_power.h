@@ -49,9 +49,6 @@ void tRfPower::Update(void)
 
     sx.UpdateRfPower(&Config.Sx);
     sx2.UpdateRfPower(&Config.Sx2);
-
-dbg.puts("\ntx pow = ");dbg.puts(u8toBCD_s(Setup.Rx.Power));
-dbg.puts(" , ");dbg.puts(s8toBCD_s(Config.Sx.Power_dbm));
 }
 
 
