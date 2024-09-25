@@ -30,6 +30,7 @@ SWC     solder pad      PA14        SWDCLK      ADC_IN10
 
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_DEBUG_SWUART
+#define SX_USE_REGULATOR_MODE_DCDC
 
 
 //-- Timers, Timing, EEPROM, and such stuff
