@@ -149,6 +149,24 @@ typedef enum {
 } RX_SEND_RADIO_STATUS_ENUM;
 
 
+typedef enum {
+    POWER_SWITCH_CHANNEL_OFF = 0,
+    POWER_SWITCH_CHANNEL_CH5,
+    POWER_SWITCH_CHANNEL_CH6,
+    POWER_SWITCH_CHANNEL_CH7,
+    POWER_SWITCH_CHANNEL_CH8,
+    POWER_SWITCH_CHANNEL_CH9,
+    POWER_SWITCH_CHANNEL_CH10,
+    POWER_SWITCH_CHANNEL_CH11,
+    POWER_SWITCH_CHANNEL_CH12,
+    POWER_SWITCH_CHANNEL_CH13,
+    POWER_SWITCH_CHANNEL_CH14,
+    POWER_SWITCH_CHANNEL_CH15,
+    POWER_SWITCH_CHANNEL_CH16,
+    POWER_SWITCH_CHANNEL_NUM,
+} POWER_SWITCH_CHANNEL_ENUM;
+
+
 //-- Tx only
 
 typedef enum {
@@ -298,8 +316,9 @@ typedef struct
     uint8_t Buzzer;
     uint8_t __CliLineEnd; // deprecated
     uint8_t MavlinkComponent;
+    uint8_t PowerSwitchChannel;
 
-    uint8_t spare[8];
+    uint8_t spare[7];
 } tTxSetup; // 20 bytes
 
 
@@ -318,8 +337,9 @@ typedef struct
     uint8_t SendRcChannels;
     uint8_t __RadioStatusMethod; // deprecated
     uint8_t OutLqChannelMode;
+    uint8_t PowerSwitchChannel;
 
-    uint8_t spare[7];
+    uint8_t spare[6];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120

@@ -253,6 +253,7 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
     Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
     Setup.Tx[config_id].MavlinkComponent = SETUP_TX_MAV_COMPONENT;
+    Setup.Tx[config_id].PowerSwitchChannel = POWER_SWITCH_CHANNEL_OFF; //SETUP_TX_POWER_SW_CH;
 
     Setup.Rx.Power = SETUP_RX_POWER;
     Setup.Rx.Diversity = SETUP_RX_DIVERSITY;
@@ -264,6 +265,7 @@ void setup_default(uint8_t config_id)
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
     Setup.Rx.SendRcChannels = SETUP_RX_SEND_RC_CHANNELS;
+    Setup.Rx.PowerSwitchChannel = POWER_SWITCH_CHANNEL_OFF; //SETUP_RX_POWER_SW_CH;
 
     for (uint8_t ch = 0; ch < 12; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[ch] = 0; }
     for (uint8_t ch = 0; ch < 4; ch++) { Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1; }
@@ -388,6 +390,8 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
     TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);
 
+    SANITIZE(Tx[config_id].PowerSwitchChannel, POWER_SWITCH_CHANNEL_NUM, POWER_SWITCH_CHANNEL_OFF, POWER_SWITCH_CHANNEL_OFF);
+
     // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
     // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
     // -------------------------------------------------
@@ -432,6 +436,8 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Rx.SendRadioStatus, RX_SEND_RADIO_STATUS_NUM, SETUP_RX_SEND_RADIO_STATUS, RX_SEND_RADIO_STATUS_OFF);
 
     SANITIZE(Rx.SendRcChannels, SEND_RC_CHANNELS_NUM, SETUP_RX_SEND_RC_CHANNELS, SEND_RC_CHANNELS_OFF);
+
+    SANITIZE(Rx.PowerSwitchChannel, POWER_SWITCH_CHANNEL_NUM, POWER_SWITCH_CHANNEL_OFF, POWER_SWITCH_CHANNEL_OFF);
 
     //-- Spares and deprecated options:
     // should be 0xFF'ed

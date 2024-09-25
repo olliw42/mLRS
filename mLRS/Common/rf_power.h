@@ -19,36 +19,123 @@ class tRfPower
   public:
     void Init(void);
     void Update(void);
+    void Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t power);
+    void Set(uint8_t power);
 
   private:
     uint8_t rfpower_current_idx;
+    uint8_t rfpower_new_idx;
 };
 
 
 void tRfPower::Init(void)
 {
-    rfpower_current_idx = UINT8_MAX;
+    rfpower_current_idx = 0;
+    rfpower_new_idx = rfpower_current_idx; // to prevent update before first Set
 }
 
 
 void tRfPower::Update(void)
 {
-#ifdef DEVICE_IS_TRANSMITTER
-    if (Setup.Tx[Config.ConfigId].Power == rfpower_current_idx) return; // Setup.Tx[].Power has not changed
-    rfpower_current_idx = Setup.Tx[Config.ConfigId].Power;
-#endif
-#ifdef DEVICE_IS_RECEIVER
-    if (Setup.Rx.Power == rfpower_current_idx) return; // Setup.Rx.Power has not changed
-    rfpower_current_idx = Setup.Rx.Power;
-#endif
+    if (rfpower_new_idx == rfpower_current_idx) return; // no change required
 
-    if (rfpower_current_idx >= RFPOWER_LIST_NUM) rfpower_current_idx = RFPOWER_LIST_NUM; // should not happen, play it safe
+    rfpower_current_idx = rfpower_new_idx;
+
+    if (rfpower_current_idx >= RFPOWER_LIST_NUM) { // should not happen, play it safe
+        rfpower_current_idx = RFPOWER_LIST_NUM - 1;
+        rfpower_new_idx = rfpower_current_idx;
+    }
 
     Config.Sx.Power_dbm = rfpower_list[rfpower_current_idx].dbm;
     Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
     sx.UpdateRfPower(&Config.Sx);
     sx2.UpdateRfPower(&Config.Sx2);
+}
+
+
+void tRfPower::Set(uint8_t power)
+{
+    rfpower_new_idx = power;
+}
+
+
+void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t power)
+{
+    if (power_switch_channel == POWER_SWITCH_CHANNEL_OFF) { // disabled
+        rfpower_new_idx = power;
+        return;
+    }
+
+    if (power_switch_channel < POWER_SWITCH_CHANNEL_CH5 || power_switch_channel > POWER_SWITCH_CHANNEL_CH16) {
+        return; // argh
+    }
+
+    if (power_switch_channel + 4 >= RC_DATA_LEN) while (1) {} // should not happen
+
+    uint16_t rc_val = rc->ch[power_switch_channel + 4];
+
+    int8_t new_idx = 0;
+    if (RFPOWER_LIST_NUM <= 5) {
+        // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
+        // 5 slots in Rc range
+        // slot 5: > 75% = 639
+        // slot 4: 25% ... 75% = 213
+        // slot 3: -25% ... 25%
+        // slot 2: -75% ... -25%
+        // slot 1: < -75%
+        if (rc_val >= (1024 + 639)) {   // slot 5 -> max
+            new_idx = RFPOWER_LIST_NUM - 1;
+        } else
+        if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
+            new_idx = RFPOWER_LIST_NUM - 3;
+        } else
+        if (rc_val >= (1024 + 213)) {   // slot 4 -> min + 1
+            new_idx = 1;
+        } else
+        if (rc_val <= (1024 - 213)) {   // slot 2 -> min
+            new_idx = 0;
+        } else {                        // slot 3 -> max - 1
+            new_idx = RFPOWER_LIST_NUM - 2;
+        }
+    } else {
+        // 7 slots in Rc range
+        // slot 7: > 75% = 639
+        // slot 6: 50% ... 75% = 426
+        // slot 5: 25% ... 50% = 213
+        // slot 4: -25% ... 25%
+        // slot 3: -50% ... -25%
+        // slot 2: -50% ... -75%
+        // slot 1: < -75%
+        if (rc_val >= (1024 + 639)) {   // slot 7 -> max
+            new_idx = RFPOWER_LIST_NUM - 1;
+        } else
+        if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
+            new_idx = RFPOWER_LIST_NUM - 3;
+        } else
+        if (rc_val >= (1024 + 426)) {   // slot 6 -> min + 3
+            new_idx = 3;
+        } else
+        if (rc_val <= (1024 - 426)) {   // slot 2 -> min
+            new_idx = 0;
+        } else
+        if (rc_val >= (1024 + 213)) {   // slot 5 -> min + 2
+            new_idx = 2;
+        } else
+        if (rc_val <= (1024 - 213)) {   // slot 3 -> min + 1
+            new_idx = 1;
+        } else {                        // slot 4 -> max - 1
+            new_idx = RFPOWER_LIST_NUM - 2;
+        }
+    }
+
+    if (new_idx < 0) new_idx = 0; // constrain to min
+
+    if (new_idx > power) { // constrain by Setup Power setting
+        new_idx = power;
+    }
+
+    rfpower_new_idx = new_idx;
 }
 
 

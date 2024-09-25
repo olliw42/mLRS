@@ -883,6 +883,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
             msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
+            rfpower.Set(&rcData, Setup.Rx.PowerSwitchChannel, Setup.Rx.Power);
         } else {
             if (connect_occured_once) {
                 // generally output a signal only if we had a connection at least once
@@ -891,6 +892,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 mavlink.SendRcData(out.GetRcDataPtr(), true, true);
                 msp.SendRcData(out.GetRcDataPtr(), true, true);
             }
+            rfpower.Set(Setup.Rx.Power); // force to Setup Power
         }
     }//end of if(doPostReceive2)
 
