@@ -79,24 +79,25 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
     if (RFPOWER_LIST_NUM <= 5) {
         // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
         // 5 slots in Rc range
-        // slot 5: > 75% = 639
-        // slot 4: 25% ... 75% = 213
-        // slot 3: -25% ... 25%
-        // slot 2: -75% ... -25%
-        // slot 1: < -75%
+        // slot 5, up:        > 75% = 639
+        // slot 4, mid-up:     25% ... 75% = 213
+        // slot 3, mid:       -25% ... 25%
+        // slot 2, mid-down:  -75% ... -25%
+        // slot 1, down:      < -75%
         if (rc_val >= (1024 + 639)) {   // slot 5 -> max
-            new_idx = RFPOWER_LIST_NUM - 1;
+            new_idx = (int8_t)power;
         } else
         if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
-            new_idx = RFPOWER_LIST_NUM - 3;
+            new_idx = (int8_t)power - 2;
         } else
         if (rc_val >= (1024 + 213)) {   // slot 4 -> min + 1
             new_idx = 1;
+            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
         } else
         if (rc_val <= (1024 - 213)) {   // slot 2 -> min
             new_idx = 0;
         } else {                        // slot 3 -> max - 1
-            new_idx = RFPOWER_LIST_NUM - 2;
+            new_idx = (int8_t)power - 1;
         }
     } else {
         // 7 slots in Rc range
@@ -108,32 +109,32 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
         // slot 2: -50% ... -75%
         // slot 1: < -75%
         if (rc_val >= (1024 + 639)) {   // slot 7 -> max
-            new_idx = RFPOWER_LIST_NUM - 1;
+            new_idx = (int8_t)power;
         } else
         if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
-            new_idx = RFPOWER_LIST_NUM - 3;
+            new_idx = (int8_t)power - 2;
         } else
         if (rc_val >= (1024 + 426)) {   // slot 6 -> min + 3
             new_idx = 3;
+            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
         } else
         if (rc_val <= (1024 - 426)) {   // slot 2 -> min
             new_idx = 0;
         } else
         if (rc_val >= (1024 + 213)) {   // slot 5 -> min + 2
             new_idx = 2;
+            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
         } else
         if (rc_val <= (1024 - 213)) {   // slot 3 -> min + 1
             new_idx = 1;
+            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
         } else {                        // slot 4 -> max - 1
-            new_idx = RFPOWER_LIST_NUM - 2;
+            new_idx = (int8_t)power - 1;
         }
     }
 
     if (new_idx < 0) new_idx = 0; // constrain to min
-
-    if (new_idx > power) { // constrain by Setup Power setting
-        new_idx = power;
-    }
+    if (new_idx > power) new_idx = power; // constrain by Setup Power setting
 
     rfpower_new_idx = new_idx;
 }
