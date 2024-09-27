@@ -9,6 +9,8 @@
 //*******************************************************
 #ifdef STM32F103xB
 
+#error The F1 CAN driver is most likely out of date and needs revisting !
+
 #include "stm32f1xx_hal.h"
 
 #ifdef HAL_CAN_MODULE_ENABLED

@@ -21,6 +21,8 @@
 #define DRONECAN_RXFRAMEBUFSIZE   64 // actual size is RXFRAMEBUFSIZE * sizeof(tDcRxFifoElement)
 #define DRONECAN_IRQ_PRIORITY     14
 
+// DRONECAN_RXFRAMEBUFSIZE = 64 is hopefully sufficient, catches CAN-29bit frames for 4.2 ms
+
 
 #ifdef __cplusplus
 extern "C"
@@ -111,23 +113,17 @@ int16_t dc_hal_init(
     const tDcHalCanTimings* const timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode);
 
-
 int16_t dc_hal_start(void);
-
 
 int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms);
 
-
 int16_t dc_hal_receive(CanardCANFrame* const frame);
-
 
 int16_t dc_hal_config_acceptance_filters(
     const tDcHalAcceptanceFilterConfiguration* const filter_configs,
     const uint8_t num_filter_configs);
 
-
 tDcHalStatistics dc_hal_get_stats(void);
-
 
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,

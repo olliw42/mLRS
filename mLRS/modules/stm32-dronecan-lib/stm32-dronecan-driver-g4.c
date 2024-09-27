@@ -121,7 +121,7 @@ int16_t dc_hal_init(
     hfdcan.Init.Mode = FDCAN_MODE_NORMAL;
 
     hfdcan.Init.AutoRetransmission = DISABLE;
-    hfdcan.Init.TransmitPause = ENABLE; //DISABLE; // that's probably a good thing to enable it
+    hfdcan.Init.TransmitPause = ENABLE; // it is probably a good thing to enable it
     hfdcan.Init.ProtocolException = DISABLE;
 
     hfdcan.Init.NominalPrescaler = timings->bit_rate_prescaler;
@@ -140,11 +140,13 @@ int16_t dc_hal_init(
     hfdcan.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION; // FDCAN_TX_QUEUE_OPERATION
 
     HAL_StatusTypeDef hres = HAL_FDCAN_Init(&hfdcan);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_INIT; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_CAN_INIT;
+    }
 
     // configure reception filter
     //   follow licanard's default filter setup in spirit
-    //   here it's really needed since the FDCAN RAM was already set up for max num filters
+    //   here it is really needed since the FDCAN RAM was already set up for max num filters
     //   so we fill it with some default
     //   HAL_FDCAN_ConfigFilter() sets the filter registers even when it is disabled
     // at least one filter must be enabled for receive to work
@@ -161,14 +163,18 @@ int16_t dc_hal_init(
         sFilterConfig.FilterConfig = (n == 0) ? FDCAN_FILTER_TO_RXFIFO0 : FDCAN_FILTER_DISABLE;
         sFilterConfig.FilterIndex = n;
         hres = HAL_FDCAN_ConfigFilter(&hfdcan, &sFilterConfig);
-        if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_CONFIG_FILTER; }
+        if (hres != HAL_OK) {
+            return -DC_HAL_ERROR_CAN_CONFIG_FILTER;
+        }
     }
 
     // configure global filter
     //  reject non matching frames with STD and EXT ID
     //  filter all remote frames with STD and EXT ID
     hres = HAL_FDCAN_ConfigGlobalFilter(&hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_CONFIG_GLOBAL_FILTER; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_CAN_CONFIG_GLOBAL_FILTER;
+    }
 
     // FDCAN_RX_FIFO_BLOCKING, FDCAN_RX_FIFO_OVERWRITE ???
     //hres = HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE);
@@ -219,7 +225,7 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms)
 
     _process_error_status();
 
-static uint32_t tx_tlast_ms = 0;
+static uint32_t tx_tlast_ms = 0; // for error counting
 
     // thx to the TxFiFo in the G4 we can do the crude method and just put the message into the fifo if there is space
     // check for space in fifo
@@ -242,7 +248,7 @@ static uint32_t tx_tlast_ms = 0;
     pTxHeader.BitRateSwitch = FDCAN_BRS_OFF; // FDCAN_BRS_ON
     pTxHeader.FDFormat = FDCAN_CLASSIC_CAN; // FDCAN_FD_CAN
     pTxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS; // FDCAN_STORE_TX_EVENTS
-    pTxHeader.MessageMarker = 0; // This parameter must be a number between 0 and 0xFF
+    pTxHeader.MessageMarker = 0; // this parameter must be a number between 0 and 0xFF
 
     pTxHeader.Identifier = (frame->id & CANARD_CAN_EXT_ID_MASK);
     pTxHeader.IdType = FDCAN_EXTENDED_ID;
@@ -264,62 +270,8 @@ tx_tlast_ms = tnow_ms;
 //-------------------------------------------------------
 #ifndef DRONECAN_USE_RX_ISR
 //-- Polling
-
-int16_t dc_hal_receive(CanardCANFrame* const frame)
-{
-    if (frame == NULL) {
-        return -DC_HAL_ERROR_INVALID_ARGUMENT;
-    }
-
-    _process_error_status();
-
-    uint32_t rx_fifo[2] = { FDCAN_RX_FIFO0, FDCAN_RX_FIFO1 };
-    uint8_t data[64];
-
-    for (uint8_t i = 0; i < 2; i++) {
-        FDCAN_RxHeaderTypeDef pRxHeader;
-        HAL_StatusTypeDef hres = HAL_FDCAN_GetRxMessage(&hfdcan, rx_fifo[i], &pRxHeader, data); //frame->data);
-        if (hres != HAL_OK) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE;
-        }
-
-        if (pRxHeader.BitRateSwitch != FDCAN_BRS_OFF) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE; // something is wrong here
-        }
-        if (pRxHeader.FDFormat != FDCAN_CLASSIC_CAN) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE; // something is wrong here
-        }
-        if (pRxHeader.IsFilterMatchingFrame != 0) {
-            // TODO
-        }
-        // DroneCAN uses only EXT frames, so these should be errors
-        if (pRxHeader.IdType != FDCAN_EXTENDED_ID) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE;
-        }
-        if (pRxHeader.RxFrameType != FDCAN_DATA_FRAME) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE;
-        }
-
-        frame->data_len = pRxHeader.DataLength >> 16;
-        if (frame->data_len > 8) {
-            continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE; // argh something is terribly wrong
-        }
-
-        frame->id = (pRxHeader.Identifier & CANARD_CAN_EXT_ID_MASK);
-        frame->id |= CANARD_CAN_FRAME_EFF;
-
-        memset(frame->data, 0, 8);
-        memcpy(frame->data, data, frame->data_len);
-
-        frame->iface_id = 0;
-
-        return 1;
-    }
-
-    return 0;
-}
-
-#else // !DRONECAN_USE_RX_ISR
+#error CAN polling not supported, DRONECAN_USE_RX_ISR must be defined !
+#else
 //-- ISR
 
 #define DC_FDCAN_RX_FIFO_ELEMENT_SIZE  (18U * 4U) // Rx FIFO 0/1 element size in bytes, 2 words + 64 bytes = 18*4
@@ -336,15 +288,13 @@ typedef struct
 
 typedef enum // see table 400 in datasheet
 {
-    DC_RX_FIFO_R0_XTD_BIT   = 0x40000000U, // Extended identifier
-    DC_RX_FIFO_R0_RTR_BIT   = 0x20000000U, // Remote transmission request
+    DC_RX_FIFO_R0_XTD_BIT   = 0x40000000U, // extended identifier
+    DC_RX_FIFO_R0_RTR_BIT   = 0x20000000U, // remote transmission request
     DC_RX_FIFO_R1_FDF_BIT   = 0x00200000U, // FD format
-    DC_RX_FIFO_R1_BRS_BIT   = 0x00100000U, // Bit rate switch
-    DC_RX_FIFO_R1_DLC_MASK  = 0x000F0000U, // Data length code
+    DC_RX_FIFO_R1_BRS_BIT   = 0x00100000U, // bit rate switch
+    DC_RX_FIFO_R1_DLC_MASK  = 0x000F0000U, // data length code
 } DC_RX_FIFO_ELEMENT_ENUM;
 
-
-//#define DRONECAN_RXFRAMEBUFSIZE  64 // that's hopefully sufficient, catches CAN-29bit frames for 4.2 ms
 
 #define DRONECAN_RXFRAMEBUFSIZEMASK  (DRONECAN_RXFRAMEBUFSIZE - 1)
 
@@ -356,12 +306,11 @@ volatile uint16_t dronecan_rxreadpos; // pos at which the next frame is to be fe
 void _dc_hal_receive_isr(uint32_t* RxAddress)
 {
     uint32_t r0 = *RxAddress;
-    // DroneCAN uses only EXT frames, so these should be errors
-    if ((r0 & DC_RX_FIFO_R0_XTD_BIT) == 0) {
+    if ((r0 & DC_RX_FIFO_R0_XTD_BIT) == 0) { // DroneCAN uses only EXT frames, so this should be an error
         dc_hal_stats.isr_xtd_count++;
         return;
     }
-    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) {
+    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) { // DroneCAN uses only EXT frames, so this should be an error
         dc_hal_stats.isr_rtr_count++;
         return;
     }
@@ -424,7 +373,6 @@ void FDCAN1_IT0_IRQHandler(void)
     if (RxFifo0ITs != 0) {
         __HAL_FDCAN_CLEAR_FLAG(&hfdcan, RxFifo0ITs); // clear Rx FIFO0 flags
 
-//        if ((RxFifo0ITs & FDCAN_IR_RF0N) != 0 || (RxFifo0ITs & FDCAN_IR_RF0F) != 0) {
         if ((RxFifo0ITs & (FDCAN_IR_RF0N | FDCAN_IR_RF0F)) != 0) { // do it also if Rx FIFO 0 full
             // HAL_FDCAN_GetRxMessage()
             while ((hfdcan.Instance->RXF0S & FDCAN_RXF0S_F0FL) != 0) { // Rx FIFO 0 not empty
@@ -501,13 +449,13 @@ HAL_StatusTypeDef hres;
     dronecan_rxreadpos = 0;
     memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
 
-/* doc in stm32g4xx_hal_fdcan.c says: By default, all interrupts are assigned to line 0
-    hres = HAL_FDCAN_ConfigInterruptLines(
-        &hfdcan,
-        FDCAN_IT_GROUP_RX_FIFO0 | FDCAN_IT_GROUP_RX_FIFO1,
-        FDCAN_INTERRUPT_LINE0);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_ISR_CONFIG; }
-*/
+// doc in stm32g4xx_hal_fdcan.c says: By default, all interrupts are assigned to line 0
+// so we should not have to do this
+//    hres = HAL_FDCAN_ConfigInterruptLines(
+//        &hfdcan,
+//        FDCAN_IT_GROUP_RX_FIFO0 | FDCAN_IT_GROUP_RX_FIFO1,
+//        FDCAN_INTERRUPT_LINE0);
+//    if (hres != HAL_OK) { return -DC_HAL_ERROR_ISR_CONFIG; }
 
     hres = HAL_FDCAN_ActivateNotification(
         &hfdcan,
@@ -549,13 +497,12 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
 
     frame->data_len = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
     if (frame->data_len > CANARD_CAN_FRAME_MAX_DATA_LEN) frame->data_len = CANARD_CAN_FRAME_MAX_DATA_LEN; // should not happen, but play it safe
-/*
-    memset((uint8_t*)frame->data, 0, 8);
-    memcpy((uint8_t*)frame->data, (uint8_t*)dronecan_rxbuf[rxreadpos].data, frame->data_len); */
+
+//    memset((uint8_t*)frame->data, 0, 8);
+//    memcpy((uint8_t*)frame->data, (uint8_t*)dronecan_rxbuf[rxreadpos].data, frame->data_len);
     for (uint8_t n = 0; n < CANARD_CAN_FRAME_MAX_DATA_LEN; n++) {
         frame->data[n] = (n < frame->data_len) ? dronecan_rxbuf[rxreadpos].data[n] : 0;
     }
-
 
     frame->iface_id = 0;
 
@@ -701,53 +648,12 @@ int16_t dc_hal_compute_timings(
         return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
     }
 #endif
-
-    // timings generated by somewhat following mbed's method
-    // it favors small prescaler
-    // 170 MHz -> 1, 127, 42, 42
-#if 0
-    const uint32_t tq = peripheral_clock_rate / 1000000;
-    uint32_t prescaler = 1;
-    uint32_t bs1 = tq/2; // just something, to silence compiler
-    while (1) {
-        // see if we can use that prescaler
-        // 75%
-        // => 1 + BS1 = 3 * BS2 => BS2 will never reach it's upper limit
-        // => 4/3 * (1 + BS1) * prescaler = tq
-        // => BS1 = 3/4 * tq/prescaler - 1
-        bs1 = 3 * tq / (4 * prescaler); // is 3/4 * tq/prescaler - 1, but drop the -1
-        if (IS_FDCAN_NOMINAL_TSEG1(bs1)) break; // we found a good value
-        prescaler++;
-        if (!IS_FDCAN_NOMINAL_PRESCALER(prescaler)) {
-            return -DC_HAL_ERROR_TIMING;
-        }
-    }
-
-    timings->bit_rate_prescaler = prescaler;
-    timings->bit_segment_1 = bs1;
-    timings->bit_segment_2 = tq - 1 - bs1; // to ensure (1 + BS1 + BS2) = f_clk_MHz / 1000000
-    timings->sync_jump_width = timings->bit_segment_2;
-#endif
-
     // timings generated by kvaser
 #if 0
     timings->bit_rate_prescaler = 1;
     timings->bit_segment_1 = 127;
     timings->bit_segment_2 = 42;
     timings->sync_jump_width = 43; // not allowed according to datasheet !!
-#endif
-
-
-    // timings generated by ACANF
-#if 0
-    return ACANFD_STM32_Settings(
-        peripheral_clock_rate,
-        timings,
-        target_bit_rate, 75,  1, 75,   50);
-        // ppm = 500: 5, 24, 9, 9
-        // ppm = 100: 5, 24, 9, 9
-        // ppm =  50: 5, 24, 9, 9
-        // => (1 + 24 + 9) * 5 = 170 OK!
 #endif
 
     // let's do a check

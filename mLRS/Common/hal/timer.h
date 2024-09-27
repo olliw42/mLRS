@@ -56,6 +56,22 @@ uint16_t micros16(void)
 }
 
 
+// needs to be called not later than every 65 ms
+// to ensure the overflow counter is updated properly
+uint64_t micros64(void)
+{
+static uint64_t overflow_cnt = 0;
+static uint16_t last_cnt;
+
+    uint16_t cnt = MICROS_TIMx->CNT;
+    if (cnt < last_cnt) {
+        overflow_cnt += 0x10000;
+    }
+    last_cnt = cnt;
+    return overflow_cnt + cnt;
+}
+
+
 //-------------------------------------------------------
 // Init function
 //-------------------------------------------------------

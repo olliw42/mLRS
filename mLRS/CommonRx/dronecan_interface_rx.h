@@ -31,33 +31,14 @@ extern tStats stats;
 extern tSetup Setup;
 extern tGlobalConfig Config;
 
-#ifndef DRONECAN_PREFERRED_NODE_ID
 #define DRONECAN_PREFERRED_NODE_ID  68
-#endif
 
-#ifndef CANARD_POOL_SIZE
 #define CANARD_POOL_SIZE  4096
-#endif
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
 
 CanardInstance canard;
 uint8_t canard_memory_pool[CANARD_POOL_SIZE]; // doing this static leads to crash in full mLRS code !?
-
-
-// needs to be called not later than every 65 ms
-uint64_t micros64(void)
-{
-static uint64_t overflow_cnt = 0;
-static uint16_t last_cnt;
-
-    uint16_t cnt = micros16();
-    if (cnt < last_cnt) {
-        overflow_cnt += 0x10000;
-    }
-    last_cnt = cnt;
-    return overflow_cnt + cnt;
-}
 
 
 void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
@@ -77,7 +58,6 @@ const uint32_t c = 2531011;
 const uint32_t m = 2147483648;
 
     _seed = (a * _seed + c) % m;
-
     return _seed >> 16;
 }
 
@@ -273,9 +253,6 @@ uint8_t filter_num = 0;
 // This function is called at 1 ms rate from the main loop
 void tRxDroneCan::Tick_ms(void)
 {
-//    dronecan_receive_frames();
-//    dronecan_process_tx_queue();
-
     uint64_t tnow_us = micros64(); // call it every ms to ensure it is updated
 
     // do dynamic node allocation if still needed
@@ -510,7 +487,7 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
 }
 
 
-// The following two functions for dynamic node id allocation VERY closely follow an example source which
+// The next two functions for dynamic node id allocation VERY closely follow an example source which
 // was provided by the UAVACN and libcanard projects in around 2017. The original sources seem to not be
 // available anymore. The license was almost surely permissive (MIT?) and the author Pavel Kirienko. We
 // apologize for not giving more appropriate credit.
@@ -599,7 +576,7 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 }
 
 
-// Handle a tunnel.Targetted message, check if it's for us and proper
+// Handle a tunnel.Targetted message, check if it is for us and proper
 void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer)
 {
     if (!dronecan.id_is_allcoated()) { // this should never happen, but play it safe
@@ -619,20 +596,19 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
 
     // must be targeted at us
     if (_p.tunnel_targetted.target_node != canardGetLocalNodeID(&canard)) {
-        tunnel_targetted_error_cnt++; // not actually an error, we count it here for testing
         return;
     }
 
     // we expect serial_id to be 0
-    // TODO: should we just store it and reuse when sending?
+    // TODO: should we store it and reuse whatever we got when sending?
     if (_p.tunnel_targetted.serial_id != 0) {
-        tunnel_targetted_error_cnt++; // not actually an error, we count it here for testing
         return;
     }
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        // ArduPilot <= v4.5.x doesn't set protocol correctly, so we can't check -> we check only when it is set
-        // when v4.6 is out, we could require having to use v4.6, by mandating also correct protocol
+        // ArduPilot <= v4.5.x doesn't set protocol correctly, so we cannot generally check
+        // -> we check only when it is set
+        // when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED &&
             _p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_MAVLINK2) {
             tunnel_targetted_error_cnt++;
@@ -647,7 +623,7 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     }
 
     // memorize the node_id of the sender, this is most likely our fc (hopefully true)
-    // just always respond to whoever sends to use
+    // just always respond to whoever sends to us
     if (tunnel_targetted.server_node_id && tunnel_targetted.server_node_id != transfer->source_node_id) {
         tunnel_targetted_error_cnt++; // not actually an error, we count it here for testing
     }
@@ -677,7 +653,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
     }
     _p.tunnel_targetted.serial_id = 0;
     _p.tunnel_targetted.options = UAVCAN_TUNNEL_TARGETTED_OPTION_LOCK_PORT;
-    _p.tunnel_targetted.baudrate = Config.SerialBaudrate; // this is ignored by ArduPilot (as it should do)
+    _p.tunnel_targetted.baudrate = Config.SerialBaudrate; // this is ignored by ArduPilot (as it should)
 
     uint16_t data_len = fifo_ser_to_fc.Available();
     _p.tunnel_targetted.buffer.len = (data_len < 120) ? data_len : 120;
@@ -704,9 +680,9 @@ void tRxDroneCan::send_tunnel_targetted(void)
 
 // This callback is invoked when it detects beginning of a new transfer on the bus that can be
 // received by our node.
-// Return value
-//  true: library will accept the transfer
-//  false: library will ignore the transfer.
+// Return value:
+//   true: library will accept the transfer
+//   false: library will ignore the transfer.
 // This function must fill in the out_data_type_signature to be the signature of the message.
 bool dronecan_should_accept_transfer(
     const CanardInstance* const ins,
@@ -768,7 +744,7 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
 
 
 //-------------------------------------------------------
-// CAN init
+// CAN Init
 //-------------------------------------------------------
 
 #ifdef STM32F1
@@ -815,66 +791,22 @@ void can_init(void)
   #error HAL_FDCAN_MODULE_ENABLED not defined, enable it in Core\Inc\stm32g4xx_hal_conf.h!
 #endif
 
-//#define USE_HAL_NOT_LL
-//#include "stm32g4xx_hal.h"
-
 void can_init(void)
 {
     // GPIO initialization
     // PA11 = FDCAN1_RX
     // PA12 = FDCAN1_TX
 
-#ifdef USE_HAL_NOT_LL
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-
-    GPIO_InitTypeDef GPIO_InitStruct = {};
-    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF9_FDCAN1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-#else
     gpio_init_af(IO_PA11, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
     gpio_init_af(IO_PA12, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-/*    LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_GPIOA);
-
-    LL_GPIO_InitTypeDef GPIO_InitStruct = {};
-    GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-    GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = LL_GPIO_AF_9;
-
-    GPIO_InitStruct.Pin = LL_GPIO_PIN_11;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
-    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = LL_GPIO_PIN_12;
-    GPIO_InitStruct.Pull = LL_GPIO_PULL_UP;
-    GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    LL_GPIO_Init(GPIOA, &GPIO_InitStruct); */
-#endif
 
     // FDCAN clock initialization
-/*
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {};
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
-    PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PCLK1;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {}
-*/
-#ifdef USE_HAL_NOT_LL
-    __HAL_RCC_FDCAN_CONFIG(RCC_FDCANCLKSOURCE_PCLK1); // RCC->CCIPR = (RCC->CCIPR & ~RCC_CCIPR_FDCANSEL) | RCC_CCIPR_FDCANSEL_1;
 
-    __HAL_RCC_FDCAN_CLK_ENABLE(); // RCC->APB1ENR1  |= RCC_APB1ENR1_FDCANEN;
-    //__HAL_RCC_FDCAN_FORCE_RESET(); // SET_BIT(RCC->APB1RSTR1, RCC_APB1RSTR1_FDCANRST) // RCC->APB1RSTR1 |= RCC_APB1RSTR1_FDCANRST;
-    //__HAL_RCC_FDCAN_RELEASE_RESET(); // CLEAR_BIT(RCC->APB1RSTR1, RCC_APB1RSTR1_FDCANRST) // RCC->APB1RSTR1 &= ~RCC_APB1RSTR1_FDCANRST;
-#else
     LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
 
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_FDCAN);
     //LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_FDCAN);
     //LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_FDCAN);
-#endif
 
     // DroneCAN HAL initialization
 
@@ -885,6 +817,7 @@ void can_init(void)
         DBG_DC(dbg.puts("\nERROR: Solution for CAN timings could not be found");)
         return;
     }
+
     DBG_DC(dbg.puts("\n  PCLK1: ");dbg.puts(u32toBCD_s(HAL_RCC_GetPCLK1Freq()));
     dbg.puts("\n  FDCAN CLK: ");dbg.puts(u32toBCD_s(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN)));
     dbg.puts("\n  Prescaler: ");dbg.puts(u16toBCD_s(timings.bit_rate_prescaler));
