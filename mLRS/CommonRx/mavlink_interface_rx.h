@@ -324,7 +324,7 @@ void tRxMavlink::Do(void)
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-/* only for deving, always send radio status
+/* only for dev-ing, always send radio status
         if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RADIORCCHANNELS) {
             generate_radio_link_flow_control();
         } else {
@@ -423,14 +423,18 @@ void tRxMavlink::putc(char c)
 #endif
 
 #if defined DEVICE_HAS_DRONECAN
-        // For some not yet understood reasons, the CAN_FRAME MAVLink messages which
-        // ArduPilot will send as a response to the command makes the CAN bus get stuck
-        // and the receiver don't gets any CAN messages anymore.
-        // So, as a stupid workaround we drop these commands for the GCS.
+        // Two issues, which have been resolved but are present in some versions of
+        // MissionPlanner and ArduPilot.
+        // MissionPlanner: Always sends out MAV_CMD_CAN_FORWARD commands after initial connection, but shouldn't.
+        // ArduPilot: Jams the CAN bus when it starts sending CAN_FRAME MAVLink messages as
+        // response to the MAV_CMD_CAN_FORWARD command, when MAVLink is over DroneCAN. The effect is that
+        // all DroneCAN communication stops, which is catastrophic.
+        // Our workaround which prevents this efficiently is to NOT pass on the MAV_CMD_CAN_FORWARD command to the fc.
+        // Since one cannot guarantee that a user may not use a combination is problematic MP or AP versions,
+        // the workaround is kept.
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG && dronecan.ser_over_can_enabled) {
             uint16_t cmd = fmav_msg_command_long_get_field_command(&msg_serial_out);
             if (cmd == MAV_CMD_CAN_FORWARD) {
-//dbg.puts("\nm CMD_CAN_FORWARD");
                 return; // don't send to fc
             }
         }
