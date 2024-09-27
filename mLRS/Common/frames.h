@@ -268,6 +268,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
     rx_params->OutLqChannelMode = Setup.Rx.OutLqChannelMode;
     rx_params->FailsafeMode = Setup.Rx.FailsafeMode;
+    rx_params->SerialPort = Setup.Rx.SerialPort;
     rx_params->SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params->SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_params->SendRadioStatus = Setup.Rx.SendRadioStatus;
@@ -295,6 +296,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;
     Setup.Rx.OutLqChannelMode = rx_params->OutLqChannelMode;
     Setup.Rx.FailsafeMode = rx_params->FailsafeMode;
+    Setup.Rx.SerialPort = rx_params->SerialPort;
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
@@ -352,6 +354,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 44);
     SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
     SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
+    SetupMetaData.Rx_SerialPort_allowed_mask = rx_setupdata->SerialPort_allowed_mask;
 }
 
 
@@ -402,6 +405,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     }
     rx_setupdata.Diversity_allowed_mask = SetupMetaData.Rx_Diversity_allowed_mask;
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
+    rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
     _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }

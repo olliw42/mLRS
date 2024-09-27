@@ -11,8 +11,9 @@
 // RX DIY BOARD01 v014 STM32F103CB
 //-------------------------------------------------------
 
-#define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_OUT
+//XX #define DEVICE_HAS_DIVERSITY
+//XX #define DEVICE_HAS_OUT
+#define DEVICE_HAS_DRONECAN // !!! ATTENTION: modified hal to work with the old UC4H generic node board !!!
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -50,7 +51,8 @@
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
 
-#define UARTF_USE_UART3_PB10PB11 // debug
+//#define UARTF_USE_UART3_PB10PB11 // debug
+#define UARTF_USE_UART1_PA9PA10
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
@@ -233,7 +235,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
-
+/*//XX
 #define LED_GREEN 		            IO_PB4
 #define LED_RED		                IO_PB3
 
@@ -252,6 +254,22 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
+*/
+#define LED_GREEN                 IO_PA4
+
+void leds_init(void)
+{
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
+}
+
+void led_green_off(void) { gpio_low(LED_GREEN); }
+void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
+
+void led_red_off(void) {}
+void led_red_on(void) {}
+void led_red_toggle(void) {}
 
 
 //-- POWER

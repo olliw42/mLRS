@@ -22,6 +22,7 @@
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
 extern tStats stats;
+extern tSetup Setup;
 
 
 //-------------------------------------------------------
@@ -417,6 +418,20 @@ void tRxMavlink::putc(char c)
                         fmav_msg_recalculate_crc(&msg_serial_out); // we need to recalculate CRC, requires RESULT_OK
                     }
                 }
+            }
+        }
+#endif
+
+#if defined DEVICE_HAS_DRONECAN
+        // For some not yet understood reasons, the CAN_FRAME MAVLink messages which
+        // ArduPilot will send as a response to the command makes the CAN bus get stuck
+        // and the receiver don't gets any CAN messages anymore.
+        // So, as a stupid workaround we drop these commands for the GCS.
+        if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG && dronecan.ser_over_can_enabled) {
+            uint16_t cmd = fmav_msg_command_long_get_field_command(&msg_serial_out);
+            if (cmd == MAV_CMD_CAN_FORWARD) {
+//dbg.puts("\nm CMD_CAN_FORWARD");
+                return; // don't send to fc
             }
         }
 #endif

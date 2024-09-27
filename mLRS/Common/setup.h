@@ -172,6 +172,15 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_OutMode_allowed_mask = 0; // not available, do not display
 #endif
 
+    // Rx SerialPort: "serial,can"
+    SetupMetaData.Rx_SerialPort_allowed_mask = 0;  // not available, do not display
+#ifdef USE_SERIAL
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b01; // add serial
+#endif
+#ifdef DEVICE_HAS_DRONECAN
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b10; // add can
+#endif
+
     //-- Tx: Receiver setup meta data
 
     SetupMetaData.rx_available = false;
@@ -261,6 +270,7 @@ void setup_default(uint8_t config_id)
     Setup.Rx.OutMode = SETUP_RX_OUT_MODE;
     Setup.Rx.OutRssiChannelMode = SETUP_RX_OUT_RSSI_CHANNEL;
     Setup.Rx.FailsafeMode = SETUP_RX_FAILSAFE_MODE;
+    Setup.Rx.SerialPort = SETUP_RX_SERIAL_PORT;
     Setup.Rx.SerialBaudrate = SETUP_RX_SERIAL_BAUDRATE;
     Setup.Rx.SerialLinkMode = SETUP_RX_SERIAL_LINK_MODE;
     Setup.Rx.SendRadioStatus = SETUP_RX_SEND_RADIO_STATUS;
@@ -428,6 +438,9 @@ void setup_sanitize_config(uint8_t config_id)
     for (uint8_t ch = 0; ch < 4; ch++) {
         if (Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] > 2) Setup.Rx.FailsafeOutChannelValues_Ch13_Ch16[ch] = 1;
     }
+
+    SANITIZE(Rx.SerialPort, RX_SERIAL_PORT_NUM, SETUP_RX_SERIAL_PORT, RX_SERIAL_PORT_SERIAL);
+    TST_NOTALLOWED(Rx_SerialPort_allowed_mask, Rx.SerialPort, RX_SERIAL_PORT_SERIAL);
 
     SANITIZE(Rx.SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_RX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_57600);
 

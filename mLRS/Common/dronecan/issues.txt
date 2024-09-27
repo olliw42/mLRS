@@ -1,0 +1,5 @@
+pip uninstall em
+
+
+https://github.com/dronecan/dronecan_dsdlc/issues/18
+pip install --force-reinstall -v empy==3.3.4

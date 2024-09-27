@@ -71,6 +71,8 @@
 
 #define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: low throttle, 4: CH1-CH4 center signal
 
+#define SETUP_RX_SERIAL_PORT            0 // 0: serial, 1: can
+
 #define SETUP_RX_SERIAL_BAUDRATE        3 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200, 5: 230400
 
 #define SETUP_RX_POWER                  CPOWER
