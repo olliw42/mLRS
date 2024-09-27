@@ -422,15 +422,15 @@ void tRxMavlink::putc(char c)
         }
 #endif
 
-#if defined DEVICE_HAS_DRONECAN
+#ifdef DEVICE_HAS_DRONECAN
         // Two issues, which have been resolved but are present in some versions of
         // MissionPlanner and ArduPilot.
         // MissionPlanner: Always sends out MAV_CMD_CAN_FORWARD commands after initial connection, but shouldn't.
         // ArduPilot: Jams the CAN bus when it starts sending CAN_FRAME MAVLink messages as
-        // response to the MAV_CMD_CAN_FORWARD command, when MAVLink is over DroneCAN. The effect is that
-        // all DroneCAN communication stops, which is catastrophic.
+        // response to MAV_CMD_CAN_FORWARD commands, when MAVLink is over DroneCAN. The effect
+        // is that all DroneCAN communication stops, which is catastrophic.
         // Our workaround which prevents this efficiently is to NOT pass on the MAV_CMD_CAN_FORWARD command to the fc.
-        // Since one cannot guarantee that a user may not use a combination is problematic MP or AP versions,
+        // Since one cannot guarantee that a user may not use a combination with problematic MP or AP versions,
         // the workaround is kept.
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG && dronecan.ser_over_can_enabled) {
             uint16_t cmd = fmav_msg_command_long_get_field_command(&msg_serial_out);
