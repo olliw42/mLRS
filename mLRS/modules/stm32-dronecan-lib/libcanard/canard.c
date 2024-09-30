@@ -1206,6 +1206,20 @@ CANARD_INTERNAL int16_t enqueueTxFrames(CanardInstance* ins,
         uint8_t toggle = 0;
         uint8_t sot_eot = 0x80;
 
+        /*
+          see if we are going to be able to allocate enough blocks for
+          this transfer. If not then stop now, otherwise we will end
+          up doing a partial (corrupt) transfer which will just make
+          the situation worse as it will waste bus bandwidth
+         */
+        const uint16_t total_bytes = transfer->payload_len + 2; // including CRC
+        const uint8_t bytes_per_frame = frame_max_data_len-1; // sot/eot byte consumes one byte
+        const uint16_t frames_needed = (total_bytes + (bytes_per_frame-1)) / bytes_per_frame;
+        const uint16_t blocks_available = ins->allocator.statistics.capacity_blocks - ins->allocator.statistics.current_usage_blocks;
+        if (blocks_available < frames_needed) {
+            return -CANARD_ERROR_OUT_OF_MEMORY;
+        }
+
         CanardTxQueueItem* queue_item = NULL;
 
         while (transfer->payload_len - data_index != 0)
@@ -1214,7 +1228,7 @@ CANARD_INTERNAL int16_t enqueueTxFrames(CanardInstance* ins,
             if (queue_item == NULL)
             {
                 CANARD_ASSERT(false);
-                return -CANARD_ERROR_OUT_OF_MEMORY;          // TODO: Purge all frames enqueued so far
+                return -CANARD_ERROR_OUT_OF_MEMORY;
             }
 
             uint16_t i = 0;
