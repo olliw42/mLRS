@@ -121,12 +121,13 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 {
     tick_1Hz = 0;
     node_status_transfer_id = 0;
-    rc_input_transfer_id = 0;
-    rc_input_tlast_ms = 0;
-    node_id_allocation_transfer_id = 0;
-    node_id_allocation = {};
-    node_id_allocation_running = false;
-    tunnel_targetted_transfer_id = 0;
+    rc_input.transfer_id = 0;
+    rc_input.tlast_ms = 0;
+    node_id_allocation.transfer_id = 0;
+    node_id_allocation.send_next_request_at_ms = 0;
+    node_id_allocation.unique_id_offset = 0;
+    node_id_allocation.is_running = false;
+    tunnel_targetted.transfer_id = 0;
     tunnel_targetted.to_fc_tlast_ms = 0;
     tunnel_targetted.server_node_id = 0;
     fifo_fc_to_ser.Flush();
@@ -155,11 +156,11 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 
     if (!ser_over_can_enabled) {
         // canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
-        node_id_allocation_running = true;
+        node_id_allocation.is_running = true;
     } else {
         // ArduPilot's MAVLink via CAN seems to need a fixed node id, so don't do dynamic id allocation
         canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
-        node_id_allocation_running = false;
+        node_id_allocation.is_running = false;
     }
 
     int16_t res = set_can_filters();
@@ -257,14 +258,14 @@ void tRxDroneCan::Tick_ms(void)
 
     // do dynamic node allocation if still needed
     if (!dronecan.id_is_allcoated()) {
-        node_id_allocation_running = true;
+        node_id_allocation.is_running = true;
         if (millis32() > node_id_allocation.send_next_request_at_ms) {
             send_dynamic_node_id_allocation_request();
         }
         return;
     }
-    if (node_id_allocation_running) {
-        node_id_allocation_running = false;
+    if (node_id_allocation.is_running) {
+        node_id_allocation.is_running = false;
         set_can_filters();
         return;
     }
@@ -318,8 +319,8 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     if (!dronecan.id_is_allcoated()) return;
 
     uint32_t tnow_ms = millis32();
-    if ((tnow_ms - rc_input_tlast_ms) < 19) return; // don't send too fast, DroneCAN is not for racing ...
-    rc_input_tlast_ms = tnow_ms;
+    if ((tnow_ms - rc_input.tlast_ms) < 19) return; // don't send too fast, DroneCAN is not for racing ...
+    rc_input.tlast_ms = tnow_ms;
 
     uint8_t failsafe_mode = Setup.Rx.FailsafeMode;
     if (failsafe) {
@@ -354,13 +355,13 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.rcin.data[i] = (((int32_t)(rc_out->ch[i]) - 1024) * 601) / 1024 + 1500;
     }
 
-    uint32_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf);
+    uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf);
 
     canardBroadcast(
         &canard,
         DRONECAN_SENSORS_RC_RCINPUT_SIGNATURE,
         DRONECAN_SENSORS_RC_RCINPUT_ID,
-        &rc_input_transfer_id,
+        &rc_input.transfer_id,
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
         len);
@@ -566,7 +567,7 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
         &canard,
         UAVCAN_PROTOCOL_DYNAMIC_NODE_ID_ALLOCATION_SIGNATURE,
         UAVCAN_PROTOCOL_DYNAMIC_NODE_ID_ALLOCATION_ID,
-        &node_id_allocation_transfer_id,
+        &node_id_allocation.transfer_id,
         CANARD_TRANSFER_PRIORITY_LOW,
         allocation_request,
         uid_size + 1);
@@ -665,7 +666,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
         &canard,
         UAVCAN_TUNNEL_TARGETTED_SIGNATURE,
         UAVCAN_TUNNEL_TARGETTED_ID,
-        &tunnel_targetted_transfer_id,
+        &tunnel_targetted.transfer_id,
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
         len);

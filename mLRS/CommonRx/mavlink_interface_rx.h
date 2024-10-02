@@ -429,8 +429,8 @@ void tRxMavlink::putc(char c)
         // ArduPilot: Jams the CAN bus when it starts sending CAN_FRAME MAVLink messages as
         // response to MAV_CMD_CAN_FORWARD commands, when MAVLink is over DroneCAN. The effect
         // is that all DroneCAN communication stops, which is catastrophic.
-        // Our workaround which prevents this efficiently is to NOT pass on the MAV_CMD_CAN_FORWARD command to the fc.
-        // Since one cannot guarantee that a user may not use a combination with problematic MP or AP versions,
+        // The workaround which prevents this efficiently is to NOT pass on the MAV_CMD_CAN_FORWARD command to the fc.
+        // Since one cannot guarantee that a user does not use a combination with problematic MP or AP versions,
         // the workaround is kept.
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_COMMAND_LONG && dronecan.ser_over_can_enabled) {
             uint16_t cmd = fmav_msg_command_long_get_field_command(&msg_serial_out);

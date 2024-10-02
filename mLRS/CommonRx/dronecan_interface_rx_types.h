@@ -64,18 +64,20 @@ class tRxDroneCan
 
     uint8_t node_status_transfer_id; // is this per message ? it seems so ...
 
-    uint8_t rc_input_transfer_id;
-    uint32_t rc_input_tlast_ms;
-
-    uint8_t node_id_allocation_transfer_id;
     struct {
+        uint8_t transfer_id;
+        uint32_t tlast_ms;
+    } rc_input;
+
+    struct {
+        uint8_t transfer_id;
         uint32_t send_next_request_at_ms;
         uint32_t unique_id_offset;
+        bool is_running;
     } node_id_allocation;
-    bool node_id_allocation_running;
 
-    uint8_t tunnel_targetted_transfer_id;
     struct {
+        uint8_t transfer_id;
         uint32_t to_fc_tlast_ms;
         uint8_t server_node_id;
     } tunnel_targetted;
