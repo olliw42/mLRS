@@ -17,6 +17,7 @@
 #include "dronecan_interface_rx_types.h"
 
 #ifdef DEVICE_HAS_DRONECAN
+#include "../Common/protocols/crsf_protocol.h"
 
 #if FDCAN_IRQ_PRIORITY != DRONECAN_IRQ_PRIORITY
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
@@ -335,6 +336,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         }
     }
 
+#if 1
     _p.rc_input.id = 0;
     _p.rc_input.status = 0;
     if (failsafe) _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_FAILSAFE;
@@ -365,6 +367,50 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
         len);
+
+#else
+    _p.tunnel_targetted.target_node = 10; //tunnel_targetted.server_node_id;
+    _p.tunnel_targetted.protocol.protocol = UAVCAN_TUNNEL_PROTOCOL_UNDEFINED;
+    _p.tunnel_targetted.serial_id = 1;
+    _p.tunnel_targetted.options = UAVCAN_TUNNEL_TARGETTED_OPTION_LOCK_PORT;
+    _p.tunnel_targetted.baudrate = 57600; // some dummy, is ignored by ArduPilot anyway
+
+    tCrsfChannelFrame crsf_buf;
+    crsf_buf.ch.ch0 = rc_to_crsf(rc_out->ch[0]);
+    crsf_buf.ch.ch1 = rc_to_crsf(rc_out->ch[1]);
+    crsf_buf.ch.ch2 = rc_to_crsf(rc_out->ch[2]);
+    crsf_buf.ch.ch3 = rc_to_crsf(rc_out->ch[3]);
+    crsf_buf.ch.ch4 = rc_to_crsf(rc_out->ch[4]);
+    crsf_buf.ch.ch5 = rc_to_crsf(rc_out->ch[5]);
+    crsf_buf.ch.ch6 = rc_to_crsf(rc_out->ch[6]);
+    crsf_buf.ch.ch7 = rc_to_crsf(rc_out->ch[7]);
+    crsf_buf.ch.ch8 = rc_to_crsf(rc_out->ch[8]);
+    crsf_buf.ch.ch9 = rc_to_crsf(rc_out->ch[9]);
+    crsf_buf.ch.ch10 = rc_to_crsf(rc_out->ch[10]);
+    crsf_buf.ch.ch11 = rc_to_crsf(rc_out->ch[11]);
+    crsf_buf.ch.ch12 = rc_to_crsf(rc_out->ch[12]);
+    crsf_buf.ch.ch13 = rc_to_crsf(rc_out->ch[13]);
+    crsf_buf.ch.ch14 = rc_to_crsf(rc_out->ch[14]);
+    crsf_buf.ch.ch15 = rc_to_crsf(rc_out->ch[15]);
+    crsf_buf.address = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    crsf_buf.len = CRSF_CHANNELPACKET_LEN + 2;
+    crsf_buf.frame_id = CRSF_FRAME_ID_CHANNELS;
+    crsf_buf.crc = crsf_crc8_update(0, &(crsf_buf.frame_id), CRSF_CHANNELPACKET_LEN + 1);
+
+    _p.tunnel_targetted.buffer.len = CRSF_CHANNELPACKET_LEN + 4;
+    memcpy(&_p.tunnel_targetted.buffer.data, &crsf_buf, CRSF_CHANNELPACKET_LEN + 4);
+
+    uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf);
+
+    canardBroadcast(
+        &canard,
+        UAVCAN_TUNNEL_TARGETTED_SIGNATURE,
+        UAVCAN_TUNNEL_TARGETTED_ID,
+        &tunnel_targetted.transfer_id,
+        CANARD_TRANSFER_PRIORITY_MEDIUM,
+        _buf,
+        len);
+#endif
 }
 
 
