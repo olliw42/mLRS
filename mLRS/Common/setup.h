@@ -33,11 +33,15 @@ void setup_configure_metadata(void)
   // DUALBAND 2.4 GHz & 868/915 MHz !
   #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+  #else
+    #error Unknown Frequencyband !
   #endif
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   // DUALBAND 868/915 MHz & 433 MHz !
   #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+  #else
+    #error Unknown Frequencyband !
   #endif
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
@@ -60,6 +64,8 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // 70 cm HAM, not editable
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // 866 MHz IN, not editable
+#else
+    #error Unknown Frequencyband !
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK"
@@ -314,15 +320,11 @@ void setup_sanitize_config(uint8_t config_id)
   // DUALBAND 2.4 GHz & 868/915 MHz !
   #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-  #else
-    #error Unknown Frequencyband !
   #endif
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   // DUALBAND 868/915 MHz & 433 MHz !
   #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-  #else
-    #error Unknown Frequencyband !
   #endif
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
@@ -345,8 +347,6 @@ void setup_sanitize_config(uint8_t config_id)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_70_CM_HAM;
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_866_MHZ_IN;
-#else
-    #error Unknown Frequencyband !
 #endif
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
         Setup.Common[config_id].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)frequency_band_default;
@@ -576,17 +576,12 @@ void setup_configure_config(uint8_t config_id)
     Config.FrameSyncWord = fmav_crc_calculate((uint8_t*)&bind_dblword, 4); // condense it into a u16
 
     //-- SX12xx Config: SyncWord
+    // note: SyncWord will be modified below by Ortho
 
     Config.Sx.FlrcSyncWord = bind_dblword;
-
-    if (Setup.Common[config_id].Ortho > ORTHO_NONE) {
-        Config.FrameSyncWord += 0x1111 * Config.Fhss.Ortho; // modify also FrameSyncWord
-        Config.Sx.FlrcSyncWord += 0x11111111 * Config.Fhss.Ortho;
-    }
-
     Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
 
-  //-- Diversity
+    //-- Diversity
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_IS_TRANSMITTER
@@ -680,27 +675,17 @@ void setup_configure_config(uint8_t config_id)
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz !
-    switch (Config.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_2P4_GHZ:
-        Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
-        break;
-    default:
-        while (1) {}
-    }
+    Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz !
-    switch (Config.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_433_MHZ:
-        Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
-        break;
-    default:
-        while (1) {}
-    }
+    Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
 #endif
+
     //-- Fhss
 
     Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand;
 
+    Config.Fhss.FrequencyBand_allowed_mask = 0;
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) {
         Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     }
@@ -726,6 +711,13 @@ void setup_configure_config(uint8_t config_id)
     }
 
     Config.Fhss.Ortho = Setup.Common[config_id].Ortho;
+
+    // modify also FrameSyncWord, Sx.FlrcSyncWord
+    if (Config.Fhss.Ortho > ORTHO_NONE) {
+        Config.FrameSyncWord += 0x1111 * Config.Fhss.Ortho;
+        Config.Sx.FlrcSyncWord += 0x11111111 * Config.Fhss.Ortho;
+        Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
+    }
 
     //Config.FhssSeed = bind_dblword;
     // this is much better for narrow bands, like 868 MHz

@@ -725,12 +725,12 @@ class tFhss
 
     float GetCurrFreq2_Hz(void)
     {
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq());
-#elif defined DEVICE_HAS_SX127x
-        return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
-#else // DEVICE_HAS_SX128x || DEVICE_HAS_DUAL_SX126x_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
+#if defined DEVICE_HAS_DUAL_SX126x_SX126x
+        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq2());
+#else
+        #error Something wrong with dual band config !
 #endif
     }
 
