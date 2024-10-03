@@ -33,6 +33,7 @@ const rfpower_t rfpower_list[] = {
 
 
 //-- SKY85321-11
+// PA max ?, PAin max 5 dBm, PA gain 28 dB, LNA gain 13.5 dB
 #if defined POWER_PA_SKY85321_11 || defined POWER_PA_E28_2G4M27SX // E28-2G4M27S/SX
 #define POWER_PA_DEFINED
 
@@ -62,6 +63,7 @@ const rfpower_t rfpower_list[] = {
 
 
 //-- SKY65383-11
+// PA max 30 dBm, PAin max 6 dBm, PA gain 34 dB, LNA gain 12 dB
 #if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
 #define POWER_PA_DEFINED
 
@@ -136,6 +138,7 @@ const rfpower_t rfpower_list[] = {
 
 
 //-- SE2435L
+// PA max 30 dBm, PAin max 10 dBm, PA gain 26 dB, LNA gain 16 dB
 #if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 // Matek mR900-30
 #define POWER_PA_DEFINED
 
