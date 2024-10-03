@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 22.09.2024
+ version 3.10.2024
 ********************************************************
 '''
 import os
@@ -443,6 +443,9 @@ MLRS_INCLUDES = [ # the ?? are going to be replaced with mcu_HAL label, STM32F1x
 #-- source & include files, target independent/common
 
 MLRS_SOURCES_MODULES = [
+    os.path.join('modules','stm32-dronecan-lib','libcanard','canard.c'),
+    os.path.join('modules','stm32-dronecan-lib','stm32-dronecan-driver-f1.c'),
+    os.path.join('modules','stm32-dronecan-lib','stm32-dronecan-driver-g4.c'),
     os.path.join('modules','sx12xx-lib','src','sx126x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
@@ -462,6 +465,17 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
     ]
+
+#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all 
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.sensors.rc.RCInput.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.dynamic_node_id.Allocation.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_req.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_res.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.HardwareVersion.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.NodeStatus.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.SoftwareVersion.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Protocol.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Targetted.c'))
 
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
@@ -490,7 +504,6 @@ MLRS_INCLUDES_USB = [
     os.path.join('Drivers','STM32_USB_Device_Library','Core','Inc'),
     os.path.join('..','modules','stm32-usb-device'),
     ]
-
 
 
 #-- target class to handle targets
@@ -976,29 +989,36 @@ TLIST = [
     },{
         'target' : 'rx-matek-mr900-22-wle5cc',          'target_D' : 'RX_MATEK_MR900_22_WLE5CC',
         'extra_D_list' : [], 'appendix' : '',
-
     },{
+
+        'target' : 'rx-matek-mr24-30-g431kb',           'target_D' : 'RX_MATEK_MR24_30_G431KB',
+        'extra_D_list' : ['MLRS_FEATURE_CAN'], 'appendix' : '-can',
+    },{
+        'target' : 'rx-matek-mr900-30-g431kb',          'target_D' : 'RX_MATEK_MR900_30_G431KB',
+        'extra_D_list' : ['MLRS_FEATURE_CAN'], 'appendix' : '-can',
+    },{
+    
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
     },{
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
-#    },{
+    },{
 #        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
 #        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
 #        'appendix' : '-oled',
-
-    },{
+#    },{
+    
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
     },{
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
-#    },{
+    },{
 #        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
 #        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
 #        'appendix' : '-oled',
-    },{
+#    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
@@ -1138,7 +1158,7 @@ TLIST = [
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ'],
         'appendix' : '-400-tcxo',
-#    },{
+    },{
 #        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
 #        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
 #        'appendix' : '-900-sdiode-tcxo',
@@ -1146,7 +1166,7 @@ TLIST = [
 #        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
 #        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
 #        'appendix' : '-400-sdiode-tcxo',
-    },{
+#    },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-900-xtal',
