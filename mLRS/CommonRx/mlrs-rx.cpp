@@ -22,6 +22,7 @@
 #define SX_DIO_EXTI_IRQ_PRIORITY    13
 #define SX2_DIO_EXTI_IRQ_PRIORITY   13 // on single spi diversity systems must be equal to DIO priority
 #define SWUART_TIM_IRQ_PRIORITY      9 // debug on swuart
+#define FDCAN_IRQ_PRIORITY          14
 
 #include "../Common/common_conf.h"
 #include "../Common/common_types.h"
@@ -113,7 +114,7 @@ void clock_reset(void) { rxclock.Reset(); }
 
 
 //-------------------------------------------------------
-// MAVLink & MSP
+// MAVLink & MSP & DroneCAN
 //-------------------------------------------------------
 
 #include "mavlink_interface_rx.h"
@@ -127,6 +128,10 @@ tRxMsp msp;
 #include "sx_serial_interface_rx.h"
 
 tRxSxSerial sx_serial;
+
+#include "dronecan_interface_rx.h"
+
+tRxDroneCan dronecan;
 
 
 //-------------------------------------------------------
@@ -155,6 +160,9 @@ void init_hw(void)
     powerup.Init();
 
     rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
+
+    dronecan.Init(Setup.Rx.SerialPort == RX_SERIAL_PORT_CAN); // after delay_init() since it needs delay
+    serial.SetSerialIsSource(Setup.Rx.SerialPort != RX_SERIAL_PORT_CAN);
 }
 
 
@@ -572,6 +580,7 @@ RESTARTCONTROLLER
     msp.Init();
     sx_serial.Init();
     fan.SetPower(sx.RfPower_dbm());
+    dronecan.Start();
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
@@ -594,6 +603,7 @@ INITCONTROLLER_END
         if (!connect_occured_once) bind.AutoBind();
         bind.Tick_ms();
         fan.Tick_ms();
+        dronecan.Tick_ms();
 
         if (!tick_1hz) {
             dbg.puts(".");
@@ -883,6 +893,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             out.SendLinkStatistics();
             mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
             msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
+            dronecan.SendRcData(out.GetRcDataPtr(), false);
             rfpower.Set(&rcData, Setup.Rx.PowerSwitchChannel, Setup.Rx.Power);
         } else {
             if (connect_occured_once) {
@@ -891,6 +902,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 out.SendLinkStatisticsDisconnected();
                 mavlink.SendRcData(out.GetRcDataPtr(), true, true);
                 msp.SendRcData(out.GetRcDataPtr(), true, true);
+                dronecan.SendRcData(out.GetRcDataPtr(), true);
             }
             rfpower.Set(Setup.Rx.Power); // force to Setup Power
         }
@@ -898,10 +910,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
     out.Do();
 
-    //-- Do MAVLink & MSP
+    //-- Do MAVLink & MSP & DroneCAN
 
     mavlink.Do();
     msp.Do();
+    dronecan.Do();
 
     //-- Store parameters
 

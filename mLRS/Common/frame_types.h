@@ -210,8 +210,10 @@ typedef struct
     uint8_t __RadioStatusMethod : 4; // deprecated
     uint8_t OutLqChannelMode : 4;
     uint8_t PowerSwitchChannel : 4;
+    uint8_t SerialPort : 4;
 
-    uint8_t spare2[4];
+    uint8_t spare : 4;
+    uint8_t spare2[3];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValue_Ch13 : 2;
@@ -248,7 +250,7 @@ typedef struct
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
-    uint8_t __Buzzer_allowed_mask; // deprecated
+    uint8_t SerialPort_allowed_mask; // was uint8_t __Buzzer_allowed_mask; // deprecated
 
     uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes

@@ -56,6 +56,11 @@ class tFifo
         return (Available() < (FIFO_SIZE - space));
     }
 
+    bool IsFull(void)
+    {
+        return (((writepos + 1) & (SIZEMASK)) == readpos);
+    }
+
     T Get(void)
     {
         if (writepos != readpos) { // fifo not empty

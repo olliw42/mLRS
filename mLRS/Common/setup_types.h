@@ -260,6 +260,13 @@ typedef enum {
 } RX_SEND_RCCHANNELS_ENUM;
 
 
+typedef enum {
+    RX_SERIAL_PORT_SERIAL = 0,
+    RX_SERIAL_PORT_CAN,
+    RX_SERIAL_PORT_NUM,
+} RX_SERIAL_PORT_ENUM;
+
+
 //-------------------------------------------------------
 // Config Enums
 //-------------------------------------------------------
@@ -338,8 +345,9 @@ typedef struct
     uint8_t __RadioStatusMethod; // deprecated
     uint8_t OutLqChannelMode;
     uint8_t PowerSwitchChannel;
+    uint8_t SerialPort;
 
-    uint8_t spare[6];
+    uint8_t spare[5];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
@@ -407,6 +415,7 @@ typedef struct
     char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
+    uint16_t Rx_SerialPort_allowed_mask;
 
     bool rx_available;
 
