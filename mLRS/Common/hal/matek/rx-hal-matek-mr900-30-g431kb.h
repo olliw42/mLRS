@@ -9,7 +9,7 @@
 // MLRS_FEATURE defines usually must be defined very high up,
 // the following can however be used/defined locally here
 
-//#define MLRS_FEATURE_CAN
+#define MLRS_FEATURE_CAN
 
 
 //-------------------------------------------------------
