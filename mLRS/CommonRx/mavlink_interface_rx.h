@@ -22,6 +22,7 @@
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
 extern tStats stats;
+extern tSetup Setup;
 
 
 //-------------------------------------------------------
@@ -323,7 +324,7 @@ void tRxMavlink::Do(void)
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-/* only for deving, always send radio status
+/* only for dev-ing, always send radio status
         if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RADIORCCHANNELS) {
             generate_radio_link_flow_control();
         } else {
