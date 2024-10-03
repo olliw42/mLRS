@@ -46,3 +46,9 @@
 [submodule "tools/st-drivers/stm32f3xx_hal_driver"]
 	path = tools/st-drivers/stm32f3xx_hal_driver
 	url = https://github.com/STMicroelectronics/stm32f3xx_hal_driver.git
+[submodule "mLRS/modules/dronecan/dronecan_dsdlc"]
+	path = mLRS/modules/dronecan/dronecan_dsdlc
+	url = https://github.com/dronecan/dronecan_dsdlc.git
+[submodule "mLRS/modules/dronecan/DSDL"]
+	path = mLRS/modules/dronecan/DSDL
+	url = https://github.com/dronecan/DSDL.git
