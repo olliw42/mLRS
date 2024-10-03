@@ -24,7 +24,7 @@
 //-- common to Tx & Rx
 
 // these are the frequency band options available to the user
-typedef enum {
+typedef enum : uint8_t {
     SETUP_FREQUENCY_BAND_2P4_GHZ = 0,
     SETUP_FREQUENCY_BAND_915_MHZ_FCC,
     SETUP_FREQUENCY_BAND_868_MHZ,
@@ -38,7 +38,7 @@ typedef enum {
 // these are the frequency band options available to the hardware
 // used in the SX12xx drivers and FHSS class
 // should not be defined here, but we do here for convenience
-typedef enum {
+typedef enum : uint8_t {
     SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ = 0,
     SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC,
     SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ,
