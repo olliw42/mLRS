@@ -196,7 +196,7 @@ void setup_configure_metadata(void)
 #endif
 
 
-void inc_bindphrase_char(char* s, uint8_t pos)
+void inc_bindphrase_char(char* const s, uint8_t pos)
 {
     char* cptr = strchr(bindphrase_chars, s[pos]);
     uint8_t n = (cptr) ? cptr - bindphrase_chars + 1 : 0; // must not happen that c is not found, but play it safe
@@ -207,7 +207,7 @@ void inc_bindphrase_char(char* s, uint8_t pos)
 
 // make the default bind phrases all different for all config id's
 // this provides a sort of model match per default
-void setup_default_bindphrase(char* s, uint8_t config_id, const char* bindphrase_default)
+void setup_default_bindphrase(char* const s, uint8_t config_id, const char* bindphrase_default)
 {
     strcpy(s, bindphrase_default);
     if (config_id == 0) return;

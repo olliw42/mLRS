@@ -23,7 +23,7 @@ tOutBase::tOutBase(void)
 }
 
 
-void tOutBase::Init(tRxSetup* _setup)
+void tOutBase::Init(tRxSetup* const _setup)
 {
     config = UINT8_MAX;
     initialized = false;
@@ -169,7 +169,7 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
 }
 
 
-void tOutBase::SendLinkStatistics(tOutLinkStats* lstats)
+void tOutBase::SendLinkStatistics(tOutLinkStats* const lstats)
 {
     switch (config) {
     case OUT_CONFIG_SBUS:
@@ -289,7 +289,7 @@ tCrsfChannelFrame crsf_buf;
 }
 
 
-void tOutBase::send_crsf_linkstatistics(tOutLinkStats* lstats)
+void tOutBase::send_crsf_linkstatistics(tOutLinkStats* const lstats)
 {
 tCrsfLinkStatisticsFrame crsf_buf;
 
