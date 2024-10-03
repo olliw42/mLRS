@@ -13,7 +13,6 @@
 
 #include "hal/hal.h"
 
-#if 0
 
 class tRfPower
 {
@@ -140,16 +139,6 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
     rfpower_new_idx = new_idx;
 }
 
-#else
-class tRfPower
-{
-  public:
-    void Init(void) {}
-    void Update(void) {}
-    void Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t power) {}
-    void Set(uint8_t power) {}
-};
-#endif
 
 #endif // RF_POWER_H
 
