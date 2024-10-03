@@ -731,7 +731,7 @@ class tFhss
 
     float GetCurrFreq2_Hz(void)
     {
-#ifdef DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_DUAL_SX126x_SX126x
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
         return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq2());

@@ -64,6 +64,8 @@ void setup_configure_metadata(void)
     SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // 70 cm HAM, not editable
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // 866 MHz IN, not editable
+#else
+    #error Unknown Frequencyband !
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK"
@@ -345,8 +347,6 @@ void setup_sanitize_config(uint8_t config_id)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_70_CM_HAM;
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_866_MHZ_IN;
-#else
-    #error Unknown Frequencyband !
 #endif
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
         Setup.Common[config_id].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)frequency_band_default;
