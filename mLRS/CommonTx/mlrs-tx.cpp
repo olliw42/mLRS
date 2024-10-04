@@ -802,6 +802,12 @@ INITCONTROLLER_END
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
             dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+
+
+//dbg.puts("\ndtr");dbg.puts((usb_dtr_is_set()) ? "1" : "0");
+//dbg.puts(" rts");dbg.puts((usb_rts_is_set()) ? "1" : "0");
+//dbg.puts("\ndtr rts x");dbg.puts(u8toHEX_s(usb_dtr_rts()));
+
         }
     }
 
