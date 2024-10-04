@@ -45,6 +45,10 @@ void usb_putbuf(uint8_t* buf, uint16_t len);
 void usb_rx_flush(void);
 void usb_flush(void);
 
+uint8_t usb_dtr_rts(void);
+uint8_t usb_dtr_is_set(void);
+uint8_t usb_rts_is_set(void);
+
 void usb_init(void);
 
 void usb_deinit(void);

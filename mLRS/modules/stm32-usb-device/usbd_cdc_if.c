@@ -56,6 +56,10 @@ void _cdc_transmit(void); // forward declaration
 
 static uint8_t usbd_initialized = 0; // to track if we have initialized usb already
 
+#define USBD_DTR_FLAG  0x01
+#define USBD_RTS_FLAG  0x02
+volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
+
 
 void usb_init(void)
 {
@@ -107,6 +111,8 @@ void usb_init(void)
 
     usb_txwritepos = usb_txreadpos = 0;
     usb_rxwritepos = usb_rxreadpos = 0;
+
+    usbd_dtr_rts = 0;
 
     usbd_initialized = 1;
 }
@@ -198,6 +204,24 @@ void usb_flush(void)
 }
 
 
+uint8_t usb_dtr_rts(void)
+{
+    return usbd_dtr_rts;
+}
+
+
+uint8_t usb_dtr_is_set(void)
+{
+    return (usbd_dtr_rts & USBD_DTR_FLAG) ? 1 : 0;
+}
+
+
+uint8_t usb_rts_is_set(void)
+{
+    return (usbd_dtr_rts & USBD_RTS_FLAG) ? 1 : 0;
+}
+
+
 void USBD_IRQHandler(void)
 {
     HAL_PCD_IRQHandler(&hpcd_USB_FS);
@@ -254,6 +278,18 @@ static int8_t CDC_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         pbuf[4] = USBD_CDC_LineCoding.format;
         pbuf[5] = USBD_CDC_LineCoding.paritytype;
         pbuf[6] = USBD_CDC_LineCoding.datatype;
+        break;
+    case CDC_SET_CONTROL_LINE_STATE:
+        // https://community.st.com/t5/stm32-mcus-embedded-software/usb-vcp-how-to-know-if-host-com-port-is-open/td-p/363002
+        // https://www.silabs.com/documents/public/application-notes/AN758.pdf
+        // https://github.com/stm32duino/Arduino_Core_STM32/pull/1382/files
+        // DTR is bit 1  0x01 in wValue
+        // RTS is bit 2  0x02 in wValue
+        // wValue is the same as pbuf[2] & pbuf[3] !! see USBD_SetupReqTypedef
+        usbd_dtr_rts = 0;
+        if ((((USBD_SetupReqTypedef*)pbuf)->wValue & 0x0001) != 0) usbd_dtr_rts |= USBD_DTR_FLAG;
+        if ((((USBD_SetupReqTypedef*)pbuf)->wValue & 0x0002) != 0) usbd_dtr_rts |= USBD_RTS_FLAG;
+        //usbd_dtr_rts = ((USBD_SetupReqTypedef*)pbuf)->wValue;
         break;
     }
 
