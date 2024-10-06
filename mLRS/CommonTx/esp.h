@@ -37,10 +37,40 @@ void esp_enable(uint8_t serial_destination)
 
 
 //-------------------------------------------------------
+// Uart/usb helper
+//-------------------------------------------------------
+// could be added to serial base class, but let's just do it here for now
+
+bool ser_is_full(void)
+{
+#ifdef DEVICE_HAS_COM_ON_USB
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    return !uartb_tx_notfull();
+  #endif
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    return !uartd_tx_notfull();
+  #endif
+#else
+    return false;
+#endif
+}
+
+
+bool com_is_full(void)
+{
+#ifdef DEVICE_HAS_COM_ON_USB
+    return usb_tx_full();
+#else
+    return false;
+#endif
+}
+
+
+//-------------------------------------------------------
 // ESP WifiBridge class
 //-------------------------------------------------------
 
-#define ESP_PASSTHROUGH_TMO_MS  3000
+#define ESP_PASSTHROUGH_TMO_MS  4000 // esptool uses 3 secs, so be a bit more generous
 
 
 #ifndef USE_ESP_WIFI_BRIDGE
@@ -88,8 +118,7 @@ class tTxEspWifiBridge
 
   private:
     void passthrough_do_rts_cts(void);
-    void enter_bootloader(void);
-    void passthrough_do(bool _reset);
+    void passthrough_do(void);
 
     tSerialBase* com;
     tSerialBase* ser;
@@ -157,10 +186,14 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
     uint32_t serial_tlast_ms = millis32();
 
     disp.DrawNotify("ESP\nFLASHING");
-
-    ser->SetBaudRate(115200);
+    delay_ms(50); // give display some time
 
     leds.InitPassthrough();
+
+    uint32_t baudrate = 115200;
+    ser->SetBaudRate(baudrate);
+    ser->flush();
+    com->flush();
 
     while (1) {
 
@@ -178,16 +211,29 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         }
         dtr_rts_last = dtr_rts;
 
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+             baudrate = usb_baudrate();
+             ser->SetBaudRate(baudrate);
+             ser->flush();
+             com->flush();
+        }
+#endif
+
         uint32_t tnow_ms = millis32();
 
-        if (com->available()) {
+        uint16_t cnt = 0;
+        while (com->available() && !ser_is_full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
             char c = com->getc();
             ser->putc(c);
+            cnt++;
             serial_tlast_ms = tnow_ms;
         }
-        if (ser->available()) {
+        cnt = 0;
+        while (ser->available() && !com_is_full() && (cnt < 64)) {
             char c = ser->getc();
             com->putc(c);
+            cnt++;
         }
 
         if (tnow_ms - serial_tlast_ms > ESP_PASSTHROUGH_TMO_MS) {
@@ -214,22 +260,8 @@ void tTxEspWifiBridge::EnterFlash(void)
     if (!initialized) return;
 
     disp.DrawNotify("FLASH ESP");
+    delay_ms(30);
 
-    passthrough_do(true);
-}
-
-
-// enter ESP passthrough, can only be exited by re-powering
-void tTxEspWifiBridge::EnterPassthrough(void)
-{
-    if (!initialized) return;
-
-    passthrough_do(false);
-}
-
-
-void tTxEspWifiBridge::enter_bootloader(void)
-{
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
     esp_reset_low();
     esp_gpio0_low();
@@ -239,26 +271,33 @@ void tTxEspWifiBridge::enter_bootloader(void)
     esp_gpio0_high();
     delay_ms(10); // delay_ms(100);
 #endif
+
+    passthrough_do();
 }
 
 
-void tTxEspWifiBridge::passthrough_do(bool _reset)
+// enter ESP passthrough, can only be exited by re-powering
+void tTxEspWifiBridge::EnterPassthrough(void)
 {
     if (!initialized) return;
 
-    ser->SetBaudRate(115200);
-    //com->SetBaudRate(115200);
+    passthrough_do();
+}
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
-    ser_or_com_set_to_com();
-#endif
+
+void tTxEspWifiBridge::passthrough_do(void)
+{
+    if (!initialized) return;
 
     leds.InitPassthrough();
 
+    uint32_t baudrate = 115200;
+    ser->SetBaudRate(baudrate);
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
+    ser_or_com_set_to_com();
+#endif
     ser->flush();
     com->flush();
-
-    if (_reset) enter_bootloader();
 
     while (1) {
         if (doSysTask) {
@@ -266,16 +305,23 @@ void tTxEspWifiBridge::passthrough_do(bool _reset)
             leds.TickPassthrough_ms();
         }
 
-        //if (com->available()) {
-        uint8_t cnt = 0;
-        while (com->available() && uartb_tx_notfull() && (cnt < 64)) {
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+             baudrate = usb_baudrate();
+             ser->SetBaudRate(baudrate);
+             ser->flush();
+             com->flush();
+        }
+#endif
+
+        uint16_t cnt = 0;
+        while (com->available() && !ser_is_full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
             char c = com->getc();
             ser->putc(c);
             cnt++;
         }
-        //if (ser->available()) {
         cnt = 0;
-        if (ser->available() && usb_tx_notfull() && (cnt < 64)) {
+        while (ser->available() && !com_is_full() && (cnt < 64)) {
             char c = ser->getc();
             com->putc(c);
             cnt++;
@@ -290,3 +336,25 @@ void tTxEspWifiBridge::passthrough_do(bool _reset)
 
 
 
+/*
+void tTxEspWifiBridge::_read_write(void)
+{
+    uint8_t cnt = 0;
+    //while (com->available() && uartb_tx_notfull() && (cnt < 64)) {
+    //while (com->available() && (cnt < 64)) { // does not work
+    if (com->available() && !ser->full()) { //uartb_tx_notfull()) {
+    //if (com->available()) { // does not work
+        char c = com->getc();
+        ser->putc(c);
+        cnt++;
+    }
+    cnt = 0;
+    //while (ser->available() && usb_tx_notfull() && (cnt < 64)) {
+    //while (ser->available() && (cnt < 64)) {
+    if (ser->available() && !com->full()) { //usb_tx_notfull()) {
+    //if (ser->available()) {
+        char c = ser->getc();
+        com->putc(c);
+        cnt++;
+    }
+} */
