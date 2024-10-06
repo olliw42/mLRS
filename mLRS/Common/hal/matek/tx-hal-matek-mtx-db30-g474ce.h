@@ -10,12 +10,15 @@
 //-------------------------------------------------------
 // TX MATEK MTX-DB30 STM32G474CE
 //-------------------------------------------------------
+// UART1: available on "left" JST-GH plug
+//        also connected to ESP32-PICO when jumpers set
+// UART4: available on "right" JST-GH plug
 
 #define DEVICE_HAS_JRPIN5
 //xx#define DEVICE_HAS_IN_ON_JRPIN5_TX
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 //#define DEVICE_HAS_SERIAL2
-//#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 #define DEVICE_HAS_COM_ON_USB // com USB/CLI
 //#define DEVICE_HAS_NO_DEBUG
 
@@ -322,6 +325,7 @@ uint8_t fiveway_read(void)
 
 #define ESP_RESET                 IO_PA15
 #define ESP_GPIO0                 IO_PB9
+//#define ESP_DTR_RTS_USB
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 void esp_init(void)
