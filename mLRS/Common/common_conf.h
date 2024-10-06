@@ -147,7 +147,8 @@
 #define RX_SERIAL_RXBUFSIZE             2048 // ArduPilot also can be rude
 
 #define TX_COM_BAUDRATE                 115200
-#define TX_COM_TXBUFSIZE                1024 // cli needs it
+#define TX_COM_TXBUFSIZE                2048 // cli needs more than 1024
+#define TX_COM_TXBUFSIZE_SMALL          512 // we don't have enough RAM
 #define TX_COM_RXBUFSIZE                512
 
 

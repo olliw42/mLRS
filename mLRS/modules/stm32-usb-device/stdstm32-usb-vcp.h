@@ -40,7 +40,8 @@ char usb_getc(void);
 
 void usb_putc(uint8_t c);
 void usb_puts(const char *s);
-void usb_putbuf(uint8_t* buf, uint16_t len);
+void usb_putbuf(uint8_t* const buf, uint16_t len);
+uint8_t usb_tx_notfull(void);
 
 void usb_rx_flush(void);
 void usb_flush(void);

@@ -63,7 +63,7 @@ volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
 
 void usb_init(void)
 {
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
     // initialize HSI48, copied with adaption from SystemClock_Config()
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
@@ -124,7 +124,7 @@ void usb_deinit(void)
 
     USBD_DeInit(&husbd_CDC);
 
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
@@ -183,11 +183,18 @@ void usb_puts(const char* s)
 }
 
 
-void usb_putbuf(uint8_t* buf, uint16_t len)
+void usb_putbuf(uint8_t* const buf, uint16_t len)
 {
     uint8_t written = 0;
     for (uint16_t i = 0; i < len; i++) written = _usb_putc(buf[i]);
     if (written) _cdc_transmit();
+}
+
+
+uint8_t usb_tx_notfull(void)
+{
+    uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
+    return (usb_txreadpos != next); // fifo not full
 }
 
 
