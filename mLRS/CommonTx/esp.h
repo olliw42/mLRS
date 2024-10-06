@@ -233,11 +233,11 @@ void tTxEspWifiBridge::enter_bootloader(void)
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
     esp_reset_low();
     esp_gpio0_low();
-    delay_ms(100);
+    delay_ms(10); // delay_ms(100);
     esp_reset_high();
-    delay_ms(100);
+    delay_ms(10); // delay_ms(100);
     esp_gpio0_high();
-    delay_ms(100);
+    delay_ms(10); // delay_ms(100);
 #endif
 }
 
@@ -267,14 +267,18 @@ void tTxEspWifiBridge::passthrough_do(bool _reset)
         }
 
         //if (com->available()) {
-        if (com->available() && uartb_tx_notfull()) {
+        uint8_t cnt = 0;
+        while (com->available() && uartb_tx_notfull() && (cnt < 64)) {
             char c = com->getc();
             ser->putc(c);
+            cnt++;
         }
         //if (ser->available()) {
-        if (ser->available() && usb_tx_notfull()) {
+        cnt = 0;
+        if (ser->available() && usb_tx_notfull() && (cnt < 64)) {
             char c = ser->getc();
             com->putc(c);
+            cnt++;
         }
     }
 }
