@@ -266,13 +266,13 @@ void tTxEspWifiBridge::passthrough_do(bool _reset)
             leds.TickPassthrough_ms();
         }
 
-        //if (com->available() && uartb_tx_notfull()) {
-        if (com->available()) {
+        //if (com->available()) {
+        if (com->available() && uartb_tx_notfull()) {
             char c = com->getc();
             ser->putc(c);
         }
-        //if (ser->available() && usb_tx_notfull()) {
-        if (ser->available()) {
+        //if (ser->available()) {
+        if (ser->available() && usb_tx_notfull()) {
             char c = ser->getc();
             com->putc(c);
         }
