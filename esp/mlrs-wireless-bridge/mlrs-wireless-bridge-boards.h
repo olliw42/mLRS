@@ -125,10 +125,10 @@ GPIO15 = RTC_GPIO13
     #define LED_IO  13 // TODO
     #define USE_LED
 
-    #undef GPIO0_IO
-    #define GPIO0_IO  0
-    #undef WIRELESS_PROTOCOL
-    #define WIRELESS_PROTOCOL 3 // make BlueTooth the default
+//    #undef GPIO0_IO
+//    #define GPIO0_IO  0
+//    #undef WIRELESS_PROTOCOL
+//    #define WIRELESS_PROTOCOL 3 // make BlueTooth the default
     #define DEVICE_NAME_HEAD "Matek"
 
 

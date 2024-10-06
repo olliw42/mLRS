@@ -325,7 +325,7 @@ uint8_t fiveway_read(void)
 
 #define ESP_RESET                 IO_PA15
 #define ESP_GPIO0                 IO_PB9
-//#define ESP_DTR_RTS_USB
+#define ESP_DTR_RTS_USB
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 void esp_init(void)

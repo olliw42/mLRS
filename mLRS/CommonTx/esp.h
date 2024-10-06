@@ -88,7 +88,8 @@ class tTxEspWifiBridge
 
   private:
     void passthrough_do_rts_cts(void);
-    void passthrough_do(void);
+    void enter_bootloader(void);
+    void passthrough_do(bool _reset);
 
     tSerialBase* com;
     tSerialBase* ser;
@@ -214,6 +215,21 @@ void tTxEspWifiBridge::EnterFlash(void)
 
     disp.DrawNotify("FLASH ESP");
 
+    passthrough_do(true);
+}
+
+
+// enter ESP passthrough, can only be exited by re-powering
+void tTxEspWifiBridge::EnterPassthrough(void)
+{
+    if (!initialized) return;
+
+    passthrough_do(false);
+}
+
+
+void tTxEspWifiBridge::enter_bootloader(void)
+{
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
     esp_reset_low();
     esp_gpio0_low();
@@ -223,30 +239,26 @@ void tTxEspWifiBridge::EnterFlash(void)
     esp_gpio0_high();
     delay_ms(100);
 #endif
-
-    passthrough_do();
 }
 
 
-// enter ESP passthrough, can only be exited by re-powering
-void tTxEspWifiBridge::EnterPassthrough(void)
-{
-    if (!initialized) return;
-
-    passthrough_do();
-}
-
-
-void tTxEspWifiBridge::passthrough_do(void)
+void tTxEspWifiBridge::passthrough_do(bool _reset)
 {
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
-#if defined DEVICE_HAS_SERIAL_OR_COM && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    //com->SetBaudRate(115200);
+
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
     ser_or_com_set_to_com();
 #endif
 
     leds.InitPassthrough();
+
+    ser->flush();
+    com->flush();
+
+    if (_reset) enter_bootloader();
 
     while (1) {
         if (doSysTask) {
@@ -254,10 +266,12 @@ void tTxEspWifiBridge::passthrough_do(void)
             leds.TickPassthrough_ms();
         }
 
+        //if (com->available() && uartb_tx_notfull()) {
         if (com->available()) {
             char c = com->getc();
             ser->putc(c);
         }
+        //if (ser->available() && usb_tx_notfull()) {
         if (ser->available()) {
             char c = ser->getc();
             com->putc(c);
