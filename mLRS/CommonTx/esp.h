@@ -62,6 +62,12 @@ extern volatile uint32_t millis32(void);
 extern tTxDisp disp;
 
 
+typedef enum {
+    ESP_DTR_SET = 0x01,
+    ESP_RTS_SET = 0x02,
+} ESP_DTR_RTS_ENUM;
+
+
 class tTxEspWifiBridge
 {
   public:
@@ -118,7 +124,7 @@ void tTxEspWifiBridge::Do(void)
 
     uint8_t dtr_rts = esp_dtr_rts();
 
-    if ((dtr_rts_last == 3) && !(dtr_rts & 0x02)) {
+    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // == 0x03, & 0x02
 
         //dbg.puts("\npst");
 
@@ -157,8 +163,8 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         uint8_t dtr_rts = esp_dtr_rts();
 
         if (dtr_rts != dtr_rts_last) {
-            if (dtr_rts & 0x02) esp_reset_high(); else esp_reset_low();
-            if (dtr_rts & 0x01) esp_gpio0_high(); else esp_gpio0_low();
+            if (dtr_rts & ESP_RTS_SET) esp_reset_high(); else esp_reset_low(); // & 0x02
+            if (dtr_rts & ESP_DTR_SET) esp_gpio0_high(); else esp_gpio0_low(); // & 0x01
             //dbg.puts("\ndtr,rts ="); dbg.putc(dtr_rts + '0');
         }
         dtr_rts_last = dtr_rts;
@@ -228,7 +234,7 @@ void tTxEspWifiBridge::passthrough_do(void)
     if (!initialized) return;
 
     ser->SetBaudRate(115200);
-#if defined DEVICE_HAS_SERIAL_OR_COM && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
     ser_or_com_set_to_com();
 #endif
 
