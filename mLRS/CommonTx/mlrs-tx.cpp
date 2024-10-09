@@ -281,10 +281,12 @@ void init_hw(void)
     fan.Init();
     dbg.Init();
 
-    sx.Init();
-    sx2.Init();
-
     setup_init();
+
+    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+
+    sx.Init(); // these take time
+    sx2.Init();
 
     mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
@@ -730,11 +732,8 @@ RESTARTCONTROLLER
     msp.Init(&serial, &serial2); // ports selected by SerialDestination
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    esp.Init(&comport, &serial2, Config.SerialBaudrate);
-#else
-    esp.Init(&comport, &serial, Config.SerialBaudrate);
+#ifdef USE_ESP_WIFI_BRIDGE
+    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
     hc04.Init(&comport, &serial2, Config.SerialBaudrate);
@@ -802,12 +801,6 @@ INITCONTROLLER_END
 
             dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
             dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-
-
-//dbg.puts("\ndtr");dbg.puts((usb_dtr_is_set()) ? "1" : "0");
-//dbg.puts(" rts");dbg.puts((usb_rts_is_set()) ? "1" : "0");
-//dbg.puts("\ndtr rts x");dbg.puts(u8toHEX_s(usb_dtr_rts()));
-
         }
     }
 

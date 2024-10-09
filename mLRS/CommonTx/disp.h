@@ -239,6 +239,11 @@ void tTxDisp::Init(void)
     idx_focused_in_edit = false;
     idx_focused_pos = 0;
     idx_focused_task_pending = TX_TASK_NONE;
+
+    // let's show startup page immediately
+    page = PAGE_STARTUP;
+    page_startup_tmo = DISP_START_PAGE_TMO_MS;
+    page_modified = true;
 }
 
 
