@@ -41,6 +41,7 @@ void esp_enable(uint8_t serial_destination)
 // Uart/usb helper
 //-------------------------------------------------------
 // could be added to serial base class, but let's just do it here for now
+#ifdef USE_ESP_WIFI_BRIDGE
 
 bool ser_is_full(void)
 {
@@ -65,6 +66,8 @@ bool com_is_full(void)
     return false;
 #endif
 }
+
+#endif
 
 
 //-------------------------------------------------------
@@ -532,7 +535,7 @@ esp_read("AT+WIFIPOWER=?", s, &len);)
         esp_configure_wifichannel();
         esp_configure_wifipower();
 
-        if (esp_read("AT+RESTART", s, &len)) {
+        if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed
             delay_ms(1500); // 500 ms is too short, 1000 ms is sometimes too short, 1200 ms works fine, play it safe
         }
     }
