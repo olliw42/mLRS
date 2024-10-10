@@ -145,7 +145,7 @@ bool AtMode::Do(void)
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos - 1); // don't send the '?'
                     switch (i) {
-                        case AT_NAME_QUERY: 
+                        case AT_NAME_QUERY:
                             SERIAL.write("mLRS-Wireless-Bridge-");
                             SERIAL.write(VERSION_STR);
                             break;

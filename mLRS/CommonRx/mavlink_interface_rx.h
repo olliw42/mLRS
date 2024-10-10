@@ -48,8 +48,10 @@ class tRxAutoPilot
   public:
     void Init(void);
     void Do(void);
+
     bool RequestAutopilotVersion(void);
     bool HasMFtpFlowControl(void);
+    bool HasDroneCanExtendedRcStats(void);
 
     void handle_heartbeat(fmav_message_t* const msg);
     void handle_autopilot_version(fmav_message_t* const msg);
@@ -77,6 +79,8 @@ class tRxMavlink
     bool available(void);
     uint8_t getc(void);
     void flush(void);
+
+    tRxAutoPilot autopilot;
 
   private:
     void send_msg_serial_out(void);
@@ -145,7 +149,6 @@ class tRxMavlink
     void generate_cmd_ack(void);
 
     // to handle autopilot detection
-    tRxAutoPilot autopilot;
     void generate_autopilot_version_request(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -1112,6 +1115,14 @@ bool tRxAutoPilot::RequestAutopilotVersion(void)
 
 
 bool tRxAutoPilot::HasMFtpFlowControl(void)
+{
+    if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
+
+    return (version >= 040600);
+}
+
+
+bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
 {
     if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
 

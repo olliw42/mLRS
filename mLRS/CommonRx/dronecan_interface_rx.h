@@ -26,6 +26,7 @@
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
 #endif
 
+extern tRxMavlink mavlink;
 extern tRxDroneCan dronecan;
 
 extern uint16_t micros16(void);
@@ -342,9 +343,35 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     // this message's quality is used by ArduPilot for setting rssi (not LQ)
     // it goes from 0 ... 255
     // so we use the same conversion as in e.g. RADIO_STATUS, so that ArduPilot shows us (nearly) the same value
-    _p.rc_input.quality = (connected()) ? rssi_i8_to_ap(stats.GetLastRssi()) : 0;
+
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID 1
+
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_LQ 4
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_RSSI_DBM 8
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_SNR 16
+
+    _p.rc_input.quality = 0;
     if (connected()) {
-        _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
+        if (mavlink.autopilot.HasDroneCanExtendedRcStats()) {
+            // send LQ, RSSI_DBM, SNR round robin
+            static uint8_t slot = UINT8_MAX;
+            INCc(slot, 3);
+            if (slot == 1) { // LQ
+                _p.rc_input.quality = stats.GetLQ_rc();
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_LQ;
+            } else
+            if (slot == 2) { // SNR
+                _p.rc_input.quality = 128 + stats.GetLastSnr();
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_SNR;
+            } else { // RSSI_DBM
+                _p.rc_input.quality = crsf_cvt_rssi_rx(stats.GetLastRssi());
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_RSSI_DBM;
+            }
+        } else {
+            // just send RSSI
+            _p.rc_input.quality = rssi_i8_to_ap(stats.GetLastRssi());
+            _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
+        }
     }
 
     _p.rc_input.rcin.len = 16;
