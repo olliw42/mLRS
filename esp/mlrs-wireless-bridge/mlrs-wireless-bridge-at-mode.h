@@ -145,7 +145,10 @@ bool AtMode::Do(void)
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos - 1); // don't send the '?'
                     switch (i) {
-                        case AT_NAME_QUERY: SERIAL.write("ESP-mLRS-Wireless-Bridge"); break;
+                        case AT_NAME_QUERY:
+                            SERIAL.write("mLRS-Wireless-Bridge-");
+                            SERIAL.write(VERSION_STR);
+                            break;
                         case AT_BAUD_QUERY: SERIAL.print(g_baudrate); break;
                         case AT_WIFICHANNEL_QUERY: SERIAL.print(g_wifichannel); break;
                         case AT_WIFIPOWER_QUERY: SERIAL.print(g_wifipower); break;

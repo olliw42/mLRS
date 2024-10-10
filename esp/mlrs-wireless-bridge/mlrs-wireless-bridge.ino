@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 19. Sep. 2024
+// 10. Okt. 2024
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -125,6 +125,13 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // LED pin (only effective for the generic module)
 // uncomment if you want a LED, and set the pin number as desired
 //#define LED_IO  13
+
+
+//-------------------------------------------------------
+// Version 
+//-------------------------------------------------------
+
+#define VERSION_STR  "v1.3.03" // to not get version salad use what the current mLRS version is at the time
 
 
 //-------------------------------------------------------
@@ -250,7 +257,8 @@ void setup_device_name(void)
     // MACs are different for STA and AP, BT
     esp_base_mac_addr_get(MAC_buf);
     uint16_t device_id = 0;
-    for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + (uint16_t)MAC_buf[i + 1] << 8;
+    for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
+    device_id += MAC_buf[5];
     device_name = "mLRS-";
 #ifdef DEVICE_NAME_HEAD
     device_name = String(DEVICE_NAME_HEAD) + "-mLRS-";
