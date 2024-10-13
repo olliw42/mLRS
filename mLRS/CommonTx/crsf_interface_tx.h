@@ -816,6 +816,17 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
     if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
 
     switch (msg->function) {
+    case MSP_SONAR_ALTITUDE: { //
+        tMspSonarAltitude* payload = (tMspSonarAltitude*)(msg->payload);
+        if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_RANGEFINDER)) {
+            // for the moment we do it by creating a fake mavlink message
+            fmav_rangefinder_t p;
+            p.distance = (float)((payload->rangefinder_altitude + 5) / 10); // float m <- uint32_t cm
+            p.voltage = 0.0f;
+            passthrough.handle_mavlink_msg_rangefinder(&p);
+        }
+        } break;
+
     case MSP_ATTITUDE: { // tCrsfAttitude, CRSF_FRAME_ID_ATTITUDE = 0x1E
         tMspAttitude* payload = (tMspAttitude*)(msg->payload);
         attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->pitch)); // int16_t rad * 1e4  // cdeg -> rad * 1e4
