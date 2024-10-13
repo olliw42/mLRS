@@ -235,7 +235,7 @@ typedef struct
     int8_t uplink_snr;                  // OpenTx -> "RSNR"
     uint8_t active_antenna;             // OpenTx -> "ANT"
     uint8_t mode;                       // OpenTx -> "RFMD"
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPw2" ?? uplink but "T" ??
+    uint8_t uplink_transmit_power;      // OpenTx -> "TPw2", in CRSF units
     uint8_t downlink_rssi;              // OpenTx -> "TRSS"
     uint8_t downlink_LQ;                // OpenTx -> "TQly"
     int8_t downlink_snr;                // OpenTx -> "TSNR"

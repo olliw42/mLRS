@@ -344,11 +344,13 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     // it goes from 0 ... 255
     // so we use the same conversion as in e.g. RADIO_STATUS, so that ArduPilot shows us (nearly) the same value
 
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID 1
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE 28 // 4+8+16
 
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_LQ 4
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_RSSI_DBM 8
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_SNR 16
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI 0
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ 4
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM 8
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR 12
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER 16
 
     _p.rc_input.quality = 0;
     if (connected()) {
@@ -358,20 +360,20 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
             INCc(slot, 3);
             if (slot == 1) { // LQ
                 _p.rc_input.quality = stats.GetLQ_rc();
-                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_LQ;
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ;
             } else
             if (slot == 2) { // SNR
                 _p.rc_input.quality = 128 + stats.GetLastSnr();
-                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_SNR;
-            } else { // RSSI_DBM
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR;
+            } else { // slot 0: RSSI_DBM
                 _p.rc_input.quality = crsf_cvt_rssi_rx(stats.GetLastRssi());
-                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_RSSI_DBM;
+                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM;
             }
         } else {
             // just send RSSI
             _p.rc_input.quality = rssi_i8_to_ap(stats.GetLastRssi());
-            _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
         }
+        _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
     }
 
     _p.rc_input.rcin.len = 16;
