@@ -307,7 +307,7 @@ tCrsfLinkStatisticsFrame crsf_buf;
     crsf_buf.ls.uplink_snr = lstats->receiver_snr;
     crsf_buf.ls.active_antenna = lstats->receiver_antenna;
     crsf_buf.ls.mode = crsf_cvt_mode(lstats->mode);
-    crsf_buf.ls.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm); // actually wrong, but hey ...
+    crsf_buf.ls.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm); // actually wrong, should be Tx tx power, but hey ...
     crsf_buf.ls.downlink_rssi = crsf_cvt_rssi_rx(lstats->transmitter_rssi);
     crsf_buf.ls.downlink_LQ = lstats->transmitter_LQ;
     crsf_buf.ls.downlink_snr = lstats->transmitter_snr;
