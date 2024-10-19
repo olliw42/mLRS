@@ -371,49 +371,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
                 if ((tnow_ms - tlast_ms > 2500) || (power_dbm != power_dbm_last)) {
                     tlast_ms = tnow_ms;
                     power_dbm_last = power_dbm;
-                    const uint16_t cvt_power_dBm_to_mW[] = {
-                        1, // 0 dBm
-                        1, // 1 dBm
-                        2, // 2 dBm
-                        2, // 3 dBm
-                        2, // 4 dBm
-                        3, // 5 dBm
-                        4, // 6 dBm
-                        5, // 7 dBm
-                        6, // 8 dBm
-                        8, // 9 dBm
-                        10, // 10 dBm
-                        12, // 11 dBm
-                        16, // 12 dBm
-                        20, // 13 dBm
-                        25, // 14 dBm
-                        32, // 15 dBm
-                        40, // 16 dBm
-                        50, // 17 dBm
-                        63, // 18 dBm
-                        80, // 19 dBm
-                        100, // 20 dBm
-                        125, // 21 dBm
-                        158, // 22 dBm
-                        200, // 23 dBm
-                        250, // 24 dBm
-                        316, // 25 dBm
-                        400, // 26 dBm
-                        500, // 27 dBm
-                        630, // 28 dBm
-                        800, // 29 dBm
-                        1000, // 30 dBm
-                        1250, // 31 dBm
-                        1500, // 32 dBm
-                        2000, // 33 dBm
-                    };
-                    if (power_dbm < 0) {
-                        _p.rc_input.quality = 0;
-                    } else if (power_dbm > 31) {
-                        _p.rc_input.quality = 1250 / 5;
-                    } else {
-                        _p.rc_input.quality = cvt_power_dBm_to_mW[power_dbm] / 5;
-                    }
+                    _p.rc_input.quality = dronecan_cvt_power(power_dbm);
                     _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER;
                 } else {
                     _p.rc_input.quality = 128 + stats.GetLastSnr();
