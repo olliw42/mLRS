@@ -61,6 +61,9 @@ static uint8_t usbd_initialized = 0; // to track if we have initialized usb alre
 volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
 
 
+uint32_t usb_baudrate(void) { return USBD_CDC_LineCoding.bitrate; }
+
+
 void usb_init(void)
 {
 #if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
@@ -169,6 +172,13 @@ uint8_t _usb_putc(uint8_t c)
 }
 
 
+uint8_t usb_tx_full(void)
+{
+    uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
+    return !(usb_txreadpos != next); // not fifo not full
+}
+
+
 void usb_putc(uint8_t c)
 {
     if (_usb_putc(c)) _cdc_transmit();
@@ -188,13 +198,6 @@ void usb_putbuf(uint8_t* const buf, uint16_t len)
     uint8_t written = 0;
     for (uint16_t i = 0; i < len; i++) written = _usb_putc(buf[i]);
     if (written) _cdc_transmit();
-}
-
-
-uint8_t usb_tx_notfull(void)
-{
-    uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
-    return (usb_txreadpos != next); // fifo not full
 }
 
 
