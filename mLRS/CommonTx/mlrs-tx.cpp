@@ -281,10 +281,12 @@ void init_hw(void)
     fan.Init();
     dbg.Init();
 
-    sx.Init();
-    sx2.Init();
-
     setup_init();
+
+    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+
+    sx.Init(); // these take time
+    sx2.Init();
 
     mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
@@ -730,11 +732,8 @@ RESTARTCONTROLLER
     msp.Init(&serial, &serial2); // ports selected by SerialDestination
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    esp.Init(&comport, &serial2, Config.SerialBaudrate);
-#else
-    esp.Init(&comport, &serial, Config.SerialBaudrate);
+#ifdef USE_ESP_WIFI_BRIDGE
+    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
     hc04.Init(&comport, &serial2, Config.SerialBaudrate);
