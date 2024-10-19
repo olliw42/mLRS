@@ -13,10 +13,10 @@
 //   is defined when RESET, GPIO0 pin handling is available
 //   this allows:
 //   - flashing via passtrough, invoked by "FLASH ESP" command
+//   - EPS TX parameters, esp configuration
 // USE_ESP_WIFI_BRIDGE_DTR_RTS
 //   is defined when DTR, RTS pin handling is available
-//   this allows:
-//   - flashing via passtrough from the COM port
+//   this allows in addition:
 //   - flashing via passtrough, invoked by "FLASH ESP" command
 //********************************************************
 #ifndef TX_ESP_H
@@ -83,6 +83,12 @@ bool com_is_full(void)
 // ESP WifiBridge class
 //-------------------------------------------------------
 
+#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+  // we currently don't do anything if no RST, GPIO0
+  #define ESP_STARTUP_CONFIGURE
+#endif
+
+
 #define ESP_PASSTHROUGH_TMO_MS  4000 // esptool uses 3 secs, so be a bit more generous
 
 
@@ -122,6 +128,15 @@ class tTxEspWifiBridge
     void EnterPassthrough(void);
 
   private:
+#ifdef ESP_STARTUP_CONFIGURE
+    bool esp_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
+    void esp_configure_baudrate(void);
+    void esp_configure_wifiprotocol(void);
+    void esp_configure_wifichannel(void);
+    void esp_configure_wifipower(void);
+    void run_configure(void);
+#endif
+
     void passthrough_do_rts_cts(void);
     void passthrough_do(void);
 
@@ -167,6 +182,10 @@ void tTxEspWifiBridge::Init(
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
     passthrough_is_running = false;
     dtr_rts_last = 0;
+
+#ifdef ESP_STARTUP_CONFIGURE
+    run_configure();
+#endif
 }
 
 
@@ -326,6 +345,198 @@ void tTxEspWifiBridge::passthrough_do(void)
     }
 }
 
+
+#ifdef ESP_STARTUP_CONFIGURE
+
+#define ESP_DBG(x)
+
+#define ESP_CMDRES_LEN      46
+#define ESP_CMDRES_TMO_MS   50
+
+
+bool tTxEspWifiBridge::esp_read(const char* const cmd, uint8_t* const res, uint8_t* const len)
+{
+    ser->puts(cmd);
+
+ESP_DBG(dbg.puts("\r\n");dbg.puts(cmd);dbg.puts(" -> ");)
+
+    *len = 0;
+    uint32_t tnow_ms = millis32();
+    char c = 0x00;
+    while (*len < ESP_CMDRES_LEN && (millis32() - tnow_ms) < ESP_CMDRES_TMO_MS) {
+        if (ser->available()) {
+            c = ser->getc();
+ESP_DBG(dbg.putc(c);)
+            res[(*len)++] = c;
+            if (c == '\n') { // 0x0A
+ESP_DBG(dbg.puts("!ENDE!");)
+                return (*len > 3 && res[0] == 'O' && res[1] == 'K' && res[*len - 2] == '\r'); // 0x0D
+            }
+        }
+    }
+    *len = 0;
+    return false;
+}
+
+
+void tTxEspWifiBridge::esp_configure_baudrate(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[32];
+
+    char baud_str[32];
+    u32toBCDstr(ser_baud, baud_str);
+    remove_leading_zeros(baud_str);
+    strcpy(cmd_str, "AT+BAUD=");
+    strcat(cmd_str, baud_str);
+    if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, when stores it, but does NOT change it
+        return;
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
+void tTxEspWifiBridge::esp_configure_wifiprotocol(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[32];
+
+    strcpy(cmd_str, "AT+PROTOCOL=");
+    switch (tx_setup->WifiProtocol) {
+        case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
+        case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
+        case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
+        default:
+            strcat(cmd_str, "3"); // should not happen
+    }
+
+    if (!esp_read(cmd_str, s, &len)) {
+        return;
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
+void tTxEspWifiBridge::esp_configure_wifichannel(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[32];
+
+    strcpy(cmd_str, "AT+WIFICHANNEL=");
+    switch (tx_setup->WifiChannel) {
+        case WIFI_CHANNEL_1: strcat(cmd_str, "01"); break;
+        case WIFI_CHANNEL_6: strcat(cmd_str, "06"); break;
+        case WIFI_CHANNEL_11: strcat(cmd_str, "11"); break;
+        case WIFI_CHANNEL_13: strcat(cmd_str, "13"); break;
+        default:
+            strcat(cmd_str, "6"); // should not happen
+    }
+
+    if (!esp_read(cmd_str, s, &len)) {
+        return;
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
+void tTxEspWifiBridge::esp_configure_wifipower(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[32];
+
+    strcpy(cmd_str, "AT+WIFIPOWER=");
+    switch (tx_setup->WifiPower) {
+        case WIFI_POWER_LOW: strcat(cmd_str, "0"); break;
+        case WIFI_POWER_MED: strcat(cmd_str, "1"); break;
+        case WIFI_POWER_MAX: strcat(cmd_str, "2"); break;
+        default:
+            strcat(cmd_str, "1"); // should not happen
+    }
+
+    if (!esp_read(cmd_str, s, &len)) {
+        return;
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
+void tTxEspWifiBridge::run_configure(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+
+    if (ser == nullptr) return; // we need a serial
+
+    // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
+    esp_gpio0_low(); // force AT mode
+    delay_ms(500); // not so nice, but it starts up really slowly ...
+
+    bool found = false;
+
+    uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
+    uint8_t baud_idx = 0;
+    for (uint8_t cc = 0; cc < 3; cc++) { // when in BT it seems to need f-ing long to start up
+        for (baud_idx = 0; baud_idx < sizeof(bauds)/4; baud_idx++) {
+            ser->SetBaudRate(bauds[baud_idx]);
+            ser->flush();
+
+            if (esp_read("AT+NAME=?", s, &len)) { // detected !
+                s[len-2] = '\0';
+                if (!strncmp((char*)s, "OK+NAME=mLRS-Wireless-Bridge", 28)) { // correct name, it's her we are looking for
+                    found = true;
+                }
+                cc = 128; // break also higher for loop, don't do 255 LOL
+                break;
+            }
+        }
+    }
+
+    if (found) {
+ESP_DBG(
+esp_read("AT+BAUD=?", s, &len);
+esp_read("AT+PROTOCOL=?", s, &len);
+esp_read("AT+WIFICHANNEL=?", s, &len);
+esp_read("AT+WIFIPOWER=?", s, &len);)
+
+        if (bauds[baud_idx] != ser_baud) { // incorrect baud rate
+            esp_configure_baudrate();
+        }
+
+        esp_configure_wifiprotocol();
+        esp_configure_wifichannel();
+        esp_configure_wifipower();
+
+        if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed
+            delay_ms(1500); // 500 ms is too short, 1000 ms is sometimes too short, 1200 ms works fine, play it safe
+        }
+    }
+
+    // if not found or baud rate change, ensure serial has correct baud rate
+    if (!found || bauds[baud_idx] != ser_baud) {
+        ser->SetBaudRate(ser_baud);
+    }
+    ser->flush();
+
+//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
+if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
+
+    esp_gpio0_high(); // leave forced AT mode
+}
+
+
+#endif // ESP_AUTOCONFIGURE
 
 #endif // USE_ESP_WIFI_BRIDGE
 

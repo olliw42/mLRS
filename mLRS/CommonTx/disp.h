@@ -46,7 +46,6 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 
 
-#define DISP_START_TMO_MS       SYSTICK_DELAY_MS(500)
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
 #define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
 
@@ -65,8 +64,6 @@ typedef enum {
 
     PAGE_NAV_MIN = PAGE_MAIN, // left endpoint
     PAGE_NAV_MAX = PAGE_ACTIONS, //PAGE_RX, // right endpoint
-
-    PAGE_UNDEFINED, // this is also used to time startup page sequence
 } PAGE_ENUM;
 
 
@@ -211,9 +208,9 @@ void tTxDisp::Init(void)
 
     keys_state = fiveway_read();
 
-    page = PAGE_UNDEFINED;
-    page_startup_tmo = DISP_START_TMO_MS;
-    page_modified = false;
+    page = PAGE_STARTUP; // start with startup page
+    page_startup_tmo = DISP_START_PAGE_TMO_MS;
+    page_modified = true;
     page_update = false;
 
     subpage = SUBPAGE_DEFAULT;
@@ -309,18 +306,13 @@ uint16_t keys, i, keys_new;
         }
     }
 
-    // startup page
-    if (page_startup_tmo) {
+    // finish startup page
+    if (page == PAGE_STARTUP && page_startup_tmo) {
         page_startup_tmo--;
         if (!page_startup_tmo) {
-            if (page == PAGE_UNDEFINED) {
-                page = PAGE_STARTUP;
-                page_startup_tmo = DISP_START_PAGE_TMO_MS;
-            } else {
-                page = PAGE_MAIN;
-                subpage = SUBPAGE_DEFAULT;
-                subpage_max = SUBPAGE_MAIN_NUM - 1;
-            }
+            page = PAGE_MAIN;
+            subpage = SUBPAGE_DEFAULT;
+            subpage_max = SUBPAGE_MAIN_NUM - 1;
             page_modified = true;
         }
         return;

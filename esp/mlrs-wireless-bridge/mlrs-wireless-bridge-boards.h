@@ -203,7 +203,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- Lilygo TTGO-MICRO32
-#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
+#elif defined MODULE_TTGO_MICRO32 || defined MODULE_DIY_E28DUAL_MODULE02_G491RE // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -219,6 +219,13 @@ GPIO15 = RTC_GPIO13
         #define LED_IO  13
     #endif    
     #define USE_LED
+
+    #ifdef MODULE_DIY_E28DUAL_MODULE02_G491RE    
+        #undef GPIO0_IO
+        #define GPIO0_IO  0
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #endif
 
 
 //-- M5Stack M5Stamp C3 Mate

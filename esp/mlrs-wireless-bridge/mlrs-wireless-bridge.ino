@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 10. Okt. 2024
+// 19. Okt. 2024
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -35,6 +35,10 @@ List of supported modules, and board which needs to be selected
 - M5Stack M5Stamp C3U Mate        board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 - M5Stack ATOM Lite               board: M5Stack-ATOM
+
+Troubleshooting:
+- If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)"
+- If flashing is via serial passthrough, you may have to use upload speed 115200
 */
 
 //-------------------------------------------------------
@@ -55,6 +59,7 @@ List of supported modules, and board which needs to be selected
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE
 //#define MODULE_GENERIC
+//#define MODULE_DIY_E28DUAL_MODULE02_G491RE
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
