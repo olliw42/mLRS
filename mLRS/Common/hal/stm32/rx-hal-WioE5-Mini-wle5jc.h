@@ -194,8 +194,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define BOOT_BUTTON               IO_PB13
 
-extern "C" { void delay_ms(uint16_t ms); }
-
 void systembootloader_init(void)
 {
     gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
