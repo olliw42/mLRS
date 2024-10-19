@@ -82,7 +82,7 @@ const rfpower_t rfpower_list[] = {
 };
 
 #endif
-#if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30
+#if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30 || defined POWER2_PA_MATEK_MTX_DB30
 #define POWER_PA_DEFINED
 
 #define POWER2_GAIN_DBM           31 // gain of a PA stage if present
@@ -139,7 +139,7 @@ const rfpower_t rfpower_list[] = {
 
 //-- SE2435L
 // PA max 30 dBm, PAin max 10 dBm, PA gain 26 dB, LNA gain 16 dB
-#if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 // Matek mR900-30
+#if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 || defined POWER_PA_MATEK_MTX_DB30
 #define POWER_PA_DEFINED
 
 // SX126X power setting can vary from -9 .. 22 for -9 dBm ... 22 dBm
