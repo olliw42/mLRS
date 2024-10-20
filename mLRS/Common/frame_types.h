@@ -231,8 +231,8 @@ typedef struct
     uint8_t spare;
 
     // rx setup meta data 1
-    uint16_t firmware_version_u16;
-    uint16_t setup_layout;
+    uint16_t firmware_version_u16; // 16.64.64
+    uint16_t setup_layout_u16; // 16.64.64
     char device_name_20[20];
     int8_t actual_power_dbm;
     uint8_t actual_diversity;

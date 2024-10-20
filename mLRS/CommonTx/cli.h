@@ -320,6 +320,7 @@ class tTxCli
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
     void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); if (put_cnt) put_cnt += strlen(s)+strlen(CLI_LINEND); delay(); }
 
+    void print_layout_version_warning(void);
     void print_config_id(void);
 
     tSerialBase* com;
@@ -419,8 +420,25 @@ uint8_t n;
 }
 
 
+void tTxCli::print_layout_version_warning(void)
+{
+    if (!connected()) return;
+    if (!SetupMetaData.rx_available) return; // is always true when connected, except when some link task is going on or in bind
+    if (SetupMetaData.rx_setup_layout < SETUPLAYOUT) {
+        putsn("!! Rx param version smaller than Tx param version. !!");
+        putsn("!! Please upgrade receiver.                        !!");
+    } else
+    if (SETUPLAYOUT < SetupMetaData.rx_setup_layout) {
+        putsn("!! Tx param version smaller than Rx param version. !!");
+        putsn("!! Please upgrade Tx module.                       !!");
+    }
+}
+
+
 void tTxCli::print_config_id(void)
 {
+    print_layout_version_warning();
+
     puts("ConfigId:");
     putc('0' + Config.ConfigId);
     putsn("");
@@ -577,6 +595,8 @@ void tTxCli::stream(void)
 
 void tTxCli::print_device_version(void)
 {
+    print_layout_version_warning();
+
     putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
 
     puts("  Rx: ");
@@ -619,6 +639,8 @@ char unit[32];
 
 void tTxCli::print_help(void)
 {
+    print_layout_version_warning();
+
     putsn("  help, h, ?  -> this help page");
     putsn("  v           -> print device and version");
     putsn("  pl          -> list all parameters");
@@ -764,7 +786,7 @@ bool rx_param_changed;
         //-- miscellaneous
         } else
         if (is_cmd("listfreqs")) {
-          print_frequencies();
+            print_frequencies();
 
         //-- System Bootloader
         } else

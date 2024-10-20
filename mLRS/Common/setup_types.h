@@ -447,8 +447,8 @@ typedef struct
 
     bool rx_available;
 
-    uint32_t rx_firmware_version;
-    uint16_t rx_setup_layout;
+    uint32_t rx_firmware_version; // 6.99.99 + enough head room
+    uint32_t rx_setup_layout; // 6.99.99 + enough head room
     char rx_device_name[20+1];
     int8_t rx_actual_power_dbm;
     uint8_t rx_actual_diversity;

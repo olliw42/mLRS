@@ -929,28 +929,8 @@ bool doEEPROMwrite;
 
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
-        if (Setup.Layout < SETUPLAYOUT_L0_3_29) {
-            strstrbufcpy(Setup.Common[0].BindPhrase, Setup.__BindPhrase, 6);
-            Setup.Common[0].FrequencyBand = Setup.__FrequencyBand;
-            Setup.Common[0].Mode = Setup.__Mode;
-            for (uint8_t id = 1; id < SETUP_CONFIG_NUM; id++) setup_default(id); // default all other tables
-            Setup._ConfigId = 0;
-        } else
-        if (Setup.Layout < SETUPLAYOUT_L0_3_35) {
-            for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
-                // Tx ChannelSource rearranged
-                uint8_t tx_channel_source = Setup.Tx[id].ChannelsSource;
-                switch (tx_channel_source) {
-                case L0329_CHANNEL_SOURCE_MBRIDGE: Setup.Tx[id].ChannelsSource = CHANNEL_SOURCE_MBRIDGE; break;
-                case L0329_CHANNEL_SOURCE_CRSF: Setup.Tx[id].ChannelsSource = CHANNEL_SOURCE_CRSF; break;
-                }
-                // Tx SerialDestination rearranged
-                uint8_t tx_serial_destination = Setup.Tx[id].SerialDestination;
-                switch (tx_serial_destination) {
-                case L0329_SERIAL_DESTINATION_MBRDIGE: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_MBRDIGE; break;
-                case L0329_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL2; break;
-                }
-            }
+        if (Setup.Layout < SETUPLAYOUT) {
+            // there would be lots to do but didn't do layout version-ing properly so far
         } else {
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
