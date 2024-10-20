@@ -88,8 +88,7 @@ class tRxMavlink
     void generate_rc_channels_override(void);
     void generate_radio_rc_channels(void);
     void generate_radio_link_stats(void);
-    void generate_radio_link_information(void);
-    void generate_radio_link_flow_control(void);
+    void generate_radio_link_information(void); // not used
 
     uint16_t serial_in_available(void);
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
@@ -327,13 +326,6 @@ void tRxMavlink::Do(void)
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-/* only for dev-ing, always send radio status
-        if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_RADIORCCHANNELS) {
-            generate_radio_link_flow_control();
-        } else {
-            generate_radio_status();
-        }
-*/
         generate_radio_status();
         send_msg_serial_out();
     }
@@ -745,13 +737,6 @@ if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 
 
 //-------------------------------------------------------
-// Handle Messages
-//-------------------------------------------------------
-
-// nothing yet
-
-
-//-------------------------------------------------------
 // Generate Messages
 //-------------------------------------------------------
 
@@ -896,6 +881,7 @@ int8_t rx_snr1, rx_snr2;
 }
 
 
+// not used
 void tRxMavlink::generate_radio_link_information(void)
 {
     uint16_t tx_ser_data_rate = 0; // ignore/unknown
@@ -979,6 +965,10 @@ void tRxMavlink::generate_autopilot_version_request(void)
         &status_serial_out);
 }
 
+
+//-------------------------------------------------------
+// Handle Messages
+//-------------------------------------------------------
 
 // handle messages from the fc
 void tRxMavlink::handle_msg(fmav_message_t* const msg)
