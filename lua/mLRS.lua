@@ -201,9 +201,10 @@ end
 
 local popup = false
 local popup_text = ""
-local popup_t_end_10ms = -1
+local popup_t_end_10ms = 0
 
 local function setPopupWTmo(txt, tmo_10ms)
+    if popup_t_end_10ms < 0 then return end -- blocked popup on display
     popup = true
     popup_text = txt
     popup_t_end_10ms = getTime() + tmo_10ms
@@ -215,12 +216,13 @@ local function setPopupBlocked(txt)
     popup_t_end_10ms = -1
 end
 
-local function clearPopupIfBlocked()
-    if popup and popup_t_end_10ms < 0 then popup = false; end
-end
-
 local function clearPopup()
     popup = false
+    popup_t_end_10ms = 0
+end
+
+local function clearPopupIfBlocked()
+    if popup and popup_t_end_10ms < 0 then clearPopup(); end
 end
 
 local function drawPopup()
@@ -513,15 +515,18 @@ local function doParamLoop()
         elseif cmd.cmd == MBRIDGE_CMD_INFO then
             -- MBRIDGE_CMD_INFO
             DEVICE_INFO = cmd
-            DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
-            DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
-            DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
-            DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
-            DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
-            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
-            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
+            DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload, 0)
+            DEVICE_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
+            DEVICE_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
+            DEVICE_INFO.LQ_low = mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
+            DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload, 3)
+            DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload, 4)
+            DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload, 5, 0, 0x1)
+            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 5, 1, 0x3)
+            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 5, 3, 0x3)
+            DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload, 6)
+            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 7, 0, 0x0F)
+            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM then
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]
@@ -606,11 +611,11 @@ local function doParamLoop()
                     DEVICE_PARAM_LIST[index].item3payload = cmd.payload
                     for i=1,23 do s[23+i] = cmd.payload[i] end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-                else    
+                else
                     local s3 = DEVICE_PARAM_LIST[index].item3payload
                     for i=1,23 do s[23+i] = s3[i]; s[23+23+i] = cmd.payload[i]; end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
-                end    
+                end
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                 s = nil
             end
@@ -658,6 +663,22 @@ local function sendBoot()
     if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD_SYSTEM_BOOTLOADER, {})
     setPopupBlocked("In System Bootloader")
+end
+
+
+local function checkBind()
+    if DEVICE_DOWNLOAD_is_running then return end
+    if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.binding == 1 then
+        setPopupBlocked("Binding")
+    end
+end
+
+
+local function checkLQ()
+    if DEVICE_DOWNLOAD_is_running then return end
+    if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.LQ_low > 1 then
+        setPopupBlocked("LQ is low")
+    end
 end
 
 
@@ -1146,7 +1167,7 @@ local function drawPageMain()
     else
         lcd.drawText(140, y, "---", TEXT_COLOR)
     end
-    
+
     -- setup layout warning
     if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_RX ~= nil and connected and DEVICE_PARAM_LIST_complete and
            (DEVICE_ITEM_TX.setuplayout_int > 515 or DEVICE_ITEM_RX.setuplayout_int > 515) then -- 515 is old 335
@@ -1155,7 +1176,7 @@ local function drawPageMain()
         elseif DEVICE_ITEM_RX.setuplayout_int < DEVICE_ITEM_TX.setuplayout_int then
             drawSetuplayoutWarning("Rx param version smaller than Tx param version.\nPlease update Rx firmware!")
         end
-    end 
+    end
 end
 
 
@@ -1287,6 +1308,8 @@ local function Do(event)
         doPageMain(event)
     end
 
+    checkBind()
+    checkLQ()
     doPopup()
 end
 

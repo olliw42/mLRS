@@ -587,6 +587,12 @@ tMBridgeInfo info = {};
     info.__tx_actual_diversity = (info.tx_actual_diversity <= 2) ? info.tx_actual_diversity : 3;
     info.__rx_actual_diversity = (info.rx_actual_diversity <= 2) ? info.rx_actual_diversity : 3;
 
+    info.has_status = 1;
+    info.binding = (bind.IsInBind()) ? 1 : 0;
+    info.connected = (connected()) ? 1 : 0;
+    info.rx_LQ_low = (stats.received_LQ_rc < 65) ? 1 : 0;
+    info.tx_LQ_low = (stats.GetLQ_serial() < 65) ? 1 : 0;
+
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }
 
