@@ -310,10 +310,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         int16_t rssi;
         if (gconfig->modeIsLora()) {
-        	Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
+        	  Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
+        	  // mimic behavior of sx128x , sx1276
+        	  // not in the datasheet, but suggested by data
+            if (*Snr < 0) rssi += *Snr;
         } else {
-        	Sx126xDriverBase::GetPacketStatusGFSK(&rssi);
-        	*Snr = 0;
+        	  Sx126xDriverBase::GetPacketStatusGFSK(&rssi);
+        	  *Snr = 0;
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
