@@ -175,7 +175,7 @@ void tRxMsp::Do(void)
                                 flight_mode |= ((uint32_t)1 << n);
                             }
                         }
-                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
+                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
                         fifo_link_out.PutBuf(_buf, len);
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
@@ -188,7 +188,7 @@ void tRxMsp::Do(void)
 
                         telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
 
-                        uint16_t len = msp_generate_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, new_len);
+                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, new_len);
                         fifo_link_out.PutBuf(_buf, len);
 
                         send = false; // mark as handled
@@ -225,7 +225,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
-        uint16_t len = msp_generate_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
+        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
         serial.putbuf(_buf, len);
         return;
     }
@@ -246,7 +246,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
             if (telm[n].rate == 0) continue; // disabled
             INCc(telm[n].cnt, telm[n].rate);
             if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
-                uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
+                uint16_t len = msp_generate_v2_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
                 serial.putbuf(_buf, len);
 //dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
             }

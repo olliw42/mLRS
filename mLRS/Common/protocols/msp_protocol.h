@@ -9,7 +9,7 @@
 // MSP v2: https://github.com/iNavFlight/inav/wiki/MSP-V2
 //
 // STX1           '$'
-// STX2           'X', 'M'
+// STX2           'X'
 // type           '<', '>', '!'
 // flag           0
 // function_1     LSB
@@ -18,6 +18,17 @@
 // len_2          MSB
 // payload
 // crc8           starting from flag up to inclusive payload
+//
+// MSP v1:
+//
+// STX1           '$'
+// STX2           'M'
+// type           '<', '>', '!'
+// len
+// function
+// payload
+// crc8           starting from len to inclusive payload, crc is ^=
+
 //
 //  https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp.c
 //
@@ -43,12 +54,14 @@
 #define MSP_TYPE_REQUEST          '<'
 #define MSP_TYPE_RESPONSE         '>'
 #define MSP_TYPE_ERROR            '!'
-#define MSP_HEADER_LEN            8
-#define MSP_FRAME_LEN_MAX         (8 + MSP_PAYLOAD_LEN_MAX + 1) // =  HEADER_LEN_MAX + PAYLOAD_LEN_MAX + CHECKSUM_LEN
+#define MSP_V1_HEADER_LEN         5
+#define MSP_V2_HEADER_LEN         8
+
+#define MSP_FRAME_LEN_MAX         (8 + MSP_PAYLOAD_LEN_MAX + 1) // use longest possible, =  HEADER_LEN_MAX + PAYLOAD_LEN_MAX + CHECKSUM_LEN
 
 
 typedef struct {
-    uint8_t magic2;
+    uint8_t magic2; // allows to differentiate between V1 and V2
     uint8_t type;
     uint8_t flag;
     uint16_t function;
