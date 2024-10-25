@@ -420,6 +420,12 @@ class tFhssBase
         bind_scan_mask = 0;
         // looks a bit silly but is to mask out invalid bits
         // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_CONFIG_FREQUENCY_BAND_NUM);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
+        //if (fb_allowed_mask & (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM)) bind_scan_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM);
         for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
             if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
         }
