@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2024-10-24.00'
+local version = '2024-10-25.00'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -19,6 +19,24 @@ local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
 -- experimental
 local paramLoadDeadTime_10ms = 300 -- 150 was a bit too short, also 200 was too short
 local disableParamLoadErrorWarnings = false
+
+
+----------------------------------------------------------------------
+-- Screen
+----------------------------------------------------------------------
+
+local page_N1 = 9 -- number of options displayed in left column
+local page_N = 18 -- number of options displayed on page
+
+local function setupScreen()
+    if LCD_H == 320 then
+        page_N1 = 11
+        page_N = 22
+    else
+        page_N1 = 9
+        page_N = 18
+    end
+end    
 
 
 ----------------------------------------------------------------------
@@ -1329,6 +1347,7 @@ local function scriptInit()
     local ver, radio, maj, minor, rev, osname = getVersion()
     isEdgeTx = (osname == 'EdgeTX')
 
+    setupScreen()
     setupBridge()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
