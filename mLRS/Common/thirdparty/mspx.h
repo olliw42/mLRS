@@ -529,7 +529,7 @@ void msp_msg_recalculate_crc(msp_message_t* const msg)
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
-    for (uint16_t i = 0; i < msg->len; i++) msg->checksum = crsf_crc8_calc(msg->checksum, msg->payload[i]);
+    msg->checksum = crsf_crc8_update(msg->checksum, msg->payload, msg->len);
 }
 
 
