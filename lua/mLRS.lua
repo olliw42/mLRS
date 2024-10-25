@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2024-10-25.00'
+local version = '2024-10-25.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -536,7 +536,7 @@ local function doParamLoop()
             DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload, 0)
             DEVICE_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
             DEVICE_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
-            DEVICE_INFO.LQ_low = mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
+            DEVICE_INFO.LQ_low = 0 -- mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
             DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload, 3)
             DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload, 4)
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload, 5, 0, 0x1)
@@ -693,10 +693,18 @@ end
 
 
 local function checkLQ()
-    if DEVICE_DOWNLOAD_is_running then return end
+--[[ 
+-- the mechanism doesn't work well when a receiver is connected while the Lua is running
+-- since in the first second the LQ may not be high
+-- so we disable it for until a better approach is found
+    if DEVICE_DOWNLOAD_is_running or not connected then 
+        if popup and popup_t_end_10ms < 0 and popup_text == "LQ is low" then clearPopup() end    
+        return 
+    end
     if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.LQ_low > 1 then
         setPopupBlocked("LQ is low")
     end
+--]]    
 end
 
 
