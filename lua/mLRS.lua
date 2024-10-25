@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2024-10-20.00'
+local version = '2024-10-24.00'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -844,10 +844,17 @@ end
 ----------------------------------------------------------------------
 
 local top_idx = 0 -- index of first displayed option
-local page_N1 = 9 -- number of options displayed in left colum
-local page_N = 18 -- number of options displayed on page
+
 
 local function drawPageEdit(page_str)
+    if LCD_H == 320 then
+        page_N1 = 11 -- number of options displayed in left column
+        page_N = 22 -- number of options displayed on page
+    else
+        page_N1 = 9
+        page_N = 18
+    end
+    
     local x, y;
 
     y = 35
