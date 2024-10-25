@@ -88,6 +88,9 @@ class tRxMsp
 
     void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; } // 0 = off, do not send
 
+    uint32_t msp_ident_tlast_ms; // time of last MSP_IDENT request received from a gcs
+    bool gcs_connected;
+
     uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXNAMES
 
     // miscellaneous
@@ -111,6 +114,9 @@ void tRxMsp::Init(void)
         telm[n].cnt = 0;
         telm[n].tlast_ms = 0;
     }
+
+    msp_ident_tlast_ms = 0;
+    gcs_connected = false;
 
     memset(inav_flight_modes_box_mode_flags, INAV_FLIGHT_MODES_COUNT, 255); // 255 = is empty
 }
@@ -158,7 +164,7 @@ void tRxMsp::Do(void)
                 bool send = true;
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
+                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0 && !gcs_connected) {
                         // send out our home-brewed MSPX_STATUS message in addition
                         // is being send before original message
                         uint32_t flight_mode = 0;
@@ -206,6 +212,15 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
         }
     }
 
+    // check for gcs
+
+    uint32_t tnow_ms = millis32();
+
+    if ((tnow_ms - msp_ident_tlast_ms) >= 3500) {
+        gcs_connected = false; // no MSP_IDENT anymore, so assume gcs disconnected
+    }
+
+
     // inject radio rc channels
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
@@ -217,8 +232,6 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
     // inject msp requests for telemetry data as needed
 
-    uint32_t tnow_ms = millis32();
-
     // generate 10 ms ticks
     bool ticked = false;
     if ((tnow_ms - tick_tlast_ms) >= 100) {
@@ -227,12 +240,12 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
     }
 
     // send scheduler
-    if (ticked) {
+    if (ticked && !gcs_connected) {
 //dbg.puts("\nSend ");
         for (uint8_t n = 0; n < MSP_TELM_COUNT; n++) {
             if (telm[n].rate == 0) continue; // disabled
             INCc(telm[n].cnt, telm[n].rate);
-            if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 1500) { // we want to send and did not got a request recently
+            if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
                 uint16_t len = msp_generate_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
                 serial.putbuf(_buf, len);
 //dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
@@ -260,6 +273,10 @@ void tRxMsp::putc(char c)
                 if (msp_msg_link_in.function == telm_function[n]) { // to indicate we got this request from a gcs
                     telm[n].tlast_ms = millis32();
                 }
+            }
+            if (msp_msg_link_in.function == MSP_IDENT) { // we got a MSP_IDENT, so there is a gcs
+                msp_ident_tlast_ms = millis32();
+                gcs_connected = true;
             }
         }
 /*

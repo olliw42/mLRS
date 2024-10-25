@@ -64,6 +64,7 @@ typedef enum {
     MSP_MODE_RANGES               = 34, // len = 160
     MSP_ADJUSTMENT_RANGES         = 52, // len = 120
     MSP_SONAR_ALTITUDE            = 58,
+    MSP_IDENT                     = 100, // not used by INAV, but by a GCS to detect it's not an old INAV
     MSP_STATUS                    = 101,
     MSP_RAW_IMU                   = 102,
     MSP_RAW_GPS                   = 106,
