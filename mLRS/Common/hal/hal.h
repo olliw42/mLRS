@@ -92,9 +92,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- MATEKSYS mLRS devices
 
+#ifdef RX_MATEK_MR900_TD30_G474CE
+#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#endif
+
 #ifdef TX_MATEK_MTX_DB30_G474CE
 #include "matek/tx-hal-matek-mtx-db30-g474ce.h"
 #endif
+
 
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
