@@ -218,12 +218,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             SetPacketType(SX126X_PACKET_TYPE_GFSK);
         }
 
-        // WORKAROUND: Better Resistance of the SX1262 Tx to Antenna Mismatch,
-        // fixes overly eager PA clamping
-        // see SX1262/SX1268 datasheet, chapter 15 Known Limitations, section 15.2 for details
-        uint8_t data = ReadRegister(SX126X_REG_TX_CLAMP_CONFIG);
-        data |= 0x1E;
-        WriteRegister(SX126X_REG_TX_CLAMP_CONFIG, data);
+        SetTxClampConfig(); // workaround 15.2.2, datasheet p.105
 
         ClearDeviceError(); // XOSC_START_ERR is raised, datasheet 13.3.6 SetDIO3AsTCXOCtrl, p.84
 
@@ -291,7 +286,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period inn ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
+        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
     void SetToRx(uint16_t tmo_ms)
