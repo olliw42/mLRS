@@ -109,7 +109,15 @@ typedef struct
 } tDcHalCanTimings;
 
 
+typedef enum
+{
+    DC_HAL_CAN1 = 0,
+    DC_HAL_CAN2,
+} DC_HAL_CAN_ENUM;
+
+
 int16_t dc_hal_init(
+    DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode);
 

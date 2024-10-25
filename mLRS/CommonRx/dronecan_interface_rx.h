@@ -833,14 +833,29 @@ void can_init(void)
   #error HAL_FDCAN_MODULE_ENABLED not defined, enable it in Core\Inc\stm32g4xx_hal_conf.h!
 #endif
 
+#ifdef CAN_USE_FDCAN2_PB5PB6
+    #ifndef FDCAN2
+      #error CAN_USE_FDCAN2_xxxx defined buf FDCAN2 not available!
+    #endif
+#else
+    #ifndef CAN_USE_FDCAN1_PA11PA12
+      #warning CAN_USE_FDCANx_xxxx not defined! CAN_USE_FDCAN1_PA11PA12 assumed.
+    #endif
+#endif
+
+
 void can_init(void)
 {
     // GPIO initialization
     // PA11 = FDCAN1_RX
     // PA12 = FDCAN1_TX
-
+#ifdef CAN_USE_FDCAN2_PB5PB6
+    gpio_init_af(IO_PB5, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
+    gpio_init_af(IO_PB6, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
+#else
     gpio_init_af(IO_PA11, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
     gpio_init_af(IO_PA12, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
+#endif
 
     // FDCAN clock initialization
 
@@ -867,7 +882,11 @@ void can_init(void)
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
 
-    res = dc_hal_init(&timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+#ifdef CAN_USE_FDCAN2_PB5PB6
+    res = dc_hal_init(DC_HAL_CAN2, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+#else
+    res = dc_hal_init(DC_HAL_CAN1, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+#endif
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)
         return;

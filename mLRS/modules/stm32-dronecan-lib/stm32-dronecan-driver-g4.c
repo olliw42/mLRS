@@ -93,6 +93,7 @@ static void _process_error_status(void)
 //-------------------------------------------------------
 
 int16_t dc_hal_init(
+    DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
@@ -113,7 +114,13 @@ int16_t dc_hal_init(
     memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
     dc_hal_abort_tx_on_error = (iface_mode == DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
 
-    hfdcan.Instance = FDCAN1;
+    switch (can_instance) { // 1, 2, ...
+#ifdef FDCAN2
+        case DC_HAL_CAN2: hfdcan.Instance = FDCAN2; break;
+#endif
+        default: // DC_HAL_CAN1
+            hfdcan.Instance = FDCAN1;
+    }
     __HAL_FDCAN_DISABLE_IT(&hfdcan, 0);
 
     hfdcan.Init.ClockDivider = FDCAN_CLOCK_DIV1;
@@ -276,6 +283,7 @@ tx_tlast_ms = tnow_ms;
 
 #define DC_FDCAN_RX_FIFO_ELEMENT_SIZE  (18U * 4U) // Rx FIFO 0/1 element size in bytes, 2 words + 64 bytes = 18*4
 
+
 typedef struct
 {
     uint32_t r0;
@@ -285,6 +293,7 @@ typedef struct
         uint32_t data_32[CANARD_CAN_FRAME_MAX_DATA_LEN / 4]; // CANARD_CAN_FRAME_MAX_DATA_LEN should be devidable by 4
     };
 } tDcRxFifoElement;
+
 
 typedef enum // see table 400 in datasheet
 {
@@ -297,6 +306,7 @@ typedef enum // see table 400 in datasheet
 
 
 #define DRONECAN_RXFRAMEBUFSIZEMASK  (DRONECAN_RXFRAMEBUFSIZE - 1)
+
 
 volatile tDcRxFifoElement dronecan_rxbuf[DRONECAN_RXFRAMEBUFSIZE];
 volatile uint16_t dronecan_rxwritepos; // pos at which the last frame was stored
@@ -348,8 +358,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
 }
 
 
-// is already C context, not C++ !
-void FDCAN1_IT0_IRQHandler(void)
+void _dc_hal_isr_handler(void)
 {
     //HAL_FDCAN_IRQHandler(&hfdcan);
     // copy the part relevant to us
@@ -439,6 +448,21 @@ void FDCAN1_IT0_IRQHandler(void)
 }
 
 
+// is already C context, not C++ !
+
+#ifdef FDCAN2
+void FDCAN2_IT0_IRQHandler(void)
+{
+    if (hfdcan.Instance == FDCAN2) _dc_hal_isr_handler();
+}
+#endif
+
+void FDCAN1_IT0_IRQHandler(void)
+{
+    if (hfdcan.Instance == FDCAN1) _dc_hal_isr_handler();
+}
+
+
 //-- API
 
 int16_t dc_hal_enable_isr(void)
@@ -470,8 +494,16 @@ HAL_StatusTypeDef hres;
 
     hfdcan.Instance->IR = 0xFFFFFFFF; // clear all flags by writing 1 to them
 
-    NVIC_SetPriority(FDCAN1_IT0_IRQn, DRONECAN_IRQ_PRIORITY);
-    NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+#ifdef FDCAN2
+    if (hfdcan.Instance == FDCAN2) {
+        NVIC_SetPriority(FDCAN2_IT0_IRQn, DRONECAN_IRQ_PRIORITY);
+        NVIC_EnableIRQ(FDCAN2_IT0_IRQn);
+    } else
+#endif
+    if (hfdcan.Instance == FDCAN1) {
+        NVIC_SetPriority(FDCAN1_IT0_IRQn, DRONECAN_IRQ_PRIORITY);
+        NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
+    }
 
     return 0;
 }
