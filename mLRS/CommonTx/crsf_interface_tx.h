@@ -816,6 +816,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
     if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
 
     switch (msg->function) {
+#if 0 // was a test to see if one can provide more sensors for Yaapu
     case MSP_SONAR_ALTITUDE: { //
         tMspSonarAltitude* payload = (tMspSonarAltitude*)(msg->payload);
         if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_RANGEFINDER)) {
@@ -826,6 +827,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
             passthrough.handle_mavlink_msg_rangefinder(&p);
         }
         } break;
+#endif
 
     case MSP_ATTITUDE: { // tCrsfAttitude, CRSF_FRAME_ID_ATTITUDE = 0x1E
         tMspAttitude* payload = (tMspAttitude*)(msg->payload);
