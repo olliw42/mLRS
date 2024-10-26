@@ -11,7 +11,7 @@
 #pragma once
 
 
-#if (defined DEVICE_HAS_JRPIN5)
+#ifdef DEVICE_HAS_JRPIN5
 
 #include "../Common/libs/fifo.h"
 #include "setup_tx.h"
@@ -114,7 +114,7 @@ void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
 // is called in isr context
 bool tMBridge::transmit_start(void)
 {
-if (crsf_emulation) while (1) {}; // must not happen
+    if (crsf_emulation) while (1) {}; // must not happen
 
     tx_free = true; // tell external code that next slot can be filled
 
@@ -161,7 +161,7 @@ void tMBridge::send_command(void)
 #define MBRIDGE_TMO_US  250
 
 
-// is called in isr context, or in ParseCrsfFrame() in case of CRSF emulatiom
+// is called in isr context, or in ParseCrsfFrame() in case of CRSF emulation
 void tMBridge::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros16();
@@ -336,7 +336,7 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
 // polled in main loop
 bool tMBridge::ChannelsUpdated(tRcData* const rc)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
+    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
     if (!enabled) return false;
 
@@ -353,7 +353,7 @@ if (crsf_emulation) return false; // CRSF: just don't ever do it, should not hap
 // polled in main loop
 bool tMBridge::TelemetryUpdate(uint8_t* const task)
 {
-if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
+    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
     if (!enabled) return false;
 
@@ -856,7 +856,7 @@ void mbridge_send_cmd(uint8_t cmd)
 class tMBridge : public tSerialBase
 {
   public:
-    void Init(bool enable_flag, bool crsf_emulation_flag) {};
+    void Init(bool enable_flag, bool crsf_emulation_flag) {}
     void TelemetryStart(void) {}
     void TelemetryTick_ms(void) {}
     void Lock(void) {}
@@ -865,6 +865,6 @@ class tMBridge : public tSerialBase
 
 tMBridge mbridge;
 
-#endif // if (defined DEVICE_HAS_JRPIN5)
+#endif // ifdef DEVICE_HAS_JRPIN5
 
 #endif // MBRIDGE_INTERFACE_H
