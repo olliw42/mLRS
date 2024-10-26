@@ -64,9 +64,6 @@
 //#define UARTF_RXBUFSIZE           512
 
 
-#define CAN_USE_FDCAN1_PA11PA12
-
-
 //-- SX1: SX12xx & SPI
 
 

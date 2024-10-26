@@ -12,3 +12,8 @@ pip install setuptools
 
 https://discord.com/channels/1005096100572700794/1288190811875446918/1288903439664812143
 https://stackoverflow.com/questions/7446187/no-module-named-pkg-resources/10538412#10538412
+
+
+git submodule DSDL
+to update browse into folder, then
+git pull

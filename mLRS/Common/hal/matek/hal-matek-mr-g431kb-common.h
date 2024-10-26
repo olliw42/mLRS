@@ -43,6 +43,11 @@ SWC     solder pad      PA14        SWDCLK      I2C1_SDA / T8_CH2
 //--
 
 
+//-- CAN
+
+#define CAN_USE_FDCAN1_PA11PA12
+
+
 //-- SX1: SX12xx & SPI
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7

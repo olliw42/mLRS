@@ -22,6 +22,7 @@
 #include "../Common/dronecan/out/include/uavcan.protocol.dynamic_node_id.Allocation.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Targetted.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Protocol.h"
+#include "../Common/dronecan/out/include/dronecan.protocol.FlexDebug.h"
 
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
@@ -91,12 +92,17 @@ class tRxDroneCan
     uint32_t fifo_fc_to_ser_tx_full_error_cnt;
     uint32_t tunnel_targetted_error_cnt;
 
+    struct {
+        uint8_t transfer_id;
+    } flex_debug;
+
     // to not burden the stack
     union {
         struct uavcan_protocol_NodeStatus node_status;
         struct uavcan_protocol_GetNodeInfoResponse node_info_resp;
         struct dronecan_sensors_rc_RCInput rc_input;
         struct uavcan_tunnel_Targetted tunnel_targetted;
+        struct dronecan_protocol_FlexDebug flex_debug;
     } _p;
     uint8_t _buf[DRONECAN_BUF_SIZE];
 };

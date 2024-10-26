@@ -6,7 +6,7 @@
  https://www.gnu.org/licenses/gpl-3.0.de.html
  OlliW @ www.olliw.eu
 *******************************************************
- version 27.08.2024
+ version 26.10.2024
 *******************************************************
 '''
 import os
@@ -71,6 +71,8 @@ desired_dsdl_list = [
     
     'uavcan.tunnel.Targetted',
     'uavcan.tunnel.Protocol',
+
+    'dronecan.protocol.FlexDebug',
 ]    
 
 

@@ -18,6 +18,9 @@
 
 #ifdef DEVICE_HAS_DRONECAN
 
+#include "../Common/hal/hal.h"
+#include "../Common/thirdparty/stdstm32-can.h"
+
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
 #endif
@@ -137,6 +140,7 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     tunnel_targetted.server_node_id = 0;
     fifo_fc_to_ser.Flush();
     fifo_ser_to_fc.Flush();
+    flex_debug.transfer_id = 0;
 
     tunnel_targetted_fc_to_ser_rate = 0;
     tunnel_targetted_ser_to_fc_rate = 0;
@@ -161,12 +165,11 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 
     if (!ser_over_can_enabled) {
         // canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
-        node_id_allocation.is_running = true;
     } else {
         // ArduPilot's MAVLink via CAN seems to need a fixed node id, so don't do dynamic id allocation
         canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
-        node_id_allocation.is_running = false;
     }
+    node_id_allocation.is_running = (canardGetLocalNodeID(&canard) == 0);
 
     int16_t res = set_can_filters();
     if (res < 0) {
@@ -315,6 +318,10 @@ void tRxDroneCan::Do(void)
 }
 
 
+//-------------------------------------------------------
+// SendRcData
+//-------------------------------------------------------
+
 void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 {
     if (!dronecan.id_is_allcoated()) return;
@@ -406,6 +413,26 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
         len);
+
+#if 0
+    _p.flex_debug.id = 110; // we just grab it, PR is pending
+    memset(_p.flex_debug.u8.data, 0, 255);
+
+    static uint8_t cnt = 0;
+    _p.flex_debug.u8.data[0] = cnt++;
+    _p.flex_debug.u8.len = 1;
+
+    len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf);
+
+    canardBroadcast(
+        &canard,
+        DRONECAN_PROTOCOL_FLEXDEBUG_SIGNATURE,
+        DRONECAN_PROTOCOL_FLEXDEBUG_ID,
+        &flex_debug.transfer_id,
+        CANARD_TRANSFER_PRIORITY_MEDIUM,
+        _buf,
+        len);
+#endif
 }
 
 
@@ -618,6 +645,10 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 }
 
 
+//-------------------------------------------------------
+// DroneCAN tunnel handling
+//-------------------------------------------------------
+
 // Handle a tunnel.Targetted message, check if it is for us and proper
 void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer)
 {
@@ -783,117 +814,6 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
         }
     }
 }
-
-
-//-------------------------------------------------------
-// CAN Init
-//-------------------------------------------------------
-
-#ifdef STM32F1
-#ifndef HAL_CAN_MODULE_ENABLED
-  #error HAL_CAN_MODULE_ENABLED not defined, enable it in Core\Inc\stm32f1xx_hal_conf.h!
-#endif
-
-void can_init(void)
-{
-    // CAN peripheral initialization
-
-    gpio_init(IO_PA11, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-    gpio_init_af(IO_PA12, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-
-    //__HAL_RCC_CAN1_CLK_ENABLE();
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CAN1);
-
-    // DroneCAN Hal initialization
-
-    tDcHalCanTimings timings;
-    int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), 1000000, &timings); // = 36000000, CAN is on slow APB1 bus
-    if (res < 0) {
-        dbg.puts("\nERROR: Solution for CAN timings could not be found");
-        return;
-    }
-    dbg.puts("\n  PCLK1: ");dbg.puts(u32toBCD_s(HAL_RCC_GetPCLK1Freq()));
-    dbg.puts("\n  Prescaler: ");dbg.puts(u16toBCD_s(timings.bit_rate_prescaler));
-    dbg.puts("\n  BS1: ");dbg.puts(u8toBCD_s(timings.bit_segment_1));
-    dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
-    dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));
-    // 4, 7, 1, 1
-
-    //res = canardSTM32Init(&timings, CanardSTM32IfaceModeNormal);
-    res = dc_hal_init(&timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
-    if (res < 0) {
-        dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));
-        return;
-    }
-}
-
-#endif // STM32F1
-#ifdef STM32G4
-#ifndef HAL_FDCAN_MODULE_ENABLED
-  #error HAL_FDCAN_MODULE_ENABLED not defined, enable it in Core\Inc\stm32g4xx_hal_conf.h!
-#endif
-
-#ifdef CAN_USE_FDCAN2_PB5PB6
-    #ifndef FDCAN2
-      #error CAN_USE_FDCAN2_xxxx defined buf FDCAN2 not available!
-    #endif
-#else
-    #ifndef CAN_USE_FDCAN1_PA11PA12
-      #warning CAN_USE_FDCANx_xxxx not defined! CAN_USE_FDCAN1_PA11PA12 assumed.
-    #endif
-#endif
-
-
-void can_init(void)
-{
-    // GPIO initialization
-    // PA11 = FDCAN1_RX
-    // PA12 = FDCAN1_TX
-#ifdef CAN_USE_FDCAN2_PB5PB6
-    gpio_init_af(IO_PB5, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-    gpio_init_af(IO_PB6, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-#else
-    gpio_init_af(IO_PA11, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-    gpio_init_af(IO_PA12, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
-#endif
-
-    // FDCAN clock initialization
-
-    LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
-
-    LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_FDCAN);
-    //LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_FDCAN);
-    //LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_FDCAN);
-
-    // DroneCAN HAL initialization
-
-    tDcHalCanTimings timings;
-    //int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), 1000000, &timings);
-    int16_t res = dc_hal_compute_timings(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN), 1000000, &timings);
-    if (res < 0) {
-        DBG_DC(dbg.puts("\nERROR: Solution for CAN timings could not be found");)
-        return;
-    }
-
-    DBG_DC(dbg.puts("\n  PCLK1: ");dbg.puts(u32toBCD_s(HAL_RCC_GetPCLK1Freq()));
-    dbg.puts("\n  FDCAN CLK: ");dbg.puts(u32toBCD_s(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN)));
-    dbg.puts("\n  Prescaler: ");dbg.puts(u16toBCD_s(timings.bit_rate_prescaler));
-    dbg.puts("\n  BS1: ");dbg.puts(u8toBCD_s(timings.bit_segment_1));
-    dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
-    dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
-
-#ifdef CAN_USE_FDCAN2_PB5PB6
-    res = dc_hal_init(DC_HAL_CAN2, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
-#else
-    res = dc_hal_init(DC_HAL_CAN1, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
-#endif
-    if (res < 0) {
-        DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)
-        return;
-    }
-}
-
-#endif // STM32G4
 
 
 //-------------------------------------------------------
