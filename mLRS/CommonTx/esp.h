@@ -83,7 +83,7 @@ bool com_is_full(void)
 // ESP WifiBridge class
 //-------------------------------------------------------
 
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
   // we currently don't do anything if no RST, GPIO0
   #define ESP_STARTUP_CONFIGURE
 #endif

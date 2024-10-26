@@ -17,6 +17,7 @@
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
 //-- Timers, Timing, EEPROM, and such stuff
