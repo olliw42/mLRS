@@ -293,21 +293,19 @@ void gdisp_hal_contrast(uint8_t c)
 
 void gdisp_update(void)
 {
-    // this must not be called too frequently, any I2C transfers must have been finsihed
+    // this must not be called too frequently, any I2C transfers must have been finished
 
     // for the moment we simply copy the complete buf to the display
     // we should be smarter and use the rectangle
 
     if (!gdisp.needsupdate) return;
 
-    //gdisp_hal_cmdhome(); // does not appear to make a difference
-
     HAL_StatusTypeDef res = gdisp_hal_put(gdisp.buf, GDISPLAY_BUFSIZE);
 //    HAL_StatusTypeDef res = ssd1306_put(gdisp.buf, GDISPLAY_BUFSIZE);
 //    HAL_StatusTypeDef res = ssd1306_put_noblock(gdisp.buf, GDISPLAY_BUFSIZE);
 //    while (i2c_device_ready() == HAL_BUSY) {};
 
-    if (res != HAL_OK) return; // retry, needs update is not reset, so it will tried the next time again
+    if (res != HAL_OK) return; // retry, needs update is not reset, so it will be tried next time again
 
     gdisp.needsupdate = 0;
 }

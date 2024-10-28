@@ -233,6 +233,7 @@ void pack_rxframe(
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
+
 // returns 0 if OK !!
 uint8_t check_rxframe(tRxFrame* const frame)
 {
@@ -252,7 +253,6 @@ uint16_t crc;
 
     return CHECK_OK;
 }
-
 
 
 //-------------------------------------------------------
