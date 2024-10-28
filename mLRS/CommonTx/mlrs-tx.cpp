@@ -9,7 +9,7 @@
 
 
 #define DBG_MAIN(x)
-#define DBG_MAIN_SLIM(x)
+#define DBG_MAIN_SLIM(x) x
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -192,6 +192,9 @@ class tWhileTransmit : public tWhileBase
   public:
     uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
+#ifdef USE_DISPLAY
+    void handle(void) override { disp.SpinI2C(); }
+#endif
 };
 
 tWhileTransmit whileTransmit;
@@ -828,6 +831,7 @@ INITCONTROLLER_END
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
+        DBG_MAIN_SLIM(dbg.puts("r");)
         break;
     }//end of switch(link_state)
 
