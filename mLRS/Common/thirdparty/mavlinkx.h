@@ -156,8 +156,8 @@ fmavx_status_t fmavx_status = {};
 
 
 #ifdef MAVLINKX_COMPRESSION
-uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint8_t* const len_out, const uint8_t* const payload, uint8_t len);
-void _fmavX_payload_decompress(uint8_t* const payload_out, uint8_t* const len_out, uint8_t len);
+uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, const uint8_t* const payload, uint8_t len);
+void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_out, uint8_t len);
 #endif
 
 
@@ -360,7 +360,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
 
     // more
 #ifdef MAVLINKX_COMPRESSION
-    uint8_t pos_of_len = pos;
+    uint8_t pos_of_len = pos; // len may have to be corrected later depending on success of compression
 #endif
     buf[pos++] = msg->len;
     buf[pos++] = msg->seq;
@@ -396,9 +396,13 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
     // payload
     // we should want to remove the targets if there are any, for the moment we just don't
     // do compression, but do not advance pos since we need to do crc8
-    uint8_t len;
+    uint16_t len;
     if (fmavx_config_g.compression_enabled &&
         _fmavX_payload_compress(&(buf[pos + 1]), &len, msg->payload, msg->len)) {
+
+if (len > 255) while (1) {}
+if (len > msg->len) while (1) {}
+
         buf[2] |= MAVLINKX_FLAGS_IS_COMPRESSED;
         buf[pos_of_len] = len;
     } else {
@@ -667,9 +671,9 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
 
 #ifdef MAVLINKX_COMPRESSION
             if (fmavx_status.flags & MAVLINKX_FLAGS_IS_COMPRESSED) {
-                uint8_t len;
+                uint16_t len;
                 _fmavX_payload_decompress(&(buf[status->rx_header_len]), &len, fmavx_status.rx_payload_len);
-                uint8_t delta_len = (len - fmavx_status.rx_payload_len);
+                uint16_t delta_len = (len - fmavx_status.rx_payload_len);
                 status->rx_cnt += delta_len;
                 fmavx_status.rx_payload_len += delta_len;
                 status->rx_frame_len += delta_len;
@@ -771,7 +775,7 @@ the last byte all to 1.
 // we can use payload_out buffer as working buffer
 
 // len_out & out_bit index the next bit position to write to
-void _fmavX_encode_put_bits(uint8_t* const payload_out, uint8_t* const len_out, uint16_t code, uint8_t code_bit_len)
+void _fmavX_encode_put_bits(uint8_t* const payload_out, uint16_t* const len_out, uint16_t code, uint8_t code_bit_len)
 {
     uint16_t cur_code_bit = (uint16_t)1 << (code_bit_len - 1);
 
@@ -783,6 +787,9 @@ void _fmavX_encode_put_bits(uint8_t* const payload_out, uint8_t* const len_out, 
         fmavx_status.out_bit >>= 1; // next bit pos in out bytes
         if (fmavx_status.out_bit == 0) { // out byte completely done, go to next out byte
             (*len_out)++;
+
+if ((*len_out) > 258) while (1) {}
+
             fmavx_status.out_bit = 0x80;
             payload_out[*len_out] = 0xFF;
         }
@@ -790,9 +797,11 @@ void _fmavX_encode_put_bits(uint8_t* const payload_out, uint8_t* const len_out, 
 }
 
 
-void _fmavX_encode_rle(uint8_t* const payload_out, uint8_t* const len_out, uint8_t c, uint8_t RLE_cnt)
+void _fmavX_encode_rle(uint8_t* const payload_out, uint16_t* const len_out, uint8_t c, uint8_t RLE_cnt)
 {
 uint16_t code;
+
+if (RLE_cnt > 255) while (1) {}
 
     if (c == 0x00) {
         if (RLE_cnt <= 4) { // 3 * x <= 13 => x <= 4
@@ -821,21 +830,25 @@ uint16_t code;
 }
 
 
-uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint8_t* const len_out, const uint8_t* const payload, uint8_t len)
+uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, const uint8_t* const payload, uint8_t len)
 {
 uint16_t code; // can be 2 - 13 bits
 uint8_t is_in_RLE;
-uint8_t RLE_char = 0; // to make gcc12 happy, avoid warning may be used uninitialized
-uint8_t RLE_cnt;
+uint8_t RLE_char;
+uint16_t RLE_cnt;
 
     *len_out = 0;
     fmavx_status.out_bit = 0x80;
     payload_out[0] = 0xFF; // we use 1's as stop marker in last byte, so it's easier to fill with 0xFF
 
     is_in_RLE = 0;
+    RLE_char = 0; // to make gcc12 happy, avoid warning may be used uninitialized
+    RLE_cnt = 0;
 
     for (uint8_t n = 0; n < len; n++) {
         uint8_t c = payload[n];
+
+if (*len_out > 255) while (1) {}
 
         if (is_in_RLE) {
             if (c == RLE_char) {
@@ -929,7 +942,7 @@ uint8_t _fmavX_decode_get_bits(uint8_t* const code, uint8_t len, uint8_t bits_le
 }
 
 
-void _fmavX_payload_decompress(uint8_t* const payload_out, uint8_t* const len_out, uint8_t len)
+void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_out, uint8_t len)
 {
     memcpy(fmavx_in_buf, payload_out, len); // copy current payload into work buffer
 
@@ -940,6 +953,8 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint8_t* const len_ou
 
     while (1) {
         uint8_t c;
+
+        if (*len_out > 255) while (1) {}
 
         // get next code
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
