@@ -12,13 +12,13 @@
 #ifndef MSPX_H
 #define MSPX_H
 
-// STX1                       '$'
-// STX2                       'X', 'M'
-// flags                      type '<', '>', '!'
-// function_1                 flag 0
-// function_2                 function_1
-// len_1                      function_2
-// len_2                      len_1
+// STX1                       '$'                     '$'
+// STX2                       'X'                     'M'
+// flags                      type '<', '>', '!'      type '<', '>', '!'
+// function_1                 flag 0                  len
+// function_2                 function_1              function
+// len_1                      function_2              payload
+// len_2                      len_1                   crc8
 // crc8                       len_2
 // paylaod                    payload
 // crc16_1                    crc8
@@ -34,11 +34,16 @@ typedef enum {
     MSP_PARSE_STATE_IDLE = 0,
     MSP_PARSE_STATE_MAGIC_2,
     MSP_PARSE_STATE_TYPE,
+    // v2
     MSP_PARSE_STATE_FLAG,
     MSP_PARSE_STATE_FUNCTION_1,
     MSP_PARSE_STATE_FUNCTION_2,
     MSP_PARSE_STATE_LEN_1,
     MSP_PARSE_STATE_LEN_2,
+    // v1
+    MSP_PARSE_STATE_V1_LEN,
+    MSP_PARSE_STATE_V1_FUNCTION,
+    // v1 & v2
     MSP_PARSE_STATE_PAYLOAD,
     MSP_PARSE_STATE_CHECKSUM,
 } msp_parse_state_e;
@@ -99,13 +104,14 @@ uint8_t msp_parse_to_msg(msp_message_t* const msg, msp_status_t* const status, c
     case MSP_PARSE_STATE_TYPE:
         if (c == MSP_TYPE_REQUEST || c == MSP_TYPE_RESPONSE || c == MSP_TYPE_ERROR) {
             msg->type = c;
-            status->state = MSP_PARSE_STATE_FLAG;
+            status->state = (msg->magic2 == MSP_MAGIC_2_V1) ? MSP_PARSE_STATE_V1_LEN : MSP_PARSE_STATE_FLAG;
         } else {
             status->state = MSP_PARSE_STATE_IDLE;
         }
         msg->res = MSP_PARSE_RESULT_NONE;
         return 0;
 
+    // v2
     case MSP_PARSE_STATE_FLAG:
         msg->flag = c;
         status->state = MSP_PARSE_STATE_FUNCTION_1;
@@ -144,6 +150,23 @@ uint8_t msp_parse_to_msg(msp_message_t* const msg, msp_status_t* const status, c
         }
         return 0;
 
+    // v1
+    case MSP_PARSE_STATE_V1_LEN:
+        msg->len = c;
+        status->state = MSP_PARSE_STATE_V1_FUNCTION;
+        msg->res = MSP_PARSE_RESULT_NONE;
+        return 0;
+
+    case MSP_PARSE_STATE_V1_FUNCTION:
+        msg->function = c;
+        status->state = MSP_PARSE_STATE_PAYLOAD;
+        msg->res = MSP_PARSE_RESULT_HAS_HEADER;
+        if (msg->len > MSP_PAYLOAD_LEN_MAX) { // should never happen for v1
+            msp_status_reset(status);
+        }
+        return 0;
+
+    // v1 & v2
     case MSP_PARSE_STATE_PAYLOAD:
         if (status->cnt < MSP_PAYLOAD_LEN_MAX) msg->payload[status->cnt] = c; // payload
         status->cnt++;
@@ -175,19 +198,28 @@ uint16_t msp_msg_to_frame_buf(uint8_t* const buf, msp_message_t* const msg)
     buf[0] = MSP_MAGIC_1;
     buf[1] = msg->magic2;
     buf[2] = msg->type;
-    buf[3] = 0;
-    buf[4] = msg->function;
-    buf[5] = msg->function >> 8;
-    buf[6] = msg->len;
-    buf[7] = msg->len >> 8;
 
     uint16_t pos = 8;
+    uint16_t header_len = 8;
+
+    if (msg->magic2 == MSP_MAGIC_2_V1) {
+        buf[3] = msg->len;
+        buf[4] = msg->function;
+        pos = header_len = 5;
+    } else {
+        buf[3] = 0;
+        buf[4] = msg->function;
+        buf[5] = msg->function >> 8;
+        buf[6] = msg->len;
+        buf[7] = msg->len >> 8;
+        pos = header_len = 8;
+    }
 
     for (uint16_t i = 0; i < msg->len; i++) buf[pos++] = msg->payload[i];
 
     buf[pos] = msg->checksum;
 
-    return msg->len + 8 + 1;
+    return msg->len + header_len + 1;
 }
 
 
@@ -195,21 +227,31 @@ uint16_t msp_frame_buf_to_msg(msp_message_t* const msg, uint8_t* const buf)
 {
     msg->magic2 = buf[1];
     msg->type = buf[2];
-    msg->flag = 0; // buf[3]
-    msg->function = (uint16_t)(buf[4]) + ((uint16_t)(buf[5]) << 8);
-    msg->len = (uint16_t)(buf[6]) + ((uint16_t)(buf[7]) << 8);
+
+    uint16_t pos = 8;
+    uint16_t header_len = 8;
+
+    if (msg->magic2 == MSP_MAGIC_2_V1) {
+        msg->flag = 0;
+        msg->len = buf[3];
+        msg->function = buf[4];
+        pos = header_len = 5;
+    } else {
+        msg->flag = 0; // buf[3]
+        msg->function = (uint16_t)(buf[4]) + ((uint16_t)(buf[5]) << 8);
+        msg->len = (uint16_t)(buf[6]) + ((uint16_t)(buf[7]) << 8);
+        pos = header_len = 8;
+    }
 
     if (msg->len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
     }
 
-    uint16_t pos = 8;
-
     for (uint16_t i = 0; i < msg->len; i++) msg->payload[i] = buf[pos++];
 
     msg->checksum = buf[pos];
 
-    return msg->len + 8 + 1;
+    return msg->len + header_len + 1;
 }
 
 
@@ -228,6 +270,7 @@ typedef enum {
 typedef enum {
     MSP_FLAGS_REQUEST   = 0x01,
     MSP_FLAGS_ERROR     = 0x02,
+    MSP_FLAGS_V1        = 0x04,
 } mspx_flags_e;
 
 
@@ -271,8 +314,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, 
 
     case MSP_PARSE_STATE_FLAGS:
         mspx_status.flags = c;
-        // fake correct MSP header
-        msg->magic2 = MSP_MAGIC_2_V2;
+        msg->magic2 = (mspx_status.flags & MSP_FLAGS_V1) ? MSP_MAGIC_2_V1 : MSP_MAGIC_2_V2;
         if (mspx_status.flags & MSP_FLAGS_REQUEST) {
             msg->type = MSP_TYPE_REQUEST;
         } else if (mspx_status.flags & MSP_FLAGS_ERROR) {
@@ -368,12 +410,19 @@ uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, 
         }
 
         // fake correct MSP checksum
-        msg->checksum = crsf_crc8_calc(0, msg->flag);
-        msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
-        msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
-        msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
-        msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
-        msg->checksum = crsf_crc8_update(msg->checksum, msg->payload, msg->len);
+        if (mspx_status.flags & MSP_FLAGS_V1) {
+            msg->checksum = 0;
+            msg->checksum ^= msg->len;
+            msg->checksum ^= msg->function;
+            for (uint16_t n = 0; n < msg->len; n++) msg->checksum ^= msg->payload[n];
+        } else {
+            msg->checksum = crsf_crc8_calc(0, msg->flag);
+            msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
+            msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
+            msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
+            msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
+            msg->checksum = crsf_crc8_update(msg->checksum, msg->payload, msg->len);
+        }
 
         msp_status_reset(status);
         msg->res = MSP_PARSE_RESULT_OK;
@@ -399,6 +448,9 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* const buf, msp_message_t* const msg)
     } else if (msg->type == MSP_TYPE_ERROR) {
         flags |= MSP_FLAGS_ERROR;
     }
+    if (msg->magic2 == MSP_MAGIC_2_V1) {
+        flags |= MSP_FLAGS_V1;
+    }
 
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSPX_MAGIC_2;
@@ -421,7 +473,8 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* const buf, msp_message_t* const msg)
 }
 
 
-uint16_t msp_generate_frame_bufX(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
+// generate a MSPX frame holding a MSP V2 message
+uint16_t msp_generate_v2_frame_bufX(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
 {
     if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
@@ -476,11 +529,12 @@ void msp_msg_recalculate_crc(msp_message_t* const msg)
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
-    for (uint16_t i = 0; i < msg->len; i++) msg->checksum = crsf_crc8_calc(msg->checksum, msg->payload[i]);
+    msg->checksum = crsf_crc8_update(msg->checksum, msg->payload, msg->len);
 }
 
 
-uint16_t msp_generate_request_to_msg(msp_message_t* const msg, uint8_t type, uint16_t function)
+/* not used
+uint16_t msp_generate_v2_request_to_msg(msp_message_t* const msg, uint8_t type, uint16_t function)
 {
     msg->magic2 = MSP_MAGIC_2_V2;
     msg->type = type;
@@ -494,9 +548,11 @@ uint16_t msp_generate_request_to_msg(msp_message_t* const msg, uint8_t type, uin
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len >> 8);
     return 8 + 1;
 }
+*/
 
 
-uint16_t msp_generate_request_to_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function)
+// generate a MSP v2 request frame (simpler since no payload)
+uint16_t msp_generate_v2_request_to_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function)
 {
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSP_MAGIC_2_V2;
@@ -511,7 +567,8 @@ uint16_t msp_generate_request_to_frame_buf(uint8_t* const buf, uint8_t type, uin
 }
 
 
-uint16_t msp_generate_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
+// generate a MSP v2 frame
+uint16_t msp_generate_v2_frame_buf(uint8_t* const buf, uint8_t type, uint16_t function, uint8_t* const payload, uint16_t len)
 {
     if (len > MSP_PAYLOAD_LEN_MAX) { // can't handle it, so couldn't have received it completely
         return 0;
