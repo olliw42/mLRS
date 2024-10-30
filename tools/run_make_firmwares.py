@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 3.10.2024
+ version 30.10.2024
 ********************************************************
 '''
 import os
@@ -476,6 +476,7 @@ MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.SoftwareVersion.c'))
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Protocol.c'))
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Targetted.c'))
+MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.protocol.FlexDebug.c'))
 
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
