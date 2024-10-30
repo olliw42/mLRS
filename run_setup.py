@@ -34,7 +34,8 @@ def os_system(arg):
         res = subprocess.call(arg)
     if res != 0:
         print('# ERROR (errno =',res,') DONE #')
-        os.system("pause")
+        print('Press Enter to Continue') 
+        input()
         exit(1)
 
 
@@ -56,7 +57,8 @@ def check_python():
         python_cmd = 'python3'
     else:
         print("ERROR: Python 3 not found on your system. Please make sure Python 3 is available.")
-        os.system("pause")
+        print('Press Enter to Continue') 
+        input()
         exit(1)
 
 
@@ -104,4 +106,5 @@ copy_st_drivers()
 generate_mavlink_c_library()
 generate_dronecan_c_library()
 
-os.system("pause")
+print('Press Enter to Continue') 
+input()
