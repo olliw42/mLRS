@@ -29,8 +29,8 @@
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 // out is on JRPin5
-#define UART_BAUD                416666   // CRSF baud rate
-#define UART_USE_TX_IO           IO_P13
+#define UART_BAUD                 416666   // CRSF baud rate
+#define UART_USE_TX_IO            IO_P13
 #define UART_USE_RX_IO            -1       // no Rx pin needed
 #define UART_TXBUFSIZE            256
 
