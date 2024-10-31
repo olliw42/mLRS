@@ -10,7 +10,9 @@
 
 /*
   Flashing ESP8285:
-  - put Tx module into FLASH_ESP mode
+  - change ser dest to serial2
+  - make sure baudrate is 115200 (default)
+  - put Tx module into FLASH_ESP mode from tools
   - Board: Generic ESP8266 Module
   - Reset Method: no dtr (aka ck)
 */
