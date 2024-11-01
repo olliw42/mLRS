@@ -878,6 +878,25 @@ our headroom is time_in_receive - toa = (52.0-24.5) ms - 23.6 ms = 3.9 ms
 
 => 53 ms is plenty, we could use 52 ms ...
 
+
+-------------------------------------------------------
+3rd order inter modulation
+-------------------------------------------------------
+
+https://www.cdt21.com/design_guide/third-order-intermodulation-channel-planning/
+https://www.cdt21.com/technical_tools/channel-planning/
+
+
+-------------------------------------------------------
+De-duplication
+-------------------------------------------------------
+
+https://discuss.ardupilot.org/t/connect-2-telemetry-devices/82424/10
+https://github.com/mavlink-router/mavlink-router/issues/139
+https://github.com/mavlink-router/mavlink-router/issues/240
+https://github.com/mavlink-router/mavlink-router/pull/338
+https://mavlink.io/en/guide/redundancy_deduplication.html
+
 */
 #endif // BLABLA_H
 

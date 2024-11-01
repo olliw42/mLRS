@@ -48,5 +48,4 @@ class tInBase
 };
 
 
-
 #endif // IN_H

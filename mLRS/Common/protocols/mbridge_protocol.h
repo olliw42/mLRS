@@ -229,7 +229,12 @@ MBRIDGE_PACKED(
 typedef struct
 {
     int16_t receiver_sensitivity;
-    uint8_t spare1;
+    uint8_t has_status : 1;
+    uint8_t binding : 1;
+    uint8_t connected : 1;
+    uint8_t rx_LQ_low : 1;
+    uint8_t tx_LQ_low : 1;
+    uint8_t spare1 : 3;
     int8_t tx_actual_power_dbm;
     int8_t rx_actual_power_dbm;
     uint8_t rx_available : 1;
@@ -248,8 +253,8 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    uint16_t firmware_version_u16;
-    uint16_t setup_layout;
+    uint16_t firmware_version_u16; // 16.64.64 format
+    uint16_t setup_layout_u16; // 16.64.64 format
     char device_name_20[20];
 }) tMBridgeDeviceItem; // 24 bytes
 

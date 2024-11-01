@@ -59,8 +59,9 @@ In tx-hal files:
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 with RESET,GPIO support, on Serial port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 with RESET,GPIO support, on Serial2 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial2 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
@@ -81,6 +82,7 @@ In rx-hal files:
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
+#define DEVICE_HAS_DRONECAN         // board has a DroneCAN port
 
 Note: Some "high-level" features are set for each device in the device_conf.h file, and not in the device's hal file.
 */
@@ -267,7 +269,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     #define USE_DEBUG
   #endif
 #else
-  #define USE_SERIAL
+  #if !defined DEVICE_HAS_NO_SERIAL
+    #define USE_SERIAL
+  #endif
   #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
     #define USE_DEBUG
   #endif

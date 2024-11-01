@@ -9,7 +9,7 @@
 
 
 #define DBG_MAIN(x)
-#define DBG_MAIN_SLIM(x)
+#define DBG_MAIN_SLIM(x) x
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -112,6 +112,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/rf_power.h"
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "config_id.h"
@@ -124,6 +125,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tRfPower rfpower;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxCli cli;
@@ -190,6 +192,9 @@ class tWhileTransmit : public tWhileBase
   public:
     uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
+#ifdef USE_DISPLAY
+    void handle(void) override { disp.SpinI2C(); }
+#endif
 };
 
 tWhileTransmit whileTransmit;
@@ -197,7 +202,6 @@ tWhileTransmit whileTransmit;
 
 void tWhileTransmit::handle_once(void)
 {
-    cli.Set(Setup.Tx[Config.ConfigId].CliLineEnd);
     cli.Do();
 
 #ifdef USE_DISPLAY
@@ -280,10 +284,12 @@ void init_hw(void)
     fan.Init();
     dbg.Init();
 
-    sx.Init();
-    sx2.Init();
-
     setup_init();
+
+    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+
+    sx.Init(); // these take time
+    sx2.Init();
 
     mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
@@ -703,6 +709,7 @@ RESTARTCONTROLLER
     bind.Init();
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
+    rfpower.Init();
 
     sx.SetRfFrequency(fhss.GetCurrFreq());
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
@@ -728,11 +735,8 @@ RESTARTCONTROLLER
     msp.Init(&serial, &serial2); // ports selected by SerialDestination
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    esp.Init(&comport, &serial2, Config.SerialBaudrate);
-#else
-    esp.Init(&comport, &serial, Config.SerialBaudrate);
+#ifdef USE_ESP_WIFI_BRIDGE
+    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
     hc04.Init(&comport, &serial2, Config.SerialBaudrate);
@@ -807,10 +811,10 @@ INITCONTROLLER_END
 
     switch (link_state) {
     case LINK_STATE_IDLE:
-    case LINK_STATE_RECEIVE_DONE:
         break;
 
     case LINK_STATE_TRANSMIT:
+        rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq2());
@@ -827,6 +831,7 @@ INITCONTROLLER_END
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
+        DBG_MAIN_SLIM(dbg.puts("r");)
         break;
     }//end of switch(link_state)
 
@@ -1050,6 +1055,7 @@ IF_MBRIDGE(
         if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
             channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
             channelOrder.Apply(&rcData);
+            rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
         }
         // when we receive channels packet from transmitter, we send link stats to transmitter
         mbridge.TelemetryStart();
@@ -1113,6 +1119,7 @@ IF_CRSF(
         // update channels
         channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
+        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
     }
     uint8_t crsftask; uint8_t crsfcmd;
     uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's too fast Lua script gets out of sync
@@ -1155,6 +1162,7 @@ IF_IN(
         // update channels
         channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
         channelOrder.Apply(&rcData);
+        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
     }
 );
 

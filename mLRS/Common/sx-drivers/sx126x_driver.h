@@ -202,6 +202,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTxParams(sx_power, SX126X_RAMPTIME_40_US); // 7.9.24: was SX126X_RAMPTIME_10_US
     }
 
+    void UpdateRfPower(tSxGlobalConfig* const global_config)
+    {
+        gconfig->Power_dbm = global_config->Power_dbm;
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
     void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
@@ -212,12 +218,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             SetPacketType(SX126X_PACKET_TYPE_GFSK);
         }
 
-        // WORKAROUND: Better Resistance of the SX1262 Tx to Antenna Mismatch,
-        // fixes overly eager PA clamping
-        // see SX1262/SX1268 datasheet, chapter 15 Known Limitations, section 15.2 for details
-        uint8_t data = ReadRegister(SX126X_REG_TX_CLAMP_CONFIG);
-        data |= 0x1E;
-        WriteRegister(SX126X_REG_TX_CLAMP_CONFIG, data);
+        SetTxClampConfig(); // workaround 15.2.2, datasheet p.105
 
         ClearDeviceError(); // XOSC_START_ERR is raised, datasheet 13.3.6 SetDIO3AsTCXOCtrl, p.84
 
@@ -230,11 +231,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         // default for SX1261/2 (E22/E77-900) is 902 to 928 MHz
         // default for SX1268 (E22/E77-400) is 470 to 510 MHz
         switch (gconfig->FrequencyBand) {
-            case SETUP_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
-            case SETUP_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SETUP_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SETUP_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
-            case SETUP_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
                 while (1) {}  // protection
         }
@@ -285,7 +286,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period inn ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
+        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
     void SetToRx(uint16_t tmo_ms)
@@ -304,10 +305,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         int16_t rssi;
         if (gconfig->modeIsLora()) {
-        	Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
+            Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
+            // mimic behavior of sx128x , sx1276
+            // not in the datasheet, but suggested by data
+            if (*Snr < 0) rssi += *Snr;
         } else {
-        	Sx126xDriverBase::GetPacketStatusGFSK(&rssi);
-        	*Snr = 0;
+            Sx126xDriverBase::GetPacketStatusGFSK(&rssi);
+            *Snr = 0;
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this

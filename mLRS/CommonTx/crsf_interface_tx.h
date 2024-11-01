@@ -139,6 +139,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     int32_t inav_baro_altitude; // needed to make INAV happy
     uint16_t msp_inav_status_sensor_status;
+    uint32_t msp_inav_status_arming_flags;
 };
 
 tTxCrsf crsf;
@@ -312,6 +313,7 @@ void tTxCrsf::Init(bool enable_flag)
 
     inav_baro_altitude = 0;
     msp_inav_status_sensor_status = 0;
+    msp_inav_status_arming_flags = 0;
 
     uart_rx_callback_ptr = &crsf_uart_rx_callback;
     uart_tc_callback_ptr = &crsf_uart_tc_callback;
@@ -814,6 +816,19 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
     if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
 
     switch (msg->function) {
+#if 0 // was a test to see if one can provide more sensors for Yaapu
+    case MSP_SONAR_ALTITUDE: { //
+        tMspSonarAltitude* payload = (tMspSonarAltitude*)(msg->payload);
+        if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_RANGEFINDER)) {
+            // for the moment we do it by creating a fake mavlink message
+            fmav_rangefinder_t p;
+            p.distance = (float)((payload->rangefinder_altitude + 5) / 10); // float m <- uint32_t cm
+            p.voltage = 0.0f;
+            passthrough.handle_mavlink_msg_rangefinder(&p);
+        }
+        } break;
+#endif
+
     case MSP_ATTITUDE: { // tCrsfAttitude, CRSF_FRAME_ID_ATTITUDE = 0x1E
         tMspAttitude* payload = (tMspAttitude*)(msg->payload);
         attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->pitch)); // int16_t rad * 1e4  // cdeg -> rad * 1e4
@@ -871,14 +886,12 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         tMspInavStatus* payload = (tMspInavStatus*)(msg->payload);
         // report it
         msp_inav_status_sensor_status = payload->sensor_status;
+        msp_inav_status_arming_flags = payload->arming_flags;
         }break;
 
-    case MSPX_STATUS: {
+    case MSPX_STATUS: { // this is send by the rx shortly after MSP2_INAV_STATUS
         uint32_t flight_mode = *(uint32_t*)(msg->payload);
-        inav_flight_mode_name4(flightmode.flight_mode, flight_mode);
-        if (!(flight_mode & ((uint32_t)1 << INAV_FLIGHT_MODES_ARM))) {
-            strcat(flightmode.flight_mode, "*");
-        }
+        inav_flight_mode_str5(flightmode.flight_mode, flight_mode, msp_inav_status_arming_flags);
         flightmode_updated = true;
         }break;
     }

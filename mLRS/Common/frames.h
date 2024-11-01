@@ -233,6 +233,7 @@ void pack_rxframe(
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
+
 // returns 0 if OK !!
 uint8_t check_rxframe(tRxFrame* const frame)
 {
@@ -254,7 +255,6 @@ uint16_t crc;
 }
 
 
-
 //-------------------------------------------------------
 // Tx/Rx Cmd Frames
 //-------------------------------------------------------
@@ -268,12 +268,14 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
     rx_params->OutRssiChannelMode = Setup.Rx.OutRssiChannelMode;
     rx_params->OutLqChannelMode = Setup.Rx.OutLqChannelMode;
     rx_params->FailsafeMode = Setup.Rx.FailsafeMode;
+    rx_params->SerialPort = Setup.Rx.SerialPort;
     rx_params->SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params->SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_params->SendRadioStatus = Setup.Rx.SendRadioStatus;
     // deprecated rx_params->Buzzer = Setup.Rx.Buzzer;
     rx_params->SendRcChannels = Setup.Rx.SendRcChannels;
     // deprecated rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
+    rx_params->PowerSwitchChannel = Setup.Rx.PowerSwitchChannel;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params->FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -294,12 +296,14 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
     Setup.Rx.OutRssiChannelMode = rx_params->OutRssiChannelMode;
     Setup.Rx.OutLqChannelMode = rx_params->OutLqChannelMode;
     Setup.Rx.FailsafeMode = rx_params->FailsafeMode;
+    Setup.Rx.SerialPort = rx_params->SerialPort;
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
     // deprecated Setup.Rx.Buzzer = rx_params->Buzzer;
     Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
     // deprecated Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
+    Setup.Rx.PowerSwitchChannel = rx_params->PowerSwitchChannel;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -332,7 +336,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     SetupMetaData.rx_available = true;
 
     SetupMetaData.rx_firmware_version = version_from_u16(rx_setupdata->firmware_version_u16);
-    SetupMetaData.rx_setup_layout = rx_setupdata->setup_layout;
+    SetupMetaData.rx_setup_layout = version_from_u16(rx_setupdata->setup_layout_u16);
     strstrbufcpy(SetupMetaData.rx_device_name, rx_setupdata->device_name_20, 20);
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
     SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
@@ -350,6 +354,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 44);
     SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
     SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
+    SetupMetaData.Rx_SerialPort_allowed_mask = rx_setupdata->SerialPort_allowed_mask;
 }
 
 
@@ -382,7 +387,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 
     rx_setupdata.firmware_version_u16 = version_to_u16(VERSION);
-    rx_setupdata.setup_layout = SETUPLAYOUT;
+    rx_setupdata.setup_layout_u16 = version_to_u16(SETUPLAYOUT);
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
     rx_setupdata.actual_diversity = Config.Diversity;
@@ -400,6 +405,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     }
     rx_setupdata.Diversity_allowed_mask = SetupMetaData.Rx_Diversity_allowed_mask;
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
+    rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
     _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
@@ -412,7 +418,7 @@ void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
     strstrbufcpy(Setup.Common[0].BindPhrase, rx_params->BindPhrase_6, 6);
-    Setup.Common[0].FrequencyBand = rx_params->FrequencyBand;
+    Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
 

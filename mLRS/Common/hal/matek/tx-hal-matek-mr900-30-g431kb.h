@@ -42,9 +42,10 @@
 #undef UARTB_USE_UART1_PA9PA10 // serial
 #undef DEVICE_HAS_HC04_MODULE_ON_SERIAL
 #undef DEVICE_HAS_SERIAL2
+#undef UARTD_USE_LPUART1_PA2PA3 // serial2
 
 #define DEVICE_HAS_SERIAL_ON_USB
-#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
+#define UARTC_USE_LPUART1_PA2PA3 // com
 #define DEVICE_HAS_SERIAL2
 #define UARTD_USE_UART1_PA9PA10 // serial2
 
@@ -52,11 +53,13 @@
 // for Tx module mods
 // USB-C = --, Tx1/Rx1 = serial, LPTx1/LPRx1 = com
 #undef DEVICE_HAS_COM_ON_USB
+#undef UARTB_USE_UART1_PA9PA10 // serial
 #undef DEVICE_HAS_HC04_MODULE_ON_SERIAL
 #undef DEVICE_HAS_SERIAL2
+#undef UARTD_USE_LPUART1_PA2PA3 // serial2
 
 #define UARTB_USE_UART1_PA9PA10 // serial
-#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
+#define UARTC_USE_LPUART1_PA2PA3 // com
 #define UARTD_USE_LPUART1_PA2PA3 // serial2
 
 #ifdef MLRS_FEATURE_COM_ON_USB

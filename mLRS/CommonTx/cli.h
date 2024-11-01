@@ -14,13 +14,16 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include "../Common/hal/hal.h"
 #include "setup_tx.h"
 
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
 extern tStats stats;
-extern tConfigId config_id;
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
 
 
 //-------------------------------------------------------
@@ -44,24 +47,24 @@ uint8_t nr, n;
     const char* optstr = SetupParameter[param_idx].optstr;
 
     if (format == PARAM_FORMAT_CLI) {
-         if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
+         if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
-         if ((SetupParameter[param_idx].ptr == &Setup.Tx[0].Diversity) ||
-             (SetupParameter[param_idx].ptr == &Setup.Rx.Diversity)) {
+         if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
+             (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
              optstr = SETUP_OPT_DIVERSITY_LONGSTR;
          }
     } else
     if (format == PARAM_FORMAT_DISPLAY) {
-        if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPSTR;
         }
-        if ((SetupParameter[param_idx].ptr == &Setup.Tx[0].Diversity) ||
-            (SetupParameter[param_idx].ptr == &Setup.Rx.Diversity)) {
+        if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
+            (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
             optstr = SETUP_OPT_DIVERSITY_DISPSTR;
         }
-        if (SetupParameter[param_idx].ptr == &Setup.Rx.SerialLinkMode) {
-            optstr = SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR;
+        if (SetupParameter[param_idx].ptr == &(Setup.Rx.SerialLinkMode)) {
+            optstr = SETUP_OPT_SERIAL_LINK_MODE_DISPSTR;
         }
     }
 
@@ -120,7 +123,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 
 
 // helper, finds index from name
-bool param_get_idx(uint8_t* const param_idx, char* const name)
+bool param_get_idx_fromname(uint8_t* const param_idx, char* const name)
 {
 char s[64];
 
@@ -145,8 +148,6 @@ char s[64];
 bool param_get_val_formattedstr(char* const s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
 {
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         int8_t i8 = *(int8_t*)(SetupParameterPtr(param_idx));
         stoBCDstr(i8, s);
@@ -156,10 +157,6 @@ bool param_get_val_formattedstr(char* const s, uint8_t param_idx, uint8_t format
         }
         return true;
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         uint8_t u8 = *(uint8_t*)(SetupParameterPtr(param_idx));
         return _param_get_listval_fromoptstr(s, param_idx, u8, format);
@@ -179,8 +176,6 @@ bool param_set_val_fromint(bool* const rx_param_changed, int32_t value, uint8_t 
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         // check
         int32_t i8 = SetupParameter[param_idx].min.INT8_value;
@@ -193,10 +188,6 @@ bool param_set_val_fromint(bool* const rx_param_changed, int32_t value, uint8_t 
         *rx_param_changed = setup_set_param(param_idx, vv);
         return true;
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         // check
         if (value < 0) return false;
@@ -223,10 +214,7 @@ bool param_set_str6val(bool* const rx_param_changed, char* const svalue, uint8_t
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_INT8:
-    case SETUP_PARAM_TYPE_UINT16:
-    case SETUP_PARAM_TYPE_INT16:
     case SETUP_PARAM_TYPE_LIST:
         // not a str6-valued parameter, so return false
         break;
@@ -252,10 +240,7 @@ bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uin
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_INT8:
-    case SETUP_PARAM_TYPE_UINT16:
-    case SETUP_PARAM_TYPE_INT16:
     case SETUP_PARAM_TYPE_LIST:{
         int32_t value = atoi(svalue);
         return param_set_val_fromint(rx_param_changed, value, param_idx);
@@ -268,15 +253,33 @@ bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uin
 }
 
 
+bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_t frequency_band)
+{
+    if (frequency_band != SETUP_FREQUENCY_BAND_2P4_GHZ) return false;
+
+    switch (except_from_bindphrase(bind_phrase)) {
+        case 0: strcpy(ext, " /--"); return true;
+        case 1: strcpy(ext, " /e1"); return true;
+        case 2: strcpy(ext, " /e6"); return true;
+        case 3: strcpy(ext, " /e11"); return true;
+        case 4: strcpy(ext, " /e13"); return true;
+    }
+
+    return false; // should not happen
+}
+
+
 //-------------------------------------------------------
 // CLI class
 //-------------------------------------------------------
+
+#define CLI_LINEND  "\r\n"
+
 
 class tTxCli
 {
   public:
     void Init(tSerialBase* const _comport);
-    void Set(uint8_t new_line_end);
     void Do(void);
     uint8_t Task(void);
     int32_t GetTaskValue(void) { return task_value; }
@@ -305,20 +308,24 @@ class tTxCli
     void delay_off(void) { put_cnt = 0; }
     void delay_clear(void) { put_cnt = 1; }
 //    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
-    void delay(void) { if (put_cnt > 256) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
+#if defined DEVICE_HAS_COM_ON_USB && (USB_TXBUFSIZE >= 2048)
+    void delay(void) {}
+#elif !defined DEVICE_HAS_COM_ON_USB && (UARTC_TXBUFSIZE >= 2048)
+    void delay(void) {}
+#else
+    void delay(void) { if (put_cnt > 192) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
+#endif
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
     void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
-    void putsn(const char* s) { com->puts(s); com->puts(ret); if (put_cnt) put_cnt += strlen(s)+strlen(ret); delay(); }
+    void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); if (put_cnt) put_cnt += strlen(s)+strlen(CLI_LINEND); delay(); }
 
+    void print_layout_version_warning(void);
     void print_config_id(void);
 
     tSerialBase* com;
 
     bool initialized;
-
-    uint8_t line_end;
-    char ret[4];
 
     char buf[128];
     uint8_t pos;
@@ -337,9 +344,6 @@ void tTxCli::Init(tSerialBase* const _comport)
 
     initialized = (com != nullptr) ? true : false;
 
-    line_end = CLI_LINE_END_CRLF;
-    strcpy(ret, "\r\n");
-
     pos = 0;
     buf[pos] = '\0';
     tlast_ms = 0;
@@ -350,20 +354,6 @@ void tTxCli::Init(tSerialBase* const _comport)
     state = CLI_STATE_NORMAL;
 
     put_cnt = 0;
-}
-
-
-void tTxCli::Set(uint8_t new_line_end)
-{
-    if (new_line_end == line_end) return;
-
-    line_end = new_line_end;
-
-    switch (line_end) {
-    case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
-    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
-    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
-    }
 }
 
 
@@ -430,10 +420,27 @@ uint8_t n;
 }
 
 
+void tTxCli::print_layout_version_warning(void)
+{
+    if (!connected()) return;
+    if (!SetupMetaData.rx_available) return; // is always true when connected, except when some link task is going on or in bind
+    if (SetupMetaData.rx_setup_layout < SETUPLAYOUT) {
+        putsn("!! Rx param version smaller than Tx param version. !!");
+        putsn("!! Please upgrade receiver.                        !!");
+    } else
+    if (SETUPLAYOUT < SetupMetaData.rx_setup_layout) {
+        putsn("!! Tx param version smaller than Rx param version. !!");
+        putsn("!! Please upgrade Tx module.                       !!");
+    }
+}
+
+
 void tTxCli::print_config_id(void)
 {
+    print_layout_version_warning();
+
     puts("ConfigId:");
-    putc('0'+Config.ConfigId);
+    putc('0' + Config.ConfigId);
     putsn("");
 }
 
@@ -480,8 +487,6 @@ void tTxCli::print_param_opt_list(uint8_t idx)
 char s[16];
 
     switch (SetupParameter[idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         int8_t i8 = SetupParameter[idx].min.INT8_value;
         puts("  min: ");
@@ -490,10 +495,6 @@ char s[16];
         puts("  max: ");
         stoBCDstr(i8, s); putsn(s);
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
@@ -526,31 +527,19 @@ void tTxCli::print_param(uint8_t idx)
     param_get_val_formattedstr(s, idx, PARAM_FORMAT_CLI);
     puts(s);
     switch (SetupParameter[idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:
         break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
-    case SETUP_PARAM_TYPE_LIST:{
+    case SETUP_PARAM_TYPE_LIST: {
         uint8_t u8 = *(uint8_t*)(SetupParameterPtr(idx));
         puts(" ["); putc(u8 + '0'); puts("]");
         if (allowed_num == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
-    case SETUP_PARAM_TYPE_STR6:
-        if (Config.FrequencyBand != SETUP_FREQUENCY_BAND_2P4_GHZ) break;
-        switch (except_from_bindphrase(s)) {
-        case 0: puts(" /--"); break;
-        case 1: puts(" /e1"); break;
-        case 2: puts(" /e6"); break;
-        case 3: puts(" /e11"); break;
-        case 4: puts(" /e13"); break;
-        }
-        break;
+    case SETUP_PARAM_TYPE_STR6: {
+        char except_str[8];
+        if (except_str_from_bindphrase(except_str, s, Config.FrequencyBand)) puts(except_str);
+        }break;
     }
-    puts(ret);
+    putsn("");
 }
 
 
@@ -606,6 +595,8 @@ void tTxCli::stream(void)
 
 void tTxCli::print_device_version(void)
 {
+    print_layout_version_warning();
+
     putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
 
     puts("  Rx: ");
@@ -628,6 +619,7 @@ void tTxCli::print_device_version(void)
 void tTxCli::print_frequencies(void)
 {
 char s[32];
+char unit[32];
 
     for (uint8_t i = 0; i < fhss.Cnt(); i++) {
         puts(u8toBCD_s(i));
@@ -636,14 +628,10 @@ char s[32];
         puts("  f_reg: ");
         puts(u32toBCD_s(fhss.FhssList(i)));
         puts("  f: ");
-        u32toBCDstr(fhss.GetFreq_x1000(i), s);
+        u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
         remove_leading_zeros(s);
         puts(s);
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined  DEVICE_HAS_SX127x
-        putsn(" kHz");
-#else
-        putsn(" MHz");
-#endif
+        putsn(unit);
         //delay_ms(20);
     }
 }
@@ -651,6 +639,8 @@ char s[32];
 
 void tTxCli::print_help(void)
 {
+    print_layout_version_warning();
+
     putsn("  help, h, ?  -> this help page");
     putsn("  v           -> print device and version");
     putsn("  pl          -> list all parameters");
@@ -727,7 +717,7 @@ bool rx_param_changed;
 
         } else
         if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
-            if (!param_get_idx(&param_idx, sname)) {
+            if (!param_get_idx_fromname(&param_idx, sname)) {
                 putsn("err: invalid parameter name");
             } else if (!connected() && setup_param_is_rx(param_idx)) {
                 putsn("warn: receiver not connected");
@@ -796,7 +786,7 @@ bool rx_param_changed;
         //-- miscellaneous
         } else
         if (is_cmd("listfreqs")) {
-          print_frequencies();
+            print_frequencies();
 
         //-- System Bootloader
         } else

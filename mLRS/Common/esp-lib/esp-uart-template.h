@@ -75,6 +75,12 @@ IRAM_ATTR void uart$_putbuf(uint8_t* buf, uint16_t len)
 }
 
 
+IRAM_ATTR uint16_t uart$_tx_notfull(void)
+{
+    return 1; // fifo not full
+}
+
+
 IRAM_ATTR void uart$_tx_flush(void)
 {
 #ifdef ESP32

@@ -41,9 +41,12 @@ extern bool connected(void);
 extern bool connected_and_rx_setup_available(void);
 extern tStats stats;
 extern tGDisplay gdisp;
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
+void i2c_spin(uint16_t chunksize);
 
 
-#define DISP_START_TMO_MS       SYSTICK_DELAY_MS(500)
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
 #define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
 
@@ -62,8 +65,6 @@ typedef enum {
 
     PAGE_NAV_MIN = PAGE_MAIN, // left endpoint
     PAGE_NAV_MAX = PAGE_ACTIONS, //PAGE_RX, // right endpoint
-
-    PAGE_UNDEFINED, // this is also used to time startup page sequence
 } PAGE_ENUM;
 
 
@@ -114,6 +115,8 @@ class tTxDisp
     uint8_t Task(void);
     void DrawNotify(const char* const s);
     void DrawBoot(void);
+
+    void SpinI2C(void);
 
     typedef struct {
         uint8_t list[SETUP_PARAMETER_NUM];
@@ -208,9 +211,9 @@ void tTxDisp::Init(void)
 
     keys_state = fiveway_read();
 
-    page = PAGE_UNDEFINED;
-    page_startup_tmo = DISP_START_TMO_MS;
-    page_modified = false;
+    page = PAGE_STARTUP; // start with startup page
+    page_startup_tmo = DISP_START_PAGE_TMO_MS;
+    page_modified = true;
     page_update = false;
 
     subpage = SUBPAGE_DEFAULT;
@@ -306,18 +309,13 @@ uint16_t keys, i, keys_new;
         }
     }
 
-    // startup page
-    if (page_startup_tmo) {
+    // finish startup page
+    if (page == PAGE_STARTUP && page_startup_tmo) {
         page_startup_tmo--;
         if (!page_startup_tmo) {
-            if (page == PAGE_UNDEFINED) {
-                page = PAGE_STARTUP;
-                page_startup_tmo = DISP_START_PAGE_TMO_MS;
-            } else {
-                page = PAGE_MAIN;
-                subpage = SUBPAGE_DEFAULT;
-                subpage_max = SUBPAGE_MAIN_NUM - 1;
-            }
+            page = PAGE_MAIN;
+            subpage = SUBPAGE_DEFAULT;
+            subpage_max = SUBPAGE_MAIN_NUM - 1;
             page_modified = true;
         }
         return;
@@ -497,6 +495,7 @@ void tTxDisp::DrawNotify(const char* const s)
     draw_page_notify(s);
     gdisp_update();
     page_modified = false;
+    i2c_spin(GDISPLAY_BUFSIZE); // needed for ESP32 // always draw it directly to the buffer
 }
 
 
@@ -542,6 +541,12 @@ void tTxDisp::Draw(void)
 //t2 = micros16(); //HAL_GetTick();
 //dbg.puts("\nupda ");dbg.puts(u16toBCD_s(t1));dbg.puts(" , ");dbg.puts(u16toBCD_s(t2-t1));
     }
+}
+
+
+void tTxDisp::SpinI2C(void)
+{
+    i2c_spin(64); // for timing on ESP32 see below
 }
 
 
@@ -949,16 +954,11 @@ void tTxDisp::draw_page_common(void)
     draw_header("Common");
     draw_options(&common_list);
 
-    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+    char except_str[8];
+    if (except_str_from_bindphrase(except_str, Setup.Common[Config.ConfigId].BindPhrase, Config.FrequencyBand)) {
         gdisp_setcurXY(0, 4 * 10 + 20); // last line
         gdisp_puts("except ");
-        switch (except_from_bindphrase(Setup.Common[Config.ConfigId].BindPhrase)) {
-        case 1: gdisp_puts("/e1"); break;
-        case 2: gdisp_puts("/e6"); break;
-        case 3: gdisp_puts("/e11"); break;
-        case 4: gdisp_puts("/e13"); break;
-        default: gdisp_puts("/--");
-        }
+        gdisp_puts(except_str);
     }
 }
 
@@ -1183,5 +1183,12 @@ FRM303 F072 48 MHz
   further optimization
   - no gdisp_u_() in gdisp_setpixel_()
   - func ptr for gdisp_setpixel_()
+
+31.05.2024:
+  timing on ESP32:
+    1024: 10.1 ms
+    256:   2.6 ms
+    128:   1.35 ms
+    64:    0.72 ms
 */
 

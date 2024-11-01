@@ -107,8 +107,33 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // Module details
 //-------------------------------------------------------
+
+//-- MatekSys TxM-TD30 mLRS Tx module
+#if defined MODULE_MATEK_TXM_TD30 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
+    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
+	      #error Select board ESP32 PICO-D4!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 3 // = RX
+    #define SERIAL_TXD 1 // = TX
+
+    #undef LED_IO
+    #define LED_IO  13
+    #define USE_LED
+
+    #undef GPIO0_IO
+    #define GPIO0_IO  0
+    #undef WIRELESS_PROTOCOL
+    #define WIRELESS_PROTOCOL 3 // make BlueTooth the default
+    #define DEVICE_NAME_HEAD "Matek"
+
+
 //-- Espressif ESP32-DevKitC V4
-#if defined MODULE_ESP32_DEVKITC_V4
+#elif defined MODULE_ESP32_DEVKITC_V4
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ESP32 Dev Module!
     #endif
@@ -178,7 +203,7 @@ GPIO15 = RTC_GPIO13
 
 
 //-- Lilygo TTGO-MICRO32
-#elif defined MODULE_TTGO_MICRO32 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
+#elif defined MODULE_TTGO_MICRO32 || defined MODULE_DIY_E28DUAL_MODULE02_G491RE // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -194,6 +219,13 @@ GPIO15 = RTC_GPIO13
         #define LED_IO  13
     #endif    
     #define USE_LED
+
+    #ifdef MODULE_DIY_E28DUAL_MODULE02_G491RE    
+        #undef GPIO0_IO
+        #define GPIO0_IO  0
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #endif
 
 
 //-- M5Stack M5Stamp C3 Mate

@@ -12,6 +12,7 @@
 
 
 #include <stdint.h>
+#include <string.h>
 #include "common_conf.h"
 #include "hal/device_conf.h"
 #include "sx-drivers/sx12xx.h"
@@ -320,34 +321,9 @@ const uint8_t fhss_bind_channel_list_2p4[] = {
 //-------------------------------------------------------
 // FHSS Class
 //-------------------------------------------------------
-
-typedef enum {
-    FHSS_CONFIG_2P4_GHZ = 0,
-    FHSS_CONFIG_915_MHZ_FCC,
-    FHSS_CONFIG_868_MHZ,
-    FHSS_CONFIG_866_MHZ_IN,
-    FHSS_CONFIG_433_MHZ,
-    FHSS_CONFIG_70_CM_HAM,
-    FHSS_CONFIG_NUM,
-} FHSS_CONFIG_ENUM;
-
-
-typedef enum {
-    FHSS_ORTHO_NONE = 0,
-    FHSS_ORTHO_1_3,
-    FHSS_ORTHO_2_3,
-    FHSS_ORTHO_3_3,
-} FHSS_ORTHO_ENUM;
-
-
-typedef enum {
-    FHSS_EXCEPT_NONE = 0,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_1,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_6,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_11,
-    FHSS_EXCEPT_2P4_GHZ_WIFIBAND_13,
-} FHSS_EXCEPT_ENUM;
-
+// SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM is in setup_types.h, for convenience
+// no FHSS_ORTHO_ENUM, we use the enum in setup_types.h
+// no FHSS_EXCEPT_ENUM, we use the enum in setup_types.h
 
 typedef struct
 {
@@ -358,7 +334,7 @@ typedef struct
 } tFhssConfig;
 
 
-// this must be in exactly the same order as FHSS_CONFIG_ENUM
+// ATTENTION: this must be in exactly the same order as SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
 const tFhssConfig fhss_config[] = {
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
     {
@@ -426,21 +402,13 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, uint8_t frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
 
-        switch (frequency_band) {
-        case SETUP_FREQUENCY_BAND_2P4_GHZ: config_i = FHSS_CONFIG_2P4_GHZ; break;
-        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: config_i = FHSS_CONFIG_915_MHZ_FCC; break;
-        case SETUP_FREQUENCY_BAND_868_MHZ: config_i = FHSS_CONFIG_868_MHZ; break;
-        case SETUP_FREQUENCY_BAND_866_MHZ_IN: config_i = FHSS_CONFIG_866_MHZ_IN; break;
-        case SETUP_FREQUENCY_BAND_433_MHZ: config_i = FHSS_CONFIG_433_MHZ; break;
-        case SETUP_FREQUENCY_BAND_70_CM_HAM: config_i = FHSS_CONFIG_70_CM_HAM; break;
-        default:
-            while (1) {} // should not happen, but play it safe
-        }
+        config_i = frequency_band;
 
+        if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while (1) {} // should not happen, but play it safe
         if (fhss_config[config_i].freq_list == nullptr) while (1) {} // should not happen, but play it safe
 
         fhss_freq_list = fhss_config[config_i].freq_list;
@@ -450,12 +418,11 @@ class tFhssBase
         curr_bind_config_i = config_i; // we start with what setup suggests
 
         bind_scan_mask = 0;
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_2P4_GHZ);
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_915_MHZ_FCC)) bind_scan_mask |= (1 << FHSS_CONFIG_915_MHZ_FCC);
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_868_MHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_868_MHZ);
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) bind_scan_mask |= (1 << FHSS_CONFIG_866_MHZ_IN);
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_433_MHZ)) bind_scan_mask |= (1 << FHSS_CONFIG_433_MHZ);
-        if (fb_allowed_mask & (1 << SETUP_FREQUENCY_BAND_70_CM_HAM)) bind_scan_mask |= (1 << FHSS_CONFIG_70_CM_HAM);
+        // looks a bit silly but is to mask out invalid bits
+        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_CONFIG_FREQUENCY_BAND_NUM);
+        for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
+            if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
+        }
 
         if (bind_scan_mask == 0) while (1) {} // should not happen, but play it safe
 
@@ -465,7 +432,7 @@ class tFhssBase
         cnt = fhss_num;
 
         switch (config_i) {
-        case FHSS_CONFIG_2P4_GHZ:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ:
             // we may need to adapt cnt in case of ortho != NONE,
             // since the cnt_max = 80 - 3 = 77 channels may not be enough channels
             // in case of also except we actually only have 77 - 22 = 55 channels or so...
@@ -497,7 +464,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, except);
             break;
-        case FHSS_CONFIG_915_MHZ_FCC:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -506,7 +473,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case FHSS_CONFIG_70_CM_HAM:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -515,9 +482,9 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case FHSS_CONFIG_868_MHZ:
-        case FHSS_CONFIG_866_MHZ_IN:
-        case FHSS_CONFIG_433_MHZ:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
             generate(seed);
             break;
         default:
@@ -580,9 +547,9 @@ class tFhssBase
             bind_listen_i = 0;
             // find next bind frequency
             uint8_t iii = curr_bind_config_i;
-            for (uint8_t i = 0; i < FHSS_CONFIG_NUM; i++) { // we give it at most that much attempts
+            for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) { // we give it at most that much attempts
                 iii++;
-                if (iii >= FHSS_CONFIG_NUM) iii = 0;
+                if (iii >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) iii = 0;
                 if ((bind_scan_mask & (1 << iii)) != 0) {
                     if (fhss_config[iii].freq_list == nullptr) while (1) {} // should not happen, but play it safe
                     curr_bind_config_i = iii;
@@ -595,18 +562,18 @@ class tFhssBase
     }
 
     // only used by receiver
-    uint8_t GetCurrFrequencyBand(void)
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
         switch (curr_bind_config_i) {
-        case FHSS_CONFIG_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
-        case FHSS_CONFIG_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
-        case FHSS_CONFIG_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        case FHSS_CONFIG_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
-        case FHSS_CONFIG_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
-        case FHSS_CONFIG_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
         }
         while (1) {} // should not happen, but play it safe
-        return 0;
+        return (SETUP_FREQUENCY_BAND_ENUM)0;
     }
 
     // used by RADIO_LINK_STATS_MLRS
@@ -636,13 +603,16 @@ class tFhssBase
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
 
-    uint32_t GetFreq_x1000(uint8_t i)
+    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i)
     {
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        strcpy(unit_str, " kHz");
         return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss_list[i]);
 #elif defined DEVICE_HAS_SX127x
+        strcpy(unit_str, " kHz");
         return (uint32_t)SX127X_REG_TO_FREQ_KHZ(fhss_list[i]);
 #else // DEVICE_HAS_SX128x
+        strcpy(unit_str, " MHz");
         return (uint32_t)SX1280_REG_TO_FREQ_MHZ(fhss_list[i]);
 #endif
     }
@@ -695,13 +665,14 @@ class tFhss : public tFhssBase
 };
 
 #else
+// DUALBAND !
 
 class tFhss
 {
   public:
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
-        fhss900MHz.Init(fhss->Num, fhss->Seed,
+        fhss1stBand.Init(fhss->Num, fhss->Seed,
                           fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
                           fhss->Ortho, fhss->Except);
         fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
@@ -711,65 +682,65 @@ class tFhss
 
     void Start(void)
     {
-        fhss900MHz.Start();
+        fhss1stBand.Start();
         fhss2ndBand.Start();
     }
 
     uint8_t Cnt(void)
     {
-        return fhss900MHz.Cnt();
+        return fhss1stBand.Cnt();
     }
 
     uint8_t CurrI(void)
     {
-        return fhss900MHz.CurrI();
+        return fhss1stBand.CurrI();
     }
 
-    uint32_t GetCurrFreq(void) { return fhss900MHz.GetCurrFreq(); }
+    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
 
     void HopToNext(void)
     {
-        fhss900MHz.HopToNext();
+        fhss1stBand.HopToNext();
         fhss2ndBand.HopToNext();
     }
 
     void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
-        fhss900MHz.SetToBind(frame_rate_ms);
+        fhss1stBand.SetToBind(frame_rate_ms);
         fhss2ndBand.SetToBind(frame_rate_ms);
     }
 
     // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
     bool HopToNextBind(void)
     {
-        bool hop1 = fhss900MHz.HopToNextBind();
+        bool hop1 = fhss1stBand.HopToNextBind();
         bool hop2 = fhss2ndBand.HopToNextBind();
         return hop1 || hop2;
     }
 
     // only used by receiver
-    uint8_t GetCurrFrequencyBand(void) { return fhss900MHz.GetCurrFrequencyBand(); }
-    float GetCurrFreq_Hz(void) { return fhss900MHz.GetCurrFreq_Hz(); }
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
+    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
 
     float GetCurrFreq2_Hz(void)
     {
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq());
-#elif defined DEVICE_HAS_SX127x
-        return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
-#else // DEVICE_HAS_SX128x || DEVICE_HAS_DUAL_SX126x_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
+#if defined DEVICE_HAS_DUAL_SX126x_SX126x
+        return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq2());
+#else
+        #error Something wrong with dual band config !
 #endif
     }
 
     // only used by tx cli
-    uint8_t ChList(uint8_t i) { return fhss900MHz.ChList(i); }
-    uint32_t FhssList(uint8_t i) { return fhss900MHz.FhssList(i); }
-    uint32_t GetFreq_x1000(uint8_t i) { return fhss900MHz.GetFreq_x1000(i); }
+    uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
+    uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
+    uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
 
   private:
-    tFhssBase fhss900MHz;
+    tFhssBase fhss1stBand;
     tFhssBase fhss2ndBand;
 };
 

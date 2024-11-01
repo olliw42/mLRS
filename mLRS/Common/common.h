@@ -47,9 +47,15 @@
 
 
 // is always uartb (or usb)
+#if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
+#include "../CommonRx/dronecan_interface_rx_types.h"
+extern tRxDroneCan dronecan;
+static bool ser_not_can = true;
+#endif
+
 class tSerialPort : public tSerialBase
 {
-#ifdef USE_SERIAL
+#if defined DEVICE_IS_TRANSMITTER && defined USE_SERIAL
   public:
 #ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
     void InitOnce(void) override { usb_init(); }
@@ -68,6 +74,39 @@ class tSerialPort : public tSerialBase
     void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
     uint16_t bytes_available(void) override { IFNSER(0); return uartb_rx_bytesavailable(); }
     bool has_systemboot(void) override { return uartb_has_systemboot(); }
+#endif
+#endif
+#ifdef DEVICE_IS_RECEIVER
+  public:
+#if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
+    void Init(void) override { ser_not_can = true; if (ser_not_can) uartb_init_isroff(); }
+    void SetSerialIsSource(bool _ser) { ser_not_can = _ser; if (ser_not_can) uartb_rx_enableisr(ENABLE); }
+    void SetBaudRate(uint32_t baud) override { if (ser_not_can) uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    void putbuf(uint8_t* buf, uint16_t len) override { if (ser_not_can) uartb_putbuf(buf, len); else dronecan.putbuf(buf, len); }
+    bool available(void) override { return (ser_not_can) ? uartb_rx_available() : dronecan.available(); }
+    char getc(void) override { return (ser_not_can) ? uartb_getc() : dronecan.getc(); }
+    void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); dronecan.flush(); }
+    uint16_t bytes_available(void) override { return (ser_not_can) ? uartb_rx_bytesavailable() : dronecan.bytes_available(); }
+    bool has_systemboot(void) override { return (ser_not_can) ? uartb_has_systemboot() : false; }
+#elif defined DEVICE_HAS_DRONECAN
+    void SetSerialIsSource(bool _ser) { ser_not_can = true; } // use ser_not_can to make compiler happy
+    void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
+    bool available(void) override { return dronecan.available(); }
+    char getc(void) override { return dronecan.getc(); }
+    void flush(void) override { dronecan.flush(); }
+    uint16_t bytes_available(void) override { return dronecan.bytes_available(); }
+#elif defined USE_SERIAL
+    void Init(void) override { uartb_init(); }
+    void SetSerialIsSource(bool _ser) {}
+    void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartb_putbuf(buf, len); }
+    bool available(void) override { return uartb_rx_available(); }
+    char getc(void) override { return uartb_getc(); }
+    void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); }
+    uint16_t bytes_available(void) override { return uartb_rx_bytesavailable(); }
+    bool has_systemboot(void) override { return uartb_has_systemboot(); }
+#else
+    void SetSerialIsSource(bool _ser) {}
 #endif
 #endif
 };
@@ -318,6 +357,6 @@ STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
 STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup len missmatch")
 
-STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * FHSS_CONFIG_NUM, "fhss_config size missmatch")
+STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_CONFIG_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
 
 #endif // COMMON_H

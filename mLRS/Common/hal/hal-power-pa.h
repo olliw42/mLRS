@@ -33,6 +33,7 @@ const rfpower_t rfpower_list[] = {
 
 
 //-- SKY85321-11
+// PA max ?, PAin max 5 dBm, PA gain 28 dB, LNA gain 13.5 dB
 #if defined POWER_PA_SKY85321_11 || defined POWER_PA_E28_2G4M27SX // E28-2G4M27S/SX
 #define POWER_PA_DEFINED
 
@@ -61,8 +62,9 @@ const rfpower_t rfpower_list[] = {
 #endif
 
 
-//-- SKY68383-11
-#if defined POWER_PA_SKY68383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
+//-- SKY65383-11
+// PA max 30 dBm, PAin max 6 dBm, PA gain 34 dB, LNA gain 12 dB
+#if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
@@ -80,7 +82,7 @@ const rfpower_t rfpower_list[] = {
 };
 
 #endif
-#if defined POWER2_PA_SKY68383_11 || defined POWER2_PA_MATEK_MR24_30
+#if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30
 #define POWER_PA_DEFINED
 
 #define POWER2_GAIN_DBM           31 // gain of a PA stage if present
@@ -136,6 +138,7 @@ const rfpower_t rfpower_list[] = {
 
 
 //-- SE2435L
+// PA max 30 dBm, PAin max 10 dBm, PA gain 26 dB, LNA gain 16 dB
 #if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 // Matek mR900-30
 #define POWER_PA_DEFINED
 
@@ -145,23 +148,23 @@ const rfpower_t rfpower_list[] = {
 void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (power_dbm >= POWER_30_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -6 : -3;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -6 : -3;
         *actual_power_dbm = 27;
     } else
     if (power_dbm >= POWER_24_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -6;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -9 : -6;
         *actual_power_dbm = 24;
     } else
     if (power_dbm >= POWER_22_DBM) {
-        *sx_power = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? -9 : -8;
-        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -9 : -8;
+        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
     } else {
         *sx_power = -9;
-        *actual_power_dbm = (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ? 24 : 21;
+        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 24 : 21;
     }
 }
 

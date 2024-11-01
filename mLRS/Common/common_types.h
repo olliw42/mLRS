@@ -164,6 +164,11 @@ uint8_t crsf_crc8_calc(uint8_t crc, uint8_t data);
 uint8_t crsf_crc8_update(uint8_t crc, const void* buf, uint16_t len);
 
 
+//-- DroneCAN
+
+uint8_t dronecan_cvt_power(int8_t power_dbm);
+
+
 //-- bind phrase & power & version
 
 const char bindphrase_chars[] = "abcdefghijklmnopqrstuvwxyz0123456789_#-.";

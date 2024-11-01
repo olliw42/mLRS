@@ -310,6 +310,53 @@ uint8_t crsf_crc8_update(uint8_t crc, const void* buf, uint16_t len)
 #endif
 
 
+//-- DroneCAN
+
+const uint16_t power_table_dBm_to_mW[] = {
+    1, // 0 dBm
+    1, // 1 dBm
+    2, // 2 dBm
+    2, // 3 dBm
+    2, // 4 dBm
+    3, // 5 dBm
+    4, // 6 dBm
+    5, // 7 dBm
+    6, // 8 dBm
+    8, // 9 dBm
+    10, // 10 dBm
+    12, // 11 dBm
+    16, // 12 dBm
+    20, // 13 dBm
+    25, // 14 dBm
+    32, // 15 dBm
+    40, // 16 dBm
+    50, // 17 dBm
+    63, // 18 dBm
+    80, // 19 dBm
+    100, // 20 dBm
+    125, // 21 dBm
+    158, // 22 dBm
+    200, // 23 dBm
+    250, // 24 dBm
+    316, // 25 dBm
+    400, // 26 dBm
+    500, // 27 dBm
+    630, // 28 dBm
+    800, // 29 dBm
+    1000, // 30 dBm
+    1250, // 31 dBm
+    1500, // 32 dBm
+    2000, // 33 dBm
+};
+
+uint8_t dronecan_cvt_power(int8_t power_dbm)
+{
+    if (power_dbm < 0) return 0;
+    if (power_dbm > 31) return 250; // 1250 / 5;
+    return power_table_dBm_to_mW[power_dbm] / 5;
+}
+
+
 //-- bind phrase & power & version
 
 bool is_valid_bindphrase_char(char c)

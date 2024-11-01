@@ -38,12 +38,18 @@ uint8_t usb_rx_available(void);
 uint16_t usb_rx_bytesavailable(void);
 char usb_getc(void);
 
+uint8_t usb_tx_full(void);
 void usb_putc(uint8_t c);
 void usb_puts(const char *s);
-void usb_putbuf(uint8_t* buf, uint16_t len);
+void usb_putbuf(uint8_t* const buf, uint16_t len);
 
 void usb_rx_flush(void);
 void usb_flush(void);
+
+uint32_t usb_baudrate(void);
+uint8_t usb_dtr_rts(void);
+uint8_t usb_dtr_is_set(void);
+uint8_t usb_rts_is_set(void);
 
 void usb_init(void);
 

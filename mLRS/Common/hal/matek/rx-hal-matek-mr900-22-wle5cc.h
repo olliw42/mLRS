@@ -90,6 +90,8 @@ SWC     solder pad      PA14        SWDCLK      ADC_IN10
 #define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#define SX_USE_REGULATOR_MODE_DCDC
+
 void sx_init_gpio(void)
 {
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);

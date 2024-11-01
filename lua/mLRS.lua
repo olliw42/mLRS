@@ -8,17 +8,35 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v0.3.31 and later, mOTX v33
+-- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2023-12-01.00'
+local version = '2024-10-25.01'
 
-local required_tx_mLRS_version_int = 337 -- 'v0.3.37'
-local required_rx_mLRS_version_int = 335 -- 'v0.3.35'
+local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
+local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
 
 
 -- experimental
 local paramLoadDeadTime_10ms = 300 -- 150 was a bit too short, also 200 was too short
 local disableParamLoadErrorWarnings = false
+
+
+----------------------------------------------------------------------
+-- Screen
+----------------------------------------------------------------------
+
+local page_N1 = 9 -- number of options displayed in left column
+local page_N = 18 -- number of options displayed on page
+
+local function setupScreen()
+    if LCD_H == 320 then
+        page_N1 = 11
+        page_N = 22
+    else
+        page_N1 = 9
+        page_N = 18
+    end
+end    
 
 
 ----------------------------------------------------------------------
@@ -201,15 +219,10 @@ end
 
 local popup = false
 local popup_text = ""
-local popup_t_end_10ms = -1
-
-local function setPopup(txt)
-    popup = true
-    popup_text = txt
-    popup_t_end_10ms = getTime() + 100
-end
+local popup_t_end_10ms = 0
 
 local function setPopupWTmo(txt, tmo_10ms)
+    if popup_t_end_10ms < 0 then return end -- blocked popup on display
     popup = true
     popup_text = txt
     popup_t_end_10ms = getTime() + tmo_10ms
@@ -221,13 +234,13 @@ local function setPopupBlocked(txt)
     popup_t_end_10ms = -1
 end
 
-local function isPopupBlocked()
-    if popup and popup_t_end_10ms < 0 then return true; end
-    return false;
-end
-
 local function clearPopup()
     popup = false
+    popup_t_end_10ms = 0
+end
+
+local function clearPopupIfBlocked()
+    if popup and popup_t_end_10ms < 0 then clearPopup(); end
 end
 
 local function drawPopup()
@@ -395,14 +408,14 @@ local function mb_to_options(payload, pos, len)
     return opt
 end
 
-local function mb_to_firmware_u16_int(u16)
+local function mb_to_version_int(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
     local patch = bit32.band(u16, 0x003F)
     return major * 10000 + minor * 100 + patch
 end
 
-local function mb_to_firmware_u16_string(u16)
+local function mb_to_version_string(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
     local patch = bit32.band(u16, 0x003F)
@@ -503,30 +516,35 @@ local function doParamLoop()
             -- MBRIDGE_CMD_DEVICE_ITEM_TX
             DEVICE_ITEM_TX = cmd
             DEVICE_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
-            DEVICE_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
+            DEVICE_ITEM_TX.setuplayout_u16 = mb_to_u16(cmd.payload, 2)
             DEVICE_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
-            DEVICE_ITEM_TX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_TX.version_u16)
-            DEVICE_ITEM_TX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_TX.version_u16)
+            DEVICE_ITEM_TX.version_int = mb_to_version_int(DEVICE_ITEM_TX.version_u16)
+            DEVICE_ITEM_TX.version_str = mb_to_version_string(DEVICE_ITEM_TX.version_u16)
+            DEVICE_ITEM_TX.setuplayout_int = mb_to_version_int(DEVICE_ITEM_TX.setuplayout_u16)
         elseif cmd.cmd == MBRIDGE_CMD_DEVICE_ITEM_RX then
             -- MBRIDGE_CMD_DEVICE_ITEM_RX
             DEVICE_ITEM_RX = cmd
             DEVICE_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
-            DEVICE_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
+            DEVICE_ITEM_RX.setuplayout_u16 = mb_to_u16(cmd.payload, 2)
             DEVICE_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
-            DEVICE_ITEM_RX.version_int = mb_to_firmware_u16_int(DEVICE_ITEM_RX.version_u16)
-            DEVICE_ITEM_RX.version_str = mb_to_firmware_u16_string(DEVICE_ITEM_RX.version_u16)
+            DEVICE_ITEM_RX.version_int = mb_to_version_int(DEVICE_ITEM_RX.version_u16)
+            DEVICE_ITEM_RX.version_str = mb_to_version_string(DEVICE_ITEM_RX.version_u16)
+            DEVICE_ITEM_RX.setuplayout_int = mb_to_version_int(DEVICE_ITEM_RX.setuplayout_u16)
         elseif cmd.cmd == MBRIDGE_CMD_INFO then
             -- MBRIDGE_CMD_INFO
             DEVICE_INFO = cmd
-            DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
-            DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
-            DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
-            DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
-            DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
-            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
-            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
+            DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload, 0)
+            DEVICE_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
+            DEVICE_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
+            DEVICE_INFO.LQ_low = 0 -- mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
+            DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload, 3)
+            DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload, 4)
+            DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload, 5, 0, 0x1)
+            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 5, 1, 0x3)
+            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 5, 3, 0x3)
+            DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload, 6)
+            DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 7, 0, 0x0F)
+            DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM then
             -- MBRIDGE_CMD_PARAM_ITEM
             local index = cmd.payload[0]
@@ -611,11 +629,11 @@ local function doParamLoop()
                     DEVICE_PARAM_LIST[index].item3payload = cmd.payload
                     for i=1,23 do s[23+i] = cmd.payload[i] end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
-                else    
+                else
                     local s3 = DEVICE_PARAM_LIST[index].item3payload
                     for i=1,23 do s[23+i] = s3[i]; s[23+23+i] = cmd.payload[i]; end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23+23)
-                end    
+                end
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                 s = nil
             end
@@ -663,6 +681,30 @@ local function sendBoot()
     if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD_SYSTEM_BOOTLOADER, {})
     setPopupBlocked("In System Bootloader")
+end
+
+
+local function checkBind()
+    if DEVICE_DOWNLOAD_is_running then return end
+    if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.binding == 1 then
+        setPopupBlocked("Binding")
+    end
+end
+
+
+local function checkLQ()
+--[[ 
+-- the mechanism doesn't work well when a receiver is connected while the Lua is running
+-- since in the first second the LQ may not be high
+-- so we disable it for until a better approach is found
+    if DEVICE_DOWNLOAD_is_running or not connected then 
+        if popup and popup_t_end_10ms < 0 and popup_text == "LQ is low" then clearPopup() end    
+        return 
+    end
+    if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.LQ_low > 1 then
+        setPopupBlocked("LQ is low")
+    end
+--]]    
 end
 
 
@@ -828,10 +870,17 @@ end
 ----------------------------------------------------------------------
 
 local top_idx = 0 -- index of first displayed option
-local page_N1 = 9 -- number of options displayed in left colum
-local page_N = 18 -- number of options displayed on page
+
 
 local function drawPageEdit(page_str)
+    if LCD_H == 320 then
+        page_N1 = 11 -- number of options displayed in left column
+        page_N = 22 -- number of options displayed on page
+    else
+        page_N1 = 9
+        page_N = 18
+    end
+    
     local x, y;
 
     y = 35
@@ -981,6 +1030,25 @@ end
 ----------------------------------------------------------------------
 -- Page Main
 ----------------------------------------------------------------------
+
+local function drawSetuplayoutWarning(txt)
+    local y = 210
+    lcd.drawFilledRectangle(LCD_W/2-210-2, y, 420+4, 50+4, TEXT_COLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_W/2-210, y+2, 420, 50, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    local attr = MENU_TITLE_COLOR+CENTER
+    local s = txt
+    local i = string.find(s, "\n")
+    local lines = 0
+    while i ~= nil do
+        local s1 = string.sub(s, 1,i-1)
+        lcd.drawText(LCD_W/2, y+6 + lines, s1, attr)
+        s = string.sub(s, i+1)
+        i = string.find(s, "\n")
+        lines = lines + 21
+    end
+    lcd.drawText(LCD_W/2, y+6 + lines, s, attr)
+end
+
 
 local function drawPageMain()
     local x, y;
@@ -1132,6 +1200,16 @@ local function drawPageMain()
     else
         lcd.drawText(140, y, "---", TEXT_COLOR)
     end
+
+    -- setup layout warning
+    if DEVICE_ITEM_TX ~= nil and DEVICE_ITEM_RX ~= nil and connected and DEVICE_PARAM_LIST_complete and
+           (DEVICE_ITEM_TX.setuplayout_int > 515 or DEVICE_ITEM_RX.setuplayout_int > 515) then -- 515 is old 335
+        if DEVICE_ITEM_TX.setuplayout_int < DEVICE_ITEM_RX.setuplayout_int then
+            drawSetuplayoutWarning("Tx param version smaller than Rx param version.\nPlease update Tx firmware!")
+        elseif DEVICE_ITEM_RX.setuplayout_int < DEVICE_ITEM_TX.setuplayout_int then
+            drawSetuplayoutWarning("Rx param version smaller than Tx param version.\nPlease update Rx firmware!")
+        end
+    end
 end
 
 
@@ -1234,11 +1312,11 @@ local function Do(event)
 
     if has_connected then
         clearParams()
-        if not popup then setPopup("Receiver connected!") end
-        if isPopupBlocked() then clearPopup() end
+        if not popup then setPopupWTmo("Receiver connected!", 100) end
+        clearPopupIfBlocked()
     end
     if has_disconnected then
-        if not popup then setPopup("Receiver\nhas disconnected!") end
+        if not popup then setPopupWTmo("Receiver\nhas disconnected!", 100) end
     end
     if not connected and page_nr == PAGE_EDIT_RX then
         page_nr = PAGE_MAIN
@@ -1263,6 +1341,8 @@ local function Do(event)
         doPageMain(event)
     end
 
+    checkBind()
+    checkLQ()
     doPopup()
 end
 
@@ -1275,6 +1355,7 @@ local function scriptInit()
     local ver, radio, maj, minor, rev, osname = getVersion()
     isEdgeTx = (osname == 'EdgeTX')
 
+    setupScreen()
     setupBridge()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this

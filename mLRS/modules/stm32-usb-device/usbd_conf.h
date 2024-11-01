@@ -29,9 +29,12 @@ extern "C" {
 #if defined STM32F072xB
 #define USB_RXBUFSIZE       256
 #define USB_TXBUFSIZE       256
+#elif defined STM32G491xx || defined STM32G474xx // we really have plenty flash here
+#define USB_RXBUFSIZE       512
+#define USB_TXBUFSIZE       2048 // helps with cli
 #else
-#define USB_RXBUFSIZE       512 // 256
-#define USB_TXBUFSIZE       512 // 256
+#define USB_RXBUFSIZE       512
+#define USB_TXBUFSIZE       512
 #endif
 #define USBD_IRQ_PRIORITY   0
 

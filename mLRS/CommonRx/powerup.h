@@ -82,7 +82,7 @@ class tPowerupCounter
 
     uint32_t cur_adr;
 
-    void ee_program_val(uint32_t adr, tPOWERUPCNT_UINT* data, uint8_t datalen);
+    void ee_program_val(uint32_t adr, tPOWERUPCNT_UINT* const data, uint8_t datalen);
 };
 
 
@@ -188,7 +188,7 @@ uint8_t tPowerupCounter::Task(void)
 
 #if defined EE_USE_WORD
 
-EE_STATUS_ENUM ee_program_u32(uint32_t adr, uint32_t* data, uint8_t datalen)
+EE_STATUS_ENUM ee_program_u32(uint32_t adr, uint32_t* const data, uint8_t datalen)
 {
 EE_STATUS_ENUM status;
 uint16_t n;
@@ -231,14 +231,14 @@ QUICK_EXIT:
 }
 
 
-void tPowerupCounter::ee_program_val(uint32_t adr, uint32_t* data, uint8_t datalen)
+void tPowerupCounter::ee_program_val(uint32_t adr, uint32_t* const data, uint8_t datalen)
 {
     ee_program_u32(adr, data, datalen);
 }
 
 #else
 
-EE_STATUS_ENUM ee_program_u64(uint32_t adr, uint64_t* data, uint8_t datalen)
+EE_STATUS_ENUM ee_program_u64(uint32_t adr, uint64_t* const data, uint8_t datalen)
 {
 EE_STATUS_ENUM status;
 uint16_t n;
@@ -292,7 +292,7 @@ QUICK_EXIT:
 }
 
 
-void tPowerupCounter::ee_program_val(uint32_t adr, uint64_t* data, uint8_t datalen)
+void tPowerupCounter::ee_program_val(uint32_t adr, uint64_t* const data, uint8_t datalen)
 {
     ee_program_u64(adr, data, datalen);
 }

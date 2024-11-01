@@ -184,6 +184,12 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetTxParams(sx_power, SX1280_RAMPTIME_04_US);
     }
 
+    void UpdateRfPower(tSxGlobalConfig* const global_config)
+    {
+        gconfig->Power_dbm = global_config->Power_dbm;
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
     void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;

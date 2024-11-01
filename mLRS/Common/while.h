@@ -22,8 +22,8 @@ class tWhileBase
     void Trigger(void);
     void Do(void);
 
-    virtual void handle_once(void) {};
-    virtual void handle(void) {};
+    virtual void handle_once(void) {}
+    virtual void handle(void) {}
 
     virtual uint32_t dtmax_us(void) { return 1; }
 

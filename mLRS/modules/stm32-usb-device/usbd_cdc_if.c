@@ -56,10 +56,17 @@ void _cdc_transmit(void); // forward declaration
 
 static uint8_t usbd_initialized = 0; // to track if we have initialized usb already
 
+#define USBD_DTR_FLAG  0x01
+#define USBD_RTS_FLAG  0x02
+volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
+
+
+uint32_t usb_baudrate(void) { return USBD_CDC_LineCoding.bitrate; }
+
 
 void usb_init(void)
 {
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
     // initialize HSI48, copied with adaption from SystemClock_Config()
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
@@ -108,6 +115,8 @@ void usb_init(void)
     usb_txwritepos = usb_txreadpos = 0;
     usb_rxwritepos = usb_rxreadpos = 0;
 
+    usbd_dtr_rts = 0;
+
     usbd_initialized = 1;
 }
 
@@ -118,7 +127,7 @@ void usb_deinit(void)
 
     USBD_DeInit(&husbd_CDC);
 
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
@@ -163,6 +172,13 @@ uint8_t _usb_putc(uint8_t c)
 }
 
 
+uint8_t usb_tx_full(void)
+{
+    uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;
+    return !(usb_txreadpos != next); // not fifo not full
+}
+
+
 void usb_putc(uint8_t c)
 {
     if (_usb_putc(c)) _cdc_transmit();
@@ -177,7 +193,7 @@ void usb_puts(const char* s)
 }
 
 
-void usb_putbuf(uint8_t* buf, uint16_t len)
+void usb_putbuf(uint8_t* const buf, uint16_t len)
 {
     uint8_t written = 0;
     for (uint16_t i = 0; i < len; i++) written = _usb_putc(buf[i]);
@@ -195,6 +211,24 @@ void usb_flush(void)
 {
     usb_txwritepos = usb_txreadpos = 0;
     usb_rxwritepos = usb_rxreadpos = 0;
+}
+
+
+uint8_t usb_dtr_rts(void)
+{
+    return usbd_dtr_rts;
+}
+
+
+uint8_t usb_dtr_is_set(void)
+{
+    return (usbd_dtr_rts & USBD_DTR_FLAG) ? 1 : 0;
+}
+
+
+uint8_t usb_rts_is_set(void)
+{
+    return (usbd_dtr_rts & USBD_RTS_FLAG) ? 1 : 0;
 }
 
 
@@ -254,6 +288,18 @@ static int8_t CDC_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         pbuf[4] = USBD_CDC_LineCoding.format;
         pbuf[5] = USBD_CDC_LineCoding.paritytype;
         pbuf[6] = USBD_CDC_LineCoding.datatype;
+        break;
+    case CDC_SET_CONTROL_LINE_STATE:
+        // https://community.st.com/t5/stm32-mcus-embedded-software/usb-vcp-how-to-know-if-host-com-port-is-open/td-p/363002
+        // https://www.silabs.com/documents/public/application-notes/AN758.pdf
+        // https://github.com/stm32duino/Arduino_Core_STM32/pull/1382/files
+        // DTR is bit 1  0x01 in wValue
+        // RTS is bit 2  0x02 in wValue
+        // wValue is the same as pbuf[2] & pbuf[3] !! see USBD_SetupReqTypedef
+        usbd_dtr_rts = 0;
+        if ((((USBD_SetupReqTypedef*)pbuf)->wValue & 0x0001) != 0) usbd_dtr_rts |= USBD_DTR_FLAG;
+        if ((((USBD_SetupReqTypedef*)pbuf)->wValue & 0x0002) != 0) usbd_dtr_rts |= USBD_RTS_FLAG;
+        //usbd_dtr_rts = ((USBD_SetupReqTypedef*)pbuf)->wValue;
         break;
     }
 
