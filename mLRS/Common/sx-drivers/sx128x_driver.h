@@ -139,7 +139,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
-        if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while(1){} // must not happen
 
         lora_configuration = &(Sx128xLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
@@ -172,7 +172,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetFlrcConfigurationByIndex(uint8_t index, uint32_t sync_word)
     {
-        if (index >= sizeof(Sx128xFlrcConfiguration)/sizeof(Sx128xFlrcConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx128xFlrcConfiguration)/sizeof(Sx128xFlrcConfiguration[0])) while(1){} // must not happen
 
         flrc_configuration = &(Sx128xFlrcConfiguration[index]);
         SetFlrcConfiguration(flrc_configuration, sync_word);
@@ -293,7 +293,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
         if (gconfig->modeIsLora()) {
             uint8_t index = gconfig->LoraConfigIndex;
-            if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while (1) {} // must not happen
+            if (index >= sizeof(Sx128xLoraConfiguration)/sizeof(Sx128xLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Sx128xLoraConfiguration[index]);
         } else {
             flrc_configuration = &(Sx128xFlrcConfiguration[0]);

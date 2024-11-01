@@ -68,7 +68,7 @@ void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2por
         ser = nullptr;
         break;
     default:
-        while (1) {} // must not happen
+        while(1){} // must not happen
     }
 
     msp_init();

@@ -471,7 +471,7 @@ void gdisp_drawbitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, i
 
 void gdisp_writeline(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-    while (1) {} // TODO
+    while(1){} // TODO
 }
 
 

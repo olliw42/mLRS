@@ -132,9 +132,9 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
         ser2 = nullptr;
         break;
     default:
-        while (1) {} // must not happen
+        while(1){} // must not happen
     }
-    if (!ser) while (1) {} // must not happen
+    if (!ser) while(1){} // must not happen
 
     fmav_init();
 
@@ -361,8 +361,8 @@ if (!do_router()) {
 #ifdef DEBUG_ENABLED
 // test if _buf = buf_link_in
 uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf); // _buf should be equal buf_link_in !?!
-if (len != result.frame_len) while(1) {}
-for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1) {}
+if (len != result.frame_len) while(1){}
+for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1){}
 #endif
     }
 }

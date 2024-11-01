@@ -61,7 +61,7 @@ uint32_t n, nr, bitpos;
     for (n = 0; n < PORTB_N; n++) portb_all |= portb[n];
     for (n = 0; n < PORTC_N; n++) portc_all |= portc[n];
 
-    while(1) {
+    while (1) {
         delay_us(1000);
 
         // port marker

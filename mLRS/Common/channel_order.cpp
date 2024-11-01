@@ -55,7 +55,7 @@ void tChannelOrder::Set(uint8_t new_channel_order)
             }
             break;
         default:
-            while (1) {} // must not happen
+            while(1){} // must not happen
     }
 }
 

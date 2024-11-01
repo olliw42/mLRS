@@ -114,7 +114,7 @@ void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
 // is called in isr context
 bool tMBridge::transmit_start(void)
 {
-    if (crsf_emulation) while (1) {}; // must not happen
+    if (crsf_emulation) while(1){}; // must not happen
 
     tx_free = true; // tell external code that next slot can be filled
 
@@ -666,7 +666,7 @@ void param_get_opt_shortened_str(char* const out, uint8_t param_idx)
             }
             opt_i++;
             pos = 0;
-            if (out_pos > 80) while (1) {} // must not happen
+            if (out_pos > 80) while(1){} // must not happen
         }
     }
 /*
