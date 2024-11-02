@@ -11,6 +11,7 @@
 /*
   Flashing ESP8285:
   - change ser dest to serial2
+  - change ser baudrate to 115200
   - put Tx module into FLASH_ESP mode from tools
   - Board: Generic ESP8266 Module
   - Upload Speed: 115200
