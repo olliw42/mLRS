@@ -62,7 +62,7 @@ void tRxClock::SetPeriod(uint16_t period_ms)
 
 void tRxClock::Reset(void)
 {
-    if (!CLOCK_PERIOD_10US) while (1) {}
+    if (!CLOCK_PERIOD_10US) while(1){}
 
     __disable_irq();
     uint32_t CNT = CLOCK_TIMx->CNT; // works for both 16 and 32 bit timer

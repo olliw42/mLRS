@@ -44,9 +44,9 @@ void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbrid
         ser = _mbridge;
         break;
     default:
-        while (1) {} // must not happen
+        while(1){} // must not happen
     }
-    if (!ser) while (1) {} // must not happen
+    if (!ser) while(1){} // must not happen
 }
 
 

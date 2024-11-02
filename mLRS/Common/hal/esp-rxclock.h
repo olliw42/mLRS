@@ -110,7 +110,7 @@ IRAM_ATTR void tRxClock::SetPeriod(uint16_t period_ms)
 
 IRAM_ATTR void tRxClock::Reset(void)
 {
-    if (!CLOCK_PERIOD_10US) while (1) {}
+    if (!CLOCK_PERIOD_10US) while(1){}
 
 #ifdef ESP32
     taskENTER_CRITICAL(&esp32_spinlock);

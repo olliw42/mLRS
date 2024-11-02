@@ -322,7 +322,7 @@ void tReceiveArq::spin(void)
         break;
 
     default: // ARQ_RX_IDLE
-        while(1) {} // must not happen, should have been called after FrameMissed(), Received()
+        while(1){} // must not happen, should have been called after FrameMissed(), Received()
     }
 }
 

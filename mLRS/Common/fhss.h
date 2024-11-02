@@ -404,12 +404,12 @@ class tFhssBase
   public:
     void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
     {
-        if (fhss_num > FHSS_MAX_NUM) while (1) {} // should not happen, but play it safe
+        if (fhss_num > FHSS_MAX_NUM) while(1){} // should not happen, but play it safe
 
         config_i = frequency_band;
 
-        if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while (1) {} // should not happen, but play it safe
-        if (fhss_config[config_i].freq_list == nullptr) while (1) {} // should not happen, but play it safe
+        if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
+        if (fhss_config[config_i].freq_list == nullptr) while(1){} // should not happen, but play it safe
 
         fhss_freq_list = fhss_config[config_i].freq_list;
         FREQ_LIST_LEN = fhss_config[config_i].freq_list_len;
@@ -424,7 +424,7 @@ class tFhssBase
             if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
         }
 
-        if (bind_scan_mask == 0) while (1) {} // should not happen, but play it safe
+        if (bind_scan_mask == 0) while(1){} // should not happen, but play it safe
 
         uint8_t cnt_max = (FREQ_LIST_LEN - BIND_CHANNEL_LIST_LEN);
         if (fhss_num > cnt_max) fhss_num = cnt_max;
@@ -488,7 +488,7 @@ class tFhssBase
             generate(seed);
             break;
         default:
-            while (1) {} // should not happen, but play it safe
+            while(1){} // should not happen, but play it safe
         }
 
         is_in_binding = false;
@@ -551,7 +551,7 @@ class tFhssBase
                 iii++;
                 if (iii >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) iii = 0;
                 if ((bind_scan_mask & (1 << iii)) != 0) {
-                    if (fhss_config[iii].freq_list == nullptr) while (1) {} // should not happen, but play it safe
+                    if (fhss_config[iii].freq_list == nullptr) while(1){} // should not happen, but play it safe
                     curr_bind_config_i = iii;
                     return true;
                 }
@@ -572,7 +572,7 @@ class tFhssBase
         case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
         }
-        while (1) {} // should not happen, but play it safe
+        while(1){} // should not happen, but play it safe
         return (SETUP_FREQUENCY_BAND_ENUM)0;
     }
 

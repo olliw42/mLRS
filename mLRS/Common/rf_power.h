@@ -71,7 +71,7 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
         return; // argh
     }
 
-    if (power_switch_channel + 3 >= RC_DATA_LEN) while (1) {} // should not happen
+    if (power_switch_channel + 3 >= RC_DATA_LEN) while(1){} // should not happen
 
     uint16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
 

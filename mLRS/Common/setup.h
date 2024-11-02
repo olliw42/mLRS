@@ -537,7 +537,7 @@ void configure_mode(uint8_t mode)
         break;
 
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
 
     }
 
@@ -557,7 +557,7 @@ void configure_mode(uint8_t mode)
         Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
         break;
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz !
@@ -640,7 +640,7 @@ void setup_configure_config(uint8_t config_id)
         Config.TransmitUseAntenna2 = true;
         break;
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz !
@@ -746,7 +746,7 @@ void setup_configure_config(uint8_t config_id)
         case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
         case MODE_FLRC_111HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
         default:
-            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+            while(1){} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
     case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
@@ -763,14 +763,14 @@ void setup_configure_config(uint8_t config_id)
         case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
         case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
         default:
-            while (1) {} // must not happen, should have been resolved in setup_sanitize()
+            while(1){} // must not happen, should have been resolved in setup_sanitize()
         }
         break;
     case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
         Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
         break;
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 
     Config.Fhss2 = Config.Fhss;
@@ -784,7 +784,7 @@ void setup_configure_config(uint8_t config_id)
     case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
     case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz !
@@ -794,7 +794,7 @@ void setup_configure_config(uint8_t config_id)
     case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
     case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
     default:
-        while (1) {} // must not happen, should have been resolved in setup_sanitize()
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 #endif
 
@@ -842,7 +842,7 @@ void setup_configure_config(uint8_t config_id)
         Config.UseCrsf = true;
     }
     if (Config.UseMbridge && Config.UseCrsf) {
-        while (1) {} // mBridge and CRSF cannot be used simultaneously, must not happen
+        while(1){} // mBridge and CRSF cannot be used simultaneously, must not happen
     }
   #endif
   #ifdef USE_IN
@@ -850,7 +850,7 @@ void setup_configure_config(uint8_t config_id)
         Config.UseIn = true;
     }
     if ((Config.UseMbridge && Config.UseIn) || (Config.UseCrsf && Config.UseIn)) {
-        while (1) {} // In and mBridge or CRSF cannot be used simultaneously, must not happen
+        while(1){} // In and mBridge or CRSF cannot be used simultaneously, must not happen
     }
   #endif
 #endif

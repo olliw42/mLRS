@@ -310,6 +310,19 @@ FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
 
 
 //-------------------------------------------------------
+// Access Protectors
+//-------------------------------------------------------
+
+#ifdef DEBUG_ENABLED
+#define CHECKRANGE(i,s)   {if((i)>=s) while(1){}}
+#define CHECKRANGEBUF(i)  {if((i)>=296) while(1){}}
+#else
+#define CHECKRANGE(i,s)
+#define CHECKRANGEBUF(i)
+#endif
+
+
+//-------------------------------------------------------
 // Converter
 //-------------------------------------------------------
 // convert fmav msg structure into fmavX packet
@@ -317,7 +330,6 @@ FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
 
 FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const buf, const fmav_message_t* const msg)
 {
-    uint16_t pos = 0;
     uint8_t flags_ext = 0;
 
     // new magic
@@ -351,7 +363,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
     // we should do it based on whether we know the message, but we don't currently have that info easily available in msg
     // if (known) buf[2] |= MAVLINKX_FLAGS_HAS_CRC_EXTRA;
 
-    pos = 3;
+    uint16_t pos = 3;
 
     // flags extension
     if (buf[2] & MAVLINKX_FLAGS_HAS_EXTENSION) {
@@ -366,6 +378,8 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
     buf[pos++] = msg->seq;
     buf[pos++] = msg->sysid;
     buf[pos++] = msg->compid;
+
+CHECKRANGEBUF(pos);
 
     // targets
     if (buf[2] & MAVLINKX_FLAGS_HAS_TARGETS) {
@@ -387,6 +401,8 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
         buf[pos++] = msg->crc_extra;
     }
 
+CHECKRANGEBUF(pos);
+
 #ifdef MAVLINKX_COMPRESSION
     // crc8
     // we postpone crc8 calculation to after payload compression, since flags may change
@@ -396,10 +412,12 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
     // payload
     // we should want to remove the targets if there are any, for the moment we just don't
     // do compression, but do not advance pos since we need to do crc8
+
     uint16_t len;
     if (fmavx_config_g.compression_enabled &&
         _fmavX_payload_compress(&(buf[pos + 1]), &len, msg->payload, msg->len)) {
         buf[2] |= MAVLINKX_FLAGS_IS_COMPRESSED;
+CHECKRANGEBUF(pos_of_len);
         buf[pos_of_len] = len;
     } else {
         len = msg->len;
@@ -421,15 +439,21 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
     pos += msg->len;
 #endif
 
+CHECKRANGEBUF(pos);
+
     // crc16
     buf[pos++] = (uint8_t)msg->checksum;
     buf[pos++] = (uint8_t)((msg->checksum) >> 8);
+
+CHECKRANGEBUF(pos);
 
     // signature
     if (msg->incompat_flags & FASTMAVLINK_INCOMPAT_FLAGS_SIGNED) {
         memcpy(&(buf[pos]), msg->signature_a, FASTMAVLINK_SIGNATURE_LEN);
         pos += FASTMAVLINK_SIGNATURE_LEN;
     }
+
+CHECKRANGEBUF(pos);
 
     return pos;
 }
@@ -443,6 +467,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint16_t fmavX_msg_to_frame_bufX(uint8_t* const b
 
 FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* const buf, fmav_status_t* const status, uint8_t c)
 {
+CHECKRANGE(fmavx_status.pos,MAVLINKX_HEADER_LEN_MAX + 2);
     fmavx_status.header[fmavx_status.pos++] = c; // memorize
 
     switch (status->rx_state) {
@@ -459,6 +484,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
         fmavx_status.flags_ext = 0; // ensure it's zero, makes ifs below simpler as we don't have to check for HAS_EXTENSION
 
         uint8_t magic = (fmavx_status.flags & MAVLINKX_FLAGS_IS_V1) ? FASTMAVLINK_MAGIC_V1 : FASTMAVLINK_MAGIC_V2;
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = magic; // 0: STX
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_EXTENSION) {
@@ -477,6 +503,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
 
     case FASTMAVLINK_PARSE_STATE_LEN:
         fmavx_status.pos_of_len = status->rx_cnt;
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 1: len
         fmavx_status.rx_payload_len = c;
 
@@ -489,7 +516,9 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
 
             uint8_t incompat_flags = 0;
             if (fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_SIGNATURE) incompat_flags |= FASTMAVLINK_INCOMPAT_FLAGS_SIGNED;
+CHECKRANGEBUF(status->rx_cnt);
             buf[status->rx_cnt++] = incompat_flags; // 2: incompat_flags
+CHECKRANGEBUF(status->rx_cnt);
             buf[status->rx_cnt++] = 0; // 3: compat_flags
 
             if (incompat_flags & FASTMAVLINK_INCOMPAT_FLAGS_SIGNED) {
@@ -497,17 +526,21 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
             }
         }
 
+CHECKRANGEBUF(status->rx_frame_len);
+
         status->rx_state = FASTMAVLINK_PARSE_STATE_SEQ;
         return;
 
     case FASTMAVLINK_PARSE_STATE_SEQ:
     case FASTMAVLINK_PARSE_STATE_SYSID:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 4: seq, 5: sysid
 
         status->rx_state++;
         return;
 
     case FASTMAVLINK_PARSE_STATE_COMPID:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 6: compid
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_TARGETS) { // has targets
@@ -531,12 +564,15 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
         return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_1:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 7: msgid1
 
         if ( !(fmavx_status.flags & MAVLINKX_FLAGS_HAS_MSGID16) &&
              !(fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_MSGID24) ) { // has no msgid2, msgid3
 
+CHECKRANGEBUF(status->rx_cnt);
             buf[status->rx_cnt++] = 0; // 8: msgid2
+CHECKRANGEBUF(status->rx_cnt);
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
             if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
@@ -552,10 +588,12 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
         return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_2:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 8: msgid2
 
         if (!(fmavx_status.flags_ext & MAVLINKX_FLAGS_EXT_HAS_MSGID24)) { // has no msgid3
 
+CHECKRANGEBUF(status->rx_cnt);
             buf[status->rx_cnt++] = 0; // 9: msgid3
 
             if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
@@ -571,6 +609,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void _fmavX_parse_headerX_to_frame_buf(uint8_t* c
         return;
 
     case FASTMAVLINK_PARSE_STATE_MSGID_3:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // 9: msgid3
 
         if (fmavx_status.flags & MAVLINKX_FLAGS_HAS_CRC_EXTRA) { // has crcextra
@@ -601,6 +640,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
         status->rx_cnt = 0;
         if (c == MAVLINKX_MAGIC_1) {
             fmavX_status_reset(&fmavx_status);
+CHECKRANGE(fmavx_status.pos,MAVLINKX_HEADER_LEN_MAX + 2);
             fmavx_status.header[fmavx_status.pos++] = MAVLINKX_MAGIC_1; // memorize
             status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
         }
@@ -633,22 +673,27 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
             // search for another 'O'
             uint8_t next_magic_pos = 0;
             for (uint16_t n = 2; n < fmavx_status.pos; n++) { // sufficient to start with flags field
+CHECKRANGE(n,MAVLINKX_HEADER_LEN_MAX + 2);
                 if (fmavx_status.header[n] == MAVLINKX_MAGIC_1) { next_magic_pos = n; break; }
             }
 
             // there is another 'o' in the header, so backtrack
             if (next_magic_pos) {
+CHECKRANGE(fmavx_status.pos,MAVLINKX_HEADER_LEN_MAX + 2);
                 fmavx_status.header[fmavx_status.pos++] = c; // memorize also crc8
 
                 uint8_t len = fmavx_status.pos;
-                uint8_t head[16];
+                uint8_t head[32];
+CHECKRANGE(len,32);
                 memcpy(head, fmavx_status.header, len);
 
                 fmavX_status_reset(&fmavx_status);
+CHECKRANGE(fmavx_status.pos,MAVLINKX_HEADER_LEN_MAX + 2);
                 fmavx_status.header[fmavx_status.pos++] = MAVLINKX_MAGIC_1; // memorize
                 status->rx_state = FASTMAVLINK_PARSE_STATE_MAGIC_2;
 
                 for (uint16_t n = next_magic_pos + 1; n < len; n++) {
+CHECKRANGE(n,MAVLINKX_HEADER_LEN_MAX + 2);
                     _fmavX_parse_headerX_to_frame_buf(buf, status, head[n]);
                 }
             }
@@ -662,6 +707,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
         return FASTMAVLINK_PARSE_RESULT_HAS_HEADER; }
 
     case FASTMAVLINK_PARSE_STATE_PAYLOAD:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // payload
         if (status->rx_cnt >= status->rx_header_len + fmavx_status.rx_payload_len) {
 
@@ -673,6 +719,7 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
                 status->rx_cnt += delta_len;
                 fmavx_status.rx_payload_len += delta_len;
                 status->rx_frame_len += delta_len;
+CHECKRANGEBUF(fmavx_status.pos_of_len);
                 buf[fmavx_status.pos_of_len] = len;
             }
 #endif
@@ -682,12 +729,14 @@ FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parseX_to_frame_buf(fmav_result_t* 
         return FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
 
     case FASTMAVLINK_FASTPARSE_STATE_FRAME:
+CHECKRANGEBUF(status->rx_cnt);
         buf[status->rx_cnt++] = c; // crc16, signature
         if (status->rx_cnt >= status->rx_frame_len) {
             status->rx_cnt = 0;
             status->rx_state = FASTMAVLINK_PARSE_STATE_IDLE;
             result->res = FASTMAVLINK_PARSE_RESULT_OK;
             result->frame_len = status->rx_frame_len;
+CHECKRANGEBUF(result->frame_len);
             return FASTMAVLINK_PARSE_RESULT_OK;
         }
         result->res = FASTMAVLINK_PARSE_RESULT_HAS_HEADER;
@@ -778,7 +827,7 @@ void _fmavX_encode_put_bits(uint8_t* const payload_out, uint16_t* const len_out,
     for (uint8_t i = 0; i < code_bit_len; i++) {
         if (!(code & cur_code_bit)) { // clear the bit
 
-if (*len_out > 258) while (1) {}
+CHECKRANGE(*len_out,258);
 
             payload_out[*len_out] &=~ fmavx_status.out_bit;
         }
@@ -788,7 +837,7 @@ if (*len_out > 258) while (1) {}
             (*len_out)++;
             fmavx_status.out_bit = 0x80;
 
-if ((*len_out) > 258) while (1) {}
+CHECKRANGE(*len_out,258);
 
             payload_out[*len_out] = 0xFF;
         }
@@ -843,9 +892,10 @@ uint16_t RLE_cnt;
     RLE_cnt = 0;
 
     for (uint16_t n = 0; n < len; n++) {
+CHECKRANGE(n,256);
         uint8_t c = payload[n];
 
-if (*len_out > 255) while (1) {}
+CHECKRANGE(*len_out,256);
 
         if (is_in_RLE) {
             if (c == RLE_char) {
@@ -896,6 +946,8 @@ if (*len_out > 255) while (1) {}
     // compression didn't reduce payload len
     if (*len_out >= len) return 0;
 
+CHECKRANGE(*len_out,256);
+
     return 1;
 }
 
@@ -927,7 +979,7 @@ uint8_t _fmavX_decode_get_bits(uint8_t* const code, uint16_t len, uint8_t bits_l
         }
         *code <<= 1;
 
-if (fmavx_status.in_pos > 258) while (1) {}
+CHECKRANGE(fmavx_status.in_pos,258);
 
         if (fmavx_in_buf[fmavx_status.in_pos] & fmavx_status.in_bit) { // set the bit
             *code |= 0x01;
@@ -990,24 +1042,24 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_o
 
         switch (code) {
             case MAVLINKX_CODE_0:
-if (*len_out > 255) while (1) {}
+CHECKRANGE(*len_out,256);
                 payload_out[(*len_out)++] = 0x00;
                 break;
             case MAVLINKX_CODE_255:
-if (*len_out > 255) while (1) {}
+CHECKRANGE(*len_out,256);
                 payload_out[(*len_out)++] = 0xFF;
                 break;
             case MAVLINKX_CODE_0_RLE:
                 if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
                 for (uint16_t i = 0; i < c; i++) {
-if (*len_out > 255){ while (1) {}}
+CHECKRANGE(*len_out,256);
                     payload_out[(*len_out)++] = 0;
                 }
                 break;
             case MAVLINKX_CODE_255_RLE:
                 if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
                 for (uint16_t i = 0; i < c; i++) {
-if (*len_out > 255){ while (1) {}}
+CHECKRANGE(*len_out,256);
                     payload_out[(*len_out)++] = 0xFF;
                 }
                 break;
@@ -1017,12 +1069,12 @@ if (*len_out > 255){ while (1) {}}
                 break;
             case MAVLINKX_CODE_191_254:
                  if (!_fmavX_decode_get_bits(&c, len, 6)) return; // end
-if (*len_out > 255) while (1) {}
+CHECKRANGE(*len_out,256);
                  payload_out[(*len_out)++] = c + 191;
                 break;
             case MAVLINKX_CODE_65_190:
                 if (!_fmavX_decode_get_bits(&c, len, 7)) return; // end
-if (*len_out > 255) while (1) {}
+CHECKRANGE(*len_out,256);
                 payload_out[(*len_out)++] = c + 65;
                 break;
         }

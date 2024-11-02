@@ -155,7 +155,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
-        if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while(1){} // must not happen
 
         lora_configuration = &(Sx126xLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
@@ -190,7 +190,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
     {
-        if (index >= sizeof(Sx126xGfskConfiguration)/sizeof(Sx126xGfskConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx126xGfskConfiguration)/sizeof(Sx126xGfskConfiguration[0])) while(1){} // must not happen
 
         gfsk_configuration = &(Sx126xGfskConfiguration[index]);
         SetGfskConfiguration(gfsk_configuration, sync_word);
@@ -237,7 +237,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
-                while (1) {}  // protection
+                while(1){} // protection
         }
 
         // set DIO2 as RF control switching
@@ -335,7 +335,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         if (gconfig->modeIsLora()) {
             uint8_t index = gconfig->LoraConfigIndex;
-            if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while (1) {} // must not happen
+            if (index >= sizeof(Sx126xLoraConfiguration)/sizeof(Sx126xLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Sx126xLoraConfiguration[index]);
         } else {
             gfsk_configuration = &(Sx126xGfskConfiguration[0]);
