@@ -109,6 +109,7 @@ const rfpower_t rfpower_list[] = {
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_17_DBM, .mW = 50 },
 };
@@ -152,27 +153,31 @@ void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -6 : -3;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 2 : 4;
         *actual_power_dbm = 27;
     } else
     if (power_dbm >= POWER_24_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -9 : -6;
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -2 : 0;
         *actual_power_dbm = 24;
     } else
-    if (power_dbm >= POWER_22_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -9 : -8;
-        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 24 : 22;
-    } else {
+    if (power_dbm >= POWER_20_DBM) {
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -6 : -4;
+        *actual_power_dbm = 20;
+    } else
+	if (power_dbm >= POWER_17_DBM) {
+		*sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -8 : -7;
+		*actual_power_dbm = 17;
+	} else {
         *sx_power = -9;
-        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 24 : 21;
+        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 16 : 14;
     }
 }
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_22_DBM, .mW = 150 },
+    { .dbm = POWER_17_DBM, .mW = 50 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
