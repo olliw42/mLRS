@@ -10,8 +10,11 @@
 
 /*
   Flashing ESP8285:
-  - put Tx module into FLASH_ESP mode
+  - change ser dest to serial2
+  - change ser baudrate to 115200
+  - put Tx module into FLASH_ESP mode from tools
   - Board: Generic ESP8266 Module
+  - Upload Speed: 115200
   - Reset Method: no dtr (aka ck)
 */
 
@@ -65,8 +68,14 @@
 //#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 
+#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#define DEVICE_HAS_SINGLE_LED_RGB
+#define DEVICE_HAS_I2C_DISPLAY
+#else
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
+#endif
+
 #define DEVICE_HAS_FAN_ONOFF // board has a Fan, which can be set on or off
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 
@@ -160,6 +169,94 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 #define LED_RED                   IO_P15
 
+#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+
+#include <NeoPixelBus.h>
+bool ledRedState;
+bool ledGreenState;
+bool ledBlueState;
+
+uint8_t pixelNum = 6;
+
+NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(pixelNum, LED_RED);
+
+void leds_init(void)
+{
+    ledRGB.Begin();
+    ledRGB.Show();
+}
+
+IRAM_ATTR void led_red_off(void)
+{
+    if (!ledRedState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledRedState = 0;
+}
+
+IRAM_ATTR void led_red_on(void)
+{
+    if (ledRedState) return;
+    ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
+    ledRGB.SetPixelColor(1, RgbColor(255, 0, 0));
+    ledRGB.Show();
+    ledRedState = 1;
+}
+
+IRAM_ATTR void led_red_toggle(void)
+{
+    if (ledRedState) { led_red_off(); } else { led_red_on(); }
+}
+
+IRAM_ATTR void led_green_off(void)
+{
+    if (!ledGreenState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledGreenState = 0;
+}
+
+IRAM_ATTR void led_green_on(void)
+{
+    if (ledGreenState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
+    ledRGB.SetPixelColor(1, RgbColor(0, 255, 0));
+    ledRGB.Show();
+    ledGreenState = 1;
+}
+
+IRAM_ATTR void led_green_toggle(void)
+{
+    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
+}
+
+IRAM_ATTR void led_blue_off(void)
+{
+    if (!ledBlueState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledBlueState = 0;
+}
+
+IRAM_ATTR void led_blue_on(void)
+{
+    if (ledBlueState) return;
+    ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
+    ledRGB.SetPixelColor(1, RgbColor(0, 0, 255));
+    ledRGB.Show();
+    ledBlueState = 1;
+}
+
+IRAM_ATTR void led_blue_toggle(void)
+{
+    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
+}
+
+#else
+
 void leds_init(void)
 {
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW);
@@ -168,6 +265,8 @@ void leds_init(void)
 IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
 IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
 IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
+
+#endif  // TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
 
 
 //-- Display I2C
