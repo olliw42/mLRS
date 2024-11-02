@@ -112,7 +112,7 @@ void tRxMsp::Init(void)
         telm[n].tlast_ms = 0;
     }
 
-    memset(inav_flight_modes_box_mode_flags, INAV_FLIGHT_MODES_COUNT, 255); // 255 = is empty
+    memset(inav_flight_modes_box_mode_flags, 255, INAV_FLIGHT_MODES_COUNT); // 255 = is empty
 }
 
 
