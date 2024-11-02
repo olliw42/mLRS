@@ -93,11 +93,11 @@
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_MICRO_900_ESP32
-#include "tx-hal-radiomaster-bandit-micro-900-esp32.h"
+#include "tx-hal-radiomaster-bandit-series-900-esp32.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
-#include "tx-hal-radiomaster-bandit-micro-900-esp32.h"
+#include "tx-hal-radiomaster-bandit-series-900-esp32.h"
 #endif
 
 
