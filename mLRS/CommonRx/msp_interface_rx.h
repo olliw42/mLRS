@@ -365,15 +365,15 @@ void tRxMsp::send_rc_info(void)
     payload.uplink_tx_power = cvt_power(sx.RfPower_dbm()); // WRONG, should be tx power, but to have something we send rx power
     payload.downlink_tx_power = payload.uplink_tx_power;
 
-    char band_str[8];
-    char mode_str[8];
+    char band_str[8]; // needs char[4]
+    char mode_str[8]; // needs char[6]
 
     switch (Config.FrequencyBand) {
         case SETUP_FREQUENCY_BAND_2P4_GHZ: strcpy(band_str, "2.4"); break;
         case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strcpy(band_str, "915"); break;
         case SETUP_FREQUENCY_BAND_868_MHZ: strcpy(band_str, "868"); break;
         case SETUP_FREQUENCY_BAND_433_MHZ: strcpy(band_str, "433"); break;
-        case SETUP_FREQUENCY_BAND_70_CM_HAM: strcpy(band_str, "70c"); break;
+        case SETUP_FREQUENCY_BAND_70_CM_HAM: strcpy(band_str, "70cm"); break;
         case SETUP_FREQUENCY_BAND_866_MHZ_IN: strcpy(band_str, "866"); break;
         default: strcpy(band_str, "?");
     }

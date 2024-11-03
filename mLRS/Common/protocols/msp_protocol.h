@@ -400,11 +400,11 @@ typedef struct
     uint8_t sublink_id;                         // = 1 always
     uint16_t uplink_tx_power;                   // power in mW
     uint16_t downlink_tx_power;                 // power in mW
-    char band[3];
-    char mode[5];
-}) tMspCommonSetMspRcInfo; // 13 bytes
+    char band[4];
+    char mode[6];
+}) tMspCommonSetMspRcInfo; // 15 bytes
 
-#define MSP_COMMON_SET_MSP_RC_INFO_LEN  13
+#define MSP_COMMON_SET_MSP_RC_INFO_LEN  15
 
 
 //-------------------------------------------------------
