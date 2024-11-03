@@ -354,7 +354,7 @@ void tRxMsp::send_rc_link_stats(void)
 {
     tMspCommonSetMspRcLinkStats payload;
 
-    payload.sublink_id = 1;
+    payload.sublink_id = 0;
     payload.valid_link = 1;
     payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
     payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
@@ -387,7 +387,7 @@ static uint32_t tlast_ms = 0;
 
     tMspCommonSetMspRcInfo payload;
 
-    payload.sublink_id = 1;
+    payload.sublink_id = 0;
     payload.uplink_tx_power = cvt_power(power_dbm); // WRONG, should be tx power, but to have something we send rx power
     payload.downlink_tx_power = payload.uplink_tx_power;
 

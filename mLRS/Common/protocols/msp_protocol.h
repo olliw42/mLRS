@@ -397,7 +397,7 @@ typedef struct
 MSP_PACKED(
 typedef struct
 {
-    uint8_t sublink_id;                         // = 1 always
+    uint8_t sublink_id;                         // = 0 always for now
     uint16_t uplink_tx_power;                   // power in mW
     uint16_t downlink_tx_power;                 // power in mW
     char band[4];
