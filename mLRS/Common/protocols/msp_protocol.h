@@ -383,13 +383,14 @@ typedef struct
 {
     uint8_t sublink_id;                         // = 1 always
     uint8_t valid_link;                         // not currently used in INAV
-    uint8_t uplink_rssi;                        // negative RSSI value in dBm (will be converted to negative value)
+    uint8_t uplink_rssi_perc;
+    int16_t uplink_rssi;                        // negative RSSI value in dBm (will be converted to negative value)
     uint8_t downlink_link_quality;
     uint8_t uplink_link_quality;
     uint8_t uplink_snr;                         // will be converted to int8_t
-}) tMspCommonSetMspRcLinkStats; // 6 bytes
+}) tMspCommonSetMspRcLinkStats; // 8 bytes
 
-#define MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN  6
+#define MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN  8
 
 
 // MSP2_COMMON_SET_MSP_RC_INFO  0x100E, // 4110
@@ -397,13 +398,13 @@ MSP_PACKED(
 typedef struct
 {
     uint8_t sublink_id;                         // = 1 always
-    uint8_t uplink_tx_power;                    // power in mW
-    uint8_t downlink_tx_power;                  // power in mW
+    uint16_t uplink_tx_power;                   // power in mW
+    uint16_t downlink_tx_power;                 // power in mW
     char band[3];
     char mode[5];
-}) tMspCommonSetMspRcInfo; // 11 bytes
+}) tMspCommonSetMspRcInfo; // 13 bytes
 
-#define MSP_COMMON_SET_MSP_RC_INFO_LEN  11
+#define MSP_COMMON_SET_MSP_RC_INFO_LEN  13
 
 
 //-------------------------------------------------------
@@ -568,6 +569,7 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
 
 STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many flight modes")
 
+STATIC_ASSERT(sizeof(tMspSetRawRc) == MSP_SET_RAW_RC_LEN, "MSP_SET_RAW_RC_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcLinkStats) == MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN, "MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcInfo) == MSP_COMMON_SET_MSP_RC_INFO_LEN, "MSP_COMMON_SET_MSP_RC_INFO_LEN missmatch")
 
