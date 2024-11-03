@@ -395,12 +395,12 @@ static uint32_t tlast_ms = 0;
     char mode_str[8]; // needs char[6]
 
     switch (Config.FrequencyBand) {
-        case SETUP_FREQUENCY_BAND_2P4_GHZ: strcpy(band_str, "2.4"); break;
-        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strcpy(band_str, "915"); break;
-        case SETUP_FREQUENCY_BAND_868_MHZ: strcpy(band_str, "868"); break;
-        case SETUP_FREQUENCY_BAND_433_MHZ: strcpy(band_str, "433"); break;
+        case SETUP_FREQUENCY_BAND_2P4_GHZ: strcpy(band_str, "2.4G"); break;
+        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strcpy(band_str, "915M"); break;
+        case SETUP_FREQUENCY_BAND_868_MHZ: strcpy(band_str, "868M"); break;
+        case SETUP_FREQUENCY_BAND_433_MHZ: strcpy(band_str, "433M"); break;
         case SETUP_FREQUENCY_BAND_70_CM_HAM: strcpy(band_str, "70cm"); break;
-        case SETUP_FREQUENCY_BAND_866_MHZ_IN: strcpy(band_str, "866"); break;
+        case SETUP_FREQUENCY_BAND_866_MHZ_IN: strcpy(band_str, "866M"); break;
         default: strcpy(band_str, "?");
     }
 
