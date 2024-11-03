@@ -339,6 +339,7 @@ void tRxMsp::send_rc_link_stats(void)
 
     payload.sublink_id = 1;
     payload.valid_link = 1;
+    payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
     payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
     payload.downlink_link_quality = stats.received_LQ_serial;
     payload.uplink_link_quality = stats.GetLQ_rc();
@@ -361,7 +362,7 @@ void tRxMsp::send_rc_info(void)
 
     payload.sublink_id = 1;
     payload.uplink_tx_power = 0; // unknown
-    payload.downlink_tx_power = (uint8_t)(cvt_power(sx.RfPower_dbm()) / 5);
+    payload.downlink_tx_power = cvt_power(sx.RfPower_dbm());
 
     char band_str[8];
     char mode_str[8];
