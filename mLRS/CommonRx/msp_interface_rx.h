@@ -52,11 +52,12 @@ class tRxMsp
     tFifo<char,2*512> fifo_link_out; // needs to be at least ??
 
     // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
+    tMspSetRawRc rc_channels; // holds the rc data in MSP format
     bool inject_rc_channels;
-    uint16_t rc_chan[16]; // holds the rc data in MSP format
     bool inject_rc_link_stats;
     bool inject_rc_info;
 
+    void send_rc_channels(void);
     void send_rc_link_stats(void);
     void send_rc_info(void);
 
@@ -141,7 +142,7 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
     }
 
     for (uint8_t i = 0; i < 16; i++) {
-        rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+        rc_channels.rc[i] = rc_to_mavlink(rc_out->ch[i]);
     }
 
     inject_rc_channels = true;
@@ -219,8 +220,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
-        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
-        serial.putbuf(_buf, len);
+        send_rc_channels();
         return;
     }
 
@@ -317,6 +317,19 @@ void tRxMsp::flush(void)
 {
     fifo_link_out.Flush();
     // serial is flushed by caller
+}
+
+
+void tRxMsp::send_rc_channels(void)
+{
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_SET_RAW_RC,
+        (uint8_t*)&rc_channels,
+        MSP_SET_RAW_RC_LEN);
+
+    serial.putbuf(_buf, len);
 }
 
 

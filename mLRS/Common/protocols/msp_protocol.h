@@ -568,6 +568,7 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
 
 STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many flight modes")
 
+STATIC_ASSERT(sizeof(tMspSetRawRc) == MSP_SET_RAW_RC_LEN, "MSP_SET_RAW_RC_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcLinkStats) == MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN, "MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcInfo) == MSP_COMMON_SET_MSP_RC_INFO_LEN, "MSP_COMMON_SET_MSP_RC_INFO_LEN missmatch")
 
