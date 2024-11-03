@@ -150,7 +150,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         // set LoRaSymbNumTimeout for false detection of preamble
         // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
-//fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
+        //fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -250,7 +250,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRxGain(SX126X_RX_GAIN_BOOSTED_GAIN);
         SetOverCurrentProtection(SX126X_OCP_CONFIGURATION_140_MA); // default for SX1262 according to data sheet, but can't hurt
 
+#ifdef POWER_USE_PA_CONFIG_10_DBM 
+        SetPaConfig_10dbm();
+#else
         SetPaConfig_22dbm();
+#endif
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
