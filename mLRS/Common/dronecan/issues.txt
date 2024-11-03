@@ -5,6 +5,11 @@ https://github.com/dronecan/dronecan_dsdlc/issues/18
 pip install --force-reinstall -v empy==3.3.4
 
 
+one may have to set the path for pip to work
+C:\WinPython3-10-5\WPy64-31050\python-3.10.5.amd64
+C:\WinPython3-10-5\WPy64-31050\python-3.10.5.amd64\Scripts
+set PATH=%PATH%;C:\WinPython385\WPy64-3850\python-3.8.5.amd64;C:\WinPython385\WPy64-3850\python-3.8.5.amd64\Scripts
+
 
 error "No module named 'pkq_resources'"
 
