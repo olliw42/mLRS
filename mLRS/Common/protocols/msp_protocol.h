@@ -384,20 +384,20 @@ typedef struct
     uint8_t sublink_id;                         // = 1 always
     uint8_t valid_link;                         // not currently used in INAV
     uint8_t uplink_rssi_perc;
-    int16_t uplink_rssi;                        // negative RSSI value in dBm (will be converted to negative value)
+    uint8_t uplink_rssi;                        // negative RSSI value in dBm (will be converted to negative value)
     uint8_t downlink_link_quality;
     uint8_t uplink_link_quality;
     uint8_t uplink_snr;                         // will be converted to int8_t
-}) tMspCommonSetMspRcLinkStats; // 8 bytes
+}) tMspCommonSetMspRcLinkStats; // 7 bytes
 
-#define MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN  8
+#define MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN  7
 
 
 // MSP2_COMMON_SET_MSP_RC_INFO  0x100E, // 4110
 MSP_PACKED(
 typedef struct
 {
-    uint8_t sublink_id;                         // = 1 always
+    uint8_t sublink_id;                         // = 0 always for now
     uint16_t uplink_tx_power;                   // power in mW
     uint16_t downlink_tx_power;                 // power in mW
     char band[4];
