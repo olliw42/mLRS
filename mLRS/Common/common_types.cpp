@@ -357,6 +357,14 @@ uint8_t dronecan_cvt_power(int8_t power_dbm)
 }
 
 
+uint16_t cvt_power(int8_t power_dbm)
+{
+    if (power_dbm < 0) return 0;
+    if (power_dbm > 33) return 2000;
+    return power_table_dBm_to_mW[power_dbm];
+}
+
+
 //-- bind phrase & power & version
 
 bool is_valid_bindphrase_char(char c)
@@ -542,6 +550,8 @@ char ss[32];
 
 //-- auxiliary functions
 
+
+// copy a string into a buffer with max len chars
 void strbufstrcpy(char* const res, const char* const src, uint16_t len)
 {
     memset(res, '\0', len);
@@ -552,6 +562,7 @@ void strbufstrcpy(char* const res, const char* const src, uint16_t len)
 }
 
 
+// copy a buffer into a string with max len chars (i.e. len + 1 size)
 void strstrbufcpy(char* const res, const char* const src, uint16_t len)
 {
     memset(res, '\0', len + 1); // this ensures that res is terminated with a '\0'
