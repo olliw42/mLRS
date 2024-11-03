@@ -56,6 +56,8 @@ class tRxMsp
     bool inject_rc_channels;
     bool inject_rc_link_stats;
     bool inject_rc_info;
+    bool rc_link_stats_disabled;
+    bool rc_info_disabled;
 
     void send_rc_channels(void);
     void send_rc_link_stats(void);
@@ -112,6 +114,8 @@ void tRxMsp::Init(void)
     inject_rc_channels = false;
     inject_rc_link_stats = false;
     inject_rc_info = false;
+    rc_link_stats_disabled = false;
+    rc_info_disabled = false;
 
     tick_tlast_ms = 0;
     for (uint8_t n = 0; n < MSP_TELM_COUNT; n ++) {
@@ -146,8 +150,8 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
     }
 
     inject_rc_channels = true;
-    inject_rc_link_stats = true;
-    inject_rc_info = true;
+    inject_rc_link_stats = !rc_link_stats_disabled; // true if not disabled
+    inject_rc_info = !rc_info_disabled; // true if not disabled
 }
 
 
@@ -196,6 +200,19 @@ void tRxMsp::Do(void)
                         fifo_link_out.PutBuf(_buf, len);
 
                         send = false; // mark as handled
+                    }
+                }
+
+                if (msp_msg_ser_in.type == MSP_TYPE_ERROR) { // this is an error response from the FC
+                    switch (msp_msg_ser_in.function) {
+                    case MSP2_COMMON_SET_MSP_RC_LINK_STATS: // FC doesn't support this message and complains
+                        rc_link_stats_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
+                    case MSP2_COMMON_SET_MSP_RC_INFO: // FC doesn't support this message and complains
+                        rc_info_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
                     }
                 }
 
@@ -358,10 +375,20 @@ void tRxMsp::send_rc_link_stats(void)
 
 void tRxMsp::send_rc_info(void)
 {
+static int8_t power_dbm_last = 125;
+static uint32_t tlast_ms = 0;
+
+    uint32_t tnow_ms = millis32();
+    int8_t power_dbm = sx.RfPower_dbm();
+    if ((tnow_ms - tlast_ms < 2500) && (power_dbm == power_dbm_last)) return; // no time nor no need to send
+
+    tlast_ms = tnow_ms;
+    power_dbm_last = power_dbm;
+
     tMspCommonSetMspRcInfo payload;
 
     payload.sublink_id = 1;
-    payload.uplink_tx_power = cvt_power(sx.RfPower_dbm()); // WRONG, should be tx power, but to have something we send rx power
+    payload.uplink_tx_power = cvt_power(power_dbm); // WRONG, should be tx power, but to have something we send rx power
     payload.downlink_tx_power = payload.uplink_tx_power;
 
     char band_str[8]; // needs char[4]
