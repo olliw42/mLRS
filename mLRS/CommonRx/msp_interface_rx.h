@@ -340,6 +340,7 @@ void tRxMsp::send_rc_link_stats(void)
     payload.sublink_id = 1;
     payload.valid_link = 1;
     payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    if (payload.uplink_rssi_perc > 99) payload.uplink_rssi_perc = 99; // INAV wants RSSI % in range [0..99]
     payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
     payload.downlink_link_quality = stats.received_LQ_serial;
     payload.uplink_link_quality = stats.GetLQ_rc();
@@ -361,8 +362,8 @@ void tRxMsp::send_rc_info(void)
     tMspCommonSetMspRcInfo payload;
 
     payload.sublink_id = 1;
-    payload.uplink_tx_power = 0; // unknown
-    payload.downlink_tx_power = cvt_power(sx.RfPower_dbm());
+    payload.uplink_tx_power = cvt_power(sx.RfPower_dbm()); // WRONG, should be tx power, but to have something we send rx power
+    payload.downlink_tx_power = payload.uplink_tx_power;
 
     char band_str[8];
     char mode_str[8];
@@ -381,8 +382,8 @@ void tRxMsp::send_rc_info(void)
         case MODE_50HZ: strcpy(mode_str, "50 Hz"); break;
         case MODE_31HZ: strcpy(mode_str, "31 Hz"); break;
         case MODE_19HZ: strcpy(mode_str, "19 Hz"); break;
-        case MODE_FLRC_111HZ: strcpy(mode_str, "111 Hz"); break;
-        case MODE_FSK_50HZ: strcpy(mode_str, "50 Hz"); break;
+        case MODE_FLRC_111HZ: strcpy(mode_str, "FLRC"); break;
+        case MODE_FSK_50HZ: strcpy(mode_str, "FSK"); break;
         default: strcpy(mode_str, "?");
     }
 
