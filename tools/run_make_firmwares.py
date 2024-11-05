@@ -1018,6 +1018,9 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
+        'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
+        'extra_D_list' : [], 'appendix' : '',
+    },{
         'target' : 'rx-matek-mr900-td30-g474ce',        'target_D' : 'RX_MATEK_MR900_TD30_G474CE',
         'extra_D_list' : [], 'appendix' : '',
     },{

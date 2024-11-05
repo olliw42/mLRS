@@ -60,7 +60,7 @@
 //#define UARTF_RXBUFSIZE           512
 
 
-//-- CAN BUS -------------------------------------------
+//-- CAN BUS
 
 #define CAN_USE_FDCAN2_PB5PB6
 
