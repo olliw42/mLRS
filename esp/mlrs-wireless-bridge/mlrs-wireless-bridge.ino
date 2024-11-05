@@ -47,6 +47,7 @@ Troubleshooting:
 
 // Module
 // uncomment what you want, you must select one (and only one)
+#define MODULE_MATEK_TXM_TD30
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
 //#define MODULE_ESP32_PICO_KIT

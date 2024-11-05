@@ -930,6 +930,14 @@ class cTargetG491RE(cTargetG4):
             'STM32G491xx', 'startup_stm32g491re'+package.lower()+'.s', 'STM32G491RE'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
+class cTargetG474CE(cTargetG4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'ux'
+        super().__init__(
+            target, target_D,
+            'STM32G474xx', 'startup_stm32g474ce'+package.lower()+'.s', 'STM32G474CE'+package.upper()+'_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
 
 class cTargetWLE5CC(cTargetWL):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
@@ -1020,6 +1028,10 @@ TLIST = [
 #        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
 #        'appendix' : '-oled',
 #    },{
+
+        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
@@ -1271,6 +1283,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetG431CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g491re' in t['target']:
             tlist.append( cTargetG491RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
+        elif 'g474ce' in t['target']:
+            tlist.append( cTargetG474CE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'wle5cc' in t['target']:
             tlist.append( cTargetWLE5CC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'wle5jc' in t['target']:
