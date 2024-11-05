@@ -113,6 +113,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "matek/rx-hal-matek-mr900-22-wle5cc.h"
 #endif
 
+#ifdef RX_MATEK_MR900_TD30_G474CE
+#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#endif
+
 
 //-- FrsKy R9 system
 

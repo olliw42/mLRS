@@ -141,6 +141,7 @@ const rfpower_t rfpower_list[] = {
 // PA max 30 dBm, PAin max 10 dBm, PA gain 26 dB, LNA gain 16 dB
 #if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 // Matek mR900-30
 #define POWER_PA_DEFINED
+
 #define POWER_USE_PA_CONFIG_10_DBM
 
 // SX126X power setting can vary from -9 .. 22 for -9 dBm ... 22 dBm
