@@ -53,7 +53,7 @@ def check_python():
     global python_cmd
     if _check_python_version('python') == 3:
         python_cmd = 'python'
-    elif check_python('python3') == 3:
+    elif _check_python_version('python3') == 3:
         python_cmd = 'python3'
     else:
         print("ERROR: Python 3 not found on your system. Please make sure Python 3 is available.")
