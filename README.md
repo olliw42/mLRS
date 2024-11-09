@@ -121,43 +121,12 @@ For the devices which are supported, the easiest way to flash can be the [mLRS W
 
 ## Software: Installation Bits and Bops ##
 
-mLRS uses STM32CubeIDE for STM32 targets, and PlatformIO with VSCode for ESP targets. For STM32 targets this procedure should work (for ESP targets see [ESP Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/ESP_DEVELOPMENT.md)):
+mLRS uses STM32CubeIDE for STM32 targets, and PlatformIO with VSCode for ESP32 and ESP8285 targets. For details see:
 
-Let's assume that the project should be located in the folder C:/Me/Documents/Github/mlrs.
- 
-**I. Clone and setup the project files**
-1. open a command line processor
-2. cd into `C:/Me/Documents/Github` (not C:/Me/Documents/Github/mlrs !)
-3. `git clone https://github.com/olliw42/mLRS.git mlrs`
-4. `cd mlrs`
-5. run `run_setup.py`. This does three steps: Initializes submodules (git submodule --init --recursive), copies ST HAL and LL drivers to the target folders, and generates the MAVLink library files.
-    - ***Note***: Ensure that all three steps are executed completely.
+- [STM32 Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/STM32_DEVELOPMENT.md)
+- [ESP Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/ESP_DEVELOPMENT.md)
 
-For cloning you of course can use any other tool you like.
-
-**II. STM32CubeIDE (for STM32 targets)**
-1. download and install STM32CubeIDE
-    - ***Note***: Install into the default folder if possible.
-2. start STM32CubeIDE
-3. in Launcher select Workspace by hitting [Browse...] button, and browse to `C:/Me/Documents/Github/mlrs/mLRS`. Hit [Launch] button.
-    - ***Note***: It is not C:/Me/Documents/Github/mlrs but C:/Me/Documents/Github/mlrs/mLRS! If you proceed with the wrong path then there will be a compile error "undefined reference to main_main()"!
-4. in the IDE's top bar go to `File->Open Projects from File System`
-5. in the Importer select Import source by hitting [Directory...] button, and browse to the desired project. E.g. select `C:/Me/Documents/Github/mlrs/mLRS/rx-diy-board01-f103cb`. Hit [Finish] button.
-6. change from Debug to Release configuration: Go to the 'hammer' icon in the top icon bar, click on the down arrow right to it, and select `Release`.
-    - ***Note***: If you don't do that then there will be a compile error "undefined reference to main_main()"!
-7. open the file `mlrs-rx.cpp` or `mlrs-tx.cpp` into the editor
-8. compiling should work now: Go to the green 'right-pointing triangle' icon in the top icon bar and click it
-9. repeat steps 4. - 8. for each board you are interested in
-
-<img src="https://user-images.githubusercontent.com/6089567/154903396-25f62bf6-573a-4b80-9720-a0ad4a21f291.jpg" width="480">
-
-The STM32CubeIDE has its weirdness, so you may have to get used to it. 
-
-In case of issues with this procedure, don't hesitate to join the discussion thread at rcgroups or the discord channel, or submit an issue in the github repository.
-
-#### Dependencies ####
-
-You need to have git and Python3 installed. Depending on the Python3 distribution you may need to install further libraries.
+In case of issues with the procedures, don't hesitate to join the discussion thread at rcgroups or the discord channel.
 
 ## Further Documentation ##
 
