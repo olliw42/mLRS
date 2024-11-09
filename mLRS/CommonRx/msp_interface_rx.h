@@ -51,9 +51,17 @@ class tRxMsp
     msp_message_t msp_msg_ser_in;
     tFifo<char,2*512> fifo_link_out; // needs to be at least ??
 
-    // to inject MSP_SET_RAW_RC
+    // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
+    tMspSetRawRc rc_channels; // holds the rc data in MSP format
     bool inject_rc_channels;
-    uint16_t rc_chan[16]; // holds the rc data in MSP format
+    bool inject_rc_link_stats;
+    bool inject_rc_info;
+    bool rc_link_stats_disabled;
+    bool rc_info_disabled;
+
+    void send_rc_channels(void);
+    void send_rc_link_stats(void);
+    void send_rc_info(void);
 
     // to inject MSP requests if there are no requests from a gcs
     uint32_t tick_tlast_ms;
@@ -104,6 +112,10 @@ void tRxMsp::Init(void)
     fifo_link_out.Init();
 
     inject_rc_channels = false;
+    inject_rc_link_stats = false;
+    inject_rc_info = false;
+    rc_link_stats_disabled = false;
+    rc_info_disabled = false;
 
     tick_tlast_ms = 0;
     for (uint8_t n = 0; n < MSP_TELM_COUNT; n ++) {
@@ -134,10 +146,12 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
     }
 
     for (uint8_t i = 0; i < 16; i++) {
-        rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+        rc_channels.rc[i] = rc_to_mavlink(rc_out->ch[i]);
     }
 
     inject_rc_channels = true;
+    inject_rc_link_stats = !rc_link_stats_disabled; // true if not disabled
+    inject_rc_info = !rc_info_disabled; // true if not disabled
 }
 
 
@@ -189,6 +203,19 @@ void tRxMsp::Do(void)
                     }
                 }
 
+                if (msp_msg_ser_in.type == MSP_TYPE_ERROR) { // this is an error response from the FC
+                    switch (msp_msg_ser_in.function) {
+                    case MSP2_COMMON_SET_MSP_RC_LINK_STATS: // FC doesn't support this message and complains
+                        rc_link_stats_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
+                    case MSP2_COMMON_SET_MSP_RC_INFO: // FC doesn't support this message and complains
+                        rc_info_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
+                    }
+                }
+
                 if (send) {
                     uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
                     fifo_link_out.PutBuf(_buf, len);
@@ -210,8 +237,19 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
-        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
-        serial.putbuf(_buf, len);
+        send_rc_channels();
+        return;
+    }
+
+    if (inject_rc_link_stats) {
+        inject_rc_link_stats = false;
+        send_rc_link_stats();
+        return;
+    }
+
+    if (inject_rc_info) {
+        inject_rc_info = false;
+        send_rc_info();
         return;
     }
 
@@ -296,6 +334,96 @@ void tRxMsp::flush(void)
 {
     fifo_link_out.Flush();
     // serial is flushed by caller
+}
+
+
+void tRxMsp::send_rc_channels(void)
+{
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_SET_RAW_RC,
+        (uint8_t*)&rc_channels,
+        MSP_SET_RAW_RC_LEN);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMsp::send_rc_link_stats(void)
+{
+    tMspCommonSetMspRcLinkStats payload;
+
+    payload.sublink_id = 0;
+    payload.valid_link = 1;
+    payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
+    payload.downlink_link_quality = stats.received_LQ_serial;
+    payload.uplink_link_quality = stats.GetLQ_rc();
+    payload.uplink_snr = stats.GetLastSnr();
+
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP2_COMMON_SET_MSP_RC_LINK_STATS,
+        (uint8_t*)&payload,
+        MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMsp::send_rc_info(void)
+{
+static int8_t power_dbm_last = 125;
+static uint32_t tlast_ms = 0;
+
+    uint32_t tnow_ms = millis32();
+    int8_t power_dbm = sx.RfPower_dbm();
+    if ((tnow_ms - tlast_ms < 2500) && (power_dbm == power_dbm_last)) return; // no time nor no need to send
+
+    tlast_ms = tnow_ms;
+    power_dbm_last = power_dbm;
+
+    tMspCommonSetMspRcInfo payload;
+
+    payload.sublink_id = 0;
+    payload.uplink_tx_power = cvt_power(power_dbm); // WRONG, should be tx power, but to have something we send rx power
+    payload.downlink_tx_power = payload.uplink_tx_power;
+
+    char band_str[8]; // needs char[4]
+    char mode_str[8]; // needs char[6]
+
+    switch (Config.FrequencyBand) {
+        case SETUP_FREQUENCY_BAND_2P4_GHZ: strcpy(band_str, "2.4G"); break;
+        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strcpy(band_str, "915M"); break;
+        case SETUP_FREQUENCY_BAND_868_MHZ: strcpy(band_str, "868M"); break;
+        case SETUP_FREQUENCY_BAND_433_MHZ: strcpy(band_str, "433M"); break;
+        case SETUP_FREQUENCY_BAND_70_CM_HAM: strcpy(band_str, "70cm"); break;
+        case SETUP_FREQUENCY_BAND_866_MHZ_IN: strcpy(band_str, "866M"); break;
+        default: strcpy(band_str, "?");
+    }
+
+    switch (Config.Mode) {
+        case MODE_50HZ: strcpy(mode_str, "50Hz"); break;
+        case MODE_31HZ: strcpy(mode_str, "31Hz"); break;
+        case MODE_19HZ: strcpy(mode_str, "19Hz"); break;
+        case MODE_FLRC_111HZ: strcpy(mode_str, "FLRC"); break;
+        case MODE_FSK_50HZ: strcpy(mode_str, "FSK"); break;
+        default: strcpy(mode_str, "?");
+    }
+
+    strbufstrcpy(payload.band, band_str, sizeof(payload.band));
+    strbufstrcpy(payload.mode, mode_str, sizeof(payload.mode));
+
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP2_COMMON_SET_MSP_RC_INFO,
+        (uint8_t*)&payload,
+        MSP_COMMON_SET_MSP_RC_INFO_LEN);
+
+    serial.putbuf(_buf, len);
 }
 
 

@@ -167,6 +167,7 @@ uint8_t crsf_crc8_update(uint8_t crc, const void* buf, uint16_t len);
 //-- DroneCAN
 
 uint8_t dronecan_cvt_power(int8_t power_dbm);
+uint16_t cvt_power(int8_t power_dbm);
 
 
 //-- bind phrase & power & version
