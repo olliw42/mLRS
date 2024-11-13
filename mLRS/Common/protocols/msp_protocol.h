@@ -11,7 +11,7 @@
 // STX1           '$'
 // STX2           'X'
 // type           '<', '>', '!'
-// flag           0
+// flag           0x01: do not respond
 // function_1     LSB
 // function_2     MSB
 // len_1          LSB
@@ -51,9 +51,9 @@
 #define MSP_MAGIC_1               '$'
 #define MSP_MAGIC_2_V1            'M'
 #define MSP_MAGIC_2_V2            'X'
-#define MSP_TYPE_REQUEST          '<'
-#define MSP_TYPE_RESPONSE         '>'
-#define MSP_TYPE_ERROR            '!'
+//#define MSP_TYPE_REQUEST          '<'
+//#define MSP_TYPE_RESPONSE         '>'
+//#define MSP_TYPE_ERROR            '!'
 #define MSP_V1_HEADER_LEN         5
 #define MSP_V2_HEADER_LEN         8
 
@@ -71,6 +71,19 @@ typedef struct {
 // helper fields
     uint8_t res; // see MSP_PARSE_RESULT
 } msp_message_t;
+
+
+typedef enum {
+    MSP_TYPE_REQUEST    = '<',
+    MSP_TYPE_RESPONSE   = '>',
+    MSP_TYPE_ERROR      = '!',
+} MSP_TYPE_ENUM;
+
+
+typedef enum {
+    MSP_FLAG_NONE         = 0,
+    MSP_FLAG_NO_RESPONSE  = 0x01,
+} MSP_FLAG_ENUM;
 
 
 typedef enum {

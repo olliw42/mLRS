@@ -186,7 +186,13 @@ void tRxMsp::Do(void)
                                 flight_mode |= ((uint32_t)1 << n);
                             }
                         }
-                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
+                        uint16_t len = msp_generate_v2_frame_bufX(
+                            _buf,
+                            MSP_TYPE_RESPONSE,
+                            MSP_FLAG_NONE,
+                            MSPX_STATUS,
+                            (uint8_t*)(&flight_mode),
+                            sizeof(flight_mode));
                         fifo_link_out.PutBuf(_buf, len);
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
@@ -199,7 +205,13 @@ void tRxMsp::Do(void)
 
                         telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
 
-                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, new_len);
+                        uint16_t len = msp_generate_v2_frame_bufX(
+                            _buf,
+                            MSP_TYPE_RESPONSE,
+                            MSP_FLAG_NONE,
+                            MSP_BOXNAMES,
+                            new_payload,
+                            new_len);
                         fifo_link_out.PutBuf(_buf, len);
 
                         send = false; // mark as handled
@@ -344,6 +356,7 @@ void tRxMsp::send_request(uint16_t function)
     uint16_t len = msp_generate_v2_request_to_frame_buf(
         _buf,
         MSP_TYPE_REQUEST,
+        MSP_FLAG_NONE,
         function);
 
     serial.putbuf(_buf, len);
@@ -355,6 +368,7 @@ void tRxMsp::send_rc_channels(void)
     uint16_t len = msp_generate_v2_frame_buf(
         _buf,
         MSP_TYPE_REQUEST,
+        MSP_FLAG_NO_RESPONSE, // avoid response message from flight controller
         MSP_SET_RAW_RC,
         (uint8_t*)&rc_channels,
         MSP_SET_RAW_RC_LEN);
@@ -378,6 +392,7 @@ void tRxMsp::send_rc_link_stats(void)
     uint16_t len = msp_generate_v2_frame_buf(
         _buf,
         MSP_TYPE_REQUEST,
+        MSP_FLAG_NO_RESPONSE, // flight controller should drop response, but can't hurt
         MSP2_COMMON_SET_MSP_RC_LINK_STATS,
         (uint8_t*)&payload,
         MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN);
@@ -432,6 +447,7 @@ static uint32_t tlast_ms = 0;
     uint16_t len = msp_generate_v2_frame_buf(
         _buf,
         MSP_TYPE_REQUEST,
+        MSP_FLAG_NO_RESPONSE, // flight controller should drop response, but can't hurt
         MSP2_COMMON_SET_MSP_RC_INFO,
         (uint8_t*)&payload,
         MSP_COMMON_SET_MSP_RC_INFO_LEN);
