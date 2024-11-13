@@ -62,6 +62,7 @@ class tRxMsp
     void send_rc_channels(void);
     void send_rc_link_stats(void);
     void send_rc_info(void);
+    void send_request(uint16_t function);
 
     // to inject MSP requests if there are no requests from a gcs
     uint32_t tick_tlast_ms;
@@ -173,7 +174,9 @@ void tRxMsp::Do(void)
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
                     if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
+                        // when we get a MSP2_INAV_STATUS
                         // send out our home-brewed MSPX_STATUS message in addition
+                        // do only after we have seen MSP_BOXNAMES
                         // is being send before original message
                         uint32_t flight_mode = 0;
                         uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
@@ -271,8 +274,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
             if (telm[n].rate == 0) continue; // disabled
             INCc(telm[n].cnt, telm[n].rate);
             if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
-                uint16_t len = msp_generate_v2_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
-                serial.putbuf(_buf, len);
+                send_request(telm_function[n]);
 //dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
             }
         }
@@ -334,6 +336,17 @@ void tRxMsp::flush(void)
 {
     fifo_link_out.Flush();
     // serial is flushed by caller
+}
+
+
+void tRxMsp::send_request(uint16_t function)
+{
+    uint16_t len = msp_generate_v2_request_to_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        function);
+
+    serial.putbuf(_buf, len);
 }
 
 
