@@ -481,8 +481,8 @@ local function doParmLoop()
             DEV_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
             DEV_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
             DEV_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
-            -- DEV_INFO.num_parms = mb_to_i8(cmd.payload,8)
-            -- if DEV_INFO.num_parms ~= 0 then Max_Page = (DEV_INFO.num_parms + 2) / 7; end -- check math
+            DEV_INFO.num_parms = mb_to_i8(cmd.payload,8)
+            if DEV_INFO.num_parms ~= 0 then Max_Page = math.floor((DEV_INFO.num_parms + 2) / 7); end
         elseif cmd.cmd == MB_CMD_PARM_ITEM then
             local parm_idx = cmd.payload[0]
             local valid, parm_item = idx_to_parm(list_idx)
