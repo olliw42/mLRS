@@ -118,13 +118,20 @@ void tTxMsp::putc(char c)
             switch (msp_msg_link_in.function) {
             case MSP_BOXNAMES:
 //dbg.puts("\nMBC "); for(uint16_t i= 0; i< msp_msg_link_in.len; i++) dbg.puts(u8toHEX_s(msp_msg_link_in.payload[i]));
+                msp_msg_link_in.flag = MSP_FLAG_NONE; // it should be set to MSP_FLAG_SOURCE_ID_RC_LINK, not what we want
                 // decompress
                 mspX_boxnames_payload_decompress(&msp_msg_link_in, _buf); // we can use the buffer
 //dbg.puts("\nMB ");for(uint16_t i = 0; i < msp_msg_link_in.len; i++) dbg.putc(msp_msg_link_in.payload[i]);
                 break;
             case MSPX_STATUS:
+                // it's our home brew, catch it
                 send = false;
                 break;
+            }
+
+            if (msp_msg_link_in.flag & MSP_FLAG_SOURCE_ID_RC_LINK) {
+                // it's requested by the receiver, catch it
+                send = false;
             }
         }
 

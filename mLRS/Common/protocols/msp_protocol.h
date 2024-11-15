@@ -11,7 +11,7 @@
 // STX1           '$'
 // STX2           'X'
 // type           '<', '>', '!'
-// flag           0x01: do not respond
+// flag           0x01: do not respond, 0x02: source id rc link
 // function_1     LSB
 // function_2     MSB
 // len_1          LSB
@@ -81,8 +81,9 @@ typedef enum {
 
 
 typedef enum {
-    MSP_FLAG_NONE         = 0,
-    MSP_FLAG_NO_RESPONSE  = 0x01,
+    MSP_FLAG_NONE               = 0,
+    MSP_FLAG_NO_RESPONSE        = 0x01,
+    MSP_FLAG_SOURCE_ID_RC_LINK  = 0x02,
 } MSP_FLAG_ENUM;
 
 

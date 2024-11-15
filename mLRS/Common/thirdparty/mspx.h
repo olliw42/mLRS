@@ -273,6 +273,7 @@ typedef enum {
     MSPX_FLAGS_ERROR              = 0x02,
     MSPX_FLAGS_V1                 = 0x04,
     MSPX_FLAGS_NO_RESPONSE        = 0x08,
+    MSPX_FLAGS_SOURCE_ID_RC_LINK  = 0x10,
 } mspx_flags_e;
 
 
@@ -327,6 +328,9 @@ uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, 
         msg->flag = 0;
         if (mspx_status.flags & MSPX_FLAGS_NO_RESPONSE) {
             msg->flag |= MSP_FLAG_NO_RESPONSE;
+        }
+        if (mspx_status.flags & MSPX_FLAGS_SOURCE_ID_RC_LINK) {
+            msg->flag |= MSP_FLAG_SOURCE_ID_RC_LINK;
         }
         status->state = MSP_PARSE_STATE_FUNCTION_1;
         msg->res = MSP_PARSE_RESULT_NONE;
@@ -460,6 +464,9 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* const buf, msp_message_t* const msg)
     if (msg->flag & MSP_FLAG_NO_RESPONSE) {
         flags |= MSPX_FLAGS_NO_RESPONSE;
     }
+    if (msg->flag & MSP_FLAG_SOURCE_ID_RC_LINK) {
+        flags |= MSPX_FLAGS_SOURCE_ID_RC_LINK;
+    }
 
     buf[0] = MSP_MAGIC_1;
     buf[1] = MSPX_MAGIC_2;
@@ -498,6 +505,9 @@ uint16_t msp_generate_v2_frame_bufX(uint8_t* const buf, uint8_t type, uint8_t fl
 
     if (flag & MSP_FLAG_NO_RESPONSE) {
         flags |= MSPX_FLAGS_NO_RESPONSE;
+    }
+    if (flag & MSP_FLAG_SOURCE_ID_RC_LINK) {
+        flags |= MSPX_FLAGS_SOURCE_ID_RC_LINK;
     }
 
     buf[0] = MSP_MAGIC_1;
