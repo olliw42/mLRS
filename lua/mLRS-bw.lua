@@ -913,7 +913,7 @@ local function doPage(event)
             end
             edit = false
         elseif event == EVT_VIRTUAL_ENTER then
-            if current_page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
+            if page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
                 if parm_str6_next(0) then
                     sendParmSet(0)
                     edit = false
@@ -925,13 +925,13 @@ local function doPage(event)
                 edit = false
             end
         elseif event == EVT_VIRTUAL_NEXT then
-            if current_page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
+            if page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
                 parm_str6_inc(0)
             elseif cursor_idx <= Page_parm_max - Page_parm_diff * s then -- user defined params
                 parm_value_inc(cursor_idx)
             end
         elseif event == EVT_VIRTUAL_PREV then
-            if current_page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
+            if page == 0 and cursor_idx == BindPhrase_idx then -- BindPhrase
                 parm_str6_dec(0)
             elseif cursor_idx <= Page_parm_max - Page_parm_diff * s then -- user defined params
                 parm_value_dec(cursor_idx)
