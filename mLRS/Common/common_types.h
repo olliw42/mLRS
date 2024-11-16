@@ -160,6 +160,7 @@ uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8);
 uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8);
 uint8_t crsf_cvt_rssi_percent(int8_t rssi, int16_t receiver_sensitivity_dbm);
 
+#define CRSF_CRC8_INIT  0
 uint8_t crsf_crc8_calc(uint8_t crc, uint8_t data);
 uint8_t crsf_crc8_update(uint8_t crc, const void* buf, uint16_t len);
 

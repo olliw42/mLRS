@@ -159,21 +159,22 @@ typedef struct
             uint8_t cmd_dest_adress;
             uint8_t cmd_src_adress;
             uint8_t cmd_id;
-            uint8_t cmd;
-            uint8_t cmd_data[64 - 4 - 4 + 1]; // +1 for crc
+            uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
         });
     });
 }) tCrsfFrameHeader;
 
 
-//-- Channel frame
-
-#define CRSF_CHANNELPACKET_SIZE  22
-
+//-- RC Channel frame
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
+// #define TICKS_TO_US(x)  ((x - 992) * 5 / 8 + 1500)
+// #define US_TO_TICKS(x)  ((x - 1500) * 8 / 5 + 992)
+
+#define CRSF_RCCHANNELPACKET_SIZE  22
+
 typedef union
 {
-    uint8_t c[CRSF_CHANNELPACKET_SIZE];
+    uint8_t c[CRSF_RCCHANNELPACKET_SIZE];
     CRSF_PACKED(
     struct {
         uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
@@ -193,38 +194,38 @@ typedef union
         uint16_t ch14 : 11;
         uint16_t ch15 : 11;
     });
-} tCrsfChannelBuffer;
+} tCrsfRcChannelBuffer;
 
-#define CRSF_CHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+#define CRSF_RCCHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
 
 
-// adr, len, frame id, data, crc
+// frame: adr, len, frame id, data, crc
 CRSF_PACKED(
 typedef struct {
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfChannelBuffer ch;
+    tCrsfRcChannelBuffer ch;
     uint8_t crc;
-}) tCrsfChannelFrame;
+}) tCrsfRcChannelFrame;
 
-#define CRSF_CHANNELPACKET_FRAME_LEN  (CRSF_CHANNELPACKET_LEN + 4)
+#define CRSF_RCCHANNELPACKET_FRAME_LEN  (CRSF_RCCHANNELPACKET_LEN + 4)
 
 
 //-- Link statistics frames
 
 /* 0x14 Link Statistics
 
-  uint8_t Uplink RSSI Ant. 1 ( dBm * -1 )
-  uint8_t Uplink RSSI Ant. 2 ( dBm * -1 )
-  uint8_t Uplink Package success rate / Link quality ( % )
-  int8_t Uplink SNR ( db )
-  uint8_t Diversity active antenna ( enum ant. 1 = 0, ant. 2 )
-  uint8_t RF Mode ( enum 4fps = 0 , 50fps, 150hz)
-  uint8_t Uplink TX Power ( enum 0mW = 0, 10mW, 25 mW, 100 mW, 500 mW, 1000 mW, 2000mW, 250mW )
-  uint8_t Downlink RSSI ( dBm * -1 )
-  uint8_t Downlink package success rate / Link quality ( % )
-  int8_t Downlink SNR ( db )
+  uint8_t     up_rssi_ant1;       // Uplink RSSI Antenna 1 (dBm * -1)
+  uint8_t     up_rssi_ant2;       // Uplink RSSI Antenna 2 (dBm * -1)
+  uint8_t     up_link_quality;    // Uplink Package success rate / Link quality (%)
+  int8_t      up_snr;             // Uplink SNR (dB)
+  uint8_t     active_antenna;     // number of currently best antenna
+  uint8_t     rf_profile;         // enum {4fps = 0 , 50fps, 150fps}
+  uint8_t     up_rf_power;        // enum {0mW = 0, 10mW, 25mW, 100mW, 500mW, 1000mW, 2000mW, 250mW, 50mW}
+  uint8_t     down_rssi;          // Downlink RSSI (dBm * -1)
+  uint8_t     down_link_quality;  // Downlink Package success rate / Link quality (%)
+  int8_t      down_snr;           // Downlink SNR (dB)
 */
 CRSF_PACKED(
 typedef struct
@@ -257,14 +258,34 @@ typedef struct {
 #define CRSF_LINK_STATISTICS_FRAME_LEN  (CRSF_LINK_STATISTICS_LEN + 4)
 
 
+/* 0x1C Link Statistics RX
+  uint8_t rssi_db;        // RSSI (dBm * -1)
+  uint8_t rssi_percent;   // RSSI in percent
+  uint8_t link_quality;   // Package success rate / Link quality (%)
+  int8_t  snr;            // SNR (dB)
+  uint8_t rf_power_db;    // rf power in dBm
+*/
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t downlink_rssi;
+    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
+    uint8_t downlink_LQ;
+    int8_t downlink_snr;
+    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
+}) tCrsfLinkStatisticsRx;
+
+#define CRSF_LINK_STATISTICS_RX_LEN  5
+
+
 /* 0x1D Link Statistics TX
 
-  uint8_t Uplink RSSI ( dBm * -1 )
-  uint8_t Uplink RSSI ( % )
-  uint8_t Uplink Package success rate / Link quality ( % )
-  int8_t Uplink SNR ( db )
-  uint8_t Downlink RF Power ( db )
-  uint8_t Uplink FPS ( FPS / 10 )
+  uint8_t rssi_db;        // RSSI (dBm * -1)
+  uint8_t rssi_percent;   // RSSI in percent
+  uint8_t link_quality;   // Package success rate / Link quality (%)
+  int8_t  snr;            // SNR (dB)
+  uint8_t rf_power_db;    // rf power in dBm
+  uint8_t fps;            // rf frames per second (fps / 10)
 */
 CRSF_PACKED(
 typedef struct
@@ -278,19 +299,6 @@ typedef struct
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
-
-
-CRSF_PACKED(
-typedef struct
-{
-    uint8_t downlink_rssi;
-    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
-    uint8_t downlink_LQ;
-    int8_t downlink_snr;
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
-}) tCrsfLinkStatisticsRx;
-
-#define CRSF_LINK_STATISTICS_RX_LEN  5
 
 
 //-- Telemetry data frames

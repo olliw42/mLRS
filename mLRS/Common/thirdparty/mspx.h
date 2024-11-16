@@ -425,7 +425,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, 
             msg->checksum ^= msg->function;
             for (uint16_t n = 0; n < msg->len; n++) msg->checksum ^= msg->payload[n];
         } else {
-            msg->checksum = crsf_crc8_calc(0, msg->flag);
+            msg->checksum = crsf_crc8_calc(CRSF_CRC8_INIT, msg->flag);
             msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
             msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
             msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
@@ -547,7 +547,7 @@ void msp_init(void)
 
 void msp_msg_recalculate_crc(msp_message_t* const msg)
 {
-    msg->checksum = crsf_crc8_calc(0, msg->flag);
+    msg->checksum = crsf_crc8_calc(CRSF_CRC8_INIT, msg->flag);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
@@ -564,7 +564,7 @@ uint16_t msp_generate_v2_request_to_msg(msp_message_t* const msg, uint8_t type, 
     msg->flag = flag;
     msg->function = function;
     msg->len = 0;
-    msg->checksum = crsf_crc8_calc(0, msg->flag);
+    msg->checksum = crsf_crc8_calc(CRSF_CRC8_INIT, msg->flag);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->function >> 8);
     msg->checksum = crsf_crc8_calc(msg->checksum, msg->len);
@@ -585,7 +585,7 @@ uint16_t msp_generate_v2_request_to_frame_buf(uint8_t* const buf, uint8_t type, 
     buf[5] = function >> 8;
     buf[6] = 0;
     buf[7] = 0;
-    buf[8] = crsf_crc8_update(0, &(buf[3]), 5);
+    buf[8] = crsf_crc8_update(CRSF_CRC8_INIT, &(buf[3]), 5);
     return 8 + 1;
 }
 
@@ -610,7 +610,7 @@ uint16_t msp_generate_v2_frame_buf(uint8_t* const buf, uint8_t type, uint8_t fla
 
     for (uint16_t i = 0; i < len; i++) buf[pos++] = payload[i];
 
-    buf[pos] = crsf_crc8_update(0, &(buf[3]), len + 5);
+    buf[pos] = crsf_crc8_update(CRSF_CRC8_INIT, &(buf[3]), len + 5);
 
     return len + 8 + 1;
 }

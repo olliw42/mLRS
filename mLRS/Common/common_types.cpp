@@ -255,6 +255,7 @@ uint8_t crsf_crc8_update(uint8_t crc, const uint8_t* buf, uint16_t len)
 #pragma GCC optimize ("O3")
 
 // generated from https://crccalc.com/, for CRC-8/DVB-S2
+// matches table give in CRSF specs, https://github.com/tbs-fpv/tbs-crsf-spec/blob/main/crsf.md#crc
 const uint8_t crsf_crc8_table[256] = {
     0x00 , 0xd5 , 0x7f , 0xaa , 0xfe , 0x2b , 0x81 , 0x54,
     0x29 , 0xfc , 0x56 , 0x83 , 0xd7 , 0x02 , 0xa8 , 0x7d,

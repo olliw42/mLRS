@@ -157,7 +157,7 @@ dbg.puts(" ");for (uint16_t n=0;n<((msp_msg_link_in.len<100)?msp_msg_link_in.len
 /*dbg.puts(" ");
 dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
 uint16_t _len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), _len - 4);
+uint8_t crc8 = crsf_crc8_update(CRSF_CRC8_INIT, &(_buf[3]), _len - 4);
 dbg.puts(" ");
 dbg.puts(u8toHEX_s(crc8));
 */
