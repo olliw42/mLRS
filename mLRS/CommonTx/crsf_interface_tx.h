@@ -220,11 +220,11 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         frame[cnt++] = c;
         // let's ignore the crc here
         // this is called in isr, so we want to do crc check later, if we want to do it all
-        if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
+        if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
-            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_MODEL_SELECT_ID) {
+            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) {
             cmd_modelid_received = true;
             cmd_modelid_value = frame[7];
         } else {
