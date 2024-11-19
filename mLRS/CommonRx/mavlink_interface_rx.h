@@ -60,6 +60,7 @@ class tRxAutoPilot
   private:
     uint8_t autopilot; // this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
     uint32_t flight_sw_version;
+    uint32_t middleware_sw_version;
     uint32_t version;
     uint32_t heartbeat_tlast_ms;
     uint32_t autopilot_version_request_tlast_ms;
@@ -367,7 +368,7 @@ void tRxMavlink::FrameLost(void)
 
 typedef enum {
     MAVFTP_OPCODE_OpenFileRO = 4,
-} MAVFTPOPCODEENUM;
+} MAVFTP_OPCODE_ENUM;
 
 
 void tRxMavlink::putc(char c)
@@ -1059,6 +1060,7 @@ void tRxAutoPilot::Init(void)
     autopilot = UINT8_MAX;
     flight_sw_version = 0; // 0 indicates not known
 
+    middleware_sw_version = 0; // 0 is native ArduPilot
     version = 0;
     heartbeat_tlast_ms = 0;
     autopilot_version_request_tlast_ms = 0;
@@ -1116,7 +1118,11 @@ bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
 {
     if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
 
-    return (version >= 040600);
+    if (middleware_sw_version != 0) { // not native ArduPilot
+        return (version >= 040600); // BetaPliot has it
+    }
+
+    return (version >= 040700); // not even yet in dev actually, but let's do it
 }
 
 
@@ -1151,6 +1157,10 @@ void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
     uint32_t min = (flight_sw_version & 0x00FF0000) >> 16;
     uint32_t pat = (flight_sw_version & 0x0000FF00) >> 8;
     version = maj * 10000 + min * 100 + pat;
+
+    // is 0 for native ArduPilot, BetaPilot sets it to a value > 0
+    // https://github.com/ArduPilot/ardupilot/blob/master/libraries/GCS_MAVLink/GCS_Common.cpp#L2907-L2967
+    middleware_sw_version = payload.middleware_sw_version;
 
 //dbg.puts("\ngot version ");dbg.puts(u32toHEX_s(flight_sw_version));
 //dbg.puts(" = ");dbg.puts(u32toBCD_s(version));
