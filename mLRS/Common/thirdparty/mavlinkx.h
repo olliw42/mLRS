@@ -822,6 +822,8 @@ the last byte all to 1.
 // len_out & out_bit index the next bit position to write to
 void _fmavX_encode_put_bits(uint8_t* const payload_out, uint16_t* const len_out, uint16_t code, uint8_t code_bit_len)
 {
+CHECKRANGE(code_bit_len,14);
+
     uint16_t cur_code_bit = (uint16_t)1 << (code_bit_len - 1);
 
     for (uint8_t i = 0; i < code_bit_len; i++) {
@@ -1003,6 +1005,8 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_o
     fmavx_status.in_pos = 0;
     fmavx_status.in_bit = 0x80;
 
+CHECKRANGE(len,258);
+
     while (1) {
         uint8_t c;
 
@@ -1075,6 +1079,7 @@ CHECKRANGE(*len_out,256);
             case MAVLINKX_CODE_65_190:
                 if (!_fmavX_decode_get_bits(&c, len, 7)) return; // end
 CHECKRANGE(*len_out,256);
+if (c > 125) return; // invalid token, so just jump out
                 payload_out[(*len_out)++] = c + 65;
                 break;
         }
