@@ -648,6 +648,7 @@ INITCONTROLLER_END
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
+        DBG_MAIN_SLIM(dbg.puts("t");)
         break;
     }//end of switch(link_state)
 
