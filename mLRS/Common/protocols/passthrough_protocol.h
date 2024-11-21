@@ -169,7 +169,7 @@ class tPassThrough
 
   private:
 
-    uint16_t pt_id[PASSTHROUGH_PACKET_TYPE_NUM] = {
+    const uint16_t pt_id[PASSTHROUGH_PACKET_TYPE_NUM] = {
         0x800, 0x800,
         0x5000, 0x5001, 0x5002, 0x5003, 0x5004, 0x5005, 0x5006, 0x5007, 0x5008, 0x5009,
         0x500A, 0x500B, 0x500C, 0x500D,

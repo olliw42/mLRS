@@ -55,11 +55,11 @@
 typedef enum {
     CRSF_ADDRESS_BROADCAST              = 0x00,
     CRSF_ADDRESS_FLIGHT_CONTROLLER      = 0xC8,
-    CRSF_ADDRESS_RADIO                  = 0xEA, // radio module -> radio transmitter
+    CRSF_ADDRESS_RADIO                  = 0xEA, // tx module -> radio
     CRSF_ADDRESS_RECEIVER               = 0xEC,
-    CRSF_ADDRESS_TRANSMITTER_MODULE     = 0xEE, // radio transmitter -> radio module
+    CRSF_ADDRESS_TRANSMITTER_MODULE     = 0xEE, // radio -> tx module
 
-    CRSF_OPENTX_SYNC                    = 0xC8, // is this an otx specific thing? called CRSF_SYNC_BYTE in CleanFlight
+    CRSF_OPENTX_SYNC                    = 0xC8, // also defined as such in the TBS specs
 } CRSF_ADDRESS_ENUM;
 
 
