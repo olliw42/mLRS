@@ -51,8 +51,9 @@ class tTxMavlink
   private:
     void send_msg_fifo_link_out(fmav_message_t* const msg);
     void handle_msg_serial_out(fmav_message_t* const msg);
-    void generate_radio_status(void);
     void send_msg_serial_out(void);
+
+    void send_radio_status(void); // to serial_out
 
     uint16_t task_pending_mask;
     uint32_t task_pending_delay_ms;
@@ -93,11 +94,11 @@ class tTxMavlink
 
     // MAVLink component handling
 #ifdef USE_FEATURE_MAVLINK_COMPONENT
-    void generate_heartbeat(void);
-    void generate_autopilot_version(void);
-    void generate_protocol_version(void);
-    void generate_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid);
-    void generate_param_value(uint16_t param_idx);
+    void send_heartbeat(void);
+    void send_autopilot_version(void);
+    //void send_protocol_version(void); // not used
+    void send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid);
+    void send_param_value(uint16_t param_idx);
     void component_init(void);
     void component_do(void);
     bool component_task(uint8_t* const task);
@@ -292,8 +293,7 @@ if (!do_router()) {
 
     if (inject_radio_status) { // && serial.tx_is_empty()) {
         inject_radio_status = false;
-        generate_radio_status();
-        send_msg_serial_out();
+        send_radio_status();
         return; // only one per loop
     }
 
@@ -486,7 +486,7 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
 // Generate Messages
 //-------------------------------------------------------
 
-void tTxMavlink::generate_radio_status(void)
+void tTxMavlink::send_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
@@ -508,6 +508,8 @@ uint8_t rssi, remrssi, txbuf, noise;
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
@@ -567,7 +569,7 @@ STATIC_ASSERT(FASTMAVLINK_PARAM_NUM == SETUP_PARAMETER_NUM + MAV_PARAM_BINDPHRAS
 #include "../Common/mavlink/out/lib/fastmavlink_parameters.h"
 
 
-void tTxMavlink::generate_heartbeat(void)
+void tTxMavlink::send_heartbeat(void)
 {
     fmav_msg_heartbeat_pack(
         &msg_buf,
@@ -579,10 +581,12 @@ void tTxMavlink::generate_heartbeat(void)
         MAV_STATE_ACTIVE,
         //uint8_t type, uint8_t autopilot, uint8_t base_mode, uint32_t custom_mode, uint8_t system_status,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tTxMavlink::generate_autopilot_version(void)
+void tTxMavlink::send_autopilot_version(void)
 {
 uint8_t dummy[18+2] = {};
 
@@ -598,10 +602,13 @@ uint8_t dummy[18+2] = {};
         //const uint8_t* flight_custom_version, const uint8_t* middleware_custom_version, const uint8_t* os_custom_version,
         //uint16_t vendor_id, uint16_t product_id, uint64_t uid, const uint8_t* uid2,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tTxMavlink::generate_protocol_version(void)
+/* not used.
+void tTxMavlink::send_protocol_version(void)
 {
 uint8_t dummy[8+2] = {};
 
@@ -613,10 +620,12 @@ uint8_t dummy[8+2] = {};
         //uint16_t version, uint16_t min_version, uint16_t max_version,
         //const uint8_t* spec_version_hash, const uint8_t* library_version_hash,
         &status_serial_out);
-}
+
+    send_msg_serial_out();
+} */
 
 
-void tTxMavlink::generate_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid)
+void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid)
 {
     fmav_msg_command_ack_pack(
         &msg_buf,
@@ -626,10 +635,12 @@ void tTxMavlink::generate_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tTxMavlink::generate_param_value(uint16_t param_idx)
+void tTxMavlink::send_param_value(uint16_t param_idx)
 {
     // if BIND_PHRASE_U32, then do special handling, get bind_phrase_u32 from bind_phrase
     if (param_idx == MAV_PARAM_BINDPHRASE_IDX) {
@@ -644,6 +655,8 @@ void tTxMavlink::generate_param_value(uint16_t param_idx)
         RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         &payload,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
@@ -745,8 +758,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
             } //end of switch (command)
 
             // that's a small message, so let's hope buf has enough space
-            generate_cmd_ack(command, res, msg->sysid, msg->compid);
-            send_msg_serial_out();
+            send_cmd_ack(command, res, msg->sysid, msg->compid);
             break;}
 
       } // end of switch (msg->msgid)
@@ -779,8 +791,7 @@ void tTxMavlink::component_do(void)
 
     if (inject_task & INJECT_TASK_PARAM_VALUE) {
         inject_task &=~ INJECT_TASK_PARAM_VALUE;
-        generate_param_value(param_send_param_idx);
-        send_msg_serial_out();
+        send_param_value(param_send_param_idx);
         param_send_param_idx++;
         if (param_send_param_idx >= FASTMAVLINK_PARAM_NUM) param_request_list = false;
         return; // only one per loop
@@ -788,22 +799,19 @@ void tTxMavlink::component_do(void)
 
     if (inject_task & INJECT_TASK_AUTOPILOT_VERSION) {
         inject_task &=~ INJECT_TASK_AUTOPILOT_VERSION;
-        generate_autopilot_version();
-        send_msg_serial_out();
+        send_autopilot_version();
         return; // only one per loop
     }
 
     if (inject_task & INJECT_TASK_PROTOCOL_VERSION) {
         inject_task &=~ INJECT_TASK_PROTOCOL_VERSION;
-        generate_autopilot_version();
-        send_msg_serial_out();
+        send_autopilot_version();
         return; // only one per loop
     }
 
     if (inject_task & INJECT_TASK_HEARTBEAT) { // check available size!?
         inject_task &=~ INJECT_TASK_HEARTBEAT;
-        generate_heartbeat();
-        send_msg_serial_out();
+        send_heartbeat();
         return; // only one per loop
     }
 }
