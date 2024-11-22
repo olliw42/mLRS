@@ -19,6 +19,7 @@
 #define MAVLINKX_CRC8_LOOKUP_TABLE
 #define MAVLINKX_COMPRESSION // compression with O3 costs ca 8 kB flash
 #define MAVLINKX_O3
+#define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
 
 
 //-------------------------------------------------------
@@ -313,7 +314,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
 // Access Protectors
 //-------------------------------------------------------
 
-#ifdef DEBUG_ENABLED
+#if defined DEBUG_ENABLED && defined MAVLINKX_CHECKRANGE
 #define CHECKRANGE(i,s)   {if((i)>=s) while(1){}}
 #define CHECKRANGEBUF(i)  {if((i)>=296) while(1){}}
 #else
