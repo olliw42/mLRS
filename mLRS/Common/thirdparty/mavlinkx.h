@@ -1079,8 +1079,8 @@ CHECKRANGE(*len_out,256);
                 break;
             case MAVLINKX_CODE_65_190:
                 if (!_fmavX_decode_get_bits(&c, len, 7)) return; // end
+                if (c > 125) return; // invalid token, so just jump out
 CHECKRANGE(*len_out,256);
-if (c > 125) return; // invalid token, so just jump out
                 payload_out[(*len_out)++] = c + 65;
                 break;
         }
