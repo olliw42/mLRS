@@ -417,14 +417,14 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx_amp_receive();
         Sx127xDriverCommon::SetToRx(tmo_ms);
@@ -558,14 +558,14 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx2_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx2_amp_receive();
         Sx127xDriverCommon::SetToRx(tmo_ms);
