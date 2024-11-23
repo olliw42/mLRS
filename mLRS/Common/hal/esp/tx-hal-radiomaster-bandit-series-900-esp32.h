@@ -77,7 +77,7 @@
 #endif
 
 #define DEVICE_HAS_FAN_ONOFF // board has a Fan, which can be set on or off
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 backpack with GPIO,RST, but no CONFIGURE for now
 
 
 //-- UARTS
@@ -356,7 +356,7 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 }
 
 
-//-- ESP32 Wifi Bridge
+//-- ESP8285 Wifi Bridge
 
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P32 // backpack_boot, seems to be inverted
