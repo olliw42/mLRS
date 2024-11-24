@@ -22,6 +22,10 @@
 #define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
 
 
+#if defined ESP8266 || defined ESP32
+#define MAVLINKX_O3 // esp seem not to work without, at least BetaFpv 1w Micro does not
+#endif
+
 //-------------------------------------------------------
 // MavlinkX
 //-------------------------------------------------------
