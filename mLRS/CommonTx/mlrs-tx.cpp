@@ -535,10 +535,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     }
 
     // output data on serial
-    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-        uint8_t c = frame->payload[i];
-        sx_serial.putc(c);
-    }
+    sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
     stats.bytes_received.Add(frame->status.payload_len);
     stats.serial_data_received.Inc();
@@ -852,7 +849,7 @@ IF_SX(
             }
         }
 
-        if (irq_status) { // this should not happen
+        if (irq_status) { // these should not happen
             if (irq_status & SX_IRQ_TIMEOUT) {
             }
             if (irq_status & SX_IRQ_RX_DONE) {
