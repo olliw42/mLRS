@@ -66,7 +66,7 @@ bool tTxSxSerial::available(void)
 
 char tTxSxSerial::getc(void)
 {
-    if (!connected_and_rx_setup_available()) return 0;
+    if (!connected_and_rx_setup_available()) return 0; // not needed as done already by available()
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
         return mavlink.getc(); // get from serial via MAVLink parser
