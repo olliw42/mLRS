@@ -900,8 +900,6 @@ IF_SX2(
 );
 
     // this happens before switching to transmit, i.e. after a frame was or should have been received
-    uint8_t link_state_before = link_state; // to detect changes in link state
-
     if (doPreTransmit) {
         doPreTransmit = false;
 
@@ -1038,9 +1036,9 @@ IF_SX2(
         }
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
-    }//end of if(doPreTransmit)
 
-    if (link_state != link_state_before) return; // link state has changed, so process immediately
+        return; // link state might have changed, process immediately
+    }//end of if(doPreTransmit)
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
