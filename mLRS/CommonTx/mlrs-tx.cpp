@@ -603,7 +603,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 }
 
 
-void do_transmit(uint8_t antenna) // we prepare a TX frame to be send to receiver
+void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
 {
     if (bind.IsInBind()) {
         bind.do_transmit(antenna);
@@ -823,14 +823,14 @@ INITCONTROLLER_END
         break;
 
     case LINK_STATE_TRANSMIT:
-        do_transmit(tdiversity.Antenna());
+        do_transmit_prepare(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_SEND;
         DBG_MAIN_SLIM(dbg.puts("\nt");)
         break;
 
     case LINK_STATE_TRANSMIT_SEND: {
-//        uint16_t dt_us = micros16() - link_state_transmit_tstamp_us;
-//        if (dt_us < 1000) break; // not yet time
+        uint16_t dt_us = micros16() - link_state_transmit_tstamp_us;
+        if (dt_us < 1000) break; // not yet time
         rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
