@@ -200,6 +200,7 @@ uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8)
 uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
+    if (rssi_i8 > RSSI_MAX) return RSSI_MAX; // limit to -1
     return rssi_i8;
 }
 
