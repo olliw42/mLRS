@@ -1181,7 +1181,7 @@ IF_IN(
     }
 );
 
-    if (link_state == LINK_STATE_TRANSMIT) return; // don't do anything else in this time slot, is important!
+    if (link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 
     //-- Do MAVLink & MSP
 
