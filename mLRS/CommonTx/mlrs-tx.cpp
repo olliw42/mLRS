@@ -665,13 +665,13 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 //*******************************************************
 
 uint16_t tick_1hz;
+uint16_t tick_1hz_commensurate;
 
 uint16_t tx_tick;
-uint16_t tick_1hz_commensurate;
 bool doPreTransmit;
+bool doTransmit;
 
 uint16_t link_state;
-uint16_t link_state_transmit_tstamp_us;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
@@ -723,8 +723,8 @@ RESTARTCONTROLLER
 
     tx_tick = 0;
     doPreTransmit = false;
+    doTransmit = false;
     link_state = LINK_STATE_IDLE;
-    link_state_transmit_tstamp_us = 0;
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
     connect_sync_cnt = 0;
@@ -785,9 +785,11 @@ INITCONTROLLER_END
 
         DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
 
-        if (!tx_tick) {
+        if (tx_tick == 1) {
             doPreTransmit = true; // trigger next cycle
-            link_state_transmit_tstamp_us = micros16();
+        }
+        if (tx_tick == 0) {
+            doTransmit = true; // trigger transmission
             crsf.TelemetryStart();
         }
 
@@ -828,9 +830,9 @@ INITCONTROLLER_END
         DBG_MAIN_SLIM(dbg.puts("\nt");)
         break;
 
-    case LINK_STATE_TRANSMIT_SEND: {
-        uint16_t dt_us = micros16() - link_state_transmit_tstamp_us;
-        if (dt_us < 1000) break; // not yet time
+    case LINK_STATE_TRANSMIT_SEND:
+        if (!doTransmit) break;
+        doTransmit = false;
         rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -840,7 +842,7 @@ INITCONTROLLER_END
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts(">");)
         whileTransmit.Trigger();
-        break;}
+        break;
 
     case LINK_STATE_RECEIVE:
         IF_ANTENNA1(sx.SetToRx(0));
