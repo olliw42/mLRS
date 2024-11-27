@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 5.11.2024
+ version 27.11.2024
 ********************************************************
 '''
 import os
@@ -1052,11 +1052,11 @@ TLIST = [
         'appendix' : '-elrs-bl',
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
-        'package' : 'yx',
+        'package' : 'ux',
         'extra_D_list' : [], 'appendix' : '',
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
-        'package' : 'yx',
+        'package' : 'ux',
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
         'appendix' : '-elrs-bl',
     },{
