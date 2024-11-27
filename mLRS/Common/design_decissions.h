@@ -468,11 +468,13 @@ sx1280, sx1276, sx1262
 sx1280:  800kHz, SF5, LI4/5, 12: -105 dBm, 91 bytes payload =>  7.9 ms    -> 20 ms (50 Hz)
 sx1280:  800kHz, SF6, LI4/5, 12: -108 dBm, 91 bytes payload => 13.4 ms    -> 32 ms (31 Hz)
 sx1280:  800kHz, SF7, LI4/5, 12: -112 dBm, 91 bytes payload => 23.5 ms    -> 53 ms (19 Hz)
+sx1280:  FLRC, 650kHz, CR1/2   : -104 dBm, 91 bytes payload =>  2.4 ms    ->  9 ms (111 Hz)
 
 sx1276:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.3 ms    -> 53 ms (19 Hz)
 
 sx1262:  500kHz, SF5, CR4/5, 12: -111 dBm, 91 bytes payload => 13.2 ms    -> 32 ms (31 Hz)
 sx1262:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.6 ms    -> 53 ms (19 Hz)
+sx1276:  GFSK, 312kHz          : -106 dBm, 91 bytes payload =>  7.6 ms    -> 20 ms (50 Hz)
 
 
 -------------------------------------------------------

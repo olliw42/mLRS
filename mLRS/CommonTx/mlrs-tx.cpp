@@ -1064,7 +1064,7 @@ IF_SX2(
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
 
-        return; // process immediately
+        return; // link state might have changed, process immediately
     }//end of if(doPreTransmit)
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
