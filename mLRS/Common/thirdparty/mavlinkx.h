@@ -19,7 +19,7 @@
 #define MAVLINKX_CRC8_LOOKUP_TABLE
 #define MAVLINKX_COMPRESSION // compression with O3 costs ca 8 kB flash
 #define MAVLINKX_O3
-#define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
+//#define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
 
 
 #if defined ESP8266 || defined ESP32
