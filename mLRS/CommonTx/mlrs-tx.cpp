@@ -190,7 +190,7 @@ tTxHc04Bridge hc04;
 class tWhileTransmit : public tWhileBase
 {
   public:
-    uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1500; }
+    uint32_t dtmax_us(void) override { return sx.TimeOverAir_us() - 1000; }
     void handle_once(void) override;
 #ifdef USE_DISPLAY
     void handle(void) override { disp.SpinI2C(); }
