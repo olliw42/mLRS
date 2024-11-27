@@ -796,6 +796,7 @@ INITCONTROLLER_END
         if (tx_tick == 0) {
             doTransmit = true; // trigger transmission
             crsf.TelemetryStart();
+            whileTransmit.Trigger();
         }
 
         link_task_tick_ms();
@@ -846,7 +847,6 @@ INITCONTROLLER_END
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts(">");)
-        whileTransmit.Trigger();
         break;
 
     case LINK_STATE_RECEIVE:
