@@ -668,6 +668,7 @@ uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
 uint16_t tx_tick;
+bool isInTimeGuard;
 bool doPreTransmit;
 bool doTransmit;
 
@@ -722,6 +723,7 @@ RESTARTCONTROLLER
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
 
     tx_tick = 0;
+    isInTimeGuard = false;
     doPreTransmit = false;
     doTransmit = false;
     link_state = LINK_STATE_IDLE;
@@ -785,6 +787,9 @@ INITCONTROLLER_END
 
         DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
 
+        if (tx_tick == 2) {
+            isInTimeGuard = true; // prevent extra work
+        }
         if (tx_tick == 1) {
             doPreTransmit = true; // trigger next cycle
         }
@@ -832,7 +837,7 @@ INITCONTROLLER_END
 
     case LINK_STATE_TRANSMIT_SEND:
         if (!doTransmit) break;
-        doTransmit = false;
+        doTransmit = isInTimeGuard = false;
         rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -1183,7 +1188,7 @@ IF_IN(
     }
 );
 
-    if (link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
+    if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 
     //-- Do MAVLink & MSP
 
