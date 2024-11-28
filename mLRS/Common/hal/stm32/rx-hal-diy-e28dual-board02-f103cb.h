@@ -75,7 +75,7 @@
 #define SPI_USE_SPI1 // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PB0
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_18MHZ
+#define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB5
 #define SX_DIO1                   IO_PB3
@@ -149,7 +149,7 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PA8
 #define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
-#define SPIB_USE_CLOCKSPEED_18MHZ
+#define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PA4
 #define SX2_DIO1                  IO_PA1
