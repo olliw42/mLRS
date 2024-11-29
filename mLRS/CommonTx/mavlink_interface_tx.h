@@ -66,6 +66,7 @@ class tTxMavlink
     fmav_status_t status_link_in; // status for link in parser
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // status for serial out (ser and ser2) messages
+    void parse_link_in_serial_out(char c);
 
     // fields for ser/ser2 in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
@@ -75,6 +76,7 @@ class tTxMavlink
     uint8_t buf_ser2_in[MAVLINK_BUF_SIZE];
     tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
 #endif
+    void parse_serial_in_link_out(void);
 
     fmav_message_t msg_buf; // temporary working buffer, to not burden stack
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
@@ -207,8 +209,49 @@ void tTxMavlink::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse ser in -> link out
+    parse_serial_in_link_out();
+
+    if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
+        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
+            radio_status_tlast_ms = tnow_ms;
+            inject_radio_status = true;
+        }
+    } else {
+        radio_status_tlast_ms = tnow_ms;
+    }
+
+    if (inject_radio_status) { // && serial.tx_is_empty()) {
+        inject_radio_status = false;
+        send_radio_status();
+        return; // only one per loop
+    }
+
+#ifdef USE_FEATURE_MAVLINK_COMPONENT
+    component_do();
+#endif
+}
+
+
+uint8_t tTxMavlink::Task(void)
+{
+#ifdef USE_FEATURE_MAVLINK_COMPONENT
+    uint8_t task;
+    if (component_task(&task)) {
+        return task;
+    }
+#endif
+
+    task_pending_mask = 0;
+    return TX_TASK_NONE;
+}
+
+
+void tTxMavlink::parse_serial_in_link_out(void)
+{
+fmav_result_t result;
+
+    // parse ser in -> link out
 #ifdef USE_FEATURE_MAVLINKX
-    fmav_result_t result;
 if (!do_router()) {
     // without router, parse ser in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
@@ -281,46 +324,14 @@ if (!do_router()) {
     }
 } // end if(do_router())
 #endif // USE_FEATURE_MAVLINKX
-
-    if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
-        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-            radio_status_tlast_ms = tnow_ms;
-            inject_radio_status = true;
-        }
-    } else {
-        radio_status_tlast_ms = tnow_ms;
-    }
-
-    if (inject_radio_status) { // && serial.tx_is_empty()) {
-        inject_radio_status = false;
-        send_radio_status();
-        return; // only one per loop
-    }
-
-#ifdef USE_FEATURE_MAVLINK_COMPONENT
-    component_do();
-#endif
 }
 
 
-uint8_t tTxMavlink::Task(void)
+void tTxMavlink::parse_link_in_serial_out(char c)
 {
-#ifdef USE_FEATURE_MAVLINK_COMPONENT
-    uint8_t task;
-    if (component_task(&task)) {
-        return task;
-    }
-#endif
+fmav_result_t result;
 
-    task_pending_mask = 0;
-    return TX_TASK_NONE;
-}
-
-
-void tTxMavlink::putc(char c)
-{
     // parse link in -> serial out
-    fmav_result_t result;
 #ifdef USE_FEATURE_MAVLINKX
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
         fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
@@ -395,6 +406,13 @@ void tTxMavlink::send_msg_serial_out(void)
 #ifdef USE_FEATURE_MAVLINKX
     if (ser2) ser2->putbuf(_buf, len);
 #endif
+}
+
+
+void tTxMavlink::putc(char c)
+{
+    // parse link in -> serial out
+    parse_link_in_serial_out(c);
 }
 
 
