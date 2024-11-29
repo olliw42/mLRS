@@ -85,11 +85,11 @@ class tRxMavlink
 
   private:
     void send_msg_serial_out(void);
-    void generate_radio_status(void);
-    void generate_rc_channels_override(void);
-    void generate_radio_rc_channels(void);
-    void generate_radio_link_stats(void);
-    void generate_radio_link_information(void); // not used
+    void send_radio_status(void);
+    void send_rc_channels_override(void);
+    void send_radio_rc_channels(void);
+    void send_radio_link_stats(void);
+    void send_radio_link_information(void); // not used
 
     uint16_t serial_in_available(void);
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
@@ -146,10 +146,10 @@ class tRxMavlink
 
     void handle_msg(fmav_message_t* const msg); // handle messages from the fc
     void handle_cmd(fmav_message_t* const msg);
-    void generate_cmd_ack(void);
+    void send_cmd_ack(void);
 
     // to handle autopilot detection
-    void generate_autopilot_version_request(void);
+    void send_autopilot_version_request(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -308,12 +308,10 @@ void tRxMavlink::Do(void)
         inject_rc_channels = false;
         switch (Setup.Rx.SendRcChannels) {
         case SEND_RC_CHANNELS_RCCHANNELSOVERRIDE:
-            generate_rc_channels_override();
-            send_msg_serial_out();
+            send_rc_channels_override();
             break;
         case SEND_RC_CHANNELS_RADIORCCHANNELS:
-            generate_radio_rc_channels();
-            send_msg_serial_out();
+            send_radio_rc_channels();
             inject_radio_link_stats = true;
             break;
         }
@@ -321,20 +319,17 @@ void tRxMavlink::Do(void)
 
     if (inject_radio_link_stats) { // check available size!?
         inject_radio_link_stats = false;
-        generate_radio_link_stats();
-        send_msg_serial_out();
+        send_radio_link_stats();
     }
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-        generate_radio_status();
-        send_msg_serial_out();
+        send_radio_status();
     }
 
     if (inject_cmd_ack) {
         inject_cmd_ack = false;
-        generate_cmd_ack();
-        send_msg_serial_out();
+        send_cmd_ack();
     }
 
     if (cmd_ack.state == 2 && (tnow_ms - cmd_ack.texe_ms) > 1000) {
@@ -351,8 +346,7 @@ void tRxMavlink::Do(void)
     }
 
     if (autopilot.RequestAutopilotVersion()) {
-        generate_autopilot_version_request();
-        send_msg_serial_out();
+        send_autopilot_version_request();
     }
 }
 
@@ -742,7 +736,7 @@ if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 //-------------------------------------------------------
 
 // see design_decissions.h for details
-void tRxMavlink::generate_radio_status(void)
+void tRxMavlink::send_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
@@ -762,10 +756,12 @@ uint8_t rssi, remrssi, txbuf, noise;
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_rc_channels_override(void)
+void tRxMavlink::send_rc_channels_override(void)
 {
     fmav_msg_rc_channels_override_pack(
         &msg_serial_out,
@@ -779,10 +775,12 @@ void tRxMavlink::generate_rc_channels_override(void)
         // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
         // uint16_t chan17_raw, uint16_t chan18_raw,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_radio_rc_channels(void)
+void tRxMavlink::send_radio_rc_channels(void)
 {
 int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 32
 
@@ -803,10 +801,12 @@ int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
         //uint32_t time_last_update_ms, uint16_t flags,
         //uint8_t count, const int16_t* channels,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_radio_link_stats(void)
+void tRxMavlink::send_radio_link_stats(void)
 {
 uint8_t flags, rx_rssi1, rx_rssi2;
 int8_t rx_snr1, rx_snr2;
@@ -879,11 +879,13 @@ int8_t rx_snr1, rx_snr2;
         //uint8_t rx_receive_antenna, uint8_t rx_transmit_antenna,
         //uint8_t tx_receive_antenna, uint8_t tx_transmit_antenna,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
 // not used
-void tRxMavlink::generate_radio_link_information(void)
+void tRxMavlink::send_radio_link_information(void)
 {
     uint16_t tx_ser_data_rate = 0; // ignore/unknown
     uint16_t rx_ser_data_rate = 0; // ignore/unknown
@@ -926,10 +928,12 @@ void tRxMavlink::generate_radio_link_information(void)
         //uint16_t tx_ser_data_rate, uint16_t rx_ser_data_rate,
         //uint8_t tx_receive_sensitivity, uint8_t rx_receive_sensitivity,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_cmd_ack(void)
+void tRxMavlink::send_cmd_ack(void)
 {
     uint8_t result = MAV_RESULT_ACCEPTED;
     if (cmd_ack.command == MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN) {
@@ -948,10 +952,12 @@ void tRxMavlink::generate_cmd_ack(void)
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_autopilot_version_request(void)
+void tRxMavlink::send_autopilot_version_request(void)
 {
     fmav_msg_command_long_pack(
         &msg_serial_out,
@@ -964,6 +970,8 @@ void tRxMavlink::generate_autopilot_version_request(void)
         //uint16_t command, uint8_t confirmation,
         //float param1, float param2, float param3, float param4, float param5, float param6, float param7,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 

@@ -1027,15 +1027,15 @@ CHECKRANGE(len,258);
             } else
             if (c == 0b01) { // 01
                 code = MAVLINKX_CODE_65_190;
-            } else
+            } else // 00
             if (_fmavX_decode_get_bits(&c, len, 1)) {
                 if (c == 0b0) { // 000
                     code = MAVLINKX_CODE_0;
-                } else
+                } else // 001
                 if (_fmavX_decode_get_bits(&c, len, 1)) {
                     if (c == 0b0) { // 0010
                         code = MAVLINKX_CODE_255;
-                    } else
+                    } else // 0011
                     if (_fmavX_decode_get_bits(&c, len, 1)) {
                         if (c == 0b0) { // 00110
                             code = MAVLINKX_CODE_0_RLE;
