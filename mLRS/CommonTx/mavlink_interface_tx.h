@@ -212,7 +212,7 @@ void tTxMavlink::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse link in -> serial out, do it before parse_serial_in_link_out()
-    //parse_link_in_serial_out();
+    parse_link_in_serial_out();
 
     // parse ser in -> link out
     parse_serial_in_link_out();
@@ -426,7 +426,6 @@ void tTxMavlink::send_msg_serial_out(void)
 void tTxMavlink::putc(char c)
 {
     fifo_link_in.Put(c);
-    parse_link_in_serial_out();
 }
 
 
