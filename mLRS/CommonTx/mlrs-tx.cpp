@@ -664,13 +664,13 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 // MAIN routine
 //*******************************************************
 
-uint16_t tick_1hz;
-uint16_t tick_1hz_commensurate;
-
+uint16_t doSysTask2;
 uint16_t tx_tick;
 bool isInTimeGuard;
 bool doPreTransmit;
 bool doTransmit;
+uint16_t tick_1hz;
+uint16_t tick_1hz_commensurate;
 
 uint16_t link_state;
 uint8_t connect_state;
@@ -762,6 +762,7 @@ RESTARTCONTROLLER
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
     doSysTask = 0; // helps in avoiding too short first loop
+    doSysTask2 = 0;
 INITCONTROLLER_END
 
     //-- SysTask handling
@@ -773,16 +774,6 @@ INITCONTROLLER_END
 
         if (connect_tmo_cnt) {
             connect_tmo_cnt--;
-        }
-
-        leds.Tick_ms(connected());
-
-        DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
-
-        if (!tick_1hz) {
-            if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                buzzer.BeepLQ(stats.received_LQ_rc);
-            }
         }
 
         DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
@@ -801,8 +792,23 @@ INITCONTROLLER_END
 
         link_task_tick_ms();
 
+        if (!doTransmit) doSysTask2++;
+    }
+    if (doSysTask2) {
+        doSysTask2--;
+
+        leds.Tick_ms(connected()); // can take long
+
+        DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
+
+        if (!tick_1hz) {
+            if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+                buzzer.BeepLQ(stats.received_LQ_rc);
+            }
+        }
+
         bind.Tick_ms();
-        disp.Tick_ms();
+        disp.Tick_ms(); // can take long
         fan.Tick_ms();
 
         if (!tick_1hz) {

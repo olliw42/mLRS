@@ -66,7 +66,8 @@ class tTxMavlink
     fmav_status_t status_link_in; // status for link in parser
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // status for serial out (ser and ser2) messages
-    void parse_link_in_serial_out(char c);
+    tFifo<char,512> fifo_link_in; // size ??? in principle should need to hold only one OTA payload
+    void parse_link_in_serial_out(void);
 
     // fields for ser/ser2 in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
@@ -143,6 +144,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 
     status_link_in = {};
     status_serial_out = {};
+    fifo_link_in.Init();
 
 #ifdef USE_FEATURE_MAVLINKX
     fmavX_init();
@@ -200,6 +202,7 @@ void tTxMavlink::Do(void)
     if (!connected_and_rx_setup_available()) {
         //Init();
         radio_status_tlast_ms = tnow_ms;
+        fifo_link_in.Flush();
 #ifdef USE_FEATURE_MAVLINKX
         fifo_link_out.Flush();
 #endif
@@ -207,6 +210,9 @@ void tTxMavlink::Do(void)
     }
 
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+
+    // parse link in -> serial out, do it before parse_serial_in_link_out()
+    //parse_link_in_serial_out();
 
     // parse ser in -> link out
     parse_serial_in_link_out();
@@ -327,9 +333,12 @@ if (!do_router()) {
 }
 
 
-void tTxMavlink::parse_link_in_serial_out(char c)
+void tTxMavlink::parse_link_in_serial_out(void)
 {
 fmav_result_t result;
+
+while (fifo_link_in.Available()) {
+    char c = fifo_link_in.Get();
 
     // parse link in -> serial out
 #ifdef USE_FEATURE_MAVLINKX
@@ -369,13 +378,18 @@ if (!do_router()) {
         // we also want to capture it to extract some info
         handle_msg_serial_out(&msg_buf);
 
-#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLEDx
 // test if _buf = buf_link_in
 uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf); // _buf should be equal buf_link_in !?!
 if (len != result.frame_len) while(1){}
 for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1){}
 #endif
+
+        // don't jump out early here, seems to be important to do all
+        //return; // do only one message per loop
     }
+
+} // while (fifo_link_in.Available())
 }
 
 
@@ -411,8 +425,8 @@ void tTxMavlink::send_msg_serial_out(void)
 
 void tTxMavlink::putc(char c)
 {
-    // parse link in -> serial out
-    parse_link_in_serial_out(c);
+    fifo_link_in.Put(c);
+    parse_link_in_serial_out();
 }
 
 
