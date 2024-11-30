@@ -665,10 +665,12 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 //*******************************************************
 
 uint16_t doSysTask2;
+
 uint16_t tx_tick;
 bool isInTimeGuard;
 bool doPreTransmit;
-bool doTransmit;
+uint16_t pretransmit_tstamp_us;
+
 uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
@@ -725,7 +727,7 @@ RESTARTCONTROLLER
     tx_tick = 0;
     isInTimeGuard = false;
     doPreTransmit = false;
-    doTransmit = false;
+    pretransmit_tstamp_us = 0;
     link_state = LINK_STATE_IDLE;
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
@@ -783,16 +785,16 @@ INITCONTROLLER_END
         }
         if (tx_tick == 1) {
             doPreTransmit = true; // trigger next cycle
+            pretransmit_tstamp_us = micros16();
         }
         if (tx_tick == 0) {
-            doTransmit = true; // trigger transmission
-            crsf.TelemetryStart();
-            whileTransmit.Trigger();
+//            crsf.TelemetryStart();
+//            whileTransmit.Trigger();
         }
 
         link_task_tick_ms();
 
-        if (!doTransmit) doSysTask2++;
+        if (!doPreTransmit) doSysTask2++;
     }
     if (doSysTask2) {
         doSysTask2--;
@@ -842,9 +844,10 @@ INITCONTROLLER_END
         DBG_MAIN_SLIM(dbg.puts("\nt");)
         break;
 
-    case LINK_STATE_TRANSMIT_SEND:
-        if (!doTransmit) break;
-        doTransmit = isInTimeGuard = false;
+    case LINK_STATE_TRANSMIT_SEND: {
+        uint16_t dt = micros16() - pretransmit_tstamp_us;
+        if (dt < 500) break;
+        isInTimeGuard = false;
         rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
@@ -853,7 +856,9 @@ INITCONTROLLER_END
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts(">");)
-        break;
+        crsf.TelemetryStart();
+        whileTransmit.Trigger();
+        break; }
 
     case LINK_STATE_RECEIVE:
         IF_ANTENNA1(sx.SetToRx(0));
