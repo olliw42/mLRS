@@ -123,6 +123,8 @@
 #define SX_DIO_EXTI_IRQHandler        EXTI3_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#define SX_USE_REGULATOR_MODE_DCDC
+
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -194,6 +196,8 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_DIO_EXTI_IRQn             EXTI1_IRQn
 #define SX2_DIO_EXTI_IRQHandler       EXTI1_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
+
+#define SX2_USE_REGULATOR_MODE_DCDC
 
 void sx2_init_gpio(void)
 {
