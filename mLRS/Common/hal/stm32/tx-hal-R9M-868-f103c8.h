@@ -68,6 +68,7 @@
 #define UARTE_RXBUFSIZE           512
 
 #define SWUART_USE_TIM4 // debug // goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
+#define SWUART_INVERTED // uninvert JR Pin2
 #define SWUART_TX_IO              IO_PA2
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX
