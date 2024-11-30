@@ -192,6 +192,51 @@ tSerial2Port serial2;
 tComPort comport;
 #endif
 
+// Perf Mon time statistics for up to PM_NUM_B pairs of measurement points
+#ifdef USE_DEBUG
+#define PM_NUM_B 10
+uint64_t PM_start[PM_NUM_B];
+uint64_t PM_total[PM_NUM_B];
+uint64_t PM_last_report[PM_NUM_B];
+uint32_t PM_min[PM_NUM_B];
+uint32_t PM_max[PM_NUM_B];
+uint32_t PM_count[PM_NUM_B];
+inline void PM_START(int block) {
+    PM_start[block] = micros64();
+}
+inline void PM_END(int block, uint32_t report_period) {
+    uint64_t PM_time = micros64();
+    uint32_t elapsed = PM_time - PM_start[block];
+    if (PM_count[block] == 0) {
+        PM_total[block] = PM_max[block] = PM_min[block] = elapsed;
+    } else {
+        PM_total[block] += elapsed;
+        if (elapsed < PM_min[block]) PM_min[block] = elapsed;
+        if (elapsed > PM_max[block]) PM_max[block] = elapsed;
+    }    
+    PM_count[block] ++;
+    if (PM_time - PM_last_report[block] >= report_period) {
+        dbg.puts("PM[");
+        dbg.puts(u16toBCD_s(block)); dbg.puts("]-> ");
+        dbg.puts(u16toBCD_s(PM_total[block]));
+        dbg.puts("/");
+        dbg.puts(u16toBCD_s(PM_count[block]));
+        dbg.puts(" ");
+        dbg.puts(u16toBCD_s(PM_min[block]));
+        dbg.puts(" ");
+        dbg.puts(u16toBCD_s(PM_max[block]));
+        dbg.puts("\r\n");
+        PM_count[block] = 0;
+        PM_last_report[block] = PM_time;
+    }
+    PM_start[block] = PM_time; // handy when only PM_END is used
+}
+#else
+inline void PM_START(int block) {
+}
+inline void PM_END(int block, uint32_t report_period) {
+}
+#endif
 tRcData rcData;
 
 #ifdef DEVICE_IS_RECEIVER
