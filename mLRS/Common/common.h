@@ -196,17 +196,18 @@ tComPort comport;
 #ifdef USE_DEBUG
 #define PM_NUM_B 10
 uint64_t PM_start[PM_NUM_B];
-uint64_t PM_total[PM_NUM_B];
 uint64_t PM_last_report[PM_NUM_B];
+uint32_t PM_total[PM_NUM_B];
 uint32_t PM_min[PM_NUM_B];
 uint32_t PM_max[PM_NUM_B];
 uint32_t PM_count[PM_NUM_B];
 inline void PM_START(int block) {
     PM_start[block] = micros64();
 }
-inline void PM_END(int block, uint32_t report_period) {
+inline void PM_END(int block, uint32_t report_period, bool cont = false) {
+    if (!cont && PM_start[block] == 0) return; // no end without start
     uint64_t PM_time = micros64();
-    uint32_t elapsed = PM_time - PM_start[block];
+    uint64_t elapsed = PM_time - PM_start[block];
     if (PM_count[block] == 0) {
         PM_total[block] = PM_max[block] = PM_min[block] = elapsed;
     } else {
@@ -216,11 +217,11 @@ inline void PM_END(int block, uint32_t report_period) {
     }    
     PM_count[block] ++;
     if (PM_time - PM_last_report[block] >= report_period) {
-        dbg.puts("PM[");
-        dbg.puts(u16toBCD_s(block)); dbg.puts("]-> ");
-        dbg.puts(u16toBCD_s(PM_total[block]));
+        dbg.puts("[");
+        dbg.puts(u8toBCD_s(block)); dbg.puts("] ");
+        dbg.puts(u32toBCD_s(PM_total[block]));
         dbg.puts("/");
-        dbg.puts(u16toBCD_s(PM_count[block]));
+        dbg.puts(u32toBCD_s(PM_count[block]));
         dbg.puts(" ");
         dbg.puts(u16toBCD_s(PM_min[block]));
         dbg.puts(" ");
@@ -229,7 +230,10 @@ inline void PM_END(int block, uint32_t report_period) {
         PM_count[block] = 0;
         PM_last_report[block] = PM_time;
     }
-    PM_start[block] = PM_time; // handy when only PM_END is used
+    if (cont)
+        PM_start[block] = micros64();
+    else
+        PM_start[block] = 0; // no end without start
 }
 #else
 inline void PM_START(int block) {

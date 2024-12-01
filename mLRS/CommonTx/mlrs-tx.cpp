@@ -769,6 +769,10 @@ INITCONTROLLER_END
 
     //-- SysTask handling
 
+    PM_START(3); // measure interrupt and PM overhead
+    PM_END(2, 10000000, true);
+    PM_END(3, 10000000);
+    PM_END(9, 10000000);
     if (doSysTask) {
         // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
         // the commands below must not be sensitive to strict ms timing
@@ -782,12 +786,19 @@ INITCONTROLLER_END
 
         if (tx_tick == 2) {
             isInTimeGuard = true; // prevent extra work
+            PM_START(5);
         }
         if (tx_tick == 1) {
             doPreTransmit = true; // trigger next cycle
             pretransmit_tstamp_us = micros16();
+            PM_END(5, 10000000);
+            PM_START(9);
+            PM_START(0);
+            PM_START(4);
+            PM_START(6);
         }
         if (tx_tick == 0) {
+            PM_END(4, 10000000);
 //            crsf.TelemetryStart();
 //            whileTransmit.Trigger();
         }
@@ -839,13 +850,17 @@ INITCONTROLLER_END
         break;
 
     case LINK_STATE_TRANSMIT:
+        PM_END(0, 10000000);
+        PM_START(1);
         do_transmit_prepare(tdiversity.Antenna());
+        PM_END(1, 10000000);
         link_state = LINK_STATE_TRANSMIT_SEND;
         DBG_MAIN_SLIM(dbg.puts("\nt");)
         break;
 
     case LINK_STATE_TRANSMIT_SEND: {
         uint16_t dt = micros16() - pretransmit_tstamp_us;
+        PM_END(6, 10000000);
         if (dt < 500) break;
         isInTimeGuard = false;
         rfpower.Update();
