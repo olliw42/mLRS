@@ -783,7 +783,7 @@ INITCONTROLLER_END
 
         bind.Tick_ms();
         disp.Tick_ms();
-        fan.Tick_ms();
+        fan.Tick_ms(sx.RfPower_dbm());
 
         if (!tick_1hz) {
             dbg.puts(".");
