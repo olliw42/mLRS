@@ -35,7 +35,7 @@ class tFan
     void Init(void);
 
     void SetPower(int8_t power_dbm);
-    void Tick_ms(int8_t power_dbm);
+    void Tick_ms(void);
 
   private:
     bool initialized;
@@ -63,7 +63,7 @@ void tFan::SetPower(int8_t power_dbm)
 }
 
 
-void tFan::Tick_ms(int8_t power_dbm)
+void tFan::Tick_ms(void)
 {
 #ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
     int16_t temp_dC = fan_tempsensor_read_dC();
@@ -75,16 +75,11 @@ void tFan::Tick_ms(int8_t power_dbm)
         fan_off();
     }
 #endif
-
-#ifdef DEVICE_HAS_FAN_ONOFF
-    fan_set_power(power_dbm); // when using switchable power
-#endif
 }
 
 
 #endif // DEVICE_HAS_FAN
 
 #endif // FAN_H
-
 
 
