@@ -599,6 +599,7 @@ INITCONTROLLER_END
 
         if (!connect_occured_once) bind.AutoBind();
         bind.Tick_ms();
+        fan.SetPower(sx.RfPower_dbm());
         fan.Tick_ms();
         dronecan.Tick_ms();
 
