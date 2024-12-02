@@ -235,8 +235,8 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
 
     while (1) {
 
-        if (doSysTask) {
-            doSysTask = 0;
+        if (doSysTask != doneSysTask) {
+            doneSysTask++;
             leds.TickPassthrough_ms();
         }
 
@@ -329,8 +329,8 @@ void tTxEspWifiBridge::passthrough_do(void)
     com->flush();
 
     while (1) {
-        if (doSysTask) {
-            doSysTask = 0;
+        if (doSysTask != doneSysTask) {
+            doneSysTask++;
             leds.TickPassthrough_ms();
         }
 

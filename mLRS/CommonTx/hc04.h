@@ -123,8 +123,8 @@ void tTxHc04Bridge::passthrough_do(void)
     disp.DrawNotify("HC04\nPASSTHRU");
 
     while (1) {
-        if (doSysTask) {
-            doSysTask = 0;
+        if (doSysTask != doneSysTask) {
+            doneSysTask++;
             leds.TickPassthrough_ms();
         }
 
