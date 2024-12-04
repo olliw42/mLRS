@@ -27,11 +27,10 @@ void resetSysTask()
 
 volatile bool doSysTask()
 {
-    if (uwTick != doSysTask_done)
-        {
-            doSysTask_done++;
-            return true;
-        }
+    if (uwTick != doSysTask_done) {
+        doSysTask_done++;
+        return true;
+    }
     return false;
 }
 
