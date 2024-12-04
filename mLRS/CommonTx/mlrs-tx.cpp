@@ -748,15 +748,14 @@ RESTARTCONTROLLER
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
-    doneSysTask = doSysTask; // helps in avoiding too short first loop
+    resetSysTask(); // helps in avoiding too short first loop
 INITCONTROLLER_END
 
     //-- SysTask handling
 
-    if (doSysTask != doneSysTask) {
+    if (doSysTask()) {
         // when we do long tasks, like display transfer, we miss ticks, so we need to catch up
         // the commands below must not be sensitive to strict ms timing
-        doneSysTask++;
 
         if (connect_tmo_cnt) {
             connect_tmo_cnt--;

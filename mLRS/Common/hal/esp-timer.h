@@ -17,17 +17,28 @@
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
 
-// Two variables are required to avoid race with HAL_IncTick() when tasks may take longer than one tick
-volatile uint32_t doSysTask = 0; // Only changed in ISR; incremented to signal tick
-uint32_t doneSysTask = 0; // Never changed in ISR; incremented when (doSysTask != doneSysTask)
+// Two variables allow to avoid race with HAL_IncTick() when tasks may take longer than one tick
+uint32_t doSysTask_done = 0; // Never changed in ISR; incremented when (uwTick != doSysTask_done)
+volatile uint32_t uwTick = 0; // Only changed in ISR; incremented to signal tick
 
-volatile uint32_t uwTick = 0;
+void resetSysTask()
+{
+    doSysTask_done = uwTick;
+}
 
+volatile bool doSysTask()
+{
+    if (uwTick != doSysTask_done)
+        {
+            doSysTask_done++;
+            return true;
+        }
+    return false;
+}
 
 IRAM_ATTR void HAL_IncTick(void)
 {
-    uwTick += 1;
-    doSysTask++;
+    uwTick++;
 }
 
 
@@ -111,11 +122,10 @@ uint16_t micros16(void)
 
 void timer_init(void)
 {
-    doSysTask = 0;
-    doneSysTask = 0;
     uwTick = 0;
     systick_millis_init();
     micros_init();
+    resetSysTask();
 }
 
 
