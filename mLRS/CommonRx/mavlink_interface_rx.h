@@ -100,6 +100,7 @@ class tRxMavlink
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding, is used only momentarily/locally
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
@@ -109,6 +110,7 @@ class tRxMavlink
     tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
     uint32_t bytes_parser_in; // bytes in the parser
 #endif
+    void parse_serial_in_link_out(void);
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     uint32_t radio_status_tlast_ms;
@@ -246,37 +248,7 @@ void tRxMavlink::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
-#ifdef USE_FEATURE_MAVLINKX
-    fmav_result_t result;
-    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
-        while (serial.available()) {
-            char c = serial.getc();
-            bytes_parser_in++; // memorize it is still in processing
-            fmav_parse_and_check_to_frame_buf(&result, buf_serial_in, &status_serial_in, c);
-            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-
-                // TODO: this could be be done more efficiently by not going via msg_link_out
-                // but by directly going buf_serial_in -> _buf
-
-                fmav_frame_buf_to_msg(&msg_link_out, &result, buf_serial_in); // requires RESULT_OK
-
-                uint16_t len;
-                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-                    len = fmavX_msg_to_frame_bufX(_buf, &msg_link_out); // X frame now in _buf
-                } else {
-                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-                }
-
-                fifo_link_out.PutBuf(_buf, len);
-                bytes_parser_in = 0;
-
-                handle_msg(&msg_link_out);
-
-                break; // give the loop a chance before handling a further message
-            }
-        }
-    }
-#endif
+    parse_serial_in_link_out();
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
@@ -365,7 +337,44 @@ typedef enum {
 } MAVFTP_OPCODE_ENUM;
 
 
-void tRxMavlink::putc(char c)
+void tRxMavlink::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
+#ifdef USE_FEATURE_MAVLINKX
+    fmav_result_t result;
+    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
+        while (serial.available()) {
+            char c = serial.getc();
+            bytes_parser_in++; // memorize it is still in processing
+            fmav_parse_and_check_to_frame_buf(&result, buf_serial_in, &status_serial_in, c);
+            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+
+                // TODO: this could be be done more efficiently by not going via msg_link_out
+                // but by directly going buf_serial_in -> _buf
+
+                fmav_frame_buf_to_msg(&msg_link_out, &result, buf_serial_in); // requires RESULT_OK
+
+                uint16_t len;
+                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                    len = fmavX_msg_to_frame_bufX(_buf, &msg_link_out); // X frame now in _buf
+                } else {
+                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+                }
+
+                fifo_link_out.PutBuf(_buf, len);
+                bytes_parser_in = 0;
+
+                handle_msg(&msg_link_out);
+
+                break; // give the loop a chance before handling a further message
+            }
+        }
+    }
+#endif
+}
+
+
+void tRxMavlink::parse_link_in_serial_out(char c)
 {
     // parse link in -> serial out
     fmav_result_t result;
@@ -435,6 +444,20 @@ void tRxMavlink::putc(char c)
 }
 
 
+void tRxMavlink::send_msg_serial_out(void)
+{
+    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMavlink::putc(char c)
+{
+    parse_link_in_serial_out(c);
+}
+
+
 bool tRxMavlink::available(void)
 {
 #ifdef USE_FEATURE_MAVLINKX
@@ -464,14 +487,6 @@ void tRxMavlink::flush(void)
     fifo_link_out.Flush();
 #endif
     serial.flush();
-}
-
-
-void tRxMavlink::send_msg_serial_out(void)
-{
-    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
-
-    serial.putbuf(_buf, len);
 }
 
 
