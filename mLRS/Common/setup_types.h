@@ -504,6 +504,7 @@ typedef struct
     uint16_t frame_rate_hz;
     uint16_t connect_tmo_systicks;
     uint16_t connect_listen_hop_cnt;
+    uint8_t connect_sync_cnt_max;
 
     uint8_t Diversity; // snapshot of Setup's Diversity at startup
     bool ReceiveUseAntenna1;

@@ -801,7 +801,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         // when in listen, slowly loop through frequencies
         if (connect_state == CONNECT_STATE_LISTEN) {
             connect_listen_cnt++;
-            if (connect_listen_cnt >= CONNECT_LISTEN_HOP_CNT) {
+            uint8_t connect_sync_cnt_max = CONNECT_SYNC_CNT;
+            if (!connect_occured_once && (stats.GetLastRssi() > -30)) {
+                connect_sync_cnt_max = Config.connect_sync_cnt_max;
+            }
+            if (connect_sync_cnt >= connect_sync_cnt_max) {
                 fhss.HopToNext();
                 connect_listen_cnt = 0;
                 link_state = LINK_STATE_RECEIVE; // switch back to RX

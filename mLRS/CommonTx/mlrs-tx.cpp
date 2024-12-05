@@ -994,7 +994,11 @@ IF_SX2(
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
-                if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
+                uint8_t connect_sync_cnt_max = CONNECT_SYNC_CNT;
+                if (!connect_occured_once && (stats.GetLastRssi() > -30)) {
+                    connect_sync_cnt_max = Config.connect_sync_cnt_max;
+                }
+                if (connect_sync_cnt >= connect_sync_cnt_max) {
                     if (!SetupMetaData.rx_available && !bind.IsInBind()) {
                         // should not have happen, but does very occasionally happen, so let's cope with
                         // we must have gotten it at least once, on first connect, since we need it

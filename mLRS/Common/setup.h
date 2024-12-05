@@ -804,6 +804,13 @@ void setup_configure_config(uint8_t config_id)
     Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
     Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
 
+    if (Config.Fhss.Num >= Config.Fhss2.Num) {
+        Config.connect_sync_cnt_max = Config.Fhss.Num / 2;
+    } else {
+        Config.connect_sync_cnt_max = Config.Fhss2.Num / 2;
+    }
+    if (Config.connect_sync_cnt_max < CONNECT_SYNC_CNT) Config.connect_sync_cnt_max = CONNECT_SYNC_CNT;
+
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
     //-- Serial
