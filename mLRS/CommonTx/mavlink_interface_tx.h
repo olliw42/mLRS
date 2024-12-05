@@ -254,10 +254,10 @@ uint8_t tTxMavlink::Task(void)
 
 void tTxMavlink::parse_serial_in_link_out(void)
 {
-fmav_result_t result;
-
     // parse ser in -> link out
 #ifdef USE_FEATURE_MAVLINKX
+    fmav_result_t result;
+
 if (!do_router()) {
     // without router, parse ser in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
