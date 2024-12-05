@@ -224,7 +224,6 @@ void tBindBase::do_transmit(uint8_t antenna)
     txBindFrame.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
 }
 
 

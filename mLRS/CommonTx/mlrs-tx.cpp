@@ -603,7 +603,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 }
 
 
-void do_transmit(uint8_t antenna) // we send a TX frame to receiver
+void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
 {
     if (bind.IsInBind()) {
         bind.do_transmit(antenna);
@@ -613,6 +613,15 @@ void do_transmit(uint8_t antenna) // we send a TX frame to receiver
     stats.transmit_seq_no++;
 
     prepare_transmit_frame(antenna);
+}
+
+
+void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
+{
+    if (bind.IsInBind()) {
+       sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+       return;
+    }
 
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
 }
@@ -655,11 +664,18 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 // MAIN routine
 //*******************************************************
 
-uint16_t tick_1hz;
-
+// the tx transmit needs to be jitter free, much less than the receiver's 1 ms gap
+// the strategy is
+// - block hard work one a first tx_tick, to ensure the next tx_tick comes in time
+// - start a timer of 750 us, and do the preparation work for the next transmit frame
+// - transmit
 uint16_t tx_tick;
-uint16_t tick_1hz_commensurate;
+bool isInTimeGuard;
 bool doPreTransmit;
+uint16_t pretransmit_tstamp_us;
+
+uint16_t tick_1hz;
+uint16_t tick_1hz_commensurate;
 
 uint16_t link_state;
 uint8_t connect_state;
@@ -712,7 +728,9 @@ RESTARTCONTROLLER
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
 
     tx_tick = 0;
+    isInTimeGuard = false;
     doPreTransmit = false;
+    pretransmit_tstamp_us = 0;
     link_state = LINK_STATE_IDLE;
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
@@ -762,47 +780,52 @@ INITCONTROLLER_END
             connect_tmo_cnt--;
         }
 
-        leds.Tick_ms(connected());
-
-        DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
-
-        if (!tick_1hz) {
-            if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                buzzer.BeepLQ(stats.received_LQ_rc);
-            }
-        }
-
         DECc(tx_tick, SYSTICK_DELAY_MS(Config.frame_rate_ms));
 
-        if (!tx_tick) {
+        if (tx_tick == 1) {
+            isInTimeGuard = true; // prevent extra work
+        }
+        if (tx_tick == 0) {
             doPreTransmit = true; // trigger next cycle
-            crsf.TelemetryStart();
+            pretransmit_tstamp_us = micros16();
         }
 
         link_task_tick_ms();
 
-        bind.Tick_ms();
-        disp.Tick_ms();
-        fan.SetPower(sx.RfPower_dbm());
-        fan.Tick_ms();
+        if (!doPreTransmit) {
+            leds.Tick_ms(connected()); // can take long
 
-        if (!tick_1hz) {
-            dbg.puts(".");
-/*            dbg.puts("\nTX: ");
-            dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
-            dbg.puts("(");
-            dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-            dbg.puts("),");
-            dbg.puts(u8toBCD_s(stats.received_LQ_rc)); dbg.puts(", ");
+            DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-            dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
-            dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-            dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
+            if (!tick_1hz) {
+                if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+                    buzzer.BeepLQ(stats.received_LQ_rc);
+                }
+            }
 
-            dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-        }
+            bind.Tick_ms();
+            disp.Tick_ms(); // can take long
+            fan.SetPower(sx.RfPower_dbm());
+            fan.Tick_ms();
+
+            if (!tick_1hz) {
+                dbg.puts(".");
+/*                dbg.puts("\nTX: ");
+                dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
+                dbg.puts("(");
+                dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
+                dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
+                dbg.puts("),");
+                dbg.puts(u8toBCD_s(stats.received_LQ_rc)); dbg.puts(", ");
+
+                dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
+                dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
+                dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
+
+                dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
+                dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
+            }
+        } // end of if (!doPreTransmit)
     }
 
     //-- SX handling
@@ -812,16 +835,27 @@ INITCONTROLLER_END
         break;
 
     case LINK_STATE_TRANSMIT:
+        do_transmit_prepare(tdiversity.Antenna());
+        link_state = LINK_STATE_TRANSMIT_SEND;
+        DBG_MAIN_SLIM(dbg.puts("\nt");)
+        break;
+
+    case LINK_STATE_TRANSMIT_SEND: {
+        uint16_t dt = micros16() - pretransmit_tstamp_us;
+        if (dt < 750) break;
+        isInTimeGuard = false;
         rfpower.Update();
         fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq2());
-        do_transmit(tdiversity.Antenna());
+        do_transmit_send(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0;
-        DBG_MAIN_SLIM(dbg.puts("\n>");)
+        DBG_MAIN_SLIM(dbg.puts(">");)
+        // auxiliaries
+        crsf.TelemetryStart();
         whileTransmit.Trigger();
-        break;
+        break; }
 
     case LINK_STATE_RECEIVE:
         IF_ANTENNA1(sx.SetToRx(0));
@@ -1161,6 +1195,8 @@ IF_IN(
         rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
     }
 );
+
+    if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 
     //-- Do MAVLink & MSP
 
