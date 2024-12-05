@@ -45,11 +45,13 @@ class tTxMsp
     // fields for link in -> parser -> serial out
     msp_status_t status_link_in;
     msp_message_t msp_msg_link_in;
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
     tFifo<char,2*512> fifo_link_out; // needs to be at least ??
+    void parse_serial_in_link_out(void);
 
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -94,6 +96,13 @@ void tTxMsp::Do(void)
     if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
+    parse_serial_in_link_out();
+}
+
+
+void tTxMsp::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (ser->available()) {
             char c = ser->getc();
@@ -106,10 +115,8 @@ void tTxMsp::Do(void)
 }
 
 
-void tTxMsp::putc(char c)
+void tTxMsp::parse_link_in_serial_out(char c)
 {
-    if (!ser) return;
-
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
         bool send = true;
@@ -162,6 +169,15 @@ dbg.puts(" ");
 dbg.puts(u8toHEX_s(crc8));
 */
     }
+}
+
+
+void tTxMsp::putc(char c)
+{
+    if (!ser) return;
+
+    // parse link in -> serial out
+    parse_link_in_serial_out(c);
 }
 
 

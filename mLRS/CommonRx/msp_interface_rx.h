@@ -45,11 +45,13 @@ class tRxMsp
     // fields for link in -> parser -> serial out
     msp_status_t status_link_in;
     msp_message_t msp_msg_link_in;
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
     tFifo<char,1024> fifo_link_out; // needs to be at least ??
+    void parse_serial_in_link_out(void);
 
     // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
     tMspSetRawRc rc_channels; // holds the rc data in MSP format
@@ -174,6 +176,63 @@ void tRxMsp::Do(void)
     if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
+    parse_serial_in_link_out();
+
+    // inject radio rc channels
+
+    if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
+        inject_rc_channels = false;
+        send_rc_channels();
+        return;
+    }
+
+    if (inject_rc_link_stats) {
+        inject_rc_link_stats = false;
+        send_rc_link_stats();
+        return;
+    }
+
+    if (inject_rc_info) {
+        inject_rc_info = false;
+        send_rc_info();
+        return;
+    }
+
+    // inject msp requests for telemetry data as needed
+
+    uint32_t tnow_ms = millis32();
+
+    // generate 10 ms ticks
+    bool ticked = false;
+    if ((tnow_ms - tick_tlast_ms) >= 100) {
+        tick_tlast_ms = tnow_ms;
+        ticked = true;
+    }
+
+    // send scheduler
+    if (ticked) {
+//dbg.puts("\nSend ");
+        for (uint8_t n = 0; n < MSP_TELM_COUNT; n++) {
+            if (telm[n].rate == 0) continue; // disabled
+            INCc(telm[n].cnt, telm[n].rate);
+            if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
+                send_request(telm_function[n]);
+//dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
+            }
+        }
+    }
+}
+
+
+void tRxMsp::FrameLost(void)
+{
+    msp_parse_reset(&status_link_in);
+}
+
+
+void tRxMsp::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (serial.available()) {
             char c = serial.getc();
@@ -255,60 +314,10 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
 
         }
     }
-
-    // inject radio rc channels
-
-    if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
-        inject_rc_channels = false;
-        send_rc_channels();
-        return;
-    }
-
-    if (inject_rc_link_stats) {
-        inject_rc_link_stats = false;
-        send_rc_link_stats();
-        return;
-    }
-
-    if (inject_rc_info) {
-        inject_rc_info = false;
-        send_rc_info();
-        return;
-    }
-
-    // inject msp requests for telemetry data as needed
-
-    uint32_t tnow_ms = millis32();
-
-    // generate 10 ms ticks
-    bool ticked = false;
-    if ((tnow_ms - tick_tlast_ms) >= 100) {
-        tick_tlast_ms = tnow_ms;
-        ticked = true;
-    }
-
-    // send scheduler
-    if (ticked) {
-//dbg.puts("\nSend ");
-        for (uint8_t n = 0; n < MSP_TELM_COUNT; n++) {
-            if (telm[n].rate == 0) continue; // disabled
-            INCc(telm[n].cnt, telm[n].rate);
-            if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
-                send_request(telm_function[n]);
-//dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
-            }
-        }
-    }
 }
 
 
-void tRxMsp::FrameLost(void)
-{
-    msp_parse_reset(&status_link_in);
-}
-
-
-void tRxMsp::putc(char c)
+void tRxMsp::parse_link_in_serial_out(char c)
 {
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
@@ -338,6 +347,13 @@ dbg.puts(u8toHEX_s(crc8));
 }
 
 
+void tRxMsp::putc(char c)
+{
+    // parse link in -> serial out
+    parse_link_in_serial_out(c);
+}
+
+
 bool tRxMsp::available(void)
 {
     return fifo_link_out.Available();
@@ -358,6 +374,10 @@ void tRxMsp::flush(void)
     // serial is flushed by caller
 }
 
+
+//-------------------------------------------------------
+// Generate Messages
+//-------------------------------------------------------
 
 void tRxMsp::send_request(uint16_t function)
 {
