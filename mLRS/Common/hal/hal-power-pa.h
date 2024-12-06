@@ -73,7 +73,7 @@ const rfpower_t rfpower_list[] = {
 void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
-        *sx_power = 17;
+        *sx_power = 19;
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
