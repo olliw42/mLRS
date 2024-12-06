@@ -67,14 +67,40 @@ const rfpower_t rfpower_list[] = {
 #if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
 #define POWER_PA_DEFINED
 
-#define POWER_GAIN_DBM            31 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
+#include "../setup_types.h"
+
+// SX1280 power setting can vary from 0 to 31 which corresponds to -18 to 13 dBm
+void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+{
+    if (power_dbm >= POWER_30_DBM) {
+        *sx_power = 17;
+        *actual_power_dbm = 30;
+    } else
+    if (power_dbm >= POWER_27_DBM) {
+        *sx_power = 12;
+        *actual_power_dbm = 27;
+    } else
+    if (power_dbm >= POWER_24_DBM) {
+        *sx_power = 8;
+        *actual_power_dbm = 24;
+    } else
+    if (power_dbm >= POWER_20_DBM) {
+        *sx_power = 4;
+        *actual_power_dbm = 20;
+    } else
+	if (power_dbm >= POWER_17_DBM) {
+		*sx_power = 1;
+		*actual_power_dbm = 17;
+	} else {
+        *sx_power = 0;
+        *actual_power_dbm = 16;
+    }
+}
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
+    { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
