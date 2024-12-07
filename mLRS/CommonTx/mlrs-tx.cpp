@@ -995,8 +995,11 @@ IF_SX2(
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 uint8_t connect_sync_cnt_max = CONNECT_SYNC_CNT;
-                if (!connect_occured_once && (stats.GetLastRssi() > -30)) {
+                if (!connect_occured_once) {
                     connect_sync_cnt_max = Config.connect_sync_cnt_max;
+                    if (stats.GetLastRssi() < -75) {
+                        connect_sync_cnt = 0;
+                    }
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
                     if (!SetupMetaData.rx_available && !bind.IsInBind()) {
