@@ -69,7 +69,7 @@ const rfpower_t rfpower_list[] = {
 
 #include "../setup_types.h"
 
-// SX1280 power setting can vary from 0 to 31 which corresponds to -18 to 13 dBm
+// SX1280 power setting can vary from 0 .. 31 which corresponds to -18 dBm .. 13 dBm
 void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
@@ -114,6 +114,8 @@ const rfpower_t rfpower_list[] = {
 #define POWER2_GAIN_DBM           31 // gain of a PA stage if present
 #define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER2_USE_DEFAULT_RFPOWER_CALC
+
+#error mR24-30 dual band, power2 needs to be worked out!
 
 #endif
 
@@ -170,7 +172,7 @@ const rfpower_t rfpower_list[] = {
 
 #define POWER_USE_PA_CONFIG_10_DBM
 
-// SX126X power setting can vary from -9 .. 22 for -9 dBm ... 22 dBm
+// SX126X power setting can vary from -9 .. 22 which corresponds to -9 dBm .. 22 dBm
 #include "../setup_types.h"
 
 void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)

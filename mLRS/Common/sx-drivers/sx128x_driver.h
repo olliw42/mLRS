@@ -544,8 +544,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+  #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX_DBM);
-#elif POWER_USE_DEFAULT_RFPOWER_CALC
+  #else
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
+  #endif
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
 #else
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm);

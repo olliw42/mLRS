@@ -348,6 +348,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define POWER2_GAIN_DBM           27 // gain of a PA stage if present
 #define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 
 //-- TEST
