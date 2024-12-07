@@ -170,7 +170,7 @@ const rfpower_t rfpower_list[] = {
 #if defined POWER_PA_SE2435L || defined POWER_PA_MATEK_MR900_30 // Matek mR900-30
 #define POWER_PA_DEFINED
 
-#define POWER_USE_PA_CONFIG_10_DBM
+#define SX_USE_PA_CONFIG_10_DBM
 
 // SX126X power setting can vary from -9 .. 22 which corresponds to -9 dBm .. 22 dBm
 #include "../setup_types.h"
