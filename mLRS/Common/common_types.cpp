@@ -367,6 +367,35 @@ uint16_t cvt_power(int8_t power_dbm)
 }
 
 
+//-- modes and so on
+// ATTENTION: must not be longer than FREQUENCY_BAND_STR_LEN, MODE_STR_LEN, w/o terminating NULL character!
+
+void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t len)
+{
+    switch (frequency_band) {
+        case SETUP_FREQUENCY_BAND_2P4_GHZ: strbufstrcpy(s, "2.4G", len); break;
+        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strbufstrcpy(s, "915M", len); break;
+        case SETUP_FREQUENCY_BAND_868_MHZ: strbufstrcpy(s, "868M", len); break;
+        case SETUP_FREQUENCY_BAND_433_MHZ: strbufstrcpy(s, "433M", len); break;
+        case SETUP_FREQUENCY_BAND_70_CM_HAM: strbufstrcpy(s, "70cm", len); break;
+        case SETUP_FREQUENCY_BAND_866_MHZ_IN: strbufstrcpy(s, "866M", len); break;
+        default: strbufstrcpy(s, "?", len);
+    }
+}
+
+void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
+{
+    switch (mode) {
+        case MODE_50HZ: strbufstrcpy(s, "50Hz", len); break;
+        case MODE_31HZ: strbufstrcpy(s, "31Hz", len); break;
+        case MODE_19HZ: strbufstrcpy(s, "19Hz", len); break;
+        case MODE_FLRC_111HZ: strbufstrcpy(s, "FLRC", len); break;
+        case MODE_FSK_50HZ: strbufstrcpy(s, "FSK", len); break;
+        default: strbufstrcpy(s, "?", len);
+    }
+}
+
+
 //-- bind phrase & power & version
 
 bool is_valid_bindphrase_char(char c)

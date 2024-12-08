@@ -452,30 +452,8 @@ tMspCommonSetMspRcInfo payload;
     payload.uplink_tx_power = cvt_power(power_dbm); // WRONG, should be tx power, but to have something we send rx power
     payload.downlink_tx_power = payload.uplink_tx_power;
 
-    char band_str[8]; // needs char[4]
-    char mode_str[8]; // needs char[6]
-
-    switch (Config.FrequencyBand) {
-        case SETUP_FREQUENCY_BAND_2P4_GHZ: strcpy(band_str, "2.4G"); break;
-        case SETUP_FREQUENCY_BAND_915_MHZ_FCC: strcpy(band_str, "915M"); break;
-        case SETUP_FREQUENCY_BAND_868_MHZ: strcpy(band_str, "868M"); break;
-        case SETUP_FREQUENCY_BAND_433_MHZ: strcpy(band_str, "433M"); break;
-        case SETUP_FREQUENCY_BAND_70_CM_HAM: strcpy(band_str, "70cm"); break;
-        case SETUP_FREQUENCY_BAND_866_MHZ_IN: strcpy(band_str, "866M"); break;
-        default: strcpy(band_str, "?");
-    }
-
-    switch (Config.Mode) {
-        case MODE_50HZ: strcpy(mode_str, "50Hz"); break;
-        case MODE_31HZ: strcpy(mode_str, "31Hz"); break;
-        case MODE_19HZ: strcpy(mode_str, "19Hz"); break;
-        case MODE_FLRC_111HZ: strcpy(mode_str, "FLRC"); break;
-        case MODE_FSK_50HZ: strcpy(mode_str, "FSK"); break;
-        default: strcpy(mode_str, "?");
-    }
-
-    strbufstrcpy(payload.band, band_str, sizeof(payload.band));
-    strbufstrcpy(payload.mode, mode_str, sizeof(payload.mode));
+    frequency_band_str_to_strbuf(payload.band, Config.FrequencyBand, sizeof(payload.band));
+    mode_str_to_strbuf(payload.mode, Config.Mode, sizeof(payload.mode));
 
     uint16_t len = msp_generate_v2_frame_buf(
         _buf,

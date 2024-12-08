@@ -171,6 +171,12 @@ uint8_t dronecan_cvt_power(int8_t power_dbm);
 uint16_t cvt_power(int8_t power_dbm);
 
 
+//-- modes and so on
+
+void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t len);
+void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len);
+
+
 //-- bind phrase & power & version
 
 const char bindphrase_chars[] = "abcdefghijklmnopqrstuvwxyz0123456789_#-.";
