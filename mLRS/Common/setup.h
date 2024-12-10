@@ -938,8 +938,9 @@ bool doEEPROMwrite;
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
-            // there would be lots to do but didn't do layout version-ing properly so far
+            // was 335 or lower, there would be lots to do but didn't do layout version-ing properly so far
         } else {
+            // ups, > 10304, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
         }
