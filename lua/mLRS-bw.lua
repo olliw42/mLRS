@@ -291,6 +291,7 @@ local function clearParms()
     DEV_INFO = nil
     DEV_PARM_LIST = nil
     list_idx = 0
+    warned = 0
     parm_idx_current = -1
     DEV_PARM_LIST_error = 0
     DEV_PARM_LIST_complete = false
@@ -377,14 +378,14 @@ local function mb_to_options(payload, pos, len)
     return r
 end
 
-local function mb_to_firmware_u16_int(u16)
+local function mb_to_firmware_int(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
     local patch = bit32.band(u16, 0x003F)
     return major * 10000 + minor * 100 + patch
 end
 
-local function mb_to_firmware_u16_string(u16)
+local function mb_to_firmware_string(u16)
     local major = bit32.rshift(bit32.band(u16, 0xF000), 12)
     local minor = bit32.rshift(bit32.band(u16, 0x0FC0), 6)
     local patch = bit32.band(u16, 0x003F)
@@ -455,32 +456,28 @@ local function doParmLoop()
         end
         if cmd.cmd == MB_CMD_DEV_ITEM_TX then
             DEV_ITEM_TX = cmd
-            DEV_ITEM_TX.version_u16 = mb_to_u16(cmd.payload, 0)
-            DEV_ITEM_TX.setuplayout = mb_to_u16(cmd.payload, 2)
             --DEV_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
-            DEV_ITEM_TX.version_int = mb_to_firmware_u16_int(DEV_ITEM_TX.version_u16)
-            DEV_ITEM_TX.version_str = mb_to_firmware_u16_string(DEV_ITEM_TX.version_u16)
+            DEV_ITEM_TX.version_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 0))
+            DEV_ITEM_TX.setuplayout_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 2))
+            DEV_ITEM_TX.version_str = mb_to_firmware_string(mb_to_u16(cmd.payload, 0))
         elseif cmd.cmd == MB_CMD_DEV_ITEM_RX then
             DEV_ITEM_RX = cmd
-            DEV_ITEM_RX.version_u16 = mb_to_u16(cmd.payload, 0)
-            DEV_ITEM_RX.setuplayout = mb_to_u16(cmd.payload, 2)
             --DEV_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
-            DEV_ITEM_RX.version_int = mb_to_firmware_u16_int(DEV_ITEM_RX.version_u16)
-            DEV_ITEM_RX.version_str = mb_to_firmware_u16_string(DEV_ITEM_RX.version_u16)
+            DEV_ITEM_RX.version_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 0))
+            DEV_ITEM_RX.setuplayout_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 2))
+            DEV_ITEM_RX.version_str = mb_to_firmware_string(mb_to_u16(cmd.payload, 0))
         elseif cmd.cmd == MB_CMD_INFO then
             DEV_INFO = cmd
-            DEV_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
-            -- DEV_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
-            -- DEV_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
-            -- DEV_INFO.LQ_low = 0 -- mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
+            --DEV_INFO.receiver_sensitivity = mb_to_i16(cmd.payload,0)
+            --DEV_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
+            --DEV_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
+            --DEV_INFO.LQ_low = 0 -- mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
             DEV_INFO.tx_power_dbm = mb_to_i8(cmd.payload,3)
             DEV_INFO.rx_power_dbm = mb_to_i8(cmd.payload,4)
             DEV_INFO.rx_available = mb_to_u8_bits(cmd.payload,5,0,0x1)
-            --DEV_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,5,1,0x3)
-            --DEV_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,5,3,0x3)
-            DEV_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
-            DEV_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
-            DEV_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
+            --DEV_INFO.tx_config_id = mb_to_u8(cmd.payload,6)
+            --DEV_INFO.tx_diversity = mb_to_u8_bits(cmd.payload,7,0,0x0F)
+            --DEV_INFO.rx_diversity = mb_to_u8_bits(cmd.payload,7,4,0x0F)
             DEV_INFO.num_parms = mb_to_i8(cmd.payload,8)
             if DEV_INFO.num_parms ~= 0 then Max_Page = math.floor((DEV_INFO.num_parms + 2) / 7); end
         elseif cmd.cmd == MB_CMD_PARM_ITEM then
@@ -570,6 +567,18 @@ local function doParmLoop()
         end
         cmd = nil
     end --for
+    
+    if DEV_ITEM_TX ~= nil and DEV_ITEM_RX ~= nil and connected and warned == 0 and
+           (DEV_ITEM_TX.setuplayout_int > 515 or DEV_ITEM_RX.setuplayout_int > 515) then -- 515 is old 335
+        if DEV_ITEM_TX.setuplayout_int < DEV_ITEM_RX.setuplayout_int then
+            setPopupWTmo("Tx param ver old\nUpdate Tx firmware", 500)
+            warned = 1
+        elseif DEV_ITEM_RX.setuplayout_int < DEV_ITEM_TX.setuplayout_int then
+            setPopupWTmo("Rx param ver old\nUpdate Rx firmware", 500)
+            warned = 1
+        end
+    end
+    
     if DEV_PARM_LIST_error > 0 then
         -- Huston, we have a problem,
         setPopupWTmo("Er("..tostring(DEV_PARM_LIST_error)..")!\nTry Reload", 300)
