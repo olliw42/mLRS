@@ -1035,6 +1035,10 @@ TLIST = [
 #        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
 #        'appendix' : '-oled',
 #    },{
+
+        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
