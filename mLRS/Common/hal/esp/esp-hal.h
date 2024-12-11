@@ -25,6 +25,7 @@
 #include "rx-hal-generic-900-td-pa-esp32.h"
 #endif
 
+
 //-- Generic 868/915 MHz ELRS devices with overlays or other variations
 
 #ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
@@ -53,6 +54,7 @@
 #ifdef RX_ELRS_GENERIC_2400_TD_PA_ESP32
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
+
 
 //-- Generic 2.4 GHz ELRS boards with overlays or other variations
 
@@ -83,7 +85,6 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
-
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
 #include "tx-hal-radiomaster-rp4td-2400-esp32.h"
 #endif
@@ -100,6 +101,14 @@
 #include "tx-hal-radiomaster-bandit-series-900-esp32.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_BANDIT_MICRO_900_ESP32
+#include "rx-hal-radiomaster-bandit-series-900-esp32.h"
+#endif
+
+#ifdef RX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#include "rx-hal-radiomaster-bandit-series-900-esp32.h"
+#endif
+
 
 // -- DIY
 
@@ -110,5 +119,3 @@
 #ifdef RX_DIY_DEV_900_ESP32
 #include "rx-hal-diy-dev-900-esp32.h"
 #endif
-
-
