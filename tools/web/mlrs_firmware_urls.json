@@ -3,7 +3,7 @@
         "uint": 10304,
         "type": "pre-release",
         "commit": "ec7a3827a34fa5d4caa05b107a7711884edea580",
-        "url": "https://github.com/olliw42/mLRS/tree/v1.3.04/firmware"
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3.04-pre-release/firmware"
     },
     "v1.3.02": {
         "uint": 10302,
