@@ -1,0 +1,5 @@
+dronecan==1.0.26
+empy==3.3.4
+pexpect==4.9.0
+ptyprocess==0.7.0
+setuptools==75.6.0
