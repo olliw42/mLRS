@@ -19,7 +19,12 @@
 #define MAVLINKX_CRC8_LOOKUP_TABLE
 #define MAVLINKX_COMPRESSION // compression with O3 costs ca 8 kB flash
 #define MAVLINKX_O3
+#define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
 
+
+#if defined ESP8266 || defined ESP32
+#define MAVLINKX_O3 // esp seem not to work without, at least BetaFpv 1w Micro does not
+#endif
 
 //-------------------------------------------------------
 // MavlinkX
@@ -313,7 +318,7 @@ FASTMAVLINK_FUNCTION_DECORATOR void fmavX_crc8_init(uint8_t* crc)
 // Access Protectors
 //-------------------------------------------------------
 
-#ifdef DEBUG_ENABLED
+#if defined DEBUG_ENABLED && defined MAVLINKX_CHECKRANGE
 #define CHECKRANGE(i,s)   {if((i)>=s) while(1){}}
 #define CHECKRANGEBUF(i)  {if((i)>=296) while(1){}}
 #else
@@ -822,6 +827,8 @@ the last byte all to 1.
 // len_out & out_bit index the next bit position to write to
 void _fmavX_encode_put_bits(uint8_t* const payload_out, uint16_t* const len_out, uint16_t code, uint8_t code_bit_len)
 {
+CHECKRANGE(code_bit_len,14);
+
     uint16_t cur_code_bit = (uint16_t)1 << (code_bit_len - 1);
 
     for (uint8_t i = 0; i < code_bit_len; i++) {
@@ -1003,6 +1010,8 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_o
     fmavx_status.in_pos = 0;
     fmavx_status.in_bit = 0x80;
 
+CHECKRANGE(len,258);
+
     while (1) {
         uint8_t c;
 
@@ -1018,15 +1027,15 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_o
             } else
             if (c == 0b01) { // 01
                 code = MAVLINKX_CODE_65_190;
-            } else
+            } else // 00
             if (_fmavX_decode_get_bits(&c, len, 1)) {
                 if (c == 0b0) { // 000
                     code = MAVLINKX_CODE_0;
-                } else
+                } else // 001
                 if (_fmavX_decode_get_bits(&c, len, 1)) {
                     if (c == 0b0) { // 0010
                         code = MAVLINKX_CODE_255;
-                    } else
+                    } else // 0011
                     if (_fmavX_decode_get_bits(&c, len, 1)) {
                         if (c == 0b0) { // 00110
                             code = MAVLINKX_CODE_0_RLE;
@@ -1074,6 +1083,7 @@ CHECKRANGE(*len_out,256);
                 break;
             case MAVLINKX_CODE_65_190:
                 if (!_fmavX_decode_get_bits(&c, len, 7)) return; // end
+                if (c > 125) return; // invalid token, so just jump out
 CHECKRANGE(*len_out,256);
                 payload_out[(*len_out)++] = c + 65;
                 break;

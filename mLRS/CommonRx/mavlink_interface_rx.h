@@ -60,6 +60,7 @@ class tRxAutoPilot
   private:
     uint8_t autopilot; // this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
     uint32_t flight_sw_version;
+    uint32_t middleware_sw_version;
     uint32_t version;
     uint32_t heartbeat_tlast_ms;
     uint32_t autopilot_version_request_tlast_ms;
@@ -84,11 +85,12 @@ class tRxMavlink
 
   private:
     void send_msg_serial_out(void);
-    void generate_radio_status(void);
-    void generate_rc_channels_override(void);
-    void generate_radio_rc_channels(void);
-    void generate_radio_link_stats(void);
-    void generate_radio_link_information(void); // not used
+    void send_radio_status(void);
+    void send_rc_channels_override(void);
+    void send_radio_rc_channels(void);
+
+    void send_mlrs_radio_link_stats(void);
+    void send_mlrs_radio_link_information(void);
 
     uint16_t serial_in_available(void);
     bool handle_txbuf_ardupilot(uint32_t tnow_ms);
@@ -99,6 +101,7 @@ class tRxMavlink
     uint8_t buf_link_in[MAVLINK_BUF_SIZE]; // buffer for link in parser
     fmav_status_t status_serial_out; // not needed, status_link_in could be used, but clearer so
     fmav_message_t msg_serial_out; // could be avoided by more efficient coding, is used only momentarily/locally
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
 #ifdef USE_FEATURE_MAVLINKX
@@ -108,6 +111,7 @@ class tRxMavlink
     tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
     uint32_t bytes_parser_in; // bytes in the parser
 #endif
+    void parse_serial_in_link_out(void);
 
     // to inject RADIO_STATUS or RADIO_LINK_FLOW_CONTROL
     uint32_t radio_status_tlast_ms;
@@ -133,6 +137,10 @@ class tRxMavlink
     uint32_t rc_channels_tupdated_ms; // time of last update of RC channels values
     bool rc_channels_uptodate;
 
+    uint32_t mlrs_radio_link_stats_tlast_ms;
+    uint32_t radio_link_information_dev_tlast_ms;
+    int8_t radio_link_information_dev_power_dbm_last;
+
     // to handle command PREFLIGHT_REBOOT_SHUTDOWN, START_RX_PAIR and to inject CMD_ACK response
     bool inject_cmd_ack;
     struct {
@@ -145,10 +153,10 @@ class tRxMavlink
 
     void handle_msg(fmav_message_t* const msg); // handle messages from the fc
     void handle_cmd(fmav_message_t* const msg);
-    void generate_cmd_ack(void);
+    void send_cmd_ack(void);
 
     // to handle autopilot detection
-    void generate_autopilot_version_request(void);
+    void send_autopilot_version_request(void);
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -183,6 +191,10 @@ void tRxMavlink::Init(void)
     rc_failsafe = false;
     rc_channels_tupdated_ms = 0;
     rc_channels_uptodate = false;
+
+    mlrs_radio_link_stats_tlast_ms = 0;
+    radio_link_information_dev_tlast_ms = 0;
+    radio_link_information_dev_power_dbm_last = 125;
 
     inject_cmd_ack = false;
     cmd_ack.cmd_src_sysid = 0;
@@ -245,37 +257,7 @@ void tRxMavlink::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
-#ifdef USE_FEATURE_MAVLINKX
-    fmav_result_t result;
-    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
-        while (serial.available()) {
-            char c = serial.getc();
-            bytes_parser_in++; // memorize it is still in processing
-            fmav_parse_and_check_to_frame_buf(&result, buf_serial_in, &status_serial_in, c);
-            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-
-                // TODO: this could be be done more efficiently by not going via msg_link_out
-                // but by directly going buf_serial_in -> _buf
-
-                fmav_frame_buf_to_msg(&msg_link_out, &result, buf_serial_in); // requires RESULT_OK
-
-                uint16_t len;
-                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-                    len = fmavX_msg_to_frame_bufX(_buf, &msg_link_out); // X frame now in _buf
-                } else {
-                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
-                }
-
-                fifo_link_out.PutBuf(_buf, len);
-                bytes_parser_in = 0;
-
-                handle_msg(&msg_link_out);
-
-                break; // give the loop a chance before handling a further message
-            }
-        }
-    }
-#endif
+    parse_serial_in_link_out();
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
@@ -307,12 +289,10 @@ void tRxMavlink::Do(void)
         inject_rc_channels = false;
         switch (Setup.Rx.SendRcChannels) {
         case SEND_RC_CHANNELS_RCCHANNELSOVERRIDE:
-            generate_rc_channels_override();
-            send_msg_serial_out();
+            send_rc_channels_override();
             break;
         case SEND_RC_CHANNELS_RADIORCCHANNELS:
-            generate_radio_rc_channels();
-            send_msg_serial_out();
+            send_radio_rc_channels();
             inject_radio_link_stats = true;
             break;
         }
@@ -320,20 +300,18 @@ void tRxMavlink::Do(void)
 
     if (inject_radio_link_stats) { // check available size!?
         inject_radio_link_stats = false;
-        generate_radio_link_stats();
-        send_msg_serial_out();
+        send_mlrs_radio_link_stats();
+        send_mlrs_radio_link_information();
     }
 
     if (inject_radio_status) { // check available size!?
         inject_radio_status = false;
-        generate_radio_status();
-        send_msg_serial_out();
+        send_radio_status();
     }
 
     if (inject_cmd_ack) {
         inject_cmd_ack = false;
-        generate_cmd_ack();
-        send_msg_serial_out();
+        send_cmd_ack();
     }
 
     if (cmd_ack.state == 2 && (tnow_ms - cmd_ack.texe_ms) > 1000) {
@@ -350,8 +328,7 @@ void tRxMavlink::Do(void)
     }
 
     if (autopilot.RequestAutopilotVersion()) {
-        generate_autopilot_version_request();
-        send_msg_serial_out();
+        send_autopilot_version_request();
     }
 }
 
@@ -367,10 +344,47 @@ void tRxMavlink::FrameLost(void)
 
 typedef enum {
     MAVFTP_OPCODE_OpenFileRO = 4,
-} MAVFTPOPCODEENUM;
+} MAVFTP_OPCODE_ENUM;
 
 
-void tRxMavlink::putc(char c)
+void tRxMavlink::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
+#ifdef USE_FEATURE_MAVLINKX
+    fmav_result_t result;
+    if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
+        while (serial.available()) {
+            char c = serial.getc();
+            bytes_parser_in++; // memorize it is still in processing
+            fmav_parse_and_check_to_frame_buf(&result, buf_serial_in, &status_serial_in, c);
+            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+
+                // TODO: this could be be done more efficiently by not going via msg_link_out
+                // but by directly going buf_serial_in -> _buf
+
+                fmav_frame_buf_to_msg(&msg_link_out, &result, buf_serial_in); // requires RESULT_OK
+
+                uint16_t len;
+                if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+                    len = fmavX_msg_to_frame_bufX(_buf, &msg_link_out); // X frame now in _buf
+                } else {
+                    len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
+                }
+
+                fifo_link_out.PutBuf(_buf, len);
+                bytes_parser_in = 0;
+
+                handle_msg(&msg_link_out);
+
+                break; // give the loop a chance before handling a further message
+            }
+        }
+    }
+#endif
+}
+
+
+void tRxMavlink::parse_link_in_serial_out(char c)
 {
     // parse link in -> serial out
     fmav_result_t result;
@@ -440,6 +454,20 @@ void tRxMavlink::putc(char c)
 }
 
 
+void tRxMavlink::send_msg_serial_out(void)
+{
+    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMavlink::putc(char c)
+{
+    parse_link_in_serial_out(c);
+}
+
+
 bool tRxMavlink::available(void)
 {
 #ifdef USE_FEATURE_MAVLINKX
@@ -469,14 +497,6 @@ void tRxMavlink::flush(void)
     fifo_link_out.Flush();
 #endif
     serial.flush();
-}
-
-
-void tRxMavlink::send_msg_serial_out(void)
-{
-    uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
-
-    serial.putbuf(_buf, len);
 }
 
 
@@ -741,7 +761,7 @@ if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 //-------------------------------------------------------
 
 // see design_decissions.h for details
-void tRxMavlink::generate_radio_status(void)
+void tRxMavlink::send_radio_status(void)
 {
 uint8_t rssi, remrssi, txbuf, noise;
 
@@ -761,10 +781,12 @@ uint8_t rssi, remrssi, txbuf, noise;
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_rc_channels_override(void)
+void tRxMavlink::send_rc_channels_override(void)
 {
     fmav_msg_rc_channels_override_pack(
         &msg_serial_out,
@@ -778,10 +800,12 @@ void tRxMavlink::generate_rc_channels_override(void)
         // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
         // uint16_t chan17_raw, uint16_t chan18_raw,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_radio_rc_channels(void)
+void tRxMavlink::send_radio_rc_channels(void)
 {
 int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 32
 
@@ -802,43 +826,70 @@ int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
         //uint32_t time_last_update_ms, uint16_t flags,
         //uint8_t count, const int16_t* channels,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_radio_link_stats(void)
+#define MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_STATS         208
+#define MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_INFORMATION   209
+
+
+void tRxMavlink::send_mlrs_radio_link_stats(void)
 {
-uint8_t flags, rx_rssi1, rx_rssi2;
+uint16_t flags;
+uint8_t rx_rssi1, rx_rssi2;
 int8_t rx_snr1, rx_snr2;
 
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - mlrs_radio_link_stats_tlast_ms) < 19) return; // don't send too fast
+    mlrs_radio_link_stats_tlast_ms = tnow_ms;
+
     // Rssi are in negative dBm. Values 0..253 corresponds to 0..-253 dBm. 254 = no link connection, 255 = unknown
-    flags = RADIO_LINK_STATS_FLAGS_RSSI_DBM_DEV;
+    flags = MLRS_RADIO_LINK_STATS_FLAGS_RSSI_DBM;
 
     if (USE_ANTENNA1 && USE_ANTENNA2) {
         rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1, connected());
-        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
         rx_snr1 = stats.last_snr1;
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
         rx_snr2 = stats.last_snr2;
     } else if (USE_ANTENNA2) {
-        rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
-        rx_rssi2 = UINT8_MAX; // invalidate so that rx_rssi1 is used
-        rx_snr1 = stats.last_snr2;
-        rx_snr2 = INT8_MAX; // invalidate so that rx_snr1 is used
+        rx_rssi1 = UINT8_MAX; // invalid
+        rx_snr1 = INT8_MAX; // invalid
+        rx_rssi2 = rssi_i8_to_mavradio(stats.last_rssi2, connected());
+        rx_snr2 = stats.last_snr2;
     } else {
         rx_rssi1 = rssi_i8_to_mavradio(stats.last_rssi1, connected());
-        rx_rssi2 = UINT8_MAX;
         rx_snr1 = stats.last_snr1;
-        rx_snr2 = INT8_MAX;
+        rx_rssi2 = UINT8_MAX; // invalid
+        rx_snr2 = INT8_MAX; // invalid
     }
 
-#define MAVLINK_USE_RADIO_LINK_STATS_MLRS
-#ifdef MAVLINK_USE_RADIO_LINK_STATS_MLRS
+    // antenna
+    if (stats.last_antenna == ANTENNA_2) { // rx_receive_antenna
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_RX_RECEIVE_ANTENNA2;
+    }
+    if (stats.last_transmit_antenna == ANTENNA_2) { // rx_transmit_antenna
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_RX_TRANSMIT_ANTENNA2;
+    } else {
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_RX_TRANSMIT_ANTENNA1;
+    }
+
+    if (stats.received_antenna == ANTENNA_2) { // tx_receive_antenna
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_TX_RECEIVE_ANTENNA2;
+    }
+    if (stats.received_transmit_antenna == ANTENNA_2) { // tx_transmit_antenna
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_TX_TRANSMIT_ANTENNA1;
+    } else {
+        flags |= MLRS_RADIO_LINK_STATS_FLAGS_TX_TRANSMIT_ANTENNA2;
+    }
+
+    // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
     float freq2 = fhss.GetCurrFreq2_Hz();
 
-    fmav_msg_radio_link_stats_mlrs_pack(
-#else
-    fmav_msg_radio_link_stats_dev_pack(
-#endif
+#if 0
+    fmav_msg_mlrs_radio_link_stats_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         0, 0, // targets
@@ -850,42 +901,77 @@ int8_t rx_snr1, rx_snr2;
         stats.GetLQ_serial(), // uint8_t rx_LQ_ser
         rx_rssi1, // uint8_t rx_rssi1
         rx_snr1, // int8_t rx_snr1
-        rx_rssi2, // uint8_t rx_rssi2
-        rx_snr2, // int8_t rx_snr2
 
         // tx stats
         (connected()) ? stats.received_LQ_serial : 0, // uint8_t tx_LQ_ser
         rssi_i8_to_mavradio(stats.received_rssi, connected()), // uint8_t tx_rssi1
-        INT8_MAX, // int8_t tx_snr1
-        UINT8_MAX, // uint8_t tx_rssi2, we don't know from which antenna, thus invalidate so that rssi1 is used
-        INT8_MAX, // int8_t tx_snr2, we don't know from which antenna, thus invalidate so that snr1 is used
+        INT8_MAX, // int8_t tx_snr1, we don't know it
 
-        // antenna
-        stats.last_antenna, // uint8_t rx_receive_antenna
-        stats.last_transmit_antenna, // uint8_t rx_transmit_antenna
-        stats.received_antenna, // uint8_t tx_receive_antenna
-        stats.received_transmit_antenna, // uint8_t tx_transmit_antenna
+        // rx stats 2
+        rx_rssi2, // uint8_t rx_rssi2
+        rx_snr2, // int8_t rx_snr2
 
-#ifdef MAVLINK_USE_RADIO_LINK_STATS_MLRS
+        // tx stats 2
+        UINT8_MAX, // uint8_t tx_rssi2, we don't know it
+        INT8_MAX, // int8_t tx_snr2, we don't know it
+
         // frequencies in Hz
         freq1, freq2,
-#endif
 
         //uint8_t target_system, uint8_t target_component,
-        //uint8_t flags,
-        //uint8_t rx_LQ_rc, uint8_t rx_LQ_ser, uint8_t rx_rssi1, int8_t rx_snr1, uint8_t rx_rssi2, int8_t rx_snr2,
-        //uint8_t tx_LQ_ser, uint8_t tx_rssi1, int8_t tx_snr1, uint8_t tx_rssi2, int8_t tx_snr2,
-        //uint8_t rx_receive_antenna, uint8_t rx_transmit_antenna,
-        //uint8_t tx_receive_antenna, uint8_t tx_transmit_antenna,
+        //uint16_t flags,
+        //uint8_t rx_LQ_rc, uint8_t rx_LQ_ser, uint8_t rx_rssi1, int8_t rx_snr1,
+        //uint8_t tx_LQ_ser, uint8_t tx_rssi1, int8_t tx_snr1,
+        //uint8_t rx_rssi2, int8_t rx_snr2, uint8_t tx_rssi2, int8_t tx_snr2,
+        //float frequency1, float frequency2,
         &status_serial_out);
+#else
+    fmav_mlrs_radio_link_stats_t payload;
+    payload.target_system = 0;
+    payload.target_component = 0;
+    payload.flags = flags;
+    payload.rx_LQ_rc = stats.GetLQ_rc();
+    payload.rx_LQ_ser = stats.GetLQ_serial();
+    payload.rx_rssi1 = rx_rssi1;
+    payload.rx_snr1 = rx_snr1;
+    payload.tx_LQ_ser = (connected()) ? stats.received_LQ_serial : 0;
+    payload.tx_rssi1 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+    payload.tx_snr1 = INT8_MAX;
+    payload.rx_rssi2 = rx_rssi2;
+    payload.rx_snr2 = rx_snr2;
+    payload.tx_rssi2 = UINT8_MAX;
+    payload.tx_snr2 = INT8_MAX;
+    payload.frequency1 = freq1;
+    payload.frequency2 = freq2;
+
+    uint8_t tunnel_payload[FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN];
+    memset(tunnel_payload, 0, FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN);
+    memcpy(tunnel_payload, &payload, sizeof(payload));
+
+    fmav_msg_tunnel_pack(
+        &msg_serial_out,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+        0, 0,
+        MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_STATS, sizeof(payload), tunnel_payload,
+        //uint8_t target_system, uint8_t target_component,
+        //uint16_t payload_type, uint8_t payload_length, const uint8_t* payload,
+        &status_serial_out);
+#endif
+
+    send_msg_serial_out();
 }
 
 
-// not used
-void tRxMavlink::generate_radio_link_information(void)
+void tRxMavlink::send_mlrs_radio_link_information(void)
 {
-    uint16_t tx_ser_data_rate = 0; // ignore/unknown
-    uint16_t rx_ser_data_rate = 0; // ignore/unknown
+uint16_t tx_ser_data_rate, rx_ser_data_rate;
+
+    uint32_t tnow_ms = millis32();
+    int8_t power_dbm = sx.RfPower_dbm();
+    if ((tnow_ms - radio_link_information_dev_tlast_ms < 2500) &&
+        (power_dbm == radio_link_information_dev_power_dbm_last)) return; // not yet time nor a need to send
+    radio_link_information_dev_tlast_ms = tnow_ms;
+    radio_link_information_dev_power_dbm_last = power_dbm;
 
     switch (Config.Mode) {
     case MODE_50HZ: case MODE_FSK_50HZ:
@@ -904,31 +990,76 @@ void tRxMavlink::generate_radio_link_information(void)
         tx_ser_data_rate = 7111;
         rx_ser_data_rate = 9111;
         break;
+    default:
+        tx_ser_data_rate = 0; // ignore/unknown
+        rx_ser_data_rate = 0; // ignore/unknown
     }
 
-    fmav_msg_radio_link_information_dev_pack(
+#if 0
+    char mode_str[16]; // make it large enough
+    char band_str[16]; // make it large enough
+
+    mode_str_to_strbuf(mode_str, Config.Mode, FASTMAVLINK_MSG_MLRS_RADIO_LINK_INFORMATION_FIELD_MODE_STR_LEN);
+    frequency_band_str_to_strbuf(band_str, Config.FrequencyBand, FASTMAVLINK_MSG_MLRS_RADIO_LINK_INFORMATION_FIELD_BAND_STR_LEN);
+
+    fmav_msg_mlrs_radio_link_information_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         0, 0, // targets
 
-        RADIO_LINK_TYPE_MLRS_DEV, // uint8_t type
+        MLRS_RADIO_LINK_TYPE_MLRS, // uint8_t type
         Config.Mode, // uint8_t mode
-        INT8_MAX, sx.RfPower_dbm(), // int8_t tx_power, int8_t rx_power
-        Config.frame_rate_hz, Config.frame_rate_hz, // uint16_t tx_packet_rate, uint16_t rx_packet_rate,
-        tx_ser_data_rate, rx_ser_data_rate, //uint16_t tx_ser_data_rate, uint16_t rx_ser_data_rate,
-        sx.ReceiverSensitivity_dbm(), sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx // uint8_t tx_receive_sensitivity, uint8_t rx_receive_sensitivity
+        INT8_MAX, sx.RfPower_dbm(),
+        Config.frame_rate_hz, Config.frame_rate_hz, // is equal for Tx and Rx
+        mode_str, band_str,
+        tx_ser_data_rate, rx_ser_data_rate,
+        sx.ReceiverSensitivity_dbm(), sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx
 
         //uint8_t target_system, uint8_t target_component,
         //uint8_t type, uint8_t mode,
-        //int8_t tx_power, int8_t rx_power,
-        //uint16_t tx_packet_rate, uint16_t rx_packet_rate,
+        //int8_t tx_power, int8_t rx_power, uint16_t tx_frame_rate, uint16_t rx_frame_rate,
+        //const char* mode_str, const char* band_str,
         //uint16_t tx_ser_data_rate, uint16_t rx_ser_data_rate,
         //uint8_t tx_receive_sensitivity, uint8_t rx_receive_sensitivity,
         &status_serial_out);
+#else
+    fmav_mlrs_radio_link_information_t payload;
+    payload.target_system = 0;
+    payload.target_component = 0;
+    payload.type = MLRS_RADIO_LINK_TYPE_MLRS,
+    payload.mode = Config.Mode;
+    payload.tx_power = INT8_MAX;
+    payload.rx_power = power_dbm; // sx.RfPower_dbm();
+    payload.tx_frame_rate = Config.frame_rate_hz;
+    payload.rx_frame_rate = Config.frame_rate_hz;
+
+    mode_str_to_strbuf(payload.mode_str, Config.Mode, sizeof(payload.mode_str));
+    frequency_band_str_to_strbuf(payload.band_str, Config.FrequencyBand, sizeof(payload.band_str));
+
+    payload.tx_ser_data_rate = tx_ser_data_rate;
+    payload.rx_ser_data_rate = rx_ser_data_rate;
+    payload.tx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
+    payload.rx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
+
+    uint8_t tunnel_payload[FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN];
+    memset(tunnel_payload, 0, FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN);
+    memcpy(tunnel_payload, &payload, sizeof(payload));
+
+    fmav_msg_tunnel_pack(
+        &msg_serial_out,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
+        0, 0,
+        MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_INFORMATION, sizeof(payload), tunnel_payload,
+        //uint8_t target_system, uint8_t target_component,
+        //uint16_t payload_type, uint8_t payload_length, const uint8_t* payload,
+        &status_serial_out);
+#endif
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_cmd_ack(void)
+void tRxMavlink::send_cmd_ack(void)
 {
     uint8_t result = MAV_RESULT_ACCEPTED;
     if (cmd_ack.command == MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN) {
@@ -947,10 +1078,12 @@ void tRxMavlink::generate_cmd_ack(void)
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
-void tRxMavlink::generate_autopilot_version_request(void)
+void tRxMavlink::send_autopilot_version_request(void)
 {
     fmav_msg_command_long_pack(
         &msg_serial_out,
@@ -963,6 +1096,8 @@ void tRxMavlink::generate_autopilot_version_request(void)
         //uint16_t command, uint8_t confirmation,
         //float param1, float param2, float param3, float param4, float param5, float param6, float param7,
         &status_serial_out);
+
+    send_msg_serial_out();
 }
 
 
@@ -1059,6 +1194,7 @@ void tRxAutoPilot::Init(void)
     autopilot = UINT8_MAX;
     flight_sw_version = 0; // 0 indicates not known
 
+    middleware_sw_version = 0; // 0 is native ArduPilot
     version = 0;
     heartbeat_tlast_ms = 0;
     autopilot_version_request_tlast_ms = 0;
@@ -1116,7 +1252,11 @@ bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
 {
     if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
 
-    return (version >= 040600);
+    if (middleware_sw_version != 0) { // not native ArduPilot
+        return (version >= 040600); // BetaPliot has it
+    }
+
+    return (version >= 040700); // not even yet in dev actually, but let's do it
 }
 
 
@@ -1151,6 +1291,10 @@ void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
     uint32_t min = (flight_sw_version & 0x00FF0000) >> 16;
     uint32_t pat = (flight_sw_version & 0x0000FF00) >> 8;
     version = maj * 10000 + min * 100 + pat;
+
+    // is 0 for native ArduPilot, BetaPilot sets it to a value > 0
+    // https://github.com/ArduPilot/ardupilot/blob/master/libraries/GCS_MAVLink/GCS_Common.cpp#L2907-L2967
+    middleware_sw_version = payload.middleware_sw_version;
 
 //dbg.puts("\ngot version ");dbg.puts(u32toHEX_s(flight_sw_version));
 //dbg.puts(" = ");dbg.puts(u32toBCD_s(version));

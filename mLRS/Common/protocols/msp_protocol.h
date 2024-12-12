@@ -11,7 +11,7 @@
 // STX1           '$'
 // STX2           'X'
 // type           '<', '>', '!'
-// flag           0
+// flag           0x01: do not respond, 0x02: source id rc link
 // function_1     LSB
 // function_2     MSB
 // len_1          LSB
@@ -51,9 +51,9 @@
 #define MSP_MAGIC_1               '$'
 #define MSP_MAGIC_2_V1            'M'
 #define MSP_MAGIC_2_V2            'X'
-#define MSP_TYPE_REQUEST          '<'
-#define MSP_TYPE_RESPONSE         '>'
-#define MSP_TYPE_ERROR            '!'
+//#define MSP_TYPE_REQUEST          '<'
+//#define MSP_TYPE_RESPONSE         '>'
+//#define MSP_TYPE_ERROR            '!'
 #define MSP_V1_HEADER_LEN         5
 #define MSP_V2_HEADER_LEN         8
 
@@ -71,6 +71,20 @@ typedef struct {
 // helper fields
     uint8_t res; // see MSP_PARSE_RESULT
 } msp_message_t;
+
+
+typedef enum {
+    MSP_TYPE_REQUEST    = '<',
+    MSP_TYPE_RESPONSE   = '>',
+    MSP_TYPE_ERROR      = '!',
+} MSP_TYPE_ENUM;
+
+
+typedef enum {
+    MSP_FLAG_NONE               = 0,
+    MSP_FLAG_NO_RESPONSE        = 0x01,
+    MSP_FLAG_SOURCE_ID_RC_LINK  = 0x02,
+} MSP_FLAG_ENUM;
 
 
 typedef enum {
@@ -100,6 +114,8 @@ typedef enum {
 
     MSP2_COMMON_MOTOR_MIXER             = 0x1005, // 4101, len = 192
     MSP2_COMMON_SETTING_INFO            = 0x1007, // 4103, len = large, varies
+    MSP2_COMMON_SET_MSP_RC_LINK_STATS   = 0x100D, // 4109
+    MSP2_COMMON_SET_MSP_RC_INFO         = 0x100E, // 4110
 
     MSP2_INAV_STATUS                    = 0x2000,
     MSP2_INAV_ANALOG                    = 0x2002,
@@ -375,6 +391,36 @@ typedef struct
 #define MSP_SET_RAW_RC_LEN  32
 
 
+// MSP2_COMMON_SET_MSP_RC_LINK_STATS  0x100D, // 4109
+MSP_PACKED(
+typedef struct
+{
+    uint8_t sublink_id;                         // = 1 always
+    uint8_t valid_link;                         // not currently used in INAV
+    uint8_t uplink_rssi_perc;
+    uint8_t uplink_rssi;                        // negative RSSI value in dBm (will be converted to negative value)
+    uint8_t downlink_link_quality;
+    uint8_t uplink_link_quality;
+    uint8_t uplink_snr;                         // will be converted to int8_t
+}) tMspCommonSetMspRcLinkStats; // 7 bytes
+
+#define MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN  7
+
+
+// MSP2_COMMON_SET_MSP_RC_INFO  0x100E, // 4110
+MSP_PACKED(
+typedef struct
+{
+    uint8_t sublink_id;                         // = 0 always for now
+    uint16_t uplink_tx_power;                   // power in mW
+    uint16_t downlink_tx_power;                 // power in mW
+    char band[4];
+    char mode[6];
+}) tMspCommonSetMspRcInfo; // 15 bytes
+
+#define MSP_COMMON_SET_MSP_RC_INFO_LEN  15
+
+
 //-------------------------------------------------------
 // MSP X Messages
 //-------------------------------------------------------
@@ -536,6 +582,10 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
 //-- check some sizes
 
 STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many flight modes")
+
+STATIC_ASSERT(sizeof(tMspSetRawRc) == MSP_SET_RAW_RC_LEN, "MSP_SET_RAW_RC_LEN missmatch")
+STATIC_ASSERT(sizeof(tMspCommonSetMspRcLinkStats) == MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN, "MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN missmatch")
+STATIC_ASSERT(sizeof(tMspCommonSetMspRcInfo) == MSP_COMMON_SET_MSP_RC_INFO_LEN, "MSP_COMMON_SET_MSP_RC_INFO_LEN missmatch")
 
 
 #endif // MSP_PROTOCOL_H

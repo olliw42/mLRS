@@ -157,6 +157,14 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+  #define DEVICE_NAME "RM Bandit 900"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_SX127x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 
 // -- DIY
 

@@ -394,7 +394,11 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+#else
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
+#endif
     }
 
     //-- init API functions
@@ -443,14 +447,14 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx_amp_receive();
         Sx128xDriverCommon::SetToRx(tmo_ms);
@@ -540,9 +544,15 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+  #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX_DBM);
-#else
+  #else
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
+  #endif
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
         sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+#else
+        sx1280_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
@@ -599,14 +609,14 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx2_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx2_amp_receive();
         Sx128xDriverCommon::SetToRx(tmo_ms);

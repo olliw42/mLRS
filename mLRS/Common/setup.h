@@ -459,6 +459,7 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Rx.SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_RX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_57600);
 
     SANITIZE(Rx.SerialLinkMode, SERIAL_LINK_MODE_NUM, SETUP_RX_SERIAL_LINK_MODE, SERIAL_LINK_MODE_TRANSPARENT);
+    if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) Setup.Rx.SerialPort = RX_SERIAL_PORT_SERIAL; // don't do CAN when MSPX
 
     SANITIZE(Rx.SendRadioStatus, RX_SEND_RADIO_STATUS_NUM, SETUP_RX_SEND_RADIO_STATUS, RX_SEND_RADIO_STATUS_OFF);
 
@@ -803,6 +804,13 @@ void setup_configure_config(uint8_t config_id)
     Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
     Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
 
+    if (Config.Fhss.Num >= Config.Fhss2.Num) {
+        Config.connect_sync_cnt_max = Config.Fhss.Num / 2;
+    } else {
+        Config.connect_sync_cnt_max = Config.Fhss2.Num / 2;
+    }
+    if (Config.connect_sync_cnt_max < CONNECT_SYNC_CNT) Config.connect_sync_cnt_max = CONNECT_SYNC_CNT;
+
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
 
     //-- Serial
@@ -930,8 +938,9 @@ bool doEEPROMwrite;
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
-            // there would be lots to do but didn't do layout version-ing properly so far
+            // was 335 or lower, there would be lots to do but didn't do layout version-ing properly so far
         } else {
+            // ups, > 10304, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
         }

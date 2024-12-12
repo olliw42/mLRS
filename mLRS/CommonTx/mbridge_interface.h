@@ -583,15 +583,13 @@ tMBridgeInfo info = {};
         info.rx_actual_diversity = DIVERSITY_NUM; // 5 = invalid
     }
 
-    // we try to also set the deprecated fields to something reasonable, to help with transition
-    info.__tx_actual_diversity = (info.tx_actual_diversity <= 2) ? info.tx_actual_diversity : 3;
-    info.__rx_actual_diversity = (info.rx_actual_diversity <= 2) ? info.rx_actual_diversity : 3;
-
-    info.has_status = 1;
+    info.has_status = 1; // to indicate it has these flags
     info.binding = (bind.IsInBind()) ? 1 : 0;
     info.connected = (connected()) ? 1 : 0;
     info.rx_LQ_low = (stats.received_LQ_rc < 65) ? 1 : 0;
     info.tx_LQ_low = (stats.GetLQ_serial() < 65) ? 1 : 0;
+
+    info.param_num = SETUP_PARAMETER_NUM; // known if non-zero
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }

@@ -15,7 +15,7 @@
 const char* connectstate_str[] = { "L", "S", "C" };
 
 #ifdef DEVICE_IS_TRANSMITTER
-const char* linkstate_str[] = { "i", "t", "tw", "r", "rw", "d" };
+const char* linkstate_str[] = { "i", "t", "ts", "tw", "r", "rw", "d" };
 const char* rxstatus_str[] = { "n", "i", "v" };
 #endif
 #ifdef DEVICE_IS_RECEIVER

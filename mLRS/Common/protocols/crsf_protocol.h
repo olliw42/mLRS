@@ -7,42 +7,34 @@
 // CRSF Protocol
 //
 // The CRSF protocol details have been thankfully released by TBS
-// So, this info is openly available.
-// See e.g.
-// BetaFlight:
-// https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf_protocol.h
-// https://github.com/betaflight/betaflight/blob/master/src/main/rx/crsf.c
-// ArduPilot:
-// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.h
-// https://github.com/ArduPilot/ardupilot/blob/master/libraries/AP_RCTelemetry/AP_CRSF_Telem.h
-// ExpressLRS:
-// https://github.com/ExpressLRS/ExpressLRS/blob/master/src/lib/CrsfProtocol/crsf_protocol.h
-// https://github.com/ExpressLRS/ExpressLRS/wiki/CRSF-Protocol
+// https://github.com/tbs-fpv/tbs-crsf-spec/blob/main/crsf.md
 
 // CRSF frame format:
-//   address
+//   address (aka sync byte)
 //   len
 //   type/frame_id
 //   payload
 //   crc8
-// len is the length including type, payload, crc8, so it is len(frame)-1
+// len is the length including type, payload, crc8, so it is len(frame)-2
 // crc8 includes type, payload
-// maximal frame length is 64 bytes (ELRS says 66 bytes!) correct???
-// maximal payload length is thus 60 bytes (ELRS says 62 bytes!)
+// maximal frame length is 64 bytes
+// maximal payload length is thus 60 bytes
 //
 // baudrate:
-// is reported inconsistently across the various resources
-// Ardupilot: seems to use 416666 for receiver -> autopilot
-// OpenTx: seems to use 400000 for radio -> tx module
+// 416666 for receiver -> autopilot
+// 400000 for radio -> tx module
 //
 // depending on type/frame_id, the payload can have additional sub-struture
-// type/frame_id = CRSF_FRAME_ID_COMMAND (0x32):
+// CMD frame structure (frame type 0x32):
+//   address
+//   len
+//   frame type (0x32)
 //   destination address
-//   source address
-//   sub command identifier (0x10)
-//   command
-//   data
-//   command_crc8
+//   origin address
+//   command ID
+//   command payload
+//   command crc8
+//   crc8
 //
 //*******************************************************
 #ifndef CRSF_PROTOCOL_H
@@ -57,61 +49,69 @@
 #endif
 
 
-#define CRSF_FRAME_LEN_MAX  64 // the info is confusing, when using it add some bytes
+#define CRSF_FRAME_LEN_MAX  64 // some implementations seem to assume more, when using it add some bytes
 
 
 typedef enum {
-    CRSF_ADDRESS_BROADCAST            = 0x00,
-    CRSF_ADDRESS_FLIGHT_CONTROLLER    = 0xC8,
-    CRSF_ADDRESS_RADIO                = 0xEA, // radio module -> radio transmitter
-    CRSF_ADDRESS_RECEIVER             = 0xEC,
-    CRSF_ADDRESS_TRANSMITTER_MODULE   = 0xEE, // radio transmitter -> radio module
+    CRSF_ADDRESS_BROADCAST              = 0x00,
+    CRSF_ADDRESS_FLIGHT_CONTROLLER      = 0xC8,
+    CRSF_ADDRESS_RADIO                  = 0xEA, // tx module -> radio
+    CRSF_ADDRESS_RECEIVER               = 0xEC,
+    CRSF_ADDRESS_TRANSMITTER_MODULE     = 0xEE, // radio -> tx module
 
-    CRSF_OPENTX_SYNC                  = 0xC8, // is this an otx specific thing? called CRSF_SYNC_BYTE in CleanFlight
+    CRSF_OPENTX_SYNC                    = 0xC8, // also defined as such in the TBS specs
 } CRSF_ADDRESS_ENUM;
 
 
 typedef enum {
-    CRSF_FRAME_ID_GPS                 = 0x02,
-    CRSF_FRAME_ID_VARIO               = 0x07,
-    CRSF_FRAME_ID_BATTERY             = 0x08,
-    CRSF_FRAME_ID_BARO_ALTITUDE       = 0x09,
-    CRSF_FRAME_ID_LINK_STATISTICS     = 0x14,
-    CRSF_FRAME_ID_CHANNELS            = 0x16,
-    CRSF_FRAME_ID_LINK_STATISTICS_RX  = 0x1C,
-    CRSF_FRAME_ID_LINK_STATISTICS_TX  = 0x1D,
-    CRSF_FRAME_ID_ATTITUDE            = 0x1E,
-    CRSF_FRAME_ID_FLIGHT_MODE         = 0x21,
-    CRSF_FRAME_ID_PING_DEVICES        = 0x28,
-    CRSF_FRAME_ID_DEVICE_INFO         = 0x29,
-    CRSF_FRAME_ID_REQUEST_SETTINGS    = 0x2A,
+    // normal frames
+    CRSF_FRAME_ID_GPS                   = 0x02,
+    CRSF_FRAME_ID_VARIO                 = 0x07,
+    CRSF_FRAME_ID_BATTERY               = 0x08,
+    CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
+    CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16,
+    CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
+    CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
+    CRSF_FRAME_ID_ATTITUDE              = 0x1E,
+    CRSF_FRAME_ID_MAVLINK_FC            = 0x1F,
+    CRSF_FRAME_ID_FLIGHT_MODE           = 0x21,
+
+    // extended frames
+    CRSF_FRAME_ID_PING_DEVICES          = 0x28,
+    CRSF_FRAME_ID_DEVICE_INFO           = 0x29,
+    CRSF_FRAME_ID_REQUEST_SETTINGS      = 0x2A, // ??? not in TBS spec ???
     CRSF_FRAME_ID_PARAMETER_SETTINGS_ENTRY = 0x2B,
-    CRSF_FRAME_ID_PARAMETER_READ      = 0x2C,
-    CRSF_FRAME_ID_PARAMETER_WRITE     = 0x2D,
-    CRSF_FRAME_ID_COMMAND             = 0x32,
-    CRSF_FRAME_ID_RADIO               = 0x3A,
+    CRSF_FRAME_ID_PARAMETER_READ        = 0x2C,
+    CRSF_FRAME_ID_PARAMETER_WRITE       = 0x2D,
+    CRSF_FRAME_ID_COMMAND               = 0x32,
+    CRSF_FRAME_ID_RADIO                 = 0x3A,
 
-    CRSF_FRAME_ID_KISS_REQUEST        = 0x78,
-    CRSF_FRAME_ID_KISS_RESPONSE       = 0x79,
-    CRSF_FRAME_ID_MSP_REQUSET         = 0x7A,
-    CRSF_FRAME_ID_MSP_RESPONSE        = 0x7B,
-    CRSF_FRAME_ID_MSP_WRITE           = 0x7C,
+    CRSF_FRAME_ID_KISS_REQUEST          = 0x78,
+    CRSF_FRAME_ID_KISS_RESPONSE         = 0x79,
+    CRSF_FRAME_ID_MSP_REQUSET           = 0x7A,
+    CRSF_FRAME_ID_MSP_RESPONSE          = 0x7B,
+    CRSF_FRAME_ID_MSP_WRITE             = 0x7C, // ??? not in TBS spec ???
+    CRSF_FRAME_ID_AP_CUSTOM_TELEM_LEGACY = 0x7F, // ??? not in TBS spec ???
+    CRSF_FRAME_ID_AP_CUSTOM_TELEM       = 0x80,
 
-    CRSF_FRAME_ID_AP_CUSTOM_TELEM_LEGACY = 0x7F,
-    CRSF_FRAME_ID_AP_CUSTOM_TELEM     = 0x80,
+    CRSF_FRAME_ID_MBRIDGE_TO_MODULE     = 0x81, // radio -> tx module
+    CRSF_FRAME_ID_MBRIDGE_TO_RADIO      = 0x82, // tx module -> radio
 
-    CRSF_FRAME_ID_MBRIDGE_TO_MODULE   = 0x81, // radio -> tx module
-    CRSF_FRAME_ID_MBRIDGE_TO_RADIO    = 0x82, // tx module -> radio
+    CRSF_FRAME_ID_MAVLINK_ENVELOPE      = 0xAA,
+    CRSF_FRAME_ID_MAVLINK_SYSTEM_STATUS = 0xAC,
 } CRSF_FRAME_ID_ENUM;
 
 
 typedef enum {
-    CRSF_COMMAND_ID                   = 0x10,
+    CRSF_COMMAND_ID                     = 0x10,
 } CRSF_COMMAND_ID_ENUM;
 
 
 typedef enum {
-    CRSF_COMMAND_MODEL_SELECT_ID      = 0x05,
+    CRSF_COMMAND_SET_MODEL_SELECTION    = 0x05, // command to select model/receiver
+    CRSF_COMMAND_QUERY_MODEL_SELECTION  = 0x06, // query frame of current selection
+    CRSF_COMMAND_REPLY_MODEL_SELECTION  = 0x07, // reply frame of current selection
 } CRSF_COMMAND_ENUM;
 
 
@@ -159,21 +159,22 @@ typedef struct
             uint8_t cmd_dest_adress;
             uint8_t cmd_src_adress;
             uint8_t cmd_id;
-            uint8_t cmd;
-            uint8_t cmd_data[64 - 4 - 4 + 1]; // +1 for crc
+            uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
         });
     });
 }) tCrsfFrameHeader;
 
 
-//-- Channel frame
-
-#define CRSF_CHANNELPACKET_SIZE  22
-
+//-- RC Channel frame
 // do not confuse with sbus, it is similar to sbus packet format, but not sbus values
+// #define TICKS_TO_US(x)  ((x - 992) * 5 / 8 + 1500)
+// #define US_TO_TICKS(x)  ((x - 1500) * 8 / 5 + 992)
+
+#define CRSF_RCCHANNELPACKET_SIZE  22
+
 typedef union
 {
-    uint8_t c[CRSF_CHANNELPACKET_SIZE];
+    uint8_t c[CRSF_RCCHANNELPACKET_SIZE];
     CRSF_PACKED(
     struct {
         uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
@@ -193,38 +194,38 @@ typedef union
         uint16_t ch14 : 11;
         uint16_t ch15 : 11;
     });
-} tCrsfChannelBuffer;
+} tCrsfRcChannelBuffer;
 
-#define CRSF_CHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+#define CRSF_RCCHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
 
 
-// adr, len, frame id, data, crc
+// frame: adr, len, frame id, data, crc
 CRSF_PACKED(
 typedef struct {
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfChannelBuffer ch;
+    tCrsfRcChannelBuffer ch;
     uint8_t crc;
-}) tCrsfChannelFrame;
+}) tCrsfRcChannelFrame;
 
-#define CRSF_CHANNELPACKET_FRAME_LEN  (CRSF_CHANNELPACKET_LEN + 4)
+#define CRSF_RCCHANNELPACKET_FRAME_LEN  (CRSF_RCCHANNELPACKET_LEN + 4)
 
 
 //-- Link statistics frames
 
 /* 0x14 Link Statistics
 
-  uint8_t Uplink RSSI Ant. 1 ( dBm * -1 )
-  uint8_t Uplink RSSI Ant. 2 ( dBm * -1 )
-  uint8_t Uplink Package success rate / Link quality ( % )
-  int8_t Uplink SNR ( db )
-  uint8_t Diversity active antenna ( enum ant. 1 = 0, ant. 2 )
-  uint8_t RF Mode ( enum 4fps = 0 , 50fps, 150hz)
-  uint8_t Uplink TX Power ( enum 0mW = 0, 10mW, 25 mW, 100 mW, 500 mW, 1000 mW, 2000mW, 250mW )
-  uint8_t Downlink RSSI ( dBm * -1 )
-  uint8_t Downlink package success rate / Link quality ( % )
-  int8_t Downlink SNR ( db )
+  uint8_t     up_rssi_ant1;       // Uplink RSSI Antenna 1 (dBm * -1)
+  uint8_t     up_rssi_ant2;       // Uplink RSSI Antenna 2 (dBm * -1)
+  uint8_t     up_link_quality;    // Uplink Package success rate / Link quality (%)
+  int8_t      up_snr;             // Uplink SNR (dB)
+  uint8_t     active_antenna;     // number of currently best antenna
+  uint8_t     rf_profile;         // enum {4fps = 0 , 50fps, 150fps}
+  uint8_t     up_rf_power;        // enum {0mW = 0, 10mW, 25mW, 100mW, 500mW, 1000mW, 2000mW, 250mW, 50mW}
+  uint8_t     down_rssi;          // Downlink RSSI (dBm * -1)
+  uint8_t     down_link_quality;  // Downlink Package success rate / Link quality (%)
+  int8_t      down_snr;           // Downlink SNR (dB)
 */
 CRSF_PACKED(
 typedef struct
@@ -257,14 +258,34 @@ typedef struct {
 #define CRSF_LINK_STATISTICS_FRAME_LEN  (CRSF_LINK_STATISTICS_LEN + 4)
 
 
+/* 0x1C Link Statistics RX
+  uint8_t rssi_db;        // RSSI (dBm * -1)
+  uint8_t rssi_percent;   // RSSI in percent
+  uint8_t link_quality;   // Package success rate / Link quality (%)
+  int8_t  snr;            // SNR (dB)
+  uint8_t rf_power_db;    // rf power in dBm
+*/
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t downlink_rssi;
+    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
+    uint8_t downlink_LQ;
+    int8_t downlink_snr;
+    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
+}) tCrsfLinkStatisticsRx;
+
+#define CRSF_LINK_STATISTICS_RX_LEN  5
+
+
 /* 0x1D Link Statistics TX
 
-  uint8_t Uplink RSSI ( dBm * -1 )
-  uint8_t Uplink RSSI ( % )
-  uint8_t Uplink Package success rate / Link quality ( % )
-  int8_t Uplink SNR ( db )
-  uint8_t Downlink RF Power ( db )
-  uint8_t Uplink FPS ( FPS / 10 )
+  uint8_t rssi_db;        // RSSI (dBm * -1)
+  uint8_t rssi_percent;   // RSSI in percent
+  uint8_t link_quality;   // Package success rate / Link quality (%)
+  int8_t  snr;            // SNR (dB)
+  uint8_t rf_power_db;    // rf power in dBm
+  uint8_t fps;            // rf frames per second (fps / 10)
 */
 CRSF_PACKED(
 typedef struct
@@ -278,19 +299,6 @@ typedef struct
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
-
-
-CRSF_PACKED(
-typedef struct
-{
-    uint8_t downlink_rssi;
-    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
-    uint8_t downlink_LQ;
-    int8_t downlink_snr;
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
-}) tCrsfLinkStatisticsRx;
-
-#define CRSF_LINK_STATISTICS_RX_LEN  5
 
 
 //-- Telemetry data frames

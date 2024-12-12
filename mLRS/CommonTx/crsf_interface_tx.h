@@ -220,11 +220,11 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         frame[cnt++] = c;
         // let's ignore the crc here
         // this is called in isr, so we want to do crc check later, if we want to do it all
-        if (frame[2] == CRSF_FRAME_ID_CHANNELS) { // frame_id
+        if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
-            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_MODEL_SELECT_ID) {
+            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) {
             cmd_modelid_received = true;
             cmd_modelid_value = frame[7];
         } else {
@@ -249,9 +249,9 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
 void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfChannelBuffer buf;
+tCrsfRcChannelBuffer buf;
 
-    memcpy(buf.c, &(frame[3]), CRSF_CHANNELPACKET_SIZE);
+    memcpy(buf.c, &(frame[3]), CRSF_RCCHANNELPACKET_SIZE);
     rc->ch[0] = rc_from_crsf(buf.ch0);
     rc->ch[1] = rc_from_crsf(buf.ch1);
     rc->ch[2] = rc_from_crsf(buf.ch2);
@@ -273,7 +273,7 @@ tCrsfChannelBuffer buf;
 
 uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 {
-    return crsf_crc8_update(0, &(buf[2]), buf[1] - 1);
+    return crsf_crc8_update(CRSF_CRC8_INIT, &(buf[2]), buf[1] - 1);
 }
 
 

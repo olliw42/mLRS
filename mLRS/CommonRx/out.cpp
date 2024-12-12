@@ -259,7 +259,7 @@ tSBusFrame sbus_buf;
 
 void tOutBase::send_crsf_rcdata(tRcData* const rc)
 {
-tCrsfChannelFrame crsf_buf;
+tCrsfRcChannelFrame crsf_buf;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch.ch0 = rc_to_crsf(rc->ch[0]);
@@ -280,12 +280,12 @@ tCrsfChannelFrame crsf_buf;
     crsf_buf.ch.ch15 = rc_to_crsf(rc->ch[15]);
 
     crsf_buf.address = CRSF_ADDRESS_FLIGHT_CONTROLLER; // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
-    crsf_buf.len = CRSF_CHANNELPACKET_LEN + 2;
-    crsf_buf.frame_id = CRSF_FRAME_ID_CHANNELS;
+    crsf_buf.len = CRSF_RCCHANNELPACKET_LEN + 2;
+    crsf_buf.frame_id = CRSF_FRAME_ID_RC_CHANNELS;
 
-    crsf_buf.crc = crsf_crc8_update(0, &(crsf_buf.frame_id), CRSF_CHANNELPACKET_LEN + 1);
+    crsf_buf.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(crsf_buf.frame_id), CRSF_RCCHANNELPACKET_LEN + 1);
 
-    putbuf((uint8_t*)&crsf_buf, CRSF_CHANNELPACKET_LEN + 4);
+    putbuf((uint8_t*)&crsf_buf, CRSF_RCCHANNELPACKET_LEN + 4);
 }
 
 
@@ -316,7 +316,7 @@ tCrsfLinkStatisticsFrame crsf_buf;
     crsf_buf.len = CRSF_LINK_STATISTICS_LEN + 2;
     crsf_buf.frame_id = CRSF_FRAME_ID_LINK_STATISTICS;
 
-    crsf_buf.crc = crsf_crc8_update(0, &(crsf_buf.frame_id), CRSF_LINK_STATISTICS_LEN + 1);
+    crsf_buf.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(crsf_buf.frame_id), CRSF_LINK_STATISTICS_LEN + 1);
 
     putbuf((uint8_t*)&crsf_buf, CRSF_LINK_STATISTICS_LEN + 4);
 }

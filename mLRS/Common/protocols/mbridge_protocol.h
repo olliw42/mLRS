@@ -229,22 +229,29 @@ MBRIDGE_PACKED(
 typedef struct
 {
     int16_t receiver_sensitivity;
-    uint8_t has_status : 1;
+
+    uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
     uint8_t binding : 1;
     uint8_t connected : 1;
     uint8_t rx_LQ_low : 1;
     uint8_t tx_LQ_low : 1;
     uint8_t spare1 : 3;
+
     int8_t tx_actual_power_dbm;
-    int8_t rx_actual_power_dbm;
+    int8_t rx_actual_power_dbm; // available if rx_available = 1
+
     uint8_t rx_available : 1;
-    uint8_t __tx_actual_diversity : 2; // deprecated, since grew too large
-    uint8_t __rx_actual_diversity : 2; // deprecated, since grew too large
+    uint8_t __deprecated1 : 4;
     uint8_t spare2 : 3;
+
     uint8_t tx_config_id;
+
     uint8_t tx_actual_diversity : 4;
-    uint8_t rx_actual_diversity : 4;
-    uint8_t spare[16];
+    uint8_t rx_actual_diversity : 4; // available if rx_available = 1
+
+    uint8_t param_num; // 0 = unknown
+
+    uint8_t spare[15];
 }) tMBridgeInfo; // 24 bytes
 
 

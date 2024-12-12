@@ -17,14 +17,26 @@
 
 #define SYSTICK_DELAY_MS(x)       (uint16_t)(((uint32_t)(x)*(uint32_t)1000)/SYSTICK_TIMESTEP)
 
+// Two variables are required to avoid race with HAL_IncTick() when tasks may take longer than one tick
+uint32_t doSysTask_done = 0; // Never changed in ISR; incremented when (uwTick != doSysTask_done)
 
-volatile uint32_t doSysTask = 0;
+void resetSysTask()
+{
+    doSysTask_done = uwTick;
+}
 
+volatile bool doSysTask()
+{
+    if (uwTick != doSysTask_done) {
+        doSysTask_done++;
+        return true;
+    }
+    return false;
+}
 
 void HAL_IncTick(void) // overwrites __weak declaration in stm32yyxx_hal.c
 {
     uwTick += uwTickFreq;
-    doSysTask++;
 }
 
 
@@ -78,8 +90,8 @@ static uint16_t last_cnt;
 
 void timer_init(void)
 {
-    doSysTask = 0;
     micros_init();
+    resetSysTask();
 }
 
 

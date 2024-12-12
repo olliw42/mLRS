@@ -384,10 +384,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // output data on serial, but only if connected
     if (!connected()) return;
-    for (uint8_t i = 0; i < frame->status.payload_len; i++) {
-        uint8_t c = frame->payload[i];
-        sx_serial.putc(c);
-    }
+    sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
     stats.bytes_received.Add(frame->status.payload_len);
     stats.serial_data_received.Inc();
@@ -584,13 +581,12 @@ RESTARTCONTROLLER
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
-    doSysTask = 0; // helps in avoiding too short first loop
+    resetSysTask(); // helps in avoiding too short first loop
 INITCONTROLLER_END
 
     //-- SysTask handling
 
-    if (doSysTask) {
-        doSysTask = 0;
+    if (doSysTask()) {
 
         if (connect_tmo_cnt) {
             connect_tmo_cnt--;
@@ -602,6 +598,7 @@ INITCONTROLLER_END
 
         if (!connect_occured_once) bind.AutoBind();
         bind.Tick_ms();
+        fan.SetPower(sx.RfPower_dbm());
         fan.Tick_ms();
         dronecan.Tick_ms();
 
@@ -648,6 +645,7 @@ INITCONTROLLER_END
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
+        DBG_MAIN_SLIM(dbg.puts("t");)
         break;
     }//end of switch(link_state)
 
@@ -670,7 +668,7 @@ IF_SX(
             }
         }
 
-        if (irq_status) { // this should not happen
+        if (irq_status) { // these should not happen
             if (irq_status & SX_IRQ_TIMEOUT) {
                 FAIL_WSTATE(BLINK_COMMON, "IRQ TMO FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
@@ -725,8 +723,6 @@ IF_SX2(
 );
 
     // this happens ca 1 ms after a frame was or should have been received
-    uint8_t link_state_before = link_state; // to detect changes in link state
-
     if (doPostReceive) {
         doPostReceive = false;
 
@@ -785,7 +781,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
-                if (connect_sync_cnt >= CONNECT_SYNC_CNT) {
+                uint8_t connect_sync_cnt_max = CONNECT_SYNC_CNT;
+                if (!connect_occured_once) {
+                    connect_sync_cnt_max = Config.connect_sync_cnt_max;
+                }
+                if (connect_sync_cnt >= connect_sync_cnt_max) {
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -874,9 +874,9 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
-    }//end of if(doPostReceive)
 
-    if (link_state != link_state_before) return; // link state has changed, so process immediately
+        return; // link state may have changed, process immediately
+    }//end of if(doPostReceive)
 
     //-- Update channels, Out handling, etc
 

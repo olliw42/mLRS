@@ -150,7 +150,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         // set LoRaSymbNumTimeout for false detection of preamble
         // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
-        SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
+        //fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -250,7 +250,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetRxGain(SX126X_RX_GAIN_BOOSTED_GAIN);
         SetOverCurrentProtection(SX126X_OCP_CONFIGURATION_140_MA); // default for SX1262 according to data sheet, but can't hurt
 
+#ifdef SX_USE_PA_CONFIG_10_DBM
+        SetPaConfig_10dbm();
+#else
         SetPaConfig_22dbm();
+#endif
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
@@ -494,14 +498,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx_amp_receive();
         Sx126xDriverCommon::SetToRx(tmo_ms);
@@ -627,14 +631,14 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- this are the API functions used in the loop
 
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx2_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(uint16_t tmo_ms)
     {
         sx2_amp_receive();
         Sx126xDriverCommon::SetToRx(tmo_ms);

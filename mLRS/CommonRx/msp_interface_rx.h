@@ -45,15 +45,30 @@ class tRxMsp
     // fields for link in -> parser -> serial out
     msp_status_t status_link_in;
     msp_message_t msp_msg_link_in;
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
-    tFifo<char,2*512> fifo_link_out; // needs to be at least ??
+    tFifo<char,1024> fifo_link_out; // needs to be at least ??
+    void parse_serial_in_link_out(void);
 
-    // to inject MSP_SET_RAW_RC
+    // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
+    tMspSetRawRc rc_channels; // holds the rc data in MSP format
     bool inject_rc_channels;
-    uint16_t rc_chan[16]; // holds the rc data in MSP format
+    bool inject_rc_link_stats;
+    bool inject_rc_info;
+    bool rc_link_stats_disabled;
+    bool rc_info_disabled;
+    uint32_t rc_channels_tlast_ms;
+    uint32_t rc_link_stats_tlast_ms;
+    uint32_t rc_info_tlast_ms = 0;
+    int8_t rc_info_power_dbm_last = 125;
+
+    void send_rc_channels(void);
+    void send_rc_link_stats(void);
+    void send_rc_info(void);
+    void send_request(uint16_t function);
 
     // to inject MSP requests if there are no requests from a gcs
     uint32_t tick_tlast_ms;
@@ -76,17 +91,17 @@ class tRxMsp
         1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
         2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
         2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
-        1,  // this is set to zero once it is gotten once, disables request
+        1,  // this is set to zero once MSP_BOXNAMES has been gotten once, disables request
     };
 
     typedef struct {
-        uint8_t rate;
+        uint8_t rate; // rate determined from telm_freq, or 0 = off, do not send
         uint8_t cnt;
         uint32_t tlast_ms; // time of last request received from a gcs
     } tMspTelm;
     tMspTelm telm[MSP_TELM_COUNT];
 
-    void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; } // 0 = off, do not send
+    void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; }
 
     uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXNAMES
 
@@ -104,6 +119,14 @@ void tRxMsp::Init(void)
     fifo_link_out.Init();
 
     inject_rc_channels = false;
+    inject_rc_link_stats = false;
+    inject_rc_info = false;
+    rc_link_stats_disabled = false;
+    rc_info_disabled = false;
+    rc_channels_tlast_ms = 0;
+    rc_link_stats_tlast_ms = 0;
+    rc_info_tlast_ms = 0;
+    rc_info_power_dbm_last = 125;
 
     tick_tlast_ms = 0;
     for (uint8_t n = 0; n < MSP_TELM_COUNT; n ++) {
@@ -134,10 +157,12 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
     }
 
     for (uint8_t i = 0; i < 16; i++) {
-        rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
+        rc_channels.rc[i] = rc_to_mavlink(rc_out->ch[i]);
     }
 
     inject_rc_channels = true;
+    inject_rc_link_stats = !rc_link_stats_disabled; // true if not disabled
+    inject_rc_info = !rc_info_disabled; // true if not disabled
 }
 
 
@@ -151,67 +176,25 @@ void tRxMsp::Do(void)
     if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
-    if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
-        while (serial.available()) {
-            char c = serial.getc();
-            if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
-                bool send = true;
-
-                if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
-                        // send out our home-brewed MSPX_STATUS message in addition
-                        // is being send before original message
-                        uint32_t flight_mode = 0;
-                        uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
-                        for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
-                            if (inav_flight_modes_box_mode_flags[n] == 255) continue; // is empty
-                            if (boxflags[inav_flight_modes_box_mode_flags[n] / 8] & (1 << (inav_flight_modes_box_mode_flags[n] % 8))) {
-                                flight_mode |= ((uint32_t)1 << n);
-                            }
-                        }
-                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSPX_STATUS, (uint8_t*)(&flight_mode), 4);
-                        fifo_link_out.PutBuf(_buf, len);
-                    }
-                    if (msp_msg_ser_in.function == MSP_BOXNAMES) {
-                        // compress, and also get inav_flight_modes_box_mode_flags[]
-                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1
-                        uint16_t new_len = 0;
-                        mspX_boxnames_payload_compress(
-                            new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
-                            inav_flight_modes_box_mode_flags);
-
-                        telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
-
-                        uint16_t len = msp_generate_v2_frame_bufX(_buf, MSP_TYPE_RESPONSE, MSP_BOXNAMES, new_payload, new_len);
-                        fifo_link_out.PutBuf(_buf, len);
-
-                        send = false; // mark as handled
-                    }
-                }
-
-                if (send) {
-                    uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
-                    fifo_link_out.PutBuf(_buf, len);
-                }
-
-/*
-dbg.puts("\n");
-dbg.putc(msp_msg_ser_in.type);
-char s[32]; msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
-dbg.puts(" ");
-dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
-*/
-            }
-
-        }
-    }
+    parse_serial_in_link_out();
 
     // inject radio rc channels
 
     if (inject_rc_channels) { // give it priority // && serial.tx_is_empty()) // check available size!?
         inject_rc_channels = false;
-        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_REQUEST, MSP_SET_RAW_RC, (uint8_t*)rc_chan, 32);
-        serial.putbuf(_buf, len);
+        send_rc_channels();
+        return;
+    }
+
+    if (inject_rc_link_stats) {
+        inject_rc_link_stats = false;
+        send_rc_link_stats();
+        return;
+    }
+
+    if (inject_rc_info) {
+        inject_rc_info = false;
+        send_rc_info();
         return;
     }
 
@@ -233,8 +216,7 @@ dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
             if (telm[n].rate == 0) continue; // disabled
             INCc(telm[n].cnt, telm[n].rate);
             if (!telm[n].cnt && (tnow_ms - telm[n].tlast_ms) >= 3500) { // we want to send and did not got a request recently
-                uint16_t len = msp_generate_v2_request_to_frame_buf(_buf, MSP_TYPE_REQUEST, telm_function[n]);
-                serial.putbuf(_buf, len);
+                send_request(telm_function[n]);
 //dbg.puts(u16toHEX_s(telm_function[n]));dbg.puts(" ");
             }
         }
@@ -248,7 +230,94 @@ void tRxMsp::FrameLost(void)
 }
 
 
-void tRxMsp::putc(char c)
+void tRxMsp::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
+    if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
+        while (serial.available()) {
+            char c = serial.getc();
+            if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
+                bool send = true;
+
+                if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
+                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
+                        // when we get a MSP2_INAV_STATUS
+                        // send out our home-brewed MSPX_STATUS message in addition
+                        // do only after we have seen MSP_BOXNAMES
+                        // is being send before original message
+                        uint32_t flight_mode = 0;
+                        uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
+                        for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
+                            if (inav_flight_modes_box_mode_flags[n] == 255) continue; // is empty
+                            if (boxflags[inav_flight_modes_box_mode_flags[n] / 8] & (1 << (inav_flight_modes_box_mode_flags[n] % 8))) {
+                                flight_mode |= ((uint32_t)1 << n);
+                            }
+                        }
+                        uint16_t len = msp_generate_v2_frame_bufX(
+                            _buf,
+                            MSP_TYPE_RESPONSE,
+                            MSP_FLAG_SOURCE_ID_RC_LINK,
+                            MSPX_STATUS,
+                            (uint8_t*)(&flight_mode),
+                            sizeof(flight_mode));
+                        fifo_link_out.PutBuf(_buf, len);
+                    }
+                    if (msp_msg_ser_in.function == MSP_BOXNAMES) {
+                        // compress, and also get inav_flight_modes_box_mode_flags[]
+                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1
+                        uint16_t new_len = 0;
+                        mspX_boxnames_payload_compress(
+                            new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
+                            inav_flight_modes_box_mode_flags);
+
+                        telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
+
+                        uint16_t len = msp_generate_v2_frame_bufX(
+                            _buf,
+                            MSP_TYPE_RESPONSE,
+                            MSP_FLAG_SOURCE_ID_RC_LINK,
+                            MSP_BOXNAMES,
+                            new_payload,
+                            new_len);
+                        fifo_link_out.PutBuf(_buf, len);
+
+                        send = false; // mark as handled
+                    }
+                }
+
+                if (msp_msg_ser_in.type == MSP_TYPE_ERROR) { // this is an error response from the FC
+                    switch (msp_msg_ser_in.function) {
+                    case MSP2_COMMON_SET_MSP_RC_LINK_STATS: // FC doesn't support this message and complains
+                        rc_link_stats_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
+                    case MSP2_COMMON_SET_MSP_RC_INFO: // FC doesn't support this message and complains
+                        rc_info_disabled = true;
+                        send = false; // don't forward to ground
+                        break;
+                    }
+                }
+
+                if (send) {
+                    uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
+                    fifo_link_out.PutBuf(_buf, len);
+                }
+
+/*
+dbg.puts("\n");
+dbg.putc(msp_msg_ser_in.type);
+char s[32]; msp_function_str_from_msg(s, &msp_msg_ser_in); dbg.puts(s);
+dbg.puts(" ");
+dbg.puts(u16toBCD_s(msp_msg_ser_in.len));
+*/
+            }
+
+        }
+    }
+}
+
+
+void tRxMsp::parse_link_in_serial_out(char c)
 {
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
@@ -278,6 +347,13 @@ dbg.puts(u8toHEX_s(crc8));
 }
 
 
+void tRxMsp::putc(char c)
+{
+    // parse link in -> serial out
+    parse_link_in_serial_out(c);
+}
+
+
 bool tRxMsp::available(void)
 {
     return fifo_link_out.Available();
@@ -296,6 +372,98 @@ void tRxMsp::flush(void)
 {
     fifo_link_out.Flush();
     // serial is flushed by caller
+}
+
+
+//-------------------------------------------------------
+// Generate Messages
+//-------------------------------------------------------
+
+void tRxMsp::send_request(uint16_t function)
+{
+    uint16_t len = msp_generate_v2_request_to_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_FLAG_SOURCE_ID_RC_LINK,
+        function);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMsp::send_rc_channels(void)
+{
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - rc_channels_tlast_ms) < 19) return; // don't send too fast, MSP-RC is not for racing
+    rc_channels_tlast_ms = tnow_ms;
+
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_FLAG_SOURCE_ID_RC_LINK | MSP_FLAG_NO_RESPONSE, // avoid response message from flight controller
+        MSP_SET_RAW_RC,
+        (uint8_t*)&rc_channels,
+        MSP_SET_RAW_RC_LEN);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMsp::send_rc_link_stats(void)
+{
+tMspCommonSetMspRcLinkStats payload;
+
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - rc_link_stats_tlast_ms) < 200) return; // really slow down, INAV FCs can be over-burdened
+    rc_link_stats_tlast_ms = tnow_ms;
+
+    payload.sublink_id = 0;
+    payload.valid_link = 1;
+    payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
+    payload.downlink_link_quality = stats.received_LQ_serial;
+    payload.uplink_link_quality = stats.GetLQ_rc();
+    payload.uplink_snr = stats.GetLastSnr();
+
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_FLAG_SOURCE_ID_RC_LINK | MSP_FLAG_NO_RESPONSE, // avoid response message from flight controller
+        MSP2_COMMON_SET_MSP_RC_LINK_STATS,
+        (uint8_t*)&payload,
+        MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN);
+
+    serial.putbuf(_buf, len);
+}
+
+
+void tRxMsp::send_rc_info(void)
+{
+tMspCommonSetMspRcInfo payload;
+
+    uint32_t tnow_ms = millis32();
+    int8_t power_dbm = sx.RfPower_dbm();
+    if ((tnow_ms - rc_info_tlast_ms < 2500) && (power_dbm == rc_info_power_dbm_last)) return; // not yet time nor no need to send
+
+    rc_info_tlast_ms = tnow_ms;
+    rc_info_power_dbm_last = power_dbm;
+
+    payload.sublink_id = 0;
+    payload.uplink_tx_power = cvt_power(power_dbm); // WRONG, should be tx power, but to have something we send rx power
+    payload.downlink_tx_power = payload.uplink_tx_power;
+
+    frequency_band_str_to_strbuf(payload.band, Config.FrequencyBand, sizeof(payload.band));
+    mode_str_to_strbuf(payload.mode, Config.Mode, sizeof(payload.mode));
+
+    uint16_t len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_FLAG_SOURCE_ID_RC_LINK | MSP_FLAG_NO_RESPONSE, // avoid response message from flight controller
+        MSP2_COMMON_SET_MSP_RC_INFO,
+        (uint8_t*)&payload,
+        MSP_COMMON_SET_MSP_RC_INFO_LEN);
+
+    serial.putbuf(_buf, len);
 }
 
 

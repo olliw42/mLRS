@@ -45,11 +45,13 @@ class tTxMsp
     // fields for link in -> parser -> serial out
     msp_status_t status_link_in;
     msp_message_t msp_msg_link_in;
+    void parse_link_in_serial_out(char c);
 
     // fields for serial in -> parser -> link out
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
     tFifo<char,2*512> fifo_link_out; // needs to be at least ??
+    void parse_serial_in_link_out(void);
 
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -94,6 +96,13 @@ void tTxMsp::Do(void)
     if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
+    parse_serial_in_link_out();
+}
+
+
+void tTxMsp::parse_serial_in_link_out(void)
+{
+    // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (ser->available()) {
             char c = ser->getc();
@@ -106,25 +115,42 @@ void tTxMsp::Do(void)
 }
 
 
-void tTxMsp::putc(char c)
+void tTxMsp::parse_link_in_serial_out(char c)
 {
-    if (!ser) return;
-
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
+        bool send = true;
 
-        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE && msp_msg_link_in.function == MSP_BOXNAMES) {
+        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE) {
+            switch (msp_msg_link_in.function) {
+            case MSP_BOXNAMES:
 //dbg.puts("\nMBC "); for(uint16_t i= 0; i< msp_msg_link_in.len; i++) dbg.puts(u8toHEX_s(msp_msg_link_in.payload[i]));
-            // decompress
-            mspX_boxnames_payload_decompress(&msp_msg_link_in, _buf); // we can use the buffer
+                msp_msg_link_in.flag = MSP_FLAG_NONE; // it should be set to MSP_FLAG_SOURCE_ID_RC_LINK, not what we want
+                // decompress
+                mspX_boxnames_payload_decompress(&msp_msg_link_in, _buf); // we can use the buffer
 //dbg.puts("\nMB ");for(uint16_t i = 0; i < msp_msg_link_in.len; i++) dbg.putc(msp_msg_link_in.payload[i]);
+                break;
+            case MSPX_STATUS:
+                // it's our home brew, catch it
+                send = false;
+                break;
+            }
+
+            if (msp_msg_link_in.flag & MSP_FLAG_SOURCE_ID_RC_LINK) {
+                // it's requested by the receiver, catch it
+                send = false;
+            }
         }
 
-        uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-        ser->putbuf(_buf, len);
+        if (send) {
+            uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
+            ser->putbuf(_buf, len);
+        }
 
         // allow crsf class to capture it
-        crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
+        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE) {
+            crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
+        }
 
 /*
 dbg.puts("\n");
@@ -138,11 +164,20 @@ dbg.puts(" ");for (uint16_t n=0;n<((msp_msg_link_in.len<100)?msp_msg_link_in.len
 /*dbg.puts(" ");
 dbg.puts(u8toHEX_s(msp_msg_link_in.checksum));
 uint16_t _len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-uint8_t crc8 = crsf_crc8_update(0, &(_buf[3]), _len - 4);
+uint8_t crc8 = crsf_crc8_update(CRSF_CRC8_INIT, &(_buf[3]), _len - 4);
 dbg.puts(" ");
 dbg.puts(u8toHEX_s(crc8));
 */
     }
+}
+
+
+void tTxMsp::putc(char c)
+{
+    if (!ser) return;
+
+    // parse link in -> serial out
+    parse_link_in_serial_out(c);
 }
 
 
