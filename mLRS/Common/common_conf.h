@@ -122,9 +122,11 @@
 #define FHSS_NUM_BAND_868_MHZ                 6 // it's a very narrow band
 #define FHSS_NUM_BAND_915_MHZ_FCC             25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
 #define FHSS_NUM_BAND_866_MHZ_IN              3 // 3 since 1 is needed for bind
+#define FHSS_NUM_BAND_900_MHZ_TAIWAN          7 // 7 since 1 is needed for bind
 #define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
 #define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
 #define FHSS_NUM_BAND_2P4_GHZ                 24
+
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 

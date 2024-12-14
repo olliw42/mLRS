@@ -41,6 +41,9 @@
 #ifdef FREQUENCY_BAND_866_MHZ_IN
   #define FHSS_HAS_CONFIG_866_MHZ_IN
 #endif
+#ifdef FREQUENCY_BAND_900_MHZ_TAIWAN
+  #define FHSS_HAS_CONFIG_900_MHZ_TAIWAN
+#endif
 #ifdef FREQUENCY_BAND_2P4_GHZ
   #define FHSS_HAS_CONFIG_2P4_GHZ
 #endif
@@ -213,6 +216,25 @@ const uint32_t fhss_freq_list_866_in[] = { // !! NEEDS TO BE ADJUSTED TO PROPER 
 };
 
 const uint8_t fhss_bind_channel_list_866_in[] = {
+    0 // just pick some
+};
+
+#endif
+#ifdef FHSS_HAS_CONFIG_900_MHZ_TAIWAN
+// 8 channels in range 900..925 MHz (@shinkansen942)
+
+const uint32_t fhss_freq_list_900_taiwan[] = {
+    SX12XX_FREQ_MHZ_TO_REG(920.4),
+    SX12XX_FREQ_MHZ_TO_REG(921.0),
+    SX12XX_FREQ_MHZ_TO_REG(921.6),
+    SX12XX_FREQ_MHZ_TO_REG(922.2),
+    SX12XX_FREQ_MHZ_TO_REG(922.8),
+    SX12XX_FREQ_MHZ_TO_REG(923.4),
+    SX12XX_FREQ_MHZ_TO_REG(924.0),
+    SX12XX_FREQ_MHZ_TO_REG(924.6),
+};
+
+const uint8_t fhss_bind_channel_list_900_taiwan[] = {
     0 // just pick some
 };
 
@@ -396,6 +418,16 @@ const tFhssConfig fhss_config[] = {
 #else
     { .freq_list = nullptr },
 #endif
+#ifdef FHSS_HAS_CONFIG_900_MHZ_TAIWAN
+    {
+        .freq_list = fhss_freq_list_900_taiwan,
+        .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_900_taiwan) / sizeof(uint32_t)),
+        .bind_channel_list = fhss_bind_channel_list_900_taiwan,
+        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_900_taiwan) / sizeof(uint8_t))
+    },
+#else
+    { .freq_list = nullptr },
+#endif
 };
 
 
@@ -484,6 +516,7 @@ class tFhssBase
             break;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
         case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_900_MHZ_TAIWAN:
         case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
             generate(seed);
             break;
@@ -569,10 +602,12 @@ class tFhssBase
         case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_900_MHZ_TAIWAN: return SETUP_FREQUENCY_BAND_900_MHZ_TAIWAN;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
+        default:
+            while(1){} // should not happen, but play it safe
         }
-        while(1){} // should not happen, but play it safe
         return (SETUP_FREQUENCY_BAND_ENUM)0;
     }
 

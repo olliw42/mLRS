@@ -28,42 +28,42 @@ void setup_configure_metadata(void)
 {
     SetupMetaData = {};
 
-    //-- FrequencyBand: "2.4,915 FCC,868,433,70,866 IN"
+    //-- FrequencyBand: "2.4,915 FCC,868,433,70,866 IN,900 TW"
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
   // DUALBAND 2.4 GHz & 868/915 MHz !
   #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000110; // 915 FCC, 868
   #else
     #error Unknown Frequencyband !
   #endif
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   // DUALBAND 868/915 MHz & 433 MHz !
   #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000110; // 915 FCC, 868
   #else
     #error Unknown Frequencyband !
   #endif
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b011110; // 915 FCC, 868, 433, 70
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_866_MHZ_IN
-    SetupMetaData.FrequencyBand_allowed_mask = 0b100110; // 915 FCC, 868, 866 IN
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0011110; // 915 FCC, 868, 433, 70
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000110; // 915 FCC, 868
 #elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b011000; // 433, 70
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0011000; // 433, 70
 #elif defined FREQUENCY_BAND_2P4_GHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000001; // 2.4 GHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000001; // 2.4 GHz, not editable
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000010; // 915 MHz FCC, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000010; // 915 MHz FCC, not editable
 #elif defined FREQUENCY_BAND_868_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b000100; // 868 MHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0000100; // 868 MHz, not editable
 #elif defined FREQUENCY_BAND_433_MHZ
-    SetupMetaData.FrequencyBand_allowed_mask = 0b001000; // 433 MHz, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0001000; // 433 MHz, not editable
 #elif defined FREQUENCY_BAND_70_CM_HAM
-    SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // 70 cm HAM, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0010000; // 70 cm HAM, not editable
 #elif defined FREQUENCY_BAND_866_MHZ_IN
-    SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // 866 MHz IN, not editable
+    SetupMetaData.FrequencyBand_allowed_mask = 0b0100000; // 866 MHz IN, not editable
+#elif defined FREQUENCY_BAND_900_MHZ_TAIWAN
+    SetupMetaData.FrequencyBand_allowed_mask = 0b1000000; // 900 MHz TAIWAN, not editable
 #else
     #error Unknown Frequencyband !
 #endif
@@ -333,8 +333,6 @@ void setup_sanitize_config(uint8_t config_id)
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_866_MHZ_IN
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
 #elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
@@ -351,6 +349,8 @@ void setup_sanitize_config(uint8_t config_id)
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_70_CM_HAM;
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_866_MHZ_IN;
+#elif defined FREQUENCY_BAND_900_MHZ_TAIWAN
+    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_900_MHZ_TAIWAN;
 #endif
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
         Setup.Common[config_id].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)frequency_band_default;
@@ -684,6 +684,7 @@ void setup_configure_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_433_MHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ; break;
     case SETUP_FREQUENCY_BAND_70_CM_HAM: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM; break;
     case SETUP_FREQUENCY_BAND_866_MHZ_IN: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN; break;
+    case SETUP_FREQUENCY_BAND_900_MHZ_TAIWAN: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_900_MHZ_TAIWAN; break;
     }
 
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
@@ -718,6 +719,9 @@ void setup_configure_config(uint8_t config_id)
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) {
         Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN);
+    }
+    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_900_MHZ_TAIWAN)) {
+        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_900_MHZ_TAIWAN);
     }
 
     Config.Fhss.Except = EXCEPT_NONE;
@@ -769,6 +773,9 @@ void setup_configure_config(uint8_t config_id)
         break;
     case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
         Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
+        break;
+    case SX_FHSS_CONFIG_FREQUENCY_BAND_900_MHZ_TAIWAN:
+        Config.Fhss.Num = FHSS_NUM_BAND_900_MHZ_TAIWAN;
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()

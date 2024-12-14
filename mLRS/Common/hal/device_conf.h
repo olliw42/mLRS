@@ -20,9 +20,10 @@ Available RF band defines:
 #define FREQUENCY_BAND_2P4_GHZ
 #define FREQUENCY_BAND_868_MHZ
 #define FREQUENCY_BAND_915_MHZ_FCC
-#define FREQUENCY_BAND_866_MHZ_IN
 #define FREQUENCY_BAND_433_MHZ
 #define FREQUENCY_BAND_70_CM_HAM
+#define FREQUENCY_BAND_866_MHZ_IN
+#define FREQUENCY_BAND_900_MHZ_TAIWAN
 
 The default selection of frequency bands can be overruled by feature defines.
 */
@@ -96,7 +97,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9M_868_F103C8
@@ -105,7 +105,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9MM_868_F103RB
@@ -114,7 +113,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9MLITEPRO_F303CC
@@ -123,7 +121,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -133,7 +130,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_R9MX_868_L433CB
@@ -142,7 +138,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -154,7 +149,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_WIO_E5_MINI_WLE5JC
@@ -163,7 +157,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -173,7 +166,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -186,6 +178,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   //#define FREQUENCY_BAND_866_MHZ_IN
+  //#define FREQUENCY_BAND_900_MHZ_TAIWAN
   //#define FREQUENCY_BAND_433_MHZ
   //#define FREQUENCY_BAND_70_CM_HAM
 #endif
@@ -197,6 +190,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
   //#define FREQUENCY_BAND_866_MHZ_IN
+  //#define FREQUENCY_BAND_900_MHZ_TAIWAN
   //#define FREQUENCY_BAND_433_MHZ
   //#define FREQUENCY_BAND_70_CM_HAM
 #endif
@@ -287,7 +281,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_E22_G431KB
@@ -296,7 +289,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
@@ -305,7 +297,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -315,7 +306,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_WIOE5_E22_WLE5JC
@@ -324,7 +314,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -336,9 +325,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
-  //#define FREQUENCY_BAND_433_MHZ
-  //#define FREQUENCY_BAND_70_CM_HAM
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
@@ -403,11 +389,13 @@ The default selection of frequency bands can be overruled by feature defines.
 // should go somewhere else !?
 
 #if defined MLRS_FEATURE_433_MHZ || defined MLRS_FEATURE_70_CM || \
-    defined MLRS_FEATURE_868_MHZ || defined MLRS_FEATURE_915_MHZ_FCC || defined MLRS_FEATURE_866_MHZ_IN
+    defined MLRS_FEATURE_868_MHZ || defined MLRS_FEATURE_915_MHZ_FCC || \
+    defined MLRS_FEATURE_866_MHZ_IN || defined MLRS_FEATURE_900_MHZ_TAIWAN
 
   #undef FREQUENCY_BAND_868_MHZ
   #undef FREQUENCY_BAND_915_MHZ_FCC
   #undef FREQUENCY_BAND_866_MHZ_IN
+  #undef FREQUENCY_BAND_900_MHZ_TAIWAN
   #undef FREQUENCY_BAND_433_MHZ
   #undef FREQUENCY_BAND_70_CM_HAM
 
@@ -419,6 +407,9 @@ The default selection of frequency bands can be overruled by feature defines.
   #endif
   #ifdef MLRS_FEATURE_866_MHZ_IN
     #define FREQUENCY_BAND_866_MHZ_IN
+  #endif
+  #ifdef MLRS_FEATURE_900_MHZ_TAIWAN
+    #define FREQUENCY_BAND_900_MHZ_TAIWAN
   #endif
   #ifdef MLRS_FEATURE_433_MHZ
     #define FREQUENCY_BAND_433_MHZ
