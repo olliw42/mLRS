@@ -391,6 +391,9 @@ bool link_task_set(uint8_t task)
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
         link_task_delay_ms = 500; // we set a delay, the actual store is triggered when it expires
         break;
+    case LINK_TASK_TX_PUT_RX_INTO_SYSTEMBOOT: // put rx into system boot
+        link_task_delay_ms = 500; // we set a delay, the tx is put into system boot when it expires
+        break;
     }
 
     return true;
@@ -413,6 +416,7 @@ void link_task_tick_ms(void)
         if (!link_task_delay_ms) {
             switch (link_task) {
             case LINK_TASK_TX_STORE_RX_PARAMS: doParamsStore = true; break;
+            case LINK_TASK_TX_PUT_RX_INTO_SYSTEMBOOT: enter_system_bootloader(); break;
             }
             link_task_reset();
             mbridge.Unlock();
@@ -446,16 +450,23 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
+        // expects to get a response from rx
         break;
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
+        // expects to get a response from rx
         break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
+        // expects to get a response from rx
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
-        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // no response from rx, so reset frame type
+        break;
+    case LINK_TASK_TX_PUT_RX_INTO_SYSTEMBOOT:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_PUT_RX_INTO_SYSTEMBOOT);
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL; // no response from rx, so reset frame type
         break;
     }
 }
@@ -1139,7 +1150,14 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
             break;
         case MBRIDGE_CMD_BIND_START: start_bind(); break;
         case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER:
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_PUT_RX_INTO_SYSTEMBOOT);
+                mbridge.Lock(MBRIDGE_CMD_SYSTEM_BOOTLOADER); // lock mBridge
+            } else {
+                enter_system_bootloader();
+            }
+            break;
         case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
             config_id.Change(mbridge.GetModelId());
@@ -1239,7 +1257,14 @@ IF_IN(
         }
         break;
     case TX_TASK_BIND: start_bind(); break;
-    case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case TX_TASK_SYSTEM_BOOT:
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_PUT_RX_INTO_SYSTEMBOOT);
+            mbridge.Lock(); // lock mBridge
+        } else {
+            enter_system_bootloader();
+        }
+        break;
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;

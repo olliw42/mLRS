@@ -179,8 +179,8 @@ typedef struct
 
 typedef enum {
     FRAME_CMD_NONE = 0,
-    FRAME_CMD_RX_REBOOT,
-    FRAME_CMD_RX_BIND,
+    // not used FRAME_CMD_RX_REBOOT,
+    // not used FRAME_CMD_RX_BIND,
 
     // these commands use the normal Tx/Rx frames, with re-purposed payload however
     FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
@@ -188,6 +188,7 @@ typedef enum {
     FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_SETUPDATA
     FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots
     FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters -> response with RX_SETUPDATA
+    FRAME_CMD_PUT_RX_INTO_SYSTEMBOOT,   // tx -> rx, puts rx into system bootloader, no response
 } FRAME_CMD_ENUM;
 
 
