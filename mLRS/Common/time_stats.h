@@ -11,7 +11,8 @@
 #pragma once
 
 // Time Statistics for up to PM_NUM_BLOCK pairs of measurement points
-#ifdef USE_DEBUG
+//#define USE_TIME_STATS // Define this here or somewhere to use these functions
+#if defined USE_DEBUG && defined USE_TIME_STATS
 #define TS_NUM_BLOCK 10
 
 struct TS_store {
@@ -26,10 +27,15 @@ struct TS_store {
 };
 static struct TS_store TS_data[TS_NUM_BLOCK];
 
-inline uint32_t TS_MICROS32(int block) {
+static inline __attribute__((always_inline)) uint32_t TS_MICROS32(int block) {
 
-    // Separate overflow and last_cnt for each block allows either ISR/normal use, but not both
+    // Separate overflow and last_cnt for each block avoids some race conditions and
+    // allows either ISR/normal use; but not both with the same block.
+#if defined ESP8266 || defined ESP32
+    uint16_t cnt = micros();
+#else
     uint16_t cnt = MICROS_TIMx->CNT;
+#endif
     if (cnt < TS_data[block].last_cnt) {
         TS_data[block].overflow += 0x10000;
     }
@@ -37,11 +43,11 @@ inline uint32_t TS_MICROS32(int block) {
     return TS_data[block].overflow + cnt;
 }
 
-inline void TS_START(int block) {
+inline __attribute__((always_inline)) void TS_START(int block) {
     TS_data[block].start = TS_MICROS32(block);
 }
 
-inline void TS_END(int block, uint32_t report_period = 10000000, bool cont = false) {
+inline __attribute__((always_inline)) void TS_END(int block, uint32_t report_period = 10000000, bool cont = false) {
     if (!cont && TS_data[block].start == 0) return; // no end without start
     uint32_t time = TS_MICROS32(block);
     uint32_t elapsed = time - TS_data[block].start;
@@ -72,12 +78,6 @@ inline void TS_END(int block, uint32_t report_period = 10000000, bool cont = fal
     else
         TS_data[block].start = 0; // no end without start
 }
-#else
-inline uint32_t TS_MICROS32(int block) {
-}
-inline void TS_START(int block) {
-}
-inline void TS_END(int block, uint32_t report_period = 10000000, bool cont = false) {
-}
 #endif
+
 #endif // TIME_STATS_H

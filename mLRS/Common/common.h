@@ -24,7 +24,6 @@
 #include "buzzer.h"
 #include "fan.h"
 #include "leds.h"
-//#include "time_stats.h" // Uncomment for time measurement functions
 
 
 //-------------------------------------------------------
