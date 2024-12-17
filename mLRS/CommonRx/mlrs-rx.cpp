@@ -93,6 +93,7 @@
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
+#include "../Common/time_stats.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
 #include "../Common/rf_power.h"

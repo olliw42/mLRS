@@ -109,6 +109,7 @@
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
+#include "../Common/time_stats.h"
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
