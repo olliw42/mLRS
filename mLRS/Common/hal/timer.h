@@ -20,10 +20,12 @@
 // Two variables are required to avoid race with HAL_IncTick() when tasks may take longer than one tick
 uint32_t doSysTask_done = 0; // Never changed in ISR; incremented when (uwTick != doSysTask_done)
 
+
 void resetSysTask()
 {
     doSysTask_done = uwTick;
 }
+
 
 volatile bool doSysTask()
 {
@@ -33,6 +35,7 @@ volatile bool doSysTask()
     }
     return false;
 }
+
 
 void HAL_IncTick(void) // overwrites __weak declaration in stm32yyxx_hal.c
 {
@@ -70,6 +73,7 @@ uint16_t micros16(void)
 
 // needs to be called not later than every 65 ms
 // to ensure the overflow counter is updated properly
+// not ISR safe
 uint64_t micros64(void)
 {
 static uint64_t overflow_cnt = 0;

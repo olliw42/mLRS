@@ -2,82 +2,97 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
-// time_stats
+// Time statistics, primarily for dev-ing
+//*******************************************************
+// The routines for one block can be used either in ISR or normal context, but not in both.
 //*******************************************************
 #ifndef TIME_STATS_H
 #define TIME_STATS_H
 #pragma once
 
-// Time Statistics for up to PM_NUM_BLOCK pairs of measurement points
-//#define USE_TIME_STATS // Define this here or somewhere to use these functions
-#if defined USE_DEBUG && defined USE_TIME_STATS
-#define TS_NUM_BLOCK 10
 
-struct TS_store {
-    uint32_t start;
-    uint32_t last_report;
+extern uint16_t micros16(void);
+
+
+// time statistics for up to PM_NUM_BLOCK pairs of measurement points
+#ifdef DEBUG_ENABLED
+
+#define TS_NUM_BLOCK  10
+
+typedef struct {
+    uint32_t tstart_us; // 0 means reporting is disabled
+    uint32_t tlast_report_us;
+    uint32_t count; // counts the number of time measurements during the reporting time
     uint32_t total;
     uint32_t min;
     uint32_t max;
-    uint32_t count;
-    uint32_t overflow;
+    uint32_t overflow_cnt;
     uint16_t last_cnt;
-};
-static struct TS_store TS_data[TS_NUM_BLOCK];
+} tTsStore;
 
-static inline __attribute__((always_inline)) uint32_t TS_MICROS32(int block) {
+static tTsStore ts_data[TS_NUM_BLOCK] = {};
 
-    // Separate overflow and last_cnt for each block avoids some race conditions and
-    // allows either ISR/normal use; but not both with the same block.
-#if defined ESP8266 || defined ESP32
-    uint16_t cnt = micros();
-#else
-    uint16_t cnt = MICROS_TIMx->CNT;
-#endif
-    if (cnt < TS_data[block].last_cnt) {
-        TS_data[block].overflow += 0x10000;
+
+uint32_t TS_MICROS32(uint8_t block)
+{
+    // separate overflow and last_cnt for each block
+    // avoids some race conditions and allows either ISR/normal use; but not both with the same block
+    uint16_t cnt = micros16();
+    if (cnt < ts_data[block].last_cnt) {
+        ts_data[block].overflow_cnt += 0x10000;
     }
-    TS_data[block].last_cnt = cnt;
-    return TS_data[block].overflow + cnt;
+    ts_data[block].last_cnt = cnt;
+    return ts_data[block].overflow_cnt + cnt;
 }
 
-inline __attribute__((always_inline)) void TS_START(int block) {
-    TS_data[block].start = TS_MICROS32(block);
+
+void TS_START(uint8_t block)
+{
+    ts_data[block].tstart_us = TS_MICROS32(block);
 }
 
-inline __attribute__((always_inline)) void TS_END(int block, uint32_t report_period = 10000000, bool cont = false) {
-    if (!cont && TS_data[block].start == 0) return; // no end without start
-    uint32_t time = TS_MICROS32(block);
-    uint32_t elapsed = time - TS_data[block].start;
-    if (TS_data[block].count == 0) {
-        TS_data[block].total = TS_data[block].max = TS_data[block].min = elapsed;
+
+void TS_END(uint8_t block, uint32_t report_period_ms = 10000, bool _continue = false)
+{
+    if (!_continue && ts_data[block].tstart_us == 0) return; // no end without start
+
+    uint32_t tnow_us = TS_MICROS32(block);
+    uint32_t elapsed = tnow_us - ts_data[block].tstart_us;
+
+    if (ts_data[block].count == 0) {
+        ts_data[block].total = ts_data[block].max = ts_data[block].min = elapsed;
     } else {
-        TS_data[block].total += elapsed;
-        if (elapsed < TS_data[block].min) TS_data[block].min = elapsed;
-        if (elapsed > TS_data[block].max) TS_data[block].max = elapsed;
-    }    
-    TS_data[block].count ++;
-    if (time - TS_data[block].last_report >= report_period) {
+        ts_data[block].total += elapsed;
+        if (elapsed < ts_data[block].min) ts_data[block].min = elapsed;
+        if (elapsed > ts_data[block].max) ts_data[block].max = elapsed;
+    }
+
+    ts_data[block].count ++;
+
+    if ((tnow_us - ts_data[block].tlast_report_us) >= report_period_ms * 1000) {
         dbg.puts("[");
         dbg.puts(u8toBCD_s(block)); dbg.puts("] ");
-        dbg.puts(u32toBCD_s(TS_data[block].total));
+        dbg.puts(u32toBCD_s(ts_data[block].total));
         dbg.puts("/");
-        dbg.puts(u32toBCD_s(TS_data[block].count));
+        dbg.puts(u32toBCD_s(ts_data[block].count));
         dbg.puts(" ");
-        dbg.puts(u16toBCD_s(TS_data[block].min));
+        dbg.puts(u16toBCD_s(ts_data[block].min));
         dbg.puts(" ");
-        dbg.puts(u16toBCD_s(TS_data[block].max));
+        dbg.puts(u16toBCD_s(ts_data[block].max));
         dbg.puts("\r\n");
-        TS_data[block].count = 0;
-        TS_data[block].last_report = time;
+
+        ts_data[block].count = 0;
+        ts_data[block].tlast_report_us = tnow_us;
     }
-    if (cont)
-        TS_data[block].start = TS_MICROS32(block); // continuous accumulation
-    else
-        TS_data[block].start = 0; // no end without start
+
+    if (_continue) {
+        ts_data[block].tstart_us = TS_MICROS32(block); // continuous accumulation
+    } else {
+        ts_data[block].tstart_us = 0; // no end without start
+    }
 }
-#endif
+
+#endif // DEBUG_ENABLED
 
 #endif // TIME_STATS_H
