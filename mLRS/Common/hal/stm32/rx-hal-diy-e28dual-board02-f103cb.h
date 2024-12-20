@@ -16,6 +16,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
+#define DEVICE_HAS_SYSTEMBOOT
 
 
 #ifdef MLRS_FEATURE_DIVERSITY
@@ -274,6 +275,23 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
+
+
+//-- SystemBootLoader
+
+#define BOOT_BUTTON               IO_PA15
+
+void systembootloader_init(void)
+{
+    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    uint8_t cnt = 0;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
+    }
+    if (cnt > 12) {
+        BootLoaderInit();
+    }
+}
 
 
 //-- POWER
