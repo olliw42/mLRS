@@ -63,6 +63,9 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
+#if defined ESP8266 || defined ESP32
+#include "esp-jr_pin5_interface.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 
 // not available in stdstm32-uart.h, used for half-duplex mode
@@ -105,7 +108,8 @@ class tPin5BridgeBase
 
     // interface to the uart hardware peripheral used for the bridge, called in isr context
     void pin5_tx_start(void) { uart_tx_start(); }
-    void pin5_putc(char c) { uart_tx_putc_totxbuf(c); }
+    // This is clumsy.  Can we avoid directly manipulating txbuf?
+    void pin5_putbuf(uint8_t* buf, uint16_t len) { while (len--) {uart_tx_putc_totxbuf(*(buf++)); }}
 
     // for in-isr processing
     void pin5_tx_enable(bool enable_flag);
@@ -370,5 +374,6 @@ void tPin5BridgeBase::CheckAndRescue(void)
     }
 }
 
+#endif // defined ESP8266 || defined ESP32
 
 #endif // JRPIN5_INTERFACE_H

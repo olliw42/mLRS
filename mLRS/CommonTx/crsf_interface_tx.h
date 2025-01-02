@@ -162,10 +162,8 @@ bool tTxCrsf::transmit_start(void)
         return false;
     }
 
-    for (uint8_t i = 0; i < tx_available; i++) {
-        uint8_t c = tx_frame[i];
-        pin5_putc(c);
-    }
+    pin5_putbuf(tx_frame, tx_available);
+
     tx_available = 0;
 
     return true;
