@@ -113,7 +113,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void SetRfPower_dbm(int8_t power_dbm)
     {
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, LR11XX_RAMPTIME_48_US); // Closet to 40 uS used by SX126x / SX127x
+        SetTxParams(sx_power, LR11XX_RAMPTIME_48_US); // Closest to 40 uS used by SX126x / SX127x
     }
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
@@ -132,6 +132,33 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetPacketType(LR11XX_PACKET_TYPE_GFSK);
         }
 
+      switch (gconfig->FrequencyBand) {
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibrateImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+        default:
+            while(1){} // protection
+      }
+
+      SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
+      SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
+
+      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
+
+      SetDioAsRfSwitch(0b0000111, 0, 0b0000010, 0b0000100,  0b00001000, 0b00000010)  // Clean up?
+
+      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+      ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+
+      if (gconfig->modeIsLora()) {
+            SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
+      } else {
+          // reserve
+      }
+
+      SetFs();
     }
 
 
