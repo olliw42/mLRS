@@ -96,7 +96,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
-        if (index >= sizeof(Lr11xxLoraConfiguration)/sizeof(Lr11xxxLoraConfiguration[0])) while(1){} // must not happen
+        if (index >= sizeof(Lr11xxLoraConfiguration)/sizeof(Lr11xxLoraConfiguration[0])) while(1){} // must not happen
 
         lora_configuration = &(Lr11xxLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
@@ -133,11 +133,11 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         }
 
       switch (gconfig->FrequencyBand) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibrateImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
         default:
             while(1){} // protection
       }
@@ -147,10 +147,10 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
       SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
 
-      SetDioAsRfSwitch(0b0000111, 0, 0b0000010, 0b0000100,  0b00001000, 0b00000010)  // Clean up?
+      SetDioAsRfSwitch(0b0000111, 0, 0b0000010, 0b0000100,  0b00001000, 0b00000010);  // Clean up?
 
       SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
-      ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+      ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);  // DIO1 only
 
       if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
@@ -175,20 +175,20 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
-        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
         SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
     }
 
     void SetToRx(uint16_t tmo_ms)
     {
-        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
 
     void SetToIdle(void)
     {
         SetFs();
-        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
@@ -196,7 +196,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         int16_t rssi;
 
         if (gconfig->modeIsLora()) {
-            LR11xxDriverBase::GetPacketStatus(&rssi, Snr);
+            Lr11xxDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
             // FSK reserve
         }
@@ -222,8 +222,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         if (gconfig->modeIsLora()) {
             uint8_t index = gconfig->LoraConfigIndex;
-            if (index >= sizeof(Lr11xxxLoraConfiguration)/sizeof(Lr11xxxLoraConfiguration[0])) while(1){} // must not happen
-            lora_configuration = &(Lr11xxxLoraConfiguration[index]);
+            if (index >= sizeof(Lr11xxLoraConfiguration)/sizeof(Lr11xxLoraConfiguration[0])) while(1){} // must not happen
+            lora_configuration = &(Lr11xxLoraConfiguration[index]);
         } else {
             // FSK reserve
         }
@@ -323,7 +323,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, LR11XX_MAX_DBM);
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
 #else
         // reserved
 #endif
@@ -389,8 +389,6 @@ class Lr11xxDriver : public Lr11xxDriverCommon
        //delay_us(125); // may not be needed if busy available
     }
 };
-
-#endif
 
 
 //-------------------------------------------------------
@@ -472,10 +470,11 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, LR11XX_MAX_DBM);
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
 #else
         // reserved
 #endif
+    }
 
     //-- init API functions
 

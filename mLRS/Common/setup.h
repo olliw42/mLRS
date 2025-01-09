@@ -509,7 +509,7 @@ void configure_mode(uint8_t mode)
 #ifdef DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
 #elif defined DEVICE_HAS_LR11xx
-        Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW500_SF5_CR4_5
+        Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW500_SF5_CR4_5;
 #else
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
 
@@ -525,7 +525,7 @@ void configure_mode(uint8_t mode)
 #elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
 #elif defined DEVICE_HAS_LR11xx
-        Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW500_SF6_CR4_5
+        Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW500_SF6_CR4_5;
 #else
         Config.Sx.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
 #endif
