@@ -129,7 +129,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         if (gconfig->modeIsLora()) {
             SetPacketType(LR11XX_PACKET_TYPE_LORA);
         } else {
-            SetPacketType(LR11XX_PACKET_TYPE_GFSK);
+            // SetPacketType(LR11XX_PACKET_TYPE_GFSK);
         }
 
       switch (gconfig->FrequencyBand) {
@@ -161,7 +161,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
       SetFs();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
@@ -233,14 +233,14 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     {
         if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : while(1){};  // play it safe for the moment
+        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : while(1){};  // FSK reserve, play it safe for the moment
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
         if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : : while(1){};  // play it safe for the moment
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : while(1){};  // FSK reserve, play it safe for the moment
     }
 
     int8_t RfPower_dbm(void)
@@ -264,11 +264,285 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 // Driver for SX1
 //-------------------------------------------------------
 
+#ifndef SX_BUSY
+  #error SX must have a BUSY pin!
+#endif
+#ifndef SX_RESET
+  #error SX must have a RESET pin!
+#endif
+
+// map the irq bits
+typedef enum {
+    SX_IRQ_TX_DONE = LR11XX_IRQ_TX_DONE,
+    SX_IRQ_RX_DONE = LR11XX_IRQ_RX_DONE,
+    SX_IRQ_TIMEOUT = LR11XX_IRQ_TIMEOUT,
+    SX_IRQ_ALL     = 0,
+} SX_IRQ_ENUM;
+
+
+class Lr11xxDriver : public Lr11xxDriverCommon
+{
+  public:
+
+    //-- interface to SPI peripheral
+
+    void WaitOnBusy(void) override
+    {
+        while (sx_busy_read()) { __NOP(); };
+    }
+
+    void SpiSelect(void) override
+    {
+        spi_select();
+        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        spi_deselect();
+    }
+
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, LR11XX_MAX_DBM);
+#else
+        // reserved
+#endif
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX_RESET);
+        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        gpio_high(SX_RESET);
+        delay_ms(50); // semtech driver says "typically 2ms observed"
+        WaitOnBusy();
+    }
+
+    void Init(void)
+    {
+        Lr11xxDriverCommon::Init();
+
+        spi_init();
+        spi_setnop(0x00); // 0x00 = NOP
+        sx_init_gpio();
+        sx_dio_exti_isr_clearflag();
+        sx_dio_init_exti_isroff();
+
+        // we could probably speed up by using WaitOnBusy()
+        delay_ms(300);
+        
+        _reset(); // this is super crucial !
+        SetStandby(LR11XX_STDBY_CONFIG_STDBY_XOSC); // should be in STDBY_RC after reset
+
+        delay_us(1000); // this is important, 500 us ok
+    }
+
+    //-- high level API functions
+
+    void StartUp(tSxGlobalConfig* const global_config)
+    {
+#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
+        SetRegulatorMode(LR11XX_REGULATOR_MODE_DCDC);
+#endif
+
+        Configure(global_config);
+        delay_us(125); // may not be needed if busy available
+
+        sx_dio_enable_exti_isr();
+    }
+
+    //-- this are the API functions used in the loop
+
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
+    {
+        sx_amp_transmit();
+        Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
+        //delay_us(125); // may not be needed if busy available
+    }
+
+    void SetToRx(uint16_t tmo_ms)
+    {
+        sx_amp_receive();
+        Lr11xxDriverCommon::SetToRx(tmo_ms);
+       //delay_us(125); // may not be needed if busy available
+    }
+};
+
+#endif
+
 
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
 
-// Note - ELRS hardware use single SPI, look at SX128x driver
+#ifndef SX2_BUSY
+  #error SX2 must have a BUSY pin!
+#endif
+#ifndef SX2_RESET
+  #error SX2 must have a RESET pin!
+#endif
+
+// map the irq bits
+typedef enum {
+    SX2_IRQ_TX_DONE = LR11XX_IRQ_TX_DONE,
+    SX2_IRQ_RX_DONE = LR11XX_IRQ_RX_DONE,
+    SX2_IRQ_TIMEOUT = LR11XX_IRQ_TIMEOUT,
+    SX2_IRQ_ALL     = 0,
+} SX2_IRQ_ENUM;
+
+
+class Lr11xxDriver2 : public Lr11xxDriverCommon
+{
+  public:
+
+    void WaitOnBusy(void) override
+    {
+        while (sx2_busy_read()) { __NOP(); };
+    }
+
+    void SpiSelect(void) override
+    {
+        spib_select();
+        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        spib_deselect();
+    }
+
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spib_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spib_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spib_write(dataout, len);
+    }
+#else
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+#endif
+
+    //-- RF power interface
+
+    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, LR11XX_MAX_DBM);
+#else
+        // reserved
+#endif
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX2_RESET);
+        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        gpio_high(SX2_RESET);
+        delay_ms(50); // semtech driver says "typically 2ms observed"
+        WaitOnBusy();
+    }
+
+    void Init(void)
+    {
+        Lr11xxDriverCommon::Init();
+
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+        spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
+        sx2_init_gpio();
+        sx2_dio_exti_isr_clearflag();
+        sx2_dio_init_exti_isroff();
+
+        // we could probably speed up by using WaitOnBusy()
+        delay_ms(300);
+        _reset(); // this is super crucial !
+
+        SetStandby(LR11XX_STDBY_CONFIG_STDBY_XOSC); // should be in STDBY_RC after reset
+        delay_us(1000); // this is important, 500 us ok
+    }
+
+    //-- high level API functions
+
+    void StartUp(tSxGlobalConfig* const global_config)
+    {
+
+
+#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
+        SetRegulatorMode(LR11XX_REGULATOR_MODE_DCDC);
+#endif
+
+        Configure(global_config);
+        delay_us(125); // may not be needed if busy available
+
+        sx2_dio_enable_exti_isr();
+    }
+
+    //-- this are the API functions used in the loop
+
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
+    {
+        sx2_amp_transmit();
+        Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
+        //delay_us(125); // may not be needed if busy available
+    }
+
+    void SetToRx(uint16_t tmo_ms)
+    {
+        sx2_amp_receive();
+        Lr11xxDriverCommon::SetToRx(tmo_ms);
+        //delay_us(125); // may not be needed if busy available
+    }
+};
+
+#endif
 
 #endif // LR11XX_DRIVER_H
