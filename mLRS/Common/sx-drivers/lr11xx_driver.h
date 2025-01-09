@@ -233,14 +233,14 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     {
         if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : while(1){};  // FSK reserve, play it safe for the moment
+        return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
         if (lora_configuration == nullptr) config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : while(1){};  // FSK reserve, play it safe for the moment
+        return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
