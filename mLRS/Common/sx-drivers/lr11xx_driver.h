@@ -155,12 +155,100 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
       if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
       } else {
-          // reserve
+          // FSK reserve
       }
 
       SetFs();
     }
 
+    //-- this are the API functions used in the loop
+
+    void ReadFrame(uint8_t* const data, uint8_t len)
+    {
+        uint8_t rxStartBufferPointer;
+        uint8_t rxPayloadLength;
+
+        GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
+        ReadBuffer(rxStartBufferPointer, data, len);
+    }
+
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
+    {
+        WriteBuffer(0, data, len);
+        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+        SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
+    }
+
+    void SetToRx(uint16_t tmo_ms)
+    {
+        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+        SetRx(tmo_ms * 33); // 0 = no timeout
+    }
+
+    void SetToIdle(void)
+    {
+        SetFs();
+        ClearIrqStatus(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);
+    }
+
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
+    {
+        int16_t rssi;
+
+        if (gconfig->modeIsLora()) {
+            LR11xxDriverBase::GetPacketStatus(&rssi, Snr);
+        } else {
+            // FSK reserve
+        }
+
+        if (rssi > -1) rssi = -1; // we do not support values larger than this
+        if (rssi < -127) rssi = -127; // we do not support values lower than this
+
+        *RssiSync = rssi;
+    }
+
+    void HandleAFC(void) {} // ???
+
+    //-- RF power interface
+
+    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+
+    //-- helper
+
+    void config_calc(void)
+    {
+        int8_t power_dbm = gconfig->Power_dbm;
+        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+
+        if (gconfig->modeIsLora()) {
+            uint8_t index = gconfig->LoraConfigIndex;
+            if (index >= sizeof(Lr11xxxLoraConfiguration)/sizeof(Lr11xxxLoraConfiguration[0])) while(1){} // must not happen
+            lora_configuration = &(Lr11xxxLoraConfiguration[index]);
+        } else {
+            // FSK reserve
+        }
+    }
+
+    uint32_t TimeOverAir_us(void)
+    {
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
+        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : while(1){};  // play it safe for the moment
+    }
+
+    int16_t ReceiverSensitivity_dbm(void)
+    {
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : : while(1){};  // play it safe for the moment
+    }
+
+    int8_t RfPower_dbm(void)
+    {
+        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+
+        return actual_power_dbm;
+    }
 
   protected:
     tSxGlobalConfig* gconfig;
