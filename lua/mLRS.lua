@@ -1374,7 +1374,7 @@ local function scriptRun(event)
         return 2
     end
     if mbridge == nil or not mbridge.enabled() then
-        if model.getModule(0).Type ~= 5 and model.getModule(0).Type ~= 5 then
+        if model.getModule(0).Type ~= 5 and model.getModule(1).Type ~= 5 then
             error("mLRS not accessible: mBridge or CRSF not enabled!")
             return 2
         end
