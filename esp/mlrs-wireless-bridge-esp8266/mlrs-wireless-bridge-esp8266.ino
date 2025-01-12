@@ -131,7 +131,7 @@ void led_off(void) {}
 
 #if (WIRELESS_PROTOCOL <= 1) // WiFi TCP, UDP
 
-IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // The first DHCP client gets assigned +99
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // The first DHCP client/MissionPlanner gets assigned +99
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 #if WIRELESS_PROTOCOL == 1 // UDP
