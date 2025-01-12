@@ -131,7 +131,7 @@ void led_off(void) {}
 
 #if (WIRELESS_PROTOCOL <= 1) // WiFi TCP, UDP
 
-IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // The first DHCP client/MissionPlanner gets assigned +99
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 #if WIRELESS_PROTOCOL == 1 // UDP
@@ -198,7 +198,8 @@ void setup()
     WiFi.setOutputPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
   #endif
   #if (WIRELESS_PROTOCOL == 1)
-    ip_udp[3] = 255; // somehow important
+    // Broadcast causes message loss for some reason
+    // ip_udp[3] = 255;
     udp.begin(port_udp);
   #else
     server.begin();
