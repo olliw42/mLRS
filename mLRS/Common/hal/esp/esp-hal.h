@@ -88,8 +88,8 @@
 #include "tx-hal-radiomaster-rp4td-2400-esp32.h"
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_TX16S_2400_ESP32
-#include "tx-hal-radiomaster-tx16s-2400-esp32.h"
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_2400_ESP32
+#include "tx-hal-radiomaster-int-2400-esp32.h"
 #endif
 
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
