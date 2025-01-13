@@ -20,10 +20,12 @@
   - Power up radio, plug in USB, select VCP
   - On Linux, run something like "python ExpressLRS/src/python/ETXinitPassthrough.py"
   - Use Visual Studio Code or esptool (or maybe web flasher?) to flash via ACM serial port.
+
+  Set the Internal RF to CRSF 400k baud in SYS->HARDWARE on EdgeTx radio
 */
 
 //-------------------------------------------------------
-// ESP32, Radiomaster TX16S internal ELRS
+// ESP32, Radiomaster internal ELRS 2.4GHz
 //-------------------------------------------------------
 /*
     Pin Defs
@@ -60,7 +62,6 @@
 
 
 #define DEVICE_HAS_JRPIN5
-#define JRPIN5_INTERNAL // Full duplex CRSF interface for Internal modules
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_NO_COM
 //#define DEVICE_HAS_NO_DEBUG
@@ -80,10 +81,9 @@
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
-//#define UART_BAUD                 400000
-#define UART_BAUD                 1843200 // Internal module
-#define UART_USE_TX_IO           IO_P1
-#define UART_USE_RX_IO           IO_P3
+#define UART_BAUD                 400000
+#define UART_USE_TX_IO            IO_P1
+#define UART_USE_RX_IO            IO_P3
 #define UART_TXBUFSIZE            512 //0 // 128 fifo should be sufficient // 512
 #define UART_RXBUFSIZE            512
 

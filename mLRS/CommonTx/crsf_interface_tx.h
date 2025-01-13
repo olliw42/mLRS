@@ -326,6 +326,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     if (!enabled) return false;
 
     CheckAndRescue();
+    uart_poll();
 
     if (!channels_received) return false;
     channels_received = false;

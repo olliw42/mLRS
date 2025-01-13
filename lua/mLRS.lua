@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2024-10-25.01'
+local version = '2025-01-12.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'

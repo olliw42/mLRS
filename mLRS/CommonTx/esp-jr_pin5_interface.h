@@ -51,8 +51,11 @@ class tPin5BridgeBase
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,
+
+        // transmit states, used by all
+        STATE_TRANSMIT_START,
+        STATE_TRANSMITING,
     } STATE_ENUM;
-#define STATE_TRANSMIT_START STATE_IDLE // Don't need this state for full duplex
 
     // not used in this class, but required by the children, so just add them here
     // no need for volatile since used only in isr context
@@ -66,6 +69,7 @@ class tPin5BridgeBase
     // can't hurt generally as safety net
     uint32_t nottransmiting_tlast_ms;
     void CheckAndRescue(void);
+    void uart_poll(void);
 };
 
 
@@ -105,16 +109,14 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 
 void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
-    // Not yet used
+    // not yet used
     // parse_nextchar(c);
 }
 
 
 void tPin5BridgeBase::uart_tc_callback(void)
 {
-    // Not yet used
-    // pin5_tx_enable(false); // switches on rx
-    //state = STATE_IDLE;
+    // not needed for full duplex
 }
 
 
@@ -130,16 +132,20 @@ void tPin5BridgeBase::uart_tc_callback(void)
 
 void tPin5BridgeBase::CheckAndRescue(void)
 {
-    while (uart_rx_available()) { // polling for now
+    // not needed for full duplex
+}
+
+void tPin5BridgeBase::uart_poll(void)
+{
+    // polling for now
+    while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
         parse_nextchar(uart_getc());
     }
 
-    uint32_t tnow_ms = millis32();
-
-    // Send telemetry and mbridge at the same rate as external module to be sure lua can keep up
-    if (tnow_ms - nottransmiting_tlast_ms >= 4) { // time to send telemetry
-        nottransmiting_tlast_ms = tnow_ms;
+    // Send telemetry after every received message
+    if (state == STATE_TRANSMIT_START) { // time to send telemetry
         transmit_start();
+        state = STATE_IDLE;
     }
 }
 
