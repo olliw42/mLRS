@@ -77,6 +77,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         uint16_t firmwareRev = (static_cast<uint16_t>(fwMajor) << 8) | fwMinor;
 
+        Serial.println("useCase: ");
+        Serial.println(useCase);  // useCase = 3 means LR1121
+
         ClearErrors();
 
         return ((firmwareRev != 0) && (firmwareRev != 65535));
@@ -150,7 +153,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
       SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
 
-      SetDioAsRfSwitch(0b0000111, 0, 0b0000010, 0b0000100,  0b00001000, 0b00000010);  // Clean up?
+      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
 
       SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
       ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT | LR11XX_IRQ_ALL);  // DIO1 only
