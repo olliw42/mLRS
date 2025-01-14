@@ -77,7 +77,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         uint16_t firmwareRev = (static_cast<uint16_t>(fwMajor) << 8) | fwMinor;
 
-        Serial.println("useCase: ");
+        Serial.println();
+        Serial.print("useCase: ");
         Serial.println(useCase);  // useCase = 3 means LR1121
 
         ClearErrors();
@@ -129,6 +130,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
+      // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams  
+      
       gconfig = global_config;
 
         if (gconfig->modeIsLora()) {
@@ -151,18 +154,18 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
       SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
       SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
 
-      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
-
       SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
 
       SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
-      ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT | LR11XX_IRQ_ALL);  // DIO1 only
+      ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT | LR11XX_IRQ_ALL);
 
       if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
       } else {
           // FSK reserve
       }
+
+      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
 
       SetFs();
     }
@@ -342,7 +345,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
         gpio_low(SX_RESET);
         delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
         gpio_high(SX_RESET);
-        delay_ms(50); // semtech driver says "typically 2ms observed"
+        delay_ms(300); // ELRS says busy is high for 230 ms after reset
         WaitOnBusy();
     }
 
@@ -489,7 +492,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
         gpio_low(SX2_RESET);
         delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
         gpio_high(SX2_RESET);
-        delay_ms(50); // semtech driver says "typically 2ms observed"
+        delay_ms(300); // ELRS says busy is high for 230 ms after reset
         WaitOnBusy();
     }
 
