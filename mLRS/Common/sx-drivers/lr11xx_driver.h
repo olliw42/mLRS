@@ -77,6 +77,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         uint16_t firmwareRev = (static_cast<uint16_t>(fwMajor) << 8) | fwMinor;
 
+        ClearErrors();
+
         return ((firmwareRev != 0) && (firmwareRev != 65535));
     }
 
@@ -128,6 +130,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(LR11XX_PACKET_TYPE_LORA);
+            Serial.println("Packet Type Set");
         } else {
             // SetPacketType(LR11XX_PACKET_TYPE_GFSK);
         }
@@ -149,8 +152,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
       SetDioAsRfSwitch(0b0000111, 0, 0b0000010, 0b0000100,  0b00001000, 0b00000010);  // Clean up?
 
-      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
-      ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);  // DIO1 only
+      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+      ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);  // DIO1 only
 
       if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
@@ -175,20 +178,20 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
-        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);
         SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
     }
 
     void SetToRx(uint16_t tmo_ms)
     {
-        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
 
     void SetToIdle(void)
     {
         SetFs();
-        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TX_DONE | LR11XX_IRQ_TIMEOUT);
+        ClearIrq(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
