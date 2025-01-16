@@ -14,7 +14,7 @@
 #include "../Common/protocols/msp_protocol.h"
 
 
-#ifdef DEVICE_HAS_JRPIN5
+#ifdef USE_JRPIN5
 
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
@@ -989,7 +989,7 @@ class tTxCrsfDummy
 
 tTxCrsfDummy crsf;
 
-#endif // ifdef DEVICE_HAS_JRPIN5
+#endif // ifdef USE_JRPIN5
 
 #endif // CRSF_INTERFACE_TX_H
 

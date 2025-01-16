@@ -61,7 +61,7 @@
 */
 
 
-#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_JRPIN5_FULL_DUPLEX
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_NO_COM
 //#define DEVICE_HAS_NO_DEBUG
@@ -69,8 +69,11 @@
 
 
 //-- UARTS
-// UARTB = serial port to backpack WiFi bridge
-// UART  = full duplex CRSF serial connection to radio - code still calls it JR bay pin5
+// UARTB = serial port BT/ESP port
+// UARTC = COM (CLI)
+// UARTD = serial2
+// UART  = JR bay pin5, full duplex CRSF serial connection to radio - code still calls it JR bay pin5
+// UARTE = in port, SBus or whatever
 // UARTF = debug port
 
 #define UARTB_USE_SERIAL // serial, is on P16/P17

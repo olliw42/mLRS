@@ -11,7 +11,7 @@
 #pragma once
 
 
-#ifdef DEVICE_HAS_JRPIN5
+#ifdef USE_JRPIN5
 
 #include "../Common/libs/fifo.h"
 #include "setup_tx.h"
@@ -864,6 +864,6 @@ class tMBridge : public tSerialBase
 
 tMBridge mbridge;
 
-#endif // ifdef DEVICE_HAS_JRPIN5
+#endif // ifdef USE_JRPIN5
 
 #endif // MBRIDGE_INTERFACE_H
