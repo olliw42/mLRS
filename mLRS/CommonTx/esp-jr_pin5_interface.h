@@ -4,11 +4,15 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
 // ESP JR Pin5 Interface Header
-// Currently works only for internal modules (Full duplex)
+// Currently works only for internal modules (full duplex)
 //********************************************************
 #ifndef ESP_JRPIN5_INTERFACE_H
 #define ESP_JRPIN5_INTERFACE_H
 
+
+#ifndef DEVICE_HAS_JRPIN5_FULL_DUPLEX
+  #error ESP JrPin5 interface only fpr full duplex currently!
+#endif
 
 #include "../Common/esp-lib/esp-uart.h"
 
