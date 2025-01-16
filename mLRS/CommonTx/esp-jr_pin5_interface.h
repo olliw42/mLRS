@@ -2,7 +2,6 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // ESP JR Pin5 Interface Header
 // Currently works only for internal modules (Full duplex)
@@ -10,7 +9,9 @@
 #ifndef ESP_JRPIN5_INTERFACE_H
 #define ESP_JRPIN5_INTERFACE_H
 
+
 #include "../Common/esp-lib/esp-uart.h"
+
 
 class tPin5BridgeBase
 {
@@ -25,7 +26,7 @@ class tPin5BridgeBase
 
     // interface to the uart hardware peripheral used for the bridge, may be called in isr context
     void pin5_tx_start(void) {}
-    void pin5_putbuf(uint8_t* const buf, uint16_t len) {uart_putbuf(buf, len);}
+    void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
 
     // for in-isr processing
     void pin5_tx_enable(bool enable_flag);
@@ -35,6 +36,9 @@ class tPin5BridgeBase
     // actual isr functions
     void uart_rx_callback(uint8_t c);
     void uart_tc_callback(void);
+
+    // asynchronous uart handler
+    void uart_do(void);
 
     // parser
     typedef enum {
@@ -65,11 +69,7 @@ class tPin5BridgeBase
     uint16_t tlast_us;
 
     // check and rescue
-    // the FRM303 can get stuck, whatever we tried, so brutal rescue
-    // can't hurt generally as safety net
-    uint32_t nottransmiting_tlast_ms;
-    void CheckAndRescue(void);
-    void uart_poll(void);
+    void CheckAndRescue(void) {} // not needed for ESP full duplex
 };
 
 
@@ -83,7 +83,6 @@ void tPin5BridgeBase::Init(void)
     telemetry_start_next_tick = false;
     telemetry_state = 0;
 
-    nottransmiting_tlast_ms = 0;
     uart_init();
 }
 
@@ -100,49 +99,30 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
-    // nothing to do for full duplex
+    // nothing to do for ESP full duplex
 }
 
 
-// we do not add a delay here before we transmit
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
-
 void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
-    // not yet used
-    // parse_nextchar(c);
+    // not used for ESP full duplex
 }
 
 
 void tPin5BridgeBase::uart_tc_callback(void)
 {
-    // not needed for full duplex
+    // not needed for ESP full duplex
 }
 
 
-//-------------------------------------------------------
-// Check and rescue
-// a good place to call it could be ChannelsUpdated()
-// Note: For the FRM303 it was observed that the TC callback may be missed in the uart isr, basically when
-// the jrpin5's uart isr priority is too low. This caused the jrpin5 loop to get stuck in STATE_TRANSMITING,
-// and not even channel data would be received anymore (= very catastrophic). This code avoids this.
-// With proper isr priorities, the issue is mainly gone, but the code remains, as safety net.
-//
-// For full duplex CRSF (internal module), this is used to poll for received bytes and pace telemetry
-
-void tPin5BridgeBase::CheckAndRescue(void)
+void tPin5BridgeBase::uart_do(void)
 {
-    // not needed for full duplex
-}
-
-void tPin5BridgeBase::uart_poll(void)
-{
-    // polling for now
+    // poll uart
     while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
         parse_nextchar(uart_getc());
     }
 
-    // Send telemetry after every received message
+    // send telemetry after every received message
     if (state == STATE_TRANSMIT_START) { // time to send telemetry
         transmit_start();
         state = STATE_IDLE;

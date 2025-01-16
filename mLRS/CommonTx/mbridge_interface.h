@@ -135,16 +135,17 @@ bool tMBridge::transmit_start(void)
 
 
 // is called in isr context
+// we can assume that there is at least one byte available
 // send in one chunk to help ensure it is transmitted with no gaps
 uint8_t tMBridge::send_serial(void)
 {
-    uint8_t buf[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX+1];
-    uint8_t i = 0;
-    buf[i] = 0x00; // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
-    while (i++ < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX && serial_rx_available()) {
-        buf[i] = serial_getc();
+    uint8_t buf[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1];
+    uint8_t cnt = 0;
+    buf[cnt++] = 0x00; // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
+    while (serial_rx_available() && cnt < (MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1)) {
+        buf[cnt++] = serial_getc();
     }
-    pin5_putbuf(buf, i);
+    pin5_putbuf(buf, cnt);
     return 1;
 }
 
@@ -338,8 +339,9 @@ bool tMBridge::ChannelsUpdated(tRcData* const rc)
 
     if (!enabled) return false;
 
+    uart_do();
+
     CheckAndRescue();
-    uart_poll();
 
     if (!channels_received) return false;
     channels_received = false;

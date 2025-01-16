@@ -108,8 +108,7 @@ class tPin5BridgeBase
 
     // interface to the uart hardware peripheral used for the bridge, called in isr context
     void pin5_tx_start(void) { uart_tx_start(); }
-    // This is clumsy.  Can we avoid directly manipulating txbuf?
-    void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) {uart_tx_putc_totxbuf(buf[i]); }}
+    void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
 
     // for in-isr processing
     void pin5_tx_enable(bool enable_flag);
@@ -119,6 +118,9 @@ class tPin5BridgeBase
     // actual isr functions
     void uart_rx_callback(uint8_t c);
     void uart_tc_callback(void);
+
+    // asynchronous uart handler
+    void uart_do(void) {} // not used on STM32
 
     // parser
     typedef enum {
@@ -153,7 +155,6 @@ class tPin5BridgeBase
     // can't hurt generally as safety net
     uint32_t nottransmiting_tlast_ms;
     void CheckAndRescue(void);
-    void uart_poll(void);
 };
 
 
@@ -375,10 +376,6 @@ void tPin5BridgeBase::CheckAndRescue(void)
     }
 }
 
-void tPin5BridgeBase::uart_poll(void)
-{
-    // not polled
-}
 
 #endif // defined ESP8266 || defined ESP32
 
