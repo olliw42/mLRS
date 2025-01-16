@@ -135,15 +135,16 @@ bool tMBridge::transmit_start(void)
 
 
 // is called in isr context
-// we can assume that there is at least one byte available
+// send in one chunk to help ensure it is transmitted with no gaps
 uint8_t tMBridge::send_serial(void)
 {
-    pin5_putc(0x00); // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
-    for (uint8_t i = 0; i < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX; i++) {
-        uint8_t c = serial_getc();
-        pin5_putc(c);
-        if (!serial_rx_available()) break;
+    uint8_t buf[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX+1];
+    uint8_t i = 0;
+    buf[i] = 0x00; // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
+    while (i++ < MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX && serial_rx_available()) {
+        buf[i] = serial_getc();
     }
+    pin5_putbuf(buf, i);
     return 1;
 }
 
@@ -151,10 +152,7 @@ uint8_t tMBridge::send_serial(void)
 // is called in isr context
 void tMBridge::send_command(void)
 {
-    for (uint8_t i = 0; i < cmd_m2r_available; i++) {
-        uint8_t c = cmd_m2r_frame[i];
-        pin5_putc(c);
-    }
+    pin5_putbuf(cmd_m2r_frame, cmd_m2r_available);
 }
 
 
@@ -341,6 +339,7 @@ bool tMBridge::ChannelsUpdated(tRcData* const rc)
     if (!enabled) return false;
 
     CheckAndRescue();
+    uart_poll();
 
     if (!channels_received) return false;
     channels_received = false;

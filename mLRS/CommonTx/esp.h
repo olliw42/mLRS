@@ -71,6 +71,8 @@ bool com_is_full(void)
 {
 #ifdef DEVICE_HAS_COM_ON_USB
     return usb_tx_full();
+#elif defined DEVICE_HAS_NO_COM
+    return !uart_tx_notfull();
 #else
   #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
     return !uartb_tx_notfull();
@@ -286,8 +288,10 @@ void tTxEspWifiBridge::EnterFlash(void)
 {
     if (!passthrough) return;
 
+#ifdef USE_DISPLAY
     disp.DrawNotify("FLASH ESP");
     delay_ms(30);
+#endif
 
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
     esp_reset_low();

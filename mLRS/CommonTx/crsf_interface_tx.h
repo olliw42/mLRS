@@ -162,10 +162,8 @@ bool tTxCrsf::transmit_start(void)
         return false;
     }
 
-    for (uint8_t i = 0; i < tx_available; i++) {
-        uint8_t c = tx_frame[i];
-        pin5_putc(c);
-    }
+    pin5_putbuf(tx_frame, tx_available);
+
     tx_available = 0;
 
     return true;
@@ -328,6 +326,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     if (!enabled) return false;
 
     CheckAndRescue();
+    uart_poll();
 
     if (!channels_received) return false;
     channels_received = false;

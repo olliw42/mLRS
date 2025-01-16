@@ -74,9 +74,10 @@ int wifi_channel = 6;
 // Baudrate
 int baudrate = 115200;
 
-// LED pin (only effective for the generic module)
+// LED pin
 // uncomment if you want a LED, and set the pin number as desired
-//#define LED_IO  2
+//#define LED_IO  2  // Generic module
+//#define LED_IO  16 // Radiomaster TX16S internal backpack
 
 
 //-------------------------------------------------------
