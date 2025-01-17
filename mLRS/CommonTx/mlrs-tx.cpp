@@ -113,7 +113,7 @@
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
 #include "../Common/rf_power.h"
-//#include "../Common/time_stats.h" // un-comment if you want to use
+#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "config_id.h"
@@ -698,6 +698,7 @@ bool connected_and_rx_setup_available(void)
 
 void main_loop(void)
 {
+    TS_END(9, 10000, true);
 #ifdef BOARD_TEST_H
     main_test();
 #endif
@@ -752,7 +753,7 @@ RESTARTCONTROLLER
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&comport);
 #ifdef USE_ESP_WIFI_BRIDGE
-  #ifdef DEVICE_HAS_JRPIN5_FULL_DUPLEX
+  #if defined DEVICE_HAS_JRPIN5_NO_TC && UART_USE_TX_IO != UART_USE_RX_IO
     esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
   #else
     esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
