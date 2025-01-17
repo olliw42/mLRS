@@ -14,6 +14,22 @@
 #include "hal/hal.h"
 
 
+#ifdef DEVICE_HAS_NO_LED
+
+class tLEDs
+{
+  public:
+    void Init(void) {}
+    void Tick_ms(bool connected) {}
+    void SetToBind(void) {}
+    void SetToParamStore(void) {}
+    void InitPassthrough(void) {}
+    void TickPassthrough_ms(void) {}
+};
+
+#else
+
+
 class tLEDs
 {
   public:
@@ -114,5 +130,8 @@ class tLEDs
     uint16_t blink;
     bool is_in_bind;
 };
+
+
+#endif // DEVICE_HAS_NO_LED
 
 #endif // LEDS_H

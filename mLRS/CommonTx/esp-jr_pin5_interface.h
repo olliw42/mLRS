@@ -11,7 +11,7 @@
 
 
 #ifndef DEVICE_HAS_JRPIN5_FULL_DUPLEX
-  #error ESP JrPin5 interface only fpr full duplex currently!
+  #error ESP JrPin5 interface only for full duplex currently!
 #endif
 
 #include "../Common/esp-lib/esp-uart.h"

@@ -40,7 +40,7 @@ In tx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
 #define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
-#define DEVICE_HAS_JRPIN5_FULL_DUPLEX         // board has full duplex uart for JR bay Pin5 function
+#define DEVICE_HAS_JRPIN5_FULL_DUPLEX   // board has full duplex uart for JR bay Pin5 function
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
@@ -67,6 +67,7 @@ In tx-hal files:
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
+#define DEVICE_HAS_NO_LED           // board has no LEDs at all
 
 In rx-hal files:
 
@@ -264,6 +265,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-------------------------------------------------------
 // Derived Defines
+// The "derived" defines digest DEVICE_HAS_XXX defines and set USE_XXX defines based on them.
 //-------------------------------------------------------
 // should go somewhere else !?
 
@@ -400,6 +402,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_SX2
 #endif
 
+
 #ifdef USE_SX2
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
@@ -468,6 +471,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   void systembootloader_init(void) {}
 #endif
 
+#ifdef DEVICE_HAS_NO_LED
+  void leds_init(void) {}
+#endif
+
 #ifndef USE_ESP_WIFI_BRIDGE
   void esp_init(void) {}
 #endif
@@ -475,5 +482,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #if !defined DEVICE_HAS_FIVEWAY && !defined USE_DISPLAY
   void fiveway_init(void) {}
 #endif
+
 
 #endif // HAL_H

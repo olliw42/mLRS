@@ -53,7 +53,9 @@ void fail(tSerialBase* const dbg, uint8_t led_pattern, const char* const msg)
 
     fail_dbg_cnt = 0;
 
-#if defined DEVICE_HAS_SINGLE_LED || defined DEVICE_HAS_SINGLE_LED_RGB
+#ifdef DEVICE_HAS_NO_LED
+    while (1) { delay_ms(50); fail_do_dbg(dbg, msg); }
+#elif defined DEVICE_HAS_SINGLE_LED || defined DEVICE_HAS_SINGLE_LED_RGB
     while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
 #else
     if (led_pattern == FAIL_LED_PATTERN_GR_OFF_RD_BLINK /*1*/) {
