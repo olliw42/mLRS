@@ -161,4 +161,24 @@ void tPin5BridgeBase::CheckAndRescue(void)
 }
 
 
+//-------------------------------------------------------
+// Pin5 Serial class
+
+class tJrPin5SerialPort : public tSerialBase
+{
+  public:
+    // void Init(void) override { uart_init(); }
+    void SetBaudRate(uint32_t baud) override { uart_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    bool full(void) { return !uart_tx_notfull(); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uart_putbuf(buf, len); }
+    bool available(void) override { return uart_rx_available(); }
+    char getc(void) override { return uart_getc(); }
+    void flush(void) override { uart_rx_flush(); uart_tx_flush(); }
+    uint16_t bytes_available(void) override { return uart_rx_bytesavailable(); }
+    // bool has_systemboot(void) override { return uart_has_systemboot(); }
+};
+
+tJrPin5SerialPort jrpin5serial;
+
+
 #endif // JRPIN5_INTERFACE_FULL_DUPLEX_H
