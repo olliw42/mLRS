@@ -138,6 +138,7 @@ const rfpower_t rfpower_list[] = {
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_17_DBM, .mW = 50 },
 };
 
@@ -158,6 +159,7 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_22_DBM, .mW = 158 },
 };
