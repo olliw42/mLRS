@@ -21,6 +21,9 @@
 #endif
 
 
+//-------------------------------------------------------
+// Pin5BridgeBase class
+
 class tPin5BridgeBase
 {
   public:
@@ -33,6 +36,7 @@ class tPin5BridgeBase
     void TelemetryStart(void);
 
     // interface to the uart hardware peripheral used for the bridge, may be called in isr context
+    void pin5_init(void);
     void pin5_tx_start(void) {}
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
 
@@ -42,11 +46,11 @@ class tPin5BridgeBase
     virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
     // actual isr functions
-    void uart_rx_callback(uint8_t c);
-    void uart_tc_callback(void);
+    void pin5_rx_callback(uint8_t c);
+    void pin5_tc_callback(void);
 
     // asynchronous uart handler
-    void uart_do(void);
+    void pin5_do(void);
 
     // parser
     typedef enum {
@@ -77,7 +81,7 @@ class tPin5BridgeBase
     uint16_t tlast_us;
 
     // check and rescue
-    void CheckAndRescue(void) {} // not needed for ESP full duplex
+    void CheckAndRescue(void);
 };
 
 
@@ -91,7 +95,7 @@ void tPin5BridgeBase::Init(void)
     telemetry_start_next_tick = false;
     telemetry_state = 0;
 
-    uart_init();
+    pin5_init();
 }
 
 
@@ -103,7 +107,13 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 //-------------------------------------------------------
 // Interface to the uart hardware peripheral used for the bridge
-// called in isr context
+// except pin5_init() called in isr context
+
+void tPin5BridgeBase::pin5_init(void)
+{
+    uart_init();
+}
+
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
@@ -111,19 +121,23 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 }
 
 
-void tPin5BridgeBase::uart_rx_callback(uint8_t c)
+void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     // not used for full duplex
 }
 
 
-void tPin5BridgeBase::uart_tc_callback(void)
+void tPin5BridgeBase::pin5_tc_callback(void)
 {
     // not needed for full duplex
 }
 
 
-void tPin5BridgeBase::uart_do(void)
+//-------------------------------------------------------
+// Pin5 asynchronous uart handler
+// polled in Crsf or mBridge ChannelsUpdated()
+
+void tPin5BridgeBase::pin5_do(void)
 {
     // poll uart
     while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
@@ -135,6 +149,15 @@ void tPin5BridgeBase::uart_do(void)
         transmit_start();
         state = STATE_IDLE;
     }
+}
+
+
+//-------------------------------------------------------
+// Check and rescue
+
+void tPin5BridgeBase::CheckAndRescue(void)
+{
+    // not needed for ESP full duplex
 }
 
 

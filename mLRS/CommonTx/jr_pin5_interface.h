@@ -84,7 +84,7 @@ void uart_tx_start(void)
     LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
 }
 
-// not available in stdstm32-uart.h, used for full-duplex mode
+// not available in stdstm32-uart.h, used for IN on JrPin5 mode
 void uart_rx_putc_torxbuf(uint8_t c)
 {
     uint16_t next = (uart_rxwritepos + 1) & UART_RXBUFSIZEMASK;
@@ -94,6 +94,9 @@ void uart_rx_putc_torxbuf(uint8_t c)
     }
 }
 
+
+//-------------------------------------------------------
+// Pin5BridgeBase class
 
 class tPin5BridgeBase
 {
@@ -106,7 +109,8 @@ class tPin5BridgeBase
 
     void TelemetryStart(void);
 
-    // interface to the uart hardware peripheral used for the bridge, called in isr context
+    // interface to the uart hardware peripheral used for the bridge, may be called in isr context
+    void pin5_init(void);
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
 
@@ -116,11 +120,11 @@ class tPin5BridgeBase
     virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
     // actual isr functions
-    void uart_rx_callback(uint8_t c);
-    void uart_tc_callback(void);
+    void pin5_rx_callback(uint8_t c);
+    void pin5_tc_callback(void);
 
     // asynchronous uart handler
-    void uart_do(void) {} // not used on STM32
+    void pin5_do(void);
 
     // parser
     typedef enum {
@@ -170,6 +174,22 @@ void tPin5BridgeBase::Init(void)
 
     nottransmiting_tlast_ms = 0;
 
+    pin5_init();
+}
+
+
+void tPin5BridgeBase::TelemetryStart(void)
+{
+    telemetry_start_next_tick = true;
+}
+
+
+//-------------------------------------------------------
+// Interface to the uart hardware peripheral used for the bridge
+// except pin5_init() called in isr context
+
+void tPin5BridgeBase::pin5_init(void)
+{
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -248,16 +268,6 @@ void tPin5BridgeBase::Init(void)
 }
 
 
-void tPin5BridgeBase::TelemetryStart(void)
-{
-    telemetry_start_next_tick = true;
-}
-
-
-//-------------------------------------------------------
-// Interface to the uart hardware peripheral used for the bridge
-// called in isr context
-
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
     if (enable_flag) {
@@ -318,7 +328,7 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 // we do not add a delay here before we transmit
 // the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
 
-void tPin5BridgeBase::uart_rx_callback(uint8_t c)
+void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     parse_nextchar(c);
 
@@ -339,10 +349,20 @@ void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 }
 
 
-void tPin5BridgeBase::uart_tc_callback(void)
+void tPin5BridgeBase::pin5_tc_callback(void)
 {
     pin5_tx_enable(false); // switches on rx
     state = STATE_IDLE;
+}
+
+
+//-------------------------------------------------------
+// Pin5 asynchronous uart handler
+// polled in Crsf or mBridge ChannelsUpdated()
+
+void tPin5BridgeBase::pin5_do(void)
+{
+    // not used on STM32
 }
 
 
@@ -377,6 +397,6 @@ void tPin5BridgeBase::CheckAndRescue(void)
 }
 
 
-#endif // defined ESP8266 || defined ESP32
+#endif // !DEVICE_HAS_JRPIN5_FULL_DUPLEX
 
 #endif // JRPIN5_INTERFACE_H

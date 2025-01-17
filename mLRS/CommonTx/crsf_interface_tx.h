@@ -149,8 +149,8 @@ tTxCrsf crsf;
 // CRSF half-duplex interface, used for radio <-> mLRS tx module
 
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
-void crsf_uart_rx_callback(uint8_t c) { crsf.uart_rx_callback(c); }
-void crsf_uart_tc_callback(void) { crsf.uart_tc_callback(); }
+void crsf_pin5_rx_callback(uint8_t c) { crsf.pin5_rx_callback(c); }
+void crsf_pin5_tc_callback(void) { crsf.pin5_tc_callback(); }
 
 
 // is called in isr context
@@ -313,8 +313,8 @@ void tTxCrsf::Init(bool enable_flag)
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
 
-    uart_rx_callback_ptr = &crsf_uart_rx_callback;
-    uart_tc_callback_ptr = &crsf_uart_tc_callback;
+    uart_rx_callback_ptr = &crsf_pin5_rx_callback;
+    uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
     tPin5BridgeBase::Init();
 }
@@ -325,7 +325,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
-    uart_do();
+    pin5_do();
     
     CheckAndRescue();
 

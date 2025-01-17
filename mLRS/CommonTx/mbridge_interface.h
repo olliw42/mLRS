@@ -107,8 +107,8 @@ tMBridge mbridge;
 // MBridge half-duplex interface, used for radio <-> mLRS tx module
 
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
-void mbridge_uart_rx_callback(uint8_t c) { mbridge.uart_rx_callback(c); }
-void mbridge_uart_tc_callback(void) { mbridge.uart_tc_callback(); }
+void mbridge_pin5_rx_callback(uint8_t c) { mbridge.pin5_rx_callback(c); }
+void mbridge_pin5_tc_callback(void) { mbridge.pin5_tc_callback(); }
 
 
 // is called in isr context
@@ -323,8 +323,8 @@ void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
     cmd_in_process = 0;
 
     if (!crsf_emulation) {
-        uart_rx_callback_ptr = &mbridge_uart_rx_callback;
-        uart_tc_callback_ptr = &mbridge_uart_tc_callback;
+        uart_rx_callback_ptr = &mbridge_pin5_rx_callback;
+        uart_tc_callback_ptr = &mbridge_pin5_tc_callback;
 
         tPin5BridgeBase::Init();
         tSerialBase::Init();
@@ -339,7 +339,7 @@ bool tMBridge::ChannelsUpdated(tRcData* const rc)
 
     if (!enabled) return false;
 
-    uart_do();
+    pin5_do();
 
     CheckAndRescue();
 
