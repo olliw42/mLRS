@@ -63,8 +63,8 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
-#if defined ESP8266 || defined ESP32
-#include "esp-jr_pin5_interface.h"
+#ifdef DEVICE_HAS_JRPIN5_FULL_DUPLEX
+#include "jr_pin5_interface_full_duplex.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 

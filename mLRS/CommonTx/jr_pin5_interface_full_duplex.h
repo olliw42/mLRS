@@ -3,18 +3,22 @@
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// ESP JR Pin5 Interface Header
-// Currently works only for internal modules (full duplex)
+// JR Pin5 Interface Header for Full Duplex
 //********************************************************
-#ifndef ESP_JRPIN5_INTERFACE_H
-#define ESP_JRPIN5_INTERFACE_H
+#ifndef JRPIN5_INTERFACE_FULL_DUPLEX_H
+#define JRPIN5_INTERFACE_FULL_DUPLEX_H
 
 
-#ifndef DEVICE_HAS_JRPIN5_FULL_DUPLEX
-  #error ESP JrPin5 interface only for full duplex currently!
+#if !(defined ESP8266 || defined ESP32)
+  #error JrPin5 full duplex interface only for ESP currently!
 #endif
 
+
+#if defined ESP8266 || defined ESP32
 #include "../Common/esp-lib/esp-uart.h"
+#else
+#include "../modules/stm32ll-lib/src/stdstm32-uart.h"
+#endif
 
 
 class tPin5BridgeBase
@@ -103,19 +107,19 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 {
-    // nothing to do for ESP full duplex
+    // nothing to do for full duplex
 }
 
 
 void tPin5BridgeBase::uart_rx_callback(uint8_t c)
 {
-    // not used for ESP full duplex
+    // not used for full duplex
 }
 
 
 void tPin5BridgeBase::uart_tc_callback(void)
 {
-    // not needed for ESP full duplex
+    // not needed for full duplex
 }
 
 
@@ -134,4 +138,4 @@ void tPin5BridgeBase::uart_do(void)
 }
 
 
-#endif // ESP_JRPIN5_INTERFACE_H
+#endif // JRPIN5_INTERFACE_FULL_DUPLEX_H
