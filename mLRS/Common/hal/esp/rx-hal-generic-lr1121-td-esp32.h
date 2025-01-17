@@ -41,12 +41,14 @@
 #define SX_DIO1                   IO_P37
 #define SX_RESET                  IO_P26
 
+#define SX_USE_REGULATOR_MODE_DCDC
+
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
     gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_ANALOG);
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
@@ -85,9 +87,11 @@ void sx2_init_gpio(void)
 {
     gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
     gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU);
+    gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
+
+#define SX2_USE_REGULATOR_MODE_DCDC
 
 IRAM_ATTR void spib_select(void)
 {

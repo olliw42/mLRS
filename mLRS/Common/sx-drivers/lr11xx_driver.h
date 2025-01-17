@@ -75,24 +75,25 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         
         GetVersion(&hwVersion, &useCase, &fwMajor, &fwMinor);
 
-        uint16_t firmwareRev = (static_cast<uint16_t>(fwMajor) << 8) | fwMinor;
-
-        //Serial.println();
-        //Serial.print("useCase: ");
-        //Serial.println(useCase);  // useCase = 3 means LR1121
+        Serial.println();
+        Serial.print("useCase: ");
+        Serial.println(useCase);  // useCase = 3 means LR1121
+        Serial.println();
 
         ClearErrors();
 
-        return ((firmwareRev != 0) && (firmwareRev != 65535));
+        return (useCase != 0);
     }
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
+        Serial.println("Set Mod Params");
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
 
+        Serial.println("Set Packet Params");
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
                         config->PayloadLength,
@@ -130,16 +131,29 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
-      // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams  
+      // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
+      Serial.println("Set Fallback Mode");
+      SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
+      Serial.println("Set RX Boosted");
+      SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
       
+      Serial.println("SetDIO as RfSwitch");
+      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
+
+      Serial.println("SetDIO IrqParams");
+      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);  // DIO1 only
+
+      Serial.println("Clear IRQ");
+      ClearIrq(LR11XX_IRQ_ALL);
+
+#ifdef SX_USE_REGULATOR_MODE_DCDC
+        Serial.println("DC-DC Enable");
+        SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
+#endif
+
       gconfig = global_config;
 
-        if (gconfig->modeIsLora()) {
-            SetPacketType(LR11XX_PACKET_TYPE_LORA);
-        } else {
-            // SetPacketType(LR11XX_PACKET_TYPE_GFSK);
-        }
-
+      Serial.println("Calibrate Image");  
       switch (gconfig->FrequencyBand) {
         case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
@@ -150,23 +164,32 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             while(1){} // protection
       }
 
-      SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
-      SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-
-      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
-
-      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
-      ClearIrq(LR11XX_IRQ_ALL);
+      Serial.println("Set Standby");
+      SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
 
       if (gconfig->modeIsLora()) {
+            Serial.println("Set Packet Type");
+            SetPacketType(LR11XX_PACKET_TYPE_LORA);
+            Serial.println("SetLoraConfig");
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
       } else {
           // FSK reserve
       }
 
-      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
-
+      Serial.println("Set FS");
       SetFs();
+
+      Serial.println("SetRfFreq");
+      SetRfFrequency(900E6);
+
+      Serial.println("Set PA Config");  
+      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
+      
+      Serial.println("Set RF Power");
+      SetRfPower_dbm(gconfig->Power_dbm);
+
+      Serial.println("Clear IRQ");
+      ClearIrq(LR11XX_IRQ_ALL);
     }
 
     //-- these are the API functions used in the loop
@@ -362,19 +385,12 @@ class Lr11xxDriver : public Lr11xxDriverCommon
         delay_ms(300);
         
         _reset(); // this is super crucial !
-        SetStandby(LR11XX_STDBY_CONFIG_STDBY_XOSC); // should be in STDBY_RC after reset
-
-        delay_us(1000); // this is important, 500 us ok
     }
 
     //-- high level API functions
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
-#ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
-        SetRegulatorMode(LR11XX_REGULATOR_MODE_DCDC);
-#endif
-
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
 
@@ -512,21 +528,12 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
         // we could probably speed up by using WaitOnBusy()
         delay_ms(300);
         _reset(); // this is super crucial !
-
-        SetStandby(LR11XX_STDBY_CONFIG_STDBY_XOSC); // should be in STDBY_RC after reset
-        delay_us(1000); // this is important, 500 us ok
     }
 
     //-- high level API functions
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
-
-
-#ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
-        SetRegulatorMode(LR11XX_REGULATOR_MODE_DCDC);
-#endif
-
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
 
