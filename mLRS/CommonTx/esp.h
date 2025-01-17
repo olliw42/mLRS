@@ -4,20 +4,27 @@
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 // OlliW @ www.olliw.eu
 //*******************************************************
-// EPS Wifi Bridge Interface Header
+// ESP Wifi Bridge Interface Header
 //********************************************************
 //
 // USE_ESP_WIFI_BRIDGE
 //   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+//
 // USE_ESP_WIFI_BRIDGE_RST_GPIO0
-//   is defined when RESET, GPIO0 pin handling is available
+//   is defined when RESET & GPIO0 pin handling is available
 //   this allows:
-//   - flashing via passtrough, invoked by "FLASH ESP" command
-//   - EPS TX parameters, esp configuration
+//   - flashing via passthrough, flash mode invoked by "FLASH ESP" command
+//   - ESP TX parameters, esp configuration
+//
 // USE_ESP_WIFI_BRIDGE_DTR_RTS
-//   is defined when DTR, RTS pin handling is available
+//   is defined when DTR & RTS pin handling is available
 //   this allows in addition:
-//   - flashing via passtrough, invoked by "FLASH ESP" command
+//   - flashing via passthrough, flash mode entered via DTR/RTS, no need for invoking "FLASH ESP" command
+//
+// USE_ESP_WIFI_BRIDGE_BOOT0
+//   is defined when BOOT0 pin handling is available
+//   this allows in addition:
+//   - flashing via passthrough, flash mode entered via BOOT0, no need for invoking "FLASH ESP" command
 //********************************************************
 #ifndef TX_ESP_H
 #define TX_ESP_H
@@ -26,6 +33,11 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+
+
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined DEVICE_HAS_SERIAL_OR_COM
+  #error ESP: ESP wireless bridge is on serial but board has serial/com !
+#endif
 
 
 //-------------------------------------------------------
@@ -55,7 +67,7 @@ void esp_enable(uint8_t serial_destination)
 //-------------------------------------------------------
 
 #if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-  // we currently don't do anything if no RST, GPIO0
+  // we currently require RST, GPIO0 for ESP configuration option
   #define ESP_STARTUP_CONFIGURE
 #endif
 
@@ -108,7 +120,7 @@ class tTxEspWifiBridge
     void run_configure(void);
 #endif
 
-    void passthrough_do_rts_cts(void);
+    void passthrough_do_flashing(void);
     void passthrough_do(void);
 
     tTxSetup* tx_setup;
@@ -120,8 +132,9 @@ class tTxEspWifiBridge
     uint8_t task_pending;
 
     bool passthrough; // indicates passthrough is possible
-    bool passthrough_is_running;
+
     uint8_t dtr_rts_last;
+    uint8_t boot0_last;
 };
 
 
@@ -151,8 +164,9 @@ void tTxEspWifiBridge::Init(
     task_pending = TX_TASK_NONE;
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
-    passthrough_is_running = false;
+
     dtr_rts_last = 0;
+    boot0_last = 0;
 
 #ifdef ESP_STARTUP_CONFIGURE
     run_configure();
@@ -170,49 +184,71 @@ uint8_t tTxEspWifiBridge::Task(void)
 
 void tTxEspWifiBridge::Do(void)
 {
-#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
+#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (defined USE_ESP_WIFI_BRIDGE_DTR_RTS || defined USE_ESP_WIFI_BRIDGE_BOOT0)
     if (!passthrough) return;
 
+#ifdef USE_ESP_WIFI_BRIDGE_DTR_RTS
     uint8_t dtr_rts = esp_dtr_rts();
 
-    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // == 0x03, & 0x02
-        passthrough_do_rts_cts();
+    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // toggle 0x03 -> 0x02
+        passthrough_do_flashing();
         task_pending = TX_TASK_RESTART_CONTROLLER;
     }
 
     dtr_rts_last = dtr_rts;
 #endif
+#ifdef USE_ESP_WIFI_BRIDGE_BOOT0
+    uint8_t boot0 = esp_boot0();
+
+    if (boot0_last == 1 && boot0 == 0) { // toggle 1 -> 0
+        passthrough_do_flashing();
+        task_pending = TX_TASK_RESTART_CONTROLLER;
+    }
+
+    boot0_last = boot0;
+#endif
+#endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (USE_ESP_WIFI_BRIDGE_DTR_RTS || USE_ESP_WIFI_BRIDGE_BOOT0)
 }
 
 
-void tTxEspWifiBridge::passthrough_do_rts_cts(void)
+void tTxEspWifiBridge::passthrough_do_flashing(void)
 {
-#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined USE_ESP_WIFI_BRIDGE_DTR_RTS
+#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (defined USE_ESP_WIFI_BRIDGE_DTR_RTS || defined USE_ESP_WIFI_BRIDGE_BOOT0)
     uint32_t serial_tlast_ms = millis32();
 
     disp.DrawNotify("ESP\nFLASHING");
     delay_ms(50); // give display some time
 
+#ifdef USE_ESP_WIFI_BRIDGE_BOOT0
+    esp_reset_low();
+    esp_gpio0_low();
+    delay_ms(10);
+    esp_reset_high();
+    delay_ms(100); // 10 ms is too short, ESP8285 needs more time
+    esp_gpio0_high();
+    delay_ms(10);
+#endif
+
     leds.InitPassthrough();
 
-    uint32_t baudrate = 115200;
+    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
     ser->flush();
     com->flush();
 
     while (1) {
-
         if (doSysTask()) {
             leds.TickPassthrough_ms();
         }
 
+#ifdef USE_ESP_WIFI_BRIDGE_DTR_RTS
         uint8_t dtr_rts = esp_dtr_rts();
-
         if (dtr_rts != dtr_rts_last) {
             if (dtr_rts & ESP_RTS_SET) esp_reset_high(); else esp_reset_low(); // & 0x02
             if (dtr_rts & ESP_DTR_SET) esp_gpio0_high(); else esp_gpio0_low(); // & 0x01
         }
         dtr_rts_last = dtr_rts;
+#endif
 
         uint32_t tnow_ms = millis32();
 
@@ -231,20 +267,17 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         }
 
         if (tnow_ms - serial_tlast_ms > ESP_PASSTHROUGH_TMO_MS) {
-
-            passthrough_is_running = false;
-
+            // reset ESP
             esp_reset_low();
             delay_ms(100);
             esp_reset_high();
-
+            // finish
             disp.DrawNotify("");
-
             return;
         }
 
     }
-#endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && USE_ESP_WIFI_BRIDGE_DTR_RTS
+#endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (USE_ESP_WIFI_BRIDGE_DTR_RTS || USE_ESP_WIFI_BRIDGE_BOOT0)
 }
 
 
@@ -286,7 +319,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 {
     leds.InitPassthrough();
 
-    uint32_t baudrate = 115200;
+    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
     ser_or_com_set_to_com();

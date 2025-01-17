@@ -365,6 +365,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #if defined ESP_DTR && defined ESP_RTS
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
+  #if defined ESP_BOOT0
+    #define USE_ESP_WIFI_BRIDGE_BOOT0
+  #endif
 #endif
 
 #if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
