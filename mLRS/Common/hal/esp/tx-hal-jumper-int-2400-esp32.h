@@ -7,14 +7,14 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// ESP32, Jumper T20 Internal ELRS
+// ESP32, Jumper Tx Internal ELRS, good for T20, T20 V2, T15, T14, T-Pro S
 //-------------------------------------------------------
 
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%202400.json
 // Added fan on GPIO 33
 
 #define DEVICE_HAS_JRPIN5_FULL_DUPLEX
-#define DEVICE_HAS_SINGLE_LED
+#define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF
@@ -22,8 +22,11 @@
 
 
 //-- UARTS
-// UARTB = serial port to backpack WiFi bridge
-// UART  = full duplex CRSF serial connection to radio - code still calls it JR bay pin5
+// UARTB = serial port BT/ESP port
+// UARTC = COM (CLI)
+// UARTD = serial2
+// UART  = JR bay pin5, full duplex CRSF serial connection to radio - code still calls it JR bay pin5
+// UARTE = in port, SBus or whatever
 // UARTF = debug port
 
 #define UARTB_USE_SERIAL // serial, is on P12/P13
@@ -107,14 +110,7 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 
 //-- LEDs
-
-#define LED_RED                   -1
-
-void leds_init(void) {}
-
-IRAM_ATTR void led_red_off(void) {}
-IRAM_ATTR void led_red_on(void) {}
-IRAM_ATTR void led_red_toggle(void) {}
+//--
 
 
 //-- Cooling Fan

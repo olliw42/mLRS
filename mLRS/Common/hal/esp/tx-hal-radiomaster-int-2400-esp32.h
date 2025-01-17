@@ -25,7 +25,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, Radiomaster internal ELRS 2.4GHz
+// ESP32, Radiomaster Tx Internal ELRS 2.4GHz, good for TX16S, TX12, MT12, Zorro, Pocket
 //-------------------------------------------------------
 /*
     Pin Defs
