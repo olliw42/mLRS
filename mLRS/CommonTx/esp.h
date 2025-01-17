@@ -51,39 +51,6 @@ void esp_enable(uint8_t serial_destination)
 
 
 //-------------------------------------------------------
-// Uart/usb helper
-//-------------------------------------------------------
-// could be added to serial base class, but let's just do it here for now
-#ifdef USE_ESP_WIFI_BRIDGE
-
-bool ser_is_full(void)
-{
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    return !uartb_tx_notfull();
-#endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    return !uartd_tx_notfull();
-#endif
-}
-
-
-bool com_is_full(void)
-{
-#ifdef DEVICE_HAS_COM_ON_USB
-    return usb_tx_full();
-#else
-  #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
-    return !uartb_tx_notfull();
-  #else
-    return !uartc_tx_notfull();
-  #endif  
-#endif
-}
-
-#endif
-
-
-//-------------------------------------------------------
 // ESP WifiBridge class
 //-------------------------------------------------------
 
@@ -250,14 +217,14 @@ void tTxEspWifiBridge::passthrough_do_rts_cts(void)
         uint32_t tnow_ms = millis32();
 
         uint16_t cnt = 0;
-        while (com->available() && !ser_is_full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
+        while (com->available() && !ser->full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
             char c = com->getc();
             ser->putc(c);
             cnt++;
             serial_tlast_ms = tnow_ms;
         }
         cnt = 0;
-        while (ser->available() && !com_is_full() && (cnt < 64)) {
+        while (ser->available() && !com->full() && (cnt < 64)) {
             char c = ser->getc();
             com->putc(c);
             cnt++;
@@ -333,13 +300,13 @@ void tTxEspWifiBridge::passthrough_do(void)
         }
 
         uint16_t cnt = 0;
-        while (com->available() && !ser_is_full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
+        while (com->available() && !ser->full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
             char c = com->getc();
             ser->putc(c);
             cnt++;
         }
         cnt = 0;
-        while (ser->available() && !com_is_full() && (cnt < 64)) {
+        while (ser->available() && !com->full() && (cnt < 64)) {
             char c = ser->getc();
             com->putc(c);
             cnt++;
