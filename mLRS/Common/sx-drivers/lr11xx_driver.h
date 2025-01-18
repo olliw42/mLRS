@@ -73,6 +73,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         uint8_t fwMajor;
         uint8_t fwMinor;
         
+        Serial.println("Get Version");
         GetVersion(&hwVersion, &useCase, &fwMajor, &fwMinor);
 
         Serial.println();
@@ -80,6 +81,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         Serial.println(useCase);  // useCase = 3 means LR1121
         Serial.println();
 
+        Serial.println("Clear Errors");  // This command fails to work or the status here means the previous command (Get Version) failed?
         ClearErrors();
 
         return (useCase != 0);
@@ -141,7 +143,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
       SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
 
       Serial.println("SetDIO IrqParams");
-      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT);  // DIO1 only
+      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
       Serial.println("Clear IRQ");
       ClearIrq(LR11XX_IRQ_ALL);
@@ -212,7 +214,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetToRx(uint16_t tmo_ms)
     {
+        Serial.println("SetToRx - Clear IRQ");
         ClearIrq(LR11XX_IRQ_ALL);
+        Serial.println("SetToRx - SetRx");
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
 
@@ -410,7 +414,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     {
         sx_amp_receive();
         Lr11xxDriverCommon::SetToRx(tmo_ms);
-       //delay_us(125); // may not be needed if busy available
+        //delay_us(125); // may not be needed if busy available
     }
 };
 
