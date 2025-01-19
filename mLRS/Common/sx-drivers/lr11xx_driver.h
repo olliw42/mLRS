@@ -95,7 +95,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void SetLoraConfigurationByIndex(uint8_t index)
     {
         if (index >= sizeof(Lr11xxLoraConfiguration)/sizeof(Lr11xxLoraConfiguration[0])) while(1){} // must not happen
-
         lora_configuration = &(Lr11xxLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
     }
@@ -103,7 +102,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void ResetToLoraConfiguration(void)
     {
         SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
-        delay_us(1000);
         SetPacketType(LR11XX_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
