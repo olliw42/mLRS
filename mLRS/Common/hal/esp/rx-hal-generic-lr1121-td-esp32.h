@@ -81,6 +81,8 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 #define SX2_DIO1                  IO_P34
 #define SX2_RESET                 IO_P21
 
+#define SX2_USE_REGULATOR_MODE_DCDC
+
 IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
 
 void sx2_init_gpio(void)
