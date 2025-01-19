@@ -167,7 +167,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
-        WriteBuffer(0, data, len);
+        WriteBuffer(data, len);
         ClearIrq(LR11XX_IRQ_ALL);
         SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
     }
