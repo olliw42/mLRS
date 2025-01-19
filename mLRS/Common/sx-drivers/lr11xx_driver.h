@@ -2,9 +2,10 @@
 // Copyright (c) MLRS project
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
-// OlliW @ www.olliw.eu
 //*******************************************************
 // LR11XX Driver
+//*******************************************************
+// contributed by JLP
 //*******************************************************
 
 #ifndef LR11XX_DRIVER_H
@@ -120,38 +121,38 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
-      // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
-      SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
-      SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // ELRS hardware specific
-      SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+        // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
+        SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
+        SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
+        SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // ELRS hardware specific
+        SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
-      gconfig = global_config;
+        gconfig = global_config;
 
-      switch (gconfig->FrequencyBand) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
-        default:
-            while(1){} // protection
-      }
+        switch (gconfig->FrequencyBand) {
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+            default:
+                while(1){} // protection
+        }
 
-      SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
+        SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
 
-      if (gconfig->modeIsLora()) {
+        if (gconfig->modeIsLora()) {
             SetPacketType(LR11XX_PACKET_TYPE_LORA);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
-      } else {
-          // FSK reserve
-      }
+        } else {
+            // FSK reserve
+        }
 
-      SetRfFrequency(900E6);  // have to set a dummy freq?
-      SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
-      SetRfPower_dbm(gconfig->Power_dbm);
-      ClearIrq(LR11XX_IRQ_ALL);
-      SetFs();
+        SetRfFrequency(900E6);  // have to set a dummy freq?
+        SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
+        SetRfPower_dbm(gconfig->Power_dbm);
+        ClearIrq(LR11XX_IRQ_ALL);
+        SetFs();
     }
 
     //-- these are the API functions used in the loop

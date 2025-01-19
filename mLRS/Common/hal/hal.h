@@ -440,8 +440,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #error Must be either transmitter or receiver !
 #endif
 
-#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x  && !defined DEVICE_HAS_LR11xx
+#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && !defined DEVICE_HAS_LR11xx && \
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x  
   #error Must be either SX128x or SX127x or SX126x or LR11xx !
 #endif
 
