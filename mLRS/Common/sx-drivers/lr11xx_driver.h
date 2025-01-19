@@ -73,26 +73,18 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         uint8_t fwMajor;
         uint8_t fwMinor;
         
-        Serial.println("Get Version");
         GetVersion(&hwVersion, &useCase, &fwMajor, &fwMinor);
-
-        Serial.println();
-        Serial.print("useCase: ");
-        Serial.println(useCase);  // useCase = 3 means LR1121
-        Serial.println();
 
         return (useCase != 0);
     }
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
-        Serial.println("Set Mod Params");
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
 
-        Serial.println("Set Packet Params");
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
                         config->PayloadLength,
@@ -131,25 +123,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void Configure(tSxGlobalConfig* const global_config)
     {
       // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
-      Serial.println("Set Fallback Mode");
       SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
-      Serial.println("Set RX Boosted");
       SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-      
-      Serial.println("SetDIO as RfSwitch");
-      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // Clean up?
-
-      Serial.println("SetDIO IrqParams");
+      SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // ELRS hardware specific
       SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
-
-#ifdef SX_USE_REGULATOR_MODE_DCDC
-        Serial.println("DC-DC Enable");
-        SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
-#endif
 
       gconfig = global_config;
 
-      Serial.println("Calibrate Image");  
       switch (gconfig->FrequencyBand) {
         case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
         case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
@@ -160,31 +140,19 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             while(1){} // protection
       }
 
-      Serial.println("Set Standby");
       SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
 
       if (gconfig->modeIsLora()) {
-            Serial.println("Set Packet Type");
             SetPacketType(LR11XX_PACKET_TYPE_LORA);
-            Serial.println("SetLoraConfig");
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
       } else {
           // FSK reserve
       }
 
-      Serial.println("SetRfFreq");
-      SetRfFrequency(900E6);
-
-      Serial.println("Set PA Config");  
+      SetRfFrequency(900E6);  // have to set a dummy freq?
       SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
-      
-      Serial.println("Set RF Power");
       SetRfPower_dbm(gconfig->Power_dbm);
-
-      Serial.println("Clear IRQ");
       ClearIrq(LR11XX_IRQ_ALL);
-
-      Serial.println("Set FS");
       SetFs();
     }
 
@@ -208,9 +176,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetToRx(uint16_t tmo_ms)
     {
-        //Serial.println("SetToRx - Clear IRQ");
         ClearIrq(LR11XX_IRQ_ALL);
-        //Serial.println("SetToRx - SetRx");
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
 
@@ -385,6 +351,9 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+#ifdef SX_USE_REGULATOR_MODE_DCDC
+        SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
+#endif
         Configure(global_config);
         
         sx_dio_enable_exti_isr();
@@ -522,6 +491,9 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+#ifdef SX2_USE_REGULATOR_MODE_DCDC
+        SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
+#endif
         Configure(global_config);
 
         sx2_dio_enable_exti_isr();

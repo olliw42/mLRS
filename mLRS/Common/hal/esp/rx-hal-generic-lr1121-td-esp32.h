@@ -12,8 +12,8 @@
 
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
-//#define DEVICE_HAS_NO_DEBUG
-#define DEVICE_HAS_SERIAL_OR_DEBUG
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_SERIAL_OR_DEBUG
 
 
 //-- UARTS
