@@ -12,7 +12,6 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_SINGLE_LED
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -62,7 +61,7 @@
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_USE_SPI1              // PA5, PA6, PA7  SCK, MISO, MOSI
+#define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
 #define SPI_USE_CLOCKSPEED_9MHZ
@@ -70,6 +69,8 @@
 #define SX_RESET                  IO_PB6
 #define SX_DIO1                   IO_PB4
 #define SX_BUSY                   IO_PB5
+#define SX_RX_EN                  IO_PB0
+#define SX_TX_EN                  IO_PB7
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
 #define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
@@ -83,6 +84,8 @@ void sx_init_gpio(void)
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
     gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_busy_read(void)
@@ -92,10 +95,14 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
+    gpio_low(SX_RX_EN);
+    gpio_high(SX_TX_EN);
 }
 
 void sx_amp_receive(void)
 {
+    gpio_low(SX_TX_EN);
+    gpio_high(SX_RX_EN);
 }
 
 void sx_dio_init_exti_isroff(void)
@@ -147,7 +154,7 @@ void out_set_inverted(void)
 
 //-- Button
 
-#define BUTTON                    IO_PC13
+#define BUTTON                    IO_PA11
 
 void button_init(void)
 {
@@ -162,13 +169,20 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_RED		                IO_PC6
+#define LED_GREEN 		            IO_PA1
+#define LED_RED		                IO_PA0
 
 void leds_init(void)
 {
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
     gpio_low(LED_RED); // LED_RED_OFF
 }
+
+void led_green_off(void) { gpio_low(LED_GREEN); }
+void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 
 void led_red_off(void) { gpio_low(LED_RED); }
 void led_red_on(void) { gpio_high(LED_RED); }
@@ -177,23 +191,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#ifndef POWER_OVERLAY
-
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_LR11XX_MAX_DBM      LR11XX_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
-
-#endif // !POWER_OVERLAY
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST
@@ -209,5 +208,4 @@ uint32_t portb[] = {
 
 uint32_t portc[] = {
 };
-
 
