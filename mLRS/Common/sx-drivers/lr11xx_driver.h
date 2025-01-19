@@ -81,9 +81,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         Serial.println(useCase);  // useCase = 3 means LR1121
         Serial.println();
 
-        Serial.println("Clear Errors");  // This command fails to work or the status here means the previous command (Get Version) failed?
-        ClearErrors();
-
         return (useCase != 0);
     }
 
@@ -145,9 +142,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
       Serial.println("SetDIO IrqParams");
       SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
-      Serial.println("Clear IRQ");
-      ClearIrq(LR11XX_IRQ_ALL);
-
 #ifdef SX_USE_REGULATOR_MODE_DCDC
         Serial.println("DC-DC Enable");
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
@@ -178,9 +172,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
           // FSK reserve
       }
 
-      Serial.println("Set FS");
-      SetFs();
-
       Serial.println("SetRfFreq");
       SetRfFrequency(900E6);
 
@@ -192,6 +183,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
       Serial.println("Clear IRQ");
       ClearIrq(LR11XX_IRQ_ALL);
+
+      Serial.println("Set FS");
+      SetFs();
     }
 
     //-- these are the API functions used in the loop
@@ -214,9 +208,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetToRx(uint16_t tmo_ms)
     {
-        Serial.println("SetToRx - Clear IRQ");
+        //Serial.println("SetToRx - Clear IRQ");
         ClearIrq(LR11XX_IRQ_ALL);
-        Serial.println("SetToRx - SetRx");
+        //Serial.println("SetToRx - SetRx");
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
 
@@ -369,9 +363,8 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void _reset(void)
     {
         gpio_low(SX_RESET);
-        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        delay_ms(1);
         gpio_high(SX_RESET);
-        delay_ms(300); // ELRS says busy is high for 230 ms after reset
         WaitOnBusy();
     }
 
@@ -384,10 +377,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
         sx_init_gpio();
         sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
-
-        // we could probably speed up by using WaitOnBusy()
-        delay_ms(300);
-        
+       
         _reset(); // this is super crucial !
     }
 
@@ -396,8 +386,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void StartUp(tSxGlobalConfig* const global_config)
     {
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
-
+        
         sx_dio_enable_exti_isr();
     }
 
@@ -407,14 +396,12 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     {
         sx_amp_transmit();
         Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
-        //delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(uint16_t tmo_ms)
     {
         sx_amp_receive();
         Lr11xxDriverCommon::SetToRx(tmo_ms);
-        //delay_us(125); // may not be needed if busy available
     }
 };
 
@@ -509,9 +496,8 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     void _reset(void)
     {
         gpio_low(SX2_RESET);
-        delay_ms(5); // 10 us seems to be sufficient, play it safe, semtech driver uses 50 ms
+        delay_ms(1);
         gpio_high(SX2_RESET);
-        delay_ms(300); // ELRS says busy is high for 230 ms after reset
         WaitOnBusy();
     }
 
@@ -529,8 +515,6 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();
 
-        // we could probably speed up by using WaitOnBusy()
-        delay_ms(300);
         _reset(); // this is super crucial !
     }
 
@@ -539,7 +523,6 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     void StartUp(tSxGlobalConfig* const global_config)
     {
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
 
         sx2_dio_enable_exti_isr();
     }
@@ -550,14 +533,12 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     {
         sx2_amp_transmit();
         Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
-        //delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(uint16_t tmo_ms)
     {
         sx2_amp_receive();
         Lr11xxDriverCommon::SetToRx(tmo_ms);
-        //delay_us(125); // may not be needed if busy available
     }
 };
 
