@@ -86,7 +86,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b00100; // 19 Hz, not editable
 #elif defined DEVICE_HAS_LR11xx
-    SetupMetaData.Mode_allowed_mask = 0b00110; // 19 Hz, 31 Hz
+    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK
 #endif
 
     //-- Ortho: "off,1/3,2/3,3/3"

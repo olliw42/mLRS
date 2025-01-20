@@ -17,6 +17,25 @@
 // SX Driver
 //-------------------------------------------------------
 
+typedef struct
+{
+    uint32_t br_bps;
+    uint8_t PulseShape;
+    uint8_t Bandwidth;
+    uint32_t Fdev_hz;
+    uint16_t PreambleLength;
+    uint8_t PreambleDetectorLength;
+    uint8_t SyncWordLength;
+    uint8_t AddrComp;
+    uint8_t PacketType;
+    uint8_t PayloadLength;
+    uint8_t CRCType;
+    uint8_t Whitening;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxGfskConfiguration;
+
+
 const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
     { .SpreadingFactor = LR11XX_LORA_SF5,
       .Bandwidth = LR11XX_LORA_BW_500,
@@ -43,6 +62,25 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
 };
 
 
+const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
+    { .br_bps = 100000,
+      .PulseShape = LR11XX_GFSK_PULSESHAPE_BT_1,
+      .Bandwidth = LR11XX_GFSK_BW_312000,
+      .Fdev_hz = 100000,
+      .PreambleLength = 16,
+      .PreambleDetectorLength = LR11XX_GFSK_PREAMBLE_DETECTOR_LENGTH_8BITS,
+      .SyncWordLength = 16,
+      .AddrComp = LR11XX_GFSK_ADDRESS_FILTERING_DISABLE,
+      .PacketType = LR11XX_GFSK_PKT_FIX_LEN,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CRCType = LR11XX_GFSK_CRC_OFF,
+      .Whitening = LR11XX_GFSK_WHITENING_ENABLE,
+      .TimeOverAir = 7600,
+      .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
+    }
+};
+
+
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t LR11XX_MAX_DBM)
 {
@@ -65,6 +103,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     void Init(void)
     {
         lora_configuration = nullptr;
+        gfsk_configuration = nullptr;
     }
 
     bool isOk(void)
@@ -107,6 +146,33 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
+    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
+    {
+        SetModulationParamsGFSK(config->br_bps,
+                                config->PulseShape,
+                                config->Bandwidth,
+                                config->Fdev_hz);
+
+        SetPacketParamsGFSK(config->PreambleLength,
+                            config->PreambleDetectorLength,
+                            config->SyncWordLength,
+                            config->AddrComp,
+                            config->PacketType,
+                            config->PayloadLength,
+                            config->CRCType,
+                            config->Whitening);
+
+        SetSyncWordGFSK(sync_word);
+    }
+
+    void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
+    {
+        if (index >= sizeof(Lr11xxGfskConfiguration)/sizeof(Lr11xxGfskConfiguration[0])) while(1){} // must not happen
+
+        gfsk_configuration = &(Lr11xxGfskConfiguration[index]);
+        SetGfskConfiguration(gfsk_configuration, sync_word);
+    }
+
     void SetRfPower_dbm(int8_t power_dbm)
     {
         RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
@@ -145,7 +211,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetPacketType(LR11XX_PACKET_TYPE_LORA);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
-            // FSK reserve
+            SetPacketType(LR11XX_PACKET_TYPE_GFSK);
+            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
         SetRfFrequency(900E6);  // have to set a dummy freq?
@@ -192,7 +259,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         if (gconfig->modeIsLora()) {
             Lr11xxDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
-            // FSK reserve
+            Lr11xxDriverBase::GetPacketStatusGFSK(&rssi);
+            *Snr = 0;
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
@@ -219,27 +287,27 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             if (index >= sizeof(Lr11xxLoraConfiguration)/sizeof(Lr11xxLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Lr11xxLoraConfiguration[index]);
         } else {
-            // FSK reserve
+            gfsk_configuration = &(Lr11xxGfskConfiguration[0]);
         }
     }
 
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
-        return lora_configuration->TimeOverAir;
+        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
-        return lora_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
@@ -249,6 +317,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    const tSxGfskConfiguration* gfsk_configuration;
     uint8_t sx_power;
     int8_t actual_power_dbm;
 };
