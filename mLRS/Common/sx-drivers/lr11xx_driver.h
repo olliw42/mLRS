@@ -125,6 +125,10 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
 
+#ifdef LR11XX_SX127X_COMPATIBLE
+        EnableSx127xCompatibility();
+#endif
+
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
                         config->PayloadLength,
