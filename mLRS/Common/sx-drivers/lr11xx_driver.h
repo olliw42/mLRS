@@ -219,7 +219,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
-        SetRfFrequency(900E6);  // have to set a dummy freq?
         SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
         SetRfPower_dbm(gconfig->Power_dbm);
         ClearIrq(LR11XX_IRQ_ALL);
