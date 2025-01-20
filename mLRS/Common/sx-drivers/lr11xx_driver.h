@@ -124,7 +124,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
         SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
         SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-        SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010);  // ELRS hardware specific
+        SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010, 0, 0b00000001);  // ELRS hardware specific
         SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
         gconfig = global_config;
