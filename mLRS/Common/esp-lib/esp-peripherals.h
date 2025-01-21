@@ -33,7 +33,6 @@
 #define IO_P17      17
 #define IO_P18      18
 #define IO_P19      19
-#define IO_P20      20  // ESP32C3
 #define IO_P21      21
 #define IO_P22      22
 #define IO_P23      23
@@ -62,7 +61,7 @@ typedef enum {
 
 void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#ifdef ESP32
     // special handling for pins >= 32
     // pinMode(), digitalWrite() do not work
     if (GPIO_Pin >= 32) {
@@ -126,9 +125,7 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-    GPIO.out_w1tc.out_w1tc = (1 << GPIO_Pin);
-#elif defined CONFIG_IDF_TARGET_ESP32
+#ifdef ESP32
     if (GPIO_Pin < 32) {
         GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
     } else {
@@ -146,9 +143,7 @@ GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-    GPIO.out_w1ts.out_w1ts = (1 << GPIO_Pin);
-#elif CONFIG_IDF_TARGET_ESP32
+#ifdef ESP32
     if (GPIO_Pin < 32) {
         GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
     } else {
