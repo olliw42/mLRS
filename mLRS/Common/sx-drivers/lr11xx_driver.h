@@ -197,9 +197,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 #ifndef SX_USE_RFSW_CTRL
         SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1);  // Default ELRS selection
 #else
-        uint8_t radioRfswCtrl[8] = RADIO_RFSW_CTRL;
-        SetDioAsRfSwitch(radioRfswCtrl[0], radioRfswCtrl[1],radioRfswCtrl[2], radioRfswCtrl[3], 
-                         radioRfswCtrl[4], radioRfswCtrl[5], radioRfswCtrl[6], radioRfswCtrl[7]);
+        uint8_t RfswCtrl[8] = SX_USE_RFSW_CTRL;
+        SetDioAsRfSwitch(RfswCtrl[0], RfswCtrl[1], RfswCtrl[2], RfswCtrl[3], 
+                         RfswCtrl[4], RfswCtrl[5], RfswCtrl[6], RfswCtrl[7]);
 #endif
         SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
