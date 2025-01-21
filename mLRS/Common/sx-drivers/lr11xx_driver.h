@@ -7,6 +7,12 @@
 //*******************************************************
 // contributed by JLP
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+// #define SX_USE_RFSW_CTRL
+//*******************************************************
 
 #ifndef LR11XX_DRIVER_H
 #define LR11XX_DRIVER_H
@@ -124,10 +130,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
                             config->Bandwidth,
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
-
-#ifdef LR11XX_SX127X_COMPATIBLE
-        EnableSx127xCompatibility();
-#endif
 
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
