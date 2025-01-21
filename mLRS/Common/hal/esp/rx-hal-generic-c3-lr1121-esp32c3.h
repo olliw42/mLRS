@@ -7,11 +7,10 @@
 //********************************************************
 
 //-------------------------------------------------------
-// ESP32, ELRS GENERIC LR1121 True Diversity Receiver
+// ESP32, ELRS GENERIC C3 R1121 Receiver
 //-------------------------------------------------------
 
 #define DEVICE_HAS_SINGLE_LED_RGB
-#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_SERIAL_OR_DEBUG
 
@@ -23,6 +22,8 @@
 
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
+#define UARTB_USE_TX_IO           IO_P21
+#define UARTB_USE_RX_IO           IO_P20
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
@@ -32,14 +33,14 @@
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_CS_IO                 IO_P27
-#define SPI_MISO                  IO_P33
-#define SPI_MOSI                  IO_P32
-#define SPI_SCK                   IO_P25
+#define SPI_CS_IO                 IO_P7
+#define SPI_MISO                  IO_P5
+#define SPI_MOSI                  IO_P4
+#define SPI_SCK                   IO_P6
 #define SPI_FREQUENCY             16000000L  // 16 MHz max per datasheet
-#define SX_BUSY                   IO_P36
-#define SX_DIO1                   IO_P37
-#define SX_RESET                  IO_P26
+#define SX_BUSY                   IO_P3
+#define SX_DIO1                   IO_P1
+#define SX_RESET                  IO_P2
 
 #define SX_USE_REGULATOR_MODE_DCDC
 
@@ -74,62 +75,9 @@ void sx_dio_enable_exti_isr(void)
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
-//-- SX2: SX12xx & SPI
-
-#define SX2_CS_IO                 IO_P13
-#define SX2_BUSY                  IO_P39
-#define SX2_DIO1                  IO_P34
-#define SX2_RESET                 IO_P21
-
-#define SX2_USE_REGULATOR_MODE_DCDC
-
-IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
-
-void sx2_init_gpio(void)
-{
-    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
-    gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
-}
-
-#define SX2_USE_REGULATOR_MODE_DCDC
-
-IRAM_ATTR void spib_select(void)
-{
-    gpio_low(SX2_CS_IO);
-}
-
-IRAM_ATTR void spib_deselect(void)
-{
-    gpio_high(SX2_CS_IO);
-}
-
-IRAM_ATTR bool sx2_busy_read(void)
-{
-    return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
-}
-
-IRAM_ATTR void sx2_amp_transmit(void) {}
-
-IRAM_ATTR void sx2_amp_receive(void) {}
-
-void sx2_dio_init_exti_isroff(void)
-{
-    detachInterrupt(SX2_DIO1);
-}
-
-void sx2_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING);
-}
-
-void sx2_dio_exti_isr_clearflag(void) {}
-
-
 //-- Button
 
-#define BUTTON                    IO_P0
+#define BUTTON                    IO_P9
 
 void button_init(void)
 {
@@ -144,12 +92,12 @@ IRAM_ATTR bool button_pressed(void)
 
 //-- LEDs
 #include <NeoPixelBus.h>
-#define LED_RED                    IO_P22
+#define LED_RED                    IO_P8
 bool ledRedState;
 bool ledGreenState;
 bool ledBlueState;
 
-NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(1, LED_RED);
+NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(1, LED_RED);
 
 void leds_init(void)
 {

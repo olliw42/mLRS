@@ -29,6 +29,10 @@
 #include "rx-hal-generic-lr1121-td-esp32.h"
 #endif
 
+#ifdef RX_ELRS_GENERIC_C3_LR1121_ESP32C3
+#include "rx-hal-generic-c3-lr1121-esp32c3.h"
+#endif
+
 //-- Generic 868/915 MHz ELRS devices with overlays or other variations
 
 #ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
@@ -87,16 +91,16 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_XR1_900_ESP32C3
+#include "rx-hal-radiomaster-xr1-900-esp32c3.h"
+#endif
+
+#ifdef RX_ELRS_RADIOMASTER_XR4_900_ESP32
+#include "rx-hal-radiomaster-xr4-900-esp32.h"
+#endif
+
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
 #include "tx-hal-radiomaster-rp4td-2400-esp32.h"
-#endif
-
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_2400_ESP32
-#include "tx-hal-radiomaster-int-2400-esp32.h"
-#endif
-
-#ifdef TX_ELRS_JUMPER_INTERNAL_2400_ESP32
-#include "tx-hal-jumper-int-2400-esp32.h"
 #endif
 
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
