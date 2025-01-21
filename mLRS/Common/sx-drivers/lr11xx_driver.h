@@ -194,10 +194,10 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
         SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
         SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-#ifndef RADIO_RFSW_CTRL
+#ifndef SX_USE_RFSW_CTRL
         SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1);  // Default ELRS selection
 #else
-        uint8_t radioRfswCtrl[] = RADIO_RFSW_CTRL;
+        uint8_t radioRfswCtrl[8] = RADIO_RFSW_CTRL;
         SetDioAsRfSwitch(radioRfswCtrl[0], radioRfswCtrl[1],radioRfswCtrl[2], radioRfswCtrl[3], 
                          radioRfswCtrl[4], radioRfswCtrl[5], radioRfswCtrl[6], radioRfswCtrl[7]);
 #endif
