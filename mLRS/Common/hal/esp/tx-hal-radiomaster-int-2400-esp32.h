@@ -10,10 +10,9 @@
   Flashing ESP8285 backpack WiFi bridge:
   - Board: Generic ESP8266 Module, define LED_IO 16
   - First flash can be via web browser/ELRS WiFi
-  - Flash backpack before erasing ELRS or flash ELRS first using configurator via EdgeTx passthrough
   - Need ELRS version of esptool from https://github.com/ExpressLRS/Backpack
   - Power up radio, plug in USB, select VCP
-  - On Linux, run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 460800 --before etx --after hard_reset write_flash 0x0000 ~/Arduino/build/mlrs-wireless-bridge-esp8266.ino.bin
+  - On Linux, run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 115200 --before etx --after hard_reset write_flash 0x0000 ~/Arduino/build/mlrs-wireless-bridge-esp8266.ino.bin
 
   Flashing ESP32 module:
   - Need ELRS python folder from https://github.com/ExpressLRS/ExpressLRS
@@ -80,15 +79,15 @@
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX_IO           IO_P17
 #define UARTB_USE_RX_IO           IO_P16
-#define UARTB_TXBUFSIZE           1024 // TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P1
 #define UART_USE_RX_IO            IO_P3
-#define UART_TXBUFSIZE            512 //0 // 128 fifo should be sufficient // 512
-#define UART_RXBUFSIZE            512
+#define UART_TXBUFSIZE            TX_SERIAL_TXBUFSIZE
+#define UART_RXBUFSIZE            TX_SERIAL_RXBUFSIZE // 512
 
 #define UARTF_USE_SERIAL2 // debug
 #define UARTF_BAUD                115200
@@ -154,18 +153,18 @@ void sx_dio_exti_isr_clearflag(void) {}
 //-- Button
 // Not normally used since this is inside the radio
 
-#define BUTTON                    IO_P0
+//#define BUTTON                    IO_P0
 
 void button_init(void)
 {
-    gpio_init(BUTTON, IO_MODE_INPUT_PU);
+    //gpio_init(BUTTON, IO_MODE_INPUT_PU);
 }
 
 IRAM_ATTR bool button_pressed(void)
 {
-    return gpio_read_activelow(BUTTON) ? true : false;
+    //return gpio_read_activelow(BUTTON) ? true : false;
+    return false;
 }
-
 
 //-- LEDs
 
@@ -184,9 +183,15 @@ IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //-- ESP32 Wifi Bridge
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-
+#define ESP_BOOT0                 IO_P0
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P15 // backpack_boot inverted?
+
+uint8_t esp_boot0()
+{
+    return gpio_read_activelow(ESP_BOOT0);
+}
+
 
 void esp_init(void)
 {

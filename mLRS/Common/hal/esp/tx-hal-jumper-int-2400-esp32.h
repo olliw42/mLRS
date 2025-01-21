@@ -8,6 +8,7 @@
 
 //-------------------------------------------------------
 // ESP32, Jumper Tx Internal ELRS, good for T20, T20 V2, T15, T14, T-Pro S
+// Backpack: Generic ESP8266 Module, define LED_IO 16
 //-------------------------------------------------------
 
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%202400.json
@@ -138,6 +139,12 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 #define ESP_RESET                 IO_P15 // backpack_en
 #define ESP_GPIO0                 IO_P2  // backpack_boot inverted?
+#define ESP_BOOT0                 IO_P0
+
+uint8_t esp_boot0()
+{
+    return gpio_read_activelow(ESP_BOOT0);
+}
 
 void esp_init(void)
 {
