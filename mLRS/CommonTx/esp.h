@@ -233,6 +233,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
+    com->SetBaudRate(baudrate); // Standard tools should specify 115200 to avoid baudrate change
     ser->flush();
     com->flush();
 
@@ -266,6 +267,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
             cnt++;
         }
 
+#ifndef USE_ESP_WIFI_BRIDGE_BOOT0
         if (tnow_ms - serial_tlast_ms > ESP_PASSTHROUGH_TMO_MS) {
             // reset ESP
             esp_reset_low();
@@ -275,6 +277,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
             disp.DrawNotify("");
             return;
         }
+#endif
 
     }
 #endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (USE_ESP_WIFI_BRIDGE_DTR_RTS || USE_ESP_WIFI_BRIDGE_BOOT0)
