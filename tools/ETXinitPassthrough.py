@@ -1,13 +1,64 @@
 #!/usr/bin/env python
-import serial, time, sys
+import serial, time, sys, glob
 import argparse
-import serials_find
 import streamexpect
 
 
 def dbg_print(line=''):
     sys.stdout.write(line + '\n')
     sys.stdout.flush()
+
+def serial_ports():
+    """ Lists serial port names
+
+        :raises Exception:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    result = []
+    ports = []
+
+    try:
+        from serial.tools.list_ports import comports
+        if comports:
+            print("  ** Searching for radios **")
+            __ports = list(comports())
+            for port in __ports:
+                if (port.vid and port.vid == 0x0483):
+                    print("      > Radio found from '%s'" % port.device)
+                    ports.append(port.device)
+    except ImportError:
+        pass
+
+    if not ports:
+        print("  ** No Radio found, Please specify port **")
+
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append(port)
+        except (OSError, serial.SerialException) as error:
+            if "permission denied" in str(error).lower():
+                raise Exception("You don't have permission to use serial port!")
+            pass
+    result.reverse()
+    return result
+
+def get_serial_port(debug=True):
+    result = serial_ports()
+    if debug:
+        print()
+        print("Detected the following serial ports on this system:")
+        for port in result:
+            print("  %s" % port)
+        print()
+
+    if len(result) == 0:
+        raise Exception('No valid serial port detected or port already open')
+
+    return result[0]
 
 
 def etx_passthrough_init(port, requestedBaudrate):
@@ -76,6 +127,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if (args.port == None):
-        args.port = serials_find.get_serial_port()
+        args.port = get_serial_port()
 
     etx_passthrough_init(args.port, args.baud)
