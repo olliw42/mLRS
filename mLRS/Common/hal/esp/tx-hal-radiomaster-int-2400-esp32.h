@@ -183,9 +183,10 @@ IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //-- ESP32 Wifi Bridge
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-#define ESP_BOOT0                 IO_P0
+
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P15 // backpack_boot inverted?
+#define ESP_BOOT0                 IO_P0 // Will always be IO_P0
 
 uint8_t esp_boot0()
 {
@@ -195,6 +196,7 @@ uint8_t esp_boot0()
 
 void esp_init(void)
 {
+    // No need to configure ESP_BOOT0 which will always be IO_P0 and is pull-up by default
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW); // low -> esp is in reset
 }
