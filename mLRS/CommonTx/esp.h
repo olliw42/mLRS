@@ -215,7 +215,6 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 {
 #if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (defined USE_ESP_WIFI_BRIDGE_DTR_RTS || defined USE_ESP_WIFI_BRIDGE_BOOT0)
     uint32_t serial_tlast_ms = millis32();
-    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
 
     disp.DrawNotify("ESP\nFLASHING");
     delay_ms(50); // give display some time
@@ -228,12 +227,13 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
     delay_ms(100); // 10 ms is too short, ESP8285 needs more time
     esp_gpio0_high();
     delay_ms(10);
-    com->SetBaudRate(baudrate); // Standard tools should specify 115200 to avoid baudrate change
 #endif
 
-    ser->SetBaudRate(baudrate);
     leds.InitPassthrough();
 
+    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
+    ser->SetBaudRate(baudrate);
+    com->SetBaudRate(baudrate); // Standard tools should specify 115200 to avoid baudrate change
     ser->flush();
     com->flush();
 
