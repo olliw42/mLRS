@@ -30,7 +30,7 @@
 #define UARTF_BAUD                115200
 
 
-//-- SX1: SX12xx & SPI
+//-- SX1: LR11xx & SPI
 
 #define SPI_CS_IO                 IO_P27
 #define SPI_MISO                  IO_P33
@@ -74,7 +74,7 @@ void sx_dio_enable_exti_isr(void)
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
-//-- SX2: SX12xx & SPI
+//-- SX2: LR11xx & SPI
 
 #define SX2_CS_IO                 IO_P13
 #define SX2_BUSY                  IO_P39
@@ -92,8 +92,6 @@ void sx2_init_gpio(void)
     gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
-
-#define SX2_USE_REGULATOR_MODE_DCDC
 
 IRAM_ATTR void spib_select(void)
 {
