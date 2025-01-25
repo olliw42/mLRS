@@ -11,6 +11,7 @@
 
 
 #include <Arduino.h>
+#include "esp_task_wdt.h"
 
 #define __NOP() _NOP()
 
@@ -49,7 +50,22 @@ typedef enum
 static uint8_t restart_controller = 0;
 void setup() {}
 void main_loop(void);
-void loop() { main_loop(); }
+void loop() {
+#ifdef CONFIG_IDF_TARGET_ESP32C3 // ESP32C3 needs this to get around 5 ms delay every 2 s
+    
+    extern bool loopTaskWDTEnabled;
+    
+    for (;;) { if (loopTaskWDTEnabled) { esp_task_wdt_reset(); }
+        main_loop();
+    }
+#else
+    main_loop();
+}
+#endif
+    
+    
+    
+     main_loop(); }
 
 #define INITCONTROLLER_ONCE \
     if(restart_controller <= 1){ \
