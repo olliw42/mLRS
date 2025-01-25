@@ -46,4 +46,4 @@ void out_set_inverted(void)
 
 //-- LR11xx DIO switch control
 
-#define RADIO_RFSW_CTRL {15, 0, 12, 8, 8, 6, 0, 5}
+#define SX_USE_RFSW_CTRL {15, 0, 12, 8, 8, 6, 0, 5}
