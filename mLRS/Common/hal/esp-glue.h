@@ -60,8 +60,8 @@ void loop() {
     }
 #else
     main_loop();
-}
 #endif
+}
 
 #define INITCONTROLLER_ONCE \
     if(restart_controller <= 1){ \
