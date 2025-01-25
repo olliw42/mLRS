@@ -62,10 +62,6 @@ void loop() {
     main_loop();
 }
 #endif
-    
-    
-    
-     main_loop(); }
 
 #define INITCONTROLLER_ONCE \
     if(restart_controller <= 1){ \
