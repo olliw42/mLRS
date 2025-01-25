@@ -31,7 +31,7 @@
 #define UARTF_BAUD                115200
 
 
-//-- SX1: SX12xx & SPI
+//-- SX1: LR11xx & SPI
 
 #define SPI_CS_IO                 IO_P7
 #define SPI_MISO                  IO_P5
