@@ -7,6 +7,12 @@
 //*******************************************************
 // contributed by JLP
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_REGULATOR_MODE_DCDC
+// #define SX_USE_RFSW_CTRL
+//*******************************************************
 
 #ifndef LR11XX_DRIVER_H
 #define LR11XX_DRIVER_H
@@ -82,7 +88,7 @@ const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t LR11XX_MAX_DBM)
+void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const int8_t GAIN_DBM, const uint8_t LR11XX_MAX_DBM)
 {
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
 
@@ -124,10 +130,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
                             config->Bandwidth,
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
-
-#ifdef LR11XX_SX127X_COMPATIBLE
-        EnableSx127xCompatibility();
-#endif
 
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
@@ -194,7 +196,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
         SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
         SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
-        SetDioAsRfSwitch(0b00001111, 0, 0b00000100, 0b00001000,  0b00001000, 0b00000010, 0, 0b00000001);  // ELRS hardware specific
+#ifndef SX_USE_RFSW_CTRL
+        SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1);  // Default ELRS selection
+#else
+        uint8_t RfswCtrl[8] = SX_USE_RFSW_CTRL;
+        SetDioAsRfSwitch(RfswCtrl[0], RfswCtrl[1], RfswCtrl[2], RfswCtrl[3], 
+                         RfswCtrl[4], RfswCtrl[5], RfswCtrl[6], RfswCtrl[7]);
+#endif
         SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
 
         gconfig = global_config;

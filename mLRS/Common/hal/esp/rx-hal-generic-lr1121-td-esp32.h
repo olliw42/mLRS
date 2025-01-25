@@ -30,7 +30,7 @@
 #define UARTF_BAUD                115200
 
 
-//-- SX1: SX12xx & SPI
+//-- SX1: LR11xx & SPI
 
 #define SPI_CS_IO                 IO_P27
 #define SPI_MISO                  IO_P33
@@ -74,7 +74,7 @@ void sx_dio_enable_exti_isr(void)
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
-//-- SX2: SX12xx & SPI
+//-- SX2: LR11xx & SPI
 
 #define SX2_CS_IO                 IO_P13
 #define SX2_BUSY                  IO_P39
@@ -92,8 +92,6 @@ void sx2_init_gpio(void)
     gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
-
-#define SX2_USE_REGULATOR_MODE_DCDC
 
 IRAM_ATTR void spib_select(void)
 {
@@ -224,18 +222,16 @@ IRAM_ATTR void led_blue_toggle(void)
 //-- POWER
 #ifndef POWER_OVERLAY
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_GAIN_DBM            -2 // gain of a PA stage if present
 #define POWER_LR11XX_MAX_DBM      LR11XX_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+#define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
 };
 
 #endif // !POWER_OVERLAY
