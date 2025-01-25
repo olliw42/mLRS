@@ -227,7 +227,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
-        SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_CONFIG_22_DBM_PA_DUTY_CYCLE, LR11XX_PA_CONFIG_22_DBM_HP_MAX);
+        SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_DUTY_CYCLE_22_DBM, LR11XX_PA_HP_SEL_22_DBM);
         SetRfPower_dbm(gconfig->Power_dbm);
         ClearIrq(LR11XX_IRQ_ALL);
         SetFs();
