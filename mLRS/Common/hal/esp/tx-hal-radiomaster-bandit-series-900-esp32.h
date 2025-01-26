@@ -69,7 +69,6 @@
 #define DEVICE_HAS_NO_DEBUG
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
-#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY
 #else
 #define DEVICE_HAS_SINGLE_LED
@@ -190,7 +189,6 @@ IRAM_ATTR void led_red_off(void)
 {
     if (!ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledRedState = 0;
 }
@@ -199,7 +197,6 @@ IRAM_ATTR void led_red_on(void)
 {
     if (ledRedState) return;
     ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
-    ledRGB.SetPixelColor(1, RgbColor(255, 0, 0));
     ledRGB.Show();
     ledRedState = 1;
 }
@@ -212,7 +209,6 @@ IRAM_ATTR void led_red_toggle(void)
 IRAM_ATTR void led_green_off(void)
 {
     if (!ledGreenState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
     ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledGreenState = 0;
@@ -221,7 +217,6 @@ IRAM_ATTR void led_green_off(void)
 IRAM_ATTR void led_green_on(void)
 {
     if (ledGreenState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 255, 0));
     ledRGB.SetPixelColor(1, RgbColor(0, 255, 0));
     ledRGB.Show();
     ledGreenState = 1;
@@ -232,11 +227,11 @@ IRAM_ATTR void led_green_toggle(void)
     if (ledGreenState) { led_green_off(); } else { led_green_on(); }
 }
 
+// blue not yet used and not correctly working with red
 IRAM_ATTR void led_blue_off(void)
 {
     if (!ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledBlueState = 0;
 }
@@ -245,7 +240,6 @@ IRAM_ATTR void led_blue_on(void)
 {
     if (ledBlueState) return;
     ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 255));
     ledRGB.Show();
     ledBlueState = 1;
 }
