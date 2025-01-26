@@ -313,7 +313,7 @@ class tTxCli
 #elif !defined DEVICE_HAS_COM_ON_USB && (UARTC_TXBUFSIZE >= 2048)
     void delay(void) {}
 #else
-    void delay(void) { if (put_cnt > 192) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
+    void delay(void) { if (put_cnt > 96) { delay_ms(10); put_cnt = 0; } } // 115200 -> 96 bytes = 8.3 ms, usb txbuf is small
 #endif
 
     void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
