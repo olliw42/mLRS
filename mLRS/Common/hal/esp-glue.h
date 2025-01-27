@@ -11,7 +11,9 @@
 
 
 #include <Arduino.h>
+#ifdef CONFIG_IDF_TARGET_ESP32C3
 #include "esp_task_wdt.h"
+#endif
 
 #define __NOP() _NOP()
 
@@ -52,12 +54,8 @@ void setup() {}
 void main_loop(void);
 void loop() {
 #ifdef CONFIG_IDF_TARGET_ESP32C3 // ESP32C3 needs this to get around 5 ms delay every 2 s
-    
     extern bool loopTaskWDTEnabled;
-    
-    for (;;) { if (loopTaskWDTEnabled) { esp_task_wdt_reset(); }
-        main_loop();
-    }
+    for (;;) { if (loopTaskWDTEnabled) { esp_task_wdt_reset(); } main_loop(); }
 #else
     main_loop();
 #endif
