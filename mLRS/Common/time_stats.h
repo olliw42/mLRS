@@ -34,6 +34,12 @@ typedef struct {
 static tTsStore ts_data[TS_NUM_BLOCK] = {};
 
 
+#if defined ESP8266 || defined ESP32
+uint32_t TS_MICROS32(uint8_t block)
+{
+    return micros(); // Allows longer interval between calls
+}
+#else
 uint32_t TS_MICROS32(uint8_t block)
 {
     // separate overflow and last_cnt for each block
@@ -45,7 +51,7 @@ uint32_t TS_MICROS32(uint8_t block)
     ts_data[block].last_cnt = cnt;
     return ts_data[block].overflow_cnt + cnt;
 }
-
+#endif
 
 void TS_START(uint8_t block)
 {
