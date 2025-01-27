@@ -12,6 +12,7 @@
 // #define SX_USE_REGULATOR_MODE_DCDC
 // #define SX2_USE_REGULATOR_MODE_DCDC
 // #define SX_USE_RFSW_CTRL
+// #define SX_USE_LP_PA  
 //*******************************************************
 
 #ifndef LR11XX_DRIVER_H
@@ -226,8 +227,11 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetPacketType(LR11XX_PACKET_TYPE_GFSK);
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
-
+#ifndef SX_USE_LP_PA
         SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_DUTY_CYCLE_22_DBM, LR11XX_PA_HP_SEL_22_DBM);
+#else
+        SetPaConfig(LR11XX_PA_SELECT_LP_PA, LR11XX_REG_PA_SUPPLY_INTERNAL, LR11XX_PA_DUTY_CYCLE_14_DBM, 0);
+#endif
         SetRfPower_dbm(gconfig->Power_dbm);
         ClearIrq(LR11XX_IRQ_ALL);
         SetFs();
@@ -399,7 +403,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
 #else
-        // reserved
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
@@ -535,7 +539,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
 #else
-        // reserved
+        lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
