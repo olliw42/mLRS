@@ -574,8 +574,8 @@ tMBridgeInfo info = {};
     	info.tx_actual_power_dbm = sx.RfPower_dbm();
     }
     else {
-    	info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
-		info.tx_actual_power_dbm = sx2.RfPower_dbm();
+    	info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
+    	info.tx_actual_power_dbm = sx2.RfPower_dbm();
     }
 
     info.tx_actual_diversity = Config.Diversity;
