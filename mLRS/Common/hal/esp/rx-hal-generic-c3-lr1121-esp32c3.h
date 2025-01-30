@@ -77,7 +77,7 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 
 //-- LEDs
 
-#include "../../esp-lib/esp-rgb.h"  // is there a better way to do this?
+#include "../../esp-lib/esp-rgb.h"
 
 #define LED_PIN                    IO_P8
 #define LED_COUNT                  1
