@@ -109,68 +109,17 @@ void leds_init(void)
     ledRGB->Begin();
 }
 
-IRAM_ATTR void led_red_off(void)
-{
-    if (!ledRedState) return;
-    ledRGB->ClearTo(RgbColor(0, 0, 0), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledRedState = 0;
-}
+IRAM_ATTR void led_red_off(void) { ledRGB->redOff(0,0); }
+IRAM_ATTR void led_red_on(void) { ledRGB->redOn(0,0); }
+IRAM_ATTR void led_red_toggle(void) { ledRGB->redToggle(0,0); }
 
-IRAM_ATTR void led_red_on(void)
-{
-    if (ledRedState) return;
-    ledRGB->ClearTo(RgbColor(255, 0, 0), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledRedState = 1;
-}
+IRAM_ATTR void led_green_off(void) { ledRGB->greenOff(0,0); }
+IRAM_ATTR void led_green_on(void) { ledRGB->greenOn(0,0); }
+IRAM_ATTR void led_green_toggle(void) { ledRGB->greenToggle(0,0); }
 
-IRAM_ATTR void led_red_toggle(void)
-{
-    if (ledRedState) { led_red_off(); } else { led_red_on(); }
-}
-
-IRAM_ATTR void led_green_off(void)
-{
-    if (!ledGreenState) return;
-    ledRGB->ClearTo(RgbColor(0, 0, 0), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledGreenState = 0;
-}
-
-IRAM_ATTR void led_green_on(void)
-{
-    if (ledGreenState) return;
-    ledRGB->ClearTo(RgbColor(0, 255, 0), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledGreenState = 1;
-}
-
-IRAM_ATTR void led_green_toggle(void)
-{
-    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
-}
-
-IRAM_ATTR void led_blue_off(void)
-{
-    if (!ledBlueState) return;
-    ledRGB->ClearTo(RgbColor(0, 0, 0), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledBlueState = 0;
-}
-
-IRAM_ATTR void led_blue_on(void)
-{
-    if (ledBlueState) return;
-    ledRGB->ClearTo(RgbColor(0, 0, 255), 0, LED_COUNT - 1);
-    ledRGB->Show();
-    ledBlueState = 1;
-}
-
-IRAM_ATTR void led_blue_toggle(void)
-{
-    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
-}
+IRAM_ATTR void led_blue_off(void) { ledRGB->blueOff(0,0); }
+IRAM_ATTR void led_blue_on(void) { ledRGB->blueOn(0,0); }
+IRAM_ATTR void led_blue_toggle(void) { ledRGB->blueToggle(0,0); }
 
 
 //-- POWER

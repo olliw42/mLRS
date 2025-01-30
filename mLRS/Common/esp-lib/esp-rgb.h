@@ -65,6 +65,15 @@ public:
     void Show();
     void ClearTo(RgbColor color, uint16_t first, uint16_t last);
     void SetPixelColor(uint16_t indexPixel, RgbColor color);
+    void redOff(uint16_t first, uint16_t last);
+    void redOn(uint16_t first, uint16_t last);
+    void redToggle(uint16_t first, uint16_t last);
+    void greenOff(uint16_t first, uint16_t last);
+    void greenOn(uint16_t first, uint16_t last);
+    void greenToggle(uint16_t first, uint16_t last);
+    void blueOff(uint16_t first, uint16_t last);
+    void blueOn(uint16_t first, uint16_t last);
+    void blueToggle(uint16_t first, uint16_t last);
 
 private:
     RgbColor *ledsbuff = nullptr;
@@ -72,6 +81,10 @@ private:
     size_t out_buffer_size;
     int num_leds;
     int gpio_pin;
+    bool ledRedState;
+    bool ledGreenState;
+    bool ledBlueState;
+
 };
 
 
@@ -111,7 +124,7 @@ void ESP32LedDriver::Begin()
     i2s_stop(I2S_NUM);
 }
 
-void ESP32LedDriver::Show()
+IRAM_ATTR void ESP32LedDriver::Show()
 {
     size_t bytes_written = 0;
     i2s_stop(I2S_NUM);
@@ -119,7 +132,7 @@ void ESP32LedDriver::Show()
     i2s_start(I2S_NUM);
 }
 
-void ESP32LedDriver::ClearTo(RgbColor color, uint16_t first, uint16_t last)
+IRAM_ATTR void ESP32LedDriver::ClearTo(RgbColor color, uint16_t first, uint16_t last)
 {
     for (uint16_t i=first ; i<=last; i++)
     {
@@ -127,7 +140,7 @@ void ESP32LedDriver::ClearTo(RgbColor color, uint16_t first, uint16_t last)
     }
 }
 
-void ESP32LedDriver::SetPixelColor(uint16_t indexPixel, RgbColor color)
+IRAM_ATTR void ESP32LedDriver::SetPixelColor(uint16_t indexPixel, RgbColor color)
 {
     int loc = indexPixel * 24;
     for(int bitpos = 0 ; bitpos < 8 ; bitpos++)
@@ -137,6 +150,69 @@ void ESP32LedDriver::SetPixelColor(uint16_t indexPixel, RgbColor color)
         out_buffer[loc + bitpos + 8] = (color.R & bit) ? 0xFFE0 : 0xF000;
         out_buffer[loc + bitpos + 16] = (color.B & bit) ? 0xFFE0 : 0xF000;
     }
+}
+
+IRAM_ATTR void ESP32LedDriver::redOff(uint16_t first, uint16_t last)
+{
+    if (!ledRedState) return;
+    ClearTo(RgbColor(0, 0, 0), first, last);
+    Show();
+    ledRedState = 0;
+}
+
+IRAM_ATTR void ESP32LedDriver::redOn(uint16_t first, uint16_t last)
+{
+    if (ledRedState) return;
+    ClearTo(RgbColor(255, 0, 0), first, last);
+    Show();
+    ledRedState = 1;
+}
+
+IRAM_ATTR void ESP32LedDriver::redToggle(uint16_t first, uint16_t last)
+{
+    if (ledRedState) { redOff(first, last); } else { redOn(first, last); }
+}
+
+IRAM_ATTR void ESP32LedDriver::greenOff(uint16_t first, uint16_t last)
+{
+    if (!ledGreenState) return;
+    ClearTo(RgbColor(0, 0, 0), first, last);
+    Show();
+    ledGreenState = 0;
+}
+
+IRAM_ATTR void ESP32LedDriver::greenOn(uint16_t first, uint16_t last)
+{
+    if (ledGreenState) return;
+    ClearTo(RgbColor(0, 255, 0), first, last);
+    Show();
+    ledGreenState = 1;
+}
+
+IRAM_ATTR void ESP32LedDriver::greenToggle(uint16_t first, uint16_t last)
+{
+    if (ledGreenState) { greenOff(first, last); } else { greenOn(first, last); }
+}
+
+IRAM_ATTR void ESP32LedDriver::blueOff(uint16_t first, uint16_t last)
+{
+    if (!ledBlueState) return;
+    ClearTo(RgbColor(0, 0, 0), first, last);
+    Show();
+    ledBlueState = 0;
+}
+
+IRAM_ATTR void ESP32LedDriver::blueOn(uint16_t first, uint16_t last)
+{
+    if (ledBlueState) return;
+    ClearTo(RgbColor(0, 0, 255), first, last);
+    Show();
+    ledBlueState = 1;
+}
+
+IRAM_ATTR void ESP32LedDriver::blueToggle(uint16_t first, uint16_t last)
+{
+    if (ledBlueState) { blueOff(first, last); } else { blueOn(first, last); }
 }
 
 
