@@ -82,17 +82,9 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 #define LED_PIN                    IO_P8
 #define LED_COUNT                  1
 
-bool ledRedState;
-bool ledGreenState;
-bool ledBlueState;
-
 static ESP32LedDriver *ledRGB;
 
-void leds_init(void)
-{
-    ledRGB = new ESP32LedDriver(LED_COUNT, LED_PIN);
-    ledRGB->Begin();
-}
+void leds_init(void) { ledRGB = new ESP32LedDriver(LED_COUNT, LED_PIN); }
 
 IRAM_ATTR void led_red_off(void) { ledRGB->redOff(0,0); }
 IRAM_ATTR void led_red_on(void) { ledRGB->redOn(0,0); }

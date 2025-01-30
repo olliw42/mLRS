@@ -61,10 +61,10 @@ class ESP32LedDriver
 public:
     ESP32LedDriver(int count, int pin);
 
-    void Begin();
     void Show();
     void ClearTo(RgbColor color, uint16_t first, uint16_t last);
     void SetPixelColor(uint16_t indexPixel, RgbColor color);
+    
     void redOff(uint16_t first, uint16_t last);
     void redOn(uint16_t first, uint16_t last);
     void redToggle(uint16_t first, uint16_t last);
@@ -81,6 +81,7 @@ private:
     size_t out_buffer_size;
     int num_leds;
     int gpio_pin;
+    
     bool ledRedState;
     bool ledGreenState;
     bool ledBlueState;
@@ -92,21 +93,18 @@ ESP32LedDriver::ESP32LedDriver(int count, int pin) : num_leds(count), gpio_pin(p
 {
     out_buffer_size = num_leds * 24 * sizeof(uint16_t);
     out_buffer = (uint16_t *)heap_caps_malloc(out_buffer_size, MALLOC_CAP_8BIT);
-}
 
-void ESP32LedDriver::Begin()
-{
     i2s_config_t i2s_config = {
-        .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_TX),
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        .intr_alloc_flags = 0,
-        .dma_buf_count = 4,
-        .use_apll = true,
-        .tx_desc_auto_clear = true,
-        .fixed_mclk = MCLK,
+    .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_TX),
+    .sample_rate = SAMPLE_RATE,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+    .intr_alloc_flags = 0,
+    .dma_buf_count = 4,
+    .use_apll = true,
+    .tx_desc_auto_clear = true,
+    .fixed_mclk = MCLK,
     };
 
     i2s_pin_config_t pin_config = {
