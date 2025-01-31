@@ -21,23 +21,6 @@
 // SX Driver
 //-------------------------------------------------------
 
-typedef struct
-{
-    uint8_t Bandwidth;
-    uint8_t CodingRate;
-    uint8_t Bt;
-    uint8_t AGCPreambleLength;
-    uint8_t SyncWordLength;
-    uint8_t SyncWordMatch;
-    uint8_t PacketType;
-    uint8_t PayloadLength;
-    uint8_t CrcLength;
-    uint16_t CrcSeed;
-    uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
-} tSxFlrcConfiguration;
-
-
 const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
     { .SpreadingFactor = SX1280_LORA_SF5,
       .Bandwidth = SX1280_LORA_BW_800,
