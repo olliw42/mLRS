@@ -79,6 +79,7 @@ typedef struct
     int16_t ReceiverSensitivity;
 } tSxLoraConfiguration;
 
+
 typedef struct
 {
     uint8_t Bandwidth;
@@ -94,6 +95,7 @@ typedef struct
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
 } tSxFlrcConfiguration;
+
 
 typedef struct
 {
