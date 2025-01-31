@@ -24,25 +24,6 @@
 // SX Driver
 //-------------------------------------------------------
 
-typedef struct
-{
-    uint32_t br_bps;
-    uint8_t PulseShape;
-    uint8_t Bandwidth;
-    uint32_t Fdev_hz;
-    uint16_t PreambleLength;
-    uint8_t PreambleDetectorLength;
-    uint8_t SyncWordLength;
-    uint8_t AddrComp;
-    uint8_t PacketType;
-    uint8_t PayloadLength;
-    uint8_t CRCType;
-    uint8_t Whitening;
-    uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
-} tSxGfskConfiguration;
-
-
 const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
     { .SpreadingFactor = LR11XX_LORA_SF5,
       .Bandwidth = LR11XX_LORA_BW_500,

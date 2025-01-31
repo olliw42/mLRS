@@ -79,6 +79,40 @@ typedef struct
     int16_t ReceiverSensitivity;
 } tSxLoraConfiguration;
 
+typedef struct
+{
+    uint8_t Bandwidth;
+    uint8_t CodingRate;
+    uint8_t Bt;
+    uint8_t AGCPreambleLength;
+    uint8_t SyncWordLength;
+    uint8_t SyncWordMatch;
+    uint8_t PacketType;
+    uint8_t PayloadLength;
+    uint8_t CrcLength;
+    uint16_t CrcSeed;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxFlrcConfiguration;
+
+typedef struct
+{
+    uint32_t br_bps;
+    uint8_t PulseShape;
+    uint8_t Bandwidth;
+    uint32_t Fdev_hz;
+    uint16_t PreambleLength;
+    uint8_t PreambleDetectorLength;
+    uint8_t SyncWordLength;
+    uint8_t AddrComp;
+    uint8_t PacketType;
+    uint8_t PayloadLength;
+    uint8_t CRCType;
+    uint8_t Whitening;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxGfskConfiguration;
+
 
 class SxDriverDummy
 {
