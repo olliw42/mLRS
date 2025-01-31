@@ -151,7 +151,6 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 
 void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
-    TS_START(0);
     // poll uart
     while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
         parse_nextchar(uart_getc());
@@ -162,7 +161,6 @@ void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
         transmit_start();
         state = STATE_IDLE;
     }
-    TS_END(0);
 }
 
 
