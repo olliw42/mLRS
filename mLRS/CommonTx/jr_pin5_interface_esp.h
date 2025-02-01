@@ -13,12 +13,7 @@
   #error JrPin5 full duplex interface only for ESP currently!
 #endif
 
-
-#if defined ESP8266 || defined ESP32
 #include "../Common/esp-lib/esp-uart.h"
-#else
-#include "../modules/stm32ll-lib/src/stdstm32-uart.h"
-#endif
 
 //-------------------------------------------------------
 // Pin5BridgeBase class
@@ -95,14 +90,12 @@ void tPin5BridgeBase::Init(void)
 
     pin5_init();
 
-    UART_SERIAL_NO.setRxTimeout(1);
     // A small value (like 4) for RxFIFOFull has a higher impact on main loop time,
     // but reduces the delay between JRpin5 receive and transmit.  Choose large for now.
-    // The documented default is 128, but seems to actually be smaller than 64 when RXBUFSIZE = 0
     UART_SERIAL_NO.setRxFIFOFull(64);
     UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, false);
     
-#if UART_USE_TX_IO == UART_USE_RX_IO // Half duplex
+#ifdef JR_PIN5_FULL_DUPLEX
 
 #ifdef UART_USE_SERIAL
   #define UART_SERIAL_NO       Serial
@@ -122,6 +115,9 @@ void tPin5BridgeBase::Init(void)
     gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0);
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
+    // We really want inverted open-drain, but apparently it is not possible.
+    // Because of the 51 Ohm resistor tested radios seem to utilize on their output,
+    // this reduces the pull enough to maintain a usable signal when the handset is sending.
     gpio_set_drive_capability((gpio_num_t)UART_USE_TX_IO, GPIO_DRIVE_CAP_0);
 #endif
 }

@@ -59,7 +59,7 @@
 */
 
 
-#define DEVICE_HAS_JRPIN5_NO_TC
+#define DEVICE_HAS_JRPIN5
 //#define DEVICE_HAS_IN
 //#define DEVICE_HAS_SERIAL_OR_COM // board has UART which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL

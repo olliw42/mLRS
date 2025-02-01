@@ -13,7 +13,7 @@
 
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%20900%20V2.json
 
-#define DEVICE_HAS_JRPIN5_NO_TC
+#define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
@@ -43,6 +43,7 @@
 #define UART_TXBUFSIZE            0 // TX_SERIAL_TXBUFSIZE  // 512
 #define UART_RXBUFSIZE            0 // TX_SERIAL_RXBUFSIZE  // 2048
 
+#define JR_PIN5_FULL_DUPLEX       // Internal module
 
 //-- SX1: SX12xx & SPI
 

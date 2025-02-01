@@ -176,6 +176,7 @@ void tMBridge::parse_nextchar(uint8_t c)
     case STATE_IDLE:
         if (c == MBRIDGE_STX1) {
             state = STATE_RECEIVE_MBRIDGE_STX2;
+#ifdef USE_DEBUG
             if (discarded) {
                 if (discarded > 1) {
                     dbg.puts(u16toBCD_s(discarded));
@@ -187,6 +188,7 @@ void tMBridge::parse_nextchar(uint8_t c)
         else {
             // Detect discarded bytes
             discarded++;
+#endif
         }
         break;
 

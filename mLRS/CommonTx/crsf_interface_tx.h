@@ -173,7 +173,7 @@ bool tTxCrsf::transmit_start(void)
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
 // gaps between frames are 3 ms or so
-#define CRSF_PARSE_NEXTCHAR_TMO_US  2200 // Lots of jitter when polled.
+#define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 
 // CRSF frame format:
@@ -200,6 +200,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             cnt = 0;
             frame[cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
+#ifdef USE_DEBUG
             if (discarded) {
                 if (discarded > 1) {
                     dbg.puts(u16toBCD_s(discarded));
@@ -211,6 +212,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         else {
             // Detect discarded bytes
             discarded++;
+#endif
         }
         break;
 
