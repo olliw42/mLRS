@@ -184,12 +184,14 @@ void tMBridge::parse_nextchar(uint8_t c)
                 }
                 discarded = 0;
             }
+#endif
         }
+#ifdef USE_DEBUG
         else {
             // Detect discarded bytes
             discarded++;
-#endif
         }
+#endif
         break;
 
     case STATE_RECEIVE_MBRIDGE_STX2:

@@ -172,7 +172,7 @@ bool tTxCrsf::transmit_start(void)
 
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
-// gaps between frames are 3 ms or so
+// The gaps between received frames are at least 2.4 ms
 #define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 
@@ -208,12 +208,14 @@ void tTxCrsf::parse_nextchar(uint8_t c)
                 }
                 discarded = 0;
             }
+#endif
         }
+#ifdef USE_DEBUG
         else {
             // Detect discarded bytes
             discarded++;
-#endif
         }
+#endif
         break;
 
     case STATE_RECEIVE_CRSF_LEN:

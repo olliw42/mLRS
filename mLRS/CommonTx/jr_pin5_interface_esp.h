@@ -95,7 +95,7 @@ void tPin5BridgeBase::Init(void)
     UART_SERIAL_NO.setRxFIFOFull(64);
     UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, false);
     
-#ifdef JR_PIN5_FULL_DUPLEX
+#ifndef JR_PIN5_FULL_DUPLEX
 
 #ifdef UART_USE_SERIAL
   #define UART_SERIAL_NO       Serial
@@ -109,8 +109,8 @@ void tPin5BridgeBase::Init(void)
     UART_SERIAL_NO.setMode(MODE_RS485_HALF_DUPLEX);
 
     gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
-    gpio_pulldown_en((gpio_num_t)UART_USE_TX_IO);
-    gpio_pullup_dis((gpio_num_t)UART_USE_TX_IO);
+    gpio_pulldown_dis((gpio_num_t)UART_USE_TX_IO);  // Should be pulldown if we had inverted open drain
+    gpio_pullup_dis((gpio_num_t)UART_USE_TX_IO); // But would pulup help?
 
     gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0);
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT_OUTPUT);

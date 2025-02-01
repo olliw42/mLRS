@@ -386,6 +386,6 @@ void tPin5BridgeBase::CheckAndRescue(void)
 }
 
 
-#endif // !DEVICE_HAS_JRPIN5_NO_TC
+#endif // !(defined ESP8266 || defined ESP32) 
 
 #endif // JRPIN5_INTERFACE_H
