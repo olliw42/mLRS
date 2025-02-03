@@ -172,7 +172,7 @@ bool tTxCrsf::transmit_start(void)
 
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
-// gaps between frames are 1 ms or so
+// The gaps between received frames are at least 2.4 ms
 #define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 
@@ -200,7 +200,22 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             cnt = 0;
             frame[cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
+#ifdef USE_DEBUG
+            if (discarded) {
+                if (discarded > 1) {
+                    dbg.puts(u16toBCD_s(discarded));
+                    dbg.puts(" bytes lost!\n");
+                }
+                discarded = 0;
+            }
+#endif
         }
+#ifdef USE_DEBUG
+        else {
+            // Detect discarded bytes
+            discarded++;
+        }
+#endif
         break;
 
     case STATE_RECEIVE_CRSF_LEN:
@@ -325,8 +340,6 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
-    pin5_do();
-    
     CheckAndRescue();
 
     if (!channels_received) return false;
