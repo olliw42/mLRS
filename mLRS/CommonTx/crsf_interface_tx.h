@@ -177,7 +177,7 @@ bool tTxCrsf::transmit_start(void)
 
 // a frame is sent every 4 ms, frame length is max 64 bytes
 // a byte is 25 us
-// The gaps between received frames are at least 2.4 ms
+// gaps between received frames are at least 2.4 ms
 #define CRSF_PARSE_NEXTCHAR_TMO_US  500
 
 

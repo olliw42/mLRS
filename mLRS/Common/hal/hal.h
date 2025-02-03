@@ -39,7 +39,7 @@ following for the tx-hal and rx-hal files.
 In tx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
-#define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort with tc interrupt
+#define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
@@ -453,7 +453,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && !defined DEVICE_HAS_LR11xx && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x  
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
   #error Must be either SX128x or SX127x or SX126x or LR11xx !
 #endif
 
