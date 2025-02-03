@@ -63,7 +63,7 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
-#if defined ESP8266 || defined ESP32
+#if defined ESP32 || defined ESP8266
 #include "jr_pin5_interface_esp.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
@@ -150,7 +150,6 @@ class tPin5BridgeBase
     uint8_t len;
     uint8_t cnt;
     uint16_t tlast_us;
-    uint16_t discarded;
 
     // check and rescue
     // the FRM303 can get stuck, whatever we tried, so brutal rescue
@@ -166,7 +165,6 @@ void tPin5BridgeBase::Init(void)
     len = 0;
     cnt = 0;
     tlast_us = 0;
-    discarded = 0;
 
     telemetry_start_next_tick = false;
     telemetry_state = 0;
@@ -386,6 +384,6 @@ void tPin5BridgeBase::CheckAndRescue(void)
 }
 
 
-#endif // !(defined ESP8266 || defined ESP32) 
+#endif // !(defined ESP32 || defined ESP8266)
 
 #endif // JRPIN5_INTERFACE_H

@@ -98,6 +98,11 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t cmd_in_process;
     uint8_t ack_cmd;
     bool ack_ok;
+
+    // momentarily for debug, detect discarded bytes
+#ifdef USE_DEBUG
+    uint16_t discarded = 0;
+#endif
 };
 
 tMBridge mbridge;
@@ -184,14 +189,10 @@ void tMBridge::parse_nextchar(uint8_t c)
                 }
                 discarded = 0;
             }
-#endif
-        }
-#ifdef USE_DEBUG
-        else {
-            // Detect discarded bytes
+        } else {
             discarded++;
-        }
 #endif
+        }
         break;
 
     case STATE_RECEIVE_MBRIDGE_STX2:

@@ -19,7 +19,7 @@
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_JRPIN5
 
 
 //-- UARTS
@@ -44,7 +44,7 @@
 #define UART_TXBUFSIZE            0 // TX_SERIAL_TXBUFSIZE  // 512
 #define UART_RXBUFSIZE            0 // TX_SERIAL_RXBUFSIZE  // 2048
 
-#define JR_PIN5_FULL_DUPLEX       // Internal module
+#define JR_PIN5_FULL_DUPLEX       // internal module
 
 //-- SX1: SX12xx & SPI
 

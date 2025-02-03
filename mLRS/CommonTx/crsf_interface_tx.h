@@ -140,6 +140,11 @@ class tTxCrsf : public tPin5BridgeBase
     int32_t inav_baro_altitude; // needed to make INAV happy
     uint16_t msp_inav_status_sensor_status;
     uint32_t msp_inav_status_arming_flags;
+
+    // momentarily for debug, detect discarded bytes
+#ifdef USE_DEBUG
+    uint16_t discarded = 0;
+#endif
 };
 
 tTxCrsf crsf;
@@ -208,14 +213,10 @@ void tTxCrsf::parse_nextchar(uint8_t c)
                 }
                 discarded = 0;
             }
-#endif
-        }
-#ifdef USE_DEBUG
-        else {
-            // Detect discarded bytes
+        } else {
             discarded++;
-        }
 #endif
+        }
         break;
 
     case STATE_RECEIVE_CRSF_LEN:

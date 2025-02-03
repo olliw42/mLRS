@@ -89,7 +89,7 @@
 #define UART_TXBUFSIZE            0 // TX_SERIAL_TXBUFSIZE
 #define UART_RXBUFSIZE            0 // TX_SERIAL_RXBUFSIZE // 512
 
-#define JR_PIN5_FULL_DUPLEX       // Internal module
+#define JR_PIN5_FULL_DUPLEX       // internal module
 
 #define UARTF_USE_SERIAL2 // debug
 #define UARTF_BAUD                115200

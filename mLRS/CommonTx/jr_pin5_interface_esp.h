@@ -3,15 +3,11 @@
 // GPL3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// JR Pin5 Interface Header for Full Duplex
+// JR Pin5 Interface Header for ESP32
 //********************************************************
-#ifndef JRPIN5_INTERFACE_FULL_DUPLEX_H
-#define JRPIN5_INTERFACE_FULL_DUPLEX_H
+#ifndef JRPIN5_INTERFACE_ESP_H
+#define JRPIN5_INTERFACE_ESP_H
 
-
-#if !(defined ESP8266 || defined ESP32)
-  #error JrPin5 full duplex interface only for ESP currently!
-#endif
 
 #include "../Common/esp-lib/esp-uart.h"
 
@@ -70,7 +66,6 @@ class tPin5BridgeBase
     uint8_t len;
     uint8_t cnt;
     uint16_t tlast_us;
-    uint16_t discarded;
 
     // check and rescue
     void CheckAndRescue(void);
@@ -83,7 +78,6 @@ void tPin5BridgeBase::Init(void)
     len = 0;
     cnt = 0;
     tlast_us = 0;
-    discarded = 0;
 
     telemetry_start_next_tick = false;
     telemetry_state = 0;
@@ -195,4 +189,4 @@ class tJrPin5SerialPort : public tSerialBase
 tJrPin5SerialPort jrpin5serial;
 
 
-#endif // JRPIN5_INTERFACE_FULL_DUPLEX_H
+#endif // JRPIN5_INTERFACE_ESP_H
