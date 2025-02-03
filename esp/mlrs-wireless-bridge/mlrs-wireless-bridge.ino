@@ -58,7 +58,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE
-#define MODULE_GENERIC
+//#define MODULE_GENERIC
 //#define MODULE_DIY_E28DUAL_MODULE02_G491RE
 
 // Serial level
