@@ -23,9 +23,9 @@
 
 
 //-- UARTS
-// UARTB = serial port BT/ESP port
+// UARTB = serial port 
 // UARTC = COM (CLI)
-// UARTD = serial2
+// UARTD = serial2 BT/ESP port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
