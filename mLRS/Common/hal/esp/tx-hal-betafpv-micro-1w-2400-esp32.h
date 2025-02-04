@@ -6,14 +6,12 @@
 // hal
 //*******************************************************
 
-// FOR SiK TELEM USE ONLY !
-
 /*
   Info on DIP switches
    
-  1,2 on:   update firmware on main ESP32, USB is connected to UO 
-  3,4 on:   normal operation mode, USB is inoperational, UO connected to ESP8285
-  5,6,7 on: update firmware on ESP8285, USB is connected to ESP8285's uart
+  1,2 on:   update firmware on main ESP32, USB is connected to UARTO 
+  3,4 on:   normal operation mode, USB isn't used, UARTO connected to ESP8285
+  5,6,7 on: update firmware on ESP8285, USB is connected to ESP8285's UART
 
   Flashing ESP8285:
   - Board: Generic ESP8266 Module
@@ -23,52 +21,15 @@
 //-------------------------------------------------------
 // ESP32, ELRS BETAFPV MICRO 1W 2400 TX
 //-------------------------------------------------------
-/*
-    Pin Defs
-    "serial_rx": 13
-    "serial_tx": 13
-    "radio_busy": 21
-    "radio_dio1": 4
-    "radio_miso": 19
-    "radio_mosi": 23
-    "radio_nss": 5
-    "radio_rst": 14
-    "radio_sck": 18
-    "power_rxen": 27
-    "power_txen": 26
-    "power_lna_gain": 12
-    "power_min": 1
-    "power_high": 6
-    "power_max": 6
-    "power_default": 2
-    "power_control": 0
-    "power_values": [-18,-15,-12,-7,-4,2]
-    "joystick": 25
-    "joystick_values": [2839,2191,1616,3511,0,4095]
-    "led_rgb": 16
-    "led_rgb_isgrb": true
-    "screen_sck": 32
-    "screen_sda": 22
-    "screen_type": 1
-    "screen_reversed": 1
-    "use_backpack": true
-    "debug_backpack_baud": 460800
-    "debug_backpack_rx": 3
-    "debug_backpack_tx": 1
-    "misc_fan_en": 17
-*/
+
+// https://github.com/ExpressLRS/targets/blob/master/TX/BETAFPV%202400%20Micro%201W.json
 
 
-//#define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_IN //for some reason sbus inv blocks the 5 way button
-//#define DEVICE_HAS_IN_INVERTED
-#define DEVICE_HAS_SERIAL_OR_COM // board has UART which is shared between Serial or Com, selected by e.g. a switch
-//#define DEVICE_HAS_NO_SERIAL
-//#define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_SERIAL_OR_COM // hold down direction at boot to enable CLI
 #define DEVICE_HAS_NO_DEBUG
-
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
-#define DEVICE_HAS_FAN_ONOFF // board has a Fan, which can be set on or off
+#define DEVICE_HAS_FAN_ONOFF
 
 
 //-- UARTS
@@ -79,35 +40,26 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
-#define UARTB_USE_SERIAL // serial, is on P1/P3
+#define UARTB_USE_SERIAL // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
-#define UARTB_TXBUFSIZE           1024 // TX_SERIAL_TXBUFSIZE
+#define UARTB_USE_TX_IO           IO_P1
+#define UARTB_USE_RX_IO           IO_P3
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL // com USB/CLI, is on P1/P3
+#define UARTC_USE_SERIAL // COM (CLI)
 #define UARTC_BAUD                115200
-#define UARTC_TXBUFSIZE           0 // ?? // TX_COM_TXBUFSIZE
+#define UARTC_USE_TX_IO           IO_P1
+#define UARTC_USE_RX_IO           IO_P3
+#define UARTC_TXBUFSIZE           0  // TX FIFO = 128
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_SERIAL1 // JR pin5, MBridge, is on P13
+#define UART_USE_SERIAL1 // JR bay pin5
 #define UART_BAUD                 400000
-#define UARTE_USE_TX_IO           -1 // no Tx pin needed
-#define UARTE_USE_RX_IO           13
-#define UART_TXBUFSIZE            512 //0 // 128 fifo should be sufficient // 512
-#define UART_RXBUFSIZE            512
-
-#define UARTE_USE_SERIAL1 // in port is on P13
-#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
-#define UARTE_USE_TX_IO           -1 // no Tx pin needed
-#define UARTE_USE_RX_IO           13
-#define UARTE_TXBUFSIZE           0 // not used
-#define UARTE_RXBUFSIZE           512
-
-#define UARTF_USE_SERIAL2 // debug is on JRPin5
-#define UARTF_BAUD                115200
-#define UARTF_USE_TX_IO           IO_P13
-#define UARTF_USE_RX_IO           -1
-#define UARTF_TXBUFSIZE           512 // ?? // 512
+#define UART_USE_TX_IO            IO_P13
+#define UART_USE_RX_IO            IO_P13
+#define UART_TXBUFSIZE            0  // TX FIFO = 128
+#define UART_RXBUFSIZE            0  // RX FIFO = 128 + 1
 
 
 //-- SX1: SX12xx & SPI
@@ -162,24 +114,6 @@ void sx_dio_init_exti_isroff(void)
 }
 
 void sx_dio_exti_isr_clearflag(void) {}
-
-
-//-- In port
-#if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_INVERTED
-#include "../../esp-lib/esp-uarte.h"
-
-void in_init_gpio(void) {}
-
-void in_set_normal(void)
-{
-    uart_set_line_inverse(UARTE_SERIAL_NO, UART_SIGNAL_INV_DISABLE);
-}
-
-void in_set_inverted(void)
-{
-    uart_set_line_inverse(UARTE_SERIAL_NO, UART_SIGNAL_RXD_INV);
-}
-#endif
 
 
 //-- Button
