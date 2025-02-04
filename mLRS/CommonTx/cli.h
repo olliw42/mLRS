@@ -276,6 +276,20 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 #define CLI_LINEND  "\r\n"
 
 
+// TODO: we want a better math for how many to send max per time slot
+#if defined DEVICE_HAS_COM_ON_USB
+  #if USB_TXBUFSIZE >= 2048
+    #define CLI_PRINT_CHUNKS_CNT_MAX  64
+  #else // we assume 512
+    #define CLI_PRINT_CHUNKS_CNT_MAX  8
+  #endif
+#elif !defined DEVICE_HAS_COM_ON_USB && (UARTC_TXBUFSIZE >= 2048)
+  #define CLI_PRINT_CHUNKS_CNT_MAX  64
+#else
+  #define CLI_PRINT_CHUNKS_CNT_MAX  2 // only 2 chunks fit into 128 fifo
+#endif
+
+
 class tTxCli
 {
   public:
@@ -285,22 +299,14 @@ class tTxCli
     int32_t GetTaskValue(void) { return task_value; }
 
   private:
-    typedef enum {
-        CLI_STATE_NORMAL = 0,
-        CLI_STATE_STATS,
-        CLI_STATE_HELP,
-        CLI_STATE_PL,
-        CLI_STATE_FREQS,
-    } CLI_STATE_ENUM;
-
     void addc(uint8_t c);
     void clear(void);
-    void print_help(void);
+    void print_help_do(void); // printed in chunks
     void print_param(uint8_t idx);
-    void print_param_list(void);
+    void print_param_list_do(void); // printed in chunks
     void print_param_opt_list(uint8_t idx);
     void print_device_version(void);
-    void print_frequencies(void);
+    void print_frequencies_do(void); // printed in chunks
     void stream(void);
 
     bool is_cmd(const char* const cmd);
@@ -325,9 +331,21 @@ class tTxCli
     uint8_t task_pending;
     int32_t task_value;
 
+    // variables needed for print state machine to print in junks
+    typedef enum {
+        CLI_STATE_NORMAL = 0,
+        CLI_STATE_STATS,
+        CLI_STATE_PRINT_HELP,
+        CLI_STATE_PRINT_PARAM_LIST,
+        CLI_STATE_PRINT_LISTFREQS,
+    } CLI_STATE_ENUM;
+
+    void print_it(uint8_t _state) { state = _state; print_index = 0; }
+    void print_it_reset(void) { state = CLI_STATE_NORMAL; }
+
     uint8_t state;
-    int8_t print_index;
-    int8_t print_pl_flag;
+    uint8_t print_index;
+    uint8_t print_pl_flag;
 };
 
 
@@ -536,7 +554,8 @@ void tTxCli::print_param(uint8_t idx)
 }
 
 
-void tTxCli::print_param_list(void)
+// is chunk-ed by state
+void tTxCli::print_param_list_do(void)
 {
     if (print_index == 0 && (print_pl_flag == 0 || print_pl_flag == 1 || print_pl_flag == 3) && !connected()) {
         putsn("warn: receiver not connected");
@@ -554,12 +573,12 @@ void tTxCli::print_param_list(void)
         if ((print_pl_flag == 0 || print_pl_flag == 3) && !connected() && setup_param_is_rx(param_index)) continue;
 
         print_param(param_index);
+
         count++;
-        if (count > 1) return; // only 2 lines fit into 128 bytes
+        if (count > CLI_PRINT_CHUNKS_CNT_MAX) return; // only as many lines fit into tx buffer
     }
 
-    state = CLI_STATE_NORMAL;
-    print_index = 0;
+    print_it_reset();
 }
 
 
@@ -617,15 +636,18 @@ void tTxCli::print_device_version(void)
 }
 
 
-void tTxCli::print_frequencies(void)
+void tTxCli::print_frequencies_do(void)
 {
-    char s[32];
-    char unit[32];
+char s[32];
+char unit[32];
 
-    uint8_t count = 0;
-    while (print_index < fhss.Cnt()) {
+    for (uint8_t count = 0; count < CLI_PRINT_CHUNKS_CNT_MAX; count++) { // only as many lines fit into tx buffer
+        if (print_index >= fhss.Cnt()) {
+            print_it_reset();
+            return;
+        }
+
         uint8_t i = print_index;
-        print_index++;
 
         puts(u8toBCD_s(i));
         puts("  ch: ");
@@ -638,72 +660,48 @@ void tTxCli::print_frequencies(void)
         puts(s);
         putsn(unit);
 
-        count++;
-        if (count > 1) return; // only 2 lines fit into 128 bytes
+        print_index++;
     }
-
-    state = CLI_STATE_NORMAL;
-    print_index = 0;
 }
 
 
-void tTxCli::print_help(void)
+void tTxCli::print_help_do(void)
 {
-    switch (print_index) {
-    case 0:
-        print_layout_version_warning();
-
-        putsn("  help, h, ?  -> this help page");
-        break;
-    case 1:
-        putsn("  v           -> print device and version");
-        putsn("  pl          -> list all parameters");
-        break;
-    case 2:
-        putsn("  pl c        -> list common parameters");
-        putsn("  pl tx       -> list Tx parameters");
-        break;
-    case 3:
-        putsn("  pl rx       -> list Rx parameters");
-        putsn("  p name          -> get parameter value");
-        break;
-    case 4:
-        putsn("  p name = value  -> set parameter value");
-        putsn("  p name = ?      -> get parameter value and list of allowed values");
-        break;
-    case 5:
-        putsn("  pstore      -> store parameters");
-        putsn("  setconfigid -> select config id");
-        break;
-    case 6:
-        putsn("  bind        -> start binding");
-        putsn("  reload      -> reload all parameter settings");
-        break;
-    case 7:
-        putsn("  stats       -> starts streaming statistics");
-        putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-        break;
-    case 8:
-        putsn("  systemboot  -> call system bootloader");
-        break;
-    case 9:
+    for (uint8_t count = 0; count < CLI_PRINT_CHUNKS_CNT_MAX; count++) { // only as many lines fit into tx buffer
+        switch (print_index) {
+        case 0:  print_layout_version_warning(); break;
+        case 1:  putsn("  help, h, ?  -> this help page"); break;
+        case 2:  putsn("  v           -> print device and version"); break;
+        case 3:  putsn("  pl          -> list all parameters"); break;
+        case 4:  putsn("  pl c        -> list common parameters"); break;
+        case 5:  putsn("  pl tx       -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx       -> list Rx parameters"); break;
+        case 7:  putsn("  p name          -> get parameter value"); break;
+        case 8:  putsn("  p name = value  -> set parameter value"); break;
+        case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
+        case 10: putsn("  pstore      -> store parameters"); break;
+        case 11: putsn("  setconfigid -> select config id"); break;
+        case 12: putsn("  bind        -> start binding"); break;
+        case 13: putsn("  reload      -> reload all parameter settings"); break;
+        case 14: putsn("  stats       -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
+        case 16: putsn("  systemboot  -> call system bootloader"); break;
 #ifdef USE_ESP_WIFI_BRIDGE
-        putsn("  esppt       -> enter serial passthrough");
-        putsn("  espboot     -> reboot ESP and enter serial passthrough");
+        case 17: putsn("  esppt       -> enter serial passthrough"); break;
+        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
 #endif
-        break;
-    case 10:
 #ifdef USE_HC04_MODULE
-        putsn("  hc04 pt       -> enter serial passthrough");
-        putsn("  hc04 setpin   -> set pin of HC04");
+        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
+        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
 #endif
-        // Last chunk, reset
-        print_index = 0;
-        state = CLI_STATE_NORMAL;
-        return;
+        default:
+            // last chunk, reset
+            print_it_reset();
+            return;
+        }
+
+        print_index++; // do next chunk
     }
-    
-    print_index++; // Do next chunk next time
 }
 
 
@@ -718,19 +716,20 @@ bool rx_param_changed;
 
     //puts(".");
 
+    // we are in a print state
     switch (state) {
     case CLI_STATE_STATS:
-        if (com->available()) { com->getc(); state = CLI_STATE_NORMAL; putsn("  streaming stats stopped"); return; }
+        if (com->available()) { com->getc(); print_it_reset(); putsn("  streaming stats stopped"); return; }
         stream();
         break;
-    case CLI_STATE_HELP:
-        print_help();
+    case CLI_STATE_PRINT_HELP:
+        print_help_do();
         return;
-    case CLI_STATE_PL:
-        print_param_list();
+    case CLI_STATE_PRINT_PARAM_LIST:
+        print_param_list_do();
         return;
-    case CLI_STATE_FREQS:
-        print_frequencies();
+    case CLI_STATE_PRINT_LISTFREQS:
+        print_frequencies_do();
         return;
     }
 
@@ -749,14 +748,14 @@ bool rx_param_changed;
         putsn(">");
 
         //-- basic commands
-        if (is_cmd("h"))     { state = CLI_STATE_HELP; } else
-        if (is_cmd("help"))  { state = CLI_STATE_HELP; } else
-        if (is_cmd("?"))     { state = CLI_STATE_HELP; } else
+        if (is_cmd("h"))     { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("help"))  { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("?"))     { print_it(CLI_STATE_PRINT_HELP); } else
         if (is_cmd("v"))     { print_device_version(); } else
-        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = 0; state = CLI_STATE_PL; } else
-        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = 1; state = CLI_STATE_PL; } else
-        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = 2; state = CLI_STATE_PL; } else
-        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = 3; state = CLI_STATE_PL;
+        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = 0; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = 1; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = 2; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = 3; print_it(CLI_STATE_PRINT_PARAM_LIST);
 
         } else
         if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
@@ -829,7 +828,7 @@ bool rx_param_changed;
         //-- miscellaneous
         } else
         if (is_cmd("listfreqs")) {
-            state = CLI_STATE_FREQS;
+            print_it(CLI_STATE_PRINT_LISTFREQS);
 
         //-- System Bootloader
         } else
