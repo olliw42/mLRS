@@ -61,7 +61,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial2 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_JRPIN5  // board has ESP32 or ESp82xx with RESET,GPIO support, on JRPin5 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESp82xx with its passthrough via JRPin5 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
@@ -357,7 +357,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || DEVICE_HAS_ESP_WIFI_BRIDGE_ON_JRPIN5
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
   #define USE_ESP_WIFI_BRIDGE
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
