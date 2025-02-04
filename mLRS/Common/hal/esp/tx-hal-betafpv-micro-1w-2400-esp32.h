@@ -28,6 +28,7 @@
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // hold down direction at boot to enable CLI
 #define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_FAN_ONOFF
 

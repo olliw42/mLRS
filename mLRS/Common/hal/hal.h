@@ -67,6 +67,7 @@ In tx-hal files:
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
+#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 #define DEVICE_HAS_NO_LED           // board has no LEDs at all
 
 In rx-hal files:
