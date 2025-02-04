@@ -323,11 +323,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif // DEVICE_IS_TRANSMITTER
 
 
-#if defined DEVICE_HAS_JRPIN5
-   #define USE_JRPIN5
-#endif
-
-
 #if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED || \
     defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX
   #define USE_IN
@@ -409,7 +404,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_SX2
 #endif
 
-
 #ifdef USE_SX2
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
@@ -430,7 +424,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define TRANSMIT_USE_ANTENNA2     false
 #endif
 
-#ifdef USE_JRPIN5
+#ifdef DEVICE_HAS_JRPIN5
   #define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
   #define IF_CRSF(x)                if (Config.UseCrsf) { x; }
   #define IF_MBRIDGE_OR_CRSF(x)     if (Config.UseMbridge | Config.UseCrsf) { x; }

@@ -114,9 +114,9 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx ChannelSource: "none,crsf,in,mbridge"
-#if defined USE_JRPIN5 && defined USE_IN
+#if defined DEVICE_HAS_JRPIN5 && defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // none, crsf, in, mBridge
-#elif defined USE_JRPIN5
+#elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // none, crsf, mBridge
 #elif defined USE_IN
     SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // none, in
@@ -136,9 +136,9 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx SerialDestination: "serial,serial2,mbridge"
-#if defined USE_JRPIN5 && defined USE_SERIAL2
+#if defined DEVICE_HAS_JRPIN5 && defined USE_SERIAL2
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b111; // all
-#elif defined USE_JRPIN5
+#elif defined DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // serial, mbridge
 #elif defined USE_SERIAL2
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0b011; // serial, serial2
@@ -850,7 +850,7 @@ void setup_configure_config(uint8_t config_id)
     Config.UseIn = false;
 #ifdef DEVICE_IS_TRANSMITTER
     // conflicts must have been sorted out before in setup_sanitize()
-  #ifdef USE_JRPIN5
+  #ifdef DEVICE_HAS_JRPIN5
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
         (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
         Config.UseMbridge = true;
