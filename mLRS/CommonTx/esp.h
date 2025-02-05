@@ -35,7 +35,7 @@
 #include <ctype.h>
 
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined DEVICE_HAS_SERIAL_OR_COM
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
   #error ESP: ESP wireless bridge is on serial but board has serial/com !
 #endif
 
@@ -324,7 +324,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined DEVICE_HAS_SERIAL_OR_COM
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
     ser_or_com_set_to_com();
 #endif
     ser->flush();
