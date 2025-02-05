@@ -19,62 +19,27 @@
 //-------------------------------------------------------
 // ESP32, ELRS RADIOMASTER BANDIT MICRO 900 TX
 //-------------------------------------------------------
-/*
-  "serial_rx": 13,
-  "serial_tx": 13,
-  "radio_dio0": 22,
-  "radio_dio1": 21,
-  "radio_miso": 19,
-  "radio_mosi": 23,
-  "radio_nss": 4,
-  "radio_rst": 5,
-  "radio_sck": 18,
-  "radio_dcdc": true,       ???
-  "radio_rfo_hf": true,
-  "power_txen": 33,
-  "power_apc2": 26,
-  "power_min": 3,
-  "power_high": 6,
-  "power_max": 6,
-  "power_default": 3,
-  "power_control": 3,
-  "power_values": [168,148,128,90],
-  "power_values2": [2,6,9,12],
-  "use_backpack": true,
-  "debug_backpack_baud": 460800,
-  "debug_backpack_rx": 16,
-  "debug_backpack_tx": 17,
-  "backpack_boot": 32,
-  "backpack_en": 25,
-  "passthrough_baud": 230400,
-  "led_red": 15,
-  "led_red_invert": true,
-  "misc_fan_en": 2,
-  "screen_type": 1,
-  "screen_sck": 12,
-  "screen_sda": 14,
-  "screen_reversed": true,
-  "joystick": 39,
-  "joystick_values": [3227,0,1961,2668,1290,4095]
-*/
+
+// Bandit, "big" Bandit: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit.json
+// Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
 
 
 #define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_IN
 #define DEVICE_HAS_SERIAL_OR_COM // board has UART which is shared between Serial or Com, selected by e.g. a switch
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY
-#else
+#else // Bandit Micro
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
 
-#define DEVICE_HAS_FAN_ONOFF // board has a Fan, which can be set on or off
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 backpack with GPIO,RST, but no CONFIGURE for now
+#define DEVICE_HAS_FAN_ONOFF
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST, but no CONFIGURE for now
 
 
 //-- UARTS
@@ -106,14 +71,14 @@
 #define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
+#define UART_USE_SERIAL1 // JR bay pin5
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P13
 #define UART_USE_RX_IO            IO_P13
 #define UART_TXBUFSIZE            0 // TX FIFO = 128
 #define UART_RXBUFSIZE            0 // RX FIFO = 128 + 1
 
-#define UARTF_USE_SERIAL // if needed, debug is on RT or USB; need to disable serial and com
+#define UARTF_USE_SERIAL // debug, if needed, debug is either on the "RT" pad or on USB; need to disable serial and com
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX_IO           IO_P1
 #define UARTF_USE_RX_IO           -1

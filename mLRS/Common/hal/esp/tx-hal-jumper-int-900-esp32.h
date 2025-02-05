@@ -46,6 +46,7 @@
 
 #define JR_PIN5_FULL_DUPLEX       // internal module
 
+
 //-- SX1: SX12xx & SPI
 
 #define SPI_CS_IO                 IO_P5
@@ -96,10 +97,7 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 //-- Button
 
-#define BUTTON                    -1
-
 void button_init(void) {}
-
 IRAM_ATTR bool button_pressed(void) { return false; }
 
 
@@ -156,6 +154,7 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 
 //-- POWER
+
 #define POWER_GAIN_DBM            22 // gain of a PA stage if present
 #define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
