@@ -276,16 +276,19 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 #define CLI_LINEND  "\r\n"
 
 
-// TODO: we want a better math for how many to send max per time slot
-#if defined DEVICE_HAS_COM_ON_USB
+#ifdef DEVICE_HAS_COM_ON_USB
   #if USB_TXBUFSIZE >= 2048
-    #define CLI_PRINT_CHUNKS_CNT_MAX  64
+    #define CLI_PRINT_CHUNKS_CNT_MAX  200
   #else // we assume 512
     #define CLI_PRINT_CHUNKS_CNT_MAX  8
   #endif
-#elif !defined DEVICE_HAS_COM_ON_USB && (UARTC_TXBUFSIZE >= 2048)
-  #define CLI_PRINT_CHUNKS_CNT_MAX  64
-#else
+#elif UARTC_TXBUFSIZE >= 2048
+  #define CLI_PRINT_CHUNKS_CNT_MAX  200
+#elif UARTC_TXBUFSIZE >= 512
+  #define CLI_PRINT_CHUNKS_CNT_MAX  8
+#elif UARTC_TXBUFSIZE >= 256
+  #define CLI_PRINT_CHUNKS_CNT_MAX  4
+#else // esp tx: TXBUFSIZE = 0, which corresponds to 128 fifo
   #define CLI_PRINT_CHUNKS_CNT_MAX  2 // only 2 chunks fit into 128 fifo
 #endif
 
@@ -293,7 +296,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 class tTxCli
 {
   public:
-    void Init(tSerialBase* const _comport);
+    void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
     void Do(void);
     uint8_t Task(void);
     int32_t GetTaskValue(void) { return task_value; }
@@ -344,12 +347,13 @@ class tTxCli
     void print_it_reset(void) { state = CLI_STATE_NORMAL; }
 
     uint8_t state;
+    uint8_t print_chunks_max;
     uint8_t print_index;
     uint8_t print_pl_flag;
 };
 
 
-void tTxCli::Init(tSerialBase* const _comport)
+void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 {
     com = _comport;
 
@@ -363,6 +367,19 @@ void tTxCli::Init(tSerialBase* const _comport)
     task_value = 0;
 
     state = CLI_STATE_NORMAL;
+
+    // 9 ms, 20 ms, 32 ms, 53 ms
+    if (_frame_rate_ms < 19) {
+        print_chunks_max = 1;
+    } else if (_frame_rate_ms < 30) {
+        print_chunks_max = 3;
+    } else if (_frame_rate_ms < 50) {
+        print_chunks_max = 5;
+    } else {
+        print_chunks_max = 8;
+    }
+    if (print_chunks_max > CLI_PRINT_CHUNKS_CNT_MAX) print_chunks_max = CLI_PRINT_CHUNKS_CNT_MAX;
+
     print_index = 0;
     print_pl_flag = 0;
 }
@@ -575,7 +592,7 @@ void tTxCli::print_param_list_do(void)
         print_param(param_index);
 
         count++;
-        if (count > CLI_PRINT_CHUNKS_CNT_MAX) return; // only as many lines fit into tx buffer
+        if (count > print_chunks_max) return; // only as many lines fit into tx buffer
     }
 
     print_it_reset();
@@ -641,7 +658,7 @@ void tTxCli::print_frequencies_do(void)
 char s[32];
 char unit[32];
 
-    for (uint8_t count = 0; count < CLI_PRINT_CHUNKS_CNT_MAX; count++) { // only as many lines fit into tx buffer
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
         if (print_index >= fhss.Cnt()) {
             print_it_reset();
             return;
@@ -667,7 +684,7 @@ char unit[32];
 
 void tTxCli::print_help_do(void)
 {
-    for (uint8_t count = 0; count < CLI_PRINT_CHUNKS_CNT_MAX; count++) { // only as many lines fit into tx buffer
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
         switch (print_index) {
         case 0:  print_layout_version_warning(); break;
         case 1:  putsn("  help, h, ?  -> this help page"); break;
