@@ -1013,7 +1013,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
         Config.frame_rate_hz, Config.frame_rate_hz, // is equal for Tx and Rx
         mode_str, band_str,
         tx_ser_data_rate, rx_ser_data_rate,
-        sx.ReceiverSensitivity_dbm(), sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx
+        -sx.ReceiverSensitivity_dbm(), -sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx
 
         //uint8_t target_system, uint8_t target_component,
         //uint8_t type, uint8_t mode,
@@ -1038,8 +1038,8 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
 
     payload.tx_ser_data_rate = tx_ser_data_rate;
     payload.rx_ser_data_rate = rx_ser_data_rate;
-    payload.tx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
-    payload.rx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
+    payload.tx_receive_sensitivity = -sx.ReceiverSensitivity_dbm();
+    payload.rx_receive_sensitivity = -sx.ReceiverSensitivity_dbm();
 
     uint8_t tunnel_payload[FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN];
     memset(tunnel_payload, 0, FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN);
