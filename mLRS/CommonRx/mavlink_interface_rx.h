@@ -886,7 +886,11 @@ int8_t rx_snr1, rx_snr2;
 
     // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // is single band
     float freq2 = fhss.GetCurrFreq2_Hz();
+#else
+    float freq2 = 0.0f;
+#endif
 
 #if 0
     fmav_msg_mlrs_radio_link_stats_pack(
