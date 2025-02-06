@@ -31,9 +31,10 @@
 #define DEVICE_HAS_NO_DEBUG
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
-#define DEVICE_HAS_SINGLE_LED_RGB
+// Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
 #define DEVICE_HAS_I2C_DISPLAY
 #else // Bandit Micro
+// Bandit Micro has one normal pin-driven LED
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
@@ -137,10 +138,8 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 
 //-- LEDs
-
-#define LED_RED                   IO_P15
-
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+// Bandit, "big" Bandit have RGB LEDs, so we use our normal red/green
 
 #include <NeoPixelBus.h>
 bool ledRedState;
@@ -222,6 +221,8 @@ IRAM_ATTR void led_blue_toggle(void)
 }
 
 #else
+
+#define LED_RED                   IO_P15
 
 void leds_init(void)
 {
