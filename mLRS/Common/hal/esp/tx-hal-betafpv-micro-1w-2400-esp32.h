@@ -21,16 +21,18 @@
 //-------------------------------------------------------
 // ESP32, ELRS BETAFPV MICRO 1W 2400 TX
 //-------------------------------------------------------
-
 // https://github.com/ExpressLRS/targets/blob/master/TX/BETAFPV%202400%20Micro%201W.json
 
-
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // hold down direction at boot to enable CLI
+#define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_FAN_ONOFF
+
+// Note on SERIAL_OR_COM:
+// The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
+// The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
 
 
 //-- UARTS
