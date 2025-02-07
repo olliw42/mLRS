@@ -4,14 +4,14 @@
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
 -- Lua script for ArduPilot
--- Logging of link statistics data send via MAVLink 
+-- Logging of link statistics data send via MAVLink
 ----------------------------------------------------------------------
 -- contributed by twistedwings
 ----------------------------------------------------------------------
 -- Version 2025-02-07.01
 ----------------------------------------------------------------------
 -- To install the script:
--- 	 - set SCR_ENABLE = 1
+--   - set SCR_ENABLE = 1
 --   - put the script in APM/SCRIPTS/ on the microSD of the flight controller
 --   - restart the flightcontroller
 -- Configuration of mLRS receiver:
@@ -74,8 +74,8 @@ function decode_header(msg)
 
         -- fetch the message id
         header.msgid, pos = string.unpack("<I3", msg, pos)
-	else
-		header.msgid = -1 -- we use this to detect a false decode
+    else
+        header.msgid = -1 -- we use this to detect a false decode
     end
 
     return header, pos
@@ -169,9 +169,9 @@ function handle_tunnel(msg, pos)
     local target_system, pos = string.unpack("<B", msg, pos)
     local target_component, pos = string.unpack("<B", msg, pos)
     local payload_length, pos = string.unpack("<B", msg, pos)
-	
+
     --gcs:send_text(6, string.format("handle_tunnel payload_type %d", payload_type))
-	
+
     if payload_type == MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_STATS then
         handle_radio_link_stats(msg, pos)
     elseif payload_type == MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_INFORMATION then
@@ -186,9 +186,9 @@ end
 
 function update()
     -- runtime: mean 204 us, max 2318 us
-    
-	local msg = mavlink.receive_chan()
-    
+
+    local msg = mavlink.receive_chan()
+
     if msg ~= nil then
         local header, pos = decode_header(msg)
         if header.msgid == TUNNEL_MSG_ID then
@@ -197,7 +197,7 @@ function update()
                 handle_tunnel(msg, pos)
             end
         end
-		
+
         return update() -- give it an immediate second try
     end
 
