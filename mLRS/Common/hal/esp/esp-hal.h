@@ -107,8 +107,8 @@
 #include "tx-hal-radiomaster-int-2400-esp32.h"
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_BOXER_2400_ESP32
-#include "tx-hal-radiomaster-boxer-2400-esp32.h"
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_BOXER_2400_ESP32
+#include "tx-hal-radiomaster-int-boxer-2400-esp32.h"
 #endif
 
 #ifdef TX_ELRS_JUMPER_INTERNAL_2400_ESP32
