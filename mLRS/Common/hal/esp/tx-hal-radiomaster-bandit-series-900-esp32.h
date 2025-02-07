@@ -140,6 +140,9 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 
 //-- LEDs
+
+#define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality
+
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
 // Bandit, "big" Bandit have RGB LEDs, so we use our normal red/green
 
@@ -223,8 +226,6 @@ IRAM_ATTR void led_blue_toggle(void)
 }
 
 #else
-
-#define LED_RED                   IO_P15
 
 void leds_init(void)
 {
