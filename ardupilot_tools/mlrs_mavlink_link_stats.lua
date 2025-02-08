@@ -8,33 +8,49 @@
 ----------------------------------------------------------------------
 -- contributed by twistedwings
 ----------------------------------------------------------------------
--- Version 2025-02-08.01
+-- Version 2025-02-08.02
 ----------------------------------------------------------------------
 -- To install the script:
 --   - set SCR_ENABLE = 1
 --   - put the script in APM/SCRIPTS/ on the microSD of the flight controller
 --   - restart the flightcontroller
--- Configuration of mLRS receiver:
+-- Required mLRS receiver settings:
 --   - 'Rx Ser Link Mode' = 'mavlink' or 'mavlinkX' ('mavlinkX' should be prefered)
 --   - 'Rx Snd RcChannel' = 'rc channels' (NOT 'rc override'!)
--- works with mLRS v1.3.04 and later
+-- Works with mLRS v1.3.04 and later
 
 
 -- TUNNEL message metadata
 
-local TUNNEL_MSG_ID = 385
-
 local RADIO_LINK_SYSTEM_ID = 51
 local MAV_COMP_ID_TELEMETRY_RADIO = 68
 
+local TUNNEL_MSG_ID = 385
 local MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_STATS = 208
 local MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_INFORMATION = 209
 
+--[[
+-- MLRS_RADIO_LINK_STATS_FLAGS
+local MLRS_RADIO_LINK_STATS_FLAGS_RSSI_DBM = 1              -- Rssi values are in negative dBm. Values 1..254 corresponds to -1..-254 dBm. 0: no reception, UINT8_MAX: unknown.
+local MLRS_RADIO_LINK_STATS_FLAGS_RX_RECEIVE_ANTENNA2 = 2   -- Rx receive antenna. When set the data received on antenna 2 are taken, else the data stems from antenna 1.
+local MLRS_RADIO_LINK_STATS_FLAGS_RX_TRANSMIT_ANTENNA1 = 4  -- Rx transmit antenna. Data are transmitted on antenna 1.
+local MLRS_RADIO_LINK_STATS_FLAGS_RX_TRANSMIT_ANTENNA2 = 8  -- Rx transmit antenna. Data are transmitted on antenna 2.
+local MLRS_RADIO_LINK_STATS_FLAGS_TX_RECEIVE_ANTENNA2 = 16  -- Tx receive antenna. When set the data received on antenna 2 are taken, else the data stems from antenna 1.
+local MLRS_RADIO_LINK_STATS_FLAGS_TX_TRANSMIT_ANTENNA1 = 32 -- Tx transmit antenna. Data are transmitted on antenna 1.
+local MLRS_RADIO_LINK_STATS_FLAGS_TX_TRANSMIT_ANTENNA2 = 64 -- Tx transmit antenna. Data are transmitted on antenna 2.
+
+-- mLRS Modes
+local MLRS_MODE_50HZ = 0
+local MLRS_MODE_31HZ = 1
+local MLRS_MODE_19HZ = 2
+local MLRS_MODE_FLRC_111HZ = 3
+local MLRS_MODE_FSK_50HZ = 4
+--]]
 
 -- Initialize MAVLink via Lua script
 -- mavlink:init(msg_queue_length, num_rx_msgid)
 -- 1st number determines size of buffer, 2nd number determines number of IDs which can be registered
--- Note: it's important to use a msg_queue_length >= 2
+-- Note: it is important to use a msg_queue_length >= 2
 
 mavlink.init(2, 10)
 mavlink.register_rx_msgid(TUNNEL_MSG_ID)
@@ -88,6 +104,12 @@ end
 -- https://github.com/ArduPilot/ardupilot/tree/master/libraries/AP_Logger
 -- not all format types are supported by scripting, only: i, L, e, f, n, M, B, I, E, and N
 -- Lua automatically adds a timestamp in micro seconds
+
+-- For comparison, log structure of (older) BetaPilot
+-- { LOG_RADIO_LINK_STATS_MSG_RX, sizeof(log_RadioLinkStatsRx), \
+--   "RDRX", "QBBBbBbBB", "TimeUS,rxLQrc,rxLQser,rxRssi1,rxSnr1,rxRssi2,rxSnr2,rxRAn,rxTAn", "s%%------", "F--------", true }, \
+-- { LOG_RADIO_LINK_STATS_MSG_TX, sizeof(log_RadioLinkStatsTx), \
+--   "RDTX", "QBBbBbBBB", "TimeUS,txLQser,txRssi1,txSnr1,txRssi2,txSnr2,txRAn,txTAn,flags", "s%-------", "F--------", true }, \
 
 function handle_radio_link_stats(msg, pos)
     -- process the mavlink payload
@@ -201,7 +223,7 @@ function update()
         return update() -- give it an immediate second try
     end
 
-    return update, 10 -- run at 100 Hz
+    return update, 10 -- run at 100 Hz, it is important to write update and not update()
 end
 
 
