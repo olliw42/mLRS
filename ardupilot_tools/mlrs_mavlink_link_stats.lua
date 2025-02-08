@@ -8,7 +8,7 @@
 ----------------------------------------------------------------------
 -- contributed by twistedwings
 ----------------------------------------------------------------------
--- Version 2025-02-07.01
+-- Version 2025-02-08.01
 ----------------------------------------------------------------------
 -- To install the script:
 --   - set SCR_ENABLE = 1
@@ -201,7 +201,7 @@ function update()
         return update() -- give it an immediate second try
     end
 
-    return update(), 10 -- run at 100 Hz
+    return update, 10 -- run at 100 Hz
 end
 
 
