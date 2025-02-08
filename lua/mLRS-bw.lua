@@ -997,7 +997,7 @@ local function scriptRun(event)
         error("Cannot be run as a model script!")
         return 2
     end
-    if model.getModule(1).Type ~= 5 then
+    if model.getModule(0).Type ~= 5 and model.getModule(1).Type ~= 5 then
         error("mLRS not accessible: CRSF not enabled!")
         return 2
     end
