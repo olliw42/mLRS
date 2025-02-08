@@ -88,11 +88,23 @@ void tRxClock::Init(uint16_t period_ms)
 
     // initialize the timer
 #ifdef ESP32
-    hw_timer_t* timer0_cfg = nullptr;
-    timer0_cfg = timerBegin(0, 800, 1);  // Timer 0, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
-    timerAttachInterrupt(timer0_cfg, &CLOCK_IRQHandler, true);
-    timerAlarmWrite(timer0_cfg, 1, true);
-    timerAlarmEnable(timer0_cfg);
+    xTaskCreatePinnedToCore([](void *parameter)
+    {
+        hw_timer_t* timer0_cfg = nullptr;
+        timer0_cfg = timerBegin(0, 800, 1);  // Timer 0, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
+        timerAttachInterrupt(timer0_cfg, &CLOCK_IRQHandler, true);
+        timerAlarmWrite(timer0_cfg, 1, true);
+        timerAlarmEnable(timer0_cfg);
+
+        vTaskDelete(NULL);
+    },
+        "TimerSetup",  // Task name
+        2048,          // Stack size
+        NULL,          // Parameters
+        1,             // Priority
+        NULL,          // Task handle
+        0              // Core ID, 1 is used by Arduino.  Ignored on ESP32C3
+    );
 #elif defined ESP8266
     timer1_attachInterrupt(CLOCK_IRQHandler);
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
