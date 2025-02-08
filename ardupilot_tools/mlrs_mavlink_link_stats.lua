@@ -64,7 +64,10 @@ function decode_header(msg)
     -- build up a map of the header
     local header = {}
 
-    local pos = 3 -- TODO: why that?
+    -- mavlink.receive_chan() returns as first result a mavlink_message_t structure
+    -- which holds the message crc in the first two bytes, the magic STX and rest of the message are following
+    -- the STX is thus found in the third byte
+    local pos = 3
 
     -- Magic packet start marker, can be used to identify the MAVLink version
     header.stx, pos = string.unpack("<B", msg, pos)
