@@ -19,27 +19,30 @@
 //-------------------------------------------------------
 // ESP32, ELRS RADIOMASTER BANDIT MICRO 900 TX
 //-------------------------------------------------------
-
 // Bandit, "big" Bandit: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit.json
 // Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
 
-
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // board has UART which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
-#define DEVICE_HAS_SINGLE_LED_RGB
+// Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
 #define DEVICE_HAS_I2C_DISPLAY
 #else // Bandit Micro
+// Bandit Micro has one normal pin-driven LED
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
 
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST, but no CONFIGURE for now
+
+// Note on SERIAL_OR_COM:
+// The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
+// The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
 
 
 //-- UARTS
@@ -138,9 +141,10 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 //-- LEDs
 
-#define LED_RED                   IO_P15
+#define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+// Bandit, "big" Bandit have RGB LEDs, so we use our normal red/green
 
 #include <NeoPixelBus.h>
 bool ledRedState;

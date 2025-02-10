@@ -45,7 +45,7 @@ In tx-hal files:
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_RX  // board shares IN with JRPin5 on RX pin, implies support of normal and inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_SERIAL_OR_COM    // board has UART (or USB) which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
@@ -67,7 +67,7 @@ In tx-hal files:
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
-#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
+#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812, and thus can do more colors
 #define DEVICE_HAS_NO_LED           // board has no LEDs at all
 
 In rx-hal files:

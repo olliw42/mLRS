@@ -10,10 +10,8 @@
 // ESP32, Jumper Tx Internal ELRS, good for T20, T20 V2, T15, T14, T-Pro S
 // Backpack: Generic ESP8266 Module, define LED_IO 16
 //-------------------------------------------------------
-
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%202400.json
 // Added fan on GPIO 33
-
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_NO_LED
