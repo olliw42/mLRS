@@ -30,7 +30,7 @@ class tRfPower
 
 void tRfPower::Init(void)
 {
-    rfpower_current_idx = 0;
+    rfpower_current_idx = -1;  // to initialize properly
     rfpower_new_idx = rfpower_current_idx; // to prevent update before first Set
 }
 
