@@ -196,6 +196,11 @@ void uartc_init(void)
     // isr is enabled !
 }
 
+void uartc_rx_enableisr(FunctionalState flag)
+{
+    // not supported on ESP, allows in functionality
+}
+
 
 //-------------------------------------------------------
 // System bootloader

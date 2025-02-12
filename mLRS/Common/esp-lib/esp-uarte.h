@@ -196,6 +196,11 @@ void uarte_init(void)
     // isr is enabled !
 }
 
+void uarte_rx_enableisr(FunctionalState flag)
+{
+    // not supported on ESP, allows in functionality
+}
+
 
 //-------------------------------------------------------
 // System bootloader
