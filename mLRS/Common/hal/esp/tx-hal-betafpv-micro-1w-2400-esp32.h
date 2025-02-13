@@ -130,9 +130,9 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 void in_init_gpio(void) {}
 
-void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UART_USE_RX_IO, U1RXD_IN_IDX, false); }
+void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, false); }
 
-void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UART_USE_RX_IO, U1RXD_IN_IDX, true); }
+void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, true); }
 
 
 //-- Button
