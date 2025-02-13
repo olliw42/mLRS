@@ -723,15 +723,6 @@ IF_SX2(
     }//end of if(irq2_status)
 );
 
-#ifdef ESP32
-    taskENTER_CRITICAL(&esp32_spinlock);
-    if (doPostReceiveESP32) { 
-        doPostReceiveESP32 = false;
-        doPostReceive = true; 
-    }
-    taskEXIT_CRITICAL(&esp32_spinlock);
-#endif
-
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
         doPostReceive = false;
