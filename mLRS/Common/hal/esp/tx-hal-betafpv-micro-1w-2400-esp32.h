@@ -15,6 +15,7 @@
 
   Flashing ESP8285:
   - Board: Generic ESP8266 Module
+  - Upload Speed: can be 921600
   - Reset Method: dtr (aka modemcu)
 */
 

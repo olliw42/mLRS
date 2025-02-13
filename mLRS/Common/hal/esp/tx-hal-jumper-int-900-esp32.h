@@ -7,7 +7,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// ESP32, Jumper Tx Internal ELRS, good for T20 V2, T15, T14, T-Pro S
+// ESP32, Jumper Tx Internal ELRS, good for T20 V2, T15, T14, T-Pro S (not T20 V1!)
 // Backpack: Generic ESP8266 Module, define LED_IO 16
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%20900%20V2.json
