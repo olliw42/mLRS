@@ -198,7 +198,7 @@ void uartd_init(void)
 
 void uartd_rx_enableisr(FunctionalState flag)
 {
-    // not supported on ESP, allows in functionality
+    // not supported on ESP, allows in functionality without lots of ifdefs
 }
 
 

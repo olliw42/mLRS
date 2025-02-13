@@ -198,7 +198,7 @@ void uarte_init(void)
 
 void uarte_rx_enableisr(FunctionalState flag)
 {
-    // not supported on ESP, allows in functionality
+    // not supported on ESP, allows in functionality without lots of ifdefs
 }
 
 

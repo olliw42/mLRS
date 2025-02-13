@@ -25,6 +25,7 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
+#define DEVICE_HAS_IN
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
@@ -63,6 +64,12 @@
 #define UART_USE_RX_IO            IO_P13
 #define UART_TXBUFSIZE            0  // TX FIFO = 128
 #define UART_RXBUFSIZE            0  // RX FIFO = 128 + 1
+
+#define UARTE_USE_SERIAL1 // in port, uses JRPin5
+#define UARTE_BAUD                 100000
+#define UARTE_USE_TX_IO            -1
+#define UARTE_USE_RX_IO            IO_P13
+#define UARTE_RXBUFSIZE            0 // RX FIFO = 128 + 1
 
 
 //-- SX1: SX12xx & SPI
@@ -117,6 +124,15 @@ void sx_dio_init_exti_isroff(void)
 }
 
 void sx_dio_exti_isr_clearflag(void) {}
+
+
+//-- In port
+
+void in_init_gpio(void) {}
+
+void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UART_USE_RX_IO, U1RXD_IN_IDX, false); }
+
+void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UART_USE_RX_IO, U1RXD_IN_IDX, true); }
 
 
 //-- Button

@@ -26,6 +26,8 @@
 #define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_SERIAL
+//#define DEVICE_HAS_NO_COM
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
 // Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
@@ -80,7 +82,7 @@
 #define UART_TXBUFSIZE            0 // TX FIFO = 128
 #define UART_RXBUFSIZE            0 // RX FIFO = 128 + 1
 
-#define UARTE_USE_SERIAL1 // JR bay pin5
+#define UARTE_USE_SERIAL1 // in port, uses JRPin5
 #define UARTE_BAUD                 100000
 #define UARTE_USE_TX_IO            -1
 #define UARTE_USE_RX_IO            IO_P13

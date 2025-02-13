@@ -198,7 +198,7 @@ void uartf_init(void)
 
 void uartf_rx_enableisr(FunctionalState flag)
 {
-    // not supported on ESP, allows in functionality
+    // not supported on ESP, allows in functionality without lots of ifdefs
 }
 
 
