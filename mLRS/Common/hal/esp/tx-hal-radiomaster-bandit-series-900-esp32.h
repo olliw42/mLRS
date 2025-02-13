@@ -24,9 +24,10 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
+#define DEVICE_HAS_IN
+#define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_NO_DEBUG
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
 // Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
@@ -81,6 +82,12 @@
 #define UART_TXBUFSIZE            0 // TX FIFO = 128
 #define UART_RXBUFSIZE            0 // RX FIFO = 128 + 1
 
+#define UARTE_USE_SERIAL1 // in port, uses JRPin5
+#define UARTE_BAUD                 100000
+#define UARTE_USE_TX_IO            -1
+#define UARTE_USE_RX_IO            IO_P13
+#define UARTE_RXBUFSIZE            0 // RX FIFO = 128 + 1
+
 #define UARTF_USE_SERIAL // debug, if needed, debug is either on the "RT" pad or on USB; need to disable serial and com
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX_IO           IO_P1
@@ -131,6 +138,15 @@ void sx_dio_init_exti_isroff(void)
 }
 
 void sx_dio_exti_isr_clearflag(void) {}
+
+
+//-- In port
+
+void in_init_gpio(void) {}
+
+void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, false); }
+
+void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, true); }
 
 
 //-- Button

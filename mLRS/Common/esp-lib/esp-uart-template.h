@@ -196,6 +196,11 @@ void uart$_init(void)
     // isr is enabled !
 }
 
+void uart$_rx_enableisr(FunctionalState flag)
+{
+    // not supported on ESP, allows in functionality without lots of ifdefs
+}
+
 
 //-------------------------------------------------------
 // System bootloader
