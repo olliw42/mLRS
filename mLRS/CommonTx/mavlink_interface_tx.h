@@ -233,21 +233,6 @@ void tTxMavlink::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
-    if (inject_radio_status) { // && serial.tx_is_empty()) {
-        inject_radio_status = false;
-        send_radio_status();
-        return; // only one per loop
-    }
-
-    if (Setup.Tx[Config.ConfigId].SendRadioStatus) {
-        if ((tnow_ms - radio_status_tlast_ms) >= 1000) {
-            radio_status_tlast_ms = tnow_ms;
-            inject_radio_status = true;
-        }
-    } else {
-        radio_status_tlast_ms = tnow_ms;
-    }
-
     if (crsf.IsRelayMain()) {
         if ((tnow_ms - main_radio_stats_tlast_ms) >= 100) {
             main_radio_stats_tlast_ms = tnow_ms;
@@ -260,6 +245,12 @@ void tTxMavlink::Do(void)
     if (crsf.IsRelayMain() || crsf.IsRelaySecondary()) { // this is a inner tx module
         inject_radio_status = false;
         inject_main_radio_stats = false;
+    }
+
+    if (inject_radio_status) { // && serial.tx_is_empty()) {
+        inject_radio_status = false;
+        send_radio_status();
+        return; // only one per loop
     }
 
     if (inject_main_radio_stats) { // check available size!?
