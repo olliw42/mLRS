@@ -100,6 +100,11 @@ IRAM_ATTR char uart$_getc(void)
     return (char)UART$_SERIAL_NO.read();
 }
 
+IRAM_ATTR void uart$_getbuf(char* buf, uint16_t len)
+{
+    UART$_SERIAL_NO.readBytes(buf, len);
+}
+
 
 IRAM_ATTR void uart$_rx_flush(void)
 {

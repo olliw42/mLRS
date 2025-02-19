@@ -100,6 +100,11 @@ IRAM_ATTR char uartf_getc(void)
     return (char)UARTF_SERIAL_NO.read();
 }
 
+IRAM_ATTR void uartf_getbuf(char* buf, uint16_t len)
+{
+    UARTF_SERIAL_NO.readBytes(buf, len);
+}
+
 
 IRAM_ATTR void uartf_rx_flush(void)
 {
