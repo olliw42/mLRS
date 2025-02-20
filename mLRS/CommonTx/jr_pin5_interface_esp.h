@@ -139,11 +139,19 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 }
 
 
-void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
+void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     // poll uart
     while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
-        parse_nextchar(uart_getc());
+        uint16_t bytesAvailable = uart_rx_bytesavailable();
+        uint16_t i = 0;
+        char buffer[bytesAvailable];
+        
+        uart_getbuf(buffer, bytesAvailable);
+
+        while (i < bytesAvailable && state != STATE_TRANSMIT_START) {
+          parse_nextchar(buffer[i++]);
+        }
     }
 
     // send telemetry after every received message
