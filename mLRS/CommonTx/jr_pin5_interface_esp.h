@@ -150,8 +150,8 @@ void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
     uart_getbuf(buf, available);
     
     for (uint16_t i = 0; i < available; i++) {
-      if (state >= STATE_TRANSMIT_START) break; // read at most 1 message
-      parse_nextchar(buf[i]);
+        if (state >= STATE_TRANSMIT_START) break; // read at most 1 message
+        parse_nextchar(buf[i]);
     }
 
 
