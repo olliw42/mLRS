@@ -10,6 +10,7 @@
 
 
 #include "../Common/esp-lib/esp-uart.h"
+#include "../Common/protocols/crsf_protocol.h"
 
 //-------------------------------------------------------
 // Pin5BridgeBase class
@@ -142,17 +143,17 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     // poll uart
-    while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
-        uint16_t bytesAvailable = uart_rx_bytesavailable();
-        uint16_t i = 0;
-        char buffer[bytesAvailable];
-        
-        uart_getbuf(buffer, bytesAvailable);
-
-        while (i < bytesAvailable && state != STATE_TRANSMIT_START) {
-          parse_nextchar(buffer[i++]);
-        }
+    char buf[CRSF_FRAME_LEN_MAX + 16];
+    uint16_t available = uart_rx_bytesavailable();
+    available = MIN(available, CRSF_FRAME_LEN_MAX);
+    
+    uart_getbuf(buf, available);
+    
+    for (uint16_t i = 0; i < available; i++) {
+      if (state >= STATE_TRANSMIT_START) break; // read at most 1 message
+      parse_nextchar(buf[i]);
     }
+
 
     // send telemetry after every received message
     if (state == STATE_TRANSMIT_START) { // time to send telemetry
