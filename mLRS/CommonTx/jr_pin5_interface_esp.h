@@ -92,7 +92,8 @@ void tPin5BridgeBase::Init(void)
     pin5_init();
 
     // trigger the callback on a symbol timeout
-    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, true);
+    // use a lambda, since the rx callback doesn't actually need the argument
+    UART_SERIAL_NO.onReceive([this]() { pin5_rx_callback(0); }, true);
     
 #ifndef JR_PIN5_FULL_DUPLEX
 
@@ -150,17 +151,20 @@ void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 
 //-------------------------------------------------------
 // Pin5 Serial class
-// used for ESP passthrough flashing
+// used for ESP passthrough flashing, commented functions are unused
 
 class tJrPin5SerialPort : public tSerialBase
 {
   public:
+    // void Init(void) override { uart_init(); }
     void SetBaudRate(uint32_t baud) override { uart_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
     bool full(void) { return !uart_tx_notfull(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { uart_putbuf(buf, len); }
     bool available(void) override { return uart_rx_available(); }
     char getc(void) override { return uart_getc(); }
     void flush(void) override { uart_rx_flush(); uart_tx_flush(); }
+    // uint16_t bytes_available(void) override { return uart_rx_bytesavailable(); }
+    // bool has_systemboot(void) override { return uart_has_systemboot(); }
 };
 
 tJrPin5SerialPort jrpin5serial;
