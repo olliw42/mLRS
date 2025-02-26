@@ -91,9 +91,9 @@ void tPin5BridgeBase::Init(void)
 
     pin5_init();
 
-    // trigger the callback on a symbol timeout
-    // use a lambda, since the rx callback doesn't actually need the argument
-    UART_SERIAL_NO.onReceive([this]() { pin5_rx_callback(0); }, true);
+    // onReceive uses the pin5_rx_callback function
+    // true means trigger only on a symbol timeout
+    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, true);
     
 #ifndef JR_PIN5_FULL_DUPLEX
 
@@ -121,9 +121,9 @@ void tPin5BridgeBase::Init(void)
 //-------------------------------------------------------
 // Receive callback
 // callback is triggered once the radio has stopped transmitting
-// the buffer will contain complete CRSF message or potentially the end of a
-// message when the callback is first initialized
-// use a FIFO to play it safe
+// the buffer will contain a complete CRSF message or potentially 
+// the end of a message when the callback is first initialized
+// use a fifo to play it safe
 
 void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
@@ -135,7 +135,7 @@ void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
     pin5_getbuf(buf, available);
     crsf_fifo.PutBuf(buf, available);
     
-    // parse for a crsf message
+    // parse for a CRSF message
     while (crsf_fifo.Available()) {
         if (state >= STATE_TRANSMIT_START) break; // read at most 1 message
         parse_nextchar(crsf_fifo.Get());
