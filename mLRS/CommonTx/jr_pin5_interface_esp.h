@@ -10,65 +10,70 @@
 
 
 #include "../Common/esp-lib/esp-uart.h"
+#include "../Common/protocols/crsf_protocol.h"
 
 //-------------------------------------------------------
 // Pin5BridgeBase class
 
 class tPin5BridgeBase
 {
-  public:
-    void Init(void);
+    public:
+        void Init(void);
 
-    // telemetry handling
-    bool telemetry_start_next_tick;
-    uint16_t telemetry_state;
+        // telemetry handling
+        bool telemetry_start_next_tick;
+        uint16_t telemetry_state;
 
-    void TelemetryStart(void);
+        void TelemetryStart(void) { telemetry_start_next_tick = true; }
 
-    // interface to the uart hardware peripheral used for the bridge, may be called in isr context
-    void pin5_init(void);
-    void pin5_tx_start(void) {}
-    void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
+        // interface to the uart hardware peripheral used for the bridge
+        void pin5_init(void) { uart_init(); }
+        void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
+        void pin5_getbuf(char* const buf, uint16_t len) { uart_getbuf(buf, len); }
+        uint16_t pin5_bytes_available(void) { return uart_rx_bytesavailable(); }
 
-    // for in-isr processing
-    void pin5_tx_enable(bool enable_flag);
-    virtual void parse_nextchar(uint8_t c) = 0;
-    virtual bool transmit_start(void) = 0; // returns true if transmission should be started
+        // callback functions
+        void IRAM_ATTR pin5_rx_callback(uint8_t c);
+        void pin5_tc_callback(void) {}
 
-    // actual isr functions
-    void pin5_rx_callback(uint8_t c);
-    void pin5_tc_callback(void);
+        // for callback processing
+        virtual void parse_nextchar(uint8_t c) = 0;
+        virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
-    // parser
-    typedef enum {
-        STATE_IDLE = 0,
+        // parser
+        typedef enum {
+            STATE_IDLE = 0,
 
-        // mBridge receive states
-        STATE_RECEIVE_MBRIDGE_STX2,
-        STATE_RECEIVE_MBRIDGE_LEN,
-        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
-        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
-        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
+            // mBridge receive states
+            STATE_RECEIVE_MBRIDGE_STX2,
+            STATE_RECEIVE_MBRIDGE_LEN,
+            STATE_RECEIVE_MBRIDGE_SERIALPACKET,
+            STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
+            STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
 
-        // CRSF receive states
-        STATE_RECEIVE_CRSF_LEN,
-        STATE_RECEIVE_CRSF_PAYLOAD,
-        STATE_RECEIVE_CRSF_CRC,
+            // CRSF receive states
+            STATE_RECEIVE_CRSF_LEN,
+            STATE_RECEIVE_CRSF_PAYLOAD,
+            STATE_RECEIVE_CRSF_CRC,
 
-        // transmit states, used by all
-        STATE_TRANSMIT_START,
-        STATE_TRANSMITING,
-    } STATE_ENUM;
+            // transmit states, used by all
+            STATE_TRANSMIT_START,
+            STATE_TRANSMITING,
+        } STATE_ENUM;
 
-    // not used in this class, but required by the children, so just add them here
-    // no need for volatile since used only in isr context
-    uint8_t state;
-    uint8_t len;
-    uint8_t cnt;
-    uint16_t tlast_us;
+        // not used in this class, but required by the children, so just add them here
+        // no need for volatile since used only in isr context
+        uint8_t state;
+        uint8_t len;
+        uint8_t cnt;
+        uint16_t tlast_us;
 
-    // check and rescue
-    void CheckAndRescue(void);
+        // check and rescue, needed for compatibility
+        void CheckAndRescue(void) {}
+
+    private:
+        tFifo<char,128> crsf_fifo;  // enough for 2 full CRSF messages
+
 };
 
 
@@ -81,30 +86,26 @@ void tPin5BridgeBase::Init(void)
 
     telemetry_start_next_tick = false;
     telemetry_state = 0;
+    
+    crsf_fifo.Init();
 
     pin5_init();
 
-    // A small value (like 4) for RxFIFOFull has a higher impact on main loop time,
-    // but reduces the delay between JRpin5 receive and transmit.  Choose large for now.
-    UART_SERIAL_NO.setRxFIFOFull(64);
-    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, false);
+    // onReceive uses the pin5_rx_callback function
+    // true means trigger only on a symbol timeout
+    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, true);
     
 #ifndef JR_PIN5_FULL_DUPLEX
 
-#ifdef UART_USE_SERIAL
-  #define UART_SERIAL_NO       Serial
-#elif defined UART_USE_SERIAL1
-  #define UART_SERIAL_NO       Serial1
-#elif defined UART_USE_SERIAL2
-  #define UART_SERIAL_NO       Serial2
-#else
-  #error UART_SERIAL_NO must be defined!
+#ifndef UART_USE_SERIAL1
+  #error JRPin5 muse use Serial1!
 #endif
+
     UART_SERIAL_NO.setMode(MODE_RS485_HALF_DUPLEX);
 
     gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
     gpio_pulldown_dis((gpio_num_t)UART_USE_TX_IO);  // Should be pulldown if we had inverted open drain
-    gpio_pullup_dis((gpio_num_t)UART_USE_TX_IO); // But would pulup help?
+    gpio_pullup_dis((gpio_num_t)UART_USE_TX_IO); // But would pullup help?
 
     gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0);
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT_OUTPUT);
@@ -117,33 +118,27 @@ void tPin5BridgeBase::Init(void)
 }
 
 
-void tPin5BridgeBase::TelemetryStart(void)
-{
-    telemetry_start_next_tick = true;
-}
-
-
 //-------------------------------------------------------
-// Interface to the uart hardware peripheral used for the bridge
-// except pin5_init() called in isr context
+// Receive callback
+// callback is triggered once the radio has stopped transmitting
+// the buffer will contain a complete CRSF message or potentially 
+// the end of a message when the callback is first initialized
+// use a fifo to play it safe
 
-void tPin5BridgeBase::pin5_init(void)
+void IRAM_ATTR tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
-    uart_init();
-}
-
-
-void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
-{
-    // not used
-}
-
-
-void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
-{
-    // poll uart
-    while (uart_rx_available() && state != STATE_TRANSMIT_START) { // read at most 1 message
-        parse_nextchar(uart_getc());
+    // read out the buffer, put bytes in fifo
+    char buf[CRSF_FRAME_LEN_MAX + 16];
+    uint16_t available = pin5_bytes_available();
+    available = MIN(available, CRSF_FRAME_LEN_MAX);
+    
+    pin5_getbuf(buf, available);
+    crsf_fifo.PutBuf(buf, available);
+    
+    // parse for a CRSF message
+    while (crsf_fifo.Available()) {
+        if (state >= STATE_TRANSMIT_START) break; // read at most 1 message
+        parse_nextchar(crsf_fifo.Get());
     }
 
     // send telemetry after every received message
@@ -154,23 +149,9 @@ void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 }
 
 
-void tPin5BridgeBase::pin5_tc_callback(void)
-{
-    // not used
-}
-
-
-//-------------------------------------------------------
-// Check and rescue
-
-void tPin5BridgeBase::CheckAndRescue(void)
-{
-    // not needed
-}
-
-
 //-------------------------------------------------------
 // Pin5 Serial class
+// used for ESP passthrough flashing, commented functions are unused
 
 class tJrPin5SerialPort : public tSerialBase
 {
@@ -182,7 +163,7 @@ class tJrPin5SerialPort : public tSerialBase
     bool available(void) override { return uart_rx_available(); }
     char getc(void) override { return uart_getc(); }
     void flush(void) override { uart_rx_flush(); uart_tx_flush(); }
-    uint16_t bytes_available(void) override { return uart_rx_bytesavailable(); }
+    // uint16_t bytes_available(void) override { return uart_rx_bytesavailable(); }
     // bool has_systemboot(void) override { return uart_has_systemboot(); }
 };
 
