@@ -1000,10 +1000,15 @@ tCrsfLinkStatisticsRx clstats;
 
 void tTxCrsf::SendDeviceInfo(void)
 {
+// extended frame, so need to send the destination and origin addresses
+
 char buf[64];
 
-    strcpy(buf, "MLRS " DEVICE_NAME " " VERSIONONLYSTR);
-    uint8_t name_len = strlen(buf);
+    buf[0] = 0x00;  // destination address, 0x00 = broadcast
+    buf[1] = 0xEE;  // origin address, 0xEE = module, EdgeTx looks for this
+
+    strcpy(buf + 2, "MLRS " DEVICE_NAME);  // device name + versiononlystr too long
+    uint8_t name_len = strlen(buf + 2);
 
     tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + name_len + 1);
     dvif_ptr->serial_number = 12345; // TODO
