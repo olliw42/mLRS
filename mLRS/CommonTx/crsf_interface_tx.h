@@ -1007,7 +1007,7 @@ char buf[64];
     buf[0] = 0x00;  // destination address, 0x00 = broadcast
     buf[1] = 0xEE;  // origin address, 0xEE = module, EdgeTx looks for this
 
-    strcpy(buf + 2, "MLRS " DEVICE_NAME);  // device name + versiononlystr too long
+    strcpy(buf + 2, "MLRS " DEVICE_NAME " " VERSIONONLYSTR);
     uint8_t name_len = strlen(buf + 2);
 
     tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + name_len + 1);
