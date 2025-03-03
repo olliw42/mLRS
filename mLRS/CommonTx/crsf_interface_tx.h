@@ -1010,14 +1010,14 @@ char buf[64];
     strcpy(buf + 2, "MLRS " DEVICE_NAME " " VERSIONONLYSTR);
     uint8_t name_len = strlen(buf + 2);
 
-    tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + name_len + 1);
+    tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + 2 + name_len + 1);
     dvif_ptr->serial_number = 12345; // TODO
     dvif_ptr->hardware_id = 54321; // TODO
     dvif_ptr->firmware_id = VERSION;
     dvif_ptr->parameters_total = 0;
     dvif_ptr->parameter_version_number = 0;
 
-    send_frame(CRSF_FRAME_ID_DEVICE_INFO, buf, name_len + 1 + CRSF_DEVICE_INFO_FRAGMENT_LEN);
+    send_frame(CRSF_FRAME_ID_DEVICE_INFO, buf, 2 + name_len + 1 + CRSF_DEVICE_INFO_FRAGMENT_LEN);
 }
 
 
