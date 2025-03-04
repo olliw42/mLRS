@@ -1024,7 +1024,7 @@ char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of sp
     tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + len);
     dvif_ptr->serial_number = 0x6D4C5253; // EdgeTx digests it as 4 chars to identify ELRS, so let's set it to mLRS
     dvif_ptr->hardware_id = 54321; // TODO, we could use stm32 uid, as for hc04, but this we haven't currently for esp
-    dvif_ptr->firmware_id = version_to_u32(VERSION) << 8; // EdgeTx is showing it as Vmaj.min.patch, maj is in highest byte
+    dvif_ptr->firmware_id = CRSF_REV_U32(version_to_u32(VERSION)); // EdgeTx is showing it as Vmaj.min.patch, maj is in highest byte
     dvif_ptr->parameters_total = 0;
     dvif_ptr->parameter_version_number = 0;
 
