@@ -1181,6 +1181,7 @@ IF_CRSF(
             }
             INCc(do_cnt, 3);
             break;
+        case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
         }
     }
     if (crsf.CommandReceived(&crsfcmd)) {

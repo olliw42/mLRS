@@ -70,7 +70,7 @@ typedef enum {
     CRSF_FRAME_ID_BATTERY               = 0x08,
     CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
-    CRSF_FRAME_ID_RC_CHANNELS           = 0x16,
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
     CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
     CRSF_FRAME_ID_ATTITUDE              = 0x1E,
@@ -259,6 +259,7 @@ typedef struct {
 
 
 /* 0x1C Link Statistics RX
+
   uint8_t rssi_db;        // RSSI (dBm * -1)
   uint8_t rssi_percent;   // RSSI in percent
   uint8_t link_quality;   // Package success rate / Link quality (%)
@@ -299,6 +300,29 @@ typedef struct
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
+
+
+/* 0x29 Device Info
+
+  char[]      Device_name; // null-terminated string
+  uint32_t    Serial_number;
+  uint32_t    Hardware_ID;
+  uint32_t    Firmware_ID;
+  uint8_t     Parameters_total; // total amount of parameters
+  uint8_t     Parameter_version_number; *
+  this cannot be put into a fixed struct, so we only define the last fragment here
+*/
+CRSF_PACKED(
+typedef struct
+{
+    uint32_t serial_number;
+    uint32_t hardware_id;
+    uint32_t firmware_id;
+    uint8_t  parameters_total;
+    uint8_t  parameter_version_number;
+}) tCrsfDeviceInfoFragment;
+
+#define CRSF_DEVICE_INFO_FRAGMENT_LEN  14
 
 
 //-- Telemetry data frames

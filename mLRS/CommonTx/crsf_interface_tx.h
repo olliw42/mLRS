@@ -37,6 +37,7 @@ typedef enum {
     TXCRSF_SEND_LINK_STATISTICS_TX,
     TXCRSF_SEND_LINK_STATISTICS_RX,
     TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
+    TXCRSF_SEND_DEVICE_INFO,
 } TXCRSF_SEND_ENUM;
 
 
@@ -65,6 +66,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
+    void SendDeviceInfo(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
@@ -83,6 +85,7 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t frame[CRSF_FRAME_LEN_MAX + 16];
     volatile bool channels_received;
     volatile bool cmd_received;
+    volatile bool ping_device_received;
     volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
     volatile uint8_t cmd_modelid_value;
 
@@ -237,8 +240,12 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES &&
+            frame[3] == CRSF_ADDRESS_BROADCAST && frame[4] == CRSF_ADDRESS_RADIO) { // len = 4
+            ping_device_received = true;
+        } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
-            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) {
+            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) { // len = 8, to MODULE_ADDRESS, RADIO_ADDRESS
             cmd_modelid_received = true;
             cmd_modelid_value = frame[7];
         } else {
@@ -304,6 +311,7 @@ void tTxCrsf::Init(bool enable_flag)
     tx_free = false;
     channels_received = false;
     cmd_received = false;
+    ping_device_received = false;
     cmd_modelid_received = false;
 
     flightmode_updated = false;
@@ -394,6 +402,13 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
         case 0: *task = TXCRSF_SEND_LINK_STATISTICS; return true;
         case 1: *task = TXCRSF_SEND_LINK_STATISTICS_TX; return true;
         case 2: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
+    }
+
+    // if we got a PING_DEVICE, send a DEVICE_INFO instead of a telemetry frame
+    if (ping_device_received) {
+        ping_device_received = false;
+        *task = TXCRSF_SEND_DEVICE_INFO;
+        return true;
     }
 
     *task = TXCRSF_SEND_TELEMETRY_FRAME;
@@ -983,6 +998,40 @@ tCrsfLinkStatisticsRx clstats;
 }
 
 
+uint32_t version_to_u32(uint32_t version)
+{
+    uint32_t major = version / 10000;
+    version -= major * 10000;
+    uint32_t minor = version / 100;
+    version -= minor * 100;
+    uint32_t patch = version;
+
+    return (major << 16) + (minor << 8) + patch;
+}
+
+
+void tTxCrsf::SendDeviceInfo(void)
+{
+char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
+
+    // extended frame, so need to send destination and origin addresses
+    buf[0] = CRSF_ADDRESS_BROADCAST; // destination address
+    buf[1] = CRSF_ADDRESS_TRANSMITTER_MODULE; // origin address, EdgeTx looks for this
+
+    strstrbufcpy(buf + 2, DEVICE_NAME, 20); // this fills max 21 bytes, EdgeTx is limiting name to 15 chars (16-1)
+    uint8_t len = 2 + strlen(buf + 2) + 1;
+
+    tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + len);
+    dvif_ptr->serial_number = 0x6D4C5253; // EdgeTx digests it as 4 chars to identify ELRS, so let's set it to mLRS
+    dvif_ptr->hardware_id = 54321; // TODO, we could use stm32 uid, as for hc04, but this we haven't currently for esp
+    dvif_ptr->firmware_id = CRSF_REV_U32(version_to_u32(VERSION)); // EdgeTx is showing it as Vmaj.min.patch, maj is in highest byte
+    dvif_ptr->parameters_total = 0;
+    dvif_ptr->parameter_version_number = 0;
+
+    send_frame(CRSF_FRAME_ID_DEVICE_INFO, buf, len + CRSF_DEVICE_INFO_FRAGMENT_LEN);
+}
+
+
 #else
 
 class tTxCrsfDummy
@@ -999,6 +1048,7 @@ class tTxCrsfDummy
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsTx(void) {}
     void SendLinkStatisticsRx(void) {}
+    void SendDevideInfo(void) {}
 };
 
 tTxCrsfDummy crsf;
