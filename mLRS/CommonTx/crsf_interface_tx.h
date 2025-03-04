@@ -998,21 +998,33 @@ tCrsfLinkStatisticsRx clstats;
 }
 
 
+uint32_t version_to_u32(uint32_t version)
+{
+    uint32_t major = version / 10000;
+    version -= major * 10000;
+    uint32_t minor = version / 100;
+    version -= minor * 100;
+    uint32_t patch = version;
+
+    return (major << 16) + (minor << 8) + patch;
+}
+
+
 void tTxCrsf::SendDeviceInfo(void)
 {
-char buf[64]; // DEVICE_NAME should be 20 chars max, so this should be enough space
+char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
 
     // extended frame, so need to send destination and origin addresses
     buf[0] = CRSF_ADDRESS_BROADCAST; // destination address
     buf[1] = CRSF_ADDRESS_TRANSMITTER_MODULE; // origin address, EdgeTx looks for this
 
-    strcpy(buf + 2, "MLRS " DEVICE_NAME " " VERSIONONLYSTR); // EdgeTx is limiting it to 15 chars (16-1)
+    strstrbufcpy(buf + 2, DEVICE_NAME, 20); // this fills max 21 bytes, EdgeTx is limiting name to 15 chars (16-1)
     uint8_t len = 2 + strlen(buf + 2) + 1;
 
     tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + len);
-    dvif_ptr->serial_number = 12345; // TODO
-    dvif_ptr->hardware_id = 54321; // TODO
-    dvif_ptr->firmware_id = VERSION;
+    dvif_ptr->serial_number = 0x4D4C5253; // EdgeTx digests it as 4 chars to identify ELRS, so lets set it to MLRS
+    dvif_ptr->hardware_id = 54321; // TODO, we could use stm32 uid, as for hc04, but this we haven't currently for esp
+    dvif_ptr->firmware_id = version_to_u32(VERSION) << 8; // EdgeTx is showing it as Vmaj.min.patch, maj is in highest byte
     dvif_ptr->parameters_total = 0;
     dvif_ptr->parameter_version_number = 0;
 
