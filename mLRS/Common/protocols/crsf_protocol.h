@@ -104,10 +104,11 @@ typedef enum {
 
 
 typedef enum {
-    CRSF_COMMAND_ID                     = 0x10,
+    CRSF_COMMAND_ID                     = 0x10, // 0x32.0x10 Crossfire
 } CRSF_COMMAND_ID_ENUM;
 
 
+// 0x32.0x10 Crossfire command options
 typedef enum {
     CRSF_COMMAND_SET_MODEL_SELECTION    = 0x05, // command to select model/receiver
     CRSF_COMMAND_QUERY_MODEL_SELECTION  = 0x06, // query frame of current selection
@@ -144,7 +145,7 @@ typedef enum {
 } CRSF_RFMODE_ENUM;
 
 
-//-- Frame header
+//-- Frame Structure
 
 // final crc8 included in payload or cmd_data, hence these fields are one byte longer
 CRSF_PACKED(
@@ -162,7 +163,7 @@ typedef struct
             uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
         });
     });
-}) tCrsfFrameHeader;
+}) tCrsfFrame;
 
 
 //-- RC Channel frame

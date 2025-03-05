@@ -432,7 +432,7 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
     // TODO: we could check crc if we wanted to
 
-    tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
+    tCrsfFrame* header = (tCrsfFrame*)frame;
 
     // mBridge emulation
     if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
@@ -447,13 +447,13 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
 uint8_t* tTxCrsf::GetPayloadPtr(void)
 {
-    return ((tCrsfFrameHeader*)frame)->payload;
+    return ((tCrsfFrame*)frame)->payload;
 }
 
 
 uint8_t tTxCrsf::GetPayloadLen(void)
 {
-    return ((tCrsfFrameHeader*)frame)->len - 2;
+    return ((tCrsfFrame*)frame)->len - 2;
 }
 
 
@@ -1015,7 +1015,7 @@ void tTxCrsf::SendDeviceInfo(void)
 char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
 
     // extended frame, so need to send destination and origin addresses
-    buf[0] = CRSF_ADDRESS_RADIO; // destination address
+    buf[0] = CRSF_ADDRESS_RADIO; // destination address, ignored by EdgeTx (ELRS uses BROADCAST)
     buf[1] = CRSF_ADDRESS_TRANSMITTER_MODULE; // origin address, EdgeTx looks for this
 
     strstrbufcpy(buf + 2, DEVICE_NAME, 20); // this fills max 21 bytes, EdgeTx is limiting name to 15 chars (16-1)
