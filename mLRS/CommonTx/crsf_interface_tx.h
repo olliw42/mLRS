@@ -1015,7 +1015,7 @@ void tTxCrsf::SendDeviceInfo(void)
 char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
 
     // extended frame, so need to send destination and origin addresses
-    buf[0] = CRSF_ADDRESS_BROADCAST; // destination address
+    buf[0] = CRSF_ADDRESS_RADIO; // destination address
     buf[1] = CRSF_ADDRESS_TRANSMITTER_MODULE; // origin address, EdgeTx looks for this
 
     strstrbufcpy(buf + 2, DEVICE_NAME, 20); // this fills max 21 bytes, EdgeTx is limiting name to 15 chars (16-1)
