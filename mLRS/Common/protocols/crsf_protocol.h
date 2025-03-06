@@ -110,6 +110,8 @@ typedef enum {
 
 // 0x32.0x10 Crossfire command options
 typedef enum {
+    CRSF_COMMAND_SET_BIND_MODE          = 0x01, // command to enter bind mode
+    CRSF_COMMAND_CANCEL_BIND_MODE       = 0x02, // command to cancel bind mode
     CRSF_COMMAND_SET_MODEL_SELECTION    = 0x05, // command to select model/receiver
     CRSF_COMMAND_QUERY_MODEL_SELECTION  = 0x06, // query frame of current selection
     CRSF_COMMAND_REPLY_MODEL_SELECTION  = 0x07, // reply frame of current selection

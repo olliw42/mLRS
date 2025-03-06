@@ -43,6 +43,8 @@ typedef enum {
 
 typedef enum {
     TXCRSF_CMD_MODELID_SET = 0,
+    TXCRSF_CMD_BIND_START,
+    TXCRSF_CMD_BIND_STOP,
     TXCRSF_CMD_MBRIDGE_IN,
 } TXCRSF_CMD_ENUM;
 
@@ -88,6 +90,8 @@ class tTxCrsf : public tPin5BridgeBase
     volatile bool ping_device_received;
     volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
     volatile uint8_t cmd_modelid_value;
+    volatile bool cmd_bind_set_received;
+    volatile bool cmd_bind_cancel_received;
 
     volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
@@ -240,14 +244,24 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES &&
-            frame[3] == CRSF_ADDRESS_BROADCAST && frame[4] == CRSF_ADDRESS_RADIO) { // len = 4
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
+            // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
             ping_device_received = true;
         } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
-            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) { // len = 8, to MODULE_ADDRESS, RADIO_ADDRESS
-            cmd_modelid_received = true;
-            cmd_modelid_value = frame[7];
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND && frame[5] == CRSF_COMMAND_ID) {
+            switch (frame[6]) {
+            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
+                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS
+                cmd_modelid_received = true;
+                cmd_modelid_value = frame[7];
+                break;
+            case CRSF_COMMAND_SET_BIND_MODE: // len = 7
+                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
+                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+            case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
+                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
+                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+            }
         } else {
             cmd_received = true;
         }
@@ -313,6 +327,8 @@ void tTxCrsf::Init(bool enable_flag)
     cmd_received = false;
     ping_device_received = false;
     cmd_modelid_received = false;
+    cmd_bind_set_received = false;
+    cmd_bind_cancel_received = false;
 
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
@@ -424,6 +440,18 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
     if (cmd_modelid_received) {
         cmd_modelid_received = false;
         *cmd = TXCRSF_CMD_MODELID_SET;
+        return true;
+    }
+
+    if (cmd_bind_set_received) {
+        cmd_bind_set_received = false;
+        *cmd = TXCRSF_CMD_BIND_START;
+        return true;
+    }
+
+    if (cmd_bind_cancel_received) {
+        cmd_bind_cancel_received = false;
+        *cmd = TXCRSF_CMD_BIND_STOP;
         return true;
     }
 
