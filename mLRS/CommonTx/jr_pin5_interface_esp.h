@@ -11,6 +11,30 @@
 
 #include "../Common/esp-lib/esp-uart.h"
 #include "../Common/protocols/crsf_protocol.h"
+#include <hal/uart_ll.h>
+
+
+//-------------------------------------------------------
+// 100 us transmit check ISR for half-duplex
+// need to know when the UART has finished transmitting, so can switch back to receive
+// arduino doesn't expose a UART transmit complete interrupt / callback like STM
+// so poll the UART state machine every 100 us using an interrupt on Core 0
+// mLRS uses Core 1, so this shouldn't have any impact
+
+volatile bool transmitting;
+
+IRQHANDLER(
+void CLOCK100US_IRQHandler(void)
+{
+    if (transmitting) { 
+        if (uart_ll_is_tx_idle(UART_LL_GET_HW(1))) { 
+            transmitting = false;
+            gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
+            gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY);
+            gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);    
+        }
+    }
+})
 
 
 //-------------------------------------------------------
@@ -32,6 +56,8 @@ class tPin5BridgeBase
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
     void pin5_getbuf(char* const buf, uint16_t len) { uart_getbuf(buf, len); }
     uint16_t pin5_bytes_available(void) { return uart_rx_bytesavailable(); }
+    IRAM_ATTR void pin5_tx_enable(void);  // only for half-duplex
+    IRAM_ATTR void pin5_rx_enable(void);  // only for half-duplex
 
     // for callback processing
     virtual void parse_nextchar(uint8_t c) = 0;
@@ -74,6 +100,7 @@ class tPin5BridgeBase
 
   private:
     tFifo<char,128> pin5_fifo; // enough for 2 full CRSF messages
+    bool timerInitialized = false;
 
 };
 
@@ -120,20 +147,46 @@ void tPin5BridgeBase::pin5_init(void)
 #ifndef UART_USE_SERIAL1
   #error JRPin5 must use Serial1!
 #endif
+    
+    pin5_rx_enable();  // configure the pin for receive  
+    
+    // setup the timer interrupt, only needs to be done on first boot    
+    if (timerInitialized) return;  
+    
+    xTaskCreatePinnedToCore([](void *parameter) {
+        hw_timer_t* timer1_cfg = nullptr;
+        timer1_cfg = timerBegin(1, 800, 1);  // Timer 1, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
+        timerAttachInterrupt(timer1_cfg, &CLOCK100US_IRQHandler, true);
+        timerAlarmWrite(timer1_cfg, 10, true); // 10 * 10 = 100 us
+        timerAlarmEnable(timer1_cfg);
+        vTaskDelete(NULL);
+    }, "TimerSetup", 2048, NULL, 1, NULL, 0);  // last argument here is Core 0, ignored on ESP32C3
 
-    UART_SERIAL_NO.setMode(MODE_RS485_HALF_DUPLEX);
+    timerInitialized = true;
 
-    gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
-    gpio_pulldown_dis((gpio_num_t)UART_USE_TX_IO);  // should be pulldown if we had inverted open drain
-    gpio_pullup_dis((gpio_num_t)UART_USE_TX_IO); // but would pullup help?
+#endif
+}
 
-    gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0);
-    gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT_OUTPUT);
+
+IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
+{
+#ifndef JR_PIN5_FULL_DUPLEX
+    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_FLOATING);  // disable pullup / pulldown
+    gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0);  // set inverted level
+    gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_OUTPUT);
+    constexpr uint8_t MATRIX_DETACH_IN_LOW = 0x30; // routes 0 to matrix slot
+    gpio_matrix_in(MATRIX_DETACH_IN_LOW, U1RXD_IN_IDX, false); // disconnect RX from all pads
     gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
-    // We really want inverted open-drain, but apparently it is not possible.
-    // Because of the 51 Ohm resistor, which the tested radios seem to utilize on their output,
-    // this reduces the pull enough to maintain a usable signal when the handset is sending.
-    gpio_set_drive_capability((gpio_num_t)UART_USE_TX_IO, GPIO_DRIVE_CAP_0);
+#endif
+}
+
+
+IRAM_ATTR void tPin5BridgeBase::pin5_rx_enable(void)
+{
+#ifndef JR_PIN5_FULL_DUPLEX
+    gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
+    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // pulldown only, since inverted
+    gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
 #endif
 }
 
@@ -155,8 +208,10 @@ IRAM_ATTR void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
     }
 
     // send telemetry after every received message
-    if (state == STATE_TRANSMIT_START) { // time to send telemetry
-        transmit_start();
+    if (state == STATE_TRANSMIT_START) {
+        pin5_tx_enable();
+        transmitting = transmit_start();
+        if (!transmitting) { pin5_rx_enable(); }
         state = STATE_IDLE;
     }
 }
