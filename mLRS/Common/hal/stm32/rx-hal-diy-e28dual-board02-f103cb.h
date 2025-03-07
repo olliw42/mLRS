@@ -14,8 +14,8 @@
 // RX DIY DUAL-E28 BOARD02 v010 STM32F103CB
 //-------------------------------------------------------
 
-#define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_OUT
+//#define DEVICE_HAS_DIVERSITY
+//#define DEVICE_HAS_OUT
 
 
 #ifdef MLRS_FEATURE_DIVERSITY

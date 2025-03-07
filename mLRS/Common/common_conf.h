@@ -47,7 +47,7 @@
 
 #define SETUP_TX_SERIAL_DESTINATION     0 // 0: serial port, 1: serial2 (BT/ESP) port, 2: mBridge
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
+#define SETUP_TX_CHANNELS_SOURCE        0 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
@@ -59,15 +59,15 @@
 
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_TX_SEND_RADIO_STATUS      1 // 0: off, 1: 1 Hz
-#define SETUP_TX_MAV_COMPONENT          1 // 0: off, 1: enabled
+#define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
+#define SETUP_TX_MAV_COMPONENT          0 // 0: off, 1: enabled
 
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
-#define SETUP_RX_OUT_MODE               1 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF, 2: OUT_CONFIG_SBUS_INVERTED
+#define SETUP_RX_OUT_MODE               0 // 0: OUT_CONFIG_SBUS, 1: OUT_CONFIG_CRSF, 2: OUT_CONFIG_SBUS_INVERTED
 
 #define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: low throttle, 4: CH1-CH4 center signal
 
@@ -79,26 +79,29 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       2 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
+#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
-#define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
+#define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
 #define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 16: CH16
 #define SETUP_RX_OUT_LQ_CHANNEL         0 // 0: off, 5: CH5, 16: CH16
 
 
-#define BIND_PHRASE                     "mlrs.0" // string of 6 characters, allowed are 'a'-'z','0'-'9','_','-','#','.'
+#define BIND_PHRASE                     "bind.5" // string of 6 characters, allowed are 'a'-'z','0'-'9','_','-','#','.'
 
 
 #define SETUP_MODE                      MODE_50HZ
+//#define SETUP_MODE                      MODE_50HZ
 //#define SETUP_MODE                      MODE_31HZ
 //#define SETUP_MODE                      MODE_19HZ
+//#define SETUP_MODE                        MODE_19HZ
 
 
 //#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_915_MHZ_FCC
-#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
-
+//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
+//#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
+#define SETUP_RF_BAND                      SETUP_FREQUENCY_BAND_2P4_GHZ
 
 #define SETUP_RF_ORTHO                   0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
 

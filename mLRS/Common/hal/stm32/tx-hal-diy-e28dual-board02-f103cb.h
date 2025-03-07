@@ -16,8 +16,8 @@
 // TX DIY DUAL-E28 BOARD02 v010 STM32F103CB
 //-------------------------------------------------------
 
-#define DEVICE_HAS_DIVERSITY
-#define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
+//#define DEVICE_HAS_DIVERSITY
+//#define DEVICE_HAS_JRPIN5 // requires diode from Tx to Rx soldered on the board
 //#define DEVICE_HAS_IN
 #define DEVICE_HAS_DEBUG_SWUART
 
