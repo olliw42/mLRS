@@ -113,6 +113,10 @@ class tTxMavlink
     uint16_t param_send_param_idx;
     uint32_t param_send_tlast_ms;
 #endif
+
+    // for relay operation
+    uint32_t main_radio_stats_tlast_ms;
+    void send_main_radio_stats(void);
 };
 
 
@@ -174,6 +178,8 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 #ifdef USE_FEATURE_MAVLINK_COMPONENT
     component_init();
 #endif
+
+    main_radio_stats_tlast_ms = millis32() + 1050;
 }
 
 
@@ -198,6 +204,7 @@ void tTxMavlink::Do(void)
 {
     uint32_t tnow_ms = millis32();
     bool inject_radio_status = false;
+    bool inject_main_radio_stats = false;
 
     if (!connected_and_rx_setup_available()) {
         //Init();
@@ -226,10 +233,30 @@ void tTxMavlink::Do(void)
         radio_status_tlast_ms = tnow_ms;
     }
 
+    if (crsf.IsRelayMain()) {
+        if ((tnow_ms - main_radio_stats_tlast_ms) >= 100) {
+            main_radio_stats_tlast_ms = tnow_ms;
+            inject_main_radio_stats = true;
+        }
+    } else {
+        main_radio_stats_tlast_ms = tnow_ms;
+    }
+
+    if (crsf.IsRelayMain() || crsf.IsRelaySecondary()) { // this is a inner tx module
+        inject_radio_status = false;
+        inject_main_radio_stats = false;
+    }
+
     if (inject_radio_status) { // && serial.tx_is_empty()) {
         inject_radio_status = false;
         send_radio_status();
         return; // only one per loop
+    }
+
+    if (inject_main_radio_stats) { // check available size!?
+        inject_main_radio_stats = false;
+        send_main_radio_stats();
+        return;
     }
 
 #ifdef USE_FEATURE_MAVLINK_COMPONENT
@@ -471,6 +498,13 @@ void tTxMavlink::flush(void)
 
 void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
 {
+    if ((msg->sysid == RADIO_STATUS_SYSTEM_ID) &&
+        (msg->compid == MAV_COMP_ID_TELEMETRY_RADIO) &&
+        (msg->msgid == FASTMAVLINK_MSG_ID_MLRS_MAIN_RADIO_STATS)) {
+        crsf.HandleMainRadioStatsMavlinkMsg(msg);
+        return;
+    }
+
     if ((msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) && (msg->compid == MAV_COMP_ID_AUTOPILOT1)) {
         fmav_heartbeat_t payload;
         fmav_msg_heartbeat_decode(&payload, msg);
@@ -535,9 +569,43 @@ uint8_t rssi, remrssi, txbuf, noise;
     fmav_msg_radio_status_pack(
         &msg_buf,
         RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
-        MAV_COMP_ID_TELEMETRY_RADIO,
+        MAV_COMP_ID_TELEMETRY_RADIO + (crsf.IsRelaySecondary() ? 1 : 0),
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
+        &status_serial_out);
+
+    send_msg_serial_out();
+}
+
+
+// for relay operation
+
+void tTxMavlink::send_main_radio_stats(void)
+{
+    fmav_msg_mlrs_main_radio_stats_pack(
+        &msg_buf,
+        RADIO_STATUS_SYSTEM_ID,
+        MAV_COMP_ID_TELEMETRY_RADIO,
+
+        crsf_cvt_rssi_tx(stats.received_rssi),
+        stats.received_LQ_rc,
+        stats.received_antenna,
+        crsf_cvt_mode(Config.Mode),
+        crsf_cvt_power(sx.RfPower_dbm()),
+        crsf_cvt_rssi_tx(stats.GetLastRssi()),
+        stats.GetLQ_serial(),
+        stats.GetLastSnr(),
+
+        crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm()),
+        crsf_cvt_fps(Config.Mode),
+
+        crsf_cvt_rssi_percent(stats.received_rssi, sx.ReceiverSensitivity_dbm()),
+        sx.RfPower_dbm(),
+
+        //uint8_t uplink_rssi1, uint8_t uplink_LQ, uint8_t active_antenna, uint8_t mode,
+        //uint8_t uplink_transmit_power2, uint8_t downlink_rssi, uint8_t downlink_LQ, int8_t downlink_snr,
+        //uint8_t uplink_rssi_percent, uint8_t uplink_fps,
+        //uint8_t downlink_rssi_percent, uint8_t uplink_transmit_power,
         &status_serial_out);
 
     send_msg_serial_out();

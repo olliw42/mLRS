@@ -259,6 +259,8 @@ void tRxMavlink::Do(void)
     // parse serial in -> link out
     parse_serial_in_link_out();
 
+    if (out.IsRelaySecondary()) return; // don't inject anything in this case
+
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
         switch (Setup.Rx.SendRadioStatus) {
@@ -400,6 +402,7 @@ void tRxMavlink::parse_link_in_serial_out(char c)
     if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
 
+if (!out.IsRelaySecondary()) { // don't do mavftp faking in this case
 #if MAVLINK_OPT_FAKE_PARAMFTP > 0
         // if it's a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
@@ -430,6 +433,7 @@ void tRxMavlink::parse_link_in_serial_out(char c)
             }
         }
 #endif
+}
 
 #ifdef DEVICE_HAS_DRONECAN
         // Two issues, which have been resolved but are present in some versions of
