@@ -169,7 +169,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     {
         if (!gconfig) return;
 
-        rf_power_calc(power_dbm, &sx_power, &actual_power_dbm);
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         SetTxParams(sx_power, LR11XX_RAMPTIME_48_US); // Closest to 40 uS used by SX126x / SX127x
     }
 
