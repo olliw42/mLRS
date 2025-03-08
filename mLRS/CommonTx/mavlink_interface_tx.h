@@ -34,6 +34,27 @@ extern tStats stats;
 #define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 286 bytes
 
 
+// keeps info on the vehicle
+// currently only used to send vehicle state in mBridge info
+class tTxVehicle
+{
+  public:
+    void Init(void);
+    uint8_t State(void);
+
+    bool is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg);
+    void handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* const payload);
+    void handle_extended_sys_state(fmav_extended_sys_state_t* const payload);
+
+  private:
+    uint8_t sysid; // 0 indicates data is invalid
+    uint8_t is_armed;
+    uint8_t is_flying;
+    uint8_t type;
+    uint8_t flight_mode;
+};
+
+
 class tTxMavlink
 {
   public:
@@ -85,11 +106,8 @@ class tTxMavlink
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
 
-    uint8_t vehicle_sysid; // 0 indicates data is invalid
-    uint8_t vehicle_is_armed;
-    uint8_t vehicle_is_flying;
-    uint8_t vehicle_type;
-    uint8_t vehicle_flight_mode;
+    // keep info on vehicle
+    tTxVehicle vehicle;
 
     // MAVLink packet link quality
     bool msg_seq_initialized;
@@ -100,7 +118,7 @@ class tTxMavlink
     void send_heartbeat(void);
     void send_autopilot_version(void);
     //void send_protocol_version(void); // not used
-    void send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid);
+    void send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t tcompid);
     void send_param_value(uint16_t param_idx);
     void component_init(void);
     void component_do(void);
@@ -159,11 +177,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 
     radio_status_tlast_ms = millis32() + 1000;
 
-    vehicle_sysid = 0;
-    vehicle_is_armed = UINT8_MAX;
-    vehicle_is_flying = UINT8_MAX;
-    vehicle_type = UINT8_MAX;
-    vehicle_flight_mode = UINT8_MAX;
+    vehicle.Init();
 
     msg_seq_initialized = false;
     msg_seq_last = 0;
@@ -179,9 +193,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 
 uint8_t tTxMavlink::VehicleState(void)
 {
-    if (vehicle_is_armed == UINT8_MAX) return UINT8_MAX;
-    if (vehicle_is_armed == 1 && vehicle_is_flying == 1) return 2;
-    return vehicle_is_armed;
+    return vehicle.State();
 }
 
 
@@ -476,30 +488,18 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
         fmav_msg_heartbeat_decode(&payload, msg);
         if (payload.autopilot != MAV_AUTOPILOT_INVALID) {
             // this is an autopilot
-            vehicle_sysid = msg->sysid;
-            vehicle_is_armed = (payload.base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
-
-            // ArduPilot provides flight mode number in custom mode
-            if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
-                vehicle_type = ap_vehicle_from_mavtype(payload.type);
-                vehicle_flight_mode = payload.custom_mode;
-            } else {
-                vehicle_type = UINT8_MAX;
-                vehicle_flight_mode = UINT8_MAX;
-            }
+            vehicle.handle_heartbeat(msg, &payload);
         }
     }
 
-    if (!vehicle_sysid) return;
-
-    // continue only for autopilot
-    if (msg->sysid != vehicle_sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
+    // continue only if vehicle has been seen and if msg is for autopilot
+    if (!vehicle.is_seen_and_msg_is_for_autopilot(msg)) return;
 
     switch (msg->msgid) {
     case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
         fmav_extended_sys_state_t payload;
         fmav_msg_extended_sys_state_decode(&payload, msg);
-        vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
+        vehicle.handle_extended_sys_state(&payload);
         }break;
     }
 
@@ -545,7 +545,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
 
 //-------------------------------------------------------
-// Parameter Handling
+// Component/Parameter Handling
 //-------------------------------------------------------
 // MissionPlanner inconveniences
 // - connection possible only with autopilot present
@@ -638,31 +638,13 @@ uint8_t dummy[18+2] = {};
 }
 
 
-/* not used.
-void tTxMavlink::send_protocol_version(void)
-{
-uint8_t dummy[8+2] = {};
-
-    fmav_msg_protocol_version_pack(
-        &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
-        200, 100, 200,
-        dummy, dummy,
-        //uint16_t version, uint16_t min_version, uint16_t max_version,
-        //const uint8_t* spec_version_hash, const uint8_t* library_version_hash,
-        &status_serial_out);
-
-    send_msg_serial_out();
-} */
-
-
-void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid)
+void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t tcompid)
 {
     fmav_msg_command_ack_pack(
         &msg_buf,
         RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         cmd, res, 0, 0,
-        sysid, compid,
+        tsysid, tcompid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
@@ -906,8 +888,60 @@ void tTxMavlink::component_init(void)
     }
 }
 
-
 #endif // USE_FEATURE_MAVLINK_COMPONENT
+
+
+//-------------------------------------------------------
+// Vehicle class implementation
+//-------------------------------------------------------
+
+void tTxVehicle::Init(void)
+{
+    sysid = 0;
+    is_armed = UINT8_MAX;
+    is_flying = UINT8_MAX;
+    type = UINT8_MAX;
+    flight_mode = UINT8_MAX;
+}
+
+
+uint8_t tTxVehicle::State(void)
+{
+    if (is_armed == UINT8_MAX) return UINT8_MAX;
+    if (is_armed == 1 && is_flying == 1) return 2;
+    return is_armed;
+}
+
+
+bool tTxVehicle::is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg)
+{
+    if (!sysid) return false;
+    if (msg->sysid != sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return false;
+    return true;
+}
+
+
+void tTxVehicle::handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* const payload)
+{
+    sysid = msg->sysid;
+    is_armed = (payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
+
+    // ArduPilot provides flight mode number in custom mode
+    if (payload->autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
+        type = ap_vehicle_from_mavtype(payload->type);
+        flight_mode = payload->custom_mode;
+    } else {
+        type = UINT8_MAX;
+        flight_mode = UINT8_MAX;
+    }
+}
+
+
+void tTxVehicle::handle_extended_sys_state(fmav_extended_sys_state_t* const payload)
+{
+    is_flying = (payload->landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
+}
+
 
 #endif // MAVLINK_INTERFACE_TX_H
 
