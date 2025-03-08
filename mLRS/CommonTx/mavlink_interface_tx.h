@@ -349,46 +349,46 @@ void tTxMavlink::parse_link_in_serial_out(void)
 {
 fmav_result_t result;
 
-while (fifo_link_in.Available()) {
-    char c = fifo_link_in.Get();
+    while (fifo_link_in.Available()) {
+        char c = fifo_link_in.Get();
 
-    // parse link in -> serial out
+        // parse link in -> serial out
 #ifdef USE_FEATURE_MAVLINKX
-    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    } else {
-        fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    }
-    if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+            fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        } else {
+            fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        }
+        if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
 
 if (!do_router()) {
-        // without router
-        ser->putbuf(buf_link_in, result.frame_len);
-} else {
-        // with router
-        fmav_router_handle_message(0, &result);
-        if (fmav_router_send_to_link(1)) {
+            // without router
             ser->putbuf(buf_link_in, result.frame_len);
-        }
-        if (fmav_router_send_to_link(2)) {
-            ser2->putbuf(buf_link_in, result.frame_len);
-        }
-        if (fmav_router_send_to_link(0)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
+} else {
+            // with router
+            fmav_router_handle_message(0, &result);
+            if (fmav_router_send_to_link(1)) {
+                ser->putbuf(buf_link_in, result.frame_len);
+            }
+            if (fmav_router_send_to_link(2)) {
+                ser2->putbuf(buf_link_in, result.frame_len);
+            }
+            if (fmav_router_send_to_link(0)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
 } // end if(do_router())
 
 #else
-    fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-        ser->putbuf(buf_link_in, result.frame_len);
+        fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+            ser->putbuf(buf_link_in, result.frame_len);
 #endif
 
-        fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
+            fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
 
-        // allow CRSF to capture it
-        crsf.TelemetryHandleMavlinkMsg(&msg_buf);
+            // allow CRSF to capture it
+            crsf.TelemetryHandleMavlinkMsg(&msg_buf);
 
-        // we also want to capture it to extract some info
-        handle_msg_serial_out(&msg_buf);
+            // we also want to capture it to extract some info
+            handle_msg_serial_out(&msg_buf);
 
 #ifdef DEBUG_ENABLEDx
 // test if _buf = buf_link_in
@@ -397,11 +397,11 @@ if (len != result.frame_len) while(1){}
 for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1){}
 #endif
 
-        // don't jump out early here, seems to be important to do all
-        //return; // do only one message per loop
-    }
+            // don't jump out early here, seems to be important to do all
+            //return; // do only one message per loop
+        } // if (result.res == FASTMAVLINK_PARSE_RESULT_OK)
 
-} // while (fifo_link_in.Available())
+    } // while (fifo_link_in.Available())
 }
 
 
