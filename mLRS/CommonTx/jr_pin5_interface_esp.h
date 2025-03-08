@@ -212,13 +212,14 @@ IRAM_ATTR void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
         parse_nextchar(pin5_fifo.Get());
     }
 
-    // send telemetry after every received message
+    // can transmit now that entire message has been parsed
     if (state == STATE_TRANSMIT_START) {
         pin5_tx_enable();
         transmit_start();
         uart_is_transmitting = true;
-        state = STATE_IDLE;
     }
+    
+    state = STATE_IDLE;
 }
 
 
