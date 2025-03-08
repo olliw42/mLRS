@@ -30,7 +30,7 @@ void CLOCK100US_IRQHandler(void)
 
     if (uart_ll_is_tx_idle(UART_LL_GET_HW(1))) {
         uart_is_transmitting = false;
-        uart_ll_rxfifo_rst(UART_LL_GET_HW(1));  // discards ghost byte caused by switching
+        uart_ll_rxfifo_rst(UART_LL_GET_HW(1)); // discards ghost byte caused by switching
         gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
         gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY);
         gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
@@ -212,6 +212,7 @@ IRAM_ATTR void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
         parse_nextchar(pin5_fifo.Get());
     }
 
+    // send telemetry after every received message
     // can transmit now that entire message has been parsed
     if (state == STATE_TRANSMIT_START) {
         pin5_tx_enable();
