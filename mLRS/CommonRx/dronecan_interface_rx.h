@@ -322,6 +322,8 @@ void tRxDroneCan::Do(void)
 // SendRcData
 //-------------------------------------------------------
 
+// rc_out is the rc data stored in out class
+// so after handling of channel order and failsafes by out class.
 void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 {
     if (!dronecan.id_is_allcoated()) return;

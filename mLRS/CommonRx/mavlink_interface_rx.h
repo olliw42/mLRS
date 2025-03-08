@@ -43,6 +43,10 @@ extern tSetup Setup;
 #define MAVLINK_OPT_FAKE_PARAMFTP     2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
+// keeps info on the attached autopilot (ArduPilot only)
+// currently used to
+// - determine autopilot sysid, to target some messages
+// - request and digest AUTOPILOT_VERSION, to determine ArduPilot version and disable mftp fakery if >= 4.6.0
 class tRxAutoPilot
 {
   public:
@@ -207,8 +211,8 @@ void tRxMavlink::Init(void)
 
 
 // rc_out is the rc data stored in out class
-// after handling of channel order and failsafes.
-// Need to take care of failsafe flag however.
+// so after handling of channel order and failsafes by out class.
+// Need to take care of specific failsafe flag however.
 void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;

@@ -136,8 +136,6 @@ class tTxCrsf : public tPin5BridgeBase
     void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);
     void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);
 
-    uint8_t vehicle_sysid;
-
     // CRSF passthrough telemetry
 
     tPassThrough passthrough;
@@ -367,7 +365,6 @@ void tTxCrsf::Init(bool enable_flag)
     baro_altitude_updated = false;
     baro_send_tlast_ms = 0;
 
-    vehicle_sysid = 0;
     passthrough.Init();
 
     inav_baro_altitude = 0;
@@ -740,21 +737,6 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
     if (relay != RELAY_NO) return;
 
     if (msg->sysid == 0) return; // this can't be anything meaningful
-
-    // autodetect vehicle sysid
-/* we don't really need this for as long as we can assume that there is only one autopilot, so play it simple
-    if (!vehicle_sysid) {
-        if (msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) {
-            fmav_heartbeat_t payload;
-            fmav_msg_heartbeat_decode(&payload, msg);
-            if ((msg->compid == MAV_COMP_ID_AUTOPILOT1) || (payload.autopilot != MAV_AUTOPILOT_INVALID)) {
-                vehicle_sysid = msg->sysid;
-            }
-        }
-        if (!vehicle_sysid) return;
-    }
-    if (msg->sysid != vehicle_sysid) return;
-*/
 
     if (msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
 
