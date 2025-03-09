@@ -30,10 +30,9 @@ void CLOCK100US_IRQHandler(void)
 
     if (uart_ll_is_tx_idle(UART_LL_GET_HW(1))) {
         uart_is_transmitting = false;
-        uart_ll_rxfifo_rst(UART_LL_GET_HW(1)); // discards ghost byte caused by switching
         gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
-        gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY);
         gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
+        uart_ll_rxfifo_rst(UART_LL_GET_HW(1)); // discards ghost byte caused by switching
     }
 })
 
@@ -177,8 +176,7 @@ IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
 #ifndef JR_PIN5_FULL_DUPLEX
 constexpr uint8_t MATRIX_DETACH_IN_LOW = 0x30; // routes 0 to matrix slot
     
-    gpio_matrix_in(MATRIX_DETACH_IN_LOW, U1RXD_IN_IDX, false); // disconnect RX from all pads
-    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // disable pullup / pulldown
+    gpio_matrix_in(MATRIX_DETACH_IN_LOW, U1RXD_IN_IDX, true); // disconnect RX from all pads, true here important
     gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0); // set inverted level
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_OUTPUT);
     gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
@@ -189,8 +187,8 @@ constexpr uint8_t MATRIX_DETACH_IN_LOW = 0x30; // routes 0 to matrix slot
 IRAM_ATTR void tPin5BridgeBase::pin5_rx_enable(void)
 {
 #ifndef JR_PIN5_FULL_DUPLEX
+    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // enable pulldown permanently
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
-    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // pulldown only, since inverted
     gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
 #endif
 }
