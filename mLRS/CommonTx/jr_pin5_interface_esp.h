@@ -102,7 +102,7 @@ class tPin5BridgeBase
 
   private:
     tFifo<char,128> pin5_fifo; // enough for 2 full CRSF messages
-    bool pin5_clock_initialized;
+    bool pin5_clock_initialized = false;
 };
 
 
@@ -121,7 +121,6 @@ void tPin5BridgeBase::Init(void)
     pin5_init();
 
     uart_is_transmitting = false;
-    pin5_clock_initialized = false;
 }
 
 
