@@ -835,40 +835,40 @@ INITCONTROLLER_END
     //-- SX handling
 
     switch (link_state) {
-    case LINK_STATE_IDLE:
-        break;
+		case LINK_STATE_IDLE:
+			break;
 
-    case LINK_STATE_TRANSMIT:
-        do_transmit_prepare(tdiversity.Antenna());
-        link_state = LINK_STATE_TRANSMIT_SEND;
-        DBG_MAIN_SLIM(dbg.puts("\nt");)
-        break;
+		case LINK_STATE_TRANSMIT:
+			do_transmit_prepare(tdiversity.Antenna());
+			link_state = LINK_STATE_TRANSMIT_SEND;
+			DBG_MAIN_SLIM(dbg.puts("\nt");)
+			break;
 
-    case LINK_STATE_TRANSMIT_SEND: {
-        uint16_t dt = micros16() - pretransmit_tstamp_us;
-        if (dt < 750) break;
-        isInTimeGuard = false;
-        rfpower.Update();
-        fhss.HopToNext();
-        sx.SetRfFrequency(fhss.GetCurrFreq());
-        sx2.SetRfFrequency(fhss.GetCurrFreq2());
-        do_transmit_send(tdiversity.Antenna());
-        link_state = LINK_STATE_TRANSMIT_WAIT;
-        irq_status = irq2_status = 0;
-        DBG_MAIN_SLIM(dbg.puts(">");)
-        // auxiliaries
-        crsf.TelemetryStart();
-        whileTransmit.Trigger();
-        break; }
+		case LINK_STATE_TRANSMIT_SEND: {
+			uint16_t dt = micros16() - pretransmit_tstamp_us;
+			if (dt < 750) break;
+			isInTimeGuard = false;
+			rfpower.Update();
+			fhss.HopToNext();
+			sx.SetRfFrequency(fhss.GetCurrFreq());
+			sx2.SetRfFrequency(fhss.GetCurrFreq2());
+			do_transmit_send(tdiversity.Antenna());
+			link_state = LINK_STATE_TRANSMIT_WAIT;
+			irq_status = irq2_status = 0;
+			DBG_MAIN_SLIM(dbg.puts(">");)
+			// auxiliaries
+			crsf.TelemetryStart();
+			whileTransmit.Trigger();
+			break; }
 
-    case LINK_STATE_RECEIVE:
-        IF_ANTENNA1(sx.SetToRx(0));
-        IF_ANTENNA2(sx2.SetToRx(0));
-        link_state = LINK_STATE_RECEIVE_WAIT;
-        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-        irq_status = irq2_status = 0;
-        DBG_MAIN_SLIM(dbg.puts("r");)
-        break;
+		case LINK_STATE_RECEIVE:
+			IF_ANTENNA1(sx.SetToRx(0));
+			IF_ANTENNA2(sx2.SetToRx(0));
+			link_state = LINK_STATE_RECEIVE_WAIT;
+			link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+			irq_status = irq2_status = 0;
+			DBG_MAIN_SLIM(dbg.puts("r");)
+			break;
     }//end of switch(link_state)
 
 IF_SX(
@@ -1223,34 +1223,34 @@ IF_IN(
     if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
 
     switch (tx_task) {
-    case TX_TASK_RX_PARAM_SET:
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-            mbridge.Lock(); // lock mBridge
-        }
-        break;
-    case TX_TASK_PARAM_STORE:
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-            mbridge.Lock(); // lock mBridge
-        } else {
-            doParamsStore = true;
-        }
-        break;
-    case TX_TASK_PARAM_RELOAD:
-        setup_reload();
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-            mbridge.Lock(); // lock mBridge
-        }
-        break;
-    case TX_TASK_BIND: start_bind(); break;
-    case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
-    case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
-    case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
-    case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
-    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
+		case TX_TASK_RX_PARAM_SET:
+			if (connected()) {
+				link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+				mbridge.Lock(); // lock mBridge
+			}
+			break;
+		case TX_TASK_PARAM_STORE:
+			if (connected()) {
+				link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+				mbridge.Lock(); // lock mBridge
+			} else {
+				doParamsStore = true;
+			}
+			break;
+		case TX_TASK_PARAM_RELOAD:
+			setup_reload();
+			if (connected()) {
+				link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+				mbridge.Lock(); // lock mBridge
+			}
+			break;
+		case TX_TASK_BIND: start_bind(); break;
+		case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+		case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
+		case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
+		case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+		case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+		case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
     }
 
     //-- Handle ESP wifi bridge
