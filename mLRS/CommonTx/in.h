@@ -25,7 +25,7 @@ class tInBase
 
     void Configure(uint8_t new_config);
 
-    bool Update(tRcData* const rc);
+    bool ChannelsUpdated(tRcData* const rc);
 
 //XX  private:
     virtual bool available(void) { return false; }

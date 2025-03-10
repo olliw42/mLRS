@@ -1198,7 +1198,7 @@ IF_CRSF(
     }
 );
 IF_IN(
-    if (in.Update(&rcData)) {
+    if (in.ChannelsUpdated(&rcData)) {
         // update channels
         channelOrder.SetAndApply(&rcData, Setup.Tx[Config.ConfigId].ChannelOrder);
         rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
