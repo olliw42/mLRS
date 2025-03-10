@@ -109,7 +109,7 @@ class tRxClock
     void Reset(void);
 
   private:
-    bool initialized = false;
+    bool initialized = false; // must be inited only once at power up
 };
 
 

@@ -29,9 +29,9 @@ extern bool connected_and_rx_setup_available(void);
 extern tStats stats;
 
 
-#define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
+#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 286 bytes
+#define MAVLINK_BUF_SIZE          300 // needs to be larger than max MAVLink frame size = 286 bytes
 
 
 // keeps info on the vehicle
@@ -510,7 +510,7 @@ void tTxMavlink::flush(void)
 
 void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
 {
-    if ((msg->sysid == RADIO_STATUS_SYSTEM_ID) &&
+    if ((msg->sysid == RADIO_LINK_SYSTEM_ID) &&
         (msg->compid == MAV_COMP_ID_TELEMETRY_RADIO) &&
         (msg->msgid == FASTMAVLINK_MSG_ID_MLRS_MAIN_RADIO_STATS)) {
         crsf.HandleMainRadioStatsMavlinkMsg(msg);
@@ -568,7 +568,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
     fmav_msg_radio_status_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, // sysid, SiK uses 51, 68
         MAV_COMP_ID_TELEMETRY_RADIO + (crsf.IsRelaySecondary() ? 1 : 0),
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
@@ -584,7 +584,7 @@ void tTxMavlink::send_main_radio_stats(void)
 {
     fmav_msg_mlrs_main_radio_stats_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID,
+        RADIO_LINK_SYSTEM_ID,
         MAV_COMP_ID_TELEMETRY_RADIO,
 
         crsf_cvt_rssi_tx(stats.received_rssi),
@@ -672,7 +672,7 @@ void tTxMavlink::send_heartbeat(void)
 {
     fmav_msg_heartbeat_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         MAV_TYPE_GENERIC, // type ???
         MAV_AUTOPILOT_INVALID,
         MAV_MODE_FLAG_SAFETY_ARMED,
@@ -691,7 +691,7 @@ uint8_t dummy[18+2] = {};
 
     fmav_msg_autopilot_version_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_BYTEWISE,
         VERSION, 0, 0, 0,
         dummy, dummy, dummy,
@@ -710,7 +710,7 @@ void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t
 {
     fmav_msg_command_ack_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         cmd, res, 0, 0,
         tsysid, tcompid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
@@ -733,7 +733,7 @@ void tTxMavlink::send_param_value(uint16_t param_idx)
 
     fmav_msg_param_value_encode(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         &payload,
         &status_serial_out);
 
@@ -745,7 +745,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) return;
 
-    if (!fmav_msg_is_for_me(RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, msg)) return; // not for us
+    if (!fmav_msg_is_for_me(RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, msg)) return; // not for us
 
     switch (msg->msgid) {
         case FASTMAVLINK_MSG_ID_PARAM_REQUEST_READ: {
@@ -765,7 +765,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
             break;}
 
         case FASTMAVLINK_MSG_ID_PARAM_SET: {
-            if (msg->target_sysid != RADIO_STATUS_SYSTEM_ID ||
+            if (msg->target_sysid != RADIO_LINK_SYSTEM_ID ||
                 msg->target_compid != MAV_COMP_ID_TELEMETRY_RADIO) break; // only accept if targeted at us
 
             fmav_param_set_t payload;
@@ -800,7 +800,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 
         case FASTMAVLINK_MSG_ID_COMMAND_INT:
         case FASTMAVLINK_MSG_ID_COMMAND_LONG: {
-            if (msg->target_sysid != RADIO_STATUS_SYSTEM_ID ||
+            if (msg->target_sysid != RADIO_LINK_SYSTEM_ID ||
                 msg->target_compid != MAV_COMP_ID_TELEMETRY_RADIO) break; // only accept if targeted at us
 
             uint16_t command;
