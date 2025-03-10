@@ -739,7 +739,6 @@ RESTARTCONTROLLER
     connect_occured_once = true; //false;
     link_rx1_status = link_rx2_status = RX_STATUS_VALID; //RX_STATUS_NONE;
     link_task_init();
-    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
     //link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
     SetupMetaData.rx_available = true;
 
