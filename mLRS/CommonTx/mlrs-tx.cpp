@@ -413,7 +413,7 @@ void link_task_tick_ms(void)
         link_task_delay_ms--;
         if (!link_task_delay_ms) {
             switch (link_task) {
-            case LINK_TASK_TX_STORE_RX_PARAMS: doParamsStore = true; break;
+            case LINK_TASK_TX_STORE_RX_PARAMS: /*doParamsStore = true;*/ break;
             }
             link_task_reset();
             mbridge.Unlock();
@@ -733,11 +733,11 @@ RESTARTCONTROLLER
     doPreTransmit = false;
     pretransmit_tstamp_us = 0;
     link_state = LINK_STATE_IDLE;
-    connect_state = CONNECT_STATE_LISTEN;
+    connect_state = CONNECT_STATE_CONNECTED; //CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
     connect_sync_cnt = 0;
-    connect_occured_once = false;
-    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    connect_occured_once = true; //false;
+    link_rx1_status = link_rx2_status = RX_STATUS_VALID; //RX_STATUS_NONE;
     link_task_init();
     link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
 
@@ -1025,17 +1025,17 @@ IF_SX2(
         }
 
         // we are connected but tmo ran out
-        if (connected() && !connect_tmo_cnt) {
-            // so disconnect
-            connect_state = CONNECT_STATE_LISTEN;
-            // link_state will be set to LINK_STATE_TRANSMIT below
-        }
+        //if (connected() && !connect_tmo_cnt) {
+        //    // so disconnect
+        //    connect_state = CONNECT_STATE_LISTEN;
+        //    // link_state will be set to LINK_STATE_TRANSMIT below
+        //}
 
         // we are connected but didn't receive a valid frame
-        if (connected() && !valid_frame_received) {
-            // reset sync counter, relevant if in sync
-            //connect_sync_cnt = 0; //isn't needed, right? since when connected we can't be in sync
-        }
+        //if (connected() && !valid_frame_received) {
+        //    // reset sync counter, relevant if in sync
+        //    //connect_sync_cnt = 0; //isn't needed, right? since when connected we can't be in sync
+        //}
 
         link_state = LINK_STATE_TRANSMIT;
         link_rx1_status = RX_STATUS_NONE;
@@ -1066,17 +1066,17 @@ IF_SX2(
             GOTO_RESTARTCONTROLLER;
         }
 
-        bind.Do();
-        switch (bind.Task()) {
-        case BIND_TASK_CHANGED_TO_BIND:
-            bind.ConfigForBind();
-            fhss.SetToBind();
-            leds.SetToBind();
-            connect_state = CONNECT_STATE_LISTEN;
-            // link_state was set to LINK_STATE_TRANSMIT already
-            break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
-        }
+        //bind.Do();
+        //switch (bind.Task()) {
+        //case BIND_TASK_CHANGED_TO_BIND:
+        //    bind.ConfigForBind();
+        //    fhss.SetToBind();
+        //    leds.SetToBind();
+        //    connect_state = CONNECT_STATE_LISTEN;
+        //    // link_state was set to LINK_STATE_TRANSMIT already
+         //   break;
+        //case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        //}
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
 
@@ -1244,7 +1244,7 @@ IF_IN(
 				mbridge.Lock(); // lock mBridge
 			}
 			break;
-		case TX_TASK_BIND: start_bind(); break;
+		//case TX_TASK_BIND: start_bind(); break;
 		case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
 		case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
 		case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;

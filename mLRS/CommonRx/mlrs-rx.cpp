@@ -264,7 +264,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
-        doParamsStore = true;
+        //doParamsStore = true;
         break;
     case FRAME_CMD_GET_RX_SETUPDATA_WRELOAD:
         setup_reload();
@@ -851,7 +851,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset();
-            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        //    link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         }
 
         powerup.Do();
@@ -870,7 +870,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             break;
         case BIND_TASK_RX_STORE_PARAMS:
             Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
-            doParamsStore = true;
+            //doParamsStore = true;
             break;
         }
 
