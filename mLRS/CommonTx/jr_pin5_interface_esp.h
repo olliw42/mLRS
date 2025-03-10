@@ -102,7 +102,7 @@ class tPin5BridgeBase
 
   private:
     tFifo<char,128> pin5_fifo; // enough for 2 full CRSF messages
-    bool pin5_clock_initialized = false;
+    bool pin5_clock_initialized = false; // must be inited only once at power up
 };
 
 
