@@ -503,14 +503,13 @@ class tFhssBase
         curr_i = 0;
     }
 
-    // only used for statistics
-    uint8_t Cnt(void)
+    void HopToNext(void)
     {
-        return cnt;
+        curr_i++;
+        if (curr_i >= cnt) curr_i = 0;
     }
 
-    // only used for statistics
-    uint8_t CurrI(void)
+    uint8_t GetCurrI(void)
     {
         return curr_i;
     }
@@ -526,12 +525,6 @@ class tFhssBase
         return fhss_list[curr_i];
     }
 
-    void HopToNext(void)
-    {
-        curr_i++;
-        if (curr_i >= cnt) curr_i = 0;
-    }
-
     void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
         is_in_binding = true;
@@ -539,7 +532,17 @@ class tFhssBase
         bind_listen_i = 0;
     }
 
-    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    //-- only used by receiver
+
+    // Rx:
+    void SetCurrI(uint8_t i)
+    {
+        if (i == curr_i) return; // nothing to do
+
+
+    }
+
+    // Rx: for bind, bool determines if it needs to switch back to LINK_STATE_RECEIVE
     bool HopToNextBind(void)
     {
         if (!is_in_binding) return false;
@@ -563,7 +566,7 @@ class tFhssBase
         return false;
     }
 
-    // only used by receiver
+    // Rx: for bind
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
         switch (curr_bind_config_i) {
@@ -578,7 +581,7 @@ class tFhssBase
         return (SETUP_FREQUENCY_BAND_ENUM)0;
     }
 
-    // used by RADIO_LINK_STATS_MLRS
+    // Rx: for RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
     {
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -592,19 +595,23 @@ class tFhssBase
 #endif
     }
 
-    uint32_t bestX(void)
-    {
-        uint8_t i_best = 0;
-        for (uint8_t i = 0; i < cnt; i++) {
-          if (fhss_last_rssi[i] > fhss_last_rssi[i_best]) i_best = i;
-        }
+    //-- only used by Tx module
 
-        curr_i = i_best;
-        return fhss_list[curr_i];
+    // Tx: for CLI, for mBridge statistics
+    uint8_t Cnt(void)
+    {
+        return cnt;
     }
 
-    // used by CLI
+    // Tx: for mBridge statistics
+    uint8_t CurrI_4mBridge(void)
+    {
+        return curr_i;
+    }
+
+    // Tx: for CLI
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
+
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
 
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i)
@@ -667,9 +674,13 @@ class tFhss : public tFhssBase
                           fhss->Ortho, fhss->Except);
     }
 
+    uint8_t GetCurrI2(void) { return GetCurrI(); }
     uint32_t GetCurrFreq2(void) { return GetCurrFreq(); }
 
-    float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); }
+    //-- receiver only
+
+    void SetCurrI2(uint8_t i) { SetCurrI(i); }
+    float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); } // for RADIO_LINK_STATS_MLRS
 };
 
 #else
@@ -694,24 +705,17 @@ class tFhss
         fhss2ndBand.Start();
     }
 
-    uint8_t Cnt(void)
-    {
-        return fhss1stBand.Cnt();
-    }
-
-    uint8_t CurrI(void)
-    {
-        return fhss1stBand.CurrI();
-    }
-
-    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
-    uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
-
     void HopToNext(void)
     {
         fhss1stBand.HopToNext();
         fhss2ndBand.HopToNext();
     }
+
+    uint8_t GetCurrI(void) { return fhss1stBand.GetCurrI(); }
+    uint8_t GetCurrI2(void) { return fhss2stBand.GetCurrI(); }
+
+    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
+    uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
 
     void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
     {
@@ -719,7 +723,11 @@ class tFhss
         fhss2ndBand.SetToBind(frame_rate_ms);
     }
 
-    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    //-- receiver only
+
+    void SetCurrI(uint8_t i) { fhss1stBand.SetCurrI(i); }
+    void SetCurrI2(uint8_t i) { fhss2ndBand.SetCurrI(i); }
+
     bool HopToNextBind(void)
     {
         bool hop1 = fhss1stBand.HopToNextBind();
@@ -727,7 +735,6 @@ class tFhss
         return hop1 || hop2;
     }
 
-    // only used by receiver
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
     float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
 
@@ -742,7 +749,10 @@ class tFhss
 #endif
     }
 
-    // only used by tx cli
+    //-- Tx module only
+
+    uint8_t Cnt(void) { return fhss1stBand.Cnt(); }
+    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI(); }
     uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }

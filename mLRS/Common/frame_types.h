@@ -43,6 +43,9 @@ typedef struct
     uint8_t LQ_serial;
     uint8_t antenna;
     uint8_t transmit_antenna;
+    // not stats but needed
+    uint8_t tx_frequency_index_band; // TODO: dualband
+    uint8_t tx_frequency_index; // TODO: dual band
 } tFrameStats;
 
 
@@ -56,17 +59,34 @@ typedef struct
 PACKED(
 typedef struct
 {
-    uint8_t seq_no : 3;
-    uint8_t ack : 1;
-    uint8_t frame_type : 4;
+    uint32_t seq_no : 3;
+    uint32_t ack : 1;
+    uint32_t frame_type : 4;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
-    uint32_t LQ_rc : 7; // only Rx->Tx frame, not Tx->Rx
+    uint32_t frequency_index_band : 1; // frequency index is for band 0 or 1
+    uint32_t frequency_index : 6; // older versions have set that field to 63
     uint32_t LQ_serial : 7;
     uint32_t transmit_antenna : 1;
     uint32_t spare : 2;
     uint32_t payload_len : 7;
-}) tFrameStatus;
+}) tTxFrameStatus; // 5 bytes
+
+
+PACKED(
+typedef struct
+{
+    uint32_t seq_no : 3;
+    uint32_t ack : 1;
+    uint32_t frame_type : 4;
+    uint32_t antenna : 1;
+    uint32_t rssi_u7 : 7;
+    uint32_t LQ_rc : 7; // available only for Rx->Tx frame, not for Tx->Rx
+    uint32_t LQ_serial : 7;
+    uint32_t transmit_antenna : 1;
+    uint32_t spare : 2;
+    uint32_t payload_len : 7;
+}) tRxFrameStatus; // 5 bytes
 
 
 //-- Tx Frame ----------
@@ -103,7 +123,7 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tTxFrameStatus status; // 5 bytes
     tFrameRcData1 rc1; // 6 bytes
     uint16_t crc1;
     tFrameRcData2 rc2; // 10 bytes
@@ -118,7 +138,7 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tRxFrameStatus status; // 5 bytes
     uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
 }) tRxFrame; // 91 bytes
