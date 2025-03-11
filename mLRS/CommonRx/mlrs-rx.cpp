@@ -799,24 +799,20 @@ dbg.puts(" check ");
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                } else { // ok, so set band 2, should only happen for dual band
-                    connect_frequency_index_band_seen |= 0x01; //0 seen
-                    if (fhss.GetCurrI2() != stats.received_frequency_index) {
-                        fhss.SetCurrI2(stats.received_frequency_index);
-dbg.puts(" set b2");
-                    }
+                    fhss.SetCurrI(stats.received_frequency_index); // set band 1, should only happen for dual band
+dbg.puts(" set b1");
+                } else { // ok
+                    connect_frequency_index_band_seen |= 0x01; // 0 seen
                 }
             } else {
                 if (fhss.GetCurrI2() != stats.received_frequency_index) { // somehow wrong frequency, so discard
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                } else { // ok, so set band 1, should only happen for dual band
-                    connect_frequency_index_band_seen |= 0x02; //1 seen
-                    if (fhss.GetCurrI() != stats.received_frequency_index) {
-                        fhss.SetCurrI(stats.received_frequency_index);
-dbg.puts(" set b1");
-                    }
+                    fhss.SetCurrI2(stats.received_frequency_index); // set band 2, should only happen for dual band
+dbg.puts(" set b2");
+                } else { // ok
+                    connect_frequency_index_band_seen |= 0x02; // 1 seen
                 }
             }
         }
@@ -836,6 +832,7 @@ dbg.puts(" set b1");
                 }
                 if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_frequency_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
+dbg.puts(" delay");
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
                     connect_state = CONNECT_STATE_CONNECTED;
