@@ -712,7 +712,7 @@ class tFhss
     }
 
     uint8_t GetCurrI(void) { return fhss1stBand.GetCurrI(); }
-    uint8_t GetCurrI2(void) { return fhss2stBand.GetCurrI(); }
+    uint8_t GetCurrI2(void) { return fhss2ndBand.GetCurrI(); }
 
     uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
@@ -752,7 +752,7 @@ class tFhss
     //-- Tx module only
 
     uint8_t Cnt(void) { return fhss1stBand.Cnt(); }
-    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI(); }
+    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
     uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
