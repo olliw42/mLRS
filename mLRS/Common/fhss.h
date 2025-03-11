@@ -538,8 +538,8 @@ class tFhssBase
     void SetCurrI(uint8_t i)
     {
         if (i == curr_i) return; // nothing to do
-
-
+        curr_i = i;
+        if (curr_i >= cnt) curr_i = 0; // should not happen but play it safe
     }
 
     // Rx: for bind, bool determines if it needs to switch back to LINK_STATE_RECEIVE
