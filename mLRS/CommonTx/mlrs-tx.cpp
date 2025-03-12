@@ -473,6 +473,31 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //   post loop:  -> handle_receive() or handle_receive_none()
 //                   if valid -> process_received_frame()
 
+// Numerical Recipe's quick generator randq1()
+uint32_t nr_randq1(void)
+{
+    static uint32_t seed = 0;
+    seed = 1664525UL * seed + 1013904223UL;
+    return seed;
+}
+
+
+uint8_t fhss_band_next(void)
+{
+    static uint8_t fhss_band = 0;
+    static uint8_t fhss_band_last = 0;
+
+    if (fhss_band == fhss_band_last) { // we had it two times, so toggle
+        fhss_band_last = fhss_band;
+        fhss_band++;
+    } else { // toggle with 50% probability
+        fhss_band_last = fhss_band;
+        if (nr_randq1() < UINT32_MAX/2) fhss_band++;
+    }
+    return fhss_band;
+}
+
+
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
 uint8_t payload[FRAME_TX_PAYLOAD_LEN];
@@ -503,10 +528,9 @@ uint8_t payload_len = 0;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
 
-    static uint8_t fhss_band = 0;
+    uint8_t fhss_band = fhss_band_next();
     frame_stats.tx_frequency_index_band = fhss_band;
     frame_stats.tx_frequency_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
-    fhss_band++;
 
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
