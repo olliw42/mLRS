@@ -792,6 +792,10 @@ dbg.puts(u8toBCD_s(fhss.GetCurrI2()));
             msp.FrameLost();
         }
 
+#if 0
+stats.received_fhss_index = 63; // enable/disable fhss_index mechanism
+#endif
+
         // check fhss index
         // do it only in LISTEN and SYNC
         if ((connect_state <= CONNECT_STATE_SYNC) && valid_frame_received &&
