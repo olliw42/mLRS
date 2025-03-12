@@ -44,8 +44,8 @@ typedef struct
     uint8_t antenna;
     uint8_t transmit_antenna;
     // not stats but needed
-    uint8_t tx_frequency_index_band; // TODO: dualband
-    uint8_t tx_frequency_index; // TODO: dual band
+    uint8_t tx_fhss_index_band;
+    uint8_t tx_fhss_index;
 } tFrameStats;
 
 
@@ -64,8 +64,8 @@ typedef struct
     uint32_t frame_type : 4;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
-    uint32_t frequency_index_band : 1; // frequency index is for band 0 or 1
-    uint32_t frequency_index : 6; // older versions have set that field to 63
+    uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
+    uint32_t fhss_index : 6; // older versions have set that field to 63
     uint32_t LQ_serial : 7;
     uint32_t transmit_antenna : 1;
     uint32_t spare : 2;

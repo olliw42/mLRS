@@ -529,8 +529,8 @@ uint8_t payload_len = 0;
     frame_stats.rssi = stats.GetLastRssi();
 
     uint8_t fhss_band = fhss_band_next();
-    frame_stats.tx_frequency_index_band = fhss_band;
-    frame_stats.tx_frequency_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
+    frame_stats.tx_fhss_index_band = fhss_band;
+    frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
 
     frame_stats.LQ_serial = stats.GetLQ_serial();
 

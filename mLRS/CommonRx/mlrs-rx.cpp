@@ -364,8 +364,8 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
 
-    stats.received_frequency_index_band = frame->status.frequency_index_band;
-    stats.received_frequency_index = frame->status.frequency_index;
+    stats.received_fhss_index_band = frame->status.fhss_index_band;
+    stats.received_fhss_index = frame->status.fhss_index;
 
     stats.received_LQ_serial = frame->status.LQ_serial;
 
@@ -515,7 +515,7 @@ uint8_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
-uint8_t connect_frequency_index_band_seen;
+uint8_t connect_fhss_index_band_seen;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
 
@@ -564,7 +564,7 @@ RESTARTCONTROLLER
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
     connect_sync_cnt = 0;
-    connect_frequency_index_band_seen = 0;
+    connect_fhss_index_band_seen = 0;
     connect_listen_cnt = 0;
     connect_occured_once = false;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
@@ -760,12 +760,15 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 antenna = ANTENNA_2;
             }
             handle_receive(antenna);
-//dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
 
-dbg.puts("\n> b: ");
-dbg.puts(((stats.received_frequency_index_band & 0x01) == 0) ? "0" : "1");
+dbg.puts("\n>");dbg.puts(rxstatus_str[link_rx1_status]);dbg.puts(rxstatus_str[link_rx2_status]);
+dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
+
+//dbg.puts("\n> b: ");
+dbg.puts("  b: ");
+dbg.puts(((stats.received_fhss_index_band & 0x01) == 0) ? "0" : "1");
 dbg.puts(" i: ");
-dbg.puts(u8toBCD_s(stats.received_frequency_index));
+dbg.puts(u8toBCD_s(stats.received_fhss_index));
 dbg.puts(" ; ");
 dbg.puts(u8toBCD_s(fhss.GetCurrI()));
 dbg.puts(" ");
@@ -792,27 +795,27 @@ dbg.puts(u8toBCD_s(fhss.GetCurrI2()));
         // check fhss index
         // do it only in LISTEN and SYNC
         if ((connect_state <= CONNECT_STATE_SYNC) && valid_frame_received &&
-            (stats.received_frequency_index < 63)) { // older version don't offer this
+            (stats.received_fhss_index < 63)) { // older version don't offer this
 dbg.puts(" check ");
-            if (stats.received_frequency_index_band == 0) {
-                if (fhss.GetCurrI() != stats.received_frequency_index) { // somehow wrong frequency, discard
+            if (stats.received_fhss_index_band == 0) {
+                if (fhss.GetCurrI() != stats.received_fhss_index) { // somehow wrong frequency, discard
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                    fhss.SetCurrI(stats.received_frequency_index); // set band 1, should only happen for dual band
+                    fhss.SetCurrI(stats.received_fhss_index); // set band 1, should only happen for dual band
 dbg.puts(" set b1");
                 } else { // ok
-                    connect_frequency_index_band_seen |= 0x01; // 0 seen
+                    connect_fhss_index_band_seen |= 0x01; // 0 seen
                 }
             } else {
-                if (fhss.GetCurrI2() != stats.received_frequency_index) { // somehow wrong frequency, so discard
+                if (fhss.GetCurrI2() != stats.received_fhss_index) { // somehow wrong frequency, so discard
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                    fhss.SetCurrI2(stats.received_frequency_index); // set band 2, should only happen for dual band
+                    fhss.SetCurrI2(stats.received_fhss_index); // set band 2, should only happen for dual band
 dbg.puts(" set b2");
                 } else { // ok
-                    connect_frequency_index_band_seen |= 0x02; // 1 seen
+                    connect_fhss_index_band_seen |= 0x02; // 1 seen
                 }
             }
         }
@@ -822,7 +825,7 @@ dbg.puts(" set b2");
             case CONNECT_STATE_LISTEN:
                 connect_state = CONNECT_STATE_SYNC;
                 connect_sync_cnt = 0;
-                connect_frequency_index_band_seen = (stats.received_frequency_index < 63) ? 0 : 0x03;
+                connect_fhss_index_band_seen = (stats.received_fhss_index < 63) ? 0 : 0x03;
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
@@ -830,7 +833,7 @@ dbg.puts(" set b2");
                 if (!connect_occured_once) {
                     connect_sync_cnt_max = Config.connect_sync_cnt_max;
                 }
-                if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_frequency_index_band_seen != 0x03)) {
+                if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
 dbg.puts(" delay");
                 }

@@ -85,8 +85,8 @@ class tStats
     uint8_t received_LQ_rc;
 #endif
 #ifdef DEVICE_IS_RECEIVER
-    uint8_t received_frequency_index_band;
-    uint8_t received_frequency_index;
+    uint8_t received_fhss_index_band;
+    uint8_t received_fhss_index;
 #endif
     uint8_t received_LQ_serial;
     uint8_t received_antenna;

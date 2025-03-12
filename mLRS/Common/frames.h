@@ -53,8 +53,8 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.frequency_index_band = frame_stats->tx_frequency_index_band;
-    frame->status.frequency_index = frame_stats->tx_frequency_index;
+    frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
+    frame->status.fhss_index = frame_stats->tx_fhss_index;
     frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
