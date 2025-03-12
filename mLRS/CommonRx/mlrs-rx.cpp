@@ -806,7 +806,7 @@ dbg.puts(" check ");
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                    fhss.SetCurrI(stats.received_fhss_index); // set band 1, should only happen for dual band
+                    fhss.SetCurrI(stats.received_fhss_index); // set 1st band, should only happen for dual band
 dbg.puts(" set b1");
                 } else { // ok
                     connect_fhss_index_band_seen |= 0x01; // 0 seen
@@ -816,7 +816,7 @@ dbg.puts(" set b1");
                     valid_frame_received = false;
                     invalid_frame_received = true;
 dbg.puts(" discard");
-                    fhss.SetCurrI2(stats.received_fhss_index); // set band 2, should only happen for dual band
+                    fhss.SetCurrI2(stats.received_fhss_index); // set 2nd band, should only happen for dual band
 dbg.puts(" set b2");
                 } else { // ok
                     connect_fhss_index_band_seen |= 0x02; // 1 seen
