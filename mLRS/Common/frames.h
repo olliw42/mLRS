@@ -14,6 +14,7 @@
 #include "frame_types.h"
 
 
+extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
@@ -427,6 +428,35 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 }
 
 #endif
+
+
+//-------------------------------------------------------
+// Helper
+//-------------------------------------------------------
+
+// Numerical Recipe's quick generator randq1()
+uint32_t nr_randq1(void)
+{
+    static uint32_t seed = 0;
+    seed = 1664525UL * seed + 1013904223UL;
+    return seed;
+}
+
+
+uint8_t fhss_band_next(void)
+{
+    static uint8_t fhss_band = 0;
+    static uint8_t fhss_band_last = 0;
+
+    if (fhss_band == fhss_band_last) { // we had it two times, so toggle
+        fhss_band_last = fhss_band;
+        fhss_band++;
+    } else { // toggle with 50% probability
+        fhss_band_last = fhss_band;
+        if (nr_randq1() < UINT32_MAX/2) fhss_band++;
+    }
+    return fhss_band;
+}
 
 
 #endif // FRAMES_H
