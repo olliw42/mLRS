@@ -60,7 +60,7 @@
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
-#define SETUP_TX_MAV_COMPONENT          0 // 0: off, 1: enabled
+#define SETUP_TX_MAV_COMPONENT          1 // 0: off, 1: enabled
 
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
 
@@ -79,7 +79,7 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
+#define SETUP_RX_SERIAL_LINK_MODE       2 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
