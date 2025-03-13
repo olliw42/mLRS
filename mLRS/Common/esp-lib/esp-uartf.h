@@ -59,8 +59,8 @@ typedef enum {
   #if (UARTF_TXBUFSIZE > 0) && (UARTF_TXBUFSIZE < 256)
     #error UARTF_TXBUFSIZE must be 0 or >= 256
   #endif
-  #if (UARTF_RXBUFSIZE < 256)
-    #error UARTF_RXBUFSIZE must be >= 256
+  #if (UARTF_RXBUFSIZE > 0) && (UARTF_RXBUFSIZE < 256)
+    #error UARTF_TXBUFSIZE must be 0 or >= 256
   #endif
 #endif
 
@@ -98,6 +98,11 @@ IRAM_ATTR void uartf_tx_flush(void)
 IRAM_ATTR char uartf_getc(void)
 {
     return (char)UARTF_SERIAL_NO.read();
+}
+
+IRAM_ATTR void uartf_getbuf(char* buf, uint16_t len)
+{
+    UARTF_SERIAL_NO.readBytes(buf, len);
 }
 
 
@@ -194,6 +199,11 @@ void uartf_init(void)
 {
     uartf_init_isroff();
     // isr is enabled !
+}
+
+void uartf_rx_enableisr(FunctionalState flag)
+{
+    // not supported on ESP, allows in functionality without lots of ifdefs
 }
 
 

@@ -139,6 +139,8 @@ void tRxMsp::Init(void)
 }
 
 
+// rc_out is the rc data stored in out class
+// so after handling of channel order and failsafes by out class.
 void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;

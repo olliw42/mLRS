@@ -76,6 +76,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
   public:
     void Init(void)
     {
+        gconfig = nullptr;
         lora_configuration = nullptr;
     }
 
@@ -112,12 +113,16 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
+        if (!gconfig) while(1){} // must not happen
+
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        if (!gconfig) return;
+
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
         // there would be special setting for +20dBm mode, don't do it
         // 5 OcpOn, 4-0 OcpTrim
@@ -132,6 +137,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
     {
+        if (!gconfig) return;
+
         gconfig->Power_dbm = global_config->Power_dbm;
         SetRfPower_dbm(gconfig->Power_dbm);
     }
@@ -211,6 +218,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
+        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+
         int16_t rssi;
         Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
 
@@ -232,14 +241,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     //-- RF power interface
 
-    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
-    void config_calc(void)
+    void _config_calc(void)
     {
         int8_t power_dbm = gconfig->Power_dbm;
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
         uint8_t index = gconfig->LoraConfigIndex;
         if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
@@ -251,28 +260,34 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
 
   private:
-    const tSxLoraConfiguration* lora_configuration;
     tSxGlobalConfig* gconfig;
+    const tSxLoraConfiguration* lora_configuration;
     uint8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
@@ -355,7 +370,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
@@ -501,7 +516,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
  //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);

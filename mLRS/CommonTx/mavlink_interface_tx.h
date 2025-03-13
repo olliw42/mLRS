@@ -29,9 +29,30 @@ extern bool connected_and_rx_setup_available(void);
 extern tStats stats;
 
 
-#define RADIO_STATUS_SYSTEM_ID      51 // SiK uses 51, 68
+#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
 
-#define MAVLINK_BUF_SIZE            300 // needs to be larger than max MAVLink frame size = 286 bytes
+#define MAVLINK_BUF_SIZE          300 // needs to be larger than max MAVLink frame size = 286 bytes
+
+
+// keeps info on the vehicle
+// currently only used to send vehicle state in mBridge info
+class tTxVehicle
+{
+  public:
+    void Init(void);
+    uint8_t State(void);
+
+    bool is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg);
+    void handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* const payload);
+    void handle_extended_sys_state(fmav_extended_sys_state_t* const payload);
+
+  private:
+    uint8_t sysid; // 0 indicates data is invalid
+    uint8_t is_armed;
+    uint8_t is_flying;
+    uint8_t type;
+    uint8_t flight_mode;
+};
 
 
 class tTxMavlink
@@ -85,11 +106,8 @@ class tTxMavlink
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;
 
-    uint8_t vehicle_sysid; // 0 indicates data is invalid
-    uint8_t vehicle_is_armed;
-    uint8_t vehicle_is_flying;
-    uint8_t vehicle_type;
-    uint8_t vehicle_flight_mode;
+    // keep info on vehicle
+    tTxVehicle vehicle;
 
     // MAVLink packet link quality
     bool msg_seq_initialized;
@@ -100,7 +118,7 @@ class tTxMavlink
     void send_heartbeat(void);
     void send_autopilot_version(void);
     //void send_protocol_version(void); // not used
-    void send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid);
+    void send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t tcompid);
     void send_param_value(uint16_t param_idx);
     void component_init(void);
     void component_do(void);
@@ -159,11 +177,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 
     radio_status_tlast_ms = millis32() + 1000;
 
-    vehicle_sysid = 0;
-    vehicle_is_armed = UINT8_MAX;
-    vehicle_is_flying = UINT8_MAX;
-    vehicle_type = UINT8_MAX;
-    vehicle_flight_mode = UINT8_MAX;
+    vehicle.Init();
 
     msg_seq_initialized = false;
     msg_seq_last = 0;
@@ -179,9 +193,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 
 uint8_t tTxMavlink::VehicleState(void)
 {
-    if (vehicle_is_armed == UINT8_MAX) return UINT8_MAX;
-    if (vehicle_is_armed == 1 && vehicle_is_flying == 1) return 2;
-    return vehicle_is_armed;
+    return vehicle.State();
 }
 
 
@@ -337,46 +349,46 @@ void tTxMavlink::parse_link_in_serial_out(void)
 {
 fmav_result_t result;
 
-while (fifo_link_in.Available()) {
-    char c = fifo_link_in.Get();
+    while (fifo_link_in.Available()) {
+        char c = fifo_link_in.Get();
 
-    // parse link in -> serial out
+        // parse link in -> serial out
 #ifdef USE_FEATURE_MAVLINKX
-    if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
-        fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    } else {
-        fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    }
-    if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+        if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
+            fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        } else {
+            fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        }
+        if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
 
 if (!do_router()) {
-        // without router
-        ser->putbuf(buf_link_in, result.frame_len);
-} else {
-        // with router
-        fmav_router_handle_message(0, &result);
-        if (fmav_router_send_to_link(1)) {
+            // without router
             ser->putbuf(buf_link_in, result.frame_len);
-        }
-        if (fmav_router_send_to_link(2)) {
-            ser2->putbuf(buf_link_in, result.frame_len);
-        }
-        if (fmav_router_send_to_link(0)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
+} else {
+            // with router
+            fmav_router_handle_message(0, &result);
+            if (fmav_router_send_to_link(1)) {
+                ser->putbuf(buf_link_in, result.frame_len);
+            }
+            if (fmav_router_send_to_link(2)) {
+                ser2->putbuf(buf_link_in, result.frame_len);
+            }
+            if (fmav_router_send_to_link(0)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
 } // end if(do_router())
 
 #else
-    fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
-    if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-        ser->putbuf(buf_link_in, result.frame_len);
+        fmav_parse_and_check_to_frame_buf(&result, buf_link_in, &status_link_in, c);
+        if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+            ser->putbuf(buf_link_in, result.frame_len);
 #endif
 
-        fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
+            fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
 
-        // allow CRSF to capture it
-        crsf.TelemetryHandleMavlinkMsg(&msg_buf);
+            // allow CRSF to capture it
+            crsf.TelemetryHandleMavlinkMsg(&msg_buf);
 
-        // we also want to capture it to extract some info
-        handle_msg_serial_out(&msg_buf);
+            // we also want to capture it to extract some info
+            handle_msg_serial_out(&msg_buf);
 
 #ifdef DEBUG_ENABLEDx
 // test if _buf = buf_link_in
@@ -385,11 +397,11 @@ if (len != result.frame_len) while(1){}
 for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1){}
 #endif
 
-        // don't jump out early here, seems to be important to do all
-        //return; // do only one message per loop
-    }
+            // don't jump out early here, seems to be important to do all
+            //return; // do only one message per loop
+        } // if (result.res == FASTMAVLINK_PARSE_RESULT_OK)
 
-} // while (fifo_link_in.Available())
+    } // while (fifo_link_in.Available())
 }
 
 
@@ -476,30 +488,18 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
         fmav_msg_heartbeat_decode(&payload, msg);
         if (payload.autopilot != MAV_AUTOPILOT_INVALID) {
             // this is an autopilot
-            vehicle_sysid = msg->sysid;
-            vehicle_is_armed = (payload.base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
-
-            // ArduPilot provides flight mode number in custom mode
-            if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
-                vehicle_type = ap_vehicle_from_mavtype(payload.type);
-                vehicle_flight_mode = payload.custom_mode;
-            } else {
-                vehicle_type = UINT8_MAX;
-                vehicle_flight_mode = UINT8_MAX;
-            }
+            vehicle.handle_heartbeat(msg, &payload);
         }
     }
 
-    if (!vehicle_sysid) return;
-
-    // continue only for autopilot
-    if (msg->sysid != vehicle_sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
+    // continue only if vehicle has been seen and if msg is for autopilot
+    if (!vehicle.is_seen_and_msg_is_for_autopilot(msg)) return;
 
     switch (msg->msgid) {
     case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
         fmav_extended_sys_state_t payload;
         fmav_msg_extended_sys_state_decode(&payload, msg);
-        vehicle_is_flying = (payload.landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
+        vehicle.handle_extended_sys_state(&payload);
         }break;
     }
 
@@ -534,7 +534,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
     fmav_msg_radio_status_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, // sysid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, // sysid, SiK uses 51, 68
         MAV_COMP_ID_TELEMETRY_RADIO,
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
@@ -545,7 +545,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
 
 //-------------------------------------------------------
-// Parameter Handling
+// Component/Parameter Handling
 //-------------------------------------------------------
 // MissionPlanner inconveniences
 // - connection possible only with autopilot present
@@ -604,7 +604,7 @@ void tTxMavlink::send_heartbeat(void)
 {
     fmav_msg_heartbeat_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         MAV_TYPE_GENERIC, // type ???
         MAV_AUTOPILOT_INVALID,
         MAV_MODE_FLAG_SAFETY_ARMED,
@@ -623,7 +623,7 @@ uint8_t dummy[18+2] = {};
 
     fmav_msg_autopilot_version_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_BYTEWISE,
         VERSION, 0, 0, 0,
         dummy, dummy, dummy,
@@ -638,31 +638,13 @@ uint8_t dummy[18+2] = {};
 }
 
 
-/* not used.
-void tTxMavlink::send_protocol_version(void)
-{
-uint8_t dummy[8+2] = {};
-
-    fmav_msg_protocol_version_pack(
-        &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
-        200, 100, 200,
-        dummy, dummy,
-        //uint16_t version, uint16_t min_version, uint16_t max_version,
-        //const uint8_t* spec_version_hash, const uint8_t* library_version_hash,
-        &status_serial_out);
-
-    send_msg_serial_out();
-} */
-
-
-void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t sysid, uint8_t compid)
+void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t tcompid)
 {
     fmav_msg_command_ack_pack(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         cmd, res, 0, 0,
-        sysid, compid,
+        tsysid, tcompid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
         //uint8_t target_system, uint8_t target_component,
         &status_serial_out);
@@ -683,7 +665,7 @@ void tTxMavlink::send_param_value(uint16_t param_idx)
 
     fmav_msg_param_value_encode(
         &msg_buf,
-        RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
         &payload,
         &status_serial_out);
 
@@ -695,7 +677,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) return;
 
-    if (!fmav_msg_is_for_me(RADIO_STATUS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, msg)) return; // not for us
+    if (!fmav_msg_is_for_me(RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, msg)) return; // not for us
 
     switch (msg->msgid) {
         case FASTMAVLINK_MSG_ID_PARAM_REQUEST_READ: {
@@ -715,7 +697,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
             break;}
 
         case FASTMAVLINK_MSG_ID_PARAM_SET: {
-            if (msg->target_sysid != RADIO_STATUS_SYSTEM_ID ||
+            if (msg->target_sysid != RADIO_LINK_SYSTEM_ID ||
                 msg->target_compid != MAV_COMP_ID_TELEMETRY_RADIO) break; // only accept if targeted at us
 
             fmav_param_set_t payload;
@@ -750,7 +732,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 
         case FASTMAVLINK_MSG_ID_COMMAND_INT:
         case FASTMAVLINK_MSG_ID_COMMAND_LONG: {
-            if (msg->target_sysid != RADIO_STATUS_SYSTEM_ID ||
+            if (msg->target_sysid != RADIO_LINK_SYSTEM_ID ||
                 msg->target_compid != MAV_COMP_ID_TELEMETRY_RADIO) break; // only accept if targeted at us
 
             uint16_t command;
@@ -906,8 +888,60 @@ void tTxMavlink::component_init(void)
     }
 }
 
-
 #endif // USE_FEATURE_MAVLINK_COMPONENT
+
+
+//-------------------------------------------------------
+// Vehicle class implementation
+//-------------------------------------------------------
+
+void tTxVehicle::Init(void)
+{
+    sysid = 0;
+    is_armed = UINT8_MAX;
+    is_flying = UINT8_MAX;
+    type = UINT8_MAX;
+    flight_mode = UINT8_MAX;
+}
+
+
+uint8_t tTxVehicle::State(void)
+{
+    if (is_armed == UINT8_MAX) return UINT8_MAX;
+    if (is_armed == 1 && is_flying == 1) return 2;
+    return is_armed;
+}
+
+
+bool tTxVehicle::is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg)
+{
+    if (!sysid) return false;
+    if (msg->sysid != sysid || msg->compid != MAV_COMP_ID_AUTOPILOT1) return false;
+    return true;
+}
+
+
+void tTxVehicle::handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* const payload)
+{
+    sysid = msg->sysid;
+    is_armed = (payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
+
+    // ArduPilot provides flight mode number in custom mode
+    if (payload->autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
+        type = ap_vehicle_from_mavtype(payload->type);
+        flight_mode = payload->custom_mode;
+    } else {
+        type = UINT8_MAX;
+        flight_mode = UINT8_MAX;
+    }
+}
+
+
+void tTxVehicle::handle_extended_sys_state(fmav_extended_sys_state_t* const payload)
+{
+    is_flying = (payload->landed_state == MAV_LANDED_STATE_IN_AIR) ? 1 : 0;
+}
+
 
 #endif // MAVLINK_INTERFACE_TX_H
 

@@ -12,7 +12,6 @@
 
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
-//#define DEVICE_HAS_IN
 //#define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
@@ -37,13 +36,6 @@
 #define UARTC_USE_RX_IO           5
 #define UARTC_TXBUFSIZE           0 // ?? // TX_COM_TXBUFSIZE
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
-
-#define UARTE_USE_SERIAL1 // in
-#define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
-#define UARTE_USE_TX_IO           -1 // no Tx pin needed
-#define UARTE_USE_RX_IO           IO_P18
-#define UARTE_TXBUFSIZE           0 // not used
-#define UARTE_RXBUFSIZE           512
 
 #define UARTF_USE_SERIAL1 // debug
 #define UARTF_BAUD                115200

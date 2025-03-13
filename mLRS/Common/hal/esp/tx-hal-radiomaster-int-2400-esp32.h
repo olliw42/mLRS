@@ -26,45 +26,14 @@
 //-------------------------------------------------------
 // ESP32, Radiomaster Tx Internal ELRS 2.4GHz, good for TX16S, TX12, MT12, Zorro, Pocket
 //-------------------------------------------------------
-/*
-    Pin Defs
-    "serial_rx": 3,
-    "serial_tx": 1,
-    "radio_busy": 21,
-    "radio_dio1": 4,
-    "radio_dio2": 22,
-    "radio_miso": 19,
-    "radio_mosi": 23,
-    "radio_nss": 5,
-    "radio_rst": 14,
-    "radio_sck": 18,
-    "radio_dcdc": true,
-    "power_rxen": 27,
-    "power_txen": 26,
-    "power_lna_gain": 12,
-    "power_min": 0,
-    "power_high": 4,
-    "power_max": 4,
-    "power_default": 2,
-    "power_pdet": 35,
-    "power_pdet_intercept": 1.5,
-    "power_pdet_slope": 0.032,
-    "power_control": 0,
-    "power_values": [-17,-13,-9,-6,-2],
-    "use_backpack": true,
-    "debug_backpack_baud": 460800,
-    "debug_backpack_rx": 16,
-    "debug_backpack_tx": 17,
-    "backpack_boot": 15,
-    "backpack_en": 25
-*/
+// https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20TX16S%202400.json
 
-
-#define DEVICE_HAS_JRPIN5_FULL_DUPLEX
+#define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_NO_COM
 //#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
 
 
 //-- UARTS
@@ -86,8 +55,10 @@
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P1
 #define UART_USE_RX_IO            IO_P3
-#define UART_TXBUFSIZE            TX_SERIAL_TXBUFSIZE
-#define UART_RXBUFSIZE            TX_SERIAL_RXBUFSIZE // 512
+#define UART_TXBUFSIZE            0 // TX_SERIAL_TXBUFSIZE
+#define UART_RXBUFSIZE            0 // TX_SERIAL_RXBUFSIZE // 512
+
+#define JR_PIN5_FULL_DUPLEX       // internal module
 
 #define UARTF_USE_SERIAL2 // debug
 #define UARTF_BAUD                115200
@@ -151,20 +122,10 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
-// Not normally used since this is inside the radio
 
-//#define BUTTON                    IO_P0
+void button_init(void) {}
+IRAM_ATTR bool button_pressed(void) { return false; }
 
-void button_init(void)
-{
-    //gpio_init(BUTTON, IO_MODE_INPUT_PU);
-}
-
-IRAM_ATTR bool button_pressed(void)
-{
-    //return gpio_read_activelow(BUTTON) ? true : false;
-    return false;
-}
 
 //-- LEDs
 
@@ -208,8 +169,10 @@ IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 #endif
 
+
 //-- POWER
 // Need to confirm all of this!
+
 #define POWER_GAIN_DBM            26 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC

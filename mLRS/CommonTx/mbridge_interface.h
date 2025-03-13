@@ -11,7 +11,7 @@
 #pragma once
 
 
-#ifdef USE_JRPIN5
+#ifdef DEVICE_HAS_JRPIN5
 
 #include "../Common/libs/fifo.h"
 #include "setup_tx.h"
@@ -98,6 +98,11 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     uint8_t cmd_in_process;
     uint8_t ack_cmd;
     bool ack_ok;
+
+    // momentarily for debug, detect discarded bytes
+#ifdef USE_DEBUG
+    uint16_t discarded = 0;
+#endif
 };
 
 tMBridge mbridge;
@@ -174,7 +179,20 @@ void tMBridge::parse_nextchar(uint8_t c)
 
     switch (state) {
     case STATE_IDLE:
-        if (c == MBRIDGE_STX1) state = STATE_RECEIVE_MBRIDGE_STX2;
+        if (c == MBRIDGE_STX1) {
+            state = STATE_RECEIVE_MBRIDGE_STX2;
+#ifdef USE_DEBUG
+            if (discarded) {
+                if (discarded > 1) {
+                    dbg.puts(u16toBCD_s(discarded));
+                    dbg.puts(" bytes lost!\n");
+                }
+                discarded = 0;
+            }
+        } else {
+            discarded++;
+#endif
+        }
         break;
 
     case STATE_RECEIVE_MBRIDGE_STX2:
@@ -338,8 +356,6 @@ bool tMBridge::ChannelsUpdated(tRcData* const rc)
     if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
 
     if (!enabled) return false;
-
-    pin5_do();
 
     CheckAndRescue();
 
@@ -570,8 +586,15 @@ tMBridgeInfo info = {};
 
     info.tx_config_id = Config.ConfigId;
 
-    info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
-    info.tx_actual_power_dbm = sx.RfPower_dbm();
+    if (!TRANSMIT_USE_ANTENNA1) {
+        // Config.Diversity = DIVERSITY_ANTENNA2, DIVERSITY_R_ENABLED_T_ANTENNA2
+        info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
+        info.tx_actual_power_dbm = sx2.RfPower_dbm();
+    } else {
+        // Config.Diversity = DIVERSITY_DEFAULT, DIVERSITY_ANTENNA1, DIVERSITY_R_ENABLED_T_ANTENNA1
+        info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
+        info.tx_actual_power_dbm = sx.RfPower_dbm();
+    }
     info.tx_actual_diversity = Config.Diversity;
 
     if (SetupMetaData.rx_available) {
@@ -864,6 +887,6 @@ class tMBridge : public tSerialBase
 
 tMBridge mbridge;
 
-#endif // ifdef USE_JRPIN5
+#endif // ifdef DEVICE_HAS_JRPIN5
 
 #endif // MBRIDGE_INTERFACE_H

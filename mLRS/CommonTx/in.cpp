@@ -64,7 +64,7 @@ void tInBase::Configure(uint8_t new_config)
 }
 
 
-bool tInBase::Update(tRcData* const rc)
+bool tInBase::ChannelsUpdated(tRcData* const rc)
 {
     if (!initialized) return false;
 

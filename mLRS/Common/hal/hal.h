@@ -40,13 +40,12 @@ In tx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
 #define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
-#define DEVICE_HAS_JRPIN5_FULL_DUPLEX   // board has full duplex uart for JR bay Pin5 function
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_RX  // board shares IN with JRPin5 on RX pin, implies support of normal and inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_COM    // board has UART which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_SERIAL_OR_COM    // board has UART (or USB) which is shared between Serial or Com, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
@@ -62,11 +61,13 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 or ESp82xx with RESET,GPIO support, on Serial2 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESp82xx with its passthrough via JRPin5 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
+#define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812, and thus can do more colors
 #define DEVICE_HAS_NO_LED           // board has no LEDs at all
 
 In rx-hal files:
@@ -323,11 +324,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif // DEVICE_IS_TRANSMITTER
 
 
-#if defined DEVICE_HAS_JRPIN5 || defined DEVICE_HAS_JRPIN5_FULL_DUPLEX
-   #define USE_JRPIN5
-#endif
-
-
 #if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED || \
     defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX
   #define USE_IN
@@ -409,7 +405,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_SX2
 #endif
 
-
 #ifdef USE_SX2
   #define IF_SX(x)                  if (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) { x; }
   #define IF_SX2(x)                 if (Config.ReceiveUseAntenna2 || Config.TransmitUseAntenna2) { x; }
@@ -430,7 +425,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define TRANSMIT_USE_ANTENNA2     false
 #endif
 
-#ifdef USE_JRPIN5
+#ifdef DEVICE_HAS_JRPIN5
   #define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
   #define IF_CRSF(x)                if (Config.UseCrsf) { x; }
   #define IF_MBRIDGE_OR_CRSF(x)     if (Config.UseMbridge | Config.UseCrsf) { x; }
@@ -453,7 +448,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && !defined DEVICE_HAS_LR11xx && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x  
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
   #error Must be either SX128x or SX127x or SX126x or LR11xx !
 #endif
 

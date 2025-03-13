@@ -567,7 +567,7 @@ local function doParmLoop()
         end
         cmd = nil
     end --for
-    
+
     if DEV_ITEM_TX ~= nil and DEV_ITEM_RX ~= nil and connected and warned == 0 and
            (DEV_ITEM_TX.setuplayout_int > 515 or DEV_ITEM_RX.setuplayout_int > 515) then -- 515 is old 335
         if DEV_ITEM_TX.setuplayout_int < DEV_ITEM_RX.setuplayout_int then
@@ -578,7 +578,7 @@ local function doParmLoop()
             warned = 1
         end
     end
-    
+
     if DEV_PARM_LIST_error > 0 then
         -- Huston, we have a problem,
         setPopupWTmo("Er("..tostring(DEV_PARM_LIST_error)..")!\nTry Reload", 300)
@@ -852,9 +852,9 @@ local function drawPage()
     lcd.drawText(LCD_W/4, y, "boot", cur_attr(Boot_idx))
     -- lcd.drawText(LCD_W/2, y, tostring(mem_max1), TEXT_COLOR) -- memory size
     -- lcd.drawText(LCD_W*3/4, y, tostring(mem_max2), TEXT_COLOR) -- memory size
-  
+
   end
-  
+
     -- Save/Load and Navigation
     y = liney(7)
     lcd.drawText(0, y, "save", cur_attr(Save_idx - s))
@@ -997,7 +997,7 @@ local function scriptRun(event)
         error("Cannot be run as a model script!")
         return 2
     end
-    if model.getModule(1).Type ~= 5 then
+    if model.getModule(0).Type ~= 5 and model.getModule(1).Type ~= 5 then
         error("mLRS not accessible: CRSF not enabled!")
         return 2
     end

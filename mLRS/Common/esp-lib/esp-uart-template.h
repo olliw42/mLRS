@@ -59,8 +59,8 @@ typedef enum {
   #if (UART$_TXBUFSIZE > 0) && (UART$_TXBUFSIZE < 256)
     #error UART$_TXBUFSIZE must be 0 or >= 256
   #endif
-  #if (UART$_RXBUFSIZE < 256)
-    #error UART$_RXBUFSIZE must be >= 256
+  #if (UART$_RXBUFSIZE > 0) && (UART$_RXBUFSIZE < 256)
+    #error UART$_TXBUFSIZE must be 0 or >= 256
   #endif
 #endif
 
@@ -98,6 +98,11 @@ IRAM_ATTR void uart$_tx_flush(void)
 IRAM_ATTR char uart$_getc(void)
 {
     return (char)UART$_SERIAL_NO.read();
+}
+
+IRAM_ATTR void uart$_getbuf(char* buf, uint16_t len)
+{
+    UART$_SERIAL_NO.readBytes(buf, len);
 }
 
 
@@ -194,6 +199,11 @@ void uart$_init(void)
 {
     uart$_init_isroff();
     // isr is enabled !
+}
+
+void uart$_rx_enableisr(FunctionalState flag)
+{
+    // not supported on ESP, allows in functionality without lots of ifdefs
 }
 
 

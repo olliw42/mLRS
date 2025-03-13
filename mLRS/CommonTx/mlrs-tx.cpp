@@ -431,7 +431,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         // received rx setup data
         unpack_rxcmdframe_rxsetupdata(frame);
         link_task_reset();
-#ifdef USE_JRPIN5
+#ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
         case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
@@ -684,6 +684,8 @@ uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 bool connect_occured_once;
 
+bool rc_data_updated;
+
 
 bool connected(void)
 {
@@ -750,9 +752,9 @@ RESTARTCONTROLLER
     mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
     msp.Init(&serial, &serial2); // ports selected by SerialDestination
     sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
-    cli.Init(&comport);
+    cli.Init(&comport, Config.frame_rate_ms);
 #ifdef USE_ESP_WIFI_BRIDGE
-  #ifdef DEVICE_HAS_JRPIN5_FULL_DUPLEX
+  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
     esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
   #else
     esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
@@ -768,6 +770,8 @@ RESTARTCONTROLLER
     disp.Init();
 
     config_id.Init();
+
+    rc_data_updated = false;
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
@@ -1091,9 +1095,7 @@ IF_MBRIDGE(
         // update channels, do only if we use mBridge also as channels source
         // note: mBridge is used when either CHANNEL_SOURCE_MBRIDGE or SERIAL_DESTINATION_MBRDIGE, so need to check here
         if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-            channelOrder.Apply(&rcData);
-            rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+            rc_data_updated = true;
         }
         // when we receive channels packet from transmitter, we send link stats to transmitter
         mbridge.TelemetryStart();
@@ -1155,10 +1157,7 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
 );
 IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
-        // update channels
-        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+        rc_data_updated = true;
     }
     uint8_t crsftask; uint8_t crsfcmd;
     uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's too fast Lua script gets out of sync
@@ -1181,6 +1180,7 @@ IF_CRSF(
             }
             INCc(do_cnt, 3);
             break;
+        case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
         }
     }
     if (crsf.CommandReceived(&crsfcmd)) {
@@ -1189,6 +1189,8 @@ IF_CRSF(
 //dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdModelId()));
             config_id.Change(crsf.GetCmdModelId());
             break;
+        case TXCRSF_CMD_BIND_START: start_bind(); break;
+        case TXCRSF_CMD_BIND_STOP: stop_bind(); break;
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");
             mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
@@ -1197,13 +1199,15 @@ IF_CRSF(
     }
 );
 IF_IN(
-    if (in.Update(&rcData)) {
-        // update channels
-        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+    if (in.ChannelsUpdated(&rcData)) {
+        rc_data_updated = true;
     }
 );
+    if (rc_data_updated) {
+        rc_data_updated = false;
+        channelOrder.SetAndApply(&rcData, Setup.Tx[Config.ConfigId].ChannelOrder);
+        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+    }
 
     if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 

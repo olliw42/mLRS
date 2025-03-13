@@ -656,6 +656,7 @@ class tFhssBase
 
 
 #if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+// SINGLE BAND
 
 class tFhss : public tFhssBase
 {

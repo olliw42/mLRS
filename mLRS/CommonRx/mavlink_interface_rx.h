@@ -43,6 +43,10 @@ extern tSetup Setup;
 #define MAVLINK_OPT_FAKE_PARAMFTP     2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
+// keeps info on the attached autopilot (ArduPilot only)
+// currently used to
+// - determine autopilot sysid, to target some messages
+// - request and digest AUTOPILOT_VERSION, to determine ArduPilot version and disable mftp fakery if >= 4.6.0
 class tRxAutoPilot
 {
   public:
@@ -207,8 +211,8 @@ void tRxMavlink::Init(void)
 
 
 // rc_out is the rc data stored in out class
-// after handling of channel order and failsafes.
-// Need to take care of failsafe flag however.
+// so after handling of channel order and failsafes by out class.
+// Need to take care of specific failsafe flag however.
 void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
@@ -791,7 +795,7 @@ void tRxMavlink::send_rc_channels_override(void)
     fmav_msg_rc_channels_override_pack(
         &msg_serial_out,
         GCS_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // ArduPilot accepts it only if it comes from its GCS sysid
-        0, 0, // we do not know the sysid, compid of the flight controller
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
         rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
         rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0, 0,
@@ -819,7 +823,7 @@ int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
     fmav_msg_radio_rc_channels_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        0, 0, // targets
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
         rc_channels_tupdated_ms, flags,
         16, channels,
         //uint8_t target_system, uint8_t target_component,
@@ -886,13 +890,17 @@ int8_t rx_snr1, rx_snr2;
 
     // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // is single band
     float freq2 = fhss.GetCurrFreq2_Hz();
+#else
+    float freq2 = 0.0f;
+#endif
 
 #if 0
     fmav_msg_mlrs_radio_link_stats_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        0, 0, // targets
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
 
         flags,
 
@@ -927,8 +935,8 @@ int8_t rx_snr1, rx_snr2;
         &status_serial_out);
 #else
     fmav_mlrs_radio_link_stats_t payload;
-    payload.target_system = 0;
-    payload.target_component = 0;
+    payload.target_system = 0; // irrelevant
+    payload.target_component = 0; // irrelevant
     payload.flags = flags;
     payload.rx_LQ_rc = stats.GetLQ_rc();
     payload.rx_LQ_ser = stats.GetLQ_serial();
@@ -951,7 +959,7 @@ int8_t rx_snr1, rx_snr2;
     fmav_msg_tunnel_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        0, 0,
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
         MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_STATS, sizeof(payload), tunnel_payload,
         //uint8_t target_system, uint8_t target_component,
         //uint16_t payload_type, uint8_t payload_length, const uint8_t* payload,
@@ -1005,7 +1013,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
     fmav_msg_mlrs_radio_link_information_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        0, 0, // targets
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
 
         MLRS_RADIO_LINK_TYPE_MLRS, // uint8_t type
         Config.Mode, // uint8_t mode
@@ -1013,7 +1021,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
         Config.frame_rate_hz, Config.frame_rate_hz, // is equal for Tx and Rx
         mode_str, band_str,
         tx_ser_data_rate, rx_ser_data_rate,
-        sx.ReceiverSensitivity_dbm(), sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx
+        -sx.ReceiverSensitivity_dbm(), -sx.ReceiverSensitivity_dbm(), // is equal for Tx and Rx
 
         //uint8_t target_system, uint8_t target_component,
         //uint8_t type, uint8_t mode,
@@ -1024,8 +1032,8 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
         &status_serial_out);
 #else
     fmav_mlrs_radio_link_information_t payload;
-    payload.target_system = 0;
-    payload.target_component = 0;
+    payload.target_system = 0; // irrelevant
+    payload.target_component = 0; // irrelevant
     payload.type = MLRS_RADIO_LINK_TYPE_MLRS,
     payload.mode = Config.Mode;
     payload.tx_power = INT8_MAX;
@@ -1038,8 +1046,8 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
 
     payload.tx_ser_data_rate = tx_ser_data_rate;
     payload.rx_ser_data_rate = rx_ser_data_rate;
-    payload.tx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
-    payload.rx_receive_sensitivity = sx.ReceiverSensitivity_dbm();
+    payload.tx_receive_sensitivity = -sx.ReceiverSensitivity_dbm();
+    payload.rx_receive_sensitivity = -sx.ReceiverSensitivity_dbm();
 
     uint8_t tunnel_payload[FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN];
     memset(tunnel_payload, 0, FASTMAVLINK_MSG_TUNNEL_FIELD_PAYLOAD_LEN);
@@ -1048,7 +1056,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
     fmav_msg_tunnel_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
-        0, 0,
+        autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
         MLRS_TUNNEL_PAYLOAD_TYPE_RADIO_LINK_INFORMATION, sizeof(payload), tunnel_payload,
         //uint8_t target_system, uint8_t target_component,
         //uint16_t payload_type, uint8_t payload_length, const uint8_t* payload,

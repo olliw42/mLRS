@@ -6,8 +6,6 @@
 // hal
 //*******************************************************
 
-// FOR SiK TELEM USE ONLY !
-
 /*
   Flashing ESP8285:
   - change ser dest to serial2
@@ -21,62 +19,31 @@
 //-------------------------------------------------------
 // ESP32, ELRS RADIOMASTER BANDIT MICRO 900 TX
 //-------------------------------------------------------
-/*
-  "serial_rx": 13,
-  "serial_tx": 13,
-  "radio_dio0": 22,
-  "radio_dio1": 21,
-  "radio_miso": 19,
-  "radio_mosi": 23,
-  "radio_nss": 4,
-  "radio_rst": 5,
-  "radio_sck": 18,
-  "radio_dcdc": true,       ???
-  "radio_rfo_hf": true,
-  "power_txen": 33,
-  "power_apc2": 26,
-  "power_min": 3,
-  "power_high": 6,
-  "power_max": 6,
-  "power_default": 3,
-  "power_control": 3,
-  "power_values": [168,148,128,90],
-  "power_values2": [2,6,9,12],
-  "use_backpack": true,
-  "debug_backpack_baud": 460800,
-  "debug_backpack_rx": 16,
-  "debug_backpack_tx": 17,
-  "backpack_boot": 32,
-  "backpack_en": 25,
-  "passthrough_baud": 230400,
-  "led_red": 15,
-  "led_red_invert": true,
-  "misc_fan_en": 2,
-  "screen_type": 1,
-  "screen_sck": 12,
-  "screen_sda": 14,
-  "screen_reversed": true,
-  "joystick": 39,
-  "joystick_values": [3227,0,1961,2668,1290,4095]
-*/
+// Bandit, "big" Bandit: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit.json
+// Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
 
-
-//#define DEVICE_HAS_JRPIN5
-//#define DEVICE_HAS_IN
-#define DEVICE_HAS_SERIAL_OR_COM // board has UART which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
+#define DEVICE_HAS_IN
+#define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_NO_DEBUG
 
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
+// Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
 #define DEVICE_HAS_I2C_DISPLAY
-#else
+#else // Bandit Micro
+// Bandit Micro has one normal pin-driven LED
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
 
-#define DEVICE_HAS_FAN_ONOFF // board has a Fan, which can be set on or off
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 backpack with GPIO,RST, but no CONFIGURE for now
+#define DEVICE_HAS_FAN_ONOFF
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST, but no CONFIGURE for now
+
+// Note on SERIAL_OR_COM:
+// The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
+// The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
 
 
 //-- UARTS
@@ -87,30 +54,45 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
-#define UARTB_USE_SERIAL // serial
+#define UARTB_USE_SERIAL // serial, is connected to USB-C via USB<>UART also RT connector
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
-//#define UARTB_USE_TX_IO           IO_P17
-//#define UARTB_USE_RX_IO           IO_P16
-#define UARTB_TXBUFSIZE           1024 // TX_SERIAL_TXBUFSIZE
+#define UARTB_USE_TX_IO           IO_P1
+#define UARTB_USE_RX_IO           IO_P3
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL // com USB/CLI
+#define UARTC_USE_SERIAL // COM (CLI), is connected to USB-C via USB<>UART also RT connector
 #define UARTC_BAUD                115200
-#define UARTC_TXBUFSIZE           0 // ?? // TX_COM_TXBUFSIZE
+#define UARTC_USE_TX_IO           IO_P1
+#define UARTC_USE_RX_IO           IO_P3
+#define UARTC_TXBUFSIZE           0 // TX FIFO = 128
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UARTD_USE_SERIAL1 // serial2 BT/ESP
+#define UARTD_USE_SERIAL2 // serial2 BT/ESP
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX_IO           IO_P17
 #define UARTD_USE_RX_IO           IO_P16
-#define UARTD_TXBUFSIZE           1024 // TX_SERIAL_TXBUFSIZE
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTF_USE_SERIAL2 // debug is on JRPin5
+#define UART_USE_SERIAL1 // JR bay pin5
+#define UART_BAUD                 400000
+#define UART_USE_TX_IO            IO_P13
+#define UART_USE_RX_IO            IO_P13
+#define UART_TXBUFSIZE            0 // TX FIFO = 128
+#define UART_RXBUFSIZE            0 // RX FIFO = 128 + 1
+
+#define UARTE_USE_SERIAL1 // in port, uses JRPin5
+#define UARTE_BAUD                 100000
+#define UARTE_USE_TX_IO            -1
+#define UARTE_USE_RX_IO            IO_P13
+#define UARTE_RXBUFSIZE            0 // RX FIFO = 128 + 1
+
+#define UARTF_USE_SERIAL // debug, if needed, debug is either on the "RT" pad or on USB; need to disable serial and com
 #define UARTF_BAUD                115200
-#define UARTF_USE_TX_IO           IO_P13
+#define UARTF_USE_TX_IO           IO_P1
 #define UARTF_USE_RX_IO           -1
-#define UARTF_TXBUFSIZE           512 // ?? // 512
+#define UARTF_TXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
@@ -158,6 +140,15 @@ void sx_dio_init_exti_isroff(void)
 void sx_dio_exti_isr_clearflag(void) {}
 
 
+//-- In port
+
+void in_init_gpio(void) {}
+
+void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, false); }
+
+void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, true); }
+
+
 //-- Button
 
 void button_init(void) {}
@@ -166,9 +157,10 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 //-- LEDs
 
-#define LED_RED                   IO_P15
+#define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+// Bandit, "big" Bandit have RGB LEDs, so we use our normal red/green
 
 #include <NeoPixelBus.h>
 bool ledRedState;

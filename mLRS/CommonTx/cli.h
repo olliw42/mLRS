@@ -276,49 +276,49 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 #define CLI_LINEND  "\r\n"
 
 
+#ifdef DEVICE_HAS_COM_ON_USB
+  #if USB_TXBUFSIZE >= 2048
+    #define CLI_PRINT_CHUNKS_CNT_MAX  200
+  #else // we assume 512
+    #define CLI_PRINT_CHUNKS_CNT_MAX  8
+  #endif
+#elif UARTC_TXBUFSIZE >= 2048
+  #define CLI_PRINT_CHUNKS_CNT_MAX  200
+#elif UARTC_TXBUFSIZE >= 512
+  #define CLI_PRINT_CHUNKS_CNT_MAX  8
+#elif UARTC_TXBUFSIZE >= 256
+  #define CLI_PRINT_CHUNKS_CNT_MAX  4
+#else // esp tx: TXBUFSIZE = 0, which corresponds to 128 fifo
+  #define CLI_PRINT_CHUNKS_CNT_MAX  2 // only 2 chunks fit into 128 fifo
+#endif
+
+
 class tTxCli
 {
   public:
-    void Init(tSerialBase* const _comport);
+    void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
     void Do(void);
     uint8_t Task(void);
     int32_t GetTaskValue(void) { return task_value; }
 
   private:
-    typedef enum {
-        CLI_STATE_NORMAL = 0,
-        CLI_STATE_STATS,
-    } CLI_STATE_ENUM;
-
     void addc(uint8_t c);
     void clear(void);
-    void print_help(void);
+    void print_help_do(void); // printed in chunks
     void print_param(uint8_t idx);
-    void print_param_list(uint8_t flag);
+    void print_param_list_do(void); // printed in chunks
     void print_param_opt_list(uint8_t idx);
     void print_device_version(void);
-    void print_frequencies(void);
+    void print_frequencies_do(void); // printed in chunks
     void stream(void);
 
     bool is_cmd(const char* const cmd);
     bool is_cmd_param_set(char* const name, char* const svalue);
     bool is_cmd_set_value(const char* const cmd, int32_t* const value);
 
-    uint16_t put_cnt;
-    void delay_off(void) { put_cnt = 0; }
-    void delay_clear(void) { put_cnt = 1; }
-//    void delay(void) { if (put_cnt > 768) { delay_ms(40); put_cnt -= 512; } } // 115200 -> 512 bytes = 44 ms
-#if defined DEVICE_HAS_COM_ON_USB && (USB_TXBUFSIZE >= 2048)
-    void delay(void) {}
-#elif !defined DEVICE_HAS_COM_ON_USB && (UARTC_TXBUFSIZE >= 2048)
-    void delay(void) {}
-#else
-    void delay(void) { if (put_cnt > 192) { delay_ms(15); put_cnt -= 128; } } // 115200 -> 128 bytes = 11 ms, usb txbuf is small
-#endif
-
-    void putc(char c) { com->putc(c); if (put_cnt) put_cnt++; delay(); }
-    void puts(const char* s) { com->puts(s); if (put_cnt) put_cnt += strlen(s); delay(); }
-    void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); if (put_cnt) put_cnt += strlen(s)+strlen(CLI_LINEND); delay(); }
+    void putc(char c) { com->putc(c); }
+    void puts(const char* s) { com->puts(s); }
+    void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); }
 
     void print_layout_version_warning(void);
     void print_config_id(void);
@@ -334,11 +334,26 @@ class tTxCli
     uint8_t task_pending;
     int32_t task_value;
 
+    // variables needed for print state machine to print in junks
+    typedef enum {
+        CLI_STATE_NORMAL = 0,
+        CLI_STATE_STATS,
+        CLI_STATE_PRINT_HELP,
+        CLI_STATE_PRINT_PARAM_LIST,
+        CLI_STATE_PRINT_LISTFREQS,
+    } CLI_STATE_ENUM;
+
+    void print_it(uint8_t _state) { state = _state; print_index = 0; }
+    void print_it_reset(void) { state = CLI_STATE_NORMAL; }
+
     uint8_t state;
+    uint8_t print_chunks_max;
+    uint8_t print_index;
+    uint8_t print_pl_flag;
 };
 
 
-void tTxCli::Init(tSerialBase* const _comport)
+void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 {
     com = _comport;
 
@@ -353,7 +368,20 @@ void tTxCli::Init(tSerialBase* const _comport)
 
     state = CLI_STATE_NORMAL;
 
-    put_cnt = 0;
+    // 9 ms, 20 ms, 32 ms, 53 ms
+    if (_frame_rate_ms < 19) {
+        print_chunks_max = 1;
+    } else if (_frame_rate_ms < 30) {
+        print_chunks_max = 3;
+    } else if (_frame_rate_ms < 50) {
+        print_chunks_max = 5;
+    } else {
+        print_chunks_max = 8;
+    }
+    if (print_chunks_max > CLI_PRINT_CHUNKS_CNT_MAX) print_chunks_max = CLI_PRINT_CHUNKS_CNT_MAX;
+
+    print_index = 0;
+    print_pl_flag = 0;
 }
 
 
@@ -543,22 +571,31 @@ void tTxCli::print_param(uint8_t idx)
 }
 
 
-void tTxCli::print_param_list(uint8_t flag)
+// is chunk-ed by state
+void tTxCli::print_param_list_do(void)
 {
-    if ((flag == 0 || flag == 1 || flag == 3) && !connected()) {
+    if (print_index == 0 && (print_pl_flag == 0 || print_pl_flag == 1 || print_pl_flag == 3) && !connected()) {
         putsn("warn: receiver not connected");
     }
 
-    for (uint8_t idx = 0; idx < SETUP_PARAMETER_NUM; idx++) {
-        if ((flag == 1) && (setup_param_is_tx(idx) || setup_param_is_rx(idx))) continue;
-        if ((flag == 2) && !setup_param_is_tx(idx)) continue;
-        if ((flag == 3) && !setup_param_is_rx(idx)) continue;
+    uint8_t count = 0;
+    while (print_index < SETUP_PARAMETER_NUM) {
+        uint8_t param_index = print_index;
+        print_index++;
 
-        if ((flag == 0 || flag == 3) && !connected() && setup_param_is_rx(idx)) continue;
+        if ((print_pl_flag == 1) && (setup_param_is_tx(param_index) || setup_param_is_rx(param_index))) continue;
+        if ((print_pl_flag == 2) && !setup_param_is_tx(param_index)) continue;
+        if ((print_pl_flag == 3) && !setup_param_is_rx(param_index)) continue;
 
-        print_param(idx);
-        //delay_ms(10);
+        if ((print_pl_flag == 0 || print_pl_flag == 3) && !connected() && setup_param_is_rx(param_index)) continue;
+
+        print_param(param_index);
+
+        count++;
+        if (count > print_chunks_max) return; // only as many lines fit into tx buffer
     }
+
+    print_it_reset();
 }
 
 
@@ -616,12 +653,19 @@ void tTxCli::print_device_version(void)
 }
 
 
-void tTxCli::print_frequencies(void)
+void tTxCli::print_frequencies_do(void)
 {
 char s[32];
 char unit[32];
 
-    for (uint8_t i = 0; i < fhss.Cnt(); i++) {
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
+        if (print_index >= fhss.Cnt()) {
+            print_it_reset();
+            return;
+        }
+
+        uint8_t i = print_index;
+
         puts(u8toBCD_s(i));
         puts("  ch: ");
         puts(u8toBCD_s(fhss.ChList(i)));
@@ -632,43 +676,49 @@ char unit[32];
         remove_leading_zeros(s);
         puts(s);
         putsn(unit);
-        //delay_ms(20);
+
+        print_index++;
     }
 }
 
 
-void tTxCli::print_help(void)
+void tTxCli::print_help_do(void)
 {
-    print_layout_version_warning();
-
-    putsn("  help, h, ?  -> this help page");
-    putsn("  v           -> print device and version");
-    putsn("  pl          -> list all parameters");
-    putsn("  pl c        -> list common parameters");
-    putsn("  pl tx       -> list Tx parameters");
-    putsn("  pl rx       -> list Rx parameters");
-
-    putsn("  p name          -> get parameter value");
-    putsn("  p name = value  -> set parameter value");
-    putsn("  p name = ?      -> get parameter value and list of allowed values");
-    putsn("  pstore      -> store parameters");
-
-    putsn("  setconfigid -> select config id");
-    putsn("  bind        -> start binding");
-    putsn("  reload      -> reload all parameter settings");
-    putsn("  stats       -> starts streaming statistics");
-    putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-
-    putsn("  systemboot  -> call system bootloader");
-
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
+        switch (print_index) {
+        case 0:  print_layout_version_warning(); break;
+        case 1:  putsn("  help, h, ?  -> this help page"); break;
+        case 2:  putsn("  v           -> print device and version"); break;
+        case 3:  putsn("  pl          -> list all parameters"); break;
+        case 4:  putsn("  pl c        -> list common parameters"); break;
+        case 5:  putsn("  pl tx       -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx       -> list Rx parameters"); break;
+        case 7:  putsn("  p name          -> get parameter value"); break;
+        case 8:  putsn("  p name = value  -> set parameter value"); break;
+        case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
+        case 10: putsn("  pstore      -> store parameters"); break;
+        case 11: putsn("  setconfigid -> select config id"); break;
+        case 12: putsn("  bind        -> start binding"); break;
+        case 13: putsn("  reload      -> reload all parameter settings"); break;
+        case 14: putsn("  stats       -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
+        case 16: putsn("  systemboot  -> call system bootloader"); break;
 #ifdef USE_ESP_WIFI_BRIDGE
-    putsn("  esppt       -> enter serial passthrough");
-    putsn("  espboot     -> reboot ESP and enter serial passthrough");
+        case 17: putsn("  esppt       -> enter serial passthrough"); break;
+        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
 #endif
 #ifdef USE_HC04_MODULE
-    putsn("  hc04 pt       -> enter serial passthrough");
-    putsn("  hc04 setpin   -> set pin of HC04");
+        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
+        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
 #endif
+        default:
+            // last chunk, reset
+            print_it_reset();
+            return;
+        }
+
+        print_index++; // do next chunk
+    }
 }
 
 
@@ -683,16 +733,25 @@ bool rx_param_changed;
 
     //puts(".");
 
-    uint32_t tnow_ms = millis32();
-    if (pos && (tnow_ms - tlast_ms > 2000)) { putsn(">"); putsn("  timeout"); clear(); }
-
-    if (state != CLI_STATE_NORMAL) {
-        if (com->available()) { com->getc(); state = CLI_STATE_NORMAL; putsn("  streaming stats stopped"); return; }
-        delay_off();
+    // we are in a print state
+    switch (state) {
+    case CLI_STATE_STATS:
+        if (com->available()) { com->getc(); print_it_reset(); putsn("  streaming stats stopped"); return; }
         stream();
+        break;
+    case CLI_STATE_PRINT_HELP:
+        print_help_do();
+        return;
+    case CLI_STATE_PRINT_PARAM_LIST:
+        print_param_list_do();
+        return;
+    case CLI_STATE_PRINT_LISTFREQS:
+        print_frequencies_do();
+        return;
     }
 
-    delay_clear();
+    uint32_t tnow_ms = millis32();
+    if (pos && (tnow_ms - tlast_ms > 2000)) { putsn(">"); putsn("  timeout"); clear(); }
 
     while (com->available()) {
         char c = com->getc();
@@ -706,14 +765,14 @@ bool rx_param_changed;
         putsn(">");
 
         //-- basic commands
-        if (is_cmd("h"))     { print_help(); } else
-        if (is_cmd("help"))  { print_help(); } else
-        if (is_cmd("?"))     { print_help(); } else
+        if (is_cmd("h"))     { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("help"))  { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("?"))     { print_it(CLI_STATE_PRINT_HELP); } else
         if (is_cmd("v"))     { print_device_version(); } else
-        if (is_cmd("pl"))    { print_config_id(); print_param_list(0); } else
-        if (is_cmd("pl c"))  { print_config_id(); print_param_list(1); } else
-        if (is_cmd("pl tx")) { print_config_id(); print_param_list(2); } else
-        if (is_cmd("pl rx")) { print_config_id(); print_param_list(3);
+        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = 0; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = 1; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = 2; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = 3; print_it(CLI_STATE_PRINT_PARAM_LIST);
 
         } else
         if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
@@ -786,7 +845,7 @@ bool rx_param_changed;
         //-- miscellaneous
         } else
         if (is_cmd("listfreqs")) {
-            print_frequencies();
+            print_it(CLI_STATE_PRINT_LISTFREQS);
 
         //-- System Bootloader
         } else
