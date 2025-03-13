@@ -110,12 +110,40 @@ const rfpower_t rfpower_list[] = {
 #endif
 #if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30 || defined POWER2_PA_MATEK_MTX_DB30
 #define POWER_PA_DEFINED
-
+/*
 #define POWER2_GAIN_DBM           31 // gain of a PA stage if present
 #define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 #error mR24-30 dual band, power2 needs to be worked out!
+*/
+
+void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+{
+    if (power_dbm >= POWER_30_DBM) {
+        *sx_power = 19;
+        *actual_power_dbm = 30;
+    } else
+    if (power_dbm >= POWER_27_DBM) {
+        *sx_power = 12;
+        *actual_power_dbm = 27;
+    } else
+    if (power_dbm >= POWER_24_DBM) {
+        *sx_power = 8;
+        *actual_power_dbm = 24;
+    } else
+    if (power_dbm >= POWER_20_DBM) {
+        *sx_power = 4;
+        *actual_power_dbm = 20;
+    } else
+  if (power_dbm >= POWER_17_DBM) {
+    *sx_power = 1;
+    *actual_power_dbm = 17;
+  } else {
+        *sx_power = 0;
+        *actual_power_dbm = 16;
+    }
+}
 
 #endif
 
