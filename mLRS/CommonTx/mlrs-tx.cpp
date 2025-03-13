@@ -473,7 +473,7 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //   post loop:  -> handle_receive() or handle_receive_none()
 //                   if valid -> process_received_frame()
 
-void prepare_transmit_frame(uint8_t antenna)
+void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
 uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
@@ -502,7 +502,11 @@ uint8_t payload_len = 0;
     frame_stats.antenna = stats.last_antenna;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ_rc = UINT8_MAX; // Tx has no valid value
+
+    uint8_t fhss_band = fhss_band_next();
+    frame_stats.tx_fhss_index_band = fhss_band;
+    frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
+
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
@@ -604,7 +608,7 @@ void handle_receive_none(void) // RX_STATUS_NONE
 }
 
 
-void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
+void do_transmit_prepare(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i) // we prepare a TX frame to be send to receiver
 {
     if (bind.IsInBind()) {
         bind.do_transmit(antenna);
@@ -613,7 +617,7 @@ void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to
 
     stats.transmit_seq_no++;
 
-    prepare_transmit_frame(antenna);
+    prepare_transmit_frame(antenna, fhss1_curr_i, fhss2_curr_i);
 }
 
 
@@ -624,7 +628,35 @@ void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
        return;
     }
 
+#if 1
+static uint8_t cnt = 0;
+if (1300 < rcData.ch[4] && rcData.ch[4] < 1450) {
+  INCc(cnt,12);
+  rcData.ch[4] = (cnt) ? 1150 : 650;
+}
+if (1550 < rcData.ch[4] && rcData.ch[4] < 1700) {
+  INCc(cnt,12);
+  rcData.ch[4] = (cnt) ? 1150 : 900;
+}
+
+if ( 600 < rcData.ch[4] && rcData.ch[4] <  700) {
+  sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+  sx2.SetToIdle();
+} else
+if ( 800 < rcData.ch[4] && rcData.ch[4] < 1000) {
+  sx.SetToIdle();
+  sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+} else
+if (1100 < rcData.ch[4] && rcData.ch[4] < 1200) {
+  sx.SetToIdle();
+  sx2.SetToIdle();
+} else {
+  sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+  sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+}
+#else
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
+#endif
 }
 
 
@@ -843,7 +875,8 @@ INITCONTROLLER_END
         break;
 
     case LINK_STATE_TRANSMIT:
-        do_transmit_prepare(tdiversity.Antenna());
+        fhss.HopToNext();
+        do_transmit_prepare(tdiversity.Antenna(), fhss.GetCurrI(), fhss.GetCurrI2());
         link_state = LINK_STATE_TRANSMIT_SEND;
         DBG_MAIN_SLIM(dbg.puts("\nt");)
         break;
@@ -853,7 +886,7 @@ INITCONTROLLER_END
         if (dt < 750) break;
         isInTimeGuard = false;
         rfpower.Update();
-        fhss.HopToNext();
+        //fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq2());
         do_transmit_send(tdiversity.Antenna());
@@ -990,7 +1023,7 @@ IF_SX2(
         }
 #endif
 
-        stats.fhss_curr_i = fhss.CurrI();
+        stats.fhss_curr_i = fhss.CurrI_4mBridge();
         stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
         stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
