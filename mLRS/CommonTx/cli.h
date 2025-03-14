@@ -59,6 +59,9 @@ uint8_t nr, n;
         if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPSTR;
         }
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].Mode)) { // Mode
+            optstr = SETUP_OPT_MODE_DISPSTR;
+        }
         if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
             (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
             optstr = SETUP_OPT_DIVERSITY_DISPSTR;
