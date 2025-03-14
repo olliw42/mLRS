@@ -706,9 +706,9 @@ int8_t power;
     draw_header("Main");
 
     gdisp_setcurX(50);
-    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE, PARAM_FORMAT_DISPLAY); // 1 = index of Mode
     if (strlen(s) > 5) {
-        gdisp_setcurXY(35, 6);
+        gdisp_setcurXY(43, 6);
     } else {
         gdisp_setcurXY(50, 6);
     }

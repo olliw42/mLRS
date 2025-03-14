@@ -106,6 +106,10 @@ void tBindBase::Init(void)
 void tBindBase::ConfigForBind(void)
 {
     // switch to 19 Mode, select lowest possible power
+    // THIS IS DIRTY!
+    // we should determine if it should be MODE_19HZ or MODE_19HZ_7X
+    // however, configure_mode() does in fact do the same for both cases
+    // We could determined by checking #ifdef DEVICE_HAS_DUAL_SX127x. Is ok as also in device_conf.h.
     configure_mode(MODE_19HZ);
 
     sx.SetToIdle();

@@ -175,7 +175,7 @@ void tRxMavlink::Init(void)
 
 #ifdef USE_FEATURE_MAVLINKX
     fmavX_init();
-    fmavX_config_compression((Config.Mode == MODE_19HZ) ? 1 : 0); // use compression only in 19 Hz mode
+    fmavX_config_compression((Config.Mode == MODE_19HZ || Config.Mode == MODE_19HZ_7X) ? 1 : 0); // use compression only in 19 Hz mode
 
     status_serial_in = {};
     fifo_link_out.Init();
@@ -416,7 +416,8 @@ void tRxMavlink::parse_link_in_serial_out(char c)
             case MODE_50HZ:
             case MODE_FSK_50HZ: force_param_list = (Config.SerialBaudrate > 115200); break; // 115200 bps and lower is ok for mftp
             case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
-            case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
+            case MODE_19HZ:
+            case MODE_19HZ_7X: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
             }
             if (autopilot.HasMFtpFlowControl()) force_param_list = false; // mftp is flow controlled, so always ok
 #endif
@@ -990,7 +991,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
         tx_ser_data_rate = 2000;
         rx_ser_data_rate = 2562;
         break;
-    case MODE_19HZ:
+    case MODE_19HZ: case MODE_19HZ_7X:
         tx_ser_data_rate = 1207;
         rx_ser_data_rate = 1547;
         break;
