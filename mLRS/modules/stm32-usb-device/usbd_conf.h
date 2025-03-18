@@ -33,7 +33,7 @@ extern "C" {
 #define USB_RXBUFSIZE       512
 #define USB_TXBUFSIZE       2048 // helps with cli
 #else
-#define USB_RXBUFSIZE       512
+#define USB_RXBUFSIZE       2048  // for serial
 #define USB_TXBUFSIZE       512
 #endif
 #define USBD_IRQ_PRIORITY   0
