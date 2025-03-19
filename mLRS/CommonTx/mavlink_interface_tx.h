@@ -275,13 +275,15 @@ if (!do_router()) {
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (ser->available()) {
             char c = ser->getc();
-            fmav_parse_and_check_to_frame_buf(&result, buf_ser_in, &status_ser_in, c);
-            if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
-                fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser_in); // requires RESULT_OK
-                send_msg_fifo_link_out(&msg_buf);
+            if (fmav_parse_and_check_to_frame_buf(&result, buf_ser_in, &status_ser_in, c)) {
+                if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
+                    fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser_in); // requires RESULT_OK
+                    send_msg_fifo_link_out(&msg_buf);
 #ifdef USE_FEATURE_MAVLINK_COMPONENT
-                component_handle_msg(&msg_buf);
+                    component_handle_msg(&msg_buf);
 #endif
+                }
+                break; // do only one message per loop
             }
         }
     }
