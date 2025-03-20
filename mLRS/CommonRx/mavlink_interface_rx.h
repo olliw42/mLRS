@@ -257,7 +257,7 @@ void tRxMavlink::Do(void)
     if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
 
     // parse serial in -> link out
-    parse_serial_in_link_out();
+    // parse_serial_in_link_out(); DO NOT
 
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
@@ -371,7 +371,7 @@ void tRxMavlink::parse_serial_in_link_out(void)
                     len = fmav_msg_to_frame_buf(_buf, &msg_link_out);
                 }
 
-                fifo_link_out.PutBuf(_buf, len);
+                fifo_link_out.PutBuf(_buf, len); //Do not but anything for sending
                 bytes_parser_in = 0;
 
                 handle_msg(&msg_link_out);
@@ -1138,7 +1138,7 @@ void tRxMavlink::handle_msg(fmav_message_t* const msg)
 void tRxMavlink::handle_cmd(fmav_message_t* const msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
-fmav_command_long_t payload;
+	fmav_command_long_t payload;
 
     fmav_msg_command_long_decode(&payload, msg);
 

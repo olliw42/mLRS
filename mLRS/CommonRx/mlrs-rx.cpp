@@ -299,8 +299,8 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
-uint8_t payload[FRAME_RX_PAYLOAD_LEN];
-uint8_t payload_len = 0;
+	uint8_t payload[FRAME_RX_PAYLOAD_LEN];
+	uint8_t payload_len = 0;
 
     bool get_fresh_payload = tarq.GetFreshPayload();
 
@@ -384,11 +384,13 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
-    if (!connected()) return;
-    sx_serial.putbuf(frame->payload, frame->status.payload_len);
-
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.serial_data_received.Inc();
+    //if (!connected()) return;
+    if (frame->status.payload_len > 0)
+    {
+    	sx_serial.putbuf(frame->payload, frame->status.payload_len);
+    	stats.bytes_received.Add(frame->status.payload_len);
+		stats.serial_data_received.Inc();
+    }
 }
 
 
@@ -794,7 +796,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             }
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
 
-            link_state = LINK_STATE_TRANSMIT; // switch to TX
+            link_state = LINK_STATE_RECEIVE;// LINK_STATE_TRANSMIT // switch to TX
         }
 
         // when in listen: we received something, but something wrong, so we need go back to RX
@@ -831,7 +833,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             // switch to transmit state
             // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
             // we are on the correct frequency, so no need to hop
-            link_state = LINK_STATE_TRANSMIT;
+            //link_state = LINK_STATE_TRANSMIT;
         }
 
         if ((connect_state >= CONNECT_STATE_SYNC) ||

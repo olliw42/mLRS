@@ -39,7 +39,7 @@ void _pack_txframe_w_type(
     uint8_t* const payload,
     uint8_t payload_len)
 {
-uint16_t crc;
+	uint16_t crc;
 
     if (payload_len > FRAME_TX_PAYLOAD_LEN) payload_len = FRAME_TX_PAYLOAD_LEN; // should never occur, but play it safe
 
@@ -197,7 +197,7 @@ void _pack_rxframe_w_type(
     uint8_t* const payload,
     uint8_t payload_len)
 {
-uint16_t crc;
+	uint16_t crc;
 
     if (payload_len > FRAME_RX_PAYLOAD_LEN) payload_len = FRAME_RX_PAYLOAD_LEN; // should never occur, but play it safe
 
@@ -237,7 +237,7 @@ void pack_rxframe(
 // returns 0 if OK !!
 uint8_t check_rxframe(tRxFrame* const frame)
 {
-uint16_t crc;
+	uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
@@ -331,7 +331,7 @@ uint8_t payload[1];
 // Tx: handle FRAME_CMD_RX_SETUPDATA from Rx
 void unpack_rxcmdframe_rxsetupdata(tRxFrame* const frame)
 {
-tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
+	tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
     SetupMetaData.rx_available = true;
 
@@ -362,7 +362,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 // we take the values from Tx' Setup.Rx structure
 void pack_txcmdframe_setrxparams(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc)
 {
-tTxCmdFrameRxParams rx_params = {};
+	tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
@@ -382,7 +382,7 @@ tTxCmdFrameRxParams rx_params = {};
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
 void pack_rxcmdframe_rxsetupdata(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
-tRxCmdFrameRxSetupData rx_setupdata = {};
+	tRxCmdFrameRxSetupData rx_setupdata = {};
 
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 
@@ -415,7 +415,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
 // new parameter values are stored in Rx' Setup.Rx fields
 void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 {
-tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
+	tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 
     strstrbufcpy(Setup.Common[0].BindPhrase, rx_params->BindPhrase_6, 6);
     Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;

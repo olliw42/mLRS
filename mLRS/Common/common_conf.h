@@ -60,7 +60,7 @@
 #define SETUP_TX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
 #define SETUP_TX_SEND_RADIO_STATUS      0 // 0: off, 1: 1 Hz
-#define SETUP_TX_MAV_COMPONENT          1 // 0: off, 1: enabled
+#define SETUP_TX_MAV_COMPONENT          0 // 0: off, 1: enabled
 
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
 
@@ -131,9 +131,9 @@
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 
-#define CONNECT_TMO_MS                  1250 // time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
+#define CONNECT_TMO_MS                  2500 // 1250 time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
 
-#define CONNECT_SYNC_CNT                5 // number of packets to connect
+#define CONNECT_SYNC_CNT                1 // 5 number of packets to connect
 
 #define LQ_AVERAGING_MS                 1000
 

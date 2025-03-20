@@ -1044,10 +1044,10 @@ IF_SX2(
 
         if (!connected()) rarq.Disconnected();
 
-        if (connect_state == CONNECT_STATE_LISTEN) {
-            link_task_reset(); // to ensure that the following set is enforced
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
-        }
+        //if (connect_state == CONNECT_STATE_LISTEN) {
+        //    link_task_reset(); // to ensure that the following set is enforced
+        //    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+        //}
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

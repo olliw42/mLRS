@@ -759,7 +759,7 @@ CHECKRANGEBUF(result->frame_len);
 // returns 0, or 1
 FASTMAVLINK_FUNCTION_DECORATOR uint8_t fmavX_parse_and_checkX_to_frame_buf(fmav_result_t* const result, uint8_t* const buf, fmav_status_t* const status, uint8_t c)
 {
-uint8_t res;
+	uint8_t res;
 
     res = fmavX_parseX_to_frame_buf(result, buf, status, c);
     // result can be NONE, HAS_HEADER, or OK
