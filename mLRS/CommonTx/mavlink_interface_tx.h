@@ -399,8 +399,11 @@ if (len != result.frame_len) while(1){}
 for (uint16_t i = 0; i < len; i++) if (_buf[i] != buf_link_in[i]) while(1){}
 #endif
 
-            // don't jump out early here, seems to be important to do all
-            //return; // do only one message per loop
+            // Note: makes logically sense
+            // for some time it seemed important to not jump out early here, but appears to give issues with WLE however
+            // so return was re-enabled again
+            // https://github.com/olliw42/mLRS/issues/283
+            return; // do only one message per loop
         } // if (result.res == FASTMAVLINK_PARSE_RESULT_OK)
 
     } // while (fifo_link_in.Available())
