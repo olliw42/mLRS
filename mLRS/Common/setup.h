@@ -68,25 +68,25 @@ void setup_configure_metadata(void)
     #error Unknown Frequencyband !
 #endif
 
-    //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK"
+    //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x"
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz !
-    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
+    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz !
-    SetupMetaData.Mode_allowed_mask = 0b00110; // 31 Hz, 19 Hz
+    SetupMetaData.Mode_allowed_mask = 0b000110; // 31 Hz, 19 Hz
 #elif defined DEVICE_HAS_SX128x
   #ifdef USE_FEATURE_FLRC
-    SetupMetaData.Mode_allowed_mask = 0b01111; // 50 Hz, 31 Hz, 19 Hz, FLRC
+    SetupMetaData.Mode_allowed_mask = 0b001111; // 50 Hz, 31 Hz, 19 Hz, FLRC
   #else
-    SetupMetaData.Mode_allowed_mask = 0b00111; // 50 Hz, 31 Hz, 19 Hz
+    SetupMetaData.Mode_allowed_mask = 0b000111; // 50 Hz, 31 Hz, 19 Hz
   #endif
 #elif defined DEVICE_HAS_SX126x
-    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK
+    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #elif defined DEVICE_HAS_SX127x
-    SetupMetaData.Mode_allowed_mask = 0b00100; // 19 Hz, not editable
+    SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
 #elif defined DEVICE_HAS_LR11xx
-    SetupMetaData.Mode_allowed_mask = 0b10110; // 31 Hz, 19 Hz, FSK
+    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #endif
 
     //-- Ortho: "off,1/3,2/3,3/3"
@@ -364,7 +364,7 @@ void setup_sanitize_config(uint8_t config_id)
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined DEVICE_HAS_SX126x
     uint8_t mode_default = MODE_31HZ;
 #elif defined DEVICE_HAS_SX127x
-    uint8_t mode_default = MODE_19HZ;
+    uint8_t mode_default = MODE_19HZ_7X;
 #elif defined DEVICE_HAS_LR11xx
     uint8_t mode_default = MODE_31HZ;
 #endif
@@ -518,6 +518,7 @@ void configure_mode(uint8_t mode)
         break;
 
   case MODE_19HZ:
+  case MODE_19HZ_7X:
         Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
         Config.frame_rate_hz = 19;
 #ifdef DEVICE_HAS_SX128x
@@ -765,7 +766,9 @@ void setup_configure_config(uint8_t config_id)
     case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
         switch (Config.Mode) {
         case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
-        case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
+        case MODE_19HZ:
+        case MODE_19HZ_7X:
+            Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
         default:
             while(1){} // must not happen, should have been resolved in setup_sanitize()
         }
@@ -794,12 +797,7 @@ void setup_configure_config(uint8_t config_id)
     // DUALBAND 868/915 MHz & 433 MHz !
     Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
-    switch (Config.Mode) {
-    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
-    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ; break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize()
-    }
+    Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ;
 #endif
 
     //-- More Config, may depend on above config settings
@@ -942,6 +940,10 @@ bool doEEPROMwrite;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
             // was 335 or lower, there would be lots to do but didn't do layout version-ing properly so far
+
+            // Note: In v1.3.05 Mode changed, so we would have to change to MODE_19HZ_7X if it's a Sx127x.
+            // Luckily, the sanitizer will do that for us so we do not need to bother here.
+
         } else {
             // ups, > 10304, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
