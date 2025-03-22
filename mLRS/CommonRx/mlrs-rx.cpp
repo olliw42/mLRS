@@ -363,7 +363,10 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     stats.received_antenna = frame->status.antenna;
     stats.received_transmit_antenna = frame->status.transmit_antenna;
     stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
+
+    stats.received_fhss_index_band = frame->status.fhss_index_band;
+    stats.received_fhss_index = frame->status.fhss_index;
+
     stats.received_LQ_serial = frame->status.LQ_serial;
 
     // copy rc1 data
@@ -512,6 +515,7 @@ uint8_t link_state;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
+uint8_t connect_fhss_index_band_seen;
 uint8_t connect_listen_cnt;
 bool connect_occured_once;
 
@@ -559,8 +563,9 @@ RESTARTCONTROLLER
     link_state = LINK_STATE_RECEIVE;
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
-    connect_listen_cnt = 0;
     connect_sync_cnt = 0;
+    connect_fhss_index_band_seen = 0;
+    connect_listen_cnt = 0;
     connect_occured_once = false;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_task_init();
@@ -755,7 +760,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 antenna = ANTENNA_2;
             }
             handle_receive(antenna);
-//dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
         } else {
             handle_receive_none();
         }
@@ -774,17 +778,44 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             msp.FrameLost();
         }
 
+        // check fhss index
+        // do it only in LISTEN and SYNC
+        if ((connect_state <= CONNECT_STATE_SYNC) && valid_frame_received &&
+            (stats.received_fhss_index < 63)) { // older version don't offer this
+            if (stats.received_fhss_index_band == 0) {
+                if (fhss.GetCurrI() != stats.received_fhss_index) { // somehow wrong frequency, discard
+                    valid_frame_received = false;
+                    invalid_frame_received = true;
+                    fhss.SetCurrI(stats.received_fhss_index); // set 1st band, should only happen for dual band
+                } else { // ok
+                    connect_fhss_index_band_seen |= 0x01; // 0 seen
+                }
+            } else {
+                if (fhss.GetCurrI2() != stats.received_fhss_index) { // somehow wrong frequency, so discard
+                    valid_frame_received = false;
+                    invalid_frame_received = true;
+                    fhss.SetCurrI2(stats.received_fhss_index); // set 2nd band, should only happen for dual band
+                } else { // ok
+                    connect_fhss_index_band_seen |= 0x02; // 1 seen
+                }
+            }
+        }
+
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
             case CONNECT_STATE_LISTEN:
                 connect_state = CONNECT_STATE_SYNC;
                 connect_sync_cnt = 0;
+                connect_fhss_index_band_seen = (stats.received_fhss_index < 63) ? 0 : 0x03;
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;
                 uint8_t connect_sync_cnt_max = CONNECT_SYNC_CNT;
                 if (!connect_occured_once) {
                     connect_sync_cnt_max = Config.connect_sync_cnt_max;
+                }
+                if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
+                    connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
                     connect_state = CONNECT_STATE_CONNECTED;
@@ -810,7 +841,9 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 connect_listen_cnt = 0;
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
-            if (fhss.HopToNextBind()) { link_state = LINK_STATE_RECEIVE; } // switch back to RX
+            if (fhss.HopToNextBind()) {
+                link_state = LINK_STATE_RECEIVE; // switch back to RX
+            }
         }
 
         // we just disconnected, or are in sync but don't receive anything

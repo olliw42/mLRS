@@ -14,6 +14,7 @@
 #include "frame_types.h"
 
 
+extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
@@ -53,7 +54,8 @@ uint16_t crc;
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ_rc = frame_stats->LQ_rc;
+    frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
+    frame->status.fhss_index = frame_stats->tx_fhss_index;
     frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
@@ -426,6 +428,34 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
 }
 
 #endif
+
+
+//-------------------------------------------------------
+// Helper
+//-------------------------------------------------------
+
+// Numerical Recipe's quick generator randq1()
+uint32_t nr_randq1(void)
+{
+    static uint32_t seed = 0;
+    seed = 1664525UL * seed + 1013904223UL;
+    return seed;
+}
+
+
+uint8_t fhss_band_next(void)
+{
+    static uint8_t fhss_band = 0;
+    static uint8_t fhss_band_last = 0;
+
+    if (fhss_band == fhss_band_last) { // we had it two times, so toggle
+        fhss_band++;
+    } else { // toggle with 50% probability
+        fhss_band_last = fhss_band;
+        if (nr_randq1() < UINT32_MAX/2) fhss_band++;
+    }
+    return fhss_band;
+}
 
 
 #endif // FRAMES_H
