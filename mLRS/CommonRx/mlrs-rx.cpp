@@ -760,20 +760,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 antenna = ANTENNA_2;
             }
             handle_receive(antenna);
-
-dbg.puts("\n>");dbg.puts(rxstatus_str[link_rx1_status]);dbg.puts(rxstatus_str[link_rx2_status]);
-dbg.puts(" a "); dbg.puts((antenna == ANTENNA_1) ? "1 " : "2 ");
-
-//dbg.puts("\n> b: ");
-dbg.puts("  b: ");
-dbg.puts(((stats.received_fhss_index_band & 0x01) == 0) ? "0" : "1");
-dbg.puts(" i: ");
-dbg.puts(u8toBCD_s(stats.received_fhss_index));
-dbg.puts(" ; ");
-dbg.puts(u8toBCD_s(fhss.GetCurrI()));
-dbg.puts(" ");
-dbg.puts(u8toBCD_s(fhss.GetCurrI2()));
-
         } else {
             handle_receive_none();
         }
@@ -792,22 +778,15 @@ dbg.puts(u8toBCD_s(fhss.GetCurrI2()));
             msp.FrameLost();
         }
 
-#if 0
-stats.received_fhss_index = 63; // enable/disable fhss_index mechanism
-#endif
-
         // check fhss index
         // do it only in LISTEN and SYNC
         if ((connect_state <= CONNECT_STATE_SYNC) && valid_frame_received &&
             (stats.received_fhss_index < 63)) { // older version don't offer this
-dbg.puts(" check ");
             if (stats.received_fhss_index_band == 0) {
                 if (fhss.GetCurrI() != stats.received_fhss_index) { // somehow wrong frequency, discard
                     valid_frame_received = false;
                     invalid_frame_received = true;
-dbg.puts(" discard");
                     fhss.SetCurrI(stats.received_fhss_index); // set 1st band, should only happen for dual band
-dbg.puts(" set b1");
                 } else { // ok
                     connect_fhss_index_band_seen |= 0x01; // 0 seen
                 }
@@ -815,9 +794,7 @@ dbg.puts(" set b1");
                 if (fhss.GetCurrI2() != stats.received_fhss_index) { // somehow wrong frequency, so discard
                     valid_frame_received = false;
                     invalid_frame_received = true;
-dbg.puts(" discard");
                     fhss.SetCurrI2(stats.received_fhss_index); // set 2nd band, should only happen for dual band
-dbg.puts(" set b2");
                 } else { // ok
                     connect_fhss_index_band_seen |= 0x02; // 1 seen
                 }
@@ -839,7 +816,6 @@ dbg.puts(" set b2");
                 }
                 if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
-dbg.puts(" delay");
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
                     connect_state = CONNECT_STATE_CONNECTED;

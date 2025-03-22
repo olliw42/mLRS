@@ -628,35 +628,7 @@ void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
        return;
     }
 
-#if 1
-static uint8_t cnt = 0;
-if (1300 < rcData.ch[4] && rcData.ch[4] < 1450) {
-  INCc(cnt,12);
-  rcData.ch[4] = (cnt) ? 1150 : 650;
-}
-if (1550 < rcData.ch[4] && rcData.ch[4] < 1700) {
-  INCc(cnt,12);
-  rcData.ch[4] = (cnt) ? 1150 : 900;
-}
-
-if ( 600 < rcData.ch[4] && rcData.ch[4] <  700) {
-  sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-  sx2.SetToIdle();
-} else
-if ( 800 < rcData.ch[4] && rcData.ch[4] < 1000) {
-  sx.SetToIdle();
-  sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-} else
-if (1100 < rcData.ch[4] && rcData.ch[4] < 1200) {
-  sx.SetToIdle();
-  sx2.SetToIdle();
-} else {
-  sx.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-  sx2.SendFrame((uint8_t*)&txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-}
-#else
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
-#endif
 }
 
 
@@ -886,7 +858,6 @@ INITCONTROLLER_END
         if (dt < 750) break;
         isInTimeGuard = false;
         rfpower.Update();
-        //fhss.HopToNext();
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq2());
         do_transmit_send(tdiversity.Antenna());
