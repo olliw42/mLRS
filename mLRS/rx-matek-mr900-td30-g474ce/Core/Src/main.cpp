@@ -64,9 +64,14 @@ int main_main();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  /* Configure Flash prefetch, Instruction cache, Data cache */
+  /* Default configuration at reset is:                      */
+  /* - Prefetch disabled                                     */
+  /* - Instruction cache enabled                             */
+  /* - Data cache enabled                                    */
+  //__HAL_FLASH_PREFETCH_BUFFER_ENABLE(); // seems to have no appreciable effect
   //__HAL_FLASH_INSTRUCTION_CACHE_DISABLE(); // this has massive effect
   __HAL_FLASH_DATA_CACHE_DISABLE(); // has nearly no effect, so keep it disabled
-  //__HAL_FLASH_PREFETCH_BUFFER_ENABLE(); // seems to have no appreciable effect
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
