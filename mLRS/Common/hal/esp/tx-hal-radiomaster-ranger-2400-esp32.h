@@ -101,6 +101,7 @@
 #define SX_TX_EN                  IO_P33
 #define SX_RX_EN                  IO_P32
 
+#define SX_USE_REGULATOR_MODE_DCDC
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
