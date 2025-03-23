@@ -10,8 +10,6 @@
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
 // 5.Sep.2023: jrpin5 and in simultaneously supported
 
-//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
-
 //-------------------------------------------------------
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
@@ -22,13 +20,6 @@
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SINGLE_LED
 //#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-
-
-#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
-  #define DEVICE_HAS_JRPIN5
-  #undef DEVICE_HAS_IN
-  #undef DEVICE_HAS_IN_ON_JRPIN5_RX
-#endif
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -73,11 +64,7 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
 #define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
-#else
-#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
-#endif
 
 #define UARTE_USE_LPUART1_PC1PC0 // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow

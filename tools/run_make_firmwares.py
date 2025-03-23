@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 11.02.2025
+ version 23.03.2025
 ********************************************************
 '''
 import os
@@ -1163,10 +1163,6 @@ TLIST = [
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : ['MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-        'appendix' : '-sdiode', # just for RAVI :)
-    },{
 #-- tx E77 MBL
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -1176,14 +1172,6 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ'],
         'appendix' : '-400-tcxo',
     },{
-#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-#        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-#        'appendix' : '-900-sdiode-tcxo',
-#    },{
-#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-#        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-#        'appendix' : '-400-sdiode-tcxo',
-#    },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-900-xtal',
