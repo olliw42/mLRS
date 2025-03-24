@@ -32,8 +32,8 @@
 extern tRxMavlink mavlink;
 extern tRxDroneCan dronecan;
 
-extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
+extern uint64_t micros64(void);
 extern bool connected(void);
 extern tStats stats;
 extern tSetup Setup;
