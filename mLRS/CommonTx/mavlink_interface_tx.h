@@ -260,7 +260,7 @@ uint8_t tTxMavlink::Task(void)
 #endif
 
     task_pending_mask = 0;
-    return TX_TASK_NONE;
+    return MAIN_TASK_NONE;
 }
 
 
@@ -838,7 +838,7 @@ void tTxMavlink::component_do(void)
 bool tTxMavlink::component_task(uint8_t* const task)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) {
-        *task = TX_TASK_NONE;
+        *task = MAIN_TASK_NONE;
         return false;
     }
 
@@ -852,13 +852,13 @@ bool tTxMavlink::component_task(uint8_t* const task)
         // we need to wait for the previous link task to finish
         // link task is not free in connection stage, so skip if not in connection stage
         if (connected_and_rx_setup_available() && !link_task_free()) {
-            *task = TX_TASK_NONE;
+            *task = MAIN_TASK_NONE;
             return true;
         }
         // delay by 50 ms, so a response message is send
         if (task_pending_delay_ms) {
             if ((millis32() - task_pending_delay_ms) < 50) {
-                *task = TX_TASK_NONE;
+                *task = MAIN_TASK_NONE;
                 return true;
             }
             task_pending_delay_ms = 0;
@@ -868,7 +868,7 @@ bool tTxMavlink::component_task(uint8_t* const task)
         return true;
     }
 
-    *task = TX_TASK_NONE;
+    *task = MAIN_TASK_NONE;
     return false;
 }
 

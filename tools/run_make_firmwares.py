@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 23.03.2025
+ version 24.03.2025
 ********************************************************
 '''
 import os
@@ -465,6 +465,7 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','link_types.cpp'),
     os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
+    os.path.join('Common','tasks.cpp'),
     ]
 
 #add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all 

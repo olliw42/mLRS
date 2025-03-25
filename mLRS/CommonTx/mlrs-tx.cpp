@@ -113,6 +113,7 @@
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
 #include "../Common/rf_power.h"
+#include "../Common/tasks.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -130,6 +131,7 @@ tRfPower rfpower;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxCli cli;
+tTasks tasks;
 
 
 //-------------------------------------------------------
@@ -772,6 +774,7 @@ RESTARTCONTROLLER
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
     disp.Init();
+    tasks.Init();
 
     config_id.Init();
 
@@ -1148,10 +1151,10 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
                 doParamsStore = true;
             }
             break;
-        case MBRIDGE_CMD_BIND_START: start_bind(); break;
-        case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
-        case MBRIDGE_CMD_FLASH_ESP: esp.EnterFlash(); break;
+        case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(MAIN_TASK_BIND_START); break;
+        case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(MAIN_TASK_BIND_STOP); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(MAIN_TASK_SYSTEM_BOOT); break;
+        case MBRIDGE_CMD_FLASH_ESP: tasks.SetMBridgeTask(TX_TASK_FLASH_ESP); break;
         case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
             config_id.Change(mbridge.GetModelId());
@@ -1193,8 +1196,8 @@ IF_CRSF(
 //dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdModelId()));
             config_id.Change(crsf.GetCmdModelId());
             break;
-        case TXCRSF_CMD_BIND_START: start_bind(); break;
-        case TXCRSF_CMD_BIND_STOP: stop_bind(); break;
+        case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(MAIN_TASK_BIND_START); break;
+        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(MAIN_TASK_BIND_START); break;
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");
             mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
@@ -1226,9 +1229,8 @@ IF_IN(
 
     //-- Handle display or CLI or MAVLink task
 
-    uint8_t tx_task = disp.Task();
-    if (tx_task == TX_TASK_NONE) tx_task = mavlink.Task();
-    if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
+    uint8_t tx_task = tasks.Task();
+    if (tx_task == MAIN_TASK_NONE) tx_task = mavlink.Task();
 
     switch (tx_task) {
     case TX_TASK_RX_PARAM_SET:
@@ -1252,20 +1254,21 @@ IF_IN(
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case TX_TASK_BIND: start_bind(); break;
-    case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case MAIN_TASK_BIND_START: start_bind(); break;
+    case MAIN_TASK_BIND_STOP: stop_bind(); break;
+    case MAIN_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
+    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
     case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
-    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
+    case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(tasks.GetCliTaskValue()); break;
     }
+    if (tx_task == MAIN_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+
 
     //-- Handle ESP wifi bridge
 
     esp.Do();
-    uint8_t esp_task = esp.Task();
-    if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- more
 

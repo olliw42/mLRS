@@ -82,7 +82,6 @@ class tTxEspWifiBridge
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup) {}
     void Do(void) {}
-    uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterFlash(void) {}
     void EnterPassthrough(void) {}
@@ -90,8 +89,11 @@ class tTxEspWifiBridge
 
 #else
 
+#include "../Common/tasks.h"
+
+
 extern volatile uint32_t millis32(void);
-extern tTxDisp disp;
+extern tTasks tasks;
 
 
 typedef enum {
@@ -105,7 +107,6 @@ class tTxEspWifiBridge
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup);
     void Do(void);
-    uint8_t Task(void);
 
     void EnterFlash(void);
     void EnterPassthrough(void);
@@ -128,8 +129,6 @@ class tTxEspWifiBridge
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
-
-    uint8_t task_pending;
 
     bool passthrough; // indicates passthrough is possible
 
@@ -161,8 +160,6 @@ void tTxEspWifiBridge::Init(
     }
     ser_baud = _serial_baudrate;
 
-    task_pending = TX_TASK_NONE;
-
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
 
     dtr_rts_last = 0;
@@ -171,14 +168,6 @@ void tTxEspWifiBridge::Init(
 #ifdef ESP_STARTUP_CONFIGURE
     run_configure();
 #endif
-}
-
-
-uint8_t tTxEspWifiBridge::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
 }
 
 
@@ -192,7 +181,7 @@ void tTxEspWifiBridge::Do(void)
 
     if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // toggle 0x03 -> 0x02
         passthrough_do_flashing();
-        task_pending = TX_TASK_RESTART_CONTROLLER;
+        tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
     }
 
     dtr_rts_last = dtr_rts;
@@ -202,7 +191,7 @@ void tTxEspWifiBridge::Do(void)
 
     if (boot0_last == 1 && boot0 == 0) { // toggle 1 -> 0
         passthrough_do_flashing();
-        task_pending = TX_TASK_RESTART_CONTROLLER;
+        tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
     }
 
     boot0_last = boot0;
