@@ -21,15 +21,15 @@
 // UARTF = debug port
 
 #define UARTB_USE_SERIAL
-#define UARTB_USE_TX_IO           IO_P37
-#define UARTB_USE_RX_IO           IO_P36
+#define UARTB_USE_TX_IO           IO_P43
+#define UARTB_USE_RX_IO           IO_P44
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 
 #define UART_BAUD                 416666   // CRSF baud rate
-#define UART_USE_TX_IO            IO_P43   // TX1
+#define UART_USE_TX_IO            IO_P37   // TX3
 #define UART_USE_RX_IO            -1       // no Rx pin needed
 #define UART_TXBUFSIZE            256
 
