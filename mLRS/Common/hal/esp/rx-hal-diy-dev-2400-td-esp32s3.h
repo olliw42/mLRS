@@ -177,12 +177,12 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 
 //-- LEDs
 #include <NeoPixelBus.h>
-#define LED_RED                    IO_P38
+#define LED_RGB                    IO_P38
 bool ledRedState;
 bool ledGreenState;
 bool ledBlueState;
 
-NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(1, LED_RED);
+NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(1, LED_RGB);
 
 void leds_init(void)
 {
