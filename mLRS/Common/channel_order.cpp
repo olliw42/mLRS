@@ -81,3 +81,10 @@ uint8_t tChannelOrder::ChannelMap(uint8_t n)
 }
 
 
+void tChannelOrder::SetAndApply(tRcData* const rc, uint8_t new_channel_order)
+{
+    Set(new_channel_order);
+    Apply(rc);
+}
+
+

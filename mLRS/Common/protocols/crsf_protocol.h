@@ -70,7 +70,7 @@ typedef enum {
     CRSF_FRAME_ID_BATTERY               = 0x08,
     CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
-    CRSF_FRAME_ID_RC_CHANNELS           = 0x16,
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
     CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
     CRSF_FRAME_ID_ATTITUDE              = 0x1E,
@@ -104,11 +104,14 @@ typedef enum {
 
 
 typedef enum {
-    CRSF_COMMAND_ID                     = 0x10,
+    CRSF_COMMAND_ID                     = 0x10, // 0x32.0x10 Crossfire
 } CRSF_COMMAND_ID_ENUM;
 
 
+// 0x32.0x10 Crossfire command options
 typedef enum {
+    CRSF_COMMAND_SET_BIND_MODE          = 0x01, // command to enter bind mode
+    CRSF_COMMAND_CANCEL_BIND_MODE       = 0x02, // command to cancel bind mode
     CRSF_COMMAND_SET_MODEL_SELECTION    = 0x05, // command to select model/receiver
     CRSF_COMMAND_QUERY_MODEL_SELECTION  = 0x06, // query frame of current selection
     CRSF_COMMAND_REPLY_MODEL_SELECTION  = 0x07, // reply frame of current selection
@@ -144,7 +147,7 @@ typedef enum {
 } CRSF_RFMODE_ENUM;
 
 
-//-- Frame header
+//-- Frame Structure
 
 // final crc8 included in payload or cmd_data, hence these fields are one byte longer
 CRSF_PACKED(
@@ -162,7 +165,7 @@ typedef struct
             uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
         });
     });
-}) tCrsfFrameHeader;
+}) tCrsfFrame;
 
 
 //-- RC Channel frame
@@ -259,6 +262,7 @@ typedef struct {
 
 
 /* 0x1C Link Statistics RX
+
   uint8_t rssi_db;        // RSSI (dBm * -1)
   uint8_t rssi_percent;   // RSSI in percent
   uint8_t link_quality;   // Package success rate / Link quality (%)
@@ -299,6 +303,29 @@ typedef struct
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
+
+
+/* 0x29 Device Info
+
+  char[]      Device_name; // null-terminated string
+  uint32_t    Serial_number;
+  uint32_t    Hardware_ID;
+  uint32_t    Firmware_ID;
+  uint8_t     Parameters_total; // total amount of parameters
+  uint8_t     Parameter_version_number; *
+  this cannot be put into a fixed struct, so we only define the last fragment here
+*/
+CRSF_PACKED(
+typedef struct
+{
+    uint32_t serial_number;
+    uint32_t hardware_id;
+    uint32_t firmware_id;
+    uint8_t  parameters_total;
+    uint8_t  parameter_version_number;
+}) tCrsfDeviceInfoFragment;
+
+#define CRSF_DEVICE_INFO_FRAGMENT_LEN  14
 
 
 //-- Telemetry data frames

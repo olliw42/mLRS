@@ -28,6 +28,8 @@ class tChannelOrder
     void Apply(tRcData* const rc);
     uint8_t ChannelMap(uint8_t n);
 
+    void SetAndApply(tRcData* const rc, uint8_t new_channel_order);
+
   private:
     bool direction_is_tx;
     uint8_t channel_order;

@@ -52,7 +52,7 @@ class tOutBase
 
     void Do(void);
 
-    void SendRcData(tRcData* const rc, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
+    void SendRcData(tRcData* const rc_orig, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
     void SendLinkStatistics(tOutLinkStats* const lstats);
     void SendLinkStatisticsDisconnected(void);
 

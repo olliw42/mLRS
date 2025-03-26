@@ -65,7 +65,18 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  /* Default configuration at reset is:                      */
+  /* - Prefetch disabled                                     */
+  /* - Instruction cache enabled                             */
+  /* - Data cache enabled                                    */
+  // The default HAL is
+  // #define  PREFETCH_ENABLE                    0U
+  // #define  INSTRUCTION_CACHE_ENABLE           1U
+  // #define  DATA_CACHE_ENABLE                  1U
+  // These make HAL_Init() not do anything
+  __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+  __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
+  __HAL_FLASH_DATA_CACHE_DISABLE();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

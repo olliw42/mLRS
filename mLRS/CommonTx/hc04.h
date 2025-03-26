@@ -30,7 +30,6 @@ class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate) {}
-    uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterPassthrough(void) {}
     void SetPin(uint16_t pin) {}
@@ -39,6 +38,7 @@ class tTxHc04Bridge
 #else
 
 extern volatile uint32_t millis32(void);
+extern tLEDs leds;
 extern tTxDisp disp;
 
 
@@ -46,7 +46,6 @@ class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
-    uint8_t Task(void);
 
     void EnterPassthrough(void);
     void SetPin(uint16_t pin);
@@ -61,8 +60,6 @@ class tTxHc04Bridge
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
-
-    uint8_t task_pending;
 };
 
 
@@ -72,17 +69,7 @@ void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serial
     ser = _serialport;
     ser_baud = _serial_baudrate;
 
-    task_pending = TX_TASK_NONE;
-
     run_autoconfigure();
-}
-
-
-uint8_t tTxHc04Bridge::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
 }
 
 

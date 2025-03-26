@@ -43,6 +43,10 @@ extern tSetup Setup;
 #define MAVLINK_OPT_FAKE_PARAMFTP     2 // 0: off, 1: always, 2: determined from mode & baudrate
 
 
+// keeps info on the attached autopilot (ArduPilot only)
+// currently used to
+// - determine autopilot sysid, to target some messages
+// - request and digest AUTOPILOT_VERSION, to determine ArduPilot version and disable mftp fakery if >= 4.6.0
 class tRxAutoPilot
 {
   public:
@@ -171,7 +175,7 @@ void tRxMavlink::Init(void)
 
 #ifdef USE_FEATURE_MAVLINKX
     fmavX_init();
-    fmavX_config_compression((Config.Mode == MODE_19HZ) ? 1 : 0); // use compression only in 19 Hz mode
+    fmavX_config_compression((Config.Mode == MODE_19HZ || Config.Mode == MODE_19HZ_7X) ? 1 : 0); // use compression only in 19 Hz mode
 
     status_serial_in = {};
     fifo_link_out.Init();
@@ -207,8 +211,8 @@ void tRxMavlink::Init(void)
 
 
 // rc_out is the rc data stored in out class
-// after handling of channel order and failsafes.
-// Need to take care of failsafe flag however.
+// so after handling of channel order and failsafes by out class.
+// Need to take care of specific failsafe flag however.
 void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
 {
     if (Setup.Rx.SendRcChannels == SEND_RC_CHANNELS_OFF) return;
@@ -412,7 +416,8 @@ void tRxMavlink::parse_link_in_serial_out(char c)
             case MODE_50HZ:
             case MODE_FSK_50HZ: force_param_list = (Config.SerialBaudrate > 115200); break; // 115200 bps and lower is ok for mftp
             case MODE_31HZ: force_param_list = (Config.SerialBaudrate > 57600); break; // 57600 bps and lower is ok for mftp
-            case MODE_19HZ: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
+            case MODE_19HZ:
+            case MODE_19HZ_7X: force_param_list = (Config.SerialBaudrate > 38400); break; // 38400 bps and lower is ok for mftp
             }
             if (autopilot.HasMFtpFlowControl()) force_param_list = false; // mftp is flow controlled, so always ok
 #endif
@@ -795,10 +800,10 @@ void tRxMavlink::send_rc_channels_override(void)
         rc_chan[0], rc_chan[1], rc_chan[2], rc_chan[3], rc_chan[4], rc_chan[5], rc_chan[6], rc_chan[7],
         rc_chan[8], rc_chan[9], rc_chan[10], rc_chan[11], rc_chan[12], rc_chan[13], rc_chan[14], rc_chan[15],
         0, 0,
-        // uint8_t target_system, uint8_t target_component,
-        // uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
-        // uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
-        // uint16_t chan17_raw, uint16_t chan18_raw,
+        //uint8_t target_system, uint8_t target_component,
+        //uint16_t chan1_raw, uint16_t chan2_raw, uint16_t chan3_raw, uint16_t chan4_raw, uint16_t chan5_raw, uint16_t chan6_raw, uint16_t chan7_raw, uint16_t chan8_raw,
+        //uint16_t chan9_raw, uint16_t chan10_raw, uint16_t chan11_raw, uint16_t chan12_raw, uint16_t chan13_raw, uint16_t chan14_raw, uint16_t chan15_raw, uint16_t chan16_raw,
+        //uint16_t chan17_raw, uint16_t chan18_raw,
         &status_serial_out);
 
     send_msg_serial_out();
@@ -986,7 +991,7 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
         tx_ser_data_rate = 2000;
         rx_ser_data_rate = 2562;
         break;
-    case MODE_19HZ:
+    case MODE_19HZ: case MODE_19HZ_7X:
         tx_ser_data_rate = 1207;
         rx_ser_data_rate = 1547;
         break;

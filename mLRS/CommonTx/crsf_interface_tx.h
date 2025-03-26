@@ -37,11 +37,14 @@ typedef enum {
     TXCRSF_SEND_LINK_STATISTICS_TX,
     TXCRSF_SEND_LINK_STATISTICS_RX,
     TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
+    TXCRSF_SEND_DEVICE_INFO,
 } TXCRSF_SEND_ENUM;
 
 
 typedef enum {
     TXCRSF_CMD_MODELID_SET = 0,
+    TXCRSF_CMD_BIND_START,
+    TXCRSF_CMD_BIND_STOP,
     TXCRSF_CMD_MBRIDGE_IN,
 } TXCRSF_CMD_ENUM;
 
@@ -65,6 +68,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatistics(void); // in OpenTx this triggers telemetryStreaming
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
+    void SendDeviceInfo(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
@@ -83,8 +87,11 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t frame[CRSF_FRAME_LEN_MAX + 16];
     volatile bool channels_received;
     volatile bool cmd_received;
+    volatile bool ping_device_received;
     volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
     volatile uint8_t cmd_modelid_value;
+    volatile bool cmd_bind_set_received;
+    volatile bool cmd_bind_cancel_received;
 
     volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
@@ -128,8 +135,6 @@ class tTxCrsf : public tPin5BridgeBase
     void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload);
     void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);
     void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);
-
-    uint8_t vehicle_sysid;
 
     // CRSF passthrough telemetry
 
@@ -237,10 +242,24 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND &&
-            frame[5] == CRSF_COMMAND_ID && frame[6] == CRSF_COMMAND_SET_MODEL_SELECTION) {
-            cmd_modelid_received = true;
-            cmd_modelid_value = frame[7];
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
+            // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
+            ping_device_received = true;
+        } else
+        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND && frame[5] == CRSF_COMMAND_ID) {
+            switch (frame[6]) {
+            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
+                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS
+                cmd_modelid_received = true;
+                cmd_modelid_value = frame[7];
+                break;
+            case CRSF_COMMAND_SET_BIND_MODE: // len = 7
+                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
+                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+            case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
+                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
+                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+            }
         } else {
             cmd_received = true;
         }
@@ -304,7 +323,10 @@ void tTxCrsf::Init(bool enable_flag)
     tx_free = false;
     channels_received = false;
     cmd_received = false;
+    ping_device_received = false;
     cmd_modelid_received = false;
+    cmd_bind_set_received = false;
+    cmd_bind_cancel_received = false;
 
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
@@ -322,7 +344,6 @@ void tTxCrsf::Init(bool enable_flag)
     baro_altitude_updated = false;
     baro_send_tlast_ms = 0;
 
-    vehicle_sysid = 0;
     passthrough.Init();
 
     inav_baro_altitude = 0;
@@ -396,6 +417,13 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
         case 2: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
     }
 
+    // if we got a PING_DEVICE, send a DEVICE_INFO instead of a telemetry frame
+    if (ping_device_received) {
+        ping_device_received = false;
+        *task = TXCRSF_SEND_DEVICE_INFO;
+        return true;
+    }
+
     *task = TXCRSF_SEND_TELEMETRY_FRAME;
     return true;
 }
@@ -412,12 +440,24 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
         return true;
     }
 
+    if (cmd_bind_set_received) {
+        cmd_bind_set_received = false;
+        *cmd = TXCRSF_CMD_BIND_START;
+        return true;
+    }
+
+    if (cmd_bind_cancel_received) {
+        cmd_bind_cancel_received = false;
+        *cmd = TXCRSF_CMD_BIND_STOP;
+        return true;
+    }
+
     if (!cmd_received) return false;
     cmd_received = false;
 
     // TODO: we could check crc if we wanted to
 
-    tCrsfFrameHeader* header = (tCrsfFrameHeader*)frame;
+    tCrsfFrame* header = (tCrsfFrame*)frame;
 
     // mBridge emulation
     if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
@@ -432,13 +472,13 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
 uint8_t* tTxCrsf::GetPayloadPtr(void)
 {
-    return ((tCrsfFrameHeader*)frame)->payload;
+    return ((tCrsfFrame*)frame)->payload;
 }
 
 
 uint8_t tTxCrsf::GetPayloadLen(void)
 {
-    return ((tCrsfFrameHeader*)frame)->len - 2;
+    return ((tCrsfFrame*)frame)->len - 2;
 }
 
 
@@ -667,21 +707,6 @@ void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload)
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
 {
     if (msg->sysid == 0) return; // this can't be anything meaningful
-
-    // autodetect vehicle sysid
-/* we don't really need this for as long as we can assume that there is only one autopilot, so play it simple
-    if (!vehicle_sysid) {
-        if (msg->msgid == FASTMAVLINK_MSG_ID_HEARTBEAT) {
-            fmav_heartbeat_t payload;
-            fmav_msg_heartbeat_decode(&payload, msg);
-            if ((msg->compid == MAV_COMP_ID_AUTOPILOT1) || (payload.autopilot != MAV_AUTOPILOT_INVALID)) {
-                vehicle_sysid = msg->sysid;
-            }
-        }
-        if (!vehicle_sysid) return;
-    }
-    if (msg->sysid != vehicle_sysid) return;
-*/
 
     if (msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
 
@@ -983,6 +1008,40 @@ tCrsfLinkStatisticsRx clstats;
 }
 
 
+uint32_t version_to_u32(uint32_t version)
+{
+    uint32_t major = version / 10000;
+    version -= major * 10000;
+    uint32_t minor = version / 100;
+    version -= minor * 100;
+    uint32_t patch = version;
+
+    return (major << 16) + (minor << 8) + patch;
+}
+
+
+void tTxCrsf::SendDeviceInfo(void)
+{
+char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
+
+    // extended frame, so need to send destination and origin addresses
+    buf[0] = CRSF_ADDRESS_RADIO; // destination address, ignored by EdgeTx (ELRS uses BROADCAST)
+    buf[1] = CRSF_ADDRESS_TRANSMITTER_MODULE; // origin address, EdgeTx looks for this
+
+    strstrbufcpy(buf + 2, DEVICE_NAME, 20); // this fills max 21 bytes, EdgeTx is limiting name to 15 chars (16-1)
+    uint8_t len = 2 + strlen(buf + 2) + 1;
+
+    tCrsfDeviceInfoFragment* dvif_ptr = (tCrsfDeviceInfoFragment*)(buf + len);
+    dvif_ptr->serial_number = 0x53524C6D; // EdgeTx digests it as 4 chars to identify ELRS, so let's set it to mLRS
+    dvif_ptr->hardware_id = 54321; // TODO, we could use stm32 uid, as for hc04, but this we haven't currently for esp
+    dvif_ptr->firmware_id = CRSF_REV_U32(version_to_u32(VERSION)); // EdgeTx is showing it as Vmaj.min.patch
+    dvif_ptr->parameters_total = 0;
+    dvif_ptr->parameter_version_number = 0;
+
+    send_frame(CRSF_FRAME_ID_DEVICE_INFO, buf, len + CRSF_DEVICE_INFO_FRAGMENT_LEN);
+}
+
+
 #else
 
 class tTxCrsfDummy
@@ -999,6 +1058,7 @@ class tTxCrsfDummy
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsTx(void) {}
     void SendLinkStatisticsRx(void) {}
+    void SendDevideInfo(void) {}
 };
 
 tTxCrsfDummy crsf;

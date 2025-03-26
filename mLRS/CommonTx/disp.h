@@ -21,7 +21,6 @@ class tTxDisp
   public:
     void Init(void) {}
     void Tick_ms(void) {}
-    uint8_t Task(void) { return 0; }
     void DrawNotify(const char* const s) {}
     void DrawBoot(void) {}
 };
@@ -35,6 +34,7 @@ class tTxDisp
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
 #include "../Common/thirdparty/gdisp.h"
 #include "../Common/thirdparty/mlrs-logo.h"
+#include "../Common/tasks.h"
 
 
 extern bool connected(void);
@@ -44,6 +44,7 @@ extern tGDisplay gdisp;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTasks tasks;
 void i2c_spin(uint16_t chunksize);
 
 
@@ -112,7 +113,6 @@ class tTxDisp
     void UpdateMain(void);
     void SetBind(void);
     void Draw(void);
-    uint8_t Task(void);
     void DrawNotify(const char* const s);
     void DrawBoot(void);
 
@@ -145,7 +145,6 @@ class tTxDisp
     void draw_options(tParamList* const list);
 
     bool initialized;
-    uint8_t task_pending;
     bool connected_last; // to detect connection changes
     bool setupmetadata_rx_available_last; // to detect changes
 
@@ -170,7 +169,8 @@ class tTxDisp
     uint8_t idx_focused;        // index of highlighted param
     bool idx_focused_in_edit;   // if param is in edit
     uint8_t idx_focused_pos;    // pos in str6 (bind phrase) parameter
-    uint8_t idx_focused_task_pending;
+
+    uint8_t edit_setting_task_pending;
 
     tParamList common_list;
     tParamList tx_list;
@@ -198,7 +198,6 @@ void tTxDisp::Init(void)
 #endif
     }
 
-    task_pending = TX_TASK_NONE;
     connected_last = false;
     setupmetadata_rx_available_last = false;
 
@@ -238,15 +237,8 @@ void tTxDisp::Init(void)
     idx_max = 0;
     idx_focused_in_edit = false;
     idx_focused_pos = 0;
-    idx_focused_task_pending = TX_TASK_NONE;
-}
 
-
-uint8_t tTxDisp::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
+    edit_setting_task_pending = MAIN_TASK_NONE;
 }
 
 
@@ -412,16 +404,16 @@ if(!idx_focused_in_edit){
     if (key_has_been_pressed(KEY_CENTER)) {
         idx_focused_in_edit = false;
         page_modified = true;
-        if (idx_focused_task_pending != CLI_TASK_NONE) task_pending = idx_focused_task_pending;
-        idx_focused_task_pending = CLI_TASK_NONE;
+        if (idx_focused_task_pending != MAIN_TASK_NONE) task_pending = idx_focused_task_pending;
+        idx_focused_task_pending = MAIN_TASK_NONE;
     } else {
         edit_setting();
     } */
     if (edit_setting()) { // edit, and finish if true
         idx_focused_in_edit = false;
         page_modified = true;
-        if (idx_focused_task_pending != TX_TASK_NONE) task_pending = idx_focused_task_pending;
-        idx_focused_task_pending = TX_TASK_NONE;
+        if (edit_setting_task_pending != MAIN_TASK_NONE) tasks.SetDisplayTask(edit_setting_task_pending);
+        edit_setting_task_pending = MAIN_TASK_NONE;
     }
 
 }
@@ -458,16 +450,16 @@ void tTxDisp::run_action(void)
     case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
-        task_pending = TX_TASK_PARAM_STORE;
+        tasks.SetDisplayTask(TX_TASK_PARAM_STORE);
         break;
     case DISP_ACTION_BIND:
-        task_pending = TX_TASK_BIND;
+        tasks.SetDisplayTask(MAIN_TASK_BIND_START);
         break;
     case DISP_ACTION_BOOT:
-        task_pending = TX_TASK_SYSTEM_BOOT;
+        tasks.SetDisplayTask(MAIN_TASK_SYSTEM_BOOT);
         break;
     case DISP_ACTION_FLASH_ESP:
-        task_pending = TX_TASK_FLASH_ESP;
+        tasks.SetDisplayTask(TX_TASK_FLASH_ESP);
         break;
     }
 }
@@ -706,9 +698,9 @@ int8_t power;
     draw_header("Main");
 
     gdisp_setcurX(50);
-    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE, PARAM_FORMAT_DISPLAY); // 1 = index of Mode
     if (strlen(s) > 5) {
-        gdisp_setcurXY(35, 6);
+        gdisp_setcurXY(43, 6);
     } else {
         gdisp_setcurXY(50, 6);
     }
@@ -1130,7 +1122,7 @@ bool tTxDisp::edit_setting(void)
 
     }
 
-    if (rx_param_changed) idx_focused_task_pending = TX_TASK_RX_PARAM_SET;
+    if (rx_param_changed) edit_setting_task_pending = TX_TASK_RX_PARAM_SET;
     return false; // keep on editing
 }
 

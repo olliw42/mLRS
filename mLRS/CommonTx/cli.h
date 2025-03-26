@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "../Common/hal/hal.h"
+#include "../Common/tasks.h"
 #include "setup_tx.h"
 
 
@@ -24,6 +25,7 @@ extern tStats stats;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTasks tasks;
 
 
 //-------------------------------------------------------
@@ -58,6 +60,9 @@ uint8_t nr, n;
     if (format == PARAM_FORMAT_DISPLAY) {
         if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPSTR;
+        }
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].Mode)) { // Mode
+            optstr = SETUP_OPT_MODE_DISPSTR;
         }
         if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
             (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
@@ -298,8 +303,6 @@ class tTxCli
   public:
     void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
     void Do(void);
-    uint8_t Task(void);
-    int32_t GetTaskValue(void) { return task_value; }
 
   private:
     void addc(uint8_t c);
@@ -331,9 +334,6 @@ class tTxCli
     uint8_t pos;
     uint32_t tlast_ms;
 
-    uint8_t task_pending;
-    int32_t task_value;
-
     // variables needed for print state machine to print in junks
     typedef enum {
         CLI_STATE_NORMAL = 0,
@@ -363,9 +363,6 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
     buf[pos] = '\0';
     tlast_ms = 0;
 
-    task_pending = TX_TASK_NONE;
-    task_value = 0;
-
     state = CLI_STATE_NORMAL;
 
     // 9 ms, 20 ms, 32 ms, 53 ms
@@ -382,14 +379,6 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 
     print_index = 0;
     print_pl_flag = 0;
-}
-
-
-uint8_t tTxCli::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
 }
 
 
@@ -791,12 +780,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) task_pending = TX_TASK_RX_PARAM_SET;
+                if (rx_param_changed) tasks.SetCliTask(TX_TASK_RX_PARAM_SET);
             }
 
         } else
         if (is_cmd("pstore")) {
-            task_pending = TX_TASK_PARAM_STORE;
+            tasks.SetCliTask(TX_TASK_PARAM_STORE);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -807,12 +796,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            task_pending = TX_TASK_BIND;
+            tasks.SetCliTask(MAIN_TASK_BIND_START);
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            task_pending = TX_TASK_PARAM_RELOAD;
+            tasks.SetCliTask(TX_TASK_PARAM_RELOAD);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -830,8 +819,7 @@ bool rx_param_changed;
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
-                task_value = value;
+                tasks.SetCliTaskAndValue(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
             }
@@ -850,18 +838,18 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (is_cmd("systemboot")) {
-            task_pending = TX_TASK_SYSTEM_BOOT;
+            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT); //task_pending = TX_TASK_SYSTEM_BOOT;
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            task_pending = TX_TASK_ESP_PASSTHROUGH;
+            tasks.SetCliTask(TX_TASK_ESP_PASSTHROUGH);
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            task_pending = TX_TASK_FLASH_ESP;
+            tasks.SetCliTask(TX_TASK_FLASH_ESP);
 #endif
 
         //-- HC04 module handling
@@ -869,7 +857,7 @@ bool rx_param_changed;
         } else
         if (is_cmd("hc04 pt")) {
             // enter hc04 passthrough, can only be exited by re-powering
-            task_pending = TX_TASK_HC04_PASSTHROUGH;
+            tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
         } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
@@ -879,8 +867,7 @@ bool rx_param_changed;
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
                 puts("HC04 Pin: ");putsn(pin_str);
-                task_pending = TX_TASK_CLI_HC04_SETPIN;
-                task_value = value;
+                tasks.SetCliTaskAndValue(TX_TASK_CLI_HC04_SETPIN, value);
             }
 #endif
 

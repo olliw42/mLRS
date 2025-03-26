@@ -586,8 +586,15 @@ tMBridgeInfo info = {};
 
     info.tx_config_id = Config.ConfigId;
 
-    info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
-    info.tx_actual_power_dbm = sx.RfPower_dbm();
+    if (!TRANSMIT_USE_ANTENNA1) {
+        // Config.Diversity = DIVERSITY_ANTENNA2, DIVERSITY_R_ENABLED_T_ANTENNA2
+        info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
+        info.tx_actual_power_dbm = sx2.RfPower_dbm();
+    } else {
+        // Config.Diversity = DIVERSITY_DEFAULT, DIVERSITY_ANTENNA1, DIVERSITY_R_ENABLED_T_ANTENNA1
+        info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
+        info.tx_actual_power_dbm = sx.RfPower_dbm();
+    }
     info.tx_actual_diversity = Config.Diversity;
 
     if (SetupMetaData.rx_available) {
