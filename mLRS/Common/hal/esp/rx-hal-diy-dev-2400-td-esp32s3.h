@@ -11,7 +11,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-//#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
 #define DEVICE_HAS_SINGLE_LED_RGB
 
 
@@ -102,8 +102,8 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 #define SX2_BUSY                  IO_P18
 #define SX2_DIO1                  IO_P14
 #define SX2_RESET                 IO_P13
-#define SX2_RX_EN                 IO_P8
-#define SX2_TX_EN                 IO_P9
+#define SX2_RX_EN                 IO_P9
+#define SX2_TX_EN                 IO_P8
 
 #define SX2_USE_REGULATOR_MODE_DCDC
 
