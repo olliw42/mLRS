@@ -11,7 +11,7 @@
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
+//#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // must be set, doesn't work without it
 #define DEVICE_HAS_SINGLE_LED_RGB
 
 
@@ -34,9 +34,9 @@
 #define UART_TXBUFSIZE            256
 
 #define UARTF_USE_SERIAL2
+#define UARTF_BAUD                115200
 #define UARTF_USE_TX_IO           IO_P35
 #define UARTF_USE_RX_IO           -1
-#define UARTF_BAUD                115200
 #define UARTF_TXBUFSIZE           0  // TX FIFO = 128
 
 
@@ -177,7 +177,7 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 
 //-- LEDs
 #include <NeoPixelBus.h>
-#define LED_RGB                    IO_P38
+#define LED_RGB                   38
 bool ledRedState;
 bool ledGreenState;
 bool ledBlueState;
