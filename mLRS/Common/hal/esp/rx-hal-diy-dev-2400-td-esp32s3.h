@@ -29,13 +29,13 @@
 
 #define UART_USE_SERIAL1 
 #define UART_BAUD                 416666   // CRSF baud rate
-#define UART_USE_TX_IO            IO_P37   // TX3
+#define UART_USE_TX_IO            IO_P35   // TX2
 #define UART_USE_RX_IO            -1       // no Rx pin needed
 #define UART_TXBUFSIZE            256
 
 #define UARTF_USE_SERIAL2
 #define UARTF_BAUD                115200
-#define UARTF_USE_TX_IO           IO_P35
+#define UARTF_USE_TX_IO           IO_P37   // TX3
 #define UARTF_USE_RX_IO           -1
 #define UARTF_TXBUFSIZE           0  // TX FIFO = 128
 
@@ -115,6 +115,8 @@ void sx2_init_gpio(void)
     gpio_init(SX2_DIO1, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
 }
 
 IRAM_ATTR void spib_select(void)
