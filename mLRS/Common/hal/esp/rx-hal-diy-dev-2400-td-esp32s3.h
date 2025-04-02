@@ -259,18 +259,18 @@ IRAM_ATTR void led_blue_toggle(void)
 //-- POWER
 #ifndef POWER_OVERLAY
 
-#define POWER_GAIN_DBM            32 // gain of a PA stage if present
+#define POWER_GAIN_DBM            24 // gain of a PA stage if present
 #define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
 };
 
 #endif // !POWER_OVERLAY
