@@ -179,7 +179,7 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 
 //-- LEDs
 #include <NeoPixelBus.h>
-#define LED_RGB                   38
+#define LED_RGB                   IO_P38
 bool ledRedState;
 bool ledGreenState;
 bool ledBlueState;
