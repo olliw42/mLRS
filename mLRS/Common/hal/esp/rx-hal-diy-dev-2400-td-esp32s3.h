@@ -66,10 +66,7 @@ void sx_init_gpio(void)
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR bool sx_busy_read(void)
-{
-    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
-}
+IRAM_ATTR bool sx_busy_read(void) { return (gpio_read_activehigh(SX_BUSY)) ? true : false; }
 
 IRAM_ATTR void sx_amp_transmit(void)
 {
@@ -83,17 +80,9 @@ IRAM_ATTR void sx_amp_receive(void)
     gpio_high(SX_RX_EN);
 }
 
-void sx_dio_init_exti_isroff(void)
-{
-    detachInterrupt(SX_DIO1);
-}
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
-}
-
-IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
+void sx_dio_init_exti_isroff(void) { detachInterrupt(SX_DIO1); }
+void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING); }
+void sx_dio_exti_isr_clearflag(void) {}
 
 
 //-- SX2: SX128x & SPI
@@ -119,20 +108,9 @@ void sx2_init_gpio(void)
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR void spib_select(void)
-{
-    gpio_low(SX2_CS_IO);
-}
-
-IRAM_ATTR void spib_deselect(void)
-{
-    gpio_high(SX2_CS_IO);
-}
-
-IRAM_ATTR bool sx2_busy_read(void)
-{
-    return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
-}
+IRAM_ATTR void spib_select(void) { gpio_low(SX2_CS_IO); }
+IRAM_ATTR void spib_deselect(void) { gpio_high(SX2_CS_IO); }
+IRAM_ATTR bool sx2_busy_read(void) { return (gpio_read_activehigh(SX2_BUSY)) ? true : false; }
 
 IRAM_ATTR void sx2_amp_transmit(void)
 {
@@ -146,25 +124,15 @@ IRAM_ATTR void sx2_amp_receive(void)
     gpio_high(SX2_RX_EN);
 }
 
-void sx2_dio_init_exti_isroff(void)
-{
-    detachInterrupt(SX2_DIO1);
-}
-
-void sx2_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING);
-}
-
+void sx2_dio_init_exti_isroff(void) { detachInterrupt(SX2_DIO1); }
+void sx2_dio_enable_exti_isr(void) { attachInterrupt(SX2_DIO1, SX2_DIO_EXTI_IRQHandler, RISING); }
 void sx2_dio_exti_isr_clearflag(void) {}
 
 
 //-- Out port
 
 void out_init_gpio(void) {}
-
 void out_set_normal(void) { gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, false, false); }
-
 void out_set_inverted(void) { gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false); }
 
 
