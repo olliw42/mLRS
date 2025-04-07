@@ -268,6 +268,7 @@ void serialFlushRx(void)
 
 void setup_device_name(void)
 {
+#ifdef ESP8266
     String MAC_buf;
     MAC_buf = WiFi.macAddress();
     // No point in any sort of hash here, the last bytes of the MAC address in hex is more useful
@@ -280,9 +281,27 @@ void setup_device_name(void)
         device_name = (ssid == "") ? device_name + device_id + " AP TCP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
         device_name = (ssid == "") ? device_name + device_id + " AP UDP" : ssid;
-    } else if (g_protocol == WIRELESS_PROTOCOL_BT) {
-        device_name = (bluetooth_device_name == "") ? device_name + device_id + " BT" : bluetooth_device_name;
     }
+#else
+    uint8_t MAC_buf[6+2];
+    // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
+    // MACs are different for STA and AP, BT
+    esp_base_mac_addr_get(MAC_buf);
+    uint16_t device_id = 0;
+    for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
+    device_id += MAC_buf[5];
+    device_name = "mLRS-";
+#ifdef DEVICE_NAME_HEAD
+    device_name = String(DEVICE_NAME_HEAD) + "-mLRS-";
+#endif    
+    if (g_protocol == WIRELESS_PROTOCOL_TCP) {
+        device_name = (ssid == "") ? device_name + String(device_id) + " AP TCP" : ssid;
+    } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
+        device_name = (ssid == "") ? device_name + String(device_id) + " AP UDP" : ssid;
+    } else if (g_protocol == WIRELESS_PROTOCOL_BT) {
+        device_name = (bluetooth_device_name == "") ? device_name + String(device_id) + " BT" : bluetooth_device_name;
+    }
+#endif
 }
 
 
