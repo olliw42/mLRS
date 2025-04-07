@@ -15,6 +15,27 @@
 // - Use upload speed 115200 if serial passthrough shall be used for flashing
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
+
+
+//-------------------------------------------------------
+// Includes
+//-------------------------------------------------------
+
+#ifdef ESP8266
+#include <ESP8266WiFi.h> // need this before WiFi settings section
+#include <WiFiUdp.h>
+
+#else // ESP32
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+    #error Version of your ESP Arduino Core below 3.0.0 !
+#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
+    #warning Consider upgrading your ESP Arduino Core ! // warnings may not be displayed in console !
+#endif
+
+#include <WiFi.h>
+#include "esp_mac.h"
+#endif // ESP8266
+
 /*
 Definitions:
 - "module" refers to the physical hardware
@@ -24,6 +45,7 @@ For more details on the modules see mlrs-wireless-bridge-boards.h
 
 List of supported modules, and board which needs to be selected
 
+- Generic ESP8266                 board: Generic ESP8266 Module
 - Espressif ESP32-DevKitC V4      board: ESP32 Dev Module
 - NodeMCU ESP32-Wroom-32          board: ESP32 Dev Module
 - Espressif ESP32-PICO-KIT        board: ESP32 PICO-D4
@@ -47,6 +69,7 @@ Troubleshooting:
 
 // Module
 // uncomment what you want, you must select one (and only one)
+//#define MODULE_GENERIC_ESP8266
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
 //#define MODULE_ESP32_PICO_KIT
@@ -68,7 +91,7 @@ Troubleshooting:
 
 // Wireless protocol
 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCl, 3 = Bluetooth (not available for all boards)
-// Note: If GPIO0_IO is defined, and protocol not UDPCl, when it only sets the default protocol
+// Note: If GPIO0_IO is defined, and protocol not UDPCl, then it only sets the default protocol
 #define WIRELESS_PROTOCOL  1
 
 // GPIO0 usage
@@ -105,9 +128,13 @@ int port_udpcl = 14550; // connect to this port per UDPCL // MissionPlanner defa
 // WiFi power (for all TCP, UDP, UDPCl)
 // this sets the power level for the WiFi protocols
 // Note: If GPIO0_IO is defined, this sets the power for the medium power option.
+#ifdef ESP8266
+// WIFI_POWER can be 0 to 20.5
+#define WIFI_POWER  6
+#else
 // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
-
+#endif
 
 //**************************//
 //*** Bluetooth settings ***//
@@ -121,7 +148,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Baudrate
 #define BAUD_RATE  115200
 
-// Serial port usage (only effective for the generic module)
+// Serial port usage (only effective for the generic esp32 module)
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
@@ -145,43 +172,27 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 
 #include "mlrs-wireless-bridge-boards.h"
 
-
-//-------------------------------------------------------
-// Includes
-//-------------------------------------------------------
-
-#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-    #error Version of your ESP Arduino Core below 3.0.0 !
-#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
-    #warning Consider upgrading your ESP Arduino Core ! // warnings may not be displayed in console !
-#endif
-
 #ifdef GPIO0_IO
 #define USE_AT_MODE
 #endif
-
-#include <WiFi.h>
-#include "esp_mac.h"
-#if (WIRELESS_PROTOCOL != 2) // not UDPCl
-// for some reason checking
-// #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
-// does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work. 
-// This sucks. So we don't try to be nice but let the compiler work it out.
-#if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 3) // for AT commands we require BT be available
-  #define USE_WIRELESS_PROTOCOL_BLUETOOTH
-  #include <BluetoothSerial.h>
-#endif
-#endif
-
 
 //-------------------------------------------------------
 // Internals
 //-------------------------------------------------------
 
-#if (WIRELESS_PROTOCOL != 2) // WiFi TCP, UDP, BT
+#if (WIRELESS_PROTOCOL != 2) // not UDPCl
+
+#if (defined USE_AT_MODE || (WIRELESS_PROTOCOL == 3)) && ! defined ESP8266 // for AT commands we require BT be available except 8266
+  #define USE_WIRELESS_PROTOCOL_BLUETOOTH
+  #include <BluetoothSerial.h>
+#endif
 
 // WiFi TCP, UDP
+#ifdef ESP8266 // could eliminate this and use broadcast for first message
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // the first DHCP client/MissionPlanner gets assigned +99
+#else
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
+#endif
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 // UDP
@@ -194,7 +205,7 @@ WiFiClient client;
 BluetoothSerial SerialBT;
 #endif
 
-#elif (WIRELESS_PROTOCOL == 2) // WiFi UDPCl
+#else // (WIRELESS_PROTOCOL == 2) WiFi UDPCl
 
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
@@ -218,7 +229,7 @@ typedef enum {
 #define PROTOCOL_DEFAULT  WIRELESS_PROTOCOL
 #define BAUDRATE_DEFAULT  BAUD_RATE
 #define WIFICHANNEL_DEFAULT  WIFI_CHANNEL
-#define WIFIPOWER_DEFAULT  WIFI_POWER
+#define WIFIPOWER_DEFAULT  WIFI_POWER_MED
 
 #define G_PROTOCOL_STR  "protocol"
 int g_protocol = PROTOCOL_DEFAULT;
@@ -257,30 +268,37 @@ void serialFlushRx(void)
 
 void setup_device_name(void)
 {
-    uint8_t MAC_buf[6+2];
-    // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
-    // MACs are different for STA and AP, BT
-    esp_base_mac_addr_get(MAC_buf);
-    uint16_t device_id = 0;
-    for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
-    device_id += MAC_buf[5];
+    String MAC_buf;
+    MAC_buf = WiFi.macAddress();
+    // No point in any sort of hash here, the last bytes of the MAC address in hex is more useful
+    String device_id = MAC_buf.substring(12,14)+MAC_buf.substring(15);
     device_name = "mLRS-";
 #ifdef DEVICE_NAME_HEAD
     device_name = String(DEVICE_NAME_HEAD) + "-mLRS-";
 #endif    
     if (g_protocol == WIRELESS_PROTOCOL_TCP) {
-        device_name = (ssid == "") ? device_name + String(device_id) + " AP TCP" : ssid;
+        device_name = (ssid == "") ? device_name + device_id + " AP TCP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
-        device_name = (ssid == "") ? device_name + String(device_id) + " AP UDP" : ssid;
+        device_name = (ssid == "") ? device_name + device_id + " AP UDP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_BT) {
-        device_name = (bluetooth_device_name == "") ? device_name + String(device_id) + " BT" : bluetooth_device_name;
+        device_name = (bluetooth_device_name == "") ? device_name + device_id + " BT" : bluetooth_device_name;
     }
 }
 
 
 void setup_wifipower()
 {
-    //WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
+#ifdef ESP8266
+    switch (g_wifipower) {
+        case WIFI_POWER_LOW: WiFi.setOutputPower(0); break;
+#ifdef WIFI_POWER
+        case WIFI_POWER_MED: WiFi.setOutputPower(WIFI_POWER); break;
+#else
+        case WIFI_POWER_MED: WiFi.setOutputPower(5); break;
+#endif        
+        case WIFI_POWER_MAX: WiFi.setOutputPower(20.5); break;
+    }
+#else
     switch (g_wifipower) {
         case WIFI_POWER_LOW: WiFi.setTxPower(WIFI_POWER_MINUS_1dBm); break;
 #ifdef WIFI_POWER
@@ -290,6 +308,7 @@ void setup_wifipower()
 #endif        
         case WIFI_POWER_MAX: WiFi.setTxPower(WIFI_POWER_19_5dBm); break;
     }
+#endif
 }
 
 
@@ -395,7 +414,9 @@ void setup()
 
     // Serial 
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
+#ifndef ESP8266 // do we even need this on esp32?
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
+#endif
 #ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
   #ifdef USE_SERIAL_INVERTED
     SERIAL.begin(g_baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, true);
