@@ -18,6 +18,7 @@
 #define DEVICE_HAS_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+#define DEVICE_BRIDGE_HAS_BT
 
 
 //-- Timers, Timing, EEPROM, and such stuff

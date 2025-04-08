@@ -153,6 +153,13 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
+    // Tx Bridge WiFi Protocol : "TCP,UDP,BT"
+#ifdef DEVICE_BRIDGE_HAS_BT
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0111; // all
+#else
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0011; // no BT
+#endif
+
     //-- Rx:
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
