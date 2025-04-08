@@ -447,6 +447,7 @@ typedef struct
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
+    uint16_t Tx_WiFiProt_allowed_mask;
 
     char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;
