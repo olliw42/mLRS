@@ -115,9 +115,9 @@ Don't hesitate to join the discussion thread at rcgroups or the discord channel 
 
 ## Firmware: Flashing ##
 
-Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the binary file appropriate for your board into the device (it is not required to install the software for compiling as described in the next chapter or the docs). The mLRS transmitter can then be configured to your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
+Most devices which are supported can be flashed with the [mLRS Desktop App](https://github.com/olliw42/mLRS-Flasher).  Additionally, Matek devices can be flashed using a web browser with the [mLRS Web Flasher](https://mlrs.xyz/flash).
 
-For the devices which are supported, the easiest way to flash can be the [mLRS Web Flasher](https://mlrs.xyz/flash) (currently only DFU mode is supported).
+Once your hardware is flashed, you can then use the mLRS transmitter to configure your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
 
 ## Software: Installation Bits and Bops ##
 
