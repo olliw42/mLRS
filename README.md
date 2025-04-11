@@ -100,7 +100,6 @@ The code currently supports:
 - Frsky R9M and R9M Lite Pro transmitter modules and R9 MX, R9 MM and R9 Mini receivers (868/915 MHz*)
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards (868/915 MHz, 433 MHz/70 cm)
 - EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
-- Flysky FRM303 transmitter module (2.4 GHz)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 MatekSys offers a selection of quality mLRS boards, which are currently the best option available. They are specifically designed for mLRS, exploiting its full potential feature-wise. They support the 2.4 GHz and 868/915 MHz frequency bands, offer up to 1 W transmit power, and employ TCXOs. Furthermore, they use comparatively beefy STM32 MCUs, and are also very well suited for tinkering since all usable pins are broken out and easily accessible.
