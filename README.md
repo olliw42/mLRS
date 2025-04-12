@@ -100,7 +100,6 @@ The code currently supports:
 - Frsky R9M and R9M Lite Pro transmitter modules and R9 MX, R9 MM and R9 Mini receivers (868/915 MHz*)
 - SeeedStudio Wio-E5 Mini and Grove Wio-E5 boards (868/915 MHz, 433 MHz/70 cm)
 - EByte E77 MBL board (868/915 MHz, 433 MHz/70 cm)
-- Flysky FRM303 transmitter module (2.4 GHz)
 - several DIY boards you can find in https://github.com/olliw42/mLRS-hardware
 
 MatekSys offers a selection of quality mLRS boards, which are currently the best option available. They are specifically designed for mLRS, exploiting its full potential feature-wise. They support the 2.4 GHz and 868/915 MHz frequency bands, offer up to 1 W transmit power, and employ TCXOs. Furthermore, they use comparatively beefy STM32 MCUs, and are also very well suited for tinkering since all usable pins are broken out and easily accessible.
@@ -115,9 +114,9 @@ Don't hesitate to join the discussion thread at rcgroups or the discord channel 
 
 ## Firmware: Flashing ##
 
-Ready-to-flash firmware can be found in the "firmware" folder. All you need to do is to flash the binary file appropriate for your board into the device (it is not required to install the software for compiling as described in the next chapter or the docs). The mLRS transmitter can then be configured to your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
+Most devices which are supported can be flashed with the [mLRS Desktop App](https://github.com/olliw42/mLRS-Flasher).  Additionally, Matek devices can be flashed using a web browser with the [mLRS Web Flasher](https://mlrs.xyz/flash).
 
-For the devices which are supported, the easiest way to flash can be the [mLRS Web Flasher](https://mlrs.xyz/flash) (currently only DFU mode is supported).
+Once your hardware is flashed, you can then use the mLRS transmitter to configure your needs via the CLI, the mLRS Configuration Lua script, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
 
 ## Software: Installation Bits and Bops ##
 
