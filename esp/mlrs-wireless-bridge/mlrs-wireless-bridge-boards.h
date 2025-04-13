@@ -9,6 +9,12 @@
 
 /*
 ------------------------------
+Generic ESP8266
+------------------------------
+board: Generic ESP8266 Module
+https://www.espressif.com/sites/default/files/documentation/esp8266-technical_reference_en.pdf
+Used in many ELRS Tx modules
+------------------------------
 Espressif ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module
@@ -108,8 +114,28 @@ GPIO15 = RTC_GPIO13
 // Module details
 //-------------------------------------------------------
 
+//-- ESP8266 with GPIO0 controlable, used in many ELRS Tx modules
+#if defined MODULE_ESP8266_ELRS_TX
+    #ifndef ARDUINO_ESP8266_GENERIC // ARDUINO_BOARD != ESP8266
+	      #error Select board Generic ESP8266 module
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #undef LED_IO
+    #define LED_IO 16
+    #define USE_LED
+
+    #undef GPIO0_IO
+    #define GPIO0_IO  0
+    #undef WIRELESS_PROTOCOL
+    #define WIRELESS_PROTOCOL 1 // make UDP the default
+
+
 //-- MatekSys TxM-TD30 mLRS Tx module
-#if defined MODULE_MATEK_TXM_TD30 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
+#elif defined MODULE_MATEK_TXM_TD30 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ESP32 PICO-D4!
     #endif
@@ -355,6 +381,7 @@ GPIO15 = RTC_GPIO13
 
 
 #if defined USE_SERIAL_DBG1
+    #undef SERIAL
     #define SERIAL Serial
     #define DBG Serial1
     #define DBG_PRINT(x) Serial1.print(x)
@@ -374,7 +401,8 @@ GPIO15 = RTC_GPIO13
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
 
-#else    
+#else
+    #undef SERIAL
     #define SERIAL Serial
     #define DBG_PRINT(x)
     #define DBG_PRINTLN(x)

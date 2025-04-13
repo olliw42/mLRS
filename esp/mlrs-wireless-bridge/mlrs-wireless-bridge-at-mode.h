@@ -91,9 +91,11 @@ void AtMode::Init(uint8_t _gpio_pin)
     gpio_is_low = false;
     restart_needed = false;
 
+#ifndef ESP8266
     // https://github.com/espressif/esp-idf/issues/12473
     esp_log_level_set("wifi", ESP_LOG_NONE);
     // ?? esp_wifi_nan_stop();
+#endif
 
     startup_tmo_ms = 750 + millis(); // stay in AT loop for at least 750 ms, 0 = startup timeout ended
 }
