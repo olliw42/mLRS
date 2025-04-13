@@ -69,7 +69,7 @@ Troubleshooting:
 
 // Module
 // uncomment what you want, you must select one (and only one)
-//#define MODULE_GENERIC_ESP8266
+//#define MODULE_ESP8266_ELRS_TX
 //#define MODULE_ESP32_DEVKITC_V4
 //#define MODULE_NODEMCU_ESP32_WROOM32
 //#define MODULE_ESP32_PICO_KIT
@@ -188,7 +188,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 #endif
 
 // WiFi TCP, UDP
-#ifdef ESP8266 // could eliminate this and use broadcast for first message
+#ifdef ESP8266 // could eliminate this ifdef and use broadcast for first message
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // the first DHCP client/MissionPlanner gets assigned +99
 #else
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
@@ -268,25 +268,14 @@ void serialFlushRx(void)
 
 void setup_device_name(void)
 {
-#ifdef ESP8266
-    String MAC_buf;
-    MAC_buf = WiFi.macAddress();
-    // No point in any sort of hash here, the last bytes of the MAC address in hex is more useful
-    String device_id = MAC_buf.substring(12,14)+MAC_buf.substring(15);
-    device_name = "mLRS-";
-#ifdef DEVICE_NAME_HEAD
-    device_name = String(DEVICE_NAME_HEAD) + "-mLRS-";
-#endif    
-    if (g_protocol == WIRELESS_PROTOCOL_TCP) {
-        device_name = (ssid == "") ? device_name + device_id + " AP TCP" : ssid;
-    } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
-        device_name = (ssid == "") ? device_name + device_id + " AP UDP" : ssid;
-    }
-#else
     uint8_t MAC_buf[6+2];
     // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
     // MACs are different for STA and AP, BT
+#ifdef ESP8266
+    wifi_get_macaddr(STATION_IF, MAC_buf);
+#else
     esp_base_mac_addr_get(MAC_buf);
+#endif
     uint16_t device_id = 0;
     for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
     device_id += MAC_buf[5];
@@ -301,7 +290,6 @@ void setup_device_name(void)
     } else if (g_protocol == WIRELESS_PROTOCOL_BT) {
         device_name = (bluetooth_device_name == "") ? device_name + String(device_id) + " BT" : bluetooth_device_name;
     }
-#endif
 }
 
 

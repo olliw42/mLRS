@@ -114,8 +114,8 @@ GPIO15 = RTC_GPIO13
 // Module details
 //-------------------------------------------------------
 
-//-- Generic ESP8266, used in many ELRS Tx modules
-#if defined MODULE_GENERIC_ESP8266
+//-- ESP8266 with GPIO0 controlable, used in many ELRS Tx modules
+#if defined MODULE_ESP8266_ELRS_TX
     #ifndef ARDUINO_ESP8266_GENERIC // ARDUINO_BOARD != ESP8266
 	      #error Select board Generic ESP8266 module
     #endif
