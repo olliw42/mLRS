@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 19. Okt. 2024
+// 14. Apr. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -15,6 +15,21 @@
 // - Use upload speed 115200 if serial passthrough shall be used for flashing
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
+// Dependencies:
+// You need to have in File->Prefernces->Additional Board managers URLs
+// - https://arduino.esp8266.com/stable/package_esp8266com_index.json
+// - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+// Install 
+// - Boards Manager: esp32 by Espressif
+// - Boards Manager: esp8266 by ESP8266 Community
+// - Library Manager: Preferences by Volodymyr Shymanskyy
+
+// For ESP8266 this sadly needs to come before User Configuration section
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+#endif
+
 /*
 Definitions:
 - "module" refers to the physical hardware
@@ -24,42 +39,47 @@ For more details on the modules see mlrs-wireless-bridge-boards.h
 
 List of supported modules, and board which needs to be selected
 
-- Espressif ESP32-DevKitC V4      board: ESP32 Dev Module
-- NodeMCU ESP32-Wroom-32          board: ESP32 Dev Module
-- Espressif ESP32-PICO-KIT        board: ESP32 PICO-D4
-- Adafruit QT Py S2               board: Adafruit QT Py ESP32-S2
-- Lilygo TTGO-MICRO32             board: ESP32 PICO-D4
-- M5Stack M5Stamp C3 Mate         board: ESP32C3 Dev Module
+- ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module
+  Comment: ESP8266 needs to have a GPIO0 controlable
+- Espressif ESP32-DevKitC V4        board: ESP32 Dev Module
+- NodeMCU ESP32-Wroom-32            board: ESP32 Dev Module
+- Espressif ESP32-PICO-KIT          board: ESP32 PICO-D4
+- Adafruit QT Py S2                 board: Adafruit QT Py ESP32-S2
+- Lilygo TTGO-MICRO32               board: ESP32 PICO-D4
+- M5Stack M5Stamp C3 Mate           board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack M5Stamp Pico            board: ESP32 PICO-D4
-- M5Stack M5Stamp C3U Mate        board: ESP32C3 Dev Module
+- M5Stack M5Stamp Pico              board: ESP32 PICO-D4
+- M5Stack M5Stamp C3U Mate          board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack ATOM Lite               board: M5Stack-ATOM
+- M5Stack ATOM Lite                 board: M5Stack-ATOM
 
 Troubleshooting:
 - If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)"
 - If flashing is via serial passthrough, you may have to use upload speed 115200
 */
 
+
 //-------------------------------------------------------
 // User configuration
 //-------------------------------------------------------
 
 // Module
-// uncomment what you want, you must select one (and only one)
-//#define MODULE_ESP32_DEVKITC_V4
-//#define MODULE_NODEMCU_ESP32_WROOM32
-//#define MODULE_ESP32_PICO_KIT
-//#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
-//#define MODULE_TTGO_MICRO32
-//#define MODULE_M5STAMP_C3_MATE
-//#define MODULE_M5STAMP_C3U_MATE
+// uncomment what you want, you must select one (and only one) 
+// (you also need to set the board in the Arduino IDE accordingly)
+//#define MODULE_ESP8266_ELRS_TX                // board: Generic ESP8266 Module
+//#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
+//#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
+//#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
+//#define MODULE_ADAFRUIT_QT_PY_ESP32_S2        // board: Adafruit QT Py ESP32-S2
+//#define MODULE_TTGO_MICRO32                   // board: ESP32 PICO-D4
+//#define MODULE_M5STAMP_C3_MATE                // board: ESP32C3 Dev Module
+//#define MODULE_M5STAMP_C3U_MATE               // board: ESP32C3 Dev Module
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // uses inverted serial
-//#define MODULE_M5STAMP_PICO
+//#define MODULE_M5STAMP_PICO                   // board: ESP32 PICO-D4
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
-//#define MODULE_M5STACK_ATOM_LITE
+//#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM
 //#define MODULE_GENERIC
-//#define MODULE_DIY_E28DUAL_MODULE02_G491RE
+//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4 
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -68,7 +88,7 @@ Troubleshooting:
 
 // Wireless protocol
 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCl, 3 = Bluetooth (not available for all boards)
-// Note: If GPIO0_IO is defined, and protocol not UDPCl, when it only sets the default protocol
+// Note: If GPIO0_IO is defined, and protocol not UDPCl, then it only sets the default protocol
 #define WIRELESS_PROTOCOL  1
 
 // GPIO0 usage
@@ -105,8 +125,13 @@ int port_udpcl = 14550; // connect to this port per UDPCL // MissionPlanner defa
 // WiFi power (for all TCP, UDP, UDPCl)
 // this sets the power level for the WiFi protocols
 // Note: If GPIO0_IO is defined, this sets the power for the medium power option.
+#ifndef ESP8266
 // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
 #define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
+#else
+// Note: WIFI_POWER can be 0 to 20.5
+#define WIFI_POWER  6
+#endif
 
 
 //**************************//
@@ -121,7 +146,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Baudrate
 #define BAUD_RATE  115200
 
-// Serial port usage (only effective for the generic module)
+// Serial port usage (only effective for the Generic ESP32 module)
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
@@ -150,14 +175,15 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Includes
 //-------------------------------------------------------
 
+#ifdef GPIO0_IO
+#define USE_AT_MODE
+#endif
+
+#ifndef ESP8266
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
     #error Version of your ESP Arduino Core below 3.0.0 !
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
     #warning Consider upgrading your ESP Arduino Core ! // warnings may not be displayed in console !
-#endif
-
-#ifdef GPIO0_IO
-#define USE_AT_MODE
 #endif
 
 #include <WiFi.h>
@@ -172,16 +198,22 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
   #include <BluetoothSerial.h>
 #endif
 #endif
+#endif
 
 
 //-------------------------------------------------------
 // Internals
 //-------------------------------------------------------
 
-#if (WIRELESS_PROTOCOL != 2) // WiFi TCP, UDP, BT
+#if (WIRELESS_PROTOCOL != 2) // WiFi TCP, UDP, BT (= not UDPCl)
 
 // WiFi TCP, UDP
+#ifndef ESP8266
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
+#else
+// the ESP8266 requires different, appears to be a bug in the Arduino lib
+IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // the first DHCP client/MissionPlanner gets assigned +99
+#endif
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
 // UDP
@@ -260,7 +292,11 @@ void setup_device_name(void)
     uint8_t MAC_buf[6+2];
     // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
     // MACs are different for STA and AP, BT
+#ifndef ESP8266
     esp_base_mac_addr_get(MAC_buf);
+#else
+    wifi_get_macaddr(STATION_IF, MAC_buf);
+#endif
     uint16_t device_id = 0;
     for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
     device_id += MAC_buf[5];
@@ -280,7 +316,7 @@ void setup_device_name(void)
 
 void setup_wifipower()
 {
-    //WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
+#ifndef ESP8266
     switch (g_wifipower) {
         case WIFI_POWER_LOW: WiFi.setTxPower(WIFI_POWER_MINUS_1dBm); break;
 #ifdef WIFI_POWER
@@ -290,6 +326,17 @@ void setup_wifipower()
 #endif        
         case WIFI_POWER_MAX: WiFi.setTxPower(WIFI_POWER_19_5dBm); break;
     }
+#else
+    switch (g_wifipower) {
+        case WIFI_POWER_LOW: WiFi.setOutputPower(0); break;
+#ifdef WIFI_POWER
+        case WIFI_POWER_MED: WiFi.setOutputPower(WIFI_POWER); break;
+#else
+        case WIFI_POWER_MED: WiFi.setOutputPower(5); break;
+#endif        
+        case WIFI_POWER_MAX: WiFi.setOutputPower(20.5); break;
+    }
+#endif
 }
 
 
@@ -395,7 +442,9 @@ void setup()
 
     // Serial 
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
+#ifndef ESP8266 // not implemented on ESP8266
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
+#endif
 #ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
   #ifdef USE_SERIAL_INVERTED
     SERIAL.begin(g_baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, true);
