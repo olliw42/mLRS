@@ -242,15 +242,15 @@ typedef enum {
 } WIRELESS_PROTOCOL_ENUM;
 
 typedef enum {
-    WIFI_POWER_LOW = 0,
-    WIFI_POWER_MED,
-    WIFI_POWER_MAX,
-} WIFI_POWER_ENUM;
+    WIFIPOWER_LOW = 0,
+    WIFIPOWER_MED,
+    WIFIPOWER_MAX,
+} WIFIPOWER_ENUM;
 
 #define PROTOCOL_DEFAULT  WIRELESS_PROTOCOL
 #define BAUDRATE_DEFAULT  BAUD_RATE
 #define WIFICHANNEL_DEFAULT  WIFI_CHANNEL
-#define WIFIPOWER_DEFAULT  WIFI_POWER
+#define WIFIPOWER_DEFAULT  WIFIPOWER_MED
 
 #define G_PROTOCOL_STR  "protocol"
 int g_protocol = PROTOCOL_DEFAULT;
@@ -318,23 +318,23 @@ void setup_wifipower()
 {
 #ifndef ESP8266
     switch (g_wifipower) {
-        case WIFI_POWER_LOW: WiFi.setTxPower(WIFI_POWER_MINUS_1dBm); break;
+        case WIFIPOWER_LOW: WiFi.setTxPower(WIFI_POWER_MINUS_1dBm); break;
 #ifdef WIFI_POWER
-        case WIFI_POWER_MED: WiFi.setTxPower(WIFI_POWER); break;
+        case WIFIPOWER_MED: WiFi.setTxPower(WIFI_POWER); break;
 #else
-        case WIFI_POWER_MED: WiFi.setTxPower(WIFI_POWER_5dBm); break;
+        case WIFIPOWER_MED: WiFi.setTxPower(WIFI_POWER_5dBm); break;
 #endif        
-        case WIFI_POWER_MAX: WiFi.setTxPower(WIFI_POWER_19_5dBm); break;
+        case WIFIPOWER_MAX: WiFi.setTxPower(WIFI_POWER_19_5dBm); break;
     }
 #else
     switch (g_wifipower) {
-        case WIFI_POWER_LOW: WiFi.setOutputPower(0); break;
+        case WIFIPOWER_LOW: WiFi.setOutputPower(0); break;
 #ifdef WIFI_POWER
-        case WIFI_POWER_MED: WiFi.setOutputPower(WIFI_POWER); break;
+        case WIFIPOWER_MED: WiFi.setOutputPower(WIFI_POWER); break;
 #else
-        case WIFI_POWER_MED: WiFi.setOutputPower(5); break;
+        case WIFIPOWER_MED: WiFi.setOutputPower(5); break;
 #endif        
-        case WIFI_POWER_MAX: WiFi.setOutputPower(20.5); break;
+        case WIFIPOWER_MAX: WiFi.setOutputPower(20.5); break;
     }
 #endif
 }
@@ -434,7 +434,7 @@ void setup()
     }
 
     g_wifipower = preferences.getInt(G_WIFIPOWER_STR, 255); // 255 indicates not available
-    if (g_wifipower < WIFI_POWER_LOW || g_wifipower > WIFI_POWER_MAX) { // not a valid value
+    if (g_wifipower < WIFIPOWER_LOW || g_wifipower > WIFIPOWER_MAX) { // not a valid value
         g_wifipower = WIFIPOWER_DEFAULT;
         preferences.putInt(G_WIFIPOWER_STR, g_wifipower);
     }
