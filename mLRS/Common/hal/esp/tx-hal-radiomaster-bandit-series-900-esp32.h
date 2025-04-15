@@ -41,6 +41,7 @@
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 // Note on SERIAL_OR_COM:
 // The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
