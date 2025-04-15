@@ -11,8 +11,8 @@
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
-// - Partition Scheme needs to be changed to "No OTA (Large App)"
-// - Use upload speed 115200 if serial passthrough shall be used for flashing
+// - For ESP32: Partition Scheme needs to be changed to "No OTA (Large App)" !!
+// - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
 // Dependencies:
@@ -23,12 +23,6 @@
 // - Boards Manager: esp32 by Espressif
 // - Boards Manager: esp8266 by ESP8266 Community
 // - Library Manager: Preferences by Volodymyr Shymanskyy
-
-// For ESP8266 this sadly needs to come before User Configuration section
-#ifdef ESP8266
-#include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
-#endif
 
 /*
 Definitions:
@@ -57,6 +51,12 @@ Troubleshooting:
 - If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)"
 - If flashing is via serial passthrough, you may have to use upload speed 115200
 */
+
+// For ESP8266 this sadly needs to come before User Configuration section
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+#endif
 
 
 //-------------------------------------------------------

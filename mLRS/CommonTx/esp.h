@@ -11,18 +11,18 @@
 //   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 //
 // USE_ESP_WIFI_BRIDGE_RST_GPIO0
-//   is defined when RESET & GPIO0 pin handling is available
+//   is defined when RESET & GPIO0 pin handling is available (ESP_RESET & ESP_GPIO0 defined)
 //   this allows:
 //   - flashing via passthrough, flash mode invoked by "FLASH ESP" command
 //   - ESP TX parameters, esp configuration
 //
 // USE_ESP_WIFI_BRIDGE_DTR_RTS
-//   is defined when DTR & RTS pin handling is available
+//   is defined when DTR & RTS pin handling is available (ESP_DTR & ESP_RTS defined)
 //   this allows in addition:
 //   - flashing via passthrough, flash mode entered via DTR/RTS, no need for invoking "FLASH ESP" command
 //
 // USE_ESP_WIFI_BRIDGE_BOOT0
-//   is defined when BOOT0 pin handling is available
+//   is defined when BOOT0 pin handling is available (ESP_BOOT0 defined)
 //   this allows in addition:
 //   - flashing via passthrough, flash mode entered via BOOT0, no need for invoking "FLASH ESP" command
 //********************************************************
