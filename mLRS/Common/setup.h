@@ -153,6 +153,13 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
+    // Tx Bridge WiFi Protocol : "TCP,UDP,BT"
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0011; // no BT
+#else
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0111; // all
+#endif
+
     //-- Rx:
 
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
@@ -424,6 +431,7 @@ void setup_sanitize_config(uint8_t config_id)
 
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
     SANITIZE(Tx[config_id].WifiProtocol, WIFI_PROTOCOL_NUM, WIFI_PROTOCOL_UDP, WIFI_PROTOCOL_UDP);
+    TST_NOTALLOWED(Tx_WiFiProt_allowed_mask, Tx[config_id].WifiProtocol, WIFI_PROTOCOL_UDP);
     SANITIZE(Tx[config_id].WifiChannel, WIFI_CHANNEL_NUM, WIFI_CHANNEL_6, WIFI_CHANNEL_6);
     SANITIZE(Tx[config_id].WifiPower, WIFI_POWER_NUM, WIFI_POWER_MED, WIFI_POWER_MED);
 #else
