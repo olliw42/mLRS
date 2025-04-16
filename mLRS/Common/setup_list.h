@@ -39,6 +39,7 @@
 #define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_WIFIPROT         &SetupMetaData.Tx_WiFiProt_allowed_mask // this we generate from the hal
+
 // Rx only
 #define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
 #define SETUP_MSK_RX_SER_PORT         &SetupMetaData.Rx_SerialPort_allowed_mask // this we get from the receiver
