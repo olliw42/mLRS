@@ -17,11 +17,12 @@
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
 // Dependencies:
 // You need to have in File->Prefernces->Additional Board managers URLs
-// - https://arduino.esp8266.com/stable/package_esp8266com_index.json
 // - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-// Install 
-// - Boards Manager: esp32 by Espressif
+// - https://arduino.esp8266.com/stable/package_esp8266com_index.json
+// Install
+// - Boards Manager: esp32 by Espressif Systems (not Arduino ESP32 VBoards by Arduino!)
 // - Boards Manager: esp8266 by ESP8266 Community
+// - Library Manager: Adafruit NeoPixel by Adafruit
 // - Library Manager: Preferences by Volodymyr Shymanskyy
 
 /*
@@ -64,7 +65,7 @@ Troubleshooting:
 //-------------------------------------------------------
 
 // Module
-// uncomment what you want, you must select one (and only one) 
+// uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_ESP8266_ELRS_TX                // board: Generic ESP8266 Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
@@ -101,7 +102,7 @@ Troubleshooting:
 //*** WiFi settings ***//
 
 // for TCP, UDP (only for these two)
-String ssid = ""; // "mLRS AP"; // Wifi name, "" results in a default name, like "mLRS-13427 AP UDP" 
+String ssid = ""; // "mLRS AP"; // Wifi name, "" results in a default name, like "mLRS-13427 AP UDP"
 String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
 
 IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
@@ -137,7 +138,7 @@ int port_udpcl = 14550; // connect to this port per UDPCL // MissionPlanner defa
 //**************************//
 //*** Bluetooth settings ***//
 
-String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" results in a default name, like "mLRS-13427 BT" 
+String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" results in a default name, like "mLRS-13427 BT"
 
 
 //************************//
@@ -158,7 +159,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 
 
 //-------------------------------------------------------
-// Version 
+// Version
 //-------------------------------------------------------
 
 #define VERSION_STR  "v1.3.03" // to not get version salad use what the current mLRS version is at the time
@@ -191,14 +192,14 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 #if (WIRELESS_PROTOCOL != 2) // not UDPCl
 // for some reason checking
 // #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
-// does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work. 
+// does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work.
 // This sucks. So we don't try to be nice but let the compiler work it out.
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 3) // for AT commands we require BT be available
   #define USE_WIRELESS_PROTOCOL_BLUETOOTH
   #include <BluetoothSerial.h>
 #endif
 #endif
-#endif
+#endif // #ifndef ESP8266
 
 
 //-------------------------------------------------------
@@ -303,7 +304,7 @@ void setup_device_name(void)
     device_name = "mLRS-";
 #ifdef DEVICE_NAME_HEAD
     device_name = String(DEVICE_NAME_HEAD) + "-mLRS-";
-#endif    
+#endif
     if (g_protocol == WIRELESS_PROTOCOL_TCP) {
         device_name = (ssid == "") ? device_name + String(device_id) + " AP TCP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
@@ -323,7 +324,7 @@ void setup_wifipower()
         case WIFIPOWER_MED: WiFi.setTxPower(WIFI_POWER); break;
 #else
         case WIFIPOWER_MED: WiFi.setTxPower(WIFI_POWER_5dBm); break;
-#endif        
+#endif
         case WIFIPOWER_MAX: WiFi.setTxPower(WIFI_POWER_19_5dBm); break;
     }
 #else
@@ -333,7 +334,7 @@ void setup_wifipower()
         case WIFIPOWER_MED: WiFi.setOutputPower(WIFI_POWER); break;
 #else
         case WIFIPOWER_MED: WiFi.setOutputPower(5); break;
-#endif        
+#endif
         case WIFIPOWER_MAX: WiFi.setOutputPower(20.5); break;
     }
 #endif
@@ -362,7 +363,7 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
         server.begin();
         server.setNoDelay(true);
     } else
-    if (g_protocol == WIRELESS_PROTOCOL_UDP) {    
+    if (g_protocol == WIRELESS_PROTOCOL_UDP) {
         udp.begin(port_udp);
     }
 
@@ -374,7 +375,7 @@ if (g_protocol == WIRELESS_PROTOCOL_BT) {
 
     SerialBT.begin(device_name);
 
-#endif    
+#endif
 }
 
 #elif (WIRELESS_PROTOCOL == 2)
@@ -388,9 +389,9 @@ if (g_protocol == WIRELESS_PROTOCOL_BT) {
 
     while (WiFi.status() != WL_CONNECTED) {
         //delay(500);
-        led_on(true); delay(75); led_off(); delay(75); 
-        led_on(true); delay(75); led_off(); delay(75); 
-        led_on(true); delay(75); led_off(); delay(75); 
+        led_on(true); delay(75); led_off(); delay(75);
+        led_on(true); delay(75); led_off(); delay(75);
+        led_on(true); delay(75); led_off(); delay(75);
         DBG_PRINTLN("connecting to WiFi network...");
     }
     DBG_PRINTLN("connected");
@@ -412,7 +413,7 @@ void setup()
 
     // Preferences
 #ifdef USE_AT_MODE
-    preferences.begin("setup", false);     
+    preferences.begin("setup", false);
 
     g_protocol = preferences.getInt(G_PROTOCOL_STR, 255); // 155 indicates not available
     if (g_protocol != WIRELESS_PROTOCOL_TCP && g_protocol != WIRELESS_PROTOCOL_UDP && g_protocol != WIRELESS_PROTOCOL_BT) { // not a valid value
@@ -438,9 +439,9 @@ void setup()
         g_wifipower = WIFIPOWER_DEFAULT;
         preferences.putInt(G_WIFIPOWER_STR, g_wifipower);
     }
-#endif    
+#endif
 
-    // Serial 
+    // Serial
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
 #ifndef ESP8266 // not implemented on ESP8266
     size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
