@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 14. Apr. 2025
+// 19. Apr. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -20,7 +20,7 @@
 // - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 // - https://arduino.esp8266.com/stable/package_esp8266com_index.json
 // Install
-// - Boards Manager: esp32 by Espressif Systems (not Arduino ESP32 VBoards by Arduino!)
+// - Boards Manager: esp32 by Espressif Systems (not Arduino ESP32 Boards by Arduino!)
 // - Boards Manager: esp8266 by ESP8266 Community
 // - Library Manager: Adafruit NeoPixel by Adafruit
 // - Library Manager: Preferences by Volodymyr Shymanskyy
@@ -189,15 +189,15 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 
 #include <WiFi.h>
 #include "esp_mac.h"
-#if (WIRELESS_PROTOCOL != 2) // not UDPCl
 // for some reason checking
 // #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
 // does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work.
 // This sucks. So we don't try to be nice but let the compiler work it out.
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 3) // for AT commands we require BT be available
+#ifdef CONFIG_IDF_TARGET_ESP32 // classic BT only available on ESP32
   #define USE_WIRELESS_PROTOCOL_BLUETOOTH
   #include <BluetoothSerial.h>
-#endif
+#endif  
 #endif
 #endif // #ifndef ESP8266
 
@@ -206,7 +206,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Internals
 //-------------------------------------------------------
 
-#if (WIRELESS_PROTOCOL != 2) // WiFi TCP, UDP, BT (= not UDPCl)
+#if defined USE_AT_MODE || (WIRELESS_PROTOCOL != 2) // WiFi TCP, UDP, BT (= not UDPCl), for AT commands we require all
 
 // WiFi TCP, UDP
 #ifndef ESP8266
