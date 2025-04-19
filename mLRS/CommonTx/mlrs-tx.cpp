@@ -761,9 +761,9 @@ RESTARTCONTROLLER
     cli.Init(&comport, Config.frame_rate_ms);
 #ifdef USE_ESP_WIFI_BRIDGE
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
+    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #else
-    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
+    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #endif
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
