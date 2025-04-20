@@ -766,6 +766,8 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
 
     // these are for passthrough only
 
+    // case FASTMAVLINK_MSG_ID_PARAM_VALUE, is handled by mavlink/vehicle class as needed
+
     case FASTMAVLINK_MSG_ID_SYS_STATUS: {
         fmav_sys_status_t payload;
         fmav_msg_sys_status_decode(&payload, msg);

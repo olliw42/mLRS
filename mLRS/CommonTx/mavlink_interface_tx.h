@@ -48,7 +48,7 @@ class tTxVehicle
     bool is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg);
     void handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* const payload);
     void handle_extended_sys_state(fmav_extended_sys_state_t* const payload);
-    void handle_param_value(fmav_param_value_t* const payload);
+    void handle_param_value(fmav_message_t* const msg);
 
     uint8_t sysid; // 0 indicates autopilot not detected, indicates data is invalid
   private:
@@ -57,7 +57,7 @@ class tTxVehicle
     uint8_t type;
     uint8_t flight_mode;
 
-    uint32_t batt_capacity; // 0 indicates not known
+    bool batt_capacity_valid;
     uint32_t param_batt_capacity_request_tlast_ms;
     bool request_param_batt_capacity;
 };
@@ -516,15 +516,14 @@ void tTxMavlink::handle_msg_serial_out(fmav_message_t* const msg)
     if (!vehicle.is_seen_and_msg_is_for_autopilot(msg)) return;
 
     switch (msg->msgid) {
-    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE:{
+    case FASTMAVLINK_MSG_ID_EXTENDED_SYS_STATE: {
         fmav_extended_sys_state_t payload;
         fmav_msg_extended_sys_state_decode(&payload, msg);
         vehicle.handle_extended_sys_state(&payload);
         }break;
-    case FASTMAVLINK_MSG_ID_PARAM_VALUE:{
-        fmav_param_value_t payload;
-        fmav_msg_param_value_decode(&payload, msg);
-        vehicle.handle_param_value(&payload);
+    case FASTMAVLINK_MSG_ID_PARAM_VALUE: {
+        // this is special, handling is by vehicle class, but needs to be related to passthrough class
+        vehicle.handle_param_value(msg);
         }break;
     }
 
@@ -571,10 +570,8 @@ uint8_t rssi, remrssi, txbuf, noise;
 
 void tTxMavlink::send_param_request_read_batt_capacity(void)
 {
-    if (!vehicle.sysid) return; // should not happen, but play it safe
-
     char param_id[16+1];
-    strbufstrcpy(param_id, "BATT_CAPICITY", 16);
+    strbufstrcpy(param_id, "BATT_CAPACITY", 16);
 
     // goes to link out send_msg_serial_out();
 
@@ -584,7 +581,7 @@ void tTxMavlink::send_param_request_read_batt_capacity(void)
         MAV_COMP_ID_TELEMETRY_RADIO,
         vehicle.sysid, MAV_COMP_ID_AUTOPILOT1,
         param_id,
-        0,
+        -1,
         //uint8_t target_system, uint8_t target_component, const char* param_id, int16_t param_index,
         &status_serial_out);
 
@@ -951,7 +948,7 @@ void tTxVehicle::Init(void)
     type = UINT8_MAX;
     flight_mode = UINT8_MAX;
 
-    batt_capacity = 0; // 0 indicates not known // TODO: we want to request it only upon first connection
+    batt_capacity_valid = false;
     param_batt_capacity_request_tlast_ms = 0;
     request_param_batt_capacity = false;
 }
@@ -971,11 +968,16 @@ void tTxVehicle::Do(void)
 {
     uint32_t tnow_ms = millis32(); // we need to get fresh time, since a HEARTBEAT might be received in the main Do loop
 
+    // we want to start requests only on first connection
+    // this is achieved by checking for sysid, which is valid only if the autopilot was seen
+    // request are stopped when a response is obtained
+    // TODO: should we add a counter to limit number of tries?
+
     // we want to request for PARAM BATT_CAPACITY when
     // sysid > 0 (which means we see a fc) and
-    // batt_capacity == 0 (which means we don't have gotten that value)
-    if (sysid && !batt_capacity) {
-        if ((tnow_ms - param_batt_capacity_request_tlast_ms) > 250) {
+    // batt_capacity_valid = false (which means we don't have gotten that value)
+    if (sysid && !batt_capacity_valid) {
+        if ((tnow_ms - param_batt_capacity_request_tlast_ms) > 1000) {
             param_batt_capacity_request_tlast_ms = tnow_ms;
             request_param_batt_capacity =  true;
         }
@@ -987,22 +989,35 @@ bool tTxVehicle::RequestParamBattCapacity(void)
 {
     if (request_param_batt_capacity) {
         request_param_batt_capacity = false;
-//dbg.puts("\nsend request");
+//dbg.puts("\nsend param request");
         return true;
     }
     return false;
 }
 
 
-void tTxVehicle::handle_param_value(fmav_param_value_t* const payload)
+void tTxVehicle::handle_param_value(fmav_message_t* const msg)
 {
+    // we have checked already that msg comes from our autopilot
+    if (batt_capacity_valid) return; // we do have it already, so can save time by not processing again
+
+    fmav_param_value_t payload;
+    fmav_msg_param_value_decode(&payload, msg);
+
     // note: 'BATT_CAPACITY' is shorter than 16 chars, so we don't need to worry using str
-    if (strcmp(payload->param_id, "BATT_CAPACITY")) return;
+    if (strcmp(payload.param_id, "BATT_CAPACITY")) return;
+
+    batt_capacity_valid = true; // got it, stop requesting
 
     // ArduPilot converts from/to float
     // we should detect AUTOPILOT_VERSION.capabilities,
     // but for AP we know it's MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_C_CAST
-    batt_capacity = payload->param_value;
+    uint32_t batt_capacity = payload.param_value;
+
+    if (batt_capacity == 0) return; // allow the user to set BATT_CAPACITY to 0 to disable sending it to yaapu
+
+    // communicate to the passthrough class
+    crsf.passthrough.SetBattery0Capacity(batt_capacity);
 }
 
 #endif
