@@ -80,7 +80,7 @@ void esp_enable(uint8_t serial_destination)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup) {}
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
     void Do(void) {}
 
     void EnterFlash(void) {}
@@ -105,7 +105,7 @@ typedef enum {
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup);
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
     void Do(void);
 
     void EnterFlash(void);
@@ -118,6 +118,7 @@ class tTxEspWifiBridge
     void esp_configure_wifiprotocol(void);
     void esp_configure_wifichannel(void);
     void esp_configure_wifipower(void);
+    void esp_configure_bindphrase(void);
     void run_configure(void);
 #endif
 
@@ -125,6 +126,7 @@ class tTxEspWifiBridge
     void passthrough_do(void);
 
     tTxSetup* tx_setup;
+    tCommonSetup* common_setup;
 
     tSerialBase* com;
     tSerialBase* ser;
@@ -142,9 +144,11 @@ void tTxEspWifiBridge::Init(
     tSerialBase* const _serialport,
     tSerialBase* const _serial2port,
     uint32_t _serial_baudrate,
-    tTxSetup* const _tx_setup)
+    tTxSetup* const _tx_setup,
+    tCommonSetup* const _common_setup)
 {
     tx_setup = _tx_setup;
+    common_setup = _common_setup;
 
     com = _comport;
     ser = nullptr;
@@ -403,6 +407,7 @@ char cmd_str[32];
     switch (tx_setup->WifiProtocol) {
         case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
         case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
+        case WIFI_PROTOCOL_UDPCl: strcat(cmd_str, "2"); break;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
         default:
             strcat(cmd_str, "3"); // should not happen
@@ -466,6 +471,24 @@ char cmd_str[32];
 }
 
 
+void tTxEspWifiBridge::esp_configure_bindphrase(void)
+{
+uint8_t s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[32];
+
+    strcpy(cmd_str, "AT+BINDPHRASE=");
+    strcat(cmd_str, common_setup->BindPhrase);
+
+    if (!esp_read(cmd_str, s, &len)) {
+        return;
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
 void tTxEspWifiBridge::run_configure(void)
 {
 uint8_t s[ESP_CMDRES_LEN+2];
@@ -511,6 +534,7 @@ esp_read("AT+WIFIPOWER=?", s, &len);)
         esp_configure_wifiprotocol();
         esp_configure_wifichannel();
         esp_configure_wifipower();
+        esp_configure_bindphrase();
 
         if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed
             delay_ms(1500); // 500 ms is too short, 1000 ms is sometimes too short, 1200 ms works fine, play it safe

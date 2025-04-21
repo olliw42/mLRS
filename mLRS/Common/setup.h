@@ -155,9 +155,9 @@ void setup_configure_metadata(void)
 
     // Tx Bridge WiFi Protocol : "TCP,UDP,BT"
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
-    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0011; // no BT
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b00111; // no BT
 #else
-    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b0111; // all
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b01111; // all
 #endif
 
     //-- Rx:

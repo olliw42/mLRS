@@ -34,7 +34,9 @@ typedef enum {
     AT_PROTOCOL_QUERY,
     AT_PROTOCOL_0_TCP,
     AT_PROTOCOL_1_UDP,
+    AT_PROTOCOL_2_UDPCl,
     AT_PROTOCOL_3_BT,
+    AT_BINDPHRASE,
     AT_CMDS_NUM,
 } AT_NAME_ENUM;
 
@@ -60,7 +62,9 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+PROTOCOL=?",
      "AT+PROTOCOL=0",
      "AT+PROTOCOL=1",
+     "AT+PROTOCOL=2",
      "AT+PROTOCOL=3",
+     "AT+BINDPHRASE=",
 };
 
 
@@ -205,7 +209,7 @@ bool AtMode::Do(void)
                         restart_needed = true;
                     }
                 } else
-                if (i == AT_PROTOCOL_0_TCP || i == AT_PROTOCOL_1_UDP || i == AT_PROTOCOL_3_BT) {
+                if (i == AT_PROTOCOL_0_TCP || i == AT_PROTOCOL_1_UDP || i == AT_PROTOCOL_2_UDPCl || i == AT_PROTOCOL_3_BT) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos);
@@ -214,6 +218,32 @@ bool AtMode::Do(void)
                     if (new_protocol != g_protocol) {
                         preferences.putInt(G_PROTOCOL_STR, new_protocol);
                         restart_needed = true;
+                    }
+                } else
+                if (i == AT_BINDPHRASE) {
+                    String new_phrase = "";
+                    int count = 0;
+                    while (count < 6) {
+                        if (SERIAL.available() <= 0) delay(2); // if not available, wait at least one character time
+                        if (SERIAL.available() > 0) {
+                            SERIAL.read(&c, 1);
+                            new_phrase += c;
+                            count++;
+                        } else { // Timed out
+                            break;
+                        }
+                    }
+                    if (count == 6) {
+                        at_buf[0] = 'O';
+                        at_buf[1] = 'K';
+                        if (new_phrase != g_bindphrase) {
+                            preferences.putString(G_BINDPHRASE_STR, new_phrase);
+                            restart_needed = true;
+                        }
+                        SERIAL.write(at_buf, at_pos);
+                        SERIAL.write("\r\n");
+                    } else {
+                        SERIAL.write("KO\r\n"); // Error
                     }
                 }
                 at_pos = 0;
