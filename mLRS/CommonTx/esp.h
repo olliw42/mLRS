@@ -113,7 +113,7 @@ class tTxEspWifiBridge
 
   private:
 #ifdef ESP_STARTUP_CONFIGURE
-    bool esp_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
+    bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
     void esp_configure_baudrate(void);
     void esp_configure_wifiprotocol(void);
     void esp_configure_wifichannel(void);
@@ -352,7 +352,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 #define ESP_CMDRES_TMO_MS   50
 
 
-bool tTxEspWifiBridge::esp_read(const char* const cmd, uint8_t* const res, uint8_t* const len)
+bool tTxEspWifiBridge::esp_read(const char* const cmd, char* const res, uint8_t* const len)
 {
     ser->puts(cmd);
 
@@ -379,7 +379,7 @@ ESP_DBG(dbg.puts("!ENDE!");)
 
 void tTxEspWifiBridge::esp_configure_baudrate(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 char cmd_str[32];
 
@@ -399,7 +399,7 @@ char cmd_str[32];
 
 void tTxEspWifiBridge::esp_configure_wifiprotocol(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 char cmd_str[32];
 
@@ -407,8 +407,8 @@ char cmd_str[32];
     switch (tx_setup->WifiProtocol) {
         case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
         case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
-        case WIFI_PROTOCOL_UDPCl: strcat(cmd_str, "2"); break;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
+        case WIFI_PROTOCOL_UDPCl: strcat(cmd_str, "2"); break;
         default:
             strcat(cmd_str, "3"); // should not happen
     }
@@ -424,7 +424,7 @@ char cmd_str[32];
 
 void tTxEspWifiBridge::esp_configure_wifichannel(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 char cmd_str[32];
 
@@ -449,7 +449,7 @@ char cmd_str[32];
 
 void tTxEspWifiBridge::esp_configure_wifipower(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 char cmd_str[32];
 
@@ -473,7 +473,7 @@ char cmd_str[32];
 
 void tTxEspWifiBridge::esp_configure_bindphrase(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 char cmd_str[32];
 
@@ -491,8 +491,9 @@ char cmd_str[32];
 
 void tTxEspWifiBridge::run_configure(void)
 {
-uint8_t s[ESP_CMDRES_LEN+2];
+char s[ESP_CMDRES_LEN+2];
 uint8_t len;
+uint32_t ver;
 
     if (ser == nullptr) return; // we need a serial
 
@@ -501,6 +502,7 @@ uint8_t len;
     delay_ms(500); // not so nice, but it starts up really slowly ...
 
     bool found = false;
+    ver = 0; // unknown
 
     uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
     uint8_t baud_idx = 0;
@@ -511,8 +513,9 @@ uint8_t len;
 
             if (esp_read("AT+NAME=?", s, &len)) { // detected !
                 s[len-2] = '\0';
-                if (!strncmp((char*)s, "OK+NAME=mLRS-Wireless-Bridge", 28)) { // correct name, it's her we are looking for
+                if (!strncmp(s, "OK+NAME=mLRS-Wireless-Bridge", 28)) { // correct name, it's her we are looking for
                     found = true;
+                    if (strlen(s) > 32) ver = version_from_str(s + 28);
                 }
                 cc = 128; // break also higher for loop, don't do 255 LOL
                 break;
@@ -522,10 +525,11 @@ uint8_t len;
 
     if (found) {
 ESP_DBG(
-esp_read("AT+BAUD=?", s, &len);
-esp_read("AT+PROTOCOL=?", s, &len);
-esp_read("AT+WIFICHANNEL=?", s, &len);
-esp_read("AT+WIFIPOWER=?", s, &len);)
+esp_read("dAT+BAUD=?", s, &len);
+esp_read("dAT+PROTOCOL=?", s, &len);
+esp_read("dAT+WIFICHANNEL=?", s, &len);
+esp_read("dAT+WIFIPOWER=?", s, &len);
+esp_read("dAT+BINDPHRASE=?", s, &len);)
 
         if (bauds[baud_idx] != ser_baud) { // incorrect baud rate
             esp_configure_baudrate();
@@ -534,7 +538,11 @@ esp_read("AT+WIFIPOWER=?", s, &len);)
         esp_configure_wifiprotocol();
         esp_configure_wifichannel();
         esp_configure_wifipower();
-        esp_configure_bindphrase();
+        if (ver >= 10307) { // not available before v1.3.07
+            esp_configure_bindphrase();
+        } else {
+            // Houston, we have a problem. UDPCl is not available but we allow the user to select
+        }
 
         if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed
             delay_ms(1500); // 500 ms is too short, 1000 ms is sometimes too short, 1200 ms works fine, play it safe

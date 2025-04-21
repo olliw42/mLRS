@@ -7,6 +7,7 @@
 // COMMON TYPES
 //*******************************************************
 
+#include <stdlib.h>
 #include <string.h>
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "common_types.h"
@@ -583,6 +584,45 @@ char ss[32];
     u8toBCDstr(patch, ss);
     ss[0] = ss[1]; ss[1] = ss[2]; ss[2] = '\0'; // remove_leading_zeros(ss);
     strcat(s, ss);
+}
+
+
+uint32_t version_from_str(char* const s)
+{
+char ss[32];
+
+    uint32_t major = 0;
+    uint32_t minor = 0;
+    uint32_t patch = 0;
+
+    uint8_t pos = 0;
+    uint8_t state = 0;
+    for (uint8_t i = 0; i < strlen(s) + 1; i++) { // +1 to handle end of string
+        switch (state) {
+        case 0: case 2: case 4:
+            if (s[i] >= '0' && s[i] <= '9') {
+                 pos = 0;
+                 ss[pos++] = s[i];
+                 ss[pos] = '\0';
+                 state++;
+            }
+            break;
+        case 1: case 3: case 5:
+            if (s[i] >= '0' && s[i] <= '9') {
+                 ss[pos++] = s[i];
+                 ss[pos] = '\0';
+            } else {
+                switch (state) {
+                case 1: major = atoi(ss); break;
+                case 3: minor = atoi(ss); break;
+                case 5: patch = atoi(ss); break;
+                }
+                state++;
+            }
+            break;
+        }
+    }
+    return major * 10000 + minor * 100 + patch;
 }
 
 
