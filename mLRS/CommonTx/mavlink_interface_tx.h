@@ -977,7 +977,7 @@ void tTxVehicle::Do(void)
     // sysid > 0 (which means we see a fc) and
     // batt_capacity_valid = false (which means we don't have gotten that value)
     if (sysid && !batt_capacity_valid) {
-        if ((tnow_ms - param_batt_capacity_request_tlast_ms) > 1000) {
+        if ((tnow_ms - param_batt_capacity_request_tlast_ms) > 1500) {
             param_batt_capacity_request_tlast_ms = tnow_ms;
             request_param_batt_capacity =  true;
         }
@@ -1036,10 +1036,13 @@ void tTxVehicle::handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* c
     // TODO: PX4 ??
     if (payload->autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
         sysid = msg->sysid;
+
         is_armed = (payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
         type = ap_vehicle_from_mavtype(payload->type);
         // ArduPilot provides flight mode number in custom mode
         flight_mode = payload->custom_mode;
+
+        param_batt_capacity_request_tlast_ms = millis32() + 1500; // first request in 1.5 sec
     }
 }
 

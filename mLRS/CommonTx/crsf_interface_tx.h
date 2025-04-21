@@ -631,7 +631,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* const pay
 
     battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
     battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // CRSF is in 0.1 A, MAVLink is in 0.01 A
-    uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
+    uint32_t capacity = (payload->current_consumed < 0) ? 0 : payload->current_consumed; // -1 = unknown, but can become negative
     if (capacity > 8388607) capacity = 8388607; // int 24 bit
     battery.capacity[0] = (capacity >> 16);
     battery.capacity[1] = (capacity >> 8);
