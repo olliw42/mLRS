@@ -80,7 +80,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM
 //#define MODULE_GENERIC
-//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -102,16 +102,20 @@ Troubleshooting:
 //*** WiFi settings ***//
 
 // for TCP, UDP (only for these two)
-String ssid = ""; // "mLRS AP"; // Wifi name, "" results in a default name, like "mLRS-13427 AP UDP"
-String password = ""; // "thisisgreat"; // WiFi password, "" makes it an open AP
+// ssid = "" results in a default name, like "mLRS-13427 AP UDP"
+// password = "" makes it an open AP
+String ssid = ""; // "mLRS AP"; // Wifi name
+String password = ""; // "thisisgreat"; // WiFi password
 
-IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter
+IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter 192.168.4.55 in MP
 
 int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
 // for UDPCl (only for UDPCl)
-// network_ssid = "" results in a default name, like "mLRS-13427 STA UDPCl" and default password, like "mLRS-mlrs.0"
+// network_ssid = "" results in
+// - a default name, like "mLRS-13427 STA UDPCl"
+// - and a default password which includes your mLRS bindphrase, like "mLRS-mlrs.0"
 String network_ssid = ""; // name of your WiFi network
 String network_password = "****"; // password to access your WiFi network
 
@@ -139,7 +143,8 @@ int port_udpcl = 14550; // connect to this port per UDPCL // MissionPlanner defa
 //**************************//
 //*** Bluetooth settings ***//
 
-String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" results in a default name, like "mLRS-13427 BT"
+// bluetooth_device_name = "" results in a default name, like "mLRS-13427 BT"
+String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name
 
 
 //************************//
@@ -148,13 +153,13 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Baudrate
 #define BAUD_RATE  115200
 
-// Serial port usage (only effective for the Generic ESP32 module)
+// Serial port usage (only effective for MODULE_GENERIC)
 // comment all for default behavior, which is using only Serial port
 //#define USE_SERIAL_DBG1 // use Serial for communication and flashing, and Serial1 for debug output
 //#define USE_SERIAL1_DBG // use Serial1 for communication, and Serial for debug output and flashing
 //#define USE_SERIAL2_DBG // use Serial2 for communication, and Serial for debug output and flashing
 
-// LED pin (only effective for the generic module)
+// LED pin (only effective for MODULE_GENERIC)
 // uncomment if you want a LED, and set the pin number as desired
 //#define LED_IO  13
 
@@ -163,7 +168,7 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name, "" re
 // Version
 //-------------------------------------------------------
 
-#define VERSION_STR  "v1.3.07" // to not get version salad use what the current mLRS version is at the time
+#define VERSION_STR  "v1.3.07" // to not get version salad, use what the current mLRS version is at the time
 
 
 //-------------------------------------------------------
@@ -411,7 +416,7 @@ void setup()
 #ifdef USE_AT_MODE
     preferences.begin("setup", false);
 
-    g_protocol = preferences.getInt(G_PROTOCOL_STR, 255); // 155 indicates not available
+    g_protocol = preferences.getInt(G_PROTOCOL_STR, 255); // 255 indicates not available
     if (g_protocol != WIRELESS_PROTOCOL_TCP && g_protocol != WIRELESS_PROTOCOL_UDP &&
         g_protocol != WIRELESS_PROTOCOL_UDPCl && g_protocol != WIRELESS_PROTOCOL_BT) { // not a valid value
         g_protocol = PROTOCOL_DEFAULT;
@@ -436,7 +441,9 @@ void setup()
         g_wifipower = WIFIPOWER_DEFAULT;
         preferences.putInt(G_WIFIPOWER_STR, g_wifipower);
     }
-    g_bindphrase = preferences.getString(G_BINDPHRASE_STR, "mlrs.0");
+
+    g_bindphrase = preferences.getString(G_BINDPHRASE_STR, "mlrs.0"); // "mlrs.0" is the mLRS default bind phrase
+    // TODO: we should check for sanity
 #endif
 
     // Serial

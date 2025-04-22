@@ -43,7 +43,7 @@ typedef enum {
 
 const char* at_cmds[AT_CMDS_NUM] = {
      "AT+NAME=?",
-     "AT+RESTART",
+     "AT+RESTART", // restarts the ESP if needed, and communicates this back to the host
      "AT+BAUD=?",
      "AT+BAUD=9600",
      "AT+BAUD=19200",
@@ -148,6 +148,8 @@ bool AtMode::Do(void)
             strcpy(at_cmd, at_cmds[i]);
             
             // we need to adjust the cmd to look for in the case of bindphrase
+            // replaces the chars in the cmd's 'x' positions with the actual chars
+            // somewhat dirty but does the trick and avoids massive parser change
             if (i == AT_BINDPHRASE_XXXXXX) {
                 for (int pp = 14; pp < 14+6; pp++) if (pp < at_pos) at_cmd[pp] = at_buf[pp];
             }
@@ -156,7 +158,7 @@ bool AtMode::Do(void)
             if (strncmp(at_buf, at_cmd, at_pos) != 0) continue; // not even a possible match
             possible_match = true;
 
-            // check it is a full match already
+            // check if it is a full match already, and if so take action
             if (strcmp(at_buf, at_cmd) == 0) {
                 if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY ||
                     i == AT_WIFIPOWER_QUERY || i == AT_PROTOCOL_QUERY || i == AT_BINDPHRASE_QUERY) {
@@ -187,7 +189,7 @@ bool AtMode::Do(void)
                         delay(100);
                         restart();
                     } else {
-                        SERIAL.write("KO\r\n"); // cmd recognized, but not executed
+                        SERIAL.write("KO\r\n"); // cmd recognized, but a restart was not needed
                     }
                 } else
                 if (i >= AT_BAUD_9600 && i <= AT_BAUD_230400) {
