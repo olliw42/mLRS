@@ -116,9 +116,11 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 
 //-- ELRS Tx Module ESP82xx backpack
-#if defined MODULE_ESP8266_ELRS_TX
-    #ifndef ARDUINO_ESP8266_GENERIC // ARDUINO_BOARD != ESP8266
-        #error Select board Generic ESP8266 module
+#if defined MODULE_ESP82XX_ELRS_TX
+    // board = Generic ESP8266 Module: -DARDUINO_ESP8266_GENERIC -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_GENERIC" -DARDUINO_BOARD_ID="generic"
+    // board = Generic ESP8285 Module: -DARDUINO_ESP8266_ESP01 -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_ESP01" -DARDUINO_BOARD_ID="esp8285" 
+    #if !(defined ARDUINO_ESP8266_GENERIC || defined ARDUINO_ESP8266_ESP01)
+        #error Select board Generic ESP8266 Module or Generic ESP8285 Module
     #endif
 
     #undef USE_SERIAL_DBG1

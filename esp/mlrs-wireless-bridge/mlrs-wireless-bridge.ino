@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 21. Apr. 2025
+// 22. Apr. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -34,8 +34,9 @@ For more details on the modules see mlrs-wireless-bridge-boards.h
 
 List of supported modules, and board which needs to be selected
 
-- ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module
-  Comment: ESP8266 needs to have a GPIO0 controlable
+- ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module or Generic ESP8285 Module
+  is used in many ELRS Tx modules
+  Comment: ESP82xx needs to have a GPIO0 controllable
 - Espressif ESP32-DevKitC V4        board: ESP32 Dev Module
 - NodeMCU ESP32-Wroom-32            board: ESP32 Dev Module
 - Espressif ESP32-PICO-KIT          board: ESP32 PICO-D4
@@ -67,7 +68,7 @@ Troubleshooting:
 // Module
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
-//#define MODULE_ESP8266_ELRS_TX                // board: Generic ESP8266 Module
+//#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
