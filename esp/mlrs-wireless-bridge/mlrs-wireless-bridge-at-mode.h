@@ -34,8 +34,9 @@ typedef enum {
     AT_PROTOCOL_QUERY,
     AT_PROTOCOL_0_TCP,
     AT_PROTOCOL_1_UDP,
-    AT_PROTOCOL_2_UDPCl,
+    AT_PROTOCOL_2_UDPSTA,
     AT_PROTOCOL_3_BT,
+    AT_PROTOCOL_4_UDPCl,
     AT_BINDPHRASE_QUERY,
     AT_BINDPHRASE_XXXXXX,
     AT_CMDS_NUM,
@@ -65,6 +66,7 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+PROTOCOL=1",
      "AT+PROTOCOL=2",
      "AT+PROTOCOL=3",
+     "AT+PROTOCOL=4",
      "AT+BINDPHRASE=?",
      "AT+BINDPHRASE=xxxxxx",
 };
@@ -225,7 +227,7 @@ bool AtMode::Do(void)
                         restart_needed = true;
                     }
                 } else
-                if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_3_BT) {
+                if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_4_UDPCl) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos);

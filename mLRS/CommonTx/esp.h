@@ -408,9 +408,9 @@ char cmd_str[32];
         case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
         case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
-        case WIFI_PROTOCOL_UDPCl: strcat(cmd_str, "2"); break;
+        case WIFI_PROTOCOL_UDPSTA: strcat(cmd_str, "2"); break;
         default:
-            strcat(cmd_str, "3"); // should not happen
+            strcat(cmd_str, "1"); // should not happen
     }
 
     if (!esp_read(cmd_str, s, &len)) {
