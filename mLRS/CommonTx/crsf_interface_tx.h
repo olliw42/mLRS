@@ -580,7 +580,7 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 //-------------------------------------------------------
 // CRSF Telemetry Mavlink Handling
-// we have to kinds to consider:
+// we have two kinds to consider:
 // - native CRSF telemetry frames:
 //   these are filled from MAVLink messages by the tTxCrsf class
 // - passthrough packets which are packed into CRSF passthrough telemetry frames:
@@ -674,7 +674,7 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
 
     // take the ground speed from VFR_HUD
     if (vfr_hud_groundspd_mps != NAN) {
-        gps.groundspeed = CRSF_REV_U16(100.0f * vfr_hud_groundspd_mps / 3.6f);
+        gps.groundspeed = CRSF_REV_U16(10.0f * vfr_hud_groundspd_mps * 3.6f); // TBS docs say 'km/h / 100' but seems to be 'km/h / 10'
     } else {
         gps.groundspeed = 0;
     }
