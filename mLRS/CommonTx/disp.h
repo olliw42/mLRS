@@ -44,6 +44,7 @@ extern tGDisplay gdisp;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTxInfo info;
 extern tTasks tasks;
 void i2c_spin(uint16_t chunksize);
 
@@ -908,6 +909,11 @@ char s[32];
     gdisp_puts(DEVICE_NAME);
     gdisp_setcurXY(0, 1 * 10 + 20);
     gdisp_puts(VERSIONONLYSTR);
+
+    if (info.WirelessDeviceName_disp(s)) {
+        gdisp_setcurXY(60, 1 * 10 + 20);
+        gdisp_puts(s);
+    }
 
     if (connected_and_rx_setup_available()) {
         gdisp_setcurXY(0, 3 * 10 + 20);

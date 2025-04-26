@@ -118,6 +118,7 @@
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "config_id.h"
+#include "info.h"
 #include "cli.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
@@ -130,6 +131,7 @@ tReceiveArq rarq;
 tRfPower rfpower;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
+tTxInfo info;
 tTxCli cli;
 tTasks tasks;
 

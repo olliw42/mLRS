@@ -267,6 +267,10 @@ int g_wifipower = WIFIPOWER_DEFAULT;
 #define G_BINDPHRASE_STR  "bindphrase"
 String g_bindphrase = "mlrs.0";
 
+uint16_t device_id = 0; // is going to be set by setup_device_name_and_password(), and can be queried in at mode
+String device_name = "";
+String device_password = "";
+
 #ifdef USE_AT_MODE
 #include <Preferences.h>
 Preferences preferences;
@@ -274,8 +278,6 @@ Preferences preferences;
 AtMode at_mode;
 #endif
 
-String device_name = "";
-String device_password = "";
 bool wifi_initialized;
 bool led_state;
 unsigned long led_tlast_ms;
@@ -304,7 +306,6 @@ void setup_device_name_and_password(void)
 #else
     wifi_get_macaddr(STATION_IF, MAC_buf);
 #endif
-    uint16_t device_id = 0;
     for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
     device_id += MAC_buf[5];
     device_name = "mLRS-";
@@ -354,8 +355,6 @@ void setup_wifipower()
 
 void setup_wifi()
 {
-    setup_device_name_and_password();
-
 if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) {
 //-- WiFi TCP, UDP
 
@@ -482,6 +481,7 @@ void setup()
     g_bindphrase = preferences.getString(G_BINDPHRASE_STR, "mlrs.0"); // "mlrs.0" is the mLRS default bind phrase
     // TODO: we should check for sanity
 #endif
+    setup_device_name_and_password();
 
     // Serial
     size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails

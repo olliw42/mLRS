@@ -114,6 +114,7 @@ class tTxEspWifiBridge
   private:
 #ifdef ESP_STARTUP_CONFIGURE
     bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
+    void esp_wait_after_read(const char* const res);
     void esp_configure_baudrate(void);
     void esp_configure_wifiprotocol(void);
     void esp_configure_wifichannel(void);
@@ -136,6 +137,8 @@ class tTxEspWifiBridge
 
     uint8_t dtr_rts_last;
     uint8_t boot0_last;
+
+    uint32_t version;
 };
 
 
@@ -168,6 +171,8 @@ void tTxEspWifiBridge::Init(
 
     dtr_rts_last = 0;
     boot0_last = 0;
+
+    version = 0; // unknown
 
 #ifdef ESP_STARTUP_CONFIGURE
     run_configure();
@@ -377,6 +382,20 @@ ESP_DBG(dbg.puts("!ENDE!");)
 }
 
 
+void tTxEspWifiBridge::esp_wait_after_read(const char* const res)
+{
+    if (version >= 10307){ // sends a '*' instead of a '+' if setting had been changed
+        if (res[2] == '+') { // no change, so no need to wait for long
+            delay_ms(5);
+            return;
+        }
+    }
+
+    // wait for save on esp to finish
+    delay_ms(100);
+}
+
+
 void tTxEspWifiBridge::esp_configure_baudrate(void)
 {
 char s[ESP_CMDRES_LEN+2];
@@ -388,12 +407,12 @@ char cmd_str[32];
     remove_leading_zeros(baud_str);
     strcpy(cmd_str, "AT+BAUD=");
     strcat(cmd_str, baud_str);
+
     if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, when stores it, but does NOT change it
         return;
     }
 
-    // wait for save on esp to finish
-    delay_ms(100);
+    esp_wait_after_read(s);
 }
 
 
@@ -417,8 +436,7 @@ char cmd_str[32];
         return;
     }
 
-    // wait for save on esp to finish
-    delay_ms(100);
+    esp_wait_after_read(s);
 }
 
 
@@ -442,8 +460,7 @@ char cmd_str[32];
         return;
     }
 
-    // wait for save on esp to finish
-    delay_ms(100);
+    esp_wait_after_read(s);
 }
 
 
@@ -466,8 +483,7 @@ char cmd_str[32];
         return;
     }
 
-    // wait for save on esp to finish
-    delay_ms(100);
+    esp_wait_after_read(s);
 }
 
 
@@ -484,8 +500,7 @@ char cmd_str[32];
         return;
     }
 
-    // wait for save on esp to finish
-    delay_ms(100);
+    esp_wait_after_read(s);
 }
 
 
@@ -493,7 +508,6 @@ void tTxEspWifiBridge::run_configure(void)
 {
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
-uint32_t ver;
 
     if (ser == nullptr) return; // we need a serial
 
@@ -502,7 +516,6 @@ uint32_t ver;
     delay_ms(500); // not so nice, but it starts up really slowly ...
 
     bool found = false;
-    ver = 0; // unknown
 
     uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
     uint8_t baud_idx = 0;
@@ -515,7 +528,7 @@ uint32_t ver;
                 s[len-2] = '\0';
                 if (!strncmp(s, "OK+NAME=mLRS-Wireless-Bridge", 28)) { // correct name, it's her we are looking for
                     found = true;
-                    if (strlen(s) > 32) ver = version_from_str(s + 28);
+                    if (strlen(s) > 32) version = version_from_str(s + 28);
                 }
                 cc = 128; // break also higher for loop, don't do 255 LOL
                 break;
@@ -538,10 +551,23 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         esp_configure_wifiprotocol();
         esp_configure_wifichannel();
         esp_configure_wifipower();
-        if (ver >= 10307) { // not available before v1.3.07
+        if (version >= 10307) { // not available before v1.3.07
             esp_configure_bindphrase();
         } else {
             // Houston, we have a problem. UDPCl is not available but we allow the user to select
+        }
+        if (version >= 10307) { // not available before v1.3.07
+//            esp_read("AT+WIFIDEVICEID=?", s, &len);
+//            if (len > 18) device_id = atoi(s + 16);
+            esp_read("AT+WIFIDEVICENAME=?", s, &len);
+            if (len > 22) {
+                strcpy(info.wireless.device_name, s + 18);
+                info.wireless.device_name[strlen(info.wireless.device_name)-1] = '\0'; // strip off '\n'
+                info.wireless.device_name[strlen(info.wireless.device_name)-1] = '\0'; // strip off '\r'
+            }
+            if (strlen(info.wireless.device_name) > 9 && !strncmp(info.wireless.device_name, "mLRS-", 5)) {
+                info.wireless.device_id = atoi(info.wireless.device_name + 5);
+            }
         }
 
         if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed

@@ -37,6 +37,8 @@ typedef enum {
     AT_PROTOCOL_2_UDPSTA,
     AT_PROTOCOL_3_BT,
     AT_PROTOCOL_4_UDPCl,
+    AT_WIFIDEVICEID_QUERY,
+    AT_WIFIDEVICENAME_QUERY,
     AT_BINDPHRASE_QUERY,
     AT_BINDPHRASE_XXXXXX,
     AT_CMDS_NUM,
@@ -67,6 +69,8 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+PROTOCOL=2",
      "AT+PROTOCOL=3",
      "AT+PROTOCOL=4",
+     "AT+WIFIDEVICEID=?", // only query, no option to set
+     "AT+WIFIDEVICENAME=?", // only query, no option to set
      "AT+BINDPHRASE=?",
      "AT+BINDPHRASE=xxxxxx",
 };
@@ -162,8 +166,9 @@ bool AtMode::Do(void)
 
             // check if it is a full match already, and if so take action
             if (strcmp(at_buf, at_cmd) == 0) {
-                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY ||
-                    i == AT_WIFIPOWER_QUERY || i == AT_PROTOCOL_QUERY || i == AT_BINDPHRASE_QUERY) {
+                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY || 
+                    i == AT_PROTOCOL_QUERY || i == AT_WIFIDEVICEID_QUERY || i == AT_WIFIDEVICENAME_QUERY ||
+                    i == AT_BINDPHRASE_QUERY) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos - 1); // don't send the '?'
@@ -176,6 +181,8 @@ bool AtMode::Do(void)
                         case AT_WIFICHANNEL_QUERY: SERIAL.print(g_wifichannel); break;
                         case AT_WIFIPOWER_QUERY: SERIAL.print(g_wifipower); break;
                         case AT_PROTOCOL_QUERY: SERIAL.print(g_protocol); break;
+                        case AT_WIFIDEVICEID_QUERY: SERIAL.print(device_id); break;
+                        case AT_WIFIDEVICENAME_QUERY: SERIAL.print(device_name); break;
                         case AT_BINDPHRASE_QUERY: SERIAL.print(g_bindphrase); break;
                     }
                     SERIAL.write("\r\n");
@@ -197,58 +204,63 @@ bool AtMode::Do(void)
                 if (i >= AT_BAUD_9600 && i <= AT_BAUD_230400) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
                     int new_baudrate = atoi(at_buf + 8); // AT+BAUD=9600
                     if (new_baudrate != g_baudrate) {
                         preferences.putInt(G_BAUDRATE_STR, new_baudrate);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 } else
                 if (i >= AT_WIFICHANNEL_1 && i <= AT_WIFICHANNEL_13) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
                     int new_wifichannel = atoi(at_buf + 15); // AT+WIFICHANNEL=1
                     if (new_wifichannel != g_wifichannel) {
                         preferences.putInt(G_WIFICHANNEL_STR, new_wifichannel);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 } else
                 if (i >= AT_WIFIPOWER_0_LOW && i <= AT_WIFIPOWER_2_MAX) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
                     int new_wifipower = atoi(at_buf + 13); // AT+WIFIPOWER=1
                     if (new_wifipower != g_wifipower) {
                         preferences.putInt(G_WIFIPOWER_STR, new_wifipower);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 } else
                 if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_4_UDPCl) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
                     int new_protocol = atoi(at_buf + 12); // AT+PROTOCOL=1
                     if (new_protocol != g_protocol) {
                         preferences.putInt(G_PROTOCOL_STR, new_protocol);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
-                } else 
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
+                } else
                 if (i == AT_BINDPHRASE_XXXXXX) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
                     String new_bindphrase = "";
                     for (int pp = 14; pp < 14+6; pp++) new_bindphrase += at_buf[pp]; // AT+BINDPHRASE=mlrs.0
                     if (new_bindphrase != g_bindphrase) {
                         preferences.putString(G_BINDPHRASE_STR, new_bindphrase);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 }
                 at_pos = 0;
                 break;

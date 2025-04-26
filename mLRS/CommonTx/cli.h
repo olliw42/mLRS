@@ -25,6 +25,7 @@ extern tStats stats;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTxInfo info;
 extern tTasks tasks;
 
 
@@ -623,7 +624,13 @@ void tTxCli::print_device_version(void)
 {
     print_layout_version_warning();
 
-    putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    puts("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    char s[48];
+    if (info.WirelessDeviceName_cli(s)) {
+        puts(", ");
+        puts(s);
+    }
+    putsn("");
 
     puts("  Rx: ");
     if (connected()) {

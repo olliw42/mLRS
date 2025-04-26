@@ -153,7 +153,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx Bridge WiFi Protocol : "TCP,UDP,BT,UDPCl"
+    // Tx Bridge WiFi Protocol : "TCP,UDP,BT,UDPSTA"
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
     SetupMetaData.Tx_WiFiProt_allowed_mask = 0b1011; // no BT
 #else
