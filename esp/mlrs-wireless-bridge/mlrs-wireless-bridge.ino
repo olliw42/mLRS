@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 26. Apr. 2025
+// 27. Apr. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -102,7 +102,7 @@ Troubleshooting:
 //**********************//
 //*** WiFi settings ***//
 
-// for TCP, UDP, UDPSTA (only for these three)
+// for TCP, UDP (only for these two)
 // ssid = "" results in a default name, like "mLRS-13427 AP UDP"
 // password = "" makes it an open AP
 String ssid = ""; // "mLRS AP"; // Wifi name
@@ -115,16 +115,17 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 
 #define WIFI_USE_BROADCAST_FOR_UDP // comment out if you do not want UDP, UDP STA to start in broadcast
 
-// for UDPCl (only for UDPCl)
-// network_ssid = "" results in
-// - a default name, like "mLRS-13427 STA UDPCl"
-// - and a default password which includes your mLRS bindphrase, like "mLRS-mlrs.0"
+// for UDPSTA, UDPCl (only for these two)
+// for UDPSTA setting network_ssid = "" results in
+// - a default name, like "mLRS-13427 STA UDP"
+// - and a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
+// for UDPCl they both MUST be set to what your Wifi netwrok requires
 String network_ssid = ""; // name of your WiFi network
 String network_password = "****"; // password to access your WiFi network
 
-IPAddress ip_udpcl(192, 168, 0, 164); // your Wifi network's IP // MissionPlanner default is 127.0.0.1, so enter your home's IP in MP
+IPAddress ip_udpcl(192, 168, 0, 164); // your network's IP (only for UDPCl) // MissionPlanner default is 127.0.0.1, so enter your home's IP in MP
 
-int port_udpcl = 14550; // connect to this port per UDPCl // MissionPlanner default is 14550
+int port_udpcl = 14550; // listens to this port per UDPCl (only for UDPCl) // MissionPlanner default is 14550
 
 // WiFi channel (only for TCP, UDP)
 // choose 1, 6, 11, 13. Channel 13 (2461-2483 MHz) has the least overlap with mLRS 2.4 GHz frequencies.
@@ -317,10 +318,11 @@ void setup_device_name_and_password(void)
     } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
         device_name = (ssid == "") ? device_name + String(device_id) + " AP UDP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
-        device_name = (ssid == "") ? device_name + String(device_id) + " STA UDP" : ssid;
-    } else if (g_protocol == WIRELESS_PROTOCOL_UDPCl) {
-        device_name = (network_ssid == "") ? device_name + String(device_id) + " STA UDPCl" : network_ssid;
+        device_name = (network_ssid == "") ? device_name + String(device_id) + " STA UDP" : network_ssid;
         device_password = (network_ssid == "") ? String("mLRS-") + g_bindphrase : network_password;
+    } else if (g_protocol == WIRELESS_PROTOCOL_UDPCl) {
+        device_name = network_ssid;
+        device_password = network_password;
     } else if (g_protocol == WIRELESS_PROTOCOL_BT) {
         device_name = (bluetooth_device_name == "") ? device_name + String(device_id) + " BT" : bluetooth_device_name;
     }
