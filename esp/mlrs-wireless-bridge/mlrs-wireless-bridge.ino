@@ -219,16 +219,12 @@ String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name
 // TCP, UDP, UDPCl 
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
-// UDP (variable is used by UDPSTA, but is set by itself)
-#ifdef WIFI_USE_BROADCAST_FOR_UDP
-IPAddress ip_udp(ip[0], ip[1], ip[2], 255); // use broadcast until we know who we are talking too
-#else // use unicast, assume first address offered by DHCP is our remote
+// UDP, UDPSTA (might be set or overwritten as needed by the user configuration)
 #ifndef ESP8266
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
 #else // the ESP8266 requires different, appears to be a bug in the Arduino lib
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+99); // the first DHCP client/MissionPlanner gets assigned +99
 #endif
-#endif // WIFI_USE_BROADCAST_FOR_UDP
 WiFiUDP udp;
 // TCP
 WiFiServer server(port_tcp);
@@ -411,8 +407,7 @@ if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
 
     setup_wifipower();
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
-    ip_udp = WiFi.broadcastIP(); // ?? a good comment would be nice
-    udp.stop();    
+    ip_udp = WiFi.broadcastIP(); // start with broadcast
 #endif    
     udp.begin(port_udp);
 
@@ -598,6 +593,7 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
 
     if (g_protocol == WIRELESS_PROTOCOL_UDPSTA){
         if (!is_connected && WiFi.status() != WL_CONNECTED) {
+            udp.stop();    
             setup_wifi(); // attempt to reconnect if we got disconnected
         }
     }
