@@ -159,6 +159,7 @@ void setup_configure_metadata(void)
 #else
     SetupMetaData.Tx_WiFiProt_allowed_mask = 0b1111; // all
 #endif
+    SetupMetaData.Tx_WiFiProt_allowed_mask &= 0b0111; // disable UDPSTA for now // TODO
 
     //-- Rx:
 
