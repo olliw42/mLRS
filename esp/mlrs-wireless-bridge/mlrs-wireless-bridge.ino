@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 27. Apr. 2025
+// 29. Apr. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -148,7 +148,7 @@ int port_udpcl = 14550; // listens to this port per UDPCl (only for UDPCl) // Mi
 //*** Bluetooth settings ***//
 
 // bluetooth_device_name = "" results in a default name, like "mLRS-13427 BT"
-String bluetooth_device_name = ""; // "mLRS BT"; // Bluetooth device name
+String bluetooth_device_name = ""; // name of your Bluetooth device as it will be seen by your operating system
 
 
 //************************//
@@ -371,6 +371,9 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
         server.setNoDelay(true);
     } else
     if (g_protocol == WIRELESS_PROTOCOL_UDP) {
+#ifdef WIFI_USE_BROADCAST_FOR_UDP
+        ip_udp = WiFi.broadcastIP(); // effectively does what we want, setting ip_udp[3] = 255; // start with broadcast
+#endif    
         udp.begin(port_udp);
     }
 
@@ -390,9 +393,6 @@ if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
     // STA mode
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
-#ifndef WIFI_USE_BROADCAST_FOR_UDP    
-    WiFi.config(ip_udp, ip_gateway, netmask); // no WiFi.config() when we start in broadcast
-#endif    
     WiFi.begin(device_name.c_str(), device_password.c_str());
 
     while (WiFi.status() != WL_CONNECTED) {
