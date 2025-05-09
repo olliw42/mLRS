@@ -94,9 +94,9 @@ Troubleshooting:
 #define WIRELESS_PROTOCOL  1
 
 // GPIO0 usage
-// comment out if your Tx module does not support the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
+// uncomment for pre-built binaries or if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
 // the number determines the IO pin, usally it is 0
-#define GPIO0_IO  0
+//#define GPIO0_IO  0
 
 
 //**********************//
@@ -220,7 +220,7 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 // TCP, UDP, UDPCl 
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
-// UDP, UDPSTA (Will be overwritten if WIFI_USE_BRADCAST_FOR_UDP is set)
+// UDP, UDPSTA (Will be overwritten if WIFI_USE_BROADCAST_FOR_UDP is set)
 #ifndef ESP8266
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
 #else // the ESP8266 requires different, appears to be a bug in the Arduino lib
@@ -373,7 +373,9 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
     } else
     if (g_protocol == WIRELESS_PROTOCOL_UDP) {
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
-        ip_udp = WiFi.broadcastIP(); // Start with broadcast
+        //ip_udp = WiFi.broadcastIP(); // Looks like this is only for station mode
+        // Broadcast until we receive
+        ip_udp[3] = 255; // Our subnetmask is 255.255.255.0 so, just the last octet needs to change.
 #endif    
         udp.begin(port_udp);
     }
