@@ -152,7 +152,7 @@ bool AtMode::Do(void)
         for (int i = 0; i < AT_CMDS_NUM; i++) {
             char at_cmd[32];
             strcpy(at_cmd, at_cmds[i]);
-            
+
             // we need to adjust the cmd to look for in the case of bindphrase
             // replaces the chars in the cmd's 'x' positions with the actual chars
             // somewhat dirty but does the trick and avoids massive parser change
@@ -166,7 +166,7 @@ bool AtMode::Do(void)
 
             // check if it is a full match already, and if so take action
             if (strcmp(at_buf, at_cmd) == 0) {
-                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY || 
+                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY ||
                     i == AT_PROTOCOL_QUERY || i == AT_WIFIDEVICEID_QUERY || i == AT_WIFIDEVICENAME_QUERY ||
                     i == AT_BINDPHRASE_QUERY) {
                     at_buf[0] = 'O';

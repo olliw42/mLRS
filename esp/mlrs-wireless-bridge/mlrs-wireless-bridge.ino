@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 8. Mai. 2025
+// 10. Mai. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -81,7 +81,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM
 //#define MODULE_GENERIC
-//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -90,11 +90,11 @@ Troubleshooting:
 
 // Wireless protocol
 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPSTA, 3 = Bluetooth (not available for all boards), 4 = Wifi UDPCl
-// Note: If GPIO0_IO is defined, then it only sets the default protocol
+// Note: If GPIO0_IO is defined, then this only sets the default protocol
 #define WIRELESS_PROTOCOL  1
 
 // GPIO0 usage
-// uncomment for pre-built binaries or if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
+// uncomment if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
 // the number determines the IO pin, usally it is 0
 //#define GPIO0_IO  0
 
@@ -102,7 +102,7 @@ Troubleshooting:
 //**********************//
 //*** WiFi settings ***//
 
-// for TCP, UDP (only for these two)
+// For TCP, UDP (only for these two)
 // ssid = "" results in a default name, like "mLRS-13427 AP UDP"
 // password = "" makes it an open AP
 String ssid = ""; // "mLRS AP"; // Wifi name
@@ -113,14 +113,15 @@ IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default i
 int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
-// For UDP, UDPSTA; comment out only if broadcast won't work and then for STA, also set ip_udp below
+// For UDP, UDPSTA (only for these two)
+// comment out only if broadcast won't work for you (ip_udp declared below will then be used)
 #define WIFI_USE_BROADCAST_FOR_UDP
 
-// for UDPSTA (only for this) setting network_ssid = "" results in
+// For UDPSTA, UDPCl (only for these two)
+// for UDPSTA setting network_ssid = "" results in
 // - a default name, like "mLRS-13427 STA UDP"
-// - and a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
-
-// for UDPCl they both MUST be set to what your Wifi netwrok requires
+// - a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
+// for UDPCl both strings MUST be set to what your Wifi network requires
 String network_ssid = ""; // name of your WiFi network
 String network_password = "****"; // password to access your WiFi network
 
@@ -208,7 +209,7 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 #ifdef CONFIG_IDF_TARGET_ESP32 // classic BT only available on ESP32
   #define USE_WIRELESS_PROTOCOL_BLUETOOTH
   #include <BluetoothSerial.h>
-#endif  
+#endif
 #endif
 #endif // #ifndef ESP8266
 
@@ -217,10 +218,10 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 // Internals
 //-------------------------------------------------------
 
-// TCP, UDP, UDPCl 
+// TCP, UDP, UDPCl
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
-// UDP, UDPSTA (Will be overwritten if WIFI_USE_BROADCAST_FOR_UDP is set)
+// UDP, UDPSTA (will be overwritten if WIFI_USE_BROADCAST_FOR_UDP is set)
 #ifndef ESP8266
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
 #else // the ESP8266 requires different, appears to be a bug in the Arduino lib
@@ -373,10 +374,9 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
     } else
     if (g_protocol == WIRELESS_PROTOCOL_UDP) {
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
-        //ip_udp = WiFi.broadcastIP(); // Looks like this is only for station mode
-        // Broadcast until we receive
-        ip_udp[3] = 255; // Our subnetmask is 255.255.255.0 so, just the last octet needs to change.
-#endif    
+        //ip_udp = WiFi.broadcastIP(); // seems to not work for AP mode
+        ip_udp[3] = 255; // start with broadcast, the subnet mask is 255.255.255.0 so just last octet needs to change
+#endif
         udp.begin(port_udp);
     }
 
@@ -410,8 +410,8 @@ if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
 
     setup_wifipower();
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
-    ip_udp = WiFi.broadcastIP(); // Start with broadcast
-#endif    
+    ip_udp = WiFi.broadcastIP(); // start with broadcast
+#endif
     udp.begin(port_udp);
 
 } else
@@ -596,7 +596,7 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
 
     if (g_protocol == WIRELESS_PROTOCOL_UDPSTA){
         if (!is_connected && WiFi.status() != WL_CONNECTED) {
-            udp.stop();    
+            udp.stop();
             setup_wifi(); // attempt to reconnect if WiFi got disconnected
         }
     }
@@ -606,11 +606,11 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
         int len = udp.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
-        if (is_connected != true) { // First received UDP packet
-           ip_udp = udp.remoteIP(); // stop broadcast, switch to unicast to avoid Aurdino performance issue
-           port_udp = udp.remotePort();
+        if (!is_connected) { // first received UDP packet
+            ip_udp = udp.remoteIP(); // stop broadcast, switch to unicast to avoid Aurdino performance issue
+            port_udp = udp.remotePort();
         }
-#endif        
+#endif
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
