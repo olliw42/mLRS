@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 1. Mai. 2025
+// 8. Mai. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -89,12 +89,12 @@ Troubleshooting:
 //#define USE_SERIAL_INVERTED
 
 // Wireless protocol
-// 0 = WiFi TCP, 1 = WiFi UDP, 3 = Bluetooth (not available for all boards), 4 = Wifi UDPCl
+// 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPSTA, 3 = Bluetooth (not available for all boards), 4 = Wifi UDPCl
 // Note: If GPIO0_IO is defined, then it only sets the default protocol
 #define WIRELESS_PROTOCOL  1
 
 // GPIO0 usage
-// uncomment, if your Tx module does support the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
+// uncomment for pre-built binaries or if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
 // the number determines the IO pin, usally it is 0
 //#define GPIO0_IO  0
 
@@ -113,7 +113,13 @@ IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default i
 int port_tcp = 5760; // connect to this port per TCP // MissionPlanner default is 5760
 int port_udp = 14550; // connect to this port per UDP // MissionPlanner default is 14550
 
-// for UDPSTA (only for this)
+// For UDP, UDPSTA; comment out only if broadcast won't work and then for STA, also set ip_udp below
+#define WIFI_USE_BROADCAST_FOR_UDP
+
+// for UDPSTA (only for this) setting network_ssid = "" results in
+// - a default name, like "mLRS-13427 STA UDP"
+// - and a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
+
 // for UDPCl they both MUST be set to what your Wifi netwrok requires
 String network_ssid = ""; // name of your WiFi network
 String network_password = "****"; // password to access your WiFi network
@@ -206,10 +212,6 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 #endif
 #endif // #ifndef ESP8266
 
-#if WIRELESS_PROTOCOL == 2
-    #error WIRELESS_PROTOCOL 2 has changed and is not available anymore, use WIRELESS_PROTOCOL 4 !
-#endif
-
 
 //-------------------------------------------------------
 // Internals
@@ -218,7 +220,7 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 // TCP, UDP, UDPCl 
 IPAddress ip_gateway(0, 0, 0, 0);
 IPAddress netmask(255, 255, 255, 0);
-// UDP
+// UDP, UDPSTA (Will be overwritten if WIFI_USE_BROADCAST_FOR_UDP is set)
 #ifndef ESP8266
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // usually the client/MissionPlanner gets assigned +1
 #else // the ESP8266 requires different, appears to be a bug in the Arduino lib
@@ -236,7 +238,7 @@ BluetoothSerial SerialBT;
 typedef enum {
     WIRELESS_PROTOCOL_TCP = 0,
     WIRELESS_PROTOCOL_UDP = 1,
-    WIRELESS_PROTOCOL_UDPSTA = 2, // TODO
+    WIRELESS_PROTOCOL_UDPSTA = 2,
     WIRELESS_PROTOCOL_BT = 3,
     WIRELESS_PROTOCOL_UDPCl = 4,
 } WIRELESS_PROTOCOL_ENUM;
@@ -313,7 +315,8 @@ void setup_device_name_and_password(void)
     } else if (g_protocol == WIRELESS_PROTOCOL_UDP) {
         device_name = (ssid == "") ? device_name + String(device_id) + " AP UDP" : ssid;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
-        // TODO
+        device_name = (network_ssid == "") ? device_name + String(device_id) + " STA UDP" : network_ssid;
+        device_password = (network_ssid == "") ? String("mLRS-") + g_bindphrase : network_password;
     } else if (g_protocol == WIRELESS_PROTOCOL_UDPCl) {
         device_name = network_ssid;
         device_password = network_password;
@@ -369,6 +372,11 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
         server.setNoDelay(true);
     } else
     if (g_protocol == WIRELESS_PROTOCOL_UDP) {
+#ifdef WIFI_USE_BROADCAST_FOR_UDP
+        //ip_udp = WiFi.broadcastIP(); // Looks like this is only for station mode
+        // Broadcast until we receive
+        ip_udp[3] = 255; // Our subnetmask is 255.255.255.0 so, just the last octet needs to change.
+#endif    
         udp.begin(port_udp);
     }
 
@@ -385,7 +393,26 @@ if (g_protocol == WIRELESS_PROTOCOL_BT) {
 if (g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
 //-- Wifi UDPSTA
 
-    // TODO
+    // STA mode
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    WiFi.begin(device_name.c_str(), device_password.c_str());
+
+    while (WiFi.status() != WL_CONNECTED) {
+        led_on(true); delay(75); led_off(); delay(75);
+        led_on(true); delay(75); led_off(); delay(75);
+        led_on(true); delay(75); led_off(); delay(75);
+        DBG_PRINTLN("connecting to WiFi network...");
+    }
+    DBG_PRINTLN("connected");
+    DBG_PRINT("network ip address: ");
+    DBG_PRINTLN(WiFi.localIP());
+
+    setup_wifipower();
+#ifdef WIFI_USE_BROADCAST_FOR_UDP
+    ip_udp = WiFi.broadcastIP(); // Start with broadcast
+#endif    
+    udp.begin(port_udp);
 
 } else
 if (g_protocol == WIRELESS_PROTOCOL_UDPCl) {
@@ -564,13 +591,26 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP) {
     }
 
 } else
-if (g_protocol == WIRELESS_PROTOCOL_UDP) {
-//-- WiFi UDP
+if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPSTA) {
+//-- WiFi UDP, UDPSTA
+
+    if (g_protocol == WIRELESS_PROTOCOL_UDPSTA){
+        if (!is_connected && WiFi.status() != WL_CONNECTED) {
+            udp.stop();    
+            setup_wifi(); // attempt to reconnect if WiFi got disconnected
+        }
+    }
 
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
         SERIAL.write(buf, len);
+#ifdef WIFI_USE_BROADCAST_FOR_UDP
+        if (is_connected != true) { // First received UDP packet
+           ip_udp = udp.remoteIP(); // stop broadcast, switch to unicast to avoid Aurdino performance issue
+           port_udp = udp.remotePort();
+        }
+#endif        
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
