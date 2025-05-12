@@ -60,10 +60,10 @@ class tRxAutoPilot
     void handle_heartbeat(fmav_message_t* const msg);
     void handle_autopilot_version(fmav_message_t* const msg);
 
-    uint8_t sysid;
+    uint8_t sysid; // 0 indicates autopilot not detected
   private:
     uint8_t autopilot; // this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
-    uint32_t flight_sw_version;
+    uint32_t flight_sw_version; // 0 indicates not known
     uint32_t middleware_sw_version;
     uint32_t version;
     uint32_t heartbeat_tlast_ms;
@@ -1276,6 +1276,7 @@ void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
 
     // check if it could be the heartbeat from ArduPilot
     // we also could check if type is proper, but this is very daunting, so don't do
+    // TODO: PX4 ??
     if (payload.autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
 //if (!sysid) { dbg.puts("\ngot heartbeat"); }
         sysid = msg->sysid;

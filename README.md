@@ -1,4 +1,4 @@
-<p align="left"><a href="https://raw.githubusercontent.com/olliw42/mLRS-docu/master/logos/mLRS_logo_long_w_slogan_1280x768.png"><img src="https://raw.githubusercontent.com/olliw42/mLRS-docu/master/logos/mLRS_logo_long_w_slogan_1280x768.png" align="center" height="153" width="256" ></a>
+<p align="left"><a href="https://raw.githubusercontent.com/olliw42/mLRS-docu/main/logos/mLRS_logo_long_w_slogan_1280x768.png"><img src="https://raw.githubusercontent.com/olliw42/mLRS-docu/main/logos/mLRS_logo_long_w_slogan_1280x768.png" align="center" height="153" width="256" ></a>
 
 # mLRS #
 
@@ -104,9 +104,9 @@ The code currently supports:
 
 MatekSys offers a selection of quality mLRS boards, which are currently the best option available. They are specifically designed for mLRS, exploiting its full potential feature-wise. They support the 2.4 GHz and 868/915 MHz frequency bands, offer up to 1 W transmit power, and employ TCXOs. Furthermore, they use comparatively beefy STM32 MCUs, and are also very well suited for tinkering and DIY extensions since all usable pins are broken out and easily accessible.
 
-ExpressLRS hardware also provides a readily available entry into mLRS. The RadioMaster Bandit and Ranger or the BetaFPV 1W Micro modules are good mLRS Tx modules offering up to 1 W. Also the internal modules in a number of popular EdgeTx/ExpressLRS radios from RadioMaster and Jumper are supported. The various ExpressLRS receivers can also be good options; some of them provide up to 500 mW transmission power, and some others are cheaply available. Note though that not every ExpressLRS hardware is supported by mLRS. A main downside of the ExpressLRS 900 MHz gear is that they only support the 19 Hz 7x mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/master/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
+ExpressLRS hardware also provides a readily available entry into mLRS. The RadioMaster Bandit and Ranger or the BetaFPV 1W Micro modules are good mLRS Tx modules offering up to 1 W. Also the internal modules in a number of popular EdgeTx/ExpressLRS radios from RadioMaster and Jumper are supported. The various ExpressLRS receivers can also be good options; some of them provide up to 500 mW transmission power, and some others are cheaply available. Note though that not every ExpressLRS hardware is supported by mLRS. A main downside of the ExpressLRS 900 MHz gear is that they only support the 19 Hz 7x mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/main/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
 
-In the 915/868 MHz range, the Frsky R9 system can be an option too. The Frsky R9M transmitter module is a reasonable mLRS Tx module offering up to 1 W (the R9M Lite Pro cannot be used as transmitter). The R9 receivers are nice options but provide low transmission power (50 mW). This can be mitigated by using a R9M Lite Pro or R9M as receiver (1 W). Here too, the downside is that the R9 devices only support the 19 Hz 7x mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/master/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
+In the 915/868 MHz range, the Frsky R9 system can be an option too. The Frsky R9M transmitter module is a reasonable mLRS Tx module offering up to 1 W (the R9M Lite Pro cannot be used as transmitter). The R9 receivers are nice options but provide low transmission power (50 mW). This can be mitigated by using a R9M Lite Pro or R9M as receiver (1 W). Here too, the downside is that the R9 devices only support the 19 Hz 7x mode, and are incompatible with the MatekSys and Wio-E5/E77/E22 based gear ([link](https://github.com/olliw42/mLRS-docu/blob/main/docs/SX126x_SX127x_INCOMPATIBILITY.md)).
 
 The SeeedStudio Wio-E5 boards and the EByte E77-MBL board are yet another readily available and reasonable options for entering mLRS. The "easy-to-solder" board, which uses an EByte E77 module, is a simple and cheap DIY option for building mLRS receivers and transmitters. It can also be used for building mLRS full diversity devices, as well as dual-band devices working simultaneously in e.g. the 868/915 MHz and 2.4 GHz ranges. All these boards are based on the STM32WL5E chip and thus provide all advantages of the SX126x chipset, such as the 31 Hz mode. Their maximum power is 22 dBm, and they can be used in the 915/868 MHz and 433 MHz/70 cm frequency ranges. 
 
@@ -114,7 +114,7 @@ Don't hesitate to join the discussion thread at rcgroups or the discord channel 
 
 ## Firmware: Flashing ##
 
-Most devices which are supported can be flashed with the [mLRS Desktop App](https://github.com/olliw42/mLRS-Flasher).  Additionally, Matek devices can be flashed using a web browser with the [mLRS Web Flasher](https://mlrs.xyz/flash), which makes flashing most easy.
+Most devices which are supported can be flashed with the [mLRS Flasher Desktop App](https://github.com/olliw42/mLRS-Flasher). Additionally, Matek devices can be flashed using a web browser with the [mLRS Web Flasher](https://mlrs.xyz/flash), which makes flashing most easy.
 
 Once your hardware is flashed, you can then use the mLRS transmitter to configure the system via the CLI, the mLRS Configuration Lua script for EdgeTx/OpenTx radios, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
 
@@ -122,8 +122,8 @@ Once your hardware is flashed, you can then use the mLRS transmitter to configur
 
 mLRS uses STM32CubeIDE for STM32 targets, and PlatformIO with VSCode for ESP32 and ESP8285 targets. For details see:
 
-- [STM32 Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/STM32_DEVELOPMENT.md)
-- [ESP Development](https://github.com/olliw42/mLRS-docu/blob/master/docs/ESP_DEVELOPMENT.md)
+- [STM32 Development](https://github.com/olliw42/mLRS-docu/blob/main/docs/STM32_DEVELOPMENT.md)
+- [ESP Development](https://github.com/olliw42/mLRS-docu/blob/main/docs/ESP_DEVELOPMENT.md)
 
 In case of issues with the procedures, don't hesitate to join the discussion thread at rcgroups or the discord channel.
 
@@ -131,4 +131,4 @@ In case of issues with the procedures, don't hesitate to join the discussion thr
 
 You find many more information here:
 
-[mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/master/README.md)
+[mLRS Documentation](https://github.com/olliw42/mLRS-docu/blob/main/README.md)

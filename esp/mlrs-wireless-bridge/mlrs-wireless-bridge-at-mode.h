@@ -34,13 +34,19 @@ typedef enum {
     AT_PROTOCOL_QUERY,
     AT_PROTOCOL_0_TCP,
     AT_PROTOCOL_1_UDP,
+    AT_PROTOCOL_2_UDPSTA,
     AT_PROTOCOL_3_BT,
+    AT_PROTOCOL_4_UDPCl,
+    AT_WIFIDEVICEID_QUERY,
+    AT_WIFIDEVICENAME_QUERY,
+    AT_BINDPHRASE_QUERY,
+    AT_BINDPHRASE_XXXXXX,
     AT_CMDS_NUM,
 } AT_NAME_ENUM;
 
 const char* at_cmds[AT_CMDS_NUM] = {
      "AT+NAME=?",
-     "AT+RESTART",
+     "AT+RESTART", // restarts the ESP if needed, and communicates this back to the host
      "AT+BAUD=?",
      "AT+BAUD=9600",
      "AT+BAUD=19200",
@@ -60,7 +66,13 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+PROTOCOL=?",
      "AT+PROTOCOL=0",
      "AT+PROTOCOL=1",
+     "AT+PROTOCOL=2",
      "AT+PROTOCOL=3",
+     "AT+PROTOCOL=4",
+     "AT+WIFIDEVICEID=?", // only query, no option to set
+     "AT+WIFIDEVICENAME=?", // only query, no option to set
+     "AT+BINDPHRASE=?",
+     "AT+BINDPHRASE=xxxxxx",
 };
 
 
@@ -74,7 +86,7 @@ class AtMode {
     bool gpio_is_low;
     unsigned long startup_tmo_ms;
     uint8_t at_pos;
-    uint8_t at_buf[128];
+    char at_buf[128];
 
     bool restart_needed;
 
@@ -124,7 +136,7 @@ bool AtMode::Do(void)
         if (millis() > startup_tmo_ms) startup_tmo_ms = 0;
     }
 
-    // when not in startup phase and not GPIO0 low, do to WiFi loop
+    // when not in startup phase and not GPIO0 low, go to WiFi loop
     if (!startup_tmo_ms && !gpio_is_low) return false;
 
     int avail = SERIAL.available();
@@ -138,11 +150,25 @@ bool AtMode::Do(void)
         at_buf[at_pos] = '\0'; // to make it a str
         bool possible_match = false;
         for (int i = 0; i < AT_CMDS_NUM; i++) {
-            if (strncmp((char*)at_buf, at_cmds[i], at_pos) != 0) continue; // not even a possible match
+            char at_cmd[32];
+            strcpy(at_cmd, at_cmds[i]);
+
+            // we need to adjust the cmd to look for in the case of bindphrase
+            // replaces the chars in the cmd's 'x' positions with the actual chars
+            // somewhat dirty but does the trick and avoids massive parser change
+            if (i == AT_BINDPHRASE_XXXXXX) {
+                for (int pp = 14; pp < 14+6; pp++) if (pp < at_pos) at_cmd[pp] = at_buf[pp];
+            }
+
+            // check if it could become a match by reading more chars
+            if (strncmp(at_buf, at_cmd, at_pos) != 0) continue; // not even a possible match
             possible_match = true;
-            if (strcmp((char*)at_buf, at_cmds[i]) == 0) { // full match
-                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY ||
-                    i == AT_WIFIPOWER_QUERY || i == AT_PROTOCOL_QUERY) {
+
+            // check if it is a full match already, and if so take action
+            if (strcmp(at_buf, at_cmd) == 0) {
+                if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY ||
+                    i == AT_PROTOCOL_QUERY || i == AT_WIFIDEVICEID_QUERY || i == AT_WIFIDEVICENAME_QUERY ||
+                    i == AT_BINDPHRASE_QUERY) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos - 1); // don't send the '?'
@@ -155,11 +181,14 @@ bool AtMode::Do(void)
                         case AT_WIFICHANNEL_QUERY: SERIAL.print(g_wifichannel); break;
                         case AT_WIFIPOWER_QUERY: SERIAL.print(g_wifipower); break;
                         case AT_PROTOCOL_QUERY: SERIAL.print(g_protocol); break;
+                        case AT_WIFIDEVICEID_QUERY: SERIAL.print(device_id); break;
+                        case AT_WIFIDEVICENAME_QUERY: SERIAL.print(device_name); break;
+                        case AT_BINDPHRASE_QUERY: SERIAL.print(g_bindphrase); break;
                     }
                     SERIAL.write("\r\n");
                 } else
                 if (i == AT_RESTART) {
-                    // for some reasons I don't understand it "often" gives a wifi:NAN WiFi stop error
+                    // for some reasons I don't understand, it "often" gives a wifi:NAN WiFi stop error
                     //if (1) {
                     if (restart_needed) {
                         at_buf[0] = 'O';
@@ -169,52 +198,69 @@ bool AtMode::Do(void)
                         delay(100);
                         restart();
                     } else {
-                        SERIAL.write("KO\r\n"); // cmd recognized, but not executed
+                        SERIAL.write("KO\r\n"); // cmd recognized, but a restart was not needed
                     }
                 } else
                 if (i >= AT_BAUD_9600 && i <= AT_BAUD_230400) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
-                    int new_baudrate = atoi((char*)(at_buf + 8)); // AT+BAUD=9600
+                    int new_baudrate = atoi(at_buf + 8); // AT+BAUD=9600
                     if (new_baudrate != g_baudrate) {
                         preferences.putInt(G_BAUDRATE_STR, new_baudrate);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 } else
                 if (i >= AT_WIFICHANNEL_1 && i <= AT_WIFICHANNEL_13) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
-                    int new_wifichannel = atoi((char*)(at_buf + 15)); // AT+WIFICHANNEL=1
+                    int new_wifichannel = atoi(at_buf + 15); // AT+WIFICHANNEL=1
                     if (new_wifichannel != g_wifichannel) {
                         preferences.putInt(G_WIFICHANNEL_STR, new_wifichannel);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 } else
                 if (i >= AT_WIFIPOWER_0_LOW && i <= AT_WIFIPOWER_2_MAX) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
-                    SERIAL.write(at_buf, at_pos);
-                    SERIAL.write("\r\n");
-                    int new_wifipower = atoi((char*)(at_buf + 13)); // AT+WIFIPOWER=1
+                    int new_wifipower = atoi(at_buf + 13); // AT+WIFIPOWER=1
                     if (new_wifipower != g_wifipower) {
                         preferences.putInt(G_WIFIPOWER_STR, new_wifipower);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
-                } else
-                if (i == AT_PROTOCOL_0_TCP || i == AT_PROTOCOL_1_UDP || i == AT_PROTOCOL_3_BT) {
-                    at_buf[0] = 'O';
-                    at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos);
                     SERIAL.write("\r\n");
-                    int new_protocol = atoi((char*)(at_buf + 12)); // AT+PROTOCOL=1
+                } else
+                if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_4_UDPCl) {
+                    at_buf[0] = 'O';
+                    at_buf[1] = 'K';
+                    int new_protocol = atoi(at_buf + 12); // AT+PROTOCOL=1
                     if (new_protocol != g_protocol) {
                         preferences.putInt(G_PROTOCOL_STR, new_protocol);
                         restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
+                } else
+                if (i == AT_BINDPHRASE_XXXXXX) {
+                    at_buf[0] = 'O';
+                    at_buf[1] = 'K';
+                    String new_bindphrase = "";
+                    for (int pp = 14; pp < 14+6; pp++) new_bindphrase += at_buf[pp]; // AT+BINDPHRASE=mlrs.0
+                    if (new_bindphrase != g_bindphrase) {
+                        preferences.putString(G_BINDPHRASE_STR, new_bindphrase);
+                        restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
+                    }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
                 }
                 at_pos = 0;
                 break;
