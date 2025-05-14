@@ -72,6 +72,8 @@ class tTxCrsf : public tPin5BridgeBase
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
+    void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
+
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
@@ -494,6 +496,12 @@ void tTxCrsf::SendMBridgeFrame(void* const payload, uint8_t payload_len)
 }
 
 
+void tTxCrsf::PassthroughSetBattery0Capacity(uint32_t capacity)
+{
+    crsf.passthrough.SetBattery0Capacity(capacity);
+}
+
+
 //-------------------------------------------------------
 // helper
 
@@ -631,7 +639,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* const pay
 
     battery.voltage = CRSF_REV_U16(mav_battery_voltage(payload) / 100);
     battery.current = CRSF_REV_U16((payload->current_battery == -1) ? 0 : payload->current_battery / 10); // CRSF is in 0.1 A, MAVLink is in 0.01 A
-    uint32_t capacity = (payload->current_consumed == -1) ? 0 : payload->current_consumed;
+    uint32_t capacity = (payload->current_consumed < 0) ? 0 : payload->current_consumed; // -1 = unknown, but can become negative
     if (capacity > 8388607) capacity = 8388607; // int 24 bit
     battery.capacity[0] = (capacity >> 16);
     battery.capacity[1] = (capacity >> 8);
@@ -765,6 +773,8 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         }break;
 
     // these are for passthrough only
+
+    // case FASTMAVLINK_MSG_ID_PARAM_VALUE, is handled by mavlink/vehicle class as needed
 
     case FASTMAVLINK_MSG_ID_SYS_STATUS: {
         fmav_sys_status_t payload;
@@ -1059,6 +1069,8 @@ class tTxCrsfDummy
     void SendLinkStatisticsTx(void) {}
     void SendLinkStatisticsRx(void) {}
     void SendDevideInfo(void) {}
+
+    void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
 tTxCrsfDummy crsf;
