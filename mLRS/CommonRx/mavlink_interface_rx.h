@@ -1506,8 +1506,8 @@ dbg.puts("\ngot msg interval ");//dbg.puts(u32toHEX_s(flight_sw_version));
 
 void tRxAutoPilot::Do(void) {}
 bool tRxAutoPilot::RequestAutopilotVersion(void) { return false; }
-bool RequestMessageInterval(uint32_t* const msg_id) { return false; }
-bool RequestDataStream(uint32_t* const stream_id, uint32_t *stream_rate) { return false; }
+bool tRxAutoPilot::RequestMessageInterval(uint32_t* const msg_id) { return false; }
+bool tRxAutoPilot::RequestDataStream(uint32_t* const stream_id, uint32_t *stream_rate) { return false; }
 bool tRxAutoPilot::HasMFtpFlowControl(void) { return false; }
 void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg) {}
 void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg) {}
