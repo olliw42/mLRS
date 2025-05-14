@@ -126,7 +126,7 @@ class tPassThrough
         VEL_YAW_0x5005_AIR,       // 0x5005 velocity and yaw (climbspeed,speed,yaw,flag for groundspeed/airspeed)
 
         PASSTHROUGH_PACKET_TYPE_NUM
-    } PASSTHROUGHPACKETTYPEENUM;
+    } PASSTHROUGH_PACKET_TYPE_ENUM;
 
     // these read a MAVLink message and convert data into passthrough data fields
     
@@ -211,7 +211,6 @@ class tPassThrough
 
     bool vehicle_is_armed;
     uint32_t battery0_capacity;
-    uint32_t battery1_capacity;
 
     uint8_t param_id_cnt;
 };
@@ -229,8 +228,7 @@ void tPassThrough::Init(void)
     home_position_received_once = false;
 
     vehicle_is_armed = false;
-    battery0_capacity = 0;
-    battery1_capacity = 0;
+    battery0_capacity = 0; // 0 means not available
 
     param_id_cnt = UINT8_MAX; // to start at 0
 }
