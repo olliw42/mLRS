@@ -63,6 +63,8 @@ class tRxAutoPilot
     void handle_autopilot_version(fmav_message_t* const msg);
     void handle_message_interval(fmav_message_t* const msg);
 
+    void handle_request_data_stream_from_ground(fmav_message_t* const msg);
+
     uint8_t sysid; // 0 indicates autopilot not detected
   private:
     uint8_t autopilot; // from HEARTBEAT, this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
@@ -473,6 +475,12 @@ void tRxMavlink::parse_link_in_serial_out(char c)
                     }
                 }
             }
+        }
+#endif
+
+#ifdef USE_FEATURE_MAVLINKX
+        if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_REQUEST_DATA_STREAM) {
+            autopilot.handle_request_data_stream_from_ground(&msg_serial_out);
         }
 #endif
 
@@ -1501,6 +1509,13 @@ dbg.puts(s32toBCD_s(payload.interval_us));
 dbg.puts("\ngot msg interval ");//dbg.puts(u32toHEX_s(flight_sw_version));
 //dbg.puts(" = ");dbg.puts(u32toBCD_s(version));
 }
+
+
+void tRxAutoPilot::handle_request_data_stream_from_ground(fmav_message_t* const msg)
+{
+    streamrate_tasks = STREAMRATE_TASK_NONE;
+}
+
 
 #else
 
