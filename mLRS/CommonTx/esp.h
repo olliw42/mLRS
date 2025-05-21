@@ -522,7 +522,7 @@ uint8_t len;
     for (uint8_t cc = 0; cc < 3; cc++) { // when in BT it seems to need f-ing long to start up
         for (baud_idx = 0; baud_idx < sizeof(bauds)/4; baud_idx++) {
             ser->SetBaudRate(bauds[baud_idx]);
-            delay(5); // allow a few character times to settle
+            delay_ms(5); // allow a few character times to settle
             ser->flush();
 
             if (esp_read("AT+NAME=?", s, &len)) { // detected !
