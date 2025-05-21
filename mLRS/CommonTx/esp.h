@@ -354,7 +354,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 #define ESP_DBG(x)
 
 #define ESP_CMDRES_LEN      46
-#define ESP_CMDRES_TMO_MS   50
+#define ESP_CMDRES_TMO_MS   70 // 50 was not enough at 9600 baud.  60 worked.
 
 
 bool tTxEspWifiBridge::esp_read(const char* const cmd, char* const res, uint8_t* const len)
@@ -522,6 +522,7 @@ uint8_t len;
     for (uint8_t cc = 0; cc < 3; cc++) { // when in BT it seems to need f-ing long to start up
         for (baud_idx = 0; baud_idx < sizeof(bauds)/4; baud_idx++) {
             ser->SetBaudRate(bauds[baud_idx]);
+            delay(5); // allow a few character times to settle
             ser->flush();
 
             if (esp_read("AT+NAME=?", s, &len)) { // detected !
