@@ -36,7 +36,7 @@
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error ESP: ESP wireless bridge is on serial but board has serial/com !
+//  #error ESP: ESP wireless bridge is on serial but board has serial/com !
 #endif
 
 
@@ -359,6 +359,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 
 bool tTxEspWifiBridge::esp_read(const char* const cmd, char* const res, uint8_t* const len)
 {
+    ser->flush();
     ser->puts(cmd);
 
 ESP_DBG(dbg.puts("\r\n");dbg.puts(cmd);dbg.puts(" -> ");)
@@ -408,7 +409,7 @@ char cmd_str[32];
     strcpy(cmd_str, "AT+BAUD=");
     strcat(cmd_str, baud_str);
 
-    if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, when stores it, but does NOT change it
+    if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, then stores it, but does NOT change it
         return;
     }
 
@@ -513,7 +514,6 @@ uint8_t len;
 
     // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
     esp_gpio0_low(); // force AT mode
-    delay_ms(500); // not so nice, but it starts up really slowly ...
 
     bool found = false;
 
@@ -523,7 +523,6 @@ uint8_t len;
         for (baud_idx = 0; baud_idx < sizeof(bauds)/4; baud_idx++) {
             ser->SetBaudRate(bauds[baud_idx]);
             delay_ms(5); // allow a few character times to settle
-            ser->flush();
 
             if (esp_read("AT+NAME=?", s, &len)) { // detected !
                 s[len-2] = '\0';
@@ -582,9 +581,9 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
     }
     ser->flush();
 
-//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
-if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
+ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 
+    esp_read("AT+DONE", s, &len); // leave power up AT mode
     esp_gpio0_high(); // leave forced AT mode
 }
 
