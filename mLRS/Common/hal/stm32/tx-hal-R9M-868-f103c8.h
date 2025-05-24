@@ -21,8 +21,7 @@
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+
 // Note on SERIAL_OR_COM:
 // The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
 // The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
@@ -275,23 +274,6 @@ void fan_set_power(int8_t power_dbm)
     }
 }
 
-//-- Wifi Bridge
-
-#define ESP_RESET                 // defined, but unused
-#define ESP_GPIO0                 // defined, but unused
-
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-void esp_init(void)
-{
-}
-
-void esp_reset_high(void) {}
-void esp_reset_low(void) {}
-
-void esp_gpio0_high(void) {}
-void esp_gpio0_low(void) {}
-
-#endif
 
 //-- POWER
 
