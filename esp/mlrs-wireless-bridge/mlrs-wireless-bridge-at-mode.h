@@ -11,7 +11,6 @@
 // forward declarations
 void serialFlushRx(void);
 
-
 typedef enum {
     AT_NAME_QUERY = 0,
     AT_RESTART,
@@ -41,6 +40,7 @@ typedef enum {
     AT_WIFIDEVICENAME_QUERY,
     AT_BINDPHRASE_QUERY,
     AT_BINDPHRASE_XXXXXX,
+    AT_DONE,
     AT_CMDS_NUM,
 } AT_NAME_ENUM;
 
@@ -73,6 +73,7 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+WIFIDEVICENAME=?", // only query, no option to set
      "AT+BINDPHRASE=?",
      "AT+BINDPHRASE=xxxxxx",
+     "AT+DONE",
 };
 
 
@@ -166,6 +167,7 @@ bool AtMode::Do(void)
 
             // check if it is a full match already, and if so take action
             if (strcmp(at_buf, at_cmd) == 0) {
+                startup_tmo_ms = 750 + millis(); // extend time
                 if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY ||
                     i == AT_PROTOCOL_QUERY || i == AT_WIFIDEVICEID_QUERY || i == AT_WIFIDEVICENAME_QUERY ||
                     i == AT_BINDPHRASE_QUERY) {
@@ -186,6 +188,15 @@ bool AtMode::Do(void)
                         case AT_BINDPHRASE_QUERY: SERIAL.print(g_bindphrase); break;
                     }
                     SERIAL.write("\r\n");
+                } else
+                if (i == AT_DONE) {
+                    at_buf[0] = 'O';
+                    at_buf[1] = 'K';
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
+                    delay(100);
+                    startup_tmo_ms = 0; // declare end of startup timeout phase
+                    serialFlushRx();
                 } else
                 if (i == AT_RESTART) {
                     // for some reasons I don't understand, it "often" gives a wifi:NAN WiFi stop error
