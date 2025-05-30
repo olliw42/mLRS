@@ -581,7 +581,8 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
     }
     ser->flush();
 
-ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
+//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
+if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
 
     esp_read("AT+DONE", s, &len); // leave power up AT mode
     esp_gpio0_high(); // leave forced AT mode

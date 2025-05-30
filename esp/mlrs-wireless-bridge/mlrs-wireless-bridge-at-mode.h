@@ -11,6 +11,7 @@
 // forward declarations
 void serialFlushRx(void);
 
+
 typedef enum {
     AT_NAME_QUERY = 0,
     AT_RESTART,
