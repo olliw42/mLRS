@@ -881,7 +881,9 @@ local function doPage(event)
             elseif page == 0 and cursor_idx == Boot_idx then -- Boot pressed
                 sendBoot()
             elseif cursor_idx == Reload_idx - s then -- Reload pressed
+                page = 0  -- move to page 0 to force MBRIDGE_CMD_REQUEST_INFO
                 clearParms()
+                cursor_idx = 9
             elseif cursor_idx == Prev_idx - s then -- Prev pressed
                 clearParms()
                 page = page - 1
