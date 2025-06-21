@@ -24,6 +24,47 @@
 // SX Driver
 //-------------------------------------------------------
 
+
+#ifdef FREQUENCY_BAND_2P4_GHZ
+
+const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
+    { .SpreadingFactor = LR11XX_LORA_SF5,
+      .Bandwidth = LR11XX_LORA_BW_800,
+      .CodingRate = LR11XX_LORA_CR_LI_4_5,
+      .PreambleLength = 12,
+      .HeaderType = LR11XX_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
+      .InvertIQ = LR11XX_LORA_IQ_NORMAL,
+      .TimeOverAir = 7892,
+      .ReceiverSensitivity = -105,
+    },
+    { .SpreadingFactor = LR11XX_LORA_SF6,
+      .Bandwidth = LR11XX_LORA_BW_800,
+      .CodingRate = LR11XX_LORA_CR_LI_4_5,
+      .PreambleLength = 12,
+      .HeaderType = LR11XX_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
+      .InvertIQ = LR11XX_LORA_IQ_NORMAL,
+      .TimeOverAir = 13418,
+      .ReceiverSensitivity = -108,
+    },
+    { .SpreadingFactor = LR11XX_LORA_SF7,
+      .Bandwidth = LR11XX_LORA_BW_800,
+      .CodingRate = LR11XX_LORA_CR_LI_4_5,
+      .PreambleLength = 12,
+      .HeaderType = LR11XX_LORA_HEADER_DISABLE,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
+      .InvertIQ = LR11XX_LORA_IQ_NORMAL,
+      .TimeOverAir = 23527,
+      .ReceiverSensitivity = -112,
+    }
+};
+
+#else
+
 const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
     { .SpreadingFactor = LR11XX_LORA_SF5,
       .Bandwidth = LR11XX_LORA_BW_500,
@@ -48,6 +89,8 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .ReceiverSensitivity = -112,
     }
 };
+
+#endif
 
 
 const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
@@ -203,6 +246,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
             case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
             case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ: break;
             default:
                 while(1){} // protection
         }
@@ -216,10 +260,15 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetPacketType(LR11XX_PACKET_TYPE_GFSK);
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
+
+#ifdef FREQUENCY_BAND_2P4_GHZ
+        SetPaConfig(LR11XX_PA_SELECT_HF_PA, LR11XX_REG_PA_SUPPLY_INTERNAL, 0, 0);
+#else
 #ifndef SX_USE_LP_PA
         SetPaConfig(LR11XX_PA_SELECT_HP_PA, LR11XX_REG_PA_SUPPLY_VBAT, LR11XX_PA_DUTY_CYCLE_22_DBM, LR11XX_PA_HP_SEL_22_DBM);
 #else
         SetPaConfig(LR11XX_PA_SELECT_LP_PA, LR11XX_REG_PA_SUPPLY_INTERNAL, LR11XX_PA_DUTY_CYCLE_14_DBM, 0);
+#endif
 #endif
         SetRfPower_dbm(gconfig->Power_dbm);
         ClearIrq(LR11XX_IRQ_ALL);
