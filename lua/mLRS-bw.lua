@@ -858,7 +858,11 @@ local function drawPage()
     -- Save/Load and Navigation
     y = liney(7)
     lcd.drawText(0, y, "save", cur_attr(Save_idx - s))
-    lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx - s))
+    if page == 0 then
+        lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx - s))
+    else
+        lcd.drawText(LCD_W/4, y, "home", cur_attr(Reload_idx - s))
+    end
     lcd.drawText(LCD_W/2, y, "prev", cur_attr(Prev_idx - s))
     lcd.drawText(LCD_W*3/4, y, "next", cur_attr(Next_idx - s))
 end
