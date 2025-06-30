@@ -36,7 +36,7 @@
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error ESP: ESP wireless bridge is on serial but board has serial/com !
+//  #error ESP: ESP wireless bridge is on serial but board has serial/com !
 #endif
 
 
@@ -132,6 +132,7 @@ class tTxEspWifiBridge
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
+    uint32_t cur_baud;
 
     bool passthrough; // indicates passthrough is possible
 
@@ -166,6 +167,7 @@ void tTxEspWifiBridge::Init(
 #endif
     }
     ser_baud = _serial_baudrate;
+    cur_baud = _serial_baudrate;
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
 
@@ -354,19 +356,21 @@ void tTxEspWifiBridge::passthrough_do(void)
 #define ESP_DBG(x)
 
 #define ESP_CMDRES_LEN      46
-#define ESP_CMDRES_TMO_MS   70 // 50 was not enough at 9600 baud.  60 worked.
+#define ESP_CMDRES_EXTRA_MS 5 // extra time for response
 
 
 bool tTxEspWifiBridge::esp_read(const char* const cmd, char* const res, uint8_t* const len)
 {
+    ser->flush();
     ser->puts(cmd);
 
 ESP_DBG(dbg.puts("\r\n");dbg.puts(cmd);dbg.puts(" -> ");)
 
     *len = 0;
+    uint32_t twait_ms = (strlen(cmd) + ESP_CMDRES_LEN) * 11 * 1000 / cur_baud + ESP_CMDRES_EXTRA_MS;
     uint32_t tnow_ms = millis32();
     char c = 0x00;
-    while (*len < ESP_CMDRES_LEN && (millis32() - tnow_ms) < ESP_CMDRES_TMO_MS) {
+    while (*len < ESP_CMDRES_LEN && (millis32() - tnow_ms) < twait_ms) {
         if (ser->available()) {
             c = ser->getc();
 ESP_DBG(dbg.putc(c);)
@@ -408,7 +412,7 @@ char cmd_str[32];
     strcpy(cmd_str, "AT+BAUD=");
     strcat(cmd_str, baud_str);
 
-    if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, when stores it, but does NOT change it
+    if (!esp_read(cmd_str, s, &len)) { // AT+BAUD sends response with "old" baud rate, then stores it, but does NOT change it
         return;
     }
 
@@ -513,17 +517,19 @@ uint8_t len;
 
     // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
     esp_gpio0_low(); // force AT mode
-    delay_ms(500); // not so nice, but it starts up really slowly ...
 
     bool found = false;
 
-    uint32_t bauds[7] = { ser_baud, 9600, 19200, 38400, 57600, 115200, 230400 };
+    // Try configured baud, then higher bauds first to minimize delay
+    uint32_t bauds[7] = { ser_baud, 230400, 115200, 57600, 38400, 19200, 9600 };
     uint8_t baud_idx = 0;
-    for (uint8_t cc = 0; cc < 3; cc++) { // when in BT it seems to need f-ing long to start up
+    for (uint8_t cc = 0; cc < 6; cc++) { // when in BT it seems to need f-ing long to start up
+        // the loop below delays up to ~162 ms when ESP_CMDRES_LEN = 46 and ESP_CMDRES_EXTRA_MS = 5
         for (baud_idx = 0; baud_idx < sizeof(bauds)/4; baud_idx++) {
-            ser->SetBaudRate(bauds[baud_idx]);
+            cur_baud = bauds[baud_idx];
+            if (baud_idx > 0 && cur_baud == ser_baud) continue; // We already tried this speed
+            ser->SetBaudRate(cur_baud);
             delay_ms(5); // allow a few character times to settle
-            ser->flush();
 
             if (esp_read("AT+NAME=?", s, &len)) { // detected !
                 s[len-2] = '\0';
@@ -545,7 +551,7 @@ esp_read("dAT+WIFICHANNEL=?", s, &len);
 esp_read("dAT+WIFIPOWER=?", s, &len);
 esp_read("dAT+BINDPHRASE=?", s, &len);)
 
-        if (bauds[baud_idx] != ser_baud) { // incorrect baud rate
+        if (cur_baud != ser_baud) { // incorrect baud rate
             esp_configure_baudrate();
         }
 
@@ -577,14 +583,16 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
     }
 
     // if not found or baud rate change, ensure serial has correct baud rate
-    if (!found || bauds[baud_idx] != ser_baud) {
+    if (!found || cur_baud != ser_baud) {
         ser->SetBaudRate(ser_baud);
+        cur_baud = ser_baud;
     }
     ser->flush();
 
 //ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
 
+    esp_read("AT+DONE", s, &len); // leave power up AT mode
     esp_gpio0_high(); // leave forced AT mode
 }
 
