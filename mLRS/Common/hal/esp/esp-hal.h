@@ -95,7 +95,15 @@
 #include "rx-hal-radiomaster-xr4-900-esp32.h"
 #endif
 
+#ifdef RX_ELRS_RADIOMASTER_XR4_2400_ESP32
+#include "rx-hal-radiomaster-xr4-900-esp32.h"
+#endif
+
 #ifdef RX_ELRS_RADIOMASTER_XR1_900_ESP32C3
+#include "rx-hal-radiomaster-xr1-900-esp32c3.h"
+#endif
+
+#ifdef RX_ELRS_RADIOMASTER_XR1_2400_ESP32C3
 #include "rx-hal-radiomaster-xr1-900-esp32c3.h"
 #endif
 
