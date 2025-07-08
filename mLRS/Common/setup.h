@@ -178,13 +178,14 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // antenna1, not editable
 #endif
 
-    // Rx OutMode: "sbus,crsf,sbus inv"
+    // Rx OutMode: "sbus,crsf,sbus inv,crsf tx"
 #ifdef DEVICE_HAS_OUT
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b111; // all
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b1111; // all
+    //SetupMetaData.Rx_OutMode_allowed_mask = 0b0111; // sbus,crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_NORMAL
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b110; // crsf,sbus inv
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b0110; // crsf,sbus inv
 #elif defined DEVICE_HAS_OUT_INVERTED
-    SetupMetaData.Rx_OutMode_allowed_mask = 0b001; // sbus, not editable
+    SetupMetaData.Rx_OutMode_allowed_mask = 0b0001; // sbus, not editable
 #else
     SetupMetaData.Rx_OutMode_allowed_mask = 0; // not available, do not display
 #endif
