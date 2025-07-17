@@ -87,6 +87,10 @@ if __name__ == "__main__":
         st_root = os.path.join("/opt",'st')
 
     ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(st_root)
+    if os.getenv("MLRS_ST_DIR"):
+        ST_DIR = os.getenv("MLRS_ST_DIR")
+    if os.getenv("MLRS_GNU_DIR"):
+        GNU_DIR = os.getenv("MLRS_GNU_DIR")
 
     if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
         print('ERROR: gnu-tools not found!')
