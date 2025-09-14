@@ -86,7 +86,8 @@ The range which one may expect can be estimated from the standard math; the [Imm
 | 868/915 MHz | - | 26 km | 42 km
 | 433 MHz/70 cm | - | 55 km | 87 km
 
-For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). For the other frequency bands less information is available (e.g. [5.4 km and 9.2 km were reported](https://discord.com/channels/1005096100572700794/1005096101239603232/1267115117145751694) for 868 MHz, 31 Hz and 19 Hz, 0 dBm (1 mW), which would translate to 54 km and 92 km at 100 mW). Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allows you to operate at larger ranges.
+
+For the 2.4 GHz band, the available range test reports consistently exceed the above estimated ranges (e.g., [8.3 km were reported](https://www.rcgroups.com/forums/showpost.php?p=50964339&postcount=1721) for 2.4 GHz, 50 Hz, 9 dBm (8 mW), which translates to 29 km at 100 mW). In the 900 MHz band, a range of 51 km at 1 W has been reported [~51 km at 1 W](https://discord.com/channels/1005096100572700794/1005096101239603232/1413637830856409219).  Note that mLRS supports full diversity, which when enabled has been found to significantly improve performance at lower link budget, i.e., allows you to operate at larger ranges.
 
 The FLRC and FSK modes are not intended for long range.
 
