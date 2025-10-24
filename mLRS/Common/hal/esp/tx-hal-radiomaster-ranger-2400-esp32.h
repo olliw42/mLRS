@@ -26,8 +26,8 @@
 #define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_NO_SERIAL
-//#define DEVICE_HAS_NO_COM
+// #define DEVICE_HAS_NO_SERIAL
+// #define DEVICE_HAS_NO_COM
 
 #define DEVICE_HAS_I2C_DISPLAY
 
@@ -40,7 +40,6 @@
 // The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
 // The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
 
-
 //-- UARTS
 // UARTB = serial port
 // UARTC or USB = COM (CLI)
@@ -50,58 +49,57 @@
 // UARTF = debug port
 
 #define UARTB_USE_SERIAL // serial, is connected to USB-C via USB<>UART
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
-#define UARTB_USE_TX_IO           IO_P1
-#define UARTB_USE_RX_IO           IO_P3
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTB_BAUD TX_SERIAL_BAUDRATE
+#define UARTB_USE_TX_IO IO_P1
+#define UARTB_USE_RX_IO IO_P3
+#define UARTB_TXBUFSIZE TX_SERIAL_TXBUFSIZE
+#define UARTB_RXBUFSIZE TX_SERIAL_RXBUFSIZE
 
 #define UARTC_USE_SERIAL // COM (CLI), is connected to USB-C via USB<>UART
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX_IO           IO_P1
-#define UARTC_USE_RX_IO           IO_P3
-#define UARTC_TXBUFSIZE           0 // TX FIFO = 128
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_BAUD 115200
+#define UARTC_USE_TX_IO IO_P1
+#define UARTC_USE_RX_IO IO_P3
+#define UARTC_TXBUFSIZE 0 // TX FIFO = 128
+#define UARTC_RXBUFSIZE TX_COM_RXBUFSIZE
 
 #define UARTD_USE_SERIAL2 // serial2 BT/ESP
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX_IO           IO_P17
-#define UARTD_USE_RX_IO           IO_P16
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTD_BAUD 115200
+#define UARTD_USE_TX_IO IO_P17
+#define UARTD_USE_RX_IO IO_P16
+#define UARTD_TXBUFSIZE TX_SERIAL_TXBUFSIZE
+#define UARTD_RXBUFSIZE TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 // JR bay pin5
-#define UART_BAUD                 400000
-#define UART_USE_TX_IO            IO_P13
-#define UART_USE_RX_IO            IO_P13
-#define UART_TXBUFSIZE            0 // TX FIFO = 128
-#define UART_RXBUFSIZE            0 // RX FIFO = 128 + 1
+#define UART_BAUD 400000
+#define UART_USE_TX_IO IO_P13
+#define UART_USE_RX_IO IO_P13
+#define UART_TXBUFSIZE 0 // TX FIFO = 128
+#define UART_RXBUFSIZE 0 // RX FIFO = 128 + 1
 
 #define UARTE_USE_SERIAL1 // in port, uses JRPin5
-#define UARTE_BAUD                 100000
-#define UARTE_USE_TX_IO            -1
-#define UARTE_USE_RX_IO            IO_P13
-#define UARTE_RXBUFSIZE            0 // RX FIFO = 128 + 1
+#define UARTE_BAUD 100000
+#define UARTE_USE_TX_IO -1
+#define UARTE_USE_RX_IO IO_P13
+#define UARTE_RXBUFSIZE 0 // RX FIFO = 128 + 1
 
 #define UARTF_USE_SERIAL // debug, if needed, debug on USB; need to disable serial and com
-#define UARTF_BAUD                115200
-#define UARTF_USE_TX_IO           IO_P1
-#define UARTF_USE_RX_IO           -1
-#define UARTF_TXBUFSIZE           512
-
+#define UARTF_BAUD 115200
+#define UARTF_USE_TX_IO IO_P1
+#define UARTF_USE_RX_IO -1
+#define UARTF_TXBUFSIZE 512
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_CS_IO                 IO_P4
-#define SPI_MISO                  IO_P19
-#define SPI_MOSI                  IO_P23
-#define SPI_SCK                   IO_P18
-#define SPI_FREQUENCY             18000000L
-#define SX_RESET                  IO_P5
-#define SX_BUSY                   IO_P22
-#define SX_DIO1                   IO_P21
-#define SX_TX_EN                  IO_P33
-#define SX_RX_EN                  IO_P32
+#define SPI_CS_IO IO_P4
+#define SPI_MISO IO_P19
+#define SPI_MOSI IO_P23
+#define SPI_SCK IO_P18
+#define SPI_FREQUENCY 18000000L
+#define SX_RESET IO_P5
+#define SX_BUSY IO_P22
+#define SX_DIO1 IO_P21
+#define SX_TX_EN IO_P33
+#define SX_RX_EN IO_P32
 
 #define SX_USE_REGULATOR_MODE_DCDC
 
@@ -145,7 +143,6 @@ void sx_dio_init_exti_isroff(void)
 
 void sx_dio_exti_isr_clearflag(void) {}
 
-
 //-- In port
 
 void in_init_gpio(void) {}
@@ -154,22 +151,28 @@ void in_set_normal(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_
 
 void in_set_inverted(void) { gpio_matrix_in((gpio_num_t)UARTE_USE_RX_IO, U1RXD_IN_IDX, true); }
 
-
 //-- Button
 
 void button_init(void) {}
 IRAM_ATTR bool button_pressed(void) { return false; }
 
-
 //-- LEDs
 
-#define LED_RED                   IO_P15 // pin for both Ranger and Ranger Micro, even though they have different functionality
-
+#define LED_RED IO_P15 // pin for both Ranger and Ranger Micro, even though they have different functionality
+#define LED_INDEX_RED 0
+#if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+  #define LED_INDEX_GREEN 0
+#else
+#define LED_INDEX_GREEN 1
+#endif
+#define LED_INDEX_YELLOW 0
+#define LED_INDEX_BLUE 0
 // Ranger, "big" Ranger have RGB LEDs, so we use our normal red/green
 
 #include <NeoPixelBus.h>
 bool ledRedState;
 bool ledGreenState;
+bool ledYellowState;
 bool ledBlueState;
 
 uint8_t pixelNum = 6;
@@ -184,84 +187,127 @@ void leds_init(void)
 
 IRAM_ATTR void led_red_off(void)
 {
-    if (!ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    if (!ledRedState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_RED, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledRedState = 0;
 }
 
 IRAM_ATTR void led_red_on(void)
 {
-    if (ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
+    if (ledRedState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_RED, RgbColor(255, 0, 0));
     ledRGB.Show();
     ledRedState = 1;
 }
 
 IRAM_ATTR void led_red_toggle(void)
 {
-    if (ledRedState) { led_red_off(); } else { led_red_on(); }
+    if (ledRedState)
+    {
+        led_red_off();
+    }
+    else
+    {
+        led_red_on();
+    }
 }
 
 IRAM_ATTR void led_green_off(void)
 {
-    if (!ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
+    if (!ledGreenState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_GREEN, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledGreenState = 0;
 }
 
 IRAM_ATTR void led_green_on(void)
 {
-    if (ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 255, 0));
+    if (ledGreenState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_GREEN, RgbColor(0, 255, 0));
     ledRGB.Show();
     ledGreenState = 1;
 }
 
+IRAM_ATTR void led_yellow_off(void)
+{
+    if (!ledYellowState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_YELLOW, RgbColor(0, 0, 0));
+    ledRGB.Show();
+    ledYellowState = 0;
+}
+
+IRAM_ATTR void led_yellow_on(void)
+{
+    if (ledYellowState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_YELLOW, RgbColor(255, 255, 0));
+    ledRGB.Show();
+    ledYellowState = 1;
+}
+
 IRAM_ATTR void led_green_toggle(void)
 {
-    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
+    if (ledGreenState)
+    {
+        led_green_off();
+    }
+    else
+    {
+        led_green_on();
+    }
 }
 
 IRAM_ATTR void led_blue_off(void)
 {
-    if (!ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
+    if (!ledBlueState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_BLUE, RgbColor(0, 0, 0));
     ledRGB.Show();
     ledBlueState = 0;
 }
 
 IRAM_ATTR void led_blue_on(void)
 {
-    if (ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
+    if (ledBlueState)
+        return;
+    ledRGB.SetPixelColor(LED_INDEX_BLUE, RgbColor(0, 0, 255));
     ledRGB.Show();
     ledBlueState = 1;
 }
 
 IRAM_ATTR void led_blue_toggle(void)
 {
-    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
+    if (ledBlueState)
+    {
+        led_blue_off();
+    }
+    else
+    {
+        led_blue_on();
+    }
 }
-
 
 //-- Display I2C
 
-#define I2C_SDA_IO                IO_P14
-#define I2C_SCL_IO                IO_P12
-#define I2C_CLOCKSPEED            1000000L  // fix - rather too much, but helps with LQ, ESP32 max speed
-#define I2C_BUFFER_SIZE           1024
-
+#define I2C_SDA_IO IO_P14
+#define I2C_SCL_IO IO_P12
+#define I2C_CLOCKSPEED 1000000L // fix - rather too much, but helps with LQ, ESP32 max speed
+#define I2C_BUFFER_SIZE 1024
 
 //-- 5 Way Switch
 
-#define FIVEWAY_ADC_IO            IO_P39
-#define KEY_UP_THRESH             3230
-#define KEY_DOWN_THRESH           0
-#define KEY_LEFT_THRESH           1890
-#define KEY_RIGHT_THRESH          2623
-#define KEY_CENTER_THRESH         1205
+#define FIVEWAY_ADC_IO IO_P39
+#define KEY_UP_THRESH 3230
+#define KEY_DOWN_THRESH 0
+#define KEY_LEFT_THRESH 1890
+#define KEY_RIGHT_THRESH 2623
+#define KEY_CENTER_THRESH 1205
 
 #if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180 || defined DEVICE_HAS_FIVEWAY
 
@@ -275,15 +321,19 @@ IRAM_ATTR uint16_t fiveway_adc_read(void)
 IRAM_ATTR uint8_t fiveway_read(void)
 {
     int16_t adc = analogRead(FIVEWAY_ADC_IO);
-    if (adc > (KEY_CENTER_THRESH-250) && adc < (KEY_CENTER_THRESH+250)) return (1 << KEY_CENTER);
-    if (adc > (KEY_LEFT_THRESH-250) && adc < (KEY_LEFT_THRESH+250)) return (1 << KEY_LEFT); 
-    if (adc > (KEY_DOWN_THRESH-250) && adc < (KEY_DOWN_THRESH+250)) return (1 << KEY_DOWN);
-    if (adc > (KEY_UP_THRESH-250) && adc < (KEY_UP_THRESH+250)) return (1 << KEY_UP);
-    if (adc > (KEY_RIGHT_THRESH-250) && adc < (KEY_RIGHT_THRESH+250)) return (1 << KEY_RIGHT);
+    if (adc > (KEY_CENTER_THRESH - 250) && adc < (KEY_CENTER_THRESH + 250))
+        return (1 << KEY_CENTER);
+    if (adc > (KEY_LEFT_THRESH - 250) && adc < (KEY_LEFT_THRESH + 250))
+        return (1 << KEY_LEFT);
+    if (adc > (KEY_DOWN_THRESH - 250) && adc < (KEY_DOWN_THRESH + 250))
+        return (1 << KEY_DOWN);
+    if (adc > (KEY_UP_THRESH - 250) && adc < (KEY_UP_THRESH + 250))
+        return (1 << KEY_UP);
+    if (adc > (KEY_RIGHT_THRESH - 250) && adc < (KEY_RIGHT_THRESH + 250))
+        return (1 << KEY_RIGHT);
     return 0;
 }
 #endif
-
 
 //-- Serial or Com Switch
 // use com if FIVEWAY is DOWN during power up, else use serial
@@ -294,12 +344,18 @@ bool tx_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
+#if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+    // Handled in the mlrx-tx.cpp powerup counter
+#else
     uint8_t cnt = 0;
-    for (uint8_t i = 0; i < 16; i++) {
+    for (uint8_t i = 0; i < 16; i++)
+    {
         int16_t adc = analogRead(FIVEWAY_ADC_IO);
-        if (adc > (KEY_DOWN_THRESH-200) && adc < (KEY_DOWN_THRESH+200)) cnt++;
+        if (adc > (KEY_DOWN_THRESH - 200) && adc < (KEY_DOWN_THRESH + 200))
+            cnt++;
     }
     tx_ser_or_com_serial = !(cnt > 8);
+#endif
 }
 
 IRAM_ATTR bool ser_or_com_serial(void)
@@ -313,10 +369,12 @@ IRAM_ATTR void ser_or_com_set_to_com(void)
 }
 #endif
 
-
-//-- Cooling Fan
-
-#define FAN_IO                    IO_P2
+// -- Cooling Fan
+#if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+#define FAN_IO IO_P27
+#else
+#define FAN_IO IO_P2
+#endif
 
 void fan_init(void)
 {
@@ -326,22 +384,26 @@ void fan_init(void)
 IRAM_ATTR void fan_set_power(int8_t power_dbm)
 {
 
-    if (power_dbm >= POWER_27_DBM) {
+    if (power_dbm >= POWER_27_DBM)
+    {
         analogWrite(FAN_IO, 255);
-    } else if (power_dbm >= POWER_23_DBM) {
+    }
+    else if (power_dbm >= POWER_23_DBM)
+    {
         analogWrite(FAN_IO, 127);
-    } else {
+    }
+    else
+    {
         analogWrite(FAN_IO, 0);
     }
 }
 
-
 //-- ESP8285 Wifi Bridge
 
-#define ESP_RESET                 IO_P25 // backpack_en
-#define ESP_GPIO0                 IO_P26 // backpack_boot, seems to be inverted
-//#define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
-//#define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
+#define ESP_RESET IO_P25 // backpack_en
+#define ESP_GPIO0 IO_P26 // backpack_boot, seems to be inverted
+// #define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
+// #define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 void esp_init(void)
@@ -356,24 +418,22 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-//IRAM_ATTR uint8_t esp_dtr_rts(void) { return 0; }
+// IRAM_ATTR uint8_t esp_dtr_rts(void) { return 0; }
 #endif
-
 
 //-- POWER
 
-#define POWER_GAIN_DBM            33 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM  // maximum allowed sx power
+#define POWER_GAIN_DBM 33                       // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+#define RFPOWER_DEFAULT 1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_17_DBM, .mW = 50 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
-    { .dbm = POWER_30_DBM, .mW = 1000 },
+    {.dbm = POWER_MIN, .mW = INT8_MIN},
+    {.dbm = POWER_17_DBM, .mW = 50},
+    {.dbm = POWER_20_DBM, .mW = 100},
+    {.dbm = POWER_24_DBM, .mW = 250},
+    {.dbm = POWER_27_DBM, .mW = 500},
+    {.dbm = POWER_30_DBM, .mW = 1000},
 };
-

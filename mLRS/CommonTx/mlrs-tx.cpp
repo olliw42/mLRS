@@ -105,6 +105,11 @@
 
 #endif //#if defined ESP8266 || defined ESP32
 
+#if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+#include "./Common/hal/esp/powerup_esp32_simple.h" //  we use this to toggle into cli mode
+#endif
+
+
 #include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
@@ -132,6 +137,14 @@ tConfigId config_id;
 tTxInfo info;
 tTxCli cli;
 tTasks tasks;
+
+#if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+
+    // used to determine if we go into CLI mode
+    // initialize powerup counter
+    tPowerupCounterESP32Simple powerup;
+
+#endif
 
 
 //-------------------------------------------------------
@@ -279,6 +292,16 @@ void init_hw(void)
     esp_init();
     fiveway_init();
 
+    #if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+        powerup.Init(); // needs to be before serial init
+        leds.SetToComMode(); // experimenting only with the nano for now
+        if (powerup.Task() == POWERUPCNT_CLI_MODE) {
+            ser_or_com_set_to_com();
+            leds.SetToComMode();
+        }
+
+    #endif
+
     serial.Init();
     serial2.Init();
     comport.Init();
@@ -288,6 +311,7 @@ void init_hw(void)
     dbg.Init();
 
     setup_init();
+
 
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
 
@@ -721,7 +745,11 @@ RESTARTCONTROLLER
 
     // startup sign of life
     leds.Init();
-
+    # if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+        if (!ser_or_com_serial()) { // we are in COM mode
+            leds.SetToComMode();
+        }
+    # endif
     // start up sx
     if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
     if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
@@ -1076,7 +1104,9 @@ IF_SX2(
             setup_store_to_EEPROM();
             GOTO_RESTARTCONTROLLER;
         }
-
+        #if TX_ELRS_RADIOMASTER_RANGER_NANO_ESP32
+        powerup.Do();
+        #endif
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
