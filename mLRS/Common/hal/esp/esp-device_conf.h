@@ -214,6 +214,13 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_NOMAD_2400_ESP32
+  #define DEVICE_NAME "RM Nomad 2.4G"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_LR11xx
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 //-- ELRS Internal Tx Modules
 
