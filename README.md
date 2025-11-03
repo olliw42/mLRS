@@ -31,7 +31,7 @@ There is still plenty of room for ideas and improvement, and in this sense the p
 
 The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (formerly MAVLink for OpenTx) project, which yields a most fluid user experience.
 
-It supports the SX1280/1, SX1276, SX1262 and LLCC68 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
+It supports the SX1280/1, SX1276, SX1262, LLCC68 and LR1121 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
 It provides 16 RC channels with the following layout (layout is equal in all operation modes):
 - CH1 - CH8: 8 channels with 11 bit resolution (CH1 - CH4 have a higher reliability margin)
