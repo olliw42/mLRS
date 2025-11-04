@@ -141,4 +141,5 @@
 
 #ifdef TX_ELRS_RADIOMASTER_NOMAD_2400_ESP32
 #include "tx-hal-radiomaster-nomad-900-esp32.h"
+#endif
 
