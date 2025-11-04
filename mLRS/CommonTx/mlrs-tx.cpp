@@ -477,14 +477,48 @@ void prepare_transmit_frame(uint8_t antenna)
 {
 uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 uint8_t payload_len = 0;
+static const uint8_t default_msg[FRAME_TX_PAYLOAD_LEN] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
-                if (!sx_serial.available()) break;
-                uint8_t c = sx_serial.getc();
-                payload[payload_len++] = c;
+            static const uint32_t frame_period = 200;
+            static const uint32_t safety_margin = 10;
+            static uint32_t last_period = 0;
+            static uint32_t last_frame = 0;
+            static uint32_t init = 0;
+            static uint32_t frame_id = 0;
+            uint32_t now = HAL_GetTick();
+            uint32_t pause_start = 0;
+            uint32_t pause_duration = 0;
+            if (init == 0)
+            {
+            	init = 1;
+            	last_period = now;
+            	last_frame = now;
+            }
+
+            if (pause_duration > 0)
+            {
+            	if (now - pause_start > pause_duration)
+            	{
+            		pause_duration = 0;
+            		last_period = now;
+            		last_frame = now;
+            	}
+            }
+            else if (now - last_frame >= frame_period)
+            {
+            	last_frame = now;
+            	memcpy(payload, default_msg, FRAME_TX_PAYLOAD_LEN);
+            	payload[0] = frame_id;
+            	frame_id++;
+            	payload_len = FRAME_TX_PAYLOAD_LEN;
+            	if (now - last_period >= 10000)
+            	{
+            		pause_start = now;
+            		pause_duration = 5000;
+            	}
             }
 
             stats.bytes_transmitted.Add(payload_len);
