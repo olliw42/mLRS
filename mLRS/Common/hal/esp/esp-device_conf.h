@@ -253,22 +253,3 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-
-// -- DIY
-
-#ifdef RX_DIY_DEV_900_ESP8266
-  #define DEVICE_NAME "DIY DEV 900 ESP8266"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
-#ifdef RX_DIY_DEV_900_ESP32
-  #define DEVICE_NAME "DIY DEV 900 ESP32"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
-

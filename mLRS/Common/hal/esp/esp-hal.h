@@ -141,17 +141,4 @@
 
 #ifdef TX_ELRS_RADIOMASTER_NOMAD_2400_ESP32
 #include "tx-hal-radiomaster-nomad-900-esp32.h"
-#endif
-
-
-// -- DIY
-
-#ifdef RX_DIY_DEV_900_ESP8266
-#include "rx-hal-diy-dev-900-esp8266.h"
-#endif
-
-#ifdef RX_DIY_DEV_900_ESP32
-#include "rx-hal-diy-dev-900-esp32.h"
-#endif
-
 
