@@ -25,6 +25,11 @@
 //   is defined when BOOT0 pin handling is available (ESP_BOOT0 defined)
 //   this allows in addition:
 //   - flashing via passthrough, flash mode entered via BOOT0, no need for invoking "FLASH ESP" command
+//
+// USE_ESP_WIFI_BRIDGE_BUTTON_FLASH
+//   is defined DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
+//   this allows:
+//   - button to enter ESP flash mode, uses button2 pin
 //********************************************************
 #ifndef TX_ESP_H
 #define TX_ESP_H
@@ -82,6 +87,7 @@ class tTxEspWifiBridge
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
     void Do(void) {}
+    void Tick_ms(void) {}
 
     void EnterFlash(void) {}
     void EnterPassthrough(void) {}
@@ -107,6 +113,7 @@ class tTxEspWifiBridge
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
     void Do(void);
+    void Tick_ms(void);
 
     void EnterFlash(void);
     void EnterPassthrough(void);
@@ -137,6 +144,8 @@ class tTxEspWifiBridge
 
     uint8_t dtr_rts_last;
     uint8_t boot0_last;
+
+    uint32_t button2count = 0;
 
     uint32_t version;
 };
@@ -206,6 +215,23 @@ void tTxEspWifiBridge::Do(void)
     boot0_last = boot0;
 #endif
 #endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (USE_ESP_WIFI_BRIDGE_DTR_RTS || USE_ESP_WIFI_BRIDGE_BOOT0)
+}
+
+void tTxEspWifiBridge::Tick_ms(void)
+{
+#ifdef USE_ESP_WIFI_BRIDGE_BUTTON_FLASH
+    if (button2_pressed()) {
+        button2count++;
+    } else {
+        if (button2count > 0) {
+            button2count--;
+        }            
+    }        
+    
+    if (button2count > 4000) {
+        EnterFlash();
+    }
+#endif
 }
 
 

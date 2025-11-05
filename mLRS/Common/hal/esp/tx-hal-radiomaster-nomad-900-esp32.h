@@ -18,6 +18,7 @@
 //  - put Tx module into FLASH_ESP by holding button located under the 'T' in RadioMaster for 4 seconds
 //  - Flash with esptool, example command:
 //  - esptool.py --chip esp32c3 --port "/dev/cu.SLAB_USBtoUART" --baud 115200  --before no_reset --after hard_reset write_flash -e  -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 mlrs-wireless-bridge.ino.bootloader.bin 0x8000 mlrs-wireless-bridge.ino.partitions.bin 0xe000 boot_app0.bin 0x10000 mlrs-wireless-bridge.ino.bin
+//  - Power cycle the Tx module after flashing
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN
@@ -29,6 +30,7 @@
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // requires backpack firmware to have AT mode enabled
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
 
 
 //-- UARTS
