@@ -48,7 +48,7 @@
 
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_MULTI_SX126x_SX128x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  SX1280_FREQ_GHZ_TO_REG(f_ghz)
 #elif defined DEVICE_HAS_SX127x
@@ -587,14 +587,14 @@ class tFhssBase
     // Rx: for RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
     {
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined DEVICE_HAS_MULTI_SX126x_SX128x
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq());
 #elif defined DEVICE_HAS_SX127x
         return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
 #elif defined DEVICE_HAS_LR11xx
         return 1.0E3f * LR11XX_REG_TO_FREQ_KHZ(GetCurrFreq());
 #else // DEVICE_HAS_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
+        return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq());
 #endif
     }
 
@@ -619,7 +619,7 @@ class tFhssBase
 
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i)
     {
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined DEVICE_HAS_MULTI_SX126x_SX128x
         strcpy(unit_str, " kHz");
         return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss_list[i]);
 #elif defined DEVICE_HAS_SX127x
@@ -630,7 +630,7 @@ class tFhssBase
         return (uint32_t)LR11XX_REG_TO_FREQ_KHZ(fhss_list[i]);
 #else // DEVICE_HAS_SX128x
         strcpy(unit_str, " MHz");
-        return (uint32_t)SX1280_REG_TO_FREQ_MHZ(fhss_list[i]);
+        return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss_list[i]);
 #endif
     }
 
@@ -664,7 +664,7 @@ class tFhssBase
 };
 
 
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && !defined DEVICE_HAS_MULTI_SX126x_SX128x
 // SINGLE BAND
 
 class tFhss : public tFhssBase
@@ -687,7 +687,7 @@ class tFhss : public tFhssBase
 };
 
 #else
-// DUALBAND !
+// DUALBAND! MULTIBAND!
 
 class tFhss
 {
@@ -746,7 +746,9 @@ class tFhss
 #if defined DEVICE_HAS_DUAL_SX126x_SX126x
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq2());
+        return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq2());
+#elif defined DEVICE_HAS_MULTI_SX126x_SX128x
+        return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq2());
 #else
         #error Something wrong with dual band config !
 #endif

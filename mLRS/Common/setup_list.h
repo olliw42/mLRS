@@ -76,7 +76,7 @@
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
 
 
-#define PARAM_INDEX_MODE              2
+#define PARAM_INDEX_MODE              1
 
 
 // Tx parameters must begin with "Tx "
@@ -89,8 +89,8 @@
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)
 
 #define SETUP_PARAMETER_LIST_COMMON_FURTHER \
-  X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_MODE, SETUP_MSK_MODE )\
+  X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
   X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )
 
 #define SETUP_PARAMETER_LIST_TX_MAIN \
