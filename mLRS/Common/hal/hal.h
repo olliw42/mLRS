@@ -97,6 +97,19 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- MATEKSYS mLRS devices
 
+#ifdef RX_MATEK_MR900_TD30_G474CE
+#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#endif
+
+#ifdef TX_MATEK_MTX_DB30_G474CE
+  #ifdef DEVICE_HAS_SX128x
+  #include "matek/tx-hal-matek-mtx-db30-g474ce-sx128x.h"
+  #else
+  #include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+  #endif
+#endif
+
+
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
 #endif
@@ -359,7 +372,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #endif
-  #if defined ESP_DTR && defined ESP_RTS
+  #if (defined ESP_DTR && defined ESP_RTS) || defined ESP_DTR_RTS_USB
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
   #if defined ESP_BOOT0
@@ -372,7 +385,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_MULTI_SX126x_SX128x
   #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x
   #define SX_DRIVER Sx127xDriver
@@ -392,7 +406,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #else
     #define SX2_DRIVER Sx128xDriver2
   #endif
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_MULTI_SX126x_SX128x
   #define SX2_DRIVER Sx128xDriver2
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX2_DRIVER Sx126xDriver2
@@ -402,7 +416,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
-    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || defined DEVICE_HAS_MULTI_SX126x_SX128x
   #define USE_SX2
 #endif
 
@@ -449,7 +463,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && !defined DEVICE_HAS_LR11xx && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && !defined DEVICE_HAS_MULTI_SX126x_SX128x
   #error Must be either SX128x or SX127x or SX126x or LR11xx !
 #endif
 

@@ -778,6 +778,30 @@ RESTARTCONTROLLER
 
     config_id.Init();
 
+dbg.puts("\nConfig.Diversity: ");dbg.puts(u8toBCD_s(Config.Diversity));
+dbg.puts("\nConfig.ReceiveUseAntenna1: ");dbg.puts(u8toBCD_s(Config.ReceiveUseAntenna1));
+dbg.puts("\nConfig.ReceiveUseAntenna2: ");dbg.puts(u8toBCD_s(Config.ReceiveUseAntenna2));
+dbg.puts("\nConfig.TransmitUseAntenna1: ");dbg.puts(u8toBCD_s(Config.TransmitUseAntenna1));
+dbg.puts("\nConfig.TransmitUseAntenna2: ");dbg.puts(u8toBCD_s(Config.TransmitUseAntenna2));
+
+dbg.puts("\n\nConfig.FrequencyBand: ");dbg.puts(u8toBCD_s(Config.FrequencyBand));
+dbg.puts("\nConfig.Sx.FrequencyBand: ");dbg.puts(u8toBCD_s(Config.Sx.FrequencyBand));
+dbg.puts("\nConfig.Sx2.FrequencyBand: ");dbg.puts(u8toBCD_s(Config.Sx2.FrequencyBand));
+
+dbg.puts("\n\nConfig.Fhss.FrequencyBand: ");dbg.puts(u8toBCD_s(Config.Fhss.FrequencyBand));
+dbg.puts("\nConfig.Fhss.FrequencyBand_allowed_mask: x");dbg.puts(u8toHEX_s(Config.Fhss.FrequencyBand_allowed_mask));
+dbg.puts("\nConfig.Fhss.Num: ");dbg.puts(u8toBCD_s(Config.Fhss.Num));
+
+dbg.puts("\n\nConfig.Fhss2.FrequencyBand: ");dbg.puts(u8toBCD_s(Config.Fhss2.FrequencyBand));
+dbg.puts("\nConfig.Fhss2.FrequencyBand_allowed_mask: x");dbg.puts(u8toHEX_s(Config.Fhss2.FrequencyBand_allowed_mask));
+dbg.puts("\nConfig.Fhss2.Num: ");dbg.puts(u8toBCD_s(Config.Fhss2.Num));
+
+dbg.puts("\n\nConfig.connect_listen_hop_cnt: ");dbg.puts(u8toBCD_s(Config.connect_listen_hop_cnt));
+dbg.puts("\nConfig.connect_sync_cnt_max: ");dbg.puts(u8toBCD_s(Config.connect_sync_cnt_max));
+
+dbg.puts("\n\n");
+
+
     rc_data_updated = false;
 
     tick_1hz = 0;

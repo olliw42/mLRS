@@ -1042,6 +1042,10 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
+        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+    },{
+  
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '',
