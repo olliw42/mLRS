@@ -531,9 +531,11 @@ void configure_mode(uint8_t mode)
         Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
         Config.frame_rate_hz = 31;
         Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
-#ifdef DEVICE_HAS_SX128x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
+#elif defined DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
-#elif defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#elif defined DEVICE_HAS_SX126x
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
 #elif defined DEVICE_HAS_LR11xx
         Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW500_SF5_CR4_5;
