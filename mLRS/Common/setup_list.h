@@ -76,6 +76,9 @@
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
 
 
+#define PARAM_INDEX_MODE              1
+
+
 // Tx parameters must begin with "Tx "
 // Rx parameters must begin with "Rx "
 // a parameter name is limited to 16 chars max

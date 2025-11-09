@@ -969,13 +969,14 @@ IF_SX2(
         }
 
         if (frame_received) { // frame received
-            uint8_t antenna = ANTENNA_1;
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+                uint8_t antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+                handle_receive(antenna);
             } else if (USE_ANTENNA2) {
-                antenna = ANTENNA_2;
+                handle_receive(ANTENNA_2);
+            } else { // use antenna1
+                handle_receive(ANTENNA_1);
             }
-            handle_receive(antenna);
         } else {
             handle_receive_none();
         }

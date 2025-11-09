@@ -370,11 +370,7 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // 13 // gain of a PA stage if present
-#define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
-//#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
+void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     // jr bay: 
     //   SX1276_MAX_POWER_15_DBM:   dac = 0,   sx_power = 15 => 30.5 dBm
