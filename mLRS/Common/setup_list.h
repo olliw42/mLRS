@@ -68,12 +68,15 @@
 #define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also used in e.g. cli
 #define SETUP_OPT_MODE_DISPSTR        "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, should be 6 chars however
 
-#define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN,915+2.4,868+2.4" // used below in LIST_COMMON
-#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN,915 MHz + 2.4 GHz,868 MHz + 2.4 GHz" // used e.g. in cli
-#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN,915+2.4,868+2.4" // used in display, 7 chars max
+#define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
+#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN" // used e.g. in cli
+#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN" // used in display, 7 chars max
 
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
+
+
+#define PARAM_INDEX_MODE              2
 
 
 // Tx parameters must begin with "Tx "
@@ -86,8 +89,8 @@
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)
 
 #define SETUP_PARAMETER_LIST_COMMON_FURTHER \
-  X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_MODE, SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
+  X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_MODE, SETUP_MSK_MODE )\
   X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )
 
 #define SETUP_PARAMETER_LIST_TX_MAIN \

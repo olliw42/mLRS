@@ -48,7 +48,7 @@
 
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_SX126x_SX128x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  SX1280_FREQ_GHZ_TO_REG(f_ghz)
 #elif defined DEVICE_HAS_SX127x

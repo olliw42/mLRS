@@ -73,7 +73,7 @@
 #define UARTF_USE_TX_ISR
 
 
-//-- SX12xx & SPI
+//-- SX1262 & SPI
 
 #define SPI_USE_SPI2             // PB13, PB14, PB15
 #define SPI_CS_IO                IO_PB12

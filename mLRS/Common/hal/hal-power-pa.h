@@ -117,6 +117,7 @@ const rfpower_t rfpower_list[] = {
 
 #error mR24-30 dual band, power2 needs to be worked out!
 */
+#include "../setup_types.h"
 
 void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {

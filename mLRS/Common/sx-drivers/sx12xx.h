@@ -18,7 +18,7 @@
 
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #include "../../modules/sx12xx-lib/src/sx126x.h"
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_SX126x_SX128x
   #include "../../modules/sx12xx-lib/src/sx126x.h"
   #include "../../modules/sx12xx-lib/src/sx128x.h"
 #elif defined DEVICE_HAS_SX127x
