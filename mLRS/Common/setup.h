@@ -86,8 +86,10 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
 #elif defined DEVICE_HAS_LR11xx
-#ifdef FREQUENCY_BAND_2P4_GHZ
+#if defined FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.Mode_allowed_mask = 0b000111; // 50 Hz, 31 Hz, 19 Hz
+#elif defined DEVICE_HAS_LR11xx_7x
+    SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
 #else
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #endif
