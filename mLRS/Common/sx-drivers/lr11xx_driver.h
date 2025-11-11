@@ -365,8 +365,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         return actual_power_dbm;
     }
 
-  private:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
     uint8_t sx_power;

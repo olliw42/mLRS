@@ -111,7 +111,7 @@ void tBindBase::ConfigForBind(void)
 #ifdef DEVICE_HAS_SX127x
     configure_mode(MODE_19HZ_7X);
 #else
-    configure_mode(MODE_19HZ);
+    //configure_mode(MODE_19HZ);  NEEDS TO BE ADDRESSED
 #endif
 
     sx.SetToIdle();
