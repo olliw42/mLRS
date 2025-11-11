@@ -113,7 +113,7 @@ void tBindBase::ConfigForBind(void)
     // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
 #ifdef DEVICE_HAS_SX127x
-    configure_mode(MODE_19HZ_7X);
+    configure_mode(MODE_19HZ_7X, gconfig->FrequencyBand);
 #else
     configure_mode(MODE_19HZ, gconfig->FrequencyBand);
 #endif
