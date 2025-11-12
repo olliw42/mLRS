@@ -138,14 +138,6 @@
 
 // -- DIY
 
-#ifdef RX_DIY_DEV_900_ESP8266
-#include "rx-hal-diy-dev-900-esp8266.h"
-#endif
-
-#ifdef RX_DIY_DEV_900_ESP32
-#include "rx-hal-diy-dev-900-esp32.h"
-#endif
-
 #ifdef RX_DIY_DEV_2400_TD_ESP32S3
 #include "rx-hal-diy-dev-2400-td-esp32s3.h"
 #endif

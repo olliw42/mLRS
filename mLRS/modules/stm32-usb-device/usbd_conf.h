@@ -29,7 +29,10 @@ extern "C" {
 #if defined STM32F072xB
 #define USB_RXBUFSIZE       256
 #define USB_TXBUFSIZE       256
-#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#elif defined STM32G431xx || defined STM32G441xx
+#define USB_RXBUFSIZE       2048 // for serial, 4 kB use as double buffer
+#define USB_TXBUFSIZE       2048 // helps with cli
+#elif defined STM32G491xx || defined STM32G474xx // we really have plenty flash here
 #define USB_RXBUFSIZE       2048 // for serial, 4 kB use as double buffer
 #define USB_TXBUFSIZE       2048 // helps with cli
 #else

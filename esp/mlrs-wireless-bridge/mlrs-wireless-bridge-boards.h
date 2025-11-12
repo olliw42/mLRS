@@ -9,6 +9,13 @@
 
 /*
 ------------------------------
+ELRS Tx Module ESP82xx backpack
+------------------------------
+board: Generic ESP8266 Module
+https://www.espressif.com/sites/default/files/documentation/esp8266-technical_reference_en.pdf
+is used in many ELRS Tx modules
+
+------------------------------
 Espressif ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module
@@ -108,10 +115,32 @@ GPIO15 = RTC_GPIO13
 // Module details
 //-------------------------------------------------------
 
+//-- ELRS Tx Module ESP82xx backpack
+#if defined MODULE_ESP82XX_ELRS_TX
+    // board = Generic ESP8266 Module: -DARDUINO_ESP8266_GENERIC -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_GENERIC" -DARDUINO_BOARD_ID="generic"
+    // board = Generic ESP8285 Module: -DARDUINO_ESP8266_ESP01 -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_ESP01" -DARDUINO_BOARD_ID="esp8285"
+    #if !(defined ARDUINO_ESP8266_GENERIC || defined ARDUINO_ESP8266_ESP01)
+        #error Select board Generic ESP8266 Module or Generic ESP8285 Module
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #undef LED_IO
+    #define LED_IO 16
+    #define USE_LED
+
+    #undef GPIO0_IO
+    #define GPIO0_IO  0
+    #undef WIRELESS_PROTOCOL
+    #define WIRELESS_PROTOCOL 1 // make UDP the default
+
+
 //-- MatekSys TxM-TD30 mLRS Tx module
-#if defined MODULE_MATEK_TXM_TD30 // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
+#elif defined MODULE_MATEK_TXM_TD30
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ESP32 PICO-D4!
+        #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -135,7 +164,7 @@ GPIO15 = RTC_GPIO13
 //-- Espressif ESP32-DevKitC V4
 #elif defined MODULE_ESP32_DEVKITC_V4
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
-	      #error Select board ESP32 Dev Module!
+        #error Select board ESP32 Dev Module!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -151,7 +180,7 @@ GPIO15 = RTC_GPIO13
 //-- NodeMCU ESP32-Wroom-32
 #elif defined MODULE_NODEMCU_ESP32_WROOM32
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
-	      #error Select board ESP32 Dev Module!
+        #error Select board ESP32 Dev Module!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -163,14 +192,14 @@ GPIO15 = RTC_GPIO13
 
     #ifndef LED_IO
         #define LED_IO  2
-    #endif    
+    #endif
     #define USE_LED
 
 
 //-- Espressif ESP32-PICO-KIT
 #elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ESP32 PICO-D4!
+        #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -179,20 +208,20 @@ GPIO15 = RTC_GPIO13
 
     #ifndef LED_IO
         #define LED_IO  13
-    #endif    
+    #endif
     #define USE_LED
 
 
 //-- Adafruit QT Py S2
 #elif defined MODULE_ADAFRUIT_QT_PY_ESP32_S2 // ARDUINO_ADAFRUIT_QTPY_ESP32S2, ARDUINO_BOARD == ADAFRUIT_QTPY_ESP32S2
     #ifndef ARDUINO_ADAFRUIT_QTPY_ESP32S2 // ARDUINO_BOARD != ADAFRUIT_QTPY_ESP32S2
-	      #error Select board Adafruit QT Py ESP32-S2!
-    #endif		
+        #error Select board Adafruit QT Py ESP32-S2!
+    #endif
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
     #undef USE_SERIAL2_DBG
-    
+
     #define SERIAL_RXD 18 // = RX1
     #define SERIAL_TXD 17 // = TX1
 
@@ -205,7 +234,7 @@ GPIO15 = RTC_GPIO13
 //-- Lilygo TTGO-MICRO32
 #elif defined MODULE_TTGO_MICRO32 || defined MODULE_DIY_E28DUAL_MODULE02_G491RE // ARDUINO_ESP32_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ESP32 PICO-D4!
+        #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -217,10 +246,10 @@ GPIO15 = RTC_GPIO13
 
     #ifndef LED_IO
         #define LED_IO  13
-    #endif    
+    #endif
     #define USE_LED
 
-    #ifdef MODULE_DIY_E28DUAL_MODULE02_G491RE    
+    #ifdef MODULE_DIY_E28DUAL_MODULE02_G491RE
         #undef GPIO0_IO
         #define GPIO0_IO  0
         #undef WIRELESS_PROTOCOL
@@ -231,8 +260,8 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack M5Stamp C3 Mate
 #elif defined MODULE_M5STAMP_C3_MATE // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
     #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
-	      #error Select board ESP32C3 Dev Module!
-    #endif		
+        #error Select board ESP32C3 Dev Module!
+    #endif
 
     #undef USE_SERIAL_DBG1
     #define USE_SERIAL1_DBG
@@ -250,7 +279,7 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack M5Stamp Pico
 #elif defined MODULE_M5STAMP_PICO || defined MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // M5STAMP_PICO, ARDUINO_BOARD == ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
-	      #error Select board ESP32 PICO-D4!
+        #error Select board ESP32 PICO-D4!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -272,7 +301,7 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack M5Stamp C3U Mate
 #elif defined MODULE_M5STAMP_C3U_MATE || defined MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
     #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
-	      #error Select board ESP32C3 Dev Module!
+        #error Select board ESP32C3 Dev Module!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -283,7 +312,7 @@ GPIO15 = RTC_GPIO13
     #define SERIAL_TXD  0 // = TX1
     #ifdef MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M
         #define USE_SERIAL_INVERTED
-    #endif    
+    #endif
 
     #undef LED_IO
     #define USE_LED
@@ -294,7 +323,7 @@ GPIO15 = RTC_GPIO13
 //-- M5Stack ATOM Lite
 #elif defined MODULE_M5STACK_ATOM_LITE
     #ifndef ARDUINO_M5Stack_ATOM // ARDUINO_BOARD != ARDUINO_M5Stack_ATOM
-	      #error Select board M5Stack-ATOM!
+        #error Select board M5Stack-ATOM!
     #endif
 
     #undef USE_SERIAL_DBG1
@@ -312,7 +341,7 @@ GPIO15 = RTC_GPIO13
 
 //-- Generic
 #elif defined MODULE_GENERIC
-    #ifdef LED_IO  
+    #ifdef LED_IO
         #define USE_LED
     #endif
 
@@ -355,6 +384,7 @@ GPIO15 = RTC_GPIO13
 
 
 #if defined USE_SERIAL_DBG1
+    #undef SERIAL
     #define SERIAL Serial
     #define DBG Serial1
     #define DBG_PRINT(x) Serial1.print(x)
@@ -374,7 +404,8 @@ GPIO15 = RTC_GPIO13
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
 
-#else    
+#else
+    #undef SERIAL
     #define SERIAL Serial
     #define DBG_PRINT(x)
     #define DBG_PRINTLN(x)
@@ -382,7 +413,7 @@ GPIO15 = RTC_GPIO13
 
 
 #ifdef DBG
-    void dbg_init(void) 
+    void dbg_init(void)
     {
         DBG.begin(115200);
         DBG_PRINTLN();
@@ -390,22 +421,22 @@ GPIO15 = RTC_GPIO13
     }
 #else
     void dbg_init(void) {}
-#endif    
+#endif
 
 
 #if defined LED_IO && defined USE_LED
-    void led_init(void) 
+    void led_init(void)
     {
         pinMode(LED_IO, OUTPUT);
         digitalWrite(LED_IO, LOW);
     }
 
-    void led_on(bool is_connected) 
+    void led_on(bool is_connected)
     {
         digitalWrite(LED_IO, HIGH);
     }
 
-    void led_off(void) 
+    void led_off(void)
     {
         digitalWrite(LED_IO, LOW);
     }
@@ -415,5 +446,5 @@ GPIO15 = RTC_GPIO13
     void led_init(void) {}
     void led_on(bool is_connected) {}
     void led_off(void) {}
-#endif    
+#endif
 

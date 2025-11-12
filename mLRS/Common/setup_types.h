@@ -219,6 +219,7 @@ typedef enum {
     WIFI_PROTOCOL_TCP = 0,
     WIFI_PROTOCOL_UDP,
     WIFI_PROTOCOL_BT,
+    WIFI_PROTOCOL_UDPSTA,
     WIFI_PROTOCOL_NUM,
 } TX_WIFI_PROTOCOL_ENUM;
 
@@ -447,6 +448,7 @@ typedef struct
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
+    uint16_t Tx_WiFiProt_allowed_mask;
 
     char Rx_Power_optstr[44+1];
     uint16_t Rx_Diversity_allowed_mask;

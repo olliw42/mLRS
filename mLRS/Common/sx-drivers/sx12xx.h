@@ -38,12 +38,12 @@
 
 #define SX126X_FREQ_XTAL_HZ            32000000
 #define SX127X_FREQ_XTAL_HZ            32000000
-#define SX1280_FREQ_XTAL_HZ            52000000
+#define SX128X_FREQ_XTAL_HZ            52000000
 #define LR11XX_FREQ_XTAL_HZ            32000000
 
 #define SX126X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX126X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 25)) )
 #define SX127X_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * ((double)SX127X_FREQ_XTAL_HZ * 1.0E-3 / (double)(1 << 19)) )
-#define SX1280_REG_TO_FREQ_MHZ(f_reg)  roundf( (float)f_reg * ((double)SX1280_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
+#define SX128X_REG_TO_FREQ_MHZ(f_reg)  roundf( (float)f_reg * ((double)SX128X_FREQ_XTAL_HZ * 1.0E-6 / (double)(1 << 18)) )
 #define LR11XX_REG_TO_FREQ_KHZ(f_reg)  roundf( (float)f_reg * 1.0E3)
 
 

@@ -11,9 +11,10 @@
 // Configuration defines:
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
 // #define SX_HAS_NO_RESET
+// #define SX_USE_PA_CONFIG_10_DBM
 // #define SX_USE_CRYSTALOSCILLATOR
-// #define SX2_USE_CRYSTALOSCILLATOR
 // #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_CRYSTALOSCILLATOR
 // #define SX2_USE_REGULATOR_MODE_DCDC
 //*******************************************************
 #ifndef SX126X_DRIVER_H
@@ -84,7 +85,7 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
+void sx126x_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
 {
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
 
@@ -437,7 +438,7 @@ class Sx126xDriver : public Sx126xDriverCommon
     void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -572,7 +573,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif

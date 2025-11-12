@@ -98,6 +98,8 @@ class tPassThrough
     bool GetTelemetryFrameSingle(uint8_t packet_type, uint8_t* const data, uint8_t* const len);
     bool GetTelemetryFrameMulti(uint8_t* const data, uint8_t* const len);
 
+    void SetBattery0Capacity(uint32_t capacity) { battery0_capacity = capacity; }
+
     enum {
         GPS_LAT_0x800 = 0,        // 0x800 GPS lat
         GPS_LON_0x800,            // 0x800 GPS lon
@@ -124,7 +126,7 @@ class tPassThrough
         VEL_YAW_0x5005_AIR,       // 0x5005 velocity and yaw (climbspeed,speed,yaw,flag for groundspeed/airspeed)
 
         PASSTHROUGH_PACKET_TYPE_NUM
-    } PASSTHROUGHPACKETTYPEENUM;
+    } PASSTHROUGH_PACKET_TYPE_ENUM;
 
     // these read a MAVLink message and convert data into passthrough data fields
     
@@ -208,8 +210,9 @@ class tPassThrough
     bool home_position_received_once;
 
     bool vehicle_is_armed;
+    uint32_t battery0_capacity;
 
-    uint8_t param_id_to_send;
+    uint8_t param_id_cnt;
 };
 
 
@@ -225,8 +228,9 @@ void tPassThrough::Init(void)
     home_position_received_once = false;
 
     vehicle_is_armed = false;
+    battery0_capacity = 0; // 0 means not available
 
-    param_id_to_send = 1;
+    param_id_cnt = UINT8_MAX; // to start at 0
 }
 
 
@@ -726,15 +730,19 @@ bool tPassThrough::get_Param_0x5007(uint32_t* const data)
     if (!pt_update[PARAM_0x5007]) return false;
     pt_update[PARAM_0x5007] = false;
 
-    uint32_t pt_param_id = param_id_to_send;
+    INCc(param_id_cnt, 4); // has 4 items, implies sending at 0.25 Hz
 
-    param_id_to_send++;
-    if (param_id_to_send > 4) param_id_to_send = 1;
-
+    uint32_t pt_param_id = 0; // can be 1,4,5,6 // note web spreadsheet is incorrect!
     uint32_t pt_param_value = 0;
-    switch (pt_param_id) {
-    case 1:
+    switch (param_id_cnt) {
+    case 0: // 1: MAV_TYPE
+        pt_param_id = 1;
         pt_param_value = heartbeat.type;
+        break;
+    case 1: // 4: battery 1 pack capacity, in mAH
+        if (!battery0_capacity) return false;
+        pt_param_id = 4;
+        pt_param_value = battery0_capacity;
         break;
     default:
         return false;
@@ -742,7 +750,7 @@ bool tPassThrough::get_Param_0x5007(uint32_t* const data)
 
     *data = 0;
     pt_pack32(data, pt_param_value, 0, 24);
-    pt_pack32(data, pt_param_id, 24, 4);
+    pt_pack32(data, pt_param_id, 24, 8);
 
     return true;
 }

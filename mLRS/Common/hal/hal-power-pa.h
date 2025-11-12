@@ -70,7 +70,7 @@ const rfpower_t rfpower_list[] = {
 #include "../setup_types.h"
 
 // SX1280 power setting can vary from 0 .. 31 which corresponds to -18 dBm .. 13 dBm
-void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx128x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
         *sx_power = 19;
