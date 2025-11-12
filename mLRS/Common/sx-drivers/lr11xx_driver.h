@@ -365,6 +365,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         return actual_power_dbm;
     }
 
+  protected:
     tSxGlobalConfig* gconfig;
 
   private:

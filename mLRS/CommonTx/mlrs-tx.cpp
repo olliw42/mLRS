@@ -728,7 +728,7 @@ RESTARTCONTROLLER
     irq_status = irq2_status = 0;
     IF_SX(sx.StartUp(&Config.Sx));
     IF_SX2(sx2.StartUp(&Config.Sx2));
-    bind.Init(&Config.Sx);
+    bind.Init();
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
     rfpower.Init();

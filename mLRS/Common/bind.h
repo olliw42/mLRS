@@ -53,7 +53,7 @@ typedef enum {
 class tBindBase
 {
   public:
-    void Init(tSxGlobalConfig* const global_config);
+    void Init(void);
     bool IsInBind(void) { return is_in_binding; }
     void StartBind(void) { binding_requested = true; }
     void StopBind(void) { binding_stop_requested = true; }
@@ -87,9 +87,8 @@ class tBindBase
 };
 
 
-void tBindBase::Init(tSxGlobalConfig* const global_config)
+void tBindBase::Init(void)
 {
-    gconfig = global_config;
     is_in_binding = false;
     binding_requested = false;
     binding_stop_requested = false;
@@ -113,9 +112,9 @@ void tBindBase::ConfigForBind(void)
     // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
 #ifdef DEVICE_HAS_SX127x
-    configure_mode(MODE_19HZ_7X, gconfig->FrequencyBand);
+    configure_mode(MODE_19HZ_7X, Config.FrequencyBand;
 #else
-    configure_mode(MODE_19HZ, gconfig->FrequencyBand);
+    configure_mode(MODE_19HZ, Config.FrequencyBand);
 #endif
 
     sx.SetToIdle();
