@@ -135,3 +135,7 @@
 #include "tx-hal-radiomaster-ranger-2400-esp32.h"
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
+#include "tx-hal-radiomaster-nomad-esp32.h"
+#endif
+

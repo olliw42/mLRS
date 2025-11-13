@@ -81,6 +81,9 @@ class tBindBase
 
     bool is_pressed;
     int8_t pressed_cnt;
+
+  private:
+    tSxGlobalConfig* gconfig;  
 };
 
 
@@ -108,11 +111,11 @@ void tBindBase::ConfigForBind(void)
     // switch to 19 Mode, select lowest possible power
     // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
-#ifdef DEVICE_HAS_SX127x
-    configure_mode(MODE_19HZ_7X);
-#else
-    configure_mode(MODE_19HZ);
-#endif
+    if (Config.Mode == MODE_19HZ_7X) {
+        configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
+    } else {
+        configure_mode(MODE_19HZ, Config.FrequencyBand);
+    }
 
     sx.SetToIdle();
     sx2.SetToIdle();
