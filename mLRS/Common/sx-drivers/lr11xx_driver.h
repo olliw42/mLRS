@@ -148,6 +148,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
                             config->CodingRate,
                             LR11XX_LORA_LDR_OFF);
 
+        if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
+
         SetPacketParams(config->PreambleLength,
                         config->HeaderType,
                         config->PayloadLength,

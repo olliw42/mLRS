@@ -95,7 +95,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_LR11xx && defined DEVICE_IS_TRANSMITTER
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
-    SetupMetaData.Mode_allowed_mask = 0b010111; // 50 Hz, 31 Hz, 19 Hz, FSK
+    SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
 #elif defined DEVICE_HAS_LR11xx
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #else
@@ -395,7 +395,7 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
-        SetupMetaData.Mode_allowed_mask &= 0b010110; // filter down to 31 Hz, 19 Hz, FSK
+        SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, 19 Hz 7x, FSK
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()
