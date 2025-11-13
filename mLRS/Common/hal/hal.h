@@ -64,6 +64,7 @@ In tx-hal files:
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESP82xx with its passthrough via JRPin5 port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx in fact, not ESP32
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH    // board has button used to enter ESP flash mode
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup

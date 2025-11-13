@@ -822,6 +822,7 @@ INITCONTROLLER_END
             disp.Tick_ms(); // can take long
             fan.SetPower(sx.RfPower_dbm());
             fan.Tick_ms();
+            esp.Tick_ms();
 
             if (!tick_1hz) {
                 dbg.puts(".");
