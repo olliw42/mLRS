@@ -331,25 +331,25 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 #define SX_USE_LP_PA  // Nomad uses the low power amplifier for the 900 side
 
 
-void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, uint8_t frequencyBand)
+void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
-    if (frequencyBand == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
-        if (power_dbm > 28) { // -> 30
+    if (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
+        if (power_dbm >= POWER_30_DBM) { // -> 30
             *sx_power = 5;
             *actual_power_dbm = 30;
-        } else if (power_dbm > 25) { // -> 27
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
             *sx_power = 3;
             *actual_power_dbm = 27;
-        } else if (power_dbm > 22) { // -> 24
+        } else if (power_dbm >= POWER_24_DBM) { // -> 24
             *sx_power = 2;
             *actual_power_dbm = 24;
-        } else if (power_dbm > 18) { // -> 20
+        } else if (power_dbm >= POWER_20_DBM) { // -> 20
             *sx_power = -6;
             *actual_power_dbm = 20;
-        } else if (power_dbm > 15) { // -> 17
+        } else if (power_dbm >= POWER_17_DBM) { // -> 17
             *sx_power = -8;
             *actual_power_dbm = 17;
-        } else if (power_dbm > 12) { // -> 14
+        } else if (power_dbm >= POWER_14_DBM) { // -> 14
             *sx_power = -14;
             *actual_power_dbm = 14;
         } else {
@@ -359,27 +359,27 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     } else {
         uint8_t dac = 120;
 
-        if (power_dbm > 28) { // -> 30
+        if (power_dbm >= POWER_30_DBM) { // -> 30
             dac = 95;
             *sx_power = 5;
             *actual_power_dbm = 30;
-        } else if (power_dbm > 25) { // -> 27
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
             dac = 120;
             *sx_power = -3;
             *actual_power_dbm = 27;
-        } else if (power_dbm > 22) { // -> 24
+        } else if (power_dbm >= POWER_24_DBM) { // -> 24
             dac = 120;
             *sx_power = -7;
             *actual_power_dbm = 24;
-        } else if (power_dbm > 18) { // -> 20
+        } else if (power_dbm >= POWER_20_DBM) { // -> 20
             dac = 120;
             *sx_power = -11;
             *actual_power_dbm = 20;
-        } else if (power_dbm > 15) { // -> 17
+        } else if (power_dbm >= POWER_17_DBM) { // -> 17
             dac = 120;
             *sx_power = -14;
             *actual_power_dbm = 17;
-        } else if (power_dbm > 12) { // -> 14
+        } else if (power_dbm >= POWER_14_DBM) { // -> 14
             dac = 120;
             *sx_power = -16;
             *actual_power_dbm = 14;
