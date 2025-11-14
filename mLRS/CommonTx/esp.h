@@ -73,8 +73,8 @@ void esp_enable(uint8_t serial_destination)
 
 
 #define ESP_PASSTHROUGH_TMO_MS  4000 // esptool uses 3 secs, so be a bit more generous
-#define ESP_BUTTON_DEBOUNCE_MS   50
-#define ESP_BUTTON_TMO_MS        4000
+#define ESP_BUTTON_DEBOUNCE_MS  50
+#define ESP_BUTTON_TMO_MS       4000
 
 
 #ifndef USE_ESP_WIFI_BRIDGE

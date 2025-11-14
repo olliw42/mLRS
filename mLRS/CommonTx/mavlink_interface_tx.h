@@ -29,7 +29,8 @@ extern bool connected_and_rx_setup_available(void);
 extern tStats stats;
 
 
-#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
+//#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
+#define RADIO_LINK_SYSTEM_ID      TX_RADIO_LINK_SYSTEM_ID // moved to common_conf.h
 
 #define MAVLINK_BUF_SIZE          300 // needs to be larger than max MAVLink frame size = 286 bytes
 

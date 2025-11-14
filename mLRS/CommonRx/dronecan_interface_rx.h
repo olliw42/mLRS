@@ -39,7 +39,8 @@ extern tStats stats;
 extern tSetup Setup;
 extern tGlobalConfig Config;
 
-#define DRONECAN_PREFERRED_NODE_ID  68
+//#define DRONECAN_PREFERRED_NODE_ID  68
+#define DRONECAN_PREFERRED_NODE_ID  RX_DRONECAN_PREFERRED_NODE_ID // moved to common_conf.h
 
 #define CANARD_POOL_SIZE  4096
 
