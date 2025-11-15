@@ -37,7 +37,7 @@ List of supported modules, and board which needs to be selected
 - ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module or Generic ESP8285 Module
   is used in many ELRS Tx modules
 - ELRS Tx module ESP32C3 backpack   board: Generic ESP32C3 Module
-  Comment: Both ESP82xx and ESP32C3 needs to have a GPIO0/GPIO9 controllable
+  Comment: ELRS Tx backpacks using ESP82xx or ESP32-C3 must have GPIO0 or GPIO9 controllable, respectively
 - Espressif ESP32-DevKitC V4        board: ESP32 Dev Module
 - NodeMCU ESP32-Wroom-32            board: ESP32 Dev Module
 - Espressif ESP32-PICO-KIT          board: ESP32 PICO-D4
@@ -70,7 +70,7 @@ Troubleshooting:
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
-#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
+//#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
@@ -198,7 +198,7 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 #ifndef ESP8266
 #ifdef ARDUINO_ESP32C3_DEV
 #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
-    #error "For ESP32-C3, you must use ESP Arduino Core 2.0.17"
+    #error "For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager."
 #endif
 #else
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
