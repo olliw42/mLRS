@@ -222,8 +222,6 @@ IRAM_ATTR void led_blue_toggle(void)
 //-- POWER
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
-#define SX_USE_LP_PA  // Nomad uses the low power amplifier for the 900 side
-
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
