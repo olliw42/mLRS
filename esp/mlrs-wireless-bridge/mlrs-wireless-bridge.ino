@@ -14,9 +14,10 @@
 // - For ESP32: Partition Scheme needs to be changed to "No OTA (Large App)" !!
 // - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
+// - For ESP32C3: ESP32 arduino core must be 2.0.17 !!
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
 // Dependencies:
-// You need to have in File->Prefernces->Additional Board managers URLs
+// You need to have in File->Preferences->Additional Board managers URLs
 // - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 // - https://arduino.esp8266.com/stable/package_esp8266com_index.json
 // Install
