@@ -198,13 +198,13 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 #ifndef ESP8266
 #ifdef ARDUINO_ESP32C3_DEV
 #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
-    #error "For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager."
+    #error For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager.
 #endif
 #else
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-    #error "Version of your ESP Arduino Core below 3.0.0!"
+    error "Version of your ESP Arduino Core below 3.0.0 !
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
-    #warning "Consider upgrading your ESP Arduino Core!"
+    #warning Consider upgrading your ESP Arduino Core !
 #endif
 #endif
 
