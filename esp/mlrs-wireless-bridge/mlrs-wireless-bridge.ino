@@ -202,7 +202,7 @@ String bluetooth_device_name = ""; // name of your Bluetooth device as it will b
 #endif
 #else
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-    error "Version of your ESP Arduino Core below 3.0.0 !
+    #error "Version of your ESP Arduino Core below 3.0.0 !
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
     #warning Consider upgrading your ESP Arduino Core !
 #endif
