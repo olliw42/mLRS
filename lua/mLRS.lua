@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-01-12.01'
+local version = '2025-11-15.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -24,18 +24,28 @@ local disableParamLoadErrorWarnings = false
 ----------------------------------------------------------------------
 -- Screen
 ----------------------------------------------------------------------
+-- TX16, T16, etc.:    480 x 272
+-- T15:                480 x 320   
 
 local page_N1 = 9 -- number of options displayed in left column
-local page_N = 18 -- number of options displayed on page
+local page_N = 18 -- number of options displayed on page, should be just 2 * page_N1
+local LCD_W_HALF = LCD_W / 2
+local LCD_POPUP_X = 80 -- LCD_W/2-160 -- location of popup box
+local LCD_POPUP_Y = 76
+local LCD_POPUP_W = 320
+local LCD_POPUP_H = 80
+local LCD_INFO_Y = 210 -- location of info section on main page
+local LCD_WARN_X = 30 -- LCD_W/2-210 -- location of setup layout issue warning box in info section
+local LCD_WARN_W = 420
+local LCD_WARN_H = 50
 
 local function setupScreen()
-    if LCD_H == 320 then
+    if LCD_H == 320 then -- T15
         page_N1 = 11
-        page_N = 22
     else
         page_N1 = 9
-        page_N = 18
     end
+    page_N = 2 * page_N1
 end    
 
 
@@ -244,18 +254,18 @@ local function clearPopupIfBlocked()
 end
 
 local function drawPopup()
-    lcd.drawFilledRectangle(LCD_W/2-160-2, 74, 320+4, 84, TEXT_COLOR) --TITLE_BGCOLOR)
-    lcd.drawFilledRectangle(LCD_W/2-160, 76, 320, 80, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_POPUP_X-2, LCD_POPUP_Y-2, LCD_POPUP_W+4, LCD_POPUP_H+4, TEXT_COLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_POPUP_X, LCD_POPUP_Y, LCD_POPUP_W, LCD_POPUP_H, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
 
     local i = string.find(popup_text, "\n")
     local attr = MENU_TITLE_COLOR+MIDSIZE+CENTER
     if i == nil then
-        lcd.drawText(LCD_W/2, 99, popup_text, attr)
+        lcd.drawText(LCD_W_HALF, 99, popup_text, attr)
     else
         local t1 = string.sub(popup_text, 1,i-1)
         local t2 = string.sub(popup_text, i+1)
-        lcd.drawText(LCD_W/2, 85, t1, attr)
-        lcd.drawText(LCD_W/2, 85+30, t2, attr)
+        lcd.drawText(LCD_W_HALF, 85, t1, attr)
+        lcd.drawText(LCD_W_HALF, 85+30, t2, attr)
     end
 end
 
@@ -873,17 +883,7 @@ local top_idx = 0 -- index of first displayed option
 
 
 local function drawPageEdit(page_str)
-    if LCD_H == 320 then
-        page_N1 = 11 -- number of options displayed in left column
-        page_N = 22 -- number of options displayed on page
-    else
-        page_N1 = 9
-        page_N = 18
-    end
-    
-    local x, y;
-
-    y = 35
+    local y = 35
     if page_str == "Tx" then
         if DEVICE_INFO ~= nil then
             lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", TEXT_COLOR)
@@ -932,7 +932,7 @@ local function drawPageEdit(page_str)
 
     page_param_cnt = idx
 
-    local x_mid = LCD_W/2 - 5
+    local x_mid = LCD_W_HALF - 5
     if top_idx > 0 then
         local y_base = y0 - 4
         --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
@@ -1032,30 +1032,28 @@ end
 ----------------------------------------------------------------------
 
 local function drawSetuplayoutWarning(txt)
-    local y = 210
-    lcd.drawFilledRectangle(LCD_W/2-210-2, y, 420+4, 50+4, TEXT_COLOR) --TITLE_BGCOLOR)
-    lcd.drawFilledRectangle(LCD_W/2-210, y+2, 420, 50, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    local y = LCD_INFO_Y
+    lcd.drawFilledRectangle(LCD_WARN_X-2, y, LCD_WARN_W+4, LCD_WARN_H+4, TEXT_COLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_WARN_X, y+2, LCD_WARN_W, LCD_WARN_H, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
     local attr = MENU_TITLE_COLOR+CENTER
     local s = txt
     local i = string.find(s, "\n")
     local lines = 0
     while i ~= nil do
         local s1 = string.sub(s, 1,i-1)
-        lcd.drawText(LCD_W/2, y+6 + lines, s1, attr)
+        lcd.drawText(LCD_W_HALF, y+6 + lines, s1, attr)
         s = string.sub(s, i+1)
         i = string.find(s, "\n")
         lines = lines + 21
     end
-    lcd.drawText(LCD_W/2, y+6 + lines, s, attr)
+    lcd.drawText(LCD_W_HALF, y+6 + lines, s, attr)
 end
 
 
 local function drawPageMain()
-    local x, y;
-
     lcd.setColor(CUSTOM_COLOR, RED)
 
-    y = 35
+    local y = 35
     lcd.drawText(5, y, "Tx:", TEXT_COLOR)
     if DEVICE_ITEM_TX == nil then
         lcd.drawText(35, y, "---", TEXT_COLOR)
@@ -1151,7 +1149,7 @@ local function drawPageMain()
     lcd.drawText(10 + 365, y, "Tools", cur_attr(Tools_idx))
 
     -- show overview of some selected parameters
-    y = 210 --05
+    y = LCD_INFO_Y --210 --05
     lcd.setColor(CUSTOM_COLOR, GREY)
     lcd.drawFilledRectangle(0, y-5, LCD_W, 1, CUSTOM_COLOR)
 
