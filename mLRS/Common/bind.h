@@ -131,6 +131,8 @@ void tBindBase::ConfigForBind(void)
 
 void tBindBase::HopToNextBind(uint8_t frequency_band)
 {
+#ifdef DEVICE_HAS_LR11xx
+    // LR11xx can connect to SX126x, SX127x and SX128x devices, so special considerations needed for binding
     // for bands that can support the 19 Hz 7x mode, we alternate between 19Hz and 19Hz 7x
     bool band_supports_7x =
         (frequency_band == SETUP_FREQUENCY_BAND_915_MHZ_FCC) ||
@@ -160,6 +162,7 @@ void tBindBase::HopToNextBind(uint8_t frequency_band)
     sx2.ResetToLoraConfiguration();
     sx.SetToIdle();
     sx2.SetToIdle();
+#endif
 }
 
 
