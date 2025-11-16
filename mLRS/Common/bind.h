@@ -84,7 +84,8 @@ class tBindBase
     int8_t pressed_cnt;
 
   private:
-    tSxGlobalConfig* gconfig;  
+    tSxGlobalConfig* gconfig;
+    bool last_was_7x = false;
 };
 
 
@@ -130,12 +131,24 @@ void tBindBase::ConfigForBind(void)
 
 void tBindBase::HopToNextBind(uint8_t frequency_band)
 {
-    // switch to 19 Mode, select lowest possible power
-    // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
-    // configure_mode() however does currently do the same for both cases
-    if (Config.Mode == MODE_19HZ_7X) {
-        configure_mode(MODE_19HZ_7X, frequency_band);
-    } else {
+    // for bands that can support the 19 Hz 7x mode, we alternate between 19Hz and 19Hz 7x
+    bool band_supports_7x =
+        (frequency_band == SETUP_FREQUENCY_BAND_915_MHZ_FCC) ||
+        (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ||
+        (frequency_band == SETUP_FREQUENCY_BAND_866_MHZ_IN) ||
+        (frequency_band == SETUP_FREQUENCY_BAND_433_MHZ) ||
+        (frequency_band == SETUP_FREQUENCY_BAND_70_CM_HAM);
+
+    last_was_7x = !last_was_7x;
+
+    if (band_supports_7x) {
+        if (last_was_7x) {
+            configure_mode(MODE_19HZ_7X, frequency_band);
+        } else {
+            configure_mode(MODE_19HZ, frequency_band);
+        }
+    }
+    else {
         configure_mode(MODE_19HZ, frequency_band);
     }
 
