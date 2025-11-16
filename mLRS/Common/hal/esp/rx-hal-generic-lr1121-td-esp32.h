@@ -227,13 +227,13 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
 {
     if (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
         if (power_dbm >= POWER_20_DBM) { // -> 20
-            *sx_power = 1;
-            *actual_power_dbm = 20;
+            *sx_power = 2;
+            *actual_power_dbm = 20; // xr4 measures about 19 dBm here, further power shows little increase, PA max input is +5 dBm
         } else if (power_dbm >= POWER_14_DBM) { // -> 14
-            *sx_power = -5;
+            *sx_power = -7;
             *actual_power_dbm = 14;
         } else {
-            *sx_power = -9;
+            *sx_power = -11;
             *actual_power_dbm = 10;
         }
     } else {
