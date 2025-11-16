@@ -58,6 +58,7 @@ class tBindBase
     void StartBind(void) { binding_requested = true; }
     void StopBind(void) { binding_stop_requested = true; }
     void ConfigForBind(void);
+    void HopToNextBind(uint8_t frequency_band);
     void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
@@ -115,6 +116,27 @@ void tBindBase::ConfigForBind(void)
         configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
     } else {
         configure_mode(MODE_19HZ, Config.FrequencyBand);
+    }
+
+    sx.SetToIdle();
+    sx2.SetToIdle();
+    sx.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx.ResetToLoraConfiguration();
+    sx2.ResetToLoraConfiguration();
+    sx.SetToIdle();
+    sx2.SetToIdle();
+}
+
+void tBindBase::HopToNextBind(uint8_t frequency_band)
+{
+    // switch to 19 Mode, select lowest possible power
+    // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
+    // configure_mode() however does currently do the same for both cases
+    if (Config.Mode == MODE_19HZ_7X) {
+        configure_mode(MODE_19HZ_7X, frequency_band);
+    } else {
+        configure_mode(MODE_19HZ, frequency_band);
     }
 
     sx.SetToIdle();
