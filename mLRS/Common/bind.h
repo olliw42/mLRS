@@ -122,6 +122,19 @@ void tBindBase::ConfigModeForBind(void)
 }
 
 
+void tBindBase::ConfigRfForBind(void)
+{
+    sx.SetToIdle();
+    sx2.SetToIdle();
+    sx.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx.ResetToLoraConfiguration();
+    sx2.ResetToLoraConfiguration();
+    sx.SetToIdle();
+    sx2.SetToIdle();
+}
+
+
 void tBindBase::HopToNextBind(uint8_t frequency_band)
 {
 #ifdef DEVICE_HAS_LR11xx
@@ -147,19 +160,6 @@ void tBindBase::HopToNextBind(uint8_t frequency_band)
         configure_mode(MODE_19HZ, frequency_band);
     }
 #endif
-}
-
-
-void tBindBase::ConfigRfForBind(void)
-{
-    sx.SetToIdle();
-    sx2.SetToIdle();
-    sx.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx.ResetToLoraConfiguration();
-    sx2.ResetToLoraConfiguration();
-    sx.SetToIdle();
-    sx2.SetToIdle();
 }
 
 
