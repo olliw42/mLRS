@@ -66,6 +66,7 @@ static uint64_t powerup_counter_signature = POWERUPCNT_SIGNATURE_A;
 typedef enum {
     POWERUPCNT_TASK_NONE = 0,
     POWERUPCNT_TASK_BIND,
+    POWERUPCNT_CLI_MODE
 } POWERUPCNT_TASK_ENUM;
 
 
