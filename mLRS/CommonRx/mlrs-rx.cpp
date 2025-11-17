@@ -841,6 +841,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             }
             if (fhss.HopToNextBind()) {
                 bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
+                bind.ConfigRfForBind();
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
         }
@@ -892,7 +893,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            bind.ConfigForBind();
+            bind.ConfigModeForBind();
+            bind.ConfigRfForBind();
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
             fhss.SetToBind(Config.frame_rate_ms);
