@@ -121,6 +121,7 @@ void tBindBase::ConfigModeForBind(void)
     }
 }
 
+
 void tBindBase::HopToNextBind(uint8_t frequency_band)
 {
 #ifdef DEVICE_HAS_LR11xx
@@ -147,6 +148,7 @@ void tBindBase::HopToNextBind(uint8_t frequency_band)
     }
 #endif
 }
+
 
 void tBindBase::ConfigRfForBind(void)
 {
