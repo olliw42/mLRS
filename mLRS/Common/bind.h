@@ -57,7 +57,7 @@ class tBindBase
     bool IsInBind(void) { return is_in_binding; }
     void StartBind(void) { binding_requested = true; }
     void StopBind(void) { binding_stop_requested = true; }
-    void ConfigModeForBind(void);
+    void ConfigForBind(void);
     void HopToNextBind(uint8_t frequency_band);
     void Tick_ms(void);
     void Do(void);
@@ -110,7 +110,7 @@ void tBindBase::Init(void)
 }
 
 
-void tBindBase::ConfigModeForBind(void)
+void tBindBase::ConfigForBind(void)
 {
     // used by both the Tx and Rx, switch to 19 Hz mode, select lowest possible power
     // LR11xx supports both 19 Hz and 19 Hz 7x, so for LR11xx Tx to bind with SX127x Rx, need to use the config
