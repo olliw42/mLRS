@@ -1083,7 +1083,6 @@ IF_SX2(
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
             bind.ConfigModeForBind();
-            bind.ConfigRfForBind();
             fhss.SetToBind();
             leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;

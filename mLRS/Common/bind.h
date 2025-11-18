@@ -58,7 +58,6 @@ class tBindBase
     void StartBind(void) { binding_requested = true; }
     void StopBind(void) { binding_stop_requested = true; }
     void ConfigModeForBind(void);
-    void ConfigRfForBind(void);
     void HopToNextBind(uint8_t frequency_band);
     void Tick_ms(void);
     void Do(void);
@@ -85,8 +84,10 @@ class tBindBase
     int8_t pressed_cnt;
 
   private:
+
+    void config_rf_for_bind(void);
+
     tSxGlobalConfig* gconfig;
-    bool last_was_7x = false;
 };
 
 
@@ -111,54 +112,37 @@ void tBindBase::Init(void)
 
 void tBindBase::ConfigModeForBind(void)
 {
-    // switch to 19 Mode, select lowest possible power
-    // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
-    // configure_mode() however does currently do the same for both cases
+    // used by both the Tx and Rx, switch to 19 Hz mode, select lowest possible power
+    // LR11xx supports both 19 Hz and 19 Hz 7x, so for LR11xx Tx to bind with SX127x Rx, need to use the config
     if (Config.Mode == MODE_19HZ_7X) {
         configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
     } else {
         configure_mode(MODE_19HZ, Config.FrequencyBand);
     }
-}
-
-
-void tBindBase::ConfigRfForBind(void)
-{
-    sx.SetToIdle();
-    sx2.SetToIdle();
-    sx.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx.ResetToLoraConfiguration();
-    sx2.ResetToLoraConfiguration();
-    sx.SetToIdle();
-    sx2.SetToIdle();
+    config_rf_for_bind();
 }
 
 
 void tBindBase::HopToNextBind(uint8_t frequency_band)
 {
+    // used only by Rx
+    // for LR11xx, alternate between 19 Hz and 19 Hz 7x modes on the bands that support it
 #ifdef DEVICE_HAS_LR11xx
-    // LR11xx can connect to SX126x, SX127x and SX128x devices, so special considerations needed for binding
-    // for bands that can support the 19 Hz 7x mode, we alternate between 19Hz and 19Hz 7x
-    bool band_supports_7x =
-        (frequency_band == SETUP_FREQUENCY_BAND_915_MHZ_FCC) ||
-        (frequency_band == SETUP_FREQUENCY_BAND_868_MHZ) ||
-        (frequency_band == SETUP_FREQUENCY_BAND_866_MHZ_IN) ||
-        (frequency_band == SETUP_FREQUENCY_BAND_433_MHZ) ||
-        (frequency_band == SETUP_FREQUENCY_BAND_70_CM_HAM);
+    static bool use_7x_next[SETUP_FREQUENCY_BAND_NUM];  // will start with 19 Hz mode
 
-    last_was_7x = !last_was_7x;
+    bool band_does_not_support_7x = (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ);
 
-    if (band_supports_7x) {
-        if (last_was_7x) {
+    if (band_does_not_support_7x) {
+        configure_mode(MODE_19HZ, frequency_band);
+    } else {
+        if (use_7x_next[frequency_band]) {
             configure_mode(MODE_19HZ_7X, frequency_band);
         } else {
             configure_mode(MODE_19HZ, frequency_band);
         }
+        use_7x_next[frequency_band] = !use_7x_next[frequency_band];
     }
-    else {
-        configure_mode(MODE_19HZ, frequency_band);
-    }
+    config_rf_for_bind();
 #endif
 }
 
@@ -341,6 +325,19 @@ uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 }
 
 #endif
+
+
+void tBindBase::config_rf_for_bind(void)
+{
+    sx.SetToIdle();
+    sx2.SetToIdle();
+    sx.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx.ResetToLoraConfiguration();
+    sx2.ResetToLoraConfiguration();
+    sx.SetToIdle();
+    sx2.SetToIdle();
+}
 
 
 #endif // BIND_H

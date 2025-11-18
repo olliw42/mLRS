@@ -228,13 +228,16 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     if (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
         if (power_dbm >= POWER_20_DBM) { // -> 20
             *sx_power = 2;
-            *actual_power_dbm = 20; // xr4 measures about 19 dBm here, further power shows little increase, PA max input is +5 dBm
+            *actual_power_dbm = 20;  // xr1 measures about 19 dBm here, further power shows little increase, PA max input is +5 dBm
         } else if (power_dbm >= POWER_14_DBM) { // -> 14
-            *sx_power = -7;
+            *sx_power = -6;
             *actual_power_dbm = 14;
-        } else {
+        } else if (power_dbm >= POWER_10_DBM) { // -> 10
             *sx_power = -11;
             *actual_power_dbm = 10;
+        } else {
+            *sx_power = -18;
+            *actual_power_dbm = 3;
         }
     } else {
         if (power_dbm >= POWER_20_DBM) { // -> 20
@@ -243,17 +246,21 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         } else if (power_dbm >= POWER_14_DBM) { // -> 14
             *sx_power = 16;
             *actual_power_dbm = 14;
-        } else {
+        } else if (power_dbm >= POWER_10_DBM) { // -> 10
             *sx_power = 12;
             *actual_power_dbm = 10;
+        } else {
+            *sx_power = 5;
+            *actual_power_dbm = 3;
         }
 
     }
 }
 
-#define RFPOWER_DEFAULT           0 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_20_DBM, .mW = 100 },
