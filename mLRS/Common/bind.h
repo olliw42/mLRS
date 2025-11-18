@@ -130,9 +130,7 @@ void tBindBase::HopToNextBind(uint8_t frequency_band)
 #ifdef DEVICE_HAS_LR11xx
     static bool use_7x_next[SETUP_FREQUENCY_BAND_NUM];  // will start with 19 Hz mode
 
-    bool band_does_not_support_7x = (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ);
-
-    if (band_does_not_support_7x) {
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         configure_mode(MODE_19HZ, frequency_band);
     } else {
         if (use_7x_next[frequency_band]) {
