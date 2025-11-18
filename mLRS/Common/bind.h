@@ -113,7 +113,7 @@ void tBindBase::Init(void)
 
 void tBindBase::ConfigForBind(void)
 {
-    // switch to 19 Hz Mode, select lowest possible power
+    // used by both the Tx and Rx, switch to 19 Hz mode, select lowest possible power
     // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
     if (Config.Mode == MODE_19HZ_7X) {
@@ -133,6 +133,7 @@ void tBindBase::ConfigForBind(void)
 void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM
 {
     // not nice
+    // used only by Rx
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
     // we could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // we also could provide a function to do it both in setup.h and here
