@@ -12,12 +12,13 @@
   - First flash can be via web browser/ELRS WiFi
   - Need ELRS version of esptool from https://github.com/ExpressLRS/Backpack
   - Power up radio, plug in USB, select VCP
-  - On Linux, run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 115200 --before etx --after hard_reset write_flash 0x0000 ~/Arduino/build/mlrs-wireless-bridge-esp8266.ino.bin
+  - Run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 115200 --before etx --after hard_reset
+  -
 
   Flashing ESP32 module:
   - Need ELRS python folder from https://github.com/ExpressLRS/ExpressLRS
   - Power up radio, plug in USB, select VCP
-  - On Linux, run something like "python ExpressLRS/src/python/ETXinitPassthrough.py"
+  - Run something like "python ExpressLRS/src/python/ETXinitPassthrough.py"
   - Use Visual Studio Code or esptool (or maybe web flasher?) to flash via ACM serial port.
 */
 
