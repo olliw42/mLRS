@@ -78,6 +78,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         gconfig = nullptr;
         lora_configuration = nullptr;
+        low_frequency_mode = 0;
     }
 
     //-- high level API functions
@@ -147,16 +148,18 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         gconfig = global_config;
 
+        low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
+
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
                                          SX1276_ACCESS_SHARED_REG_LORA |
-                                         SX1276_LOW_FREQUENCY_MODE_OFF |
+                                         low_frequency_mode |
                                          SX1276_MODE_SLEEP);
         SetStandby();
         //SetOperationMode(SX1276_PACKET_TYPE_LORA, SX1276_LOW_FREQUENCY_MODE_OFF);
 
         uint8_t band_width = Sx127xLoraConfiguration[gconfig->LoraConfigIndex].Bandwidth;
-        OptimizeSensitivity(band_width);
+        OptimizeSensitivity(band_width, low_frequency_mode);
         OptimizeReceiverResponse(band_width);
 
         SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
@@ -221,7 +224,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
-        Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
+        Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -288,6 +291,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
   private:
     tSxGlobalConfig* gconfig;
     const tSxLoraConfiguration* lora_configuration;
+    uint8_t low_frequency_mode;
     uint8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
