@@ -13,13 +13,13 @@
   - Need ELRS version of esptool from https://github.com/ExpressLRS/Backpack
   - Power up radio, plug in USB, select VCP
   - Run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 115200 --before etx --after hard_reset
-  -
+  - PUT ADDITIONAL LINES HERE
 
   Flashing ESP32 module:
   - Need ELRS python folder from https://github.com/ExpressLRS/ExpressLRS
   - Power up radio, plug in USB, select VCP
   - Run something like "python ExpressLRS/src/python/ETXinitPassthrough.py"
-  - Use Visual Studio Code or esptool (or maybe web flasher?) to flash via ACM serial port.
+  - Use Visual Studio Code or esptool to flash via ACM serial port.
 */
 
 //-------------------------------------------------------
@@ -28,7 +28,6 @@
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20TX15.json
 
 #define DEVICE_HAS_JRPIN5
-#define JR_PIN5_FULL_DUPLEX
 #define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
@@ -54,6 +53,7 @@
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
+#define JR_PIN5_FULL_DUPLEX
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P1
