@@ -148,7 +148,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         gconfig = global_config;
 
-        low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
+        switch (gconfig->FrequencyBand) {
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
+            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_ON;
+                break;
+            default:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
+        }
 
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
