@@ -10,12 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-11-19.01'
-
-local g_textColor
-local g_titleBgColor
-local g_menuTitleColor
-local g_textDisableColor
+local version = '2025-11-20.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -30,7 +25,12 @@ local disableParamLoadErrorWarnings = false
 -- Screen
 ----------------------------------------------------------------------
 -- TX16, T16, etc.:    480 x 272
--- T15:                480 x 320   
+-- T15, TX15:          480 x 320
+
+local g_textColor
+local g_titleBgColor
+local g_menuTitleColor
+local g_textDisableColor
 
 local page_N1 = 9 -- number of options displayed in left column
 local page_N = 18 -- number of options displayed on page, should be just 2 * page_N1
@@ -55,12 +55,11 @@ end
 
 local function setupColors()
     local ver, radio, maj, minor, rev, osname = getVersion()
-    isEdgeTx = (osname == 'EdgeTX')
 
     if maj == nil then maj = 0 end
     if minor == nil then minor = 0 end
 
-    if isEdgeTx and (maj > 2 or (maj == 2 and minor >= 4)) then
+    if (osname == 'EdgeTX') and (maj > 2 or (maj == 2 and minor >= 4)) then
         g_textColor = COLOR_THEME_SECONDARY1
         g_titleBgColor = COLOR_THEME_SECONDARY1
         g_menuTitleColor = COLOR_THEME_PRIMARY2
@@ -1375,6 +1374,9 @@ end
 ----------------------------------------------------------------------
 
 local function scriptInit()
+    local ver, radio, maj, minor, rev, osname = getVersion()
+    isEdgeTx = (osname == 'EdgeTX')
+
     setupScreen()
     setupColors()
     setupBridge()
