@@ -30,6 +30,7 @@
 //#define DEVICE_HAS_NO_COM
 
 #define DEVICE_HAS_I2C_DISPLAY
+#define DEVICE_HAS_SINGLE_LED_RGB
 
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST
