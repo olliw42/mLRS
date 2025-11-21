@@ -333,7 +333,6 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     }
 
     dacWrite(IO_P26, dac);
-    dacWrite(IO_P26, dac);
 }
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
