@@ -170,19 +170,48 @@ IRAM_ATTR void led_blue_toggle(void)
 
 
 //-- POWER
-#ifndef POWER_OVERLAY
 
-#define POWER_GAIN_DBM            -2 // gain of a PA stage if present
-#define POWER_LR11XX_MAX_DBM      LR11XX_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
+#include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 
-#define RFPOWER_DEFAULT           0 // index into rfpower_list array
+void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+{
+    if (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
+        if (power_dbm >= POWER_20_DBM) { // -> 20
+            *sx_power = 2;
+            *actual_power_dbm = 20;  // xr1 measures about 19 dBm here, further power shows little increase, PA max input is +5 dBm
+        } else if (power_dbm >= POWER_14_DBM) { // -> 14
+            *sx_power = -6;
+            *actual_power_dbm = 14;
+        } else if (power_dbm >= POWER_10_DBM) { // -> 10
+            *sx_power = -11;
+            *actual_power_dbm = 10;
+        } else {
+            *sx_power = -18;
+            *actual_power_dbm = 3;
+        }
+    } else {
+        if (power_dbm >= POWER_20_DBM) { // -> 20
+            *sx_power = 22;
+            *actual_power_dbm = 20;
+        } else if (power_dbm >= POWER_14_DBM) { // -> 14
+            *sx_power = 16;
+            *actual_power_dbm = 14;
+        } else if (power_dbm >= POWER_10_DBM) { // -> 10
+            *sx_power = 12;
+            *actual_power_dbm = 10;
+        } else {
+            *sx_power = 5;
+            *actual_power_dbm = 3;
+        }
+
+    }
+}
+
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_3_DBM, .mW = 2 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_20_DBM, .mW = 100 },
 };
-
-#endif // !POWER_OVERLAY

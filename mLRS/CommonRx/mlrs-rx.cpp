@@ -840,6 +840,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
             if (fhss.HopToNextBind()) {
+                bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
         }
