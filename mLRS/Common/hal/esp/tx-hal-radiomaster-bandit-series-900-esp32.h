@@ -30,10 +30,9 @@
 //#define DEVICE_HAS_NO_COM
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
-// Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY
 #else // Bandit Micro
-// Bandit Micro has one normal pin-driven LED
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
@@ -161,7 +160,6 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 // Big Bandit has RGB LEDs, Bandit Micro has a single LED
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
-    #define DEVICE_HAS_SINGLE_LED_RGB
     #define LED_RGB                   IO_P15
     #define PIXEL_NUM                 6
 #else
