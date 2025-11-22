@@ -109,7 +109,7 @@ void AtMode::Init(uint8_t _gpio_pin)
     // ?? esp_wifi_nan_stop();
 #endif
 
-    startup_tmo_ms = 750 + millis(); // stay in AT loop for at least 750 ms, 0 = startup timeout ended
+    startup_tmo_ms = 1250 + millis(); // stay in AT loop for at least 1250 ms, 0 = startup timeout ended
 }
 
 
