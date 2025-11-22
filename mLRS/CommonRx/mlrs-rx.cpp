@@ -51,6 +51,9 @@
 #include "../Common/hal/esp-timer.h"
 #include "../Common/hal/esp-powerup.h"
 #include "../Common/hal/esp-rxclock.h"
+#ifdef DEVICE_HAS_SINGLE_LED_RGB
+#include "../Common/esp-lib/esp-rgb-led.h"
+#endif
 
 #else
 
