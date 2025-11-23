@@ -92,12 +92,10 @@ void setup_configure_metadata(void)
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
-#elif defined DEVICE_HAS_LR11xx && defined DEVICE_IS_TRANSMITTER
+#elif defined DEVICE_HAS_LR11xx
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
     SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
-#elif defined DEVICE_HAS_LR11xx
-    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
 #else
     #error Unknown Mode !
 #endif
@@ -386,9 +384,9 @@ void setup_sanitize_config(uint8_t config_id)
     }
     TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default, SETUP_FREQUENCY_BAND_ENUM);
 
-#if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    // MULTIBAND
-    // we now know the band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
+#ifdef DEVICE_HAS_LR11xx
+    // MULTIBAND capable hardware, so adjust allowed modes for hardware capabilities
+    // we now know the frequency band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
     switch (Setup.Common[config_id].FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         SetupMetaData.Mode_allowed_mask &= 0b000111; // filter down to 50 Hz, 31 Hz, 19 Hz
