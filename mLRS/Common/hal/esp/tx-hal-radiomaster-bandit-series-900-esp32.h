@@ -161,7 +161,8 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 // Big Bandit has RGB LEDs, Bandit Micro has a single LED
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
     #define LED_RGB                   IO_P15
-    #define PIXEL_NUM                 6
+    #define LED_RGB_PIXEL_NUM         6
+    #include "../esp-hal-led-rgb.h"
 #else
 
 #define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality

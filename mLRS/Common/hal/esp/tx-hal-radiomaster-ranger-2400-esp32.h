@@ -165,7 +165,8 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 //-- LEDs
 
 #define LED_RGB                   IO_P15
-#define PIXEL_NUM                 6
+#define LED_RGB_PIXEL_NUM         6
+#include "../esp-hal-led-rgb.h"
 
 //-- Display I2C
 

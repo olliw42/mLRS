@@ -60,9 +60,6 @@
 #include "../Common/esp-lib/esp-i2c.h"
 #endif
 #include "../Common/hal/esp-timer.h"
-#ifdef DEVICE_HAS_SINGLE_LED_RGB
-#include "../Common/esp-lib/esp-rgb-led.h"
-#endif
 
 #else
 

@@ -119,10 +119,13 @@ class tLEDs
     void TickPassthrough_ms(void)
     {
         DECc(blink, SYSTICK_DELAY_MS(100));
-#if !defined DEVICE_HAS_SINGLE_LED && !defined DEVICE_HAS_SINGLE_LED_RGB
-        if (!blink) { led_green_toggle(); led_red_toggle(); }
-#else
+
+#ifdef DEVICE_HAS_SINGLE_LED
         if (!blink) { led_red_toggle(); }
+#elif defined DEVICE_HAS_SINGLE_LED_RGB
+        if (!blink) { led_purple_toggle(); }
+#else
+        if (!blink) { led_green_toggle(); led_red_toggle(); }
 #endif
     }
 

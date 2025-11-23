@@ -163,7 +163,8 @@ IRAM_ATTR bool button_pressed(void)
 //-- LEDs
 
 #define LED_RGB                   IO_P22
-#define PIXEL_NUM                 1
+#define LED_RGB_PIXEL_NUM         1
+#include "../esp-hal-led-rgb.h"
 
 
 //-- POWER
