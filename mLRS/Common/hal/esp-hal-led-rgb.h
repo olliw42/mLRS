@@ -19,7 +19,8 @@ uint8_t ledCurrentColorState;;
 
 NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(LED_RGB_PIXEL_NUM, LED_RGB);
 
-void leds_init(void) { 
+void leds_init(void) 
+{ 
     ledRGB.Begin();
     ledRGB.ClearTo(RgbColor(0));
     ledRGB.Show(); 
@@ -27,7 +28,8 @@ void leds_init(void) {
 }
 
 // Helper, ClearTo() overwrites the previous color, this function is mutually exclusive by design.
-IRAM_ATTR void set_led_color_and_state(uint8_t targetState, RgbColor color) {
+IRAM_ATTR void set_led_color_and_state(uint8_t targetState, RgbColor color) 
+{
     if (ledCurrentColorState == targetState) return;
     
     ledRGB.ClearTo(color);
