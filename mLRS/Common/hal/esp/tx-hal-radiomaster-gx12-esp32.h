@@ -23,7 +23,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, Radiomaster Tx Internal GX12 LR1121
+// ESP32, RadioMaster Tx Internal GX12 LR1121
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20GX12.json
 
@@ -190,22 +190,22 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {  
-        if (power_dbm >= POWER_30_DBM) { // -> 30
+        if (power_dbm >= POWER_30_DBM) {
             *sx_power = 2;
             *actual_power_dbm = 30;
-        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+        } else if (power_dbm >= POWER_27_DBM) {
             *sx_power = -2;
             *actual_power_dbm = 27;
-        } else if (power_dbm >= POWER_24_DBM) { // -> 24
+        } else if (power_dbm >= POWER_24_DBM) {
             *sx_power = -6;
             *actual_power_dbm = 24;
-        } else if (power_dbm >= POWER_20_DBM) { // -> 20
+        } else if (power_dbm >= POWER_20_DBM) {
             *sx_power = -10;
             *actual_power_dbm = 20;
-        } else if (power_dbm >= POWER_17_DBM) { // -> 17
+        } else if (power_dbm >= POWER_17_DBM) {
             *sx_power = -15;
             *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) { // -> 14
+        } else if (power_dbm >= POWER_14_DBM) {
             *sx_power = -18;
             *actual_power_dbm = 14;
         } else {
@@ -215,27 +215,27 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     } else {
         uint8_t dac = 120;
 
-        if (power_dbm >= POWER_30_DBM) { // -> 30
+        if (power_dbm >= POWER_30_DBM) {
             dac = 100;
             *sx_power = 7;
             *actual_power_dbm = 30;
-        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+        } else if (power_dbm >= POWER_27_DBM) {
             dac = 120;
             *sx_power = 0;
             *actual_power_dbm = 27;
-        } else if (power_dbm >= POWER_24_DBM) { // -> 24
+        } else if (power_dbm >= POWER_24_DBM) {
             dac = 120;
             *sx_power = -5;
             *actual_power_dbm = 24;
-        } else if (power_dbm >= POWER_20_DBM) { // -> 20
+        } else if (power_dbm >= POWER_20_DBM) {
             dac = 120;
             *sx_power = -9;
             *actual_power_dbm = 20;
-        } else if (power_dbm >= POWER_17_DBM) { // -> 17
+        } else if (power_dbm >= POWER_17_DBM) {
             dac = 120;
             *sx_power = -12;
             *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) { // -> 14
+        } else if (power_dbm >= POWER_14_DBM) {
             dac = 120;
             *sx_power = -15;
             *actual_power_dbm = 14;
