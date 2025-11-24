@@ -140,6 +140,6 @@
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
-#include "tx-hal-radiomaster-tx15-esp32.h"
+#include "tx-hal-radiomaster-int-tx15-esp32.h"
 #endif
 

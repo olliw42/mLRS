@@ -248,7 +248,7 @@
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
-  #define DEVICE_NAME "RM TX15"
+  #define DEVICE_NAME "RadioMaster Int TX15"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
   #define FREQUENCY_BAND_2P4_GHZ
