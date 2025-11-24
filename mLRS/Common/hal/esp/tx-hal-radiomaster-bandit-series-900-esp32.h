@@ -30,10 +30,9 @@
 //#define DEVICE_HAS_NO_COM
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
-// Bandit, "big" Bandit have RGB LEDs, so we use our usual red/green
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY
 #else // Bandit Micro
-// Bandit Micro has one normal pin-driven LED
 #define DEVICE_HAS_SINGLE_LED
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
@@ -159,91 +158,14 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 //-- LEDs
 
-#define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality
-
+// Big Bandit has RGB LEDs, Bandit Micro has a single LED
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
-// Bandit, "big" Bandit have RGB LEDs, so we use our normal red/green
-
-#include <NeoPixelBus.h>
-bool ledRedState;
-bool ledGreenState;
-bool ledBlueState;
-
-uint8_t pixelNum = 6;
-
-NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(pixelNum, LED_RED);
-
-void leds_init(void)
-{
-    ledRGB.Begin();
-    ledRGB.Show();
-}
-
-IRAM_ATTR void led_red_off(void)
-{
-    if (!ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledRedState = 0;
-}
-
-IRAM_ATTR void led_red_on(void)
-{
-    if (ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
-    ledRGB.Show();
-    ledRedState = 1;
-}
-
-IRAM_ATTR void led_red_toggle(void)
-{
-    if (ledRedState) { led_red_off(); } else { led_red_on(); }
-}
-
-IRAM_ATTR void led_green_off(void)
-{
-    if (!ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledGreenState = 0;
-}
-
-IRAM_ATTR void led_green_on(void)
-{
-    if (ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 255, 0));
-    ledRGB.Show();
-    ledGreenState = 1;
-}
-
-IRAM_ATTR void led_green_toggle(void)
-{
-    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
-}
-
-// blue not yet used and not correctly working with red
-IRAM_ATTR void led_blue_off(void)
-{
-    if (!ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledBlueState = 0;
-}
-
-IRAM_ATTR void led_blue_on(void)
-{
-    if (ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
-    ledRGB.Show();
-    ledBlueState = 1;
-}
-
-IRAM_ATTR void led_blue_toggle(void)
-{
-    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
-}
-
+    #define LED_RGB                   IO_P15
+    #define LED_RGB_PIXEL_NUM         6
+    #include "../esp-hal-led-rgb.h"
 #else
+
+#define LED_RED                   IO_P15 // pin for both Bandit and Bandit Micro, even though they have different functionality
 
 void leds_init(void)
 {
@@ -411,7 +333,6 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *actual_power_dbm = 10;
     }
 
-    dacWrite(IO_P26, dac);
     dacWrite(IO_P26, dac);
 }
 
