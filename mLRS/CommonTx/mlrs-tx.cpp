@@ -818,11 +818,13 @@ INITCONTROLLER_END
                 }
             }
 
-            bind.Tick_ms();
+            if (!connected()) {  // no bind or passthrough when connected
+                bind.Tick_ms();
+                esp.Tick_ms();
+            }
             disp.Tick_ms(); // can take long
             fan.SetPower(sx.RfPower_dbm());
             fan.Tick_ms();
-            esp.Tick_ms();
 
             if (!tick_1hz) {
                 dbg.puts(".");
