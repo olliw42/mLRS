@@ -516,6 +516,39 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
         Config.send_frame_tmo_ms = MODE_50HZ_SEND_FRAME_TMO_MS; // 10;
+        break;
+    case MODE_31HZ:
+        Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
+        Config.frame_rate_hz = 31;
+        Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
+        break;
+    case MODE_19HZ:
+    case MODE_19HZ_7X:
+        Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
+        Config.frame_rate_hz = 19;
+        Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
+        break;
+    case MODE_FLRC_111HZ:
+        Config.frame_rate_ms = 9; // 9 ms = 111 Hz
+        Config.frame_rate_hz = 111,
+        Config.send_frame_tmo_ms = MODE_FLRC_111HZ_SEND_FRAME_TMO_MS; // 7;
+        break;
+    case MODE_FSK_50HZ:
+        Config.frame_rate_ms = 20; // 20 ms = 50 Hz
+        Config.frame_rate_hz = 50;
+        Config.send_frame_tmo_ms = MODE_FSK_50HZ_SEND_FRAME_TMO_MS; // 10;
+        break;
+    default:
+        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
+    }
+
+    // helper for sx drivers
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ);
+    Config.Sx2.is_lora = Config.Sx.is_lora;
+
+    // Sx/Sx2 LoraConfigIndex
+    switch (Config.Mode) {
+    case MODE_50HZ:
 #ifdef DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
 #elif defined DEVICE_HAS_LR11xx
@@ -528,10 +561,8 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         break;
 
     case MODE_31HZ:
-        Config.frame_rate_ms = 32; // 32 ms = 31.25 Hz
-        Config.frame_rate_hz = 31;
-        Config.send_frame_tmo_ms = MODE_31HZ_SEND_FRAME_TMO_MS; // 15
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+        // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF5_CR4_5;
 #elif defined DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
@@ -548,11 +579,8 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
 #endif
         break;
 
-  case MODE_19HZ:
-  case MODE_19HZ_7X:
-        Config.frame_rate_ms = 53; // 53 ms = 18.9 Hz
-        Config.frame_rate_hz = 19;
-        Config.send_frame_tmo_ms = MODE_19HZ_SEND_FRAME_TMO_MS; // 25;
+    case MODE_19HZ:
+    case MODE_19HZ_7X:
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
         // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
         Config.Sx.LoraConfigIndex = SX126x_LORA_CONFIG_BW500_SF6_CR4_5;
@@ -574,29 +602,12 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         break;
 
     case MODE_FLRC_111HZ:
-        Config.frame_rate_ms = 9; // 9 ms = 111 Hz
-        Config.frame_rate_hz = 111,
-        Config.send_frame_tmo_ms = MODE_FLRC_111HZ_SEND_FRAME_TMO_MS; // 7;
-        Config.Sx.LoraConfigIndex = 0;
-        break;
-
     case MODE_FSK_50HZ:
-        Config.frame_rate_ms = 20; // 20 ms = 50 Hz
-        Config.frame_rate_hz = 50;
-        Config.send_frame_tmo_ms = MODE_FSK_50HZ_SEND_FRAME_TMO_MS; // 10;
         Config.Sx.LoraConfigIndex = 0;
         break;
-
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
     }
 
-    // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ);
-
-    // Sx2
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
-    Config.Sx2.is_lora = Config.Sx.is_lora;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
@@ -640,6 +651,7 @@ void setup_configure_config(uint8_t config_id)
     // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
 
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
     Config.Diversity = DIVERSITY_DEFAULT; // treat it like diversity
     Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
     Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
