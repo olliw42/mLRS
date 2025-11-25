@@ -139,3 +139,6 @@
 #include "tx-hal-radiomaster-nomad-esp32.h"
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_GX12_ESP32
+#include "tx-hal-radiomaster-int-gx12-esp32.h"
+#endif
