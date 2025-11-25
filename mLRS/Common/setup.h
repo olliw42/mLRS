@@ -29,11 +29,13 @@ void setup_configure_metadata(void)
     SetupMetaData = {};
 
     //-- FrequencyBand: "2.4,915 FCC,868,433,70,866 IN"
+    // also define the default setting for use below in setup_sanitize_config()
 //** dual band
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
   // DUALBAND 2.4 GHz & 868/915 MHz
   #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
   #else
     #error Unknown Frequencyband !
   #endif
@@ -41,61 +43,80 @@ void setup_configure_metadata(void)
   // DUALBAND 868/915 MHz & 433 MHz
   #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
   #else
     #error Unknown Frequencyband !
   #endif
 //** multi band
 #elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    // MULTIBAND
+    // MULTIBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.FrequencyBand_allowed_mask = 0b000111; // 2.4 GHz, 915 FCC, 868
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 //** single band, multiple frequencies
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b011110; // 915 FCC, 868, 433, 70
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_866_MHZ_IN
     SetupMetaData.FrequencyBand_allowed_mask = 0b100110; // 915 FCC, 868, 866 IN
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000110; // 915 FCC, 868
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 #elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b011000; // 433, 70
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_433_MHZ
 //** single band, single frequency
 #elif defined FREQUENCY_BAND_2P4_GHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000001; // 2.4 GHz, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_2P4_GHZ
 #elif defined FREQUENCY_BAND_915_MHZ_FCC
     SetupMetaData.FrequencyBand_allowed_mask = 0b000010; // 915 MHz FCC, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_915_MHZ_FCC
 #elif defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b000100; // 868 MHz, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 #elif defined FREQUENCY_BAND_433_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b001000; // 433 MHz, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_433_MHZ
 #elif defined FREQUENCY_BAND_70_CM_HAM
     SetupMetaData.FrequencyBand_allowed_mask = 0b010000; // 70 cm HAM, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_70_CM_HAM
 #elif defined FREQUENCY_BAND_866_MHZ_IN
     SetupMetaData.FrequencyBand_allowed_mask = 0b100000; // 866 MHz IN, not editable
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_866_MHZ_IN
 #else
     #error Unknown Frequencyband !
 #endif
 
     //-- Mode: "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x"
+    // also define the default setting for use below in setup_sanitize_config()
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK  Note: FSK implies 50 Hz for SX128x
+    #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz
     SetupMetaData.Mode_allowed_mask = 0b000110; // 31 Hz, 19 Hz
+    #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_SX128x
   #ifdef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b001111; // 50 Hz, 31 Hz, 19 Hz, FLRC
   #else
     SetupMetaData.Mode_allowed_mask = 0b000111; // 50 Hz, 31 Hz, 19 Hz
   #endif
+    #define MODE_DEFAULT  MODE_50HZ
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
+    #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
+    #define MODE_DEFAULT  MODE_19HZ_7X
 #elif defined DEVICE_HAS_LR11xx
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
     SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
+    #define MODE_DEFAULT  MODE_31HZ
 #else
     #error Unknown Mode !
 #endif
@@ -340,49 +361,10 @@ void setup_sanitize_config(uint8_t config_id)
     setup_default_bindphrase(bind_phrase, config_id, BIND_PHRASE);
     sanitize_bindphrase(Setup.Common[config_id].BindPhrase, bind_phrase);
 
-//** dual band
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-  // DUALBAND 2.4 GHz & 868/915 MHz
-  #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-  #endif
-#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
-  // DUALBAND 868/915 MHz & 433 MHz
-  #if defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_433_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-  #endif
-//** multi band
-#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    // MULTIBAND
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-//** single band, multiple frequencies
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
-      defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && defined FREQUENCY_BAND_866_MHZ_IN
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_433_MHZ;
-//** single band, single frequency
-#elif defined FREQUENCY_BAND_2P4_GHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_2P4_GHZ;
-#elif defined FREQUENCY_BAND_915_MHZ_FCC
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_915_MHZ_FCC;
-#elif defined FREQUENCY_BAND_868_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_868_MHZ;
-#elif defined FREQUENCY_BAND_433_MHZ
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_433_MHZ;
-#elif defined FREQUENCY_BAND_70_CM_HAM
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_70_CM_HAM;
-#elif defined FREQUENCY_BAND_866_MHZ_IN
-    uint8_t frequency_band_default = SETUP_FREQUENCY_BAND_866_MHZ_IN;
-#endif
     if (Setup.Common[config_id].FrequencyBand >= SETUP_FREQUENCY_BAND_NUM) {
-        Setup.Common[config_id].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)frequency_band_default;
+        Setup.Common[config_id].FrequencyBand = FREQUENCY_BAND_DEFAULT;
     }
-    TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, frequency_band_default, SETUP_FREQUENCY_BAND_ENUM);
+    TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, FREQUENCY_BAND_DEFAULT, SETUP_FREQUENCY_BAND_ENUM);
 
 #ifdef DEVICE_HAS_LR11xx
     // MULTIBAND capable hardware, so adjust allowed modes for hardware capabilities
@@ -400,20 +382,8 @@ void setup_sanitize_config(uint8_t config_id)
     }
 #endif
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
-    uint8_t mode_default = MODE_31HZ;
-#elif defined DEVICE_HAS_SX128x
-    uint8_t mode_default = MODE_50HZ;
-#elif defined DEVICE_HAS_SX126x
-    uint8_t mode_default = MODE_31HZ;
-#elif defined DEVICE_HAS_SX127x
-    uint8_t mode_default = MODE_19HZ_7X;
-#elif defined DEVICE_HAS_LR11xx
-    uint8_t mode_default = MODE_31HZ;
-#endif
-    SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, mode_default);
-    TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode, mode_default);
+    SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, MODE_DEFAULT);
+    TST_NOTALLOWED(Mode_allowed_mask, Common[config_id].Mode, MODE_DEFAULT);
 
     SANITIZE(Common[config_id].Ortho, ORTHO_NUM, SETUP_RF_ORTHO, ORTHO_NONE);
     // allowed Ortho depends on FrequencyBand, so we adjust here!
@@ -667,15 +637,12 @@ void setup_configure_config(uint8_t config_id)
     }
 
     //-- Diversity
+    // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
 
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
-    // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
     Config.Diversity = DIVERSITY_DEFAULT; // treat it like diversity
-    Config.ReceiveUseAntenna1 = true;
-    Config.ReceiveUseAntenna2 = true;
-    Config.TransmitUseAntenna1 = true;
-    Config.TransmitUseAntenna2 = true;
+    Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+    Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
 #elif defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
   #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].Diversity) {
@@ -684,48 +651,38 @@ void setup_configure_config(uint8_t config_id)
   #endif
     case DIVERSITY_DEFAULT:
         Config.Diversity = DIVERSITY_DEFAULT;
-        Config.ReceiveUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = true;
-        Config.TransmitUseAntenna1 = true;
-        Config.TransmitUseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
         break;
     case DIVERSITY_ANTENNA1:
         Config.Diversity = DIVERSITY_ANTENNA1;
-        Config.ReceiveUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = false;
-        Config.TransmitUseAntenna1 = true;
-        Config.TransmitUseAntenna2 = false;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
         break;
     case DIVERSITY_ANTENNA2:
         Config.Diversity = DIVERSITY_ANTENNA2;
-        Config.ReceiveUseAntenna1 = false;
-        Config.ReceiveUseAntenna2 = true;
-        Config.TransmitUseAntenna1 = false;
-        Config.TransmitUseAntenna2 = true;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = false;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
         break;
     case DIVERSITY_R_ENABLED_T_ANTENNA1:
         Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA1;
-        Config.ReceiveUseAntenna1 = true;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
         Config.ReceiveUseAntenna2 = true;
-        Config.TransmitUseAntenna1 = true;
         Config.TransmitUseAntenna2 = false;
         break;
     case DIVERSITY_R_ENABLED_T_ANTENNA2:
         Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA2;
         Config.ReceiveUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = true;
         Config.TransmitUseAntenna1 = false;
-        Config.TransmitUseAntenna2 = true;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
 #else
     Config.Diversity = DIVERSITY_ANTENNA1;
-    Config.ReceiveUseAntenna1 = true;
-    Config.ReceiveUseAntenna2 = false;
-    Config.TransmitUseAntenna1 = true;
-    Config.TransmitUseAntenna2 = false;
+    Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+    Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
 #endif
 
     //-- FrequencyBand
