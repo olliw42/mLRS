@@ -572,16 +572,7 @@ class tFhssBase
     // Rx: for bind
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
-        switch (curr_bind_config_i) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
-        }
-        while(1){} // should not happen, but play it safe
-        return (SETUP_FREQUENCY_BAND_ENUM)0;
+        return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
     }
 
     // Rx: for RADIO_LINK_STATS_MLRS

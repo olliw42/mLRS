@@ -759,15 +759,7 @@ void setup_configure_config(uint8_t config_id)
 #endif
     Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
-    switch (Config.FrequencyBand) {
-    case SETUP_FREQUENCY_BAND_2P4_GHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ; break;
-    case SETUP_FREQUENCY_BAND_915_MHZ_FCC: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC; break;
-    case SETUP_FREQUENCY_BAND_868_MHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ; break;
-    case SETUP_FREQUENCY_BAND_433_MHZ: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ; break;
-    case SETUP_FREQUENCY_BAND_70_CM_HAM: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM; break;
-    case SETUP_FREQUENCY_BAND_866_MHZ_IN: Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN; break;
-    }
-
+    Config.Sx.FrequencyBand = cvt_to_sx_fhss_frequency_band(Config.FrequencyBand); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
