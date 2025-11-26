@@ -32,6 +32,7 @@
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
@@ -142,16 +143,28 @@ void button_init(void) {}
 IRAM_ATTR bool button_pressed(void) { return false; }
 
 
+//-- LEDs
+
+#define LED_RGB                   IO_P22
+#define LED_RGB_PIXEL_NUM         1
+#include "../esp-hal-led-rgb.h"
+
+
 //-- Cooling Fan
 
 #define FAN_IO                    IO_P2
 
-void fan_init(void) { gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW); }
+void fan_init(void) { analogWriteFrequency(25000); }
 
 IRAM_ATTR void fan_set_power(int8_t power_dbm)
 {
-    if (power_dbm >= POWER_23_DBM) { gpio_high(FAN_IO); } 
-    else { gpio_low(FAN_IO); }
+    if (power_dbm >= POWER_27_DBM) {
+        analogWrite(FAN_IO, 255);
+    } else if (power_dbm >= POWER_23_DBM) {
+        analogWrite(FAN_IO, 127);
+    } else {
+        analogWrite(FAN_IO, 0);
+    }
 }
 
 
