@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-11-15.01'
+local version = '2025-11-20.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -25,7 +25,12 @@ local disableParamLoadErrorWarnings = false
 -- Screen
 ----------------------------------------------------------------------
 -- TX16, T16, etc.:    480 x 272
--- T15:                480 x 320   
+-- T15, TX15:          480 x 320
+
+local g_textColor
+local g_titleBgColor
+local g_menuTitleColor
+local g_textDisableColor
 
 local page_N1 = 9 -- number of options displayed in left column
 local page_N = 18 -- number of options displayed on page, should be just 2 * page_N1
@@ -46,7 +51,26 @@ local function setupScreen()
         page_N1 = 9
     end
     page_N = 2 * page_N1
-end    
+end
+
+local function setupColors()
+    local ver, radio, maj, minor, rev, osname = getVersion()
+
+    if maj == nil then maj = 0 end
+    if minor == nil then minor = 0 end
+
+    if (osname == 'EdgeTX') and (maj > 2 or (maj == 2 and minor >= 4)) then
+        g_textColor = COLOR_THEME_SECONDARY1
+        g_titleBgColor = COLOR_THEME_SECONDARY1
+        g_menuTitleColor = COLOR_THEME_PRIMARY2
+        g_textDisableColor = COLOR_THEME_DISABLED
+    else
+        g_textColor = TEXT_COLOR
+        g_titleBgColor = TITLE_BGCOLOR
+        g_menuTitleColor = MENU_TITLE_COLOR
+        g_textDisableColor = TEXT_DISABLE_COLOR
+    end
+end
 
 
 ----------------------------------------------------------------------
@@ -254,11 +278,11 @@ local function clearPopupIfBlocked()
 end
 
 local function drawPopup()
-    lcd.drawFilledRectangle(LCD_POPUP_X-2, LCD_POPUP_Y-2, LCD_POPUP_W+4, LCD_POPUP_H+4, TEXT_COLOR) --TITLE_BGCOLOR)
-    lcd.drawFilledRectangle(LCD_POPUP_X, LCD_POPUP_Y, LCD_POPUP_W, LCD_POPUP_H, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_POPUP_X-2, LCD_POPUP_Y-2, LCD_POPUP_W+4, LCD_POPUP_H+4, g_textColor) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_POPUP_X, LCD_POPUP_Y, LCD_POPUP_W, LCD_POPUP_H, g_titleBgColor) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
 
     local i = string.find(popup_text, "\n")
-    local attr = MENU_TITLE_COLOR+MIDSIZE+CENTER
+    local attr = g_menuTitleColor+MIDSIZE+CENTER
     if i == nil then
         lcd.drawText(LCD_W_HALF, 99, popup_text, attr)
     else
@@ -755,7 +779,7 @@ local bindphrase_chars = "abcdefghijklmnopqrstuvwxyz0123456789_#-."
 
 
 local function cur_attr(idx) -- used in menu
-    local attr = TEXT_COLOR
+    local attr = g_textColor
     if cursor_idx == idx then
         attr = attr + INVERS
         if edit then attr = attr + BLINK end
@@ -765,7 +789,7 @@ end
 
 
 local function cur_attr_x(idx, x_idx) -- for Bind Phrase character editing
-    local attr = TEXT_COLOR
+    local attr = g_textColor
     if DEVICE_PARAM_LIST_complete and cursor_idx == idx then
         if edit then
             if cursor_x_idx == x_idx then attr = attr + BLINK + INVERS end
@@ -886,12 +910,12 @@ local function drawPageEdit(page_str)
     local y = 35
     if page_str == "Tx" then
         if DEVICE_INFO ~= nil then
-            lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", TEXT_COLOR)
+            lcd.drawText(5, y, "Tx - "..tostring(DEVICE_INFO.tx_config_id)..":", g_textColor)
         else
-            lcd.drawText(5, y, "Tx - ?:", TEXT_COLOR)
+            lcd.drawText(5, y, "Tx - ?:", g_textColor)
         end
     else
-        lcd.drawText(5, y, page_str..":", TEXT_COLOR)
+        lcd.drawText(5, y, page_str..":", g_textColor)
     end
 
     y = 60
@@ -916,7 +940,7 @@ local function drawPageEdit(page_str)
             local xofs = 0
             if shifted_idx >= page_N1 then y = y - page_N1*dy; xofs = 230 end
 
-            lcd.drawText(10+xofs, y, name, TEXT_COLOR)
+            lcd.drawText(10+xofs, y, name, g_textColor)
             if p.typ < MBRIDGE_PARAM_TYPE_LIST then
                 lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))
             elseif p.typ == MBRIDGE_PARAM_TYPE_LIST then
@@ -935,20 +959,20 @@ local function drawPageEdit(page_str)
     local x_mid = LCD_W_HALF - 5
     if top_idx > 0 then
         local y_base = y0 - 4
-        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
-        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, TEXT_COLOR)
+        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, g_textColor)
+        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base-6, g_textColor)
     end
     if page_param_cnt > top_idx + page_N then
         local y_base = y0 + page_N1*dy + 4
-        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
-        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, TEXT_COLOR)
+        --lcd.drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, g_textColor)
+        drawFilledTriangle(x_mid-6, y_base, x_mid+6, y_base, x_mid, y_base+6, g_textColor)
     end
 end
 
 
 local function doPageEdit(event, page_str)
-    lcd.drawFilledRectangle(0, 0, LCD_W, 30, TITLE_BGCOLOR)
-    lcd.drawText(5, 5, "mLRS Configurator: Edit "..page_str, MENU_TITLE_COLOR)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 30, g_titleBgColor)
+    lcd.drawText(5, 5, "mLRS Configurator: Edit "..page_str, g_menuTitleColor)
 
     if event == EVT_VIRTUAL_EXIT and not edit then
         page_nr = PAGE_MAIN
@@ -1002,8 +1026,8 @@ end
 
 
 local function doPageTools(event)
-    lcd.drawFilledRectangle(0, 0, LCD_W, 30, TITLE_BGCOLOR)
-    lcd.drawText(5, 5, "mLRS Configurator: Tools Page", MENU_TITLE_COLOR)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 30, g_titleBgColor)
+    lcd.drawText(5, 5, "mLRS Configurator: Tools Page", g_menuTitleColor)
 
     drawPageTools()
 
@@ -1033,9 +1057,9 @@ end
 
 local function drawSetuplayoutWarning(txt)
     local y = LCD_INFO_Y
-    lcd.drawFilledRectangle(LCD_WARN_X-2, y, LCD_WARN_W+4, LCD_WARN_H+4, TEXT_COLOR) --TITLE_BGCOLOR)
-    lcd.drawFilledRectangle(LCD_WARN_X, y+2, LCD_WARN_W, LCD_WARN_H, TITLE_BGCOLOR) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
-    local attr = MENU_TITLE_COLOR+CENTER
+    lcd.drawFilledRectangle(LCD_WARN_X-2, y, LCD_WARN_W+4, LCD_WARN_H+4, g_textColor) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LCD_WARN_X, y+2, LCD_WARN_W, LCD_WARN_H, g_titleBgColor) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    local attr = g_menuTitleColor+CENTER
     local s = txt
     local i = string.find(s, "\n")
     local lines = 0
@@ -1054,27 +1078,27 @@ local function drawPageMain()
     lcd.setColor(CUSTOM_COLOR, RED)
 
     local y = 35
-    lcd.drawText(5, y, "Tx:", TEXT_COLOR)
+    lcd.drawText(5, y, "Tx:", g_textColor)
     if DEVICE_ITEM_TX == nil then
-        lcd.drawText(35, y, "---", TEXT_COLOR)
+        lcd.drawText(35, y, "---", g_textColor)
     else
-        lcd.drawText(35, y, DEVICE_ITEM_TX.name, TEXT_COLOR+SMLSIZE)
-        lcd.drawText(35, y+16, DEVICE_ITEM_TX.version_str, TEXT_COLOR+SMLSIZE)
+        lcd.drawText(35, y, DEVICE_ITEM_TX.name, g_textColor+SMLSIZE)
+        lcd.drawText(35, y+16, DEVICE_ITEM_TX.version_str, g_textColor+SMLSIZE)
         if DEVICE_INFO ~= nil then
-            lcd.drawText(35, y+32, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), TEXT_COLOR+SMLSIZE)
+            lcd.drawText(35, y+32, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), g_textColor+SMLSIZE)
         end
     end
 
-    lcd.drawText(240, y, "Rx:", TEXT_COLOR)
+    lcd.drawText(240, y, "Rx:", g_textColor)
     if not DEVICE_PARAM_LIST_complete then
         -- don't do anything
     elseif not connected then
-        lcd.drawText(270, y, "not connected", TEXT_COLOR)
+        lcd.drawText(270, y, "not connected", g_textColor)
     elseif DEVICE_ITEM_RX == nil then
-        lcd.drawText(270, y, "---", TEXT_COLOR)
+        lcd.drawText(270, y, "---", g_textColor)
     else
-        lcd.drawText(270, y, DEVICE_ITEM_RX.name, TEXT_COLOR+SMLSIZE)
-        lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, TEXT_COLOR+SMLSIZE)
+        lcd.drawText(270, y, DEVICE_ITEM_RX.name, g_textColor+SMLSIZE)
+        lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, g_textColor+SMLSIZE)
     end
 
     local version_error = false
@@ -1092,7 +1116,7 @@ local function drawPageMain()
     end
 
     y = 95 --90
-    lcd.drawText(10, y, "Bind Phrase", TEXT_COLOR)
+    lcd.drawText(10, y, "Bind Phrase", g_textColor)
     if DEVICE_PARAM_LIST_complete then
         local x = 140
         for i = 1,6 do
@@ -1102,12 +1126,12 @@ local function drawPageMain()
             --x = x + lcd.getTextWidth(c,1,attr)+1
             x = x + getCharWidth(c) + 1
             if i == 6 and DEVICE_PARAM_LIST[2].value == 0 then -- do only for 2.4GHz band
-                lcd.drawText(140 + 70, y, getExceptStrFromChar(c), TEXT_COLOR)
+                lcd.drawText(140 + 70, y, getExceptStrFromChar(c), g_textColor)
             end
         end
     end
 
-    lcd.drawText(10, y + 21, "Mode", TEXT_COLOR)
+    lcd.drawText(10, y + 21, "Mode", g_textColor)
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
@@ -1115,7 +1139,7 @@ local function drawPageMain()
         end
     end
 
-    lcd.drawText(10, y + 2*21, "RF Band", TEXT_COLOR)
+    lcd.drawText(10, y + 2*21, "RF Band", g_textColor)
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[2] -- param_idx = 2 = RfBand
         if p.options[p.value+1] ~= nil then
@@ -1129,7 +1153,7 @@ local function drawPageMain()
     end
 
     if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
-        lcd.drawText(270, y, "Ortho", TEXT_COLOR)
+        lcd.drawText(270, y, "Ortho", g_textColor)
         local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
         if p.options[p.value+1] ~= nil then
             lcd.drawText(330, y, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
@@ -1139,7 +1163,7 @@ local function drawPageMain()
     y = 171 --166
     lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))
     if not connected then
-        lcd.drawText(10 + 80, y, "Edit Rx", TEXT_DISABLE_COLOR)
+        lcd.drawText(10 + 80, y, "Edit Rx", g_textDisableColor)
     else
         lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(EditRx_idx))
     end
@@ -1155,27 +1179,27 @@ local function drawPageMain()
 
     --if not DEVICE_PARAM_LIST_complete then
     if DEVICE_DOWNLOAD_is_running then
-        lcd.drawText(130, y+20, "parameters loading ...", TEXT_COLOR+BLINK+INVERS)
+        lcd.drawText(130, y+20, "parameters loading ...", g_textColor+BLINK+INVERS)
         return
     end
 
-    lcd.drawText(10, y, "Tx Power", TEXT_COLOR)
-    lcd.drawText(10, y+20, "Tx Diversity", TEXT_COLOR)
+    lcd.drawText(10, y, "Tx Power", g_textColor)
+    lcd.drawText(10, y+20, "Tx Diversity", g_textColor)
     if DEVICE_INFO ~= nil then
-        lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", TEXT_COLOR)
+        lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
         if DEVICE_INFO.tx_diversity <= #diversity_list then
-            lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], TEXT_COLOR)
+            lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
         else
-            lcd.drawText(140, y+20, "?", TEXT_COLOR)
+            lcd.drawText(140, y+20, "?", g_textColor)
         end
     else
-        lcd.drawText(140, y, "---", TEXT_COLOR)
-        lcd.drawText(140, y+20, "---", TEXT_COLOR)
+        lcd.drawText(140, y, "---", g_textColor)
+        lcd.drawText(140, y+20, "---", g_textColor)
     end
 
-    local rx_attr = TEXT_COLOR
+    local rx_attr = g_textColor
     if not connected then
-        rx_attr = TEXT_DISABLE_COLOR
+        rx_attr = g_textDisableColor
     end
     lcd.drawText(10+240, y, "Rx Power", rx_attr)
     lcd.drawText(10+240, y+20, "Rx Diversity", rx_attr)
@@ -1192,11 +1216,11 @@ local function drawPageMain()
     end
 
     y = y + 2*20
-    lcd.drawText(10, y, "Sensitivity", TEXT_COLOR)
+    lcd.drawText(10, y, "Sensitivity", g_textColor)
     if DEVICE_INFO ~= nil then
-        lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", TEXT_COLOR)
+        lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
     else
-        lcd.drawText(140, y, "---", TEXT_COLOR)
+        lcd.drawText(140, y, "---", g_textColor)
     end
 
     -- setup layout warning
@@ -1212,9 +1236,9 @@ end
 
 
 local function doPageMain(event)
-    lcd.drawFilledRectangle(0, 0, LCD_W, 30, TITLE_BGCOLOR)
-    lcd.drawText(5, 5, "mLRS Configurator: Main Page", MENU_TITLE_COLOR)
-    lcd.drawText(LCD_W-1, 0, version, MENU_TITLE_COLOR+TINSIZE+RIGHT)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 30, g_titleBgColor)
+    lcd.drawText(5, 5, "mLRS Configurator: Main Page", g_menuTitleColor)
+    lcd.drawText(LCD_W-1, 0, version, g_menuTitleColor+TINSIZE+RIGHT)
 
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
@@ -1354,6 +1378,7 @@ local function scriptInit()
     isEdgeTx = (osname == 'EdgeTX')
 
     setupScreen()
+    setupColors()
     setupBridge()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this

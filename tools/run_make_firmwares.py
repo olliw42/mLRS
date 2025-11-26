@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 4.05.2025
+ version 25.11.2025
 ********************************************************
 '''
 import os
@@ -464,6 +464,7 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','channel_order.cpp'),
     os.path.join('Common','common_stats.cpp'),
     os.path.join('Common','common_types.cpp'),
+    os.path.join('Common','setup_types.cpp'),
     os.path.join('Common','diversity.cpp'),
     os.path.join('Common','fhss.cpp'),
     os.path.join('Common','link_types.cpp'),

@@ -91,12 +91,12 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR4_900_ESP32
-#include "rx-hal-radiomaster-xr4-900-esp32.h"
+#ifdef RX_ELRS_RADIOMASTER_XR4_ESP32
+#include "rx-hal-radiomaster-xr4-esp32.h"
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR1_900_ESP32C3
-#include "rx-hal-radiomaster-xr1-900-esp32c3.h"
+#ifdef RX_ELRS_RADIOMASTER_XR1_ESP32C3
+#include "rx-hal-radiomaster-xr1-esp32c3.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
