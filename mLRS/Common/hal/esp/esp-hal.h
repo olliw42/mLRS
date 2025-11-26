@@ -119,6 +119,10 @@
 #include "tx-hal-jumper-int-900-esp32.h"
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
+#include "tx-hal-radiomaster-int-tx15-esp32.h"
+#endif
+
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
 #include "tx-hal-betafpv-micro-1w-2400-esp32.h"
 #endif
@@ -137,9 +141,5 @@
 
 #ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
 #include "tx-hal-radiomaster-nomad-esp32.h"
-#endif
-
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
-#include "tx-hal-radiomaster-int-tx15-esp32.h"
 #endif
 
