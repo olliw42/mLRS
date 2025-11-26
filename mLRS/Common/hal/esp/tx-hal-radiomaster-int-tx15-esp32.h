@@ -114,12 +114,17 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 #define FAN_IO                    IO_P2
 
-void fan_init(void) { gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW); }
+void fan_init(void) { analogWriteFrequency(25000); }
 
 IRAM_ATTR void fan_set_power(int8_t power_dbm)
 {
-    if (power_dbm >= POWER_23_DBM) { gpio_high(FAN_IO); } 
-    else { gpio_low(FAN_IO); }
+    if (power_dbm >= POWER_27_DBM) {
+        analogWrite(FAN_IO, 255);
+    } else if (power_dbm >= POWER_23_DBM) {
+        analogWrite(FAN_IO, 127);
+    } else {
+        analogWrite(FAN_IO, 0);
+    }
 }
 
 
