@@ -28,9 +28,9 @@
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20TX15.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
@@ -101,6 +101,13 @@ void sx_dio_exti_isr_clearflag(void) {}
 
 void button_init(void) {}
 IRAM_ATTR bool button_pressed(void) { return false; }
+
+
+//-- LEDs
+
+#define LED_RGB                   IO_P22
+#define LED_RGB_PIXEL_NUM         1
+#include "../esp-hal-led-rgb.h"
 
 
 //-- Cooling Fan
