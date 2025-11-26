@@ -28,7 +28,6 @@
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20GX12.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_NO_COM
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
