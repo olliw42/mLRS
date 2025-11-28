@@ -180,6 +180,7 @@ IRAM_ATTR bool button_pressed(void)
 #define LED_RGB_PIXEL_NUM         1
 #include "../esp-hal-led-rgb.h"
 
+
 //-- POWER
 
 #define POWER_GAIN_DBM            18 // gain of a PA stage if present
@@ -193,3 +194,4 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_20_DBM, .mW = 100 },
 };
+

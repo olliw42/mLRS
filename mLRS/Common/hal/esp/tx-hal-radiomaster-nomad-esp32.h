@@ -6,19 +6,20 @@
 // hal
 //*******************************************************
 
-//-------------------------------------------------------
-// ESP32, Radiomaster Tx Nomad
-//-------------------------------------------------------
+/*
+  Flashing ESP32C3 Backpack:
+  - change ser dest to serial2
+  - change ser baudrate to 115200
+  - put Tx module into FLASH_ESP by holding button located under the 'T' in RadioMaster for 4 seconds
+  - Flash with esptool, example command:
+  - esptool.py --chip esp32c3 --port "/dev/cu.SLAB_USBtoUART" --baud 115200  --before no_reset --after hard_reset write_flash -e  -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 mlrs-wireless-bridge.ino.bootloader.bin 0x8000 mlrs-wireless-bridge.ino.partitions.bin 0xe000 boot_app0.bin 0x10000 mlrs-wireless-bridge.ino.bin
+  - Power cycle the Tx module after flashing
+*/
 
+//-------------------------------------------------------
+// ESP32, Radiomaster Tx Nomad, LR1121 2400 & 900
+//-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Nomad.json
-
-//  Flashing ESP32C3 Backpack:
-//  - change ser dest to serial2
-//  - change ser baudrate to 115200
-//  - put Tx module into FLASH_ESP by holding button located under the 'T' in RadioMaster for 4 seconds
-//  - Flash with esptool, example command:
-//  - esptool.py --chip esp32c3 --port "/dev/cu.SLAB_USBtoUART" --baud 115200  --before no_reset --after hard_reset write_flash -e  -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 mlrs-wireless-bridge.ino.bootloader.bin 0x8000 mlrs-wireless-bridge.ino.partitions.bin 0xe000 boot_app0.bin 0x10000 mlrs-wireless-bridge.ino.bin
-//  - Power cycle the Tx module after flashing
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN
@@ -276,7 +277,6 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         }
     } else {
         uint8_t dac = 120;
-
         if (power_dbm >= POWER_30_DBM) { // -> 30
             dac = 95;
             *sx_power = 5;
@@ -306,11 +306,9 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = -17;
             *actual_power_dbm = 10; // measures about 11 dBm
         }
-
         dacWrite(IO_P26, dac);
     }
 }
-
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 

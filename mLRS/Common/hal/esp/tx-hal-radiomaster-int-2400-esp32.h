@@ -24,7 +24,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, Radiomaster Tx Internal ELRS 2.4GHz, good for TX16S, TX12, MT12, Zorro, Pocket
+// ESP32, Radiomaster Tx, Internal SX1280 2400, good for TX16S, TX12, MT12, Zorro, Pocket
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20TX16S%202400.json
 
@@ -156,7 +156,6 @@ uint8_t esp_boot0()
     return gpio_read_activelow(ESP_BOOT0);
 }
 
-
 void esp_init(void)
 {
     // No need to configure ESP_BOOT0 which will always be IO_P0 and is pull-up by default
@@ -169,7 +168,8 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
-#endif
+
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
 //-- POWER

@@ -17,7 +17,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, ELRS RADIOMASTER BANDIT MICRO 900 TX
+// ESP32, Radiomaster Bandit Tx, Bandit Micro TX, SX1276 900
 //-------------------------------------------------------
 // Bandit, "big" Bandit: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit.json
 // Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
@@ -176,7 +176,7 @@ IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
 IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
 IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
-#endif  // TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#endif // TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
 
 
 //-- Display I2C
@@ -270,10 +270,9 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P32 // backpack_boot, seems to be inverted
-//#define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
-//#define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
@@ -286,8 +285,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-//IRAM_ATTR uint8_t esp_dtr_rts(void) { return 0; }
-#endif
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 
 
 //-- POWER
@@ -308,9 +306,7 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
     //                              dac = 100, sx_power = 15 => 29.9 dBm
     //                              dac = 0,   sx_power = 15 => 30.0 dBm
     //                              dac = 180, sx_power = 0  => 10.1 dBm
-
     uint8_t dac = 100;
-
     if (power_dbm > 28) { // -> 30
         dac = 0;
         *sx_power = 15; // equals SX1276_OUTPUT_POWER_MAX
@@ -332,7 +328,6 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *sx_power = 0;
         *actual_power_dbm = 10;
     }
-
     dacWrite(IO_P26, dac);
 }
 

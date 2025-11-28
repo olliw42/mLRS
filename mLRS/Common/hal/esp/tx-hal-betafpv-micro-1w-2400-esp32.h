@@ -20,7 +20,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, ELRS BETAFPV MICRO 1W 2400 TX
+// ESP32, BetaFpv Micro 1W TX, SX1280 2400
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/BETAFPV%202400%20Micro%201W.json
 
@@ -147,6 +147,7 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 #define LED_RGB                   IO_P16
 #define LED_RGB_PIXEL_NUM         1
 #include "../esp-hal-led-rgb.h"
+
 
 //-- Display I2C
 

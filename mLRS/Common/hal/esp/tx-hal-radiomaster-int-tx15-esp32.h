@@ -23,7 +23,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, Radiomaster Tx Internal TX15 LR1121
+// ESP32, Radiomaster Tx TX15, Internal LR1121 2400 & 900
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20TX15.json
 
@@ -187,7 +187,6 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         }
     } else {
         uint8_t dac = 120;
-
         if (power_dbm >= POWER_30_DBM) { // -> 30
             dac = 95;
             *sx_power = 10;
@@ -217,20 +216,16 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = -14;
             *actual_power_dbm = 10;
         }
-
         dacWrite(IO_P26, dac);  // power_apc_2
     }
 }
 
-
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
-// 6 power levels allowed
-
-const rfpower_t rfpower_list[] = {
+const rfpower_t rfpower_list[] = { // 6 power levels maximum allowed
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
-    { .dbm = POWER_17_DBM, .mW = 50 }, // 6 power levels allowed
+    { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     //{ .dbm = POWER_27_DBM, .mW = 500 },
