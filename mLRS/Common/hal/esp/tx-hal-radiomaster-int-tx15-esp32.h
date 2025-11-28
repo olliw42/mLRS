@@ -207,6 +207,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = -10;
             *actual_power_dbm = 14;
         } else {
+            dac = 140;
             *sx_power = -14;
             *actual_power_dbm = 10;
         }

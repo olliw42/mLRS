@@ -297,6 +297,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = -16;
             *actual_power_dbm = 14;
         } else {
+            dac = 150;
             *sx_power = -17;
             *actual_power_dbm = 10; // measures about 11 dBm
         }
