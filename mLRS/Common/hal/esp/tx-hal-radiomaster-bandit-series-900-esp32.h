@@ -290,6 +290,8 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 //-- POWER
 
+#define SX_PA_DAC_IO      IO_P26
+
 void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     // jr bay: 
@@ -328,7 +330,7 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *sx_power = 0;
         *actual_power_dbm = 10;
     }
-    dacWrite(IO_P26, dac);
+    dacWrite(SX_PA_DAC_IO, dac);
 }
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array

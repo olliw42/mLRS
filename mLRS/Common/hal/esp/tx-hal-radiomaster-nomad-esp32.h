@@ -248,7 +248,7 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 #define SX_USE_LP_PA  // Nomad uses the low power amplifier for the 900 side
-
+#define SX_PA_DAC_IO  IO_P26
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
@@ -282,42 +282,36 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = 5;
             *actual_power_dbm = 30;
         } else if (power_dbm >= POWER_27_DBM) { // -> 27
-            dac = 120;
             *sx_power = -3;
             *actual_power_dbm = 27;
         } else if (power_dbm >= POWER_24_DBM) { // -> 24
-            dac = 120;
             *sx_power = -7;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
-            dac = 120;
             *sx_power = -11;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) { // -> 17
-            dac = 120;
             *sx_power = -14;
             *actual_power_dbm = 17;
         } else if (power_dbm >= POWER_14_DBM) { // -> 14
-            dac = 120;
             *sx_power = -16;
             *actual_power_dbm = 14;
         } else {
-            dac = 150;
             *sx_power = -17;
             *actual_power_dbm = 10; // measures about 11 dBm
         }
-        dacWrite(IO_P26, dac);
+        dacWrite(SX_PA_DAC_IO, dac);
     }
 }
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
-const rfpower_t rfpower_list[] = {
-    //{ .dbm = POWER_10_DBM, .mW = 10 },
+const rfpower_t rfpower_list[] = { // 6 power levels maximum allowed
+    { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
-    { .dbm = POWER_17_DBM, .mW = 50 }, // 6 power levels allowed
+    { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
+    // { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
 };

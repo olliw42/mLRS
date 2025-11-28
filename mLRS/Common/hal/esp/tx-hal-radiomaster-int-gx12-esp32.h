@@ -194,8 +194,8 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 #define SX_USE_LP_PA  // GX12 uses the low power amplifier for the 900 side, radio_rfo_hf option
-#define SX_USE_RFSW_CTRL {31, 0, 20, 24, 24, 2, 0, 1} // radio_rfsw_ctrl array
-
+#define SX_USE_RFSW_CTRL  {31, 0, 20, 24, 24, 2, 0, 1} // radio_rfsw_ctrl array
+#define SX_PA_DAC_IO      IO_P26
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
@@ -229,31 +229,25 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
             *sx_power = 7;
             *actual_power_dbm = 30;
         } else if (power_dbm >= POWER_27_DBM) {
-            dac = 120;
             *sx_power = 0;
             *actual_power_dbm = 27;
         } else if (power_dbm >= POWER_24_DBM) {
-            dac = 120;
             *sx_power = -5;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) {
-            dac = 120;
             *sx_power = -9;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) {
-            dac = 120;
             *sx_power = -12;
             *actual_power_dbm = 17;
         } else if (power_dbm >= POWER_14_DBM) {
-            dac = 120;
             *sx_power = -15;
             *actual_power_dbm = 14;
         } else {
-            dac = 120;
             *sx_power = -17;
             *actual_power_dbm = 10;
         }
-        dacWrite(IO_P26, dac);  // power_apc_2
+        dacWrite(SX_PA_DAC_IO, dac);  // power_apc_2
     }
 }
 
