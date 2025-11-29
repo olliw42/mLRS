@@ -91,8 +91,8 @@ void sx_dio_exti_isr_clearflag(void) {}
 #define SX2_BUSY                  IO_P18
 #define SX2_DIO1                  IO_P14
 #define SX2_RESET                 IO_P13
-#define SX2_RX_EN                 IO_P9
 #define SX2_TX_EN                 IO_P8
+#define SX2_RX_EN                 IO_P9
 
 #define SX2_USE_REGULATOR_MODE_DCDC
 
@@ -154,8 +154,8 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 //-- POWER
 #ifndef POWER_OVERLAY
 
-#define POWER_GAIN_DBM            24 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER_GAIN_DBM            22 // gain of a PA stage if present
+#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
