@@ -43,7 +43,7 @@ It provides these operation modes:
 |  | 50 Hz | 31 Hz | 19 Hz | 19 Hz 7x | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- | --- |
 | frequency<br>bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 915/868 MHz | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
-| chip sets | SX128x | SX128x<br>SX126x/LLCC68 | SX128x<br>SX126x/LLCC68 | SX1276 | SX128x | SX126x/LLCC68 |
+| chip sets | SX128x<br>LR1121 | SX128x<br>SX126x/LLCC68<br>LR1121 | SX128x<br>SX126x/LLCC68<br>LR1121 | SX1276<br>LR1121 | SX128x | SX126x/LLCC68<br>LR1121 |
 | downlink<br>serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | -112 dBm | not for LR | not for LR |
@@ -66,7 +66,7 @@ Further features:
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
-- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68.
+- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121.
 
 ## Community ##
 

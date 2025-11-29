@@ -137,6 +137,26 @@ GPIO15 = RTC_GPIO13
     #define WIRELESS_PROTOCOL 1 // make UDP the default
 
 
+//-- ELRS Tx Module ESP32C3 backpack
+#elif defined MODULE_ESP32C3_ELRS_TX // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
+    #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
+        #error Select board ESP32C3 Dev Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #define USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 20 // = RX1
+    #define SERIAL_TXD 21 // = TX1
+
+    #undef LED_IO
+    #undef GPIO0_IO
+    #define GPIO0_IO  9
+    #undef WIRELESS_PROTOCOL
+    #define WIRELESS_PROTOCOL 1 // make UDP the default
+
+
 //-- MatekSys TxM-TD30 mLRS Tx module
 #elif defined MODULE_MATEK_TXM_TD30
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO

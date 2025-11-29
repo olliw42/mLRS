@@ -73,6 +73,8 @@ void esp_enable(uint8_t serial_destination)
 
 
 #define ESP_PASSTHROUGH_TMO_MS  4000 // esptool uses 3 secs, so be a bit more generous
+#define ESP_BUTTON_DEBOUNCE_MS  50
+#define ESP_BUTTON_TMO_MS       4000
 
 
 #ifndef USE_ESP_WIFI_BRIDGE
@@ -81,6 +83,7 @@ class tTxEspWifiBridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
+    void Tick_ms(void) {}
     void Do(void) {}
 
     void EnterFlash(void) {}
@@ -106,6 +109,7 @@ class tTxEspWifiBridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
+    void Tick_ms(void);
     void Do(void);
 
     void EnterFlash(void);
@@ -139,6 +143,10 @@ class tTxEspWifiBridge
     uint8_t boot0_last;
 
     uint32_t version;
+
+    bool is_pressed;
+    int8_t pressed_cnt;
+    uint32_t button_tlast_ms;
 };
 
 
@@ -180,8 +188,35 @@ void tTxEspWifiBridge::Init(
 }
 
 
+void tTxEspWifiBridge::Tick_ms(void)
+{
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
+    if (!is_pressed) {
+        if (button2_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
+        if (pressed_cnt >= ESP_BUTTON_DEBOUNCE_MS) is_pressed = true;
+    } else {
+        if (!button2_pressed()) { pressed_cnt--; } else { pressed_cnt = ESP_BUTTON_DEBOUNCE_MS; }
+        if (pressed_cnt <= 0) is_pressed = false;
+    }
+#endif
+}
+
+
 void tTxEspWifiBridge::Do(void)
 {
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
+
+    uint32_t tnow = millis32();
+
+    if (is_pressed) {
+        if (tnow - button_tlast_ms > ESP_BUTTON_TMO_MS) {
+            EnterFlash();
+        }
+    } else {
+        button_tlast_ms = tnow;
+    }
+
+#endif
 #if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (defined USE_ESP_WIFI_BRIDGE_DTR_RTS || defined USE_ESP_WIFI_BRIDGE_BOOT0)
     if (!passthrough) return;
 

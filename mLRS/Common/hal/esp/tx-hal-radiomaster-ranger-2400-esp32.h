@@ -17,7 +17,7 @@
 */
 
 //-------------------------------------------------------
-// ESP32, ELRS RADIOMASTER RANGER TX
+// ESP32, Radiomaster Tx Ranger, SX1280 2400
 //-------------------------------------------------------
 // Ranger, "big" Ranger: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Ranger.json
 // This could probably be expanded to also support Ranger Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Ranger%20Micro.json
@@ -28,9 +28,8 @@
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
-
 #define DEVICE_HAS_I2C_DISPLAY
-
+#define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
@@ -163,88 +162,9 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 //-- LEDs
 
-#define LED_RED                   IO_P15 // pin for both Ranger and Ranger Micro, even though they have different functionality
-
-// Ranger, "big" Ranger have RGB LEDs, so we use our normal red/green
-
-#include <NeoPixelBus.h>
-bool ledRedState;
-bool ledGreenState;
-bool ledBlueState;
-
-uint8_t pixelNum = 6;
-
-NeoPixelBus<NeoGrbFeature, NeoEsp32I2s0Ws2812xMethod> ledRGB(pixelNum, LED_RED);
-
-void leds_init(void)
-{
-    ledRGB.Begin();
-    ledRGB.Show();
-}
-
-IRAM_ATTR void led_red_off(void)
-{
-    if (!ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledRedState = 0;
-}
-
-IRAM_ATTR void led_red_on(void)
-{
-    if (ledRedState) return;
-    ledRGB.SetPixelColor(0, RgbColor(255, 0, 0));
-    ledRGB.Show();
-    ledRedState = 1;
-}
-
-IRAM_ATTR void led_red_toggle(void)
-{
-    if (ledRedState) { led_red_off(); } else { led_red_on(); }
-}
-
-IRAM_ATTR void led_green_off(void)
-{
-    if (!ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledGreenState = 0;
-}
-
-IRAM_ATTR void led_green_on(void)
-{
-    if (ledGreenState) return;
-    ledRGB.SetPixelColor(1, RgbColor(0, 255, 0));
-    ledRGB.Show();
-    ledGreenState = 1;
-}
-
-IRAM_ATTR void led_green_toggle(void)
-{
-    if (ledGreenState) { led_green_off(); } else { led_green_on(); }
-}
-
-IRAM_ATTR void led_blue_off(void)
-{
-    if (!ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 0));
-    ledRGB.Show();
-    ledBlueState = 0;
-}
-
-IRAM_ATTR void led_blue_on(void)
-{
-    if (ledBlueState) return;
-    ledRGB.SetPixelColor(0, RgbColor(0, 0, 255));
-    ledRGB.Show();
-    ledBlueState = 1;
-}
-
-IRAM_ATTR void led_blue_toggle(void)
-{
-    if (ledBlueState) { led_blue_off(); } else { led_blue_on(); }
-}
-
+#define LED_RGB                   IO_P15
+#define LED_RGB_PIXEL_NUM         6
+#include "../esp-hal-led-rgb.h"
 
 //-- Display I2C
 
@@ -340,10 +260,9 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P26 // backpack_boot, seems to be inverted
-//#define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
-//#define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
@@ -356,8 +275,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-//IRAM_ATTR uint8_t esp_dtr_rts(void) { return 0; }
-#endif
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 
 
 //-- POWER
