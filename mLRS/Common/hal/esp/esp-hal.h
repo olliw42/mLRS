@@ -99,6 +99,10 @@
 #include "rx-hal-radiomaster-xr1-esp32c3.h"
 #endif
 
+#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
+#include "rx-flysky-pr02-2400-td-esp32s3.h"
+#endif
+
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
 #include "tx-hal-radiomaster-rp4td-2400-esp32.h"
 #endif
@@ -143,12 +147,6 @@
 #include "tx-hal-radiomaster-ranger-2400-esp32.h"
 #endif
 
-
-// -- DIY
-
-#ifdef RX_DIY_DEV_2400_TD_ESP32S3
-#include "rx-hal-diy-dev-2400-td-esp32s3.h"
-#endif
 #ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
 #include "tx-hal-radiomaster-nomad-esp32.h"
 #endif

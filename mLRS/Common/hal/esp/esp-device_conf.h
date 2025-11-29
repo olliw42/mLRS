@@ -170,6 +170,13 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
+  #define DEVICE_NAME "FlySky PR02 2400"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 //-- ELRS Tx Modules (external)
 
@@ -237,15 +244,6 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-
-// -- DIY
-
-#ifdef RX_DIY_DEV_2400_TD_ESP32S3
-  #define DEVICE_NAME "DIY DEV 2400 ESP32S3"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_2400_ESP32
   #define DEVICE_NAME "RM Int 2.4G"
   #define DEVICE_IS_TRANSMITTER
