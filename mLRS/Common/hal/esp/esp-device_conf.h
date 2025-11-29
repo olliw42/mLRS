@@ -237,7 +237,6 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-<<<<<<< HEAD
 
 // -- DIY
 
@@ -247,7 +246,6 @@
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
-=======
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_2400_ESP32
   #define DEVICE_NAME "RM Int 2.4G"
   #define DEVICE_IS_TRANSMITTER
@@ -279,4 +277,3 @@
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
->>>>>>> origin/main

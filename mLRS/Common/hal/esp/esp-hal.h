@@ -143,16 +143,13 @@
 #include "tx-hal-radiomaster-ranger-2400-esp32.h"
 #endif
 
-<<<<<<< HEAD
 
 // -- DIY
 
 #ifdef RX_DIY_DEV_2400_TD_ESP32S3
 #include "rx-hal-diy-dev-2400-td-esp32s3.h"
 #endif
-=======
 #ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
 #include "tx-hal-radiomaster-nomad-esp32.h"
 #endif
 
->>>>>>> origin/main
