@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-11-20.01'
+local version = '2025-12-01.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -26,6 +26,7 @@ local disableParamLoadErrorWarnings = false
 ----------------------------------------------------------------------
 -- TX16, T16, etc.:    480 x 272
 -- T15, TX15:          480 x 320
+-- PA01:               320 x 240
 
 local g_textColor
 local g_titleBgColor
@@ -1187,9 +1188,9 @@ local function drawPageMain()
             lcd.drawText(10 + 50, y, "Rx", cur_attr(EditRx_idx))
         end
         lcd.drawText(10 + 100, y, "Save", cur_attr(Save_idx))
-        lcd.drawText(10 + 150, y, "Ld", cur_attr(Reload_idx))
-        lcd.drawText(10 + 190, y, "Bnd", cur_attr(Bind_idx))
-        lcd.drawText(10 + 240, y, "Tool", cur_attr(Tools_idx))
+        lcd.drawText(10 + 150, y, "Load", cur_attr(Reload_idx))
+        lcd.drawText(10 + 200, y, "Bind", cur_attr(Bind_idx))
+        lcd.drawText(10 + 250, y, "Tools", cur_attr(Tools_idx))
     else
         lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))
         if not connected then
