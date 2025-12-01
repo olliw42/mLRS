@@ -45,12 +45,21 @@ local LCD_WARN_W = 420
 local LCD_WARN_H = 50
 
 local function setupScreen()
-    if LCD_H == 320 then -- T15
+    if LCD_W == 320 then -- 320x240
+        page_N1 = 7
+        page_N = 7 -- single column
+        LCD_POPUP_X = 10
+        LCD_POPUP_W = 300
+        LCD_WARN_X = 10
+        LCD_WARN_W = 300
+        LCD_INFO_Y = 180
+    elseif LCD_H == 320 then -- T15
         page_N1 = 11
+        page_N = 2 * page_N1
     else
         page_N1 = 9
+        page_N = 2 * page_N1
     end
-    page_N = 2 * page_N1
 end
 
 local function setupColors()
@@ -1089,16 +1098,16 @@ local function drawPageMain()
         end
     end
 
-    lcd.drawText(240, y, "Rx:", g_textColor)
+    lcd.drawText(LCD_W_HALF, y, "Rx:", g_textColor)
     if not DEVICE_PARAM_LIST_complete then
         -- don't do anything
     elseif not connected then
-        lcd.drawText(270, y, "not connected", g_textColor)
+        lcd.drawText(LCD_W_HALF+30, y, "not connected", g_textColor)
     elseif DEVICE_ITEM_RX == nil then
-        lcd.drawText(270, y, "---", g_textColor)
+        lcd.drawText(LCD_W_HALF+30, y, "---", g_textColor)
     else
-        lcd.drawText(270, y, DEVICE_ITEM_RX.name, g_textColor+SMLSIZE)
-        lcd.drawText(270, y+16, DEVICE_ITEM_RX.version_str, g_textColor+SMLSIZE)
+        lcd.drawText(LCD_W_HALF+30, y, DEVICE_ITEM_RX.name, g_textColor+SMLSIZE)
+        lcd.drawText(LCD_W_HALF+30, y+16, DEVICE_ITEM_RX.version_str, g_textColor+SMLSIZE)
     end
 
     local version_error = false
@@ -1153,24 +1162,46 @@ local function drawPageMain()
     end
 
     if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
-        lcd.drawText(270, y, "Ortho", g_textColor)
-        local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
-        if p.options[p.value+1] ~= nil then
-            lcd.drawText(330, y, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
+        if LCD_W == 320 then
+             lcd.drawText(LCD_W_HALF+30, y + 42, "Ortho", g_textColor)
+             local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
+             if p.options[p.value+1] ~= nil then
+                 lcd.drawText(LCD_W_HALF+90, y + 42, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
+             end
+        else
+            lcd.drawText(LCD_W_HALF+30, y, "Ortho", g_textColor)
+            local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
+            if p.options[p.value+1] ~= nil then
+                lcd.drawText(LCD_W_HALF+90, y, p.options[p.value+1], cur_attr_p(RFOrtho_idx,3))
+            end
         end
     end
 
     y = 171 --166
-    lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))
-    if not connected then
-        lcd.drawText(10 + 80, y, "Edit Rx", g_textDisableColor)
+    if LCD_W == 320 then
+        y = 158
+        lcd.drawText(10, y, "Tx", cur_attr(EditTx_idx))
+        if not connected then
+            lcd.drawText(10 + 50, y, "Rx", g_textDisableColor)
+        else
+            lcd.drawText(10 + 50, y, "Rx", cur_attr(EditRx_idx))
+        end
+        lcd.drawText(10 + 100, y, "Save", cur_attr(Save_idx))
+        lcd.drawText(10 + 150, y, "Ld", cur_attr(Reload_idx))
+        lcd.drawText(10 + 190, y, "Bnd", cur_attr(Bind_idx))
+        lcd.drawText(10 + 240, y, "Tool", cur_attr(Tools_idx))
     else
-        lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(EditRx_idx))
+        lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))
+        if not connected then
+            lcd.drawText(10 + 80, y, "Edit Rx", g_textDisableColor)
+        else
+            lcd.drawText(10 + 80, y, "Edit Rx", cur_attr(EditRx_idx))
+        end
+        lcd.drawText(10 + 160, y, "Save", cur_attr(Save_idx))
+        lcd.drawText(10 + 225, y, "Reload", cur_attr(Reload_idx))
+        lcd.drawText(10 + 305, y, "Bind", cur_attr(Bind_idx))
+        lcd.drawText(10 + 365, y, "Tools", cur_attr(Tools_idx))
     end
-    lcd.drawText(10 + 160, y, "Save", cur_attr(Save_idx))
-    lcd.drawText(10 + 225, y, "Reload", cur_attr(Reload_idx))
-    lcd.drawText(10 + 305, y, "Bind", cur_attr(Bind_idx))
-    lcd.drawText(10 + 365, y, "Tools", cur_attr(Tools_idx))
 
     -- show overview of some selected parameters
     y = LCD_INFO_Y --210 --05
@@ -1183,44 +1214,86 @@ local function drawPageMain()
         return
     end
 
-    lcd.drawText(10, y, "Tx Power", g_textColor)
-    lcd.drawText(10, y+20, "Tx Diversity", g_textColor)
-    if DEVICE_INFO ~= nil then
-        lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
-        if DEVICE_INFO.tx_diversity <= #diversity_list then
-            lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
+    if LCD_W == 320 then
+        lcd.drawText(10, y, "Tx Power", g_textColor)
+        lcd.drawText(10, y+15, "Tx Diversity", g_textColor)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(90, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
+            if DEVICE_INFO.tx_diversity <= #diversity_list then
+                lcd.drawText(90, y+15, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
+            else
+                lcd.drawText(90, y+15, "?", g_textColor)
+            end
         else
-            lcd.drawText(140, y+20, "?", g_textColor)
+            lcd.drawText(90, y, "---", g_textColor)
+            lcd.drawText(90, y+15, "---", g_textColor)
+        end
+
+        local rx_attr = g_textColor
+        if not connected then
+            rx_attr = g_textDisableColor
+        end
+        lcd.drawText(165, y, "Rx Power", rx_attr)
+        lcd.drawText(165, y+15, "Rx Diversity", rx_attr)
+        if DEVICE_INFO ~= nil and connected then
+            lcd.drawText(245, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
+            if DEVICE_INFO.rx_diversity <= #diversity_list then
+                lcd.drawText(245, y+15, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
+            else
+                lcd.drawText(245, y+15, "?", rx_attr)
+            end
+        else
+            lcd.drawText(245, y, "---", rx_attr)
+            lcd.drawText(245, y+15, "---", rx_attr)
+        end
+        
+        y = y + 30
+        lcd.drawText(10, y, "Sensitivity", g_textColor)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(90, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
+        else
+            lcd.drawText(90, y, "---", g_textColor)
         end
     else
-        lcd.drawText(140, y, "---", g_textColor)
-        lcd.drawText(140, y+20, "---", g_textColor)
-    end
-
-    local rx_attr = g_textColor
-    if not connected then
-        rx_attr = g_textDisableColor
-    end
-    lcd.drawText(10+240, y, "Rx Power", rx_attr)
-    lcd.drawText(10+240, y+20, "Rx Diversity", rx_attr)
-    if DEVICE_INFO ~= nil and connected then
-        lcd.drawText(140+240, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
-        if DEVICE_INFO.rx_diversity <= #diversity_list then
-            lcd.drawText(140+240, y+20, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
+        lcd.drawText(10, y, "Tx Power", g_textColor)
+        lcd.drawText(10, y+20, "Tx Diversity", g_textColor)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(140, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
+            if DEVICE_INFO.tx_diversity <= #diversity_list then
+                lcd.drawText(140, y+20, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
+            else
+                lcd.drawText(140, y+20, "?", g_textColor)
+            end
         else
-            lcd.drawText(140+240, y+20, "?", rx_attr)
+            lcd.drawText(140, y, "---", g_textColor)
+            lcd.drawText(140, y+20, "---", g_textColor)
         end
-    else
-        lcd.drawText(140+240, y, "---", rx_attr)
-        lcd.drawText(140+240, y+20, "---", rx_attr)
-    end
 
-    y = y + 2*20
-    lcd.drawText(10, y, "Sensitivity", g_textColor)
-    if DEVICE_INFO ~= nil then
-        lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
-    else
-        lcd.drawText(140, y, "---", g_textColor)
+        local rx_attr = g_textColor
+        if not connected then
+            rx_attr = g_textDisableColor
+        end
+        lcd.drawText(10+LCD_W_HALF, y, "Rx Power", rx_attr)
+        lcd.drawText(10+LCD_W_HALF, y+20, "Rx Diversity", rx_attr)
+        if DEVICE_INFO ~= nil and connected then
+            lcd.drawText(140+LCD_W_HALF, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
+            if DEVICE_INFO.rx_diversity <= #diversity_list then
+                lcd.drawText(140+LCD_W_HALF, y+20, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
+            else
+                lcd.drawText(140+LCD_W_HALF, y+20, "?", rx_attr)
+            end
+        else
+            lcd.drawText(140+LCD_W_HALF, y, "---", rx_attr)
+            lcd.drawText(140+LCD_W_HALF, y+20, "---", rx_attr)
+        end
+
+        y = y + 2*20
+        lcd.drawText(10, y, "Sensitivity", g_textColor)
+        if DEVICE_INFO ~= nil then
+            lcd.drawText(140, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
+        else
+            lcd.drawText(140, y, "---", g_textColor)
+        end
     end
 
     -- setup layout warning
