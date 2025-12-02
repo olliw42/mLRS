@@ -246,9 +246,12 @@ void setup_configure_metadata(void)
 
 // override default setup setting from common_conf.h
 // TODO: when AP4.6 is out, the default should become SEND_RC_CHANNELS_RADIORCCHANNELS
-#if !defined USE_OUT || defined ESP32 || defined ESP8266
+// RC Channels is only included with 2 MB boards, so override makes more sense?
+#if !defined USE_OUT
+#if defined ESP32 || defined ESP8266
   #undef SETUP_RX_SEND_RC_CHANNELS
   #define SETUP_RX_SEND_RC_CHANNELS  SEND_RC_CHANNELS_RCCHANNELSOVERRIDE
+#endif
 #endif
 
 
