@@ -1181,16 +1181,16 @@ local function drawPageMain()
     y = 171 --166
     if LCD_W == 320 then
         y = 158
-        lcd.drawText(5, y, "Edit Tx", cur_attr(EditTx_idx))
+        lcd.drawText(2, y, "Edit Tx", cur_attr(EditTx_idx))
         if not connected then
-            lcd.drawText(60, y, "Edit Rx", g_textDisableColor)
+            lcd.drawText(66, y, "Edit Rx", g_textDisableColor)
         else
-            lcd.drawText(60, y, "Edit Rx", cur_attr(EditRx_idx))
+            lcd.drawText(66, y, "Edit Rx", cur_attr(EditRx_idx))
         end
-        lcd.drawText(120, y, "Save", cur_attr(Save_idx))
-        lcd.drawText(165, y, "Load", cur_attr(Reload_idx))
-        lcd.drawText(210, y, "Bind", cur_attr(Bind_idx))
-        lcd.drawText(260, y, "Tools", cur_attr(Tools_idx))
+        lcd.drawText(130, y, "Save", cur_attr(Save_idx))
+        lcd.drawText(175, y, "Reload", cur_attr(Reload_idx))
+        lcd.drawText(234, y, "Bind", cur_attr(Bind_idx))
+        lcd.drawText(277, y, "Tools", cur_attr(Tools_idx))
     else
         lcd.drawText(10, y, "Edit Tx", cur_attr(EditTx_idx))
         if not connected then
