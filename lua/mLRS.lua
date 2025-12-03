@@ -45,6 +45,19 @@ local LCD_WARN_X = 30 -- LCD_W/2-210 -- location of setup layout issue warning b
 local LCD_WARN_W = 420
 local LCD_WARN_H = 50
 
+local LCD_INFO_DY = 20
+local LCD_BUTTONS_Y = 171
+local LCD_EDIT_TX_X = 10
+local LCD_EDIT_RX_X = 10 + 80
+local LCD_SAVE_X = 10 + 160
+local LCD_RELOAD_X = 10 + 225
+local LCD_BIND_X = 10 + 305
+local LCD_TOOLS_X = 10 + 365
+local LCD_INFO_LEFT_X = 10
+local LCD_INFO_LEFT_VAL_X = 140
+local LCD_INFO_RIGHT_X = 10 + LCD_W_HALF
+local LCD_INFO_RIGHT_VALUE_X = 140 + LCD_W_HALF
+
 local g_screenSize = 0
 
 local function setupScreen()
@@ -57,7 +70,19 @@ local function setupScreen()
         LCD_WARN_X = 10
         LCD_WARN_W = 300
         LCD_INFO_Y = 180
-    elseif LCD_H == 320 then -- T15
+        LCD_INFO_DY = 15
+        LCD_BUTTONS_Y = 158
+        LCD_EDIT_TX_X = 2
+        LCD_EDIT_RX_X = 66
+        LCD_SAVE_X = 130
+        LCD_RELOAD_X = 175
+        LCD_BIND_X = 234
+        LCD_TOOLS_X = 277
+        LCD_INFO_LEFT_X = 10
+        LCD_INFO_LEFT_VAL_X = 90
+        LCD_INFO_RIGHT_X = 165
+        LCD_INFO_RIGHT_VALUE_X = 245
+    elseif g_screenSize == 480320 then -- T15
         page_N1 = 11
         page_N = 2 * page_N1
     else
@@ -1176,34 +1201,17 @@ local function drawPageMain()
         end
     end
 
-    y = 171 --166
-    local x_edit_tx = 10
-    local x_edit_rx = 10 + 80
-    local x_save = 10 + 160
-    local x_reload = 10 + 225
-    local x_bind = 10 + 305
-    local x_tools = 10 + 365
-    
-    if g_screenSize == 320240 then
-        y = 158
-        x_edit_tx = 2
-        x_edit_rx = 66
-        x_save = 130
-        x_reload = 175
-        x_bind = 234
-        x_tools = 277
-    end
-
-    lcd.drawText(x_edit_tx, y, "Edit Tx", cur_attr(EditTx_idx))
+    y = LCD_BUTTONS_Y
+    lcd.drawText(LCD_EDIT_TX_X, y, "Edit Tx", cur_attr(EditTx_idx))
     if not connected then
-        lcd.drawText(x_edit_rx, y, "Edit Rx", g_textDisableColor)
+        lcd.drawText(LCD_EDIT_RX_X, y, "Edit Rx", g_textDisableColor)
     else
-        lcd.drawText(x_edit_rx, y, "Edit Rx", cur_attr(EditRx_idx))
+        lcd.drawText(LCD_EDIT_RX_X, y, "Edit Rx", cur_attr(EditRx_idx))
     end
-    lcd.drawText(x_save, y, "Save", cur_attr(Save_idx))
-    lcd.drawText(x_reload, y, "Reload", cur_attr(Reload_idx))
-    lcd.drawText(x_bind, y, "Bind", cur_attr(Bind_idx))
-    lcd.drawText(x_tools, y, "Tools", cur_attr(Tools_idx))
+    lcd.drawText(LCD_SAVE_X, y, "Save", cur_attr(Save_idx))
+    lcd.drawText(LCD_RELOAD_X, y, "Reload", cur_attr(Reload_idx))
+    lcd.drawText(LCD_BIND_X, y, "Bind", cur_attr(Bind_idx))
+    lcd.drawText(LCD_TOOLS_X, y, "Tools", cur_attr(Tools_idx))
 
     -- show overview of some selected parameters
     y = LCD_INFO_Y --210 --05
@@ -1216,55 +1224,44 @@ local function drawPageMain()
         return
     end
 
-    local dy = 20
-    local tx_val_x = 140
-    local rx_lbl_x = 10 + LCD_W_HALF
-    local rx_val_x = 140 + LCD_W_HALF
-    if g_screenSize == 320240 then
-        dy = 15
-        tx_val_x = 90
-        rx_lbl_x = 165
-        rx_val_x = 245
-    end
-
-    lcd.drawText(10, y, "Tx Power", g_textColor)
-    lcd.drawText(10, y+dy, "Tx Diversity", g_textColor)
+    lcd.drawText(LCD_INFO_LEFT_X, y, "Tx Power", g_textColor)
+    lcd.drawText(LCD_INFO_LEFT_X, y+LCD_INFO_DY, "Tx Diversity", g_textColor)
     if DEVICE_INFO ~= nil then
-        lcd.drawText(tx_val_x, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
+        lcd.drawText(LCD_INFO_LEFT_VAL_X, y, tostring(DEVICE_INFO.tx_power_dbm).." dBm", g_textColor)
         if DEVICE_INFO.tx_diversity <= #diversity_list then
-            lcd.drawText(tx_val_x, y+dy, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
+            lcd.drawText(LCD_INFO_LEFT_VAL_X, y+LCD_INFO_DY, diversity_list[DEVICE_INFO.tx_diversity], g_textColor)
         else
-            lcd.drawText(tx_val_x, y+dy, "?", g_textColor)
+            lcd.drawText(LCD_INFO_LEFT_VAL_X, y+LCD_INFO_DY, "?", g_textColor)
         end
     else
-        lcd.drawText(tx_val_x, y, "---", g_textColor)
-        lcd.drawText(tx_val_x, y+dy, "---", g_textColor)
+        lcd.drawText(LCD_INFO_LEFT_VAL_X, y, "---", g_textColor)
+        lcd.drawText(LCD_INFO_LEFT_VAL_X, y+LCD_INFO_DY, "---", g_textColor)
     end
 
     local rx_attr = g_textColor
     if not connected then
         rx_attr = g_textDisableColor
     end
-    lcd.drawText(rx_lbl_x, y, "Rx Power", rx_attr)
-    lcd.drawText(rx_lbl_x, y+dy, "Rx Diversity", rx_attr)
+    lcd.drawText(LCD_INFO_RIGHT_X, y, "Rx Power", rx_attr)
+    lcd.drawText(LCD_INFO_RIGHT_X, y+LCD_INFO_DY, "Rx Diversity", rx_attr)
     if DEVICE_INFO ~= nil and connected then
-        lcd.drawText(rx_val_x, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
+        lcd.drawText(LCD_INFO_RIGHT_VALUE_X, y, tostring(DEVICE_INFO.rx_power_dbm).." dBm", rx_attr)
         if DEVICE_INFO.rx_diversity <= #diversity_list then
-            lcd.drawText(rx_val_x, y+dy, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
+            lcd.drawText(LCD_INFO_RIGHT_VALUE_X, y+LCD_INFO_DY, diversity_list[DEVICE_INFO.rx_diversity], rx_attr)
         else
-            lcd.drawText(rx_val_x, y+dy, "?", rx_attr)
+            lcd.drawText(LCD_INFO_RIGHT_VALUE_X, y+LCD_INFO_DY, "?", rx_attr)
         end
     else
-        lcd.drawText(rx_val_x, y, "---", rx_attr)
-        lcd.drawText(rx_val_x, y+dy, "---", rx_attr)
+        lcd.drawText(LCD_INFO_RIGHT_VALUE_X, y, "---", rx_attr)
+        lcd.drawText(LCD_INFO_RIGHT_VALUE_X, y+LCD_INFO_DY, "---", rx_attr)
     end
 
-    y = y + 2*dy
-    lcd.drawText(10, y, "Sensitivity", g_textColor)
+    y = y + 2*LCD_INFO_DY
+    lcd.drawText(LCD_INFO_LEFT_X, y, "Sensitivity", g_textColor)
     if DEVICE_INFO ~= nil then
-        lcd.drawText(tx_val_x, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
+        lcd.drawText(LCD_INFO_LEFT_VAL_X, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", g_textColor)
     else
-        lcd.drawText(tx_val_x, y, "---", g_textColor)
+        lcd.drawText(LCD_INFO_LEFT_VAL_X, y, "---", g_textColor)
     end
 
     -- setup layout warning
