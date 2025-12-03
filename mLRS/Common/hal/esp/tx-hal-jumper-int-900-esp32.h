@@ -7,7 +7,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// ESP32, Jumper Tx Internal ELRS, good for T20 V2, T15, T14, T-Pro S (not T20 V1!)
+// ESP32, Jumper Tx, Internal SX1276 900, good for T20 V2, T15, T14, T-Pro S (not T20 V1!)
 // Backpack: Generic ESP8266 Module, define LED_IO 16
 //-------------------------------------------------------
 // https://github.com/ExpressLRS/targets/blob/master/TX/Jumper%20T-20%20900%20V2.json
@@ -151,7 +151,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
 //-- POWER
