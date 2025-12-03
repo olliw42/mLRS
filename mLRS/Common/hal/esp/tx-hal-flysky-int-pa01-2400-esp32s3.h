@@ -151,21 +151,14 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
   //"misc_fan_speeds": [90,95,110,125,140,160]
     switch (power_dbm)
     {
-        case POWER_10_DBM:
-          analogWrite(FAN_IO, 90); break;
-        case POWER_14_DBM:
-          analogWrite(FAN_IO, 95); break;
-        case POWER_17_DBM:
-          analogWrite(FAN_IO, 110); break;
-        case POWER_20_DBM:
-          analogWrite(FAN_IO, 125); break;
-        case POWER_24_DBM:
-          analogWrite(FAN_IO, 140); break;
-        case POWER_27_DBM:
-          analogWrite(FAN_IO, 160); break;
+        case POWER_10_DBM: analogWrite(FAN_IO, 0); break;  // no fan needed at 10 mW
+        case POWER_14_DBM: analogWrite(FAN_IO, 95); break; 
+        case POWER_17_DBM: analogWrite(FAN_IO, 110); break;
+        case POWER_20_DBM: analogWrite(FAN_IO, 125); break;
+        case POWER_24_DBM: analogWrite(FAN_IO, 140); break;
+        case POWER_27_DBM: analogWrite(FAN_IO, 160); break;
         default:
-        case POWER_30_DBM:
-          analogWrite(FAN_IO, 255); break;
+        case POWER_30_DBM: analogWrite(FAN_IO, 255); break;
     }
 }
 
@@ -201,6 +194,8 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_14_DBM, .mW = 25 },
     { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
