@@ -90,7 +90,7 @@ void tBindBase::Init(void)
     binding_requested = false;
     binding_stop_requested = false;
     task = BIND_TASK_NONE;
-    is_connected = false;
+    is_connected = true;
 
     button_tlast_ms = millis32();
     is_pressed = false;

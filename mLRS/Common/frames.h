@@ -57,6 +57,7 @@ void _pack_txframe_w_type(
     frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
+    /*
     // pack rc data
     // rcData: 0 .. 1024 .. 2047, 11 bits
     frame->rc1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
@@ -78,6 +79,7 @@ void _pack_txframe_w_type(
     frame->rc1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
     frame->rc2.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
     frame->rc2.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+    */
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -86,10 +88,7 @@ void _pack_txframe_w_type(
 
     // finalize, crc
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    frame->crc1 = crc;
-
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN - 2);
     frame->crc = crc;
 }
 
@@ -119,16 +118,13 @@ uint16_t crc;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    if (crc != frame->crc1) return CHECK_ERROR_CRC1;
-
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN - 2);
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
 }
 
-
+/*
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
@@ -139,8 +135,9 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
     rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
     rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
 }
+*/
 
-
+/*
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
@@ -166,6 +163,7 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
     rc->ch[16] = 1024;
     rc->ch[17] = 1024;
 }
+*/
 
 
 // update header info with new data, keep payload
@@ -335,11 +333,8 @@ void unpack_rxcmdframe_rxsetupdata(tRxFrame* const frame)
 
     SetupMetaData.rx_available = true;
 
-    SetupMetaData.rx_firmware_version = version_from_u16(rx_setupdata->firmware_version_u16);
-    SetupMetaData.rx_setup_layout = version_from_u16(rx_setupdata->setup_layout_u16);
     strstrbufcpy(SetupMetaData.rx_device_name, rx_setupdata->device_name_20, 20);
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
-    SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
 
@@ -352,9 +347,6 @@ void unpack_rxcmdframe_rxsetupdata(tRxFrame* const frame)
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
     power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 44);
-    SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
-    SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
-    SetupMetaData.Rx_SerialPort_allowed_mask = rx_setupdata->SerialPort_allowed_mask;
 }
 
 

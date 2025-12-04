@@ -163,9 +163,9 @@ tTxSxSerial sx_serial;
 // doing one, draw or update, every cycle in 50 Hz mode works, but
 // doing both every cycle does not work! why ???
 
-#include "../CommonTx/disp.h"
+//#include "../CommonTx/disp.h"
 
-tTxDisp disp;
+//tTxDisp disp;
 
 
 //-------------------------------------------------------
@@ -246,8 +246,8 @@ void stop_bind(void)
 
 void enter_system_bootloader(void)
 {
-    disp.DrawBoot();
-    BootLoaderInit();
+    //disp.DrawBoot();
+    //BootLoaderInit();
 }
 
 
@@ -269,32 +269,32 @@ void init_hw(void)
     __disable_irq();
 
     delay_init();
-    systembootloader_init(); // after delay_init() since it may need delay
+    //systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
 
     leds_init();
     button_init();
-    esp_init();
-    fiveway_init();
+    //esp_init();
+    //fiveway_init();
 
     serial.Init();
     serial2.Init();
     comport.Init();
 
-    buzzer.Init();
-    fan.Init();
-    dbg.Init();
+    //buzzer.Init();
+    //fan.Init();
+    //dbg.Init();
 
     setup_init();
 
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+    //esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
 
     sx.Init(); // these take time
     sx2.Init();
 
-    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
-    in.Init(Config.UseIn);
+    //mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
+    //crsf.Init(Config.UseCrsf);
+    //in.Init(Config.UseIn);
 
     __enable_irq();
 }
@@ -482,44 +482,44 @@ static const uint8_t default_msg[FRAME_TX_PAYLOAD_LEN] = {0, 1, 2, 3, 4, 5, 6, 7
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            static const uint32_t frame_period = 200;
-            static const uint32_t safety_margin = 10;
-            static uint32_t last_period = 0;
-            static uint32_t last_frame = 0;
-            static uint32_t init = 0;
+            //static const uint32_t frame_period = 2;
+            //static const uint32_t safety_margin = 10;
+            //static uint32_t last_period = 0;
+            //static uint32_t last_frame = 0;
+            //static uint32_t init = 0;
             static uint32_t frame_id = 0;
-            uint32_t now = HAL_GetTick();
-            uint32_t pause_start = 0;
-            uint32_t pause_duration = 0;
-            if (init == 0)
-            {
-            	init = 1;
-            	last_period = now;
-            	last_frame = now;
-            }
+            //uint32_t now = HAL_GetTick();
+            //uint32_t pause_start = 0;
+            //uint32_t pause_duration = 0;
+            //if (init == 0)
+            //{
+            //	init = 1;
+            //	last_period = now;
+            //	last_frame = now;
+            //}
 
-            if (pause_duration > 0)
-            {
-            	if (now - pause_start > pause_duration)
-            	{
-            		pause_duration = 0;
-            		last_period = now;
-            		last_frame = now;
-            	}
-            }
-            else if (now - last_frame >= frame_period)
-            {
-            	last_frame = now;
-            	memcpy(payload, default_msg, FRAME_TX_PAYLOAD_LEN);
-            	payload[0] = frame_id;
-            	frame_id++;
-            	payload_len = FRAME_TX_PAYLOAD_LEN;
-            	if (now - last_period >= 10000)
-            	{
-            		pause_start = now;
-            		pause_duration = 5000;
-            	}
-            }
+            //if (pause_duration > 0)
+            //{
+            //	if (now - pause_start > pause_duration)
+            //	{
+            //		pause_duration = 0;
+            //		last_period = now;
+            //		last_frame = now;
+            //	}
+            //}
+            //else if (now - last_frame >= frame_period)
+            //{
+            //	last_frame = now;
+			memcpy(payload, default_msg, FRAME_TX_PAYLOAD_LEN);
+			payload[0] = frame_id;
+			frame_id++;
+			payload_len = FRAME_TX_PAYLOAD_LEN;
+            //	if (now - last_period >= 4500)
+            //	{
+            //		pause_start = now;
+            //		pause_duration = 0;
+            //	}
+            //}
 
             stats.bytes_transmitted.Add(payload_len);
             stats.serial_data_transmitted.Inc();
@@ -592,10 +592,10 @@ tRxFrame* frame;
         frame = &rxFrame2;
     }
 
-    if (bind.IsInBind()) {
-        bind.handle_receive(antenna, rx_status);
-        return;
-    }
+    //if (bind.IsInBind()) {
+    //    bind.handle_receive(antenna, rx_status);
+    //    return;
+    //}
 
     if (rx_status < RX_STATUS_INVALID) { // must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
@@ -640,10 +640,10 @@ void handle_receive_none(void) // RX_STATUS_NONE
 
 void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
 {
-    if (bind.IsInBind()) {
-        bind.do_transmit(antenna);
-        return;
-    }
+    //if (bind.IsInBind()) {
+    //    bind.do_transmit(antenna);
+    //    return;
+    //}
 
     stats.transmit_seq_no++;
 
@@ -653,10 +653,10 @@ void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to
 
 void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
 {
-    if (bind.IsInBind()) {
-       sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-       return;
-    }
+    //if (bind.IsInBind()) {
+    //   sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+    //   return;
+    //}
 
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
 }
@@ -667,9 +667,9 @@ uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
 uint8_t res;
 uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
-    if (bind.IsInBind()) {
-        return bind.do_receive(antenna, false);
-    }
+    //if (bind.IsInBind()) {
+    //    return bind.do_receive(antenna, false);
+    //}
 
     // we don't need to read sx.GetRxBufferStatus(), but hey
     // we could save 2 byte's time by not reading sync_word again, but hey
@@ -770,8 +770,8 @@ RESTARTCONTROLLER
     connect_state = CONNECT_STATE_CONNECTED; //CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
     connect_sync_cnt = 0;
-    connect_occured_once = true; //false;
-    link_rx1_status = link_rx2_status = RX_STATUS_VALID; //RX_STATUS_NONE;
+    connect_occured_once = true;
+    link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_task_init();
     //link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
     SetupMetaData.rx_available = true;
@@ -798,9 +798,9 @@ RESTARTCONTROLLER
 #else
     hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
-    fan.SetPower(sx.RfPower_dbm());
+    //fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
-    disp.Init();
+    //disp.Init();
 
     config_id.Init();
 
@@ -836,19 +836,19 @@ INITCONTROLLER_END
 
             DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-            if (!tick_1hz) {
-                if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                    buzzer.BeepLQ(stats.received_LQ_rc);
-                }
-            }
+            //if (!tick_1hz) {
+            //    if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
+            //        buzzer.BeepLQ(stats.received_LQ_rc);
+            //    }
+            //}
 
-            bind.Tick_ms();
-            disp.Tick_ms(); // can take long
-            fan.SetPower(sx.RfPower_dbm());
-            fan.Tick_ms();
+            //bind.Tick_ms();
+            //disp.Tick_ms(); // can take long
+            //fan.SetPower(sx.RfPower_dbm());
+            //fan.Tick_ms();
 
-            if (!tick_1hz) {
-                dbg.puts(".");
+            //if (!tick_1hz) {
+            //    dbg.puts(".");
 /*                dbg.puts("\nTX: ");
                 dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
                 dbg.puts("(");
@@ -863,7 +863,7 @@ INITCONTROLLER_END
 
                 dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
                 dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-            }
+            //}
         } // end of if (!doPreTransmit)
     }
 
@@ -876,7 +876,7 @@ INITCONTROLLER_END
 		case LINK_STATE_TRANSMIT:
 			do_transmit_prepare(tdiversity.Antenna());
 			link_state = LINK_STATE_TRANSMIT_SEND;
-			DBG_MAIN_SLIM(dbg.puts("\nt");)
+			//DBG_MAIN_SLIM(dbg.puts("\nt");)
 			break;
 
 		case LINK_STATE_TRANSMIT_SEND: {
@@ -890,7 +890,7 @@ INITCONTROLLER_END
 			do_transmit_send(tdiversity.Antenna());
 			link_state = LINK_STATE_TRANSMIT_WAIT;
 			irq_status = irq2_status = 0;
-			DBG_MAIN_SLIM(dbg.puts(">");)
+			//DBG_MAIN_SLIM(dbg.puts(">");)
 			// auxiliaries
 			crsf.TelemetryStart();
 			whileTransmit.Trigger();
@@ -902,7 +902,7 @@ INITCONTROLLER_END
 			link_state = LINK_STATE_RECEIVE_WAIT;
 			link_rx1_status = link_rx2_status = RX_STATUS_NONE;
 			irq_status = irq2_status = 0;
-			DBG_MAIN_SLIM(dbg.puts("r");)
+			//DBG_MAIN_SLIM(dbg.puts("r");)
 			break;
     }//end of switch(link_state)
 
@@ -912,14 +912,14 @@ IF_SX(
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                DBG_MAIN_SLIM(dbg.puts("1!");)
+                //DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq_status & SX_IRQ_RX_DONE) {
                 irq_status = 0;
                 link_rx1_status = do_receive(ANTENNA_1);
-                DBG_MAIN_SLIM(dbg.puts("1<");)
+                //DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         }
 
@@ -935,7 +935,7 @@ IF_SX(
             irq_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            DBG_MAIN_SLIM(dbg.puts("1?");)
+            //DBG_MAIN_SLIM(dbg.puts("1?");)
         }
     }//end of if(irq_status)
 );
@@ -945,14 +945,14 @@ IF_SX2(
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                DBG_MAIN_SLIM(dbg.puts("2!");)
+                //DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq2_status & SX2_IRQ_RX_DONE) {
                 irq2_status = 0;
                 link_rx2_status = do_receive(ANTENNA_2);
-                DBG_MAIN_SLIM(dbg.puts("2<");)
+                //DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         }
 
@@ -968,7 +968,7 @@ IF_SX2(
             irq2_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            DBG_MAIN_SLIM(dbg.puts("2?");)
+            //DBG_MAIN_SLIM(dbg.puts("2?");)
         }
     }//end of if(irq2_status)
 );
@@ -1090,16 +1090,16 @@ IF_SX2(
         stats.Next();
         if (!connected()) stats.Clear();
 
-        if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
-            if (!valid_frame_received) buzzer.BeepLP();
-        }
+        //if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
+        //    if (!valid_frame_received) buzzer.BeepLP();
+        //}
 
         // store parameters
-        if (doParamsStore) {
-            leds.SetToParamStore();
-            setup_store_to_EEPROM();
-            GOTO_RESTARTCONTROLLER;
-        }
+        //if (doParamsStore) {
+        //    leds.SetToParamStore();
+        //    setup_store_to_EEPROM();
+        //    GOTO_RESTARTCONTROLLER;
+        //}
 
         //bind.Do();
         //switch (bind.Task()) {
@@ -1253,52 +1253,54 @@ IF_IN(
 
     //-- Handle display or CLI or MAVLink task
 
-    uint8_t tx_task = disp.Task();
+    uint8_t tx_task = TX_TASK_NONE; //= disp.Task();
     if (tx_task == TX_TASK_NONE) tx_task = mavlink.Task();
     if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
 
     switch (tx_task) {
 		case TX_TASK_RX_PARAM_SET:
-			if (connected()) {
-				link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-				mbridge.Lock(); // lock mBridge
-			}
+			//if (connected()) {
+			//	link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+			//	mbridge.Lock(); // lock mBridge
+			//}
 			break;
 		case TX_TASK_PARAM_STORE:
-			if (connected()) {
-				link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-				mbridge.Lock(); // lock mBridge
-			} else {
-				doParamsStore = true;
-			}
-			break;
+			//if (connected()) {
+			//	link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+			//	//mbridge.Lock(); // lock mBridge
+			//} else {
+			//	doParamsStore = true;
+			//}
+			//break;
 		case TX_TASK_PARAM_RELOAD:
-			setup_reload();
-			if (connected()) {
-				link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-				mbridge.Lock(); // lock mBridge
-			}
-			break;
+			//setup_reload();
+			//if (connected()) {
+			//	link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+			//	mbridge.Lock(); // lock mBridge
+			//}
+			//break;
 		//case TX_TASK_BIND: start_bind(); break;
 		case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
-		case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
-		case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
+		//case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
+		//case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
 		case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
 		case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
 		case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
+		default:
+			break;
     }
 
     //-- Handle ESP wifi bridge
 
-    esp.Do();
-    uint8_t esp_task = esp.Task();
-    if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+    //esp.Do();
+    //uint8_t esp_task = esp.Task();
+    //if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- more
 
-    if (config_id.Do()) {
-        doParamsStore = true;
-    }
+    //if (config_id.Do()) {
+    //    doParamsStore = true;
+    //}
 
 }//end of main_loop
 

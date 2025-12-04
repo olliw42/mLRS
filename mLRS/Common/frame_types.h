@@ -47,10 +47,8 @@ typedef struct
 
 
 #define FRAME_TX_RX_HEADER_LEN  7
-#define FRAME_TX_RCDATA1_LEN    6
-#define FRAME_TX_RCDATA2_LEN    10
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
-#define FRAME_RX_PAYLOAD_LEN    82
+#define FRAME_RX_PAYLOAD_LEN    64
 
 
 PACKED(
@@ -70,7 +68,7 @@ typedef struct
 
 
 //-- Tx Frame ----------
-
+/*
 PACKED(
 typedef struct
 {
@@ -81,8 +79,8 @@ typedef struct
     uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
     uint16_t ch13 :  2;
 }) tFrameRcData1; // 6 bytes
-
-
+*/
+/*
 PACKED(
 typedef struct
 {
@@ -97,19 +95,16 @@ typedef struct
     uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
     uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
 }) tFrameRcData2; // 10 bytes
-
+*/
 
 PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
     tFrameStatus status; // 5 bytes
-    tFrameRcData1 rc1; // 6 bytes
-    uint16_t crc1;
-    tFrameRcData2 rc2; // 10 bytes
     uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
-}) tTxFrame; // 91 bytes
+}) tTxFrame; // 73 bytes
 
 
 //-- Rx Frame ----------
@@ -119,9 +114,9 @@ typedef struct
 {
     uint16_t sync_word; // 2 bytes
     tFrameStatus status; // 5 bytes
-    uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
+    uint8_t payload[64]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
-}) tRxFrame; // 91 bytes
+}) tRxFrame; // 73 bytes
 
 
 //-------------------------------------------------------
@@ -146,10 +141,10 @@ typedef struct
     uint8_t Ortho : 4;
 
     uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare2[53];
 
     uint16_t crc; // 2 bytes
-}) tTxBindFrame; // 91 bytes
+}) tTxBindFrame; // 73 bytes
 
 
 PACKED(
@@ -166,10 +161,10 @@ typedef struct
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55];
+    uint8_t spare2[37];
 
     uint16_t crc; // 2bytes
-}) tRxBindFrame; // 91 bytes
+}) tRxBindFrame; // 73 bytes
 
 
 //-------------------------------------------------------
@@ -229,31 +224,16 @@ typedef struct
 {
     uint8_t cmd;
     uint8_t spare;
-
     // rx setup meta data 1
-    uint16_t firmware_version_u16; // 16.64.64
-    uint16_t setup_layout_u16; // 16.64.64
     char device_name_20[20];
     int8_t actual_power_dbm;
-    uint8_t actual_diversity;
-
+    uint8_t spare1;
     // rx parameter values
     // BindPhrase, FrequencyBand, Mode must be equal to Tx, otherwise Rx wouldn't connect, so don't have to be send
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    // rx setup meta data 2, parameter metadata
-    uint16_t FrequencyBand_allowed_mask_XXX; // TODO
-    uint8_t Mode_allowed_mask_XXX; // TODO
-    uint8_t Ortho_allowed_mask_XXX; // TODO
-    uint8_t spare2[2];
-
     int16_t Power_list[8];
-    uint8_t Diversity_allowed_mask;
-    uint8_t OutMode_allowed_mask;
-    uint8_t SerialPort_allowed_mask; // was uint8_t __Buzzer_allowed_mask; // deprecated
-
-    uint8_t spare3[5];
-}) tRxCmdFrameRxSetupData; // 82 bytes
+}) tRxCmdFrameRxSetupData; // 64 bytes
 
 
 // send from Tx to do SET_RX_PARAMS

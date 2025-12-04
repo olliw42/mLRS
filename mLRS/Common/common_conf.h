@@ -79,7 +79,7 @@
 
 #define SETUP_RX_DIVERSITY              DIVERSITY // 0: default, 1: ANTENNA 1 if diversity available, 2: ANTENNA 2 if diversity available
 
-#define SETUP_RX_SERIAL_LINK_MODE       2 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
+#define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
@@ -127,11 +127,11 @@
 #define FHSS_NUM_BAND_866_MHZ_IN              3 // 3 since 1 is needed for bind
 #define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
 #define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
-#define FHSS_NUM_BAND_2P4_GHZ                 24
+#define FHSS_NUM_BAND_2P4_GHZ                 12 // 24
 
-#define FRAME_TX_RX_LEN                 91 // we currently only support equal len
+#define FRAME_TX_RX_LEN                 73 // we currently only support equal len
 
-#define CONNECT_TMO_MS                  2500 // 1250 time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
+#define CONNECT_TMO_MS                  1250 // 1250 time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
 
 #define CONNECT_SYNC_CNT                1 // 5 number of packets to connect
 
