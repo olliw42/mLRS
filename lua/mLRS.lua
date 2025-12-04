@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-12-03.01'
+local version = '2025-12-04.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -28,6 +28,7 @@ local disableParamLoadErrorWarnings = false
 -- T15, TX15:          480 x 320
 -- PA01:               320 x 240
 
+local g_screenSize
 local g_textColor
 local g_titleBgColor
 local g_menuTitleColor
@@ -36,41 +37,36 @@ local g_textDisableColor
 local page_N1 = 9 -- number of options displayed in left column
 local page_N = 18 -- number of options displayed on page, should be just 2 * page_N1
 local LCD_W_HALF = LCD_W / 2
-local LCD_POPUP_X = 80 -- LCD_W/2-160 -- location of popup box
+local LCD_POPUP_X = 80 -- location of popup box -- LCD_W/2-160
 local LCD_POPUP_Y = 76
 local LCD_POPUP_W = 320
 local LCD_POPUP_H = 80
-local LCD_INFO_Y = 210 -- location of info section on main page
-local LCD_WARN_X = 30 -- LCD_W/2-210 -- location of setup layout issue warning box in info section
+local LCD_WARN_X = 30 -- location of setup layout issue warning box in info section -- LCD_W/2-210
 local LCD_WARN_W = 420
 local LCD_WARN_H = 50
-
-local LCD_INFO_DY = 20
-local LCD_BUTTONS_Y = 171
+local LCD_BUTTONS_Y = 171 -- location of menu buttons on main page
 local LCD_EDIT_TX_X = 10
 local LCD_EDIT_RX_X = 10 + 80
 local LCD_SAVE_X = 10 + 160
 local LCD_RELOAD_X = 10 + 225
 local LCD_BIND_X = 10 + 305
 local LCD_TOOLS_X = 10 + 365
+local LCD_INFO_Y = 210 -- location of info section on main page
+local LCD_INFO_DY = 20
 local LCD_INFO_LEFT_X = 10
 local LCD_INFO_LEFT_VAL_X = 140
 local LCD_INFO_RIGHT_X = 10 + LCD_W_HALF
 local LCD_INFO_RIGHT_VALUE_X = 140 + LCD_W_HALF
 
-local g_screenSize = 0
-
 local function setupScreen()
     g_screenSize = LCD_W * 1000 + LCD_H
-    if g_screenSize == 320240 then -- 320x240
+    if g_screenSize == 320240 then -- 320x240, PA01
         page_N1 = 7
         page_N = 7 -- single column
         LCD_POPUP_X = 10
         LCD_POPUP_W = 300
         LCD_WARN_X = 10
         LCD_WARN_W = 300
-        LCD_INFO_Y = 180
-        LCD_INFO_DY = 15
         LCD_BUTTONS_Y = 158
         LCD_EDIT_TX_X = 2
         LCD_EDIT_RX_X = 66
@@ -78,11 +74,13 @@ local function setupScreen()
         LCD_RELOAD_X = 175
         LCD_BIND_X = 234
         LCD_TOOLS_X = 277
+        LCD_INFO_Y = 180
+        LCD_INFO_DY = 15
         LCD_INFO_LEFT_X = 10
         LCD_INFO_LEFT_VAL_X = 90
         LCD_INFO_RIGHT_X = 165
         LCD_INFO_RIGHT_VALUE_X = 245
-    elseif g_screenSize == 480320 then -- T15
+    elseif g_screenSize == 480320 then -- 480x320, T15
         page_N1 = 11
         page_N = 2 * page_N1
     else
@@ -765,18 +763,18 @@ end
 
 
 local function checkLQ()
---[[ 
+--[[
 -- the mechanism doesn't work well when a receiver is connected while the Lua is running
 -- since in the first second the LQ may not be high
 -- so we disable it for until a better approach is found
-    if DEVICE_DOWNLOAD_is_running or not connected then 
-        if popup and popup_t_end_10ms < 0 and popup_text == "LQ is low" then clearPopup() end    
-        return 
+    if DEVICE_DOWNLOAD_is_running or not connected then
+        if popup and popup_t_end_10ms < 0 and popup_text == "LQ is low" then clearPopup() end
+        return
     end
     if DEVICE_INFO ~= nil and DEVICE_INFO.has_status == 1 and DEVICE_INFO.LQ_low > 1 then
         setPopupBlocked("LQ is low")
     end
---]]    
+--]]
 end
 
 
@@ -1193,7 +1191,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
         local y_ortho = y
         if g_screenSize == 320240 then y_ortho = y + 42 end
-        
+
         lcd.drawText(LCD_W_HALF+30, y_ortho, "Ortho", g_textColor)
         local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
         if p.options[p.value+1] ~= nil then
