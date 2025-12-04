@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 10. Mai. 2025
+// 13. Nov. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
