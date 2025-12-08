@@ -306,43 +306,24 @@ void init_hw(void)
 // SX12xx
 //-------------------------------------------------------
 
-volatile uint16_t irq_status;
-volatile uint16_t irq2_status;
+uint16_t irq_status;
+uint16_t irq2_status;
+
+volatile bool isr_sx_flag = false;
+volatile bool isr_sx2_flag = false;
 
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
-    irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
-    if (irq_status & SX_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.RxSignature) irq_status = 0; // not binding frame, so ignore it
-        } else {
-            uint16_t sync_word;
-            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-        }
-    }
+    isr_sx_flag = true;
 })
 #ifdef USE_SX2
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     sx2_dio_exti_isr_clearflag();
-    irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
-    if (irq2_status & SX2_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.RxSignature) irq2_status = 0;
-        } else {
-            uint16_t sync_word;
-            sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-            if (sync_word != Config.FrameSyncWord) irq2_status = 0;
-        }
-    }
+    isr_sx2_flag = true;
 })
 #endif
 
@@ -785,6 +766,40 @@ RESTARTCONTROLLER
     resetSysTask(); // helps in avoiding too short first loop
 INITCONTROLLER_END
 
+    //-- Poll ISR flags safely in main loop
+    if (isr_sx_flag) {
+        isr_sx_flag = false;
+        irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
+        if (irq_status & SX_IRQ_RX_DONE) {
+            if (bind.IsInBind()) {
+                uint64_t bind_signature;
+                sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+                if (bind_signature != bind.RxSignature) irq_status = 0; // not binding frame, so ignore it
+            } else {
+                uint16_t sync_word;
+                sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+                if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+            }
+        }
+    }
+#ifdef USE_SX2
+    if (isr_sx2_flag) {
+        isr_sx2_flag = false;
+        irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
+        if (irq2_status & SX2_IRQ_RX_DONE) {
+            if (bind.IsInBind()) {
+                uint64_t bind_signature;
+                sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+                if (bind_signature != bind.RxSignature) irq2_status = 0;
+            } else {
+                uint16_t sync_word;
+                sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+                if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+            }
+        }
+    }
+#endif
+
     //-- SysTask handling
 
     if (doSysTask()) {
@@ -907,12 +922,22 @@ IF_SX(
                 FAIL_WSTATE(BLINK_RD_GR_OFF, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_TX_DONE) {
-                FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                // in dual band, sx2 may have already advanced state to RECEIVE, so this is a valid "late" tx done
+                bool is_late_tx = is_dual_band_frequency(Config.FrequencyBand) &&
+                                  (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT);
+                if (is_late_tx) {
+                    DBG_MAIN_SLIM(dbg.puts("Tx1 late");)
+                    irq_status = 0;
+                } else {
+                    FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
+                }
             }
-            irq_status = 0;
-            link_state = LINK_STATE_IDLE;
-            link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            DBG_MAIN_SLIM(dbg.puts("1?");)
+            if (irq_status) { // timeout or unhandled - reset state
+                irq_status = 0;
+                link_state = LINK_STATE_IDLE;
+                link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+                DBG_MAIN_SLIM(dbg.puts("1?");)
+            }
         }
     }//end of if(irq_status)
 );
@@ -940,12 +965,22 @@ IF_SX2(
                 FAIL_WSTATE(BLINK_RD_GR_ON, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_TX_DONE) {
-                FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                // in dual band, sx1 may have already advanced state to RECEIVE, so this is a valid "late" tx done
+                bool is_late_tx = is_dual_band_frequency(Config.FrequencyBand) &&
+                                  (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT);
+                if (is_late_tx) {
+                    DBG_MAIN_SLIM(dbg.puts("Tx2 late");)
+                    irq2_status = 0;
+                } else {
+                    FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
+                }
             }
-            irq2_status = 0;
-            link_state = LINK_STATE_IDLE;
-            link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            DBG_MAIN_SLIM(dbg.puts("2?");)
+            if (irq2_status) { // timeout or unhandled - reset state
+                irq2_status = 0;
+                link_state = LINK_STATE_IDLE;
+                link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+                DBG_MAIN_SLIM(dbg.puts("2?");)
+            }
         }
     }//end of if(irq2_status)
 );

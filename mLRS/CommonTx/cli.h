@@ -654,24 +654,49 @@ void tTxCli::print_frequencies_do(void)
 char s[32];
 char unit[32];
 
+#ifdef USE_SX2
+    uint8_t total_cnt = fhss.Cnt() + fhss.Cnt2();
+#else
+    uint8_t total_cnt = fhss.Cnt();
+#endif
+
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
-        if (print_index >= fhss.Cnt()) {
+        if (print_index >= total_cnt) {
             print_it_reset();
             return;
         }
 
         uint8_t i = print_index;
 
-        puts(u8toBCD_s(i));
-        puts("  ch: ");
-        puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  f_reg: ");
-        puts(u32toBCD_s(fhss.FhssList(i)));
-        puts("  f: ");
-        u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
-        remove_leading_zeros(s);
-        puts(s);
-        putsn(unit);
+        if (i < fhss.Cnt()) {
+            // Band 1 frequencies
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+        }
+#ifdef USE_SX2
+        else {
+            // Band 2 frequencies
+            uint8_t i2 = i - fhss.Cnt();
+            puts(u8toBCD_s(i2));
+            puts("  ch2: ");
+            puts(u8toBCD_s(fhss.ChList2(i2)));
+            puts("  f2_reg: ");
+            puts(u32toBCD_s(fhss.FhssList2(i2)));
+            puts("  f2: ");
+            u32toBCDstr(fhss.GetFreq2_x1000(unit, i2), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+        }
+#endif
 
         print_index++;
     }

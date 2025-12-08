@@ -654,8 +654,7 @@ class tFhssBase
     void generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t except);
 };
 
-
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && !(defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI)
 // SINGLE BAND
 
 class tFhss : public tFhssBase
@@ -738,6 +737,8 @@ class tFhss
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
         return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq2());
+#elif defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+        return 1.0E3f * LR11XX_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #else
         #error Something wrong with dual band config !
 #endif
@@ -746,10 +747,14 @@ class tFhss
     //-- Tx module only
 
     uint8_t Cnt(void) { return fhss1stBand.Cnt(); }
+    uint8_t Cnt2(void) { return fhss2ndBand.Cnt(); }
     uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
     uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
+    uint8_t ChList2(uint8_t i) { return fhss2ndBand.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
+    uint32_t FhssList2(uint8_t i) { return fhss2ndBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
+    uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i) { return fhss2ndBand.GetFreq_x1000(unit_str, i); }
 
   private:
     tFhssBase fhss1stBand;
