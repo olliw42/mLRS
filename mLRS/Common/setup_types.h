@@ -54,7 +54,6 @@ typedef enum : uint8_t {
 SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM cvt_to_sx_fhss_frequency_band(uint8_t setup_frequency_band);
 SETUP_FREQUENCY_BAND_ENUM cvt_to_setup_frequency_band(uint8_t sx_fhss_frequency_band);
 bool is_dual_band_frequency(uint8_t setup_frequency_band);
-SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM cvt_to_sx2_fhss_frequency_band(uint8_t setup_frequency_band);
 
 
 typedef enum {

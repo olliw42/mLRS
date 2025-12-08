@@ -758,7 +758,6 @@ void setup_configure_config(uint8_t config_id)
     Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
     Config.Sx.FrequencyBand = cvt_to_sx_fhss_frequency_band(Config.FrequencyBand); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
-    Config.Sx2.FrequencyBand = cvt_to_sx2_fhss_frequency_band(Config.FrequencyBand);
 
 #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
