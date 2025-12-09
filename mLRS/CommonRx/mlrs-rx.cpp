@@ -502,6 +502,9 @@ uint8_t doPostReceive2_cnt;
 bool doPostReceive2;
 bool frame_missed;
 
+bool tx1_done;  // tracks TX completion for sx1 in dual-band
+bool tx2_done;  // tracks TX completion for sx2 in dual-band
+
 
 bool connected(void)
 {
@@ -664,6 +667,13 @@ INITCONTROLLER_END
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
+        if (is_dual_band_frequency(Config.FrequencyBand)) {
+            tx1_done = tx2_done = false;
+        } else {
+            // Single radio or diversity: only one transmits
+            tx1_done = (tdiversity.Antenna() != ANTENNA_1);  // already "done" if not used
+            tx2_done = (tdiversity.Antenna() != ANTENNA_2);
+        }
         DBG_MAIN_SLIM(dbg.puts("t");)
         break;
     }//end of switch(link_state)
@@ -673,7 +683,10 @@ IF_SX(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                tx1_done = true;
+                if (tx1_done && tx2_done) {
+                    link_state = LINK_STATE_RECEIVE;
+                }
                 DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         } else
@@ -695,15 +708,7 @@ IF_SX(
                 FAIL_WSTATE(BLINK_RD_GR_OFF, "IRQ RX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status & SX_IRQ_TX_DONE) {
-                // in dual band, sx2 may have already advanced state to RECEIVE, so this is a valid "late" tx done
-                bool is_late_tx = is_dual_band_frequency(Config.FrequencyBand) &&
-                                  (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT);
-                if (is_late_tx) {
-                    DBG_MAIN_SLIM(dbg.puts("Tx1 late");)
-                    irq_status = 0;
-                } else {
-                    FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
-                }
+                FAIL_WSTATE(BLINK_GR_RD_OFF, "IRQ TX DONE FAIL", irq_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq_status) { // timeout or unhandled - reset state
                 irq_status = 0;
@@ -719,7 +724,10 @@ IF_SX2(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                tx2_done = true;
+                if (tx1_done && tx2_done) {
+                    link_state = LINK_STATE_RECEIVE;
+                }
                 DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         } else
@@ -741,15 +749,7 @@ IF_SX2(
                 FAIL_WSTATE(BLINK_RD_GR_ON, "IRQ2 RX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status & SX2_IRQ_TX_DONE) {
-                // in dual band, sx1 may have already advanced state to RECEIVE, so this is a valid "late" tx done
-                bool is_late_tx = is_dual_band_frequency(Config.FrequencyBand) &&
-                                  (link_state == LINK_STATE_RECEIVE || link_state == LINK_STATE_RECEIVE_WAIT);
-                if (is_late_tx) {
-                    DBG_MAIN_SLIM(dbg.puts("Tx2 late");)
-                    irq2_status = 0;
-                } else {
-                    FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
-                }
+                FAIL_WSTATE(BLINK_GR_RD_ON, "IRQ2 TX DONE FAIL", irq2_status, link_state, link_rx1_status, link_rx2_status);
             }
             if (irq2_status) { // timeout or unhandled - reset state
                 irq2_status = 0;
