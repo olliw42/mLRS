@@ -11,7 +11,7 @@
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
-// - For ESP32: Partition Scheme needs to be changed to "No OTA (Large App)" !!
+// - For ESP32 and ESP32C3: Partition Scheme needs to be changed to "No OTA (Large App)" !!
 // - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // - For ESP32C3: ESP32 arduino core must be 2.0.17 !!
