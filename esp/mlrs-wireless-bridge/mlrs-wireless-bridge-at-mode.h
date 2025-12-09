@@ -37,6 +37,7 @@ typedef enum {
     AT_PROTOCOL_2_UDPSTA,
     AT_PROTOCOL_3_BT,
     AT_PROTOCOL_4_UDPCl,
+    AT_PROTOCOL_5_BLE,
     AT_WIFIDEVICEID_QUERY,
     AT_WIFIDEVICENAME_QUERY,
     AT_BINDPHRASE_QUERY,
@@ -69,6 +70,7 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+PROTOCOL=2",
      "AT+PROTOCOL=3",
      "AT+PROTOCOL=4",
+     "AT+PROTOCOL=5",
      "AT+WIFIDEVICEID=?", // only query, no option to set
      "AT+WIFIDEVICENAME=?", // only query, no option to set
      "AT+BINDPHRASE=?",
@@ -237,7 +239,7 @@ bool AtMode::Do(void)
                     SERIAL.write(at_buf, at_pos);
                     SERIAL.write("\r\n");
                 } else
-                if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_4_UDPCl) {
+                if (i >= AT_PROTOCOL_0_TCP && i <= AT_PROTOCOL_5_BLE) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     int new_protocol = atoi(at_buf + 12); // AT+PROTOCOL=1
