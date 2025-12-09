@@ -11,7 +11,7 @@
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
-// - For ESP32: Partition Scheme needs to be changed to "No OTA (Large App)" !!
+// - For ESP32 & ESP32C3: Partition Scheme needs to be changed to "No OTA (Large App)" !!
 // - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // - For ESP32C3: ESP32 arduino core must be 2.0.17 !!
@@ -99,8 +99,8 @@ Troubleshooting:
 // GPIO0 usage
 // uncomment if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
 // the number determines the IO pin, usally it is 0
-//#define GPIO0_IO  0 for ESP32, ESP82XX
-//#define GPIO0_IO  9 for ESP32C3
+//#define GPIO0_IO  0 // for ESP32, ESP82XX
+//#define GPIO0_IO  9 // for ESP32C3
 
 
 //**********************//
