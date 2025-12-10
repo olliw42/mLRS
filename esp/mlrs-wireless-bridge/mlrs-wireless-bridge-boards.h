@@ -16,6 +16,12 @@ https://www.espressif.com/sites/default/files/documentation/esp8266-technical_re
 is used in many ELRS Tx modules
 
 ------------------------------
+ELRS Tx Module ESP32-C3 backpack
+------------------------------
+board: Generic ESP32C3 Module
+is used in many ELRS Tx modules
+
+------------------------------
 Espressif ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module

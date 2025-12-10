@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 13. Nov. 2025
+// 10. Dez. 2025
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -52,7 +52,7 @@ List of supported modules, and board which needs to be selected
 - M5Stack ATOM Lite                 board: M5Stack-ATOM
 
 Troubleshooting:
-- If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)"
+- If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)" or "No OTA (2MB APP/2MB SPIFFS)" or similar
 - If flashing is via serial passthrough, you may have to use upload speed 115200
 */
 
@@ -229,7 +229,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #endif
 #endif
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 5) // for AT commands we require BLE be available
-#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32C3) // BLE available on ESP32 and ESP32C3
+#if defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3 // BLE available on ESP32 and ESP32C3
   #define USE_WIRELESS_PROTOCOL_BLE
   #include <BLEDevice.h>
   #include <BLEServer.h>
@@ -263,26 +263,25 @@ BluetoothSerial SerialBT;
 #endif
 // BLE
 #ifdef USE_WIRELESS_PROTOCOL_BLE
-// Forward declarations needed for BLE callbacks
-extern bool is_connected;
-extern unsigned long is_connected_tlast_ms;
-
-#define BLE_SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // Nordic UART service UUID
-#define BLE_CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-#define BLE_CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-BLEServer *pBLEServer = NULL;
-BLECharacteristic *pBLETxCharacteristic;
-bool ble_device_connected = false;
-bool ble_serial_started = false;
-uint16_t ble_negotiated_mtu = 23;
+#define BLE_SERVICE_UUID            "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // Nordic UART service UUID
+#define BLE_CHARACTERISTIC_UUID_RX  "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+#define BLE_CHARACTERISTIC_UUID_TX  "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+BLEServer* ble_server = NULL;
+BLECharacteristic* ble_tx_characteristic;
+bool ble_device_connected;
+bool ble_serial_started;
+uint16_t ble_negotiated_mtu;
+unsigned long ble_adv_tlast_ms;
+extern bool is_connected; // forward declarations, needed for BLE callbacks
+extern unsigned long is_connected_tlast_ms; // forward declarations, needed for BLE callbacks
 
 class BLEServerCallbacksHandler : public BLEServerCallbacks {
-    void onConnect(BLEServer *pServer) {
+    void onConnect(BLEServer* pServer) {
         ble_device_connected = true;
         ble_negotiated_mtu = pServer->getPeerMTU(pServer->getConnId());
         DBG_PRINTLN("BLE connected");
     }
-    void onDisconnect(BLEServer *pServer) {
+    void onDisconnect(BLEServer* pServer) {
         ble_device_connected = false;
         ble_serial_started = false;
         DBG_PRINTLN("BLE disconnected");
@@ -290,24 +289,24 @@ class BLEServerCallbacksHandler : public BLEServerCallbacks {
 };
 
 class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
+    void onWrite(BLECharacteristic* pCharacteristic) {
         if (!ble_serial_started) {
             ble_serial_started = true;
         }
 #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-        std::string rxValue = pCharacteristic->getValue();  // Core 2.x
+        std::string rxValue = pCharacteristic->getValue(); // Core 2.x
 #else
-        String rxValue = pCharacteristic->getValue();  // Core 3.x
+        String rxValue = pCharacteristic->getValue(); // Core 3.x
 #endif
-        uint32_t payloadLength = rxValue.length();
-        if (payloadLength > 0) {
-            SERIAL.write((uint8_t *)rxValue.c_str(), payloadLength);
+        uint32_t len = rxValue.length();
+        if (len > 0) {
+            SERIAL.write((uint8_t*)rxValue.c_str(), len);
             is_connected = true;
             is_connected_tlast_ms = millis();
         }
     }
 };
-#endif
+#endif // USE_WIRELESS_PROTOCOL_BLE
 
 typedef enum {
     WIRELESS_PROTOCOL_TCP = 0,
@@ -470,6 +469,11 @@ if (g_protocol == WIRELESS_PROTOCOL_BLE) {
 //-- BLE
 #ifdef USE_WIRELESS_PROTOCOL_BLE
 
+    ble_device_connected = false;
+    ble_serial_started = false;
+    ble_negotiated_mtu = 23;
+    ble_adv_tlast_ms = 0;
+
     // Create BLE Device, set MTU
     BLEDevice::init(device_name.c_str());
     BLEDevice::setMTU(512);
@@ -477,31 +481,31 @@ if (g_protocol == WIRELESS_PROTOCOL_BLE) {
     // Set BLE Power
     BLEDevice::setPower(ESP_PWR_LVL_P9, ESP_BLE_PWR_TYPE_DEFAULT);
 
-    // Create BLE Server, Add Callbacks
-    pBLEServer = BLEDevice::createServer();
-    pBLEServer->setCallbacks(new BLEServerCallbacksHandler());
+    // Create BLE server, add callbacks
+    ble_server = BLEDevice::createServer();
+    ble_server->setCallbacks(new BLEServerCallbacksHandler());
 
-    // Create BLE Service
-    BLEService *pBLEService = pBLEServer->createService(BLE_SERVICE_UUID);
+    // Create BLE service
+    BLEService* ble_service = ble_server->createService(BLE_SERVICE_UUID);
 
-    // Create BLE Characteristics, Add Callback
-    pBLETxCharacteristic = pBLEService->createCharacteristic(BLE_CHARACTERISTIC_UUID_TX, BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ);
-    pBLETxCharacteristic->addDescriptor(new BLE2902());
-    BLECharacteristic *pBLERxCharacteristic = pBLEService->createCharacteristic(BLE_CHARACTERISTIC_UUID_RX, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
-    pBLERxCharacteristic->setCallbacks(new BLECharacteristicCallbacksHandler());
+    // Create BLE characteristics, add callback
+    ble_tx_characteristic = ble_service->createCharacteristic(BLE_CHARACTERISTIC_UUID_TX, BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ);
+    ble_tx_characteristic->addDescriptor(new BLE2902());
+    BLECharacteristic* ble_rx_characteristic = ble_service->createCharacteristic(BLE_CHARACTERISTIC_UUID_RX, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+    ble_rx_characteristic->setCallbacks(new BLECharacteristicCallbacksHandler());
 
-    // Start Service
-    pBLEService->start();
+    // Start service
+    ble_service->start();
 
     // Configure advertising
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
-    pAdvertising->setMinPreferred(0x12);
+    BLEAdvertising* advertising = BLEDevice::getAdvertising();
+    advertising->addServiceUUID(BLE_SERVICE_UUID);
+    advertising->setScanResponse(true);
+    advertising->setMinPreferred(0x06); // functions that help with iPhone connections issue
+    advertising->setMinPreferred(0x12);
 
     // Start advertising
-    pAdvertising->start();
+    advertising->start();
     DBG_PRINTLN("BLE advertising started");
 
 #endif
@@ -778,7 +782,7 @@ if (g_protocol == WIRELESS_PROTOCOL_BLE) {
 #ifdef USE_WIRELESS_PROTOCOL_BLE
 
     if (ble_device_connected) {
-        // Check serial for data to send over BLE
+        // check serial for data to send over BLE
         tnow_ms = millis();
         int avail = SERIAL.available();
         if (avail <= 0) {
@@ -787,22 +791,21 @@ if (g_protocol == WIRELESS_PROTOCOL_BLE) {
         if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) {
             serial_data_received_tfirst_ms = tnow_ms;
 
-            // Calculate the number of bytes to read, limit to MTU - 3
+            // calculate the number of bytes to read, limit to MTU - 3
             uint16_t bytesToRead = min((uint16_t)avail, (uint16_t)(ble_negotiated_mtu - 3));
             if (bytesToRead > sizeof(buf)) bytesToRead = sizeof(buf);
 
             int len = SERIAL.read(buf, bytesToRead);
-            pBLETxCharacteristic->setValue(buf, len);
-            pBLETxCharacteristic->notify();
+            ble_tx_characteristic->setValue(buf, len);
+            ble_tx_characteristic->notify();
         }
     } else {
-        // Not connected, restart advertising if needed
+        // not connected, restart advertising every 5 sec if needed
         serialFlushRx();
         is_connected = false;
-        static unsigned long ble_adv_tlast_ms = 0;
         if (tnow_ms - ble_adv_tlast_ms > 5000) {
             ble_adv_tlast_ms = tnow_ms;
-            pBLEServer->startAdvertising();
+            ble_server->startAdvertising();
         }
     }
 
