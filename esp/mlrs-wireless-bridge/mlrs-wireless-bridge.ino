@@ -294,8 +294,8 @@ class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
         if (!ble_serial_started) {
             ble_serial_started = true;
         }
-#ifdef ARDUINO_ESP32C3_DEV
-        std::string rxValue = pCharacteristic->getValue();  // Core 2.0.17
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+        std::string rxValue = pCharacteristic->getValue();  // Core 2.x
 #else
         String rxValue = pCharacteristic->getValue();  // Core 3.x
 #endif
