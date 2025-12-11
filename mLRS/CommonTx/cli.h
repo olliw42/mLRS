@@ -611,6 +611,11 @@ void tTxCli::stream(void)
             puts(s8toBCD_s(stats.last_snr1));
             puts("; ");
 
+            puts(s8toBCD_s(stats.last_rssi2));
+            puts(",");
+            puts(s8toBCD_s(stats.last_snr2));
+            puts("; ");
+
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
             puts(", ");
             puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec()));
