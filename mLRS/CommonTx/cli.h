@@ -261,7 +261,9 @@ bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uin
 
 bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_t frequency_band)
 {
-    if (frequency_band != SETUP_FREQUENCY_BAND_2P4_GHZ) return false;
+    if (frequency_band != SETUP_FREQUENCY_BAND_2P4_GHZ &&
+        frequency_band != SETUP_FREQUENCY_BAND_915_MHZ_FCC_PLUS_2P4_GHZ &&
+        frequency_band != SETUP_FREQUENCY_BAND_868_MHZ_PLUS_2P4_GHZ) return false;
 
     switch (except_from_bindphrase(bind_phrase)) {
         case 0: strcpy(ext, " /--"); return true;

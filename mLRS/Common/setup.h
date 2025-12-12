@@ -403,6 +403,7 @@ void setup_sanitize_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_2P4_GHZ: // restrict ortho to 2.4GHz, 915FCC, 70CM
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SETUP_FREQUENCY_BAND_915_MHZ_FCC_PLUS_2P4_GHZ:
         break;
     default:
         SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
