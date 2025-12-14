@@ -677,6 +677,11 @@ void setup_configure_config(uint8_t config_id)
         Config.FrameSyncWord += 0x1111 * Setup.Common[config_id].Ortho;
     }
 
+    // Dual-band frequencies use a distinct sync word to prevent single-band receivers from connecting
+    if (is_dual_band_frequency(Setup.Common[config_id].FrequencyBand)) {
+        Config.FrameSyncWord += 0x5555;
+    }
+
     //-- Diversity
     // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
 
