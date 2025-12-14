@@ -936,7 +936,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_RECEIVE;
             break;
         case BIND_TASK_RX_STORE_PARAMS:
-            Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
+            // FrequencyBand is already set in bind.handle_receive() from the bind frame
             doParamsStore = true;
             break;
         }

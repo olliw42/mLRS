@@ -161,7 +161,7 @@ typedef struct
     uint8_t spare : 7;
 
     char BindPhrase_6[6];
-    uint8_t FrequencyBand_XXX : 4; // TODO
+    uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
