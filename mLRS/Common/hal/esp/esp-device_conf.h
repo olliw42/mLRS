@@ -170,6 +170,13 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
+  #define DEVICE_NAME "Flysky PR02 2400"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 //-- ELRS Tx Modules (external)
 
