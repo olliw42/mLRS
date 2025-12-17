@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-12-04.01'
+local version = '2025-12-17.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -68,11 +68,11 @@ local function setupScreen()
         LCD_WARN_X = 10
         LCD_WARN_W = 300
         LCD_BUTTONS_Y = 158
-        LCD_EDIT_TX_X = 2
-        LCD_EDIT_RX_X = 66
-        LCD_SAVE_X = 130
-        LCD_RELOAD_X = 175
-        LCD_BIND_X = 234
+        LCD_EDIT_TX_X = 5
+        LCD_EDIT_RX_X = 60
+        LCD_SAVE_X = 120
+        LCD_RELOAD_X = 170
+        LCD_BIND_X = 227
         LCD_TOOLS_X = 277
         LCD_INFO_Y = 180
         LCD_INFO_DY = 15
@@ -380,6 +380,7 @@ local DEVICE_PARAM_LIST_errors = 0
 local DEVICE_PARAM_LIST_complete = false
 local DEVICE_DOWNLOAD_is_running = true -- we start the script with this
 local DEVICE_SAVE_t_last = 0
+local DEVICE_PARAM_LIST_retried = false -- tracks if we've already tried auto-retry
 
 
 local function clearParams()
@@ -392,6 +393,7 @@ local function clearParams()
     DEVICE_PARAM_LIST_errors = 0
     DEVICE_PARAM_LIST_complete = false
     DEVICE_DOWNLOAD_is_running = true
+    DEVICE_PARAM_LIST_retried = false
 end
 
 
@@ -639,10 +641,21 @@ local function doParamLoop()
             elseif index == 255 then -- EOL (end of list :)
                 if DEVICE_PARAM_LIST_errors == 0 then
                     DEVICE_PARAM_LIST_complete = true
+                    DEVICE_PARAM_LIST_retried = false
                 elseif disableParamLoadErrorWarnings then -- ignore any errors
                     DEVICE_PARAM_LIST_complete = true
+                elseif not DEVICE_PARAM_LIST_retried then
+                    -- Auto-retry once: clear state and trigger reload
+                    DEVICE_PARAM_LIST_retried = true
+                    DEVICE_PARAM_LIST = nil
+                    DEVICE_ITEM_TX = nil
+                    DEVICE_PARAM_LIST_expected_index = 0
+                    DEVICE_PARAM_LIST_current_index = -1
+                    DEVICE_PARAM_LIST_errors = 0
+                    DEVICE_PARAM_LIST_complete = false
+                    -- setPopupWTmo("Retrying param load...", 100) -- uncomment for debug
                 else
-                    -- Huston, we have a proble,
+                    -- Exhausted retries, show error
                     DEVICE_PARAM_LIST_complete = false
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end
