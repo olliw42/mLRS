@@ -494,25 +494,18 @@ void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power
 {
     memset(Power_optstr, 0, slen);
 
-    char optstr[44+2] = {};
+    char optstr[52+2] = {};
 
     for (uint8_t i = 0; i < num; i++) {
-        char s[44+2];
+        char s[10+2]; // single entry, e.g. "2000 mW,"
         if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {
             strcpy(s, "min,");
-        } else
-        if (power_list[i] < 1000) {
+        } else {
             u16toBCDstr(power_list[i], s);
             remove_leading_zeros(s);
             strcat(s, " mW,");
-        } else {
-            u16toBCDstr((power_list[i] + 50) / 100, s);
-            remove_leading_zeros(s);
-            uint8_t l = strlen(s);
-            s[l] = s[l-1]; s[l-1] = '.'; s[l+1] = '\0';
-            strcat(s, " W,");
         }
         if (strlen(optstr) + strlen(s) <= slen) { // we are going to cut off the last char, hence <=
             strcat(optstr, s);
