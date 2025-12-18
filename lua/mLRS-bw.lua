@@ -851,7 +851,7 @@ local function drawPage()
     y = liney(6)
     lcd.drawText(0, y, "bind", cur_attr(Bind_idx))
     lcd.drawText(LCD_W/4, y, "boot", cur_attr(Boot_idx))
-    lcd.drawText(LCD_W/2+4, y, "device", cur_attr(Device_idx))
+    lcd.drawText(LCD_W/2+10, y, "device", cur_attr(Device_idx))
     -- lcd.drawText(LCD_W*3/4, y, tostring(mem_max2), TEXT_COLOR) -- memory size
 
   elseif page == 99 then
