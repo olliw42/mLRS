@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2025-12-17.01'
+local version = '2025-12-18.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -68,11 +68,11 @@ local function setupScreen()
         LCD_WARN_X = 10
         LCD_WARN_W = 300
         LCD_BUTTONS_Y = 158
-        LCD_EDIT_TX_X = 5
-        LCD_EDIT_RX_X = 60
-        LCD_SAVE_X = 120
-        LCD_RELOAD_X = 170
-        LCD_BIND_X = 227
+        LCD_EDIT_TX_X = 2
+        LCD_EDIT_RX_X = 66
+        LCD_SAVE_X = 130
+        LCD_RELOAD_X = 175
+        LCD_BIND_X = 234
         LCD_TOOLS_X = 277
         LCD_INFO_Y = 180
         LCD_INFO_DY = 15
@@ -380,7 +380,6 @@ local DEVICE_PARAM_LIST_errors = 0
 local DEVICE_PARAM_LIST_complete = false
 local DEVICE_DOWNLOAD_is_running = true -- we start the script with this
 local DEVICE_SAVE_t_last = 0
-local DEVICE_PARAM_LIST_retried = false -- tracks if we've already tried auto-retry
 
 
 local function clearParams()
@@ -393,7 +392,6 @@ local function clearParams()
     DEVICE_PARAM_LIST_errors = 0
     DEVICE_PARAM_LIST_complete = false
     DEVICE_DOWNLOAD_is_running = true
-    DEVICE_PARAM_LIST_retried = false
 end
 
 
@@ -554,6 +552,8 @@ end
 ----------------------------------------------------------------------
 -- looper to send and read command frames
 ----------------------------------------------------------------------
+-- PROTOCOL CHANGE (2025-12-18): Switched from push-based to pull-based parameter loading
+----------------------------------------------------------------------
 
 local function doParamLoop()
     -- trigger getting device items and param items
@@ -574,8 +574,9 @@ local function doParamLoop()
       elseif DEVICE_PARAM_LIST == nil then
           if DEVICE_INFO ~= nil then -- wait for it to be populated
               DEVICE_PARAM_LIST = {}
-              cmdPush(MBRIDGE_CMD_PARAM_REQUEST_LIST, {}) -- triggers sending full list of PARAM_ITEMs
-              --cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_REQUEST_LIST})
+              -- Request first parameter by index (pull-based protocol)
+              -- OLD: cmdPush(MBRIDGE_CMD_PARAM_REQUEST_LIST, {}) -- streaming approach
+              cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
           end
       end
     end
@@ -641,21 +642,10 @@ local function doParamLoop()
             elseif index == 255 then -- EOL (end of list :)
                 if DEVICE_PARAM_LIST_errors == 0 then
                     DEVICE_PARAM_LIST_complete = true
-                    DEVICE_PARAM_LIST_retried = false
                 elseif disableParamLoadErrorWarnings then -- ignore any errors
                     DEVICE_PARAM_LIST_complete = true
-                elseif not DEVICE_PARAM_LIST_retried then
-                    -- Auto-retry once: clear state and trigger reload
-                    DEVICE_PARAM_LIST_retried = true
-                    DEVICE_PARAM_LIST = nil
-                    DEVICE_ITEM_TX = nil
-                    DEVICE_PARAM_LIST_expected_index = 0
-                    DEVICE_PARAM_LIST_current_index = -1
-                    DEVICE_PARAM_LIST_errors = 0
-                    DEVICE_PARAM_LIST_complete = false
-                    -- setPopupWTmo("Retrying param load...", 100) -- uncomment for debug
                 else
-                    -- Exhausted retries, show error
+                    -- Huston, we have a proble,
                     DEVICE_PARAM_LIST_complete = false
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end
@@ -671,6 +661,7 @@ local function doParamLoop()
             elseif DEVICE_PARAM_LIST == nil or DEVICE_PARAM_LIST[index] == nil then
                 paramsError()
             else
+                local item3_needed = false
                 if DEVICE_PARAM_LIST[index].typ < MBRIDGE_PARAM_TYPE_LIST then
                     DEVICE_PARAM_LIST[index].min = mb_to_value(cmd.payload, 1, DEVICE_PARAM_LIST[index].typ)
                     DEVICE_PARAM_LIST[index].max = mb_to_value(cmd.payload, 3, DEVICE_PARAM_LIST[index].typ)
@@ -682,10 +673,18 @@ local function doParamLoop()
                     DEVICE_PARAM_LIST[index].min = 0
                     DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                     DEVICE_PARAM_LIST[index].editable = mb_allowed_mask_editable(DEVICE_PARAM_LIST[index].allowed_mask)
+                    -- determine if we should expect an ITEM3
+                    local s = mb_to_string(cmd.payload, 3, 21)
+                    if string.len(s) == 21 then item3_needed = true end
                 elseif DEVICE_PARAM_LIST[index].typ == MBRIDGE_PARAM_TYPE_STR6 then
                     -- nothing to do, is send but hasn't any content
                 else
                     paramsError()
+                end
+                if not item3_needed then
+                    -- Request next parameter by index (pull-based protocol)
+                    -- This ensures we explicitly fetch each parameter after processing the current one
+                    cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
                 end
             end
         elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then
@@ -708,10 +707,14 @@ local function doParamLoop()
                 paramsError()
             else
                 local s = DEVICE_PARAM_LIST[index].item2payload
+                local item4_needed = false
                 if not is_item4 then
                     DEVICE_PARAM_LIST[index].item3payload = cmd.payload
                     for i=1,23 do s[23+i] = cmd.payload[i] end
                     DEVICE_PARAM_LIST[index].options = mb_to_options(s, 3, 21+23)
+                    -- determine if we should expect an ITEM4
+                    local opts = mb_to_string(cmd.payload, 1, 23)
+                    if string.len(opts) == 23 then item4_needed = true end
                 else
                     local s3 = DEVICE_PARAM_LIST[index].item3payload
                     for i=1,23 do s[23+i] = s3[i]; s[23+23+i] = cmd.payload[i]; end
@@ -719,6 +722,11 @@ local function doParamLoop()
                 end
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                 s = nil
+                if not item4_needed then
+                    -- Request next parameter by index (pull-based protocol)
+                    -- All ITEM3/ITEM4 processing complete for current param, fetch next one
+                    cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+                end
             end
         end
         cmd = nil
