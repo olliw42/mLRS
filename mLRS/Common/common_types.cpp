@@ -494,10 +494,10 @@ void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power
 {
     memset(Power_optstr, 0, slen);
 
-    char optstr[52+2] = {};
+    char optstr[67+2] = {};
 
     for (uint8_t i = 0; i < num; i++) {
-        char s[10+2]; // single entry, e.g. "2000 mW,"
+        char s[16]; // single entry, e.g. "2000 mW,"
         if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {

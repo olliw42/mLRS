@@ -83,7 +83,7 @@
 // Rx parameters must begin with "Rx "
 // a parameter name is limited to 16 chars max
 // a LIST can have only 16 options at most
-// a LIST option string list is limited to 52 chars max
+// a LIST option string list is limited to 67 chars max
 // a LIST option string should not exceed 10 chars
 #define SETUP_PARAMETER_LIST_COMMON_BINDPHRASE \
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)
