@@ -241,33 +241,16 @@ void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t l
     }
 }
 
-
-void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
+// Helper functions for cleaner sxSendFrame implementation
+static void sxSendOnBoth(void* const data, uint8_t len, uint16_t tmo_ms)
 {
-#if defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-    // LR11xx with diversity - check if dual-band frequency
-    if (is_dual_band_frequency(Config.FrequencyBand)) {
-        // dual-band frequency: send on both simultaneously
-        // sx2 (2.4 GHz) transmits first since it takes longer, reduce gap between TX done IRQs
-        sx2.SendFrame((uint8_t*)data, len, tmo_ms);
-        sx.SendFrame((uint8_t*)data, len, tmo_ms);
-    } else {
-        // single-band: normal diversity operation
-        if (antenna == ANTENNA_1) {
-            sx.SendFrame((uint8_t*)data, len, tmo_ms);
-            sx2.SetToIdle();
-        } else {
-            sx2.SendFrame((uint8_t*)data, len, tmo_ms);
-            sx.SetToIdle();
-        }
-    }
-#elif defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // dual-band configuration: send on both simultaneously
-    // no impact when using DEVICE_HAS_DUAL_SX126x_SX126x
+    // sx2 transmits first (2.4 GHz takes longer, reduces gap between TX done IRQs)
     sx2.SendFrame((uint8_t*)data, len, tmo_ms);
     sx.SendFrame((uint8_t*)data, len, tmo_ms);
-#else
-    // single-band configuration: normal diversity operation
+}
+
+static void sxSendDiversitySelection(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
+{
     if (antenna == ANTENNA_1) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms);
         sx2.SetToIdle();
@@ -275,6 +258,31 @@ void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms
         sx2.SendFrame((uint8_t*)data, len, tmo_ms);
         sx.SetToIdle();
     }
+}
+
+void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
+{
+#if defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    // LR11xx: runtime dual-band detection
+    if (is_dual_band_frequency(Config.FrequencyBand)) {
+        sxSendOnBoth(data, len, tmo_ms);
+    } else {
+        sxSendDiversitySelection(antenna, data, len, tmo_ms);
+    }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+    // Matek DB30: flexible antenna configuration (dual-band or single-band)
+    if (TRANSMIT_USE_ANTENNA2) {
+        sx2.SendFrame((uint8_t*)data, len, tmo_ms);
+    }
+    if (TRANSMIT_USE_ANTENNA1) {
+        sx.SendFrame((uint8_t*)data, len, tmo_ms);
+    }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // Dual SX126x: always transmit on both radios
+    sxSendOnBoth(data, len, tmo_ms);
+#else
+    // Standard diversity: antenna selection
+    sxSendDiversitySelection(antenna, data, len, tmo_ms);
 #endif
 }
 

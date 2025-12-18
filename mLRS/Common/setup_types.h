@@ -63,6 +63,7 @@ typedef enum {
     MODE_FLRC_111HZ,
     MODE_FSK_50HZ,
     MODE_19HZ_7X,
+    MODE_DUALBAND_FSK_50HZ,  // FSK on SX126x (sub-GHz), LoRa on SX128x (2.4 GHz)
     MODE_NUM,
 } MODE_ENUM;
 

@@ -123,7 +123,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_LR11xx
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
-    SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
+    SetupMetaData.Mode_allowed_mask = 0b1110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK, FSK/50 dual
     #define MODE_DEFAULT  MODE_31HZ
 #else
     #error Unknown Mode !
@@ -387,7 +387,7 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC_PLUS_2P4_GHZ:
     case SETUP_FREQUENCY_BAND_868_MHZ_PLUS_2P4_GHZ:
-        SetupMetaData.Mode_allowed_mask &= 0b000110; // filter down to 31 Hz, 19 Hz
+        SetupMetaData.Mode_allowed_mask &= 0b1000110; // filter down to 31 Hz, 19 Hz, FSK/50 dual
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()
@@ -403,7 +403,6 @@ void setup_sanitize_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_2P4_GHZ: // restrict ortho to 2.4GHz, 915FCC, 70CM
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_70_CM_HAM:
-    case SETUP_FREQUENCY_BAND_915_MHZ_FCC_PLUS_2P4_GHZ:
         break;
     default:
         SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
@@ -547,6 +546,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         Config.send_frame_tmo_ms = MODE_FLRC_111HZ_SEND_FRAME_TMO_MS; // 7;
         break;
     case MODE_FSK_50HZ:
+    case MODE_DUALBAND_FSK_50HZ:
         Config.frame_rate_ms = 20; // 20 ms = 50 Hz
         Config.frame_rate_hz = 50;
         Config.send_frame_tmo_ms = MODE_FSK_50HZ_SEND_FRAME_TMO_MS; // 10;
@@ -556,7 +556,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
     }
 
     // helper for sx drivers
-    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ);
+    Config.Sx.is_lora = (Config.Mode != MODE_FLRC_111HZ && Config.Mode != MODE_FSK_50HZ && Config.Mode != MODE_DUALBAND_FSK_50HZ);
     Config.Sx2.is_lora = Config.Sx.is_lora;
 
     // Sx/Sx2 LoraConfigIndex
@@ -616,50 +616,51 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
 
     case MODE_FLRC_111HZ:
     case MODE_FSK_50HZ:
+    case MODE_DUALBAND_FSK_50HZ:
         Config.Sx.LoraConfigIndex = 0;
         break;
     }
 
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
-    // DUALBAND 2.4 GHz & 868/915 MHz
-    switch (Config.Mode) {
-    case MODE_31HZ:
-        Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
-        Config.Sx2.is_lora = true;
-        break;
-    case MODE_19HZ:
-        Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
-        Config.Sx2.is_lora = true;
-        break;
-    case MODE_FSK_50HZ: // FSK for SX126x implies 50 Hz mode for SX128x, i.e. LoRa mode
-        Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
-        Config.Sx2.is_lora = true;
-        break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
-    }
-#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // DUALBAND 868/915 MHz & 433 MHz
-    // nothing to do, is the same as for 868/915
-#elif defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-    // need to set sx2 to 2.4 modes if dual-band frequency 
-    if (is_dual_band_frequency(frequencyband))
-    {
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || (defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI)
+    // DUALBAND configurations: SX126x+SX128x or LR11xx with diversity
+    // Both hardware types can operate in single-band OR dual-band mode
+    // Only configure sx2 for 2.4 GHz when dual-band frequency is selected
+    bool configure_sx2 = is_dual_band_frequency(frequencyband);
+    
+    #ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+        const uint8_t LORA_BW800_SF6 = SX128x_LORA_CONFIG_BW800_SF6_CRLI4_5;
+        const uint8_t LORA_BW800_SF7 = SX128x_LORA_CONFIG_BW800_SF7_CRLI4_5;
+        const uint8_t LORA_BW800_SF5 = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
+    #else
+        const uint8_t LORA_BW800_SF6 = LR11xx_LORA_CONFIG_BW800_SF6_CR4_5;
+        const uint8_t LORA_BW800_SF7 = LR11xx_LORA_CONFIG_BW800_SF7_CR4_5;
+        const uint8_t LORA_BW800_SF5 = LR11xx_LORA_CONFIG_BW800_SF5_CR4_5;
+    #endif
+    
+    if (configure_sx2) {
         switch (Config.Mode) {
         case MODE_31HZ:
-            Config.Sx2.LoraConfigIndex = LR11xx_LORA_CONFIG_BW800_SF6_CR4_5;
+            Config.Sx2.LoraConfigIndex = LORA_BW800_SF6;
             Config.Sx2.is_lora = true;
             break;
         case MODE_19HZ:
-            Config.Sx2.LoraConfigIndex = LR11xx_LORA_CONFIG_BW800_SF7_CR4_5;
+            Config.Sx2.LoraConfigIndex = LORA_BW800_SF7;
+            Config.Sx2.is_lora = true;
+            break;
+        case MODE_FSK_50HZ: // FSK for SX126x implies 50 Hz LoRa mode for SX128x
+        case MODE_DUALBAND_FSK_50HZ: // Dual-band FSK / 50: FSK on SX126x, LoRa on SX128x (or LoRa on both for LR11xx)
+            Config.Sx2.LoraConfigIndex = LORA_BW800_SF5;
             Config.Sx2.is_lora = true;
             break;
         default:
             while(1){} // must not happen, should have been resolved in setup_sanitize_config()
         }
     }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    // DUALBAND 868/915 MHz & 433 MHz
+    // nothing to do, is the same as for 868/915
 #endif
 }
 
@@ -771,6 +772,13 @@ void setup_configure_config(uint8_t config_id)
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 868/915 MHz & 433 MHz
     Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
+#elif defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    // LR11xx with diversity: set sx2 to 2.4 GHz if dual-band frequency, else same as sx
+    if (is_dual_band_frequency(Config.FrequencyBand)) {
+        Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
+    } else {
+        Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
+    }
 #endif
 
     //-- Fhss
@@ -862,6 +870,7 @@ void setup_configure_config(uint8_t config_id)
     case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
     case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
     case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
+    case MODE_DUALBAND_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // Dual-band FSK / 50
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize_config()
     }
@@ -871,7 +880,7 @@ void setup_configure_config(uint8_t config_id)
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
     Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ;
 #elif defined DEVICE_HAS_LR11xx && defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-    // need to set sx2 to 2.4 fhss if dual-band frequency 
+    // LR11xx with diversity: set Fhss2 to 2.4 GHz if dual-band, else keep same as Fhss
     if (is_dual_band_frequency(Config.FrequencyBand)) {
         Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
         Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
@@ -879,10 +888,12 @@ void setup_configure_config(uint8_t config_id)
         switch (Config.Mode) {
         case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
         case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
+        case MODE_DUALBAND_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // 50 Hz LoRa on 2.4 GHz for LR11xx
         default:
             while(1){} // must not happen, should have been resolved in setup_sanitize_config()
         }
     }
+    // else: Fhss2 = Fhss was already set above at line 862, so single-band diversity is handled
 #endif
 
     //-- More Config, may depend on above config settings
