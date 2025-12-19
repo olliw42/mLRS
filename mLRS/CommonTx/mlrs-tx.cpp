@@ -313,15 +313,15 @@ void SX_DIO_EXTI_IRQHandler(void)
     sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
     if (irq_status & SX_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.RxSignature) irq_status = 0; // not binding frame, so ignore it
-        } else {
-            uint16_t sync_word;
-            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-        }
+        //if (bind.IsInBind()) {
+        //    uint64_t bind_signature;
+        //    sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+        //    if (bind_signature != bind.RxSignature) irq_status = 0; // not binding frame, so ignore it
+        //} else {
+		uint16_t sync_word;
+		sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+		if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+        //}
     }
 })
 #ifdef USE_SX2
@@ -446,16 +446,16 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 {
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
-        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
+        //pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA);
         break;
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
-        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
+        //pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
         break;
     case LINK_TASK_TX_SET_RX_PARAMS:
-        pack_txcmdframe_setrxparams(frame, frame_stats, rc);
+        //pack_txcmdframe_setrxparams(frame, frame_stats, rc);
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS:
-        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
+        //pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
         transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
         break;
     }
@@ -475,58 +475,27 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 
 void prepare_transmit_frame(uint8_t antenna)
 {
-uint8_t payload[FRAME_TX_PAYLOAD_LEN];
-uint8_t payload_len = 0;
-static const uint8_t default_msg[FRAME_TX_PAYLOAD_LEN] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
+	uint8_t payload[FRAME_TX_PAYLOAD_LEN];
+	uint8_t payload_len = 0;
+	static const uint8_t default_msg[FRAME_TX_PAYLOAD_LEN] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
+	uint32_t current = HAL_GetTick();
+	static uint32_t last_transmit = 0;
 
-    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        // read data from serial port
-        if (connected()) {
-            //static const uint32_t frame_period = 2;
-            //static const uint32_t safety_margin = 10;
-            //static uint32_t last_period = 0;
-            //static uint32_t last_frame = 0;
-            //static uint32_t init = 0;
-            static uint32_t frame_id = 0;
-            //uint32_t now = HAL_GetTick();
-            //uint32_t pause_start = 0;
-            //uint32_t pause_duration = 0;
-            //if (init == 0)
-            //{
-            //	init = 1;
-            //	last_period = now;
-            //	last_frame = now;
-            //}
-
-            //if (pause_duration > 0)
-            //{
-            //	if (now - pause_start > pause_duration)
-            //	{
-            //		pause_duration = 0;
-            //		last_period = now;
-            //		last_frame = now;
-            //	}
-            //}
-            //else if (now - last_frame >= frame_period)
-            //{
-            //	last_frame = now;
+	if (HAL_GetTick() - last_transmit > 100)
+	{
+		last_transmit = current;
+		if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+			// read data from serial port
+			static uint32_t frame_id = 0;
 			memcpy(payload, default_msg, FRAME_TX_PAYLOAD_LEN);
 			payload[0] = frame_id;
 			frame_id++;
 			payload_len = FRAME_TX_PAYLOAD_LEN;
-            //	if (now - last_period >= 4500)
-            //	{
-            //		pause_start = now;
-            //		pause_duration = 0;
-            //	}
-            //}
 
-            stats.bytes_transmitted.Add(payload_len);
-            stats.serial_data_transmitted.Inc();
-        } else {
-            sx_serial.flush();
-        }
-    }
+			stats.bytes_transmitted.Add(payload_len);
+			stats.serial_data_transmitted.Inc();
+		}
+	}
 
     stats.last_transmit_antenna = antenna;
 
@@ -565,7 +534,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
-        process_received_rxcmdframe(frame);
+        //process_received_rxcmdframe(frame);
         return;
     }
 
@@ -1280,7 +1249,7 @@ IF_IN(
 			//}
 			//break;
 		//case TX_TASK_BIND: start_bind(); break;
-		case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+		//case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
 		//case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
 		//case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
 		case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;

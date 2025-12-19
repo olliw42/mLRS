@@ -36,7 +36,7 @@
 // user can modify them to their liking
 
 // un-comment to force setup to the below defines, else setup is taken from EEPROM
-//#define SETUP_FORCE_COMMON_CONF
+#define SETUP_FORCE_COMMON_CONF
 
 
 #define CPOWER                          RFPOWER_DEFAULT
