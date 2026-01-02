@@ -12,7 +12,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with OTX, ETX, mOTX v33
 
--- local version = '2024-12-17.00'
+-- local version = '2025-12-17.00'
 
 local req_tx_ver = 1000 -- 'v1.0.0'
 local req_rx_ver = 1000 -- 'v1.0.0'
