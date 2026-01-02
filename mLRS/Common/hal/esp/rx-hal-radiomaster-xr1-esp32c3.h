@@ -28,22 +28,6 @@
 #define UART_TXBUFSIZE            256
 
 
-//-- Out port
-
-void out_init_gpio(void) {}
-
-void out_set_normal(void)
-{
-    // https://github.com/espressif/esp-idf/blob/release/v4.4/components/esp_rom/include/esp32c3/rom/gpio.h#L236
-    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, false, false);
-}
-
-void out_set_inverted(void) 
-{
-    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
-}
-
-
 //-- LR11xx DIO switch control
 
 #define SX_USE_RFSW_CTRL {15, 0, 12, 8, 8, 6, 0, 5}

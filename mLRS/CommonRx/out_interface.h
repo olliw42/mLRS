@@ -23,8 +23,18 @@ extern tStats stats;
 //-------------------------------------------------------
 // Interface Implementation
 
-#ifdef ESP32
+#if defined ESP32 && defined DEVICE_HAS_OUT
 #include "../Common/esp-lib/esp-uart.h"
+
+#ifndef UART_USE_SERIAL1
+#error OUT must be on Serial1
+#endif
+
+// https://github.com/espressif/esp-idf/blob/release/v4.4/components/esp_rom/include/esp32/rom/gpio.h#L228-L242
+void out_init_gpio(void) {}
+void out_set_normal(void) { gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, false, false); }
+void out_set_inverted(void) { gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false); }
+
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 #endif
