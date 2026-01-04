@@ -460,6 +460,11 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
         transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
         break;
+    case LINK_TASK_TX_RX_ENTER_UPDATE:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_RX_ENTER_UPDATE);
+        transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+        link_task_reset();
+        break;
     }
 }
 
@@ -1264,6 +1269,11 @@ IF_IN(
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
     case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
     case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(tasks.GetCliTaskValue()); break;
+    case TX_TASK_RX_ENTER_UPDATE:
+        if (connected()) {
+            link_task_set(LINK_TASK_TX_RX_ENTER_UPDATE);
+        }
+        break;
     }
     if (tx_task == MAIN_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 

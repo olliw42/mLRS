@@ -132,6 +132,11 @@ tRxSxSerial sx_serial;
 
 tRxDroneCan dronecan;
 
+#if defined ESP8266 || defined ESP32
+#include "ota_wifi_rx.h"
+tRxOtaWifi ota_wifi;
+#endif
+
 
 //-------------------------------------------------------
 // Init
@@ -268,6 +273,14 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         setup_reload();
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        break;
+
+    case FRAME_CMD_RX_ENTER_UPDATE:
+#if defined ESP8266 || defined ESP32
+        sx.SetToIdle();
+        sx2.SetToIdle();
+        ota_wifi.Enter();
+#endif
         break;
     }
 }
@@ -565,6 +578,9 @@ RESTARTCONTROLLER
     connect_fhss_index_band_seen = 0;
     connect_listen_cnt = 0;
     connect_occured_once = false;
+#if defined ESP8266 || defined ESP32
+    ota_wifi.Init();
+#endif
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_task_init();
     doPostReceive2_cnt = 0;
@@ -588,6 +604,14 @@ RESTARTCONTROLLER
     resetSysTask(); // helps in avoiding too short first loop
 INITCONTROLLER_END
 
+#if defined ESP8266 || defined ESP32
+    //-- Wi-Fi OTA mode handling
+    if (ota_wifi.IsActive()) {
+        ota_wifi.Do();  // handles LED double-blink internally
+        return;  // skip normal loop when in wifi mode
+    }
+#endif
+
     //-- SysTask handling
 
     if (doSysTask()) {
@@ -605,6 +629,15 @@ INITCONTROLLER_END
         fan.SetPower(sx.RfPower_dbm());
         fan.Tick_ms();
         dronecan.Tick_ms();
+
+#if defined ESP8266 || defined ESP32
+        if (ota_wifi.CheckAutoTimeout(connect_occured_once, bind.IsInBind())) {
+            sx.SetToIdle();
+            sx2.SetToIdle();
+            ota_wifi.Enter();
+            return;
+        }
+#endif
 
         if (!tick_1hz) {
             dbg.puts(".");

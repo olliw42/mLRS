@@ -699,13 +699,14 @@ void tTxCli::print_help_do(void)
         case 14: putsn("  stats       -> starts streaming statistics"); break;
         case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
         case 16: putsn("  systemboot  -> call system bootloader"); break;
+        case 17: putsn("  rxupdate    -> put receiver into update mode"); break;
 #ifdef USE_ESP_WIFI_BRIDGE
-        case 17: putsn("  esppt       -> enter serial passthrough"); break;
-        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
+        case 18: putsn("  esppt       -> enter serial passthrough"); break;
+        case 19: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
 #endif
 #ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
+        case 20: putsn("  hc04 pt       -> enter serial passthrough"); break;
+        case 21: putsn("  hc04 setpin   -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
@@ -846,6 +847,16 @@ bool rx_param_changed;
         } else
         if (is_cmd("systemboot")) {
             tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT); //task_pending = TX_TASK_SYSTEM_BOOT;
+
+        //-- Receiver update mode
+        } else
+        if (is_cmd("rxupdate")) {
+            if (!connected()) {
+                putsn("warn: receiver not connected");
+            } else {
+                tasks.SetCliTask(TX_TASK_RX_ENTER_UPDATE);
+                putsn("  receiver entering update mode");
+            }
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE

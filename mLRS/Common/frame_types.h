@@ -201,6 +201,7 @@ typedef enum {
     FRAME_CMD_NONE = 0,
     FRAME_CMD_RX_REBOOT,
     FRAME_CMD_RX_BIND,
+    FRAME_CMD_RX_ENTER_UPDATE,              // tx -> rx, enter update mode (generic OTA)
 
     // these commands use the normal Tx/Rx frames, with re-purposed payload however
     FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
