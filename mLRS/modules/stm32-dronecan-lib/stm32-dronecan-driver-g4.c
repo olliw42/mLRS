@@ -45,6 +45,11 @@ static bool dc_hal_abort_tx_on_error;
 
 static FDCAN_HandleTypeDef hfdcan;
 
+static bool dc_hal_fd_mode_detected = false;
+static bool dc_hal_fd_mode_enabled = false;
+
+static uint32_t tx_tlast_ms = 0; // for TX timeout error counting
+
 
 //-------------------------------------------------------
 // Helper
@@ -52,6 +57,7 @@ static FDCAN_HandleTypeDef hfdcan;
 
 static void _process_error_status(void)
 {
+    if (hfdcan.Instance == NULL) return;
 //    FDCAN_ProtocolStatusTypeDef protocolStatus;
 //    HAL_FDCAN_GetProtocolStatus(&hfdcan, &protocolStatus);
 //    if (protocolStatus.BusOff) {
@@ -59,18 +65,52 @@ static void _process_error_status(void)
 //    }
     uint32_t psr = READ_REG(hfdcan.Instance->PSR); // read the protocol status register
 
-    if ((psr & FDCAN_PSR_BO) != 0) { // is bus off
+    static bool was_bo = false;
+    bool is_bo = (psr & FDCAN_PSR_BO) != 0;
+    if (is_bo) { // is bus off
+        if (!was_bo) {
+            dc_hal_stats.bo_count++;
+            was_bo = true;
+        }
         CLEAR_BIT(hfdcan.Instance->CCCR, FDCAN_CCCR_INIT);
-        dc_hal_stats.bo_count++;
         HAL_FDCAN_AbortTxRequest(&hfdcan, FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2);
-    };
+    } else {
+        was_bo = false;
+    }
 
     uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos;
     uint32_t dlec = (psr & FDCAN_PSR_DLEC) >> FDCAN_PSR_DLEC_Pos;
+    
+    // store last error codes only if they are new
+    if (lec != 7) {
+        dc_hal_stats.last_lec = lec;
+    }
+    if (dlec != 7) {
+        dc_hal_stats.last_dlec = dlec;
+    }
+
+    // reset LEC and DLEC to 7 (No Change) by writing back to PSR
+    hfdcan.Instance->PSR = (7 << FDCAN_PSR_LEC_Pos) | (7 << FDCAN_PSR_DLEC_Pos);
+
+    if (lec != FDCAN_PROTOCOL_ERROR_NONE && lec != FDCAN_PROTOCOL_ERROR_NO_CHANGE) {
+        dc_hal_stats.lec_count++;
+        if (lec == 3) dc_hal_stats.ack_err_count++;
+    }
+    if (dlec != FDCAN_PROTOCOL_ERROR_NONE && dlec != FDCAN_PROTOCOL_ERROR_NO_CHANGE) {
+        dc_hal_stats.dlec_count++;
+        // count by error type: 1=Stuff, 2=Form, 3=ACK, 4=Bit1, 5=Bit0, 6=CRC
+        switch (dlec) {
+            case 1: dc_hal_stats.dlec_stuff_count++; break;
+            case 2: dc_hal_stats.dlec_form_count++; break;
+            case 3: dc_hal_stats.dlec_ack_count++; break;
+            case 4: dc_hal_stats.dlec_bit1_count++; break;
+            case 5: dc_hal_stats.dlec_bit0_count++; break;
+            case 6: dc_hal_stats.dlec_crc_count++; break;
+        }
+    }
+    
     if ((lec != FDCAN_PROTOCOL_ERROR_NONE && lec != FDCAN_PROTOCOL_ERROR_NO_CHANGE) ||
         (dlec != FDCAN_PROTOCOL_ERROR_NONE && dlec != FDCAN_PROTOCOL_ERROR_NO_CHANGE)) {
-        CLEAR_BIT(hfdcan.Instance->PSR, FDCAN_PSR_LEC | FDCAN_PSR_DLEC);
-        dc_hal_stats.lec_count++;
         if (dc_hal_abort_tx_on_error) {
             HAL_FDCAN_AbortTxRequest(&hfdcan, FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2);
         }
@@ -78,10 +118,16 @@ static void _process_error_status(void)
 
     if ((psr & FDCAN_PSR_PXE) != 0) { // protocol exception event occurred, happens when fc is not yet doing CAN
         CLEAR_BIT(hfdcan.Instance->PSR, FDCAN_PSR_PXE);
-        // dc_hal_stats.pxd_count++; // un-comment only when needed for testing
+        dc_hal_stats.pxd_count++;
     }
 
     uint32_t ecr = READ_REG(hfdcan.Instance->ECR); // read the error counter register, read clears CEL
+    dc_hal_stats.last_psr = psr;
+    dc_hal_stats.last_ecr = ecr;
+    dc_hal_stats.last_cccr = hfdcan.Instance->CCCR;
+    dc_hal_stats.tec = (ecr & FDCAN_ECR_TEC) >> FDCAN_ECR_TEC_Pos;
+    dc_hal_stats.rec = (ecr & FDCAN_ECR_REC) >> FDCAN_ECR_REC_Pos;
+
     if ((ecr & FDCAN_ECR_CEL) != 0) { // CAN protocol error
         dc_hal_stats.cel_count += (ecr & FDCAN_ECR_CEL) >> FDCAN_ECR_CEL_Pos;
     }
@@ -95,6 +141,7 @@ static void _process_error_status(void)
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
+    const tDcHalDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
     if ((iface_mode != DC_HAL_IFACE_MODE_NORMAL) &&
@@ -124,22 +171,33 @@ int16_t dc_hal_init(
     __HAL_FDCAN_DISABLE_IT(&hfdcan, 0);
 
     hfdcan.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-    hfdcan.Init.FrameFormat = FDCAN_FRAME_CLASSIC; // FDCAN_FRAME_FD_NO_BRS, FDCAN_FRAME_FD_BRS
     hfdcan.Init.Mode = FDCAN_MODE_NORMAL;
-
-    hfdcan.Init.AutoRetransmission = DISABLE;
-    hfdcan.Init.TransmitPause = ENABLE; // it is probably a good thing to enable it
-    hfdcan.Init.ProtocolException = DISABLE;
-
+    hfdcan.Init.AutoRetransmission = ENABLE;
+    hfdcan.Init.TransmitPause = ENABLE;  // insert pause between TX frames to reduce bus contention
+    hfdcan.Init.ProtocolException = DISABLE; // follow ST examples: treats exceptions as form errors instead of special state
     hfdcan.Init.NominalPrescaler = timings->bit_rate_prescaler;
     hfdcan.Init.NominalTimeSeg1 = timings->bit_segment_1;
     hfdcan.Init.NominalTimeSeg2 = timings->bit_segment_2;
     hfdcan.Init.NominalSyncJumpWidth = timings->sync_jump_width;
 
-    hfdcan.Init.DataPrescaler = 1; // irrelevant if FrameFormat != FDCAN_FRAME_FD_BRS
-    hfdcan.Init.DataTimeSeg1 = 1;
-    hfdcan.Init.DataTimeSeg2 = 1;
-    hfdcan.Init.DataSyncJumpWidth = 1;
+    if (data_timings != NULL) {
+        // enable FD frame format with BRS - this allows receiving both classic CAN and CAN FD frames
+        hfdcan.Init.FrameFormat = FDCAN_FRAME_FD_BRS;
+        hfdcan.Init.DataPrescaler = data_timings->bit_rate_prescaler;
+        hfdcan.Init.DataTimeSeg1 = data_timings->bit_segment_1;
+        hfdcan.Init.DataTimeSeg2 = data_timings->bit_segment_2;
+        hfdcan.Init.DataSyncJumpWidth = data_timings->sync_jump_width;
+        // note: STM32G4 FDCAN message RAM automatically handles element sizes based on FrameFormat
+        dc_hal_fd_mode_enabled = true;
+    } else {
+        // classic CAN only
+        hfdcan.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+        hfdcan.Init.DataPrescaler = 1;
+        hfdcan.Init.DataTimeSeg1 = 1;
+        hfdcan.Init.DataTimeSeg2 = 1;
+        hfdcan.Init.DataSyncJumpWidth = 1;
+        dc_hal_fd_mode_enabled = false;
+    }
 
     hfdcan.Init.StdFiltersNbr = 0; // these are used in FDCAN_CalcultateRamBlockAddresses() called in HAL_FDCAN_Init()
     hfdcan.Init.ExtFiltersNbr = DC_HAL_ACCEPTANCE_FILTERS_NUM_MAX;
@@ -149,6 +207,16 @@ int16_t dc_hal_init(
     HAL_StatusTypeDef hres = HAL_FDCAN_Init(&hfdcan);
     if (hres != HAL_OK) {
         return -DC_HAL_ERROR_CAN_INIT;
+    }
+
+    if (data_timings != NULL) {
+        // enable transceiver delay compensation for CAN FD
+        // TDCO hardcoded to 10 to match ArduPilot
+        uint32_t tdco = 10;
+        HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan, tdco, 0);
+        HAL_FDCAN_EnableTxDelayCompensation(&hfdcan);
+        // explicitly enable TDC in DBTP register (HAL may not set this correctly)
+        SET_BIT(hfdcan.Instance->DBTP, FDCAN_DBTP_TDC);
     }
 
     // configure reception filter
@@ -207,6 +275,35 @@ int16_t dc_hal_start(void)
 
 
 //-------------------------------------------------------
+// Helper functions
+//-------------------------------------------------------
+
+// convert DLC field to actual byte count (CAN FD encoding)
+static inline uint8_t dc_dlc_to_bytes(uint8_t dlc)
+{
+    static const uint8_t dlc_to_len[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
+    return (dlc < 16) ? dlc_to_len[dlc] : 64;
+}
+
+// convert actual byte count to DLC field (CAN FD encoding)
+static inline uint8_t dc_bytes_to_dlc(uint8_t len)
+{
+    if (len > 64) {
+        dc_hal_stats.dlc_gt64_count++; // should not happen
+        len = 64; // clamp to max
+    }
+    if (len <= 8) return len;
+    if (len <= 12) return 9;
+    if (len <= 16) return 10;
+    if (len <= 20) return 11;
+    if (len <= 24) return 12;
+    if (len <= 32) return 13;
+    if (len <= 48) return 14;
+    return 15; // 49-64 bytes
+}
+
+
+//-------------------------------------------------------
 // Transmit
 //-------------------------------------------------------
 
@@ -226,13 +323,12 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms)
         return -DC_HAL_ERROR_UNSUPPORTED_FRAME_FORMAT;
     }
 
-    if (frame->data_len > 8) { // don't do FD
+    if (frame->data_len > 8 && !dc_hal_fd_mode_enabled) { // don't do FD if not enabled
         return -DC_HAL_ERROR_UNSUPPORTED_FRAME_FORMAT;
     }
 
     _process_error_status();
 
-static uint32_t tx_tlast_ms = 0; // for error counting
 
     // thx to the TxFiFo in the G4 we can do the crude method and just put the message into the fifo if there is space
     // check for space in fifo
@@ -252,8 +348,15 @@ static uint32_t tx_tlast_ms = 0; // for error counting
 
     FDCAN_TxHeaderTypeDef pTxHeader;
     pTxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE; // FDCAN_ESI_ACTIVE, FDCAN_ESI_PASSIVE ???
-    pTxHeader.BitRateSwitch = FDCAN_BRS_OFF; // FDCAN_BRS_ON
-    pTxHeader.FDFormat = FDCAN_CLASSIC_CAN; // FDCAN_FD_CAN
+    // transmit in FD mode only when enabled AND when FC has been detected as FD-capable
+    // this maintains backwards compatibility with classic CAN flight controllers
+    if (dc_hal_fd_mode_enabled && dc_hal_fd_mode_detected) {
+        pTxHeader.BitRateSwitch = FDCAN_BRS_ON;
+        pTxHeader.FDFormat = FDCAN_FD_CAN;
+    } else {
+        pTxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+        pTxHeader.FDFormat = FDCAN_CLASSIC_CAN;
+    }
     pTxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS; // FDCAN_STORE_TX_EVENTS
     pTxHeader.MessageMarker = 0; // this parameter must be a number between 0 and 0xFF
 
@@ -261,7 +364,7 @@ static uint32_t tx_tlast_ms = 0; // for error counting
     pTxHeader.IdType = FDCAN_EXTENDED_ID;
     pTxHeader.TxFrameType = FDCAN_DATA_FRAME;
 
-    pTxHeader.DataLength = (uint32_t)frame->data_len << 16;
+    pTxHeader.DataLength = (uint32_t)dc_bytes_to_dlc(frame->data_len) << 16;
 
     HAL_StatusTypeDef hres = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan, &pTxHeader, frame->data);
     if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_ADD_TX_MESSAGE; }
@@ -289,8 +392,8 @@ typedef struct
     uint32_t r0;
     uint32_t r1;
     union {
-        uint8_t data[CANARD_CAN_FRAME_MAX_DATA_LEN];
-        uint32_t data_32[CANARD_CAN_FRAME_MAX_DATA_LEN / 4]; // CANARD_CAN_FRAME_MAX_DATA_LEN should be devidable by 4
+        uint8_t data[CANARD_CANFD_FRAME_MAX_DATA_LEN];  // 64 bytes for CAN FD
+        uint32_t data_32[CANARD_CANFD_FRAME_MAX_DATA_LEN / 4];
     };
 } tDcRxFifoElement;
 
@@ -320,7 +423,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         dc_hal_stats.isr_xtd_count++;
         return;
     }
-    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) { // DroneCAN uses only EXT frames, so this should be an error
+    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) { // DroneCAN does not use RTR frames
         dc_hal_stats.isr_rtr_count++;
         return;
     }
@@ -328,17 +431,22 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
     RxAddress++;
     uint32_t r1 = *RxAddress;
     if ((r1 & DC_RX_FIFO_R1_FDF_BIT) != 0) {
-        dc_hal_stats.isr_fdf_count++;
-        return;
-    }
-    if ((r1 & DC_RX_FIFO_R1_BRS_BIT) != 0) {
-        dc_hal_stats.isr_brs_count++;
-        return;
+        dc_hal_stats.fd_rx_count++;
+        if (dc_hal_fd_mode_enabled && !dc_hal_fd_mode_detected) {
+            dc_hal_fd_mode_detected = true;
+        }
     }
 
+    // for classic CAN, reject frames with DLC > 8
+    // for CAN FD, allow larger DLC values and pass full payload to libcanard
+    bool is_fd_frame = (r1 & DC_RX_FIFO_R1_FDF_BIT) != 0;
     if ((r1 & DC_RX_FIFO_R1_DLC_MASK) > FDCAN_DLC_BYTES_8) {
-        dc_hal_stats.isr_dlc_count++;
-        return;
+        if (is_fd_frame) {
+            dc_hal_stats.fd_dlc_gt8_count++; // track FD frames with large payloads
+        } else {
+            dc_hal_stats.isr_dlc_count++;
+            return; // reject classic CAN frames with DLC > 8
+        }
     }
 
     uint16_t next = (dronecan_rxwritepos + 1) & DRONECAN_RXFRAMEBUFSIZEMASK;
@@ -348,9 +456,15 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         dronecan_rxbuf[next].r0 = r0;
         dronecan_rxbuf[next].r1 = r1;
         RxAddress++;
-        dronecan_rxbuf[next].data_32[0] = *RxAddress;
-        RxAddress++;
-        dronecan_rxbuf[next].data_32[1] = *RxAddress;
+
+        // copy all data bytes based on actual DLC (G4 message RAM supports 64 bytes)
+        uint8_t dlc = (r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
+        uint8_t data_len = dc_dlc_to_bytes(dlc);
+        uint8_t words = (data_len + 3) / 4; // round up to full words
+        for (uint8_t i = 0; i < words; i++) {
+            dronecan_rxbuf[next].data_32[i] = *RxAddress;
+            RxAddress++;
+        }
 
     } else {
         dc_hal_stats.rx_overflow_count++;
@@ -440,10 +554,12 @@ void _dc_hal_isr_handler(void)
     if (Errors != 0) {
         __HAL_FDCAN_CLEAR_FLAG(&hfdcan, Errors); // clear the Error flags
         dc_hal_stats.isr_errors_count++;
+        _process_error_status();
     }
     if (ErrorStatusITs != 0) {
         __HAL_FDCAN_CLEAR_FLAG(&hfdcan, ErrorStatusITs); // clear the Error flags
         dc_hal_stats.isr_errorstatus_count++;
+        _process_error_status();
     }
 }
 
@@ -472,6 +588,7 @@ HAL_StatusTypeDef hres;
     dronecan_rxwritepos = 0;
     dronecan_rxreadpos = 0;
     memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
+    dc_hal_fd_mode_detected = false;
 
 // doc in stm32g4xx_hal_fdcan.c says: By default, all interrupts are assigned to line 0
 // so we should not have to do this
@@ -483,12 +600,9 @@ HAL_StatusTypeDef hres;
 
     hres = HAL_FDCAN_ActivateNotification(
         &hfdcan,
-//        FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_NEW_MESSAGE | FDCAN_IT_BUS_OFF,
         FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO0_FULL |
         FDCAN_IT_RX_FIFO1_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_FULL |
-        FDCAN_IT_BUS_OFF,
-//        FDCAN_IT_LIST_RX_FIFO0 | FDCAN_IT_LIST_RX_FIFO1 |
-//        FDCAN_IT_LIST_BIT_LINE_ERROR | FDCAN_IT_LIST_PROTOCOL_ERROR,
+        FDCAN_IT_BUS_OFF | FDCAN_IT_ARB_PROTOCOL_ERROR | FDCAN_IT_DATA_PROTOCOL_ERROR,
         0);
     if (hres != HAL_OK) { return -DC_HAL_ERROR_ISR_CONFIG; }
 
@@ -527,16 +641,19 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
     frame->id = (dronecan_rxbuf[rxreadpos].r0 & CANARD_CAN_EXT_ID_MASK);
     frame->id |= CANARD_CAN_FRAME_EFF;
 
-    frame->data_len = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
-    if (frame->data_len > CANARD_CAN_FRAME_MAX_DATA_LEN) frame->data_len = CANARD_CAN_FRAME_MAX_DATA_LEN; // should not happen, but play it safe
+    // convert DLC to actual byte count
+    uint8_t dlc = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
+    frame->data_len = dc_dlc_to_bytes(dlc);
 
-//    memset((uint8_t*)frame->data, 0, 8);
-//    memcpy((uint8_t*)frame->data, (uint8_t*)dronecan_rxbuf[rxreadpos].data, frame->data_len);
-    for (uint8_t n = 0; n < CANARD_CAN_FRAME_MAX_DATA_LEN; n++) {
-        frame->data[n] = (n < frame->data_len) ? dronecan_rxbuf[rxreadpos].data[n] : 0;
+    // copy all data bytes
+    for (uint8_t n = 0; n < frame->data_len; n++) {
+        frame->data[n] = dronecan_rxbuf[rxreadpos].data[n];
     }
 
     frame->iface_id = 0;
+
+    // set canfd flag for libcanard (CANARD_ENABLE_CANFD)
+    frame->canfd = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_FDF_BIT) != 0;
 
     return 1;
 }
@@ -612,14 +729,13 @@ int16_t dc_hal_config_acceptance_filters(
 
 tDcHalStatistics dc_hal_get_stats(void)
 {
+    _process_error_status();
     dc_hal_stats.error_sum_count = dc_hal_stats.bo_count + dc_hal_stats.lec_count +
-                                   dc_hal_stats.pxd_count + dc_hal_stats.cel_count;
+                                   dc_hal_stats.dlec_count + dc_hal_stats.pxd_count + dc_hal_stats.cel_count;
 #ifdef DRONECAN_USE_RX_ISR
     dc_hal_stats.error_sum_count += dc_hal_stats.rx_overflow_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_xtd_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_rtr_count;
-    dc_hal_stats.error_sum_count += dc_hal_stats.isr_fdf_count;
-    dc_hal_stats.error_sum_count += dc_hal_stats.isr_brs_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_dlc_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_rf0l_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_rf0f_count;
@@ -648,45 +764,32 @@ int16_t dc_hal_compute_timings(
     // BS1 = SP * tq - 1, where SP is e.g. 3/4 = 75% or 7/8 = 87.5%
     // BS2 = tq - 1 - BS1 = (1 - SP) * tq
 
-    // timings generated by phryniszak for 75%
-#if 1
-    if (peripheral_clock_rate == 170000000) { // 170 MHz
+
+    if (peripheral_clock_rate == 170000000) {
+        // 170MHz / 1Mbps = 170 tq. Using prescaler 1 -> 170 tq.
+        // 75% sample point: (1 + 127) / 170 = 75.3%
         timings->bit_rate_prescaler = 1;
         timings->bit_segment_1 = 127;
         timings->bit_segment_2 = 42;
         timings->sync_jump_width = 42;
-    } else if (peripheral_clock_rate == 160000000) { // 160 MHz
+    } else if (peripheral_clock_rate == 85000000) {
+        // 85MHz / 1Mbps = 85 tq. Using prescaler 1 -> 85 tq.
+        // 75% sample point: (1 + 63) / 85 = 75.3%
         timings->bit_rate_prescaler = 1;
-        timings->bit_segment_1 = 119;
-        timings->bit_segment_2 = 40;
-        timings->sync_jump_width = 40;
-    } else if (peripheral_clock_rate == 80000000) { // 80 MHz
-        timings->bit_rate_prescaler = 1;
-        timings->bit_segment_1 = 59;
-        timings->bit_segment_2 = 20;
-        timings->sync_jump_width = 20;
-    } else {
-        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
-    }
-#endif
-    // timings generated by phryniszak for 87.5%
-#if 0
-    if (peripheral_clock_rate == 170000000) { // 170 MHz
-        timings->bit_rate_prescaler = 1;
-        timings->bit_segment_1 = 147;
-        timings->bit_segment_2 = 22;
+        timings->bit_segment_1 = 63;
+        timings->bit_segment_2 = 21;
         timings->sync_jump_width = 21;
+    } else if (peripheral_clock_rate == 80000000) {
+        // 80MHz / 1Mbps = 80 tq. Using prescaler 8 -> 10 tq.
+        // 90% sample point: (1 + 8) / 10 = 90.0%
+        // Matches ArduPilot computeTimings logic for 80MHz
+        timings->bit_rate_prescaler = 8;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
     } else {
         return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
     }
-#endif
-    // timings generated by kvaser
-#if 0
-    timings->bit_rate_prescaler = 1;
-    timings->bit_segment_1 = 127;
-    timings->bit_segment_2 = 42;
-    timings->sync_jump_width = 43; // not allowed according to datasheet !!
-#endif
 
     // let's do a check
     // datasheet:
@@ -706,6 +809,136 @@ int16_t dc_hal_compute_timings(
     return 0;
 }
 
+
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bitrate,
+    tDcHalDataTimings* const timings)
+{
+    if (timings == NULL) {
+        return -DC_HAL_ERROR_INVALID_ARGUMENT;
+    }
+
+    // FDCAN clock configuration notes:
+    //
+    // transceivers on mLRS rx hardware (TCAN34xx) support up to 5 Mbps
+    //
+    // 170 MHz SYSCLK:
+    // - 170MHz FDCAN (via PCLK or PLLQ): only 1 Mbps data rate, not useful for CAN FD
+    // - 85MHz FDCAN (via PLLQ): tested but causes excessive stuff errors with ArduPilot
+    //   at 5 Mbps due to sample point and TDC timing differences
+    //
+    // 160 MHz SYSCLK:
+    // - 80MHz FDCAN (via PLLQ): ArduPilot-compatible data rates (1/2/4/5 Mbps) - RECOMMENDED
+    //   
+    if (peripheral_clock_rate == 170000000) {
+        // 170MHz data timings - only 1 Mbps supported (same as nominal)
+        if (target_data_bitrate == 1000000) {
+            // 170MHz / 1Mbps = 170 tq. Prescaler 10 -> 17 tq.
+            // 75% sample point: (1 + 12) / 17 = 76.5%
+            timings->bit_rate_prescaler = 10;
+            timings->bit_segment_1 = 12;
+            timings->bit_segment_2 = 4;
+            timings->sync_jump_width = 4;
+        } else {
+            return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+        }
+    } else if (peripheral_clock_rate == 85000000) {
+        // 85MHz data timings - 1 Mbps and 5 Mbps supported (85 divides evenly)
+        if (target_data_bitrate == 1000000) {
+            // 85MHz / 1Mbps = 85 tq. Prescaler 5 -> 17 tq.
+            // 76% sample point: (1 + 12) / 17 = 76.5%
+            timings->bit_rate_prescaler = 5;
+            timings->bit_segment_1 = 12;
+            timings->bit_segment_2 = 4;
+            timings->sync_jump_width = 4;
+        } else if (target_data_bitrate == 5000000) {
+            // 85MHz / 5Mbps = 17 tq. Prescaler 1 -> 17 tq.
+            // 76% sample point: (1 + 12) / 17 = 76.5%
+            timings->bit_rate_prescaler = 1;
+            timings->bit_segment_1 = 12;
+            timings->bit_segment_2 = 4;
+            timings->sync_jump_width = 4;
+        } else {
+            return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+        }
+    } else if (peripheral_clock_rate == 80000000) {
+        // ArduPilot Table for 80MHz
+        // note: mLRS hardware supports up to 5 Mbps max, 8 Mbps not supported
+        if (target_data_bitrate == 1000000) {
+            timings->bit_rate_prescaler = 4;
+            timings->bit_segment_1 = 14;
+            timings->bit_segment_2 = 5;
+            timings->sync_jump_width = 5;
+        } else if (target_data_bitrate == 2000000) {
+            timings->bit_rate_prescaler = 2;
+            timings->bit_segment_1 = 14;
+            timings->bit_segment_2 = 5;
+            timings->sync_jump_width = 5;
+        } else if (target_data_bitrate == 4000000) {
+            timings->bit_rate_prescaler = 1;
+            timings->bit_segment_1 = 14;
+            timings->bit_segment_2 = 5;
+            timings->sync_jump_width = 5;
+        } else if (target_data_bitrate == 5000000) {
+            timings->bit_rate_prescaler = 1;
+            timings->bit_segment_1 = 11;
+            timings->bit_segment_2 = 4;
+            timings->sync_jump_width = 4;
+        } else {
+            return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+        }
+    } else {
+        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+    }
+
+    const uint32_t bit_time = (1 + timings->bit_segment_1 + timings->bit_segment_2) * timings->bit_rate_prescaler;
+    const uint32_t expected = peripheral_clock_rate / target_data_bitrate;
+    if (bit_time != expected) {
+        return -DC_HAL_ERROR_TIMING;
+    }
+
+    return 0;
+}
+
+bool dc_hal_is_fd_mode(void) { return dc_hal_fd_mode_detected; }
+
+
+void dc_hal_reset_fd_detection(void) { dc_hal_fd_mode_detected = false; }
+
+
+uint32_t dc_hal_debug_get_rxesc_reg(void)
+{
+    // on STM32G4, there is no RXESC register. Register map shows reserved.
+    // message RAM elements are fixed at 64 bytes data field (plus header).
+    return 0x777; // return what it should be for a 64-byte layout
+}
+
+uint32_t dc_hal_debug_get_cccr_reg(void)
+{
+    if (hfdcan.Instance == NULL) return 0xFFFFFFFF;
+    return hfdcan.Instance->CCCR;
+}
+
+uint32_t dc_hal_debug_get_dbtp_reg(void)
+{
+    if (hfdcan.Instance == NULL) return 0xFFFFFFFF;
+    return hfdcan.Instance->DBTP;
+}
+
+uint32_t dc_hal_debug_get_nbtp_reg(void)
+{
+    if (hfdcan.Instance == NULL) return 0xFFFFFFFF;
+    return hfdcan.Instance->NBTP;
+}
+
+uint32_t dc_hal_debug_get_tdcr_reg(void)
+{
+    if (hfdcan.Instance == NULL) return 0xFFFFFFFF;
+    return hfdcan.Instance->TDCR;
+}
+
+bool dc_hal_is_fd_enabled(void) { return dc_hal_fd_mode_enabled; }
 
 
 /*

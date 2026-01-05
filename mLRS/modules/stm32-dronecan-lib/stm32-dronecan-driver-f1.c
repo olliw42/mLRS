@@ -62,9 +62,13 @@ static void _process_error_status(void)
 //-------------------------------------------------------
 
 int16_t dc_hal_init(
+    DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
+    const tDcHalDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
+    (void)can_instance;
+    (void)data_timings;
     if ((iface_mode != DC_HAL_IFACE_MODE_NORMAL) &&
         (iface_mode != DC_HAL_IFACE_MODE_SILENT) &&
         (iface_mode != DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR)) {
@@ -350,6 +354,24 @@ int16_t dc_hal_compute_timings(
 
     return 0;
 }
+
+
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bitrate,
+    tDcHalDataTimings* const timings)
+{
+    (void)peripheral_clock_rate;
+    (void)target_data_bitrate;
+    (void)timings;
+    return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+}
+
+
+bool dc_hal_is_fd_mode(void) { return false; }
+
+
+void dc_hal_reset_fd_detection(void) {}
 
 
 #endif // HAL_PCD_MODULE_ENABLED

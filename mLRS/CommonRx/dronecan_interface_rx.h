@@ -29,15 +29,15 @@
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
 #endif
 
+extern tStats stats;
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tRxMavlink mavlink;
 extern tRxDroneCan dronecan;
 
 extern volatile uint32_t millis32(void);
 extern uint64_t micros64(void);
 extern bool connected(void);
-extern tStats stats;
-extern tSetup Setup;
-extern tGlobalConfig Config;
 
 //#define DRONECAN_PREFERRED_NODE_ID  68
 #define DRONECAN_PREFERRED_NODE_ID  RX_DRONECAN_PREFERRED_NODE_ID // moved to common_conf.h
@@ -82,7 +82,14 @@ CanardCANFrame frame;
             DBG_DC(dbg.puts("\nERR: rec ");dbg.puts(s16toBCD_s(res));)
         }
         if (res <= 0) break; // no receive or error
+        dronecan.dbg_rx_frame_count++;
         res = canardHandleRxFrame(&canard, &frame, micros64()); // 0: ok, <0: error
+        if (res == 0) {
+            dronecan.dbg_canard_ok_count++;
+        } else if (res < 0) {
+            dronecan.dbg_canard_err_count++;
+            dronecan.dbg_canard_last_err = res;
+        }
         return; // only do one
     }
 }
@@ -121,6 +128,33 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
 // CAN peripheral init, forward declaration
 void can_init(void);
 
+const char* tRxDroneCan::_lec_to_str(uint8_t lec)
+{
+    switch (lec) {
+        case 0: return "ok";
+        case 1: return "STUFF";
+        case 2: return "FORM";
+        case 3: return "ACK";
+        case 4: return "BIT1";
+        case 5: return "BIT0";
+        case 6: return "CRC";
+        case 7: return "NC"; // No Change
+        default: return "??";
+    }
+}
+
+// decode PSR activity bits (ACT[1:0])
+const char* tRxDroneCan::_psr_act_to_str(uint8_t act)
+{
+    switch (act) {
+        case 0: return "Sync";  // Synchronizing
+        case 1: return "Idle";  // Idle
+        case 2: return "Rx";    // Receiver
+        case 3: return "Tx";    // Transmitter
+        default: return "??";
+    }
+}
+
 
 //-------------------------------------------------------
 // RxDroneCan class implementation
@@ -149,6 +183,11 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     tunnel_targetted_send_rate = 0;
     fifo_fc_to_ser_tx_full_error_cnt = 0;
     tunnel_targetted_error_cnt = 0;
+
+    dbg_rx_frame_count = 0;
+    dbg_canard_ok_count = 0;
+    dbg_canard_err_count = 0;
+    dbg_canard_last_err = 0;
 
     ser_over_can_enabled = ser_over_can_enable_flag;
 
@@ -297,18 +336,146 @@ void tRxDroneCan::Tick_ms(void)
         // emit node status message
         send_node_status();
 
-DBG_DC(dbg.puts("\n fc->ser:   ");dbg.puts(u16toBCD_s(tunnel_targetted_fc_to_ser_rate));
-DBG_DC(dbg.puts(" h: "));dbg.puts(u16toBCD_s(tunnel_targetted_handle_rate));
-dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_ser_to_fc_rate));
-DBG_DC(dbg.puts(" s: "));dbg.puts(u16toBCD_s(tunnel_targetted_send_rate));
-tunnel_targetted_fc_to_ser_rate = 0;
-tunnel_targetted_ser_to_fc_rate = 0;
-tunnel_targetted_handle_rate = 0;
-tunnel_targetted_send_rate = 0;
-dbg.puts("\n   err tx_fifo, tt: ");dbg.puts(u16toBCD_s(fifo_fc_to_ser_tx_full_error_cnt));
-dbg.puts(" ,  ");dbg.puts(u16toBCD_s(tunnel_targetted_error_cnt));
-dbg.puts("\n        err dc sum: ");dbg.puts(u16toBCD_s(dc_hal_get_stats().error_sum_count));)
+        DBG_DC(_display_debug_stats();)
+
+        tunnel_targetted_fc_to_ser_rate = 0;
+        tunnel_targetted_ser_to_fc_rate = 0;
+        tunnel_targetted_handle_rate = 0;
+        tunnel_targetted_send_rate = 0;
     }
+}
+
+
+void tRxDroneCan::_display_debug_stats(void)
+{
+    tDcHalStatistics dc_stats = dc_hal_get_stats();
+
+    // decode data bitrate from DBTP register
+    uint32_t dbtp = dc_hal_debug_get_dbtp_reg();
+    uint8_t dbrp = ((dbtp >> 16) & 0x1F) + 1;  // prescaler
+    uint8_t dseg1 = ((dbtp >> 8) & 0x1F) + 1;  // seg1
+    uint8_t dseg2 = ((dbtp >> 4) & 0x0F) + 1;  // seg2
+    uint32_t tdcr = dc_hal_debug_get_tdcr_reg();
+    uint8_t tdco = (tdcr >> 8) & 0x7F;         // TDCO from TDCR[14:8]
+    uint32_t tq = 1 + dseg1 + dseg2;
+    // calculate sample point as percentage * 10 (e.g., 750 = 75.0%)
+    uint16_t sp_x10 = (uint16_t)(((1 + dseg1) * 1000) / tq);
+
+    // get clock frequency dynamically
+    uint32_t fdcan_clk_mhz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / 1000000;
+    uint16_t data_bitrate_kbps = (uint16_t)((fdcan_clk_mhz * 1000) / (dbrp * tq));
+
+    // CAN FD Mode
+    dbg.puts("\nMode: ");
+    if (dc_hal_is_fd_enabled()) {
+        if (dc_hal_is_fd_mode()) {
+            dbg.puts("FD @ ");dbg.puts(utoBCD_s(data_bitrate_kbps / 1000));dbg.puts(" Mbps");
+        } else {
+            dbg.puts("Classic");
+        }
+    } else {
+        dbg.puts("Classic");
+    }
+
+    // data flow
+    dbg.puts("\nData: FC->Ser ");dbg.puts(utoBCD_s(tunnel_targetted_fc_to_ser_rate));
+    dbg.puts(" B/s, Ser->FC ");dbg.puts(utoBCD_s(tunnel_targetted_ser_to_fc_rate));dbg.puts(" B/s");
+
+    // frame stats
+    dbg.puts("\nRX: ");dbg.puts(utoBCD_s(dbg_rx_frame_count));dbg.puts(" frames");
+    if (dc_hal_is_fd_mode()) {
+        dbg.puts(" (");dbg.puts(utoBCD_s(dc_stats.fd_dlc_gt8_count));dbg.puts(" FD)");
+    }
+    dbg.puts(", ");dbg.puts(utoBCD_s(dbg_canard_ok_count));dbg.puts(" ok");
+    if (dbg_canard_err_count > 0) {
+        dbg.puts(", ");dbg.puts(utoBCD_s(dbg_canard_err_count));dbg.puts(" err");
+    }
+
+    // errors
+    dbg.puts("\nErrs: BIT1:");dbg.puts(utoBCD_s(dc_stats.dlec_bit1_count));
+    dbg.puts(" dlec:");dbg.puts(_lec_to_str(dc_stats.last_dlec));dbg.puts(":");dbg.puts(utoBCD_s(dc_stats.dlec_count));
+    dbg.puts(" tec:");dbg.puts(utoBCD_s(dc_stats.tec));
+    dbg.puts(" rec:");dbg.puts(utoBCD_s(dc_stats.rec));
+
+    // error state classification
+    if (dc_stats.tec >= 128 || dc_stats.rec >= 128) {
+        dbg.puts(" [PASSIVE]");
+    } else if (dc_stats.tec >= 96 || dc_stats.rec >= 96) {
+        dbg.puts(" [WARNING]");
+    }
+
+    // timing info - sample point, TDCO, and measured TDCV
+    // note: TDCV (measured delay) is in PSR[22:16], not TDCR
+    uint8_t tdcv = (dc_stats.last_psr >> 16) & 0x7F;  // TDCV from PSR[22:16] - measured delay
+    dbg.puts("\nSP:");dbg.puts(utoBCD_s(sp_x10/10));dbg.puts(".");dbg.puts(utoBCD_s(sp_x10%10));dbg.puts("%");
+    dbg.puts(" TDCO:");dbg.puts(utoBCD_s(tdco));
+    dbg.puts(" TDCV:");dbg.puts(utoBCD_s(tdcv));
+    dbg.puts(" clk:");dbg.puts(utoBCD_s(fdcan_clk_mhz));dbg.puts("MHz");
+
+    // DLEC error type breakdown
+    dbg.puts("\nDLEC: Bit1:");dbg.puts(utoBCD_s(dc_stats.dlec_bit1_count));
+    dbg.puts(" Bit0:");dbg.puts(utoBCD_s(dc_stats.dlec_bit0_count));
+    dbg.puts(" ACK:");dbg.puts(utoBCD_s(dc_stats.dlec_ack_count));
+    dbg.puts(" Form:");dbg.puts(utoBCD_s(dc_stats.dlec_form_count));
+    dbg.puts(" Stuff:");dbg.puts(utoBCD_s(dc_stats.dlec_stuff_count));
+    dbg.puts(" CRC:");dbg.puts(utoBCD_s(dc_stats.dlec_crc_count));
+
+    // LEC (nominal phase) breakdown - show ACK errors separately
+    dbg.puts("\nLEC: ");dbg.puts(_lec_to_str(dc_stats.last_lec));dbg.puts(":");dbg.puts(utoBCD_s(dc_stats.lec_count));
+    dbg.puts(" ACK:");dbg.puts(utoBCD_s(dc_stats.ack_err_count));
+
+    // PSR status register decode
+    uint32_t psr = dc_stats.last_psr;
+    uint8_t psr_act = (psr >> 3) & 0x03;    // ACT[4:3] - Activity
+    bool psr_ep = (psr & (1 << 5)) != 0;    // EP bit 5 - Error Passive
+    bool psr_ew = (psr & (1 << 6)) != 0;    // EW bit 6 - Warning
+    bool psr_bo = (psr & (1 << 7)) != 0;    // BO bit 7 - Bus Off
+    bool psr_resi = (psr & (1 << 11)) != 0; // RESI bit 11 - Rx ESI flag
+    bool psr_rbrs = (psr & (1 << 12)) != 0; // RBRS bit 12 - Rx BRS flag
+    bool psr_rfdf = (psr & (1 << 13)) != 0; // RFDF bit 13 - Rx FDF flag
+    bool psr_pxe = (psr & (1 << 14)) != 0;  // PXE bit 14 - Protocol Exception
+
+    dbg.puts("\nPSR: Act:");dbg.puts(_psr_act_to_str(psr_act));
+    if (psr_ep) dbg.puts(" EP");
+    if (psr_ew) dbg.puts(" EW");
+    if (psr_bo) dbg.puts(" BO");
+    if (psr_pxe) dbg.puts(" PXE");
+    dbg.puts(" RxFlags:");
+    if (psr_rfdf) dbg.puts("FD");
+    if (psr_rbrs) dbg.puts("+BRS");
+    if (psr_resi) dbg.puts("+ESI");
+    dbg.puts(" PSR:0x");dbg.puts(u32toHEX_s(psr));
+
+    // bus-off and protocol exception counts
+    dbg.puts("\nBus: BO:");dbg.puts(utoBCD_s(dc_stats.bo_count));
+    dbg.puts(" PXD:");dbg.puts(utoBCD_s(dc_stats.pxd_count));
+    dbg.puts(" CEL:");dbg.puts(utoBCD_s(dc_stats.cel_count));
+    dbg.puts(" ErrSum:");dbg.puts(utoBCD_s(dc_stats.error_sum_count));
+
+    // TX FIFO status
+    dbg.puts("\nTX: FIFO_full:");dbg.puts(utoBCD_s(dc_stats.tffl_count));
+    dbg.puts(" Q_full:");dbg.puts(utoBCD_s(dc_stats.tfqf_count));
+
+    // ISR error counts
+    dbg.puts("\nISR: errs:");dbg.puts(utoBCD_s(dc_stats.isr_errors_count));
+    dbg.puts(" errstat:");dbg.puts(utoBCD_s(dc_stats.isr_errorstatus_count));
+    dbg.puts(" RF0F:");dbg.puts(utoBCD_s(dc_stats.isr_rf0f_count));
+    dbg.puts(" RF0L:");dbg.puts(utoBCD_s(dc_stats.isr_rf0l_count));
+    dbg.puts(" RF1F:");dbg.puts(utoBCD_s(dc_stats.isr_rf1f_count));
+    dbg.puts(" RF1L:");dbg.puts(utoBCD_s(dc_stats.isr_rf1l_count));
+
+    // RX overflow and rejection counts
+    dbg.puts("\nRXe: overflow:");dbg.puts(utoBCD_s(dc_stats.rx_overflow_count));
+    dbg.puts(" xtd:");dbg.puts(utoBCD_s(dc_stats.isr_xtd_count));
+    dbg.puts(" rtr:");dbg.puts(utoBCD_s(dc_stats.isr_rtr_count));
+    dbg.puts(" dlc:");dbg.puts(utoBCD_s(dc_stats.isr_dlc_count));
+
+    // CCCR and ECR register values for deep debugging
+    dbg.puts("\nRegs: CCCR:0x");dbg.puts(u32toHEX_s(dc_stats.last_cccr));
+    dbg.puts(" ECR:0x");dbg.puts(u32toHEX_s(dc_stats.last_ecr));
+    dbg.puts(" DBTP:0x");dbg.puts(u32toHEX_s(dbtp));
+
+    dbg.puts("\n");
 }
 
 
@@ -415,7 +582,8 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         &rc_input.transfer_id,
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
-        len);
+        len,
+        false);
 
 #if 0
     _p.flex_debug.id = 110; // we just grab it, PR is pending
@@ -434,7 +602,8 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         &flex_debug.transfer_id,
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
-        len);
+        len,
+        false);
 #endif
 }
 
@@ -503,7 +672,8 @@ void tRxDroneCan::send_node_status(void)
         &node_status_transfer_id,
         CANARD_TRANSFER_PRIORITY_LOW,
         _buf,
-        len);
+        len,
+        false);
 }
 
 
@@ -555,7 +725,8 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
         transfer->priority,
         CanardResponse,
         _buf,
-        len);
+        len,
+        false);
 }
 
 
@@ -633,7 +804,7 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 
     memmove(&allocation_request[1], &my_uid[node_id_allocation.unique_id_offset], uid_size);
 
-    // Broadcasting the request
+    // broadcasting the request
     canardBroadcast(
         &canard,
         UAVCAN_PROTOCOL_DYNAMIC_NODE_ID_ALLOCATION_SIGNATURE,
@@ -641,7 +812,8 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
         &node_id_allocation.transfer_id,
         CANARD_TRANSFER_PRIORITY_LOW,
         allocation_request,
-        uid_size + 1);
+        uid_size + 1,
+        false);
 
     // Preparing for timeout; if response is received, this value will be updated from the callback.
     node_id_allocation.unique_id_offset = 0;
@@ -744,7 +916,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
         &tunnel_targetted.transfer_id,
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
-        len);
+        len,
+        false);
 
     tunnel_targetted_send_rate += _p.tunnel_targetted.buffer.len;
 }

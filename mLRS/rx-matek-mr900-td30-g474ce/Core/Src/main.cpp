@@ -128,11 +128,26 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2;
-  RCC_OscInitStruct.PLL.PLLN = 85;
+  // note: 170 MHz SYSCLK with 85 MHz FDCAN was tested but causes excessive stuff errors
+  // and timing incompatibilities with ArduPilot at CAN FD 5 Mbps. ArduPilot uses 80 MHz
+  // FDCAN clock, and the sample point / TDC timing differences at 85 MHz are problematic.
+  // 170 MHz FDCAN clock only supports 1 Mbps data rate (same as nominal), not useful for FD.
+  // Stick with 160 MHz SYSCLK / 80 MHz FDCAN for reliable CAN FD operation.
+  RCC_OscInitStruct.PLL.PLLN = 80;  // 160 MHz SYSCLK: 8/2*80/2 = 320/2 = 160 (HSE=8MHz)
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4;  // FDCAN clock = 320/4 = 80 MHz
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** configure FDCAN clock source to PLLQ (80 MHz)
+  */
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
+  PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
