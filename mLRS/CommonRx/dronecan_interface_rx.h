@@ -573,7 +573,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.rcin.data[i] = (((int32_t)(rc_out->ch[i]) - 1024) * 601) / 1024 + 1500;
     }
 
-    uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf);
+    uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf, !dc_hal_is_fd_mode());
 
     canardBroadcast(
         &canard,
@@ -583,7 +583,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
         len,
-        false);
+        dc_hal_is_fd_mode());
 
 #if 0
     _p.flex_debug.id = 110; // we just grab it, PR is pending
@@ -593,7 +593,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     _p.flex_debug.u8.data[0] = cnt++;
     _p.flex_debug.u8.len = 1;
 
-    len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf);
+    len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf, !dc_hal_is_fd_mode());
 
     canardBroadcast(
         &canard,
@@ -603,7 +603,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
         len,
-        false);
+        dc_hal_is_fd_mode());
 #endif
 }
 
@@ -663,7 +663,7 @@ void tRxDroneCan::send_node_status(void)
     _p.node_status.vendor_specific_status_code = cnt;
     cnt++;
 
-    uint32_t len = uavcan_protocol_NodeStatus_encode(&_p.node_status, _buf);
+    uint32_t len = uavcan_protocol_NodeStatus_encode(&_p.node_status, _buf, !dc_hal_is_fd_mode());
 
     canardBroadcast(
         &canard,
@@ -673,7 +673,7 @@ void tRxDroneCan::send_node_status(void)
         CANARD_TRANSFER_PRIORITY_LOW,
         _buf,
         len,
-        false);
+        dc_hal_is_fd_mode());
 }
 
 
@@ -714,7 +714,7 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
     }
     _p.node_info_resp.name.len = strlen((char*)_p.node_info_resp.name.data);
 
-    uint16_t len = uavcan_protocol_GetNodeInfoResponse_encode(&_p.node_info_resp, _buf);
+    uint16_t len = uavcan_protocol_GetNodeInfoResponse_encode(&_p.node_info_resp, _buf, !dc_hal_is_fd_mode());
 
     canardRequestOrRespond(
         ins,
@@ -726,7 +726,7 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
         CanardResponse,
         _buf,
         len,
-        false);
+        dc_hal_is_fd_mode());
 }
 
 
@@ -813,7 +813,7 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
         CANARD_TRANSFER_PRIORITY_LOW,
         allocation_request,
         uid_size + 1,
-        false);
+        dc_hal_is_fd_mode());
 
     // Preparing for timeout; if response is received, this value will be updated from the callback.
     node_id_allocation.unique_id_offset = 0;
@@ -907,7 +907,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
     _p.tunnel_targetted.buffer.len = (data_len < 120) ? data_len : 120;
     for (uint8_t n = 0; n < data_len; n++) _p.tunnel_targetted.buffer.data[n] = fifo_ser_to_fc.Get();
 
-    uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf);
+    uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf, !dc_hal_is_fd_mode());
 
     canardBroadcast(
         &canard,
@@ -917,7 +917,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
         len,
-        false);
+        dc_hal_is_fd_mode());
 
     tunnel_targetted_send_rate += _p.tunnel_targetted.buffer.len;
 }

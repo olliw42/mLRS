@@ -14,9 +14,17 @@
 #ifndef STM32_DRONECAN_DRIVER_H
 #define STM32_DRONECAN_DRIVER_H
 
-// enable CAN FD support in libcanard (64-byte frames)
-// disable TAO option to avoid changing encode function signatures
-#define CANARD_ENABLE_TAO_OPTION 0
+// enable CAN FD support in libcanard (up to 64-byte frames)
+// enable TAO option so encode functions can take tao parameter for CAN FD
+//
+// TAO (Tail Array Optimization) explanation:
+// - when tao = true: dynamic array length is omitted (inferred from transport layer)
+// - when tao = false: dynamic array length is explicitly encoded in the data
+//
+// CAN FD DLC doesn't have byte-level resolution above 8 bytes, so receivers cannot
+// reliably infer array length from frame size. Therefore CAN FD requires tao = false.
+// Pass !dc_hal_is_fd_mode() to encode functions: classic CAN uses TAO, FD does not.
+#define CANARD_ENABLE_TAO_OPTION 1
 #define CANARD_ENABLE_CANFD 1
 
 #include "libcanard/canard.h"
