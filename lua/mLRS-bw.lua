@@ -12,7 +12,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with OTX, ETX, mOTX v33
 
--- local version = '2025-12-17.00'
+-- local version = '2026-01-10.00'
 
 local req_tx_ver = 1000 -- 'v1.0.0'
 local req_rx_ver = 1000 -- 'v1.0.0'
@@ -858,7 +858,7 @@ local function drawPage()
     -- Device Info Page
     y = liney(0)
     lcd.drawText(0, y, "Device Information", TITLE_COLOR)
-    
+
     y = liney(2)
     lcd.drawText(0, y, "Tx Name:", TEXT_COLOR)
     if DEV_ITEM_TX ~= nil and DEV_ITEM_TX.name ~= nil then
@@ -866,9 +866,9 @@ local function drawPage()
     else
         lcd.drawText(0, liney(3), "unknown", TEXT_COLOR)
     end
-    
+
     -- Blank line at liney(4)
-    
+
     y = liney(5)
     lcd.drawText(0, y, "Rx Name:", TEXT_COLOR)
     if DEV_ITEM_RX ~= nil and DEV_ITEM_RX.name ~= nil and connected then
@@ -876,7 +876,7 @@ local function drawPage()
     else
         lcd.drawText(0, liney(6), "unknown", TEXT_COLOR)
     end
-    
+
   end
 
     -- Save/Load and Navigation
