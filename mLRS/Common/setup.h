@@ -131,7 +131,7 @@ void setup_configure_metadata(void)
 
     //-- Tx:
 
-    power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
+    power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 67);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -196,7 +196,7 @@ void setup_configure_metadata(void)
 
     //-- Rx:
 
-    power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 44);
+    power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 67);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x

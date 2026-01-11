@@ -353,7 +353,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
-    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 44);
+    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 67);
     SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
     SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
     SetupMetaData.Rx_SerialPort_allowed_mask = rx_setupdata->SerialPort_allowed_mask;
