@@ -368,7 +368,7 @@ void setup_sanitize_config(uint8_t config_id)
     }
     TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, FREQUENCY_BAND_DEFAULT, SETUP_FREQUENCY_BAND_ENUM);
 
-#ifdef DEVICE_HAS_LR11xx
+#if defined DEVICE_HAS_LR11xx
     // MULTIBAND capable hardware, so adjust allowed modes for hardware capabilities
     // we now know the frequency band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
     switch (Setup.Common[config_id].FrequencyBand) {
@@ -551,7 +551,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
     // Sx/Sx2 LoraConfigIndex
     switch (Config.Mode) {
     case MODE_50HZ:
-#ifdef DEVICE_HAS_SX128x
+#if defined DEVICE_HAS_SX128x
         Config.Sx.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
 #elif defined DEVICE_HAS_LR11xx
         if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
@@ -611,7 +611,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
 
     Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
     switch (Config.Mode) {
     case MODE_31HZ:
@@ -733,7 +733,7 @@ void setup_configure_config(uint8_t config_id)
     Config.Sx.FrequencyBand = cvt_to_sx_fhss_frequency_band(Config.FrequencyBand); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
 
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
     Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -822,7 +822,7 @@ void setup_configure_config(uint8_t config_id)
 
     Config.Fhss2 = Config.Fhss;
 
-#ifdef DEVICE_HAS_DUAL_SX126x_SX128x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // DUALBAND 2.4 GHz & 868/915 MHz
     Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);

@@ -384,7 +384,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-  #ifdef DEVICE_HAS_SX126x
+  #if defined DEVICE_HAS_SX126x
     #define SX2_DRIVER Sx126xDriver2
   #elif defined DEVICE_HAS_SX127x
     #define SX2_DRIVER Sx127xDriver2
