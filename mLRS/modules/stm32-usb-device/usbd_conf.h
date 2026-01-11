@@ -33,8 +33,8 @@ extern "C" {
 #define USB_RXBUFSIZE       2048 // for serial, 4 kB use as double buffer
 #define USB_TXBUFSIZE       2048 // helps with cli
 #elif defined STM32G491xx || defined STM32G474xx // we really have plenty flash here
-#define USB_RXBUFSIZE       2048 // for serial, 4 kB use as double buffer
-#define USB_TXBUFSIZE       2048 // helps with cli
+#define USB_RXBUFSIZE       8192 //xx 512 // esp passthru flash wants that much !!
+#define USB_TXBUFSIZE       8192 //xx 2048 // helps with cli
 #else
 #define USB_RXBUFSIZE       512
 #define USB_TXBUFSIZE       512
@@ -50,16 +50,19 @@ extern "C" {
   #include "stm32f1xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
+  #define USBD_INST         USB
 #elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
   #include "stm32g4xx.h"
   #include "stm32g4xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
+  #define USBD_INST         USB
 #elif defined STM32F072xB
   #include "stm32f0xx.h"
   #include "stm32f0xx_hal.h"
   #define USBD_IRQn         USB_IRQn
   #define USBD_IRQHandler   USB_IRQHandler
+  #define USBD_INST         USB
 #else
   #error STM32 device not supported by USBD library !
 #endif
@@ -71,6 +74,7 @@ extern "C" {
 #define USBD_SELF_POWERED                           1U
 #define USBD_DEBUG_LEVEL                            0U
 /* #define USBD_USER_REGISTER_CALLBACK                 1U */
+#define USBD_LPM_ENABLED                            0U
 
 /* CDC Class Config */
 #define USBD_CDC_INTERVAL                           2000U

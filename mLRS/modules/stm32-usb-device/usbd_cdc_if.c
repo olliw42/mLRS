@@ -5,6 +5,9 @@
 //*******************************************************
 // STM32_USB_Device_Library based USB VCP standard library
 //*******************************************************
+// Init sequence
+// usb_init()
+//   -> USBD_Init() -> USBD_LL_Init() -> HAL_PCD_Init() -> HAL_PCD_MspInit()
 #ifdef STDSTM32_USE_USB
 
 #include "usbd_cdc.h"
@@ -66,32 +69,6 @@ uint32_t usb_baudrate(void) { return USBD_CDC_LineCoding.bitrate; }
 
 void usb_init(void)
 {
-#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
-    // initialize HSI48, copied with adaption from SystemClock_Config()
-    RCC_OscInitTypeDef RCC_OscInitStruct = {};
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
-    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-        //Error_Handler();
-    }
-#endif
-
-    // copied from SystemClock_Config()
-    RCC_PeriphCLKInitTypeDef PeriphClkInit = {};
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
-#if defined STM32F103xE
-    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
-#elif defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
-    // CubeMX is not adding this to SystemClock_Config(), but it is needed
-    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
-#elif defined STM32F072xB
-    PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
-#endif
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
-        //Error_Handler();
-    }
-
     // copied from MX_USB_DEVICE_Init()
     if (USBD_Init(&husbd_CDC, &USBD_Desc, 0) != USBD_OK) {
         //Error_Handler();
@@ -131,7 +108,7 @@ void usb_deinit(void)
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() would set PLL
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() will modify the PLL setting
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {}
 #endif
 }
