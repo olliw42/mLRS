@@ -98,6 +98,15 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- MATEKSYS mLRS devices
 
+#ifdef RX_MATEK_MR900_TD30_G474CE
+#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#endif
+
+#ifdef TX_MATEK_MTX_DB30_G474CE
+#include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+#endif
+
+
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
 #endif
@@ -360,7 +369,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #endif
-  #if defined ESP_DTR && defined ESP_RTS
+  #if (defined ESP_DTR && defined ESP_RTS) || defined ESP_DTR_RTS_USB
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
   #if defined ESP_BOOT0

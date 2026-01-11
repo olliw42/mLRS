@@ -105,6 +105,14 @@ typedef enum {
 } ESP_DTR_RTS_ENUM;
 
 
+#ifdef ESP_DTR_RTS_USB
+uint8_t esp_dtr_rts(void)
+{
+    return (usb_dtr_is_set() ? 0 : ESP_DTR_SET) + (usb_rts_is_set() ? 0 : ESP_RTS_SET);
+}
+#endif
+
+
 class tTxEspWifiBridge
 {
   public:
@@ -284,6 +292,15 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
         dtr_rts_last = dtr_rts;
 #endif
 
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+             baudrate = usb_baudrate();
+             ser->SetBaudRate(baudrate);
+             ser->flush();
+             com->flush();
+        }
+#endif
+
         uint32_t tnow_ms = millis32();
 
         uint16_t cnt = 0;
@@ -367,6 +384,15 @@ void tTxEspWifiBridge::passthrough_do(void)
         if (doSysTask()) {
             leds.TickPassthrough_ms();
         }
+
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+            baudrate = usb_baudrate();
+            ser->SetBaudRate(baudrate);
+            ser->flush();
+            com->flush();
+        }
+#endif
 
         uint16_t cnt = 0;
         while (com->available() && !ser->full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
@@ -633,3 +659,25 @@ if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.p
 
 
 
+/*
+void tTxEspWifiBridge::_read_write(void)
+{
+    uint8_t cnt = 0;
+    //while (com->available() && uartb_tx_notfull() && (cnt < 64)) {
+    //while (com->available() && (cnt < 64)) { // does not work
+    if (com->available() && !ser->full()) { //uartb_tx_notfull()) {
+    //if (com->available()) { // does not work
+        char c = com->getc();
+        ser->putc(c);
+        cnt++;
+    }
+    cnt = 0;
+    //while (ser->available() && usb_tx_notfull() && (cnt < 64)) {
+    //while (ser->available() && (cnt < 64)) {
+    if (ser->available() && !com->full()) { //usb_tx_notfull()) {
+    //if (ser->available()) {
+        char c = ser->getc();
+        com->putc(c);
+        cnt++;
+    }
+} */
