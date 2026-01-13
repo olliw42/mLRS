@@ -40,6 +40,9 @@ USBD_CDC_LineCodingTypeDef USBD_CDC_LineCoding;
 
 
 //#define USB_RXBUFSIZE           256
+#if (USB_RXBUFSIZE & (USB_RXBUFSIZE - 1)) != 0
+  #error USB_RXBUFSIZE must be a power of 2!
+#endif
 #define USB_RXBUFSIZEMASK       (USB_RXBUFSIZE-1)
 
 volatile uint8_t usb_rxbuf[USB_RXBUFSIZE];
@@ -47,14 +50,17 @@ volatile uint16_t usb_rxwritepos; // pos at which the last byte was stored
 volatile uint16_t usb_rxreadpos; // pos at which the next byte is to be fetched
 
 //#define USB_TXBUFSIZE           256
+#if (USB_TXBUFSIZE & (USB_TXBUFSIZE - 1)) != 0
+  #error USB_TXBUFSIZE must be a power of 2!
+#endif
 #define USB_TXBUFSIZEMASK       (USB_TXBUFSIZE-1)
 
 volatile uint8_t usb_txbuf[USB_TXBUFSIZE];
 volatile uint16_t usb_txwritepos; // pos at which the last byte was stored
 volatile uint16_t usb_txreadpos; // pos at which the next byte is to be fetched
 
-uint8_t usb_rcbuf[USB_RXBUFSIZE]; // what size does it have to be?
-uint8_t usb_trbuf[64];
+uint8_t usb_rcbuf[CDC_DATA_FS_MAX_PACKET_SIZE]; // only needs to hold one USB packet
+uint8_t usb_trbuf[CDC_DATA_FS_MAX_PACKET_SIZE];
 void _cdc_transmit(void); // forward declaration
 
 static uint8_t usbd_initialized = 0; // to track if we have initialized usb already
@@ -62,6 +68,11 @@ static uint8_t usbd_initialized = 0; // to track if we have initialized usb alre
 #define USBD_DTR_FLAG  0x01
 #define USBD_RTS_FLAG  0x02
 volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
+
+// NAK flow control: when RX buffer is nearly full, don't call ReceivePacket
+// this causes USB to NAK incoming packets until we have space
+volatile uint8_t usb_rx_nak_pending = 0;
+#define USB_RX_NAK_THRESHOLD  128 // NAK when less than this many bytes free (~2 USB packets)
 
 
 uint32_t usb_baudrate(void) { return USBD_CDC_LineCoding.bitrate; }
@@ -126,14 +137,26 @@ uint16_t usb_rx_bytesavailable(void)
 int16_t d;
 
     d = (int16_t)usb_rxwritepos - (int16_t)usb_rxreadpos;
-    return (d < 0) ? d + (USB_RXBUFSIZEMASK + 1) : d;
+    return (d < 0) ? d + USB_RXBUFSIZE : d;
 }
 
 
 char usb_getc(void)
 {
     usb_rxreadpos = (usb_rxreadpos + 1) & USB_RXBUFSIZEMASK;
-    return usb_rxbuf[usb_rxreadpos];
+    char c = usb_rxbuf[usb_rxreadpos];
+
+    // resume reception if NAK was pending and buffer now has space
+    if (usb_rx_nak_pending) {
+        int16_t space = (int16_t)usb_rxreadpos - (int16_t)usb_rxwritepos - 1;
+        if (space < 0) space += USB_RXBUFSIZE;
+        if (space >= USB_RX_NAK_THRESHOLD) {
+            usb_rx_nak_pending = 0;
+            USBD_CDC_ReceivePacket(&husbd_CDC); // ready to receive again
+        }
+    }
+
+    return c;
 }
 
 
@@ -270,8 +293,8 @@ static int8_t CDC_Control(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         // https://community.st.com/t5/stm32-mcus-embedded-software/usb-vcp-how-to-know-if-host-com-port-is-open/td-p/363002
         // https://www.silabs.com/documents/public/application-notes/AN758.pdf
         // https://github.com/stm32duino/Arduino_Core_STM32/pull/1382/files
-        // DTR is bit 1  0x01 in wValue
-        // RTS is bit 2  0x02 in wValue
+        // DTR is bit 0 (0x01) in wValue
+        // RTS is bit 1 (0x02) in wValue
         // wValue is the same as pbuf[2] & pbuf[3] !! see USBD_SetupReqTypedef
         usbd_dtr_rts = 0;
         if ((((USBD_SetupReqTypedef*)pbuf)->wValue & 0x0001) != 0) usbd_dtr_rts |= USBD_DTR_FLAG;
@@ -288,16 +311,27 @@ static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
 {
     // pbuf is equal to usb_rcbuf, so SetRxBuffer() is not needed
     // USBD_CDC_SetRxBuffer(&husbd_CDC, &pbuf[0]);
-    USBD_CDC_ReceivePacket(&husbd_CDC);
 
     if (*length > sizeof(usb_rcbuf)) return USBD_OK;
 
+    // copy received data to ring buffer
     for (uint8_t i = 0; i < *length; i++) {
         uint16_t next = (usb_rxwritepos + 1) & USB_RXBUFSIZEMASK;
         if (usb_rxreadpos != next) { // fifo not full
             usb_rxbuf[next] = usb_rcbuf[i];
             usb_rxwritepos = next;
         }
+        // NAK flow control prevents buffer overflow, so this branch should never execute
+    }
+
+    // NAK flow control: check if we have space for another packet
+    int16_t space = (int16_t)usb_rxreadpos - (int16_t)usb_rxwritepos - 1;
+    if (space < 0) space += USB_RXBUFSIZE;
+
+    if (space >= USB_RX_NAK_THRESHOLD) {
+        USBD_CDC_ReceivePacket(&husbd_CDC); // ready for next packet
+    } else {
+        usb_rx_nak_pending = 1; // NAK until space available
     }
 
     return USBD_OK;
