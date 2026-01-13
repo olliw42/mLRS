@@ -138,7 +138,7 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
     // we could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // we also could provide a function to do it both in setup.h and here
     // for the moment reconstruct the info by explicit defines
-#ifdef DEVICE_HAS_LR11xx
+#if defined DEVICE_HAS_LR11xx
     uint16_t mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK // only important that both 19Hz and 19Hz7x are set
 #elif defined DEVICE_HAS_SX127x
     uint16_t mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable // only important that only 19Hz7x is set
@@ -164,14 +164,17 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
 }
 
 
+// StartUp() is called only for one SX/LR for single band operation, but on dualband hardware
+// the unused SX/LR is not a dummy. So, guard operations with IF_SX/IF_SX2 to avoid calling
+// functions on the unconfigured chip which work with gconfig (which is nullptr).
 void tBindBase::config_rf(void)
 {
     sx.SetToIdle();
     sx2.SetToIdle();
     sx.SetRfPower_dbm(rfpower_list[0].dbm);
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx.ResetToLoraConfiguration();
-    sx2.ResetToLoraConfiguration();
+    IF_SX(sx.ResetToLoraConfiguration();)
+    IF_SX2(sx2.ResetToLoraConfiguration();)
     sx.SetToIdle();
     sx2.SetToIdle();
 }

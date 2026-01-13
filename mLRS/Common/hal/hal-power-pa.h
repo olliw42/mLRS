@@ -64,7 +64,7 @@ const rfpower_t rfpower_list[] = {
 
 //-- SKY65383-11
 // PA max 30 dBm, PAin max 6 dBm, PA gain 34 dB, LNA gain 12 dB
-#if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 // Matek mR24-30
+#if defined POWER_PA_SKY65383_11 || defined POWER_PA_MATEK_MR24_30 || defined POWER_PA_MATEK_MTX_DB30_SX128X // Matek mR24-30
 #define POWER_PA_DEFINED
 
 #include "../setup_types.h"
@@ -88,10 +88,10 @@ void sx128x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *sx_power = 4;
         *actual_power_dbm = 20;
     } else
-	if (power_dbm >= POWER_17_DBM) {
-		*sx_power = 1;
-		*actual_power_dbm = 17;
-	} else {
+    if (power_dbm >= POWER_17_DBM) {
+        *sx_power = 1;
+        *actual_power_dbm = 17;
+    } else {
         *sx_power = 0;
         *actual_power_dbm = 16;
     }
@@ -108,17 +108,10 @@ const rfpower_t rfpower_list[] = {
 };
 
 #endif
-#if defined POWER2_PA_SKY65383_11 || defined POWER2_PA_MATEK_MR24_30 || defined POWER2_PA_MATEK_MTX_DB30
+#if defined POWER2_PA_MATEK_MTX_DB30
 #define POWER_PA_DEFINED
-/*
-#define POWER2_GAIN_DBM           31 // gain of a PA stage if present
-#define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
-#define POWER2_USE_DEFAULT_RFPOWER_CALC
 
-#error mR24-30 dual band, power2 needs to be worked out!
-*/
-
-void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx128x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
         *sx_power = 19;
@@ -136,10 +129,10 @@ void sx1280_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *sx_power = 4;
         *actual_power_dbm = 20;
     } else
-  if (power_dbm >= POWER_17_DBM) {
-    *sx_power = 1;
-    *actual_power_dbm = 17;
-  } else {
+    if (power_dbm >= POWER_17_DBM) {
+        *sx_power = 1;
+        *actual_power_dbm = 17;
+    } else {
         *sx_power = 0;
         *actual_power_dbm = 16;
     }
@@ -223,10 +216,10 @@ void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
         *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -6 : -4;
         *actual_power_dbm = 20;
     } else
-	if (power_dbm >= POWER_17_DBM) {
-		*sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -8 : -7;
-		*actual_power_dbm = 17;
-	} else {
+    if (power_dbm >= POWER_17_DBM) {
+        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -8 : -7;
+        *actual_power_dbm = 17;
+    } else {
         *sx_power = -9;
         *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 16 : 14;
     }
@@ -281,7 +274,7 @@ ELRS d-pa-esp8285
 * SE2435L
 Matek mR900-30
 
-* SKY66319-11 
+* SKY66319-11
 ELRS td-pa-esp32
 
 */

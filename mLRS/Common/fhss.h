@@ -675,6 +675,13 @@ class tFhss : public tFhssBase
 
     void SetCurrI2(uint8_t i) { SetCurrI(i); }
     float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); } // for RADIO_LINK_STATS_MLRS
+
+    //-- Tx module only
+
+    uint8_t Cnt2(void) { return Cnt(); }
+    uint8_t ChList2(uint8_t i) { return ChList(i); }
+    uint32_t FhssList2(uint8_t i) { return FhssList(i); }
+    uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i) { return GetFreq_x1000(unit_str, i); }
 };
 
 #else
@@ -746,10 +753,25 @@ class tFhss
     //-- Tx module only
 
     uint8_t Cnt(void) { return fhss1stBand.Cnt(); }
-    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
+    uint8_t Cnt2(void) { return fhss2ndBand.Cnt(); }
     uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
+    uint8_t ChList2(uint8_t i) { return fhss2ndBand.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
+    uint32_t FhssList2(uint8_t i) { return fhss2ndBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
+
+    uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i)
+    {
+#if defined DEVICE_HAS_DUAL_SX126x_SX126x
+        strcpy(unit_str, " kHz");
+        return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss2ndBand.FhssList(i));
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+        strcpy(unit_str, " MHz");
+        return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss2ndBand.FhssList(i));
+#endif
+    }
+
+    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
 
   private:
     tFhssBase fhss1stBand;

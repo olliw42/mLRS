@@ -103,7 +103,11 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #ifdef TX_MATEK_MTX_DB30_G474CE
-#include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+  #ifdef DEVICE_HAS_SX128x
+  #include "matek/tx-hal-matek-mtx-db30-g474ce-sx128x.h"
+  #else
+  #include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+  #endif
 #endif
 
 
@@ -393,7 +397,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-  #ifdef DEVICE_HAS_SX126x
+  #if defined DEVICE_HAS_SX126x
     #define SX2_DRIVER Sx126xDriver2
   #elif defined DEVICE_HAS_SX127x
     #define SX2_DRIVER Sx127xDriver2
@@ -425,6 +429,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              (Config.ReceiveUseAntenna2)
   #define TRANSMIT_USE_ANTENNA1     (Config.TransmitUseAntenna1)
   #define TRANSMIT_USE_ANTENNA2     (Config.TransmitUseAntenna2)
+  #define SX_OR_SX2(x1,x2)          (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) ? x1 : x2
 #else
   #define IF_SX(x)                  x;
   #define IF_SX2(x)
@@ -434,6 +439,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              false
   #define TRANSMIT_USE_ANTENNA1     true
   #define TRANSMIT_USE_ANTENNA2     false
+  #define SX_OR_SX2(x1,x2)          x1
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5

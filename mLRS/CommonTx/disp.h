@@ -707,7 +707,7 @@ int8_t power;
     }
     gdisp_puts(s);
     gdisp_setcurX(85);
-    power = sx.RfPower_dbm();
+    power = SX_OR_SX2( sx.RfPower_dbm() , sx2.RfPower_dbm() );
     if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     gdisp_setcurX(100);
     if (connected_and_rx_setup_available()) {
@@ -764,14 +764,14 @@ char s[32];
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
-    stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
+    stoBCDstr(SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm()), s);
     gdisp_puts(s);
     gdisp_puts(" dB");
 
     gdisp_setcurXY(0, 1 * 10 + 20);
     gdisp_puts("Power");
     gdisp_setcurX(40);
-    stoBCDstr(sx.RfPower_dbm(), s);
+    stoBCDstr(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()), s);
     gdisp_puts(s);
     gdisp_setcurX(80);
     stoBCDstr(SetupMetaData.rx_actual_power_dbm, s);
@@ -840,7 +840,12 @@ if (page_modified) {
     gdisp_putc('<');
     gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
 
-    if (Config.Diversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
+    if (Config.Diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
+        _draw_dot2(1, 2 * 10 + 20 - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(4, 2 * 10 + 20);
+        gdisp_puts("a12");
+    }
     if (SetupMetaData.rx_available &&
          (SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT ||
           SetupMetaData.rx_actual_diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 ||
@@ -852,16 +857,17 @@ if (page_modified) {
         Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 || Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA2) {
         _draw_dot2(1, 3 * 10 + 20 - 3);
     }
-    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT) {
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
         _draw_dot2(125, 3 * 10 + 20 - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(105, 3 * 10 + 20);
+        gdisp_puts("a12");
     }
 
-    gdisp_setcurXY(40, 1 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 1 * 10 + 20);
     gdisp_puts("Bps");
 
-    gdisp_setcurXY(40, 4 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 4 * 10 + 20);
     gdisp_puts("Bps");
 }
     // now the part which is frequently updated
@@ -873,14 +879,14 @@ if (page_modified) {
     uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
 
     gdisp_setcurXY(10, 2 * 10 + 20);
-    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    if (!Config.IsDualBand) gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
     gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
 
     gdisp_setcurXY(10, 3 * 10 + 20);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
-    gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    if (!Config.IsDualBand) gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
 
     uint16_t bps_transmitted = stats.bytes_transmitted.GetBytesPerSec();
     uint16_t bps_received = stats.bytes_received.GetBytesPerSec();

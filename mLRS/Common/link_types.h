@@ -54,6 +54,12 @@ typedef enum {
     RX_STATUS_VALID, // frame received and crc (and crc1) valid
 } RX_STATUS_ENUM;
 
+typedef enum {
+    TX_STATUS_NONE = 0,
+    TX_STATUS_TX1_DONE, // frame on SX1 transmitted
+    TX_STATUS_TX2_DONE, // frame on SX2 transmitted
+} TX_STATUS_ENUM;
+
 
 extern const char* connectstate_str[]; // for debug purposes
 #ifdef DEVICE_IS_TRANSMITTER
