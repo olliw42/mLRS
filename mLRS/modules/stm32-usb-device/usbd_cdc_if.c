@@ -148,9 +148,7 @@ char usb_getc(void)
 
     // resume reception if NAK was pending and buffer now has space
     if (usb_rx_nak_pending) {
-        int16_t space = (USB_RXBUFSIZE - 1) - usb_rx_bytesavailable();
-        if (space < 0) space += USB_RXBUFSIZE;
-        if (space >= USB_RX_NAK_THRESHOLD) {
+        if (usb_rx_bytesavailable() < USB_RXBUFSIZE - USB_RX_NAK_THRESHOLD) {
             usb_rx_nak_pending = 0;
             USBD_CDC_ReceivePacket(&husbd_CDC); // ready to receive again
         }
@@ -325,10 +323,7 @@ static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
     }
 
     // NAK flow control: check if we have space for another packet
-    int16_t space = (USB_RXBUFSIZE - 1) - usb_rx_bytesavailable();
-    if (space < 0) space += USB_RXBUFSIZE;
-
-    if (space >= USB_RX_NAK_THRESHOLD) {
+    if (usb_rx_bytesavailable() < USB_RXBUFSIZE - USB_RX_NAK_THRESHOLD) {
         USBD_CDC_ReceivePacket(&husbd_CDC); // ready for next packet
     } else {
         usb_rx_nak_pending = 1; // NAK until space available
