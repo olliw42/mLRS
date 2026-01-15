@@ -38,10 +38,17 @@ USBD_CDC_LineCodingTypeDef USBD_CDC_LineCoding;
   #error USB_MAX_EP0_SIZE is not 64, something is terribly strange !
 #endif
 
+#if !defined STM32G431xx && !defined STM32G441xx && !defined STM32G491xx && !defined STM32G474xx
+  #warning Not tested on non STM32G4 MCUs
+#endif
+
 
 //#define USB_RXBUFSIZE           256
 #if (USB_RXBUFSIZE & (USB_RXBUFSIZE - 1)) != 0
   #error USB_RXBUFSIZE must be a power of 2!
+#endif
+#if USB_RXBUFSIZE < 256
+  #error USB_RXBUFSIZE must be at least 256!
 #endif
 #define USB_RXBUFSIZEMASK       (USB_RXBUFSIZE-1)
 
@@ -71,8 +78,8 @@ volatile uint8_t usbd_dtr_rts; // to track DTR RTS state
 
 // NAK flow control: when RX buffer is nearly full, don't call ReceivePacket
 // this causes USB to NAK incoming packets until we have space
-volatile uint8_t usb_rx_nak_pending = 0;
-#define USB_RX_NAK_THRESHOLD  128 // NAK when less than this many bytes free (~2 USB packets)
+volatile uint8_t usb_rx_nak_pending;
+#define USB_RX_NAK_THRESHOLD  (2 * CDC_DATA_FS_MAX_PACKET_SIZE) // NAK when less than this many bytes free, 128 bytes
 
 
 uint32_t usb_baudrate(void) { return USBD_CDC_LineCoding.bitrate; }
@@ -104,6 +111,7 @@ void usb_init(void)
     usb_rxwritepos = usb_rxreadpos = 0;
 
     usbd_dtr_rts = 0;
+    usb_rx_nak_pending = 0;
 
     usbd_initialized = 1;
 }
@@ -319,7 +327,6 @@ static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
             usb_rxbuf[next] = usb_rcbuf[i];
             usb_rxwritepos = next;
         }
-        // NAK flow control prevents buffer overflow, so this branch should never execute
     }
 
     // NAK flow control: check if we have space for another packet
