@@ -841,6 +841,7 @@ void tRxMavlink::send_mlrs_radio_link_stats(void)
 uint16_t flags;
 uint8_t rx_rssi1, rx_rssi2;
 int8_t rx_snr1, rx_snr2;
+uint8_t tx_rssi1, tx_rssi2;
 
     uint32_t tnow_ms = millis32();
     if ((tnow_ms - mlrs_radio_link_stats_tlast_ms) < 19) return; // don't send too fast
@@ -866,6 +867,9 @@ int8_t rx_snr1, rx_snr2;
         rx_snr2 = INT8_MAX; // invalid
     }
 
+    tx_rssi1 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+    tx_rssi2 = UINT8_MAX;
+
     // antenna
     if (stats.last_antenna == ANTENNA_2) { // rx_receive_antenna
         flags |= MLRS_RADIO_LINK_STATS_FLAGS_RX_RECEIVE_ANTENNA2;
@@ -887,10 +891,21 @@ int8_t rx_snr1, rx_snr2;
 
     // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // is single band
     float freq2 = fhss.GetCurrFreq2_Hz();
-#else
-    float freq2 = 0.0f;
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x && defined DEVICE_HAS_DUAL_SX126x_SX126x // dual band device
+    // Note: We must assume that for both the tx module and receiver the same antenna is used for the same band,
+    // such that A1 corresponds to band 1, and A2 to band 2.
+    if (Config.IsDualBand) {
+        // nothing to do, should be all ok
+    } else if (TRANSMIT_USE_ANTENNA2) { // fhss2
+        // the antenna is forced to A2, A1 cannot happen
+        tx_rssi1 = UINT8_MAX;
+        tx_rssi2 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+        float freq1 = 0.0f;
+    } else { // fhss1
+        float freq2 = 0.0f;
+    }
 #endif
 
 #if 0
@@ -909,7 +924,7 @@ int8_t rx_snr1, rx_snr2;
 
         // tx stats
         (connected()) ? stats.received_LQ_serial : 0, // uint8_t tx_LQ_ser
-        rssi_i8_to_mavradio(stats.received_rssi, connected()), // uint8_t tx_rssi1
+        tx_rssi1, // uint8_t tx_rssi1
         INT8_MAX, // int8_t tx_snr1, we don't know it
 
         // rx stats 2
@@ -917,7 +932,7 @@ int8_t rx_snr1, rx_snr2;
         rx_snr2, // int8_t rx_snr2
 
         // tx stats 2
-        UINT8_MAX, // uint8_t tx_rssi2, we don't know it
+        tx_rssi2, // uint8_t tx_rssi2, we don't know it
         INT8_MAX, // int8_t tx_snr2, we don't know it
 
         // frequencies in Hz
@@ -940,11 +955,11 @@ int8_t rx_snr1, rx_snr2;
     payload.rx_rssi1 = rx_rssi1;
     payload.rx_snr1 = rx_snr1;
     payload.tx_LQ_ser = (connected()) ? stats.received_LQ_serial : 0;
-    payload.tx_rssi1 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+    payload.tx_rssi1 = tx_rssi1;
     payload.tx_snr1 = INT8_MAX;
     payload.rx_rssi2 = rx_rssi2;
     payload.rx_snr2 = rx_snr2;
-    payload.tx_rssi2 = UINT8_MAX;
+    payload.tx_rssi2 = tx_rssi2;
     payload.tx_snr2 = INT8_MAX;
     payload.frequency1 = freq1;
     payload.frequency2 = freq2;
