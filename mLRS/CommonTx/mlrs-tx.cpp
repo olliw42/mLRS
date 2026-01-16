@@ -817,7 +817,7 @@ INITCONTROLLER_END
 
             if (!tick_1hz) {
                 if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                    buzzer.BeepLQ(stats.received_LQ_rc);
+                    buzzer.BeepLQ(stats.GetReceivedLQ_rc());
                 }
             }
 
@@ -1031,6 +1031,9 @@ IF_SX2(
                             // we could be more gentle and postpone connection by one cnt
                             FAILALWAYS(BLINK_3, "rx_available not true");
                         }
+                    }
+                    if (!connect_occured_once) {
+                        stats.JustConnected();
                     }
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
