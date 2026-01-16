@@ -115,7 +115,7 @@ Don't hesitate to join the discussion thread at rcgroups or the discord channel 
 
 ## Firmware: Flashing ##
 
-Most devices which are supported can be flashed with the [mLRS Flasher Desktop App](https://github.com/olliw42/mLRS-Flasher). Additionally, Matek devices can be flashed using a web browser with the [mLRS Web Flasher](https://mlrs.xyz/flash), which makes flashing most easy.
+The supported mLRS devices can be flashed with the [mLRS Flasher Web App](https://olliw.eu/mLRSFlasher), which makes flashing most easy.
 
 Once your hardware is flashed, you can then use the mLRS transmitter to configure the system via the CLI, the mLRS Configuration Lua script for EdgeTx/OpenTx radios, or the OLED display if available. The mLRS receiver is configured by connecting to the transmitter, and then configuring it through the transmitter, exactly like the transmitter is configured.
 
