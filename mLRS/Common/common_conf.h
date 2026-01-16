@@ -81,6 +81,7 @@
 
 #define SETUP_RX_SERIAL_LINK_MODE       2 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
+#define SETUP_RX_MAVLINK_SYSTEM_ID      0 // 0: 51, 1: 52, 2: 53, 3: 54, 4: 55  // SiK uses 51, 68
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
@@ -107,9 +108,6 @@
 // User-adjustable System Configs
 //-------------------------------------------------------
 
-#define TX_RADIO_LINK_SYSTEM_ID         51 // SiK uses 51, 68
-
-#define RX_RADIO_LINK_SYSTEM_ID         51 // SiK uses 51, 68
 #define RX_GCS_SYSTEM_ID                255 // default of MissionPlanner, QGC
 
 #define RX_DRONECAN_PREFERRED_NODE_ID   68

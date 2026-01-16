@@ -489,6 +489,8 @@ void setup_sanitize_config(uint8_t config_id)
 
     SANITIZE(Rx.PowerSwitchChannel, POWER_SWITCH_CHANNEL_NUM, POWER_SWITCH_CHANNEL_OFF, POWER_SWITCH_CHANNEL_OFF);
 
+    SANITIZE(Rx.MavlinkSystemID, 5, SETUP_RX_MAVLINK_SYSTEM_ID, 0);
+
     //-- Spares and deprecated options:
     // should be 0xFF'ed
 

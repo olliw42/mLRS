@@ -31,7 +31,8 @@ extern tSetup Setup;
 
 //#define RADIO_LINK_SYSTEM_ID          51 // SiK uses 51, 68
 //#define GCS_SYSTEM_ID                 255 // default of MissionPlanner, QGC
-#define RADIO_LINK_SYSTEM_ID          RX_RADIO_LINK_SYSTEM_ID // moved to common_conf.h
+//#define RADIO_LINK_SYSTEM_ID          RX_RADIO_LINK_SYSTEM_ID // moved to common_conf.h
+#define RADIO_LINK_SYSTEM_ID          (51 + Setup.Rx.MavlinkSystemID)
 #define GCS_SYSTEM_ID                 RX_GCS_SYSTEM_ID // moved to common_conf.h
 #define REBOOT_SHUTDOWN_MAGIC         1234321
 #if defined ESP8266 || defined ESP32
