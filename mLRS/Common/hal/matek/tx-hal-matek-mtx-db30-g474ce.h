@@ -43,10 +43,10 @@
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           8192 //xx TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           8192 //xx TX_SERIAL_RXBUFSIZE
+#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000

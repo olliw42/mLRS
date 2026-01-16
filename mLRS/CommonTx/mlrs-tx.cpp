@@ -903,7 +903,7 @@ IF_SX(
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_tx_status |= TX_STATUS_TX1_DONE;
-                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX2_DONE)) link_state = LINK_STATE_RECEIVE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX2_DONE)) { link_state = LINK_STATE_RECEIVE; }
                 DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         } else
@@ -937,7 +937,7 @@ IF_SX2(
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_tx_status |= TX_STATUS_TX2_DONE;
-                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX1_DONE)) link_state = LINK_STATE_RECEIVE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX1_DONE)) { link_state = LINK_STATE_RECEIVE; }
                 DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         } else
