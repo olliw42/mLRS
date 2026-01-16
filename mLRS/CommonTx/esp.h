@@ -231,7 +231,7 @@ void tTxEspWifiBridge::Do(void)
 #ifdef USE_ESP_WIFI_BRIDGE_DTR_RTS
     uint8_t dtr_rts = esp_dtr_rts();
 
-    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // toggle 0x03 -> 0x02
+    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && (dtr_rts == ESP_DTR_SET)) { // toggle 0x03 -> 0x01
         passthrough_do_flashing();
         tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
     }
