@@ -38,10 +38,6 @@ USBD_CDC_LineCodingTypeDef USBD_CDC_LineCoding;
   #error USB_MAX_EP0_SIZE is not 64, something is terribly strange !
 #endif
 
-#if !defined STM32G431xx && !defined STM32G441xx && !defined STM32G491xx && !defined STM32G474xx
-  #warning Not tested on non STM32G4 MCUs
-#endif
-
 
 //#define USB_RXBUFSIZE           256
 #if (USB_RXBUFSIZE & (USB_RXBUFSIZE - 1)) != 0
