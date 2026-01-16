@@ -502,7 +502,7 @@ uint8_t sep, n;
 
 void tTxCli::print_param_opt_list(uint8_t idx)
 {
-char s[16];
+char s[32];
 
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_INT8:{
@@ -605,10 +605,14 @@ void tTxCli::stream(void)
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_rssi2));
             puts(",");
             puts(s8toBCD_s(stats.received_rssi));
             puts(", ");
             puts(s8toBCD_s(stats.last_snr1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_snr2));
             puts("; ");
 
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
