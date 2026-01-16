@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2026-01-10.01'
+local version = '2026-01-13.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -528,6 +528,8 @@ freq_band_list[2] = "868 MHz"
 freq_band_list[3] = "433 MHz"
 freq_band_list[4] = "70 cm HAM"
 freq_band_list[5] = "866 MHz IN"
+freq_band_list[6] = "915 MHz + 2.4 GHz"
+freq_band_list[7] = "868 MHz + 2.4 GHz"
 
 local function getExceptNoFromChar(c)
     if (c >= 'a' and c <= 'z') then return (string.byte(c) - string.byte('a')) % 5; end
@@ -649,7 +651,7 @@ local function doParamLoop()
                 elseif disableParamLoadErrorWarnings then -- ignore any errors
                     DEVICE_PARAM_LIST_complete = true
                 else
-                    -- Huston, we have a proble,
+                    -- Huston, we have a problem
                     DEVICE_PARAM_LIST_complete = false
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end

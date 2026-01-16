@@ -98,6 +98,19 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- MATEKSYS mLRS devices
 
+#ifdef RX_MATEK_MR900_TD30_G474CE
+#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#endif
+
+#ifdef TX_MATEK_MTX_DB30_G474CE
+  #ifdef DEVICE_HAS_SX128x
+  #include "matek/tx-hal-matek-mtx-db30-g474ce-sx128x.h"
+  #else
+  #include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+  #endif
+#endif
+
+
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
 #endif
@@ -360,7 +373,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #endif
-  #if defined ESP_DTR && defined ESP_RTS
+  #if (defined ESP_DTR && defined ESP_RTS) || defined ESP_DTR_RTS_USB
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
   #if defined ESP_BOOT0
@@ -416,6 +429,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              (Config.ReceiveUseAntenna2)
   #define TRANSMIT_USE_ANTENNA1     (Config.TransmitUseAntenna1)
   #define TRANSMIT_USE_ANTENNA2     (Config.TransmitUseAntenna2)
+  #define SX_OR_SX2(x1,x2)          (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) ? x1 : x2
 #else
   #define IF_SX(x)                  x;
   #define IF_SX2(x)
@@ -425,6 +439,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              false
   #define TRANSMIT_USE_ANTENNA1     true
   #define TRANSMIT_USE_ANTENNA2     false
+  #define SX_OR_SX2(x1,x2)          x1
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5

@@ -502,7 +502,7 @@ uint8_t sep, n;
 
 void tTxCli::print_param_opt_list(uint8_t idx)
 {
-char s[16];
+char s[32];
 
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_INT8:{
@@ -605,10 +605,14 @@ void tTxCli::stream(void)
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_rssi2));
             puts(",");
             puts(s8toBCD_s(stats.received_rssi));
             puts(", ");
             puts(s8toBCD_s(stats.last_snr1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_snr2));
             puts("; ");
 
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
@@ -653,25 +657,54 @@ void tTxCli::print_frequencies_do(void)
 {
 char s[32];
 char unit[32];
+static uint8_t cnt_max;
+
+    if (print_index == 0) {
+        if (Config.IsDualBand) { // fhss1 & fhss2
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else
+        if (TRANSMIT_USE_ANTENNA2) { // only fhss2
+            print_index = fhss.Cnt();
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else { // only fhss1
+            cnt_max = fhss.Cnt();
+        }
+    }
 
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
-        if (print_index >= fhss.Cnt()) {
+        if (print_index >= cnt_max) {
             print_it_reset();
             return;
         }
 
-        uint8_t i = print_index;
-
-        puts(u8toBCD_s(i));
-        puts("  ch: ");
-        puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  f_reg: ");
-        puts(u32toBCD_s(fhss.FhssList(i)));
-        puts("  f: ");
-        u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
-        remove_leading_zeros(s);
-        puts(s);
-        putsn(unit);
+        if (print_index < fhss.Cnt()) {
+            uint8_t i = print_index;
+            if (i == 0) { puts("fhss1 (");puts(u8toBCD_s(fhss.Cnt()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+        } else {
+            uint8_t i = print_index - fhss.Cnt();
+            if (i == 0) { puts("fhss2 (");puts(u8toBCD_s(fhss.Cnt2()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList2(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList2(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq2_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+            i++;
+        }
 
         print_index++;
     }

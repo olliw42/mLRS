@@ -535,6 +535,8 @@ void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {};
 
+    int16_t receiver_sensitivity_dbm = SX_OR_SX2(sx.ReceiverSensitivity_dbm(), sx2.ReceiverSensitivity_dbm());
+
     lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
     lstats.rssi1_instantaneous = stats.last_rssi1;
     lstats.rssi2_instantaneous = stats.last_rssi2;
@@ -544,7 +546,7 @@ tMBridgeLinkStats lstats = {};
     lstats.rx1_valid = stats.rx1_valid;
     lstats.rx2_valid = stats.rx2_valid;
 
-    lstats.rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    lstats.rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(), receiver_sensitivity_dbm);
 
     // receiver side of things
 
@@ -554,7 +556,7 @@ tMBridgeLinkStats lstats = {};
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
 
-    lstats.receiver_rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.received_rssi, sx.ReceiverSensitivity_dbm());
+    lstats.receiver_rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.received_rssi, receiver_sensitivity_dbm);
 
     // further stats acquired on transmitter side
 
