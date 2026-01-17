@@ -168,14 +168,15 @@ void setup_configure_metadata(void)
 #endif
 
     // Tx SerialDestination: "serial,serial2,mbridge"
-#if defined DEVICE_HAS_JRPIN5 && defined USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b111; // all
-#elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b101; // serial, mbridge
-#elif defined USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b011; // serial, serial2
-#else
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0b001; // serial, not editable
+    SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
+#ifdef USE_SERIAL
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b001; // add serial
+#endif
+#ifdef USE_SERIAL2
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b010; // add serial2
+#endif
+#ifdef DEVICE_HAS_JRPIN5
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b100; // add mbridge
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -435,7 +436,14 @@ void setup_sanitize_config(uint8_t config_id)
     //  MBRDIGE | mBridge | CRSF !! | mBridge | mBridge
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
         (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
-        Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL)) {
+            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+        } else
+        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL2)) {
+            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL2;
+        } else {
+            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL; // hm ... we don't have any ??
+        }
     }
 
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
