@@ -105,6 +105,14 @@ typedef enum {
 } ESP_DTR_RTS_ENUM;
 
 
+#ifdef ESP_DTR_RTS_USB
+uint8_t esp_dtr_rts(void)
+{
+    return (usb_dtr_is_set() ? 0 : ESP_DTR_SET) + (usb_rts_is_set() ? 0 : ESP_RTS_SET);
+}
+#endif
+
+
 class tTxEspWifiBridge
 {
   public:
@@ -223,7 +231,7 @@ void tTxEspWifiBridge::Do(void)
 #ifdef USE_ESP_WIFI_BRIDGE_DTR_RTS
     uint8_t dtr_rts = esp_dtr_rts();
 
-    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && !(dtr_rts & ESP_RTS_SET)) { // toggle 0x03 -> 0x02
+    if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && (dtr_rts == ESP_DTR_SET)) { // toggle 0x03 -> 0x01
         passthrough_do_flashing();
         tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
     }
@@ -282,6 +290,15 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
             if (dtr_rts & ESP_DTR_SET) esp_gpio0_high(); else esp_gpio0_low(); // & 0x01
         }
         dtr_rts_last = dtr_rts;
+#endif
+
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+             baudrate = usb_baudrate();
+             ser->SetBaudRate(baudrate);
+             ser->flush();
+             com->flush();
+        }
 #endif
 
         uint32_t tnow_ms = millis32();
@@ -367,6 +384,15 @@ void tTxEspWifiBridge::passthrough_do(void)
         if (doSysTask()) {
             leds.TickPassthrough_ms();
         }
+
+#ifdef DEVICE_HAS_COM_ON_USB
+        if (usb_baudrate() != baudrate) {
+            baudrate = usb_baudrate();
+            ser->SetBaudRate(baudrate);
+            ser->flush();
+            com->flush();
+        }
+#endif
 
         uint16_t cnt = 0;
         while (com->available() && !ser->full() && (cnt < 64)) { // works fine without cnt, but needs is_full() check
