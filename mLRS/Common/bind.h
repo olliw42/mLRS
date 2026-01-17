@@ -164,6 +164,9 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
 }
 
 
+// StartUp() is called only for one SX/LR for single band operation, but on dualband hardware
+// the unused SX/LR is not a dummy. So, guard operations with IF_SX/IF_SX2 to avoid calling
+// functions on the unconfigured chip which work with gconfig (which is nullptr).
 void tBindBase::config_rf(void)
 {
     sx.SetToIdle();

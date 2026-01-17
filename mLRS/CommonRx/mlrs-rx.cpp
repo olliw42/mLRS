@@ -510,6 +510,7 @@ uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
 uint8_t link_state;
+uint8_t link_tx_status;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
@@ -566,6 +567,7 @@ RESTARTCONTROLLER
     connect_listen_cnt = 0;
     connect_occured_once = false;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_tx_status = TX_STATUS_NONE;
     link_task_init();
     doPostReceive2_cnt = 0;
     doPostReceive2 = false;
@@ -580,7 +582,7 @@ RESTARTCONTROLLER
     mavlink.Init();
     msp.Init();
     sx_serial.Init();
-    fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     dronecan.Start();
 
     tick_1hz = 0;
@@ -602,7 +604,7 @@ INITCONTROLLER_END
 
         if (!connect_occured_once) bind.AutoBind();
         bind.Tick_ms();
-        fan.SetPower(sx.RfPower_dbm());
+        fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
         fan.Tick_ms();
         dronecan.Tick_ms();
 
@@ -648,6 +650,7 @@ INITCONTROLLER_END
         rfpower.Update();
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
+        link_tx_status = TX_STATUS_NONE;
         irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         DBG_MAIN_SLIM(dbg.puts("t");)
         break;
@@ -658,7 +661,8 @@ IF_SX(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                link_tx_status |= TX_STATUS_TX1_DONE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX2_DONE)) { link_state = LINK_STATE_RECEIVE; }
                 DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         } else
@@ -694,7 +698,8 @@ IF_SX2(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                link_tx_status |= TX_STATUS_TX2_DONE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX1_DONE)) { link_state = LINK_STATE_RECEIVE; }
                 DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         } else
