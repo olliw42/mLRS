@@ -11,7 +11,7 @@
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
-// - For ESP32 and ESP32C3: Partition Scheme needs to be changed to "No OTA (Large App)" !!
+// - For ESP32 and ESP32C3: Partition Scheme needs to be changed to "No OTA (Large APP)" or "No OTA (2MB APP/2MB SPIFFS)" or similar!!
 // - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
 // - For ESP32C3: ESP32 arduino core must be 2.0.17 !!
@@ -83,7 +83,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STAMP_PICO                   // board: ESP32 PICO-D4
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
-//#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM
+//#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM ??
 //#define MODULE_GENERIC
 //#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
@@ -215,6 +215,10 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
     #warning Consider upgrading your ESP Arduino Core !
 #endif
+#endif // ARDUINO_ESP32C3_DEV
+#if defined USE_AT_MODE && (defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3) && \
+    !defined ARDUINO_PARTITION_no_ota
+    #error Partition Scheme must be "No OTA (Large APP)", "No OTA (2MB APP/2MB SPIFFS)" or similar!
 #endif
 
 #include <WiFi.h>

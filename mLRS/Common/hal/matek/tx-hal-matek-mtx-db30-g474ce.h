@@ -10,9 +10,9 @@
 /*
   Flashing ESP32 wireless bridge:
   - ser dest must be serial (wireless bridge is on serial)
-  - ser baudrate must be 115200
+  - ser baudrate does not matter
   - the Tx module can be put into FLASH_ESP mode via esptool's DTR&RTS method, so no need for manual intervention
-  - Arduino IDE: 115200 baud
+  - Arduino IDE: 921600 baud works
 */
 
 //-------------------------------------------------------
