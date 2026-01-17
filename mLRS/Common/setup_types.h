@@ -31,6 +31,8 @@ typedef enum : uint8_t {
     SETUP_FREQUENCY_BAND_433_MHZ,
     SETUP_FREQUENCY_BAND_70_CM_HAM,
     SETUP_FREQUENCY_BAND_866_MHZ_IN,
+    SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ,
+    SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ,
     SETUP_FREQUENCY_BAND_NUM,
 } SETUP_FREQUENCY_BAND_ENUM;
 
@@ -530,6 +532,7 @@ typedef struct
     bool ReceiveUseAntenna2;
     bool TransmitUseAntenna1;
     bool TransmitUseAntenna2;
+    bool IsDualBand;
 
     bool UseMbridge;
     bool UseCrsf;
