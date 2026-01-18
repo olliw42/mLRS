@@ -714,9 +714,11 @@ void setup_configure_config(uint8_t config_id)
         Config.FrameSyncWord += 0x1111 * Setup.Common[config_id].Ortho;
     }
 
-    if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ ||
-        Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ) {
-        Config.FrameSyncWord += 0x5A5A;
+    if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ) {
+        Config.FrameSyncWord += 0x5AA5;
+    }
+    if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ) {
+        Config.FrameSyncWord += 0xA55A;
     }
 
     //-- Diversity

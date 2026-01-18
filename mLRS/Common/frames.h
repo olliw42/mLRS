@@ -456,7 +456,8 @@ uint8_t fhss_band_next(void)
         fhss_band_last = fhss_band;
         if (nr_randq1() < UINT32_MAX/2) fhss_band++;
     }
-    return fhss_band;
+
+    return fhss_band & 0x01;
 }
 
 
