@@ -26,6 +26,8 @@ extern bool connected(void);
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
 
+#define REBOOT_SHUTDOWN_MAGIC_MSP  1234321
+
 
 class tRxMsp
 {
@@ -107,6 +109,7 @@ class tRxMsp
 
     // miscellaneous
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
+    uint32_t reboot_activate_ms;
 };
 
 
@@ -136,6 +139,8 @@ void tRxMsp::Init(void)
     }
 
     memset(inav_flight_modes_box_mode_flags, 255, INAV_FLIGHT_MODES_COUNT); // 255 = is empty
+
+    reboot_activate_ms = 0;
 }
 
 
@@ -223,6 +228,11 @@ void tRxMsp::Do(void)
             }
         }
     }
+
+    // trigger bootloader after delay
+    if (reboot_activate_ms && (tnow_ms - reboot_activate_ms) > 1000) {
+        BootLoaderInit();
+    }
 }
 
 
@@ -298,6 +308,20 @@ void tRxMsp::parse_serial_in_link_out(void)
                         send = false; // don't forward to ground
                         break;
                     }
+                }
+
+                // handle MSP_REBOOT to enter system bootloader (V2 only)
+                if (msp_msg_ser_in.type == MSP_TYPE_REQUEST && msp_msg_ser_in.function == MSP_REBOOT) {
+                    if (serial.has_systemboot() &&
+                        msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2 &&
+                        (*((uint32_t*)msp_msg_ser_in.payload) == REBOOT_SHUTDOWN_MAGIC_MSP)) {
+
+                        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_RESPONSE, 0, MSP_REBOOT, 0, 0);
+                        serial.putbuf(_buf, len);
+                        reboot_activate_ms = millis32();
+                    }
+                    send = false; // don't forward to ground
+                    break;
                 }
 
                 if (send) {
