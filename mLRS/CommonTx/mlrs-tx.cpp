@@ -234,18 +234,6 @@ void tWhileTransmit::handle_once(void)
 // Some helper
 //-------------------------------------------------------
 
-void start_bind(void)
-{
-    if (!bind.IsInBind()) bind.StartBind();
-}
-
-
-void stop_bind(void)
-{
-    if (bind.IsInBind()) bind.StopBind();
-}
-
-
 void enter_system_bootloader(void)
 {
     disp.DrawBoot();
@@ -1271,8 +1259,8 @@ IF_IN(
             mbridge.Lock(); // lock mBridge
         }
         break;
-    case MAIN_TASK_BIND_START: start_bind(); break;
-    case MAIN_TASK_BIND_STOP: stop_bind(); break;
+    case MAIN_TASK_BIND_START: bind.StartBind(); break;
+    case MAIN_TASK_BIND_STOP: bind.StopBind(); break;
     case MAIN_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;

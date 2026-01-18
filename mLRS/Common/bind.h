@@ -55,10 +55,10 @@ class tBindBase
   public:
     void Init(void);
     bool IsInBind(void) { return is_in_binding; }
-    void StartBind(void) { binding_requested = true; }
-    void StopBind(void) { binding_stop_requested = true; }
+    void StartBind(void) { if (!is_in_binding) binding_requested = true; }
+    void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
-    void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM
+    void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM, only for receiver
     void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
@@ -113,16 +113,17 @@ void tBindBase::Init(void)
 
 void tBindBase::ConfigForBind(void)
 {
-    // used by both the Tx and Rx, switch to 19 Hz mode, select lowest possible power
-    // we technically have to distinguish between MODE_19HZ or MODE_19HZ_7X
+    // used by both the Tx and Rx, switch to 19Hz or 19Hz7x mode, select lowest possible power
+    // we have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
+    // for devices which can do both modes we need to toggle
     if (Config.Mode == MODE_19HZ_7X) {
-        mode_mask = 0xFFFF;
         configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
+        mode_mask = 0xFFFF; // start with 19Hz7x for all frequencies
         mode_mask &=~ (1 << Config.FrequencyBand); // clear bit for current frequency band
     } else {
-        mode_mask = 0;
         configure_mode(MODE_19HZ, Config.FrequencyBand);
+        mode_mask = 0; // start with 19Hz for all frequencies
         mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
     }
 
@@ -130,7 +131,7 @@ void tBindBase::ConfigForBind(void)
 }
 
 
-void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM
+void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM, only for receiver
 {
     // not nice
     // used only by Rx
