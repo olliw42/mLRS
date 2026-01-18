@@ -204,7 +204,8 @@ void setup_configure_metadata(void)
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
     // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
+    // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00111; // only enabled, not editable
 #elif defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
@@ -378,16 +379,19 @@ void setup_sanitize_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
         SetupMetaData.Mode_allowed_mask &= 0b001111; // filter down to 50 Hz, 31 Hz, 19 Hz, FLRC
         SetupMetaData.Tx_Diversity_allowed_mask = 0b00100; // antenna2
+        SetupMetaData.Rx_Diversity_allowed_mask = 0b00100; // antenna2
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b010110; // filter down to 31 Hz, 19 Hz, FSK
         SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // antenna1
+        SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // antenna1
         break;
     case SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ:
     case SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ:
         SetupMetaData.Mode_allowed_mask &= 0b010110; // filter down to 31 Hz, 19 Hz, FSK
         SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // diversity / both antenna
+        SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // diversity / both antenna
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()
