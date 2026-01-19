@@ -26,7 +26,7 @@ extern bool connected(void);
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
 
-#define REBOOT_SHUTDOWN_MAGIC_MSP  1234321
+#define MSP_REBOOT_MAGIC  1234321
 
 
 class tRxMsp
@@ -310,12 +310,10 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                 }
 
+                // this is a request from the FC, response is sent back to the FC
                 // handle MSP_REBOOT to enter system bootloader (V2 only)
-                if (msp_msg_ser_in.type == MSP_TYPE_REQUEST && msp_msg_ser_in.function == MSP_REBOOT) {
-                    if (serial.has_systemboot() &&
-                        msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2 &&
-                        (*((uint32_t*)msp_msg_ser_in.payload) == REBOOT_SHUTDOWN_MAGIC_MSP)) {
-
+                if (msp_msg_ser_in.type == MSP_TYPE_REQUEST && serial.has_systemboot() && msp_msg_ser_in.function == MSP_REBOOT) {
+                    if (msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2 && (((tMspReboot*)msp_msg_ser_in.payload)->magic == MSP_REBOOT_MAGIC)) {
                         uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_RESPONSE, 0, MSP_REBOOT, 0, 0);
                         serial.putbuf(_buf, len);
                         reboot_activate_ms = millis32();

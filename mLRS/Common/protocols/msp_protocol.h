@@ -153,6 +153,16 @@ typedef struct
 #define MSP_SONAR_ALTITUDE_LEN  4
 
 
+// MSP_REBOOT  68
+MSP_PACKED(
+typedef struct
+{
+    uint32_t magic;
+}) tMspReboot;
+
+#define MSP_REBOOT_LEN  4
+
+
 // MSP_STATUS  101
 //      cycleTime   UINT 16   unit: microseconds
 //      i2c_errors_count  UINT 16
