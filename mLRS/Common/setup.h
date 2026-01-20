@@ -135,10 +135,11 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 67);
 
     // Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
-    SetupMetaData.Tx_Diversity_allowed_mask = 0b00111; // only enabled, not editable
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b00111; // will be adjusted below
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #elif defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Tx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
@@ -202,10 +203,11 @@ void setup_configure_metadata(void)
     power_optstr_from_rfpower_list(SetupMetaData.Rx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 67);
 
     // Rx Diversity: "enabled,antenna1,antenna2,r:e t:a1,r:e t:a2"
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    // DUALBAND 2.4 GHz & 868/915 MHz or 868/915 MHz & 433 MHz
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
-    SetupMetaData.Rx_Diversity_allowed_mask = 0b00111; // only enabled, not editable
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00111; // will be adjusted below
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // only enabled, not editable
 #elif defined DEVICE_HAS_DIVERSITY
     SetupMetaData.Rx_Diversity_allowed_mask = 0b11111; // all
 #elif defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
@@ -702,6 +704,53 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
 }
 
 
+// also called by bind
+void configure_diversity(uint8_t diversity)
+{
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    switch (diversity) {
+    case DIVERSITY_DEFAULT:
+        Config.Diversity = DIVERSITY_DEFAULT;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
+        break;
+    case DIVERSITY_ANTENNA1:
+        Config.Diversity = DIVERSITY_ANTENNA1;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
+        break;
+    case DIVERSITY_ANTENNA2:
+        Config.Diversity = DIVERSITY_ANTENNA2;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = false;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
+        break;
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    // must not happen for dualband, should have been resolved in setup_sanitize_config()
+    case DIVERSITY_R_ENABLED_T_ANTENNA1:
+        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA1;
+        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+        Config.ReceiveUseAntenna2 = true;
+        Config.TransmitUseAntenna2 = false;
+        break;
+    case DIVERSITY_R_ENABLED_T_ANTENNA2:
+        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA2;
+        Config.ReceiveUseAntenna1 = true;
+        Config.TransmitUseAntenna1 = false;
+        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
+        break;
+#endif
+    default:
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
+    }
+#else
+    Config.Diversity = DIVERSITY_ANTENNA1;
+    Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
+    Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
+#endif
+}
+
+
 void setup_configure_config(uint8_t config_id)
 {
     //-- SyncWord
@@ -728,66 +777,10 @@ void setup_configure_config(uint8_t config_id)
     //-- Diversity
     // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
-    switch (Setup.Tx[config_id].Diversity) { // has hopefully been correctly sanitized in setup_sanitize_config()
-    case DIVERSITY_DEFAULT:
-        Config.Diversity = DIVERSITY_DEFAULT; // treat dual band like diversity
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
-        break;
-    case DIVERSITY_ANTENNA1:
-        Config.Diversity = DIVERSITY_ANTENNA1;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
-        break;
-    case DIVERSITY_ANTENNA2:
-        Config.Diversity = DIVERSITY_ANTENNA2;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = false;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
-        break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
-    }
-#elif defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-  #ifdef DEVICE_IS_TRANSMITTER
-    switch (Setup.Tx[config_id].Diversity) {
-  #else // DEVICE_IS_RECEIVER
-    switch (Setup.Rx.Diversity) {
-  #endif
-    case DIVERSITY_DEFAULT:
-        Config.Diversity = DIVERSITY_DEFAULT;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
-        break;
-    case DIVERSITY_ANTENNA1:
-        Config.Diversity = DIVERSITY_ANTENNA1;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
-        break;
-    case DIVERSITY_ANTENNA2:
-        Config.Diversity = DIVERSITY_ANTENNA2;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = false;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
-        break;
-    case DIVERSITY_R_ENABLED_T_ANTENNA1:
-        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA1;
-        Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-        Config.ReceiveUseAntenna2 = true;
-        Config.TransmitUseAntenna2 = false;
-        break;
-    case DIVERSITY_R_ENABLED_T_ANTENNA2:
-        Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA2;
-        Config.ReceiveUseAntenna1 = true;
-        Config.TransmitUseAntenna1 = false;
-        Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
-        break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize()
-    }
-#else
-    Config.Diversity = DIVERSITY_ANTENNA1;
-    Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
-    Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = false;
+#ifdef DEVICE_IS_TRANSMITTER
+    configure_diversity(Setup.Tx[config_id].Diversity); // has hopefully been correctly sanitized in setup_sanitize_config()
+#else // DEVICE_IS_RECEIVER
+    configure_diversity(Setup.Rx.Diversity); // has hopefully been correctly sanitized in setup_sanitize_config()
 #endif
 
     //-- FrequencyBand
