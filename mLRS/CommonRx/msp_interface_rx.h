@@ -333,6 +333,15 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                 }
 
+                if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
+                    // handle MSP2_RX_BIND, only if MSP V2
+                    if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
+                        bind.StartBind();
+                        send = false; // don't forward to ground
+                        break;
+                    }
+                }
+
                 if (send) {
                     uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
                     fifo_link_out.PutBuf(_buf, len);
