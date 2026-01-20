@@ -67,17 +67,14 @@ class tRxOtaWifi
 {
   public:
     void Init(void);
-    void Do(void);
-    bool IsActive(void) { return _wifi_active; }
 
     // call from main loop - returns true if should enter wifi mode
     bool CheckAutoTimeout(bool connected_once, bool in_bind);
 
-    // call to enter wifi mode (call after setting sx to idle)
+    // enter wifi mode - blocks until timeout or update, then reboots
     void Enter(void);
 
   private:
-    bool _wifi_active;
     bool _ota_in_progress;
     uint32_t _wifi_enter_time;
     uint32_t _auto_timeout_start;
@@ -94,7 +91,6 @@ class tRxOtaWifi
 
 void tRxOtaWifi::Init(void)
 {
-    _wifi_active = false;
     _ota_in_progress = false;
     _led_state = 0;
     _led_next_ms = 0;
@@ -176,25 +172,6 @@ void tRxOtaWifi::_handleUpdateUpload(void)
 }
 
 
-void tRxOtaWifi::Enter(void)
-{
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(OTA_WIFI_SSID, OTA_WIFI_PASSWORD);
-
-    _ota_server.on("/", [this]() { _handleRoot(); });
-    _ota_server.on("/update", HTTP_POST,
-        [this]() { _handleUpdate(); },
-        [this]() { _handleUpdateUpload(); }
-    );
-    _ota_server.begin();
-
-    _wifi_active = true;
-    _wifi_enter_time = millis();
-    _led_state = 0;
-    _led_next_ms = millis();
-}
-
-
 void tRxOtaWifi::_doLed(void)
 {
     if (millis() < _led_next_ms) return;
@@ -215,18 +192,34 @@ void tRxOtaWifi::_doLed(void)
 }
 
 
-void tRxOtaWifi::Do(void)
+void tRxOtaWifi::Enter(void)
 {
-    if (!_wifi_active) return;
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(OTA_WIFI_SSID, OTA_WIFI_PASSWORD);
 
-    _ota_server.handleClient();
-    _doLed();
+    _ota_server.on("/", [this]() { _handleRoot(); });
+    _ota_server.on("/update", HTTP_POST,
+        [this]() { _handleUpdate(); },
+        [this]() { _handleUpdateUpload(); }
+    );
+    _ota_server.begin();
 
-    // timeout - exit wifi mode if no upload started
-    if (!_ota_in_progress && (millis() - _wifi_enter_time) > OTA_WIFI_TIMEOUT_MS) {
-        WiFi.mode(WIFI_OFF);
-        _wifi_active = false;
-        ESP.restart();
+    _wifi_enter_time = millis();
+    _led_state = 0;
+    _led_next_ms = millis();
+
+    // blocking loop - never returns, ends with reboot
+    while (true) {
+        _ota_server.handleClient();
+        _doLed();
+
+        // timeout - exit wifi mode if no upload started
+        if (!_ota_in_progress && (millis() - _wifi_enter_time) > OTA_WIFI_TIMEOUT_MS) {
+            WiFi.mode(WIFI_OFF);
+            ESP.restart();
+        }
+
+        yield();  // prevent watchdog reset
     }
 }
 

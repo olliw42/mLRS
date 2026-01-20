@@ -604,14 +604,6 @@ RESTARTCONTROLLER
     resetSysTask(); // helps in avoiding too short first loop
 INITCONTROLLER_END
 
-#if defined ESP8266 || defined ESP32
-    //-- Wi-Fi OTA mode handling
-    if (ota_wifi.IsActive()) {
-        ota_wifi.Do();  // handles LED double-blink internally
-        return;  // skip normal loop when in wifi mode
-    }
-#endif
-
     //-- SysTask handling
 
     if (doSysTask()) {
@@ -635,7 +627,6 @@ INITCONTROLLER_END
             sx.SetToIdle();
             sx2.SetToIdle();
             ota_wifi.Enter();
-            return;
         }
 #endif
 
