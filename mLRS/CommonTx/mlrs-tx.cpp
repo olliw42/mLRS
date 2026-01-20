@@ -510,7 +510,10 @@ uint8_t payload_len = 0;
     frame_stats.transmit_antenna = antenna;
     frame_stats.rssi = stats.GetLastRssi();
 
-    uint8_t fhss_band = fhss_band_next();
+    // Note: the receiver wants to see both bands, also single band receivers.
+    // It is then important however that fhss1_curr_i and fhss2_curr_i are identical, as otherwise
+    // the receiver would jump to wrong frequencies
+    uint8_t fhss_band = fhss_band_next(); // this randomly toggles between 0 and 1, but never has more than two symbols in a row
     frame_stats.tx_fhss_index_band = fhss_band;
     frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
 
@@ -819,7 +822,7 @@ INITCONTROLLER_END
 
             if (!tick_1hz) {
                 if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-                    buzzer.BeepLQ(stats.received_LQ_rc);
+                    buzzer.BeepLQ(stats.GetReceivedLQ_rc());
                 }
             }
 
@@ -1022,10 +1025,10 @@ IF_SX2(
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
                     if (!SetupMetaData.rx_available && !bind.IsInBind()) {
-                        // should not have happen, but does very occasionally happen, so let's cope with
-                        // we must have gotten it at least once, on first connect, since we need it
-                        // later on we can accept to be gentle and be ok with not getting it again
-                        // bottom line: the receiver must not change after first connection
+                        // should not happen, but does very occasionally happen, so let's cope with it
+                        // We must have gotten it at least once, on first connect, since we need it.
+                        // Later on we can accept to be gentle and be ok with not getting it again.
+                        // Bottom line: the receiver must not change after first connection.
                         if (connect_occured_once) {
                             link_task_reset();
                             SetupMetaData.rx_available = true;
@@ -1033,6 +1036,9 @@ IF_SX2(
                             // we could be more gentle and postpone connection by one cnt
                             FAILALWAYS(BLINK_3, "rx_available not true");
                         }
+                    }
+                    if (!connect_occured_once) {
+                        stats.JustConnected();
                     }
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;

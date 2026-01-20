@@ -232,8 +232,8 @@ typedef struct
     uint8_t OutLqChannelMode : 4;
     uint8_t PowerSwitchChannel : 4;
     uint8_t SerialPort : 4;
+    uint8_t MavlinkSystemID : 4;
 
-    uint8_t spare : 4;
     uint8_t spare2[3];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120

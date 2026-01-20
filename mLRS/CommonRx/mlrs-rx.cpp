@@ -811,8 +811,9 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         // check fhss index
         // do it only in LISTEN and SYNC
+        // for older versions not supporting the mechanism holds received_fhss_index >= 63
         if ((connect_state <= CONNECT_STATE_SYNC) && valid_frame_received &&
-            (stats.received_fhss_index < 63)) { // older version don't offer this
+            (stats.received_fhss_index < 63)) { // only when supported by tx, older version don't offer this
             if (stats.received_fhss_index_band == 0) {
                 if (fhss.GetCurrI() != stats.received_fhss_index) { // somehow wrong frequency, discard
                     valid_frame_received = false;
@@ -837,7 +838,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             case CONNECT_STATE_LISTEN:
                 connect_state = CONNECT_STATE_SYNC;
                 connect_sync_cnt = 0;
-                connect_fhss_index_band_seen = (stats.received_fhss_index < 63) ? 0 : 0x03;
+                connect_fhss_index_band_seen = (stats.received_fhss_index < 63) ? 0 : 0x03; // set as seen when mechanism not supported
                 break;
             case CONNECT_STATE_SYNC:
                 connect_sync_cnt++;

@@ -744,7 +744,7 @@ int8_t power;
     gdisp_puts(s);
     gdisp_setcurX(60 + 11);
     if (connected()) {
-        stoBCDstr(stats.received_LQ_rc, s);
+        stoBCDstr(stats.GetReceivedLQ_rc(), s);
         gdisp_puts(s);
     }
 
@@ -789,33 +789,6 @@ char s[32];
     uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : DIVERSITY_NUM;
     _diversity_str(s, rx_actual_diversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
-/*
-    gdisp_setcurXY(0, 3 * 10 + 20);
-    gdisp_puts("Rssi");
-    gdisp_setcurX(40);
-    s8toBCDstr(stats.GetLastRssi(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(80);
-    s8toBCDstr(stats.received_rssi, s);
-    if (connected()) gdisp_puts(s);
-
-    gdisp_setcurX(115);
-    gdisp_puts("dB");
-
-    gdisp_setcurXY(0, 4 * 10 + 20);
-    gdisp_puts("LQ");
-    gdisp_setcurX(40);
-    stoBCDstr(txstats.GetLQ(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(80);
-    if (connected()) {
-        stoBCDstr(stats.received_LQ, s);
-        gdisp_puts(s);
-    }
-
-    gdisp_setcurX(115+6);
-    gdisp_puts("%");
-*/
 }
 
 

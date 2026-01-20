@@ -391,8 +391,9 @@ typedef struct
     uint8_t OutLqChannelMode;
     uint8_t PowerSwitchChannel;
     uint8_t SerialPort;
+    uint8_t MavlinkSystemID;
 
-    uint8_t spare[5];
+    uint8_t spare[4];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValues_Ch13_Ch16[4]; // 0,1,2 = -120, 0, +120
@@ -450,7 +451,7 @@ typedef struct
     uint16_t Mode_allowed_mask;
     uint16_t Ortho_allowed_mask;
 
-    char Tx_Power_optstr[44+1];
+    char Tx_Power_optstr[67+1];
     uint16_t Tx_Diversity_allowed_mask;
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
@@ -458,7 +459,7 @@ typedef struct
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 
-    char Rx_Power_optstr[44+1];
+    char Rx_Power_optstr[67+1];
     uint16_t Rx_Diversity_allowed_mask;
     uint16_t Rx_OutMode_allowed_mask;
     uint16_t Rx_SerialPort_allowed_mask;

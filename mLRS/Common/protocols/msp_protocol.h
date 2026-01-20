@@ -91,6 +91,7 @@ typedef enum {
     MSP_MODE_RANGES               = 34, // len = 160
     MSP_ADJUSTMENT_RANGES         = 52, // len = 120
     MSP_SONAR_ALTITUDE            = 58,
+    MSP_REBOOT                    = 68,
     MSP_IDENT                     = 100, // not used by INAV, but by a GCS to detect it's not an old INAV
     MSP_STATUS                    = 101,
     MSP_RAW_IMU                   = 102,
@@ -150,6 +151,16 @@ typedef struct
 }) tMspSonarAltitude;
 
 #define MSP_SONAR_ALTITUDE_LEN  4
+
+
+// MSP_REBOOT  68
+MSP_PACKED(
+typedef struct
+{
+    uint32_t magic;
+}) tMspReboot;
+
+#define MSP_REBOOT_LEN  4
 
 
 // MSP_STATUS  101

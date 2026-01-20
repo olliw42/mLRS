@@ -548,7 +548,7 @@ tMBridgeLinkStats lstats = {};
 
     // receiver side of things
 
-    lstats.receiver_LQ_rc = stats.received_LQ_rc; // valid_crc1_received, number of rc data packets received on receiver side
+    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc(); // valid_crc1_received, number of rc data packets received on receiver side
     lstats.receiver_LQ_serial = stats.received_LQ_serial; // valid_frames_received, number of completely valid packets received on receiver side
     lstats.receiver_rssi_instantaneous = stats.received_rssi;
     lstats.receiver_receive_antenna = stats.received_antenna;
@@ -610,7 +610,7 @@ tMBridgeInfo info = {};
     info.has_status = 1; // to indicate it has these flags
     info.binding = (bind.IsInBind()) ? 1 : 0;
     info.connected = (connected()) ? 1 : 0;
-    info.rx_LQ_low = (stats.received_LQ_rc < 65) ? 1 : 0;
+    info.rx_LQ_low = (stats.GetReceivedLQ_rc() < 65) ? 1 : 0;
     info.tx_LQ_low = (stats.GetLQ_serial() < 65) ? 1 : 0;
 
     info.param_num = SETUP_PARAMETER_NUM; // known if non-zero

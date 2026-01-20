@@ -358,6 +358,7 @@ const uint16_t power_table_dBm_to_mW[] = {
     2000, // 33 dBm
 };
 
+
 uint8_t dronecan_cvt_power(int8_t power_dbm)
 {
     if (power_dbm < 0) return 0;
@@ -377,6 +378,8 @@ uint16_t cvt_power(int8_t power_dbm)
 //-- modes and so on
 // ATTENTION: must not be longer than FREQUENCY_BAND_STR_LEN, MODE_STR_LEN, w/o terminating NULL character!
 
+// MLRS_RADIO_LINK_INFORMATION_FIELD_BAND_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 4 chars max
 void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t len)
 {
     switch (frequency_band) {
@@ -390,6 +393,9 @@ void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t
     }
 }
 
+
+// MLRS_RADIO_LINK_INFORMATION_FIELD_MODE_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 6 chars max
 void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
 {
     switch (mode) {
@@ -494,25 +500,18 @@ void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power
 {
     memset(Power_optstr, 0, slen);
 
-    char optstr[44+2] = {};
+    char optstr[67+2] = {};
 
     for (uint8_t i = 0; i < num; i++) {
-        char s[44+2];
+        char s[16]; // single entry, e.g. "2000 mW,"
         if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {
             strcpy(s, "min,");
-        } else
-        if (power_list[i] < 1000) {
+        } else {
             u16toBCDstr(power_list[i], s);
             remove_leading_zeros(s);
             strcat(s, " mW,");
-        } else {
-            u16toBCDstr((power_list[i] + 50) / 100, s);
-            remove_leading_zeros(s);
-            uint8_t l = strlen(s);
-            s[l] = s[l-1]; s[l-1] = '.'; s[l+1] = '\0';
-            strcat(s, " W,");
         }
         if (strlen(optstr) + strlen(s) <= slen) { // we are going to cut off the last char, hence <=
             strcat(optstr, s);
