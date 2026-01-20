@@ -49,7 +49,7 @@ class tRxMsp
     msp_message_t msp_msg_link_in;
     void parse_link_in_serial_out(char c);
 
-    // fields for serial in -> parser -> link out
+    // fields for serial in -> parser -> link out (or serial out in case of response to flight controller)
     msp_status_t status_ser_in;
     msp_message_t msp_msg_ser_in;
     tFifo<char,1024> fifo_link_out; // needs to be at least ??
@@ -107,9 +107,11 @@ class tRxMsp
 
     uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXNAMES
 
+    // to handle command MSP_REBOOT
+    uint32_t reboot_activate_ms;
+
     // miscellaneous
     uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
-    uint32_t reboot_activate_ms;
 };
 
 
@@ -310,16 +312,25 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                 }
 
-                // this is a request from the FC, response is sent back to the FC
-                // handle MSP_REBOOT to enter system bootloader (V2 only)
-                if (msp_msg_ser_in.type == MSP_TYPE_REQUEST && serial.has_systemboot() && msp_msg_ser_in.function == MSP_REBOOT) {
-                    if (msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2 && (((tMspReboot*)msp_msg_ser_in.payload)->magic == MSP_REBOOT_MAGIC)) {
-                        uint16_t len = msp_generate_v2_frame_buf(_buf, MSP_TYPE_RESPONSE, 0, MSP_REBOOT, 0, 0);
-                        serial.putbuf(_buf, len);
-                        reboot_activate_ms = millis32();
+                if (msp_msg_ser_in.type == MSP_TYPE_REQUEST) { // this is a request from the FC
+                    // handle MSP_REBOOT, only if MSP V2
+                    if (msp_msg_ser_in.function == MSP_REBOOT && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
+                        uint32_t magic = ((tMspReboot*)msp_msg_ser_in.payload)->magic;
+                        if (serial.has_systemboot() && magic == MSP_REBOOT_MAGIC) {
+                            reboot_activate_ms = millis32(); // set to non zero to enter system bootloader
+                            // send response back to the FC
+                            uint16_t len = msp_generate_v2_frame_buf(
+                                _buf,
+                                MSP_TYPE_RESPONSE,
+                                MSP_FLAG_SOURCE_ID_RC_LINK,
+                                MSP_REBOOT,
+                                0, // dummy pointer
+                                0);
+                            serial.putbuf(_buf, len);
+                        }
+                        send = false; // don't forward to ground
+                        break;
                     }
-                    send = false; // don't forward to ground
-                    break;
                 }
 
                 if (send) {
