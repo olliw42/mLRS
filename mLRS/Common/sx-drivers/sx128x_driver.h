@@ -321,8 +321,10 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return actual_power_dbm;
     }
 
-  private:
+  protected:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxFlrcConfiguration* flrc_configuration;
     uint8_t sx_power;
@@ -434,6 +436,8 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
@@ -594,6 +598,8 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 

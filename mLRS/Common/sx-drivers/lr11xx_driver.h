@@ -474,6 +474,8 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif
@@ -614,6 +616,8 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif

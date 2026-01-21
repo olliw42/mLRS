@@ -429,6 +429,7 @@ class tFhssBase
         for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
             if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
         }
+        is_in_binding = false;
 
         if (bind_scan_mask == 0) while(1){} // should not happen, but play it safe
 
@@ -497,8 +498,6 @@ class tFhssBase
             while(1){} // should not happen, but play it safe
         }
 
-        is_in_binding = false;
-
         curr_i = 0;
     }
 
@@ -529,7 +528,7 @@ class tFhssBase
         return fhss_list[curr_i];
     }
 
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         is_in_binding = true;
         bind_listen_cnt = (5000 / frame_rate_ms); // should be 5 secs
@@ -574,6 +573,9 @@ class tFhssBase
     {
         return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
     }
+
+    void MergeBindScanMask(uint16_t _bind_scan_mask) { bind_scan_mask |= _bind_scan_mask; }
+    uint16_t GetBindScanMask(void) { return bind_scan_mask; }
 
     // Rx: for RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
@@ -625,7 +627,7 @@ class tFhssBase
 #endif
     }
 
-  private:
+//Xx  private:
     uint32_t _seed;
     uint8_t _ortho;
     uint8_t _except;
@@ -718,10 +720,14 @@ class tFhss
     uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
 
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         fhss1stBand.SetToBind(frame_rate_ms);
-        fhss2ndBand.SetToBind(frame_rate_ms);
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+        // for a dualband receiver we merge the bind_scan_mask of both fhss, and let fhss1 do the job
+        fhss1stBand.MergeBindScanMask(fhss2ndBand.GetBindScanMask());
+#endif
     }
 
     //-- receiver only
@@ -731,14 +737,12 @@ class tFhss
 
     bool HopToNextBind(void)
     {
-        bool hop1 = fhss1stBand.HopToNextBind();
-        bool hop2 = fhss2ndBand.HopToNextBind();
-        return hop1 || hop2;
+        return fhss1stBand.HopToNextBind(); // it's always only fhss1 which does the job
     }
 
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
-    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
 
+    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
     float GetCurrFreq2_Hz(void)
     {
 #if defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -773,7 +777,7 @@ class tFhss
 
     uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
 
-  private:
+//xx  private:
     tFhssBase fhss1stBand;
     tFhssBase fhss2ndBand;
 };

@@ -483,6 +483,8 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
@@ -616,6 +618,8 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif

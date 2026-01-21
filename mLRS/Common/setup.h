@@ -854,6 +854,10 @@ void setup_configure_config(uint8_t config_id)
     Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand; // has hopefully been correctly sanitized in Sx12xx section
 
     Config.Fhss.FrequencyBand_allowed_mask = 0;
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+    Config.Fhss.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC) |
+                                             (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
+#else
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) {
         Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     }
@@ -878,10 +882,6 @@ void setup_configure_config(uint8_t config_id)
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ)) {
         Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
     }
-
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    Config.Fhss.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC) |
-                                             (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
 #endif
 
     switch (Config.Fhss.FrequencyBand) {

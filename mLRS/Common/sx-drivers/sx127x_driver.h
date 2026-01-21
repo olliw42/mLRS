@@ -295,8 +295,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return actual_power_dbm;
     }
 
-  private:
+  protected:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     uint8_t low_frequency_mode;
     uint8_t sx_power;
@@ -429,6 +431,8 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 //XX        // this is not nice, figure out where to place
 //XX#ifdef DEVICE_HAS_I2C_DAC
 //XX        dac.Init();
@@ -581,8 +585,11 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
         Configure(global_config);
         delay_us(125); // may not be needed
+
         sx2_dio_enable_exti_isr();
     }
 

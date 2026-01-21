@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "common_conf.h"
 #include "hal/device_conf.h"
-
+#include "setup_types.h"
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
@@ -29,6 +29,8 @@ void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t l
 void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms);
 void sxGetPacketStatus(uint8_t antenna, tStats* const stats);
 
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tStats stats;
 
 
@@ -58,7 +60,7 @@ class tBindBase
     void StartBind(void) { if (!is_in_binding) binding_requested = true; }
     void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
-    void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM, only for receiver
+    void HopToNextBind(SETUP_FREQUENCY_BAND_ENUM frequency_band); // only for receiver
     void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
@@ -127,41 +129,54 @@ void tBindBase::ConfigForBind(void)
         mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
     }
 
+    // we may need them both, so ensure they are start up
+    sx.StartUp(&Config.Sx);
+    sx2.StartUp(&Config.Sx2);
+
     config_rf();
 }
 
 
-void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM, only for receiver
+// used only by Rx
+// is called in rx main when fhss.HopToNextBind() returns true
+// the frequency band is obtained with fhss.GetCurrBindSetupFrequencyBand()
+void tBindBase::HopToNextBind(SETUP_FREQUENCY_BAND_ENUM frequency_band)
 {
+    uint8_t mode = Config.Mode;
+
     // not nice
-    // used only by Rx
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
     // we could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // we also could provide a function to do it both in setup.h and here
     // for the moment reconstruct the info by explicit defines
 #if defined DEVICE_HAS_LR11xx
-    uint16_t mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK // only important that both 19Hz and 19Hz7x are set
-#elif defined DEVICE_HAS_SX127x
-    uint16_t mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable // only important that only 19Hz7x is set
-#else
-    uint16_t mode_allowed_mask = 0b000111; // 50 Hz, 31 Hz, 19 Hz // only important that only 19Hz is set
+    // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        mode = MODE_19HZ;
+    } else {
+        if (mode_mask & (1 << frequency_band)) {
+            mode = MODE_19HZ_7X;
+            mode_mask &=~ (1 << frequency_band); // clear bit
+        } else {
+            mode = MODE_19HZ;
+            mode_mask |= (1 << frequency_band); // set bit
+        }
+    }
 #endif
 
-    // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
-    if ((mode_allowed_mask & (1 << MODE_19HZ)) && (mode_allowed_mask & (1 << MODE_19HZ_7X))) {
-        if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-            configure_mode(MODE_19HZ, frequency_band);
-        } else {
-            if (mode_mask & (1 << frequency_band)) {
-                configure_mode(MODE_19HZ_7X, frequency_band);
-                mode_mask &=~ (1 << frequency_band); // clear bit
-            } else {
-                configure_mode(MODE_19HZ, frequency_band);
-                mode_mask |= (1 << frequency_band); // set bit
-            }
-        }
-        config_rf();
-    }
+    configure_mode(mode, frequency_band);
+
+    // not nice
+    // for dualband receivers with two different SXes we need to swap active RF stage
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+      if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+          configure_diversity(DIVERSITY_ANTENNA2);
+      } else {
+          configure_diversity(DIVERSITY_ANTENNA1);
+      }
+#endif
+
+    config_rf();
 }
 
 
@@ -174,8 +189,8 @@ void tBindBase::config_rf(void)
     sx2.SetToIdle();
     sx.SetRfPower_dbm(rfpower_list[0].dbm);
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    IF_SX(sx.ResetToLoraConfiguration();)
-    IF_SX2(sx2.ResetToLoraConfiguration();)
+    IF_SX(sx.ResetToLoraConfiguration());
+    IF_SX2(sx2.ResetToLoraConfiguration());
     sx.SetToIdle();
     sx2.SetToIdle();
 }
