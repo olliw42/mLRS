@@ -55,8 +55,8 @@ class tBindBase
   public:
     void Init(void);
     bool IsInBind(void) { return is_in_binding; }
-    void StartBind(void) { binding_requested = true; }
-    void StopBind(void) { binding_stop_requested = true; }
+    void StartBind(void) { if (!is_in_binding) binding_requested = true; }
+    void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
     void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM
     void Tick_ms(void);
