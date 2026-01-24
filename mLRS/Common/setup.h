@@ -729,6 +729,12 @@ void setup_configure_config(uint8_t config_id)
 
     Config.FrequencyBand = Setup.Common[config_id].FrequencyBand; // has hopefully been correctly sanitized in setup_sanitize_config()
 
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    Config.IsDualBand = true;
+#else
+    Config.IsDualBand = false;
+#endif
+
     //-- Mode, Mode dependent settings
 
     configure_mode(Setup.Common[config_id].Mode, Config.FrequencyBand); // sets also Sx/Sx2.LoraConfigIndex, Sx/Sx2.is_lora

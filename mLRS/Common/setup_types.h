@@ -530,6 +530,7 @@ typedef struct
     bool ReceiveUseAntenna2;
     bool TransmitUseAntenna1;
     bool TransmitUseAntenna2;
+    bool IsDualBand;
 
     bool UseMbridge;
     bool UseCrsf;
