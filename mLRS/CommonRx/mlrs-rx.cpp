@@ -902,7 +902,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             link_state = LINK_STATE_RECEIVE;
             break;
         case BIND_TASK_RX_STORE_PARAMS:
-            Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
+            // is already set in tBindBase::handle_receive()
+            //Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
             doParamsStore = true;
             break;
         }
