@@ -31,7 +31,7 @@ SX1,SX2     |   x      -     x     -     -   | band 1, diversity = a1
 -------------------------------------------------------------------------------
 SX1,SX'2    |   x      -     x     -     -   | band 1, diversity = a1 (forced)
             |   -      x     -     x     -   | band 2, diversity = a2 (forced)
-            |   x      x     x     x     x   | dualband, band 1 & band 2, diversity = enabled (forced)
+            |   x      x     x     x     x   | dual band, band 1 & band 2, diversity = enabled (forced)
 -------------------------------------------------------------------------------
 LR1         |   x      -     x     -     -   | band 1, diversity = a1
 -------------------------------------------------------------------------------
@@ -41,10 +41,10 @@ LR1,LR'2    |   x      -     x     -     -   | band 1, diversity = a1
                  <- -> (either or)
             |   x      -     x     x     -   | band 1, diversity = r.enabled ta1
             |   -      x     x     x     -   | band 1, diversity = r.enabled ta2
-            |   x      x     x     x     x   | dualband, band 1 & band 2, diversity = enabled (forced)
+            |   x      x     x     x     x   | dual band, band 1 & band 2, diversity = enabled (forced)
 
 
-Note: The cases diversity and dualband are thus distinguished by the isDB flag.
+Note: The cases diversity and dual band are thus distinguished by the isDB flag.
 
 For single band fhss1 and fhss2 need to be set up identically.
 

@@ -361,8 +361,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_866_in,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_866_in) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_866_in,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_866_in) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_866_in,
     },
 #else
     { .freq_list = nullptr },
@@ -371,8 +370,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_433,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_433) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_433,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_433) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_433,
     },
 #else
     { .freq_list = nullptr },
@@ -381,8 +379,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_70_cm_ham,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_cm_ham) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_70_cm_ham,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_70_cm_ham) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_70_cm_ham,
     },
 #else
     { .freq_list = nullptr },
@@ -546,13 +543,10 @@ class tFhssBase
     }
 
     // Rx: for bind
-    SX_FHSS_FREQUENCY_BAND_ENUM GetCurrBindFrequencyBand(void)
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
-        return (SX_FHSS_FREQUENCY_BAND_ENUM)curr_bind_config_i;
+        return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_FREQUENCY_BAND_ENUM
     }
-
-    uint16_t GetBindConfig(void) { return curr_bind_config_i; }
-    void SyncBindConfig(uint8_t _curr_bind_config_i) { curr_bind_config_i = _curr_bind_config_i; }
 
     // Rx: for RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
@@ -700,9 +694,6 @@ class tFhss
     {
         fhss1stBand.SetToBind(frame_rate_ms);
         fhss2ndBand.SetToBind(frame_rate_ms);
-
-        // ensure that fhss2 starts from the same bind frequency
-        fhss2ndBand.SyncBindConfig(fhss1stBand.GetBindConfig());
     }
 
     //-- receiver only
@@ -712,13 +703,16 @@ class tFhss
 
     bool HopToNextBind(void)
     {
-        // both fhss must run in sync
+        // both fhss must run in sync, so advance both
         bool hop1 = fhss1stBand.HopToNextBind();
-        fhss2ndBand.HopToNextBind();
+        bool hop2 = fhss2ndBand.HopToNextBind();
+
+        if (hop1 != hop2) while(1){} // should not happen, catch it
+
         return hop1;
     }
 
-    SX_FHSS_FREQUENCY_BAND_ENUM GetCurrBindFrequencyBand(void) { return fhss1stBand.GetCurrBindFrequencyBand(); }
+    SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
 
     float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
     float GetCurrFreq2_Hz(void)
@@ -741,7 +735,6 @@ class tFhss
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
     uint32_t FhssList2(uint8_t i) { return fhss2ndBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
-
     uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i)
     {
 #if defined DEVICE_HAS_DUAL_SX126x_SX126x

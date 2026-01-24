@@ -496,13 +496,12 @@ uint8_t payload_len = 0;
     // Note: the receiver wants to see both bands, also single band receivers.
     // It is then important however that fhss1_curr_i and fhss2_curr_i are identical, as otherwise
     // the receiver would jump to wrong frequencies
+    // this must be ensured by setup
     uint8_t fhss_band = fhss_band_next(); // this randomly toggles between 0 and 1, but never has more than two symbols in a row
     frame_stats.tx_fhss_index_band = fhss_band;
-    if (Config.IsDualBand) {
-        frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
-    } else {
-        frame_stats.tx_fhss_index = SX_OR_SX2(fhss1_curr_i, fhss2_curr_i); // always send the same, but respect which sx is enabled
-    }
+    frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
+
+if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not happen, catch it
 
     frame_stats.LQ_serial = stats.GetLQ_serial();
 

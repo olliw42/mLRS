@@ -659,25 +659,3 @@ if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.p
 
 
 
-/*
-void tTxEspWifiBridge::_read_write(void)
-{
-    uint8_t cnt = 0;
-    //while (com->available() && uartb_tx_notfull() && (cnt < 64)) {
-    //while (com->available() && (cnt < 64)) { // does not work
-    if (com->available() && !ser->full()) { //uartb_tx_notfull()) {
-    //if (com->available()) { // does not work
-        char c = com->getc();
-        ser->putc(c);
-        cnt++;
-    }
-    cnt = 0;
-    //while (ser->available() && usb_tx_notfull() && (cnt < 64)) {
-    //while (ser->available() && (cnt < 64)) {
-    if (ser->available() && !com->full()) { //usb_tx_notfull()) {
-    //if (ser->available()) {
-        char c = ser->getc();
-        com->putc(c);
-        cnt++;
-    }
-} */

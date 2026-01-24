@@ -16,6 +16,7 @@
 #include "hal/device_conf.h"
 #include "setup_types.h"
 
+
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
 #ifdef DEVICE_IS_RECEIVER
@@ -60,7 +61,7 @@ class tBindBase
     void StartBind(void) { if (!is_in_binding) binding_requested = true; }
     void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
-    void HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band); // only for receiver
+    void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM
     void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
@@ -113,50 +114,41 @@ void tBindBase::Init(void)
 }
 
 
-extern tFhss fhss;
-
 void tBindBase::ConfigForBind(void)
 {
-    uint8_t frequency_band = Config.FrequencyBand;
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    if (Config.IsDualBand) {
-        Config.IsDualBand = false; // affects receiving
-        configure_diversity(DIVERSITY_ANTENNA1);
-    }
-#endif
-
     // used by both the Tx and Rx, switch to 19Hz or 19Hz7x mode, select lowest possible power
     // we have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
     // for devices which can do both modes we need to toggle
-    if ((Config.BindMode_mask & (1 << MODE_19HZ)) && (Config.BindMode_mask & (1 << MODE_19HZ_7X))) {
-        if (Config.Mode == MODE_19HZ_7X) {
-            Config.Mode = MODE_19HZ_7X;
-            mode_mask = 0xFFFF; // start with 19Hz7x for all frequencies
-            mode_mask &=~ (1 << frequency_band); // clear bit for current frequency band
-        } else {
-            Config.Mode = MODE_19HZ;
-            mode_mask = 0; // start with 19Hz for all frequencies
-            mode_mask |= (1 << frequency_band); // set bit for current frequency band
-        }
+    if (Config.Mode == MODE_19HZ_7X) {
+        mode_mask = 0xFFFF;
+        configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
+        mode_mask &=~ (1 << Config.FrequencyBand); // clear bit for current frequency band
     } else {
-        Config.Mode = (Config.BindMode_mask & (1 << MODE_19HZ_7X)) ? MODE_19HZ_7X : MODE_19HZ;
+        mode_mask = 0;
+        configure_mode(MODE_19HZ, Config.FrequencyBand);
+        mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
     }
 
-    configure_mode(Config.Mode, Config.FrequencyBand);
-
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // we may need them both, so ensure they are both started up
     sx.StartUp(&Config.Sx);
     sx2.StartUp(&Config.Sx2);
-#endif
+
+    sx.SetToIdle();
+    sx2.SetToIdle();
+    sx.SetRfPower_dbm(rfpower_list[0].dbm);
+    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
 
     config_rf();
 
 #ifdef DEVICE_IS_RECEIVER
 swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
-swuart_puts(", f ");swuart_putc('0' + frequency_band);
+swuart_puts(", f ");swuart_putc('0' + Config.FrequencyBand);
 swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
+swuart_puts(" sx ");IF_SX(swuart_putc('Y')) else swuart_putc('-');
+swuart_puts(" sx2 ");IF_SX2(swuart_putc('Y')) else swuart_putc('-');
+swuart_puts(", lora i ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
+swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
 #endif
 }
 
@@ -164,7 +156,7 @@ swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
 // used only by Rx
 // is called in rx main when fhss.HopToNextBind() returns true
 // the frequency band is obtained with fhss.GetCurrBindSetupFrequencyBand()
-void tBindBase::HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band)
+void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM
 {
     // not nice
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
@@ -172,26 +164,23 @@ void tBindBase::HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band)
     // for the moment reconstruct the info by explicit defines
 #if defined DEVICE_HAS_LR11xx
     // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
-    if (sx_frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-        Config.Mode = MODE_19HZ;
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        configure_mode(MODE_19HZ, frequency_band);
     } else {
         if (mode_mask & (1 << frequency_band)) {
-            Config.Mode = MODE_19HZ_7X;
+            configure_mode(MODE_19HZ_7X, frequency_band);
             mode_mask &=~ (1 << frequency_band); // clear bit
         } else {
-            Config.Mode = MODE_19HZ;
+            configure_mode(MODE_19HZ, frequency_band);
             mode_mask |= (1 << frequency_band); // set bit
         }
     }
 #endif
 
-    uint8_t frequency_band = cvt_to_sx_fhss_frequency_band(sx_frequency_band);
-    configure_mode(Config.Mode, frequency_band);
-
     // not nice
     // for dualband receivers with two different SXes we need to swap active RF stage
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    if (sx_frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         configure_diversity(DIVERSITY_ANTENNA2);
     } else {
         configure_diversity(DIVERSITY_ANTENNA1);
@@ -204,25 +193,21 @@ void tBindBase::HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band)
 swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
 swuart_puts(", f ");swuart_putc('0' + frequency_band);
 swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
-//swuart_puts("  ");swuart_putc('0'+frequency_band);
-//swuart_puts(" ");swuart_putc('0'+Config.Diversity);
-//swuart_puts(" ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
-//swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
+swuart_puts(" sx ");IF_SX(swuart_putc('x')) else swuart_putc('-');
+swuart_puts(" sx2 ");IF_SX2(swuart_putc('x')) else swuart_putc('-');
+swuart_puts(" lora i ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
+swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
 #endif
 }
 
 
-// StartUp() is called only for one SX/LR for single band operation, but on dualband hardware
+// StartUp() is called only for one SX/LR for single band operation, but on dual band hardware
 // the unused SX/LR is not a dummy. So, guard operations with IF_SX/IF_SX2 to avoid calling
-// functions on the unconfigured chip which work with gconfig (which is nullptr).
+// functions on the unconfigured chip which use gconfig (which is nullptr).
 void tBindBase::config_rf(void)
 {
-    sx.SetToIdle();
-    sx2.SetToIdle();
-    sx.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    IF_SX(sx.ResetToLoraConfiguration());
-    IF_SX2(sx2.ResetToLoraConfiguration());
+    IF_SX(sx.ResetToLoraConfiguration(&Config.Sx));
+    IF_SX2(sx2.ResetToLoraConfiguration(&Config.Sx2));
     sx.SetToIdle();
     sx2.SetToIdle();
 }

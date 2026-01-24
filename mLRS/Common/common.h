@@ -248,8 +248,7 @@ void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms
     if (Config.IsDualBand) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms);
         sx2.SendFrame((uint8_t*)data, len, tmo_ms);
-        return;
-    }
+    } else
 #endif
     if (antenna == ANTENNA_1) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms); // should never happen that SX is not set up when antenna1

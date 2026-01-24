@@ -35,7 +35,7 @@ void setup_configure_metadata(void)
   // DUALBAND 2.4 GHz & 868/915 MHz
   #if defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ
     SetupMetaData.FrequencyBand_allowed_mask = 0b11000111; // 2.4 GHz, 915 FCC, 868, 915+2.4, 868+2.4
-    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_2P4_GHZ
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
   #else
     #error Unknown Frequencyband !
   #endif
@@ -682,18 +682,8 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         // has hopefully been correctly sanitized in setup_sanitize_config(), not for 2.4 GHz frequency band
         Config.Sx.LoraConfigIndex = 0;
         Config.Sx.is_lora = false;
-        switch (frequencyband) {
-        case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
-        case SETUP_FREQUENCY_BAND_868_MHZ:
-            Config.Sx2.LoraConfigIndex = 0;
-            Config.Sx2.is_lora = false;
-            break;
-        case SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ:
-        case SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ:
-            Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
-            Config.Sx2.is_lora = true;
-            break;
-        }
+        Config.Sx2.LoraConfigIndex = SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5;
+        Config.Sx2.is_lora = true;
 #else
         Config.Sx.LoraConfigIndex = 0;
         Config.Sx2.LoraConfigIndex = 0;
@@ -702,22 +692,18 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         break;
     }
 
-
+    // Sx/Sx2 FrequencyBand
     Config.Sx.FrequencyBand = cvt_to_sx_fhss_frequency_band(frequencyband); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
     Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
 
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
     if (Config.Sx.FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-        Config.Sx.FrequencyBand = SX_FHSS_FREQUENCY_BAND_868_MHZ; // set a dummy band
+        Config.Sx.FrequencyBand = SX_FHSS_FREQUENCY_BAND_868_MHZ; // set a valid dummy
     }
     Config.Sx2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_2P4_GHZ;
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     Config.Sx2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_433_MHZ;
 #endif
-
-
-    Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand; // has hopefully been correctly sanitized in Sx12xx section
-    Config.Fhss2.FrequencyBand = Config.Sx2.FrequencyBand;
 }
 
 
@@ -743,7 +729,7 @@ void configure_diversity(uint8_t diversity)
         Config.ReceiveUseAntenna2 = Config.TransmitUseAntenna2 = true;
         break;
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
-    // must not happen for dualband, should have been resolved in setup_sanitize_config()
+    // must not happen for dual band, should have been resolved in setup_sanitize_config()
     case DIVERSITY_R_ENABLED_T_ANTENNA1:
         Config.Diversity = DIVERSITY_R_ENABLED_T_ANTENNA1;
         Config.ReceiveUseAntenna1 = Config.TransmitUseAntenna1 = true;
@@ -772,8 +758,8 @@ void setup_configure_config(uint8_t config_id)
 {
     //-- SyncWord
     // note: FrameSyncWord will be modified by Ortho
-    // note: FrameSyncWord will be modified also for dualband
-    //       Use distinct sync word for dualband to prevent single band receivers from connecting
+    // note: FrameSyncWord will be modified also for dual band
+    //       Use distinct sync word for dual band to prevent single band receivers from connecting
     //       could be done nice after Config.IsDualBand is set up, but clearer to do here.
 
     uint32_t bind_dblword = u32_from_bindphrase(Setup.Common[config_id].BindPhrase);
@@ -809,19 +795,20 @@ void setup_configure_config(uint8_t config_id)
 
     //-- Mode, Mode dependent settings
 
-    configure_mode(Setup.Common[config_id].Mode, Config.FrequencyBand); // sets also Sx/Sx2.LoraConfigIndex, Sx/Sx2.is_lora
+    // sets Mode and related, also sets Sx/Sx2.LoraConfigIndex, Sx/Sx2.is_lora, Sx/Sx2.FrequencyBand
+    configure_mode(Setup.Common[config_id].Mode, Config.FrequencyBand);
 
     //-- Sx12xx
     //     LoraConfigIndex; <- set by configure_mode()
     //     FlrcSyncWord;
     //     Power_dbm;
-    //     FrequencyBand;
+    //     FrequencyBand;   <- set by configure_mode()
     //     is_lora;         <- set by configure_mode()
 
     Config.Sx.FlrcSyncWord = bind_dblword;
     Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
 
-//TODO: sort out for dualband
+//TODO: sort out for dual band
     if (Setup.Common[config_id].Ortho > ORTHO_NONE) { // has hopefully been correctly sanitized in setup_sanitize_config()
         Config.Sx.FlrcSyncWord += 0x11111111 * Setup.Common[config_id].Ortho;
         Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
@@ -835,22 +822,6 @@ void setup_configure_config(uint8_t config_id)
 #endif
     Config.Sx2.Power_dbm = Config.Sx.Power_dbm;
 
-
-/*
-    Config.Sx.FrequencyBand = cvt_to_sx_fhss_frequency_band(Config.FrequencyBand); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
-    Config.Sx2.FrequencyBand = Config.Sx.FrequencyBand;
-
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    if (Config.FrequencyBand == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-        Config.Sx.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ; // set a dummy band
-    }
-    Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
-#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
-    Config.Sx2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
-#endif
-*/
-
-
     //-- Fhss
     //     Num;
     //     Seed;
@@ -858,23 +829,21 @@ void setup_configure_config(uint8_t config_id)
     //     Ortho;
     //     Except;
     //     BindScan_mask;
-    //     BindMode_mask;
 
     //Config.FhssSeed = bind_dblword;
     // this is much better for narrow bands, like 868 MHz
     // we could make it dependable with a #ifdef, but what's the point
     Config.Fhss.Seed = Config.FrameSyncWord;
-    Config.Fhss2.Seed = Config.Fhss.Seed;
 
     Config.Fhss.Ortho = Setup.Common[config_id].Ortho; // has hopefully been correctly sanitized in setup_sanitize_config()
-    Config.Fhss2.Ortho = Config.Fhss.Ortho;
 
-//TODO: sort out for dualband
+//TODO: sort out for dual band
     Config.Fhss.Except = EXCEPT_NONE;
     if (Config.Sx.FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
         Config.Fhss.Except = except_from_bindphrase(Setup.Common[config_id].BindPhrase);
     }
-    Config.Fhss2.Except = Config.Fhss.Except;
+
+    Config.Fhss.FrequencyBand = cvt_to_sx_fhss_frequency_band(Config.FrequencyBand); // asserts if not a valid SETUP_FREQUENCY_BAND_ENUM
 
     // this mask is only used in bind, to determine the frequencies to cycle through
     // since both fhss should cycle in sync, we always set them to be equal and have all frequencies
@@ -897,62 +866,48 @@ void setup_configure_config(uint8_t config_id)
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) {
         Config.Fhss.BindScan_mask |= (1 << SX_FHSS_FREQUENCY_BAND_866_MHZ_IN);
     }
-    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ)) {
-        Config.Fhss.BindScan_mask |= (1 << SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC) | (1 << SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
-    }
-    if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ)) {
-        Config.Fhss.BindScan_mask |= (1 << SX_FHSS_FREQUENCY_BAND_868_MHZ) | (1 << SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
-    }
-    Config.Fhss2.BindScan_mask = Config.Fhss.BindScan_mask;
-
-    // this mask is only used in bind, to determine the possible 19 Hz modes
-    Config.BindMode_mask = 0;
-    if (SetupMetaData.Mode_allowed_mask & (1 << MODE_19HZ)) {
-        Config.BindMode_mask |= (1 << MODE_19HZ);
-    }
-    if (SetupMetaData.Mode_allowed_mask & (1 << MODE_19HZ_7X)) {
-        Config.BindMode_mask |= (1 << MODE_19HZ_7X);
-    }
-
-
-//xx    Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand; // has hopefully been correctly sanitized in Sx12xx section
-//xx    Config.Fhss2.FrequencyBand = Config.Sx2.FrequencyBand;
-/*
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
-#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
-    Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
-#endif
-*/
 
     uint8_t fhss_num_list[SX_FHSS_FREQUENCY_BAND_NUM][MODE_NUM] = {
-// MODE_50HZ,        MODE_31HZ,             MODE_19HZ,               MODE_FLRC_111HZ,  MODE_FSK_50HZ,        MODE_19HZ_7X
+// MODE_50HZ,         MODE_31HZ,              MODE_19HZ,                MODE_FLRC_111HZ,   MODE_FSK_50HZ,         MODE_19HZ_7X
 // SX_FHSS_FREQUENCY_BAND_2P4_GHZ
-{  FHSS_NUM_2P4GHZ,  FHSS_NUM_2P4GHZ_31HZ,  FHSS_NUM_2P4GHZ_19HZ,    FHSS_NUM_2P4GHZ,  1,                    1},
+{  FHSS_NUM_2P4_GHZ,  FHSS_NUM_2P4_GHZ_31HZ,  FHSS_NUM_2P4_GHZ_19HZ,    FHSS_NUM_2P4_GHZ,  1,                     1},
 // SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC
-{  1,                FHSS_NUM_915MHZ_FCC,   FHSS_NUM_915MHZ_FCC,     1,                FHSS_NUM_915MHZ_FCC,  FHSS_NUM_915MHZ_FCC},
+{  1,                 FHSS_NUM_915_MHZ_FCC,   FHSS_NUM_915_MHZ_FCC,     1,                 FHSS_NUM_915_MHZ_FCC,  FHSS_NUM_915_MHZ_FCC},
 // SX_FHSS_FREQUENCY_BAND_868_MHZ
-{  1,                FHSS_NUM_868MHZ,       FHSS_NUM_868MHZ,         1,                FHSS_NUM_868MHZ,      FHSS_NUM_868MHZ},
+{  1,                 FHSS_NUM_868_MHZ,       FHSS_NUM_868_MHZ,         1,                 FHSS_NUM_868_MHZ,      FHSS_NUM_868_MHZ},
 // SX_FHSS_FREQUENCY_BAND_866_MHZ_IN
-{  1,                FHSS_NUM_866MHZ_IN,    FHSS_NUM_866MHZ_IN,      1,                FHSS_NUM_866MHZ_IN,   FHSS_NUM_866MHZ_IN},
+{  1,                 FHSS_NUM_866_MHZ_IN,    FHSS_NUM_866_MHZ_IN,      1,                 FHSS_NUM_866_MHZ_IN,   FHSS_NUM_866_MHZ_IN},
 // SX_FHSS_FREQUENCY_BAND_433_MHZ
-{  1,                FHSS_NUM_433MHZ,       FHSS_NUM_433MHZ,         1,                FHSS_NUM_433MHZ,      FHSS_NUM_433MHZ},
+{  1,                 FHSS_NUM_433_MHZ,       FHSS_NUM_433_MHZ,         1,                 FHSS_NUM_433_MHZ,      FHSS_NUM_433_MHZ},
 // SX_FHSS_FREQUENCY_BAND_70_CM_HAM
-{  1,                FHSS_NUM_70CM_HAM,     FHSS_NUM_70CM_HAM_19HZ,  1,                FHSS_NUM_70CM_HAM,    FHSS_NUM_70CM_HAM_19HZ}
-};
-
+{  1,                 FHSS_NUM_70_CM_HAM,     FHSS_NUM_70_CM_HAM_19HZ,  1,                 FHSS_NUM_70_CM_HAM,    FHSS_NUM_70_CM_HAM_19HZ}
+    };
     Config.Fhss.Num = fhss_num_list[Config.Fhss.FrequencyBand][Config.Mode];
-    Config.Fhss2.Num = fhss_num_list[Config.Fhss2.FrequencyBand][Config.Mode];
+
+    // ensure equal fhss1, fhss2, is required in single band mode
+    Config.Fhss2 = Config.Fhss;
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+    if (Config.IsDualBand) { // only modify if in dual band mode, otherwise keep fhss1 = fhss2
+        Config.Fhss2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_2P4_GHZ;
+        Config.Fhss2.Num = fhss_num_list[Config.Fhss2.FrequencyBand][Config.Mode];
+    }
+#elif defined DEVICE_HAS_DUAL_SX126x_SX126x
+    Config.IsDualBand = true; // currently only dual band mode supported
+    Config.Fhss2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_433_MHZ;
+    Config.Fhss2.Num = FHSS_NUM_433_MHZ;
+#endif
 
     //-- More Config, may depend on above config settings
 
     Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
-
-    // requires that Num is set to something low when not used
-    uint8_t fhss_num = (Config.Fhss.Num >= Config.Fhss2.Num) ? Config.Fhss.Num : Config.Fhss2.Num;
-    Config.connect_listen_hop_cnt = (uint8_t)(1.5f * fhss_num);
-    Config.connect_sync_cnt_max = fhss_num / 2;
-
+    if (Config.Fhss.Num >= Config.Fhss2.Num) {
+        Config.connect_sync_cnt_max = Config.Fhss.Num / 2;
+        Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
+    } else {
+        Config.connect_sync_cnt_max = Config.Fhss2.Num / 2;
+        Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss2.Num);
+    }
     if (Config.connect_sync_cnt_max < CONNECT_SYNC_CNT) Config.connect_sync_cnt_max = CONNECT_SYNC_CNT;
 
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);

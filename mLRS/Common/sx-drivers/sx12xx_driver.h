@@ -130,7 +130,7 @@ class SxDriverDummy
     void SetToRx(uint16_t tmo_ms) {}
     void SetToIdle(void) {}
 
-    void ResetToLoraConfiguration() {}
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig) {}
     void SetRfPower_dbm(int8_t power_dbm) {}
     void UpdateRfPower(tSxGlobalConfig* const global_config) {}
     void ClearIrqStatus(uint16_t IrqMask) {}

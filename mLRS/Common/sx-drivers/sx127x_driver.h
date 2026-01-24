@@ -112,9 +112,11 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
@@ -443,7 +445,6 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         Configure(global_config);
         delay_us(125); // may not be needed
-
         sx_dio_enable_exti_isr();
     }
 
@@ -589,7 +590,6 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
         Configure(global_config);
         delay_us(125); // may not be needed
-
         sx2_dio_enable_exti_isr();
     }
 

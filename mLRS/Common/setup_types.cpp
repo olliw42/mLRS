@@ -11,6 +11,7 @@
 #include "setup_types.h"
 
 
+// used by setup
 SX_FHSS_FREQUENCY_BAND_ENUM cvt_to_sx_fhss_frequency_band(uint8_t setup_frequency_band)
 {
     switch (setup_frequency_band) {
@@ -27,6 +28,7 @@ SX_FHSS_FREQUENCY_BAND_ENUM cvt_to_sx_fhss_frequency_band(uint8_t setup_frequenc
 }
 
 
+// used by fhss, for bind only
 SETUP_FREQUENCY_BAND_ENUM cvt_to_setup_frequency_band(uint8_t sx_fhss_frequency_band)
 {
     switch (sx_fhss_frequency_band) {
@@ -39,5 +41,4 @@ SETUP_FREQUENCY_BAND_ENUM cvt_to_setup_frequency_band(uint8_t sx_fhss_frequency_
         default: while(1){}
     }
 }
-
 
