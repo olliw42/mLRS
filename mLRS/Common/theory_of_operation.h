@@ -11,6 +11,46 @@
 
 
 ============================================================
+  Flags for various operation modes
+  Config.ReceiveUseAntenna1, Config.ReceiveUseAntenna2
+  Config.TransmitUseAntenna1, Config.TransmitUseAntenna2
+  Config.IsDualBand
+  will be abbreviated as: Ra1, Ra2, Ta1, Ta2, isDB
+============================================================
+
+hardware    |  Ra1 |  Ra2 | Ta1 | Ta2 | isDB | operation mode, and comments
+-------------------------------------------------------------------------------
+SX1         |   x      -     x     -     -   | band 1, diversity = a1 (forced)
+-------------------------------------------------------------------------------
+SX1,SX2     |   x      -     x     -     -   | band 1, diversity = a1
+            |   -      x     -     x     -   | band 1, diversity = a2
+            |   x      x     x     x     -   | band 1, diversity = enabled
+                 <- -> (either or)
+            |   x      -     x     x     -   | band 1, diversity = r.enabled ta1
+            |   -      x     x     x     -   | band 1, diversity = r.enabled ta2
+-------------------------------------------------------------------------------
+SX1,SX'2    |   x      -     x     -     -   | band 1, diversity = a1 (forced)
+            |   -      x     -     x     -   | band 2, diversity = a2 (forced)
+            |   x      x     x     x     x   | dual band, band 1 & band 2, diversity = enabled (forced)
+-------------------------------------------------------------------------------
+LR1         |   x      -     x     -     -   | band 1, diversity = a1
+-------------------------------------------------------------------------------
+LR1,LR'2    |   x      -     x     -     -   | band 1, diversity = a1
+            |   -      x     -     x     -   | band 1, diversity = a2
+            |   x      x     x     x     -   | band 1, diversity = enabled
+                 <- -> (either or)
+            |   x      -     x     x     -   | band 1, diversity = r.enabled ta1
+            |   -      x     x     x     -   | band 1, diversity = r.enabled ta2
+            |   x      x     x     x     x   | dual band, band 1 & band 2, diversity = enabled (forced)
+
+
+Note: The cases diversity and dual band are thus distinguished by the isDB flag.
+
+For single band fhss1 and fhss2 need to be set up identically.
+
+
+
+============================================================
   Frequency index in Tx OTA packets
   fhss_index, fhss_index_band
 ============================================================

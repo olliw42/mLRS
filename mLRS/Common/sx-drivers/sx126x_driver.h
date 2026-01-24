@@ -144,9 +144,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
         delay_us(1000); // seems ok without, but do it
@@ -365,11 +367,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return actual_power_dbm;
     }
 
-  protected:
+//xx  protected:
     tSxGlobalConfig* gconfig;
     uint8_t osc_configuration; // "hidden" variable, TXCO 1.8 V per default, allow child access
 
-  private:
+//xx  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
     uint8_t sx_power;
@@ -483,13 +485,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx_dio_enable_exti_isr();
     }
 
@@ -616,13 +619,14 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx2_dio_enable_exti_isr();
     }
 

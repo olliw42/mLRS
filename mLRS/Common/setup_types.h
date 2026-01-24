@@ -31,6 +31,8 @@ typedef enum : uint8_t {
     SETUP_FREQUENCY_BAND_433_MHZ,
     SETUP_FREQUENCY_BAND_70_CM_HAM,
     SETUP_FREQUENCY_BAND_866_MHZ_IN,
+    SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ,
+    SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ,
     SETUP_FREQUENCY_BAND_NUM,
 } SETUP_FREQUENCY_BAND_ENUM;
 
@@ -49,7 +51,10 @@ typedef enum : uint8_t {
 } SX_FHSS_FREQUENCY_BAND_ENUM;
 
 
+// used by setup
 SX_FHSS_FREQUENCY_BAND_ENUM cvt_to_sx_fhss_frequency_band(uint8_t setup_frequency_band);
+
+// used by fhss, for bind only
 SETUP_FREQUENCY_BAND_ENUM cvt_to_setup_frequency_band(uint8_t sx_fhss_frequency_band);
 
 
