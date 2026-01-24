@@ -807,42 +807,22 @@ void setup_configure_config(uint8_t config_id)
         Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_FREQUENCY_BAND_866_MHZ_IN);
     }
 
-    switch (Config.Fhss.FrequencyBand) {
-    case SX_FHSS_FREQUENCY_BAND_2P4_GHZ:
-        switch (Config.Mode) {
-        case MODE_50HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-        case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-        case MODE_FLRC_111HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-        default:
-            Config.Fhss.Num = 1; // dummy // must not happen, should have been resolved in setup_sanitize_config()
-        }
-        break;
-    case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC:
-        Config.Fhss.Num = FHSS_NUM_BAND_915_MHZ_FCC;
-        break;
-    case SX_FHSS_FREQUENCY_BAND_868_MHZ:
-        Config.Fhss.Num = FHSS_NUM_BAND_868_MHZ;
-        break;
-    case SX_FHSS_FREQUENCY_BAND_433_MHZ:
-        Config.Fhss.Num = FHSS_NUM_BAND_433_MHZ;
-        break;
-    case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
-        switch (Config.Mode) {
-        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
-        case MODE_19HZ:
-        case MODE_19HZ_7X:
-            Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
-        default:
-            Config.Fhss.Num = 1; // dummy // must not happen, should have been resolved in setup_sanitize_config()
-        }
-        break;
-    case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN:
-        Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
-        break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
-    }
+    uint8_t fhss_num_list[SX_FHSS_FREQUENCY_BAND_NUM][MODE_NUM] = {
+// MODE_50HZ,         MODE_31HZ,              MODE_19HZ,                MODE_FLRC_111HZ,   MODE_FSK_50HZ,         MODE_19HZ_7X
+// SX_FHSS_FREQUENCY_BAND_2P4_GHZ
+{  FHSS_NUM_2P4_GHZ,  FHSS_NUM_2P4_GHZ_31HZ,  FHSS_NUM_2P4_GHZ_19HZ,    FHSS_NUM_2P4_GHZ,  1,                     1},
+// SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC
+{  1,                 FHSS_NUM_915_MHZ_FCC,   FHSS_NUM_915_MHZ_FCC,     1,                 FHSS_NUM_915_MHZ_FCC,  FHSS_NUM_915_MHZ_FCC},
+// SX_FHSS_FREQUENCY_BAND_868_MHZ
+{  1,                 FHSS_NUM_868_MHZ,       FHSS_NUM_868_MHZ,         1,                 FHSS_NUM_868_MHZ,      FHSS_NUM_868_MHZ},
+// SX_FHSS_FREQUENCY_BAND_866_MHZ_IN
+{  1,                 FHSS_NUM_866_MHZ_IN,    FHSS_NUM_866_MHZ_IN,      1,                 FHSS_NUM_866_MHZ_IN,   FHSS_NUM_866_MHZ_IN},
+// SX_FHSS_FREQUENCY_BAND_433_MHZ
+{  1,                 FHSS_NUM_433_MHZ,       FHSS_NUM_433_MHZ,         1,                 FHSS_NUM_433_MHZ,      FHSS_NUM_433_MHZ},
+// SX_FHSS_FREQUENCY_BAND_70_CM_HAM
+{  1,                 FHSS_NUM_70_CM_HAM,     FHSS_NUM_70_CM_HAM_19HZ,  1,                 FHSS_NUM_70_CM_HAM,    FHSS_NUM_70_CM_HAM_19HZ}
+};
+    Config.Fhss.Num = fhss_num_list[Config.Fhss.FrequencyBand][Config.Mode];
 
     Config.Fhss2 = Config.Fhss;
 
@@ -850,16 +830,16 @@ void setup_configure_config(uint8_t config_id)
     Config.Fhss2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_2P4_GHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
     switch (Config.Mode) {
-    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-    case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
+    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_2P4_GHZ_31HZ; break;
+    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_2P4_GHZ_19HZ; break;
+    case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize_config()
     }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     Config.Fhss2.FrequencyBand = SX_FHSS_FREQUENCY_BAND_433_MHZ;
     Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_FREQUENCY_BAND_433_MHZ);
-    Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ;
+    Config.Fhss2.Num = FHSS_NUM_433_MHZ;
 #endif
 
     //-- More Config, may depend on above config settings
