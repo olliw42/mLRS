@@ -327,7 +327,7 @@ const uint8_t fhss_bind_channel_list_2p4[] = {
 //-------------------------------------------------------
 // FHSS Class
 //-------------------------------------------------------
-// SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM is in setup_types.h, for convenience
+// SX_FHSS_FREQUENCY_BAND_ENUM is in setup_types.h, for convenience
 // no FHSS_ORTHO_ENUM, we use the enum in setup_types.h
 // no FHSS_EXCEPT_ENUM, we use the enum in setup_types.h
 
@@ -340,7 +340,7 @@ typedef struct
 } tFhssConfig;
 
 
-// ATTENTION: this must be in exactly the same order as SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
+// ATTENTION: this must be in exactly the same order as SX_FHSS_FREQUENCY_BAND_ENUM
 const tFhssConfig fhss_config[] = {
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
     {
@@ -408,13 +408,13 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while(1){} // should not happen, but play it safe
 
         config_i = frequency_band;
 
-        if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
+        if (config_i >= SX_FHSS_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
         if (fhss_config[config_i].freq_list == nullptr) while(1){} // should not happen, but play it safe
 
         fhss_freq_list = fhss_config[config_i].freq_list;
@@ -425,8 +425,8 @@ class tFhssBase
 
         bind_scan_mask = 0;
         // looks a bit silly but is to mask out invalid bits
-        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_CONFIG_FREQUENCY_BAND_NUM);
-        for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
+        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_FREQUENCY_BAND_NUM);
+        for (uint8_t i = 0; i < SX_FHSS_FREQUENCY_BAND_NUM; i++) {
             if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
         }
 
@@ -438,7 +438,7 @@ class tFhssBase
         cnt = fhss_num;
 
         switch (config_i) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ:
+        case SX_FHSS_FREQUENCY_BAND_2P4_GHZ:
             // we may need to adapt cnt in case of ortho != NONE,
             // since the cnt_max = 80 - 3 = 77 channels may not be enough channels
             // in case of also except we actually only have 77 - 22 = 55 channels or so...
@@ -470,7 +470,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, except);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
+        case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -479,7 +479,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
+        case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -488,9 +488,9 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
+        case SX_FHSS_FREQUENCY_BAND_868_MHZ:
+        case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN:
+        case SX_FHSS_FREQUENCY_BAND_433_MHZ:
             generate(seed);
             break;
         default:
@@ -555,9 +555,9 @@ class tFhssBase
             bind_listen_i = 0;
             // find next bind frequency
             uint8_t iii = curr_bind_config_i;
-            for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) { // we give it at most that much attempts
+            for (uint8_t i = 0; i < SX_FHSS_FREQUENCY_BAND_NUM; i++) { // we give it at most that much attempts
                 iii++;
-                if (iii >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) iii = 0;
+                if (iii >= SX_FHSS_FREQUENCY_BAND_NUM) iii = 0;
                 if ((bind_scan_mask & (1 << iii)) != 0) {
                     if (fhss_config[iii].freq_list == nullptr) while(1){} // should not happen, but play it safe
                     curr_bind_config_i = iii;
@@ -572,7 +572,7 @@ class tFhssBase
     // Rx: for bind
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
-        return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
+        return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_FREQUENCY_BAND_ENUM
     }
 
     // Rx: for RADIO_LINK_STATS_MLRS

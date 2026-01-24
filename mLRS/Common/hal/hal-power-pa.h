@@ -170,27 +170,27 @@ const rfpower_t rfpower_list[] = {
 void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (power_dbm >= POWER_30_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
+        *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
         *actual_power_dbm = 30;
     } else
     if (power_dbm >= POWER_27_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 2 : 4;
+        *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? 2 : 4;
         *actual_power_dbm = 27;
     } else
     if (power_dbm >= POWER_24_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -2 : 0;
+        *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? -2 : 0;
         *actual_power_dbm = 24;
     } else
     if (power_dbm >= POWER_20_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -6 : -4;
+        *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? -6 : -4;
         *actual_power_dbm = 20;
     } else
     if (power_dbm >= POWER_17_DBM) {
-        *sx_power = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? -8 : -7;
+        *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? -8 : -7;
         *actual_power_dbm = 17;
     } else {
         *sx_power = -9;
-        *actual_power_dbm = (frequency_band == SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) ? 16 : 14;
+        *actual_power_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? 16 : 14;
     }
 }
 
