@@ -140,16 +140,6 @@ void tBindBase::ConfigForBind(void)
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
 
     config_rf();
-
-#ifdef DEVICE_IS_RECEIVER
-swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
-swuart_puts(", f ");swuart_putc('0' + Config.FrequencyBand);
-swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
-swuart_puts(" sx ");IF_SX(swuart_putc('Y')) else swuart_putc('-');
-swuart_puts(" sx2 ");IF_SX2(swuart_putc('Y')) else swuart_putc('-');
-swuart_puts(", lora i ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
-swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
-#endif
 }
 
 
@@ -188,16 +178,6 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
 #endif
 
     config_rf();
-
-#ifdef DEVICE_IS_RECEIVER
-swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
-swuart_puts(", f ");swuart_putc('0' + frequency_band);
-swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
-swuart_puts(" sx ");IF_SX(swuart_putc('x')) else swuart_putc('-');
-swuart_puts(" sx2 ");IF_SX2(swuart_putc('x')) else swuart_putc('-');
-swuart_puts(" lora i ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
-swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
-#endif
 }
 
 

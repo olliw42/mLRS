@@ -367,11 +367,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return actual_power_dbm;
     }
 
-//xx  protected:
+  protected:
     tSxGlobalConfig* gconfig;
     uint8_t osc_configuration; // "hidden" variable, TXCO 1.8 V per default, allow child access
 
-//xx  private:
+  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
     uint8_t sx_power;

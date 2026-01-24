@@ -323,10 +323,10 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return actual_power_dbm;
     }
 
-//xx  protected:
+  protected:
     tSxGlobalConfig* gconfig;
 
-//xx  private:
+  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxFlrcConfiguration* flrc_configuration;
     uint8_t sx_power;

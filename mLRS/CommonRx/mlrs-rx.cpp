@@ -9,7 +9,7 @@
 
 
 #define DBG_MAIN(x)
-#define DBG_MAIN_SLIM(x) x
+#define DBG_MAIN_SLIM(x)
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -848,13 +848,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             if (fhss.HopToNextBind()) {
                 bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
-
-dbg.puts("\nf hop");
-dbg.puts("\n curr b conf  ");dbg.putc('0'+fhss.fhss1stBand.curr_bind_config_i);
-dbg.puts("  ");dbg.putc('0'+fhss.fhss2ndBand.curr_bind_config_i);
-dbg.puts("\n sx lora i    ");dbg.putc('0'+sx.gconfig->LoraConfigIndex);
-dbg.puts("  ");dbg.putc('0'+sx2.gconfig->LoraConfigIndex);
-
             }
         }
 
@@ -912,15 +905,6 @@ dbg.puts("  ");dbg.putc('0'+sx2.gconfig->LoraConfigIndex);
             leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             link_state = LINK_STATE_RECEIVE;
-
-dbg.puts("\nf conf");
-dbg.puts("\n scan mask    0x");dbg.puts(u16toHEX_s(fhss.fhss1stBand.bind_scan_mask));
-dbg.puts("  0x");dbg.puts(u16toHEX_s(fhss.fhss2ndBand.bind_scan_mask));
-dbg.puts("\n curr b conf  ");dbg.putc('0'+fhss.fhss1stBand.curr_bind_config_i);
-dbg.puts("  ");dbg.putc('0'+fhss.fhss2ndBand.curr_bind_config_i);
-dbg.puts("\n sx lora i    ");dbg.putc('0'+sx.gconfig->LoraConfigIndex);
-dbg.puts("  ");dbg.putc('0'+sx2.gconfig->LoraConfigIndex);
-
             break;
         case BIND_TASK_RX_STORE_PARAMS:
             // is already set in tBindBase::handle_receive()

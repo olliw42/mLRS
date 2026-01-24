@@ -598,7 +598,7 @@ class tFhssBase
 #endif
     }
 
-//Xx  private:
+  private:
     uint32_t _seed;
     uint8_t _ortho;
     uint8_t _except;
@@ -748,7 +748,7 @@ class tFhss
 
     uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
 
-//xx  private:
+  private:
     tFhssBase fhss1stBand;
     tFhssBase fhss2ndBand;
 };
