@@ -161,7 +161,7 @@ typedef struct
     uint8_t spare : 7;
 
     char BindPhrase_6[6];
-    uint8_t FrequencyBand_XXX : 4; // TODO
+    uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
@@ -188,7 +188,7 @@ typedef struct
 
     uint8_t spare2[55];
 
-    uint16_t crc; // 2bytes
+    uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
 
 

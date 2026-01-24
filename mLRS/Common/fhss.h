@@ -70,9 +70,7 @@ const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.480),
 };
 
-const uint8_t fhss_bind_channel_list_433[] = {
-    0 // just pick some
-};
+const uint8_t fhss_bind_channel_433 = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_70_CM_HAM
@@ -119,9 +117,7 @@ const uint32_t fhss_freq_list_70_cm_ham[] = {
     SX12XX_FREQ_MHZ_TO_REG(449.6),
 };
 
-const uint8_t fhss_bind_channel_list_70_cm_ham[] = {
-    10, 20 // picked 2
-};
+const uint8_t fhss_bind_channel_70_cm_ham = 10;
 
 #endif
 #ifdef FHSS_HAS_CONFIG_868_MHZ
@@ -144,9 +140,7 @@ const uint32_t fhss_freq_list_868[] = {
     // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
 };
 
-const uint8_t fhss_bind_channel_list_868[] = {
-    0, // just pick some
-};
+const uint8_t fhss_bind_channel_868 = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_915_MHZ_FCC
@@ -203,9 +197,7 @@ const uint32_t fhss_freq_list_915_fcc[] = {
     SX12XX_FREQ_MHZ_TO_REG(927.6),
 };
 
-const uint8_t fhss_bind_channel_list_915_fcc[] = {
-    19 // just pick some
-};
+const uint8_t fhss_bind_channel_915_fcc = 19; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_866_MHZ_IN
@@ -218,9 +210,7 @@ const uint32_t fhss_freq_list_866_in[] = { // !! NEEDS TO BE ADJUSTED TO PROPER 
     SX12XX_FREQ_MHZ_TO_REG(866.950),
 };
 
-const uint8_t fhss_bind_channel_list_866_in[] = {
-    0 // just pick some
-};
+const uint8_t fhss_bind_channel_866_in = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
@@ -318,9 +308,8 @@ const uint32_t fhss_freq_list_2p4[] = {
     SX12XX_FREQ_GHZ_TO_REG(2.480), // channel 79
 };
 
-const uint8_t fhss_bind_channel_list_2p4[] = {
-    46, 14, 68 // just pick some
-};
+const uint8_t fhss_bind_channel_2p4 = 46; // just pick some
+
 #endif
 
 
@@ -335,8 +324,7 @@ typedef struct
 {
     const uint32_t* freq_list;
     uint8_t freq_list_len;
-    const uint8_t* bind_channel_list;
-    uint8_t bind_channel_list_len;
+    uint8_t bind_channel;
 } tFhssConfig;
 
 
@@ -346,8 +334,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_2p4,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_2p4) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_2p4,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_2p4) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_2p4
     },
 #else
     { .freq_list = nullptr },
@@ -356,8 +343,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_915_fcc,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_915_fcc) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_915_fcc,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_915_fcc) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_915_fcc
     },
 #else
     { .freq_list = nullptr },
@@ -366,8 +352,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_868,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_868) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_868,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_868) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_868
     },
 #else
     { .freq_list = nullptr },
@@ -408,34 +393,27 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t bind_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while(1){} // should not happen, but play it safe
 
         config_i = frequency_band;
 
+        if (sizeof(fhss_config)/sizeof(tFhssConfig) != SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
         if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
         if (fhss_config[config_i].freq_list == nullptr) while(1){} // should not happen, but play it safe
 
         fhss_freq_list = fhss_config[config_i].freq_list;
         FREQ_LIST_LEN = fhss_config[config_i].freq_list_len;
-        fhss_bind_channel_list = fhss_config[config_i].bind_channel_list;
-        BIND_CHANNEL_LIST_LEN = fhss_config[config_i].bind_channel_list_len;
+        fhss_bind_channel = fhss_config[config_i].bind_channel;
         curr_bind_config_i = config_i; // we start with what setup suggests
 
-        bind_scan_mask = 0;
-        // looks a bit silly but is to mask out invalid bits
-        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_CONFIG_FREQUENCY_BAND_NUM);
-        for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
-            if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
-        }
+        bind_scan_mask = bind_mask; // has hopefully be set up correctly in setup
         is_in_binding = false;
 
         if (bind_scan_mask == 0) while(1){} // should not happen, but play it safe
 
-        uint8_t cnt_max = (FREQ_LIST_LEN - BIND_CHANNEL_LIST_LEN);
-        if (fhss_num > cnt_max) fhss_num = cnt_max;
-
+        if (fhss_num > (FREQ_LIST_LEN - 1)) fhss_num = (FREQ_LIST_LEN - 1);
         cnt = fhss_num;
 
         switch (config_i) {
@@ -521,8 +499,7 @@ class tFhssBase
     {
         if (is_in_binding) {
             const uint32_t* curr_bind_freq_list = fhss_config[curr_bind_config_i].freq_list;
-            const uint8_t* curr_bind_channel_list = fhss_config[curr_bind_config_i].bind_channel_list;
-            return curr_bind_freq_list[curr_bind_channel_list[0]];
+            return curr_bind_freq_list[fhss_config[curr_bind_config_i].bind_channel];
         }
 
         return fhss_list[curr_i];
@@ -635,8 +612,7 @@ class tFhssBase
     uint8_t config_i;
     uint8_t FREQ_LIST_LEN;
     const uint32_t* fhss_freq_list;
-    uint8_t BIND_CHANNEL_LIST_LEN;
-    const uint8_t* fhss_bind_channel_list;
+    uint8_t fhss_bind_channel;
     uint16_t bind_scan_mask;
 
     uint8_t curr_i;
@@ -666,7 +642,7 @@ class tFhss : public tFhssBase
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         tFhssBase::Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->Bind_mask,
                           fhss->Ortho, fhss->Except);
     }
 
@@ -695,10 +671,10 @@ class tFhss
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         fhss1stBand.Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->Bind_mask,
                           fhss->Ortho, fhss->Except);
         fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
-                          fhss2->FrequencyBand, fhss2->FrequencyBand_allowed_mask,
+                          fhss2->FrequencyBand, fhss2->Bind_mask,
                           fhss2->Ortho, fhss2->Except);
     }
 

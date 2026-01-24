@@ -497,7 +497,7 @@ typedef struct
     SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM FrequencyBand;
     uint8_t Ortho;
     uint8_t Except;
-    uint16_t FrequencyBand_allowed_mask; // copy of SetupMetaData for sx1, is modified for sx2
+    uint16_t Bind_mask;
 } tFhssGlobalConfig;
 
 

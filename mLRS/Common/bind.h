@@ -129,7 +129,7 @@ void tBindBase::ConfigForBind(void)
         mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
     }
 
-    // we may need them both, so ensure they are start up
+    // we may need them both, so ensure they are both started up
     sx.StartUp(&Config.Sx);
     sx2.StartUp(&Config.Sx2);
 
@@ -146,8 +146,7 @@ void tBindBase::HopToNextBind(SETUP_FREQUENCY_BAND_ENUM frequency_band)
 
     // not nice
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
-    // we could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
-    // we also could provide a function to do it both in setup.h and here
+    // could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // for the moment reconstruct the info by explicit defines
 #if defined DEVICE_HAS_LR11xx
     // if both 19Hz and 19Hz7X are set, we need to cycle with toggles

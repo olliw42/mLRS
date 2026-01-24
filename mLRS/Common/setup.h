@@ -836,7 +836,7 @@ void setup_configure_config(uint8_t config_id)
     //     FrequencyBand;
     //     Ortho;
     //     Except;
-    //     FrequencyBand_allowed_mask;
+    //     Bind_mask;
 
     //Config.FhssSeed = bind_dblword;
     // this is much better for narrow bands, like 868 MHz
@@ -853,105 +853,70 @@ void setup_configure_config(uint8_t config_id)
 
     Config.Fhss.FrequencyBand = Config.Sx.FrequencyBand; // has hopefully been correctly sanitized in Sx12xx section
 
-    Config.Fhss.FrequencyBand_allowed_mask = 0;
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x
-    Config.Fhss.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC) |
-                                             (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
-#else
+    // this mask is only used in bind, to determine the frequencies to cycle through
+    // since both fhss should cycle in sync, we always set them to be equal and have all frequencies
+    Config.Fhss.Bind_mask = 0;
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_2P4_GHZ)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_915_MHZ_FCC)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_868_MHZ)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_433_MHZ)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_70_CM_HAM)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_BAND_866_MHZ_IN)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC);
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC) | (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     }
     if (SetupMetaData.FrequencyBand_allowed_mask & (1 << SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ)) {
-        Config.Fhss.FrequencyBand_allowed_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ);
-    }
-#endif
-
-    switch (Config.Fhss.FrequencyBand) {
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ:
-        switch (Config.Mode) {
-        case MODE_50HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-        case MODE_19HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-        case MODE_FLRC_111HZ: Config.Fhss.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-        default:
-            Config.Fhss.Num = 1; // dummy // must not happen, should have been resolved in setup_sanitize_config()
-        }
-        break;
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
-        Config.Fhss.Num = FHSS_NUM_BAND_915_MHZ_FCC;
-        break;
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
-        Config.Fhss.Num = FHSS_NUM_BAND_868_MHZ;
-        break;
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
-        Config.Fhss.Num = FHSS_NUM_BAND_433_MHZ;
-        break;
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
-        switch (Config.Mode) {
-        case MODE_31HZ: Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM; break;
-        case MODE_19HZ:
-        case MODE_19HZ_7X:
-            Config.Fhss.Num = FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE; break;
-        default:
-            Config.Fhss.Num = 1; // dummy // must not happen, should have been resolved in setup_sanitize_config()
-        }
-        break;
-    case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
-        Config.Fhss.Num = FHSS_NUM_BAND_866_MHZ_IN;
-        break;
-    default:
-        while(1){} // must not happen, should have been resolved in setup_sanitize_config()
+        Config.Fhss.Bind_mask |= (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ) | (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
     }
 
     Config.Fhss2 = Config.Fhss;
 
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
     Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ;
-    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ);
-    switch (Config.Mode) {
-    case MODE_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-    case MODE_31HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE; break;
-    case MODE_19HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE; break;
-    case MODE_FLRC_111HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break;
-    case MODE_FSK_50HZ: Config.Fhss2.Num = FHSS_NUM_BAND_2P4_GHZ; break; // FSK for SX126x implies 50 Hz mode for SX128x
-    default:
-        Config.Fhss2.Num = 1; // dummy // while(1){} // must not happen, should have been resolved in setup_sanitize_config()
-    }
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
     Config.Fhss2.FrequencyBand = SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ;
-    Config.Fhss2.FrequencyBand_allowed_mask = (1 << SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ);
-    Config.Fhss2.Num = FHSS_NUM_BAND_433_MHZ;
 #endif
+
+    uint8_t fhss_num_list[SX_FHSS_CONFIG_FREQUENCY_BAND_NUM][MODE_NUM] = {
+// MODE_50HZ,        MODE_31HZ,             MODE_19HZ,               MODE_FLRC_111HZ,  MODE_FSK_50HZ,        MODE_19HZ_7X
+// SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ
+{  FHSS_NUM_2P4GHZ,  FHSS_NUM_2P4GHZ_31HZ,  FHSS_NUM_2P4GHZ_19HZ,    FHSS_NUM_2P4GHZ,  1,                    1},
+// SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC
+{  1,                FHSS_NUM_915MHZ_FCC,   FHSS_NUM_915MHZ_FCC,     1,                FHSS_NUM_915MHZ_FCC,  FHSS_NUM_915MHZ_FCC},
+// SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ
+{  1,                FHSS_NUM_868MHZ,       FHSS_NUM_868MHZ,         1,                FHSS_NUM_868MHZ,      FHSS_NUM_868MHZ},
+// SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN
+{  1,                FHSS_NUM_866MHZ_IN,    FHSS_NUM_866MHZ_IN,      1,                FHSS_NUM_866MHZ_IN,   FHSS_NUM_866MHZ_IN},
+// SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ
+{  1,                FHSS_NUM_433MHZ,       FHSS_NUM_433MHZ,         1,                FHSS_NUM_433MHZ,      FHSS_NUM_433MHZ},
+// SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM
+{  1,                FHSS_NUM_70CM_HAM,     FHSS_NUM_70CM_HAM_19HZ,  1,                FHSS_NUM_70CM_HAM,    FHSS_NUM_70CM_HAM_19HZ}
+};
+
+    Config.Fhss.Num = fhss_num_list[Config.Fhss.FrequencyBand][Config.Mode];
+    Config.Fhss2.Num = fhss_num_list[Config.Fhss2.FrequencyBand][Config.Mode];
 
     //-- More Config, may depend on above config settings
 
     Config.connect_tmo_systicks = SYSTICK_DELAY_MS(CONNECT_TMO_MS);
-    //?? Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
-    if (Config.Fhss.Num >= Config.Fhss2.Num) { // requires that Num is set to something low when not used
-        Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss.Num);
-        Config.connect_sync_cnt_max = Config.Fhss.Num / 2;
-    } else {
-        Config.connect_sync_cnt_max = Config.Fhss2.Num / 2;
-        Config.connect_listen_hop_cnt = (uint8_t)(1.5f * Config.Fhss2.Num);
-    }
+
+    // requires that Num is set to something low when not used
+    uint8_t fhss_num = (Config.Fhss.Num >= Config.Fhss2.Num) ? Config.Fhss.Num : Config.Fhss2.Num;
+    Config.connect_listen_hop_cnt = (uint8_t)(1.5f * fhss_num);
+    Config.connect_sync_cnt_max = fhss_num / 2;
+
     if (Config.connect_sync_cnt_max < CONNECT_SYNC_CNT) Config.connect_sync_cnt_max = CONNECT_SYNC_CNT;
 
     Config.LQAveragingPeriod = (LQ_AVERAGING_MS/Config.frame_rate_ms);
