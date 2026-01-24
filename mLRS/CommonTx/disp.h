@@ -813,7 +813,12 @@ if (page_modified) {
     gdisp_putc('<');
     gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
 
-    if (Config.Diversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
+    if (Config.Diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
+        _draw_dot2(1, 2 * 10 + 20 - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(4, 2 * 10 + 20);
+        gdisp_puts("a12");
+    }
     if (SetupMetaData.rx_available &&
          (SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT ||
           SetupMetaData.rx_actual_diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 ||
@@ -825,16 +830,17 @@ if (page_modified) {
         Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 || Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA2) {
         _draw_dot2(1, 3 * 10 + 20 - 3);
     }
-    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT) {
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
         _draw_dot2(125, 3 * 10 + 20 - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(105, 3 * 10 + 20);
+        gdisp_puts("a12");
     }
 
-    gdisp_setcurXY(40, 1 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 1 * 10 + 20);
     gdisp_puts("Bps");
 
-    gdisp_setcurXY(40, 4 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 4 * 10 + 20);
     gdisp_puts("Bps");
 }
     // now the part which is frequently updated
@@ -846,14 +852,14 @@ if (page_modified) {
     uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
 
     gdisp_setcurXY(10, 2 * 10 + 20);
-    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    if (!Config.IsDualBand) gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
     gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
 
     gdisp_setcurXY(10, 3 * 10 + 20);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
-    gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    if (!Config.IsDualBand) gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
 
     uint16_t bps_transmitted = stats.bytes_transmitted.GetBytesPerSec();
     uint16_t bps_received = stats.bytes_received.GetBytesPerSec();
