@@ -9,7 +9,7 @@
 
 
 #define DBG_MAIN(x)
-#define DBG_MAIN_SLIM(x)
+#define DBG_MAIN_SLIM(x) x
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
@@ -636,10 +636,10 @@ INITCONTROLLER_END
         if (connect_state >= CONNECT_STATE_SYNC) { // we hop only if not in listen
             fhss.HopToNext();
         }
-        sx.SetRfFrequency(fhss.GetCurrFreq());
-        sx2.SetRfFrequency(fhss.GetCurrFreq2());
-        IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
-        IF_ANTENNA2(sx2.SetToRx(0));
+        sx.SetRfFrequency(fhss.GetCurrFreq()); dbg.puts("\nf ");dbg.puts(u32toBCD_s(fhss.GetCurrFreq_Hz()));
+        sx2.SetRfFrequency(fhss.GetCurrFreq2()); dbg.puts(" ");dbg.puts(u32toBCD_s(fhss.GetCurrFreq2_Hz()));
+        IF_ANTENNA1(sx.SetToRx(0); dbg.puts(" r0");); // single without tmo
+        IF_ANTENNA2(sx2.SetToRx(0); dbg.puts(" r1"););
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
@@ -846,8 +846,19 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
             if (fhss.HopToNextBind()) {
-                bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
+                bind.HopToNextBind(fhss.GetCurrBindFrequencyBand());
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
+
+dbg.puts("\nf hop");
+dbg.puts("\n f b conf i  ");dbg.putc('0'+fhss.fhss1stBand.curr_bind_config_i);
+dbg.puts("  ");dbg.putc('0'+fhss.fhss2ndBand.curr_bind_config_i);
+dbg.puts("\n cnf lora i  ");dbg.putc('0'+Config.Sx.LoraConfigIndex);
+dbg.puts("  ");dbg.putc('0'+Config.Sx2.LoraConfigIndex);
+dbg.puts("\n sx  lora i  ");dbg.putc('0'+sx.gconfig->LoraConfigIndex);
+dbg.puts("  ");dbg.putc('0'+sx2.gconfig->LoraConfigIndex);
+dbg.puts("\n          f  ");dbg.putc('0'+sx.gconfig->FrequencyBand);
+dbg.puts("  ");dbg.putc('0'+sx2.gconfig->FrequencyBand);
+
             }
         }
 
@@ -905,9 +916,17 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             link_state = LINK_STATE_RECEIVE;
+
+dbg.puts("\nf conf");
+dbg.puts("\n scan mask  0x");dbg.puts(u16toHEX_s(fhss.fhss1stBand.bind_scan_mask));
+dbg.puts("  0x");dbg.puts(u16toHEX_s(fhss.fhss2ndBand.bind_scan_mask));
+dbg.puts("\n curr conf  ");dbg.puts(u8toBCD_s(fhss.fhss1stBand.curr_bind_config_i));
+dbg.puts("  ");dbg.puts(u8toBCD_s(fhss.fhss2ndBand.curr_bind_config_i));
+
             break;
         case BIND_TASK_RX_STORE_PARAMS:
-            Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
+            // is already set in tBindBase::handle_receive()
+            //Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
             doParamsStore = true;
             break;
         }

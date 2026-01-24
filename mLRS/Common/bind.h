@@ -60,7 +60,7 @@ class tBindBase
     void StartBind(void) { if (!is_in_binding) binding_requested = true; }
     void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
-    void HopToNextBind(SETUP_FREQUENCY_BAND_ENUM frequency_band); // only for receiver
+    void HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band); // only for receiver
     void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
@@ -113,69 +113,102 @@ void tBindBase::Init(void)
 }
 
 
+extern tFhss fhss;
+
 void tBindBase::ConfigForBind(void)
 {
+    uint8_t frequency_band = Config.FrequencyBand;
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+    if (Config.IsDualBand) {
+        Config.IsDualBand = false; // affects receiving
+        configure_diversity(DIVERSITY_ANTENNA1);
+    }
+#endif
+
     // used by both the Tx and Rx, switch to 19Hz or 19Hz7x mode, select lowest possible power
     // we have to distinguish between MODE_19HZ or MODE_19HZ_7X
     // configure_mode() however does currently do the same for both cases
     // for devices which can do both modes we need to toggle
-    if (Config.Mode == MODE_19HZ_7X) {
-        configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
-        mode_mask = 0xFFFF; // start with 19Hz7x for all frequencies
-        mode_mask &=~ (1 << Config.FrequencyBand); // clear bit for current frequency band
+    if ((Config.BindMode_mask & (1 << MODE_19HZ)) && (Config.BindMode_mask & (1 << MODE_19HZ_7X))) {
+        if (Config.Mode == MODE_19HZ_7X) {
+            Config.Mode = MODE_19HZ_7X;
+            mode_mask = 0xFFFF; // start with 19Hz7x for all frequencies
+            mode_mask &=~ (1 << frequency_band); // clear bit for current frequency band
+        } else {
+            Config.Mode = MODE_19HZ;
+            mode_mask = 0; // start with 19Hz for all frequencies
+            mode_mask |= (1 << frequency_band); // set bit for current frequency band
+        }
     } else {
-        configure_mode(MODE_19HZ, Config.FrequencyBand);
-        mode_mask = 0; // start with 19Hz for all frequencies
-        mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
+        Config.Mode = (Config.BindMode_mask & (1 << MODE_19HZ_7X)) ? MODE_19HZ_7X : MODE_19HZ;
     }
 
+    configure_mode(Config.Mode, Config.FrequencyBand);
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
     // we may need them both, so ensure they are both started up
     sx.StartUp(&Config.Sx);
     sx2.StartUp(&Config.Sx2);
+#endif
 
     config_rf();
+
+#ifdef DEVICE_IS_RECEIVER
+swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
+swuart_puts(", f ");swuart_putc('0' + frequency_band);
+swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
+#endif
 }
 
 
 // used only by Rx
 // is called in rx main when fhss.HopToNextBind() returns true
 // the frequency band is obtained with fhss.GetCurrBindSetupFrequencyBand()
-void tBindBase::HopToNextBind(SETUP_FREQUENCY_BAND_ENUM frequency_band)
+void tBindBase::HopToNextBind(SX_FHSS_FREQUENCY_BAND_ENUM sx_frequency_band)
 {
-    uint8_t mode = Config.Mode;
-
     // not nice
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
     // could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // for the moment reconstruct the info by explicit defines
 #if defined DEVICE_HAS_LR11xx
     // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
-    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-        mode = MODE_19HZ;
+    if (sx_frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        Config.Mode = MODE_19HZ;
     } else {
         if (mode_mask & (1 << frequency_band)) {
-            mode = MODE_19HZ_7X;
+            Config.Mode = MODE_19HZ_7X;
             mode_mask &=~ (1 << frequency_band); // clear bit
         } else {
-            mode = MODE_19HZ;
+            Config.Mode = MODE_19HZ;
             mode_mask |= (1 << frequency_band); // set bit
         }
     }
 #endif
 
-    configure_mode(mode, frequency_band);
+    uint8_t frequency_band = cvt_to_sx_fhss_frequency_band(sx_frequency_band);
+    configure_mode(Config.Mode, frequency_band);
 
     // not nice
     // for dualband receivers with two different SXes we need to swap active RF stage
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
-      if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
-          configure_diversity(DIVERSITY_ANTENNA2);
-      } else {
-          configure_diversity(DIVERSITY_ANTENNA1);
-      }
+    if (sx_frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        configure_diversity(DIVERSITY_ANTENNA2);
+    } else {
+        configure_diversity(DIVERSITY_ANTENNA1);
+    }
 #endif
 
     config_rf();
+
+#ifdef DEVICE_IS_RECEIVER
+swuart_puts("\nm ");swuart_puts((Config.Mode == MODE_19HZ_7X)? "197x" : "19");
+swuart_puts(", f ");swuart_putc('0' + frequency_band);
+swuart_puts(", d ");swuart_putc('0' + Config.Diversity);
+//swuart_puts("  ");swuart_putc('0'+frequency_band);
+//swuart_puts(" ");swuart_putc('0'+Config.Diversity);
+//swuart_puts(" ");swuart_putc('0'+Config.Sx.LoraConfigIndex);
+//swuart_puts(" ");swuart_putc('0'+Config.Sx2.LoraConfigIndex);
+#endif
 }
 
 
@@ -295,7 +328,7 @@ void tBindBase::do_transmit(uint8_t antenna)
     txBindFrame.connected = connected();
 
     strbufstrcpy(txBindFrame.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
-    // TODO txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
+    txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     txBindFrame.Mode = Setup.Common[Config.ConfigId].Mode;
     txBindFrame.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
@@ -328,7 +361,7 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
     if (rx_status == RX_STATUS_INVALID) return;
 
     strstrbufcpy(Setup.Common[0].BindPhrase, txBindFrame.BindPhrase_6, 6);
-    // TODO Setup.Common[0].FrequencyBand = txBindFrame.FrequencyBand;
+    Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)txBindFrame.FrequencyBand;
     Setup.Common[0].Mode = txBindFrame.Mode;
     Setup.Common[0].Ortho = txBindFrame.Ortho;
 

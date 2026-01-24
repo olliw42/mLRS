@@ -68,7 +68,7 @@ void tFhssBase::generate(uint32_t seed)
         // ensure it is not too close to the previous
         // do only if we have plenty of channels at our disposal
         bool is_too_close = false;
-        if ((config_i != SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ && config_i != SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN) &&
+        if ((config_i != SX_FHSS_FREQUENCY_BAND_433_MHZ && config_i != SX_FHSS_FREQUENCY_BAND_866_MHZ_IN) &&
             (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
             int8_t last_ch = ch_list[k - 1];
             if (last_ch == 0) { // special treatment for this case

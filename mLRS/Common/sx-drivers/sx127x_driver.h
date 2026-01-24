@@ -149,8 +149,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         gconfig = global_config;
 
         switch (gconfig->FrequencyBand) {
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ:
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
                 low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_ON;
                 break;
             default:
