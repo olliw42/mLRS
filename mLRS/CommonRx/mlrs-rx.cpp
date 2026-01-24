@@ -893,10 +893,10 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
-            bind.ConfigForBind();
+            bind.ConfigForBind(); // may change Config
             rxclock.SetPeriod(Config.frame_rate_ms);
             rxclock.Reset();
-            fhss.SetToBind(Config.frame_rate_ms);
+            fhss.SetToBind(Config.frame_rate_ms); // needs to come after fhss
             leds.SetToBind();
             connect_state = CONNECT_STATE_LISTEN;
             link_state = LINK_STATE_RECEIVE;

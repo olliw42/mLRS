@@ -295,8 +295,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return actual_power_dbm;
     }
 
-  private:
+  protected:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     uint8_t low_frequency_mode;
     uint8_t sx_power;

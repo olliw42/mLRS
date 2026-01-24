@@ -188,7 +188,7 @@ typedef struct
 
     uint8_t spare2[55];
 
-    uint16_t crc; // 2bytes
+    uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
 
 

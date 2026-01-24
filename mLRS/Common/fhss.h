@@ -504,7 +504,7 @@ class tFhssBase
         return fhss_list[curr_i];
     }
 
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         is_in_binding = true;
         bind_listen_cnt = (5000 / frame_rate_ms); // should be 5 secs
@@ -685,7 +685,7 @@ class tFhss
     uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
     uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
 
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         fhss1stBand.SetToBind(frame_rate_ms);
         fhss2ndBand.SetToBind(frame_rate_ms);
