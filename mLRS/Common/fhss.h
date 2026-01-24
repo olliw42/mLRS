@@ -408,7 +408,7 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_FREQUENCY_BAND_ENUM frequency_band, uint16_t bind_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while(1){} // should not happen, but play it safe
 
@@ -423,12 +423,8 @@ class tFhssBase
         BIND_CHANNEL_LIST_LEN = fhss_config[config_i].bind_channel_list_len;
         curr_bind_config_i = config_i; // we start with what setup suggests
 
-        bind_scan_mask = 0;
-        // looks a bit silly but is to mask out invalid bits
-        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_FREQUENCY_BAND_NUM);
-        for (uint8_t i = 0; i < SX_FHSS_FREQUENCY_BAND_NUM; i++) {
-            if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
-        }
+        bind_scan_mask = bind_mask; // has hopefully be set up correctly in setup
+        is_in_binding = false;
 
         if (bind_scan_mask == 0) while(1){} // should not happen, but play it safe
 
@@ -664,7 +660,7 @@ class tFhss : public tFhssBase
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         tFhssBase::Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->BindScan_mask,
                           fhss->Ortho, fhss->Except);
     }
 
@@ -686,10 +682,10 @@ class tFhss
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         fhss1stBand.Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->BindScan_mask,
                           fhss->Ortho, fhss->Except);
         fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
-                          fhss2->FrequencyBand, fhss2->FrequencyBand_allowed_mask,
+                          fhss2->FrequencyBand, fhss2->BindScan_mask,
                           fhss2->Ortho, fhss2->Except);
     }
 
