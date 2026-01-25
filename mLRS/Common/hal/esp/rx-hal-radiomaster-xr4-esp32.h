@@ -6,6 +6,17 @@
 // hal
 //********************************************************
 
+/*
+  Info on pin usage
+
+  TX,RX (main pads on top&bottom):    serial
+  TX2 (corner pad on bottom):         rc signal/CRSF/SBUS
+
+  top:      side with button, LED, antenna, and PA chips
+  bottom:   side with ESP chip
+*/
+
+
 //-------------------------------------------------------
 // ESP32, ELRS RadioMaster XR4 RX
 //-------------------------------------------------------
