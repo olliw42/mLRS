@@ -1,9 +1,4 @@
 
-pip uninstall em
-
-https://github.com/dronecan/dronecan_dsdlc/issues/18
-pip install --force-reinstall -v empy==3.3.4
-
 
 one may have to set the path for pip to work
 C:\WinPython3-10-5\WPy64-31050\python-3.10.5.amd64
@@ -22,3 +17,11 @@ https://stackoverflow.com/questions/7446187/no-module-named-pkg-resources/105384
 git submodule DSDL
 to update browse into folder, then
 git pull
+
+
+25.Jan.2026: 
+The empy aka @) issue is resolved with the latest dronecan_dsdlc update
+//pip uninstall em
+//https://github.com/dronecan/dronecan_dsdlc/issues/18
+//pip install --force-reinstall -v empy==3.3.4
+
