@@ -496,9 +496,12 @@ uint8_t payload_len = 0;
     // Note: the receiver wants to see both bands, also single band receivers.
     // It is then important however that fhss1_curr_i and fhss2_curr_i are identical, as otherwise
     // the receiver would jump to wrong frequencies
+    // this must be ensured by setup
     uint8_t fhss_band = fhss_band_next(); // this randomly toggles between 0 and 1, but never has more than two symbols in a row
     frame_stats.tx_fhss_index_band = fhss_band;
     frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
+
+if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not happen, catch it
 
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
@@ -764,7 +767,7 @@ RESTARTCONTROLLER
 #else
     hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
-    fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
     disp.Init();
     tasks.Init();
@@ -813,7 +816,7 @@ INITCONTROLLER_END
 
             bind.Tick_ms();
             disp.Tick_ms(); // can take long
-            fan.SetPower(sx.RfPower_dbm());
+            fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
             fan.Tick_ms();
             esp.Tick_ms();
 

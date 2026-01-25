@@ -892,10 +892,21 @@ uint8_t tx_rssi1, tx_rssi2;
 
     // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // is single band
     float freq2 = fhss.GetCurrFreq2_Hz();
-#else
-    float freq2 = 0.0f;
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // dual band device
+    // Note: We must assume that for both the tx module and receiver the same antenna is used for the same band,
+    // such that A1 corresponds to band 1, and A2 to band 2.
+    if (Config.IsDualBand) {
+        // nothing to do, should be all ok
+    } else if (TRANSMIT_USE_ANTENNA2) { // fhss2
+        // the antenna is forced to A2, A1 cannot happen
+        tx_rssi1 = UINT8_MAX;
+        tx_rssi2 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+        freq1 = 0.0f;
+    } else { // fhss1
+        freq2 = 0.0f;
+    }
 #endif
 
 #if 0

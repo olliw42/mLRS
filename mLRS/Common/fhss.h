@@ -473,8 +473,6 @@ class tFhssBase
             while(1){} // should not happen, but play it safe
         }
 
-        is_in_binding = false;
-
         curr_i = 0;
     }
 
@@ -705,9 +703,13 @@ class tFhss
 
     bool HopToNextBind(void)
     {
+        // both fhss must run in sync, so advance both
         bool hop1 = fhss1stBand.HopToNextBind();
         bool hop2 = fhss2ndBand.HopToNextBind();
-        return hop1 || hop2;
+
+        if (hop1 != hop2) while(1){} // should not happen, catch it
+
+        return hop1;
     }
 
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
