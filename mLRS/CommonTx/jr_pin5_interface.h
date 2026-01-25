@@ -56,12 +56,15 @@ extern volatile uint32_t millis32(void);
 
 void uart_rx_callback_dummy(uint8_t c) {}
 void uart_tc_callback_dummy(void) {}
+void uart_cc1_callback_dummy(void) {}
 
 void (*uart_rx_callback_ptr)(uint8_t) = &uart_rx_callback_dummy;
 void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
+void (*uart_cc1_callback_ptr)(void) = &uart_cc1_callback_dummy;
 
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
+#define UART_CC1_CALLBACK()         (*uart_cc1_callback_ptr)()
 
 #if defined ESP32 || defined ESP8266
 #include "jr_pin5_interface_esp.h"
@@ -122,6 +125,7 @@ class tPin5BridgeBase
     // actual isr functions
     void pin5_rx_callback(uint8_t c);
     void pin5_tc_callback(void);
+    void pin5_cc1_callback(void);  // MICROS_TIMx CC1 ISR for TX delay
 
     // parser
     typedef enum {
@@ -141,6 +145,7 @@ class tPin5BridgeBase
 
         // transmit states, used by all
         STATE_TRANSMIT_START,
+        STATE_TRANSMIT_PENDING,  // waiting for TX delay timer
         STATE_TRANSMITING,
     } STATE_ENUM;
 
@@ -187,6 +192,10 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_init(void)
 {
+// ensure CC1 interrupt is disabled and cleared from any previous state (e.g., after restart)
+    LL_TIM_DisableIT_CC1(MICROS_TIMx);
+    LL_TIM_ClearFlag_CC1(MICROS_TIMx);
+
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -322,8 +331,8 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 }
 
 
-// we do not add a delay here before we transmit
-// the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+// non-blocking delay before TX using MICROS_TIMx CC1 compare interrupt
+// this gives the radio time to switch from TX to RX before we start transmitting
 
 void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
@@ -331,15 +340,19 @@ void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 
     if (state < STATE_TRANSMIT_START) return; // we are in receiving
 
+    if (state == STATE_TRANSMIT_PENDING) return; // already waiting for TX delay
+
     if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
         state = STATE_IDLE;
         return;
     }
 
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        pin5_tx_enable(true);
-        state = STATE_TRANSMITING;
-        pin5_tx_start();
+        // schedule TX after PIN5_TX_DELAY_US using timer CC1 interrupt
+        MICROS_TIMx->CCR1 = (uint16_t)(MICROS_TIMx->CNT + 100);  // 100us delay, should be plenty
+        LL_TIM_ClearFlag_CC1(MICROS_TIMx);
+        LL_TIM_EnableIT_CC1(MICROS_TIMx);
+        state = STATE_TRANSMIT_PENDING;
     } else {
         state = STATE_IDLE;
     }
@@ -350,6 +363,19 @@ void tPin5BridgeBase::pin5_tc_callback(void)
 {
     pin5_tx_enable(false); // switches on rx
     state = STATE_IDLE;
+}
+
+
+void tPin5BridgeBase::pin5_cc1_callback(void)
+{
+    LL_TIM_DisableIT_CC1(MICROS_TIMx);
+    LL_TIM_ClearFlag_CC1(MICROS_TIMx);
+
+    if (state == STATE_TRANSMIT_PENDING) {
+        pin5_tx_enable(true);
+        state = STATE_TRANSMITING;
+        pin5_tx_start();
+    }
 }
 
 

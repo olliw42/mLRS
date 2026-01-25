@@ -37,6 +37,8 @@ SWC     solder pad      PA14        SWDCLK      I2C1_SDA / T8_CH2
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
+#define MICROS_TIMx_IRQn          TIM3_IRQn
+#define MICROS_TIMx_IRQHandler    TIM3_IRQHandler
 
 
 //-- UARTS
