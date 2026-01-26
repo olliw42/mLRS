@@ -102,6 +102,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #include "../Common/hal/timer.h"
+#include "clock_tx.h"
 
 #endif //#if defined ESP8266 || defined ESP32
 

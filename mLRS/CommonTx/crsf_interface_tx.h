@@ -163,6 +163,7 @@ tTxCrsf crsf;
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
 void crsf_pin5_rx_callback(uint8_t c) { crsf.pin5_rx_callback(c); }
 void crsf_pin5_tc_callback(void) { crsf.pin5_tc_callback(); }
+void crsf_pin5_cc1_callback(void) { crsf.pin5_cc1_callback(); }
 
 
 // is called in isr context
@@ -356,6 +357,9 @@ void tTxCrsf::Init(bool enable_flag)
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
     tPin5BridgeBase::Init();
+
+    // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
+    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
 }
 
 

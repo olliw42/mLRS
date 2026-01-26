@@ -122,6 +122,7 @@ class tPin5BridgeBase
     // actual isr functions
     void pin5_rx_callback(uint8_t c);
     void pin5_tc_callback(void);
+    void pin5_cc1_callback(void);
 
     // parser
     typedef enum {
@@ -141,6 +142,7 @@ class tPin5BridgeBase
 
         // transmit states, used by all
         STATE_TRANSMIT_START,
+        STATE_TRANSMIT_PENDING, // waiting for TX delay timer
         STATE_TRANSMITING,
     } STATE_ENUM;
 
@@ -170,6 +172,8 @@ void tPin5BridgeBase::Init(void)
     telemetry_state = 0;
 
     nottransmiting_tlast_ms = 0;
+
+    txclock.Init();
 
     pin5_init();
 }
@@ -324,6 +328,8 @@ void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
 
 // we do not add a delay here before we transmit
 // the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+// 25.Jan.2026: we add a non-blocking delay before transmitting, since EdgeTx has issues on H7.
+// This gives the radio time to switch from TX to RX before we start transmitting.
 
 void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
@@ -331,18 +337,35 @@ void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 
     if (state < STATE_TRANSMIT_START) return; // we are in receiving
 
+    if (state == STATE_TRANSMIT_PENDING) return; // we are already in transmit delay
+
     if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
         state = STATE_IDLE;
         return;
     }
 
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        pin5_tx_enable(true);
-        state = STATE_TRANSMITING;
-        pin5_tx_start();
+        if (txclock.HasCC1Callback()) {
+            txclock.StartCC1Delay(100); // 100 us delay, should be plenty, EdgeTx say 70 us or so is safe
+            state = STATE_TRANSMIT_PENDING;
+        } else {
+            pin5_tx_enable(true);
+            state = STATE_TRANSMITING;
+            pin5_tx_start();
+        }
     } else {
         state = STATE_IDLE;
     }
+}
+
+
+void tPin5BridgeBase::pin5_cc1_callback(void)
+{
+    if (state != STATE_TRANSMIT_PENDING) return; // anything else should not happen
+
+    pin5_tx_enable(true);
+    state = STATE_TRANSMITING;
+    pin5_tx_start();
 }
 
 

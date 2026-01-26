@@ -29,6 +29,7 @@
 #define EE_START_PAGE             120 // 256 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM16
+#define MICROS_TIM_NAMEPREFIX     TIM16_
 
 
 //-- UARTS
