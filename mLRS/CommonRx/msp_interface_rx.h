@@ -297,6 +297,13 @@ void tRxMsp::parse_serial_in_link_out(void)
 
                         send = false; // mark as handled
                     }
+                    if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
+                        // handle MSP2_RX_BIND, only if MSP V2
+                        // this is a really a request from the FC but sent as a response
+                        bind.StartBind();
+                        send = false; // don't forward to ground
+                        break;
+                    }
                 }
 
                 if (msp_msg_ser_in.type == MSP_TYPE_ERROR) { // this is an error response from the FC
@@ -328,15 +335,6 @@ void tRxMsp::parse_serial_in_link_out(void)
                                 0);
                             serial.putbuf(_buf, len);
                         }
-                        send = false; // don't forward to ground
-                        break;
-                    }
-                }
-
-                if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    // handle MSP2_RX_BIND, only if MSP V2
-                    if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
-                        bind.StartBind();
                         send = false; // don't forward to ground
                         break;
                     }
