@@ -134,6 +134,8 @@ typedef enum {
     MSP2_SENSOR_COMPASS                 = 0x1F04,
     MSP2_SENSOR_BAROMETER               = 0x1F05,
     MSP2_SENSOR_AIRSPEED                = 0x1F06,
+
+    MSP2_RX_BIND                        = 0x3001, // 12289
 } MSP_FUNCTION_ENUM;
 
 
