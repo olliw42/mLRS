@@ -300,9 +300,9 @@ void tRxMsp::parse_serial_in_link_out(void)
                     if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
                         // handle MSP2_RX_BIND, only if MSP V2
                         // this is a really a request from the FC but sent as a response
+                        // payload is ignored
                         bind.StartBind();
                         send = false; // don't forward to ground
-                        break;
                     }
                 }
 
@@ -320,8 +320,8 @@ void tRxMsp::parse_serial_in_link_out(void)
                 }
 
                 if (msp_msg_ser_in.type == MSP_TYPE_REQUEST) { // this is a request from the FC
-                    // handle MSP_REBOOT, only if MSP V2
                     if (msp_msg_ser_in.function == MSP_REBOOT && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
+                        // handle MSP_REBOOT, only if MSP V2
                         uint32_t magic = ((tMspReboot*)msp_msg_ser_in.payload)->magic;
                         if (serial.has_systemboot() && magic == MSP_REBOOT_MAGIC) {
                             reboot_activate_ms = millis32(); // set to non zero to enter system bootloader
@@ -336,7 +336,6 @@ void tRxMsp::parse_serial_in_link_out(void)
                             serial.putbuf(_buf, len);
                         }
                         send = false; // don't forward to ground
-                        break;
                     }
                 }
 

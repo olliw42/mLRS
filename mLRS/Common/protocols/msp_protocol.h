@@ -135,7 +135,7 @@ typedef enum {
     MSP2_SENSOR_BAROMETER               = 0x1F05,
     MSP2_SENSOR_AIRSPEED                = 0x1F06,
 
-    MSP2_RX_BIND                        = 0x3001, // 12289
+    MSP2_RX_BIND                        = 0x3001, // 12289, len = 4
 } MSP_FUNCTION_ENUM;
 
 
@@ -434,6 +434,18 @@ typedef struct
 #define MSP_COMMON_SET_MSP_RC_INFO_LEN  15
 
 
+// MSP2_RX_BIND  0x3001, // 12289
+MSP_PACKED(
+typedef struct
+{
+    uint8_t port_id;
+    uint32_t flags : 24;
+}) tMspRxBind;
+
+#define MSP_RX_BIND_LEN  4
+
+
+
 //-------------------------------------------------------
 // MSP X Messages
 //-------------------------------------------------------
@@ -599,6 +611,7 @@ STATIC_ASSERT(INAV_FLIGHT_MODES_COUNT < 32, "INAV_FLIGHT_MODES_COUNT too many fl
 STATIC_ASSERT(sizeof(tMspSetRawRc) == MSP_SET_RAW_RC_LEN, "MSP_SET_RAW_RC_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcLinkStats) == MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN, "MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN missmatch")
 STATIC_ASSERT(sizeof(tMspCommonSetMspRcInfo) == MSP_COMMON_SET_MSP_RC_INFO_LEN, "MSP_COMMON_SET_MSP_RC_INFO_LEN missmatch")
+STATIC_ASSERT(sizeof(tMspRxBind) == MSP_RX_BIND_LEN, "MSP_RX_BIND_LEN missmatch")
 
 
 #endif // MSP_PROTOCOL_H
