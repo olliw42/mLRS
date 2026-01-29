@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 25.11.2025
+ version 29.01.2026
 ********************************************************
 '''
 import os
@@ -1079,15 +1079,15 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
-        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'package' : 'ux',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
-        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'package' : 'ux',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
-        'appendix' : '-elrs-bl',
-    },{
+#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+#        'package' : 'ux',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
+#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+#        'package' : 'ux',
+#        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
+#        'appendix' : '-elrs-bl',
+#    },{
 
 #-- FlySky FRM303
 #        'target' : 'rx-FRM303-f072cb',                  'target_D' : 'RX_FRM303_F072CB',
@@ -1124,9 +1124,9 @@ TLIST = [
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
+#        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
 #-- rx E77 MBL
         'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
