@@ -58,8 +58,17 @@ class tRxDroneCan
     bool id_is_allcoated(void);
     bool ser_over_can_enabled;
 
+    // debug counters for frame processing (public for access from standalone functions)
+    uint32_t dbg_rx_frame_count;      // frames from dc_hal_receive()
+    uint32_t dbg_canard_ok_count;     // canardHandleRxFrame() returned 0 (success)
+    uint32_t dbg_canard_err_count;    // canardHandleRxFrame() returned error
+    int16_t dbg_canard_last_err;      // last error code from canardHandleRxFrame()
+
   private:
     int16_t set_can_filters(void);
+    void _display_debug_stats(void);
+    static const char* _lec_to_str(uint8_t lec);
+    static const char* _psr_act_to_str(uint8_t act);
 
     uint16_t tick_1Hz;
 
