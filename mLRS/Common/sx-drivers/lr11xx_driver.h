@@ -165,9 +165,11 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
         SetPacketType(LR11XX_PACKET_TYPE_LORA);
@@ -474,11 +476,13 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif
+
         Configure(global_config);
-        
         sx_dio_enable_exti_isr();
     }
 
@@ -614,11 +618,13 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif
-        Configure(global_config);
 
+        Configure(global_config);
         sx2_dio_enable_exti_isr();
     }
 

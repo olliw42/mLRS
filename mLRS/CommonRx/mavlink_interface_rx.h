@@ -264,6 +264,8 @@ void tRxMavlink::Do(void)
     // parse serial in -> link out
     parse_serial_in_link_out();
 
+    if (out.IsRelaySecondary()) return; // don't inject anything in this case
+
     if (Setup.Rx.SendRadioStatus && connected()) {
         // we currently know that if we determine inject_radio_status here it will be executed immediately
         switch (Setup.Rx.SendRadioStatus) {
@@ -405,6 +407,7 @@ void tRxMavlink::parse_link_in_serial_out(char c)
     if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
         fmav_frame_buf_to_msg(&msg_serial_out, &result, buf_link_in); // requires RESULT_OK
 
+if (!out.IsRelaySecondary()) { // don't do mavftp faking in this case
         // if it's a mavftp call to @PARAM/param.pck we fake the url
         // this will make ArduPilot to response with a NACK:FileNotFound
         // which will make MissionPlanner (any GCS?) to fallback to normal parameter upload
@@ -432,6 +435,7 @@ void tRxMavlink::parse_link_in_serial_out(char c)
                 }
             }
         }
+}
 
 #ifdef DEVICE_HAS_DRONECAN
         // Two issues, which have been resolved but are present in some versions of
@@ -892,10 +896,21 @@ uint8_t tx_rssi1, tx_rssi2;
 
     // frequencies
     float freq1 = fhss.GetCurrFreq_Hz();
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // is single band
     float freq2 = fhss.GetCurrFreq2_Hz();
-#else
-    float freq2 = 0.0f;
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // dual band device
+    // Note: We must assume that for both the tx module and receiver the same antenna is used for the same band,
+    // such that A1 corresponds to band 1, and A2 to band 2.
+    if (Config.IsDualBand) {
+        // nothing to do, should be all ok
+    } else if (TRANSMIT_USE_ANTENNA2) { // fhss2
+        // the antenna is forced to A2, A1 cannot happen
+        tx_rssi1 = UINT8_MAX;
+        tx_rssi2 = rssi_i8_to_mavradio(stats.received_rssi, connected());
+        freq1 = 0.0f;
+    } else { // fhss1
+        freq2 = 0.0f;
+    }
 #endif
 
 #if 0

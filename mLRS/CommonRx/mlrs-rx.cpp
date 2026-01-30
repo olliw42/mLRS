@@ -582,7 +582,7 @@ RESTARTCONTROLLER
     mavlink.Init();
     msp.Init();
     sx_serial.Init();
-    fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     dronecan.Start();
 
     tick_1hz = 0;
@@ -604,7 +604,7 @@ INITCONTROLLER_END
 
         if (!connect_occured_once) bind.AutoBind();
         bind.Tick_ms();
-        fan.SetPower(sx.RfPower_dbm());
+        fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
         fan.Tick_ms();
         dronecan.Tick_ms();
 
