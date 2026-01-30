@@ -63,6 +63,7 @@ int main_main();
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
   /* Configure Flash prefetch, Instruction cache, Data cache */
   /* Default configuration at reset is:                      */
