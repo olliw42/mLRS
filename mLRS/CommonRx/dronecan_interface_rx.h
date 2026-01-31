@@ -18,11 +18,19 @@
 
 #ifdef DEVICE_HAS_DRONECAN
 #ifdef STM32G4
-  // ensure that we have 160 MHz SYSCLK,PCLK1 and 80 MHz PLLQ
+  // check that we have 160 MHz SYSCLK,PCLK1 and 80 MHz PLLQ
   // for the reasons see comment in stdstm32-can.h
   #include "main.h"
-  #if !(PLL_PLLN == 80) || !(PLL_PLLQ == RCC_PLLQ_DIV4)
-    #error SystemClock_Config() settings are incorrect !
+  #if !defined PLL_PLLN && !defined PLL_PLLQ
+    // let's assume it is usual 170 MHz clocks configuration
+    #define CAN_USE_FDCAN_CLOCK_PCLK1
+    #warning FDCAN uses clock PCLK1 !
+    // #error SystemClock_Config() settings are incorrect for FDCAN ! // un-comment if this should be an error
+  #elif (PLL_PLLN == 80) && (PLL_PLLQ == RCC_PLLQ_DIV4)
+//    #define CAN_USE_FDCAN_CLOCK_PLL
+    #define CAN_USE_FDCAN_CLOCK_PCLK1
+  #else
+    #error SystemClock_Config() settings are incorrect for FDCAN !
   #endif
 #endif
 
@@ -172,6 +180,7 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
         // canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
     } else {
         // ArduPilot's MAVLink via CAN seems to need a fixed node id, so don't do dynamic id allocation
+        // TODO: Is this still true with latest AP ?
         canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
     }
     node_id_allocation.is_running = (canardGetLocalNodeID(&canard) == 0);

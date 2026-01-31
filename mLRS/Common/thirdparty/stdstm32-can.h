@@ -9,6 +9,8 @@
 // Interface:
 // CAN_USE_FDCAN1_PA11PA12
 // CAN_USE_FDCAN2_PB5PB6
+// CAN_USE_FDCAN_CLOCK_PCLK1
+// CAN_USE_FDCAN_CLOCK_PLL
 //*******************************************************
 #ifndef STDSTM32_CAN_H
 #define STDSTM32_CAN_H
@@ -119,10 +121,9 @@ void can_init(void)
     gpio_init_af(CAN_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
 
     // FDCAN clock initialization
-
-    //LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
-    //uint32_t peripheral_clock_rate = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
-
+#ifdef CAN_USE_FDCAN_CLOCK_PCLK1
+    LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
+#elif defined CAN_USE_FDCAN_CLOCK_PLL
     // Configure the FDCAN interface clock source
     // HAL function HAL_RCCEx_PeriphCLKConfig() does two things:
     //   __HAL_RCC_FDCAN_CONFIG(RCC_PERIPHCLK_FDCAN);
@@ -139,11 +140,10 @@ void can_init(void)
 
     LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PLL);
     LL_RCC_PLL_EnableDomain_48M();
+#else
+    #error No clock defined in stdstm32-can.h !
+#endif
     uint32_t peripheral_clock_rate = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
-
-    dbg.puts("\n  FDCAN CLK: ");dbg.puts(u32toBCD_s(peripheral_clock_rate));
-    dbg.puts("\n  FDCAN CLK: ");dbg.puts(u32toBCD_s(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN)));
-
 
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_FDCAN);
     //LL_APB1_GRP1_ForceReset(LL_APB1_GRP1_PERIPH_FDCAN);

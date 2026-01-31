@@ -728,9 +728,8 @@ int16_t dc_hal_compute_timings(
 
     // Note: ChatGPT was very clear on that one should use 80 MHz clock for FDCAN
     // we used 170 MHz before for classic CAN, but 80 MHz is said to be just better
-    // so we only support this
 
-    // timings by ArduPilot (by ChatGPT, by JLP, by myself using the code explicitly)
+    // timings by ArduPilot (confirmed by ChatGPT, by JLP, by myself using AP's code explicitly)
     // 10 tq
     // prescaler 8
     // BS1 = 8
@@ -743,6 +742,16 @@ int16_t dc_hal_compute_timings(
 #if 1
     if (peripheral_clock_rate == 80000000) { // 80 MHz
         timings->bit_rate_prescaler = 8;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
+    } else if (peripheral_clock_rate == 160000000) { // 160 MHz // NOT PREFFRED, but not terrible
+        timings->bit_rate_prescaler = 16;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
+    } else if (peripheral_clock_rate == 170000000) { // 170 MHz // NOT PREFFRED
+        timings->bit_rate_prescaler = 17;
         timings->bit_segment_1 = 8;
         timings->bit_segment_2 = 1;
         timings->sync_jump_width = 1;
