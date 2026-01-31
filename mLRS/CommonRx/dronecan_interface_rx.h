@@ -17,6 +17,14 @@
 #include "dronecan_interface_rx_types.h"
 
 #ifdef DEVICE_HAS_DRONECAN
+#ifdef STM32G4
+  // ensure that we have 160 MHz SYSCLK,PCLK1 and 80 MHz PLLQ
+  // for the reasons see comment in stdstm32-can.h
+  #include "main.h"
+  #if !(PLL_PLLN == 80) || !(PLL_PLLQ == RCC_PLLQ_DIV4)
+    #error SystemClock_Config() settings are incorrect !
+  #endif
+#endif
 
 #include "../Common/hal/hal.h"
 #include "../Common/thirdparty/stdstm32-can.h"
@@ -143,12 +151,8 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     fifo_ser_to_fc.Flush();
     flex_debug.transfer_id = 0;
 
-    tunnel_targetted_fc_to_ser_rate = 0;
-    tunnel_targetted_ser_to_fc_rate = 0;
-    tunnel_targetted_handle_rate = 0;
-    tunnel_targetted_send_rate = 0;
+    tunnel_targetted_stats.Init();
     fifo_fc_to_ser_tx_full_error_cnt = 0;
-    tunnel_targetted_error_cnt = 0;
 
     ser_over_can_enabled = ser_over_can_enable_flag;
 
@@ -297,17 +301,7 @@ void tRxDroneCan::Tick_ms(void)
         // emit node status message
         send_node_status();
 
-DBG_DC(dbg.puts("\n fc->ser:   ");dbg.puts(u16toBCD_s(tunnel_targetted_fc_to_ser_rate));
-DBG_DC(dbg.puts(" h: "));dbg.puts(u16toBCD_s(tunnel_targetted_handle_rate));
-dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_ser_to_fc_rate));
-DBG_DC(dbg.puts(" s: "));dbg.puts(u16toBCD_s(tunnel_targetted_send_rate));
-tunnel_targetted_fc_to_ser_rate = 0;
-tunnel_targetted_ser_to_fc_rate = 0;
-tunnel_targetted_handle_rate = 0;
-tunnel_targetted_send_rate = 0;
-dbg.puts("\n   err tx_fifo, tt: ");dbg.puts(u16toBCD_s(fifo_fc_to_ser_tx_full_error_cnt));
-dbg.puts(" ,  ");dbg.puts(u16toBCD_s(tunnel_targetted_error_cnt));
-dbg.puts("\n        err dc sum: ");dbg.puts(u16toBCD_s(dc_hal_get_stats().error_sum_count));)
+        print_debug_tick();
     }
 }
 
@@ -316,6 +310,24 @@ void tRxDroneCan::Do(void)
 {
     dronecan_receive_frames();
     dronecan_process_tx_queue();
+}
+
+
+void tRxDroneCan::print_debug_tick(void)
+{
+DBG_DC(
+    dbg.puts("\n fc->ser:   ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_rate));dbg.puts(" B/s");
+    dbg.puts(" h: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.handle_rate));
+    dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.ser_to_fc_rate));dbg.puts(" B/s");
+    dbg.puts(" s: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.send_rate));
+    tunnel_targetted_stats.Init();
+    dbg.puts("\n   err tx_fifo: ");dbg.puts(u16toBCD_s(fifo_fc_to_ser_tx_full_error_cnt));
+    dbg.puts(" tt: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.error_cnt));
+    tDcHalStatistics dc_stats = dc_hal_get_stats();
+    dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
+    dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
+    dbg.puts(" rec: ");dbg.puts(utoBCD_s(dc_stats.rec_count));
+)
 }
 
 
@@ -446,7 +458,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 void tRxDroneCan::putbuf(uint8_t* const buf, uint16_t len)
 {
     fifo_ser_to_fc.PutBuf(buf, len);
-    tunnel_targetted_ser_to_fc_rate += len;
+    tunnel_targetted_stats.ser_to_fc_rate += len;
 }
 
 
@@ -458,7 +470,7 @@ bool tRxDroneCan::available(void)
 
 uint8_t tRxDroneCan::getc(void)
 {
-    tunnel_targetted_fc_to_ser_rate++;
+  tunnel_targetted_stats.fc_to_ser_rate++;
     return fifo_fc_to_ser.Get();
 }
 
@@ -656,17 +668,17 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer)
 {
     if (!dronecan.id_is_allcoated()) { // this should never happen, but play it safe
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
     if (uavcan_tunnel_Targetted_decode(transfer, &_p.tunnel_targetted)) { // something is wrong here
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
     if (transfer->source_node_id == 0) { // this should never happen, but play it safe
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
@@ -687,13 +699,13 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
         // when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED &&
             _p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_MAVLINK2) {
-            tunnel_targetted_error_cnt++;
+            tunnel_targetted_stats.error_cnt++;
             return;
         }
     } else
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED) {
-            tunnel_targetted_error_cnt++;
+            tunnel_targetted_stats.error_cnt++;
             return;
         }
     }
@@ -701,7 +713,7 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     // memorize the node_id of the sender, this is most likely our fc (hopefully true)
     // just always respond to whoever sends to us
     if (tunnel_targetted.server_node_id && tunnel_targetted.server_node_id != transfer->source_node_id) {
-        tunnel_targetted_error_cnt++; // not actually an error, we count it here for testing
+        tunnel_targetted_stats.error_cnt++; // not actually an error, we count it here for testing
     }
     tunnel_targetted.server_node_id = transfer->source_node_id;
 
@@ -714,7 +726,7 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
 
     fifo_fc_to_ser.PutBuf(_p.tunnel_targetted.buffer.data, _p.tunnel_targetted.buffer.len);
 
-    tunnel_targetted_handle_rate += _p.tunnel_targetted.buffer.len;
+    tunnel_targetted_stats.handle_rate += _p.tunnel_targetted.buffer.len;
 }
 
 
@@ -746,7 +758,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
         _buf,
         len);
 
-    tunnel_targetted_send_rate += _p.tunnel_targetted.buffer.len;
+    tunnel_targetted_stats.send_rate += _p.tunnel_targetted.buffer.len;
 }
 
 
