@@ -439,11 +439,11 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         len);
 
 #if 0
-    _p.flex_debug.id = 110; // we just grab it, PR is pending
+    _p.flex_debug.id = DRONECAN_PROTOCOL_FLEXDEBUG_MLRS_RESERVE_START; // we got this officially
     memset(_p.flex_debug.u8.data, 0, 255);
 
     static uint8_t cnt = 0;
-    _p.flex_debug.u8.data[0] = cnt++;
+    _p.flex_debug.u8.data[0] = cnt++; // currently just something to test
     _p.flex_debug.u8.len = 1;
 
     len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf);
