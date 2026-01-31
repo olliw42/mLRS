@@ -486,7 +486,7 @@ void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 
 void remove_leading_zeros(char* const s)
 {
-uint16_t i, len;
+int16_t i, len; // int16 to avoid underflow in len -1
 
     len = strlen(s);
     for (i = 0; i < len - 1; i++) {
@@ -498,6 +498,8 @@ uint16_t i, len;
 
 void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
+    if (slen > 67) slen = 67; // should not happen, but play it safe
+
     memset(Power_optstr, 0, slen);
 
     char optstr[67+2] = {};
