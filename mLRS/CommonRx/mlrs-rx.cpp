@@ -638,8 +638,8 @@ INITCONTROLLER_END
         }
         sx.SetRfFrequency(fhss.GetCurrFreq());
         sx2.SetRfFrequency(fhss.GetCurrFreq2());
-        IF_ANTENNA1(sx.SetToRx(0)); // single without tmo
-        IF_ANTENNA2(sx2.SetToRx(0));
+        IF_ANTENNA1(sx.SetToRx());
+        IF_ANTENNA2(sx2.SetToRx());
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
