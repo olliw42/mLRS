@@ -52,7 +52,7 @@ class tRxDroneCan
     void flush(void);
     uint16_t bytes_available(void);
 
-    void handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer); // ins not needed
+    void handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer); // ins (= instance) not needed
     void send_tunnel_targetted(void);
 
     bool id_is_allcoated(void);

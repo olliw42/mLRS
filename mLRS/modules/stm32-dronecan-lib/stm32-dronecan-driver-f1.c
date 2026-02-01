@@ -13,7 +13,7 @@
 
 #ifdef HAL_CAN_MODULE_ENABLED
 
-#error The F1 CAN driver is most likely out of date and needs revisting !
+#error The F1 CAN driver is likely out of date and needs revisting !
 
 #include "stm32-dronecan-driver.h"
 #include <string.h>
@@ -48,7 +48,7 @@ static void _process_error_status(void)
 
     if ((esr & CAN_ESR_LEC) != 0) {
         CLEAR_BIT(hcan.Instance->ESR, CAN_ESR_LEC);
-        dc_hal_stats.error_count++;
+        dc_hal_stats.error_sum_count++;
 
         if (dc_hal_abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
             HAL_CAN_AbortTxRequest(&hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
@@ -62,6 +62,7 @@ static void _process_error_status(void)
 //-------------------------------------------------------
 
 int16_t dc_hal_init(
+    DC_HAL_CAN_ENUM can_instance, // irrelevant for STM32F1
     const tDcHalCanTimings* const timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
@@ -156,7 +157,7 @@ int16_t dc_hal_start(void)
 // Transmit
 //-------------------------------------------------------
 
-int16_t dc_hal_transmit(const CanardCANFrame* const frame)
+int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms) // tnow_ms irrelevant for STM32F1
 {
     if (frame == NULL) {
         return -DC_HAL_ERROR_INVALID_ARGUMENT;
@@ -215,6 +216,12 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame)
 //-------------------------------------------------------
 // Receive
 //-------------------------------------------------------
+
+#ifdef DRONECAN_USE_RX_ISR
+int16_t dc_hal_enable_isr(void) { return 0; }
+void dc_hal_rx_flush(void) {}
+#endif
+
 
 int16_t dc_hal_receive(CanardCANFrame* const frame)
 {
@@ -343,9 +350,9 @@ int16_t dc_hal_compute_timings(
     }
 
     // determined using original libcanard function
-    timings->bit_rate_prescaler = 4;
+    timings->bit_rate_prescaler = 4; // -> tq = 36/4 = 9
     timings->bit_segment_1 = 7;
-    timings->bit_segment_2 = 1;
+    timings->bit_segment_2 = 1; // -> SP = (1 + BS1)/(1 + BS1 + BS2) = 8/9 = 88.89%
     timings->sync_jump_width = 1;
 
     return 0;

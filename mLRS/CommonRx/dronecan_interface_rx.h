@@ -27,8 +27,7 @@
     #warning FDCAN uses clock PCLK1 !
     // #error SystemClock_Config() settings are incorrect for FDCAN ! // un-comment if this should be an error
   #elif (PLL_PLLN == 80) && (PLL_PLLQ == RCC_PLLQ_DIV4)
-//    #define CAN_USE_FDCAN_CLOCK_PLL
-    #define CAN_USE_FDCAN_CLOCK_PCLK1
+    #define CAN_USE_FDCAN_CLOCK_PLL
   #else
     #error SystemClock_Config() settings are incorrect for FDCAN !
   #endif
@@ -58,12 +57,16 @@ extern tGlobalConfig Config;
 //#define DRONECAN_PREFERRED_NODE_ID  68
 #define DRONECAN_PREFERRED_NODE_ID  RX_DRONECAN_PREFERRED_NODE_ID // moved to common_conf.h
 
+#ifdef STM32G4
 #define CANARD_POOL_SIZE  4096
+#elif defined STM32F1
+#define CANARD_POOL_SIZE  1024
+#endif
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
 
 CanardInstance canard;
-uint8_t canard_memory_pool[CANARD_POOL_SIZE]; // doing this static leads to crash in full mLRS code !?
+uint8_t canard_memory_pool[CANARD_POOL_SIZE];
 
 
 void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
@@ -74,7 +77,7 @@ void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
 }
 
 
-// that's the same as used in fhss lib, is Microsoft Visual/Quick C/C++'s
+// this is the same as used in fhss lib, is Microsoft Visual/Quick C/C++'s
 uint16_t dronecan_prng(void)
 {
 static uint32_t _seed = 1234;
@@ -87,7 +90,7 @@ const uint32_t m = 2147483648;
 }
 
 
-// receive one frame, only called from isr context
+// receive one frame, called in Do() (non-isr context)
 void dronecan_receive_frames(void)
 {
 CanardCANFrame frame;
@@ -99,12 +102,12 @@ CanardCANFrame frame;
         }
         if (res <= 0) break; // no receive or error
         res = canardHandleRxFrame(&canard, &frame, micros64()); // 0: ok, <0: error
-        return; // only do one
+        return; // only do one frame
     }
 }
 
 
-// transmits all frames from the TX queue, for calling from non-isr context
+// transmits all frames from the TX queue, called in Do() (non-isr context)
 void dronecan_process_tx_queue(void)
 {
 const CanardCANFrame* frame;
@@ -116,12 +119,12 @@ const CanardCANFrame* frame;
         if (res != 0) { // successfully submitted or error, so drop the frame
             canardPopTxQueue(&canard);
         }
-        return; // only do one
+        return; // only do one frame
     }
 }
 
 
-// DroneCAN/Libcanard call back, forward declaration
+// DroneCAN/Libcanard callback, forward declaration
 bool dronecan_should_accept_transfer(
     const CanardInstance* const ins,
     uint64_t* const out_data_type_signature,
@@ -130,7 +133,7 @@ bool dronecan_should_accept_transfer(
     uint8_t source_node_id);
 
 
-// DroneCAN/Libcanard call back, forward declaration
+// DroneCAN/Libcanard callback, forward declaration
 void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* const transfer);
 
 
@@ -180,7 +183,6 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
         // canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
     } else {
         // ArduPilot's MAVLink via CAN seems to need a fixed node id, so don't do dynamic id allocation
-        // TODO: Is this still true with latest AP ?
         canardSetLocalNodeID(&canard, DRONECAN_PREFERRED_NODE_ID);
     }
     node_id_allocation.is_running = (canardGetLocalNodeID(&canard) == 0);
@@ -207,7 +209,7 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 
 void tRxDroneCan::Start(void)
 {
-    // Hum?? it somehow does not work to call dc_hal_enable_isr() here ??
+    // hum?? it somehow does not work to call dc_hal_enable_isr() here ??
     dc_hal_rx_flush();
     DBG_DC(dbg.puts("\nCAN started");)
 }
@@ -269,7 +271,7 @@ uint8_t filter_num = 0;
 }
 
 
-// This function is called at 1 ms rate from the main loop
+// this function is called at 1 ms rate from the main loop
 void tRxDroneCan::Tick_ms(void)
 {
     uint64_t tnow_us = micros64(); // call it every ms to ensure it is updated
@@ -375,13 +377,14 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     // it goes from 0 ... 255
     // so we use the same conversion as in e.g. RADIO_STATUS, so that ArduPilot shows us (nearly) the same value
 
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE  28 // 4+8+16
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_RSSI  0
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_LQ_ACTIVE_ANTENNA  1
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_RSSI_DBM  2
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_SNR  3
+#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_TX_POWER  4
 
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI  0
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ_ACTIVE_ANTENNA  4
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM  8
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR  12
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER  16
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_ACTIVE_ANTENNA_1  0
+#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_ACTIVE_ANTENNA_2  1
 
     _p.rc_input.quality = 0;
     if (connected()) {
@@ -389,10 +392,12 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
             // send LQ, RSSI_DBM, SNR round robin
             static uint8_t slot = UINT8_MAX;
             INCc(slot, 3);
-            if (slot == 1) { // LQ
+            if (slot == 1) { // LQ and active antenna
                 _p.rc_input.quality = stats.GetLQ_rc();
-                if (stats.last_antenna == ANTENNA_2) _p.rc_input.quality |= 0x80;
-                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ_ACTIVE_ANTENNA;
+                if (stats.last_antenna == ANTENNA_2) {
+                    _p.rc_input.quality |= (DRONECAN_SENSORS_RC_RCINPUT_QUALITY_ACTIVE_ANTENNA_2 << 7);
+                }
+                _p.rc_input.status += (DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_LQ_ACTIVE_ANTENNA << 2);
             } else
             if (slot == 2) { // SNR or TX_POWER
                 static int8_t power_dbm_last = 125;
@@ -403,14 +408,14 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
                     tlast_ms = tnow_ms;
                     power_dbm_last = power_dbm;
                     _p.rc_input.quality = dronecan_cvt_power(power_dbm);
-                    _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER;
+                    _p.rc_input.status += (DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_TX_POWER << 2);
                 } else {
                     _p.rc_input.quality = 128 + stats.GetLastSnr();
-                    _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR;
+                    _p.rc_input.status += (DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_SNR << 2);
                 }
             } else { // slot 0: RSSI_DBM
                 _p.rc_input.quality = crsf_cvt_rssi_rx(stats.GetLastRssi());
-                _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM;
+                _p.rc_input.status += (DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE_RSSI_DBM << 2);
             }
         } else {
             // just send RSSI
@@ -705,7 +710,7 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
         // ArduPilot <= v4.5.x doesn't set protocol correctly, so we cannot generally check
         // -> we check only when it is set
-        // when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
+        // TODO: when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED &&
             _p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_MAVLINK2) {
             tunnel_targetted_stats.error_cnt++;

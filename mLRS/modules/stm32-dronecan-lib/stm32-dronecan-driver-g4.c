@@ -287,7 +287,6 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms)
     pTxHeader.IdType = FDCAN_EXTENDED_ID;
     pTxHeader.TxFrameType = FDCAN_DATA_FRAME;
 
-    //pTxHeader.DataLength = (uint32_t)frame->data_len << 16;
     pTxHeader.DataLength = (uint32_t)_dlc_from_data_len(frame->data_len) << 16;
 
     HAL_StatusTypeDef hres = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan, &pTxHeader, frame->data);
@@ -380,9 +379,6 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         dronecan_rxbuf[next].r1 = r1;
         RxAddress++;
         // copy all data bytes based on actual DLC (G4 message RAM supports 64 bytes)
-        //dronecan_rxbuf[next].data_32[0] = *RxAddress;
-        //RxAddress++;
-        //dronecan_rxbuf[next].data_32[1] = *RxAddress;
         uint8_t dlc = (r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
         uint8_t data_len = _data_len_from_dlc(dlc);
         uint8_t word_len = (data_len + 3) / 4; // round up to full words
@@ -567,14 +563,11 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
     frame->id |= CANARD_CAN_FRAME_EFF;
 
     // convert DLC to actual byte count
-    //frame->data_len = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
     uint32_t dlc = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
     frame->data_len = _data_len_from_dlc(dlc);
     if (frame->data_len > CANARD_CAN_FRAME_MAX_DATA_LEN) frame->data_len = CANARD_CAN_FRAME_MAX_DATA_LEN; // should not happen, but play it safe
 
     // copy data bytes, and zero-fill
-//    memset((uint8_t*)frame->data, 0, 8);
-//    memcpy((uint8_t*)frame->data, (uint8_t*)dronecan_rxbuf[rxreadpos].data, frame->data_len);
     for (uint8_t n = 0; n < CANARD_CAN_FRAME_MAX_DATA_LEN; n++) {
         frame->data[n] = (n < frame->data_len) ? dronecan_rxbuf[rxreadpos].data[n] : 0;
     }
@@ -838,7 +831,6 @@ int16_t dc_hal_compute_timings(
 
     return 0;
 }
-
 
 
 /*

@@ -27,7 +27,7 @@ extern "C" {
 
 #ifdef STM32G4
 #if defined CAN_USE_FDCAN1_PA11PA12
-    #define CAN_DC_HAL_INTFC    DC_HAL_CAN1
+    #define CAN_DC_HAL_INTFC    DC_HAL_CAN1 // TODO: this is currently defined in stm32-dronecan-driver.h
     #define CAN_RX_IO           IO_PA11
     #define CAN_TX_IO           IO_PA12
 #elif defined CAN_USE_FDCAN2_PB5PB6
@@ -79,15 +79,15 @@ void can_init(void)
         dbg.puts("\nERROR: Solution for CAN timings could not be found");
         return;
     }
-    dbg.puts("\n  PCLK1: ");dbg.puts(u32toBCD_s(HAL_RCC_GetPCLK1Freq()));
+
+    DBG_DC(dbg.puts("\n  PCLK1: ");dbg.puts(u32toBCD_s(HAL_RCC_GetPCLK1Freq()));
     dbg.puts("\n  Prescaler: ");dbg.puts(u16toBCD_s(timings.bit_rate_prescaler));
     dbg.puts("\n  BS1: ");dbg.puts(u8toBCD_s(timings.bit_segment_1));
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
-    dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));
+    dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width)));
     // 4, 7, 1, 1
 
-    //res = canardSTM32Init(&timings, CanardSTM32IfaceModeNormal);
-    res = dc_hal_init(&timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    res = dc_hal_init(DC_HAL_CAN1, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
     if (res < 0) {
         dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));
         return;
