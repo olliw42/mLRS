@@ -13,12 +13,10 @@
 #include <Arduino.h>
 #ifdef CONFIG_IDF_TARGET_ESP32C3
 #include "esp_task_wdt.h"
-#endif
-
-
 // undefine MIN/MAX to prevent redefinition warning when stdstm32.h is included later
 #undef MIN
 #undef MAX
+#endif
 
 
 #define __NOP() _NOP()
