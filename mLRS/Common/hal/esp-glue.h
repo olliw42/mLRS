@@ -15,6 +15,10 @@
 #include "esp_task_wdt.h"
 #endif
 
+// undefine MIN/MAX from to prevent redefinition when stdstm32.h is included later
+#undef MIN
+#undef MAX
+
 #define __NOP() _NOP()
 
 
