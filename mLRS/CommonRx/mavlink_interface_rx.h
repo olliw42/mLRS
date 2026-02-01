@@ -63,13 +63,14 @@ class tRxAutoPilot
 
     uint8_t sysid; // 0 indicates autopilot not detected
   private:
-    uint8_t autopilot; // this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
-    uint32_t flight_sw_version; // 0 indicates not known
-    uint32_t middleware_sw_version;
-    uint32_t version;
+    uint8_t autopilot; // from HEARTBEAT, this is the equally named field in HEARTBEAT message, a bit confusing, but it's how it is
+    uint32_t flight_sw_version; // from AUTOPILOT_VERSION, 0 indicates versions not known, >0 disables request
+    uint32_t middleware_sw_version; // from AUTOPILOT_VERSION
+    uint32_t version; // format e.g. 040600, we create it from flight_sw_version
+
     uint32_t heartbeat_tlast_ms;
     uint32_t autopilot_version_request_tlast_ms;
-    bool request_autopilot_version;
+    bool trigger_autopilot_version_request;
 };
 
 
@@ -161,7 +162,7 @@ class tRxMavlink
     void send_cmd_ack(void);
 
     // to handle autopilot detection
-    void send_autopilot_version_request(void);
+    void send_autopilot_version_request(void);// response is AUTO_PILOTVERSION message
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -1202,13 +1203,13 @@ void tRxAutoPilot::Init(void)
 {
     sysid = 0; // 0 indicates autopilot not detected
     autopilot = UINT8_MAX;
-    flight_sw_version = 0; // 0 indicates not known
+    flight_sw_version = 0; // 0 indicates versions not known, enables requesting AUTOPILOT_VERSION
 
     middleware_sw_version = 0; // 0 is native ArduPilot
     version = 0;
     heartbeat_tlast_ms = 0;
     autopilot_version_request_tlast_ms = 0;
-    request_autopilot_version = false;
+    trigger_autopilot_version_request = false;
 }
 
 
@@ -1219,9 +1220,11 @@ void tRxAutoPilot::Do(void)
     // we currently do this only if we expect an ArduPilot, TODO: PX4
     if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) return;
 
+    if (!sysid) return; // from here on assume we have seen the autopilot's heartbeat
+
     uint32_t tnow_ms = millis32(); // we need to get fresh time, since a HEARTBEAT might be received in the main Do loop
 
-    if (sysid && ((tnow_ms - heartbeat_tlast_ms) > 2500)) { // we lost connection to our fc
+    if ((tnow_ms - heartbeat_tlast_ms) > 2500) { // we lost connection to our fc
 //dbg.puts("\nlost heartbeat");
         Init();
         return;
@@ -1230,10 +1233,10 @@ void tRxAutoPilot::Do(void)
     // we want to request for AUTOPILOT_VERSION when
     // sysid > 0 (which means we see a fc) and
     // flight_sw_version == 0 (which means we don't know the version)
-    if (sysid && !flight_sw_version) {
+    if (!flight_sw_version) {
         if ((tnow_ms - autopilot_version_request_tlast_ms) > 250) {
             autopilot_version_request_tlast_ms = tnow_ms;
-            request_autopilot_version =  true;
+            trigger_autopilot_version_request = true;
         }
     }
 }
@@ -1241,8 +1244,8 @@ void tRxAutoPilot::Do(void)
 
 bool tRxAutoPilot::RequestAutopilotVersion(void)
 {
-    if (request_autopilot_version) {
-        request_autopilot_version = false;
+    if (trigger_autopilot_version_request) {
+        trigger_autopilot_version_request = false;
 //dbg.puts("\nsend request");
         return true;
     }
@@ -1296,7 +1299,7 @@ void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
     fmav_autopilot_version_t payload;
     fmav_msg_autopilot_version_decode(&payload, msg);
 
-    flight_sw_version = payload.flight_sw_version;
+    flight_sw_version = payload.flight_sw_version; // should be >0, disables request
 
     uint32_t maj = (flight_sw_version & 0xFF000000) >> 24;
     uint32_t min = (flight_sw_version & 0x00FF0000) >> 16;
