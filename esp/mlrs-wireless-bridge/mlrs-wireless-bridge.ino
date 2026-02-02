@@ -204,7 +204,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #endif
 
 #ifndef ESP8266
-#ifdef ARDUINO_ESP32C3_DEV
+#ifdef CONFIG_IDF_TARGET_ESP32C3
 #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
     #error For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager.
 #endif
@@ -214,7 +214,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
     #warning Consider upgrading your ESP Arduino Core !
 #endif
-#endif // ARDUINO_ESP32C3_DEV
+#endif // CONFIG_IDF_TARGET_ESP32C3
 #if defined USE_AT_MODE && (defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3) && \
     !defined ARDUINO_PARTITION_no_ota
     #error Partition Scheme must be "No OTA (Large APP)", "No OTA (2MB APP/2MB SPIFFS)" or similar!
