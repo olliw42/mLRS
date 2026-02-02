@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 10. Dez. 2025
+// 2. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -76,7 +76,7 @@ Troubleshooting:
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
 //#define MODULE_ADAFRUIT_QT_PY_ESP32_S2        // board: Adafruit QT Py ESP32-S2
-//#define MODULE_TTGO_MICRO32                   // board: ESP32 PICO-D4
+#define MODULE_TTGO_MICRO32                   // board: ESP32 PICO-D4
 //#define MODULE_M5STAMP_C3_MATE                // board: ESP32C3 Dev Module
 //#define MODULE_M5STAMP_C3U_MATE               // board: ESP32C3 Dev Module
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // uses inverted serial
@@ -369,6 +369,58 @@ void serialFlushRx(void)
 
 
 //-------------------------------------------------------
+// Clients list (for UDP)
+//-------------------------------------------------------
+
+#if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 1) // for AT commands we require UDP be available
+
+#define UDP_CLIENTS_COUNT_MAX  3
+
+class tClientList {
+  public:
+    struct tUdpClient {
+        IPAddress ip;
+        int port;
+        unsigned long tlast_ms; // to remove unseen clients 
+    };
+
+    void Init(void) {
+        cnt = 0;
+        for (int i = 0; i < UDP_CLIENTS_COUNT_MAX; i++) {
+            clients[i].port = -1; // indicates that it is empty
+            clients[i].tlast_ms = 0;
+        }
+    }
+
+    void Add(IPAddress ip, int port) {
+        for (int i = 0; i < cnt; i++) {
+            if (clients[i].ip == ip && clients[i].port == port) return; // found, is already in list
+        }
+        for (int i = 0; i < UDP_CLIENTS_COUNT_MAX; i++) {
+            if (clients[i].port < 0) { // empty spot found
+                clients[i].ip = ip;
+                clients[i].port = port;
+                clients[i].tlast_ms = millis();
+                return; // added
+            }
+        }
+    }
+
+    int Cnt(void) { return cnt; }
+    IPAddress Ip(int i) { return clients[i].ip; } // TODO: skip empty slots
+    int Port(int i) { return clients[i].port; }
+
+  private:
+    int cnt;
+    tUdpClient clients[UDP_CLIENTS_COUNT_MAX];
+};
+
+tClientList udp_client_list;
+
+#endif // defined USE_AT_MODE || (WIRELESS_PROTOCOL == 1)
+
+
+//-------------------------------------------------------
 // setup() and loop()
 //-------------------------------------------------------
 
@@ -457,6 +509,7 @@ if (g_protocol == WIRELESS_PROTOCOL_TCP || g_protocol == WIRELESS_PROTOCOL_UDP) 
         ip_udp[3] = 255; // start with broadcast, the subnet mask is 255.255.255.0 so just last octet needs to change
 #endif
         udp.begin(port_udp);
+        udp_client_list.Init();
     }
 
 } else
@@ -728,13 +781,17 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
+        if (len > 0) { // let's assume that this is the GCS, so forward
+            SERIAL.write(buf, len);
+        }
+        udp_client_list.Add(udp.remoteIP(), udp.remotePort()); 
+/*        SERIAL.write(buf, len);
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
         if (!is_connected) { // first received UDP packet
             ip_udp = udp.remoteIP(); // stop broadcast, switch to unicast to avoid Aurdino performance issue
             port_udp = udp.remotePort();
         }
-#endif
+#endif */
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
@@ -748,9 +805,14 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
         serial_data_received_tfirst_ms = tnow_ms;
 
         int len = SERIAL.read(buf, sizeof(buf));
-        udp.beginPacket(ip_udp, port_udp);
+/*        udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
-        udp.endPacket();
+        udp.endPacket(); */
+        for (int i = 0; i < udp_client_list.Cnt(); i++) {
+            udp.beginPacket(udp_client_list.Ip(i), udp_client_list.Port(i));
+            udp.write(buf, len);
+            udp.endPacket();
+        }
     }
 
 } else
