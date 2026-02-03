@@ -73,25 +73,19 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
 
     if (power_switch_channel + 3 >= RC_DATA_LEN) while(1){} // should not happen
 
-    uint16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
+    int16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
 
     // linear mapping: divide RC range evenly across available power levels
     // rc_val: 11 bits, 1 .. 1024 .. 2047 for +-120%
     // use safe range: ~200 (-100%) to ~1848 (+100%)
     // low stick = low power, high stick = high power
+    // +1 in denominator: range 200..1848 inclusive has 1649 values, ensures max input maps to max index
 
-    uint8_t num_levels = power + 1;  // number of power levels available (0 to power)
+    int16_t num_levels = power + 1;  // number of power levels available (0 to power)
+    int16_t new_idx = ((rc_val - 200) * num_levels) / (1848 - 200 + 1); // map linearly
 
-    // clamp rc_val to usable range
-    int16_t clamped = (int16_t)rc_val;
-    if (clamped < 200) clamped = 200;
-    if (clamped > 1848) clamped = 1848;
-
-    // map linearly
-    int8_t new_idx = ((clamped - 200) * num_levels) / (1848 - 200 + 1);
-
-    if (new_idx < 0) new_idx = 0;
-    if (new_idx > (int8_t)power) new_idx = (int8_t)power;
+    if (new_idx < 0) new_idx = 0; // constrain to min
+    if (new_idx > power) new_idx = power; // constrain by Setup Power setting
 
     rfpower_new_idx = new_idx;
 }
