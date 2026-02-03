@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2026-01-10.01'
+local version = '2026-02-03.01'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -649,7 +649,7 @@ local function doParamLoop()
                 elseif disableParamLoadErrorWarnings then -- ignore any errors
                     DEVICE_PARAM_LIST_complete = true
                 else
-                    -- Huston, we have a proble,
+                    -- Huston, we have a problem
                     DEVICE_PARAM_LIST_complete = false
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end
@@ -1242,6 +1242,9 @@ local function drawPageMain()
     --if not DEVICE_PARAM_LIST_complete then
     if DEVICE_DOWNLOAD_is_running then
         lcd.drawText(130, y+20, "parameters loading ...", g_textColor+BLINK+INVERS)
+        local idx = DEVICE_PARAM_LIST_current_index
+        if idx < 0 then idx = 0 end
+        lcd.drawText(330, y+20, "("..tostring(idx)..")", g_textColor)
         return
     end
 
