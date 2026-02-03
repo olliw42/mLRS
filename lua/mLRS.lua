@@ -18,7 +18,6 @@ local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
 
 -- experimental
 local paramLoadDeadTime_10ms = 300 -- 150 was a bit too short, also 200 was too short
-local disableParamLoadErrorWarnings = false
 
 
 ----------------------------------------------------------------------
@@ -643,10 +642,8 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].options = {}
                 DEVICE_PARAM_LIST[index].allowed_mask = 65536
                 DEVICE_PARAM_LIST[index].editable = true
-            elseif index == 255 then -- EOL (end of list :)
+            elseif index == 255 then -- EOL (end of list)
                 if DEVICE_PARAM_LIST_errors == 0 then
-                    DEVICE_PARAM_LIST_complete = true
-                elseif disableParamLoadErrorWarnings then -- ignore any errors
                     DEVICE_PARAM_LIST_complete = true
                 else
                     -- Huston, we have a problem
