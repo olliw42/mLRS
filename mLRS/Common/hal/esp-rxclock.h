@@ -22,7 +22,6 @@
 //********************************************************
 #ifndef ESP_RXCLOCK_H
 #define ESP_RXCLOCK_H
-#include <cstdint>
 #pragma once
 
 #include <Arduino.h>
@@ -42,7 +41,7 @@
   #define EXIT_CRITICAL_ISR()     taskEXIT_CRITICAL_ISR(&rx_spinlock)
   #define ENTER_CRITICAL_API()    taskENTER_CRITICAL(&rx_spinlock)
   #define EXIT_CRITICAL_API()     taskEXIT_CRITICAL(&rx_spinlock)
-#else
+#elif defined ESP8266
   typedef uint32_t tick_t;        // wraps at ~71 minutes
   #define GET_MICROS()            micros()
   #define ENTER_CRITICAL_ISR()    // not needed in ISR on ESP8266
@@ -54,7 +53,7 @@
 // time comparison: ESP32 uses simple >= (64-bit), ESP8266 needs signed diff for wraparound
 #ifdef ESP32
   #define TIME_GE(now, target)  ((now) >= (target))
-#else
+#elif defined ESP8266
   #define TIME_GE(now, target)  ((int32_t)((now) - (target)) >= 0)
 #endif
 
@@ -84,7 +83,7 @@ static void IRAM_ATTR schedule_next(tick_t now)
 #ifdef ESP32
     tick_t diff_tick = next_tick_us - now;
     tick_t diff_rx = next_rx_us - now;
-#else
+#elif defined ESP8266
     // cast to signed: uint32_t subtraction can underflow near timer wrap
     int32_t diff_tick = (int32_t)(next_tick_us - now);
     int32_t diff_rx = (int32_t)(next_rx_us - now);
@@ -97,7 +96,7 @@ static void IRAM_ATTR schedule_next(tick_t now)
 
 #ifdef ESP32
     esp_timer_start_once(event_timer, delay_us);
-#else
+#elif defined ESP8266
     timer1_write(delay_us * 5);
 #endif
 }
@@ -139,7 +138,7 @@ static void IRAM_ATTR event_callback(void)
 // wrappers: esp_timer requires void(*)(void*), timer1 requires void(*)(void)
 #ifdef ESP32
 static void IRAM_ATTR esp32_timer_callback(void* arg) { event_callback(); }
-#else
+#elif defined ESP8266
 void IRAM_ATTR timer1_isr() { event_callback(); }
 #endif
 
@@ -179,7 +178,7 @@ void tRxClock::Init(uint16_t period_ms)
     if (esp_timer_create(&args, &event_timer) != ESP_OK) {
         while (1) {} // fatal: timer creation failed, halt
     }
-#else
+#elif defined ESP8266
     timer1_attachInterrupt(timer1_isr);
     timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
 #endif
