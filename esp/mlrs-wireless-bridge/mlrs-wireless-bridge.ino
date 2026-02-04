@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 2. Feb. 2026
+// 5. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -76,7 +76,7 @@ Troubleshooting:
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
 //#define MODULE_ADAFRUIT_QT_PY_ESP32_S2        // board: Adafruit QT Py ESP32-S2
-#define MODULE_TTGO_MICRO32                   // board: ESP32 PICO-D4
+//#define MODULE_TTGO_MICRO32                   // board: ESP32 PICO-D4
 //#define MODULE_M5STAMP_C3_MATE                // board: ESP32C3 Dev Module
 //#define MODULE_M5STAMP_C3U_MATE               // board: ESP32C3 Dev Module
 //#define MODULE_M5STAMP_C3U_MATE_FOR_FRSKY_R9M // uses inverted serial
@@ -781,10 +781,6 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        if (len > 0) { // let's assume that this is the GCS, so forward
-            SERIAL.write(buf, len);
-        }
-        udp_client_list.Add(udp.remoteIP(), udp.remotePort()); 
 /*        SERIAL.write(buf, len);
 #ifdef WIFI_USE_BROADCAST_FOR_UDP
         if (!is_connected) { // first received UDP packet
@@ -792,6 +788,10 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
             port_udp = udp.remotePort();
         }
 #endif */
+        if (len > 0) { // let's assume that this is the GCS, so forward
+            SERIAL.write(buf, len);
+        }
+        udp_client_list.Add(udp.remoteIP(), udp.remotePort()); 
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
@@ -808,6 +808,11 @@ if (g_protocol == WIRELESS_PROTOCOL_UDP || g_protocol == WIRELESS_PROTOCOL_UDPST
 /*        udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket(); */
+        if (udp_client_list.Cnt() == 0) {
+            udp.beginPacket(ip_udp, port_udp);
+            udp.write(buf, len);
+            udp.endPacket();
+        } else
         for (int i = 0; i < udp_client_list.Cnt(); i++) {
             udp.beginPacket(udp_client_list.Ip(i), udp_client_list.Port(i));
             udp.write(buf, len);
