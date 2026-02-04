@@ -227,30 +227,6 @@ void tWhileTransmit::handle_once(void)
 #endif
 }
 
-
-//-------------------------------------------------------
-// Some helper
-//-------------------------------------------------------
-
-void start_bind(void)
-{
-    if (!bind.IsInBind()) bind.StartBind();
-}
-
-
-void stop_bind(void)
-{
-    if (bind.IsInBind()) bind.StopBind();
-}
-
-
-void enter_system_bootloader(void)
-{
-    //disp.DrawBoot();
-    //BootLoaderInit();
-}
-
-
 //-------------------------------------------------------
 // Init
 //-------------------------------------------------------
@@ -269,32 +245,19 @@ void init_hw(void)
     __disable_irq();
 
     delay_init();
-    //systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
 
     leds_init();
     button_init();
-    //esp_init();
-    //fiveway_init();
 
     serial.Init();
     serial2.Init();
     comport.Init();
 
-    //buzzer.Init();
-    //fan.Init();
-    //dbg.Init();
-
     setup_init();
-
-    //esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
 
     sx.Init(); // these take time
     sx2.Init();
-
-    //mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
-    //crsf.Init(Config.UseCrsf);
-    //in.Init(Config.UseIn);
 
     __enable_irq();
 }
@@ -501,12 +464,9 @@ void prepare_transmit_frame(uint8_t antenna)
 
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
-    frame_stats.ack = rarq.AckSeqNo();
-    frame_stats.antenna = stats.last_antenna;
-    frame_stats.transmit_antenna = antenna;
-    frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ_rc = UINT8_MAX; // Tx has no valid value
-    frame_stats.LQ_serial = stats.GetLQ_serial();
+    frame_stats.broadcast = stats.broadcast;
+    frame_stats.sys_id = stats.sys_id;
+    frame_stats.show_group = stats.show_group;
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
@@ -519,12 +479,6 @@ void prepare_transmit_frame(uint8_t antenna)
 void process_received_frame(bool do_payload, tRxFrame* const frame)
 {
     bool accept_payload = rarq.AcceptPayload();
-
-    stats.received_antenna = frame->status.antenna;
-    stats.received_transmit_antenna = frame->status.transmit_antenna;
-    stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    stats.received_LQ_rc = frame->status.LQ_rc;
-    stats.received_LQ_serial = frame->status.LQ_serial;
 
     if (!do_payload) {
         return;
@@ -609,11 +563,6 @@ void handle_receive_none(void) // RX_STATUS_NONE
 
 void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
 {
-    //if (bind.IsInBind()) {
-    //    bind.do_transmit(antenna);
-    //    return;
-    //}
-
     stats.transmit_seq_no++;
 
     prepare_transmit_frame(antenna);
@@ -622,11 +571,6 @@ void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to
 
 void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
 {
-    //if (bind.IsInBind()) {
-    //   sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-    //   return;
-    //}
-
     sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
 }
 
@@ -714,6 +658,10 @@ RESTARTCONTROLLER
     serial.SetBaudRate(Config.SerialBaudrate);
     serial2.SetBaudRate(Config.SerialBaudrate);
 
+    stats.broadcast = 0;
+    stats.sys_id = 7;
+    stats.show_group = 0;
+
     // startup sign of life
     leds.Init();
 
@@ -723,7 +671,6 @@ RESTARTCONTROLLER
     irq_status = irq2_status = 0;
     IF_SX(sx.StartUp(&Config.Sx));
     IF_SX2(sx2.StartUp(&Config.Sx2));
-    bind.Init();
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
     rfpower.Init();
@@ -805,34 +752,6 @@ INITCONTROLLER_END
 
             DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-            //if (!tick_1hz) {
-            //    if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_RX_LQ && connect_occured_once) {
-            //        buzzer.BeepLQ(stats.received_LQ_rc);
-            //    }
-            //}
-
-            //bind.Tick_ms();
-            //disp.Tick_ms(); // can take long
-            //fan.SetPower(sx.RfPower_dbm());
-            //fan.Tick_ms();
-
-            //if (!tick_1hz) {
-            //    dbg.puts(".");
-/*                dbg.puts("\nTX: ");
-                dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
-                dbg.puts("(");
-                dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
-                dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-                dbg.puts("),");
-                dbg.puts(u8toBCD_s(stats.received_LQ_rc)); dbg.puts(", ");
-
-                dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
-                dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-                dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
-
-                dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-                dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-            //}
         } // end of if (!doPreTransmit)
     }
 
@@ -859,7 +778,6 @@ INITCONTROLLER_END
 			do_transmit_send(tdiversity.Antenna());
 			link_state = LINK_STATE_TRANSMIT_WAIT;
 			irq_status = irq2_status = 0;
-			//DBG_MAIN_SLIM(dbg.puts(">");)
 			// auxiliaries
 			crsf.TelemetryStart();
 			whileTransmit.Trigger();
@@ -871,7 +789,6 @@ INITCONTROLLER_END
 			link_state = LINK_STATE_RECEIVE_WAIT;
 			link_rx1_status = link_rx2_status = RX_STATUS_NONE;
 			irq_status = irq2_status = 0;
-			//DBG_MAIN_SLIM(dbg.puts("r");)
 			break;
     }//end of switch(link_state)
 
@@ -881,14 +798,12 @@ IF_SX(
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                //DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq_status & SX_IRQ_RX_DONE) {
                 irq_status = 0;
                 link_rx1_status = do_receive(ANTENNA_1);
-                //DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         }
 
@@ -904,7 +819,6 @@ IF_SX(
             irq_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            //DBG_MAIN_SLIM(dbg.puts("1?");)
         }
     }//end of if(irq_status)
 );
@@ -914,14 +828,12 @@ IF_SX2(
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
                 link_state = LINK_STATE_RECEIVE;
-                //DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq2_status & SX2_IRQ_RX_DONE) {
                 irq2_status = 0;
                 link_rx2_status = do_receive(ANTENNA_2);
-                //DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         }
 
@@ -937,7 +849,6 @@ IF_SX2(
             irq2_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-            //DBG_MAIN_SLIM(dbg.puts("2?");)
         }
     }//end of if(irq2_status)
 );
@@ -1007,7 +918,7 @@ IF_SX2(
                     connect_sync_cnt_max = Config.connect_sync_cnt_max;
                 }
                 if (connect_sync_cnt >= connect_sync_cnt_max) {
-                    if (!SetupMetaData.rx_available && !bind.IsInBind()) {
+                    if (!SetupMetaData.rx_available) {
                         // should not have happen, but does very occasionally happen, so let's cope with
                         // we must have gotten it at least once, on first connect, since we need it
                         // later on we can accept to be gentle and be ok with not getting it again
@@ -1028,19 +939,6 @@ IF_SX2(
             connect_tmo_cnt = CONNECT_TMO_SYSTICKS;
         }
 
-        // we are connected but tmo ran out
-        //if (connected() && !connect_tmo_cnt) {
-        //    // so disconnect
-        //    connect_state = CONNECT_STATE_LISTEN;
-        //    // link_state will be set to LINK_STATE_TRANSMIT below
-        //}
-
-        // we are connected but didn't receive a valid frame
-        //if (connected() && !valid_frame_received) {
-        //    // reset sync counter, relevant if in sync
-        //    //connect_sync_cnt = 0; //isn't needed, right? since when connected we can't be in sync
-        //}
-
         link_state = LINK_STATE_TRANSMIT;
         link_rx1_status = RX_STATUS_NONE;
         link_rx2_status = RX_STATUS_NONE;
@@ -1058,31 +956,6 @@ IF_SX2(
         }
         stats.Next();
         if (!connected()) stats.Clear();
-
-        //if (Setup.Tx[Config.ConfigId].Buzzer == BUZZER_LOST_PACKETS && connect_occured_once && !bind.IsInBind()) {
-        //    if (!valid_frame_received) buzzer.BeepLP();
-        //}
-
-        // store parameters
-        //if (doParamsStore) {
-        //    leds.SetToParamStore();
-        //    setup_store_to_EEPROM();
-        //    GOTO_RESTARTCONTROLLER;
-        //}
-
-        //bind.Do();
-        //switch (bind.Task()) {
-        //case BIND_TASK_CHANGED_TO_BIND:
-        //    bind.ConfigForBind();
-        //    fhss.SetToBind();
-        //    leds.SetToBind();
-        //    connect_state = CONNECT_STATE_LISTEN;
-        //    // link_state was set to LINK_STATE_TRANSMIT already
-         //   break;
-        //case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
-        //}
-
-//dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
 
         return; // link state might have changed, process immediately
     }//end of if(doPreTransmit)

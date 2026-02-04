@@ -48,38 +48,19 @@ void _pack_txframe_w_type(
     // generate header
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
-    frame->status.ack = frame_stats->ack;
     frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
-    frame->status.antenna = frame_stats->antenna;
-    frame->status.transmit_antenna = frame_stats->transmit_antenna;
-    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ_rc = frame_stats->LQ_rc;
-    frame->status.LQ_serial = frame_stats->LQ_serial;
+    frame->status.broadcast = frame_stats->broadcast;
+    if (frame->status.broadcast)
+    {
+    	frame->status.sys_id = 0xFF;
+		frame->status.show_group = 0xFF;
+    }
+    else
+    {
+    	frame->status.sys_id = frame_stats->sys_id;
+		frame->status.show_group = frame_stats->show_group;
+    }
     frame->status.payload_len = payload_len;
-
-    /*
-    // pack rc data
-    // rcData: 0 .. 1024 .. 2047, 11 bits
-    frame->rc1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc1.ch1  = rc->ch[1];
-    frame->rc1.ch2  = rc->ch[2];
-    frame->rc1.ch3  = rc->ch[3];
-
-    frame->rc2.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc2.ch5  = rc->ch[5];
-    frame->rc2.ch6  = rc->ch[6];
-    frame->rc2.ch7  = rc->ch[7];
-
-    frame->rc2.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
-    frame->rc2.ch9  = rc->ch[9] / 8;
-    frame->rc2.ch10 = rc->ch[10] / 8;
-    frame->rc2.ch11 = rc->ch[11] / 8;
-
-    frame->rc1.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-    frame->rc1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
-    frame->rc2.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
-    frame->rc2.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
-    */
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -103,7 +84,6 @@ void pack_txframe(
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
-
 // returns 0 if OK !!
 uint8_t check_txframe(tTxFrame* const frame)
 {
@@ -124,63 +104,12 @@ uint16_t crc;
     return CHECK_OK;
 }
 
-/*
-void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
-{
-    rc->ch[0] = frame->rc1.ch0;
-    rc->ch[1] = frame->rc1.ch1;
-    rc->ch[2] = frame->rc1.ch2;
-    rc->ch[3] = frame->rc1.ch3;
-
-    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
-}
-*/
-
-/*
-void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
-{
-    rc->ch[0] = frame->rc1.ch0;
-    rc->ch[1] = frame->rc1.ch1;
-    rc->ch[2] = frame->rc1.ch2;
-    rc->ch[3] = frame->rc1.ch3;
-
-    rc->ch[4] = frame->rc2.ch4;
-    rc->ch[5] = frame->rc2.ch5;
-    rc->ch[6] = frame->rc2.ch6;
-    rc->ch[7] = frame->rc2.ch7;
-
-    rc->ch[8] = frame->rc2.ch8 * 8;
-    rc->ch[9] = frame->rc2.ch9 * 8;
-    rc->ch[10] = frame->rc2.ch10 * 8;
-    rc->ch[11] = frame->rc2.ch11 * 8;
-
-    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
-    rc->ch[14] = (frame->rc2.ch14 > 1) ? 2047 : ((frame->rc2.ch14 < 1) ? 0 : 1024);
-    rc->ch[15] = (frame->rc2.ch15 > 1) ? 2047 : ((frame->rc2.ch15 < 1) ? 0 : 1024);
-
-    rc->ch[16] = 1024;
-    rc->ch[17] = 1024;
-}
-*/
-
-
 // update header info with new data, keep payload
 void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
 uint16_t crc;
 
     frame->sync_word = Config.FrameSyncWord;
-    // keep !! frame->status.seq_no = frame_stats->seq_no;
-    frame->status.ack = frame_stats->ack;
-    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
-    frame->status.antenna = frame_stats->antenna;
-    frame->status.transmit_antenna = frame_stats->transmit_antenna;
-    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ_rc = frame_stats->LQ_rc;
-    frame->status.LQ_serial = frame_stats->LQ_serial;
-    // keep !! frame->status.payload_len = payload_len;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
@@ -203,13 +132,7 @@ void _pack_rxframe_w_type(
 
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
-    frame->status.ack = frame_stats->ack;
     frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
-    frame->status.antenna = frame_stats->antenna;
-    frame->status.transmit_antenna = frame_stats->transmit_antenna;
-    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.LQ_rc = frame_stats->LQ_rc;
-    frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -378,11 +301,8 @@ void pack_rxcmdframe_rxsetupdata(tRxFrame* const frame, tFrameStats* const frame
 
     rx_setupdata.cmd = FRAME_CMD_RX_SETUPDATA;
 
-    rx_setupdata.firmware_version_u16 = version_to_u16(VERSION);
-    rx_setupdata.setup_layout_u16 = version_to_u16(SETUPLAYOUT);
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
     rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
-    rx_setupdata.actual_diversity = Config.Diversity;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
 
@@ -395,9 +315,6 @@ void pack_rxcmdframe_rxsetupdata(tRxFrame* const frame, tFrameStats* const frame
     for (uint8_t i = 0; i < 8; i++) {
         rx_setupdata.Power_list[i] = (i < RFPOWER_LIST_NUM) ? rfpower_list[i].mW : INT16_MAX;
     }
-    rx_setupdata.Diversity_allowed_mask = SetupMetaData.Rx_Diversity_allowed_mask;
-    rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
-    rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
     _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }

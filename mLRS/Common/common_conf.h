@@ -129,7 +129,7 @@
 #define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
 #define FHSS_NUM_BAND_2P4_GHZ                 12 // 24
 
-#define FRAME_TX_RX_LEN                 73 // we currently only support equal len
+#define FRAME_TX_RX_LEN                 72 // we currently only support equal len
 
 #define CONNECT_TMO_MS                  1250 // 1250 time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
 

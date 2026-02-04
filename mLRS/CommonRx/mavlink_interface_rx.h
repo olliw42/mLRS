@@ -320,7 +320,6 @@ void tRxMavlink::Do(void)
             BootLoaderInit(); // jump to system bootloader
             break;
         case MAV_CMD_START_RX_PAIR:
-            bind.StartBind(); // start binding
             break;
         }
         cmd_ack.command = 0;

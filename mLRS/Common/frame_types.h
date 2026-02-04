@@ -37,74 +37,36 @@ typedef enum {
 typedef struct
 {
     uint8_t seq_no;
-    uint8_t ack;
-    int8_t rssi;
-    uint8_t LQ_rc; // that's the LQ we want to report to the world
-    uint8_t LQ_serial;
-    uint8_t antenna;
-    uint8_t transmit_antenna;
+    uint8_t broadcast;
+    uint8_t sys_id;
+    uint8_t show_group;
 } tFrameStats;
 
-
-#define FRAME_TX_RX_HEADER_LEN  7
+#define FRAME_TX_RX_HEADER_LEN  6
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN    64
-
 
 PACKED(
 typedef struct
 {
     uint8_t seq_no : 3;
-    uint8_t ack : 1;
     uint8_t frame_type : 4;
-    uint32_t antenna : 1;
-    uint32_t rssi_u7 : 7;
-    uint32_t LQ_rc : 7; // only Rx->Tx frame, not Tx->Rx
-    uint32_t LQ_serial : 7;
-    uint32_t transmit_antenna : 1;
-    uint32_t spare : 2;
-    uint32_t payload_len : 7;
-}) tFrameStatus;
+    uint8_t broadcast : 1;
+    uint8_t sys_id;
+    uint8_t show_group;
+    uint8_t spare : 1;
+    uint8_t payload_len : 7;
+}) tFrameStatus; // 4 bytes
 
-
-//-- Tx Frame ----------
-/*
-PACKED(
-typedef struct
-{
-    uint16_t ch0  : 11; // 0 .. 1024 .. 2047, 11 bits
-    uint16_t ch1  : 11;
-    uint16_t ch2  : 11;
-    uint16_t ch3  : 11;
-    uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
-    uint16_t ch13 :  2;
-}) tFrameRcData1; // 6 bytes
-*/
-/*
-PACKED(
-typedef struct
-{
-    uint16_t ch4  : 11; // 0 .. 1024 .. 2047, 11 bits
-    uint16_t ch5  : 11;
-    uint16_t ch6  : 11;
-    uint16_t ch7  : 11;
-    uint16_t ch14 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
-    uint16_t ch15 :  2;
-    uint8_t ch8;        // 0 .. 128 .. 255, 8 bits
-    uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
-    uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
-    uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
-}) tFrameRcData2; // 10 bytes
-*/
 
 PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
-    uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
+    tFrameStatus status; // 4 bytes
+    uint8_t payload[FRAME_TX_PAYLOAD_LEN]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
-}) tTxFrame; // 73 bytes
+}) tTxFrame; // 72 bytes
 
 
 //-- Rx Frame ----------
@@ -113,59 +75,10 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
-    uint8_t payload[64]; // = FRAME_RX_PAYLOAD_LEN
+    tFrameStatus status; // 4 bytes
+    uint8_t payload[FRAME_RX_PAYLOAD_LEN]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
-}) tRxFrame; // 73 bytes
-
-
-//-------------------------------------------------------
-// Bind frames
-// are send on bind frequency in 19 Hz mode
-//-------------------------------------------------------
-
-PACKED(
-typedef struct
-{
-    uint64_t bind_signature; // 8 bytes // different for Tx and Rx
-    uint8_t seq_no : 3;
-    uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
-
-    uint8_t connected : 1;
-    uint8_t spare : 7;
-
-    char BindPhrase_6[6];
-    uint8_t FrequencyBand_XXX : 4; // TODO
-    uint8_t Mode : 4;
-    uint8_t Ortho : 4;
-
-    uint8_t spare1 : 4;
-    uint8_t spare2[53];
-
-    uint16_t crc; // 2 bytes
-}) tTxBindFrame; // 73 bytes
-
-
-PACKED(
-typedef struct
-{
-    uint64_t bind_signature; // 8 bytes // different for Tx and Rx
-    uint8_t seq_no : 3;
-    uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
-
-    uint8_t connected : 1;
-    uint8_t spare : 7;
-
-    uint32_t firmware_version;
-    char device_name_20[20];
-
-    uint8_t spare2[37];
-
-    uint16_t crc; // 2bytes
-}) tRxBindFrame; // 73 bytes
-
+}) tRxFrame; // 72 bytes
 
 //-------------------------------------------------------
 // Cmd & SetupData frames

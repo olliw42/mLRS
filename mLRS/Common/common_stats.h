@@ -78,6 +78,10 @@ class tStats
     uint8_t last_antenna;
     uint8_t last_transmit_antenna;
 
+    uint8_t sys_id;
+    uint8_t show_group;
+    uint8_t broadcast;
+
     // statistics received from the other end
 
     int8_t received_rssi;

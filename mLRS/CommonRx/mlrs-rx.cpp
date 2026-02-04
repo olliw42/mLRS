@@ -180,15 +180,9 @@ void SX_DIO_EXTI_IRQHandler(void)
     sx_dio_exti_isr_clearflag();
     irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
     if (irq_status & SX_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
-        } else {
-            uint16_t sync_word;
-            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-        }
+		uint16_t sync_word;
+		sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+		if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
     }
 })
 #ifdef USE_SX2
@@ -326,12 +320,6 @@ void prepare_transmit_frame(uint8_t antenna)
 
     tFrameStats frame_stats;
     frame_stats.seq_no = tarq.SeqNo();
-    frame_stats.ack = 1; // TODO
-    frame_stats.antenna = stats.last_antenna;
-    frame_stats.transmit_antenna = antenna;
-    frame_stats.rssi = stats.GetLastRssi();
-    frame_stats.LQ_rc = stats.GetLQ_rc();
-    frame_stats.LQ_serial = stats.GetLQ_serial();
 
     static bool rxFrame_valid = false; // just for now
     if (get_fresh_payload) {
@@ -360,21 +348,6 @@ void prepare_transmit_frame(uint8_t antenna)
 
 void process_received_frame(bool do_payload, tTxFrame* const frame)
 {
-    stats.received_antenna = frame->status.antenna;
-    stats.received_transmit_antenna = frame->status.transmit_antenna;
-    stats.received_rssi = rssi_i8_from_u7(frame->status.rssi_u7);
-    // stats.received_LQ_rc = frame->status.LQ_rc; // has no vaid data in Tx frame
-    stats.received_LQ_serial = frame->status.LQ_serial;
-
-    // copy rc1 data
-    if (!do_payload) {
-        // copy only channels 1-4,12,13 and jump out
-        rcdata_rc1_from_txframe(&rcData, frame);
-        return;
-    }
-
-    rcdata_from_txframe(&rcData, frame);
-
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_txcmdframe(frame);
@@ -409,20 +382,8 @@ tTxFrame* frame;
         frame = &txFrame2;
     }
 
-    if (bind.IsInBind()) {
-        bind.handle_receive(antenna, rx_status);
-        return;
-    }
-
     if (rx_status < RX_STATUS_INVALID) { // must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
-    }
-
-    // handle transmit ARQ
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.AckReceived(frame->status.ack);
-    } else {
-        tarq.FrameMissed();
     }
 
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
@@ -453,11 +414,6 @@ void handle_receive_none(void) // RX_STATUS_NONE
 
 void do_transmit(uint8_t antenna) // we send a frame to transmitter
 {
-    if (bind.IsInBind()) {
-        bind.do_transmit(antenna);
-        return;
-    }
-
     prepare_transmit_frame(antenna);
 
     // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
@@ -467,12 +423,8 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
 
 uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
 {
-uint8_t res;
-uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
-
-    if (bind.IsInBind()) {
-        return bind.do_receive(antenna, do_clock_reset);
-    }
+	uint8_t res;
+	uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
 
     // we don't need to read sx.GetRxBufferStatus(), but hey
     // we could save 2 byte's time by not reading sync_word again, but hey
@@ -550,7 +502,6 @@ RESTARTCONTROLLER
     irq_status = irq2_status = 0;
     IF_SX(sx.StartUp(&Config.Sx));
     IF_SX2(sx2.StartUp(&Config.Sx2));
-    bind.Init();
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
     rfpower.Init();
@@ -599,31 +550,9 @@ INITCONTROLLER_END
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
-        if (!connect_occured_once) bind.AutoBind();
-        bind.Tick_ms();
         fan.SetPower(sx.RfPower_dbm());
         fan.Tick_ms();
         dronecan.Tick_ms();
-
-        if (!tick_1hz) {
-            dbg.puts(".");
-/*            dbg.puts("\nRX: ");
-            dbg.puts(u8toBCD_s(stats.GetLQ_rc())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(stats.GetLQ_serial()));
-            dbg.puts(" (");
-            dbg.puts(u8toBCD_s(stats.frames_received.GetLQ())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(stats.valid_crc1_received.GetLQ())); dbg.putc(',');
-            dbg.puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
-            dbg.puts("),");
-            dbg.puts(u8toBCD_s(stats.received_LQ_serial)); dbg.puts(", ");
-
-            dbg.puts(s8toBCD_s(stats.last_rssi1)); dbg.putc(',');
-            dbg.puts(s8toBCD_s(stats.received_rssi)); dbg.puts(", ");
-            dbg.puts(s8toBCD_s(stats.last_snr1)); dbg.puts("; ");
-
-            dbg.puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec())); dbg.puts(", ");
-            dbg.puts(u16toBCD_s(stats.bytes_received.GetBytesPerSec())); dbg.puts("; "); */
-        }
     }
 
     //-- SX handling
@@ -857,24 +786,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         powerup.Do();
-        if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();
-
-        bind.Do();
-        switch (bind.Task()) {
-        case BIND_TASK_CHANGED_TO_BIND:
-            bind.ConfigForBind();
-            rxclock.SetPeriod(Config.frame_rate_ms);
-            rxclock.Reset();
-            fhss.SetToBind(Config.frame_rate_ms);
-            leds.SetToBind();
-            connect_state = CONNECT_STATE_LISTEN;
-            link_state = LINK_STATE_RECEIVE;
-            break;
-        case BIND_TASK_RX_STORE_PARAMS:
-            Setup.Common[0].FrequencyBand = fhss.GetCurrBindSetupFrequencyBand();
-            //doParamsStore = true;
-            break;
-        }
 
         doPostReceive2_cnt = 5; // postpone this few loops, to allow link_state changes to be handled
 

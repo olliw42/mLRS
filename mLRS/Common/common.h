@@ -19,7 +19,6 @@
 #include "frame_types.h"
 #include "link_types.h"
 #include "common_stats.h"
-#include "bind.h"
 #include "fail.h"
 #include "buzzer.h"
 #include "fan.h"
@@ -217,8 +216,6 @@ tStats stats;
 
 tFhss fhss;
 
-tBindBase bind;
-
 #ifdef DEVICE_IS_TRANSMITTER
 tBuzzer buzzer;
 #endif
@@ -352,9 +349,6 @@ void FAIL_WSTATE(
 STATIC_ASSERT(sizeof(tFrameStatus) == FRAME_TX_RX_HEADER_LEN - 2, "tFrameStatus len missmatch")
 STATIC_ASSERT(sizeof(tTxFrame) == FRAME_TX_RX_LEN, "tTxFrame len missmatch")
 STATIC_ASSERT(sizeof(tRxFrame) == FRAME_TX_RX_LEN, "tRxFrame len missmatch")
-
-STATIC_ASSERT(sizeof(tTxBindFrame) == FRAME_TX_RX_LEN, "tTxBindFrame len missmatch")
-STATIC_ASSERT(sizeof(tRxBindFrame) == FRAME_TX_RX_LEN, "tRxBindFrame len missmatch")
 
 STATIC_ASSERT(sizeof(tTxCmdFrameRxParams) == FRAME_TX_PAYLOAD_LEN, "tTxCmdFrameRxParams len missmatch")
 STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFrameRxSetupData len missmatch")
