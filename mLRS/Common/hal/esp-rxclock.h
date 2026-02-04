@@ -81,8 +81,14 @@ static portMUX_TYPE rx_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static void IRAM_ATTR schedule_next(tick_t now)
 {
+#ifdef ESP32
     tick_t diff_tick = next_tick_us - now;
     tick_t diff_rx = next_rx_us - now;
+#else
+    // cast to signed: uint32_t subtraction can underflow near timer wrap
+    int32_t diff_tick = (int32_t)(next_tick_us - now);
+    int32_t diff_rx = (int32_t)(next_rx_us - now);
+#endif
 
     if (diff_tick < 10) diff_tick = 10;
     if (diff_rx < 10) diff_rx = 10;
