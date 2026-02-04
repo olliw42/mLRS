@@ -76,10 +76,12 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
     int16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
 
     // linear mapping: divide RC range evenly across available power levels
-    // rc_val: 11 bits, 1 .. 1024 .. 2047 for +-120%
-    // use safe range: ~200 (-100%) to ~1848 (+100%)
+    // rc_val: 11 bits, 1 ... 1024 ... 2047 for +-120%
+    // mLRS uses 172 ... 1024 ... 1876 for +-100%
+    // use safe range: 200 (--98.5%) to 1848 (+98.5%)
     // low stick = low power, high stick = high power
-    // +1 in denominator: range 200..1848 inclusive has 1649 values, ensures max input maps to max index
+    // +1 in denominator: 
+    // a range of [200..1848] has 1649 values, hence (1848 - 200 + 1)
 
     int16_t num_levels = power + 1;  // number of power levels available (0 to power)
     int16_t new_idx = ((rc_val - 200) * num_levels) / (1848 - 200 + 1); // map linearly
