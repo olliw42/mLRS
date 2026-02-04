@@ -55,16 +55,11 @@ class tRxAutoPilot
     void Do(void);
 
     bool RequestAutopilotVersion(void);
-    bool RequestMessageInterval(uint32_t* const msg_id);
-    bool RequestDataStream(uint32_t* const stream_id, uint32_t *stream_rate);
     bool HasMFtpFlowControl(void);
     bool HasDroneCanExtendedRcStats(void);
 
     void handle_heartbeat(fmav_message_t* const msg);
     void handle_autopilot_version(fmav_message_t* const msg);
-    void handle_message_interval(fmav_message_t* const msg);
-
-    void handle_request_data_stream_from_ground(fmav_message_t* const msg);
 
     uint8_t sysid; // 0 indicates autopilot not detected
   private:
@@ -74,26 +69,37 @@ class tRxAutoPilot
     uint32_t version; // format e.g. 040600, we create it from flight_sw_version
 
     uint32_t heartbeat_tlast_ms;
-
     uint32_t autopilot_version_request_tlast_ms;
     bool trigger_autopilot_version_request;
 
+    // --- auto configuration of SR/MAV stream parameters
     // set stream rates if not configured by user
     // missing configuration is detected by checking if stream rate for ATTITUDE (EXTRA1) is set
-    const uint8_t datastream_rates[3][6] = {
-        { 2, 4, 4, 2, 2, 1 }, // 50 Hz, 31 Hz, FSK
-        { 1, 4, 4, 1, 2, 1 }, // 19 Hz, 19 Hz 7x
-        { 4, 8, 8, 4, 4, 2 } // FLRC
+  public:
+    bool RequestMessageInterval(uint32_t* const msg_id);
+    bool RequestDataStream(uint32_t* const stream_id, uint32_t* stream_rate);
+    void DisableStreamRateAutoConfiguration(void);
+
+    void handle_message_interval(fmav_message_t* const msg);
+
+  private:
+    const uint8_t datastream_rates[MODE_NUM][6] = {
+        // EXT_STATS, EXTRA1, EXTRA2, EXTRA3, POSITION, CHAN
+        {     2,       4,      4,      2,      2,        1   }, // MODE_50HZ
+        {     2,       4,      4,      2,      2,        1   }, // MODE_31HZ
+        {     1,       4,      4,      1,      2,        1   }, // MODE_19HZ
+        {     4,       8,      8,      4,      4,        2   }, // MODE_FLRC_111HZ
+        {     2,       4,      4,      2,      2,        1   }, // MODE_FSK_50HZ
+        {     1,       4,      4,      1,      2,        1   }, // MODE_19HZ_7X
     };
 
     enum {
-        STREAMRATE_TASK_NONE = 0,
+        STREAMRATE_TASK_NONE = 0,                 // disables stream rate auto configuration
         STREAMRATE_TASK_CHECK_ATTITUDE  = 0x0001, // MESSAGE_INTERVAL for ATTITUDE
         STREAMRATE_TASK_SET_EXT_STATS   = 0x0010, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_EXTENDED_STATUS
         STREAMRATE_TASK_SET_EXTRA1      = 0x0020, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_EXTRA1
         STREAMRATE_TASK_SET_EXTRA2      = 0x0040, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_EXTRA2
         STREAMRATE_TASK_SET_EXTRA3      = 0x0080, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_EXTRA3
-        //STREAMRATE_TASK_SET_PARAMS    = 0x0100,
         STREAMRATE_TASK_SET_POSITION    = 0x0200, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_POSITION
         STREAMRATE_TASK_SET_CHAN        = 0x0400, // REQUEST_DATA_STREAM with MAV_DATA_STREAM_RC_CHANNELS
         STREAMRATE_TASK_SET_ALL         = 0x06F0,
@@ -195,6 +201,8 @@ class tRxMavlink
 
     // to handle autopilot detection
     void send_autopilot_version_request(void); // response is AUTO_PILOTVERSION message
+
+    // to handle auto configuration of SR/MAV stream parameters
     void send_get_message_interval(uint32_t msg_id); // response is MESSAGE_INTERVAL message
     void send_request_data_stream(uint8_t stream_id, uint16_t stream_rate);
 
@@ -477,7 +485,9 @@ void tRxMavlink::parse_link_in_serial_out(char c)
 
 #ifdef USE_FEATURE_MAVLINKX
         if (msg_serial_out.msgid == FASTMAVLINK_MSG_ID_REQUEST_DATA_STREAM) {
-            autopilot.handle_request_data_stream_from_ground(&msg_serial_out);
+            // someone from the ground, likely a GCS, sets data stream rates
+            // so don't interfere and stop our stream rate auto configuration
+            autopilot.DisableStreamRateAutoConfiguration();
         }
 #endif
 
@@ -1357,76 +1367,6 @@ bool tRxAutoPilot::RequestAutopilotVersion(void)
 }
 
 
-bool tRxAutoPilot::RequestMessageInterval(uint32_t* const msg_id)
-{
-    if (trigger_message_interval_request) {
-        trigger_message_interval_request = false;
-        *msg_id = FASTMAVLINK_MSG_ID_ATTITUDE;
-dbg.puts("\nsend request msg int");
-        return true;
-    }
-    *msg_id = 0;
-    return false;
-}
-
-
-bool tRxAutoPilot::RequestDataStream(uint32_t* const stream_id, uint32_t *stream_rate)
-{
-    if (trigger_request_data_stream_request) {
-        trigger_request_data_stream_request = false;
-
-        uint8_t id = 0;
-        switch (Config.Mode) {
-        case MODE_FLRC_111HZ: id = 2; break;
-        case MODE_50HZ:
-        case MODE_FSK_50HZ:
-        case MODE_31HZ: id = 0; break;
-        case MODE_19HZ:
-        case MODE_19HZ_7X: id = 1; break;
-        }
-
-        if (streamrate_tasks & STREAMRATE_TASK_SET_EXT_STATS) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXT_STATS; // clear the task
-            *stream_id = MAV_DATA_STREAM_EXTENDED_STATUS;
-            *stream_rate = datastream_rates[id][0];
-        } else
-        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA1) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA1; // clear the task
-            *stream_id = MAV_DATA_STREAM_EXTRA1;
-            *stream_rate = datastream_rates[id][1];
-        } else
-        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA2) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA2; // clear the task
-            *stream_id = MAV_DATA_STREAM_EXTRA2;
-            *stream_rate = datastream_rates[id][2];
-        } else
-        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA3) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA3; // clear the task
-            *stream_id = MAV_DATA_STREAM_EXTRA3;
-            *stream_rate = datastream_rates[id][3];
-        } else
-        if (streamrate_tasks & STREAMRATE_TASK_SET_POSITION) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_POSITION; // clear the task
-            *stream_id = MAV_DATA_STREAM_POSITION;
-            *stream_rate = datastream_rates[id][4];
-        } else
-        if (streamrate_tasks & STREAMRATE_TASK_SET_CHAN) {
-            streamrate_tasks &=~ STREAMRATE_TASK_SET_CHAN; // clear the task
-            *stream_id = MAV_DATA_STREAM_RC_CHANNELS;
-            *stream_rate = datastream_rates[id][5];
-        } else {
-            streamrate_tasks = STREAMRATE_TASK_NONE; // should not happen, play it safe
-            return false;
-        }
-
-dbg.puts("\nsend request data stream ");dbg.puts(u8toBCD_s(*stream_id));
-        return true;
-    }
-    *stream_id = *stream_rate = 0;
-    return false;
-}
-
-
 bool tRxAutoPilot::HasMFtpFlowControl(void)
 {
     if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
@@ -1489,11 +1429,77 @@ void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
 }
 
 
+// --- auto configuration of SR/MAV stream parameters
+
+bool tRxAutoPilot::RequestMessageInterval(uint32_t* const msg_id)
+{
+    if (trigger_message_interval_request) {
+        trigger_message_interval_request = false;
+        *msg_id = FASTMAVLINK_MSG_ID_ATTITUDE;
+dbg.puts("\nsend request msg int");
+        return true;
+    }
+    *msg_id = 0;
+    return false;
+}
+
+
+bool tRxAutoPilot::RequestDataStream(uint32_t* const stream_id, uint32_t* stream_rate)
+{
+    if (trigger_request_data_stream_request) {
+        trigger_request_data_stream_request = false;
+
+        if (Config.Mode >= MODE_NUM) while(1){} // must not happen, but play it safe
+
+        if (streamrate_tasks & STREAMRATE_TASK_SET_EXT_STATS) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXT_STATS; // clear the task
+            *stream_id = MAV_DATA_STREAM_EXTENDED_STATUS;
+            *stream_rate = datastream_rates[Config.Mode][0];
+        } else
+        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA1) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA1; // clear the task
+            *stream_id = MAV_DATA_STREAM_EXTRA1;
+            *stream_rate = datastream_rates[Config.Mode][1];
+        } else
+        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA2) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA2; // clear the task
+            *stream_id = MAV_DATA_STREAM_EXTRA2;
+            *stream_rate = datastream_rates[Config.Mode][2];
+        } else
+        if (streamrate_tasks & STREAMRATE_TASK_SET_EXTRA3) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_EXTRA3; // clear the task
+            *stream_id = MAV_DATA_STREAM_EXTRA3;
+            *stream_rate = datastream_rates[Config.Mode][3];
+        } else
+        if (streamrate_tasks & STREAMRATE_TASK_SET_POSITION) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_POSITION; // clear the task
+            *stream_id = MAV_DATA_STREAM_POSITION;
+            *stream_rate = datastream_rates[Config.Mode][4];
+        } else
+        if (streamrate_tasks & STREAMRATE_TASK_SET_CHAN) {
+            streamrate_tasks &=~ STREAMRATE_TASK_SET_CHAN; // clear the task
+            *stream_id = MAV_DATA_STREAM_RC_CHANNELS;
+            *stream_rate = datastream_rates[Config.Mode][5];
+        } else {
+            streamrate_tasks = STREAMRATE_TASK_NONE; // should not happen, play it safe
+            return false;
+        }
+
+dbg.puts("\nsend request data stream ");dbg.puts(u8toBCD_s(*stream_id));
+        return true;
+    }
+    *stream_id = *stream_rate = 0;
+    return false;
+}
+
+
 void tRxAutoPilot::handle_message_interval(fmav_message_t* const msg)
 {
     if (!sysid) return; // we don't have seen an autopilot
 
     if (msg->sysid != sysid) return; // not our autopilot
+
+    if (streamrate_tasks == STREAMRATE_TASK_NONE) return; // disabled
 
     fmav_message_interval_t payload;
     fmav_msg_message_interval_decode(&payload, msg);
@@ -1501,7 +1507,7 @@ void tRxAutoPilot::handle_message_interval(fmav_message_t* const msg)
     if (payload.message_id == FASTMAVLINK_MSG_ID_ATTITUDE) {
         streamrate_tasks &=~ STREAMRATE_TASK_CHECK_ATTITUDE; // clear task, we got the desired info
         if (payload.interval_us <= 0) {
-            streamrate_tasks = STREAMRATE_TASK_SET_ALL;
+            streamrate_tasks = STREAMRATE_TASK_SET_ALL; // enable setting the stream rates
         }
 dbg.puts(s32toBCD_s(payload.interval_us));
     }
@@ -1511,9 +1517,11 @@ dbg.puts("\ngot msg interval ");//dbg.puts(u32toHEX_s(flight_sw_version));
 }
 
 
-void tRxAutoPilot::handle_request_data_stream_from_ground(fmav_message_t* const msg)
+void tRxAutoPilot::DisableStreamRateAutoConfiguration(void)
 {
-    streamrate_tasks = STREAMRATE_TASK_NONE;
+    streamrate_tasks = STREAMRATE_TASK_NONE; // disable
+    trigger_message_interval_request = false;
+    trigger_request_data_stream_request = false;
 }
 
 
@@ -1521,11 +1529,11 @@ void tRxAutoPilot::handle_request_data_stream_from_ground(fmav_message_t* const 
 
 void tRxAutoPilot::Do(void) {}
 bool tRxAutoPilot::RequestAutopilotVersion(void) { return false; }
-bool tRxAutoPilot::RequestMessageInterval(uint32_t* const msg_id) { return false; }
-bool tRxAutoPilot::RequestDataStream(uint32_t* const stream_id, uint32_t *stream_rate) { return false; }
 bool tRxAutoPilot::HasMFtpFlowControl(void) { return false; }
 void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg) {}
 void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg) {}
+bool tRxAutoPilot::RequestMessageInterval(uint32_t* const msg_id) { return false; }
+bool tRxAutoPilot::RequestDataStream(uint32_t* const stream_id, uint32_t* stream_rate) { return false; }
 
 #endif // USE_FEATURE_MAVLINKX
 
