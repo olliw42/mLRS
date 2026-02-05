@@ -658,8 +658,8 @@ RESTARTCONTROLLER
     serial.SetBaudRate(Config.SerialBaudrate);
     serial2.SetBaudRate(Config.SerialBaudrate);
 
-    stats.broadcast = 0;
-    stats.sys_id = 7;
+    stats.broadcast = 1;
+    stats.sys_id = 0;
     stats.show_group = 0;
 
     // startup sign of life

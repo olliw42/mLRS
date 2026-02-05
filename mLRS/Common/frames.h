@@ -52,7 +52,7 @@ void _pack_txframe_w_type(
     frame->status.broadcast = frame_stats->broadcast;
     if (frame->status.broadcast)
     {
-    	frame->status.sys_id = 0xFF;
+    	frame->status.sys_id = 0x00;
 		frame->status.show_group = 0xFF;
     }
     else
