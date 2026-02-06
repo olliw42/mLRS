@@ -353,15 +353,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     // this message's quality is used by ArduPilot for setting rssi (not LQ)
     // it goes from 0 ... 255
     // so we use the same conversion as in e.g. RADIO_STATUS, so that ArduPilot shows us (nearly) the same value
-
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE  28 // 4+8+16
-
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI  0
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ_ACTIVE_ANTENNA  4
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM  8
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR  12
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER  16
-
+    // 6.Feb.2026: message has changed to allow more stats in round-robin
     _p.rc_input.quality = 0;
     if (connected()) {
         if (mavlink.autopilot.HasDroneCanExtendedRcStats()) {
