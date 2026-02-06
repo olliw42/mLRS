@@ -47,7 +47,7 @@ extern "C" {
 
 
 #ifndef CANARD_ENABLE_CANFD
-#define CANARD_ENABLE_CANFD                         0
+#define CANARD_ENABLE_CANFD                         1
 #endif
 
 #ifndef CANARD_MULTI_IFACE

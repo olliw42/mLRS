@@ -54,7 +54,7 @@
 #define UARTF_USE_UART4_PC10PC11  // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
+#define UARTF_TXBUFSIZE           1024 // for CAN debug
 #define UARTF_USE_TX_ISR
 //#define UARTF_USE_RX
 //#define UARTF_RXBUFSIZE           512
@@ -63,6 +63,7 @@
 //-- CAN BUS
 
 #define CAN_USE_FDCAN2_PB5PB6
+#define CAN_FD_DATA_BITRATE  5000000
 
 
 //-- SX1: SX12xx & SPI
