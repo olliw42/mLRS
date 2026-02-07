@@ -52,7 +52,7 @@ class tRxDroneCan
     void flush(void);
     uint16_t bytes_available(void);
 
-    void handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer); // ins not needed
+    void handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer); // ins (= instance) not needed
     void send_tunnel_targetted(void);
 
     bool id_is_allcoated(void);
@@ -83,14 +83,17 @@ class tRxDroneCan
         uint8_t server_node_id;
     } tunnel_targetted;
     tFifo<uint8_t,RX_SERIAL_RXBUFSIZE> fifo_fc_to_ser; // use the same buf sizes as we would for the uart
-    tFifo<uint8_t,TX_SERIAL_TXBUFSIZE> fifo_ser_to_fc;
+    tFifo<uint8_t,RX_SERIAL_TXBUFSIZE> fifo_ser_to_fc;
     
-    uint32_t tunnel_targetted_fc_to_ser_rate;
-    uint32_t tunnel_targetted_ser_to_fc_rate;
-    uint32_t tunnel_targetted_handle_rate;
-    uint32_t tunnel_targetted_send_rate;
+    struct {
+        uint32_t fc_to_ser_rate;
+        uint32_t ser_to_fc_rate;
+        uint32_t handle_rate;
+        uint32_t send_rate;
+        uint32_t error_cnt;
+        void Init(void) { fc_to_ser_rate = ser_to_fc_rate = handle_rate = send_rate = error_cnt = 0; }
+    } tunnel_targetted_stats;
     uint32_t fifo_fc_to_ser_tx_full_error_cnt;
-    uint32_t tunnel_targetted_error_cnt;
 
     struct {
         uint8_t transfer_id;
@@ -105,6 +108,9 @@ class tRxDroneCan
         struct dronecan_protocol_FlexDebug flex_debug;
     } _p;
     uint8_t _buf[DRONECAN_BUF_SIZE];
+
+    // debug
+    void print_debug_tick(void);
 };
 
 

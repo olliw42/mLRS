@@ -1269,7 +1269,7 @@ bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
         return (version >= 040600); // BetaPliot has it
     }
 
-    return (version >= 040700); // not even yet in dev actually, but let's do it
+    return (version >= 040700); // 7.Feb.2026: still not in dev 4.7, but in DSDL, so let's do it
 }
 
 
