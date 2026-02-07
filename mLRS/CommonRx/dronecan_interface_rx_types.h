@@ -83,7 +83,7 @@ class tRxDroneCan
         uint8_t server_node_id;
     } tunnel_targetted;
     tFifo<uint8_t,RX_SERIAL_RXBUFSIZE> fifo_fc_to_ser; // use the same buf sizes as we would for the uart
-    tFifo<uint8_t,TX_SERIAL_TXBUFSIZE> fifo_ser_to_fc;
+    tFifo<uint8_t,RX_SERIAL_TXBUFSIZE> fifo_ser_to_fc;
     
     struct {
         uint32_t fc_to_ser_rate;
