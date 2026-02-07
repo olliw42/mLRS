@@ -49,7 +49,7 @@
 #define UARTF_USE_LPUART1_PA2PA3 // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
+#define UARTF_TXBUFSIZE           1024 // for CAN debug
 #define UARTF_USE_TX_ISR
 //#define UARTF_USE_RX
 //#define UARTF_RXBUFSIZE           512
