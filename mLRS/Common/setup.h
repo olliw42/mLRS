@@ -433,9 +433,9 @@ void setup_sanitize_config(uint8_t config_id)
     // -------------------------------------------------
     //  SERIAL  |  -      | CRSF    | -       | mBridge
     //  SERIAL2 |  -      | CRSF    | -       | mBridge
-    //  MBRDIGE | mBridge | CRSF !! | mBridge | mBridge
+    //  MBRIDGE | mBridge | CRSF !! | mBridge | mBridge
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
+        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
         if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL)) {
             Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
         } else
@@ -893,7 +893,7 @@ void setup_configure_config(uint8_t config_id)
     // conflicts must have been sorted out before in setup_sanitize_config()
   #ifdef DEVICE_HAS_JRPIN5
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRDIGE)) {
+        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
         Config.UseMbridge = true;
     }
     if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {

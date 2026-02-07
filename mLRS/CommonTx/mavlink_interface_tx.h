@@ -152,7 +152,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
-    //   SerialDestination = MBRDIGE           => no router, only ser = mbridge (ser2 = null)
+    //   SerialDestination = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
@@ -163,7 +163,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
         ser = _serial2port;
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
         break;
-    case SERIAL_DESTINATION_MBRDIGE:
+    case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         ser2 = nullptr;
         break;

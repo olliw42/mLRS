@@ -40,7 +40,7 @@ void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbrid
     case SERIAL_DESTINATION_SERIAL2:
         ser = _serial2port;
         break;
-    case SERIAL_DESTINATION_MBRDIGE:
+    case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         break;
     default:
