@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 6. Feb. 2026
+// 7. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -71,7 +71,7 @@ Troubleshooting:
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
-//#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
+#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
@@ -246,7 +246,8 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #define USE_WIRELESS_PROTOCOL_BLUETOOTH
     #include <BluetoothSerial.h>
   #endif
-#elif defined USE_AT_MODE || (WIRELESS_PROTOCOL == 5)
+#endif
+#if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 5)
   #if defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3 // BLE available on ESP32 and ESP32C3
     #define USE_WIRELESS_PROTOCOL_BLE
     #include <BLEDevice.h>
