@@ -153,6 +153,7 @@ class tRxMavlink
         uint16_t command;
         uint8_t cmd_src_sysid;
         uint8_t cmd_src_compid;
+        uint8_t result;
         uint8_t state; // 0: not armed, 1: armed, 2: going to be executed
         uint32_t texe_ms;
     } cmd_ack;
@@ -162,7 +163,7 @@ class tRxMavlink
     void send_cmd_ack(void);
 
     // to handle autopilot detection
-    void send_autopilot_version_request(void);// response is AUTO_PILOTVERSION message
+    void send_autopilot_version_request(void);// response is AUTOPILOT_VERSION message
 
     uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
 };
@@ -762,6 +763,7 @@ if(txbuf>50) dbg.puts("*1.025 "); else dbg.puts("*1 ");
 //-------------------------------------------------------
 // Generate Messages
 //-------------------------------------------------------
+// send to the fc (serial out)
 
 // see design_decissions.h for details
 void tRxMavlink::send_radio_status(void)
@@ -1072,16 +1074,11 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
 
 void tRxMavlink::send_cmd_ack(void)
 {
-    uint8_t result = MAV_RESULT_ACCEPTED;
-    if (cmd_ack.command == MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN) {
-        if (!serial.has_systemboot()) result = MAV_RESULT_DENIED;
-    }
-
     fmav_msg_command_ack_pack(
         &msg_serial_out,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         cmd_ack.command,
-        result, // result
+        cmd_ack.result,
         cmd_ack.state, // progress
         REBOOT_SHUTDOWN_MAGIC_ACK, // result_param2, set it to magic value
         cmd_ack.cmd_src_sysid,
@@ -1115,8 +1112,8 @@ void tRxMavlink::send_autopilot_version_request(void)
 //-------------------------------------------------------
 // Handle Messages
 //-------------------------------------------------------
+// from the fc (serial in, link out)
 
-// handle messages from the fc
 void tRxMavlink::handle_msg(fmav_message_t* const msg)
 {
 #ifdef USE_FEATURE_MAVLINKX
@@ -1149,6 +1146,9 @@ fmav_command_long_t payload;
 
     fmav_msg_command_long_decode(&payload, msg);
 
+    // note: we do not generally respond to each command with an ack!
+    // So, if we don't handle it we just silently ignore.
+
     // check if it is for us, only allow targeted commands
     if (payload.target_system != RADIO_LINK_SYSTEM_ID) return;
     if (payload.target_component != MAV_COMP_ID_TELEMETRY_RADIO) return;
@@ -1167,6 +1167,7 @@ fmav_command_long_t payload;
     cmd_ack.command = payload.command;
     cmd_ack.cmd_src_sysid = msg->sysid;
     cmd_ack.cmd_src_compid = msg->compid;
+    cmd_ack.result = MAV_RESULT_DENIED;
 
     bool cmd_valid = false;
     switch (payload.command) {
@@ -1176,9 +1177,11 @@ fmav_command_long_t payload;
                          payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
                          // we ignore param6 (REBOOT_SHUTDOWN_CONDITIONS)
                          payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            cmd_ack.result = MAV_RESULT_ACCEPTED;
             break;
         case MAV_CMD_START_RX_PAIR:
             cmd_valid = (payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC); // we ignore param1 (RC_TYPE), param2 (RC_SUB_TYPE)
+            cmd_ack.result = MAV_RESULT_ACCEPTED;
             break;
     }
 
@@ -1218,8 +1221,7 @@ void tRxAutoPilot::Init(void)
 
 void tRxAutoPilot::Do(void)
 {
-    // we currently do this only if we expect an ArduPilot, TODO: PX4
-    if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) return;
+    if (Setup.Rx.SendRadioStatus == RX_SEND_RADIO_STATUS_OFF) return;
 
     if (!sysid) return; // from here on assume we have seen the autopilot's heartbeat
 
@@ -1234,6 +1236,7 @@ void tRxAutoPilot::Do(void)
     // we want to request for AUTOPILOT_VERSION when
     // sysid > 0 (which means we see a fc) and
     // flight_sw_version == 0 (which means we don't know the version)
+    // the actual sending is done by the parent class
     if (!flight_sw_version) {
         if ((tnow_ms - autopilot_version_request_tlast_ms) > 250) {
             autopilot_version_request_tlast_ms = tnow_ms;
@@ -1274,6 +1277,7 @@ bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
 }
 
 
+// handle HEARTBEAT from the fc (serial in, link out)
 void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
 {
     fmav_heartbeat_t payload;
@@ -1291,6 +1295,7 @@ void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
 }
 
 
+// handle AUTOPILOT_VERSION from the fc (serial in, link out)
 void tRxAutoPilot::handle_autopilot_version(fmav_message_t* const msg)
 {
     if (!sysid) return; // we don't have seen an autopilot
