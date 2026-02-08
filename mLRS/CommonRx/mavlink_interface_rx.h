@@ -144,8 +144,8 @@ class tRxMavlink
     bool rc_channels_uptodate;
 
     uint32_t mlrs_radio_link_stats_tlast_ms;
-    uint32_t radio_link_information_dev_tlast_ms;
-    int8_t radio_link_information_dev_power_dbm_last;
+    uint32_t mlrs_radio_link_information_tlast_ms;
+    int8_t mlrs_radio_link_information_power_dbm_last;
 
     // to handle command PREFLIGHT_REBOOT_SHUTDOWN, START_RX_PAIR and to inject CMD_ACK response
     bool inject_cmd_ack;
@@ -199,8 +199,8 @@ void tRxMavlink::Init(void)
     rc_channels_uptodate = false;
 
     mlrs_radio_link_stats_tlast_ms = 0;
-    radio_link_information_dev_tlast_ms = 0;
-    radio_link_information_dev_power_dbm_last = 125;
+    mlrs_radio_link_information_tlast_ms = 0;
+    mlrs_radio_link_information_power_dbm_last = 125;
 
     inject_cmd_ack = false;
     cmd_ack.cmd_src_sysid = 0;
@@ -979,10 +979,10 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
 
     uint32_t tnow_ms = millis32();
     int8_t power_dbm = sx.RfPower_dbm();
-    if ((tnow_ms - radio_link_information_dev_tlast_ms < 2500) &&
-        (power_dbm == radio_link_information_dev_power_dbm_last)) return; // not yet time nor a need to send
-    radio_link_information_dev_tlast_ms = tnow_ms;
-    radio_link_information_dev_power_dbm_last = power_dbm;
+    if ((tnow_ms - mlrs_radio_link_information_tlast_ms < 2500) &&
+        (power_dbm == mlrs_radio_link_information_power_dbm_last)) return; // not yet time nor a need to send
+    mlrs_radio_link_information_tlast_ms = tnow_ms;
+    mlrs_radio_link_information_power_dbm_last = power_dbm;
 
     switch (Config.Mode) {
     case MODE_50HZ: case MODE_FSK_50HZ:
@@ -1122,15 +1122,15 @@ void tRxMavlink::handle_msg(fmav_message_t* const msg)
 #ifdef USE_FEATURE_MAVLINKX
     switch (msg->msgid) {
     case FASTMAVLINK_MSG_ID_HEARTBEAT: {
-        if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) break; // we don't do this
-        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from ArduPilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
+        if (Setup.Rx.SendRadioStatus == RX_SEND_RADIO_STATUS_OFF) break; // we don't do this
+        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from an autopilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
+        // we currently accept in handle_heratbeat() only ArduPilot, TODO: PX4
         autopilot.handle_heartbeat(msg);
         break; }
 
     case FASTMAVLINK_MSG_ID_AUTOPILOT_VERSION: {
-        // we currently do this only if we expect an ArduPilot, TODO: PX4
-        if (Setup.Rx.SendRadioStatus != RX_SEND_RADIO_STATUS_METHOD_ARDUPILOT_1) break;
-        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from ArduPilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
+        if (Setup.Rx.SendRadioStatus == RX_SEND_RADIO_STATUS_OFF) break; // we don't do this
+        if (msg->compid != MAV_COMP_ID_AUTOPILOT1) break; // not from an autopilot, it uses compid = MAV_COMP_ID_AUTOPILOT1
         autopilot.handle_autopilot_version(msg);
         break; }
 
@@ -1172,12 +1172,13 @@ fmav_command_long_t payload;
     switch (payload.command) {
         case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
             if (!serial.has_systemboot()) break; // can't do uart flashing on this serial
-            cmd_valid = (payload.param3 == 3.0f &&
+            cmd_valid = (payload.param3 == REBOOT_SHUTDOWN_ACTION_REBOOT_TO_BOOTLOADER &&
                          payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
+                         // we ignore param6 (REBOOT_SHUTDOWN_CONDITIONS)
                          payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
             break;
         case MAV_CMD_START_RX_PAIR:
-            cmd_valid = (payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC);
+            cmd_valid = (payload.param7 == (float)REBOOT_SHUTDOWN_MAGIC); // we ignore param1 (RC_TYPE), param2 (RC_SUB_TYPE)
             break;
     }
 
