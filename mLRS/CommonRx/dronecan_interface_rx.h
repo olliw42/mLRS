@@ -747,7 +747,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
     _p.tunnel_targetted.baudrate = Config.SerialBaudrate; // this is ignored by ArduPilot (as it should)
 
     uint16_t data_len = fifo_ser_to_fc.Available();
-    _p.tunnel_targetted.buffer.len = (data_len < 120) ? data_len : 120; // tunnel_targetted.buffer.data is 120 bytes max
+    if (data_len > 120) data_len = 120;  // tunnel_targetted.buffer.data is 120 bytes max
+    _p.tunnel_targetted.buffer.len = data_len;
     for (uint8_t n = 0; n < data_len; n++) _p.tunnel_targetted.buffer.data[n] = fifo_ser_to_fc.Get();
 
     uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf);
