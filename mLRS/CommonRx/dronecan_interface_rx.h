@@ -163,7 +163,6 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     flex_debug.transfer_id = 0;
 
     tunnel_targetted_stats.Init();
-    fifo_fc_to_ser_tx_full_error_cnt = 0;
 
     ser_over_can_enabled = ser_over_can_enable_flag;
 
@@ -331,9 +330,9 @@ DBG_DC(
     dbg.puts(" h: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.handle_rate));
     dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.ser_to_fc_rate));dbg.puts(" B/s");
     dbg.puts(" s: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.send_rate));
+    dbg.puts("\n   err: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.error_cnt));
+    dbg.puts(" err tx_fifo: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt));
     tunnel_targetted_stats.Init();
-    dbg.puts("\n   err tx_fifo: ");dbg.puts(u16toBCD_s(fifo_fc_to_ser_tx_full_error_cnt));
-    dbg.puts(" tt: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.error_cnt));
     tDcHalStatistics dc_stats = dc_hal_get_stats();
     dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
     dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
@@ -723,7 +722,7 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     if (_p.tunnel_targetted.buffer.len == 0) return; // a short cut
 
     if (fifo_fc_to_ser.IsFull() || !fifo_fc_to_ser.HasSpace(_p.tunnel_targetted.buffer.len)) {
-        fifo_fc_to_ser_tx_full_error_cnt++;
+        tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt++;
         return; // don't try to put into fifo
     }
 

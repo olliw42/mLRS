@@ -91,9 +91,9 @@ class tRxDroneCan
         uint32_t handle_rate;
         uint32_t send_rate;
         uint32_t error_cnt;
-        void Init(void) { fc_to_ser_rate = ser_to_fc_rate = handle_rate = send_rate = error_cnt = 0; }
+        uint32_t fc_to_ser_tx_full_error_cnt;
+        void Init(void) { fc_to_ser_rate = ser_to_fc_rate = handle_rate = send_rate = error_cnt = fc_to_ser_tx_full_error_cnt = 0; }
     } tunnel_targetted_stats;
-    uint32_t fifo_fc_to_ser_tx_full_error_cnt;
 
     struct {
         uint8_t transfer_id;
