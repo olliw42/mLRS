@@ -440,33 +440,32 @@ void prepare_transmit_frame(uint8_t antenna)
 {
 	uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 	uint8_t payload_len = 0;
-	static const uint8_t default_msg[FRAME_TX_PAYLOAD_LEN] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
-	uint32_t current = HAL_GetTick();
-	static uint32_t last_transmit = 0;
 
-	if (HAL_GetTick() - last_transmit > 100)
+	if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL)
 	{
-		last_transmit = current;
-		if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-			// read data from serial port
-			static uint32_t frame_id = 0;
-			memcpy(payload, default_msg, FRAME_TX_PAYLOAD_LEN);
-			payload[0] = frame_id;
-			frame_id++;
-			payload_len = FRAME_TX_PAYLOAD_LEN;
-
-			stats.bytes_transmitted.Add(payload_len);
-			stats.serial_data_transmitted.Inc();
+		if (connected())
+		{
+		// read data from serial port
+			for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++)
+			{
+				if (!sx_serial.available()) break;
+				uint8_t c = sx_serial.getc();
+				payload[payload_len++] = c;
+				stats.serial_data_transmitted.Inc();
+			}
 		}
 	}
 
     stats.last_transmit_antenna = antenna;
+    stats.bytes_transmitted.Add(payload_len);
 
     tFrameStats frame_stats;
     frame_stats.seq_no = stats.transmit_seq_no;
     frame_stats.broadcast = stats.broadcast;
     frame_stats.sys_id = stats.sys_id;
     frame_stats.show_group = stats.show_group;
+
+    //TODO: This setup is always preparing the packet, even if it is 0 length (check if it is ok)
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
