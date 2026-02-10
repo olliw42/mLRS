@@ -85,10 +85,10 @@ class tTxEspWifiBridge
     void Do(void) {}
     void EnterFlash(void) {}
     void EnterPassthrough(void) {}
+    void GetPassword(void) {}
+    void SetPassword(char* str) {}
     void GetNetSsid(void) {}
     void SetNetSsid(char* str) {}
-    void GetNetPassword(void) {}
-    void SetNetPassword(char* str) {}
 };
 
 #else
@@ -125,23 +125,23 @@ class tTxEspWifiBridge
     void EnterPassthrough(void);
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+    void GetPassword(void);
+    void SetPassword(char* str);
     void GetNetSsid(void);
     void SetNetSsid(char* str);
-    void GetNetPassword(void);
-    void SetNetPassword(char* str);
 #else
+    void GetPassword(void) {}
+    void SetPassword(char* str) {}
     void GetNetSsid(void) {}
     void SetNetSsid(char* str) {}
-    void GetNetPassword(void) {}
-    void SetNetPassword(char* str) {}
 #endif
 
   private:
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
     void esp_wait_after_read(const char* const res);
-    void esp_get_net(const char* net_cmd);
-    void esp_set_net(const char* net_cmd, char* str);
+    void esp_get_ssidpswd(const char* net_cmd);
+    void esp_set_ssidpswd(const char* net_cmd, char* str);
     void esp_configure_baudrate(void);
     void esp_configure_wifiprotocol(void);
     void esp_configure_wifichannel(void);
@@ -472,7 +472,7 @@ void tTxEspWifiBridge::esp_wait_after_read(const char* const res)
 }
 
 
-void tTxEspWifiBridge::esp_get_net(const char* net_cmd)
+void tTxEspWifiBridge::esp_get_ssidpswd(const char* net_cmd)
 {
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
@@ -494,7 +494,7 @@ char cmd_str[64];
 }
 
 
-void tTxEspWifiBridge::esp_set_net(const char* net_cmd, char* str)
+void tTxEspWifiBridge::esp_set_ssidpswd(const char* net_cmd, char* str)
 {
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
@@ -510,7 +510,7 @@ char cmd_str[64];
     cmd_str[len] = '\0';
     com->puts("  ");com->puts(cmd_str);com->puts("->");
     if (!esp_read(cmd_str, s, &len)) {
-        com->puts("get ");com->puts(net_cmd);com->puts(" failed");com->puts(CLI_LINEND);
+        com->puts("set ");com->puts(net_cmd);com->puts(" failed");com->puts(CLI_LINEND);
         return;
     }
     esp_wait_after_read(s);
@@ -521,10 +521,10 @@ char cmd_str[64];
 }
 
 
-void tTxEspWifiBridge::GetNetSsid(void) { esp_get_net("NETSSID"); }
-void tTxEspWifiBridge::GetNetPassword(void) { esp_get_net("NETPSWD"); }
-void tTxEspWifiBridge::SetNetSsid(char* str) { esp_set_net("NETSSID", str); }
-void tTxEspWifiBridge::SetNetPassword(char* str) { esp_set_net("NETPSWD", str); }
+void tTxEspWifiBridge::GetPassword(void) { esp_get_ssidpswd("PSWD"); }
+void tTxEspWifiBridge::SetPassword(char* str) { esp_set_ssidpswd("PSWD", str); }
+void tTxEspWifiBridge::GetNetSsid(void) { esp_get_ssidpswd("NETSSID"); }
+void tTxEspWifiBridge::SetNetSsid(char* str) { esp_set_ssidpswd("NETSSID", str); }
 
 
 void tTxEspWifiBridge::esp_configure_baudrate(void)

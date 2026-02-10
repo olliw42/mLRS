@@ -764,10 +764,10 @@ void tTxCli::print_help_do(void)
         case 17: putsn("  esppt           -> enter serial passthrough"); break;
         case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
   #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-        case 19: putsn("  esp get netssid       -> get network SSID"); break;
-        case 20: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
-        case 21: putsn("  esp get netpswd       -> get network password"); break;
-        case 22: putsn("  esp set netpswd = str -> set network password (24 chars max)"); break;
+        case 19: putsn("  esp get pswd          -> get password (TCP/UDP/UDPSTA)"); break;
+        case 20: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
+        case 21: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
+        case 22: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
   #endif
 #elif defined USE_HC04_MODULE // let's assume that not both are true
         case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
@@ -926,29 +926,29 @@ bool rx_param_changed;
             tasks.SetCliTask(TX_TASK_FLASH_ESP);
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
         } else
+        if (is_cmd("esp get pswd")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
+        } else
+        if (is_cmd_set_str("esp set pswd", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp pswd: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
+                tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_PASSWORD, svalue);
+            }
+        } else
         if (is_cmd("esp get netssid")) {
             tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
         } else
         if (is_cmd_set_str("esp set netssid", svalue)) {
-           if (strlen(svalue) > 24) {
-               putsn("err: string exceeds 24 chars");
-           } else {
-               puts("  esp netssid: ");
-               putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
-               tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
-           }
-        } else
-        if (is_cmd("esp get netpswd")) {
-            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_PASSWORD);
-        } else
-        if (is_cmd_set_str("esp set netpswd", svalue)) {
-           if (strlen(svalue) > 24) {
-               putsn("err: string exceeds 24 chars");
-           } else {
-               puts("  esp netpswd: ");
-               putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
-               tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
-           }
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp netssid: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
+                tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+            }
 #endif
 #endif
 

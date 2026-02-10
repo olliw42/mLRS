@@ -84,7 +84,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM ??
 //#define MODULE_GENERIC
-//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -115,7 +115,7 @@ Troubleshooting:
 // ssid = "" results in a default name, like "mLRS-13427 AP UDP"
 // password = "" makes it an open AP
 String ssid = ""; // "mLRS AP"; // Wifi name
-String password = ""; // "thisisgreat"; // WiFi password
+String password = ""; // "thisisgreat"; // WiFi password (min 8 chars)
 
 IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter 192.168.4.55 in MP
 
@@ -128,7 +128,7 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 // - a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
 // for UDPCl both strings MUST be set to what your Wifi network requires
 String network_ssid = ""; // name of your WiFi network
-String network_password = "****"; // password to access your WiFi network
+String network_password = "****"; // password to access your WiFi network (min 8 chars)
 
 IPAddress ip_udpcl(192, 168, 0, 164); // your network's IP (only for UDPCl) // MissionPlanner default is 127.0.0.1, so enter your home's IP in MP
 
@@ -356,10 +356,10 @@ int g_wifichannel = WIFICHANNEL_DEFAULT;
 int g_wifipower = WIFIPOWER_DEFAULT;
 #define G_BINDPHRASE_STR  "bindphrase"
 String g_bindphrase = "mlrs.0";
+#define G_PASSWORD_STR  "password"
+String g_password = "";
 #define G_NETWORK_SSID_STR  "network_ssid"
 String g_network_ssid = "";
-#define G_NETWORK_PASSWORD_STR  "network_password"
-String g_network_password = "";
 
 uint16_t device_id = 0; // is going to be set by setup_device_name_and_password(), and can be queried in at mode
 String device_name = "";
@@ -460,7 +460,7 @@ void setup_ap_mode(IPAddress __ip)
 {
     WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
     WiFi.softAPConfig(__ip, ip_gateway, netmask);
-    WiFi.softAP(device_name.c_str(), (password.length()) ? password.c_str() : NULL, g_wifichannel); // channel = 1 is default
+    WiFi.softAP(device_name.c_str(), (device_password.length()) ? device_password.c_str() : NULL, g_wifichannel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
     DBG_PRINTLN(WiFi.softAPIP()); // comes out as 192.168.4.1
     DBG_PRINT("channel: ");
@@ -521,6 +521,16 @@ class tWifiHandler {
 #endif
     }
 
+    void SetDevicePassword(String forced_password, String std_password) {
+        if (forced_password != "") {
+            device_password = forced_password;
+        } else if (g_password != "") {
+            device_password = g_password;
+        } else {
+            device_password = std_password;
+        }
+    }
+
     void SetConnected() {
         is_connected = true;
         is_connected_tlast_ms = millis();
@@ -557,6 +567,7 @@ class tTCPHandler : public tWifiHandler {
     void Init(IPAddress __ip) {
         tWifiHandler::Init();
         device_name = (ssid != "") ? ssid : device_name + " AP TCP";
+        SetDevicePassword(password, "");
         _ip = __ip;
     }
 
@@ -615,6 +626,7 @@ class tUDPHandler : public tWifiHandler, tClientList {
         tWifiHandler::Init();
         tClientList::Init();
         device_name = (ssid != "") ? ssid : device_name + " AP UDP";
+        SetDevicePassword(password, "");
         _ip = _ip_ap = __ip; 
         //_ip = WiFi.broadcastIP(); // seems to not work for AP mode
         _ip[3] = 255; // start with broadcast, the subnet mask is 255.255.255.0 so just last octet needs to change
@@ -678,13 +690,7 @@ class tUDPSTAHandler : public tWifiHandler {
         } else { // we don't have any so set a default
             device_name = device_name + " STA UDP";
         }
-        if (network_password != "") {
-            device_password = network_password;
-        } else if (g_network_password != "") {
-            device_password = g_network_password;
-        } else {
-            device_password = String("mLRS-") + g_bindphrase;
-        }
+        SetDevicePassword(network_password, String("mLRS-") + g_bindphrase);
 //        device_name = (network_ssid == "") ? device_name + " STA UDP" : network_ssid;
 //        device_password = (network_ssid == "") ? String("mLRS-") + g_bindphrase : network_password;
         _ip = WiFi.broadcastIP(); // start with broadcast
@@ -942,8 +948,8 @@ void setup()
     g_bindphrase = preferences.getString(G_BINDPHRASE_STR, "mlrs.0"); // "mlrs.0" is the mLRS default bind phrase
     // TODO: we should check for sanity
 
+    g_password = preferences.getString(G_PASSWORD_STR, ""); // "" is the default password
     g_network_ssid = preferences.getString(G_NETWORK_SSID_STR, ""); // "" is the default network ssid
-    g_network_password = preferences.getString(G_NETWORK_PASSWORD_STR, ""); // "" is the default network password
 #endif
 
     // Wifi handler
