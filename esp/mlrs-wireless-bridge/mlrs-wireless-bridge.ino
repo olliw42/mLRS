@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 8. Feb. 2026
+// 10. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -356,6 +356,10 @@ int g_wifichannel = WIFICHANNEL_DEFAULT;
 int g_wifipower = WIFIPOWER_DEFAULT;
 #define G_BINDPHRASE_STR  "bindphrase"
 String g_bindphrase = "mlrs.0";
+#define G_NETWORK_SSID_STR  "network_ssid"
+String g_network_ssid = "";
+#define G_NETWORK_PASSWORD_STR  "network_password"
+String g_network_password = "";
 
 uint16_t device_id = 0; // is going to be set by setup_device_name_and_password(), and can be queried in at mode
 String device_name = "";
@@ -552,7 +556,7 @@ class tTCPHandler : public tWifiHandler {
   public:
     void Init(IPAddress __ip) {
         tWifiHandler::Init();
-        device_name = (ssid == "") ? device_name + " AP TCP" : ssid;
+        device_name = (ssid != "") ? ssid : device_name + " AP TCP";
         _ip = __ip;
     }
 
@@ -610,7 +614,7 @@ class tUDPHandler : public tWifiHandler, tClientList {
     void Init(IPAddress __ip, int __port) {
         tWifiHandler::Init();
         tClientList::Init();
-        device_name = (ssid == "") ? device_name + " AP UDP" : ssid;
+        device_name = (ssid != "") ? ssid : device_name + " AP UDP";
         _ip = _ip_ap = __ip; 
         //_ip = WiFi.broadcastIP(); // seems to not work for AP mode
         _ip[3] = 255; // start with broadcast, the subnet mask is 255.255.255.0 so just last octet needs to change
@@ -667,8 +671,22 @@ class tUDPSTAHandler : public tWifiHandler {
 
     void Init(int __port) {
         tWifiHandler::Init();
-        device_name = (network_ssid == "") ? device_name + " STA UDP" : network_ssid;
-        device_password = (network_ssid == "") ? String("mLRS-") + g_bindphrase : network_password;
+        if (network_ssid != "") { // local definition overwrites all other options
+            device_name = network_ssid;
+        } else if (g_network_ssid != "") { // definition in memory overwrites default
+            device_name = g_network_ssid;
+        } else { // we don't have any so set a default
+            device_name = device_name + " STA UDP";
+        }
+        if (network_password != "") {
+            device_password = network_password;
+        } else if (g_network_password != "") {
+            device_password = g_network_password;
+        } else {
+            device_password = String("mLRS-") + g_bindphrase;
+        }
+//        device_name = (network_ssid == "") ? device_name + " STA UDP" : network_ssid;
+//        device_password = (network_ssid == "") ? String("mLRS-") + g_bindphrase : network_password;
         _ip = WiFi.broadcastIP(); // start with broadcast
         _port = _initial_port = __port;
     }
@@ -718,8 +736,8 @@ class tUDPClHandler : public tWifiHandler {
   public:
     void Init(IPAddress __ip, int __port) {
         tWifiHandler::Init();
-        device_name = network_ssid;
-        device_password = network_password;
+        device_name = network_ssid; // we only allow that specified in code
+        device_password = network_password; // we only allow that specified in code
         _ip = __ip;
         _port = __port;
     }
@@ -767,7 +785,7 @@ class tBTClassicHandler : public tWifiHandler {
   public:
     void Init() {
         tWifiHandler::Init();
-        device_name = (bluetooth_device_name == "") ? device_name + " BT" : bluetooth_device_name;
+        device_name = (bluetooth_device_name != "") ? bluetooth_device_name : device_name + " BT";
     }
     
     void Setup() override {
@@ -802,7 +820,7 @@ class tBLEHandler : public tWifiHandler {
   public:
     void Init() {
         tWifiHandler::Init();
-        device_name = (ble_device_name == "") ? device_name + " BLE" : ble_device_name;
+        device_name = (ble_device_name != "") ? ble_device_name : device_name + " BLE";
     }
 
     void Setup() override {
@@ -923,6 +941,9 @@ void setup()
 
     g_bindphrase = preferences.getString(G_BINDPHRASE_STR, "mlrs.0"); // "mlrs.0" is the mLRS default bind phrase
     // TODO: we should check for sanity
+
+    g_network_ssid = preferences.getString(G_NETWORK_SSID_STR, ""); // "" is the default network ssid
+    g_network_password = preferences.getString(G_NETWORK_PASSWORD_STR, ""); // "" is the default network password
 #endif
 
     // Wifi handler

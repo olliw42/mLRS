@@ -42,6 +42,10 @@ typedef enum {
     AT_WIFIDEVICENAME_QUERY,
     AT_BINDPHRASE_QUERY,
     AT_BINDPHRASE_XXXXXX,
+    AT_NETSSID_QUERY,
+    AT_NETSSID_XXXXXX,
+    AT_NETPSWD_QUERY,
+    AT_NETPSWD_XXXXXX,
     AT_CMDS_NUM,
 } AT_NAME_ENUM;
 
@@ -75,6 +79,10 @@ const char* at_cmds[AT_CMDS_NUM] = {
      "AT+WIFIDEVICENAME=?", // only query, no option to set
      "AT+BINDPHRASE=?",
      "AT+BINDPHRASE=xxxxxx",
+     "AT+NETSSID=?",
+     "AT+NETSSID=xxxxxxxxxxxxxxxxxxxxxxxx", // must be length 24, zero-fill for shorter
+     "AT+NETPSWD=?",
+     "AT+NETPSWD=xxxxxxxxxxxxxxxxxxxxxxxx", // must be length 24, zero-fill for shorter
 };
 
 
@@ -152,14 +160,17 @@ bool AtMode::Do(void)
         at_buf[at_pos] = '\0'; // to make it a str
         bool possible_match = false;
         for (int i = 0; i < AT_CMDS_NUM; i++) {
-            char at_cmd[32];
+            char at_cmd[64];
             strcpy(at_cmd, at_cmds[i]);
 
-            // we need to adjust the cmd to look for in the case of bindphrase
+            // we need to adjust the cmd to look for in the case of bindphrase, netssid, netpassword
             // replaces the chars in the cmd's 'x' positions with the actual chars
             // somewhat dirty but does the trick and avoids massive parser change
-            if (i == AT_BINDPHRASE_XXXXXX) {
+            if (i == AT_BINDPHRASE_XXXXXX) { // first x is at buf[14]
                 for (int pp = 14; pp < 14+6; pp++) if (pp < at_pos) at_cmd[pp] = at_buf[pp];
+            }
+            if (i == AT_NETSSID_XXXXXX || i == AT_NETPSWD_XXXXXX) { // for both first 'x' happens to be at equal position, buf[11]
+                for (int pp = 11; pp < 11+24; pp++) if (pp < at_pos) at_cmd[pp] = at_buf[pp];
             }
 
             // check if it could become a match by reading more chars
@@ -170,7 +181,7 @@ bool AtMode::Do(void)
             if (strcmp(at_buf, at_cmd) == 0) {
                 if (i == AT_NAME_QUERY || i == AT_BAUD_QUERY || i == AT_WIFICHANNEL_QUERY || i == AT_WIFIPOWER_QUERY ||
                     i == AT_PROTOCOL_QUERY || i == AT_WIFIDEVICEID_QUERY || i == AT_WIFIDEVICENAME_QUERY ||
-                    i == AT_BINDPHRASE_QUERY) {
+                    i == AT_BINDPHRASE_QUERY || i == AT_NETSSID_QUERY || i == AT_NETPSWD_QUERY) {
                     at_buf[0] = 'O';
                     at_buf[1] = 'K';
                     SERIAL.write(at_buf, at_pos - 1); // don't send the '?'
@@ -186,6 +197,8 @@ bool AtMode::Do(void)
                         case AT_WIFIDEVICEID_QUERY: SERIAL.print(device_id); break;
                         case AT_WIFIDEVICENAME_QUERY: SERIAL.print(device_name); break;
                         case AT_BINDPHRASE_QUERY: SERIAL.print(g_bindphrase); break;
+                        case AT_NETSSID_QUERY: SERIAL.print(g_network_ssid); break;
+                        case AT_NETPSWD_QUERY: SERIAL.print(g_network_password); break;
                     }
                     SERIAL.write("\r\n");
                 } else
@@ -258,6 +271,32 @@ bool AtMode::Do(void)
                     for (int pp = 14; pp < 14+6; pp++) new_bindphrase += at_buf[pp]; // AT+BINDPHRASE=mlrs.0
                     if (new_bindphrase != g_bindphrase) {
                         preferences.putString(G_BINDPHRASE_STR, new_bindphrase);
+                        restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
+                    }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
+                } else
+                if (i == AT_NETSSID_XXXXXX) {
+                    at_buf[0] = 'O';
+                    at_buf[1] = 'K';
+                    String new_network_ssid = "";
+                    for (int pp = 11; pp < 11+24; pp++) if (at_buf[pp] < 255) new_network_ssid += at_buf[pp]; // AT+NETSSID=1234567890123456
+                    if (new_network_ssid != g_network_ssid) {
+                        preferences.putString(G_NETWORK_SSID_STR, new_network_ssid);
+                        restart_needed = true;
+                        at_buf[2] = '*'; // replace '+' by '*' to mark change
+                    }
+                    SERIAL.write(at_buf, at_pos);
+                    SERIAL.write("\r\n");
+                } else
+                if (i == AT_NETPSWD_XXXXXX) {
+                    at_buf[0] = 'O';
+                    at_buf[1] = 'K';
+                    String new_network_password = "";
+                    for (int pp = 11; pp < 11+24; pp++) if (at_buf[pp] < 255) new_network_password += at_buf[pp]; // AT+NETPSWD=1234567890123456
+                    if (new_network_password != g_network_password) {
+                        preferences.putString(G_NETWORK_PASSWORD_STR, new_network_password);
                         restart_needed = true;
                         at_buf[2] = '*'; // replace '+' by '*' to mark change
                     }

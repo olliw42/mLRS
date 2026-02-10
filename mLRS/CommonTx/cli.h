@@ -319,6 +319,7 @@ class tTxCli
     bool is_cmd(const char* const cmd);
     bool is_cmd_param_set(char* const name, char* const svalue);
     bool is_cmd_set_value(const char* const cmd, int32_t* const value);
+    bool is_cmd_set_str(const char* const cmd, char* const str);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
@@ -433,6 +434,33 @@ uint8_t n;
     for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
 
     *value = atoi(s);
+
+    return true;
+}
+
+
+// name = str value
+bool tTxCli::is_cmd_set_str(const char* const cmd, char* const str)
+{
+char s[64];
+uint8_t n;
+
+    uint8_t cmd_len = strlen(cmd);
+    uint8_t buf_len = strlen(buf);
+    if (buf_len < cmd_len + 2) return false;
+    if (strncmp(buf, cmd, cmd_len) != 0) return false;
+
+    // cleanify: extract '=string' // ATTENTION: it removes all blanks!
+    n = 0;
+    for (uint8_t i = cmd_len; i < buf_len; i++) {
+        if (buf[i] != ' ') s[n++] = buf[i];
+    }
+    s[n] = '\0';
+
+    if (n < 1) return false;
+    if (s[0] != '=') return false;
+
+    strcpy(str, &s[1]); // remove the '='
 
     return true;
 }
@@ -735,13 +763,16 @@ void tTxCli::print_help_do(void)
 #ifdef USE_ESP_WIFI_BRIDGE
         case 17: putsn("  esppt           -> enter serial passthrough"); break;
         case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
-#else
-        case 17: case 18: break;
-#endif
-#ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt               -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 getpin           -> get pin of HC04"); break;
-        case 21: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
+  #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+        case 19: putsn("  esp get netssid       -> get network SSID"); break;
+        case 20: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
+        case 21: putsn("  esp get netpswd       -> get network password"); break;
+        case 22: putsn("  esp set netpswd = str -> set network password (24 chars max)"); break;
+  #endif
+#elif defined USE_HC04_MODULE // let's assume that not both are true
+        case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
+        case 18: putsn("  hc04 getpin           -> get pin of HC04"); break;
+        case 19: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
@@ -881,7 +912,7 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (is_cmd("systemboot")) {
-            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT); //task_pending = TX_TASK_SYSTEM_BOOT;
+            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
@@ -893,6 +924,32 @@ bool rx_param_changed;
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
             tasks.SetCliTask(TX_TASK_FLASH_ESP);
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+        } else
+        if (is_cmd("esp get netssid")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
+        } else
+        if (is_cmd_set_str("esp set netssid", svalue)) {
+           if (strlen(svalue) > 24) {
+               putsn("err: string exceeds 24 chars");
+           } else {
+               puts("  esp netssid: ");
+               putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
+               tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+           }
+        } else
+        if (is_cmd("esp get netpswd")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_PASSWORD);
+        } else
+        if (is_cmd_set_str("esp set netpswd", svalue)) {
+           if (strlen(svalue) > 24) {
+               putsn("err: string exceeds 24 chars");
+           } else {
+               puts("  esp netpswd: ");
+               putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
+               tasks.SetCliTaskAndStr(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+           }
+#endif
 #endif
 
         //-- HC04 module handling
