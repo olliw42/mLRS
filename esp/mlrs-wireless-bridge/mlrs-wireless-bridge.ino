@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 10. Feb. 2026
+// 11. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -84,7 +84,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM ??
 //#define MODULE_GENERIC
-#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
