@@ -446,7 +446,7 @@ void setup_sanitize_config(uint8_t config_id)
         }
     }
 
-#ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     SANITIZE(Tx[config_id].WifiProtocol, WIFI_PROTOCOL_NUM, WIFI_PROTOCOL_UDP, WIFI_PROTOCOL_UDP);
     TST_NOTALLOWED(Tx_WiFiProt_allowed_mask, Tx[config_id].WifiProtocol, WIFI_PROTOCOL_UDP);
     SANITIZE(Tx[config_id].WifiChannel, WIFI_CHANNEL_NUM, WIFI_CHANNEL_6, WIFI_CHANNEL_6);

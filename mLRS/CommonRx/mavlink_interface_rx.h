@@ -1235,8 +1235,6 @@ bool tRxAutoPilot::HasMlrsRadioLinkStats(void)
 }
 
 
-
-
 // handle HEARTBEAT from the fc (serial in, link out)
 void tRxAutoPilot::handle_heartbeat(fmav_message_t* const msg)
 {

@@ -14,7 +14,11 @@
 //   is defined when RESET & GPIO0 pin handling is available (ESP_RESET & ESP_GPIO0 defined)
 //   this allows:
 //   - flashing via passthrough, flash mode invoked by "FLASH ESP" command
-//   - ESP TX parameters, esp configuration
+//
+// USE_ESP_WIFI_BRIDGE_CONFIGURE
+//   is defined when USE_ESP_WIFI_BRIDGE_RST_GPIO0 && DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+//   this allows:
+//   - ESP TX parameters, ESP configuration at startup
 //
 // USE_ESP_WIFI_BRIDGE_DTR_RTS
 //   is defined when DTR & RTS pin handling is available (ESP_DTR & ESP_RTS defined)
@@ -65,12 +69,6 @@ void esp_enable(uint8_t serial_destination)
 //-------------------------------------------------------
 // ESP WifiBridge class
 //-------------------------------------------------------
-
-#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-  // we currently require RST, GPIO0 for ESP configuration option
-  #define ESP_STARTUP_CONFIGURE
-#endif
-
 
 #define ESP_PASSTHROUGH_TMO_MS  4000 // esptool uses 3 secs, so be a bit more generous
 #define ESP_BUTTON_DEBOUNCE_MS  50
@@ -124,7 +122,7 @@ class tTxEspWifiBridge
     void EnterPassthrough(void);
 
   private:
-#ifdef ESP_STARTUP_CONFIGURE
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
     void esp_wait_after_read(const char* const res);
     void esp_configure_baudrate(void);
@@ -190,7 +188,7 @@ void tTxEspWifiBridge::Init(
 
     version = 0; // unknown
 
-#ifdef ESP_STARTUP_CONFIGURE
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     run_configure();
 #endif
 }
@@ -410,7 +408,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 }
 
 
-#ifdef ESP_STARTUP_CONFIGURE
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
 
 #define ESP_DBG(x)
 
@@ -651,7 +649,7 @@ if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.p
 }
 
 
-#endif // ESP_AUTOCONFIGURE
+#endif // USE_ESP_WIFI_BRIDGE_CONFIGURE
 
 #endif // USE_ESP_WIFI_BRIDGE
 
