@@ -735,10 +735,12 @@ void tTxCli::print_help_do(void)
 #ifdef USE_ESP_WIFI_BRIDGE
         case 17: putsn("  esppt       -> enter serial passthrough"); break;
         case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
+#else
+        case 17: case 18: break;
 #endif
 #ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
+        case 19: putsn("  hc04 pt     -> enter serial passthrough"); break;
+        case 20: putsn("  hc04 setpin -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
