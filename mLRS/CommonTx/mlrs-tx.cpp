@@ -1263,6 +1263,7 @@ IF_IN(
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
     case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
     case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+    case TX_TASK_CLI_HC04_GETPIN: hc04.GetPin(); break;
     case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(tasks.GetCliTaskValue()); break;
     }
     if (tx_task == MAIN_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }

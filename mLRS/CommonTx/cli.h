@@ -716,31 +716,32 @@ void tTxCli::print_help_do(void)
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
         switch (print_index) {
         case 0:  print_layout_version_warning(); break;
-        case 1:  putsn("  help, h, ?  -> this help page"); break;
-        case 2:  putsn("  v           -> print device and version"); break;
-        case 3:  putsn("  pl          -> list all parameters"); break;
-        case 4:  putsn("  pl c        -> list common parameters"); break;
-        case 5:  putsn("  pl tx       -> list Tx parameters"); break;
-        case 6:  putsn("  pl rx       -> list Rx parameters"); break;
+        case 1:  putsn("  help, h, ?      -> this help page"); break;
+        case 2:  putsn("  v               -> print device and version"); break;
+        case 3:  putsn("  pl              -> list all parameters"); break;
+        case 4:  putsn("  pl c            -> list common parameters"); break;
+        case 5:  putsn("  pl tx           -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx           -> list Rx parameters"); break;
         case 7:  putsn("  p name          -> get parameter value"); break;
         case 8:  putsn("  p name = value  -> set parameter value"); break;
         case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
-        case 10: putsn("  pstore      -> store parameters"); break;
-        case 11: putsn("  setconfigid -> select config id"); break;
-        case 12: putsn("  bind        -> start binding"); break;
-        case 13: putsn("  reload      -> reload all parameter settings"); break;
-        case 14: putsn("  stats       -> starts streaming statistics"); break;
-        case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
-        case 16: putsn("  systemboot  -> call system bootloader"); break;
+        case 10: putsn("  pstore          -> store parameters"); break;
+        case 11: putsn("  setconfigid     -> select config id"); break;
+        case 12: putsn("  bind            -> start binding"); break;
+        case 13: putsn("  reload          -> reload all parameter settings"); break;
+        case 14: putsn("  stats           -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+        case 16: putsn("  systemboot      -> call system bootloader"); break;
 #ifdef USE_ESP_WIFI_BRIDGE
-        case 17: putsn("  esppt       -> enter serial passthrough"); break;
-        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
+        case 17: putsn("  esppt           -> enter serial passthrough"); break;
+        case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
 #else
         case 17: case 18: break;
 #endif
 #ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt     -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 setpin -> set pin of HC04"); break;
+        case 19: putsn("  hc04 pt               -> enter serial passthrough"); break;
+        case 20: putsn("  hc04 getpin           -> get pin of HC04"); break;
+        case 21: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
@@ -901,6 +902,9 @@ bool rx_param_changed;
             // enter hc04 passthrough, can only be exited by re-powering
             tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
         } else
+        if (is_cmd("hc04 getpin")) { // getpin
+            tasks.SetCliTask(TX_TASK_CLI_HC04_GETPIN);
+        } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
                 putsn("err: invalid pin number");
@@ -908,7 +912,7 @@ bool rx_param_changed;
                 char pin_str[32];
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
-                puts("HC04 Pin: ");putsn(pin_str);
+                puts("  hc04 pin: ");putsn(pin_str);
                 tasks.SetCliTaskAndValue(TX_TASK_CLI_HC04_SETPIN, value);
             }
 #endif
