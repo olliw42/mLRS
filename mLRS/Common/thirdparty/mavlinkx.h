@@ -25,6 +25,13 @@
 #define MAVLINKX_ENCODE_BITBUFFER_ENABLE
 #define MAVLINKX_DECODE_BITBUFFER_ENABLE
 
+#define MAVLINKX_ENCODE_LUT_ENABLE
+#define MAVLINKX_DECODE_LUT_ENABLE
+
+#if defined(MAVLINKX_DECODE_LUT_ENABLE) && !defined(MAVLINKX_DECODE_BITBUFFER_ENABLE)
+  #error "MAVLINKX_DECODE_LUT_ENABLE requires MAVLINKX_DECODE_BITBUFFER_ENABLE"
+#endif
+
 #if defined ESP8266 || defined ESP32
 #define MAVLINKX_O3 // esp seem not to work without, at least BetaFpv 1w Micro does not
 #endif
@@ -897,6 +904,54 @@ void _fmavX_encode_flush_bits(uint8_t* payload_out, uint16_t* len_out)
 #endif // MAVLINKX_ENCODE_BITBUFFER_ENABLE
 
 
+#ifdef MAVLINKX_ENCODE_LUT_ENABLE
+
+// encode LUT: maps byte value -> { code, bit_len }
+// packed as (bit_len << 12) | code in uint16_t
+// entries for 0x00 and 0xFF are unused since those go through the RLE path
+const uint16_t fmavx_encode_lut[256] = {
+    // 0x00: 000 (3 bits), unused
+    0x3000 , 0x8080 , 0x8081 , 0x8082 , 0x8083 , 0x8084 , 0x8085 , 0x8086,
+    0x8087 , 0x8088 , 0x8089 , 0x808A , 0x808B , 0x808C , 0x808D , 0x808E,
+    // 0x01-0x40: 10 + 6 bits (8 bits total)
+    0x808F , 0x8090 , 0x8091 , 0x8092 , 0x8093 , 0x8094 , 0x8095 , 0x8096,
+    0x8097 , 0x8098 , 0x8099 , 0x809A , 0x809B , 0x809C , 0x809D , 0x809E,
+    0x809F , 0x80A0 , 0x80A1 , 0x80A2 , 0x80A3 , 0x80A4 , 0x80A5 , 0x80A6,
+    0x80A7 , 0x80A8 , 0x80A9 , 0x80AA , 0x80AB , 0x80AC , 0x80AD , 0x80AE,
+    0x80AF , 0x80B0 , 0x80B1 , 0x80B2 , 0x80B3 , 0x80B4 , 0x80B5 , 0x80B6,
+    0x80B7 , 0x80B8 , 0x80B9 , 0x80BA , 0x80BB , 0x80BC , 0x80BD , 0x80BE,
+    // 0x41-0xBE: 01 + 7 bits (9 bits total)
+    0x80BF , 0x9080 , 0x9081 , 0x9082 , 0x9083 , 0x9084 , 0x9085 , 0x9086,
+    0x9087 , 0x9088 , 0x9089 , 0x908A , 0x908B , 0x908C , 0x908D , 0x908E,
+    0x908F , 0x9090 , 0x9091 , 0x9092 , 0x9093 , 0x9094 , 0x9095 , 0x9096,
+    0x9097 , 0x9098 , 0x9099 , 0x909A , 0x909B , 0x909C , 0x909D , 0x909E,
+    0x909F , 0x90A0 , 0x90A1 , 0x90A2 , 0x90A3 , 0x90A4 , 0x90A5 , 0x90A6,
+    0x90A7 , 0x90A8 , 0x90A9 , 0x90AA , 0x90AB , 0x90AC , 0x90AD , 0x90AE,
+    0x90AF , 0x90B0 , 0x90B1 , 0x90B2 , 0x90B3 , 0x90B4 , 0x90B5 , 0x90B6,
+    0x90B7 , 0x90B8 , 0x90B9 , 0x90BA , 0x90BB , 0x90BC , 0x90BD , 0x90BE,
+    0x90BF , 0x90C0 , 0x90C1 , 0x90C2 , 0x90C3 , 0x90C4 , 0x90C5 , 0x90C6,
+    0x90C7 , 0x90C8 , 0x90C9 , 0x90CA , 0x90CB , 0x90CC , 0x90CD , 0x90CE,
+    0x90CF , 0x90D0 , 0x90D1 , 0x90D2 , 0x90D3 , 0x90D4 , 0x90D5 , 0x90D6,
+    0x90D7 , 0x90D8 , 0x90D9 , 0x90DA , 0x90DB , 0x90DC , 0x90DD , 0x90DE,
+    0x90DF , 0x90E0 , 0x90E1 , 0x90E2 , 0x90E3 , 0x90E4 , 0x90E5 , 0x90E6,
+    0x90E7 , 0x90E8 , 0x90E9 , 0x90EA , 0x90EB , 0x90EC , 0x90ED , 0x90EE,
+    0x90EF , 0x90F0 , 0x90F1 , 0x90F2 , 0x90F3 , 0x90F4 , 0x90F5 , 0x90F6,
+    0x90F7 , 0x90F8 , 0x90F9 , 0x90FA , 0x90FB , 0x90FC , 0x90FD , 0x80C0,
+    // 0xBF-0xFE: 11 + 6 bits (8 bits total)
+    0x80C1 , 0x80C2 , 0x80C3 , 0x80C4 , 0x80C5 , 0x80C6 , 0x80C7 , 0x80C8,
+    0x80C9 , 0x80CA , 0x80CB , 0x80CC , 0x80CD , 0x80CE , 0x80CF , 0x80D0,
+    0x80D1 , 0x80D2 , 0x80D3 , 0x80D4 , 0x80D5 , 0x80D6 , 0x80D7 , 0x80D8,
+    0x80D9 , 0x80DA , 0x80DB , 0x80DC , 0x80DD , 0x80DE , 0x80DF , 0x80E0,
+    0x80E1 , 0x80E2 , 0x80E3 , 0x80E4 , 0x80E5 , 0x80E6 , 0x80E7 , 0x80E8,
+    0x80E9 , 0x80EA , 0x80EB , 0x80EC , 0x80ED , 0x80EE , 0x80EF , 0x80F0,
+    0x80F1 , 0x80F2 , 0x80F3 , 0x80F4 , 0x80F5 , 0x80F6 , 0x80F7 , 0x80F8,
+    0x80F9 , 0x80FA , 0x80FB , 0x80FC , 0x80FD , 0x80FE , 0x80FF , 0x4002,
+    // 0xFF: 0010 (4 bits), unused
+};
+
+#endif // MAVLINKX_ENCODE_LUT_ENABLE
+
+
 void _fmavX_encode_rle(uint8_t* const payload_out, uint16_t* const len_out, uint8_t c, uint8_t RLE_cnt)
 {
 uint16_t code;
@@ -930,7 +985,9 @@ uint16_t code;
 
 uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, const uint8_t* const payload, uint16_t len)
 {
+#ifndef MAVLINKX_ENCODE_LUT_ENABLE
 uint16_t code; // can be 2 - 13 bits
+#endif
 uint8_t is_in_RLE;
 uint8_t RLE_char;
 uint16_t RLE_cnt;
@@ -967,6 +1024,11 @@ CHECKRANGE(*len_out,256);
                 is_in_RLE = 1;
                 RLE_char = c;
                 RLE_cnt = 1;
+#ifdef MAVLINKX_ENCODE_LUT_ENABLE
+            } else {
+                uint16_t entry = fmavx_encode_lut[c];
+                _fmavX_encode_put_bits(payload_out, len_out, entry & 0x0FFF, entry >> 12);
+#else
             } else
             if (c >= 1 && c <= 64) {
                 code = (uint16_t)0b10 << 6; // 10: 2 bit code + 6 bits = 8 bits length
@@ -982,6 +1044,7 @@ CHECKRANGE(*len_out,256);
                 code = (uint16_t)0b01 << 7; // 01: 2 bit code + 7 bits = 9 bits length
                 code += (c - 65); // 0 .. 125
                 _fmavX_encode_put_bits(payload_out, len_out, code, 9);
+#endif
             }
         }
 
@@ -1018,6 +1081,30 @@ typedef enum {
     MAVLINKX_CODE_65_190,     // 01     + 7 bits
     MAVLINKX_CODE_UNDEFINED,  // ????  111, 1111, 11111  used as EOF
 } fmavx_code_e;
+
+
+#ifdef MAVLINKX_DECODE_LUT_ENABLE
+
+// decode prefix LUT: maps 5-bit peek -> { prefix_len, code_type }
+// packed as (prefix_len << 4) | code_type in uint8_t
+const uint8_t fmavx_decode_lut[32] = {
+    // 00000-00011: CODE_0 (prefix 000, 3 bits)
+    0x30 , 0x30 , 0x30 , 0x30,
+    // 00100-00101: CODE_255 (prefix 0010, 4 bits)
+    0x41 , 0x41,
+    // 00110: CODE_0_RLE (prefix 00110, 5 bits)
+    0x52,
+    // 00111: CODE_255_RLE (prefix 00111, 5 bits)
+    0x53,
+    // 01000-01111: CODE_65_190 (prefix 01, 2 bits)
+    0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26,
+    // 10000-10111: CODE_1_64 (prefix 10, 2 bits)
+    0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24,
+    // 11000-11111: CODE_191_254 (prefix 11, 2 bits)
+    0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25,
+};
+
+#endif // MAVLINKX_DECODE_LUT_ENABLE
 
 
 // TODO: shouldn't be global
@@ -1098,6 +1185,21 @@ CHECKRANGE(len,258);
         // get next code
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
 
+#ifdef MAVLINKX_DECODE_LUT_ENABLE
+        // ensure at least 5 bits in buffer for prefix lookup
+        while (fmavx_status.bit_cnt < 5) {
+            if (fmavx_status.in_pos >= len) goto decompress_done; // not enough bits, EOF
+CHECKRANGE(fmavx_status.in_pos,258);
+            fmavx_status.bit_buf = (fmavx_status.bit_buf << 8) | fmavx_in_buf[fmavx_status.in_pos++];
+            fmavx_status.bit_cnt += 8;
+        }
+        {
+            uint8_t peek = (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - 5)) & 0x1F;
+            uint8_t entry = fmavx_decode_lut[peek];
+            code = entry & 0x0F;
+            fmavx_status.bit_cnt -= (entry >> 4); // consume prefix bits
+        }
+#else
         if (_fmavX_decode_get_bits(&c, len, 2)) {
             if (c == 0b10) { // 10
                 code = MAVLINKX_CODE_1_64;
@@ -1126,8 +1228,9 @@ CHECKRANGE(len,258);
                 }
             }
         }
-
+#else
         if (code == MAVLINKX_CODE_UNDEFINED) return; // end
+#endif
 
         switch (code) {
             case MAVLINKX_CODE_0:
@@ -1167,6 +1270,10 @@ CHECKRANGE(*len_out,256);
                 break;
         }
     }
+#ifdef MAVLINKX_DECODE_LUT_ENABLE
+decompress_done:
+    return;
+#endif
 }
 
 
