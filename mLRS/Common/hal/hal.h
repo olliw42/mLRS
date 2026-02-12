@@ -359,6 +359,9 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ESP_WIFI_BRIDGE
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
+    #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+      #define USE_ESP_WIFI_BRIDGE_CONFIGURE
+    #endif
   #endif
   #if (defined ESP_DTR && defined ESP_RTS) || defined ESP_DTR_RTS_USB
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS

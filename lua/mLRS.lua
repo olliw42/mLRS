@@ -10,7 +10,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
 
-local version = '2026-02-03.01'
+local version = '2026-02-12.00'
 
 local required_tx_mLRS_version_int = 10303 -- 'v1.3.03'
 local required_rx_mLRS_version_int = 10303 -- 'v1.3.03'
@@ -198,7 +198,7 @@ local MBRIDGE_CMD_DEVICE_ITEM_RX     = 5
 local MBRIDGE_CMD_PARAM_REQUEST_LIST = 6
 local MBRIDGE_CMD_PARAM_ITEM         = 7
 local MBRIDGE_CMD_PARAM_ITEM2        = 8
-local MBRIDGE_CMD_PARAM_ITEM3        = 9 -- this actually can be ITEM3 or ITEM4, is signaled by index >= 128
+local MBRIDGE_CMD_PARAM_ITEM3_4      = 9 -- this can be ITEM3 or ITEM4, is signaled by index >= 128
 local MBRIDGE_CMD_REQUEST_CMD        = 10
 local MBRIDGE_CMD_INFO               = 11
 local MBRIDGE_CMD_PARAM_SET          = 12
@@ -216,7 +216,7 @@ local function mbridgeCmdLen(cmd)
     if cmd == MBRIDGE_CMD_PARAM_REQUEST_LIST then return 0; end
     if cmd == MBRIDGE_CMD_PARAM_ITEM then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
     if cmd == MBRIDGE_CMD_PARAM_ITEM2 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
-    if cmd == MBRIDGE_CMD_PARAM_ITEM3 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
+    if cmd == MBRIDGE_CMD_PARAM_ITEM3_4 then return MBRIDGE_CMD_PARAM_ITEM_LEN; end
     if cmd == MBRIDGE_CMD_REQUEST_CMD then return MBRIDGE_CMD_REQUEST_CMD_LEN; end
     if cmd == MBRIDGE_CMD_INFO then return MBRIDGE_CMD_INFO_LEN; end
     if cmd == MBRIDGE_CMD_PARAM_SET then return MBRIDGE_CMD_PARAM_SET_LEN; end
@@ -375,6 +375,7 @@ local DEVICE_INFO = nil
 local DEVICE_PARAM_LIST = nil
 local DEVICE_PARAM_LIST_expected_index = 0
 local DEVICE_PARAM_LIST_current_index = -1
+local DEVICE_PARAM_LIST_max_index = 0 -- 0: unknown, will be updated after each param upload
 local DEVICE_PARAM_LIST_errors = 0
 local DEVICE_PARAM_LIST_complete = false
 local DEVICE_DOWNLOAD_is_running = true -- we start the script with this
@@ -555,6 +556,11 @@ end
 -- This protocol ensures that the next parameter is explicitely fetched after the current one is processed
 ----------------------------------------------------------------------
 
+local function updateDeviceParamCounts()
+    DEVICE_PARAM_LIST_max_index = #DEVICE_PARAM_LIST
+end  
+
+
 local function doParamLoop()
     -- trigger getting device items and param items
     local t_10ms = getTime()
@@ -644,6 +650,7 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].editable = true
             elseif index == 255 then -- EOL (end of list)
                 if DEVICE_PARAM_LIST_errors == 0 then
+                    updateDeviceParamCounts()
                     DEVICE_PARAM_LIST_complete = true
                 else
                     -- Huston, we have a problem
@@ -687,8 +694,8 @@ local function doParamLoop()
                     cmdPush(MBRIDGE_CMD_REQUEST_CMD, {MBRIDGE_CMD_PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
                 end
             end
-        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3 then -- can be ITEM3 or ITEM4
-            -- MBRIDGE_CMD_PARAM_ITEM3
+        elseif cmd.cmd == MBRIDGE_CMD_PARAM_ITEM3_4 then -- can be ITEM3 or ITEM4
+            -- MBRIDGE_CMD_PARAM_ITEM3_4
             local index = cmd.payload[0]
             local is_item4 = false
             if (index >= 128) then -- this is actually ITEM4
@@ -1241,7 +1248,13 @@ local function drawPageMain()
         lcd.drawText(130, y+20, "parameters loading ...", g_textColor+BLINK+INVERS)
         local idx = DEVICE_PARAM_LIST_current_index
         if idx < 0 then idx = 0 end
-        lcd.drawText(330, y+20, "("..tostring(idx)..")", g_textColor)
+        -- lcd.drawText(330, y+20, "("..tostring(idx)..")", g_textColor)
+        local s = "("..tostring(idx)
+        if DEVICE_PARAM_LIST_max_index > 0 then
+            s = s.."/"..tostring(DEVICE_PARAM_LIST_max_index)
+        end    
+        s = s..")"
+        lcd.drawText(330, y+20, s, g_textColor)
         return
     end
 

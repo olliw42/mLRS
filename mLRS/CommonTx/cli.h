@@ -280,6 +280,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 //-------------------------------------------------------
 
 #define CLI_LINEND  "\r\n"
+#define CLI_BUF_SIZE  128
 
 
 #ifdef DEVICE_HAS_COM_ON_USB
@@ -319,6 +320,7 @@ class tTxCli
     bool is_cmd(const char* const cmd);
     bool is_cmd_param_set(char* const name, char* const svalue);
     bool is_cmd_set_value(const char* const cmd, int32_t* const value);
+    bool is_cmd_set_str(const char* const cmd, char* const str);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
@@ -331,7 +333,7 @@ class tTxCli
 
     bool initialized;
 
-    char buf[128];
+    char buf[CLI_BUF_SIZE];
     uint8_t pos;
     uint32_t tlast_ms;
 
@@ -385,7 +387,7 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 
 void tTxCli::addc(uint8_t c)
 {
-    if (pos > 100) return;
+    if (pos > (CLI_BUF_SIZE-24)) return; // not full buffer size, play it safe
 
     buf[pos] = c;
     pos++;
@@ -433,6 +435,33 @@ uint8_t n;
     for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
 
     *value = atoi(s);
+
+    return true;
+}
+
+
+// name = str value
+bool tTxCli::is_cmd_set_str(const char* const cmd, char* const str)
+{
+char s[64];
+uint8_t n;
+
+    uint8_t cmd_len = strlen(cmd);
+    uint8_t buf_len = strlen(buf);
+    if (buf_len < cmd_len + 2) return false;
+    if (strncmp(buf, cmd, cmd_len) != 0) return false;
+
+    // cleanify: extract '=string' // ATTENTION: it removes all blanks!
+    n = 0;
+    for (uint8_t i = cmd_len; i < buf_len; i++) {
+        if (buf[i] != ' ') s[n++] = buf[i];
+    }
+    s[n] = '\0';
+
+    if (n < 1) return false;
+    if (s[0] != '=') return false;
+
+    strcpy(str, &s[1]); // remove the '='
 
     return true;
 }
@@ -716,29 +745,35 @@ void tTxCli::print_help_do(void)
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
         switch (print_index) {
         case 0:  print_layout_version_warning(); break;
-        case 1:  putsn("  help, h, ?  -> this help page"); break;
-        case 2:  putsn("  v           -> print device and version"); break;
-        case 3:  putsn("  pl          -> list all parameters"); break;
-        case 4:  putsn("  pl c        -> list common parameters"); break;
-        case 5:  putsn("  pl tx       -> list Tx parameters"); break;
-        case 6:  putsn("  pl rx       -> list Rx parameters"); break;
+        case 1:  putsn("  help, h, ?      -> this help page"); break;
+        case 2:  putsn("  v               -> print device and version"); break;
+        case 3:  putsn("  pl              -> list all parameters"); break;
+        case 4:  putsn("  pl c            -> list common parameters"); break;
+        case 5:  putsn("  pl tx           -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx           -> list Rx parameters"); break;
         case 7:  putsn("  p name          -> get parameter value"); break;
         case 8:  putsn("  p name = value  -> set parameter value"); break;
         case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
-        case 10: putsn("  pstore      -> store parameters"); break;
-        case 11: putsn("  setconfigid -> select config id"); break;
-        case 12: putsn("  bind        -> start binding"); break;
-        case 13: putsn("  reload      -> reload all parameter settings"); break;
-        case 14: putsn("  stats       -> starts streaming statistics"); break;
-        case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
-        case 16: putsn("  systemboot  -> call system bootloader"); break;
+        case 10: putsn("  pstore          -> store parameters"); break;
+        case 11: putsn("  setconfigid     -> select config id"); break;
+        case 12: putsn("  bind            -> start binding"); break;
+        case 13: putsn("  reload          -> reload all parameter settings"); break;
+        case 14: putsn("  stats           -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+        case 16: putsn("  systemboot      -> call system bootloader"); break;
 #ifdef USE_ESP_WIFI_BRIDGE
-        case 17: putsn("  esppt       -> enter serial passthrough"); break;
-        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
-#endif
-#ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
+        case 17: putsn("  esppt           -> enter serial passthrough"); break;
+        case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
+  #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+        case 19: putsn("  esp get pswd          -> get password (TCP/UDP/UDPSTA)"); break;
+        case 20: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
+        case 21: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
+        case 22: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
+  #endif
+#elif defined USE_HC04_MODULE // let's assume that not both are true
+        case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
+        case 18: putsn("  hc04 getpin           -> get pin of HC04"); break;
+        case 19: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
@@ -859,7 +894,7 @@ bool rx_param_changed;
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                tasks.SetCliTaskAndValue(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
+                tasks.SetCliTask(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
             }
@@ -878,7 +913,7 @@ bool rx_param_changed;
         //-- System Bootloader
         } else
         if (is_cmd("systemboot")) {
-            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT); //task_pending = TX_TASK_SYSTEM_BOOT;
+            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
@@ -890,6 +925,32 @@ bool rx_param_changed;
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
             tasks.SetCliTask(TX_TASK_FLASH_ESP);
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+        } else
+        if (is_cmd("esp get pswd")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
+        } else
+        if (is_cmd_set_str("esp set pswd", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp pswd: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_PASSWORD, svalue);
+            }
+        } else
+        if (is_cmd("esp get netssid")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
+        } else
+        if (is_cmd_set_str("esp set netssid", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp netssid: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+            }
+#endif
 #endif
 
         //-- HC04 module handling
@@ -899,6 +960,9 @@ bool rx_param_changed;
             // enter hc04 passthrough, can only be exited by re-powering
             tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
         } else
+        if (is_cmd("hc04 getpin")) { // getpin
+            tasks.SetCliTask(TX_TASK_CLI_HC04_GETPIN);
+        } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
                 putsn("err: invalid pin number");
@@ -906,7 +970,7 @@ bool rx_param_changed;
                 char pin_str[32];
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
-                puts("HC04 Pin: ");putsn(pin_str);
+                puts("  hc04 pin: ");putsn(pin_str);
                 tasks.SetCliTaskAndValue(TX_TASK_CLI_HC04_SETPIN, value);
             }
 #endif
