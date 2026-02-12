@@ -8,6 +8,7 @@
 //********************************************************
 
 #include <stdint.h>
+#include <string.h>
 #include "tasks.h"
 
 
@@ -59,7 +60,9 @@
     void tTasks::SetCrsfTask(uint8_t task) { mbridge_crsf_task_pending = task; }
     void tTasks::SetDisplayTask(uint8_t task) { display_task_pending = task; }
     void tTasks::SetCliTask(uint8_t task) { cli_task_pending = task; }
-    void tTasks::SetCliTaskAndValue(uint8_t task, int32_t value) { cli_task_pending = task; cli_task_value = value;}
+    void tTasks::SetCliTask(uint8_t task, int32_t value) { cli_task_pending = task; cli_task_value = value;}
+    void tTasks::SetCliTask(uint8_t task, char* str) { cli_task_pending = task; strncpy(cli_task_str, str, sizeof(cli_task_str)-1); }
     int32_t tTasks::GetCliTaskValue(void) { return cli_task_value; }
+    char* tTasks::GetCliTaskStr(void) { return cli_task_str; }
     void tTasks::SetEspTask(uint8_t task) { esp_task_pending = task; }
 

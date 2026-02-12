@@ -33,6 +33,10 @@ typedef enum {
     TX_TASK_HC04_PASSTHROUGH,
     TX_TASK_CLI_HC04_GETPIN,
     TX_TASK_CLI_HC04_SETPIN,
+    TX_TASK_CLI_ESP_GET_PASSWORD, // TCP, UDP, UDPSTA
+    TX_TASK_CLI_ESP_SET_PASSWORD,
+    TX_TASK_CLI_ESP_GET_NETWORK_SSID, // UDPSTA
+    TX_TASK_CLI_ESP_SET_NETWORK_SSID,
 } MAIN_TASK_ENUM;
 
 
@@ -46,8 +50,10 @@ class tTasks
     void SetCrsfTask(uint8_t task);
     void SetDisplayTask(uint8_t task);
     void SetCliTask(uint8_t task);
-    void SetCliTaskAndValue(uint8_t task, int32_t value);
+    void SetCliTask(uint8_t task, int32_t value);
+    void SetCliTask(uint8_t task, char* str);
     int32_t GetCliTaskValue(void);
+    char* GetCliTaskStr(void);
     void SetEspTask(uint8_t task);
 
   private:
@@ -55,6 +61,7 @@ class tTasks
     uint8_t display_task_pending;
     uint8_t cli_task_pending;
     int32_t cli_task_value;
+    char cli_task_str[32+1];
     uint8_t esp_task_pending;
 };
 

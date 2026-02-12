@@ -83,9 +83,12 @@ class tTxEspWifiBridge
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
     void Tick_ms(void) {}
     void Do(void) {}
-
     void EnterFlash(void) {}
     void EnterPassthrough(void) {}
+    void GetPassword(void) {}
+    void SetPassword(char* str) {}
+    void GetNetSsid(void) {}
+    void SetNetSsid(char* str) {}
 };
 
 #else
@@ -121,10 +124,24 @@ class tTxEspWifiBridge
     void EnterFlash(void);
     void EnterPassthrough(void);
 
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+    void GetPassword(void);
+    void SetPassword(char* str);
+    void GetNetSsid(void);
+    void SetNetSsid(char* str);
+#else
+    void GetPassword(void) {}
+    void SetPassword(char* str) {}
+    void GetNetSsid(void) {}
+    void SetNetSsid(char* str) {}
+#endif
+
   private:
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
     void esp_wait_after_read(const char* const res);
+    void esp_get_ssidpswd(const char* net_cmd);
+    void esp_set_ssidpswd(const char* net_cmd, char* str);
     void esp_configure_baudrate(void);
     void esp_configure_wifiprotocol(void);
     void esp_configure_wifichannel(void);
@@ -412,7 +429,7 @@ void tTxEspWifiBridge::passthrough_do(void)
 
 #define ESP_DBG(x)
 
-#define ESP_CMDRES_LEN      46
+#define ESP_CMDRES_LEN      64
 #define ESP_CMDRES_TMO_MS   70 // 50 was not enough at 9600 baud.  60 worked.
 
 
@@ -453,6 +470,61 @@ void tTxEspWifiBridge::esp_wait_after_read(const char* const res)
     // wait for save on esp to finish
     delay_ms(100);
 }
+
+
+void tTxEspWifiBridge::esp_get_ssidpswd(const char* net_cmd)
+{
+char s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[64];
+
+    esp_gpio0_low(); // force AT mode
+    delay_ms(10); // give it some time
+
+    strcpy(cmd_str, "AT+"); strcat(cmd_str, net_cmd); strcat(cmd_str, "=?");
+    com->puts("  ");com->puts(cmd_str);com->puts("->");
+    if (!esp_read(cmd_str, s, &len)) { // AT+NETSSID sends response with 24 chars max
+        com->puts("get ");com->puts(net_cmd);com->puts(" failed");com->puts(CLI_LINEND);
+        return;
+    }
+    esp_wait_after_read(s);
+    s[len-2] = '\0'; com->puts((char*)s); com->puts(CLI_LINEND);
+
+    esp_gpio0_high(); // leave forced AT mode
+}
+
+
+void tTxEspWifiBridge::esp_set_ssidpswd(const char* net_cmd, char* str)
+{
+char s[ESP_CMDRES_LEN+2];
+uint8_t len;
+char cmd_str[64];
+
+    esp_gpio0_low(); // force AT mode
+    delay_ms(10); // give it some time
+
+    // AT+NETSSID=xxxxxxxxxxxxxxxxxxxxxxxx
+    strcpy(cmd_str, "AT+"); strcat(cmd_str, net_cmd); strcat(cmd_str, "="); strcat(cmd_str, str);
+    len = 3 + strlen(net_cmd) + 1 + 24;
+    for (uint8_t i = strlen(cmd_str); i < len; i++) cmd_str[i] = 255; // AT+NETSSID= must be followed by 24 chars!
+    cmd_str[len] = '\0';
+    com->puts("  ");com->puts(cmd_str);com->puts("->");
+    if (!esp_read(cmd_str, s, &len)) {
+        com->puts("set ");com->puts(net_cmd);com->puts(" failed");com->puts(CLI_LINEND);
+        return;
+    }
+    esp_wait_after_read(s);
+    s[len-2] = '\0'; com->puts((char*)s); com->puts(CLI_LINEND);
+    if (esp_read("AT+RESTART", s, &len)) delay_ms(1500);
+
+    esp_gpio0_high(); // leave forced AT mode
+}
+
+
+void tTxEspWifiBridge::GetPassword(void) { esp_get_ssidpswd("PSWD"); }
+void tTxEspWifiBridge::SetPassword(char* str) { esp_set_ssidpswd("PSWD", str); }
+void tTxEspWifiBridge::GetNetSsid(void) { esp_get_ssidpswd("NETSSID"); }
+void tTxEspWifiBridge::SetNetSsid(char* str) { esp_set_ssidpswd("NETSSID", str); }
 
 
 void tTxEspWifiBridge::esp_configure_baudrate(void)
