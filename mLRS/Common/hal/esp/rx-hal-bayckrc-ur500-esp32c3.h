@@ -28,8 +28,8 @@
 // UR500 overlay: serial1_rx=18, serial1_tx=19
 #define UARTB_USE_SERIAL
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
-#define UARTB_USE_TX_IO           IO_P19
-#define UARTB_USE_RX_IO           IO_P18
+#define UARTB_USE_TX_IO           IO_P21
+#define UARTB_USE_RX_IO           IO_P20
 #define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE
 
