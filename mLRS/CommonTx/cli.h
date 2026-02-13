@@ -760,7 +760,11 @@ void tTxCli::print_help_do(void)
         case 13: putsn("  reload          -> reload all parameter settings"); break;
         case 14: putsn("  stats           -> starts streaming statistics"); break;
         case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
         case 16: putsn("  systemboot      -> call system bootloader"); break;
+#else
+        case 16: break;
+#endif
 #ifdef USE_ESP_WIFI_BRIDGE
         case 17: putsn("  esppt           -> enter serial passthrough"); break;
         case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
@@ -770,7 +774,7 @@ void tTxCli::print_help_do(void)
         case 21: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
         case 22: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
   #endif
-#elif defined USE_HC04_MODULE // let's assume that not both are true
+#elif defined USE_HC04_MODULE // let's assume that not both ESP and HC04 can be true
         case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
         case 18: putsn("  hc04 getpin           -> get pin of HC04"); break;
         case 19: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
@@ -911,9 +915,11 @@ bool rx_param_changed;
             print_it(CLI_STATE_PRINT_LISTFREQS);
 
         //-- System Bootloader
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
         } else
         if (is_cmd("systemboot")) {
             tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
+#endif
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
