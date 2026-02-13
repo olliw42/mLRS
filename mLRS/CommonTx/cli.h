@@ -118,7 +118,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 {
     if (SetupParameter[param_idx].type != SETUP_PARAM_TYPE_LIST) return UINT8_MAX;
 
-    uint16_t allowed_mask = param_get_allowed_mask(param_idx);
+    uint32_t allowed_mask = param_get_allowed_mask(param_idx);
 
     uint8_t num = 0;
     for (uint8_t i = 0; i < param_get_opt_num(param_idx); i++) {
