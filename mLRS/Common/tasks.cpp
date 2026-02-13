@@ -16,53 +16,55 @@
 // Tx Tasks Class Implementation
 //-------------------------------------------------------
 
+void tTasks::Init(void)
+{
+    mbridge_crsf_task_pending = MAIN_TASK_NONE;
+    display_task_pending = MAIN_TASK_NONE;
+    cli_task_pending = MAIN_TASK_NONE;
+    esp_task_pending = MAIN_TASK_NONE;
+}
 
-    void tTasks::Init(void)
-    {
+
+uint8_t tTasks::Task(void)
+{
+uint8_t task;
+
+    if (mbridge_crsf_task_pending != MAIN_TASK_NONE) {
+        task = mbridge_crsf_task_pending;
         mbridge_crsf_task_pending = MAIN_TASK_NONE;
+        return task;
+    }
+
+    if (display_task_pending != MAIN_TASK_NONE) {
+        task = display_task_pending;
         display_task_pending = MAIN_TASK_NONE;
+        return task;
+    }
+
+    if (cli_task_pending != MAIN_TASK_NONE) {
+        task = cli_task_pending;
         cli_task_pending = MAIN_TASK_NONE;
+        return task;
+    }
+
+    if (esp_task_pending != MAIN_TASK_NONE) {
+        task = esp_task_pending;
         esp_task_pending = MAIN_TASK_NONE;
+        return task;
     }
 
-    uint8_t tTasks::Task(void)
-    {
-        uint8_t task;
+    return MAIN_TASK_NONE;
+}
 
-        if (mbridge_crsf_task_pending != MAIN_TASK_NONE) {
-            task = mbridge_crsf_task_pending;
-            mbridge_crsf_task_pending = MAIN_TASK_NONE;
-            return task;
-        }
 
-        if (display_task_pending != MAIN_TASK_NONE) {
-            task = display_task_pending;
-            display_task_pending = MAIN_TASK_NONE;
-            return task;
-        }
+void tTasks::SetMBridgeTask(uint8_t task) { mbridge_crsf_task_pending = task; }
+void tTasks::SetCrsfTask(uint8_t task) { mbridge_crsf_task_pending = task; }
+void tTasks::SetDisplayTask(uint8_t task) { display_task_pending = task; }
+void tTasks::SetCliTask(uint8_t task) { cli_task_pending = task; }
+void tTasks::SetCliTask(uint8_t task, int32_t value) { cli_task_pending = task; cli_task_value = value;}
+void tTasks::SetCliTask(uint8_t task, char* const str) { cli_task_pending = task; strncpy(cli_task_str, str, sizeof(cli_task_str)-1); }
+int32_t tTasks::GetCliTaskValue(void) { return cli_task_value; }
+char* tTasks::GetCliTaskStr(void) { return cli_task_str; }
+void tTasks::SetEspTask(uint8_t task) { esp_task_pending = task; }
 
-        if (cli_task_pending != MAIN_TASK_NONE) {
-            task = cli_task_pending;
-            cli_task_pending = MAIN_TASK_NONE;
-            return task;
-        }
-
-        if (esp_task_pending != MAIN_TASK_NONE) {
-            task = esp_task_pending;
-            esp_task_pending = MAIN_TASK_NONE;
-            return task;
-        }
-
-        return MAIN_TASK_NONE;
-    }
-
-    void tTasks::SetMBridgeTask(uint8_t task) { mbridge_crsf_task_pending = task; }
-    void tTasks::SetCrsfTask(uint8_t task) { mbridge_crsf_task_pending = task; }
-    void tTasks::SetDisplayTask(uint8_t task) { display_task_pending = task; }
-    void tTasks::SetCliTask(uint8_t task) { cli_task_pending = task; }
-    void tTasks::SetCliTask(uint8_t task, int32_t value) { cli_task_pending = task; cli_task_value = value;}
-    void tTasks::SetCliTask(uint8_t task, char* const str) { cli_task_pending = task; strncpy(cli_task_str, str, sizeof(cli_task_str)-1); }
-    int32_t tTasks::GetCliTaskValue(void) { return cli_task_value; }
-    char* tTasks::GetCliTaskStr(void) { return cli_task_str; }
-    void tTasks::SetEspTask(uint8_t task) { esp_task_pending = task; }
 
