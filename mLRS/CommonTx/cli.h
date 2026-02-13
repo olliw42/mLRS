@@ -977,7 +977,7 @@ bool rx_param_changed;
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
                 puts("  hc04 pin: ");putsn(pin_str);
-                tasks.SetCliTaskAndValue(TX_TASK_CLI_HC04_SETPIN, value);
+                tasks.SetCliTask(TX_TASK_CLI_HC04_SETPIN, value);
             }
 #endif
 
