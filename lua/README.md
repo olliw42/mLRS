@@ -17,7 +17,7 @@ Please see the [documentation page](https://github.com/olliw42/mLRS-docu/blob/ma
 
 ## Ethos (FrSky) Radios
 
-The Lua script files for EThos radios are found in the folder named "Ethos". In that folder you also find information on how to install and use it.
+The Lua script files for Ethos radios are found in the folder named "Ethos". In that folder you also find information on how to install and use it.
 
 
 
