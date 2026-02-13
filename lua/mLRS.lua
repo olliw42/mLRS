@@ -438,7 +438,7 @@ local function mb_to_u24(payload, pos)
 end
 
 local function mb_to_u32(payload, pos)
-    return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256 + payload[pos+2]*256*256*256
+    return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256 + payload[pos+3]*256*256*256
 end
 
 local function mb_to_value(payload, pos, typ)
