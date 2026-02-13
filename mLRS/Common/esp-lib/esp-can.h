@@ -17,6 +17,9 @@ extern "C" {
 #include "esp-peripherals.h"
 #include "driver/twai.h"
 #include "libcanard/canard.h"
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#include "soc/usb_serial_jtag_reg.h"
+#endif
 
 
 //-------------------------------------------------------
@@ -203,6 +206,13 @@ void can_init(void)
     memset(&_dc_stats, 0, sizeof(_dc_stats));
     _dc_rxwritepos = 0;
     _dc_rxreadpos = 0;
+
+    // on ESP32-C3, GPIO 18/19 are USB D-/D+ by default.
+    // release them so the GPIO matrix can route TWAI to these pins.
+    // this disables USB serial/JTAG.
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+#endif
 
     // install TWAI driver here, matching the STM32 pattern where can_init()
     // sets up the CAN peripheral and calls dc_hal_init()
