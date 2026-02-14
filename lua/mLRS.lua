@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-02-13', -- add a '.01' if needed for the day
+    script = '2026-02-14', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -1157,10 +1157,9 @@ end
 
 local function drawParamDownload()
     local y = LAYOUT.INFO_Y
-    lcd.drawText(130, y+LAYOUT.INFO_DY, "parameters loading ...", THEME.textColor+BLINK+INVERS)
+    lcd.drawText(LAYOUT.W_HALF, y+LAYOUT.INFO_DY, " parameters loading ... ", THEME.textColor+BLINK+INVERS+CENTER)
     local idx = DEVICE_PARAM_LIST_current_index
     if idx < 0 then idx = 0 end
-    -- lcd.drawText(330, y+LAYOUT.INFO_DY, "("..tostring(idx)..")", THEME.textColor)
     local s = "("..tostring(idx)
     if DEVICE_PARAM_LIST_max_index > 0 then
         s = s.."/"..tostring(DEVICE_PARAM_LIST_max_index)
@@ -1168,9 +1167,9 @@ local function drawParamDownload()
     s = s..")"
     if isEdgeTx then -- on OTX TEXT_BGCOLOR doesn't seem to work correctly
         lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
-        lcd.drawFilledRectangle(320, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
+        lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
     end    
-    lcd.drawText(330, y+LAYOUT.INFO_DY, s, THEME.textColor)
+    lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
 end
 
 
