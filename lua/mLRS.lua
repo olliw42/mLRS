@@ -1157,7 +1157,7 @@ end
 
 local function drawParamDownload()
     local y = LAYOUT.INFO_Y
-    lcd.drawText(LAYOUT.W_HALF, y+LAYOUT.INFO_DY, "parameters loading ...", THEME.textColor+BLINK+INVERS+CENTER)
+    lcd.drawText(LAYOUT.W_HALF, y+LAYOUT.INFO_DY, " parameters loading ... ", THEME.textColor+BLINK+INVERS+CENTER)
     local idx = DEVICE_PARAM_LIST_current_index
     if idx < 0 then idx = 0 end
     local s = "("..tostring(idx)
@@ -1167,9 +1167,9 @@ local function drawParamDownload()
     s = s..")"
     if isEdgeTx then -- on OTX TEXT_BGCOLOR doesn't seem to work correctly
         lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
-        lcd.drawFilledRectangle(LAYOUT.W_HALF + 60, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
+        lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
     end    
-    lcd.drawText(LAYOUT.W_HALF + 70, y+LAYOUT.INFO_DY, s, THEME.textColor)
+    lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
 end
 
 
