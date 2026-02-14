@@ -609,11 +609,11 @@ tMBridgeInfo info = {};
 
     info.has_status = 1; // to indicate it has these flags
     info.binding = (bind.IsInBind()) ? 1 : 0;
-    info.connected = (connected()) ? 1 : 0;
-    info.rx_LQ_low = (stats.GetReceivedLQ_rc() < 65) ? 1 : 0;
-    info.tx_LQ_low = (stats.GetLQ_serial() < 65) ? 1 : 0;
+    info._connected = (connected()) ? 1 : 0;
+    info._rx_LQ_low = 0;
+    info._tx_LQ_low = 0;
 
-    info.param_num = SETUP_PARAMETER_NUM; // known if non-zero
+    info.param_num = SETUP_PARAMETER_NUM; // non-zero if known
 
     mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }
