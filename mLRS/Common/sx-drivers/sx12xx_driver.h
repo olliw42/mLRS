@@ -139,6 +139,9 @@ class SxDriverDummy
     int8_t RfPower_dbm(void) { return INT8_MIN; }
 
     void HandleAFC(void) {}
+
+    uint16_t GetAndClearIrqStatus(uint16_t IrqMask) { return 0; }
+    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len) {}
 };
 
 
