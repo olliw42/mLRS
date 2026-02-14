@@ -473,8 +473,6 @@ class tFhssBase
             while(1){} // should not happen, but play it safe
         }
 
-        is_in_binding = false;
-
         curr_i = 0;
     }
 
