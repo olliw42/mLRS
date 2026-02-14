@@ -1186,18 +1186,26 @@ CHECKRANGE(len,258);
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
 
 #ifdef MAVLINKX_DECODE_LUT_ENABLE
-        // ensure at least 5 bits in buffer for prefix lookup
-        while (fmavx_status.bit_cnt < 5) {
-            if (fmavx_status.in_pos >= len) goto decompress_done; // not enough bits, EOF
+        // fill bit buffer from input, stop when no more input bytes
+        while (fmavx_status.bit_cnt < 5 && fmavx_status.in_pos < len) {
 CHECKRANGE(fmavx_status.in_pos,258);
             fmavx_status.bit_buf = (fmavx_status.bit_buf << 8) | fmavx_in_buf[fmavx_status.in_pos++];
             fmavx_status.bit_cnt += 8;
         }
+        if (fmavx_status.bit_cnt < 2) goto decompress_done; // shortest prefix is 2 bits
         {
-            uint8_t peek = (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - 5)) & 0x1F;
+            // pad remaining bits to 5 if needed for LUT peek
+            uint8_t peek;
+            if (fmavx_status.bit_cnt >= 5) {
+                peek = (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - 5)) & 0x1F;
+            } else {
+                peek = (fmavx_status.bit_buf << (5 - fmavx_status.bit_cnt)) & 0x1F;
+            }
             uint8_t entry = fmavx_decode_lut[peek];
+            uint8_t prefix_len = entry >> 4;
+            if (prefix_len > fmavx_status.bit_cnt) goto decompress_done; // not enough bits for this code
             code = entry & 0x0F;
-            fmavx_status.bit_cnt -= (entry >> 4); // consume prefix bits
+            fmavx_status.bit_cnt -= prefix_len; // consume prefix bits
         }
 #else
         if (_fmavX_decode_get_bits(&c, len, 2)) {
@@ -1228,7 +1236,7 @@ CHECKRANGE(fmavx_status.in_pos,258);
                 }
             }
         }
-#else
+
         if (code == MAVLINKX_CODE_UNDEFINED) return; // end
 #endif
 
