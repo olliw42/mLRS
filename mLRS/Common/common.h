@@ -235,27 +235,28 @@ tRfPower rfpower;
 void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len)
 {
     if (antenna == ANTENNA_1) {
-        sx.ReadFrame((uint8_t*)data, len);
+        sx.ReadFrame((uint8_t*)data, len); // should never happen that SX is not set up when antenna1
     } else {
-        sx2.ReadFrame((uint8_t*)data2, len);
+        sx2.ReadFrame((uint8_t*)data2, len); // should never happen that SX2 is not set up when antenna2
     }
 }
 
 
 void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
 {
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x // SINGLE BAND
-    if (antenna == ANTENNA_1) {
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // DUAL BAND
+    if (Config.IsDualBand) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms);
-        sx2.SetToIdle();
-    } else {
         sx2.SendFrame((uint8_t*)data, len, tmo_ms);
-        sx.SetToIdle();
-    }
-#else
-    sx.SendFrame((uint8_t*)data, len, tmo_ms);
-    sx2.SendFrame((uint8_t*)data, len, tmo_ms);
+    } else
 #endif
+    if (antenna == ANTENNA_1) {
+        sx.SendFrame((uint8_t*)data, len, tmo_ms); // should never happen that SX is not set up when antenna1
+        IF_SX2(sx2.SetToIdle();)
+    } else {
+        sx2.SendFrame((uint8_t*)data, len, tmo_ms); // should never happen that SX2 is not set up when antenna2
+        IF_SX(sx.SetToIdle();)
+    }
 }
 
 
@@ -367,6 +368,6 @@ STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
 STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup len missmatch")
 
-STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_CONFIG_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
+STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
 
 #endif // COMMON_H

@@ -55,7 +55,8 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#define PLL_PLLN  80
+#define PLL_PLLQ  RCC_PLLQ_DIV4
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

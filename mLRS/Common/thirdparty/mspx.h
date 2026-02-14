@@ -722,8 +722,9 @@ void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const 
 // decompress
 void mspX_boxnames_payload_decompress(msp_message_t* const msg, uint8_t* const buf)
 {
-    uint8_t payload_len = msg->len;
-    memcpy(buf, msg->payload, msg->len);
+    uint16_t payload_len = msg->len;
+    if (payload_len > MSP_PAYLOAD_LEN_MAX) payload_len = MSP_PAYLOAD_LEN_MAX; // should not happen, but play it safe
+    memcpy(buf, msg->payload, payload_len);
 
     msg->len = 0;
     uint8_t state = 0;
@@ -738,7 +739,7 @@ void mspX_boxnames_payload_decompress(msp_message_t* const msg, uint8_t* const b
         } else
         if (state == 0xFF) {
             if (c < INAV_BOXES_COUNT) { // protect against nonsense
-                for (uint8_t n = 0; n < strlen(inavBoxes[c].boxName); n++) {
+                for (uint16_t n = 0; n < strlen(inavBoxes[c].boxName); n++) {
                     msg->payload[msg->len++] = (inavBoxes[c].boxName)[n];
                 }
                 msg->payload[msg->len++] = ';';

@@ -149,8 +149,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         gconfig = global_config;
 
         switch (gconfig->FrequencyBand) {
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ:
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
                 low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_ON;
                 break;
             default:
@@ -208,8 +208,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetTx();
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         WriteRegister(SX1276_REG_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
         if (tmo_ms == 0) { // 0 = no timeout
@@ -295,8 +296,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return actual_power_dbm;
     }
 
-  private:
+  protected:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     uint8_t low_frequency_mode;
     uint8_t sx_power;
@@ -452,10 +455,10 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };
@@ -595,10 +598,10 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };

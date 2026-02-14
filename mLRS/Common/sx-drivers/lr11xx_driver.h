@@ -234,12 +234,12 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         gconfig = global_config;
 
         switch (gconfig->FrequencyBand) {
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ: break;
+            case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR11XX_CAL_IMG_902_MHZ_1, LR11XX_CAL_IMG_902_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR11XX_CAL_IMG_863_MHZ_1, LR11XX_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR11XX_CAL_IMG_430_MHZ_1, LR11XX_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_2P4_GHZ: break;
             default:
                 while(1){} // protection
         }
@@ -254,7 +254,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
-        if (gconfig->FrequencyBand == SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ) {
+        if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
             SetPaConfig(LR11XX_PA_SELECT_HF_PA, LR11XX_REG_PA_SUPPLY_INTERNAL, 0, 0);
         } else {
 #ifndef SX_USE_LP_PA
@@ -287,8 +287,9 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         ClearIrq(LR11XX_IRQ_ALL);
         SetRx(tmo_ms * 33); // 0 = no timeout
     }
@@ -490,10 +491,10 @@ class Lr11xxDriver : public Lr11xxDriverCommon
         Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Lr11xxDriverCommon::SetToRx(tmo_ms);
+        Lr11xxDriverCommon::SetToRx();
     }
 };
 
@@ -630,10 +631,10 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
         Lr11xxDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Lr11xxDriverCommon::SetToRx(tmo_ms);
+        Lr11xxDriverCommon::SetToRx();
     }
 };
 

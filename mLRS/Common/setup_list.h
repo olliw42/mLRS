@@ -111,7 +111,7 @@
   X( Setup.Tx[0].WifiChannel,       LIST, "Tx Wifi Channel",  "TX_WIFI_CHANNEL",  0,0,0,"", "1,6,11,13", MSK_ALL )\
   X( Setup.Tx[0].WifiPower,         LIST, "Tx Wifi Power",    "TX_WIFI_POWER",    0,0,0,"", "low,med,max", MSK_ALL )
 
-#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE
 #define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_ESP
 #else
 #define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN
@@ -126,6 +126,7 @@
   X( Setup.Rx.SerialPort,           LIST, "Rx Ser Port",      "RX_SER_PORT",      0,0,0,"", "serial,can", SETUP_MSK_RX_SER_PORT )\
   X( Setup.Rx.SerialBaudrate,       LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,       LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Rx.MavlinkSystemID,      LIST, "Rx Mav System ID", "RX_MAV_SYSTEM_ID", 0,0,0,"", "51,52,53,54,55", MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,      LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,       LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.OutRssiChannelMode,   LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\

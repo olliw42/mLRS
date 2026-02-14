@@ -30,7 +30,8 @@ extern tStats stats;
 
 
 //#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
-#define RADIO_LINK_SYSTEM_ID      TX_RADIO_LINK_SYSTEM_ID // moved to common_conf.h
+//#define RADIO_LINK_SYSTEM_ID      TX_RADIO_LINK_SYSTEM_ID // moved to common_conf.h
+#define RADIO_LINK_SYSTEM_ID      (51 + Setup.Rx.MavlinkSystemID)
 
 #define MAVLINK_BUF_SIZE          300 // needs to be larger than max MAVLink frame size = 286 bytes
 
@@ -151,7 +152,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
-    //   SerialDestination = MBRDIGE           => no router, only ser = mbridge (ser2 = null)
+    //   SerialDestination = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
@@ -162,7 +163,7 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
         ser = _serial2port;
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
         break;
-    case SERIAL_DESTINATION_MBRDIGE:
+    case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         ser2 = nullptr;
         break;
@@ -675,10 +676,10 @@ uint8_t dummy[18+2] = {};
     fmav_msg_autopilot_version_pack(
         &msg_buf,
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
-        MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_BYTEWISE,
+        MAV_PROTOCOL_CAPABILITY_MAVLINK2 | MAV_PROTOCOL_CAPABILITY_PARAM_ENCODE_BYTEWISE | MAV_PROTOCOL_CAPABILITY_COMMAND_INT,
         VERSION, 0, 0, 0,
         dummy, dummy, dummy,
-        MAVLINK_VID, MAVLINK_PID, 0, dummy,
+        MAVLINK_VID, MAVLINK_PID, 0, dummy, // TODO: set a uid
         //uint64_t capabilities,
         //uint32_t flight_sw_version, uint32_t middleware_sw_version, uint32_t os_sw_version, uint32_t board_version,
         //const uint8_t* flight_custom_version, const uint8_t* middleware_custom_version, const uint8_t* os_custom_version,
@@ -800,7 +801,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
 
             switch (command) {
                 case MAV_CMD_REQUEST_MESSAGE: // #512
-                    switch (param1) {
+                    switch (param1) { // param1: MAVLink message id of requested message
                         case FASTMAVLINK_MSG_ID_AUTOPILOT_VERSION: // #148
                             inject_task |= INJECT_TASK_AUTOPILOT_VERSION;
                             res = MAV_RESULT_ACCEPTED;
@@ -810,12 +811,15 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
                             res = MAV_RESULT_ACCEPTED;
                             break;
                     }
+                    // we ignore param7 (target address for requested message, if message has target address fields, 0,1,2)
                     break;
                 case MAV_CMD_REQUEST_PROTOCOL_VERSION: // #519, replaced by MAV_CMD_REQUEST_MESSAGE
+                    // we ignore param1 (should test for 0,1, and ignore else)
                     inject_task |= INJECT_TASK_PROTOCOL_VERSION;
                     res = MAV_RESULT_ACCEPTED;
                     break;
                 case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: // #520, replaced by MAV_CMD_REQUEST_MESSAGE
+                    // we ignore param1 (should test for 0,1, and ignore else)
                     inject_task |= INJECT_TASK_AUTOPILOT_VERSION;
                     res = MAV_RESULT_ACCEPTED;
                     break;
@@ -869,6 +873,7 @@ void tTxMavlink::component_do(void)
 
     if (inject_task & INJECT_TASK_PROTOCOL_VERSION) {
         inject_task &=~ INJECT_TASK_PROTOCOL_VERSION;
+        // note: message PROTOCOL_VERSION (#300) is deprecated and replaced by nothing
         send_autopilot_version();
         return; // only one per loop
     }

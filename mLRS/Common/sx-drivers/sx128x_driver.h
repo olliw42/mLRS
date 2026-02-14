@@ -239,8 +239,9 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetTx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // 0 = no timeout, if a Tx timeout occurs we have a serious problem
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         ClearIrqStatus(SX1280_IRQ_ALL);
         SetRx(SX1280_PERIODBASE_62p5_US, tmo_ms*16); // 0 = no timeout
     }
@@ -321,8 +322,10 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return actual_power_dbm;
     }
 
-  private:
+  protected:
     tSxGlobalConfig* gconfig;
+
+  private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxFlrcConfiguration* flrc_configuration;
     uint8_t sx_power;
@@ -452,10 +455,10 @@ class Sx128xDriver : public Sx128xDriverCommon
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx128xDriverCommon::SetToRx(tmo_ms);
+        Sx128xDriverCommon::SetToRx();
     }
 };
 
@@ -613,10 +616,10 @@ class Sx128xDriver2 : public Sx128xDriverCommon
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx128xDriverCommon::SetToRx(tmo_ms);
+        Sx128xDriverCommon::SetToRx();
     }
 };
 

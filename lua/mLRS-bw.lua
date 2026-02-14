@@ -12,7 +12,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with OTX, ETX, mOTX v33
 
--- local version = '2026-01-10.00'
+-- local version = '2026-02-09.00'
 
 local req_tx_ver = 1000 -- 'v1.0.0'
 local req_rx_ver = 1000 -- 'v1.0.0'
@@ -31,10 +31,10 @@ local Boot_idx = 5
 local Device_idx = 6
 
 -- save/load/nav (max 4)
-local Save_idx = 8
-local Reload_idx = 9
-local Prev_idx = 10
-local Next_idx = 11
+local Save_idx = 7
+local Reload_idx = 8
+local Prev_idx = 9
+local Next_idx = 10
 
 local Page0_parm_max = 3
 local Page_parm_max = 6
@@ -634,7 +634,7 @@ end
 -- Edit stuff
 ----------------------------------------------------------------------
 
-local cursor_idx = 9
+local cursor_idx = Next_idx -- Start at next
 local edit = false
 
 local cursor_x_idx = 0 -- index into string for string edits
@@ -882,26 +882,24 @@ local function drawPage()
     -- Save/Load and Navigation
     y = liney(7)
     if page ~= 99 then
-        lcd.drawText(0, y, "save", cur_attr(Save_idx - s))
-        lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx - s))
+        lcd.drawText(0, y, "save", cur_attr(Save_idx))
+        lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx))
+        lcd.drawText(LCD_W/2, y, "prev", cur_attr(Prev_idx))
     end
-    lcd.drawText(LCD_W/2, y, "prev", cur_attr(Prev_idx - s))
-    lcd.drawText(LCD_W*3/4, y, "next", cur_attr(Next_idx - s))
+    lcd.drawText(LCD_W*3/4, y, "next", cur_attr(Next_idx))
 end
 
 local function doPage(event)
     local s = 0
     if page == 0 then
       s = 1
-    elseif page == 99 then
-      s = 0
     end
 
     if not edit then
         if event == EVT_VIRTUAL_EXIT then
             -- nothing to do
         elseif event == EVT_VIRTUAL_ENTER then
-            if cursor_idx == Save_idx - s and DEV_PARM_LIST_complete then -- Save pressed
+            if cursor_idx == Save_idx and DEV_PARM_LIST_complete then -- Save pressed
                 sendParmStore()
                 clearParms()
             elseif page == 0 and cursor_idx == Bind_idx then -- Bind pressed
@@ -911,38 +909,28 @@ local function doPage(event)
             elseif page == 0 and cursor_idx == Device_idx then -- Device info pressed
                 page = 99 -- jump to device info page
                 cursor_idx = Next_idx
-            elseif cursor_idx == Reload_idx - s then -- Reload pressed
+            elseif cursor_idx == Reload_idx then -- Reload pressed
                 page = 0  -- move to page 0 to force MBRIDGE_CMD_REQUEST_INFO
                 clearParms()
-                cursor_idx = 10
-            elseif cursor_idx == Prev_idx - s then -- Prev pressed
+                cursor_idx = Next_idx
+            elseif cursor_idx == Prev_idx then -- Prev pressed
                 clearParms()
                 if page == 99 then
                     page = 0
-                    cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
                 else
                     page = page - 1
-                    if page == 0 then
-                        cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
-                    end
                     if page < 0 then
                         page = Max_Page
-                        cursor_idx = cursor_idx + 1 -- 1 more positions on subsequent pages; move forward to "next"
                     end
                 end
-            elseif cursor_idx == Next_idx - s then -- Next pressed
+            elseif cursor_idx == Next_idx then -- Next pressed
                 clearParms()
                 if page == 99 then
                     page = 0
-                    cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
                 else
-                    if page == 0 then
-                        cursor_idx = cursor_idx + 1 -- 1 more positions on subsequent pages; move forward to "next"
-                    end
                     page = page + 1
                     if page > Max_Page then
                         page = 0
-                        cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
                     end
                 end
             elseif DEV_PARM_LIST_complete and DEV_PARM_LIST[cursor_idx] ~= nil and DEV_PARM_LIST[cursor_idx].editable then -- edit option
@@ -953,14 +941,17 @@ local function doPage(event)
             end
         elseif event == EVT_VIRTUAL_NEXT then -- and DEV_PARM_LIST_complete then
             cursor_idx = cursor_idx + 1
-            local max_cursor = Next_idx - s
-            if page == 99 then max_cursor = Prev_idx end -- only prev/next on page 99, start at prev
-            if cursor_idx > max_cursor then cursor_idx = max_cursor end
+            if cursor_idx > Next_idx then
+                cursor_idx = Next_idx
+            end
         elseif event == EVT_VIRTUAL_PREV then -- and DEV_PARM_LIST_complete then
             cursor_idx = cursor_idx - 1
-            local min_cursor = 0
-            if page == 99 then min_cursor = Prev_idx end -- only prev/next on page 99
-            if cursor_idx < min_cursor then cursor_idx = min_cursor end
+            if cursor_idx < 0 then
+                cursor_idx = 0
+            end
+            if page == 99 then
+                cursor_idx = Next_idx
+            end
         end
     else -- edit
         if event == EVT_VIRTUAL_EXIT then

@@ -163,6 +163,7 @@ tTxCrsf crsf;
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
 void crsf_pin5_rx_callback(uint8_t c) { crsf.pin5_rx_callback(c); }
 void crsf_pin5_tc_callback(void) { crsf.pin5_tc_callback(); }
+void crsf_pin5_cc1_callback(void) { crsf.pin5_cc1_callback(); }
 
 
 // is called in isr context
@@ -356,6 +357,9 @@ void tTxCrsf::Init(bool enable_flag)
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
     tPin5BridgeBase::Init();
+
+    // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
+    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
 }
 
 
@@ -970,7 +974,7 @@ tCrsfLinkStatistics clstats;
 
     clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);           // OpenTX -> "1RSS"
     clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
-    clstats.uplink_LQ = stats.received_LQ_rc; // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
+    clstats.uplink_LQ = stats.GetReceivedLQ_rc(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
     clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
     clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
     clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
@@ -1010,7 +1014,7 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(stats.received_rssi,    // OpenTx -> "RRSP" // ??? downlink but "R" ??
                                                   sx.ReceiverSensitivity_dbm());
-    clstats.downlink_LQ = stats.received_LQ_rc;                                   // ignored by OpenTx
+    clstats.downlink_LQ = stats.GetReceivedLQ_rc();                               // ignored by OpenTx
     clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
     clstats.uplink_transmit_power = sx.RfPower_dbm();                             // OpenTx -> "TPWR"
 

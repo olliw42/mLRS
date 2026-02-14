@@ -220,11 +220,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         // default for SX1261/2 (E22/E77-900) is 902 to 928 MHz
         // default for SX1268 (E22/E77-400) is 470 to 510 MHz
         switch (gconfig->FrequencyBand) {
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
                 while(1){} // protection
         }
@@ -282,8 +282,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         ClearIrqStatus(SX126X_IRQ_ALL);
         SetRx(tmo_ms * 64); // 0 = no timeout
     }
@@ -501,10 +502,10 @@ class Sx126xDriver : public Sx126xDriverCommon
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
     }
 };
 
@@ -632,10 +633,10 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
     }
 };
 

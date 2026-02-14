@@ -38,6 +38,18 @@ void CLOCK100US_IRQHandler(void)
 
 
 //-------------------------------------------------------
+// Dummy tTxClock class
+
+class tTxClock
+{
+  public:
+    void SetCC1Callback(void (*callback)(void)) {};
+};
+
+tTxClock txclock;
+
+
+//-------------------------------------------------------
 // Pin5BridgeBase class
 
 class tPin5BridgeBase
@@ -68,6 +80,7 @@ class tPin5BridgeBase
     // callback functions
     IRAM_ATTR void pin5_rx_callback(uint8_t c);
     void pin5_tc_callback(void) {} // is needed in derived classes
+    void pin5_cc1_callback(void) {} // is needed in derived classes
 
     // parser
     typedef enum {

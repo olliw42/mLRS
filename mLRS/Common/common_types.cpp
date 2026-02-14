@@ -358,6 +358,7 @@ const uint16_t power_table_dBm_to_mW[] = {
     2000, // 33 dBm
 };
 
+
 uint8_t dronecan_cvt_power(int8_t power_dbm)
 {
     if (power_dbm < 0) return 0;
@@ -377,6 +378,8 @@ uint16_t cvt_power(int8_t power_dbm)
 //-- modes and so on
 // ATTENTION: must not be longer than FREQUENCY_BAND_STR_LEN, MODE_STR_LEN, w/o terminating NULL character!
 
+// MLRS_RADIO_LINK_INFORMATION_FIELD_BAND_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 4 chars max
 void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t len)
 {
     switch (frequency_band) {
@@ -390,6 +393,9 @@ void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t
     }
 }
 
+
+// MLRS_RADIO_LINK_INFORMATION_FIELD_MODE_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 6 chars max
 void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
 {
     switch (mode) {
@@ -480,7 +486,7 @@ void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 
 void remove_leading_zeros(char* const s)
 {
-uint16_t i, len;
+int16_t i, len; // int16 to avoid underflow in len -1
 
     len = strlen(s);
     for (i = 0; i < len - 1; i++) {
@@ -492,6 +498,8 @@ uint16_t i, len;
 
 void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
+    if (slen > 67) slen = 67; // should not happen, but play it safe
+
     memset(Power_optstr, 0, slen);
 
     char optstr[67+2] = {};

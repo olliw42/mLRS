@@ -6,6 +6,17 @@
 // hal
 //********************************************************
 
+/*
+  Info on pin usage
+
+  TX,RX (main pads on top&bottom):  serial
+  TX2 (corner pad on top):          out (CRSF/SBUS)
+
+  top:      side with button, LED, antenna, and PA chips
+  bottom:   side with ESP chip
+*/
+
+
 //-------------------------------------------------------
 // ESP32, ELRS RadioMaster XR4 RX
 //-------------------------------------------------------
@@ -22,9 +33,9 @@
 // UARTF = debug port
 
 #define UART_USE_SERIAL1 
-#define UART_BAUD                 416666   // CRSF baud rate
+#define UART_BAUD                 416666   // receiver-side CRSF baud rate
 #define UART_USE_TX_IO            IO_P18   // tx2 pad on the receiver
-#define UART_USE_RX_IO            -1       // no Rx pin needed
+#define UART_USE_RX_IO            -1       // no rx pin needed
 #define UART_TXBUFSIZE            256
 
 

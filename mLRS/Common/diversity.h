@@ -38,7 +38,7 @@ class tTDiversity
     uint8_t Antenna(void) { return proposed_antenna; }
     void SetAntenna(uint8_t antenna) { proposed_antenna = antenna; }
 
-//XX  private:
+  private:
     int16_t frame_rate_ms;
 
     int16_t estimator_value;

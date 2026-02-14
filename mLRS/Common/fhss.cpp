@@ -63,16 +63,12 @@ void tFhssBase::generate(uint32_t seed)
         }
 
         // do not pick a bind channel
-        bool is_bind_channel = false;
-        for (uint8_t bi = 0; bi < BIND_CHANNEL_LIST_LEN; bi++) {
-            if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
-        }
-        if (is_bind_channel) continue;
+        if (ch == fhss_bind_channel) continue;
 
         // ensure it is not too close to the previous
         // do only if we have plenty of channels at our disposal
         bool is_too_close = false;
-        if ((config_i != SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ && config_i != SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN) &&
+        if ((config_i != SX_FHSS_FREQUENCY_BAND_433_MHZ && config_i != SX_FHSS_FREQUENCY_BAND_866_MHZ_IN) &&
             (k > 0)) { // TODO: use smarter method, e.g., cnt < 2/3
             int8_t last_ch = ch_list[k - 1];
             if (last_ch == 0) { // special treatment for this case
@@ -145,11 +141,7 @@ void tFhssBase::generate_ortho_except(uint32_t seed, uint8_t ortho, uint8_t exce
         uint8_t ch = ch_eff * ch_inc + ch_ofs; // that's the true channel
 
         // do not pick a bind channel
-        bool is_bind_channel = false;
-        for (uint8_t bi = 0; bi < BIND_CHANNEL_LIST_LEN; bi++) {
-            if (ch == fhss_bind_channel_list[bi]) is_bind_channel = true;
-        }
-        if (is_bind_channel) continue;
+        if (ch == fhss_bind_channel) continue;
 
         // do not pick a channel in an excepted wifi band
         // https://en.wikipedia.org/wiki/List_of_WLAN_channels

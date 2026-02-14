@@ -127,7 +127,7 @@ class SxDriverDummy
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr) {}
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) {}
     void ReadFrame(uint8_t* const data, uint8_t len) {}
-    void SetToRx(uint16_t tmo_ms) {}
+    void SetToRx(void) {}
     void SetToIdle(void) {}
 
     void ResetToLoraConfiguration() {}

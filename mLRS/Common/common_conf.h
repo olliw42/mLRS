@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             10307 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.3.07"
+#define VERSION             10309 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.3.09"
 #define SETUPLAYOUT         10304 // this should be changed then Setup struct and/or serial changes
 
 
@@ -81,6 +81,7 @@
 
 #define SETUP_RX_SERIAL_LINK_MODE       2 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
+#define SETUP_RX_MAVLINK_SYSTEM_ID      0 // 0: 51, 1: 52, 2: 53, 3: 54, 4: 55  // SiK uses 51, 68
 #define SETUP_RX_SEND_RADIO_STATUS      1 // 0: off, 1: ardu_1, 2: px4 aka "brad"
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
@@ -107,9 +108,6 @@
 // User-adjustable System Configs
 //-------------------------------------------------------
 
-#define TX_RADIO_LINK_SYSTEM_ID         51 // SiK uses 51, 68
-
-#define RX_RADIO_LINK_SYSTEM_ID         51 // SiK uses 51, 68
 #define RX_GCS_SYSTEM_ID                255 // default of MissionPlanner, QGC
 
 #define RX_DRONECAN_PREFERRED_NODE_ID   68
@@ -128,15 +126,15 @@
 #define MODE_FSK_50HZ_SEND_FRAME_TMO_MS       10 // just needs to be larger than toa, not critical
 
 
-#define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
-#define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz
-#define FHSS_NUM_BAND_70_CM_HAM               18 // to match 2.4 GHz at 31 Hz
-#define FHSS_NUM_BAND_868_MHZ                 6 // it's a very narrow band
-#define FHSS_NUM_BAND_915_MHZ_FCC             25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
-#define FHSS_NUM_BAND_866_MHZ_IN              3 // 3 since 1 is needed for bind
-#define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
-#define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
-#define FHSS_NUM_BAND_2P4_GHZ                 24
+#define FHSS_NUM_433_MHZ                2  // 2 since 1 is needed for bind
+#define FHSS_NUM_70_CM_HAM              18 // to match 2.4 GHz at 31 Hz
+#define FHSS_NUM_70_CM_HAM_19HZ         12 // to match 2.4 GHz at 19 Hz
+#define FHSS_NUM_868_MHZ                6  // it's a very narrow band
+#define FHSS_NUM_915_MHZ_FCC            25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
+#define FHSS_NUM_866_MHZ_IN             3  // 3 since 1 is needed for bind
+#define FHSS_NUM_2P4_GHZ                24
+#define FHSS_NUM_2P4_GHZ_31HZ           18
+#define FHSS_NUM_2P4_GHZ_19HZ           12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
 
 #define FRAME_TX_RX_LEN                 91 // we currently only support equal len
 

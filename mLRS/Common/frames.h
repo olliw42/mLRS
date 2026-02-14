@@ -12,6 +12,7 @@
 
 
 #include "frame_types.h"
+#include "hal/hal.h"
 
 
 extern tGlobalConfig Config;
@@ -278,6 +279,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
     rx_params->SendRcChannels = Setup.Rx.SendRcChannels;
     // deprecated rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
     rx_params->PowerSwitchChannel = Setup.Rx.PowerSwitchChannel;
+    rx_params->MavlinkSystemID = Setup.Rx.MavlinkSystemID;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params->FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -306,6 +308,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
     Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
     // deprecated Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
     Setup.Rx.PowerSwitchChannel = rx_params->PowerSwitchChannel;
+    Setup.Rx.MavlinkSystemID = rx_params->MavlinkSystemID;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -454,7 +457,8 @@ uint8_t fhss_band_next(void)
         fhss_band_last = fhss_band;
         if (nr_randq1() < UINT32_MAX/2) fhss_band++;
     }
-    return fhss_band;
+
+    return fhss_band & 0x01;
 }
 
 
