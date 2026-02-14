@@ -112,7 +112,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_SX127x
     SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
     #define MODE_DEFAULT  MODE_19HZ_7X
-#elif defined DEVICE_HAS_LR11xx
+#elif defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx // TODO
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
     SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
@@ -369,7 +369,7 @@ void setup_sanitize_config(uint8_t config_id)
     }
     TST_NOTALLOWED_TYPED(FrequencyBand_allowed_mask, Common[config_id].FrequencyBand, FREQUENCY_BAND_DEFAULT, SETUP_FREQUENCY_BAND_ENUM);
 
-#if defined DEVICE_HAS_LR11xx
+#if defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx // TODO
     // MULTIBAND capable hardware, so adjust allowed modes for hardware capabilities
     // we now know the frequency band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
     switch (Setup.Common[config_id].FrequencyBand) {
@@ -572,7 +572,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         while(1){} // not possible
 #elif defined DEVICE_HAS_SX127x
         while(1){} // not possible
-#elif defined DEVICE_HAS_LR11xx
+#elif defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx // TODO
         if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
             Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW800_SF5_CR4_5;
         } else {
@@ -599,7 +599,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #elif defined DEVICE_HAS_SX127x
         while(1){} // not possible
-#elif defined DEVICE_HAS_LR11xx
+#elif defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx // TODO
         if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
             Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW800_SF6_CR4_5;
         } else {
@@ -628,7 +628,7 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
 #elif defined DEVICE_HAS_SX127x
         Config.Sx.LoraConfigIndex = SX127x_LORA_CONFIG_BW500_SF6_CR4_5;
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
-#elif defined DEVICE_HAS_LR11xx
+#elif defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx // TODO
         if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
             Config.Sx.LoraConfigIndex = LR11xx_LORA_CONFIG_BW800_SF7_CR4_5;
         } else {

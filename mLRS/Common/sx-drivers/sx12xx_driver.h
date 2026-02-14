@@ -151,6 +151,8 @@ class SxDriverDummy
   #include "sx128x_driver.h"
 #elif defined DEVICE_HAS_LR11xx
   #include "lr11xx_driver.h"
+#elif defined DEVICE_HAS_LR20xx
+  #include "lr20xx_driver.h"
 #else
   #include "sx128x_driver.h"
 #endif
