@@ -22,10 +22,22 @@ extern "C" {
 
 
 //-------------------------------------------------------
-//  I2C user routines
+//  I2C Core 0 task
 //-------------------------------------------------------
+// offloads blocking Wire data transfers to Core 0 so that
+// Core 1 (radio) is not blocked during display updates.
+// the JRPin5 100us timer ISR also runs on Core 0 but is
+// harmless — ~2us preemption, Wire resumes immediately.
 
 uint8_t i2c_dev_adr;
+
+struct {
+    uint8_t reg_adr;
+    const uint8_t* buf;
+    uint16_t len;
+    volatile bool busy;
+    TaskHandle_t task_handle;
+} i2c_async;
 
 
 // call this before transaction
@@ -41,6 +53,8 @@ IRAM_ATTR uint8_t i2c_getdeviceadr(void)
 }
 
 
+// blocking Wire call, used for init and small cmd writes (cmdhome)
+// must only be called before i2c_task starts, or from Core 0
 IRAM_ATTR HAL_StatusTypeDef i2c_put_blocked(uint8_t reg_adr, uint8_t* buf, uint16_t len)
 {
     Wire.beginTransmission(i2c_dev_adr);
@@ -51,103 +65,61 @@ IRAM_ATTR HAL_StatusTypeDef i2c_put_blocked(uint8_t reg_adr, uint8_t* buf, uint1
 }
 
 
-/*
+// async transfer via Core 0 task, passes pointer (no copy)
+// caller must ensure buf stays valid until transfer completes
 IRAM_ATTR HAL_StatusTypeDef i2c_put(uint8_t reg_adr, uint8_t* buf, uint16_t len)
 {
-    Wire.beginTransmission(i2c_dev_adr);
-    Wire.write(reg_adr);
-    Wire.write(buf, len);
-    uint8_t error = Wire.endTransmission(true);
-    return (error == 0) ? HAL_OK : HAL_ERROR;
+    if (i2c_async.busy) return HAL_ERROR;
+
+    i2c_async.reg_adr = reg_adr;
+    i2c_async.buf = buf;
+    i2c_async.len = len;
+    i2c_async.busy = true;
+    xTaskNotifyGive(i2c_async.task_handle);
+    return HAL_OK;
 }
 
 
 IRAM_ATTR HAL_StatusTypeDef i2c_device_ready(void)
 {
-    Wire.beginTransmission(i2c_dev_adr);
-    uint8_t error = Wire.endTransmission(true);
-    return (error == 0) ? HAL_OK : HAL_ERROR;
-}
-*/
-
-#define I2C_WORK_CHUNK_SIZE 128
-#define I2C_WORK_QUEUE_SIZE 16
-
-typedef struct
-{
-    uint8_t buf[I2C_WORK_CHUNK_SIZE];
-    uint8_t reg_adr;
-    uint16_t pos;
-    uint16_t len;
-} i2c_chunk_t;
-
-struct
-{
-    i2c_chunk_t queue[I2C_WORK_QUEUE_SIZE];
-    uint8_t next;
-    uint8_t end;
-} i2c_work;
-
-
-IRAM_ATTR HAL_StatusTypeDef i2c_put(uint8_t reg_adr, uint8_t* buf, uint16_t len)
-{
-    if (i2c_work.end < I2C_WORK_QUEUE_SIZE) {  // not work overflow
-        i2c_chunk_t* i2c_buf = i2c_work.queue + i2c_work.end;
-        if (len <= I2C_WORK_CHUNK_SIZE) { // not buf overflow
-            i2c_buf->reg_adr = reg_adr;
-            memcpy(i2c_buf->buf, buf, len);
-            i2c_buf->len = len;
-            i2c_buf->pos = 0;
-            i2c_work.end++;
-            return HAL_OK;
-        }
-    }
-    return HAL_ERROR;
+    return (i2c_async.busy) ? HAL_BUSY : HAL_OK;
 }
 
 
-IRAM_ATTR void i2c_spin(uint16_t chunksize)
+// page-by-page display transfer on Core 0
+// uses page addressing mode (compatible with SSD1306 and CH1115/NFP1115)
+// all Wire access stays on Core 0, no cross-core contention
+void i2c_task(void* param)
 {
-    if (i2c_work.end == i2c_work.next) return; // nothing to do
-
     while (true) {
-        i2c_chunk_t* i2c_buf = i2c_work.queue + i2c_work.next;
-        uint16_t writesize = chunksize;
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        if (writesize > i2c_buf->len - i2c_buf->pos) writesize = i2c_buf->len - i2c_buf->pos;
+        const uint8_t* buf = i2c_async.buf;
+        uint16_t remaining = i2c_async.len;
 
-        if (writesize) {
+        for (uint8_t page = 0; remaining > 0; page++) {
+            uint16_t chunk = (remaining < 128) ? remaining : 128;
+
+            // set page address and column start
             Wire.beginTransmission(i2c_dev_adr);
-            Wire.write(i2c_buf->reg_adr);
-            Wire.write(&(i2c_buf->buf[i2c_buf->pos]), writesize);
+            Wire.write((uint8_t)0x00); // command register
+            Wire.write((uint8_t)0x00); // lower column address
+            Wire.write((uint8_t)0x10); // upper column address
+            Wire.write((uint8_t)(0xB0 + page)); // page address
             Wire.endTransmission(true);
+
+            // write page data
+            Wire.beginTransmission(i2c_dev_adr);
+            Wire.write(i2c_async.reg_adr);
+            Wire.write(buf, chunk);
+            Wire.endTransmission(true);
+
+            buf += chunk;
+            remaining -= chunk;
         }
 
-        i2c_buf->pos += writesize;
-        chunksize -= writesize;
-
-        if (i2c_buf->pos >= i2c_buf->len) { // done with this work item
-            i2c_buf->len = 0;
-            i2c_buf->pos = 0;
-            i2c_work.next++;
-            if (i2c_work.next >= i2c_work.end) { // done with all work items
-                i2c_work.next = 0;
-                i2c_work.end = 0;
-                return;
-            }
-        }
-        if (chunksize <= 0) return;
+        i2c_async.busy = false;
     }
-}
-
-
-IRAM_ATTR HAL_StatusTypeDef i2c_device_ready(void)
-{
-    if (i2c_work.end != 0) return HAL_BUSY;
-
-    Wire.beginTransmission(i2c_dev_adr);
-    uint8_t error = Wire.endTransmission(true);
-    return (error == 0) ? HAL_OK : HAL_ERROR;
 }
 
 
@@ -158,11 +130,22 @@ IRAM_ATTR HAL_StatusTypeDef i2c_device_ready(void)
 void i2c_init(void)
 {
     Wire.begin(I2C_SDA_IO, I2C_SCL_IO, I2C_CLOCKSPEED);
-    Wire.setBufferSize(I2C_BUFFER_SIZE);
+    Wire.setBufferSize(128 + 2); // 128 bytes per page + register address overhead
     Wire.setTimeout(2);
 
-    i2c_work.next = 0;
-    i2c_work.end = 0;
+    i2c_async.busy = false;
+    i2c_async.task_handle = NULL;
+
+    BaseType_t ret = xTaskCreatePinnedToCore(
+        i2c_task,
+        "I2C",
+        2048,
+        NULL,
+        1,
+        &i2c_async.task_handle,
+        0  // Core 0
+    );
+    configASSERT(ret == pdPASS);
 }
 
 
