@@ -99,6 +99,10 @@
 #include "rx-hal-radiomaster-xr1-esp32c3.h"
 #endif
 
+#ifdef RX_ELRS_BAYCKRC_UR500_ESP32C3
+#include "rx-hal-bayckrc-ur500-esp32c3.h"
+#endif
+
 #ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
 #include "rx-flysky-pr02-2400-td-esp32s3.h"
 #endif
