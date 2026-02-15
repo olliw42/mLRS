@@ -54,7 +54,7 @@ void i2c_spin(uint16_t chunksize);
 
 // y-offset for content below header; 20 was original value, use 22 for dual-color OLEDs
 #ifndef DISP_CONTENT_Y_BASE
-  #define DISP_CONTENT_Y_BASE               20
+  #define DISP_CONTENT_Y_BASE   20
 #endif
 
 
