@@ -53,7 +53,9 @@ void i2c_spin(uint16_t chunksize);
 #define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
 
 // y-offset for content below header; 20 was original value, use 22 for dual-color OLEDs
-#define DISP_CONTENT_Y_BASE     20
+#ifndef DISP_CONTENT_Y_BASE
+  #define DISP_CONTENT_Y_BASE               20
+#endif
 
 
 typedef enum {
