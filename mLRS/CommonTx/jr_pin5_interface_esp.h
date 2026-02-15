@@ -12,29 +12,27 @@
 #include "../Common/esp-lib/esp-uart.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include <hal/uart_ll.h>
+#include <driver/uart.h>
 
 
 //-------------------------------------------------------
-// 100 us ISR timer to check for end of transmit in half-duplex mode
-// need to know when the UART has finished transmitting, so can switch back to receive
-// Arduino doesn't expose a UART transmit complete interrupt / callback like STM32
-// so poll the UART state machine every 100 us using an interrupt on Core 0
-// mLRS uses Core 1, so this shouldn't have any impact
+// task to switch back to receive after transmit completes in half-duplex mode
+// waits for notification from pin5_rx_callback, then uses uart_wait_tx_done()
+// which blocks on the IDF driver's internal TX_DONE interrupt/semaphore.
+// runs on Core 0, mLRS uses Core 1, so no impact on radio loop.
 
-volatile bool uart_is_transmitting;
+TaskHandle_t tx_done_task_handle = nullptr;
 
-IRQHANDLER(
-void CLOCK100US_IRQHandler(void)
+void tx_done_task(void* parameter)
 {
-    if (!uart_is_transmitting) return;
-
-    if (uart_ll_is_tx_idle(UART_LL_GET_HW(1))) {
-        uart_is_transmitting = false;
+    while (1) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        uart_wait_tx_done(1, pdMS_TO_TICKS(20));
         gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
         gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
         uart_ll_rxfifo_rst(UART_LL_GET_HW(1)); // discards ghost byte caused by switching
     }
-})
+}
 
 
 //-------------------------------------------------------
@@ -132,8 +130,6 @@ void tPin5BridgeBase::Init(void)
     pin5_fifo.Init();
 
     pin5_init();
-
-    uart_is_transmitting = false;
 }
 
 
@@ -166,17 +162,10 @@ void tPin5BridgeBase::pin5_init(void)
     
     pin5_rx_enable();  // configure the pin for receive  
     
-    // setup timer interrupt, only needs to be done on first boot
+    // setup tx done task, only needs to be done on first boot
     if (pin5_clock_initialized) return;
-    
-    xTaskCreatePinnedToCore([](void *parameter) {
-        hw_timer_t* timer1_cfg = nullptr;
-        timer1_cfg = timerBegin(1, 800, 1); // Timer 1, APB clock is 80 Mhz | divide by 800 is 100 KHz / 10 us, count up
-        timerAttachInterrupt(timer1_cfg, &CLOCK100US_IRQHandler, true);
-        timerAlarmWrite(timer1_cfg, 10, true); // 10 * 10 = 100 us
-        timerAlarmEnable(timer1_cfg);
-        vTaskDelete(NULL);
-    }, "TimerSetup", 2048, NULL, 1, NULL, 0); // last argument here is Core 0, ignored on ESP32C3
+
+    xTaskCreatePinnedToCore(tx_done_task, "TxDone", 2048, NULL, 5, &tx_done_task_handle, 0); // Core 0, Priority 5
 
     pin5_clock_initialized = true;
 #endif
@@ -227,7 +216,7 @@ IRAM_ATTR void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
     if (state == STATE_TRANSMIT_START) {
         pin5_tx_enable();
         transmit_start();
-        uart_is_transmitting = true;
+        xTaskNotifyGive(tx_done_task_handle);
     }
     
     state = STATE_IDLE;
