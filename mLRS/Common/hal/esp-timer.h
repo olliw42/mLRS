@@ -115,6 +115,13 @@ uint16_t micros16(void)
 }
 
 
+// 64-bit microsecond timestamp, needed by DroneCAN (libcanard)
+uint64_t micros64(void)
+{
+    return (uint64_t)esp_timer_get_time();
+}
+
+
 //-------------------------------------------------------
 // Init function
 //-------------------------------------------------------
