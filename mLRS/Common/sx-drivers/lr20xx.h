@@ -7,9 +7,6 @@
 //*******************************************************
 // contributed by JLP, OlliW42
 //*******************************************************
-
-// Semtech User Manual: LR20XX_V1_1_datasheet.pdf
-
 #ifndef LR20XX_LIB_H
 #define LR20XX_LIB_H
 #pragma once
@@ -24,6 +21,7 @@
 #ifndef ALIGNED
 #define ALIGNED __attribute__((aligned(4)))
 #endif
+
 
 //-------------------------------------------------------
 // Base Class
@@ -59,72 +57,92 @@ public:
 
     void WriteCommand(uint16_t opcode, uint8_t* data, uint8_t len);
     void ReadCommand(uint16_t opcode, uint8_t* data, uint8_t len);
+    void WriteBuffer(uint8_t* data, uint8_t len);
+    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len);
 
     void WriteCommand(uint16_t opcode) { WriteCommand(opcode, nullptr, 0); }
     void WriteCommand(uint16_t opcode, uint8_t data) { WriteCommand(opcode, &data, 1); }
-    uint8_t ReadCommand(uint16_t opcode) {
-        uint8_t data;
-        ReadCommand(opcode, &data, 1);
-        return data;
-    }
+    uint8_t ReadCommand(uint16_t opcode) { uint8_t data; ReadCommand(opcode, &data, 1); return data; }
+
+
+    void WriteRegMem32(uint16_t opcode, uint8_t* data, uint8_t len);
+    void WriteRegMemMask32(uint16_t opcode, uint8_t* data, uint8_t len);
+    void ReadRegMem32(uint16_t opcode, uint8_t* data, uint8_t len);
 
     // common methods
 
     void GetStatus(uint8_t* Status1, uint8_t* Status2);
-    void GetLastStatus(uint8_t* Status1, uint8_t* Status2);
-    void SetStandby(uint8_t StandbyConfig);
+    void SetDioFunction(uint8_t Dio, uint8_t Func, uint8_t pull_drive);
+    void SetDioRfSwitchConfig(uint8_t Dio, uint8_t tx_hf, uint8_t rx_hf, uint8_t tx_lf, uint8_t rx_lf, uint8_t standby);
+    void SetDioIrqConfig(uint8_t Dio, uint32_t Irq);
+    void ClearIrq(uint32_t IrqsToClear);
+    uint32_t GetAndClearIrqStatus(void);
+
+    void ConfigLfClock(uint8_t lf_clock);
+    void ConfigClockOutputs(uint8_t hf_clk_out_scaling);
+    void SetTcxoMode(uint8_t tune, uint32_t start_time);
+    void SetRegMode(uint8_t simo_usage);
+    void Calibrate(uint8_t blocks_to_calibrate);
+    void CalibFE(uint16_t Freq1, uint16_t Freq2, uint16_t Freq3);
+    void SetStandby(uint8_t standby_mode);
+    void SetFs(void);
+    void SetRfFrequency(uint32_t RfFreq);
+    void SetRxPath(uint8_t rx_path, uint8_t rx_boost);
+    void SetPaConfig(uint8_t pa_sel, uint8_t pa_lf_mode, uint8_t pa_lf_duty_cycle,
+                     uint8_t pa_lf_slices,
+                     uint8_t pa_hf_duty_cycle);
+    void SetTxParams(uint8_t Power, uint8_t RampTime);
+    void SetRssiCalibration(uint8_t rx_path_hf, uint8_t rx_path_lf, uint32_t* /*??*/ table);
+    void SetRxTxFallbackMode(uint8_t FallbackMode);
     void SetPacketType(uint8_t PacketType);
-    void SetRfFrequency(uint32_t RfFrequency);
-    void SetDioRfSwitchConfig(uint8_t Dio, uint8_t Config);
-    void SetTcxoMode(uint8_t OutputVoltage, uint32_t Delay); // delay is 32 bits, in 32MHz clock periods
-    void SetModulationParams(uint8_t SpreadingFactor, uint8_t Bandwidth,
-                             uint8_t CodingRate,
-                             uint8_t LowDataRateOptimize); // implied to be LoRa
-    void SetPacketParams(uint16_t PreambleLength, uint8_t HeaderType,
-                         uint8_t PayloadLength, uint8_t Crc,
-                         uint8_t InvertIQ); // implied to be LoRa
-    void SetDioIrqConfig(uint8_t Dio, uint32_t IrqMask);
-    uint32_t GetIrqStatus(void);
-    void ClearIrq(uint32_t IrqToClear); // IrqToClear mask is identical to
-                                      // IrqToEnable assignment
-    uint32_t GetAndClearIrqStatus(uint32_t IrqToClear); // No more GetIrqStatus, use GetStatus
+    uint8_t /*??*/ GetPacketType(void);
+
+    void ResetRxStats(void);
+    void SetRx(uint32_t RxTimeout); // 24 bits only, similar to sx126x
+    void SetTx(uint32_t TxTimeout); // 24 bits only, similar to sx126x
+    void SelPa(uint8_t pa_sel);
+    uint32_t /*??*/ GetRxPktLength(void);
+    void SetDefaultRxTxTimeout(uint32_t rx_timeout, uint32_t tx_timeout);
+    void SetAgcGainManual(uint8_t GainStep);
+    void SetLoraModulationParams(uint8_t SpreadingFactor, uint8_t Bandwidth, uint8_t CodingRate, uint8_t LowDataRateOptimize);
+    void SetLoraPacketParams(uint16_t PreambleLength, uint8_t PayloadLength, uint8_t HeaderType, uint8_t Crc, uint8_t InvertIQ);
+    void SetLoraSyncword(uint8_t Syncword);
+    void GetLoraRxStats(uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* header_crc_error, uint16_t* false_synch);
+    uint32_t /*??*/ GetPacketStatus(void);
+    void SetLoraAddress(uint8_t addr_comp_len, uint8_t addr_comp_pos, uint8_t addr);
+
 
     // Tx methods
 
-    void SetPaConfig(uint8_t pa_sel, uint8_t pa_lf_mode, uint8_t pa_lf_duty_cycle,
-                     uint8_t pa_lf_slices,
-                     uint8_t pa_hf_duty_cycle); // needed before SetTxParams
-    void SetTxParams(uint8_t Power, uint8_t RampTime);
-    void SetTx(uint32_t TxTimeout); // 24 bits only, similar to sx126x
 
     // Rx methods
 
-    void SetRx(uint32_t RxTimeout); // 24 bits only, similar to sx126x
-    void GetPacketStatus(int16_t* RssiSync, int8_t* Snr); // implied to be LoRa, RSSI only 8-bit
 
     // auxiliary methods
 
-    void SetRegMode(uint8_t RegModeParam);
-    void SetRxTxFallbackMode(uint8_t FallbackMode); // replaces SetAutoFs found in sx126x / sx128x
-    void SetFs(void);
-    void SetRxPath(uint8_t rx_path, uint8_t rx_boost); // replaces SetRxBoosted, SetLnaGainMode in sx128x
-    void SetLoraCadParams(uint8_t NbSymbols, uint8_t DetPeak, uint8_t PnrDelta,
-                          uint8_t PblAny, uint8_t ExitMode, uint32_t Timeout);
-    void SetLoraCad(void);
-    void CalibFE(uint32_t Freq, uint8_t Path); // Single frequency calibration
-    void ClearErrors(void);
     void EnableSx127xCompatibility(void);
+
+
 
     // GFSK methods
 
-    void SetModulationParamsGFSK(uint32_t br_bps, uint8_t PulseShape, uint8_t Bandwidth, uint32_t Fdev_hz);
-    void SetPacketParamsGFSK(uint16_t PreambleLength,
+    void SetModulationParamsFSK(uint32_t br_bps, uint8_t PulseShape, uint8_t Bandwidth, uint32_t Fdev_hz);
+    void SetPacketParamsFSK(/* uint16_t PreambleLength,
                              uint8_t PreambleDetectorLength,
-                             uint8_t SyncWordLength, uint8_t AddrComp,
-                             uint8_t PacketType, uint8_t PayloadLength,
-                             uint8_t CRCType, uint8_t Whitening);
-    void SetSyncWordGFSK(uint16_t SyncWord);
-    void GetPacketStatusGFSK(int16_t* RssiSync);
+                             uint8_t SyncWordLength,
+                             uint8_t AddrComp,
+                             uint8_t PacketType,
+                             uint8_t PayloadLength,
+                             uint8_t CRCType,
+                             uint8_t Whitening); */
+        uint16_t pbl_len_tx, uint8_t pbl_detect, uint8_t long_preamble_mode, uint8_t pld_lenUnit, uint8_t addr_comp,
+        uint8_t pkt_format, uint16_t pld_len, uint8_t Crc, uint8_t dc_free);
+    void SetWhiteningParamsFSK(uint8_t whiten_type, uint16_t Init);
+    void SetCrcParamsFSK(uint32_t polynom, uint32_t Init);
+    void SetSyncWordFSK(uint64_t SyncWord, uint8_t bit_order, uint8_t nb_bits);
+    void SetAddressFSK(uint8_t addr_node, uint8_t addr_bcast);
+    void GetRxStatsFSK(int16_t* stats); /* ?? */
+    void GetPacketStatusFSK(int16_t* RssiSync); /* ?? */
 
     // FLRC methods
 
@@ -134,20 +152,34 @@ public:
                              uint8_t PacketType, uint8_t CrcLength,
                              uint16_t PayloadLength);
     void SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord);
-    void GetPacketStatusFLRC(int16_t* RssiSync);
+    void GetPacketStatusFLRC(int16_t* RssiSync); /*??*/
+    void GetRxStatsFLRC(int16_t* stats); /* ?? */
+
 
     // FIFO methods
 
     void WriteRadioTxFifo(uint8_t* data, uint8_t len);
     void ReadRadioRxFifo(uint8_t* data, uint8_t len);
-    uint16_t GetRxFifoLevel(void);
+    void ClearFifoIrqFlags(uint8_t RxFifoFlagsToClear, uint8_t TxFifoFlagsToCleadata);
+    void ConfigFifoIrq(uint8_t rx_fifo_irq_enable, uint8_t tx_fifo_irq_enable,
+            uint16_t rx_high_threshold, uint16_t tx_low_threshold, uint16_t rx_low_threshold, uint16_t tx_high_threshold);
+    uint32_t /*??*/ void GetFifoIrqFlags(void);
+    uint32_t /*??*/ GetAndClearFifoIrqFlags(void);
+    uint16_t /*??*/ GetRxFifoLevel(void);
     uint16_t GetTxFifoLevel(void);
     void ClearRxFifo(void);
     void ClearTxFifo(void);
 
+
+
+
+
     // other methods
 
     void GetVersion(uint8_t* HwVersion, uint8_t* UseCase, uint8_t* FwMajor, uint8_t* FwMinor);
+    void GetErrors(uint8_t* HwVersion, uint8_t* UseCase, uint8_t* FwMajor, uint8_t* FwMinor);
+    void ClearErrors(uint8_t* HwVersion, uint8_t* UseCase, uint8_t* FwMajor, uint8_t* FwMinor);
+
 
   private:
     uint8_t _status1; // status is now two bytes
