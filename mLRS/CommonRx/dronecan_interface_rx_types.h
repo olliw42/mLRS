@@ -16,10 +16,8 @@
 
 #if defined STM32G4 || defined STM32F1
 #include "../../../modules/stm32-dronecan-lib/stm32-dronecan-driver.h"
-#elif defined ESP32
-#include "../Common/esp-lib/esp-can.h"
 #endif
-#include "stm32-dronecan-protocol.h"
+#include "../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.NodeStatus.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.GetNodeInfo.h"
 #include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"

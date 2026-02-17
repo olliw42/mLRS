@@ -16,7 +16,8 @@ extern "C" {
 
 #include "esp-peripherals.h"
 #include "driver/twai.h"
-#include "libcanard/canard.h"
+#include "../../modules/stm32-dronecan-lib/libcanard/canard.h"
+
 #if defined CONFIG_IDF_TARGET_ESP32C3 || defined CONFIG_IDF_TARGET_ESP32S3
 #include "soc/usb_serial_jtag_reg.h"
 #endif
@@ -26,7 +27,6 @@ extern "C" {
 // configuration
 //-------------------------------------------------------
 
-#define DRONECAN_USE_RX_ISR              // compatibility with protocol layer expectations
 #define DRONECAN_RXFRAMEBUFSIZE   64     // ring buffer size for rx frames
 
 
@@ -110,7 +110,7 @@ typedef enum
 
 
 //-------------------------------------------------------
-// ring buffer for Core 0 → Core 1 frame handoff
+// ring buffer
 //-------------------------------------------------------
 
 static volatile CanardCANFrame _dc_rxbuf[DRONECAN_RXFRAMEBUFSIZE];
@@ -155,8 +155,8 @@ static void _dc_rx_task(void* parameter)
     twai_message_t rx_msg;
 
     while (true) {
-        // blocking receive with 10ms timeout
-        esp_err_t err = twai_receive(&rx_msg, pdMS_TO_TICKS(10));
+        // yields until a frame arrives; 1s timeout enables bus-off detection
+        esp_err_t err = twai_receive(&rx_msg, pdMS_TO_TICKS(1000));
         if (err == ESP_OK) {
 
             // only accept extended frames, skip RTR
@@ -190,8 +190,21 @@ static void _dc_rx_task(void* parameter)
 
             __sync_synchronize(); // ensure data is visible before position update
             _dc_rxwritepos = next_writepos;
+
+        } else {
+            // on timeout, check for bus-off (TEC >= 256) and attempt recovery
+            twai_status_info_t status;
+            if (twai_get_status_info(&status) == ESP_OK && status.state == TWAI_STATE_BUS_OFF) {
+                _dc_stats.bus_off_count++;
+                twai_initiate_recovery();
+                // wait for 128 × 11 recessive bit sequences to complete
+                do {
+                    vTaskDelay(pdMS_TO_TICKS(100));
+                    twai_get_status_info(&status);
+                } while (status.state == TWAI_STATE_RECOVERING);
+                twai_start();
+            }
         }
-        // ESP_ERR_TIMEOUT is normal, just loop
     }
 }
 
@@ -307,8 +320,6 @@ int16_t dc_hal_config_acceptance_filters(
 {
     // ESP32 TWAI only supports a single hardware acceptance filter, so we
     // implement multi-filter support in software via dc_hal_set_rx_filters().
-    // frames that don't match are dropped in the RX task before reaching
-    // the ring buffer, dramatically reducing processing load.
     dc_hal_set_rx_filters(filter_configs, num_filter_configs);
     return 0;
 }
@@ -318,12 +329,14 @@ int16_t dc_hal_enable_isr(void)
 {
     if (_dc_rx_task_running) return 0;
 
-    // pin RX task to Core 0
-    // mlrs runs on Core 1, so this avoids contention
+    // on dual-core ESP32, pin to Core 0 so mLRS radio loop on Core 1 is unaffected.
+    // on single-core ESP32-C3, pinning is a no-op but priority 5 ensures
+    // frames are serviced promptly by preempting the Arduino loop (priority 1).
+    // each wake takes ~10 us per frame (context switch + copy to ring buffer).
     BaseType_t ret = xTaskCreatePinnedToCore(
         _dc_rx_task,
         "DcRx",
-        4096,
+        2048,
         NULL,
         5,    // priority: above idle, below radio-critical
         NULL,
