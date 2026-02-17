@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-02-13', -- add a '.01' if needed for the day
+    script = '2026-02-14', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -470,7 +470,7 @@ local function mb_to_value(payload, pos, typ)
 end
 
 local function mb_to_value_or_str6(payload, pos, typ)
-    if typ == 5 then --MBRIDGE_PARAM_TYPE.STR6 then
+    if typ == MBRIDGE_PARAM_TYPE.STR6 then
         return mb_to_string(payload,pos,6)
     else
         return mb_to_value(payload,pos,typ)
@@ -571,8 +571,12 @@ end
 -- This protocol ensures that the next parameter is explicitely fetched after the current one is processed
 ----------------------------------------------------------------------
 
-local function updateDeviceParamCounts()
-    DEVICE_PARAM_LIST_max_index = #DEVICE_PARAM_LIST
+local function updateDeviceParamCounts(f)
+    if f <= 1 then -- called when DEVICE_INFO is received 
+        if DEVICE_INFO.param_num > 0 then DEVICE_PARAM_LIST_max_index = DEVICE_INFO.param_num - 1 end
+    else -- called when end of param list is received
+        if DEVICE_INFO.param_num == 0 then DEVICE_PARAM_LIST_max_index = #DEVICE_PARAM_LIST end
+    end
 end  
 
 
@@ -633,15 +637,14 @@ local function doParamLoop()
             DEVICE_INFO.receiver_sensitivity = mb_to_i16(cmd.payload, 0)
             DEVICE_INFO.has_status = mb_to_u8_bits(cmd.payload, 2, 0, 0x01)
             DEVICE_INFO.binding = mb_to_u8_bits(cmd.payload, 2, 1, 0x01)
-            DEVICE_INFO.LQ_low = 0 -- mb_to_u8_bits(cmd.payload, 2, 3, 0x03)
             DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload, 3)
             DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload, 4)
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload, 5, 0, 0x1)
-            --DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 5, 1, 0x3)
-            --DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 5, 3, 0x3)
             DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload, 6)
             DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 7, 0, 0x0F)
             DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
+            DEVICE_INFO.param_num = mb_to_u8(cmd.payload, 8)
+            updateDeviceParamCounts(1)
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM then
             -- MBRIDGE_CMD.PARAM_ITEM
             local index = cmd.payload[0]
@@ -665,7 +668,7 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].editable = true
             elseif index == 255 then -- EOL (end of list)
                 if DEVICE_PARAM_LIST_errors == 0 then
-                    updateDeviceParamCounts()
+                    updateDeviceParamCounts(2)
                     DEVICE_PARAM_LIST_complete = true
                 else
                     -- Huston, we have a problem
@@ -1157,20 +1160,19 @@ end
 
 local function drawParamDownload()
     local y = LAYOUT.INFO_Y
-    lcd.drawText(130, y+LAYOUT.INFO_DY, "parameters loading ...", THEME.textColor+BLINK+INVERS)
+    lcd.drawText(LAYOUT.W_HALF, y+LAYOUT.INFO_DY, " parameters loading ... ", THEME.textColor+BLINK+INVERS+CENTER)
     local idx = DEVICE_PARAM_LIST_current_index
     if idx < 0 then idx = 0 end
-    -- lcd.drawText(330, y+LAYOUT.INFO_DY, "("..tostring(idx)..")", THEME.textColor)
     local s = "("..tostring(idx)
     if DEVICE_PARAM_LIST_max_index > 0 then
         s = s.."/"..tostring(DEVICE_PARAM_LIST_max_index)
     end    
     s = s..")"
-    if isEdgeTx then -- on OTX TEXT_BGCOLOR doesn't seem to work correctly
+    if isEdgeTx then -- with OpenTx TEXT_BGCOLOR doesn't seem to work correctly
         lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
-        lcd.drawFilledRectangle(320, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
+        lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
     end    
-    lcd.drawText(330, y+LAYOUT.INFO_DY, s, THEME.textColor)
+    lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
 end
 
 
