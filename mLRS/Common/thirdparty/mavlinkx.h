@@ -25,11 +25,16 @@
 #define MAVLINKX_ENCODE_BITBUFFER_ENABLE
 #define MAVLINKX_DECODE_BITBUFFER_ENABLE
 
-#define MAVLINKX_ENCODE_LUT_ENABLE
-#define MAVLINKX_DECODE_LUT_ENABLE
+// decode method selection: FUSED, SPLIT, LUT, PEEK (comment out for original fallback)
+#define MAVLINKX_DECODE_FUSED   1
+#define MAVLINKX_DECODE_SPLIT   2
+#define MAVLINKX_DECODE_LUT     3
+#define MAVLINKX_DECODE_PEEK    4
 
-#if defined(MAVLINKX_DECODE_LUT_ENABLE) && !defined(MAVLINKX_DECODE_BITBUFFER_ENABLE)
-  #error "MAVLINKX_DECODE_LUT_ENABLE requires MAVLINKX_DECODE_BITBUFFER_ENABLE"
+#define MAVLINKX_DECODE_METHOD  MAVLINKX_DECODE_FUSED
+
+#ifdef MAVLINKX_DECODE_METHOD
+  #define MAVLINKX_DECODE_BITBUFFER_ENABLE
 #endif
 
 #if defined ESP8266 || defined ESP32
@@ -904,52 +909,6 @@ void _fmavX_encode_flush_bits(uint8_t* payload_out, uint16_t* len_out)
 #endif // MAVLINKX_ENCODE_BITBUFFER_ENABLE
 
 
-#ifdef MAVLINKX_ENCODE_LUT_ENABLE
-
-// encode LUT: maps byte value -> { code, bit_len }
-// packed as (bit_len << 12) | code in uint16_t
-// entries for 0x00 and 0xFF are unused since those go through the RLE path
-const uint16_t fmavx_encode_lut[256] = {
-    // 0x00: 000 (3 bits), unused
-    0x3000 , 0x8080 , 0x8081 , 0x8082 , 0x8083 , 0x8084 , 0x8085 , 0x8086,
-    0x8087 , 0x8088 , 0x8089 , 0x808A , 0x808B , 0x808C , 0x808D , 0x808E,
-    // 0x01-0x40: 10 + 6 bits (8 bits total)
-    0x808F , 0x8090 , 0x8091 , 0x8092 , 0x8093 , 0x8094 , 0x8095 , 0x8096,
-    0x8097 , 0x8098 , 0x8099 , 0x809A , 0x809B , 0x809C , 0x809D , 0x809E,
-    0x809F , 0x80A0 , 0x80A1 , 0x80A2 , 0x80A3 , 0x80A4 , 0x80A5 , 0x80A6,
-    0x80A7 , 0x80A8 , 0x80A9 , 0x80AA , 0x80AB , 0x80AC , 0x80AD , 0x80AE,
-    0x80AF , 0x80B0 , 0x80B1 , 0x80B2 , 0x80B3 , 0x80B4 , 0x80B5 , 0x80B6,
-    0x80B7 , 0x80B8 , 0x80B9 , 0x80BA , 0x80BB , 0x80BC , 0x80BD , 0x80BE,
-    // 0x41-0xBE: 01 + 7 bits (9 bits total)
-    0x80BF , 0x9080 , 0x9081 , 0x9082 , 0x9083 , 0x9084 , 0x9085 , 0x9086,
-    0x9087 , 0x9088 , 0x9089 , 0x908A , 0x908B , 0x908C , 0x908D , 0x908E,
-    0x908F , 0x9090 , 0x9091 , 0x9092 , 0x9093 , 0x9094 , 0x9095 , 0x9096,
-    0x9097 , 0x9098 , 0x9099 , 0x909A , 0x909B , 0x909C , 0x909D , 0x909E,
-    0x909F , 0x90A0 , 0x90A1 , 0x90A2 , 0x90A3 , 0x90A4 , 0x90A5 , 0x90A6,
-    0x90A7 , 0x90A8 , 0x90A9 , 0x90AA , 0x90AB , 0x90AC , 0x90AD , 0x90AE,
-    0x90AF , 0x90B0 , 0x90B1 , 0x90B2 , 0x90B3 , 0x90B4 , 0x90B5 , 0x90B6,
-    0x90B7 , 0x90B8 , 0x90B9 , 0x90BA , 0x90BB , 0x90BC , 0x90BD , 0x90BE,
-    0x90BF , 0x90C0 , 0x90C1 , 0x90C2 , 0x90C3 , 0x90C4 , 0x90C5 , 0x90C6,
-    0x90C7 , 0x90C8 , 0x90C9 , 0x90CA , 0x90CB , 0x90CC , 0x90CD , 0x90CE,
-    0x90CF , 0x90D0 , 0x90D1 , 0x90D2 , 0x90D3 , 0x90D4 , 0x90D5 , 0x90D6,
-    0x90D7 , 0x90D8 , 0x90D9 , 0x90DA , 0x90DB , 0x90DC , 0x90DD , 0x90DE,
-    0x90DF , 0x90E0 , 0x90E1 , 0x90E2 , 0x90E3 , 0x90E4 , 0x90E5 , 0x90E6,
-    0x90E7 , 0x90E8 , 0x90E9 , 0x90EA , 0x90EB , 0x90EC , 0x90ED , 0x90EE,
-    0x90EF , 0x90F0 , 0x90F1 , 0x90F2 , 0x90F3 , 0x90F4 , 0x90F5 , 0x90F6,
-    0x90F7 , 0x90F8 , 0x90F9 , 0x90FA , 0x90FB , 0x90FC , 0x90FD , 0x80C0,
-    // 0xBF-0xFE: 11 + 6 bits (8 bits total)
-    0x80C1 , 0x80C2 , 0x80C3 , 0x80C4 , 0x80C5 , 0x80C6 , 0x80C7 , 0x80C8,
-    0x80C9 , 0x80CA , 0x80CB , 0x80CC , 0x80CD , 0x80CE , 0x80CF , 0x80D0,
-    0x80D1 , 0x80D2 , 0x80D3 , 0x80D4 , 0x80D5 , 0x80D6 , 0x80D7 , 0x80D8,
-    0x80D9 , 0x80DA , 0x80DB , 0x80DC , 0x80DD , 0x80DE , 0x80DF , 0x80E0,
-    0x80E1 , 0x80E2 , 0x80E3 , 0x80E4 , 0x80E5 , 0x80E6 , 0x80E7 , 0x80E8,
-    0x80E9 , 0x80EA , 0x80EB , 0x80EC , 0x80ED , 0x80EE , 0x80EF , 0x80F0,
-    0x80F1 , 0x80F2 , 0x80F3 , 0x80F4 , 0x80F5 , 0x80F6 , 0x80F7 , 0x80F8,
-    0x80F9 , 0x80FA , 0x80FB , 0x80FC , 0x80FD , 0x80FE , 0x80FF , 0x4002,
-    // 0xFF: 0010 (4 bits), unused
-};
-
-#endif // MAVLINKX_ENCODE_LUT_ENABLE
 
 
 void _fmavX_encode_rle(uint8_t* const payload_out, uint16_t* const len_out, uint8_t c, uint8_t RLE_cnt)
@@ -985,9 +944,7 @@ uint16_t code;
 
 uint8_t _fmavX_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, const uint8_t* const payload, uint16_t len)
 {
-#ifndef MAVLINKX_ENCODE_LUT_ENABLE
 uint16_t code; // can be 2 - 13 bits
-#endif
 uint8_t is_in_RLE;
 uint8_t RLE_char;
 uint16_t RLE_cnt;
@@ -1024,11 +981,6 @@ CHECKRANGE(*len_out,256);
                 is_in_RLE = 1;
                 RLE_char = c;
                 RLE_cnt = 1;
-#ifdef MAVLINKX_ENCODE_LUT_ENABLE
-            } else {
-                uint16_t entry = fmavx_encode_lut[c];
-                _fmavX_encode_put_bits(payload_out, len_out, entry & 0x0FFF, entry >> 12);
-#else
             } else
             if (c >= 1 && c <= 64) {
                 code = (uint16_t)0b10 << 6; // 10: 2 bit code + 6 bits = 8 bits length
@@ -1044,7 +996,6 @@ CHECKRANGE(*len_out,256);
                 code = (uint16_t)0b01 << 7; // 01: 2 bit code + 7 bits = 9 bits length
                 code += (c - 65); // 0 .. 125
                 _fmavX_encode_put_bits(payload_out, len_out, code, 9);
-#endif
             }
         }
 
@@ -1083,29 +1034,67 @@ typedef enum {
 } fmavx_code_e;
 
 
-#ifdef MAVLINKX_DECODE_LUT_ENABLE
+#if defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_LUT)
 
-// decode prefix LUT: maps 5-bit peek -> { prefix_len, code_type }
-// packed as (prefix_len << 4) | code_type in uint8_t
-const uint8_t fmavx_decode_lut[32] = {
-    // 00000-00011: CODE_0 (prefix 000, 3 bits)
-    0x30 , 0x30 , 0x30 , 0x30,
-    // 00100-00101: CODE_255 (prefix 0010, 4 bits)
-    0x41 , 0x41,
-    // 00110: CODE_0_RLE (prefix 00110, 5 bits)
-    0x52,
-    // 00111: CODE_255_RLE (prefix 00111, 5 bits)
-    0x53,
-    // 01000-01111: CODE_65_190 (prefix 01, 2 bits)
-    0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26 , 0x26,
-    // 10000-10111: CODE_1_64 (prefix 10, 2 bits)
-    0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24 , 0x24,
-    // 11000-11111: CODE_191_254 (prefix 11, 2 bits)
-    0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25 , 0x25,
+typedef struct {
+    uint8_t len;
+    uint8_t code;
+} fmavx_decode_lut_t;
+
+// maps all 32 possible 5-bit peek values to prefix length and code type
+const fmavx_decode_lut_t fmavx_decode_lut[32] = {
+    // 000xx (0-3): prefix 000, 3 bits
+    {3, MAVLINKX_CODE_0}, {3, MAVLINKX_CODE_0}, {3, MAVLINKX_CODE_0}, {3, MAVLINKX_CODE_0},
+    // 0010x (4-5): prefix 0010, 4 bits
+    {4, MAVLINKX_CODE_255}, {4, MAVLINKX_CODE_255},
+    // 00110 (6): prefix 00110, 5 bits
+    {5, MAVLINKX_CODE_0_RLE},
+    // 00111 (7): prefix 00111, 5 bits
+    {5, MAVLINKX_CODE_255_RLE},
+    // 01xxx (8-15): prefix 01, 2 bits
+    {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190},
+    {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190}, {2, MAVLINKX_CODE_65_190},
+    // 10xxx (16-23): prefix 10, 2 bits
+    {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64},
+    {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64}, {2, MAVLINKX_CODE_1_64},
+    // 11xxx (24-31): prefix 11, 2 bits
+    {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254},
+    {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254}, {2, MAVLINKX_CODE_191_254},
 };
 
-#endif // MAVLINKX_DECODE_LUT_ENABLE
+#endif // MAVLINKX_DECODE_LUT
 
+
+#if defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_SPLIT)
+
+// slow path: 00xxx prefixes (3-5 bits), used by SPLIT
+const uint8_t fmavx_slow_len[8] = {
+    3, 3, 3, 3, // 000xx
+    4, 4,       // 0010x
+    5,          // 00110
+    5           // 00111
+};
+const uint8_t fmavx_slow_code[8] = {
+    MAVLINKX_CODE_0, MAVLINKX_CODE_0, MAVLINKX_CODE_0, MAVLINKX_CODE_0,
+    MAVLINKX_CODE_255, MAVLINKX_CODE_255,
+    MAVLINKX_CODE_0_RLE,
+    MAVLINKX_CODE_255_RLE
+};
+
+#endif // FUSED || SPLIT
+
+
+#if defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_SPLIT)
+
+// fast path: direct map for 2-bit prefixes 01, 10, 11 (index 0 unused, handled by slow path)
+const uint8_t fmavx_fast_code[4] = {
+    0,                      // 00 -> slow path
+    MAVLINKX_CODE_65_190,   // 01
+    MAVLINKX_CODE_1_64,     // 10
+    MAVLINKX_CODE_191_254   // 11
+};
+
+#endif // SPLIT
 
 // TODO: shouldn't be global
 uint8_t fmavx_in_buf[300];
@@ -1185,27 +1174,196 @@ CHECKRANGE(len,258);
         // get next code
         uint8_t code = MAVLINKX_CODE_UNDEFINED;
 
-#ifdef MAVLINKX_DECODE_LUT_ENABLE
-        // fill bit buffer from input, stop when no more input bytes
-        while (fmavx_status.bit_cnt < 5 && fmavx_status.in_pos < len) {
+        //TS_START(0);
+
+#if defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_FUSED)
+        {   // fused: prefix + data extraction inline for fast-path symbols
+            // hoist state to registers
+            uint32_t bit_buf = fmavx_status.bit_buf;
+            uint32_t bit_cnt = fmavx_status.bit_cnt;
+            uint32_t in_pos = fmavx_status.in_pos;
+            const uint8_t* in_buf = fmavx_in_buf;
+
+            // refill bit buffer
+            while (bit_cnt <= 24 && in_pos < len) {
+                bit_buf = (bit_buf << 8) | in_buf[in_pos++];
+                bit_cnt += 8;
+            }
+
+            if (bit_cnt >= 2) {
+                uint32_t aligned = bit_buf << (32 - bit_cnt);
+                uint32_t top2 = aligned >> 30;
+
+                if (top2 == 0b10) {
+                    // prefix 10 + 6 data bits -> values 1-64, 8 bits total
+                    if (bit_cnt >= 8) {
+                        uint8_t data = (aligned >> 24) & 0x3F;
+                        bit_cnt -= 8;
+                        // restore and output
+                        fmavx_status.bit_buf = bit_buf;
+                        fmavx_status.bit_cnt = bit_cnt;
+                        fmavx_status.in_pos = in_pos;
+                        TS_END(0, 1000);
+                        payload_out[(*len_out)++] = data + 1;
+                        continue;
+                    }
+                } else if (top2 == 0b11) {
+                    // prefix 11 + 6 data bits -> values 191-254, 8 bits total
+                    if (bit_cnt >= 8) {
+                        uint8_t data = (aligned >> 24) & 0x3F;
+                        bit_cnt -= 8;
+                        // restore and output
+                        fmavx_status.bit_buf = bit_buf;
+                        fmavx_status.bit_cnt = bit_cnt;
+                        fmavx_status.in_pos = in_pos;
+                        TS_END(0, 1000);
+                        payload_out[(*len_out)++] = data + 191;
+                        continue;
+                    }
+                } else if (top2 == 0b01) {
+                    // prefix 01 + 7 data bits -> values 65-190, 9 bits total
+                    if (bit_cnt >= 9) {
+                        uint8_t data = (aligned >> 23) & 0x7F;
+                        if (data <= 125) {
+                            bit_cnt -= 9;
+                            // restore and output
+                            fmavx_status.bit_buf = bit_buf;
+                            fmavx_status.bit_cnt = bit_cnt;
+                            fmavx_status.in_pos = in_pos;
+                            TS_END(0, 1000);
+                            payload_out[(*len_out)++] = data + 65;
+                            continue;
+                        } else {
+                            // invalid token
+                            fmavx_status.bit_buf = bit_buf;
+                            fmavx_status.bit_cnt = bit_cnt;
+                            fmavx_status.in_pos = in_pos;
+                            return;
+                        }
+                    }
+                } else {
+                    // slow path: 00xxx prefixes -> fuse CODE_0 and CODE_255 inline
+                    uint32_t peek = aligned >> 27;
+                    if (peek <= 5) {
+                        // 000 prefix -> literal 0x00 (~20-25% of all symbols)
+                        // 0010 prefix -> literal 0xFF (~3-4%)
+                        uint32_t prefix_len = (peek <= 3) ? 3 : 4;
+                        if (prefix_len <= bit_cnt) {
+                            uint8_t val = (peek <= 3) ? 0x00 : 0xFF;
+                            bit_cnt -= prefix_len;
+                            // restore and output
+                            fmavx_status.bit_buf = bit_buf;
+                            fmavx_status.bit_cnt = bit_cnt;
+                            fmavx_status.in_pos = in_pos;
+                            TS_END(0, 1000);
+                            payload_out[(*len_out)++] = val;
+                            continue;
+                        }
+                    } else {
+                        // 0011x prefix -> RLE (rare), fall through to switch
+                        if (bit_cnt >= 5) {
+                            code = (peek & 1) ? MAVLINKX_CODE_255_RLE : MAVLINKX_CODE_0_RLE;
+                            bit_cnt -= 5;
+                        }
+                    }
+                }
+            }
+
+            // restore state
+            fmavx_status.bit_buf = bit_buf;
+            fmavx_status.bit_cnt = bit_cnt;
+            fmavx_status.in_pos = in_pos;
+        }
+
+#elif defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_SPLIT)
+        // hoist state to registers for the refill loop
+        uint32_t bit_buf = fmavx_status.bit_buf;
+        uint32_t bit_cnt = fmavx_status.bit_cnt;
+        uint32_t in_pos = fmavx_status.in_pos;
+        const uint8_t* in_buf = fmavx_in_buf;
+
+        // refill bit buffer
+        while (bit_cnt <= 24 && in_pos < len) {
+            bit_buf = (bit_buf << 8) | in_buf[in_pos++];
+            bit_cnt += 8;
+        }
+
+        if (bit_cnt >= 2) {
+            uint32_t aligned = bit_buf << (32 - bit_cnt);
+            uint32_t top2 = aligned >> 30;
+
+            if (top2 != 0) {
+                // fast path: 2-bit prefixes 01, 10, 11 (~75% of symbols)
+                code = fmavx_fast_code[top2];
+                bit_cnt -= 2;
+            } else {
+                // slow path: 00xxx prefixes (3-5 bits)
+                uint32_t peek = aligned >> 27;
+                uint32_t prefix_len = fmavx_slow_len[peek];
+                if (prefix_len <= bit_cnt) {
+                    code = fmavx_slow_code[peek];
+                    bit_cnt -= prefix_len;
+                } else {
+                    code = MAVLINKX_CODE_UNDEFINED;
+                }
+            }
+        }
+
+        // restore state
+        fmavx_status.bit_buf = bit_buf;
+        fmavx_status.bit_cnt = bit_cnt;
+        fmavx_status.in_pos = in_pos;
+
+#elif defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_LUT)
+        // refill bit buffer: fill to near-full so _fmavX_decode_get_bits rarely needs to refill
+        while (fmavx_status.bit_cnt <= 24 && fmavx_status.in_pos < len) {
 CHECKRANGE(fmavx_status.in_pos,258);
             fmavx_status.bit_buf = (fmavx_status.bit_buf << 8) | fmavx_in_buf[fmavx_status.in_pos++];
             fmavx_status.bit_cnt += 8;
         }
-        if (fmavx_status.bit_cnt < 2) goto decompress_done; // shortest prefix is 2 bits
-        {
-            // pad remaining bits to 5 if needed for LUT peek
-            uint8_t peek;
-            if (fmavx_status.bit_cnt >= 5) {
-                peek = (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - 5)) & 0x1F;
-            } else {
-                peek = (fmavx_status.bit_buf << (5 - fmavx_status.bit_cnt)) & 0x1F;
+        if (fmavx_status.bit_cnt >= 2) { // need at least 2 bits for shortest prefix
+            // branchless peek: shift valid bits to MSB, extract top 5
+            uint8_t peek = (uint8_t)(((uint32_t)fmavx_status.bit_buf << (32 - fmavx_status.bit_cnt)) >> 27);
+            uint8_t prefix_len = fmavx_decode_lut[peek].len;
+            if (prefix_len <= fmavx_status.bit_cnt) {
+                code = fmavx_decode_lut[peek].code;
+                fmavx_status.bit_cnt -= prefix_len;
             }
-            uint8_t entry = fmavx_decode_lut[peek];
-            uint8_t prefix_len = entry >> 4;
-            if (prefix_len > fmavx_status.bit_cnt) goto decompress_done; // not enough bits for this code
-            code = entry & 0x0F;
-            fmavx_status.bit_cnt -= prefix_len; // consume prefix bits
+        }
+#elif defined(MAVLINKX_DECODE_METHOD) && (MAVLINKX_DECODE_METHOD == MAVLINKX_DECODE_PEEK)
+        // refill bit buffer: fill to near-full so _fmavX_decode_get_bits rarely needs to refill
+        while (fmavx_status.bit_cnt <= 24 && fmavx_status.in_pos < len) {
+CHECKRANGE(fmavx_status.in_pos,258);
+            fmavx_status.bit_buf = (fmavx_status.bit_buf << 8) | fmavx_in_buf[fmavx_status.in_pos++];
+            fmavx_status.bit_cnt += 8;
+        }
+        if (fmavx_status.bit_cnt >= 2) { // need at least 2 bits for shortest prefix
+            // peek top 5 bits, zero-pad if fewer available
+            uint8_t peek = (fmavx_status.bit_cnt >= 5)
+                ? (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - 5)) & 0x1F
+                : (fmavx_status.bit_buf << (5 - fmavx_status.bit_cnt)) & 0x1F;
+            uint8_t prefix_len;
+            if (peek >= 16) {       // 1xxxx: prefix 10 or 11, 2 bits
+                code = (peek >= 24) ? MAVLINKX_CODE_191_254 : MAVLINKX_CODE_1_64;
+                prefix_len = 2;
+            } else if (peek >= 8) { // 01xxx: prefix 01, 2 bits
+                code = MAVLINKX_CODE_65_190;
+                prefix_len = 2;
+            } else if (peek >= 6) { // 0011x: prefix 00110 or 00111, 5 bits
+                code = (peek & 1) ? MAVLINKX_CODE_255_RLE : MAVLINKX_CODE_0_RLE;
+                prefix_len = 5;
+            } else if (peek >= 4) { // 0010x: prefix 0010, 4 bits
+                code = MAVLINKX_CODE_255;
+                prefix_len = 4;
+            } else {                // 000xx: prefix 000, 3 bits
+                code = MAVLINKX_CODE_0;
+                prefix_len = 3;
+            }
+            if (prefix_len <= fmavx_status.bit_cnt) {
+                fmavx_status.bit_cnt -= prefix_len;
+            } else {
+                code = MAVLINKX_CODE_UNDEFINED; // not enough bits, end-of-stream
+            }
         }
 #else
         if (_fmavX_decode_get_bits(&c, len, 2)) {
@@ -1236,9 +1394,9 @@ CHECKRANGE(fmavx_status.in_pos,258);
                 }
             }
         }
-
-        if (code == MAVLINKX_CODE_UNDEFINED) return; // end
 #endif
+
+        if (code == MAVLINKX_CODE_UNDEFINED) return; // end-of-stream
 
         switch (code) {
             case MAVLINKX_CODE_0:
@@ -1277,11 +1435,10 @@ CHECKRANGE(*len_out,256);
                 payload_out[(*len_out)++] = c + 65;
                 break;
         }
+
+        //TS_END(0, 1000);
     }
-#ifdef MAVLINKX_DECODE_LUT_ENABLE
-decompress_done:
-    return;
-#endif
+
 }
 
 
