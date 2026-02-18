@@ -1,8 +1,8 @@
-# mLRS Lua Script for Ethos /FrSky) Radios
+# mLRS Lua Script for Ethos (FrSky) Radios
 
 A Lua utility for **Ethos transmitters** that provides a graphical configuration interface for **mLRS** devices over the **CRSF protocol**.
 
-This script allows you to **view, edit, and save mLRS parameters** directly from your Ethos radio without connecting to a computer or using the mLRS web configurator.
+This script allows you to **view, edit, and save mLRS parameters** directly from your Ethos radio without connecting to a computer or using the mLRS CLI.
 
 
 ![Screenshot](https://raw.githubusercontent.com/robthomson/mlrs-ethos/main/.github/gfx/screenshot.jpg)
@@ -12,7 +12,7 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 ## ✨ Features
 
 - 📡 **Direct mLRS integration** via CRSF (Crossfire).
-- 🧭 **Automatic discovery** of device parameters and metadata.
+- 🧭 **Automatic discovery** of both Tx module and receiver parameters and metadata.
 - ⚙️ **Auto-reconnect** after module reboot or power cycle.
 - 🧱 **Fully dynamic UI** — fields are built automatically from mLRS parameter descriptors.
 
@@ -20,13 +20,13 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 
 ## 🕹️ Installation
 
-1. Download and copy the folder "Ethos" and its content to your radio's sdcard, placing it in
+1. Download and copy the folder "Ethos" and its content to your radio's SD card, placing it in
 
 ```SD:\scripts\mlrs```
 
 2. Restart your radio.
 
-3. In Ethos 1.6 you will find the mlrs menu in the system tools. Please note you will need to ensure that you have swiched your protocol to CRSF with a baud rate of 400k.
+3. In Ethos 1.6 you will find the mLRS menu in the system tools. Please note you will need to ensure that you have switched your protocol to CRSF with a baud rate of 400k.
 
 4. In Ethos 1.7, mLRS will appear in the normal 'external rf module' settings. You will not need to use the system tool and in fact this is not even shown. Simply visit RF module settings; and click options.
 
@@ -36,7 +36,7 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 
 ## 💾 Saving Settings
 
-- After editing values, tap **Save** at the bottom of the form.
+- After editing values, tap **Save** at the bottom of the form to write the changes to the mLRS devices and make them permanent.
 - The script will:
 1. Send the `PARAM_STORE` command to mLRS.
 2. Keep the progress loader open while the module reboots.
@@ -63,7 +63,7 @@ Make sure the module is powered and connected via CRSF UART.
 ## 🧑‍💻 Development Notes
 
 - Written entirely in **Lua** for the Ethos scripting API.
-- Compatible with both external mLRS modules using CRSF telemetry (e.g. X18S, X20, etc.).
+- Compatible with external mLRS Tx modules using CRSF telemetry (e.g. X18S, X20, etc.).
 - All form fields are created dynamically from parameter frames.
 
 ---

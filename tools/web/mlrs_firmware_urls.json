@@ -1,4 +1,10 @@
 {
+    "v1.3.08": {
+        "uint": 10308,
+        "type": "pre-release",
+        "commit": "f535487e2073382bf57adcebff306e2e3e1cb962",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3.08-pre-release/firmware"
+    },
     "v1.3.06": {
         "uint": 10306,
         "type": "pre-release",
