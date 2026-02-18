@@ -390,7 +390,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #elif defined DEVICE_HAS_LR11xx
   #define SX_DRIVER Lr11xxDriver
 #elif defined DEVICE_HAS_LR20xx
-  #define SX_DRIVER SxDriverDummy //XXXX Lr20xxDriver
+  #define SX_DRIVER Lr20xxDriver
 #else
   #define SX_DRIVER Sx128xDriver
 #endif

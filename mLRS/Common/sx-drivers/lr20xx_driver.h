@@ -7,10 +7,6 @@
 //*******************************************************
 // Configuration defines:
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
-// #define SX_USE_REGULATOR_MODE_DCDC
-// #define SX2_USE_REGULATOR_MODE_DCDC
-// #define SX_USE_RFSW_CTRL
-// #define SX_USE_LP_PA  
 //*******************************************************
 
 #ifndef LR20XX_DRIVER_H
@@ -81,7 +77,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
     }
 };
 
-
+#if 0
 const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
     { .br_bps = 100000,
       .PulseShape = LR20XX_GFSK_PULSESHAPE_BT_1,
@@ -99,6 +95,7 @@ const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
       .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
     }
 };
+#endif
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
@@ -106,8 +103,8 @@ void lr20xx_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8
 {
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
 
-    if (power_sx < LR20XX_POWER_MIN) power_sx = LR20XX_POWER_MIN;
-    if (power_sx > LR20XX_POWER_MAX) power_sx = LR20XX_POWER_MAX;
+    if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
+    if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
     if (power_sx > LR20XX_MAX_DBM) power_sx = LR20XX_MAX_DBM;
 
     *sx_power = power_sx;
@@ -127,32 +124,30 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         gfsk_configuration = nullptr;
     }
 
-    bool isOk(void)
+    bool isOk(void) // TODO ???
     {
-        uint8_t hwVersion;
-        uint8_t useCase;
         uint8_t fwMajor;
         uint8_t fwMinor;
         
-        GetVersion(&hwVersion, &useCase, &fwMajor, &fwMinor);
+        GetVersion(&fwMajor, &fwMinor);
 
-        return (useCase != 0);
+        return true;
     }
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
-        SetModulationParams(config->SpreadingFactor,
-                            config->Bandwidth,
-                            config->CodingRate,
-                            LR20XX_LORA_LDR_OFF);
+        SetLoraModulationParams(config->SpreadingFactor,
+                                config->Bandwidth,
+                                config->CodingRate,
+                                LR20XX_LORA_LDRO_OFF);
 
-        if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
+// TODO        if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
 
-        SetPacketParams(config->PreambleLength,
-                        config->HeaderType,
-                        config->PayloadLength,
-                        config->CrcEnabled,
-                        config->InvertIQ);
+        SetLoraPacketParams(config->PreambleLength,
+                            config->HeaderType,
+                            config->PayloadLength,
+                            config->CrcEnabled,
+                            config->InvertIQ);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -167,13 +162,14 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     {
         if (!gconfig) while(1){} // must not happen
 
-        SetStandby(LR20XX_STDBY_CONFIG_STDBY_RC);
+        SetStandby(LR20XX_STANDBY_MODE_RC); // TODO LR20XX_STANDBY_MODE_XOSC ???
         SetPacketType(LR20XX_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
     {
+#if 0
         SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
                                 config->Bandwidth,
@@ -189,14 +185,17 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
                             config->Whitening);
 
         SetSyncWordGFSK(sync_word);
+#endif
     }
 
     void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
     {
+#if 0
         if (index >= sizeof(Lr20xxGfskConfiguration)/sizeof(Lr20xxGfskConfiguration[0])) while(1){} // must not happen
 
         gfsk_configuration = &(Lr20xxGfskConfiguration[index]);
         SetGfskConfiguration(gfsk_configuration, sync_word);
+#endif
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
@@ -217,10 +216,11 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
-        // Order from User Manual: SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
+        // Order from User Manual:
+        // SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
+
         SetRxTxFallbackMode(LR20XX_RX_TX_FALLBACK_MODE_FS);
-//        SetRxBoosted(LR20XX_RX_GAIN_BOOSTED_GAIN);
-// TODO        SetRxPath() ???
+        SetRxPath(LR20XX_RX_PATH_LF, LR20XX_RX_BOOST_LF_0); // TODO HF??
 #ifndef SX_USE_RFSW_CTRL
 //        SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1);  // Default ELRS selection
 // TODO SetDioRfSwitchConfig ???
@@ -243,34 +243,38 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR20XX_CAL_IMG_430_MHZ_1, LR20XX_CAL_IMG_430_MHZ_2); break;
 */
 // TODO ????
+#if 0
         case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibFE(LR20XX_CAL_FE_902_MHZ_1, LR20XX_CAL_FE_902_MHZ_2); break;
         case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibFE(LR20XX_CAL_FE_863_MHZ_1, LR20XX_CAL_FE_863_MHZ_2); break;
         case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibFE(LR20XX_CAL_FE_863_MHZ_1, LR20XX_CAL_FE_863_MHZ_2); break;
         case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibFE(LR20XX_CAL_FE_430_MHZ_1, LR20XX_CAL_FE_430_MHZ_2); break;
         case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibFE(LR20XX_CAL_FE_430_MHZ_1, LR20XX_CAL_FE_430_MHZ_2); break;
+#endif
             case SX_FHSS_FREQUENCY_BAND_2P4_GHZ: break;
             default:
                 while(1){} // protection
         }
 
-        SetStandby(LR20XX_STDBY_CONFIG_STDBY_RC);
+        SetStandby(LR20XX_STANDBY_MODE_RC);
 
         if (gconfig->modeIsLora()) {
             SetPacketType(LR20XX_PACKET_TYPE_LORA);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
-// TODO            SetPacketType(LR20XX_PACKET_TYPE_GFSK);
+            SetPacketType(LR20XX_PACKET_TYPE_FSK);
             SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
         }
 
         if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-// TODO            SetPaConfig(LR20XX_PA_SELECT_HF_PA, LR20XX_REG_PA_SUPPLY_INTERNAL, 0, 0);
+// TODO            SetPaConfig(LR20XX_PA_SEL_HF, LR20XX_PA_MODE_FSM, REG_PA_SUPPLY_INTERNAL, 0, 0);
+            SelPa(LR20XX_PA_SEL_HF);
         } else {
 #ifndef SX_USE_LP_PA
 // TODO            SetPaConfig(LR20XX_PA_SELECT_HP_PA, LR20XX_REG_PA_SUPPLY_VBAT, LR20XX_PA_DUTY_CYCLE_22_DBM, LR20XX_PA_HP_SEL_22_DBM);
 #else
             SetPaConfig(LR20XX_PA_SELECT_LP_PA, LR20XX_REG_PA_SUPPLY_INTERNAL, LR20XX_PA_DUTY_CYCLE_14_DBM, 0);
 #endif
+            SelPa(LR20XX_PA_SEL_LF);
         }
 
         SetRfPower_dbm(gconfig->Power_dbm);
@@ -280,30 +284,37 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     //-- these are the API functions used in the loop
 
+    uint32_t GetAndClearIrqStatus(uint32_t dummy)
+    {
+        return Lr20xxDriverBase::GetAndClearIrqStatus();
+    }
+
+    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len)
+    {
 // TODO
-    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len) {}
+        ReadRadioRxFifo(data, len);
+    }
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-//        uint8_t rxStartBufferPointer;
-//        uint8_t rxPayloadLength;
-
-// TODO        GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-// TODO        ReadBuffer(rxStartBufferPointer, data, len);
+// TODO
+        ReadRadioRxFifo(data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
-// TODO        WriteBuffer(data, len);
+// TODO
+        ClearTxFifo();
+        WriteRadioTxFifo(data, len);
         ClearIrq(LR20XX_IRQ_ALL);
         SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
     }
 
     void SetToRx(void)
     {
-        uint16_t tmo_ms = 0;
+        ClearRxFifo();
         ClearIrq(LR20XX_IRQ_ALL);
-        SetRx(tmo_ms * 33); // 0 = no timeout
+        SetRx(0); // 0 = no timeout
     }
 
     void SetToIdle(void)
@@ -317,11 +328,14 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
+        int16_t rssi_signal;
 
         if (gconfig->modeIsLora()) {
-            Lr20xxDriverBase::GetPacketStatus(&rssi, Snr);
+            Lr20xxDriverBase::GetPacketStatus(&rssi, &rssi_signal, Snr);
         } else {
-            Lr20xxDriverBase::GetPacketStatusGFSK(&rssi);
+#if 0
+            Lr20xxDriverBase::GetPacketStatusFSK(&rssi);
+#endif
             *Snr = 0;
         }
 
@@ -349,7 +363,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             if (index >= sizeof(Lr20xxLoraConfiguration)/sizeof(Lr20xxLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Lr20xxLoraConfiguration[index]);
         } else {
+#if 0
             gfsk_configuration = &(Lr20xxGfskConfiguration[0]);
+#endif
         }
     }
 

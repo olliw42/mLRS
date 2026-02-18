@@ -12,7 +12,7 @@
 
 // spi
 
-void Lr20xxDriverBase::SpiRead(uint8_t *datain, uint8_t len) {
+void Lr20xxDriverBase::SpiRead(uint8_t *datain, uint16_t len) {
   uint8_t dummy = 0; // NOP
 
   while (len) {
@@ -22,7 +22,7 @@ void Lr20xxDriverBase::SpiRead(uint8_t *datain, uint8_t len) {
   }
 }
 
-void Lr20xxDriverBase::SpiWrite(uint8_t *dataout, uint8_t len) {
+void Lr20xxDriverBase::SpiWrite(uint8_t *dataout, uint16_t len) {
   uint8_t dummy;
 
   while (len) {

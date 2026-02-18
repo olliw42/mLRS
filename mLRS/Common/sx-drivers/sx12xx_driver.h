@@ -125,23 +125,23 @@ class SxDriverDummy
     void SetPacketType(uint8_t PacketType) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr) {}
-    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) {}
-    void ReadFrame(uint8_t* const data, uint8_t len) {}
+    void SendFrame(uint8_t* const data, uint16_t len, uint16_t tmo_ms) {}
+    void ReadFrame(uint8_t* const data, uint16_t len) {}
     void SetToRx(void) {}
     void SetToIdle(void) {}
 
     void ResetToLoraConfiguration() {}
     void SetRfPower_dbm(int8_t power_dbm) {}
     void UpdateRfPower(tSxGlobalConfig* const global_config) {}
-    void ClearIrqStatus(uint16_t IrqMask) {}
+    void ClearIrqStatus(uint32_t IrqMask) {}
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }
     int8_t RfPower_dbm(void) { return INT8_MIN; }
 
     void HandleAFC(void) {}
 
-    uint16_t GetAndClearIrqStatus(uint16_t IrqMask) { return 0; }
-    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len) {}
+    uint32_t GetAndClearIrqStatus(uint32_t IrqMask) { return 0; }
+    void ReadBuffer(uint8_t offset, uint8_t* data, uint16_t len) {}
 };
 
 
