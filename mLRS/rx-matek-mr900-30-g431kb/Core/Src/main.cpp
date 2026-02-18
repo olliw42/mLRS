@@ -65,9 +65,14 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  /* Configure Flash prefetch, Instruction cache, Data cache */
+  /* Default configuration at reset is:                      */
+  /* - Prefetch disabled                                     */
+  /* - Instruction cache enabled                             */
+  /* - Data cache enabled                                    */
+  //__HAL_FLASH_PREFETCH_BUFFER_ENABLE(); // seems to have no appreciable effect
   //__HAL_FLASH_INSTRUCTION_CACHE_DISABLE(); // this has massive effect
   __HAL_FLASH_DATA_CACHE_DISABLE(); // has nearly no effect, so keep it disabled
-  //__HAL_FLASH_PREFETCH_BUFFER_ENABLE(); // seems to have no appreciable effect
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -124,9 +129,17 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2;
+#ifndef MLRS_FEATURE_CAN
   RCC_OscInitStruct.PLL.PLLN = 85;
+#else  
+  RCC_OscInitStruct.PLL.PLLN = PLL_PLLN; // 85; for our normal setting
+#endif
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+#ifndef MLRS_FEATURE_CAN
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+#else  
+  RCC_OscInitStruct.PLL.PLLQ = PLL_PLLQ; // RCC_PLLQ_DIV2; for our normal setting
+#endif
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {

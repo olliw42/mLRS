@@ -60,26 +60,40 @@ typedef enum
 
 typedef struct
 {
-    uint32_t bo_count; // bus off
-    uint32_t lec_count; // PSR reg: LEC
-    uint32_t pxd_count; // PSR reg: PXD
-    uint32_t cel_count; // ECR reg: CEL
+    // basic stats
+    uint32_t transmitted_frame_count; // dc_hal_transmit()
+    uint32_t received_frame_count; // dc_hal_receive()
+    // raised in _process_error_status()
+    uint32_t bo_count;              // PSR reg: BO, Bus Off
+    uint32_t lec_count;             // PSR reg: LEC, Last Error Code
+    uint32_t pxe_count;             // PSR reg: PXE, Protocol Exception Event
+    uint32_t tec_count;             // ECR reg: TEC, Transmit Error Counter
+    uint32_t rec_count;             // ECR reg: REC, Receive Error Counter
+    uint32_t cel_count;             // ECR reg: CEL, Can Error Logging
+    uint32_t last_lec;
+    uint32_t last_psr;
+    uint32_t last_ecr;
+    uint32_t last_cccr;
 #ifdef DRONECAN_USE_RX_ISR
-    uint32_t rx_overflow_count; // rx fifo overflow
-    uint32_t isr_xtd_count; // XTD
-    uint32_t isr_rtr_count; // RTR
-    uint32_t isr_fdf_count; // FDF
-    uint32_t isr_brs_count; // BRS
-    uint32_t isr_dlc_count; // DLC
-    uint32_t isr_rf0f_count; // RF0F
-    uint32_t isr_rf0l_count; // RF0L
-    uint32_t isr_rf1f_count; // RF1F
-    uint32_t isr_rf1l_count; // RF1L
-    uint32_t isr_errors_count;
-    uint32_t isr_errorstatus_count;
-    uint32_t tffl_count; // TFFL
-    uint32_t tfqf_count; // TFQF
+    // raised in _dc_hal_receive_isr() (which is called by _dc_hal_isr_handler())
+    uint32_t rx_overflow_count;     // rx frame buffer overflow
+    uint32_t isr_xtd_count;         // XTD, received frame is not a EXT frame
+    uint32_t isr_rtr_count;         // RTR, received frame is RTR frame
+    uint32_t isr_fdf_count;         // FDF, received frame is RTR frame
+    uint32_t isr_brs_count;         // BRS, received frame has bit rate switch
+    uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8
+    // raised in _dc_hal_isr_handler()
+    uint32_t isr_rf0f_count;        // RF0F, Rx Fifo 0 Full
+    uint32_t isr_rf0l_count;        // RF0L, Rx Fifo 0 Message Lost
+    uint32_t isr_rf1f_count;        // RF1F, Rx Fifo 1 Full
+    uint32_t isr_rf1l_count;        // RF1L, Rx Fifo 1 Message Lost
+    uint32_t isr_errors_count;      // IR reg: ELO, WDI, PEA, PED, ARA errors
+    uint32_t isr_errorstatus_count; // IR reg: EP, EW, BO errors
 #endif
+    // raised in dc_hal_transmit()
+    uint32_t tffl_count;            // TFFL, Tx Fifo Free Level
+    uint32_t tfqf_count;            // TFQF, Tx Fifo Queue Full
+    // total sum of counts, calculated in dc_hal_get_stats()
     uint32_t error_sum_count;
 } tDcHalStatistics;
 
@@ -131,18 +145,19 @@ int16_t dc_hal_config_acceptance_filters(
     const tDcHalAcceptanceFilterConfiguration* const filter_configs,
     const uint8_t num_filter_configs);
 
+#ifdef DRONECAN_USE_RX_ISR
+int16_t dc_hal_enable_isr(void);
+void dc_hal_rx_flush(void);
+#endif
+
 tDcHalStatistics dc_hal_get_stats(void);
+const char* dc_hal_psr_lec_to_str(uint32_t psr);
+const char* dc_hal_psr_act_to_str(uint32_t psr);
 
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bitrate,
     tDcHalCanTimings* const timings);
-
-
-#ifdef DRONECAN_USE_RX_ISR
-int16_t dc_hal_enable_isr(void);
-void dc_hal_rx_flush(void);
-#endif
 
 
 #ifdef __cplusplus

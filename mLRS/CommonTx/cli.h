@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "../Common/hal/hal.h"
+#include "../Common/tasks.h"
 #include "setup_tx.h"
 
 
@@ -24,6 +25,8 @@ extern tStats stats;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTxInfo info;
+extern tTasks tasks;
 
 
 //-------------------------------------------------------
@@ -58,6 +61,9 @@ uint8_t nr, n;
     if (format == PARAM_FORMAT_DISPLAY) {
         if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPSTR;
+        }
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].Mode)) { // Mode
+            optstr = SETUP_OPT_MODE_DISPSTR;
         }
         if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
             (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
@@ -112,7 +118,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 {
     if (SetupParameter[param_idx].type != SETUP_PARAM_TYPE_LIST) return UINT8_MAX;
 
-    uint16_t allowed_mask = param_get_allowed_mask(param_idx);
+    uint32_t allowed_mask = param_get_allowed_mask(param_idx);
 
     uint8_t num = 0;
     for (uint8_t i = 0; i < param_get_opt_num(param_idx); i++) {
@@ -274,6 +280,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 //-------------------------------------------------------
 
 #define CLI_LINEND  "\r\n"
+#define CLI_BUF_SIZE  128
 
 
 #ifdef DEVICE_HAS_COM_ON_USB
@@ -298,8 +305,6 @@ class tTxCli
   public:
     void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
     void Do(void);
-    uint8_t Task(void);
-    int32_t GetTaskValue(void) { return task_value; }
 
   private:
     void addc(uint8_t c);
@@ -315,6 +320,7 @@ class tTxCli
     bool is_cmd(const char* const cmd);
     bool is_cmd_param_set(char* const name, char* const svalue);
     bool is_cmd_set_value(const char* const cmd, int32_t* const value);
+    bool is_cmd_set_str(const char* const cmd, char* const str);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
@@ -327,12 +333,9 @@ class tTxCli
 
     bool initialized;
 
-    char buf[128];
+    char buf[CLI_BUF_SIZE];
     uint8_t pos;
     uint32_t tlast_ms;
-
-    uint8_t task_pending;
-    int32_t task_value;
 
     // variables needed for print state machine to print in junks
     typedef enum {
@@ -363,9 +366,6 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
     buf[pos] = '\0';
     tlast_ms = 0;
 
-    task_pending = TX_TASK_NONE;
-    task_value = 0;
-
     state = CLI_STATE_NORMAL;
 
     // 9 ms, 20 ms, 32 ms, 53 ms
@@ -385,17 +385,9 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 }
 
 
-uint8_t tTxCli::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
-}
-
-
 void tTxCli::addc(uint8_t c)
 {
-    if (pos > 100) return;
+    if (pos > (CLI_BUF_SIZE-24)) return; // not full buffer size, play it safe
 
     buf[pos] = c;
     pos++;
@@ -443,6 +435,33 @@ uint8_t n;
     for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
 
     *value = atoi(s);
+
+    return true;
+}
+
+
+// name = str value
+bool tTxCli::is_cmd_set_str(const char* const cmd, char* const str)
+{
+char s[64];
+uint8_t n;
+
+    uint8_t cmd_len = strlen(cmd);
+    uint8_t buf_len = strlen(buf);
+    if (buf_len < cmd_len + 2) return false;
+    if (strncmp(buf, cmd, cmd_len) != 0) return false;
+
+    // cleanify: extract '=string' // ATTENTION: it removes all blanks!
+    n = 0;
+    for (uint8_t i = cmd_len; i < buf_len; i++) {
+        if (buf[i] != ' ') s[n++] = buf[i];
+    }
+    s[n] = '\0';
+
+    if (n < 1) return false;
+    if (s[0] != '=') return false;
+
+    strcpy(str, &s[1]); // remove the '='
 
     return true;
 }
@@ -512,7 +531,7 @@ uint8_t sep, n;
 
 void tTxCli::print_param_opt_list(uint8_t idx)
 {
-char s[16];
+char s[32];
 
     switch (SetupParameter[idx].type) {
     case SETUP_PARAM_TYPE_INT8:{
@@ -615,10 +634,14 @@ void tTxCli::stream(void)
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_rssi2));
             puts(",");
             puts(s8toBCD_s(stats.received_rssi));
             puts(", ");
             puts(s8toBCD_s(stats.last_snr1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_snr2));
             puts("; ");
 
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
@@ -634,7 +657,13 @@ void tTxCli::print_device_version(void)
 {
     print_layout_version_warning();
 
-    putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    puts("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    char s[48];
+    if (info.WirelessDeviceName_cli(s)) {
+        puts(", ");
+        puts(s);
+    }
+    putsn("");
 
     puts("  Rx: ");
     if (connected()) {
@@ -657,25 +686,54 @@ void tTxCli::print_frequencies_do(void)
 {
 char s[32];
 char unit[32];
+static uint8_t cnt_max;
+
+    if (print_index == 0) {
+        if (Config.IsDualBand) { // fhss1 & fhss2
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else
+        if (TRANSMIT_USE_ANTENNA2) { // only fhss2
+            print_index = fhss.Cnt();
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else { // only fhss1
+            cnt_max = fhss.Cnt();
+        }
+    }
 
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
-        if (print_index >= fhss.Cnt()) {
+        if (print_index >= cnt_max) {
             print_it_reset();
             return;
         }
 
-        uint8_t i = print_index;
-
-        puts(u8toBCD_s(i));
-        puts("  ch: ");
-        puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  f_reg: ");
-        puts(u32toBCD_s(fhss.FhssList(i)));
-        puts("  f: ");
-        u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
-        remove_leading_zeros(s);
-        puts(s);
-        putsn(unit);
+        if (print_index < fhss.Cnt()) {
+            uint8_t i = print_index;
+            if (i == 0) { puts("fhss1 (");puts(u8toBCD_s(fhss.Cnt()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+        } else {
+            uint8_t i = print_index - fhss.Cnt();
+            if (i == 0) { puts("fhss2 (");puts(u8toBCD_s(fhss.Cnt2()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList2(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList2(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq2_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+            i++;
+        }
 
         print_index++;
     }
@@ -687,29 +745,39 @@ void tTxCli::print_help_do(void)
     for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
         switch (print_index) {
         case 0:  print_layout_version_warning(); break;
-        case 1:  putsn("  help, h, ?  -> this help page"); break;
-        case 2:  putsn("  v           -> print device and version"); break;
-        case 3:  putsn("  pl          -> list all parameters"); break;
-        case 4:  putsn("  pl c        -> list common parameters"); break;
-        case 5:  putsn("  pl tx       -> list Tx parameters"); break;
-        case 6:  putsn("  pl rx       -> list Rx parameters"); break;
+        case 1:  putsn("  help, h, ?      -> this help page"); break;
+        case 2:  putsn("  v               -> print device and version"); break;
+        case 3:  putsn("  pl              -> list all parameters"); break;
+        case 4:  putsn("  pl c            -> list common parameters"); break;
+        case 5:  putsn("  pl tx           -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx           -> list Rx parameters"); break;
         case 7:  putsn("  p name          -> get parameter value"); break;
         case 8:  putsn("  p name = value  -> set parameter value"); break;
         case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
-        case 10: putsn("  pstore      -> store parameters"); break;
-        case 11: putsn("  setconfigid -> select config id"); break;
-        case 12: putsn("  bind        -> start binding"); break;
-        case 13: putsn("  reload      -> reload all parameter settings"); break;
-        case 14: putsn("  stats       -> starts streaming statistics"); break;
-        case 15: putsn("  listfreqs   -> lists frequencies used in fhss scheme"); break;
-        case 16: putsn("  systemboot  -> call system bootloader"); break;
-#ifdef USE_ESP_WIFI_BRIDGE
-        case 17: putsn("  esppt       -> enter serial passthrough"); break;
-        case 18: putsn("  espboot     -> reboot ESP and enter serial passthrough"); break;
+        case 10: putsn("  pstore          -> store parameters"); break;
+        case 11: putsn("  setconfigid     -> select config id"); break;
+        case 12: putsn("  bind            -> start binding"); break;
+        case 13: putsn("  reload          -> reload all parameter settings"); break;
+        case 14: putsn("  stats           -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
+        case 16: putsn("  systemboot      -> call system bootloader"); break;
+#else
+        case 16: break;
 #endif
-#ifdef USE_HC04_MODULE
-        case 19: putsn("  hc04 pt       -> enter serial passthrough"); break;
-        case 20: putsn("  hc04 setpin   -> set pin of HC04"); break;
+#ifdef USE_ESP_WIFI_BRIDGE
+        case 17: putsn("  esppt           -> enter serial passthrough"); break;
+        case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
+  #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+        case 19: putsn("  esp get pswd          -> get password (TCP/UDP/UDPSTA)"); break;
+        case 20: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
+        case 21: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
+        case 22: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
+  #endif
+#elif defined USE_HC04_MODULE // let's assume that not both ESP and HC04 can be true
+        case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
+        case 18: putsn("  hc04 getpin           -> get pin of HC04"); break;
+        case 19: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
 #endif
         default:
             // last chunk, reset
@@ -791,12 +859,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) task_pending = TX_TASK_RX_PARAM_SET;
+                if (rx_param_changed) tasks.SetCliTask(TX_TASK_RX_PARAM_SET);
             }
 
         } else
         if (is_cmd("pstore")) {
-            task_pending = TX_TASK_PARAM_STORE;
+            tasks.SetCliTask(TX_TASK_PARAM_STORE);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -807,12 +875,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            task_pending = TX_TASK_BIND;
+            tasks.SetCliTask(MAIN_TASK_BIND_START);
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            task_pending = TX_TASK_PARAM_RELOAD;
+            tasks.SetCliTask(TX_TASK_PARAM_RELOAD);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -830,8 +898,7 @@ bool rx_param_changed;
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                task_pending = TX_TASK_CLI_CHANGE_CONFIG_ID;
-                task_value = value;
+                tasks.SetCliTask(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
             }
@@ -848,20 +915,48 @@ bool rx_param_changed;
             print_it(CLI_STATE_PRINT_LISTFREQS);
 
         //-- System Bootloader
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
         } else
         if (is_cmd("systemboot")) {
-            task_pending = TX_TASK_SYSTEM_BOOT;
+            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
+#endif
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            task_pending = TX_TASK_ESP_PASSTHROUGH;
+            tasks.SetCliTask(TX_TASK_ESP_PASSTHROUGH);
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            task_pending = TX_TASK_FLASH_ESP;
+            tasks.SetCliTask(TX_TASK_FLASH_ESP);
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+        } else
+        if (is_cmd("esp get pswd")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
+        } else
+        if (is_cmd_set_str("esp set pswd", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp pswd: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_PASSWORD, svalue);
+            }
+        } else
+        if (is_cmd("esp get netssid")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
+        } else
+        if (is_cmd_set_str("esp set netssid", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp netssid: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+            }
+#endif
 #endif
 
         //-- HC04 module handling
@@ -869,7 +964,10 @@ bool rx_param_changed;
         } else
         if (is_cmd("hc04 pt")) {
             // enter hc04 passthrough, can only be exited by re-powering
-            task_pending = TX_TASK_HC04_PASSTHROUGH;
+            tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
+        } else
+        if (is_cmd("hc04 getpin")) { // getpin
+            tasks.SetCliTask(TX_TASK_CLI_HC04_GETPIN);
         } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
@@ -878,9 +976,8 @@ bool rx_param_changed;
                 char pin_str[32];
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
-                puts("HC04 Pin: ");putsn(pin_str);
-                task_pending = TX_TASK_CLI_HC04_SETPIN;
-                task_value = value;
+                puts("  hc04 pin: ");putsn(pin_str);
+                tasks.SetCliTask(TX_TASK_CLI_HC04_SETPIN, value);
             }
 #endif
 

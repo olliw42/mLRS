@@ -7,6 +7,7 @@
 // COMMON TYPES
 //*******************************************************
 
+#include <stdlib.h>
 #include <string.h>
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "common_types.h"
@@ -168,22 +169,28 @@ uint8_t crsf_cvt_power(int8_t power_dbm)
 
 uint8_t crsf_cvt_mode(uint8_t mode)
 {
-    if (mode == MODE_19HZ) return 19;
-    if (mode == MODE_31HZ) return 31;
-    if (mode == MODE_50HZ) return CRSF_RFMODE_50_HZ;
-    if (mode == MODE_FLRC_111HZ) return 111;
-    if (mode == MODE_FSK_50HZ) return CRSF_RFMODE_50_HZ;
+    switch (mode) {
+    case MODE_50HZ: return CRSF_RFMODE_50_HZ;
+    case MODE_31HZ: return 31;
+    case MODE_19HZ: return 19;
+    case MODE_FLRC_111HZ: return 111;
+    case MODE_FSK_50HZ: return CRSF_RFMODE_50_HZ;
+    case MODE_19HZ_7X: return 19;
+    }
     return UINT8_MAX;
 }
 
 
 uint8_t crsf_cvt_fps(uint8_t mode)
 {
-    if (mode == MODE_19HZ) return 2; // *10 in OpenTx !
-    if (mode == MODE_31HZ) return 3;
-    if (mode == MODE_50HZ) return 5;
-    if (mode == MODE_FLRC_111HZ) return 11;
-    if (mode == MODE_FSK_50HZ) return 5;
+    switch (mode) {
+    case MODE_50HZ: return 5; // *10 in OpenTx !
+    case MODE_31HZ: return 3;
+    case MODE_19HZ: return 2;
+    case MODE_FLRC_111HZ: return 11;
+    case MODE_FSK_50HZ: return 5;
+    case MODE_19HZ_7X: return 2;
+    }
     return UINT8_MAX;
 }
 
@@ -351,6 +358,7 @@ const uint16_t power_table_dBm_to_mW[] = {
     2000, // 33 dBm
 };
 
+
 uint8_t dronecan_cvt_power(int8_t power_dbm)
 {
     if (power_dbm < 0) return 0;
@@ -370,6 +378,8 @@ uint16_t cvt_power(int8_t power_dbm)
 //-- modes and so on
 // ATTENTION: must not be longer than FREQUENCY_BAND_STR_LEN, MODE_STR_LEN, w/o terminating NULL character!
 
+// MLRS_RADIO_LINK_INFORMATION_FIELD_BAND_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 4 chars max
 void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t len)
 {
     switch (frequency_band) {
@@ -383,6 +393,9 @@ void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t
     }
 }
 
+
+// MLRS_RADIO_LINK_INFORMATION_FIELD_MODE_STR: 6 chars max
+// MSP2_COMMON_SET_MSP_RC_INFO: 6 chars max
 void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
 {
     switch (mode) {
@@ -391,6 +404,7 @@ void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
         case MODE_19HZ: strbufstrcpy(s, "19Hz", len); break;
         case MODE_FLRC_111HZ: strbufstrcpy(s, "FLRC", len); break;
         case MODE_FSK_50HZ: strbufstrcpy(s, "FSK", len); break;
+        case MODE_19HZ_7X: strbufstrcpy(s, "19Hz7x", len); break;
         default: strbufstrcpy(s, "?", len);
     }
 }
@@ -401,7 +415,7 @@ void mode_str_to_strbuf(char* const s, uint8_t mode, uint8_t len)
 bool is_valid_bindphrase_char(char c)
 {
     return ((c >= 'a' && c <= 'z') ||
-            (c >= '0' && c <= '9' ) ||
+            (c >= '0' && c <= '9') ||
             (c == '_') || (c == '#') || (c == '-') || (c == '.'));
 }
 
@@ -472,7 +486,7 @@ void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 
 void remove_leading_zeros(char* const s)
 {
-uint16_t i, len;
+int16_t i, len; // int16 to avoid underflow in len -1
 
     len = strlen(s);
     for (i = 0; i < len - 1; i++) {
@@ -484,27 +498,22 @@ uint16_t i, len;
 
 void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
+    if (slen > 67) slen = 67; // should not happen, but play it safe
+
     memset(Power_optstr, 0, slen);
 
-    char optstr[44+2] = {};
+    char optstr[67+2] = {};
 
     for (uint8_t i = 0; i < num; i++) {
-        char s[44+2];
+        char s[16]; // single entry, e.g. "2000 mW,"
         if (power_list[i] == INT16_MAX) break;
 
         if (power_list[i] <= 0) {
             strcpy(s, "min,");
-        } else
-        if (power_list[i] < 1000) {
+        } else {
             u16toBCDstr(power_list[i], s);
             remove_leading_zeros(s);
             strcat(s, " mW,");
-        } else {
-            u16toBCDstr((power_list[i] + 50) / 100, s);
-            remove_leading_zeros(s);
-            uint8_t l = strlen(s);
-            s[l] = s[l-1]; s[l-1] = '.'; s[l+1] = '\0';
-            strcat(s, " W,");
         }
         if (strlen(optstr) + strlen(s) <= slen) { // we are going to cut off the last char, hence <=
             strcat(optstr, s);
@@ -576,6 +585,45 @@ char ss[32];
     u8toBCDstr(patch, ss);
     ss[0] = ss[1]; ss[1] = ss[2]; ss[2] = '\0'; // remove_leading_zeros(ss);
     strcat(s, ss);
+}
+
+
+uint32_t version_from_str(char* const s)
+{
+char ss[32];
+
+    uint32_t major = 0;
+    uint32_t minor = 0;
+    uint32_t patch = 0;
+
+    uint8_t pos = 0;
+    uint8_t state = 0;
+    for (uint8_t i = 0; i < strlen(s) + 1; i++) { // +1 to handle end of string
+        switch (state) {
+        case 0: case 2: case 4:
+            if (s[i] >= '0' && s[i] <= '9') {
+                 pos = 0;
+                 ss[pos++] = s[i];
+                 ss[pos] = '\0';
+                 state++;
+            }
+            break;
+        case 1: case 3: case 5:
+            if (s[i] >= '0' && s[i] <= '9') {
+                 ss[pos++] = s[i];
+                 ss[pos] = '\0';
+            } else {
+                switch (state) {
+                case 1: major = atoi(ss); break;
+                case 3: minor = atoi(ss); break;
+                case 5: patch = atoi(ss); break;
+                }
+                state++;
+            }
+            break;
+        }
+    }
+    return major * 10000 + minor * 100 + patch;
 }
 
 

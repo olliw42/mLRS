@@ -46,14 +46,18 @@
 #endif
 
 
-#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+  #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX126X_FREQ_MHZ_TO_REG(f_mhz)
+  #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  SX1280_FREQ_GHZ_TO_REG(f_ghz)
 #elif defined DEVICE_HAS_SX127x
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  SX127X_FREQ_MHZ_TO_REG(f_mhz)
 #elif defined DEVICE_HAS_LR11xx
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  LR11XX_FREQ_MHZ_TO_REG(f_mhz)
+  #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  LR11XX_FREQ_GHZ_TO_REG(f_ghz)
 #else // DEVICE_HAS_SX128x
-  // for 2.4 GHz we directly use SX1280_FREQ_GHZ_TO_REG(), not SX12XX_FREQ_MHZ_TO_REG()
+  #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  SX1280_FREQ_GHZ_TO_REG(f_ghz)
 #endif
 
 
@@ -66,9 +70,7 @@ const uint32_t fhss_freq_list_433[] = {
     SX12XX_FREQ_MHZ_TO_REG(433.480),
 };
 
-const uint8_t fhss_bind_channel_list_433[] = {
-    0 // just pick some
-};
+const uint8_t fhss_bind_channel_433 = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_70_CM_HAM
@@ -115,9 +117,7 @@ const uint32_t fhss_freq_list_70_cm_ham[] = {
     SX12XX_FREQ_MHZ_TO_REG(449.6),
 };
 
-const uint8_t fhss_bind_channel_list_70_cm_ham[] = {
-    10, 20 // picked 2
-};
+const uint8_t fhss_bind_channel_70_cm_ham = 10;
 
 #endif
 #ifdef FHSS_HAS_CONFIG_868_MHZ
@@ -140,9 +140,7 @@ const uint32_t fhss_freq_list_868[] = {
     // SX12XX_FREQ_MHZ_TO_REG(869.575), // overlap with Alarmanlagen
 };
 
-const uint8_t fhss_bind_channel_list_868[] = {
-    0, // just pick some
-};
+const uint8_t fhss_bind_channel_868 = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_915_MHZ_FCC
@@ -199,9 +197,7 @@ const uint32_t fhss_freq_list_915_fcc[] = {
     SX12XX_FREQ_MHZ_TO_REG(927.6),
 };
 
-const uint8_t fhss_bind_channel_list_915_fcc[] = {
-    19 // just pick some
-};
+const uint8_t fhss_bind_channel_915_fcc = 19; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_866_MHZ_IN
@@ -214,9 +210,7 @@ const uint32_t fhss_freq_list_866_in[] = { // !! NEEDS TO BE ADJUSTED TO PROPER 
     SX12XX_FREQ_MHZ_TO_REG(866.950),
 };
 
-const uint8_t fhss_bind_channel_list_866_in[] = {
-    0 // just pick some
-};
+const uint8_t fhss_bind_channel_866_in = 0; // just pick some
 
 #endif
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
@@ -225,105 +219,104 @@ const uint8_t fhss_bind_channel_list_866_in[] = {
 
 const uint32_t fhss_freq_list_2p4[] = {
 
-    SX1280_FREQ_GHZ_TO_REG(2.401), // channel 0
-    SX1280_FREQ_GHZ_TO_REG(2.402),
-    SX1280_FREQ_GHZ_TO_REG(2.403),
-    SX1280_FREQ_GHZ_TO_REG(2.404),
-    SX1280_FREQ_GHZ_TO_REG(2.405),
-    SX1280_FREQ_GHZ_TO_REG(2.406),
-    SX1280_FREQ_GHZ_TO_REG(2.407),
-    SX1280_FREQ_GHZ_TO_REG(2.408),
-    SX1280_FREQ_GHZ_TO_REG(2.409),
-    SX1280_FREQ_GHZ_TO_REG(2.410),
+    SX12XX_FREQ_GHZ_TO_REG(2.401), // channel 0
+    SX12XX_FREQ_GHZ_TO_REG(2.402),
+    SX12XX_FREQ_GHZ_TO_REG(2.403),
+    SX12XX_FREQ_GHZ_TO_REG(2.404),
+    SX12XX_FREQ_GHZ_TO_REG(2.405),
+    SX12XX_FREQ_GHZ_TO_REG(2.406),
+    SX12XX_FREQ_GHZ_TO_REG(2.407),
+    SX12XX_FREQ_GHZ_TO_REG(2.408),
+    SX12XX_FREQ_GHZ_TO_REG(2.409),
+    SX12XX_FREQ_GHZ_TO_REG(2.410),
 
-    SX1280_FREQ_GHZ_TO_REG(2.411), // channel 10
-    SX1280_FREQ_GHZ_TO_REG(2.412),
-    SX1280_FREQ_GHZ_TO_REG(2.413),
-    SX1280_FREQ_GHZ_TO_REG(2.414),
-    SX1280_FREQ_GHZ_TO_REG(2.415),
-    SX1280_FREQ_GHZ_TO_REG(2.416),
-    SX1280_FREQ_GHZ_TO_REG(2.417),
-    SX1280_FREQ_GHZ_TO_REG(2.418),
-    SX1280_FREQ_GHZ_TO_REG(2.419),
-    SX1280_FREQ_GHZ_TO_REG(2.420),
+    SX12XX_FREQ_GHZ_TO_REG(2.411), // channel 10
+    SX12XX_FREQ_GHZ_TO_REG(2.412),
+    SX12XX_FREQ_GHZ_TO_REG(2.413),
+    SX12XX_FREQ_GHZ_TO_REG(2.414),
+    SX12XX_FREQ_GHZ_TO_REG(2.415),
+    SX12XX_FREQ_GHZ_TO_REG(2.416),
+    SX12XX_FREQ_GHZ_TO_REG(2.417),
+    SX12XX_FREQ_GHZ_TO_REG(2.418),
+    SX12XX_FREQ_GHZ_TO_REG(2.419),
+    SX12XX_FREQ_GHZ_TO_REG(2.420),
 
-    SX1280_FREQ_GHZ_TO_REG(2.421), // channel 20
-    SX1280_FREQ_GHZ_TO_REG(2.422),
-    SX1280_FREQ_GHZ_TO_REG(2.423),
-    SX1280_FREQ_GHZ_TO_REG(2.424),
-    SX1280_FREQ_GHZ_TO_REG(2.425),
-    SX1280_FREQ_GHZ_TO_REG(2.426),
-    SX1280_FREQ_GHZ_TO_REG(2.427),
-    SX1280_FREQ_GHZ_TO_REG(2.428),
-    SX1280_FREQ_GHZ_TO_REG(2.429),
-    SX1280_FREQ_GHZ_TO_REG(2.430),
+    SX12XX_FREQ_GHZ_TO_REG(2.421), // channel 20
+    SX12XX_FREQ_GHZ_TO_REG(2.422),
+    SX12XX_FREQ_GHZ_TO_REG(2.423),
+    SX12XX_FREQ_GHZ_TO_REG(2.424),
+    SX12XX_FREQ_GHZ_TO_REG(2.425),
+    SX12XX_FREQ_GHZ_TO_REG(2.426),
+    SX12XX_FREQ_GHZ_TO_REG(2.427),
+    SX12XX_FREQ_GHZ_TO_REG(2.428),
+    SX12XX_FREQ_GHZ_TO_REG(2.429),
+    SX12XX_FREQ_GHZ_TO_REG(2.430),
 
-    SX1280_FREQ_GHZ_TO_REG(2.431), // channel 30
-    SX1280_FREQ_GHZ_TO_REG(2.432),
-    SX1280_FREQ_GHZ_TO_REG(2.433),
-    SX1280_FREQ_GHZ_TO_REG(2.434),
-    SX1280_FREQ_GHZ_TO_REG(2.435),
-    SX1280_FREQ_GHZ_TO_REG(2.436),
-    SX1280_FREQ_GHZ_TO_REG(2.437),
-    SX1280_FREQ_GHZ_TO_REG(2.438),
-    SX1280_FREQ_GHZ_TO_REG(2.439),
-    SX1280_FREQ_GHZ_TO_REG(2.440),
+    SX12XX_FREQ_GHZ_TO_REG(2.431), // channel 30
+    SX12XX_FREQ_GHZ_TO_REG(2.432),
+    SX12XX_FREQ_GHZ_TO_REG(2.433),
+    SX12XX_FREQ_GHZ_TO_REG(2.434),
+    SX12XX_FREQ_GHZ_TO_REG(2.435),
+    SX12XX_FREQ_GHZ_TO_REG(2.436),
+    SX12XX_FREQ_GHZ_TO_REG(2.437),
+    SX12XX_FREQ_GHZ_TO_REG(2.438),
+    SX12XX_FREQ_GHZ_TO_REG(2.439),
+    SX12XX_FREQ_GHZ_TO_REG(2.440),
 
-    SX1280_FREQ_GHZ_TO_REG(2.441), // channel 40
-    SX1280_FREQ_GHZ_TO_REG(2.442),
-    SX1280_FREQ_GHZ_TO_REG(2.443),
-    SX1280_FREQ_GHZ_TO_REG(2.444),
-    SX1280_FREQ_GHZ_TO_REG(2.445),
-    SX1280_FREQ_GHZ_TO_REG(2.446),
-    SX1280_FREQ_GHZ_TO_REG(2.447),
-    SX1280_FREQ_GHZ_TO_REG(2.448),
-    SX1280_FREQ_GHZ_TO_REG(2.449),
-    SX1280_FREQ_GHZ_TO_REG(2.450),
+    SX12XX_FREQ_GHZ_TO_REG(2.441), // channel 40
+    SX12XX_FREQ_GHZ_TO_REG(2.442),
+    SX12XX_FREQ_GHZ_TO_REG(2.443),
+    SX12XX_FREQ_GHZ_TO_REG(2.444),
+    SX12XX_FREQ_GHZ_TO_REG(2.445),
+    SX12XX_FREQ_GHZ_TO_REG(2.446),
+    SX12XX_FREQ_GHZ_TO_REG(2.447),
+    SX12XX_FREQ_GHZ_TO_REG(2.448),
+    SX12XX_FREQ_GHZ_TO_REG(2.449),
+    SX12XX_FREQ_GHZ_TO_REG(2.450),
 
-    SX1280_FREQ_GHZ_TO_REG(2.451), // channel 50
-    SX1280_FREQ_GHZ_TO_REG(2.452),
-    SX1280_FREQ_GHZ_TO_REG(2.453),
-    SX1280_FREQ_GHZ_TO_REG(2.454),
-    SX1280_FREQ_GHZ_TO_REG(2.455),
-    SX1280_FREQ_GHZ_TO_REG(2.456),
-    SX1280_FREQ_GHZ_TO_REG(2.457),
-    SX1280_FREQ_GHZ_TO_REG(2.458),
-    SX1280_FREQ_GHZ_TO_REG(2.459),
-    SX1280_FREQ_GHZ_TO_REG(2.460),
+    SX12XX_FREQ_GHZ_TO_REG(2.451), // channel 50
+    SX12XX_FREQ_GHZ_TO_REG(2.452),
+    SX12XX_FREQ_GHZ_TO_REG(2.453),
+    SX12XX_FREQ_GHZ_TO_REG(2.454),
+    SX12XX_FREQ_GHZ_TO_REG(2.455),
+    SX12XX_FREQ_GHZ_TO_REG(2.456),
+    SX12XX_FREQ_GHZ_TO_REG(2.457),
+    SX12XX_FREQ_GHZ_TO_REG(2.458),
+    SX12XX_FREQ_GHZ_TO_REG(2.459),
+    SX12XX_FREQ_GHZ_TO_REG(2.460),
 
-    SX1280_FREQ_GHZ_TO_REG(2.461), // channel 60
-    SX1280_FREQ_GHZ_TO_REG(2.462),
-    SX1280_FREQ_GHZ_TO_REG(2.463),
-    SX1280_FREQ_GHZ_TO_REG(2.464),
-    SX1280_FREQ_GHZ_TO_REG(2.465),
-    SX1280_FREQ_GHZ_TO_REG(2.466),
-    SX1280_FREQ_GHZ_TO_REG(2.467),
-    SX1280_FREQ_GHZ_TO_REG(2.468),
-    SX1280_FREQ_GHZ_TO_REG(2.469),
-    SX1280_FREQ_GHZ_TO_REG(2.470),
+    SX12XX_FREQ_GHZ_TO_REG(2.461), // channel 60
+    SX12XX_FREQ_GHZ_TO_REG(2.462),
+    SX12XX_FREQ_GHZ_TO_REG(2.463),
+    SX12XX_FREQ_GHZ_TO_REG(2.464),
+    SX12XX_FREQ_GHZ_TO_REG(2.465),
+    SX12XX_FREQ_GHZ_TO_REG(2.466),
+    SX12XX_FREQ_GHZ_TO_REG(2.467),
+    SX12XX_FREQ_GHZ_TO_REG(2.468),
+    SX12XX_FREQ_GHZ_TO_REG(2.469),
+    SX12XX_FREQ_GHZ_TO_REG(2.470),
 
-    SX1280_FREQ_GHZ_TO_REG(2.471), // channel 70
-    SX1280_FREQ_GHZ_TO_REG(2.472),
-    SX1280_FREQ_GHZ_TO_REG(2.473),
-    SX1280_FREQ_GHZ_TO_REG(2.474),
-    SX1280_FREQ_GHZ_TO_REG(2.475),
-    SX1280_FREQ_GHZ_TO_REG(2.476),
-    SX1280_FREQ_GHZ_TO_REG(2.477),
-    SX1280_FREQ_GHZ_TO_REG(2.478),
-    SX1280_FREQ_GHZ_TO_REG(2.479),
-    SX1280_FREQ_GHZ_TO_REG(2.480), // channel 79
+    SX12XX_FREQ_GHZ_TO_REG(2.471), // channel 70
+    SX12XX_FREQ_GHZ_TO_REG(2.472),
+    SX12XX_FREQ_GHZ_TO_REG(2.473),
+    SX12XX_FREQ_GHZ_TO_REG(2.474),
+    SX12XX_FREQ_GHZ_TO_REG(2.475),
+    SX12XX_FREQ_GHZ_TO_REG(2.476),
+    SX12XX_FREQ_GHZ_TO_REG(2.477),
+    SX12XX_FREQ_GHZ_TO_REG(2.478),
+    SX12XX_FREQ_GHZ_TO_REG(2.479),
+    SX12XX_FREQ_GHZ_TO_REG(2.480), // channel 79
 };
 
-const uint8_t fhss_bind_channel_list_2p4[] = {
-    46, 14, 68 // just pick some
-};
+const uint8_t fhss_bind_channel_2p4 = 46; // just pick some
+
 #endif
 
 
 //-------------------------------------------------------
 // FHSS Class
 //-------------------------------------------------------
-// SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM is in setup_types.h, for convenience
+// SX_FHSS_FREQUENCY_BAND_ENUM is in setup_types.h, for convenience
 // no FHSS_ORTHO_ENUM, we use the enum in setup_types.h
 // no FHSS_EXCEPT_ENUM, we use the enum in setup_types.h
 
@@ -331,19 +324,17 @@ typedef struct
 {
     const uint32_t* freq_list;
     uint8_t freq_list_len;
-    const uint8_t* bind_channel_list;
-    uint8_t bind_channel_list_len;
+    uint8_t bind_channel;
 } tFhssConfig;
 
 
-// ATTENTION: this must be in exactly the same order as SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM
+// ATTENTION: this must be in exactly the same order as SX_FHSS_FREQUENCY_BAND_ENUM
 const tFhssConfig fhss_config[] = {
 #ifdef FHSS_HAS_CONFIG_2P4_GHZ
     {
         .freq_list = fhss_freq_list_2p4,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_2p4) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_2p4,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_2p4) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_2p4
     },
 #else
     { .freq_list = nullptr },
@@ -352,8 +343,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_915_fcc,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_915_fcc) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_915_fcc,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_915_fcc) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_915_fcc
     },
 #else
     { .freq_list = nullptr },
@@ -362,8 +352,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_868,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_868) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_868,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_868) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_868
     },
 #else
     { .freq_list = nullptr },
@@ -372,8 +361,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_866_in,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_866_in) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_866_in,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_866_in) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_866_in,
     },
 #else
     { .freq_list = nullptr },
@@ -382,8 +370,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_433,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_433) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_433,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_433) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_433,
     },
 #else
     { .freq_list = nullptr },
@@ -392,8 +379,7 @@ const tFhssConfig fhss_config[] = {
     {
         .freq_list = fhss_freq_list_70_cm_ham,
         .freq_list_len = (uint8_t)(sizeof(fhss_freq_list_70_cm_ham) / sizeof(uint32_t)),
-        .bind_channel_list = fhss_bind_channel_list_70_cm_ham,
-        .bind_channel_list_len = (uint8_t)(sizeof(fhss_bind_channel_list_70_cm_ham) / sizeof(uint8_t))
+        .bind_channel = fhss_bind_channel_70_cm_ham,
     },
 #else
     { .freq_list = nullptr },
@@ -404,37 +390,31 @@ const tFhssConfig fhss_config[] = {
 class tFhssBase
 {
   public:
-    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_CONFIG_FREQUENCY_BAND_ENUM frequency_band, uint16_t fb_allowed_mask, uint8_t ortho, uint8_t except)
+    void Init(uint8_t fhss_num, uint32_t seed, SX_FHSS_FREQUENCY_BAND_ENUM frequency_band, uint16_t bind_mask, uint8_t ortho, uint8_t except)
     {
         if (fhss_num > FHSS_MAX_NUM) while(1){} // should not happen, but play it safe
 
         config_i = frequency_band;
 
-        if (config_i >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
+        if (sizeof(fhss_config)/sizeof(tFhssConfig) != SX_FHSS_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
+        if (config_i >= SX_FHSS_FREQUENCY_BAND_NUM) while(1){} // should not happen, but play it safe
         if (fhss_config[config_i].freq_list == nullptr) while(1){} // should not happen, but play it safe
 
         fhss_freq_list = fhss_config[config_i].freq_list;
         FREQ_LIST_LEN = fhss_config[config_i].freq_list_len;
-        fhss_bind_channel_list = fhss_config[config_i].bind_channel_list;
-        BIND_CHANNEL_LIST_LEN = fhss_config[config_i].bind_channel_list_len;
+        fhss_bind_channel = fhss_config[config_i].bind_channel;
         curr_bind_config_i = config_i; // we start with what setup suggests
 
-        bind_scan_mask = 0;
-        // looks a bit silly but is to mask out invalid bits
-        // could do bind_scan_mask = fb_allowed_mask & ~(0xFFFF << SX_FHSS_CONFIG_FREQUENCY_BAND_NUM);
-        for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) {
-            if (fb_allowed_mask & (1 << i)) bind_scan_mask |= (1 << i);
-        }
+        bind_scan_mask = bind_mask; // has hopefully be set up correctly in setup
+        is_in_binding = false;
 
         if (bind_scan_mask == 0) while(1){} // should not happen, but play it safe
 
-        uint8_t cnt_max = (FREQ_LIST_LEN - BIND_CHANNEL_LIST_LEN);
-        if (fhss_num > cnt_max) fhss_num = cnt_max;
-
+        if (fhss_num > (FREQ_LIST_LEN - 1)) fhss_num = (FREQ_LIST_LEN - 1);
         cnt = fhss_num;
 
         switch (config_i) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ:
+        case SX_FHSS_FREQUENCY_BAND_2P4_GHZ:
             // we may need to adapt cnt in case of ortho != NONE,
             // since the cnt_max = 80 - 3 = 77 channels may not be enough channels
             // in case of also except we actually only have 77 - 22 = 55 channels or so...
@@ -466,7 +446,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, except);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC:
+        case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 12) cnt = 12; // 42 channels, so can accommodate up to 12 frequencies (12 * 3 = 36 < 42)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -475,7 +455,7 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM:
+        case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
             if (ortho >= ORTHO_1_3 && ortho <= ORTHO_3_3) {
                 if (cnt > 8) cnt = 8; // 31 channels, so can accommodate up to 8 frequencies (8 * 3 = 24 < 31)
                 if (cnt > fhss_num) cnt = fhss_num;
@@ -484,16 +464,14 @@ class tFhssBase
             }
             generate_ortho_except(seed, ortho, EXCEPT_NONE);
             break;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ:
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN:
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ:
+        case SX_FHSS_FREQUENCY_BAND_868_MHZ:
+        case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN:
+        case SX_FHSS_FREQUENCY_BAND_433_MHZ:
             generate(seed);
             break;
         default:
             while(1){} // should not happen, but play it safe
         }
-
-        is_in_binding = false;
 
         curr_i = 0;
     }
@@ -503,14 +481,13 @@ class tFhssBase
         curr_i = 0;
     }
 
-    // only used for statistics
-    uint8_t Cnt(void)
+    void HopToNext(void)
     {
-        return cnt;
+        curr_i++;
+        if (curr_i >= cnt) curr_i = 0;
     }
 
-    // only used for statistics
-    uint8_t CurrI(void)
+    uint8_t GetCurrI(void)
     {
         return curr_i;
     }
@@ -519,27 +496,29 @@ class tFhssBase
     {
         if (is_in_binding) {
             const uint32_t* curr_bind_freq_list = fhss_config[curr_bind_config_i].freq_list;
-            const uint8_t* curr_bind_channel_list = fhss_config[curr_bind_config_i].bind_channel_list;
-            return curr_bind_freq_list[curr_bind_channel_list[0]];
+            return curr_bind_freq_list[fhss_config[curr_bind_config_i].bind_channel];
         }
 
         return fhss_list[curr_i];
     }
 
-    void HopToNext(void)
-    {
-        curr_i++;
-        if (curr_i >= cnt) curr_i = 0;
-    }
-
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         is_in_binding = true;
         bind_listen_cnt = (5000 / frame_rate_ms); // should be 5 secs
         bind_listen_i = 0;
     }
 
-    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    //-- only used by receiver
+
+    // Rx:
+    void SetCurrI(uint8_t i)
+    {
+        curr_i = i;
+        if (curr_i >= cnt) curr_i = 0; // should not happen but play it safe
+    }
+
+    // Rx: for bind, bool determines if it needs to switch back to LINK_STATE_RECEIVE
     bool HopToNextBind(void)
     {
         if (!is_in_binding) return false;
@@ -549,9 +528,9 @@ class tFhssBase
             bind_listen_i = 0;
             // find next bind frequency
             uint8_t iii = curr_bind_config_i;
-            for (uint8_t i = 0; i < SX_FHSS_CONFIG_FREQUENCY_BAND_NUM; i++) { // we give it at most that much attempts
+            for (uint8_t i = 0; i < SX_FHSS_FREQUENCY_BAND_NUM; i++) { // we give it at most that much attempts
                 iii++;
-                if (iii >= SX_FHSS_CONFIG_FREQUENCY_BAND_NUM) iii = 0;
+                if (iii >= SX_FHSS_FREQUENCY_BAND_NUM) iii = 0;
                 if ((bind_scan_mask & (1 << iii)) != 0) {
                     if (fhss_config[iii].freq_list == nullptr) while(1){} // should not happen, but play it safe
                     curr_bind_config_i = iii;
@@ -563,22 +542,13 @@ class tFhssBase
         return false;
     }
 
-    // only used by receiver
+    // Rx: for bind
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void)
     {
-        switch (curr_bind_config_i) {
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_2P4_GHZ: return SETUP_FREQUENCY_BAND_2P4_GHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: return SETUP_FREQUENCY_BAND_915_MHZ_FCC;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: return SETUP_FREQUENCY_BAND_868_MHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: return SETUP_FREQUENCY_BAND_866_MHZ_IN;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: return SETUP_FREQUENCY_BAND_433_MHZ;
-        case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: return SETUP_FREQUENCY_BAND_70_CM_HAM;
-        }
-        while(1){} // should not happen, but play it safe
-        return (SETUP_FREQUENCY_BAND_ENUM)0;
+        return cvt_to_setup_frequency_band(curr_bind_config_i); // asserts if not a valid SX_FHSS_FREQUENCY_BAND_ENUM
     }
 
-    // used by RADIO_LINK_STATS_MLRS
+    // Rx: for RADIO_LINK_STATS_MLRS
     float GetCurrFreq_Hz(void)
     {
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
@@ -588,23 +558,27 @@ class tFhssBase
 #elif defined DEVICE_HAS_LR11xx
         return 1.0E3f * LR11XX_REG_TO_FREQ_KHZ(GetCurrFreq());
 #else // DEVICE_HAS_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq());
+        return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq());
 #endif
     }
 
-    uint32_t bestX(void)
-    {
-        uint8_t i_best = 0;
-        for (uint8_t i = 0; i < cnt; i++) {
-          if (fhss_last_rssi[i] > fhss_last_rssi[i_best]) i_best = i;
-        }
+    //-- only used by Tx module
 
-        curr_i = i_best;
-        return fhss_list[curr_i];
+    // Tx: for CLI, for mBridge statistics
+    uint8_t Cnt(void)
+    {
+        return cnt;
     }
 
-    // used by CLI
+    // Tx: for mBridge statistics
+    uint8_t CurrI_4mBridge(void)
+    {
+        return curr_i;
+    }
+
+    // Tx: for CLI
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
+
     uint32_t FhssList(uint8_t i) { return fhss_list[i]; }
 
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i)
@@ -620,7 +594,7 @@ class tFhssBase
         return (uint32_t)LR11XX_REG_TO_FREQ_KHZ(fhss_list[i]);
 #else // DEVICE_HAS_SX128x
         strcpy(unit_str, " MHz");
-        return (uint32_t)SX1280_REG_TO_FREQ_MHZ(fhss_list[i]);
+        return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss_list[i]);
 #endif
     }
 
@@ -632,8 +606,7 @@ class tFhssBase
     uint8_t config_i;
     uint8_t FREQ_LIST_LEN;
     const uint32_t* fhss_freq_list;
-    uint8_t BIND_CHANNEL_LIST_LEN;
-    const uint8_t* fhss_bind_channel_list;
+    uint8_t fhss_bind_channel;
     uint16_t bind_scan_mask;
 
     uint8_t curr_i;
@@ -663,13 +636,24 @@ class tFhss : public tFhssBase
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         tFhssBase::Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->BindScan_mask,
                           fhss->Ortho, fhss->Except);
     }
 
+    uint8_t GetCurrI2(void) { return GetCurrI(); }
     uint32_t GetCurrFreq2(void) { return GetCurrFreq(); }
 
-    float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); }
+    //-- receiver only
+
+    void SetCurrI2(uint8_t i) { SetCurrI(i); }
+    float GetCurrFreq2_Hz(void) { return GetCurrFreq_Hz(); } // for RADIO_LINK_STATS_MLRS
+
+    //-- Tx module only
+
+    uint8_t Cnt2(void) { return Cnt(); }
+    uint8_t ChList2(uint8_t i) { return ChList(i); }
+    uint32_t FhssList2(uint8_t i) { return FhssList(i); }
+    uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i) { return GetFreq_x1000(unit_str, i); }
 };
 
 #else
@@ -681,10 +665,10 @@ class tFhss
     void Init(tFhssGlobalConfig* const fhss, tFhssGlobalConfig* const fhss2)
     {
         fhss1stBand.Init(fhss->Num, fhss->Seed,
-                          fhss->FrequencyBand, fhss->FrequencyBand_allowed_mask,
+                          fhss->FrequencyBand, fhss->BindScan_mask,
                           fhss->Ortho, fhss->Except);
         fhss2ndBand.Init(fhss2->Num, fhss2->Seed,
-                          fhss2->FrequencyBand, fhss2->FrequencyBand_allowed_mask,
+                          fhss2->FrequencyBand, fhss2->BindScan_mask,
                           fhss2->Ortho, fhss2->Except);
     }
 
@@ -694,32 +678,29 @@ class tFhss
         fhss2ndBand.Start();
     }
 
-    uint8_t Cnt(void)
-    {
-        return fhss1stBand.Cnt();
-    }
-
-    uint8_t CurrI(void)
-    {
-        return fhss1stBand.CurrI();
-    }
-
-    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
-    uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
-
     void HopToNext(void)
     {
         fhss1stBand.HopToNext();
         fhss2ndBand.HopToNext();
     }
 
-    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it is good for transmitter
+    uint8_t GetCurrI(void) { return fhss1stBand.GetCurrI(); }
+    uint8_t GetCurrI2(void) { return fhss2ndBand.GetCurrI(); }
+
+    uint32_t GetCurrFreq(void) { return fhss1stBand.GetCurrFreq(); }
+    uint32_t GetCurrFreq2(void) { return fhss2ndBand.GetCurrFreq(); }
+
+    void SetToBind(uint16_t frame_rate_ms = 1) // preset so it, Tx doesn't cycle, so allow it be called as SetToBind()
     {
         fhss1stBand.SetToBind(frame_rate_ms);
         fhss2ndBand.SetToBind(frame_rate_ms);
     }
 
-    // only used by receiver, bool determines if it needs to switch back to LINK_STATE_RECEIVE
+    //-- receiver only
+
+    void SetCurrI(uint8_t i) { fhss1stBand.SetCurrI(i); }
+    void SetCurrI2(uint8_t i) { fhss2ndBand.SetCurrI(i); }
+
     bool HopToNextBind(void)
     {
         bool hop1 = fhss1stBand.HopToNextBind();
@@ -727,25 +708,41 @@ class tFhss
         return hop1 || hop2;
     }
 
-    // only used by receiver
     SETUP_FREQUENCY_BAND_ENUM GetCurrBindSetupFrequencyBand(void) { return fhss1stBand.GetCurrBindSetupFrequencyBand(); }
-    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
 
+    float GetCurrFreq_Hz(void) { return fhss1stBand.GetCurrFreq_Hz(); }
     float GetCurrFreq2_Hz(void)
     {
 #if defined DEVICE_HAS_DUAL_SX126x_SX126x
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
-        return 1.0E6f * SX1280_REG_TO_FREQ_MHZ(GetCurrFreq2());
+        return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq2());
 #else
         #error Something wrong with dual band config !
 #endif
     }
 
-    // only used by tx cli
+    //-- Tx module only
+
+    uint8_t Cnt(void) { return fhss1stBand.Cnt(); }
+    uint8_t Cnt2(void) { return fhss2ndBand.Cnt(); }
     uint8_t ChList(uint8_t i) { return fhss1stBand.ChList(i); }
+    uint8_t ChList2(uint8_t i) { return fhss2ndBand.ChList(i); }
     uint32_t FhssList(uint8_t i) { return fhss1stBand.FhssList(i); }
+    uint32_t FhssList2(uint8_t i) { return fhss2ndBand.FhssList(i); }
     uint32_t GetFreq_x1000(char* const unit_str, uint8_t i) { return fhss1stBand.GetFreq_x1000(unit_str, i); }
+    uint32_t GetFreq2_x1000(char* const unit_str, uint8_t i)
+    {
+#if defined DEVICE_HAS_DUAL_SX126x_SX126x
+        strcpy(unit_str, " kHz");
+        return (uint32_t)SX126X_REG_TO_FREQ_KHZ(fhss2ndBand.FhssList(i));
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+        strcpy(unit_str, " MHz");
+        return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss2ndBand.FhssList(i));
+#endif
+    }
+
+    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
 
   private:
     tFhssBase fhss1stBand;

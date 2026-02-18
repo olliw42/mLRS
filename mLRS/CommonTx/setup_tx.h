@@ -21,11 +21,6 @@
 #include "../Common/setup_list.h"
 
 
-typedef enum {
-    PARAM_INDEX_MODE = 1,
-} PARAM_INDEX_ENUM;
-
-
 //-------------------------------------------------------
 // defines
 //-------------------------------------------------------

@@ -40,33 +40,39 @@ typedef struct
     uint8_t broadcast;
     uint8_t sys_id;
     uint8_t show_group;
+    // not stats but needed
+    uint8_t tx_fhss_index_band;
+    uint8_t tx_fhss_index;
 } tFrameStats;
 
-#define FRAME_TX_RX_HEADER_LEN  6
+#define FRAME_TX_RX_HEADER_LEN  7
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN    64
 
 PACKED(
 typedef struct
 {
-    uint8_t seq_no : 3;
-    uint8_t frame_type : 4;
-    uint8_t broadcast : 1;
-    uint8_t sys_id;
-    uint8_t show_group;
-    uint8_t spare : 1;
+    uint32_t seq_no : 3;
+    uint32_t frame_type : 4;
+    uint32_t broadcast : 1;
+    uint32_t sys_id;
+    uint32_t show_group;
+    uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
+    uint32_t fhss_index : 6; // older versions have set that field to 63
+    uint32_t spare1 : 1;
+    uint8_t spare2 : 1;
     uint8_t payload_len : 7;
-}) tFrameStatus; // 4 bytes
+}) tFrameStatus; // 5 bytes
 
 
 PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 4 bytes
+    tFrameStatus status; // 5 bytes
     uint8_t payload[FRAME_TX_PAYLOAD_LEN]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
-}) tTxFrame; // 72 bytes
+}) tTxFrame; // 73 bytes
 
 
 //-- Rx Frame ----------
@@ -75,10 +81,10 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 4 bytes
+    tFrameStatus status; // 5 bytes
     uint8_t payload[FRAME_RX_PAYLOAD_LEN]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
-}) tRxFrame; // 72 bytes
+}) tRxFrame; // 73 bytes
 
 //-------------------------------------------------------
 // Cmd & SetupData frames
@@ -119,8 +125,8 @@ typedef struct
     uint8_t OutLqChannelMode : 4;
     uint8_t PowerSwitchChannel : 4;
     uint8_t SerialPort : 4;
+    uint8_t MavlinkSystemID : 4;
 
-    uint8_t spare : 4;
     uint8_t spare2[3];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120

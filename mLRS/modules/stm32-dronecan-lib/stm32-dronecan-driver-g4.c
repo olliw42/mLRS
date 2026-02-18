@@ -39,11 +39,14 @@
 #define DC_HAL_DATA_SJW_MAX         16    // datasheet: must always be smaller than BS2
 
 
-static tDcHalStatistics dc_hal_stats;
+static tDcHalStatistics dc_hal_stats = {};
 
 static bool dc_hal_abort_tx_on_error;
 
 static FDCAN_HandleTypeDef hfdcan;
+
+static uint32_t tx_tlast_ms = 0; // for TX timeout error counting in dc_hal_transmit()
+static uint8_t was_bo = 0; // for counting bus off errors only when state changes
 
 
 //-------------------------------------------------------
@@ -61,30 +64,55 @@ static void _process_error_status(void)
 
     if ((psr & FDCAN_PSR_BO) != 0) { // is bus off
         CLEAR_BIT(hfdcan.Instance->CCCR, FDCAN_CCCR_INIT);
-        dc_hal_stats.bo_count++;
         HAL_FDCAN_AbortTxRequest(&hfdcan, FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2);
-    };
+        if (!was_bo) dc_hal_stats.bo_count++; // BO, bus off, only count when toggled from bus on to bus off
+        was_bo = 1;
+    } else {
+        was_bo = 0;
+    }
 
-    uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos;
-    uint32_t dlec = (psr & FDCAN_PSR_DLEC) >> FDCAN_PSR_DLEC_Pos;
+    uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos; // Last Error Code
+    uint32_t dlec = (psr & FDCAN_PSR_DLEC) >> FDCAN_PSR_DLEC_Pos; // Data Last Error Code
     if ((lec != FDCAN_PROTOCOL_ERROR_NONE && lec != FDCAN_PROTOCOL_ERROR_NO_CHANGE) ||
         (dlec != FDCAN_PROTOCOL_ERROR_NONE && dlec != FDCAN_PROTOCOL_ERROR_NO_CHANGE)) {
         CLEAR_BIT(hfdcan.Instance->PSR, FDCAN_PSR_LEC | FDCAN_PSR_DLEC);
-        dc_hal_stats.lec_count++;
         if (dc_hal_abort_tx_on_error) {
             HAL_FDCAN_AbortTxRequest(&hfdcan, FDCAN_TX_BUFFER0 | FDCAN_TX_BUFFER1 | FDCAN_TX_BUFFER2);
         }
+        dc_hal_stats.lec_count++; // LEC, Last Error Code
     }
 
     if ((psr & FDCAN_PSR_PXE) != 0) { // protocol exception event occurred, happens when fc is not yet doing CAN
         CLEAR_BIT(hfdcan.Instance->PSR, FDCAN_PSR_PXE);
-        // dc_hal_stats.pxd_count++; // un-comment only when needed for testing
+        dc_hal_stats.pxe_count++; // PXE, Protocol Exception Event
     }
 
     uint32_t ecr = READ_REG(hfdcan.Instance->ECR); // read the error counter register, read clears CEL
-    if ((ecr & FDCAN_ECR_CEL) != 0) { // CAN protocol error
-        dc_hal_stats.cel_count += (ecr & FDCAN_ECR_CEL) >> FDCAN_ECR_CEL_Pos;
+    dc_hal_stats.tec_count = (ecr & FDCAN_ECR_TEC) >> FDCAN_ECR_TEC_Pos; // TEC, Transmit Error Counter
+    dc_hal_stats.rec_count = (ecr & FDCAN_ECR_REC) >> FDCAN_ECR_REC_Pos; // REC, Receive Error Counter
+    if ((ecr & FDCAN_ECR_CEL) != 0) { // Can Error Logging
+        dc_hal_stats.cel_count += (ecr & FDCAN_ECR_CEL) >> FDCAN_ECR_CEL_Pos; // CEL, Can Error Logging
     }
+
+    // record some more
+    if (lec != FDCAN_PROTOCOL_ERROR_NO_CHANGE) dc_hal_stats.last_lec = lec;
+    dc_hal_stats.last_psr = psr;
+    dc_hal_stats.last_ecr = ecr;
+    dc_hal_stats.last_cccr = READ_REG(hfdcan.Instance->CCCR);
+}
+
+
+// convert DLC field to data length in bytes
+uint8_t _data_len_from_dlc(uint8_t dlc)
+{
+    return (dlc <= 8) ? dlc : 8;
+}
+
+
+// convert data length in bytes to DLC field
+uint8_t _dlc_from_data_len(uint8_t data_len)
+{
+    return (data_len <= 8) ? data_len : 8;
 }
 
 
@@ -124,18 +152,18 @@ int16_t dc_hal_init(
     __HAL_FDCAN_DISABLE_IT(&hfdcan, 0);
 
     hfdcan.Init.ClockDivider = FDCAN_CLOCK_DIV1;
-    hfdcan.Init.FrameFormat = FDCAN_FRAME_CLASSIC; // FDCAN_FRAME_FD_NO_BRS, FDCAN_FRAME_FD_BRS
     hfdcan.Init.Mode = FDCAN_MODE_NORMAL;
 
     hfdcan.Init.AutoRetransmission = DISABLE;
-    hfdcan.Init.TransmitPause = ENABLE; // it is probably a good thing to enable it
-    hfdcan.Init.ProtocolException = DISABLE;
+    hfdcan.Init.TransmitPause = ENABLE; // insert pause between TX frames to reduce bus contention, probably a good thing to enable it
+    hfdcan.Init.ProtocolException = DISABLE; // ST examples: treat exceptions as form errors instead of special state
 
     hfdcan.Init.NominalPrescaler = timings->bit_rate_prescaler;
     hfdcan.Init.NominalTimeSeg1 = timings->bit_segment_1;
     hfdcan.Init.NominalTimeSeg2 = timings->bit_segment_2;
     hfdcan.Init.NominalSyncJumpWidth = timings->sync_jump_width;
 
+    hfdcan.Init.FrameFormat = FDCAN_FRAME_CLASSIC; // FDCAN_FRAME_FD_NO_BRS, FDCAN_FRAME_FD_BRS
     hfdcan.Init.DataPrescaler = 1; // irrelevant if FrameFormat != FDCAN_FRAME_FD_BRS
     hfdcan.Init.DataTimeSeg1 = 1;
     hfdcan.Init.DataTimeSeg2 = 1;
@@ -232,22 +260,20 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms)
 
     _process_error_status();
 
-static uint32_t tx_tlast_ms = 0; // for error counting
-
     // thx to the TxFiFo in the G4 we can do the crude method and just put the message into the fifo if there is space
     // check for space in fifo
     if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan) == 0) {
         if (tx_tlast_ms > 0 && (tnow_ms - tx_tlast_ms) > 10) {
-            dc_hal_stats.tffl_count++;
+            dc_hal_stats.tffl_count++; // TFFL, Tx Fifo Free Level
         }
         return 0; // no space, postpone
     }
     // this check is done in HAL_FDCAN_AddMessageToTxFifoQ(), so better do it here too
     if ((hfdcan.Instance->TXFQS & FDCAN_TXFQS_TFQF) != 0) {
         if (tx_tlast_ms > 0 && (tnow_ms - tx_tlast_ms) > 10) {
-            dc_hal_stats.tfqf_count++;
+            dc_hal_stats.tfqf_count++; // TFQF, Tx Fifo Queue Full
         }
-        return 0; // Tx FIFO/Queue full, postpone
+        return 0; // tx fifo queue full, postpone
     }
 
     FDCAN_TxHeaderTypeDef pTxHeader;
@@ -261,12 +287,15 @@ static uint32_t tx_tlast_ms = 0; // for error counting
     pTxHeader.IdType = FDCAN_EXTENDED_ID;
     pTxHeader.TxFrameType = FDCAN_DATA_FRAME;
 
-    pTxHeader.DataLength = (uint32_t)frame->data_len << 16;
+    pTxHeader.DataLength = (uint32_t)_dlc_from_data_len(frame->data_len) << 16;
 
     HAL_StatusTypeDef hres = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan, &pTxHeader, frame->data);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_ADD_TX_MESSAGE; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_CAN_ADD_TX_MESSAGE;
+    }
 
-tx_tlast_ms = tnow_ms;
+    tx_tlast_ms = tnow_ms;
+    dc_hal_stats.transmitted_frame_count++;
 
     return 1;
 }
@@ -290,7 +319,7 @@ typedef struct
     uint32_t r1;
     union {
         uint8_t data[CANARD_CAN_FRAME_MAX_DATA_LEN];
-        uint32_t data_32[CANARD_CAN_FRAME_MAX_DATA_LEN / 4]; // CANARD_CAN_FRAME_MAX_DATA_LEN should be devidable by 4
+        uint32_t data_32[CANARD_CAN_FRAME_MAX_DATA_LEN / 4]; // CANARD_CAN_FRAME_MAX_DATA_LEN should be divisible by 4
     };
 } tDcRxFifoElement;
 
@@ -320,7 +349,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         dc_hal_stats.isr_xtd_count++;
         return;
     }
-    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) { // DroneCAN uses only EXT frames, so this should be an error
+    if ((r0 & DC_RX_FIFO_R0_RTR_BIT) != 0) { // DroneCAN does not use RTR frames, so this should be an error
         dc_hal_stats.isr_rtr_count++;
         return;
     }
@@ -336,6 +365,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         return;
     }
 
+    // for classic CAN, reject frames with DLC > 8
     if ((r1 & DC_RX_FIFO_R1_DLC_MASK) > FDCAN_DLC_BYTES_8) {
         dc_hal_stats.isr_dlc_count++;
         return;
@@ -348,12 +378,17 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
         dronecan_rxbuf[next].r0 = r0;
         dronecan_rxbuf[next].r1 = r1;
         RxAddress++;
-        dronecan_rxbuf[next].data_32[0] = *RxAddress;
-        RxAddress++;
-        dronecan_rxbuf[next].data_32[1] = *RxAddress;
+        // copy all data bytes based on actual DLC (G4 message RAM supports 64 bytes)
+        uint8_t dlc = (r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
+        uint8_t data_len = _data_len_from_dlc(dlc);
+        uint8_t word_len = (data_len + 3) / 4; // round up to full words
+        for (uint8_t i = 0; i < word_len; i++) {
+            dronecan_rxbuf[next].data_32[i] = *RxAddress;
+            RxAddress++;
+        }
 
     } else {
-        dc_hal_stats.rx_overflow_count++;
+        dc_hal_stats.rx_overflow_count++; // rx frame buffer overflow
     }
 }
 
@@ -363,15 +398,15 @@ void _dc_hal_isr_handler(void)
     //HAL_FDCAN_IRQHandler(&hfdcan);
     // copy the part relevant to us
     // flags:
-    // FDCAN_IR_RF0L           // Rx FIFO 0 message lost
-    // FDCAN_IR_RF0F           // Rx FIFO 0 full
-    // FDCAN_IR_RF0N           // New message written to Rx FIFO 0
+    //   FDCAN_IR_RF0L           // Rx FIFO 0 message lost
+    //   FDCAN_IR_RF0F           // Rx FIFO 0 full
+    //   FDCAN_IR_RF0N           // New message written to Rx FIFO 0
     // more descriptive defines are in the HAL, like FDCAN_FLAG_RX_FIFO0_NEW_MESSAGE
     // #define FDCAN_RX_FIFO0_MASK (FDCAN_IR_RF0L | FDCAN_IR_RF0F | FDCAN_IR_RF0N)
     // there are also analogous defines
-    // FDCAN_IE_RF0LE          // Rx FIFO 0 message lost
-    // FDCAN_IE_RF0FE          // Rx FIFO 0 full
-    // FDCAN_IE_RF0NE          // New message written to Rx FIFO 0
+    //   FDCAN_IE_RF0LE          // Rx FIFO 0 message lost
+    //   FDCAN_IE_RF0FE          // Rx FIFO 0 full
+    //   FDCAN_IE_RF0NE          // New message written to Rx FIFO 0
     // for which there are also more descriptive defines in the HAL, like FDCAN_IT_RX_FIFO0_NEW_MESSAGE
 
     uint32_t RxFifo0ITs = hfdcan.Instance->IR & (FDCAN_IR_RF0N | FDCAN_IR_RF0F | FDCAN_IR_RF0L); // __HAL_FDCAN_GET_FLAG()
@@ -395,10 +430,10 @@ void _dc_hal_isr_handler(void)
         }
 
         if ((RxFifo0ITs & FDCAN_IR_RF0F) != 0) {
-            dc_hal_stats.isr_rf0f_count++;
+            dc_hal_stats.isr_rf0f_count++; // RF0F, Rx Fifo 0 Full
         }
         if ((RxFifo0ITs & FDCAN_IR_RF0L) != 0) {
-            dc_hal_stats.isr_rf0l_count++;
+            dc_hal_stats.isr_rf0l_count++; // RF0L, Rx Fifo 0 Message Lost
         }
     }
 
@@ -417,10 +452,10 @@ void _dc_hal_isr_handler(void)
         }
 
         if ((RxFifo1ITs & FDCAN_IR_RF1F) != 0) {
-            dc_hal_stats.isr_rf1f_count++;
+            dc_hal_stats.isr_rf1f_count++; // RF1F, Rx Fifo 1 Full
         }
         if ((RxFifo1ITs & FDCAN_IR_RF1L) != 0) {
-            dc_hal_stats.isr_rf1l_count++;
+            dc_hal_stats.isr_rf1l_count++; // RF1L, Rx Fifo 1 Message Lost
         }
     }
 
@@ -527,16 +562,19 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
     frame->id = (dronecan_rxbuf[rxreadpos].r0 & CANARD_CAN_EXT_ID_MASK);
     frame->id |= CANARD_CAN_FRAME_EFF;
 
-    frame->data_len = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
+    // convert DLC to actual byte count
+    uint32_t dlc = (dronecan_rxbuf[rxreadpos].r1 & DC_RX_FIFO_R1_DLC_MASK) >> 16;
+    frame->data_len = _data_len_from_dlc(dlc);
     if (frame->data_len > CANARD_CAN_FRAME_MAX_DATA_LEN) frame->data_len = CANARD_CAN_FRAME_MAX_DATA_LEN; // should not happen, but play it safe
 
-//    memset((uint8_t*)frame->data, 0, 8);
-//    memcpy((uint8_t*)frame->data, (uint8_t*)dronecan_rxbuf[rxreadpos].data, frame->data_len);
+    // copy data bytes, and zero-fill
     for (uint8_t n = 0; n < CANARD_CAN_FRAME_MAX_DATA_LEN; n++) {
         frame->data[n] = (n < frame->data_len) ? dronecan_rxbuf[rxreadpos].data[n] : 0;
     }
 
     frame->iface_id = 0;
+
+    dc_hal_stats.received_frame_count++;
 
     return 1;
 }
@@ -612,8 +650,10 @@ int16_t dc_hal_config_acceptance_filters(
 
 tDcHalStatistics dc_hal_get_stats(void)
 {
-    dc_hal_stats.error_sum_count = dc_hal_stats.bo_count + dc_hal_stats.lec_count +
-                                   dc_hal_stats.pxd_count + dc_hal_stats.cel_count;
+    _process_error_status(); // to ensure it is latest
+    dc_hal_stats.error_sum_count =
+        dc_hal_stats.bo_count + dc_hal_stats.lec_count +
+        dc_hal_stats.pxe_count + dc_hal_stats.cel_count;
 #ifdef DRONECAN_USE_RX_ISR
     dc_hal_stats.error_sum_count += dc_hal_stats.rx_overflow_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_xtd_count;
@@ -627,10 +667,40 @@ tDcHalStatistics dc_hal_get_stats(void)
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_rf1f_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_errors_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.isr_errorstatus_count;
+#endif
     dc_hal_stats.error_sum_count += dc_hal_stats.tffl_count;
     dc_hal_stats.error_sum_count += dc_hal_stats.tfqf_count;
-#endif
     return dc_hal_stats;
+}
+
+
+const char* dc_hal_psr_lec_to_str(uint32_t psr)
+{
+    uint32_t lec = (psr & FDCAN_PSR_LEC) >> FDCAN_PSR_LEC_Pos; // Last Error Code
+    switch (lec) {
+        case 0: return "ok";
+        case 1: return "STUFF";
+        case 2: return "FORM";
+        case 3: return "ACK";
+        case 4: return "BIT1";
+        case 5: return "BIT0";
+        case 6: return "CRC";
+        case 7: return "NC"; // No Change
+        default: return "??";
+    }
+}
+
+
+const char* dc_hal_psr_act_to_str(uint32_t psr)
+{
+    uint32_t act = (psr & FDCAN_PSR_ACT) >> FDCAN_PSR_ACT_Pos; // Activity
+    switch (act) {
+        case 0: return "Sync";  // Synchronizing
+        case 1: return "Idle";  // Idle
+        case 2: return "Rx";    // Receiver
+        case 3: return "Tx";    // Transmitter
+        default: return "??";
+    }
 }
 
 
@@ -644,26 +714,62 @@ int16_t dc_hal_compute_timings(
     }
 
     // general rule:
-    // tq = peripheral_clock_rate / bit_rate
+    // tq = peripheral_clock_rate / bit_rate / prescaler
     // BS1 = SP * tq - 1, where SP is e.g. 3/4 = 75% or 7/8 = 87.5%
     // BS2 = tq - 1 - BS1 = (1 - SP) * tq
+    // -> SP = (1 + BS1)/(1 + BS1 + BS2)
+
+    // Note: ChatGPT was very clear on that one should use 80 MHz clock for FDCAN
+    // we used 170 MHz before for classic CAN, but 80 MHz is said to be just better
+
+    // timings by ArduPilot (confirmed by ChatGPT, by JLP, by myself using AP's code explicitly)
+    // 10 tq
+    // prescaler 8
+    // BS1 = 8
+    // BS2 = 1
+    // SJW = 1
+    // -> SP = 90.0%
+    // Note: this is somewhat weird. AP cites a source that says that 8 tq would be optimal,
+    // which can be achieved with prescaler 10, BS1 = 6, BS2 = 1, SJW = 1, -> SP = 7/8 = 87.5%.
+    // It also would give SP 87.5% which ChatGPT says is industry standard. ??
+#if 1
+    if (peripheral_clock_rate == 80000000) { // 80 MHz
+        timings->bit_rate_prescaler = 8;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
+    } else if (peripheral_clock_rate == 160000000) { // 160 MHz // NOT PREFFRED, but not terrible
+        timings->bit_rate_prescaler = 16;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
+    } else if (peripheral_clock_rate == 170000000) { // 170 MHz // NOT PREFFRED
+        timings->bit_rate_prescaler = 17;
+        timings->bit_segment_1 = 8;
+        timings->bit_segment_2 = 1;
+        timings->sync_jump_width = 1;
+    } else {
+        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+    }
+#endif
 
     // timings generated by phryniszak for 75%
-#if 1
+    // legacy: this is what we used before with 170 MHz FDCAN clock
+#if 0
     if (peripheral_clock_rate == 170000000) { // 170 MHz
         timings->bit_rate_prescaler = 1;
         timings->bit_segment_1 = 127;
-        timings->bit_segment_2 = 42;
+        timings->bit_segment_2 = 42; // -> SP = 0.75294 %
         timings->sync_jump_width = 42;
     } else if (peripheral_clock_rate == 160000000) { // 160 MHz
         timings->bit_rate_prescaler = 1;
         timings->bit_segment_1 = 119;
-        timings->bit_segment_2 = 40;
+        timings->bit_segment_2 = 40; // -> SP = 0.75 %
         timings->sync_jump_width = 40;
     } else if (peripheral_clock_rate == 80000000) { // 80 MHz
         timings->bit_rate_prescaler = 1;
         timings->bit_segment_1 = 59;
-        timings->bit_segment_2 = 20;
+        timings->bit_segment_2 = 20; // -> SP = 0.75 %
         timings->sync_jump_width = 20;
     } else {
         return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
@@ -679,13 +785,6 @@ int16_t dc_hal_compute_timings(
     } else {
         return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
     }
-#endif
-    // timings generated by kvaser
-#if 0
-    timings->bit_rate_prescaler = 1;
-    timings->bit_segment_1 = 127;
-    timings->bit_segment_2 = 42;
-    timings->sync_jump_width = 43; // not allowed according to datasheet !!
 #endif
 
     // let's do a check
@@ -705,7 +804,6 @@ int16_t dc_hal_compute_timings(
 
     return 0;
 }
-
 
 
 /*
@@ -736,6 +834,7 @@ https://github.com/ARMmbed/mbed-os/pull/13565/files
 good source on CAN errors
 https://www.csselectronics.com/pages/can-bus-errors-intro-tutorial
 */
+
 
 #endif // HAL_PCD_MODULE_ENABLED
 #endif // STM32G4

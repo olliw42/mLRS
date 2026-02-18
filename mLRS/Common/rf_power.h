@@ -73,65 +73,18 @@ void tRfPower::Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t powe
 
     if (power_switch_channel + 3 >= RC_DATA_LEN) while(1){} // should not happen
 
-    uint16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
+    int16_t rc_val = rc->ch[power_switch_channel + 3]; // ch5 .. ch16 -> 3 .. 15
 
-    int8_t new_idx = 0;
-    if (RFPOWER_LIST_NUM <= 5) {
-        // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
-        // 5 slots in Rc range
-        // slot 5, up:        > 75% = 639
-        // slot 4, mid-up:     25% ... 75% = 213
-        // slot 3, mid:       -25% ... 25%
-        // slot 2, mid-down:  -75% ... -25%
-        // slot 1, down:      < -75%
-        if (rc_val >= (1024 + 639)) {   // slot 5 -> max
-            new_idx = (int8_t)power;
-        } else
-        if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
-            new_idx = (int8_t)power - 2;
-        } else
-        if (rc_val >= (1024 + 213)) {   // slot 4 -> min + 1
-            new_idx = 1;
-            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
-        } else
-        if (rc_val <= (1024 - 213)) {   // slot 2 -> min
-            new_idx = 0;
-        } else {                        // slot 3 -> max - 1
-            new_idx = (int8_t)power - 1;
-        }
-    } else {
-        // 7 slots in Rc range
-        // slot 7: > 75% = 639
-        // slot 6: 50% ... 75% = 426
-        // slot 5: 25% ... 50% = 213
-        // slot 4: -25% ... 25%
-        // slot 3: -50% ... -25%
-        // slot 2: -50% ... -75%
-        // slot 1: < -75%
-        if (rc_val >= (1024 + 639)) {   // slot 7 -> max
-            new_idx = (int8_t)power;
-        } else
-        if (rc_val <= (1024 - 639)) {   // slot 1 -> max - 2
-            new_idx = (int8_t)power - 2;
-        } else
-        if (rc_val >= (1024 + 426)) {   // slot 6 -> min + 3
-            new_idx = 3;
-            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
-        } else
-        if (rc_val <= (1024 - 426)) {   // slot 2 -> min
-            new_idx = 0;
-        } else
-        if (rc_val >= (1024 + 213)) {   // slot 5 -> min + 2
-            new_idx = 2;
-            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
-        } else
-        if (rc_val <= (1024 - 213)) {   // slot 3 -> min + 1
-            new_idx = 1;
-            if (new_idx > (int8_t)power - 3) new_idx = (int8_t)power - 3;
-        } else {                        // slot 4 -> max - 1
-            new_idx = (int8_t)power - 1;
-        }
-    }
+    // linear mapping: divide RC range evenly across available power levels
+    // rc_val: 11 bits, 1 ... 1024 ... 2047 for +-120%
+    // mLRS uses 172 ... 1024 ... 1876 for +-100%
+    // use safe range: 200 (--98.5%) to 1848 (+98.5%)
+    // low stick = low power, high stick = high power
+    // +1 in denominator: 
+    // a range of [200..1848] has 1649 values, hence (1848 - 200 + 1)
+
+    int16_t num_levels = power + 1;  // number of power levels available (0 to power)
+    int16_t new_idx = ((rc_val - 200) * num_levels) / (1848 - 200 + 1); // map linearly
 
     if (new_idx < 0) new_idx = 0; // constrain to min
     if (new_idx > power) new_idx = power; // constrain by Setup Power setting

@@ -38,6 +38,7 @@
 #define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_WIFIPROT         &SetupMetaData.Tx_WiFiProt_allowed_mask // this we generate from the hal
 
 // Rx only
 #define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
@@ -64,12 +65,18 @@
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"
 #endif
 
+#define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also used in e.g. cli
+#define SETUP_OPT_MODE_DISPSTR        "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, should be 6 chars however
+
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN" // used e.g. in cli
 #define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN" // used in display, 7 chars max
 
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
+
+
+#define PARAM_INDEX_MODE              1
 
 
 // Tx parameters must begin with "Tx "
@@ -82,7 +89,7 @@
   X( Setup.Common[0].BindPhrase[0], STR6, "Bind Phrase",      "BIND_PHRASE",      0,0,0,"", "", 0)
 
 #define SETUP_PARAMETER_LIST_COMMON_FURTHER \
-  X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", "50 Hz,31 Hz,19 Hz,FLRC,FSK", SETUP_MSK_MODE )\
+  X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_MODE, SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
   X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO )
 
@@ -100,11 +107,11 @@
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )
 
 #define SETUP_PARAMETER_LIST_TX_ESP \
-  X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT", MSK_ALL )\
+  X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT,UDP STA,BLE", SETUP_MSK_TX_WIFIPROT )\
   X( Setup.Tx[0].WifiChannel,       LIST, "Tx Wifi Channel",  "TX_WIFI_CHANNEL",  0,0,0,"", "1,6,11,13", MSK_ALL )\
   X( Setup.Tx[0].WifiPower,         LIST, "Tx Wifi Power",    "TX_WIFI_POWER",    0,0,0,"", "low,med,max", MSK_ALL )
 
-#if defined USE_ESP_WIFI_BRIDGE_RST_GPIO0 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE
 #define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_ESP
 #else
 #define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN
@@ -119,6 +126,7 @@
   X( Setup.Rx.SerialPort,           LIST, "Rx Ser Port",      "RX_SER_PORT",      0,0,0,"", "serial,can", SETUP_MSK_RX_SER_PORT )\
   X( Setup.Rx.SerialBaudrate,       LIST, "Rx Ser Baudrate",  "RX_SER_BAUD",      0,0,0,"", SETUP_OPT_RX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Rx.SerialLinkMode,       LIST, "Rx Ser Link Mode", "RX_SER_LNK_MODE",  0,0,0,"", SETUP_OPT_SERIAL_LINK_MODE, MSK_ALL )\
+  X( Setup.Rx.MavlinkSystemID,      LIST, "Rx Mav System ID", "RX_MAV_SYSTEM_ID", 0,0,0,"", "51,52,53,54,55", MSK_ALL )\
   X( Setup.Rx.SendRadioStatus,      LIST, "Rx Snd RadioStat", "RX_SND_RADIOSTAT", 0,0,0,"", "off,ardu_1,meth_b", MSK_ALL )\
   X( Setup.Rx.SendRcChannels,       LIST, "Rx Snd RcChannel", "RX_SND_RCCHANNEL", 0,0,0,"", "off,rc override,rc channels", MSK_ALL )\
   X( Setup.Rx.OutRssiChannelMode,   LIST, "Rx Out Rssi Ch",   "RX_OUT_RSSI_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\

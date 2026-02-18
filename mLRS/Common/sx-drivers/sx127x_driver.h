@@ -46,7 +46,7 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
+void sx1276_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
 {
 #ifdef SX_USE_RFO
     // Pout = OutputPower if PaSelect = 0 (RFO pin)
@@ -76,7 +76,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
   public:
     void Init(void)
     {
+        gconfig = nullptr;
         lora_configuration = nullptr;
+        low_frequency_mode = 0;
     }
 
     //-- high level API functions
@@ -112,12 +114,16 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
+        if (!gconfig) while(1){} // must not happen
+
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        if (!gconfig) return;
+
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
         // there would be special setting for +20dBm mode, don't do it
         // 5 OcpOn, 4-0 OcpTrim
@@ -132,6 +138,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
     {
+        if (!gconfig) return;
+
         gconfig->Power_dbm = global_config->Power_dbm;
         SetRfPower_dbm(gconfig->Power_dbm);
     }
@@ -140,16 +148,25 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         gconfig = global_config;
 
+        switch (gconfig->FrequencyBand) {
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ:
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_ON;
+                break;
+            default:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
+        }
+
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
                                          SX1276_ACCESS_SHARED_REG_LORA |
-                                         SX1276_LOW_FREQUENCY_MODE_OFF |
+                                         low_frequency_mode |
                                          SX1276_MODE_SLEEP);
         SetStandby();
         //SetOperationMode(SX1276_PACKET_TYPE_LORA, SX1276_LOW_FREQUENCY_MODE_OFF);
 
         uint8_t band_width = Sx127xLoraConfiguration[gconfig->LoraConfigIndex].Bandwidth;
-        OptimizeSensitivity(band_width);
+        OptimizeSensitivity(band_width, low_frequency_mode);
         OptimizeReceiverResponse(band_width);
 
         SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
@@ -191,8 +208,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetTx();
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         WriteRegister(SX1276_REG_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
         if (tmo_ms == 0) { // 0 = no timeout
@@ -211,8 +229,10 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
+        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+
         int16_t rssi;
-        Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
+        Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -232,14 +252,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     //-- RF power interface
 
-    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
-    void config_calc(void)
+    void _config_calc(void)
     {
         int8_t power_dbm = gconfig->Power_dbm;
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
         uint8_t index = gconfig->LoraConfigIndex;
         if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
@@ -251,28 +271,37 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
 
+  protected:
+    tSxGlobalConfig* gconfig;
+
   private:
     const tSxLoraConfiguration* lora_configuration;
-    tSxGlobalConfig* gconfig;
+    uint8_t low_frequency_mode;
     uint8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
@@ -355,12 +384,14 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
 #else
-        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
@@ -424,10 +455,10 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };
@@ -501,12 +532,14 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
  //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
 #else
-        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
@@ -565,10 +598,10 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };

@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 11.02.2025
+ version 29.01.2026
 ********************************************************
 '''
 import os
@@ -87,6 +87,10 @@ if __name__ == "__main__":
         st_root = os.path.join("/opt",'st')
 
     ST_DIR,GNU_DIR = findSTM32CubeIDEGnuTools(st_root)
+    if os.getenv("MLRS_ST_DIR"):
+        ST_DIR = os.getenv("MLRS_ST_DIR")
+    if os.getenv("MLRS_GNU_DIR"):
+        GNU_DIR = os.getenv("MLRS_GNU_DIR")
 
     if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
         print('ERROR: gnu-tools not found!')
@@ -460,14 +464,16 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','channel_order.cpp'),
     os.path.join('Common','common_stats.cpp'),
     os.path.join('Common','common_types.cpp'),
+    os.path.join('Common','setup_types.cpp'),
     os.path.join('Common','diversity.cpp'),
     os.path.join('Common','fhss.cpp'),
     os.path.join('Common','link_types.cpp'),
     os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
+    os.path.join('Common','tasks.cpp'),
     ]
 
-#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all 
+#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.sensors.rc.RCInput.c'))
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.dynamic_node_id.Allocation.c'))
 MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_req.c'))
@@ -1007,7 +1013,7 @@ TLIST = [
         'target' : 'rx-matek-mr900-30-g431kb',          'target_D' : 'RX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['MLRS_FEATURE_CAN'], 'appendix' : '-can',
     },{
-    
+
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
     },{
@@ -1015,7 +1021,7 @@ TLIST = [
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
     },{
 #        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
+#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'],
 #        'appendix' : '-oled',
 #    },{
 
@@ -1025,7 +1031,7 @@ TLIST = [
         'target' : 'rx-matek-mr900-td30-g474ce',        'target_D' : 'RX_MATEK_MR900_TD30_G474CE',
         'extra_D_list' : [], 'appendix' : '',
     },{
-    
+
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
     },{
@@ -1033,23 +1039,23 @@ TLIST = [
         'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
     },{
 #        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'], 
+#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'],
 #        'appendix' : '-oled',
 #    },{
-  
+
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '',
     },{
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
         'extra_D_list' : [], 'appendix' : '',
     },{
         'target' : 'rx-R9MM-f103rb',                    'target_D' : 'RX_R9MM_868_F103RB',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
@@ -1058,45 +1064,45 @@ TLIST = [
     },{
         'target' : 'rx-R9MX-l433cb',                    'target_D' : 'RX_R9MX_868_L433CB',
         'package' : 'ux',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
         'target' : 'rx-R9MLitePro-v15-f303cc',          'target_D' : 'RX_R9MLITEPRO_F303CC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-    
+
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
         'fclass': 'FrSky R9', 'fname': 'R9M',
         'extra_D_list' : [], 'appendix' : '',
     },{
         'target' : 'tx-R9M-f103c8',                     'target_D' : 'TX_R9M_868_F103C8',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
+        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
-        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'package' : 'ux',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
-        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-        'package' : 'ux',
-        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'], 
-        'appendix' : '-elrs-bl',
-    },{
-    
+#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+#        'package' : 'ux',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
+#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
+#        'package' : 'ux',
+#        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
+#        'appendix' : '-elrs-bl',
+#    },{
+
 #-- FlySky FRM303
-        'target' : 'rx-FRM303-f072cb',                  'target_D' : 'RX_FRM303_F072CB',
-        'extra_D_list' : [], 'appendix' : '',
-        
-    },{
-        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
-        'extra_D_list' : ['STDSTM32_USE_USB'],
-        'appendix' : '-usb',
-    },{
-        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
-        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_OLED'],
-        'appendix' : '-oled',
-    },{
-    
+#        'target' : 'rx-FRM303-f072cb',                  'target_D' : 'RX_FRM303_F072CB',
+#        'extra_D_list' : [], 'appendix' : '',
+#
+#    },{
+#        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
+#        'extra_D_list' : ['STDSTM32_USE_USB'],
+#        'appendix' : '-usb',
+#    },{
+#        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
+#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_OLED'],
+#        'appendix' : '-oled',
+#    },{
+
 #RX
 #-- rx diy
         'target' : 'rx-diy-board01-f103cb',             'target_D' : 'RX_DIY_BOARD01_F103CB',
@@ -1118,9 +1124,9 @@ TLIST = [
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
+#        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
 #-- rx E77 MBL
         'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -1163,10 +1169,6 @@ TLIST = [
         'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'tx-Wio-E5-Mini-wle5jc',             'target_D' : 'TX_WIO_E5_MINI_WLE5JC',
-        'extra_D_list' : ['MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-        'appendix' : '-sdiode', # just for RAVI :)
-    },{
 #-- tx E77 MBL
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -1176,14 +1178,6 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_433_MHZ'],
         'appendix' : '-400-tcxo',
     },{
-#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-#        'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-#        'appendix' : '-900-sdiode-tcxo',
-#    },{
-#        'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
-#        'extra_D_list' : ['MLRS_FEATURE_433_MHZ','MLRS_DEV_FEATURE_JRPIN5_SDIODE'],
-#        'appendix' : '-400-sdiode-tcxo',
-#    },{
         'target' : 'tx-E77-MBLKit-wle5cc',              'target_D' : 'TX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC','MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-900-xtal',
@@ -1229,7 +1223,7 @@ TLIST = [
     },{
 #-- easytosolder E77 E28/E22 dualband
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : [], 
+        'extra_D_list' : [],
         'appendix' : '-tcxo',
     },{
         'target' : 'rx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'RX_DIY_E77_E28_DUALBAND_WLE5CC',
@@ -1246,13 +1240,13 @@ TLIST = [
 
     },{
         'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : [], 
+        'extra_D_list' : [],
         'appendix' : '-tcxo',
     },{
         'target' : 'tx-easysolder-E77-E28-dualband-wle5cc', 'target_D' : 'TX_DIY_E77_E28_DUALBAND_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-xtal',
-        
+
     },{
         'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : [],

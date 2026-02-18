@@ -197,24 +197,7 @@ void power_optstr_from_rfpower_list(char* const Power_optstr, const rfpower_t* c
 uint16_t version_to_u16(uint32_t version);
 uint32_t version_from_u16(uint16_t version_u16);
 void version_to_str(char* const s, uint32_t version);
-
-
-//-- tx tasks
-
-typedef enum {
-    TX_TASK_NONE = 0,
-    TX_TASK_RX_PARAM_SET,
-    TX_TASK_PARAM_STORE,
-    TX_TASK_BIND,
-    TX_TASK_PARAM_RELOAD,
-    TX_TASK_SYSTEM_BOOT,
-    TX_TASK_RESTART_CONTROLLER,
-    TX_TASK_FLASH_ESP,
-    TX_TASK_ESP_PASSTHROUGH,
-    TX_TASK_CLI_CHANGE_CONFIG_ID,
-    TX_TASK_HC04_PASSTHROUGH,
-    TX_TASK_CLI_HC04_SETPIN,
-} TX_TASK_ENUM;
+uint32_t version_from_str(char* const s);
 
 
 //-- display & keys

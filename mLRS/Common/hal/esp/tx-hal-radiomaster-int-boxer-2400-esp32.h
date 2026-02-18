@@ -7,11 +7,9 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// ESP32, Radiomaster Boxer Tx Internal ELRS 2.4GHz
+// ESP32, Radiomaster Tx Boxer, Internal SX1280 2400
 //-------------------------------------------------------
-
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Boxer.json
-
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_NO_COM
@@ -19,6 +17,8 @@
 #define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
 
 

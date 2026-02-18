@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             10305 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.3.05"
+#define VERSION             10309 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.3.09"
 #define SETUPLAYOUT         10304 // this should be changed then Setup struct and/or serial changes
 
 
@@ -82,6 +82,8 @@
 #define SETUP_RX_SERIAL_LINK_MODE       0 // 0: transparent, 1: mavlink, 2: mavlinkX, 3: mspX
 
 #define SETUP_RX_SEND_RADIO_STATUS      0 // 0: off, 1: ardu_1, 2: px4 aka "brad"
+#define SETUP_RX_MAVLINK_SYSTEM_ID      0 // 0: 51, 1: 52, 2: 53, 3: 54, 4: 55  // SiK uses 51, 68
+
 #define SETUP_RX_SEND_RC_CHANNELS       0 // 0: off, 1: RC_CHANNEL_OVERRIDE, 2: RC_CHANNELS
 
 #define SETUP_RX_OUT_RSSI_CHANNEL       0 // 0: off, 5: CH5, 16: CH16
@@ -103,7 +105,16 @@
 //#define SETUP_RF_BAND                    SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
 #define SETUP_RF_BAND                      SETUP_FREQUENCY_BAND_2P4_GHZ
 
-#define SETUP_RF_ORTHO                   0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
+#define SETUP_RF_ORTHO                  0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
+
+
+//-------------------------------------------------------
+// User-adjustable System Configs
+//-------------------------------------------------------
+
+#define RX_GCS_SYSTEM_ID                255 // default of MissionPlanner, QGC
+
+#define RX_DRONECAN_PREFERRED_NODE_ID   68
 
 
 //-------------------------------------------------------

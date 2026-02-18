@@ -102,6 +102,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #include "../Common/hal/timer.h"
+#include "clock_tx.h"
 
 #endif //#if defined ESP8266 || defined ESP32
 
@@ -112,11 +113,12 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
-#include "../Common/rf_power.h"
+#include "../Common/tasks.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
 #include "config_id.h"
+#include "info.h"
 #include "cli.h"
 #include "mbridge_interface.h" // this includes uart.h as it needs callbacks, declares tMBridge mbridge
 #include "crsf_interface_tx.h" // this includes uart.h as it needs callbacks, declares tTxCrsf crsf
@@ -126,10 +128,11 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
-tRfPower rfpower;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
+tTxInfo info;
 tTxCli cli;
+tTasks tasks;
 
 
 //-------------------------------------------------------
@@ -226,6 +229,18 @@ void tWhileTransmit::handle_once(void)
     }
 #endif
 }
+
+
+//-------------------------------------------------------
+// Some helper
+//-------------------------------------------------------
+
+void enter_system_bootloader(void)
+{
+    disp.DrawBoot();
+    BootLoaderInit();
+}
+
 
 //-------------------------------------------------------
 // Init
@@ -436,7 +451,7 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //   post loop:  -> handle_receive() or handle_receive_none()
 //                   if valid -> process_received_frame()
 
-void prepare_transmit_frame(uint8_t antenna)
+void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
 	uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 	uint8_t payload_len = 0;
@@ -464,7 +479,12 @@ void prepare_transmit_frame(uint8_t antenna)
     frame_stats.broadcast = stats.broadcast;
     frame_stats.sys_id = stats.sys_id;
     frame_stats.show_group = stats.show_group;
-
+    // Note: the receiver wants to see both bands, also single band receivers.
+    // It is then important however that fhss1_curr_i and fhss2_curr_i are identical, as otherwise
+    // the receiver would jump to wrong frequencies
+    uint8_t fhss_band = fhss_band_next(); // this randomly toggles between 0 and 1, but never has more than two symbols in a row
+    frame_stats.tx_fhss_index_band = fhss_band;
+    frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
     //TODO: This setup is always preparing the packet, even if it is 0 length (check if it is ok)
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
@@ -560,11 +580,11 @@ void handle_receive_none(void) // RX_STATUS_NONE
 }
 
 
-void do_transmit_prepare(uint8_t antenna) // we prepare a TX frame to be send to receiver
+void do_transmit_prepare(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i) // we prepare a TX frame to be send to receiver
 {
     stats.transmit_seq_no++;
 
-    prepare_transmit_frame(antenna);
+    prepare_transmit_frame(antenna, fhss1_curr_i, fhss2_curr_i);
 }
 
 
@@ -625,10 +645,13 @@ uint16_t tick_1hz;
 uint16_t tick_1hz_commensurate;
 
 uint16_t link_state;
+uint8_t link_tx_status;
 uint8_t connect_state;
 uint16_t connect_tmo_cnt;
 uint8_t connect_sync_cnt;
 bool connect_occured_once;
+
+bool rc_data_updated;
 
 
 bool connected(void)
@@ -687,6 +710,7 @@ RESTARTCONTROLLER
     connect_sync_cnt = 0;
     connect_occured_once = true;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_tx_status = TX_STATUS_NONE;
     link_task_init();
     //link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
     SetupMetaData.rx_available = true;
@@ -703,9 +727,9 @@ RESTARTCONTROLLER
     cli.Init(&comport, Config.frame_rate_ms);
 #ifdef USE_ESP_WIFI_BRIDGE
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
+    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #else
-    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId]);
+    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #endif
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
@@ -715,9 +739,12 @@ RESTARTCONTROLLER
 #endif
     //fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
-    //disp.Init();
+    disp.Init();
+    tasks.Init();
 
     config_id.Init();
+
+    rc_data_updated = false;
 
     tick_1hz = 0;
     tick_1hz_commensurate = 0;
@@ -751,6 +778,10 @@ INITCONTROLLER_END
 
             DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
+            disp.Tick_ms(); // can take long
+            fan.SetPower(sx.RfPower_dbm());
+            fan.Tick_ms();
+            esp.Tick_ms();
         } // end of if (!doPreTransmit)
     }
 
@@ -761,7 +792,8 @@ INITCONTROLLER_END
 			break;
 
 		case LINK_STATE_TRANSMIT:
-			do_transmit_prepare(tdiversity.Antenna());
+			fhss.HopToNext();
+            do_transmit_prepare(tdiversity.Antenna());
 			link_state = LINK_STATE_TRANSMIT_SEND;
 			//DBG_MAIN_SLIM(dbg.puts("\nt");)
 			break;
@@ -796,7 +828,10 @@ IF_SX(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq_status & SX_IRQ_TX_DONE) {
                 irq_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                //link_state = LINK_STATE_RECEIVE;
+                link_tx_status |= TX_STATUS_TX1_DONE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX2_DONE)) { link_state = LINK_STATE_RECEIVE; }
+                //DBG_MAIN_SLIM(dbg.puts("1!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -826,7 +861,10 @@ IF_SX2(
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
             if (irq2_status & SX2_IRQ_TX_DONE) {
                 irq2_status = 0;
-                link_state = LINK_STATE_RECEIVE;
+                //link_state = LINK_STATE_RECEIVE;
+                link_tx_status |= TX_STATUS_TX2_DONE;
+                if (!Config.IsDualBand || (link_tx_status & TX_STATUS_TX1_DONE)) { link_state = LINK_STATE_RECEIVE; }
+                //DBG_MAIN_SLIM(dbg.puts("2!");)
             }
         } else
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
@@ -872,13 +910,14 @@ IF_SX2(
         }
 
         if (frame_received) { // frame received
-            uint8_t antenna = ANTENNA_1;
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+                uint8_t antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
+                handle_receive(antenna);
             } else if (USE_ANTENNA2) {
-                antenna = ANTENNA_2;
+                handle_receive(ANTENNA_2);
+            } else { // use antenna1
+                handle_receive(ANTENNA_1);
             }
-            handle_receive(antenna);
         } else {
             handle_receive_none();
         }
@@ -900,7 +939,7 @@ IF_SX2(
         }
 #endif
 
-        stats.fhss_curr_i = fhss.CurrI();
+        stats.fhss_curr_i = fhss.CurrI_4mBridge();
         stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
         stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
@@ -929,6 +968,9 @@ IF_SX2(
                             // we could be more gentle and postpone connection by one cnt
                             FAILALWAYS(BLINK_3, "rx_available not true");
                         }
+                    }
+                    if (!connect_occured_once) {
+                        stats.JustConnected();
                     }
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
@@ -967,9 +1009,7 @@ IF_MBRIDGE(
         // update channels, do only if we use mBridge also as channels source
         // note: mBridge is used when either CHANNEL_SOURCE_MBRIDGE or SERIAL_DESTINATION_MBRDIGE, so need to check here
         if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-            channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-            channelOrder.Apply(&rcData);
-            rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+            rc_data_updated = true;
         }
         // when we receive channels packet from transmitter, we send link stats to transmitter
         mbridge.TelemetryStart();
@@ -1018,10 +1058,10 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
                 doParamsStore = true;
             }
             break;
-        case MBRIDGE_CMD_BIND_START: start_bind(); break;
-        case MBRIDGE_CMD_BIND_STOP: stop_bind(); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: enter_system_bootloader(); break;
-        case MBRIDGE_CMD_FLASH_ESP: esp.EnterFlash(); break;
+        case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(MAIN_TASK_BIND_START); break;
+        case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(MAIN_TASK_BIND_STOP); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(MAIN_TASK_SYSTEM_BOOT); break;
+        case MBRIDGE_CMD_FLASH_ESP: tasks.SetMBridgeTask(TX_TASK_FLASH_ESP); break;
         case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
             config_id.Change(mbridge.GetModelId());
@@ -1031,10 +1071,7 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
 );
 IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
-        // update channels
-        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+        rc_data_updated = true;
     }
     uint8_t crsftask; uint8_t crsfcmd;
     uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's too fast Lua script gets out of sync
@@ -1057,6 +1094,7 @@ IF_CRSF(
             }
             INCc(do_cnt, 3);
             break;
+        case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
         }
     }
     if (crsf.CommandReceived(&crsfcmd)) {
@@ -1065,6 +1103,8 @@ IF_CRSF(
 //dbg.puts("\ncrsf model select id "); dbg.puts(u8toBCD_s(crsf.GetCmdModelId()));
             config_id.Change(crsf.GetCmdModelId());
             break;
+        case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(MAIN_TASK_BIND_START); break;
+        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(MAIN_TASK_BIND_START); break;
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");
             mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
@@ -1073,13 +1113,15 @@ IF_CRSF(
     }
 );
 IF_IN(
-    if (in.Update(&rcData)) {
-        // update channels
-        channelOrder.Set(Setup.Tx[Config.ConfigId].ChannelOrder); //TODO: better than before, but still better place!?
-        channelOrder.Apply(&rcData);
-        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+    if (in.ChannelsUpdated(&rcData)) {
+        rc_data_updated = true;
     }
 );
+    if (rc_data_updated) {
+        rc_data_updated = false;
+        channelOrder.SetAndApply(&rcData, Setup.Tx[Config.ConfigId].ChannelOrder);
+        rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+    }
 
     if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 
@@ -1094,48 +1136,50 @@ IF_IN(
 
     //-- Handle display or CLI or MAVLink task
 
-    uint8_t tx_task = TX_TASK_NONE; //= disp.Task();
-    if (tx_task == TX_TASK_NONE) tx_task = mavlink.Task();
-    if (tx_task == TX_TASK_NONE) tx_task = cli.Task();
+    uint8_t tx_task = tasks.Task();
+    if (tx_task == MAIN_TASK_NONE) tx_task = mavlink.Task();
 
     switch (tx_task) {
-		case TX_TASK_RX_PARAM_SET:
-			//if (connected()) {
-			//	link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-			//	mbridge.Lock(); // lock mBridge
-			//}
-			break;
-		case TX_TASK_PARAM_STORE:
-			//if (connected()) {
-			//	link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-			//	//mbridge.Lock(); // lock mBridge
-			//} else {
-			//	doParamsStore = true;
-			//}
-			//break;
-		case TX_TASK_PARAM_RELOAD:
-			//setup_reload();
-			//if (connected()) {
-			//	link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-			//	mbridge.Lock(); // lock mBridge
-			//}
-			//break;
-		//case TX_TASK_BIND: start_bind(); break;
-		//case TX_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
-		//case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
-		//case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-		case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(cli.GetTaskValue()); break;
-		case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
-		case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(cli.GetTaskValue()); break;
-		default:
-			break;
+        case TX_TASK_RX_PARAM_SET:
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
+                mbridge.Lock(); // lock mBridge
+            }
+            break;
+        case TX_TASK_PARAM_STORE:
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
+                mbridge.Lock(); // lock mBridge
+            } else {
+                doParamsStore = true;
+            }
+            break;
+        case TX_TASK_PARAM_RELOAD:
+            setup_reload();
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+                mbridge.Lock(); // lock mBridge
+            }
+            break;
+        case MAIN_TASK_BIND_START: /*bind.StartBind();*/ break; //do not bind ever
+        case MAIN_TASK_BIND_STOP: /*bind.StopBind();*/ break; //do not bind ever
+        case MAIN_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+        case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
+        case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
+        case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
+        case TX_TASK_CLI_ESP_GET_PASSWORD: esp.GetPassword(); break;
+        case TX_TASK_CLI_ESP_SET_PASSWORD: esp.SetPassword(tasks.GetCliTaskStr()); break;
+        case TX_TASK_CLI_ESP_GET_NETWORK_SSID: esp.GetNetSsid(); break;
+        case TX_TASK_CLI_ESP_SET_NETWORK_SSID: esp.SetNetSsid(tasks.GetCliTaskStr()); break;
+        case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+        case TX_TASK_CLI_HC04_GETPIN: hc04.GetPin(); break;
+        case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(tasks.GetCliTaskValue()); break;
     }
+    if (tx_task == MAIN_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+
 
     //-- Handle ESP wifi bridge
-
-    //esp.Do();
-    //uint8_t esp_task = esp.Task();
-    //if (esp_task == TX_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
+    esp.Do();
 
     //-- more
 

@@ -41,6 +41,7 @@
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM15
+#define MICROS_TIM_NAMEPREFIX     TIM1_BRK_TIM15_
 
 
 //-- UARTS
@@ -67,7 +68,7 @@
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
 
-#define SWUART_USE_TIM15 // debug
+#define SWUART_USE_TIM1 // debug
 #define SWUART_TX_IO              IO_PA11
 #define SWUART_BAUD               115200
 #define SWUART_USE_TX

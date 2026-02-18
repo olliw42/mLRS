@@ -12,7 +12,7 @@
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with OTX, ETX, mOTX v33
 
--- local version = '2024-11-14.00'
+-- local version = '2026-02-09.00'
 
 local req_tx_ver = 1000 -- 'v1.0.0'
 local req_rx_ver = 1000 -- 'v1.0.0'
@@ -28,6 +28,7 @@ local BindPhrase_idx = 0 -- must not be changed
 -- tools (max 4)
 local Bind_idx = 4
 local Boot_idx = 5
+local Device_idx = 6
 
 -- save/load/nav (max 4)
 local Save_idx = 7
@@ -456,13 +457,13 @@ local function doParmLoop()
         end
         if cmd.cmd == MB_CMD_DEV_ITEM_TX then
             DEV_ITEM_TX = cmd
-            --DEV_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
+            DEV_ITEM_TX.name = mb_to_string(cmd.payload, 4, 20)
             DEV_ITEM_TX.version_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 0))
             DEV_ITEM_TX.setuplayout_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 2))
             DEV_ITEM_TX.version_str = mb_to_firmware_string(mb_to_u16(cmd.payload, 0))
         elseif cmd.cmd == MB_CMD_DEV_ITEM_RX then
             DEV_ITEM_RX = cmd
-            --DEV_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
+            DEV_ITEM_RX.name = mb_to_string(cmd.payload, 4, 20)
             DEV_ITEM_RX.version_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 0))
             DEV_ITEM_RX.setuplayout_int = mb_to_firmware_int(mb_to_u16(cmd.payload, 2))
             DEV_ITEM_RX.version_str = mb_to_firmware_string(mb_to_u16(cmd.payload, 0))
@@ -633,7 +634,7 @@ end
 -- Edit stuff
 ----------------------------------------------------------------------
 
-local cursor_idx = 9
+local cursor_idx = Next_idx -- Start at next
 local edit = false
 
 local cursor_x_idx = 0 -- index into string for string edits
@@ -793,7 +794,7 @@ local function drawPage()
     s = 1
   end
 
-    if DEV_PARM_LIST_complete then
+    if DEV_PARM_LIST_complete and page ~= 99 then
         for i=s,parm_max do
             if DEV_PARM_LIST[i] ~= nil and DEV_PARM_LIST[i].name ~= nil then
                 lcd.drawText(0, liney(i), string.sub(DEV_PARM_LIST[i].name, 1, 14), TEXT_COLOR)
@@ -850,17 +851,42 @@ local function drawPage()
     y = liney(6)
     lcd.drawText(0, y, "bind", cur_attr(Bind_idx))
     lcd.drawText(LCD_W/4, y, "boot", cur_attr(Boot_idx))
-    -- lcd.drawText(LCD_W/2, y, tostring(mem_max1), TEXT_COLOR) -- memory size
+    lcd.drawText(LCD_W/2+10, y, "device", cur_attr(Device_idx))
     -- lcd.drawText(LCD_W*3/4, y, tostring(mem_max2), TEXT_COLOR) -- memory size
+
+  elseif page == 99 then
+    -- Device Info Page
+    y = liney(0)
+    lcd.drawText(0, y, "Device Information", TITLE_COLOR)
+
+    y = liney(2)
+    lcd.drawText(0, y, "Tx Name:", TEXT_COLOR)
+    if DEV_ITEM_TX ~= nil and DEV_ITEM_TX.name ~= nil then
+        lcd.drawText(0, liney(3), DEV_ITEM_TX.name, TEXT_COLOR)
+    else
+        lcd.drawText(0, liney(3), "unknown", TEXT_COLOR)
+    end
+
+    -- Blank line at liney(4)
+
+    y = liney(5)
+    lcd.drawText(0, y, "Rx Name:", TEXT_COLOR)
+    if DEV_ITEM_RX ~= nil and DEV_ITEM_RX.name ~= nil and connected then
+        lcd.drawText(0, liney(6), DEV_ITEM_RX.name, TEXT_COLOR)
+    else
+        lcd.drawText(0, liney(6), "unknown", TEXT_COLOR)
+    end
 
   end
 
     -- Save/Load and Navigation
     y = liney(7)
-    lcd.drawText(0, y, "save", cur_attr(Save_idx - s))
-    lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx - s))
-    lcd.drawText(LCD_W/2, y, "prev", cur_attr(Prev_idx - s))
-    lcd.drawText(LCD_W*3/4, y, "next", cur_attr(Next_idx - s))
+    if page ~= 99 then
+        lcd.drawText(0, y, "save", cur_attr(Save_idx))
+        lcd.drawText(LCD_W/4, y, "load", cur_attr(Reload_idx))
+        lcd.drawText(LCD_W/2, y, "prev", cur_attr(Prev_idx))
+    end
+    lcd.drawText(LCD_W*3/4, y, "next", cur_attr(Next_idx))
 end
 
 local function doPage(event)
@@ -873,34 +899,39 @@ local function doPage(event)
         if event == EVT_VIRTUAL_EXIT then
             -- nothing to do
         elseif event == EVT_VIRTUAL_ENTER then
-            if cursor_idx == Save_idx - s and DEV_PARM_LIST_complete then -- Save pressed
+            if cursor_idx == Save_idx and DEV_PARM_LIST_complete then -- Save pressed
                 sendParmStore()
                 clearParms()
             elseif page == 0 and cursor_idx == Bind_idx then -- Bind pressed
                 sendBind()
             elseif page == 0 and cursor_idx == Boot_idx then -- Boot pressed
                 sendBoot()
-            elseif cursor_idx == Reload_idx - s then -- Reload pressed
+            elseif page == 0 and cursor_idx == Device_idx then -- Device info pressed
+                page = 99 -- jump to device info page
+                cursor_idx = Next_idx
+            elseif cursor_idx == Reload_idx then -- Reload pressed
+                page = 0  -- move to page 0 to force MBRIDGE_CMD_REQUEST_INFO
                 clearParms()
-            elseif cursor_idx == Prev_idx - s then -- Prev pressed
+                cursor_idx = Next_idx
+            elseif cursor_idx == Prev_idx then -- Prev pressed
                 clearParms()
-                page = page - 1
-                if page == 0 then
-                    cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
-                end
-                if page < 0 then
-                    page = Max_Page
-                    cursor_idx = cursor_idx + 1 -- 1 more positions on subsequent pages; move forward to "next"
-                 end
-            elseif cursor_idx == Next_idx - s then -- Next pressed
-                clearParms()
-                if page == 0 then
-                    cursor_idx = cursor_idx + 1 -- 1 more positions on subsequent pages; move forward to "next"
-                end
-                page = page + 1
-                if page > Max_Page then
+                if page == 99 then
                     page = 0
-                    cursor_idx = cursor_idx - 1 -- 1 fewer positions on page 0; move back to "next"
+                else
+                    page = page - 1
+                    if page < 0 then
+                        page = Max_Page
+                    end
+                end
+            elseif cursor_idx == Next_idx then -- Next pressed
+                clearParms()
+                if page == 99 then
+                    page = 0
+                else
+                    page = page + 1
+                    if page > Max_Page then
+                        page = 0
+                    end
                 end
             elseif DEV_PARM_LIST_complete and DEV_PARM_LIST[cursor_idx] ~= nil and DEV_PARM_LIST[cursor_idx].editable then -- edit option
                 cursor_x_idx = 0
@@ -910,10 +941,17 @@ local function doPage(event)
             end
         elseif event == EVT_VIRTUAL_NEXT then -- and DEV_PARM_LIST_complete then
             cursor_idx = cursor_idx + 1
-            if cursor_idx > Next_idx - s then cursor_idx = Next_idx - s end
+            if cursor_idx > Next_idx then
+                cursor_idx = Next_idx
+            end
         elseif event == EVT_VIRTUAL_PREV then -- and DEV_PARM_LIST_complete then
             cursor_idx = cursor_idx - 1
-            if cursor_idx < 0 then cursor_idx = 0 end
+            if cursor_idx < 0 then
+                cursor_idx = 0
+            end
+            if page == 99 then
+                cursor_idx = Next_idx
+            end
         end
     else -- edit
         if event == EVT_VIRTUAL_EXIT then

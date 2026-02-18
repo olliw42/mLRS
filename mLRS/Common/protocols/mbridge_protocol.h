@@ -234,9 +234,9 @@ typedef struct
 
     uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
     uint8_t binding : 1;
-    uint8_t connected : 1;
-    uint8_t rx_LQ_low : 1;
-    uint8_t tx_LQ_low : 1;
+    uint8_t _connected : 1; // not used, start deprecating (> v1.3.08)
+    uint8_t _rx_LQ_low : 1; // not used, start deprecating (> v1.3.08)
+    uint8_t _tx_LQ_low : 1; // not used, start deprecating (> v1.3.08)
     uint8_t spare1 : 3;
 
     int8_t tx_actual_power_dbm;

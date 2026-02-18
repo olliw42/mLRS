@@ -6,8 +6,7 @@
 // hal
 //*******************************************************
 
-// MLRS_FEATURE defines usually must be defined very high up,
-// the following can however be used/defined locally here
+// MLRS_FEATURE defines usually must be defined very high up
 
 //#define MLRS_FEATURE_CAN
 

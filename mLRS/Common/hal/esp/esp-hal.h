@@ -91,12 +91,16 @@
 #include "rx-hal-generic-2400-td-pa-esp32.h"
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR4_900_ESP32
-#include "rx-hal-radiomaster-xr4-900-esp32.h"
+#ifdef RX_ELRS_RADIOMASTER_XR4_ESP32
+#include "rx-hal-radiomaster-xr4-esp32.h"
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR1_900_ESP32C3
-#include "rx-hal-radiomaster-xr1-900-esp32c3.h"
+#ifdef RX_ELRS_RADIOMASTER_XR1_ESP32C3
+#include "rx-hal-radiomaster-xr1-esp32c3.h"
+#endif
+
+#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
+#include "rx-flysky-pr02-2400-td-esp32s3.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
@@ -119,6 +123,14 @@
 #include "tx-hal-jumper-int-900-esp32.h"
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
+#include "tx-hal-radiomaster-int-tx15-esp32.h"
+#endif
+
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_GX12_ESP32
+#include "tx-hal-radiomaster-int-gx12-esp32.h"
+#endif
+
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
 #include "tx-hal-betafpv-micro-1w-2400-esp32.h"
 #endif
@@ -131,15 +143,15 @@
 #include "tx-hal-radiomaster-bandit-series-900-esp32.h"
 #endif
 
-
-// -- DIY
-
-#ifdef RX_DIY_DEV_900_ESP8266
-#include "rx-hal-diy-dev-900-esp8266.h"
+#ifdef TX_ELRS_RADIOMASTER_RANGER_2400_ESP32
+#include "tx-hal-radiomaster-ranger-2400-esp32.h"
 #endif
 
-#ifdef RX_DIY_DEV_900_ESP32
-#include "rx-hal-diy-dev-900-esp32.h"
+#ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
+#include "tx-hal-radiomaster-nomad-esp32.h"
 #endif
 
+#ifdef TX_ELRS_FLYSKY_INTERNAL_PA01_2400_ESP32S3
+#include "tx-hal-flysky-int-pa01-2400-esp32s3.h"
+#endif
 

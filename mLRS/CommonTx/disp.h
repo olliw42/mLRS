@@ -21,7 +21,6 @@ class tTxDisp
   public:
     void Init(void) {}
     void Tick_ms(void) {}
-    uint8_t Task(void) { return 0; }
     void DrawNotify(const char* const s) {}
     void DrawBoot(void) {}
 };
@@ -35,6 +34,7 @@ class tTxDisp
 #include "../Common/thirdparty/gfxfontFreeMono9pt7b.h"
 #include "../Common/thirdparty/gdisp.h"
 #include "../Common/thirdparty/mlrs-logo.h"
+#include "../Common/tasks.h"
 
 
 extern bool connected(void);
@@ -44,11 +44,18 @@ extern tGDisplay gdisp;
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tTxInfo info;
+extern tTasks tasks;
 void i2c_spin(uint16_t chunksize);
 
 
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
 #define KEYS_DEBOUNCE_TMO_MS    SYSTICK_DELAY_MS(40)
+
+// y-offset for content below header; 20 was original value, use 22 for dual-color OLEDs
+#ifndef DISP_CONTENT_Y_BASE
+  #define DISP_CONTENT_Y_BASE   20
+#endif
 
 
 typedef enum {
@@ -112,7 +119,6 @@ class tTxDisp
     void UpdateMain(void);
     void SetBind(void);
     void Draw(void);
-    uint8_t Task(void);
     void DrawNotify(const char* const s);
     void DrawBoot(void);
 
@@ -145,7 +151,6 @@ class tTxDisp
     void draw_options(tParamList* const list);
 
     bool initialized;
-    uint8_t task_pending;
     bool connected_last; // to detect connection changes
     bool setupmetadata_rx_available_last; // to detect changes
 
@@ -170,7 +175,8 @@ class tTxDisp
     uint8_t idx_focused;        // index of highlighted param
     bool idx_focused_in_edit;   // if param is in edit
     uint8_t idx_focused_pos;    // pos in str6 (bind phrase) parameter
-    uint8_t idx_focused_task_pending;
+
+    uint8_t edit_setting_task_pending;
 
     tParamList common_list;
     tParamList tx_list;
@@ -198,7 +204,6 @@ void tTxDisp::Init(void)
 #endif
     }
 
-    task_pending = TX_TASK_NONE;
     connected_last = false;
     setupmetadata_rx_available_last = false;
 
@@ -238,15 +243,8 @@ void tTxDisp::Init(void)
     idx_max = 0;
     idx_focused_in_edit = false;
     idx_focused_pos = 0;
-    idx_focused_task_pending = TX_TASK_NONE;
-}
 
-
-uint8_t tTxDisp::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
+    edit_setting_task_pending = MAIN_TASK_NONE;
 }
 
 
@@ -412,16 +410,16 @@ if(!idx_focused_in_edit){
     if (key_has_been_pressed(KEY_CENTER)) {
         idx_focused_in_edit = false;
         page_modified = true;
-        if (idx_focused_task_pending != CLI_TASK_NONE) task_pending = idx_focused_task_pending;
-        idx_focused_task_pending = CLI_TASK_NONE;
+        if (idx_focused_task_pending != MAIN_TASK_NONE) task_pending = idx_focused_task_pending;
+        idx_focused_task_pending = MAIN_TASK_NONE;
     } else {
         edit_setting();
     } */
     if (edit_setting()) { // edit, and finish if true
         idx_focused_in_edit = false;
         page_modified = true;
-        if (idx_focused_task_pending != TX_TASK_NONE) task_pending = idx_focused_task_pending;
-        idx_focused_task_pending = TX_TASK_NONE;
+        if (edit_setting_task_pending != MAIN_TASK_NONE) tasks.SetDisplayTask(edit_setting_task_pending);
+        edit_setting_task_pending = MAIN_TASK_NONE;
     }
 
 }
@@ -458,16 +456,16 @@ void tTxDisp::run_action(void)
     case DISP_ACTION_STORE:
         page = PAGE_NOTIFY_STORE;
         page_modified = true;
-        task_pending = TX_TASK_PARAM_STORE;
+        tasks.SetDisplayTask(TX_TASK_PARAM_STORE);
         break;
     case DISP_ACTION_BIND:
-        task_pending = TX_TASK_BIND;
+        tasks.SetDisplayTask(MAIN_TASK_BIND_START);
         break;
     case DISP_ACTION_BOOT:
-        task_pending = TX_TASK_SYSTEM_BOOT;
+        tasks.SetDisplayTask(MAIN_TASK_SYSTEM_BOOT);
         break;
     case DISP_ACTION_FLASH_ESP:
-        task_pending = TX_TASK_FLASH_ESP;
+        tasks.SetDisplayTask(TX_TASK_FLASH_ESP);
         break;
     }
 }
@@ -607,7 +605,7 @@ char s[32];
 
         uint8_t param_idx = list->list[idx];
 
-        gdisp_setcurXY(0, (idx - idx_first) * 10 + 20);
+        gdisp_setcurXY(0, (idx - idx_first) * 10 + DISP_CONTENT_Y_BASE);
         if (idx == idx_focused) gdisp_setinverted();
 
         if (setup_param_is_tx(param_idx) || setup_param_is_rx(param_idx)) {
@@ -706,9 +704,9 @@ int8_t power;
     draw_header("Main");
 
     gdisp_setcurX(50);
-    param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
+    param_get_val_formattedstr(s, PARAM_INDEX_MODE, PARAM_FORMAT_DISPLAY); // 1 = index of Mode
     if (strlen(s) > 5) {
-        gdisp_setcurXY(35, 6);
+        gdisp_setcurXY(43, 6);
     } else {
         gdisp_setcurXY(50, 6);
     }
@@ -724,14 +722,14 @@ int8_t power;
     gdisp_setcurX(115);
     gdisp_puts("dB");
 
-    gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_setcurXY(0, 0 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Rssi");
-    gdisp_setcurXY(115, 1 * 10 + 20 + 5);
+    gdisp_setcurXY(115, 1 * 10 + DISP_CONTENT_Y_BASE + 5);
     gdisp_puts("dB");
 
-    gdisp_setcurXY(0, 3 * 10 + 20 - 4);
+    gdisp_setcurXY(0, 3 * 10 + DISP_CONTENT_Y_BASE - 4);
     gdisp_puts("LQ");
-    gdisp_setcurXY(115+6, 4 * 10 + 20 + 1);
+    gdisp_setcurXY(115+6, 4 * 10 + DISP_CONTENT_Y_BASE + 1);
     gdisp_puts("%");
 
     // now the part which is frequently updated
@@ -739,19 +737,19 @@ int8_t power;
 
     gdisp_setfont(&FreeMono9pt7b);
 
-    gdisp_setcurXY(5, 1 * 10 + 20 + 5);
+    gdisp_setcurXY(5, 1 * 10 + DISP_CONTENT_Y_BASE + 5);
     s8toBCDstr(stats.GetLastRssi(), s);
     gdisp_puts(s);
     gdisp_setcurX(60);
     s8toBCDstr(stats.received_rssi, s);
     if (connected()) gdisp_puts(s);
 
-    gdisp_setcurXY(5 + 11, 4 * 10 + 20 + 1);
+    gdisp_setcurXY(5 + 11, 4 * 10 + DISP_CONTENT_Y_BASE + 1);
     stoBCDstr(stats.GetLQ_serial(), s);
     gdisp_puts(s);
     gdisp_setcurX(60 + 11);
     if (connected()) {
-        stoBCDstr(stats.received_LQ_rc, s);
+        stoBCDstr(stats.GetReceivedLQ_rc(), s);
         gdisp_puts(s);
     }
 
@@ -765,7 +763,7 @@ char s[32];
 
     draw_header("Main/2");
 
-    gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_setcurXY(0, 0 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Mode");
     gdisp_setcurX(40);
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
@@ -775,7 +773,7 @@ char s[32];
     gdisp_puts(s);
     gdisp_puts(" dB");
 
-    gdisp_setcurXY(0, 1 * 10 + 20);
+    gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Power");
     gdisp_setcurX(40);
     stoBCDstr(sx.RfPower_dbm(), s);
@@ -787,7 +785,7 @@ char s[32];
     gdisp_setcurX(115);
     gdisp_puts("dB");
 
-    gdisp_setcurXY(0, 2 * 10 + 20);
+    gdisp_setcurXY(0, 2 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Div.");
     gdisp_setcurX(40);
     _diversity_str(s, Config.Diversity);
@@ -796,33 +794,6 @@ char s[32];
     uint8_t rx_actual_diversity = (SetupMetaData.rx_available) ? SetupMetaData.rx_actual_diversity : DIVERSITY_NUM;
     _diversity_str(s, rx_actual_diversity);
     if (connected_and_rx_setup_available()) gdisp_puts(s);
-/*
-    gdisp_setcurXY(0, 3 * 10 + 20);
-    gdisp_puts("Rssi");
-    gdisp_setcurX(40);
-    s8toBCDstr(stats.GetLastRssi(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(80);
-    s8toBCDstr(stats.received_rssi, s);
-    if (connected()) gdisp_puts(s);
-
-    gdisp_setcurX(115);
-    gdisp_puts("dB");
-
-    gdisp_setcurXY(0, 4 * 10 + 20);
-    gdisp_puts("LQ");
-    gdisp_setcurX(40);
-    stoBCDstr(txstats.GetLQ(), s);
-    gdisp_puts(s);
-    gdisp_setcurX(80);
-    if (connected()) {
-        stoBCDstr(stats.received_LQ, s);
-        gdisp_puts(s);
-    }
-
-    gdisp_setcurX(115+6);
-    gdisp_puts("%");
-*/
 }
 
 
@@ -834,41 +805,47 @@ if (page_modified) {
 
     draw_header("Main/3");
 
-    gdisp_setcurXY(5, 0 * 10 + 20);
+    gdisp_setcurXY(5, 0 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Tx");
     gdisp_setcurX(110);
     gdisp_puts("Rx");
 
-    gdisp_setcurXY(92, 2 * 10 + 20);
+    gdisp_setcurXY(92, 2 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_putc('>');
-    gdisp_drawline_H(32, 2 * 10 + 20 - 3, 63, 1);
+    gdisp_drawline_H(32, 2 * 10 + DISP_CONTENT_Y_BASE - 3, 63, 1);
 
-    gdisp_setcurXY(28, 3 * 10 + 20);
+    gdisp_setcurXY(28, 3 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_putc('<');
-    gdisp_drawline_H(32, 3 * 10 + 20 - 3, 63, 1);
+    gdisp_drawline_H(32, 3 * 10 + DISP_CONTENT_Y_BASE - 3, 63, 1);
 
-    if (Config.Diversity == DIVERSITY_DEFAULT) _draw_dot2(1, 2 * 10 + 20 - 3);
+    if (Config.Diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
+        _draw_dot2(1, 2 * 10 + DISP_CONTENT_Y_BASE - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(4, 2 * 10 + DISP_CONTENT_Y_BASE);
+        gdisp_puts("a12");
+    }
     if (SetupMetaData.rx_available &&
          (SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT ||
           SetupMetaData.rx_actual_diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 ||
           SetupMetaData.rx_actual_diversity == DIVERSITY_R_ENABLED_T_ANTENNA2)) {
-        _draw_dot2(125, 2 * 10 + 20 - 3);
+        _draw_dot2(125, 2 * 10 + DISP_CONTENT_Y_BASE - 3);
     }
 
     if (Config.Diversity == DIVERSITY_DEFAULT ||
         Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA1 || Config.Diversity == DIVERSITY_R_ENABLED_T_ANTENNA2) {
-        _draw_dot2(1, 3 * 10 + 20 - 3);
+        _draw_dot2(1, 3 * 10 + DISP_CONTENT_Y_BASE - 3);
     }
-    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT) {
-        _draw_dot2(125, 3 * 10 + 20 - 3);
+    if (SetupMetaData.rx_available && SetupMetaData.rx_actual_diversity == DIVERSITY_DEFAULT && !Config.IsDualBand) {
+        _draw_dot2(125, 3 * 10 + DISP_CONTENT_Y_BASE - 3);
+    } else if (Config.IsDualBand) { // draw 'a12' instead of dot
+        gdisp_setcurXY(105, 3 * 10 + DISP_CONTENT_Y_BASE);
+        gdisp_puts("a12");
     }
 
-    gdisp_setcurXY(40, 1 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Bps");
 
-    gdisp_setcurXY(40, 4 * 10 + 20);
-    gdisp_setcurX(70);
+    gdisp_setcurXY(70, 4 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Bps");
 }
     // now the part which is frequently updated
@@ -879,25 +856,25 @@ if (page_modified) {
     uint8_t rx_receive_antenna = stats.received_antenna;
     uint8_t rx_transmit_antenna = stats.received_transmit_antenna;
 
-    gdisp_setcurXY(10, 2 * 10 + 20);
-    gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    gdisp_setcurXY(10, 2 * 10 + DISP_CONTENT_Y_BASE);
+    if (!Config.IsDualBand) gdisp_puts((tx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
     gdisp_puts((rx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
 
-    gdisp_setcurXY(10, 3 * 10 + 20);
+    gdisp_setcurXY(10, 3 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts((tx_receive_antenna == ANTENNA_2) ? "a2" : "a1");
     gdisp_setcurX(105);
-    gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
+    if (!Config.IsDualBand) gdisp_puts((rx_transmit_antenna == ANTENNA_2) ? "a2" : "a1");
 
     uint16_t bps_transmitted = stats.bytes_transmitted.GetBytesPerSec();
     uint16_t bps_received = stats.bytes_received.GetBytesPerSec();
 
-    gdisp_setcurXY(40, 1 * 10 + 20);
+    gdisp_setcurXY(40, 1 * 10 + DISP_CONTENT_Y_BASE);
     utoBCDstr(bps_transmitted, s);
     for (uint8_t i = 0; i < 4; i++) { if (s[i] == '\0') { s[i] = ' '; s[i+1] = '\0'; } }
     gdisp_puts(s);
 
-    gdisp_setcurXY(40, 4 * 10 + 20);
+    gdisp_setcurXY(40, 4 * 10 + DISP_CONTENT_Y_BASE);
     utoBCDstr(bps_received, s);
     for (uint8_t i = 0; i < 4; i++) { if (s[i] == '\0') { s[i] = ' '; s[i+1] = '\0'; } }
     gdisp_puts(s);
@@ -912,15 +889,20 @@ char s[32];
 
     draw_header("Main/4");
 
-    gdisp_setcurXY(0, 0 * 10 + 20);
+    gdisp_setcurXY(0, 0 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts(DEVICE_NAME);
-    gdisp_setcurXY(0, 1 * 10 + 20);
+    gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts(VERSIONONLYSTR);
 
+    if (info.WirelessDeviceName_disp(s)) {
+        gdisp_setcurXY(60, 1 * 10 + DISP_CONTENT_Y_BASE);
+        gdisp_puts(s);
+    }
+
     if (connected_and_rx_setup_available()) {
-        gdisp_setcurXY(0, 3 * 10 + 20);
+        gdisp_setcurXY(0, 3 * 10 + DISP_CONTENT_Y_BASE);
         gdisp_puts(SetupMetaData.rx_device_name);
-        gdisp_setcurXY(0, 4 * 10 + 20);
+        gdisp_setcurXY(0, 4 * 10 + DISP_CONTENT_Y_BASE);
         version_to_str(s, SetupMetaData.rx_firmware_version);
         gdisp_puts(s);
     }
@@ -956,7 +938,7 @@ void tTxDisp::draw_page_common(void)
 
     char except_str[8];
     if (except_str_from_bindphrase(except_str, Setup.Common[Config.ConfigId].BindPhrase, Config.FrequencyBand)) {
-        gdisp_setcurXY(0, 4 * 10 + 20); // last line
+        gdisp_setcurXY(0, 4 * 10 + DISP_CONTENT_Y_BASE); // last line
         gdisp_puts("except ");
         gdisp_puts(except_str);
     }
@@ -979,7 +961,7 @@ void tTxDisp::draw_page_rx(void)
     draw_header("Rx");
 
     if (!connected()) {
-        gdisp_setcurXY(0, 20);
+        gdisp_setcurXY(0, DISP_CONTENT_Y_BASE + 4);
         gdisp_puts("not connected!");
         return;
     }
@@ -998,19 +980,19 @@ void tTxDisp::draw_page_actions(void)
 
     uint8_t idx = 0;
 
-    gdisp_setcurXY(5, idx * 16 + 25);
+    gdisp_setcurXY(5, idx * 16 + DISP_CONTENT_Y_BASE + 5);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("STORE");
     gdisp_unsetinverted();
     idx++;
 
-/*    gdisp_setcurXY(5, idx * 16 + 25);
+/*    gdisp_setcurXY(5, idx * 16 + DISP_CONTENT_Y_BASE + 5);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("RELOAD");
     gdisp_unsetinverted();
     idx++; */
 
-    gdisp_setcurXY(5, idx * 16 + 25);
+    gdisp_setcurXY(5, idx * 16 + DISP_CONTENT_Y_BASE + 5);
     if (idx == idx_focused) gdisp_setinverted();
     gdisp_puts("BIND");
     gdisp_unsetinverted();
@@ -1019,7 +1001,7 @@ void tTxDisp::draw_page_actions(void)
     gdisp_unsetfont();
 
     if ((idx < DISP_ACTION_NUM) && (disp_actions[idx] == DISP_ACTION_BOOT)) {
-        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        gdisp_setcurXY(75, (idx - 2) * 11 + DISP_CONTENT_Y_BASE);
         if (idx == idx_focused) gdisp_setinverted();
         gdisp_puts("BOOT");
         gdisp_unsetinverted();
@@ -1027,7 +1009,7 @@ void tTxDisp::draw_page_actions(void)
     }
 
     if ((idx < DISP_ACTION_NUM) && (disp_actions[idx] == DISP_ACTION_FLASH_ESP)) {
-        gdisp_setcurXY(75, (idx - 2) * 11 + 20);
+        gdisp_setcurXY(75, (idx - 2) * 11 + DISP_CONTENT_Y_BASE);
         if (idx == idx_focused) gdisp_setinverted();
         gdisp_puts("FLASH "); gdisp_movecurX(-2); gdisp_puts("ESP");
         gdisp_unsetinverted();
@@ -1130,7 +1112,7 @@ bool tTxDisp::edit_setting(void)
 
     }
 
-    if (rx_param_changed) idx_focused_task_pending = TX_TASK_RX_PARAM_SET;
+    if (rx_param_changed) edit_setting_task_pending = TX_TASK_RX_PARAM_SET;
     return false; // keep on editing
 }
 
@@ -1191,4 +1173,3 @@ FRM303 F072 48 MHz
     128:   1.35 ms
     64:    0.72 ms
 */
-

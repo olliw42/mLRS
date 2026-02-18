@@ -33,6 +33,7 @@ class tStats
     void Update1Hz(void);             // called at 1 Hz
     void Next(void);                  // called at each cycle, is called when transmit starts, or shortly after
     void Clear(void);                 // called then not connected
+    void JustConnected(void);         // called upon first connection
 
     void doFrameReceived(void);
 #ifdef DEVICE_IS_RECEIVER
@@ -49,6 +50,9 @@ class tStats
     uint8_t GetLQ_rc(void);           // this is the "main" LQ, in case of Rx reflects the crc1-rcdata LQ
 #endif
     uint8_t GetLQ_serial(void);
+#ifdef DEVICE_IS_TRANSMITTER
+    uint8_t GetReceivedLQ_rc(void);   // this is the "main" LQ of the receiver side
+#endif
 
     void doMavlinkCnt(bool valid);
     uint8_t GetMavlinkLQ(void);
@@ -88,6 +92,10 @@ class tStats
 #ifdef DEVICE_IS_TRANSMITTER
     uint8_t received_LQ_rc;
 #endif
+#ifdef DEVICE_IS_RECEIVER
+    uint8_t received_fhss_index_band;
+    uint8_t received_fhss_index;
+#endif
     uint8_t received_LQ_serial;
     uint8_t received_antenna;
     uint8_t received_transmit_antenna;
@@ -115,6 +123,9 @@ class tStats
 //    tLqCounterBase LQma_received;
 //    tLqCounterBase LQma_valid_crc1;
 //    tLqCounterBase LQma_valid;
+
+    // to avoid fractional LQ upon first connection, report 100% for 2 secs
+    uint8_t just_connected_cnt;
 };
 
 

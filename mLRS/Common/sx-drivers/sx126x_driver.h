@@ -11,9 +11,10 @@
 // Configuration defines:
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
 // #define SX_HAS_NO_RESET
+// #define SX_USE_PA_CONFIG_10_DBM
 // #define SX_USE_CRYSTALOSCILLATOR
-// #define SX2_USE_CRYSTALOSCILLATOR
 // #define SX_USE_REGULATOR_MODE_DCDC
+// #define SX2_USE_CRYSTALOSCILLATOR
 // #define SX2_USE_REGULATOR_MODE_DCDC
 //*******************************************************
 #ifndef SX126X_DRIVER_H
@@ -84,7 +85,7 @@ typedef enum {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
+void sx126x_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
 {
     int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
 
@@ -104,6 +105,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void Init(void)
     {
+        gconfig = nullptr;
         osc_configuration = SX12xx_OSCILLATOR_CONFIG_TCXO_1P8_V;
         lora_configuration = nullptr;
         gfsk_configuration = nullptr;
@@ -144,6 +146,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ResetToLoraConfiguration(void)
     {
+        if (!gconfig) while(1){} // must not happen
+
         SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
         delay_us(1000); // seems ok without, but do it
         SetPacketType(SX126X_PACKET_TYPE_LORA);
@@ -179,12 +183,16 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        if (!gconfig) return;
+
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         SetTxParams(sx_power, SX126X_RAMPTIME_40_US); // 7.9.24: was SX126X_RAMPTIME_10_US
     }
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
     {
+        if (!gconfig) return;
+
         gconfig->Power_dbm = global_config->Power_dbm;
         SetRfPower_dbm(gconfig->Power_dbm);
     }
@@ -212,11 +220,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         // default for SX1261/2 (E22/E77-900) is 902 to 928 MHz
         // default for SX1268 (E22/E77-400) is 470 to 510 MHz
         switch (gconfig->FrequencyBand) {
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
-            case SX_FHSS_CONFIG_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibrateImage(SX126X_CAL_IMG_902_MHZ_1, SX126X_CAL_IMG_902_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibrateImage(SX126X_CAL_IMG_863_MHZ_1, SX126X_CAL_IMG_863_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibrateImage(SX126X_CAL_IMG_430_MHZ_1, SX126X_CAL_IMG_430_MHZ_2); break;
             default:
                 while(1){} // protection
         }
@@ -274,8 +282,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         ClearIrqStatus(SX126X_IRQ_ALL);
         SetRx(tmo_ms * 64); // 0 = no timeout
     }
@@ -288,6 +297,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
+        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+
         int16_t rssi;
         if (gconfig->modeIsLora()) {
             Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
@@ -309,14 +320,14 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     //-- RF power interface
 
-    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
-    void config_calc(void)
+    void _config_calc(void)
     {
         int8_t power_dbm = gconfig->Power_dbm;
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
         if (gconfig->modeIsLora()) {
             uint8_t index = gconfig->LoraConfigIndex;
@@ -330,21 +341,27 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
         return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
         return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr && gfsk_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
@@ -419,10 +436,10 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -486,10 +503,10 @@ class Sx126xDriver : public Sx126xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };
@@ -554,10 +571,10 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -619,10 +636,10 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };

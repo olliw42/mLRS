@@ -21,6 +21,9 @@
 #define MAVLINKX_O3
 #define MAVLINKX_CHECKRANGE // enables CHECKRANGE, CHECKRANGEBUF, but only if also DEBUG_ENABLED
 
+// encode: saves ~400 bytes, decode: saves ~800 bytes, combined: saves ~3200 bytes !?!?
+#define MAVLINKX_ENCODE_BITBUFFER_ENABLE
+#define MAVLINKX_DECODE_BITBUFFER_ENABLE
 
 #if defined ESP8266 || defined ESP32
 #define MAVLINKX_O3 // esp seem not to work without, at least BetaFpv 1w Micro does not
@@ -131,6 +134,8 @@ typedef struct
     uint8_t out_bit;
     uint16_t in_pos;
     uint8_t in_bit;
+    uint32_t bit_buf; // it's a good idea to make it as large as possible ;)
+    uint8_t bit_cnt;
 } fmavx_status_t;
 
 
@@ -821,8 +826,11 @@ the last byte all to 1.
 */
 #ifdef MAVLINKX_COMPRESSION
 
+//-------------------------------------------------------
 //-- compression
 // we can use payload_out buffer as working buffer
+
+#ifndef MAVLINKX_ENCODE_BITBUFFER_ENABLE
 
 // len_out & out_bit index the next bit position to write to
 void _fmavX_encode_put_bits(uint8_t* const payload_out, uint16_t* const len_out, uint16_t code, uint8_t code_bit_len)
@@ -850,6 +858,43 @@ CHECKRANGE(*len_out,258);
         }
     }
 }
+
+
+void _fmavX_encode_flush_bits(uint8_t* const payload_out, uint16_t* const len_out)
+{
+    if (fmavx_status.out_bit != 0x80) { // handle last out byte if not completed
+        (*len_out)++; // count it
+    }
+}
+
+#else
+
+// append len bits of code to the stream
+void _fmavX_encode_put_bits(uint8_t* payload_out, uint16_t* len_out, uint16_t code, uint8_t len)
+{
+    fmavx_status.bit_buf = (fmavx_status.bit_buf << len) | code; // shift to left, and add code
+    fmavx_status.bit_cnt += len;
+
+    while (fmavx_status.bit_cnt >= 8) { // flush whole bytes
+        fmavx_status.bit_cnt -= 8;
+
+CHECKRANGE(*len_out,258);
+
+        payload_out[(*len_out)++] = fmavx_status.bit_buf >> fmavx_status.bit_cnt;
+    }
+}
+
+
+// flush remaining bits (and pad with 1's)
+void _fmavX_encode_flush_bits(uint8_t* payload_out, uint16_t* len_out)
+{
+    if (fmavx_status.bit_cnt > 0) {
+        uint32_t pad = (1 << (8 - fmavx_status.bit_cnt)) - 1; // nice trick to generate e.g. 0b00000011 for count = 6
+        payload_out[(*len_out)++] = (fmavx_status.bit_buf << (8 - fmavx_status.bit_cnt)) | pad;
+    }
+}
+
+#endif // MAVLINKX_ENCODE_BITBUFFER_ENABLE
 
 
 void _fmavX_encode_rle(uint8_t* const payload_out, uint16_t* const len_out, uint8_t c, uint8_t RLE_cnt)
@@ -891,12 +936,15 @@ uint8_t RLE_char;
 uint16_t RLE_cnt;
 
     *len_out = 0;
-    fmavx_status.out_bit = 0x80;
     payload_out[0] = 0xFF; // we use 1's as stop marker in last byte, so it's easier to fill with 0xFF
 
     is_in_RLE = 0;
     RLE_char = 0; // to make gcc12 happy, avoid warning may be used uninitialized
     RLE_cnt = 0;
+
+    fmavx_status.out_bit = 0x80;
+    fmavx_status.bit_buf = 0;
+    fmavx_status.bit_cnt = 0;
 
     for (uint16_t n = 0; n < len; n++) {
 CHECKRANGE(n,256);
@@ -946,9 +994,7 @@ CHECKRANGE(*len_out,256);
         _fmavX_encode_rle(payload_out, len_out, RLE_char, RLE_cnt);
     }
 
-    if (fmavx_status.out_bit != 0x80) { // handle last out byte if not completed
-        (*len_out)++; // count it
-    }
+    _fmavX_encode_flush_bits(payload_out, len_out); // handle last out byte if not completed
 
     // compression didn't reduce payload len
     if (*len_out >= len) return 0;
@@ -959,23 +1005,26 @@ CHECKRANGE(*len_out,256);
 }
 
 
+//-------------------------------------------------------
 //-- decompression
 
 typedef enum {
-    MAVLINKX_CODE_0 = 0,
-    MAVLINKX_CODE_255,
-    MAVLINKX_CODE_0_RLE,
-    MAVLINKX_CODE_255_RLE,
-    MAVLINKX_CODE_1_64,
-    MAVLINKX_CODE_191_254,
-    MAVLINKX_CODE_65_190,
-    MAVLINKX_CODE_UNDEFINED,
+    MAVLINKX_CODE_0 = 0,      // 000
+    MAVLINKX_CODE_255,        // 0010
+    MAVLINKX_CODE_0_RLE,      // 00110  + 8 bits
+    MAVLINKX_CODE_255_RLE,    // 00111  + 8 bits
+    MAVLINKX_CODE_1_64,       // 10     + 6 bits
+    MAVLINKX_CODE_191_254,    // 11     + 6 bits
+    MAVLINKX_CODE_65_190,     // 01     + 7 bits
+    MAVLINKX_CODE_UNDEFINED,  // ????  111, 1111, 11111  used as EOF
 } fmavx_code_e;
 
 
 // TODO: shouldn't be global
 uint8_t fmavx_in_buf[300];
 
+
+#ifndef MAVLINKX_DECODE_BITBUFFER_ENABLE
 
 uint8_t _fmavX_decode_get_bits(uint8_t* const code, uint16_t len, uint8_t bits_len)
 {
@@ -1000,6 +1049,35 @@ CHECKRANGE(fmavx_status.in_pos,258);
     return 1;
 }
 
+#else
+
+// It terminates differently: it returns 0 if there is not enough bits to read WITHOUT having digested
+// these bits into code. It thus only does the same as the previous version if code is not used when it
+// terminates, but that's what we are doing.
+
+uint8_t _fmavX_decode_get_bits(uint8_t* const code, uint16_t len, uint8_t bits_len)
+{
+    while (fmavx_status.bit_cnt < bits_len) { // not enough bits in buffer
+        if (fmavx_status.in_pos >= len) { // reached end in fact
+            return 0;
+        }
+
+CHECKRANGE(fmavx_status.in_pos,258);
+
+        fmavx_status.bit_buf = (fmavx_status.bit_buf << 8) | fmavx_in_buf[fmavx_status.in_pos++]; // shift and fill in next byte
+        fmavx_status.bit_cnt += 8;
+    }
+
+    uint32_t mask = ((uint32_t)1 << bits_len) - 1; // nice trick to get e.g. 0b00111111 for bits_len = 6
+    *code = (fmavx_status.bit_buf >> (fmavx_status.bit_cnt - bits_len)) & mask;
+    fmavx_status.bit_cnt -= bits_len;
+    //fmavx_status.bit_buf &= (1 << fmavx_status.bit_cnt) - 1; // this not really needed since unused bits are never looked at
+
+    return 1;
+}
+
+#endif // MAVLINKX_DECODE_BITBUFFER_ENABLE
+
 
 void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_out, uint16_t len)
 {
@@ -1009,6 +1087,8 @@ void _fmavX_payload_decompress(uint8_t* const payload_out, uint16_t* const len_o
 
     fmavx_status.in_pos = 0;
     fmavx_status.in_bit = 0x80;
+    fmavx_status.bit_buf = 0;
+    fmavx_status.bit_cnt = 0;
 
 CHECKRANGE(len,258);
 
@@ -1060,17 +1140,15 @@ CHECKRANGE(*len_out,256);
                 break;
             case MAVLINKX_CODE_0_RLE:
                 if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
-                for (uint16_t i = 0; i < c; i++) {
-CHECKRANGE(*len_out,256);
-                    payload_out[(*len_out)++] = 0;
-                }
+CHECKRANGE(*len_out+c,256);
+                memset(&payload_out[*len_out], 0, c);
+                *len_out += c;
                 break;
             case MAVLINKX_CODE_255_RLE:
                 if (!_fmavX_decode_get_bits(&c, len, 8)) return; // end
-                for (uint16_t i = 0; i < c; i++) {
-CHECKRANGE(*len_out,256);
-                    payload_out[(*len_out)++] = 0xFF;
-                }
+CHECKRANGE(*len_out+c,256);
+                memset(&payload_out[*len_out], 0xFF, c);
+                *len_out += c;
                 break;
             case MAVLINKX_CODE_1_64:
                  if (!_fmavX_decode_get_bits(&c, len, 6)) return; // end

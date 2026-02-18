@@ -12,8 +12,10 @@
 
 
 #include "frame_types.h"
+#include "hal/hal.h"
 
 
+extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
@@ -50,6 +52,8 @@ void _pack_txframe_w_type(
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
     frame->status.broadcast = frame_stats->broadcast;
+    frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
+    frame->status.fhss_index = frame_stats->tx_fhss_index;
     if (frame->status.broadcast)
     {
     	frame->status.sys_id = 0x00;
@@ -197,6 +201,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
     rx_params->SendRcChannels = Setup.Rx.SendRcChannels;
     // deprecated rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
     rx_params->PowerSwitchChannel = Setup.Rx.PowerSwitchChannel;
+    rx_params->MavlinkSystemID = Setup.Rx.MavlinkSystemID;
 
     for (uint8_t i = 0; i < 12; i++) {
         rx_params->FailsafeOutChannelValues_Ch1_Ch12[i] = Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -225,6 +230,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
     Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
     // deprecated Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
     Setup.Rx.PowerSwitchChannel = rx_params->PowerSwitchChannel;
+    Setup.Rx.MavlinkSystemID = rx_params->MavlinkSystemID;
 
     for (uint8_t i = 0; i < 12; i++) {
         Setup.Rx.FailsafeOutChannelValues_Ch1_Ch12[i] = rx_params->FailsafeOutChannelValues_Ch1_Ch12[i];
@@ -269,7 +275,7 @@ void unpack_rxcmdframe_rxsetupdata(tRxFrame* const frame)
 
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
-    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 44);
+    power_optstr_from_power_list(SetupMetaData.Rx_Power_optstr, power_list, 8, 67);
 }
 
 
@@ -335,6 +341,35 @@ void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 }
 
 #endif
+
+
+//-------------------------------------------------------
+// Helper
+//-------------------------------------------------------
+
+// Numerical Recipe's quick generator randq1()
+uint32_t nr_randq1(void)
+{
+    static uint32_t seed = 0;
+    seed = 1664525UL * seed + 1013904223UL;
+    return seed;
+}
+
+
+uint8_t fhss_band_next(void)
+{
+    static uint8_t fhss_band = 0;
+    static uint8_t fhss_band_last = 0;
+
+    if (fhss_band == fhss_band_last) { // we had it two times, so toggle
+        fhss_band++;
+    } else { // toggle with 50% probability
+        fhss_band_last = fhss_band;
+        if (nr_randq1() < UINT32_MAX/2) fhss_band++;
+    }
+
+    return fhss_band & 0x01;
+}
 
 
 #endif // FRAMES_H

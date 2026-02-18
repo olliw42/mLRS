@@ -63,6 +63,14 @@ void tStats::Clear(void) // called then not connected
 
     frame_cnt.Clear();
     transmit_seq_no = 0;
+
+    just_connected_cnt = 0;
+}
+
+
+void tStats::JustConnected(void) // called upon first connection
+{
+    just_connected_cnt = 2;
 }
 
 
@@ -82,6 +90,7 @@ void tStats::Update1Hz(void)
     mav_packets_received.Update1Hz();
 #endif
 
+    if (just_connected_cnt) just_connected_cnt--;
 }
 
 
@@ -169,10 +178,24 @@ uint8_t tStats::GetLQ_serial(void)
 {
     if (!connected()) return 0;
 
+#ifdef DEVICE_IS_TRANSMITTER
+    if (just_connected_cnt) return 100; // when just connected, report back 100% for two secs
+#endif
+
     uint8_t LQser = serial_data_received.GetLQ();
     if (LQser == 0) return 1;
     return LQser;
 }
+
+
+#ifdef DEVICE_IS_TRANSMITTER
+uint8_t tStats::GetReceivedLQ_rc(void)
+{
+    if (just_connected_cnt) return 100; // when just connected, report back 100% for two secs
+
+    return received_LQ_rc;
+}
+#endif
 
 
 void tStats::doMavlinkCnt(bool valid)

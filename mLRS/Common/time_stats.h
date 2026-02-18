@@ -5,6 +5,7 @@
 //*******************************************************
 // Time statistics, primarily for dev-ing
 //*******************************************************
+// Time statistics for up to PM_NUM_BLOCK pairs of measurement points.
 // The routines for one block can be used either in ISR or normal context, but not in both.
 //*******************************************************
 #ifndef TIME_STATS_H
@@ -15,8 +16,8 @@
 extern uint16_t micros16(void);
 
 
-// time statistics for up to PM_NUM_BLOCK pairs of measurement points
-#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED // only if DEBUG is enabled
+
 
 #define TS_NUM_BLOCK  10
 
@@ -34,15 +35,13 @@ typedef struct {
 static tTsStore ts_data[TS_NUM_BLOCK] = {};
 
 
+uint32_t TS_MICROS32(uint8_t block)
+{
 #if defined ESP8266 || defined ESP32
-uint32_t TS_MICROS32(uint8_t block)
-{
-    return micros(); // Allows longer interval between calls
-}
+    return micros(); // allows longer interval between calls
 #else
-uint32_t TS_MICROS32(uint8_t block)
-{
     // separate overflow and last_cnt for each block
+    // needs to be called not later than every 65 ms
     // avoids some race conditions and allows either ISR/normal use; but not both with the same block
     uint16_t cnt = micros16();
     if (cnt < ts_data[block].last_cnt) {
@@ -50,8 +49,9 @@ uint32_t TS_MICROS32(uint8_t block)
     }
     ts_data[block].last_cnt = cnt;
     return ts_data[block].overflow_cnt + cnt;
-}
 #endif
+}
+
 
 void TS_START(uint8_t block)
 {
@@ -64,14 +64,14 @@ void TS_END(uint8_t block, uint32_t report_period_ms = 10000, bool _continue = f
     if (!_continue && ts_data[block].tstart_us == 0) return; // no end without start
 
     uint32_t tnow_us = TS_MICROS32(block);
-    uint32_t elapsed = tnow_us - ts_data[block].tstart_us;
+    uint32_t telapsed_us = tnow_us - ts_data[block].tstart_us;
 
     if (ts_data[block].count == 0) {
-        ts_data[block].total = ts_data[block].max = ts_data[block].min = elapsed;
+        ts_data[block].total = ts_data[block].max = ts_data[block].min = telapsed_us;
     } else {
-        ts_data[block].total += elapsed;
-        if (elapsed < ts_data[block].min) ts_data[block].min = elapsed;
-        if (elapsed > ts_data[block].max) ts_data[block].max = elapsed;
+        ts_data[block].total += telapsed_us;
+        if (telapsed_us < ts_data[block].min) ts_data[block].min = telapsed_us;
+        if (telapsed_us > ts_data[block].max) ts_data[block].max = telapsed_us;
     }
 
     ts_data[block].count ++;
@@ -98,6 +98,7 @@ void TS_END(uint8_t block, uint32_t report_period_ms = 10000, bool _continue = f
         ts_data[block].tstart_us = 0; // no end without start
     }
 }
+
 
 #endif // DEBUG_ENABLED
 

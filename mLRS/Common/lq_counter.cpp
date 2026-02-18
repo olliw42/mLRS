@@ -30,7 +30,7 @@ void tStatsCount::Init(uint16_t _frame_rate_hz)
 
 void tStatsLQ::Update1Hz(void)
 {
-    // the period is Config.frame_rate_ms * Config.frame_rate_hz, and may not be exactly 1000
+    // the period is Config.frame_rate_ms * Config.frame_rate_hz, and may not be exactly 1000 ms
 
     counts_per_sec = count - count_last;
     LQ = (counts_per_sec * 100) / frame_rate_hz;

@@ -30,15 +30,16 @@ class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate) {}
-    uint8_t Task(void) { return TX_TASK_NONE; }
 
     void EnterPassthrough(void) {}
+    void GetPin(void) {}
     void SetPin(uint16_t pin) {}
 };
 
 #else
 
 extern volatile uint32_t millis32(void);
+extern tLEDs leds;
 extern tTxDisp disp;
 
 
@@ -46,9 +47,9 @@ class tTxHc04Bridge
 {
   public:
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
-    uint8_t Task(void);
 
     void EnterPassthrough(void);
+    void GetPin(void);
     void SetPin(uint16_t pin);
 
   private:
@@ -61,8 +62,6 @@ class tTxHc04Bridge
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
-
-    uint8_t task_pending;
 };
 
 
@@ -72,17 +71,7 @@ void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serial
     ser = _serialport;
     ser_baud = _serial_baudrate;
 
-    task_pending = TX_TASK_NONE;
-
     run_autoconfigure();
-}
-
-
-uint8_t tTxHc04Bridge::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = TX_TASK_NONE;
-    return task;
 }
 
 
@@ -92,6 +81,22 @@ void tTxHc04Bridge::EnterPassthrough(void)
     if (com == nullptr || ser == nullptr) return; // we need both for passthrough
 
     passthrough_do();
+}
+
+
+void tTxHc04Bridge::GetPin(void)
+{
+uint8_t s[34];
+uint8_t len;
+char cmd_str[16];
+
+    strcpy(cmd_str, "AT+PIN=?");
+    com->puts( "  ");com->puts(cmd_str);com->puts("->");
+    if (hc04_read(cmd_str, s, &len)) {
+      s[len-2] = '\0';
+      com->puts((char*)s);
+    } else com->puts("get pin failed");
+    com->puts(CLI_LINEND);
 }
 
 
@@ -109,10 +114,13 @@ uint8_t len;
     char cmd_str[16];
     strcpy(cmd_str, "AT+PIN=");
     strcat(cmd_str, pin_str);
+    com->puts( "  ");com->puts(cmd_str);com->puts("->");
 
     if (hc04_read(cmd_str, s, &len)) {
         delay_ms(1500);
-    }
+        s[len-2] = '\0';
+        com->puts((char*)s);
+    } else com->puts("set pin failed");
 }
 
 
@@ -235,6 +243,9 @@ uint8_t len;
     strcpy(ok_device_name, "OK+NAME=Matek-mLRS-");
     strcat(ok_device_name, u16toBCD_s(device_id));
     strcat(ok_device_name, "-BT");
+
+    info.wireless.device_id = device_id;
+    strcpy(info.wireless.device_name, ok_device_name + 8); // strip off "OK+NAME="
 
     for (uint8_t baud_idx = 0; baud_idx < 7; baud_idx++) {
         ser->SetBaudRate(bauds[baud_idx]);
