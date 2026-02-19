@@ -24,6 +24,9 @@ extern bool connected(void);
 extern tStats stats;
 extern tSetup Setup;
 
+#define REBOOT_SHUTDOWN_ACTION_REBOOT_TO_BOOTLOADER 3 /* we added this definition to avoid compilation error, */
+                                                      /* as we do not have proper mavlink code generated, */
+                                                      /* as we prefer to not use it at the moment, google AI told that it should be 3*/
 
 //-------------------------------------------------------
 // RxMavlink class
