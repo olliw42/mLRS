@@ -130,17 +130,17 @@
 #define MODE_FSK_50HZ_SEND_FRAME_TMO_MS       10 // just needs to be larger than toa, not critical
 
 
-#define FHSS_NUM_BAND_433_MHZ                 2 // 2 since 1 is needed for bind
-#define FHSS_NUM_BAND_70_CM_HAM_19HZ_MODE     12 // to match 2.4 GHz at 19 Hz
-#define FHSS_NUM_BAND_70_CM_HAM               18 // to match 2.4 GHz at 31 Hz
-#define FHSS_NUM_BAND_868_MHZ                 6 // it's a very narrow band
-#define FHSS_NUM_BAND_915_MHZ_FCC             25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
-#define FHSS_NUM_BAND_866_MHZ_IN              3 // 3 since 1 is needed for bind
-#define FHSS_NUM_BAND_2P4_GHZ_19HZ_MODE       12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
-#define FHSS_NUM_BAND_2P4_GHZ_31HZ_MODE       18
-#define FHSS_NUM_BAND_2P4_GHZ                 12 // 24
+#define FHSS_NUM_433_MHZ                2  // 2 since 1 is needed for bind
+#define FHSS_NUM_70_CM_HAM              18 // to match 2.4 GHz at 31 Hz
+#define FHSS_NUM_70_CM_HAM_19HZ         12 // to match 2.4 GHz at 19 Hz
+#define FHSS_NUM_868_MHZ                6  // it's a very narrow band
+#define FHSS_NUM_915_MHZ_FCC            25 // https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-C/subject-group-ECFR2f2e5828339709e/section-15.247#p-15.247(a)(1)(i)
+#define FHSS_NUM_866_MHZ_IN             3  // 3 since 1 is needed for bind
+#define FHSS_NUM_2P4_GHZ                12
+#define FHSS_NUM_2P4_GHZ_31HZ           18
+#define FHSS_NUM_2P4_GHZ_19HZ           12 // was 24, but a cycle takes then 1.3 sec! would need long disconnect
 
-#define FRAME_TX_RX_LEN                 72 // we currently only support equal len
+#define FRAME_TX_RX_LEN                 73 // we currently only support equal len
 
 #define CONNECT_TMO_MS                  1250 // 1250 time to disconnect, was 500, then 750 to better handle 19 Hz mode, now 1250
 

@@ -55,21 +55,31 @@ typedef struct
     uint32_t seq_no : 3;
     uint32_t frame_type : 4;
     uint32_t broadcast : 1;
-    uint32_t sys_id;
-    uint32_t show_group;
+    uint32_t sys_id:8;
+    uint32_t show_group:8;
     uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
     uint32_t fhss_index : 6; // older versions have set that field to 63
-    uint32_t spare1 : 1;
-    uint8_t spare2 : 1;
-    uint8_t payload_len : 7;
-}) tFrameStatus; // 5 bytes
+    uint32_t spare : 2;
+    uint32_t payload_len : 7;
+}) tTxFrameStatus; // 5 bytes
 
+PACKED(
+typedef struct
+{
+    uint32_t seq_no : 3;
+    uint32_t frame_type : 4;
+    uint32_t broadcast : 1;
+    uint32_t sys_id:8;
+    uint32_t show_group:8;
+    uint32_t spare : 9;
+    uint32_t payload_len : 7;
+}) tRxFrameStatus; // 5 bytes
 
 PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tTxFrameStatus status; // 5 bytes
     uint8_t payload[FRAME_TX_PAYLOAD_LEN]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
 }) tTxFrame; // 73 bytes
@@ -81,7 +91,7 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tRxFrameStatus status; // 5 bytes
     uint8_t payload[FRAME_RX_PAYLOAD_LEN]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
 }) tRxFrame; // 73 bytes

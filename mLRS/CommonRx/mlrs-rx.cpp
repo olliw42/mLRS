@@ -256,7 +256,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         break;
     case FRAME_CMD_STORE_RX_PARAMS:
         // got request to store rx params
-        //doParamsStore = true;
+        doParamsStore = true;
         break;
     case FRAME_CMD_GET_RX_SETUPDATA_WRELOAD:
         setup_reload();
@@ -776,7 +776,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
             if (fhss.HopToNextBind()) {
-                bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
+                //bind.HopToNextBind(fhss.GetCurrBindSetupFrequencyBand());
                 link_state = LINK_STATE_RECEIVE; // switch back to RX
             }
         }

@@ -301,7 +301,7 @@ void tRxMsp::parse_serial_in_link_out(void)
                         // handle MSP2_RX_BIND, only if MSP V2
                         // this is a really a request from the FC but sent as a response
                         // payload is ignored
-                        bind.StartBind();
+                        //bind.StartBind();
                         send = false; // don't forward to ground
                     }
                 }

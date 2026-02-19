@@ -249,10 +249,10 @@ void setup_configure_metadata(void)
 
 // override default setup setting from common_conf.h
 // enable rc channels for single serial receivers
-//#if !defined DEVICE_HAS_OUT
-  //#undef SETUP_RX_SEND_RC_CHANNELS
-  //#define SETUP_RX_SEND_RC_CHANNELS  SEND_RC_CHANNELS_RADIORCCHANNELS
-//#endif
+#if !defined DEVICE_HAS_OUT
+  #undef SETUP_RX_SEND_RC_CHANNELS
+  #define SETUP_RX_SEND_RC_CHANNELS  SEND_RC_CHANNELS_RADIORCCHANNELS
+#endif
 
 
 void inc_bindphrase_char(char* const s, uint8_t pos)
