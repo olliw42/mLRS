@@ -11,12 +11,27 @@
 #pragma once
 
 
-#define DBG_DC(x) x // only temporary
+#define DBG_DC(x)
 
 
 #include "dronecan_interface_rx_types.h"
 
 #ifdef DEVICE_HAS_DRONECAN
+#ifdef STM32G4
+  // check that we have 160 MHz SYSCLK,PCLK1 and 80 MHz PLLQ
+  // for the reasons see comment in stdstm32-can.h
+  #include "main.h"
+  #if !defined PLL_PLLN && !defined PLL_PLLQ
+    // let's assume it is usual 170 MHz clocks configuration
+    #define CAN_USE_FDCAN_CLOCK_PCLK1
+    //#warning FDCAN uses clock PCLK1 !
+    #error SystemClock_Config() settings are incorrect for FDCAN ! // un-comment if this should be an error
+  #elif (PLL_PLLN == 80) && (PLL_PLLQ == RCC_PLLQ_DIV4)
+    #define CAN_USE_FDCAN_CLOCK_PLL
+  #else
+    #error SystemClock_Config() settings are incorrect for FDCAN !
+  #endif
+#endif
 
 #include "../Common/hal/hal.h"
 #include "../Common/thirdparty/stdstm32-can.h"
@@ -42,12 +57,16 @@ extern tGlobalConfig Config;
 //#define DRONECAN_PREFERRED_NODE_ID  68
 #define DRONECAN_PREFERRED_NODE_ID  RX_DRONECAN_PREFERRED_NODE_ID // moved to common_conf.h
 
+#ifdef STM32G4
 #define CANARD_POOL_SIZE  4096
+#elif defined STM32F1
+#define CANARD_POOL_SIZE  1024
+#endif
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
 
 CanardInstance canard;
-uint8_t canard_memory_pool[CANARD_POOL_SIZE]; // doing this static leads to crash in full mLRS code !?
+uint8_t canard_memory_pool[CANARD_POOL_SIZE];
 
 
 void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
@@ -58,7 +77,7 @@ void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
 }
 
 
-// that's the same as used in fhss lib, is Microsoft Visual/Quick C/C++'s
+// this is the same as used in fhss lib, is Microsoft Visual/Quick C/C++'s
 uint16_t dronecan_prng(void)
 {
 static uint32_t _seed = 1234;
@@ -71,7 +90,7 @@ const uint32_t m = 2147483648;
 }
 
 
-// receive one frame, only called from isr context
+// receive one frame, called in Do() (non-isr context)
 void dronecan_receive_frames(void)
 {
 CanardCANFrame frame;
@@ -83,12 +102,12 @@ CanardCANFrame frame;
         }
         if (res <= 0) break; // no receive or error
         res = canardHandleRxFrame(&canard, &frame, micros64()); // 0: ok, <0: error
-        return; // only do one
+        return; // only do one frame
     }
 }
 
 
-// transmits all frames from the TX queue, for calling from non-isr context
+// transmits all frames from the TX queue, called in Do() (non-isr context)
 void dronecan_process_tx_queue(void)
 {
 const CanardCANFrame* frame;
@@ -100,12 +119,12 @@ const CanardCANFrame* frame;
         if (res != 0) { // successfully submitted or error, so drop the frame
             canardPopTxQueue(&canard);
         }
-        return; // only do one
+        return; // only do one frame
     }
 }
 
 
-// DroneCAN/Libcanard call back, forward declaration
+// DroneCAN/Libcanard callback, forward declaration
 bool dronecan_should_accept_transfer(
     const CanardInstance* const ins,
     uint64_t* const out_data_type_signature,
@@ -114,7 +133,7 @@ bool dronecan_should_accept_transfer(
     uint8_t source_node_id);
 
 
-// DroneCAN/Libcanard call back, forward declaration
+// DroneCAN/Libcanard callback, forward declaration
 void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* const transfer);
 
 
@@ -143,12 +162,7 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     fifo_ser_to_fc.Flush();
     flex_debug.transfer_id = 0;
 
-    tunnel_targetted_fc_to_ser_rate = 0;
-    tunnel_targetted_ser_to_fc_rate = 0;
-    tunnel_targetted_handle_rate = 0;
-    tunnel_targetted_send_rate = 0;
-    fifo_fc_to_ser_tx_full_error_cnt = 0;
-    tunnel_targetted_error_cnt = 0;
+    tunnel_targetted_stats.Init();
 
     ser_over_can_enabled = ser_over_can_enable_flag;
 
@@ -194,7 +208,7 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 
 void tRxDroneCan::Start(void)
 {
-    // Hum?? it somehow does not work to call dc_hal_enable_isr() here ??
+    // hum?? it somehow does not work to call dc_hal_enable_isr() here ??
     dc_hal_rx_flush();
     DBG_DC(dbg.puts("\nCAN started");)
 }
@@ -256,7 +270,7 @@ uint8_t filter_num = 0;
 }
 
 
-// This function is called at 1 ms rate from the main loop
+// this function is called at 1 ms rate from the main loop
 void tRxDroneCan::Tick_ms(void)
 {
     uint64_t tnow_us = micros64(); // call it every ms to ensure it is updated
@@ -297,17 +311,7 @@ void tRxDroneCan::Tick_ms(void)
         // emit node status message
         send_node_status();
 
-DBG_DC(dbg.puts("\n fc->ser:   ");dbg.puts(u16toBCD_s(tunnel_targetted_fc_to_ser_rate));
-DBG_DC(dbg.puts(" h: "));dbg.puts(u16toBCD_s(tunnel_targetted_handle_rate));
-dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_ser_to_fc_rate));
-DBG_DC(dbg.puts(" s: "));dbg.puts(u16toBCD_s(tunnel_targetted_send_rate));
-tunnel_targetted_fc_to_ser_rate = 0;
-tunnel_targetted_ser_to_fc_rate = 0;
-tunnel_targetted_handle_rate = 0;
-tunnel_targetted_send_rate = 0;
-dbg.puts("\n   err tx_fifo, tt: ");dbg.puts(u16toBCD_s(fifo_fc_to_ser_tx_full_error_cnt));
-dbg.puts(" ,  ");dbg.puts(u16toBCD_s(tunnel_targetted_error_cnt));
-dbg.puts("\n        err dc sum: ");dbg.puts(u16toBCD_s(dc_hal_get_stats().error_sum_count));)
+        print_debug_tick();
     }
 }
 
@@ -316,6 +320,24 @@ void tRxDroneCan::Do(void)
 {
     dronecan_receive_frames();
     dronecan_process_tx_queue();
+}
+
+
+void tRxDroneCan::print_debug_tick(void)
+{
+DBG_DC(
+    dbg.puts("\n fc->ser:   ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_rate));dbg.puts(" B/s");
+    dbg.puts(" h: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.handle_rate));
+    dbg.puts("\n ser->fc:   ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.ser_to_fc_rate));dbg.puts(" B/s");
+    dbg.puts(" s: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.send_rate));
+    dbg.puts("\n   err: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.error_cnt));
+    dbg.puts(" err tx_fifo: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt));
+    tunnel_targetted_stats.Init();
+    tDcHalStatistics dc_stats = dc_hal_get_stats();
+    dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
+    dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
+    dbg.puts(" rec: ");dbg.puts(utoBCD_s(dc_stats.rec_count));
+)
 }
 
 
@@ -353,22 +375,14 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     // this message's quality is used by ArduPilot for setting rssi (not LQ)
     // it goes from 0 ... 255
     // so we use the same conversion as in e.g. RADIO_STATUS, so that ArduPilot shows us (nearly) the same value
-
-#define DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_TYPE  28 // 4+8+16
-
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI  0
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ_ACTIVE_ANTENNA  4
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_RSSI_DBM  8
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR  12
-#define DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER  16
-
+    // 6.Feb.2026: message has changed to allow more stats in round-robin
     _p.rc_input.quality = 0;
     if (connected()) {
-        if (mavlink.autopilot.HasDroneCanExtendedRcStats()) {
+        if (mavlink.autopilot.HasDroneCanExtendedRcStats()) {  // 7.Feb.2026: not yet in AP 4.7, but DSDL is, so let's do it
             // send LQ, RSSI_DBM, SNR round robin
             static uint8_t slot = UINT8_MAX;
             INCc(slot, 3);
-            if (slot == 1) { // LQ
+            if (slot == 1) { // LQ and active antenna
                 _p.rc_input.quality = stats.GetLQ_rc();
                 if (stats.last_antenna == ANTENNA_2) _p.rc_input.quality |= 0x80;
                 _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_LQ_ACTIVE_ANTENNA;
@@ -378,13 +392,13 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
                 static uint32_t tlast_ms = 0;
                 uint32_t tnow_ms = millis32();
                 int8_t power_dbm = sx.RfPower_dbm();
-                if ((tnow_ms - tlast_ms > 2500) || (power_dbm != power_dbm_last)) {
+                if ((tnow_ms - tlast_ms > 2500) || (power_dbm != power_dbm_last)) { // tx power every 2.5 sec or when changed
                     tlast_ms = tnow_ms;
                     power_dbm_last = power_dbm;
                     _p.rc_input.quality = dronecan_cvt_power(power_dbm);
                     _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_TX_POWER;
                 } else {
-                    _p.rc_input.quality = 128 + stats.GetLastSnr();
+                    _p.rc_input.quality = 128 + stats.GetLastSnr(); // that's the way to handle +- values
                     _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_QUALITY_TYPE_SNR;
                 }
             } else { // slot 0: RSSI_DBM
@@ -418,11 +432,11 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         len);
 
 #if 0
-    _p.flex_debug.id = 110; // we just grab it, PR is pending
+    _p.flex_debug.id = DRONECAN_PROTOCOL_FLEXDEBUG_MLRS_RESERVE_START; // we 8mLRS) got this officially
     memset(_p.flex_debug.u8.data, 0, 255);
 
     static uint8_t cnt = 0;
-    _p.flex_debug.u8.data[0] = cnt++;
+    _p.flex_debug.u8.data[0] = cnt++; // currently just something to test
     _p.flex_debug.u8.len = 1;
 
     len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf);
@@ -446,7 +460,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 void tRxDroneCan::putbuf(uint8_t* const buf, uint16_t len)
 {
     fifo_ser_to_fc.PutBuf(buf, len);
-    tunnel_targetted_ser_to_fc_rate += len;
+    tunnel_targetted_stats.ser_to_fc_rate += len;
 }
 
 
@@ -458,7 +472,7 @@ bool tRxDroneCan::available(void)
 
 uint8_t tRxDroneCan::getc(void)
 {
-    tunnel_targetted_fc_to_ser_rate++;
+    tunnel_targetted_stats.fc_to_ser_rate++;
     return fifo_fc_to_ser.Get();
 }
 
@@ -656,17 +670,17 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer)
 {
     if (!dronecan.id_is_allcoated()) { // this should never happen, but play it safe
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
     if (uavcan_tunnel_Targetted_decode(transfer, &_p.tunnel_targetted)) { // something is wrong here
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
     if (transfer->source_node_id == 0) { // this should never happen, but play it safe
-        tunnel_targetted_error_cnt++;
+        tunnel_targetted_stats.error_cnt++;
         return;
     }
 
@@ -684,16 +698,16 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
         // ArduPilot <= v4.5.x doesn't set protocol correctly, so we cannot generally check
         // -> we check only when it is set
-        // when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
+        // TODO: when v4.6 is out, we could require users having to use v4.6, by mandating also correct protocol
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED &&
             _p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_MAVLINK2) {
-            tunnel_targetted_error_cnt++;
+            tunnel_targetted_stats.error_cnt++;
             return;
         }
     } else
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
         if (_p.tunnel_targetted.protocol.protocol != UAVCAN_TUNNEL_PROTOCOL_UNDEFINED) {
-            tunnel_targetted_error_cnt++;
+            tunnel_targetted_stats.error_cnt++;
             return;
         }
     }
@@ -701,20 +715,20 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     // memorize the node_id of the sender, this is most likely our fc (hopefully true)
     // just always respond to whoever sends to us
     if (tunnel_targetted.server_node_id && tunnel_targetted.server_node_id != transfer->source_node_id) {
-        tunnel_targetted_error_cnt++; // not actually an error, we count it here for testing
+        tunnel_targetted_stats.error_cnt++; // not actually an error, we count it here for testing
     }
     tunnel_targetted.server_node_id = transfer->source_node_id;
 
     if (_p.tunnel_targetted.buffer.len == 0) return; // a short cut
 
     if (fifo_fc_to_ser.IsFull() || !fifo_fc_to_ser.HasSpace(_p.tunnel_targetted.buffer.len)) {
-        fifo_fc_to_ser_tx_full_error_cnt++;
+        tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt++;
         return; // don't try to put into fifo
     }
 
     fifo_fc_to_ser.PutBuf(_p.tunnel_targetted.buffer.data, _p.tunnel_targetted.buffer.len);
 
-    tunnel_targetted_handle_rate += _p.tunnel_targetted.buffer.len;
+    tunnel_targetted_stats.handle_rate += _p.tunnel_targetted.buffer.len;
 }
 
 
@@ -732,7 +746,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
     _p.tunnel_targetted.baudrate = Config.SerialBaudrate; // this is ignored by ArduPilot (as it should)
 
     uint16_t data_len = fifo_ser_to_fc.Available();
-    _p.tunnel_targetted.buffer.len = (data_len < 120) ? data_len : 120;
+    if (data_len > 120) data_len = 120;  // tunnel_targetted.buffer.data is 120 bytes max
+    _p.tunnel_targetted.buffer.len = data_len;
     for (uint8_t n = 0; n < data_len; n++) _p.tunnel_targetted.buffer.data[n] = fifo_ser_to_fc.Get();
 
     uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf);
@@ -746,7 +761,7 @@ void tRxDroneCan::send_tunnel_targetted(void)
         _buf,
         len);
 
-    tunnel_targetted_send_rate += _p.tunnel_targetted.buffer.len;
+    tunnel_targetted_stats.send_rate += _p.tunnel_targetted.buffer.len;
 }
 
 

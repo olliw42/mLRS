@@ -282,8 +282,9 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         ClearIrqStatus(SX126X_IRQ_ALL);
         SetRx(tmo_ms * 64); // 0 = no timeout
     }
@@ -502,10 +503,10 @@ class Sx126xDriver : public Sx126xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };
@@ -635,10 +636,10 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx126xDriverCommon::SetToRx(tmo_ms);
+        Sx126xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };

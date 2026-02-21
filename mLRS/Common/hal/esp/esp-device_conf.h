@@ -11,7 +11,7 @@
 // ESP Boards
 //-------------------------------------------------------
 
-//-- ELRS 868/915 MHz Generic Devices
+//-- ELRS 868/915 MHz Generic Devices (SX127x)
 
 #ifdef RX_ELRS_GENERIC_900_ESP8285
   #define DEVICE_NAME "GENERIC 900"
@@ -37,24 +37,6 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_ELRS_GENERIC_LR1121_TD_ESP32
-  #define DEVICE_NAME "GENERIC LR1121 TD"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_LR11xx
-  #define FREQUENCY_BAND_2P4_GHZ
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
-#ifdef RX_ELRS_GENERIC_C3_LR1121_ESP32C3
-  #define DEVICE_NAME "GENERIC C3 LR1121"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_LR11xx
-  #define FREQUENCY_BAND_2P4_GHZ
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
 //-- Generic 868/915 MHz ELRS devices with overlays or other variations
 
 #ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
@@ -73,8 +55,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-
-//-- ELRS 2.4 GHz Generic Devices
+//-- ELRS 2.4 GHz Generic Devices (SX128x)
 
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
   #define DEVICE_NAME "GENERIC 2400"
@@ -104,7 +85,7 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-//-- Generic 2.4 GHz ELRS boards with overlays or other variations
+//-- Generic 2.4 GHz ELRS devices with overlays or other variations
 
 #ifdef RX_ELRS_IFLIGHT_ELRS_TD_2400_ESP32
   #define DEVICE_NAME "IFLIGHT 2400 TD"
@@ -120,6 +101,25 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+//-- ELRS 2.4 GHz & 868/915 MHz Generic Devices (LR1121)
+
+#ifdef RX_ELRS_GENERIC_LR1121_TD_ESP32
+  #define DEVICE_NAME "GENERIC LR1121 TD"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_LR11xx
+  #define FREQUENCY_BAND_2P4_GHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_ELRS_GENERIC_C3_LR1121_ESP32C3
+  #define DEVICE_NAME "GENERIC C3 LR1121"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_LR11xx
+  #define FREQUENCY_BAND_2P4_GHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
 
 //-- ELRS Selected Receivers
 

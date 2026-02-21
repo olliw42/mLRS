@@ -869,8 +869,8 @@ INITCONTROLLER_END
         break; }
 
     case LINK_STATE_RECEIVE:
-        IF_ANTENNA1(sx.SetToRx(0));
-        IF_ANTENNA2(sx2.SetToRx(0));
+        IF_ANTENNA1(sx.SetToRx());
+        IF_ANTENNA2(sx2.SetToRx());
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
         irq_status = irq2_status = 0;
@@ -1259,10 +1259,15 @@ IF_IN(
     case MAIN_TASK_BIND_START: bind.StartBind(); break;
     case MAIN_TASK_BIND_STOP: bind.StopBind(); break;
     case MAIN_TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
     case TX_TASK_FLASH_ESP: esp.EnterFlash(); break;
     case TX_TASK_ESP_PASSTHROUGH: esp.EnterPassthrough(); break;
-    case TX_TASK_CLI_CHANGE_CONFIG_ID: config_id.Change(tasks.GetCliTaskValue()); break;
+    case TX_TASK_CLI_ESP_GET_PASSWORD: esp.GetPassword(); break;
+    case TX_TASK_CLI_ESP_SET_PASSWORD: esp.SetPassword(tasks.GetCliTaskStr()); break;
+    case TX_TASK_CLI_ESP_GET_NETWORK_SSID: esp.GetNetSsid(); break;
+    case TX_TASK_CLI_ESP_SET_NETWORK_SSID: esp.SetNetSsid(tasks.GetCliTaskStr()); break;
     case TX_TASK_HC04_PASSTHROUGH: hc04.EnterPassthrough(); break;
+    case TX_TASK_CLI_HC04_GETPIN: hc04.GetPin(); break;
     case TX_TASK_CLI_HC04_SETPIN: hc04.SetPin(tasks.GetCliTaskValue()); break;
     }
     if (tx_task == MAIN_TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }

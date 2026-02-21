@@ -55,7 +55,10 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-
+#ifdef MLRS_FEATURE_CAN
+  #define PLL_PLLN  80
+  #define PLL_PLLQ  RCC_PLLQ_DIV4
+#endif
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/

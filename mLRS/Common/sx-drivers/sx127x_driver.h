@@ -208,8 +208,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetTx();
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         WriteRegister(SX1276_REG_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
         if (tmo_ms == 0) { // 0 = no timeout
@@ -454,10 +455,10 @@ class Sx127xDriver : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };
@@ -597,10 +598,10 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         delay_us(125); // may not be needed if busy available
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
         sx2_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
+        Sx127xDriverCommon::SetToRx();
         delay_us(125); // may not be needed if busy available
     }
 };

@@ -32,6 +32,7 @@ class tTxHc04Bridge
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate) {}
 
     void EnterPassthrough(void) {}
+    void GetPin(void) {}
     void SetPin(uint16_t pin) {}
 };
 
@@ -48,6 +49,7 @@ class tTxHc04Bridge
     void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
 
     void EnterPassthrough(void);
+    void GetPin(void);
     void SetPin(uint16_t pin);
 
   private:
@@ -82,6 +84,22 @@ void tTxHc04Bridge::EnterPassthrough(void)
 }
 
 
+void tTxHc04Bridge::GetPin(void)
+{
+uint8_t s[34];
+uint8_t len;
+char cmd_str[16];
+
+    strcpy(cmd_str, "AT+PIN=?");
+    com->puts( "  ");com->puts(cmd_str);com->puts("->");
+    if (hc04_read(cmd_str, s, &len)) {
+      s[len-2] = '\0';
+      com->puts((char*)s);
+    } else com->puts("get pin failed");
+    com->puts(CLI_LINEND);
+}
+
+
 void tTxHc04Bridge::SetPin(uint16_t pin)
 {
 uint8_t s[34];
@@ -96,10 +114,13 @@ uint8_t len;
     char cmd_str[16];
     strcpy(cmd_str, "AT+PIN=");
     strcat(cmd_str, pin_str);
+    com->puts( "  ");com->puts(cmd_str);com->puts("->");
 
     if (hc04_read(cmd_str, s, &len)) {
         delay_ms(1500);
-    }
+        s[len-2] = '\0';
+        com->puts((char*)s);
+    } else com->puts("set pin failed");
 }
 
 
