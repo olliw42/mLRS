@@ -136,16 +136,7 @@ void i2c_init(void)
     i2c_async.busy = false;
     i2c_async.task_handle = NULL;
 
-    BaseType_t ret = xTaskCreatePinnedToCore(
-        i2c_task,
-        "I2C",
-        2048,
-        NULL,
-        1,
-        &i2c_async.task_handle,
-        0  // Core 0
-    );
-    configASSERT(ret == pdPASS);
+    xTaskCreatePinnedToCore(i2c_task, "I2C", 2048, NULL, 1, &i2c_async.task_handle, 0); // Core 0, Priority 1
 }
 
 
