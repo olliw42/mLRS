@@ -186,13 +186,13 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx Bridge WiFi Protocol : "TCP,UDP,BT,UDPSTA,BLE"
+    // Tx Bridge WiFi Protocol : "TCP,UDP,BT,UDPSTA,BLE,ESPNOW"
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
-    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b01011; // TCP, UDP, UDPSTA (no BT, no BLE)
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b101011; // TCP, UDP, UDPSTA, ESPNOW (no BT, no BLE)
 #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
-    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b11011; // all except BT (no classic BT on C3)
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b111011; // all except BT (no classic BT on C3)
 #else // ESP32
-    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b11111; // all protocols
+    SetupMetaData.Tx_WiFiProt_allowed_mask = 0b111111; // all protocols
 #endif
 
     //-- Rx:

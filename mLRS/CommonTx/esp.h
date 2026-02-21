@@ -560,6 +560,7 @@ uint8_t len;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
         case WIFI_PROTOCOL_UDPSTA: strcat(cmd_str, "2"); break;
         case WIFI_PROTOCOL_BLE: strcat(cmd_str, "5"); break;
+        case WIFI_PROTOCOL_ESPNOW: strcat(cmd_str, "6"); break;
         default:
             strcat(cmd_str, "1"); // should not happen
     }
