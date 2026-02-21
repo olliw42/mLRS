@@ -24,7 +24,6 @@
 #define ESP_RXCLOCK_H
 #pragma once
 
-#include <Arduino.h>
 
 #ifdef ESP32
 #include <esp_timer.h>
