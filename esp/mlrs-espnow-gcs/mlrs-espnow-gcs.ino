@@ -8,7 +8,7 @@
 // For use with ESP8266, ESP32, ESP32C3 and ESP32S3 modules.
 // To use USB on ESP32C3 and ESP32S3, 'USB CDC On Boot' must be enabled in Tools.
 //********************************************************
-// 20. Feb. 2026
+// 21. Feb. 2026
 //********************************************************
 
 #ifdef ESP8266
@@ -22,11 +22,6 @@
 
 
 #define BAUD_RATE           115200 // baudrate for serial connection to GCS
-
-// ESP-NOW Long Range (only for ESP32, ESP32-to-ESP32 only, not compatible with ESP8266)
-// uncomment to force ESP32 Long Range protocol only. Default is 802.11b only.
-// NOTE: MUST match the setting on the Bridge side!
-//#define USE_ESPNOW_LR
 
 //#define USE_SERIAL1                // uncomment to use Serial1 instead of USB Serial for ESP32C3 and ESP32S3
 //#define TX_PIN              43     // Serial1 TX pin
@@ -197,13 +192,8 @@ void setup_wifi(void)
     // set country to EU to enable channels 1-13 (default may restrict to 1-11)
     wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
     esp_wifi_set_country(&country);
-  #ifdef USE_ESPNOW_LR
-    // force LR only for maximum range (ESP32-to-ESP32 only)
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
-  #else
     // force 11b only for best reliability
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B);
-  #endif
 #endif
 
     esp_now_init();

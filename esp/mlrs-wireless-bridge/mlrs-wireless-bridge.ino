@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 20. Feb. 2026
+// 21. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -101,10 +101,6 @@ Troubleshooting:
 //     6 = ESP-NOW broadcast
 // Note: If GPIO0_IO is defined, then this only sets the default protocol
 #define WIRELESS_PROTOCOL  1
-
-// ESP-NOW Long Range (only for ESP32, ESP32-to-ESP32 only, not compatible with ESP8266)
-// uncomment to force ESP32 Long Range protocol only. Default is 802.11b only.
-//#define USE_ESPNOW_LR
 
 // GPIO0 usage
 // uncomment if your Tx module supports the RESET and GPIO0 lines on the ESP32/ESP82xx (aka AT mode)
@@ -1010,13 +1006,8 @@ class tESPNOWHandler : public tWifiHandler {
         wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
         esp_wifi_set_country(&country);
         esp_wifi_set_channel(g_wifichannel, WIFI_SECOND_CHAN_NONE);
-  #ifdef USE_ESPNOW_LR
-        // force LR only for maximum range (ESP32-to-ESP32 only)
-        esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
-  #else
         // force 11b only for best reliability
         esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B);
-  #endif
 #endif
 
         setup_wifipower();
