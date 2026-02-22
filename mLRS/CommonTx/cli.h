@@ -769,10 +769,11 @@ void tTxCli::print_help_do(void)
         case 17: putsn("  esppt           -> enter serial passthrough"); break;
         case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
   #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-        case 19: putsn("  esp get pswd          -> get password (TCP/UDP/UDPSTA)"); break;
-        case 20: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
-        case 21: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
-        case 22: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
+        case 19: putsn("  espname         -> get current name (TCP/UDP/UDPSTA/BT/BLE)"); break;
+        case 20: putsn("  esp get pswd          -> get current password (TCP/UDP/UDPSTA)"); break;
+        case 21: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
+        case 22: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
+        case 23: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
   #endif
 #elif defined USE_HC04_MODULE // let's assume that not both ESP and HC04 can be true
         case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
@@ -932,6 +933,14 @@ bool rx_param_changed;
             // enter esp flashing, can only be exited by re-powering
             tasks.SetCliTask(TX_TASK_FLASH_ESP);
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+        } else
+        if (is_cmd("espname")) {
+            char s[48];
+            if (info.WirelessDeviceName_cli(s)) {
+                puts("  ");putsn(s);
+            } else {
+                putsn("  unknown (restart tx module)");
+            }
         } else
         if (is_cmd("esp get pswd")) {
             tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
