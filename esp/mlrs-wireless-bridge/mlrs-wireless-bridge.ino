@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 12. Feb. 2026
+// 22. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -84,7 +84,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM ??
 //#define MODULE_GENERIC
-//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -186,7 +186,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 // Version
 //-------------------------------------------------------
 
-#define VERSION_STR  "v1.3.07" // to not get version salad, use what the current mLRS version is at the time
+#define VERSION_STR  "v1.3.09" // to not get version salad, use what the current mLRS version is at the time
 
 
 //-------------------------------------------------------
@@ -363,6 +363,7 @@ String g_network_ssid = "";
 
 uint16_t device_id = 0; // is going to be set by setup_device_name_and_password(), and can be queried in at mode
 String device_name = "";
+String device_name_STAUDP;
 String device_password = "";
 
 #ifdef USE_AT_MODE
@@ -372,7 +373,6 @@ Preferences preferences;
 AtMode at_mode;
 #endif
 
-bool wifi_initialized;
 bool led_state;
 unsigned long led_tlast_ms;
 bool is_connected;
@@ -468,24 +468,30 @@ void setup_ap_mode(IPAddress __ip)
 }
 
 
-void setup_sta_mode(bool config_ip, IPAddress ip)
+// true: has connected, false: not yet connected, retry
+bool setup_sta_mode_nonblocking(bool first, bool config_ip, IPAddress ip)
 {
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    if (config_ip) {
-        WiFi.config(ip, ip_gateway, netmask);
+    if (first) {
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect();
+        if (config_ip) {
+            WiFi.config(ip, ip_gateway, netmask);
+        }
+        WiFi.begin(device_name.c_str(), device_password.c_str());
     }
-    WiFi.begin(device_name.c_str(), device_password.c_str());
-
-    while (WiFi.status() != WL_CONNECTED) {
+/*    while (WiFi.status() != WL_CONNECTED) {
         led_on(true); delay(75); led_off(); delay(75);
         led_on(true); delay(75); led_off(); delay(75);
         led_on(true); delay(75); led_off(); delay(75);
         DBG_PRINTLN("connecting to WiFi network...");
+    } */
+    if (WiFi.status() == WL_CONNECTED) {
+        DBG_PRINTLN("connected");
+        DBG_PRINT("network ip address: ");
+        DBG_PRINTLN(WiFi.localIP());
+        return true;
     }
-    DBG_PRINTLN("connected");
-    DBG_PRINT("network ip address: ");
-    DBG_PRINTLN(WiFi.localIP());
+    return false;
 }
 
 
@@ -495,15 +501,18 @@ void setup_sta_mode(bool config_ip, IPAddress ip)
 
 //-------------------------------------------------------
 //-- Wifi Base class
+// note: g_ sould be already set up
 
 class tWifiHandler {
   public:
     IPAddress _ip;
     int _port;
     unsigned long serial_data_received_tfirst_ms;
+    int _setup_state; // 0: first call, 1: trying to connect, 2: done, some need a state machine
 
     void Init() {
         serial_data_received_tfirst_ms = 0;
+        _setup_state = 0;
 
         uint8_t MAC_buf[6+2];
         // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
@@ -519,6 +528,12 @@ class tWifiHandler {
 #ifdef DEVICE_NAME_HEAD
         device_name = String(DEVICE_NAME_HEAD) + "-mLRS-" + String(device_id);
 #endif
+        // set STAUDP devicename here, as it may be needed in AT
+        if (g_network_ssid != "") { // definition in memory overwrites default
+            device_name_STAUDP = g_network_ssid;
+        } else { // we don't have any so set a default
+            device_name_STAUDP = device_name + " STA UDP";
+        }
     }
 
     void SetDevicePassword(String forced_password, String std_password) {
@@ -549,9 +564,19 @@ class tWifiHandler {
         }
     }
 
+    virtual void wifi_setup() {}
     virtual void wifi_write(uint8_t* buf, int len) {}
 
-    virtual void Setup() {}
+    bool Setup() { // true: setup has completed and is not called anymore
+        if (_setup_state >= 2) return true;
+        wifi_setup();
+        if (_setup_state == 1) {
+            return false;
+        }
+        _setup_state = 2; 
+        return true;
+    }
+
     virtual void Loop(uint8_t* buf, int sizeofbuf) {}
 };
 
@@ -571,7 +596,7 @@ class tTCPHandler : public tWifiHandler {
         _ip = __ip;
     }
 
-    void Setup() override {
+    void wifi_setup() override {
         setup_ap_mode(_ip); // AP mode
         setup_wifipower();
         server.begin();
@@ -634,7 +659,7 @@ class tUDPHandler : public tWifiHandler, tClientList {
 
     }
 
-    void Setup() override {
+    void wifi_setup() override {
         setup_ap_mode(_ip_ap); // AP mode
         setup_wifipower();
         udp.begin(_port);
@@ -683,29 +708,30 @@ class tUDPSTAHandler : public tWifiHandler {
 
     void Init(int __port) {
         tWifiHandler::Init();
-        if (network_ssid != "") { // local definition overwrites all other options
-            device_name = network_ssid;
-        } else if (g_network_ssid != "") { // definition in memory overwrites default
-            device_name = g_network_ssid;
-        } else { // we don't have any so set a default
-            device_name = device_name + " STA UDP";
-        }
+        device_name = (network_ssid != "") ? network_ssid : device_name_STAUDP;
         SetDevicePassword(network_password, String("mLRS-") + g_bindphrase);
         _ip = WiFi.broadcastIP(); // start with broadcast
         _port = _initial_port = __port;
     }
 
-    void Setup() override {
-        setup_sta_mode(false, IPAddress()); // STA mode, without config ip, so dummy ip
-        setup_wifipower();
-        udp.begin(_port);
+    void wifi_setup() override {
+        //setup_sta_mode(false, IPAddress()); // STA mode, without config ip, so dummy ip
+        bool res = setup_sta_mode_nonblocking((_setup_state == 0), false, IPAddress()); // STA mode, without config ip, so dummy ip
+        _setup_state = 1; // switch to trying
+        if (res) { // done
+            setup_wifipower();
+            udp.begin(_port);
+            _setup_state = 2; // we are actually connected, so signal done
+        }
     }
 
     void Loop(uint8_t* buf, int sizeofbuf)  override {
         if (!is_connected && WiFi.status() != WL_CONNECTED) {
             udp.stop();
             _port = _initial_port;
-            Setup(); // attempt to reconnect if WiFi got disconnected
+//xx            Setup(); // attempt to reconnect if WiFi got disconnected
+            _setup_state = 0; // attempt to reconnect if WiFi got disconnected
+            return;
         }
 
         int packetSize = udp.parsePacket();
@@ -746,10 +772,15 @@ class tUDPClHandler : public tWifiHandler {
         _port = __port;
     }
 
-    void Setup() override {
-        setup_sta_mode(true, _ip); // STA mode 
-        setup_wifipower();
-        udp.begin(_port);
+    void wifi_setup() override {
+        // setup_sta_mode(true, _ip); // STA mode 
+        bool res = setup_sta_mode_nonblocking((_setup_state == 0), true, _ip); // STA mode, with config ip
+        _setup_state = 1; // switch to trying
+        if (res) { // done
+            setup_wifipower();
+            udp.begin(_port);
+            _setup_state = 2; // we are actually connected, so signal done
+        }
     }
 
     void Loop(uint8_t* buf, int sizeofbuf)  override {
@@ -792,7 +823,7 @@ class tBTClassicHandler : public tWifiHandler {
         device_name = (bluetooth_device_name != "") ? bluetooth_device_name : device_name + " BT";
     }
     
-    void Setup() override {
+    void wifi_setup() override {
         SerialBT.begin(device_name);
     }
 
@@ -827,7 +858,7 @@ class tBLEHandler : public tWifiHandler {
         device_name = (ble_device_name != "") ? ble_device_name : device_name + " BLE";
     }
 
-    void Setup() override {
+    void wifi_setup() override {
         ble_device_connected = false;
         ble_serial_started = false;
         ble_negotiated_mtu = 23;
@@ -996,8 +1027,6 @@ void setup()
     at_mode.Init(GPIO0_IO);
 #endif
 
-    wifi_initialized = false; // setup_wifi();
-
     led_tlast_ms = 0;
     led_state = false;
 
@@ -1029,9 +1058,7 @@ void loop()
 
     uint8_t buf[256]; // working buffer
 
-    if (!wifi_initialized) {
-        wifi_initialized = true;
-        wifi_handler->Setup();
+    if (!wifi_handler->Setup()) {
         return;
     }
 
