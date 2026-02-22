@@ -263,7 +263,8 @@ GPIO15 = RTC_GPIO13
         #error Select board ESP32 PICO-D4!
     #endif
 
-    #undef USE_SERIAL_DBG1
+    //#undef USE_SERIAL_DBG1
+    #define USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
     #undef USE_SERIAL2_DBG
 

@@ -84,7 +84,7 @@ Troubleshooting:
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE              // board: M5Stack-ATOM ??
 //#define MODULE_GENERIC
-#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
+//#define MODULE_DIY_E28DUAL_MODULE02_G491RE    // board: ESP32 PICO-D4, upload speed: 115200
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -128,7 +128,7 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 // - a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
 // for UDPCl both strings MUST be set to what your Wifi network requires
 String network_ssid = ""; // name of your WiFi network
-String network_password = "****"; // password to access your WiFi network (min 8 chars)
+String network_password = ""; // password to access your WiFi network (min 8 chars)
 
 IPAddress ip_udpcl(192, 168, 0, 164); // your network's IP (only for UDPCl) // MissionPlanner default is 127.0.0.1, so enter your home's IP in MP
 
@@ -471,6 +471,8 @@ void setup_ap_mode(IPAddress __ip)
 // true: has connected, false: not yet connected, retry
 bool setup_sta_mode_nonblocking(bool first, bool config_ip, IPAddress ip)
 {
+static unsigned long tlast_ms;
+
     if (first) {
         WiFi.mode(WIFI_STA);
         WiFi.disconnect();
@@ -478,18 +480,17 @@ bool setup_sta_mode_nonblocking(bool first, bool config_ip, IPAddress ip)
             WiFi.config(ip, ip_gateway, netmask);
         }
         WiFi.begin(device_name.c_str(), device_password.c_str());
+        tlast_ms = millis();
     }
-/*    while (WiFi.status() != WL_CONNECTED) {
-        led_on(true); delay(75); led_off(); delay(75);
-        led_on(true); delay(75); led_off(); delay(75);
-        led_on(true); delay(75); led_off(); delay(75);
-        DBG_PRINTLN("connecting to WiFi network...");
-    } */
     if (WiFi.status() == WL_CONNECTED) {
         DBG_PRINTLN("connected");
         DBG_PRINT("network ip address: ");
         DBG_PRINTLN(WiFi.localIP());
         return true;
+    }
+    if (millis() > tlast_ms + 500) {
+        tlast_ms = millis();
+        DBG_PRINTLN("connecting to WiFi network...");
     }
     return false;
 }
@@ -715,7 +716,6 @@ class tUDPSTAHandler : public tWifiHandler {
     }
 
     void wifi_setup() override {
-        //setup_sta_mode(false, IPAddress()); // STA mode, without config ip, so dummy ip
         bool res = setup_sta_mode_nonblocking((_setup_state == 0), false, IPAddress()); // STA mode, without config ip, so dummy ip
         _setup_state = 1; // switch to trying
         if (res) { // done
@@ -729,7 +729,6 @@ class tUDPSTAHandler : public tWifiHandler {
         if (!is_connected && WiFi.status() != WL_CONNECTED) {
             udp.stop();
             _port = _initial_port;
-//xx            Setup(); // attempt to reconnect if WiFi got disconnected
             _setup_state = 0; // attempt to reconnect if WiFi got disconnected
             return;
         }
@@ -773,7 +772,6 @@ class tUDPClHandler : public tWifiHandler {
     }
 
     void wifi_setup() override {
-        // setup_sta_mode(true, _ip); // STA mode 
         bool res = setup_sta_mode_nonblocking((_setup_state == 0), true, _ip); // STA mode, with config ip
         _setup_state = 1; // switch to trying
         if (res) { // done
@@ -1021,6 +1019,8 @@ void setup()
 
     DBG_PRINTLN(rxbufsize);
     DBG_PRINTLN(txbufsize);
+    DBG_PRINTLN(device_name);
+    //DBG_PRINTLN(device_password);
 
     // Gpio0 handling
 #ifdef USE_AT_MODE
