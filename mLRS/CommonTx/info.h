@@ -27,7 +27,7 @@ class tTxInfo
     bool WirelessDeviceName_cli(char* const s)
     {
         if (wireless.device_name[0]) {
-            strcpy(s, wireless.device_name);
+            strncpy(s, wireless.device_name, sizeof(wireless.device_name)-1);
             return true;
         }
         return false;

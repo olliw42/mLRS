@@ -714,6 +714,7 @@ RESTARTCONTROLLER
 
     // startup sign of life
     leds.Init();
+    info.Init();
 
     // start up sx
     if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
