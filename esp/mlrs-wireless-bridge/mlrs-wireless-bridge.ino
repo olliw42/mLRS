@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 22. Feb. 2026
+// 23. Feb. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -1019,8 +1019,10 @@ void setup()
 
     DBG_PRINTLN(rxbufsize);
     DBG_PRINTLN(txbufsize);
+    DBG_PRINTLN(g_protocol);
     DBG_PRINTLN(device_name);
     //DBG_PRINTLN(device_password);
+    if (!wifi_handler) { DBG_PRINTLN("No protocol selected"); while(1){} }
 
     // Gpio0 handling
 #ifdef USE_AT_MODE

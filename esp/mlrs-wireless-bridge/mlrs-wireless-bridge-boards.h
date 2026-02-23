@@ -139,8 +139,10 @@ GPIO15 = RTC_GPIO13
 
     #undef GPIO0_IO
     #define GPIO0_IO  0
-    #undef WIRELESS_PROTOCOL
-    #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #if WIRELESS_PROTOCOL != 4
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #endif    
 
 
 //-- ELRS Tx Module ESP32C3 backpack
@@ -159,8 +161,10 @@ GPIO15 = RTC_GPIO13
     #undef LED_IO
     #undef GPIO0_IO
     #define GPIO0_IO  9
-    #undef WIRELESS_PROTOCOL
-    #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #if WIRELESS_PROTOCOL != 4
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #endif    
 
 
 //-- MatekSys TxM-TD30 mLRS Tx module
@@ -182,8 +186,10 @@ GPIO15 = RTC_GPIO13
 
     #undef GPIO0_IO
     #define GPIO0_IO  0
-    #undef WIRELESS_PROTOCOL
-    #define WIRELESS_PROTOCOL 3 // make BlueTooth the default
+    #if WIRELESS_PROTOCOL != 4
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 3 // make BlueTooth the default
+    #endif    
     #define DEVICE_NAME_HEAD "Matek"
 
 
@@ -263,8 +269,7 @@ GPIO15 = RTC_GPIO13
         #error Select board ESP32 PICO-D4!
     #endif
 
-    //#undef USE_SERIAL_DBG1
-    #define USE_SERIAL_DBG1
+    #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
     #undef USE_SERIAL2_DBG
 
@@ -283,6 +288,7 @@ GPIO15 = RTC_GPIO13
             #undef WIRELESS_PROTOCOL
             #define WIRELESS_PROTOCOL 1 // make UDP the default
         #endif    
+        //#define USE_SERIAL_DBG1 // Rx1 = 26, Tx1 = 27
     #endif
 
 
