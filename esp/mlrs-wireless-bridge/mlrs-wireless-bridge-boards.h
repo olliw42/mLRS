@@ -279,8 +279,10 @@ GPIO15 = RTC_GPIO13
     #ifdef MODULE_DIY_E28DUAL_MODULE02_G491RE
         #undef GPIO0_IO
         #define GPIO0_IO  0
-        #undef WIRELESS_PROTOCOL
-        #define WIRELESS_PROTOCOL 1 // make UDP the default
+        #if WIRELESS_PROTOCOL != 4
+            #undef WIRELESS_PROTOCOL
+            #define WIRELESS_PROTOCOL 1 // make UDP the default
+        #endif    
     #endif
 
 
