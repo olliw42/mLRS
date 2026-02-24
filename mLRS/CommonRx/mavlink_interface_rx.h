@@ -1220,18 +1220,18 @@ bool tRxAutoPilot::HasDroneCanExtendedRcStats(void)
     if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
 
     if (middleware_sw_version != 0) { // not native ArduPilot
-        return (version >= 040600); // BetaPliot has it
+        return (version >= 040600); // BetaPilot has it
     }
 
-    return (version >= 040700); // 7.Feb.2026: still not in dev 4.7, but in DSDL, so let's do it
+    return (version >= 040700); // is in dev 4.7 (since 24.Feb.2026)
 }
 
 
 bool tRxAutoPilot::HasMlrsRadioLinkStats(void)
 {
-  if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
+    if (autopilot != MAV_AUTOPILOT_ARDUPILOTMEGA) return false; // we don't know for this autopilot
 
-  return (version >= 040700); // these messages are in dev 4.7
+    return (version >= 040700); // these messages are in dev 4.7
 }
 
 
