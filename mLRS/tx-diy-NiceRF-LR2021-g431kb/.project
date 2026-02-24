@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>rx-diy-NiceRF-LR2021-g431kb</name>
+	<name>tx-diy-NiceRF-LR2021-g431kb</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -37,9 +37,9 @@
 			<location>WORKSPACE_LOC/Common</location>
 		</link>
 		<link>
-			<name>CommonRx</name>
+			<name>CommonTx</name>
 			<type>2</type>
-			<location>WORKSPACE_LOC/CommonRx</location>
+			<location>WORKSPACE_LOC/CommonTx</location>
 		</link>
 		<link>
 			<name>modules</name>

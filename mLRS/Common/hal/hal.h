@@ -263,6 +263,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "stm32/rx-hal-diy-NiceRF-LR2021-g431kb.h"
 #endif
 
+#if defined TX_DIY_NICERF_LR2021_G431KB
+#include "stm32/tx-hal-diy-NiceRF-LR2021-g431kb.h"
+#endif
+
 
 //-------------------------------------------------------
 // ESP Boards
