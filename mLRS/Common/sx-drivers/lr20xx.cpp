@@ -61,6 +61,10 @@ void Lr20xxDriverBase::ReadCommand(uint16_t opcode, uint8_t* data, uint8_t len)
     }
     SpiRead(data, len);
     SpiDeselect();
+    if (len >= 2) { // the first two bytes of the response seem to always be the latest status
+        _status1 = data[0];
+        _status2 = data[1];
+    }
 }
 
 
@@ -117,44 +121,57 @@ void Lr20xxDriverBase::ReadRegMem32(uint32_t addr, uint32_t* data, uint8_t len)
     SpiDeselect();
 }
 
-
-
-
-
+// System Configuration Commands
 
 // TODO: is this really doing the right thing ??
-// Dow ealso want the IrqStatus ??
+// Do we also want the IrqStatus ??
 void Lr20xxDriverBase::GetStatus(uint8_t* Status1, uint8_t* Status2)
 {
-    WriteCommand(LR20XX_CMD_GET_STATUS); // don't need a response, so don't need to use ReadCommand
+    WriteCommand(LR20XX_CMD_GET_STATUS); // doesn't need a response, so don't need to use ReadCommand
 
     *Status1 = _status1;
     *Status2 = _status2;
 }
 
-void Lr20xxDriverBase::GetLastStatus(uint8_t* Status1, uint8_t* Status2)
+uint16_t Lr20xxDriverBase::GetStatus(void)
 {
-    *Status1 = _status1;
-    *Status2 = _status2;
+    WriteCommand(LR20XX_CMD_GET_STATUS); // doesn't need a response, so don't need to use ReadCommand
+
+    return ((uint16_t)_status1 << 8) + _status2;
+}
+
+uint16_t Lr20xxDriverBase::GetLastStatus(void)
+{
+    return ((uint16_t)_status1 << 8) + _status2;
+}
+
+uint8_t Lr20xxDriverBase::GetLastStatusCmd(void)
+{
+    return (_status1 >> 1) & 0x07;
+}
+
+uint8_t Lr20xxDriverBase::GetLastStatusChipMode(void)
+{
+    return _status2 & 0x07;
 }
 
 void Lr20xxDriverBase::GetVersion(uint8_t* FwMajor, uint8_t* FwMinor)
 {
-uint8_t buf[2];
+uint8_t buf[4];
 
-    ReadCommand(LR20XX_CMD_GET_VERSION, buf, 2);
+    ReadCommand(LR20XX_CMD_GET_VERSION, buf, 4);
 
-    *FwMajor = buf[0];
-    *FwMinor = buf[1];
+    *FwMajor = buf[2];
+    *FwMinor = buf[3];
 }
 
-void Lr20xxDriverBase::GetErrors(uint16_t* ErrorStat)
+uint16_t Lr20xxDriverBase::GetErrors(void)
 {
 uint8_t buf[4];
 
     ReadCommand(LR20XX_CMD_GET_ERRORS, buf, 4);
 
-    *ErrorStat = ((uint16_t)buf[2] << 8) + buf[3];
+    return ((uint16_t)buf[2] << 8) + buf[3];
 }
 
 void Lr20xxDriverBase::ClearErrors(void)
@@ -167,7 +184,7 @@ void Lr20xxDriverBase::SetDioFunction(uint8_t Dio, uint8_t Func, uint8_t PullDri
 uint8_t buf[2];
 
     buf[0] = Dio; // allowed values are 5 - 11
-    buf[1] = ((Func & 0x07) << 3) + (PullDrive & 0x7); // TODO: is this correct ???
+    buf[1] = ((Func & 0x0F) << 4) + (PullDrive & 0xF);
 
     WriteCommand(LR20XX_CMD_SET_DIO_FUNCTION, buf, 2);
 }
@@ -203,7 +220,7 @@ uint8_t buf[4];
     buf[2] = (uint8_t)((IrqsToClear & 0x0000FF00) >> 8);
     buf[3] = (uint8_t) (IrqsToClear & 0x000000FF);
 
-    WriteCommand(LR20XX_CMD_SET_DIO_IRQ_CONFIG, buf, 5);
+    WriteCommand(LR20XX_CMD_CLEAR_IRQ, buf, 4);
 }
 
 uint32_t Lr20xxDriverBase::GetAndClearIrqStatus(void)
@@ -215,13 +232,32 @@ uint8_t buf[6];
     return ((uint32_t)buf[2] << 24) + ((uint32_t)buf[3] << 16) + ((uint32_t)buf[4] << 8) + (uint32_t)buf[5];
 }
 
-void Lr20xxDriverBase::ConfigLfClock(uint8_t LfClock)
+uint16_t Lr20xxDriverBase::GetRxFifoLevel(void)
 {
-uint8_t buf[1];
+uint8_t buf[4];
 
-    buf[0] = (LfClock & 0x03);
+    ReadCommand(LR20XX_CMD_GET_RX_FIFO_LEVEL, buf, 4);
 
-    WriteCommand(LR20XX_CMD_CONFIG_LF_CLOCK, buf, 1);
+    return ((uint16_t)buf[2] << 8) + (uint16_t)buf[3];
+}
+
+uint16_t Lr20xxDriverBase::GetTxFifoLevel(void)
+{
+uint8_t buf[4];
+
+    ReadCommand(LR20XX_CMD_GET_TX_FIFO_LEVEL, buf, 4);
+
+    return ((uint16_t)buf[2] << 8) + (uint16_t)buf[3];
+}
+
+void Lr20xxDriverBase::ClearRxFifo(void)
+{
+    WriteCommand(LR20XX_CMD_CLEAR_RX_FIFO);
+}
+
+void Lr20xxDriverBase::ClearTxFifo(void)
+{
+    WriteCommand(LR20XX_CMD_CLEAR_TX_FIFO);
 }
 
 void Lr20xxDriverBase::SetTcxoMode(uint8_t Tune, uint32_t StartTime)
@@ -316,7 +352,86 @@ uint8_t buf[3];
     WriteCommand(LR20XX_CMD_SET_PA_CONFIG, buf, 3);
 }
 
-void Lr20xxDriverBase::SetTxParams(uint8_t Power, uint8_t RampTime)
+void Lr20xxDriverBase::SetPaConfig915Mhz(int8_t Power)
+{
+uint8_t PaLfDutyCycle, PaLfSlices;
+
+    // table 7-16
+    // convert LF Power -19 ... 44 = -9.5 ... 22 dBm
+    // into TargetPower of table 7-16
+    int16_t TargetPower = Power - 20;
+    switch (TargetPower) {
+    case 0  /* 10_DBM   */: PaLfDutyCycle = 2; PaLfSlices = 1; break;
+    case 1  /* 10p5_DBM */: PaLfDutyCycle = 3; PaLfSlices = 1; break;
+    case 2  /* 11_DBM   */: PaLfDutyCycle = 2; PaLfSlices = 2; break;
+    case 3  /* 11p5_DBM */: PaLfDutyCycle = 4; PaLfSlices = 2; break;
+    case 4  /* 12_DBM   */: PaLfDutyCycle = 5; PaLfSlices = 1; break;
+    case 5  /* 12p5_DBM */: PaLfDutyCycle = 4; PaLfSlices = 2; break;
+    case 6  /* 13_DBM   */: PaLfDutyCycle = 4; PaLfSlices = 3; break;
+    case 7  /* 13p5_DBM */: PaLfDutyCycle = 6; PaLfSlices = 1; break;
+    case 8  /* 14_DBM   */: PaLfDutyCycle = 4; PaLfSlices = 2; break;
+    case 9  /* 14p5_DBM */:
+    case 10 /* 15_DBM   */:
+    case 11 /* 15p5_DBM */: PaLfDutyCycle = 5; PaLfSlices = 4; break;
+    case 12 /* 16_DBM   */: PaLfDutyCycle = 4; PaLfSlices = 4; break;
+    case 13 /* 16p5_DBM */:
+    case 14 /* 17_DBM   */:
+    case 15 /* 17p5_DBM */:
+    case 16 /* 18_DBM   */: PaLfDutyCycle = 5; PaLfSlices = 6; break;
+    case 17 /* 18p5_DBM */:
+    case 18 /* 19_DBM   */:
+    case 19 /* 19p5_DBM */:
+    case 20 /* 20_DBM   */: PaLfDutyCycle = 6; PaLfSlices = 6; break;
+    case 21 /* 20p5_DBM */:
+    case 22 /* 21_DBM   */:
+    case 23 /* 21p5_DBM */: PaLfDutyCycle = 7; PaLfSlices = 7; break;
+    case 24 /* 22_DBM   */: PaLfDutyCycle = 7; PaLfSlices = 6; break;
+    default:
+        PaLfDutyCycle = 6; PaLfSlices = 7;
+    }
+
+    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, PaLfDutyCycle, PaLfSlices, LR20XX_PA_HF_DUTY_CYCLE_IF_PA_LF);
+}
+
+void Lr20xxDriverBase::SetPaConfig2p4Ghz(int8_t Power)
+{
+uint8_t PaHfDutyCycle;
+
+    // table 7-16
+    // convert HF Power -39 ... 24 = -19.5 ... 12 dBm
+    // into TargetPower of table 7-18
+    int16_t TargetPower = Power / 2;
+    switch (TargetPower) {
+    case 0  /* 0_DBM */:  PaHfDutyCycle = 10; break;
+    case 1  /* 1_DBM */:  PaHfDutyCycle = 30; break;
+    case 2  /* 2_DBM */:  PaHfDutyCycle = 28;break;
+    case 3  /* 3_DBM */:  PaHfDutyCycle = 25; break;
+    case 4  /* 4_DBM */:  PaHfDutyCycle = 25; break;
+    case 5  /* 5_DBM */:  PaHfDutyCycle = 31; break;
+    case 6  /* 6_DBM */:  PaHfDutyCycle = 30; break;
+    case 7  /* 7_DBM */:  PaHfDutyCycle = 30; break;
+    case 8  /* 8_DBM */:  PaHfDutyCycle = 31; break;
+    case 9  /* 9_DBM */:  PaHfDutyCycle = 30; break;
+    case 10 /* 10_DBM */: PaHfDutyCycle = 30; break;
+    case 11 /* 11_DBM */: PaHfDutyCycle = 26; break;
+    case 12 /* 12_DBM */: PaHfDutyCycle = 16; break;
+    default:
+        PaHfDutyCycle = 16;
+    }
+
+    SetPaConfig(LR20XX_PA_SEL_HF,
+                LR20XX_PA_LF_MODE_IF_PA_HF, // 0
+                LR20XX_PA_LF_DUTY_CYCLE_IF_PA_HF, // 6
+                LR20XX_PA_LF_SLICE_IF_PA_HF, // 7
+                PaHfDutyCycle);
+}
+
+void Lr20xxDriverBase::SetPaConfig433Mhz(int8_t Power)
+{
+    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, 6, 7, LR20XX_PA_HF_DUTY_CYCLE_IF_PA_LF);
+}
+
+void Lr20xxDriverBase::SetTxParams(int8_t Power, uint8_t RampTime)
 {
 uint8_t buf[2];
 
@@ -367,6 +482,15 @@ uint8_t buf[3];
 void Lr20xxDriverBase::ResetRxStats(void)
 {
     WriteCommand(LR20XX_CMD_RESET_RX_STATS);
+}
+
+int16_t Lr20xxDriverBase::GetRssiInst(void)
+{
+uint8_t buf[4];
+
+    ReadCommand(LR20XX_CMD_GET_RSSI_INST, buf, 4);
+
+    return -(int16_t)buf[2]; // rssi(dBm) = - RSSI/2 or just byte 3
 }
 
 void Lr20xxDriverBase::SetRx(uint32_t RxTimeout) // 24 bits only, similar to sx126x
@@ -444,19 +568,19 @@ uint8_t buf[1];
 }
 
 
-
+// LoRa Packet Radio Commands
 
 void Lr20xxDriverBase::SetLoraModulationParams(uint8_t SpreadingFactor, uint8_t Bandwidth, uint8_t CodingRate, uint8_t LowDataRateOptimize)
 {
 uint8_t buf[2];
 
     buf[0] = ((SpreadingFactor & 0x0F) << 4) + (Bandwidth & 0x0F);
-    buf[1] = ((CodingRate & 0x0F) << 4) + ((CodingRate & 0x03) << 2) + (LowDataRateOptimize & 0x03);
+    buf[1] = ((CodingRate & 0x0F) << 4) + (LowDataRateOptimize & 0x03);
 
-    WriteCommand(LR20XX_CMD_SET_LORA_MODULATION_PARAMS, buf, 1);
+    WriteCommand(LR20XX_CMD_SET_LORA_MODULATION_PARAMS, buf, 2);
 }
 
-void Lr20xxDriverBase::SetLoraPacketParams(uint16_t PreambleLength, uint8_t PayloadLength, uint8_t HeaderType, uint8_t Crc, uint8_t InvertIQ)
+void Lr20xxDriverBase::SetLoraPacketParams(uint16_t PreambleLength, uint8_t HeaderType, uint8_t PayloadLength, uint8_t Crc, uint8_t InvertIQ)
 {
 uint8_t buf[4];
 
@@ -481,8 +605,7 @@ uint8_t buf[10];
      *false_synch = ((uint16_t)buf[8] << 8) + buf[9];
 }
 
-
-void Lr20xxDriverBase::GetPacketStatus(
+void Lr20xxDriverBase::GetLoraPacketStatus(
       int16_t* Rssi, int16_t* RssiSignal, int8_t* Snr,
       uint8_t* Crc, uint8_t* CR, uint16_t* PktLen, uint8_t* Detector)
 {
@@ -499,7 +622,7 @@ uint8_t buf[8];
      *Detector = (buf[7] & 0x3D) >> 2;
 }
 
-void Lr20xxDriverBase::GetPacketStatus(int16_t* Rssi, int16_t* RssiSignal, int8_t* Snr)
+void Lr20xxDriverBase::GetLoraPacketStatus(int16_t* Rssi, int16_t* RssiSignal, int8_t* Snr)
 {
  uint8_t buf[8];
 
@@ -510,40 +633,7 @@ void Lr20xxDriverBase::GetPacketStatus(int16_t* Rssi, int16_t* RssiSignal, int8_
       *RssiSignal = ((int16_t)buf[6] << 1) + ((int16_t)buf[7] & 0x01);
 }
 
-
-
-// FIFO methods
-
-uint16_t Lr20xxDriverBase::GetRxFifoLevel(void)
-{
-uint8_t buf[4];
-
-    ReadCommand(LR20XX_CMD_GET_RX_FIFO_LEVEL, buf, 4);
-
-    return ((uint16_t)buf[2] << 8) + (uint16_t)buf[3];
-}
-
-uint16_t Lr20xxDriverBase::GetTxFifoLevel(void)
-{
-uint8_t buf[4];
-
-    ReadCommand(LR20XX_CMD_GET_TX_FIFO_LEVEL, buf, 4);
-
-    return ((uint16_t)buf[2] << 8) + (uint16_t)buf[3];
-}
-
-void Lr20xxDriverBase::ClearRxFifo(void)
-{
-    WriteCommand(LR20XX_CMD_CLEAR_RX_FIFO);
-}
-
-void Lr20xxDriverBase::ClearTxFifo(void)
-{
-    WriteCommand(LR20XX_CMD_CLEAR_TX_FIFO);
-}
-
-
-// GFSK methods
+// FSK Packet Radio Commands
 
 void Lr20xxDriverBase::SetModulationParamsFSK(uint32_t BitRate, uint8_t PulseShape, uint8_t Bandwidth, uint32_t Fdev_hz)
 {
@@ -680,4 +770,35 @@ uint8_t buf[8];
     *Lqi = buf[7];
 }
 
+// FLRC Packet Radio Commands
 
+void Lr20xxDriverBase::SetModulationParamsFLRC(uint8_t BitrateBw, uint8_t CodingRate, uint8_t PulseShape)
+{
+
+}
+
+void Lr20xxDriverBase::SetPacketParamsFLRC(
+      uint8_t AgcPblLen, uint8_t SyncWordLength,
+      uint8_t SyncWordTx, uint8_t SyncWordMatch,
+      uint8_t PacketFormat, uint8_t CrcLength,
+      uint16_t PayloadLength)
+{
+
+}
+
+void Lr20xxDriverBase::GetRxStatsFLRC(int16_t* stats)
+{
+
+}
+
+void Lr20xxDriverBase::GetPacketStatusFLRC(int16_t* RssiSync)
+{
+
+}
+
+void Lr20xxDriverBase::SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord)
+{
+
+}
+
+// auxiliary methods

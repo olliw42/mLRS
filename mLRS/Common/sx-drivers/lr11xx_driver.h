@@ -26,6 +26,7 @@
 
 // the first two are for 900 MHz and the last three are for 2.4 GHz
 const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
+    // 900 MHz, Lora
     { .SpreadingFactor = LR11XX_LORA_SF5,
       .Bandwidth = LR11XX_LORA_BW_500,
       .CodingRate = LR11XX_LORA_CR_4_5,
@@ -48,6 +49,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .TimeOverAir = 22560,
       .ReceiverSensitivity = -112,
     },
+    // 2.4 GHz, Lora
     { .SpreadingFactor = LR11XX_LORA_SF5,
       .Bandwidth = LR11XX_LORA_BW_800,
       .CodingRate = LR11XX_LORA_CR_LI_4_5,

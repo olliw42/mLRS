@@ -185,7 +185,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //#include "../hal-power-pa.h"
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_LR20XX_MAX_DBM      LR20XX_POWER_LF_22_DBM // maximum allowed lr20xx power
+#define POWER_LR20XX_MAX          LR20XX_POWER_LF_22_DBM // maximum allowed lr20xx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           2 // index into rfpower_list array

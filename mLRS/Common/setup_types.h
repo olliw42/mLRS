@@ -301,8 +301,8 @@ typedef enum {
 
 //-------------------------------------------------------
 // Config Enums
+// ATTENTION: numbers must match config arrays in sx drivers !!
 //-------------------------------------------------------
-// numbers must match config arrays in sx drivers !!
 
 typedef enum {
     SX128x_LORA_CONFIG_BW800_SF5_CRLI4_5 = 0,
@@ -326,13 +326,20 @@ typedef enum {
 
 
 typedef enum {
-    LR11xx_LORA_CONFIG_BW500_SF5_CR4_5 = 0,
+    LR11xx_LORA_CONFIG_BW500_SF5_CR4_5 = 0, // 900 MHz
     LR11xx_LORA_CONFIG_BW500_SF6_CR4_5,
-    LR11xx_LORA_CONFIG_BW800_SF5_CR4_5,
+    LR11xx_LORA_CONFIG_BW800_SF5_CR4_5, // 2.4 GHz
     LR11xx_LORA_CONFIG_BW800_SF6_CR4_5,
     LR11xx_LORA_CONFIG_BW800_SF7_CR4_5,
     LR11xx_LORA_CONFIG_NUM,
 } LR11xx_LORA_CONFIG_ENUM;
+
+
+typedef enum {
+    LR20xx_LORA_CONFIG_BW500_SF5_CR4_5 = 0, // 900 MHz
+    LR20xx_LORA_CONFIG_BW500_SF6_CR4_5,
+    LR20xx_LORA_CONFIG_NUM,
+} LR20xx_LORA_CONFIG_ENUM;
 
 
 //-------------------------------------------------------

@@ -113,7 +113,7 @@ typedef struct
     uint8_t Whitening;
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
-} tSxGfskConfiguration;
+} tSxFskConfiguration;
 
 
 class SxDriverDummy
