@@ -243,13 +243,16 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         // Order from User Manual:
         // SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
 
-        SetStandby(LR20XX_STANDBY_MODE_RC);
+//??        Calibrate(LR20XX_CALIBRATE_ALL);
+
+        //SetStandby(LR20XX_STANDBY_MODE_RC);
+        SetStandby(LR20XX_STANDBY_MODE_XOSC);
+
+//??        SetTcxoMode(LR20XX_TCXO_SUPPLY_VOLTAGE_2_7, 25000); // set output to 1.6V-3.3V, ask specification of TCXO to maker board
+//??        SetRegMode(LR20XX_SIMO_USAGE_NORMAL); // Attention: requires DCDC workaround
 
         SetRxTxFallbackMode(LR20XX_RX_TX_FALLBACK_MODE_FS);
         SetDefaultRxTxTimeout(0, 0);
-
-        SetDioFunction(7, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_DOWN);
-        SetDioIrqConfig(7, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
 
         gconfig = global_config;
 
@@ -276,6 +279,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(LR20XX_PACKET_TYPE_LORA);
+//??            uint8_t sw = 0x34; WriteCommand(_LR20XX_CMD_SET_LORA_SYNC_WORD, &sw, 1);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
 #if 0
@@ -293,7 +297,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
+        SetDioFunction(7, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_DOWN);
+        SetDioIrqConfig(7, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
         ClearIrq(LR20XX_IRQ_ALL);
+
         SetFs();
     }
 

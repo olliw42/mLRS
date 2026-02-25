@@ -431,6 +431,7 @@ typedef enum {
     LR20XX_CALIBRATE_AAF                    = 0x08,
     LR20XX_CALIBRATE_MU                     = 0x20,
     LR20XX_CALIBRATE_PA_OFF                 = 0x40,
+    LR20XX_CALIBRATE_ALL                    = 0x6F,
 } LR20XX_CALIBRATE_ENUM;
 
 // cmd 0x0123 void CalibFE(uint16_t Freq1, uint16_t Freq2, uint16_t Freq3)
