@@ -86,7 +86,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
 };
 
 
-const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
+const tSxFskConfiguration Lr11xxGfskConfiguration[] = {
     { .br_bps = 100000,
       .PulseShape = LR11XX_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = LR11XX_GFSK_BW_312000,
@@ -176,7 +176,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
+    void SetGfskConfiguration(const tSxFskConfiguration* const config, uint16_t sync_word)
     {
         SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
@@ -375,7 +375,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
-    const tSxGfskConfiguration* gfsk_configuration;
+    const tSxFskConfiguration* gfsk_configuration;
     uint8_t sx_power;
     int8_t actual_power_dbm;
 };

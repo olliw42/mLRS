@@ -52,7 +52,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
 };
 
 
-const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
+const tSxFskConfiguration Sx126xGfskConfiguration[] = {
     { .br_bps = 100000,
       .PulseShape = SX126X_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = SX126X_GFSK_BW_312000,
@@ -154,7 +154,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
+    void SetGfskConfiguration(const tSxFskConfiguration* const config, uint16_t sync_word)
     {
         SetModulationParamsGFSK(config->br_bps,
                                 config->PulseShape,
@@ -372,7 +372,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
-    const tSxGfskConfiguration* gfsk_configuration;
+    const tSxFskConfiguration* gfsk_configuration;
     uint8_t sx_power;
     int8_t actual_power_dbm;
 };
