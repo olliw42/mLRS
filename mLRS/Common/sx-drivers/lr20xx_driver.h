@@ -41,7 +41,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
       .ReceiverSensitivity = -112,
-    }/*,
+    },
     { .SpreadingFactor = LR20XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
       .CodingRate = LR20XX_LORA_CR_LI_4_5,
@@ -74,23 +74,23 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
       .ReceiverSensitivity = -112,
-    }*/
+    }
 };
 
 #if 0
-const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
+const tSxFskConfiguration Lr20xxFskConfiguration[] = { // 900 MHz, FSK 50 Hz
     { .br_bps = 100000,
-      .PulseShape = LR20XX_GFSK_PULSESHAPE_BT_1,
-      .Bandwidth = LR20XX_GFSK_BW_312000,
+      .PulseShape = LR20XX_FSK_PULSESHAPE_BT_1,
+      .Bandwidth = LR20XX_FSK_BW_312000,
       .Fdev_hz = 50000,
       .PreambleLength = 16,
-      .PreambleDetectorLength = LR20XX_GFSK_PREAMBLE_DETECTOR_LENGTH_8BITS,
+      .PreambleDetectorLength = LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_8_BITS,
       .SyncWordLength = 16,
-      .AddrComp = LR20XX_GFSK_ADDRESS_FILTERING_DISABLE,
-      .PacketType = LR20XX_GFSK_PKT_FIX_LEN,
+      .AddrComp = LR20XX_FSK_ADDRESS_FILTERING_DISABLE,
+      .PacketType = LR20XX_FSK_PKT_FIX_LEN,
       .PayloadLength = FRAME_TX_RX_LEN,
-      .CRCType = LR20XX_GFSK_CRC_OFF,
-      .Whitening = LR20XX_GFSK_WHITENING_ENABLE,
+      .CRCType = LR20XX_FSK_CRC_OFF,
+      .Whitening = LR20XX_FSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
       .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
     }
@@ -99,20 +99,33 @@ const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_max)
+void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const uint8_t frequency_band)
 {
     int16_t power_sx = ((int16_t)power_dbm - gain_dbm) * 2;
 
-    if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
-    if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
-    if (power_sx > sx_max) power_sx = sx_max;
+    if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        if (power_sx < LR20XX_POWER_HF_MIN) power_sx = LR20XX_POWER_HF_MIN;
+        if (power_sx > LR20XX_POWER_HF_MAX) power_sx = LR20XX_POWER_HF_MAX;
+power_sx = LR20XX_POWER_HF_MAX; //XX // TODO
+    } else {
+        if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
+        if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
+power_sx = LR20XX_POWER_LF_MAX; //XX // TODO
+    }
 
     *sx_power = power_sx;
     *actual_power_dbm = power_sx / 2 + gain_dbm;
-
-*sx_power = sx_max; //XX // TODO
 }
 #endif
+
+
+// map the irq bits
+typedef enum {
+    SX_IRQ_TX_DONE = LR20XX_IRQ_TX_DONE,
+    SX_IRQ_RX_DONE = LR20XX_IRQ_RX_DONE,
+    SX_IRQ_TIMEOUT = LR20XX_IRQ_TIMEOUT,
+    SX_IRQ_ALL     = LR20XX_IRQ_ALL,
+} SX_IRQ_ENUM;
 
 
 class Lr20xxDriverCommon : public Lr20xxDriverBase
@@ -166,34 +179,34 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     {
         if (!gconfig) while(1){} // must not happen
 
-        SetStandby(LR20XX_STANDBY_MODE_RC); // TODO LR20XX_STANDBY_MODE_XOSC ???
+        SetStandby(LR20XX_STANDBY_MODE_RC); // LR20XX_STANDBY_MODE_XOSC ?
         SetPacketType(LR20XX_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
 #if 0
-    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
+    void SetFskConfiguration(const tSxFskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsGFSK(config->br_bps,
-                                config->PulseShape,
-                                config->Bandwidth,
-                                config->Fdev_hz);
+        SetModulationParamsFSK(config->br_bps,
+                               config->PulseShape,
+                               config->Bandwidth,
+                               config->Fdev_hz);
 
-        SetPacketParamsGFSK(config->PreambleLength,
-                            config->PreambleDetectorLength,
-                            config->SyncWordLength,
-                            config->AddrComp,
-                            config->PacketType,
-                            config->PayloadLength,
-                            config->CRCType,
-                            config->Whitening);
+        SetPacketParamsFSK(config->PreambleLength,
+                           config->PreambleDetectorLength,
+                           config->SyncWordLength,
+                           config->AddrComp,
+                           config->PacketType,
+                           config->PayloadLength,
+                           config->CRCType,
+                           config->Whitening);
 
-        SetSyncWordGFSK(sync_word);
+        SetSyncWordFSK(sync_word);
     }
 
-    void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
+    void SetFskConfigurationByIndex(uint8_t index, uint16_t sync_word)
     {
-        if (index >= sizeof(Lr20xxGfskConfiguration)/sizeof(Lr20xxGfskConfiguration[0])) while(1){} // must not happen
+        if (index >= sizeof(Lr20xxFskConfiguration)/sizeof(Lr20xxFskConfiguration[0])) while(1){} // must not happen
 
         fsk_configuration = &(Lr20xxFskConfiguration[index]);
         SetFskConfiguration(fsk_configuration, sync_word);
@@ -208,16 +221,13 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
             SetPaConfig2p4Ghz(sx_power);
-            while(1){}
         } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_433_MHZ) {
             SetPaConfig433Mhz(sx_power);
         } else {
-            SetPaConfig915Mhz(sx_power);
-            //SelPa(LR20XX_PA_SEL_LF); // needed?
-            while(1){}
+            SetPaConfig915Mhz(sx_power); // SelPa(LR20XX_PA_SEL_LF); // seems not to be needed
         }
 
-        SetTxParams(sx_power, LR20XX_RAMPTIME_48_US); // closest to 40 uS used by SX126x / SX127x
+        SetTxParams(sx_power, LR20XX_RAMPTIME_48_US); // closest to 40 us used by SX126x / SX127x
     }
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
@@ -270,7 +280,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         } else {
 #if 0
             SetPacketType(LR20XX_PACKET_TYPE_FSK);
-            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
+            SetFskConfigurationByIndex(0, Config.FrameSyncWord);
 #endif
             while(1){}
         }
@@ -311,11 +321,6 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         ClearIrq(LR20XX_IRQ_ALL);
         //SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR20xx uses 30.52 = 1/32768 us period, so for 1 ms needs 33 tmo value
         SetTx(0); // 0 = no timeout. What is LR20xx's timeout doing??
-
-GetStatus();
-uartf_puts(" cmdSTx ");uartf_puts(u8toHEX_s(GetLastStatusCmd()));
-uartf_puts(" cm ");uartf_puts(u8toHEX_s(GetLastStatusChipMode()));
-uartf_puts(";");
     }
 
     void SetToRx(void)
@@ -426,14 +431,6 @@ uartf_puts(";");
   #error SX must have a RESET pin!
 #endif
 
-// map the irq bits
-typedef enum {
-    SX_IRQ_TX_DONE = LR20XX_IRQ_TX_DONE,
-    SX_IRQ_RX_DONE = LR20XX_IRQ_RX_DONE,
-    SX_IRQ_TIMEOUT = LR20XX_IRQ_TIMEOUT,
-    SX_IRQ_ALL     = LR20XX_IRQ_ALL,
-} SX_IRQ_ENUM;
-
 
 class Lr20xxDriver : public Lr20xxDriverCommon
 {
@@ -477,7 +474,9 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR20XX_MAX);
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+#endif
     }
 
     //-- init API functions

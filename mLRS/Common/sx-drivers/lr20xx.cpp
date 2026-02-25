@@ -67,7 +67,6 @@ void Lr20xxDriverBase::ReadCommand(uint16_t opcode, uint8_t* data, uint8_t len)
     }
 }
 
-
 void Lr20xxDriverBase::WriteRadioTxFifo(uint8_t* data, uint8_t len)
 {
     WriteCommand(LR20XX_CMD_WRITE_RADIO_TX_FIFO, data, len);
@@ -123,8 +122,7 @@ void Lr20xxDriverBase::ReadRegMem32(uint32_t addr, uint32_t* data, uint8_t len)
 
 // System Configuration Commands
 
-// TODO: is this really doing the right thing ??
-// Do we also want the IrqStatus ??
+// would we also want IrqStatus ??
 void Lr20xxDriverBase::GetStatus(uint8_t* Status1, uint8_t* Status2)
 {
     WriteCommand(LR20XX_CMD_GET_STATUS); // doesn't need a response, so don't need to use ReadCommand
