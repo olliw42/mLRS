@@ -14,6 +14,7 @@
 #include <inttypes.h>
 
 #define LR20XX_FREQ_XTAL_HZ               32000000
+#define LR20XX_FREQ_RC_HZ                 32768
 
 #define LR20XX_FREQ_MHZ_TO_REG(f_mhz)     (uint32_t)((double)f_mhz * 1.0E6)
 #define LR20XX_FREQ_GHZ_TO_REG(f_ghz)     (uint32_t)((double)f_ghz * 1.0E9)
@@ -145,7 +146,7 @@ public:
 
     void SetModulationParamsFSK(uint32_t BitRate, uint8_t PulseShape, uint8_t Bandwidth, uint32_t Fdev_hz);
     void SetPacketParamsFSK(uint16_t PreambleLength, uint8_t PreambleDetectorLength,
-                            uint8_t long_preamble_mode, uint8_t pld_lenUnit, uint8_t addr_comp,
+                            uint8_t long_preamble_mode, uint8_t pld_len_unit, uint8_t addr_comp,
                             uint8_t PacketFormat, uint16_t PayloadLength, uint8_t Crc, uint8_t dc_free);
     void SetWhiteningParamsFSK(uint8_t WhitenType, uint16_t Init);
     void SetCrcParamsFSK(uint32_t Polynom, uint32_t Init);
@@ -153,9 +154,9 @@ public:
     void SetAddressFSK(uint8_t addr_node, uint8_t addr_bcast);
     void GetRxStatsFSK(uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* len_error, uint16_t* pbl_det,
                        uint16_t* sync_ok, uint16_t* sync_fail, uint16_t* timeout);
-    void GetPacketStatusFSK(uint16_t* PktLen, uint16_t* RssiAvg, uint16_t* RssiSync, uint8_t* AddrMatchBcast,
-                            uint8_t* AddrMatchNode, uint8_t* Lqi);
-    void GetPacketStatusFSK(uint16_t* RssiAvg, uint16_t* RssiSync, uint8_t* Lqi);
+    void GetPacketStatusFSK(uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* AddrMatchBcast,
+                            uint8_t* AddrMatchNode, int8_t* Lqi);
+    void GetPacketStatusFSK(int16_t* RssiAvg, int16_t* RssiSync, int8_t* Lqi);
 
     // FLRC Packet Radio Commands
 
@@ -170,12 +171,15 @@ public:
 
     // auxiliary methods
 
+    uint32_t TimeMs2RcTicks(uint16_t t_ms) { return ((uint32_t)t_ms * LR20XX_FREQ_RC_HZ)/1000; }
+
     void EnableSx127xCompatibility() {}
 
   private:
     uint8_t _status1; // status is two bytes
     uint8_t _status2;
 };
+
 
 //-------------------------------------------------------
 // Enum Definitions
@@ -319,6 +323,7 @@ typedef enum {
     LR20XX_IRQ_ALL                          = 0xFFFFFFFF,
 } LR20XX_IRQ_ENUM;
 
+
 //-------------------------------------------------------
 // Enum Definitions, System Configuration Commands
 //-------------------------------------------------------
@@ -461,6 +466,7 @@ typedef enum {
     LR20XX_RX_BOOST_4_HF                    = 4, // recommended value for HF
 } LR20XX_RX_BOOST_ENUM;
 
+
 //-------------------------------------------------------
 // Enum Definitions, Common Radio Commands
 //-------------------------------------------------------
@@ -474,11 +480,10 @@ typedef enum {
 
 // cmd 0x0202 void SetPaConfig(uint8_t PaSel, uint8_t PaLfMode, uint8_t PaLfDutyCycle, uint8_t PaLfSlices, uint8_t PaHfDutyCycle)
 typedef enum {
-    LR20XX_PA_LF_MODE_IF_PA_HF              = 0, // helper to handle defaults according to datasheet
-    LR20XX_PA_LF_DUTY_CYCLE_IF_PA_HF        = 6,
-    LR20XX_PA_LF_SLICE_IF_PA_HF             = 7,
-    LR20XX_PA_HF_DUTY_CYCLE_IF_PA_LF        = 16,
-} LR20XX_PA_AUXILLIARY_ENUM;
+    LR20XX_PA_LF_DUTY_CYCLE_DEFAULT         = 6, // defaults according to datasheet
+    LR20XX_PA_LF_SLICES_DEFAULT             = 7,
+    LR20XX_PA_HF_DUTY_CYCLE_DEFAULT         = 16,
+} LR20XX_PA_DEFAULT_ENUM;
 
 typedef enum {
     LR20XX_PA_SEL_LF                        = 0, // table 7-15, page 132
@@ -572,6 +577,7 @@ typedef enum {
     LR20XX_AGC_GAIN_MANUAL_13               = 13,
 } LR20XX_AGC_GAIN_MANUAL_ENUM;
 
+
 //-------------------------------------------------------
 // Enum Definitions, LoRa Packet Radio Commands
 //-------------------------------------------------------
@@ -640,6 +646,7 @@ typedef enum {
     LR20XX_LORA_IQ_INVERTED                 = 1,
 } LR20XX_LORA_IQMODE_ENUM;
 
+
 //-------------------------------------------------------
 // Enum Definitions, FSK Packet Radio Commands
 //-------------------------------------------------------
@@ -660,14 +667,14 @@ typedef enum {
 } LR20XX_FSK_PULSESHAPE_ENUM;
 
 typedef enum {
-    LR20XX_FSK_BW_3076                      = 0, // table 11-2, page 162
+    LR20XX_FSK_BW_307700                    = 33, // table 11-2, page 162
 } LR20XX_FSK_BANDWIDTH_ENUM;
 
 //cmd 0x0241 void SetPacketParamsFSK(uint16_t PreambleLength, uint8_t PreambleDetectorLength,
-//                  uint8_t long_preamble_mode, uint8_t pld_lenUnit, uint8_t addr_comp,
+//                  uint8_t long_preamble_mode, uint8_t pld_len_unit, uint8_t addr_comp,
 //                  uint8_t PacketFormat, uint16_t PayloadLength, uint8_t Crc, uint8_t dc_free)
 typedef enum {
-    LR20XX_FSK_PREAMBLE_DETECTOR_LENGT_OFF          = 0x00, // table 11-4, page 163
+    LR20XX_FSK_PREAMBLE_DETECTOR_OFF                = 0x00, // table 11-4, page 163
     LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_8_BITS      = 0x08,
     LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_16_BITS     = 0x10,
     LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_24_BITS     = 0x18,
@@ -691,10 +698,10 @@ typedef enum {
 } LR20XX_FSK_ADDR_COMP_ENUM;
 
 typedef enum {
-    LR20XX_FSK_PKT_FORMAT_FIXED_LEN                 = 0, // table 11-6, page 164
-    LR20XX_FSK_PKT_FORMAT_VARIABLE_LEN_8BIT_HEADER  = 1, // SX126x/SX127x compatible
-    LR20XX_FSK_PKT_FORMAT_VARIABLE_LEN_9BIT_HEADER  = 2, // SX128x compatible
-    LR20XX_FSK_PKT_FORMAT_VARIABLE_LEN_16BIT_HEADER = 3,
+    LR20XX_FSK_PKT_FORMAT_FIX_LEN                   = 0, // table 11-6, page 164
+    LR20XX_FSK_PKT_FORMAT_VAR_LEN_8_BIT_HEADER      = 1, // SX126x/SX127x compatible
+    LR20XX_FSK_PKT_FORMAT_VAR_LEN_9_BIT_HEADER      = 2, // SX128x compatible
+    LR20XX_FSK_PKT_FORMAT_VAR_LEN_16_BIT_HEADER     = 3,
 } LR20XX_FSK_PKT_FORMAT_ENUM;
 
 typedef enum {
@@ -710,9 +717,21 @@ typedef enum {
 } LR20XX_FSK_CRC_ENUM;
 
 typedef enum {
+    LR20XX_FSK_WHITENING_OFF                = 0, // table 11-7, page 165
+    LR20XX_FSK_WHITENING_ENABLE             = 1,
+} LR20XX_FSK_WHITENINGE_ENUM;
+
+
+typedef enum {
     LR20XX_FSK_WHITEN_TYPE_SX126x_SX127x    = 0, // table 11-9, page 166
     LR20XX_FSK_WHITEN_TYPE_SX128x           = 1,
 } LR20XX_FSK_WHITEN_TYPE_ENUM;
+
+typedef enum {
+    LR20XX_FSK_SYNC_BITORDER_LSB            = 0, // table 11-11, page 167
+    LR20XX_FSK_SYNC_BITORDER_MSB            = 1,
+} LR20XX_FSK_SYNC_BITORDER_ENUM;
+
 
 //-------------------------------------------------------
 // Enum Definitions, FLRC Packet Radio Commands

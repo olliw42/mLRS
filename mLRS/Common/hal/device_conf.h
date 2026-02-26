@@ -405,7 +405,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_LR20xx
 //  #define FREQUENCY_BAND_2P4_GHZ
   #define FREQUENCY_BAND_868_MHZ
-//XX  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_915_MHZ_FCC
 //  #define FREQUENCY_BAND_433_MHZ
 #endif
 

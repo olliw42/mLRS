@@ -117,13 +117,9 @@ void setup_configure_metadata(void)
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
     SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
     #define MODE_DEFAULT  MODE_31HZ
-#elif defined DEVICE_HAS_LR20xx // TODO
-    SetupMetaData.Mode_allowed_mask = 0b000110; // 31 Hz, 19 Hz
+#elif defined DEVICE_HAS_LR20xx
+    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
     #define MODE_DEFAULT  MODE_31HZ
-
-SetupMetaData.Mode_allowed_mask = 0b000100; // XX // TODO
-
-
 #else
     #error Unknown Mode !
 #endif

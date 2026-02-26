@@ -352,8 +352,10 @@ uint8_t buf[3];
 
 void Lr20xxDriverBase::SetPaConfig915Mhz(int8_t Power)
 {
-uint8_t PaLfDutyCycle, PaLfSlices;
+uint8_t PaLfDutyCycle = LR20XX_PA_LF_DUTY_CYCLE_DEFAULT;
+uint8_t PaLfSlices = LR20XX_PA_LF_SLICES_DEFAULT;
 
+#if 0
     // table 7-16
     // convert LF Power -19 ... 44 = -9.5 ... 22 dBm
     // into TargetPower of table 7-16
@@ -384,17 +386,17 @@ uint8_t PaLfDutyCycle, PaLfSlices;
     case 22 /* 21_DBM   */:
     case 23 /* 21p5_DBM */: PaLfDutyCycle = 7; PaLfSlices = 7; break;
     case 24 /* 22_DBM   */: PaLfDutyCycle = 7; PaLfSlices = 6; break;
-    default:
-        PaLfDutyCycle = 6; PaLfSlices = 7;
     }
+#endif
 
-    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, PaLfDutyCycle, PaLfSlices, LR20XX_PA_HF_DUTY_CYCLE_IF_PA_LF);
+    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, PaLfDutyCycle, PaLfSlices, LR20XX_PA_HF_DUTY_CYCLE_DEFAULT);
 }
 
 void Lr20xxDriverBase::SetPaConfig2p4Ghz(int8_t Power)
 {
-uint8_t PaHfDutyCycle;
+uint8_t PaHfDutyCycle = LR20XX_PA_HF_DUTY_CYCLE_DEFAULT;
 
+#if 0
     // table 7-16
     // convert HF Power -39 ... 24 = -19.5 ... 12 dBm
     // into TargetPower of table 7-18
@@ -413,20 +415,19 @@ uint8_t PaHfDutyCycle;
     case 10 /* 10_DBM */: PaHfDutyCycle = 30; break;
     case 11 /* 11_DBM */: PaHfDutyCycle = 26; break;
     case 12 /* 12_DBM */: PaHfDutyCycle = 16; break;
-    default:
-        PaHfDutyCycle = 16;
     }
+#endif
 
-    SetPaConfig(LR20XX_PA_SEL_HF,
-                LR20XX_PA_LF_MODE_IF_PA_HF, // 0
-                LR20XX_PA_LF_DUTY_CYCLE_IF_PA_HF, // 6
-                LR20XX_PA_LF_SLICE_IF_PA_HF, // 7
-                PaHfDutyCycle);
+    SetPaConfig(LR20XX_PA_SEL_HF, LR20XX_PA_LF_MODE_FSM,
+                LR20XX_PA_LF_DUTY_CYCLE_DEFAULT, LR20XX_PA_LF_SLICES_DEFAULT, PaHfDutyCycle);
 }
 
 void Lr20xxDriverBase::SetPaConfig433Mhz(int8_t Power)
 {
-    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, 6, 7, LR20XX_PA_HF_DUTY_CYCLE_IF_PA_LF);
+uint8_t PaLfDutyCycle = LR20XX_PA_LF_DUTY_CYCLE_DEFAULT;
+uint8_t PaLfSlices = LR20XX_PA_LF_SLICES_DEFAULT;
+
+    SetPaConfig(LR20XX_PA_SEL_LF, LR20XX_PA_LF_MODE_FSM, PaLfDutyCycle, PaLfSlices, LR20XX_PA_HF_DUTY_CYCLE_DEFAULT);
 }
 
 void Lr20xxDriverBase::SetTxParams(int8_t Power, uint8_t RampTime)
@@ -614,9 +615,9 @@ uint8_t buf[8];
      *Crc = ((buf[2] & 0x10) << 1);
      *CR = (buf[2] & 0x0F);
      *PktLen = buf[3];
-     *Snr = buf[4];
-     *Rssi = ((int16_t)buf[5] << 1) + (((int16_t)buf[7] & 0x02) >> 1);
-     *RssiSignal = ((int16_t)buf[6] << 1) + ((int16_t)buf[7] & 0x01);
+     *Snr = (int8_t)buf[4];
+     *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
+     *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
      *Detector = (buf[7] & 0x3D) >> 2;
 }
 
@@ -626,9 +627,9 @@ void Lr20xxDriverBase::GetLoraPacketStatus(int16_t* Rssi, int16_t* RssiSignal, i
 
       ReadCommand(LR20XX_CMD_GET_LORA_PACKET_STATUS, buf, 8);
 
-      *Snr = buf[4];
-      *Rssi = ((int16_t)buf[5] << 1) + (((int16_t)buf[7] & 0x02) >> 1);
-      *RssiSignal = ((int16_t)buf[6] << 1) + ((int16_t)buf[7] & 0x01);
+      *Snr = (int8_t)buf[4];
+      *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
+      *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
 }
 
 // FSK Packet Radio Commands
@@ -652,7 +653,7 @@ uint8_t buf[9];
 
 void Lr20xxDriverBase::SetPacketParamsFSK(
       uint16_t PreambleLength, uint8_t PreambleDetectorLength,
-      uint8_t long_preamble_mode, uint8_t pld_lenUnit, uint8_t addr_comp,
+      uint8_t long_preamble_mode, uint8_t pld_len_unit, uint8_t addr_comp,
       uint8_t PacketFormat, uint16_t PayloadLength, uint8_t Crc,
       uint8_t dc_free)
 {
@@ -661,7 +662,7 @@ uint8_t buf[7];
     buf[0] = (uint8_t)((PreambleLength & 0xFF00) >> 8);
     buf[1] = (uint8_t) (PreambleLength & 0x00FF);
     buf[2] = PreambleDetectorLength;
-    buf[3] = ((long_preamble_mode & 0x01) << 5) + ((pld_lenUnit & 0x01) << 4) +
+    buf[3] = ((long_preamble_mode & 0x01) << 5) + ((pld_len_unit & 0x01) << 4) +
              ((addr_comp & 0x02) << 2) + (PacketFormat & 0x03);
     buf[4] = (uint8_t)((PayloadLength & 0xFF00) >> 8);
     buf[5] = (uint8_t) (PayloadLength & 0x00FF);
@@ -743,29 +744,29 @@ uint8_t buf[16];
 }
 
 void Lr20xxDriverBase::GetPacketStatusFSK(
-      uint16_t* PktLen, uint16_t* RssiAvg, uint16_t* RssiSync, uint8_t* AddrMatchBcast, uint8_t* AddrMatchNode, uint8_t* Lqi)
+      uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* AddrMatchBcast, uint8_t* AddrMatchNode, int8_t* Lqi)
 {
 uint8_t buf[8];
 
     ReadCommand(LR20XX_CMD_GET_FSK_PACKET_STATUS, buf, 8);
 
     *PktLen = ((uint16_t)buf[2] << 8) + buf[3];
-    *RssiAvg = ((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2);
-    *RssiSync = ((uint16_t)buf[5] << 1) + (buf[6] & 0x01);
+    *RssiAvg = (int16_t)(((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2));
+    *RssiSync = (int16_t)(((uint16_t)buf[5] << 1) + (buf[6] & 0x01));
     *AddrMatchBcast = (buf[6] & 0x20) >> 5;
     *AddrMatchNode = (buf[6] & 0x10) >> 4;
-    *Lqi = buf[7];
+    *Lqi = (int8_t)buf[7];
 }
 
-void Lr20xxDriverBase::GetPacketStatusFSK(uint16_t* RssiAvg, uint16_t* RssiSync, uint8_t* Lqi)
+void Lr20xxDriverBase::GetPacketStatusFSK(int16_t* RssiAvg, int16_t* RssiSync, int8_t* Lqi)
 {
 uint8_t buf[8];
 
     ReadCommand(LR20XX_CMD_GET_FSK_PACKET_STATUS, buf, 8);
 
-    *RssiAvg = ((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2);
-    *RssiSync = ((uint16_t)buf[5] << 1) + (buf[6] & 0x01);
-    *Lqi = buf[7];
+    *RssiAvg = (int16_t)(((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2));
+    *RssiSync = (int16_t)(((uint16_t)buf[5] << 1) + (buf[6] & 0x01));
+    *Lqi = (int8_t)buf[7];
 }
 
 // FLRC Packet Radio Commands

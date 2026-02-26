@@ -87,7 +87,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
 
 
 const tSxFskConfiguration Lr11xxGfskConfiguration[] = {
-    { .br_bps = 100000,
+    { .BitRate_bps = 100000,
       .PulseShape = LR11XX_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = LR11XX_GFSK_BW_312000,
       .Fdev_hz = 50000,
@@ -145,18 +145,20 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
-        SetModulationParams(config->SpreadingFactor,
-                            config->Bandwidth,
-                            config->CodingRate,
-                            LR11XX_LORA_LDR_OFF);
+        SetModulationParams(
+            config->SpreadingFactor,
+            config->Bandwidth,
+            config->CodingRate,
+            LR11XX_LORA_LDR_OFF);
 
         if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
 
-        SetPacketParams(config->PreambleLength,
-                        config->HeaderType,
-                        config->PayloadLength,
-                        config->CrcEnabled,
-                        config->InvertIQ);
+        SetPacketParams(
+            config->PreambleLength,
+            config->HeaderType,
+            config->PayloadLength,
+            config->CrcEnabled,
+            config->InvertIQ);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -178,19 +180,21 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetGfskConfiguration(const tSxFskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsGFSK(config->br_bps,
-                                config->PulseShape,
-                                config->Bandwidth,
-                                config->Fdev_hz);
+        SetModulationParamsGFSK(
+            config->BitRate_bps,
+            config->PulseShape,
+            config->Bandwidth,
+            config->Fdev_hz);
 
-        SetPacketParamsGFSK(config->PreambleLength,
-                            config->PreambleDetectorLength,
-                            config->SyncWordLength,
-                            config->AddrComp,
-                            config->PacketType,
-                            config->PayloadLength,
-                            config->CRCType,
-                            config->Whitening);
+        SetPacketParamsGFSK(
+            config->PreambleLength,
+            config->PreambleDetectorLength,
+            config->SyncWordLength,
+            config->AddrComp,
+            config->PacketType,
+            config->PayloadLength,
+            config->CRCType,
+            config->Whitening);
 
         SetSyncWordGFSK(sync_word);
     }

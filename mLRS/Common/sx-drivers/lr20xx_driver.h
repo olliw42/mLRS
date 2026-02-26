@@ -20,6 +20,7 @@
 
 // the first two are for 900 MHz and the last three are for 2.4 GHz
 const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
+    // 900 MHz, Lora
     { .SpreadingFactor = LR20XX_LORA_SF5, // 900 MHz, 31 Hz
       .Bandwidth = LR20XX_LORA_BW_500,
       .CodingRate = LR20XX_LORA_CR_4_5,
@@ -42,6 +43,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .TimeOverAir = 22560,
       .ReceiverSensitivity = -112,
     },
+    // 2.4 GHz, Lora
     { .SpreadingFactor = LR20XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
       .CodingRate = LR20XX_LORA_CR_LI_4_5,
@@ -77,17 +79,18 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
     }
 };
 
-#if 0
-const tSxFskConfiguration Lr20xxFskConfiguration[] = { // 900 MHz, FSK 50 Hz
-    { .br_bps = 100000,
+
+const tSxFskConfiguration Lr20xxFskConfiguration[] = {
+    // 900 MHz, FSK 50 Hz
+    { .BitRate_bps = 100000,
       .PulseShape = LR20XX_FSK_PULSESHAPE_BT_1,
-      .Bandwidth = LR20XX_FSK_BW_312000,
+      .Bandwidth = LR20XX_FSK_BW_307700,
       .Fdev_hz = 50000,
       .PreambleLength = 16,
       .PreambleDetectorLength = LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_8_BITS,
       .SyncWordLength = 16,
-      .AddrComp = LR20XX_FSK_ADDRESS_FILTERING_DISABLE,
-      .PacketType = LR20XX_FSK_PKT_FIX_LEN,
+      .AddrComp = LR20XX_FSK_ADDR_COMP_DISABLE,
+      .PacketType = LR20XX_FSK_PKT_FORMAT_FIX_LEN,
       .PayloadLength = FRAME_TX_RX_LEN,
       .CRCType = LR20XX_FSK_CRC_OFF,
       .Whitening = LR20XX_FSK_WHITENING_ENABLE,
@@ -95,7 +98,6 @@ const tSxFskConfiguration Lr20xxFskConfiguration[] = { // 900 MHz, FSK 50 Hz
       .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
     }
 };
-#endif
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
@@ -106,11 +108,9 @@ void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
         if (power_sx < LR20XX_POWER_HF_MIN) power_sx = LR20XX_POWER_HF_MIN;
         if (power_sx > LR20XX_POWER_HF_MAX) power_sx = LR20XX_POWER_HF_MAX;
-power_sx = LR20XX_POWER_HF_MAX; //XX // TODO
     } else {
         if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
         if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
-power_sx = LR20XX_POWER_LF_MAX; //XX // TODO
     }
 
     *sx_power = power_sx;
@@ -153,18 +153,20 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
-        SetLoraModulationParams(config->SpreadingFactor,
-                                config->Bandwidth,
-                                config->CodingRate,
-                                LR20XX_LORA_LDRO_OFF); // recommended setting for BW500
+        SetLoraModulationParams(
+            config->SpreadingFactor,
+            config->Bandwidth,
+            config->CodingRate,
+            LR20XX_LORA_LDRO_OFF); // recommended setting for BW500
 
         if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
 
-        SetLoraPacketParams(config->PreambleLength,
-                            config->HeaderType,
-                            config->PayloadLength,
-                            config->CrcEnabled,
-                            config->InvertIQ);
+        SetLoraPacketParams(
+            config->PreambleLength,
+            config->HeaderType,
+            config->PayloadLength,
+            config->CrcEnabled,
+            config->InvertIQ);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -184,24 +186,28 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
-#if 0
     void SetFskConfiguration(const tSxFskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsFSK(config->br_bps,
-                               config->PulseShape,
-                               config->Bandwidth,
-                               config->Fdev_hz);
+        SetModulationParamsFSK(
+            config->BitRate_bps | LR20XX_FSK_BITRATE_DIRECT,
+            config->PulseShape,
+            config->Bandwidth,
+            config->Fdev_hz);
 
-        SetPacketParamsFSK(config->PreambleLength,
-                           config->PreambleDetectorLength,
-                           config->SyncWordLength,
-                           config->AddrComp,
-                           config->PacketType,
-                           config->PayloadLength,
-                           config->CRCType,
-                           config->Whitening);
+        SetPacketParamsFSK(
+            config->PreambleLength,
+            config->PreambleDetectorLength,
+            LR20XX_FSK_LONG_PREAMBLE_MODE_OFF,
+            LR20XX_FSK_PREAMBLE_LEN_UNIT_BYTES,
+            config->AddrComp,
+            config->PacketType,
+            config->PayloadLength,
+            config->CRCType,
+            config->Whitening);
 
-        SetSyncWordFSK(sync_word);
+        SetWhiteningParamsFSK(LR20XX_FSK_WHITEN_TYPE_SX126x_SX127x, 0); // TODO???? what seed for sx126x ???
+
+        SetSyncWordFSK(sync_word, LR20XX_FSK_SYNC_BITORDER_MSB, config->SyncWordLength); // MSB for sx126x compatibility
     }
 
     void SetFskConfigurationByIndex(uint8_t index, uint16_t sync_word)
@@ -211,7 +217,6 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         fsk_configuration = &(Lr20xxFskConfiguration[index]);
         SetFskConfiguration(fsk_configuration, sync_word);
     }
-#endif
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
@@ -219,11 +224,14 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
-        if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        switch (gconfig->FrequencyBand) {
+        case SX_FHSS_FREQUENCY_BAND_2P4_GHZ:
             SetPaConfig2p4Ghz(sx_power);
-        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_433_MHZ) {
+            break;
+        case SX_FHSS_FREQUENCY_BAND_433_MHZ:
             SetPaConfig433Mhz(sx_power);
-        } else {
+            break;
+        default:
             SetPaConfig915Mhz(sx_power); // SelPa(LR20XX_PA_SEL_LF); // seems not to be needed
         }
 
@@ -240,10 +248,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
-        // Order from User Manual:
+        // Order from DATASHEET:
         // SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
 
-//??        Calibrate(LR20XX_CALIBRATE_ALL);
+        Calibrate(LR20XX_CALIBRATE_ALL);
 
         SetStandby(LR20XX_STANDBY_MODE_RC);
         //SetStandby(LR20XX_STANDBY_MODE_XOSC);
@@ -255,6 +263,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetDefaultRxTxTimeout(0, 0);
 
         gconfig = global_config;
+
+        // TODO:
+        // - calibrate front end
+        // - calibrate rssi values
 
 #if 0
         switch (gconfig->FrequencyBand) {
@@ -279,14 +291,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(LR20XX_PACKET_TYPE_LORA);
-            //uint8_t sw = 0x12; WriteCommand(_LR20XX_CMD_SET_LORA_SYNC_WORD, &sw, 1);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
-#if 0
             SetPacketType(LR20XX_PACKET_TYPE_FSK);
             SetFskConfigurationByIndex(0, Config.FrameSyncWord);
-#endif
-            while(1){}
         }
 
         if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
@@ -343,8 +351,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         ClearTxFifo();
         WriteRadioTxFifo(data, len);
         ClearIrq(LR20XX_IRQ_ALL);
-        //SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR20xx uses 30.52 = 1/32768 us period, so for 1 ms needs 33 tmo value
-        SetTx(0); // 0 = no timeout. What is LR20xx's timeout doing??
+        // TODO: What is LR20xx's timeout exactly doing?
+        SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR20xx uses 30.52 = 1/32768 us period, so 1 ms needs 33 rc ticks
     }
 
     void SetToRx(void)
@@ -361,26 +369,26 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         ClearIrq(LR20XX_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
+    void GetPacketStatus(int8_t* const Rssi, int8_t* const Snr)
     {
-        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+        if (!gconfig) { *Rssi = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
-        int16_t rssi_signal;
 
         if (gconfig->modeIsLora()) {
-            Lr20xxDriverBase::GetLoraPacketStatus(&rssi, &rssi_signal, Snr);
+            int16_t rssi_signal;
+            GetLoraPacketStatus(&rssi, &rssi_signal, Snr);
+            rssi = -(rssi / 2);
         } else {
-#if 0
-            Lr20xxDriverBase::GetPacketStatusFSK(&rssi);
-#endif
-            *Snr = 0;
+            int16_t rssi_sync;
+            GetPacketStatusFSK(&rssi, &rssi_sync, Snr);
+            rssi = -(rssi / 2);
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
-        *RssiSync = rssi;
+        *Rssi = rssi;
     }
 
     void HandleAFC(void) {}
@@ -401,9 +409,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             if (index >= sizeof(Lr20xxLoraConfiguration)/sizeof(Lr20xxLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Lr20xxLoraConfiguration[index]);
         } else {
-#if 0
             fsk_configuration = &(Lr20xxFskConfiguration[0]);
-#endif
         }
     }
 
