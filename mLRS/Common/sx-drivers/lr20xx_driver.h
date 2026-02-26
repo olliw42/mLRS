@@ -30,7 +30,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13200,
-      .ReceiverSensitivity = -111,
+      .ReceiverSensitivity = -111, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF6,// 900 MHz, 19 Hz
       .Bandwidth = LR20XX_LORA_BW_500,
@@ -41,7 +41,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
-      .ReceiverSensitivity = -112,
+      .ReceiverSensitivity = -112, // ??
     },
     // 2.4 GHz, Lora
     { .SpreadingFactor = LR20XX_LORA_SF5, // 2.4 GHz, 50 Hz
@@ -53,7 +53,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
-      .ReceiverSensitivity = -105,
+      .ReceiverSensitivity = -105, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF6, // 2.4 GHz, 31 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
@@ -64,7 +64,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13418,
-      .ReceiverSensitivity = -108,
+      .ReceiverSensitivity = -108, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF7, // 2.4 GHz, 19 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
@@ -75,16 +75,15 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
-      .ReceiverSensitivity = -112,
+      .ReceiverSensitivity = -112, // ??
     }
 };
-
 
 const tSxFskConfiguration Lr20xxFskConfiguration[] = {
     // 900 MHz, FSK 50 Hz
     { .BitRate_bps = 100000,
       .PulseShape = LR20XX_FSK_PULSESHAPE_BT_1,
-      .Bandwidth = LR20XX_FSK_BW_307700,
+      .Bandwidth = LR20XX_FSK_BW_307700, // that's the closest to GFSK_BW_312000 used by sx126x
       .Fdev_hz = 50000,
       .PreambleLength = 16,
       .PreambleDetectorLength = LR20XX_FSK_PREAMBLE_DETECTOR_LENGTH_8_BITS,
@@ -95,7 +94,7 @@ const tSxFskConfiguration Lr20xxFskConfiguration[] = {
       .CRCType = LR20XX_FSK_CRC_OFF,
       .Whitening = LR20XX_FSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
+      .ReceiverSensitivity = -106, // ??
     }
 };
 

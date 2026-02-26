@@ -173,7 +173,7 @@ public:
 
     uint32_t TimeMs2RcTicks(uint16_t t_ms) { return ((uint32_t)t_ms * LR20XX_FREQ_RC_HZ)/1000; }
 
-    void EnableSx127xCompatibility() {}
+    void EnableSx127xCompatibility(void);
 
   private:
     uint8_t _status1; // status is two bytes

@@ -34,6 +34,7 @@ uint8_t dummy;
     }
 }
 
+
 // low level methods
 
 void Lr20xxDriverBase::WriteCommand(uint16_t opcode, uint8_t* data, uint8_t len)
@@ -119,6 +120,7 @@ void Lr20xxDriverBase::ReadRegMem32(uint32_t addr, uint32_t* data, uint8_t len)
     if (len > 0) SpiRead((uint8_t*)data, 4*len);
     SpiDeselect();
 }
+
 
 // System Configuration Commands
 
@@ -316,6 +318,9 @@ void Lr20xxDriverBase::SetFs(void)
 {
     WriteCommand(LR20XX_CMD_SET_FS);
 }
+
+
+// Common Radio Commands
 
 void Lr20xxDriverBase::SetRfFrequency(uint32_t RfFreq)
 {
@@ -632,6 +637,7 @@ void Lr20xxDriverBase::GetLoraPacketStatus(int16_t* Rssi, int16_t* RssiSignal, i
       *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
 }
 
+
 // FSK Packet Radio Commands
 
 void Lr20xxDriverBase::SetModulationParamsFSK(uint32_t BitRate, uint8_t PulseShape, uint8_t Bandwidth, uint32_t Fdev_hz)
@@ -769,6 +775,7 @@ uint8_t buf[8];
     *Lqi = (int8_t)buf[7];
 }
 
+
 // FLRC Packet Radio Commands
 
 void Lr20xxDriverBase::SetModulationParamsFLRC(uint8_t BitrateBw, uint8_t CodingRate, uint8_t PulseShape)
@@ -800,4 +807,10 @@ void Lr20xxDriverBase::SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord)
 
 }
 
+
 // auxiliary methods
+
+void Lr20xxDriverBase::EnableSx127xCompatibility(void)
+{
+
+}

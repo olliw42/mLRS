@@ -118,7 +118,9 @@ void setup_configure_metadata(void)
     SetupMetaData.Mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK
     #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_LR20xx
-    SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
+    // MULTIBAND
+    // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
+    SetupMetaData.Mode_allowed_mask = 0b010111; // 50 Hz, 31 Hz, 19 Hz, FSK
     #define MODE_DEFAULT  MODE_31HZ
 #else
     #error Unknown Mode !
@@ -386,6 +388,20 @@ void setup_sanitize_config(uint8_t config_id)
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()
     }
+#elif defined DEVICE_HAS_LR20xx
+    // MULTIBAND capable hardware, so adjust allowed modes for hardware capabilities
+    // we now know the frequency band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
+    switch (Setup.Common[config_id].FrequencyBand) {
+    case SETUP_FREQUENCY_BAND_2P4_GHZ:
+        SetupMetaData.Mode_allowed_mask &= 0b000111; // filter down to 50 Hz, 31 Hz, 19 Hz
+        break;
+    case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
+    case SETUP_FREQUENCY_BAND_868_MHZ:
+        SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
+        break;
+    default:
+        while(1){} // must not happen, should have been resolved in setup_sanitize()
+    }
 #endif
 
     SANITIZE(Common[config_id].Mode, MODE_NUM, SETUP_MODE, MODE_DEFAULT);
@@ -583,7 +599,12 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         }
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #elif defined DEVICE_HAS_LR20xx
-        while(1){} // not possible
+        if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+            Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW800_SF5_CR4_5;
+        } else {
+            while(1){} // not possible
+        }
+        Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #else
   #error Unknown Device !
 #endif
@@ -612,7 +633,11 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         }
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #elif defined DEVICE_HAS_LR20xx
-        Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW500_SF5_CR4_5;
+        if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+            Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW800_SF6_CR4_5;
+        } else {
+            Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW500_SF5_CR4_5;
+        }
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #else
   #error Unknown Device !
@@ -644,7 +669,11 @@ void configure_mode(uint8_t mode, uint8_t frequencyband)
         }
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #elif defined DEVICE_HAS_LR20xx
-        Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW500_SF6_CR4_5;
+        if (frequencyband == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+            Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW800_SF7_CR4_5;
+        } else {
+            Config.Sx.LoraConfigIndex = LR20xx_LORA_CONFIG_BW500_SF6_CR4_5;
+        }
         Config.Sx2.LoraConfigIndex = Config.Sx.LoraConfigIndex;
 #else
   #error Unknown Device !
