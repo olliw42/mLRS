@@ -306,23 +306,23 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         ClearIrq(LR11XX_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
+    void GetPacketStatus(int8_t* const Rssi, int8_t* const Snr)
     {
-        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+        if (!gconfig) { *Rssi = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
 
         if (gconfig->modeIsLora()) {
             Lr11xxDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
-            Lr11xxDriverBase::GetPacketStatusGFSK(&rssi);
+            GetPacketStatusGFSK(&rssi);
             *Snr = 0;
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
-        *RssiSync = rssi;
+        *Rssi = rssi;
     }
 
     void HandleAFC(void) {} // ???

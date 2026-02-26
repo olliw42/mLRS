@@ -227,9 +227,9 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
+    void GetPacketStatus(int8_t* const Rssi, int8_t* const Snr)
     {
-        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+        if (!gconfig) { *Rssi = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
         Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
@@ -237,7 +237,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
-        *RssiSync = rssi;
+        *Rssi = rssi;
     }
 
     void SetRfFrequency(uint32_t RfFrequency)

@@ -252,9 +252,9 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         ClearIrqStatus(SX1280_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
+    void GetPacketStatus(int8_t* const Rssi, int8_t* const Snr)
     {
-        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+        if (!gconfig) { *Rssi = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
 
@@ -262,14 +262,14 @@ class Sx128xDriverCommon : public Sx128xDriverBase
             Sx128xDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
             // FLRC has no SNR
-            Sx128xDriverBase::GetPacketStatusFLRC(&rssi);
+            GetPacketStatusFLRC(&rssi);
             *Snr = 0;
         }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
-        *RssiSync = rssi;
+        *Rssi = rssi;
     }
 
     void HandleAFC(void) {}

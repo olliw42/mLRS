@@ -663,10 +663,10 @@ uint8_t buf[7];
     buf[1] = (uint8_t) (PreambleLength & 0x00FF);
     buf[2] = PreambleDetectorLength;
     buf[3] = ((long_preamble_mode & 0x01) << 5) + ((pld_len_unit & 0x01) << 4) +
-             ((addr_comp & 0x02) << 2) + (PacketFormat & 0x03);
+             ((addr_comp & 0x03) << 2) + (PacketFormat & 0x03);
     buf[4] = (uint8_t)((PayloadLength & 0xFF00) >> 8);
     buf[5] = (uint8_t) (PayloadLength & 0x00FF);
-    buf[6] = ((Crc & 0x0F) >> 4) + (dc_free & 0x0F);
+    buf[6] = ((Crc & 0x0F) << 4) + (dc_free & 0x0F);
 
     WriteCommand(LR20XX_CMD_SET_FSK_PACKET_PARAMS, buf, 7);
 }
@@ -675,8 +675,8 @@ void Lr20xxDriverBase::SetWhiteningParamsFSK(uint8_t WhitenType, uint16_t Init)
 {
 uint8_t buf[2];
 
-    buf[0] = ((WhitenType & 0x0F) << 4) + (uint8_t)(Init & 0x0FFF);
-    buf[1] = Init;
+    buf[0] = ((WhitenType & 0x0F) << 4) + (uint8_t)((Init & 0x0F00) >> 8);
+    buf[1] = (uint8_t)(Init & 0x00FF);
 
     WriteCommand(LR20XX_CMD_SET_FSK_WHITENING_PARAMS, buf, 2);
 }
@@ -711,7 +711,7 @@ uint8_t buf[9];
     buf[6] = (uint8_t)((SyncWord & 0x000000000000FF00) >> 8);
     buf[7] = (uint8_t) (SyncWord & 0x00000000000000FF);
 
-    buf[8] = ((nb_bits & 0x01) << 7) + (bit_order & 0x7F);
+    buf[8] = ((bit_order & 0x01) << 7) + (nb_bits & 0x7F);
 
     WriteCommand(LR20XX_CMD_SET_FSK_SYNC_WORD, buf, 9);
 }

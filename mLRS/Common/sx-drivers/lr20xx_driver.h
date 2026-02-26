@@ -205,7 +205,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             config->CRCType,
             config->Whitening);
 
-        SetWhiteningParamsFSK(LR20XX_FSK_WHITEN_TYPE_SX126x_SX127x, 0); // TODO???? what seed for sx126x ???
+        SetWhiteningParamsFSK(LR20XX_FSK_WHITEN_TYPE_SX126x_SX127x, 0x0100); // LR1121 data sheet says seed default is 0x0100
 
         SetSyncWordFSK(sync_word, LR20XX_FSK_SYNC_BITORDER_MSB, config->SyncWordLength); // MSB for sx126x compatibility
     }
