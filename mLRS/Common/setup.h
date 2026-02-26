@@ -52,6 +52,10 @@ void setup_configure_metadata(void)
     // MULTIBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.FrequencyBand_allowed_mask = 0b000111; // 2.4 GHz, 915 FCC, 868
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
+#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ
+    // MULTIBAND 2.4 GHz & 433 MHz
+    SetupMetaData.FrequencyBand_allowed_mask = 0b001001; // 2.4 GHz, 433
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
 //** single band, multiple frequencies
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
@@ -398,6 +402,9 @@ void setup_sanitize_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
+        break;
+    case SETUP_FREQUENCY_BAND_433_MHZ:
+        SetupMetaData.Mode_allowed_mask &= 0b010110; // filter down to 31 Hz, 19 Hz, FSK
         break;
     default:
         while(1){} // must not happen, should have been resolved in setup_sanitize()

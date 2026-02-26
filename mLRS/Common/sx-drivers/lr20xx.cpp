@@ -591,16 +591,16 @@ uint8_t buf[4];
 }
 
 void Lr20xxDriverBase::GetLoraRxStats(
-      uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* header_crc_error, uint16_t* false_synch)
+    uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* header_crc_error, uint16_t* false_synch)
 {
 uint8_t buf[10];
 
-     ReadCommand(LR20XX_CMD_GET_LORA_RX_STATS, buf, 10);
+    ReadCommand(LR20XX_CMD_GET_LORA_RX_STATS, buf, 10);
 
-     *pkt_rx = ((uint16_t)buf[2] << 8) + buf[3];
-     *pkt_crc_error = ((uint16_t)buf[4] << 8) + buf[5];
-     *header_crc_error = ((uint16_t)buf[6] << 8) + buf[7];
-     *false_synch = ((uint16_t)buf[8] << 8) + buf[9];
+    *pkt_rx = ((uint16_t)buf[2] << 8) + buf[3];
+    *pkt_crc_error = ((uint16_t)buf[4] << 8) + buf[5];
+    *header_crc_error = ((uint16_t)buf[6] << 8) + buf[7];
+    *false_synch = ((uint16_t)buf[8] << 8) + buf[9];
 }
 
 void Lr20xxDriverBase::GetLoraPacketStatus(
@@ -609,26 +609,26 @@ void Lr20xxDriverBase::GetLoraPacketStatus(
 {
 uint8_t buf[8];
 
-     ReadCommand(LR20XX_CMD_GET_LORA_PACKET_STATUS, buf, 8);
+    ReadCommand(LR20XX_CMD_GET_LORA_PACKET_STATUS, buf, 8);
 
-     *Crc = ((buf[2] & 0x10) << 1);
-     *CR = (buf[2] & 0x0F);
-     *PktLen = buf[3];
-     *Snr = (int8_t)buf[4];
-     *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
-     *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
-     *Detector = (buf[7] & 0x3D) >> 2;
+    *Crc = ((buf[2] & 0x10) << 1);
+    *CR = (buf[2] & 0x0F);
+    *PktLen = buf[3];
+    *Snr = (int8_t)buf[4];
+    *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
+    *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
+    *Detector = (buf[7] & 0x3D) >> 2;
 }
 
 void Lr20xxDriverBase::GetLoraPacketStatus(int16_t* Rssi, int16_t* RssiSignal, int8_t* Snr)
 {
- uint8_t buf[8];
+uint8_t buf[8];
 
-      ReadCommand(LR20XX_CMD_GET_LORA_PACKET_STATUS, buf, 8);
+    ReadCommand(LR20XX_CMD_GET_LORA_PACKET_STATUS, buf, 8);
 
-      *Snr = (int8_t)buf[4];
-      *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
-      *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
+    *Snr = (int8_t)buf[4];
+    *Rssi = (int16_t)(((uint16_t)buf[5] << 1) + (((uint16_t)buf[7] & 0x02) >> 1));
+    *RssiSignal = (int16_t)(((uint16_t)buf[6] << 1) + ((uint16_t)buf[7] & 0x01));
 }
 
 
@@ -652,10 +652,10 @@ uint8_t buf[9];
 }
 
 void Lr20xxDriverBase::SetPacketParamsFSK(
-      uint16_t PreambleLength, uint8_t PreambleDetectorLength,
-      uint8_t long_preamble_mode, uint8_t pld_len_unit, uint8_t addr_comp,
-      uint8_t PacketFormat, uint16_t PayloadLength, uint8_t Crc,
-      uint8_t dc_free)
+    uint16_t PreambleLength, uint8_t PreambleDetectorLength,
+    uint8_t long_preamble_mode, uint8_t pld_len_unit, uint8_t addr_comp,
+    uint8_t PacketFormat, uint16_t PayloadLength, uint8_t Crc,
+    uint8_t dc_free)
 {
 uint8_t buf[7];
 
@@ -727,8 +727,8 @@ uint8_t buf[2];
 }
 
 void Lr20xxDriverBase::GetRxStatsFSK(
-      uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* len_error, uint16_t* pbl_det,
-      uint16_t* sync_ok, uint16_t* sync_fail, uint16_t* timeout)
+    uint16_t* pkt_rx, uint16_t* pkt_crc_error, uint16_t* len_error, uint16_t* pbl_det,
+    uint16_t* sync_ok, uint16_t* sync_fail, uint16_t* timeout)
 {
 uint8_t buf[16];
 
@@ -744,7 +744,7 @@ uint8_t buf[16];
 }
 
 void Lr20xxDriverBase::GetPacketStatusFSK(
-      uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* AddrMatchBcast, uint8_t* AddrMatchNode, int8_t* Lqi)
+    uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* AddrMatchBcast, uint8_t* AddrMatchNode, int8_t* Lqi)
 {
 uint8_t buf[8];
 
@@ -783,10 +783,10 @@ uint8_t buf[2];
 }
 
 void Lr20xxDriverBase::SetPacketParamsFLRC(
-      uint8_t AgcPblLen, uint8_t SyncWordLength,
-      uint8_t SyncWordTx, uint8_t SyncWordMatch,
-      uint8_t PacketFormat, uint8_t CrcLength,
-      uint16_t PayloadLength)
+    uint8_t AgcPblLen, uint8_t SyncWordLength,
+    uint8_t SyncWordTx, uint8_t SyncWordMatch,
+    uint8_t PacketFormat, uint8_t CrcLength,
+    uint16_t PayloadLength)
 {
 uint8_t buf[4];
 

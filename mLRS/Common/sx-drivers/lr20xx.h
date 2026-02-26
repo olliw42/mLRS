@@ -172,8 +172,6 @@ public:
 
     // auxiliary methods
 
-    uint32_t TimeMs2RcTicks(uint16_t t_ms) { return ((uint32_t)t_ms * LR20XX_FREQ_RC_HZ)/1000; }
-
     void EnableSx127xCompatibility(void);
 
   private:
@@ -186,30 +184,29 @@ public:
 // Enum Definitions
 //-------------------------------------------------------
 
-// WriteCommand(uint16_t opcode, uint8_t* data, uint16_t len)
 typedef enum {
-    // FIFO Read/Write Commands (Table 5-1)
+    // FIFO Read/Write Commands (table 5-1)
     LR20XX_CMD_READ_RADIO_RX_FIFO               = 0x0001,
     LR20XX_CMD_WRITE_RADIO_TX_FIFO              = 0x0002,
-    // Register/Memory Access (Table 5-2)
+    // Register/Memory Access (table 5-2)
     LR20XX_CMD_WRITE_REG_MEM_32                 = 0x0104,
     LR20XX_CMD_WRITE_REG_MEM_MASK_32            = 0x0105,
     LR20XX_CMD_READ_REG_MEM_32                  = 0x0106,
-    // System Configuration (Table 5-3)
+    // System Configuration (table 5-3)
     LR20XX_CMD_GET_STATUS                       = 0x0100,
     LR20XX_CMD_GET_VERSION                      = 0x0101,
     LR20XX_CMD_GET_ERRORS                       = 0x0110,
     LR20XX_CMD_CLEAR_ERRORS                     = 0x0111,
     LR20XX_CMD_SET_DIO_FUNCTION                 = 0x0112,
     LR20XX_CMD_SET_DIO_RF_SWITCH_CONFIG         = 0x0113,
-    _LR20XX_CMD_CLEAR_FIFO_IRQ_FLAGS             = 0x0114, // nu
+    LR20XX_CMD_CLEAR_FIFO_IRQ_FLAGS             = 0x0114, // nu
     LR20XX_CMD_SET_DIO_IRQ_CONFIG               = 0x0115,
     LR20XX_CMD_CLEAR_IRQ                        = 0x0116,
     LR20XX_CMD_GET_AND_CLEAR_IRQ_STATUS         = 0x0117,
-    _LR20XX_CMD_CONFIG_LF_CLOCK                  = 0x0118, // nu
-    _LR20XX_CMD_CONFIG_CLK_OUTPUTS               = 0x0119, // nu
-    _LR20XX_CMD_CONFIG_FIFO_IRQ                  = 0x011A, // nu
-    _LR20XX_CMD_GET_FIFO_IRQ_FLAGS               = 0x011B, // nu
+    LR20XX_CMD_CONFIG_LF_CLOCK                  = 0x0118, // nu
+    LR20XX_CMD_CONFIG_CLK_OUTPUTS               = 0x0119, // nu
+    LR20XX_CMD_CONFIG_FIFO_IRQ                  = 0x011A, // nu
+    LR20XX_CMD_GET_FIFO_IRQ_FLAGS               = 0x011B, // nu
     LR20XX_CMD_GET_RX_FIFO_LEVEL                = 0x011C,
     LR20XX_CMD_GET_TX_FIFO_LEVEL                = 0x011D,
     LR20XX_CMD_CLEAR_RX_FIFO                    = 0x011E,
@@ -218,18 +215,18 @@ typedef enum {
     LR20XX_CMD_SET_REG_MODE                     = 0x0121,
     LR20XX_CMD_CALIBRATE                        = 0x0122,
     LR20XX_CMD_CALIB_FE                         = 0x0123,
-    _LR20XX_CMD_GET_VBAT                         = 0x0124, // nu
-    _LR20XX_CMD_GET_TEMP                         = 0x0125, // nu
-    _LR20XX_CMD_GET_RANDOM_NUMBER                = 0x0126, // nu
-    _LR20XX_CMD_SET_SLEEP                        = 0x0127, // nu
+    LR20XX_CMD_GET_VBAT                         = 0x0124, // nu
+    LR20XX_CMD_GET_TEMP                         = 0x0125, // nu
+    LR20XX_CMD_GET_RANDOM_NUMBER                = 0x0126, // nu
+    LR20XX_CMD_SET_SLEEP                        = 0x0127, // nu
     LR20XX_CMD_SET_STANDBY                      = 0x0128,
     LR20XX_CMD_SET_FS                           = 0x0129,
-    _LR20XX_CMD_ADD_REGISTER_TO_RETENTION_MEM    = 0x012A, // nu
-    _LR20XX_CMD_SET_EOL_CFG                      = 0x0130, // nu
-    _LR20XX_CMD_CONFIGURE_XOSC                   = 0x0131, // nu
-    _LR20XX_CMD_SET_TEMP_COMP_CFG                = 0x0132, // nu
-    _LR20XX_CMD_SET_NTC_PARAMS                   = 0x0133, // nu
-    // Common Radio Commands (Table 5-4)
+    LR20XX_CMD_ADD_REGISTER_TO_RETENTION_MEM    = 0x012A, // nu
+    LR20XX_CMD_SET_EOL_CFG                      = 0x0130, // nu
+    LR20XX_CMD_CONFIGURE_XOSC                   = 0x0131, // nu
+    LR20XX_CMD_SET_TEMP_COMP_CFG                = 0x0132, // nu
+    LR20XX_CMD_SET_NTC_PARAMS                   = 0x0133, // nu
+    // Common Radio Commands (table 5-4)
     LR20XX_CMD_SET_RF_FREQUENCY                 = 0x0200,
     LR20XX_CMD_SET_RX_PATH                      = 0x0201,
     LR20XX_CMD_SET_PA_CONFIG                    = 0x0202,
@@ -238,39 +235,39 @@ typedef enum {
     LR20XX_CMD_SET_RXTX_FALLBACK_MODE           = 0x0206,
     LR20XX_CMD_SET_PACKET_TYPE                  = 0x0207,
     LR20XX_CMD_GET_PACKET_TYPE                  = 0x0208,
-    _LR20XX_CMD_STOP_TIMEOUT_ON_PREAMBLE         = 0x0209, // nu
+    LR20XX_CMD_STOP_TIMEOUT_ON_PREAMBLE         = 0x0209, // nu
     LR20XX_CMD_RESET_RX_STATS                   = 0x020A,
     LR20XX_CMD_GET_RSSI_INST                    = 0x020B,
     LR20XX_CMD_SET_RX                           = 0x020C,
     LR20XX_CMD_SET_TX                           = 0x020D,
-    _LR20XX_CMD_SET_TX_TEST_MODE                 = 0x020E, // nu
+    LR20XX_CMD_SET_TX_TEST_MODE                 = 0x020E, // nu
     LR20XX_CMD_SEL_PA                           = 0x020F,
-    _LR20XX_CMD_SET_RX_DUTY_CYCLE                = 0x0210, // nu
-    _LR20XX_CMD_AUTO_TXRX                        = 0x0211, // nu
+    LR20XX_CMD_SET_RX_DUTY_CYCLE                = 0x0210, // nu
+    LR20XX_CMD_AUTO_TXRX                        = 0x0211, // nu
     LR20XX_CMD_GET_RX_PKT_LENGTH                = 0x0212,
     LR20XX_CMD_SET_DEFAULT_RX_TX_TIMEOUT        = 0x0215,
-    _LR20XX_CMD_SET_TIMESTAMP_SOURCE             = 0x0216, // nu
-    _LR20XX_CMD_GET_TIMESTAMP_VALUE              = 0x0217, // nu
-    _LR20XX_CMD_SET_CCA                          = 0x0218, // nu
-    _LR20XX_CMD_GET_CCA_RESULT                   = 0x0219, // nu
+    LR20XX_CMD_SET_TIMESTAMP_SOURCE             = 0x0216, // nu
+    LR20XX_CMD_GET_TIMESTAMP_VALUE              = 0x0217, // nu
+    LR20XX_CMD_SET_CCA                          = 0x0218, // nu
+    LR20XX_CMD_GET_CCA_RESULT                   = 0x0219, // nu
     LR20XX_CMD_SET_AGC_GAIN_MANUAL              = 0x021A,
-    _LR20XX_CMD_SET_CAD_PARAMS                   = 0x021B, // nu
-    _LR20XX_CMD_SET_CAD                          = 0x021C, // nu
-    // LoRa Commands (Table 5-5)
+    LR20XX_CMD_SET_CAD_PARAMS                   = 0x021B, // nu
+    LR20XX_CMD_SET_CAD                          = 0x021C, // nu
+    // LoRa Commands (table 5-5)
     LR20XX_CMD_SET_LORA_MODULATION_PARAMS       = 0x0220,
     LR20XX_CMD_SET_LORA_PACKET_PARAMS           = 0x0221,
-    _LR20XX_CMD_SET_LORA_SYNCH_TIMEOUT           = 0x0222, // nu
-    _LR20XX_CMD_SET_LORA_SYNC_WORD               = 0x0223, // nu
-    _LR20XX_CMD_SET_LORA_SIDE_DET_CONFIG         = 0x0224, // nu
-    _LR20XX_CMD_SET_LORA_SIDE_DET_SYNCWORD       = 0x0225, // nu
-    _LR20XX_CMD_SET_LORA_CAD_PARAMS              = 0x0227, // nu
-    _LR20XX_CMD_SET_LORA_CAD                     = 0x0228, // nu
+    LR20XX_CMD_SET_LORA_SYNCH_TIMEOUT           = 0x0222, // nu
+    LR20XX_CMD_SET_LORA_SYNC_WORD               = 0x0223, // nu
+    LR20XX_CMD_SET_LORA_SIDE_DET_CONFIG         = 0x0224, // nu
+    LR20XX_CMD_SET_LORA_SIDE_DET_SYNCWORD       = 0x0225, // nu
+    LR20XX_CMD_SET_LORA_CAD_PARAMS              = 0x0227, // nu
+    LR20XX_CMD_SET_LORA_CAD                     = 0x0228, // nu
     LR20XX_CMD_GET_LORA_RX_STATS                = 0x0229,
     LR20XX_CMD_GET_LORA_PACKET_STATUS           = 0x022A,
-    _LR20XX_CMD_SET_LORA_ADDRESS                 = 0x022B, // nu
-    _LR20XX_CMD_SET_LORA_HOPPING                 = 0x022C, // nu
-    _LR20XX_CMD_SET_LORA_SIDE_DET_CAD            = 0x021E, // nu
-    // FSK Commands (Table 5-6)
+    LR20XX_CMD_SET_LORA_ADDRESS                 = 0x022B, // nu
+    LR20XX_CMD_SET_LORA_HOPPING                 = 0x022C, // nu
+    LR20XX_CMD_SET_LORA_SIDE_DET_CAD            = 0x021E, // nu
+    // FSK Commands (table 5-6)
     LR20XX_CMD_SET_FSK_MODULATION_PARAMS        = 0x0240,
     LR20XX_CMD_SET_FSK_PACKET_PARAMS            = 0x0241,
     LR20XX_CMD_SET_FSK_WHITENING_PARAMS         = 0x0242,
@@ -279,7 +276,7 @@ typedef enum {
     LR20XX_CMD_SET_FSK_ADDRESS                  = 0x0245,
     LR20XX_CMD_GET_FSK_RX_STATS                 = 0x0246,
     LR20XX_CMD_GET_FSK_PACKET_STATUS            = 0x0247,
-    // FLRC Commands (Table 5-7)
+    // FLRC Commands (table 5-7)
     LR20XX_CMD_SET_FLRC_MODULATION_PARAMS       = 0x0248,
     LR20XX_CMD_SET_FLRC_PACKET_PARAMS           = 0x0249,
     LR20XX_CMD_GET_FLRC_RX_STATS                = 0x024A,
