@@ -146,7 +146,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         
         GetVersion(&fwMajor, &fwMinor);
 
-        if (GetLastStatusCmd() != LR20XX_STATUS_CMD_DAT) return false;
+        if (GetLastStatusCmd() != LR20XX_STATUS_CMD_DAT) return false; // CMD_OK && CMD_DAT are ok
 
         return true;
     }
@@ -156,7 +156,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetLoraModulationParams(config->SpreadingFactor,
                                 config->Bandwidth,
                                 config->CodingRate,
-                                LR20XX_LORA_LDRO_ON); // recommended setting for BW500
+                                LR20XX_LORA_LDRO_OFF); // recommended setting for BW500
 
         if (Config.Mode == MODE_19HZ_7X) { EnableSx127xCompatibility(); }
 
@@ -245,8 +245,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
 //??        Calibrate(LR20XX_CALIBRATE_ALL);
 
-        //SetStandby(LR20XX_STANDBY_MODE_RC);
-        SetStandby(LR20XX_STANDBY_MODE_XOSC);
+        SetStandby(LR20XX_STANDBY_MODE_RC);
+        //SetStandby(LR20XX_STANDBY_MODE_XOSC);
 
 //??        SetTcxoMode(LR20XX_TCXO_SUPPLY_VOLTAGE_2_7, 25000); // set output to 1.6V-3.3V, ask specification of TCXO to maker board
 //??        SetRegMode(LR20XX_SIMO_USAGE_NORMAL); // Attention: requires DCDC workaround
@@ -279,7 +279,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(LR20XX_PACKET_TYPE_LORA);
-//??            uint8_t sw = 0x34; WriteCommand(_LR20XX_CMD_SET_LORA_SYNC_WORD, &sw, 1);
+            //uint8_t sw = 0x12; WriteCommand(_LR20XX_CMD_SET_LORA_SYNC_WORD, &sw, 1);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
 #if 0
@@ -311,14 +311,31 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         return Lr20xxDriverBase::GetAndClearIrqStatus();
     }
 
+    // Attention. This is nasty.
+    // LR2021 uses a rx fifo, so we can't peek into the received data without advancing the fifo.
+    // We call ReadBuffer() in the ISR to read few bytes, and later call ReadFrame().
+    // So, as a temporary workaround we double buffer. At some point in time we need to find
+    // a proper solution.
+
     void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len)
     {
         ReadRadioRxFifo(data, len);
+
+        if (rx_buf_pos != 0) while(1){} // must not happen!
+        if (len >= sizeof(rx_buf)) while(1){} // to play it safe
+        memcpy(rx_buf, data, len);
+        rx_buf_pos = len;
     }
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        ReadRadioRxFifo(data, len);
+        if (rx_buf_pos == 0) while(1){} // must not happen!
+        if (rx_buf_pos >= len) while(1){} // play it safe
+        memcpy(data, rx_buf, rx_buf_pos);
+        len -= rx_buf_pos;
+
+        ReadRadioRxFifo(data + rx_buf_pos, len);
+        ClearRxFifo();
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -335,6 +352,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         ClearRxFifo();
         ClearIrq(LR20XX_IRQ_ALL);
         SetRx(0); // 0 = no timeout
+        rx_buf_pos = 0;
     }
 
     void SetToIdle(void)
@@ -424,6 +442,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     const tSxFskConfiguration* fsk_configuration;
     int8_t sx_power;
     int8_t actual_power_dbm;
+
+    // for temporary workaround
+    uint8_t rx_buf_pos;
+    uint8_t rx_buf[16];
 };
 
 
