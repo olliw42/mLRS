@@ -111,7 +111,7 @@ const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = {
       .CrcLength = LR20XX_FLRC_CRC_OFF,
       .CrcSeed = 27368, // CrcSeed is 'j', 'p'. Not used.
       .TimeOverAir = 2383,
-      .ReceiverSensitivity = -104,
+      .ReceiverSensitivity = -104, // ??
     }
 };
 
@@ -223,7 +223,6 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             config->Whitening);
 
         SetWhiteningParamsFSK(LR20XX_FSK_WHITEN_TYPE_SX126x_SX127x, 0x0100); // LR1121 data sheet says seed default is 0x0100
-
         SetSyncWordFSK(sync_word, LR20XX_FSK_SYNC_BITORDER_MSB, config->SyncWordLength); // MSB for sx126x compatibility
     }
 
@@ -352,8 +351,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
-        SetDioFunction(7, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_DOWN);
-        SetDioIrqConfig(7, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
+        SetDioFunction(LR20XX_DIO_7, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_DOWN);
+        SetDioIrqConfig(LR20XX_DIO_7, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
         ClearIrq(LR20XX_IRQ_ALL);
 
         SetFs();
@@ -420,19 +419,16 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     {
         if (!gconfig) { *Rssi = -127; *Snr = 0; return; } // should not happen in practice
 
-        int16_t rssi;
-
+        int16_t rssi, rssi_s;
         if (gconfig->modeIsLora()) {
-            int16_t rssi_signal;
-            GetLoraPacketStatus(&rssi, &rssi_signal, Snr);
-            rssi = -(rssi / 2);
+            GetLoraPacketStatus(&rssi, &rssi_s, Snr);
         } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-
+            GetPacketStatusFLRC(&rssi, &rssi_s);
+            *Snr = 0;
         } else {
-            int16_t rssi_sync;
-            GetPacketStatusFSK(&rssi, &rssi_sync, Snr);
-            rssi = -(rssi / 2);
+            GetPacketStatusFSK(&rssi, &rssi_s, Snr);
         }
+        rssi = -(rssi / 2);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this

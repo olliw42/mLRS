@@ -800,12 +800,29 @@ uint8_t buf[4];
 
 void Lr20xxDriverBase::GetRxStatsFLRC(int16_t* stats)
 {
-
+    while(1){}
 }
 
-void Lr20xxDriverBase::GetPacketStatusFLRC(int16_t* RssiSync)
+void Lr20xxDriverBase::GetPacketStatusFLRC(uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* SyncWordNum)
 {
+uint8_t buf[7];
 
+    ReadCommand(LR20XX_CMD_GET_FLRC_PACKET_STATUS, buf, 7);
+
+    *PktLen = ((uint16_t)buf[2] << 8) + buf[3];
+    *RssiAvg = (int16_t)(((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2));
+    *RssiSync = (int16_t)(((uint16_t)buf[5] << 1) + (buf[6] & 0x01));
+    *SyncWordNum = (buf[6] & 0xF0) >> 4;
+}
+
+void Lr20xxDriverBase::GetPacketStatusFLRC(int16_t* RssiAvg, int16_t* RssiSync)
+{
+uint8_t buf[7];
+
+    ReadCommand(LR20XX_CMD_GET_FLRC_PACKET_STATUS, buf, 7);
+
+    *RssiAvg = (int16_t)(((uint16_t)buf[4] << 1) + ((buf[6] & 0x04) >> 2));
+    *RssiSync = (int16_t)(((uint16_t)buf[5] << 1) + (buf[6] & 0x01));
 }
 
 void Lr20xxDriverBase::SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord)
@@ -824,13 +841,14 @@ uint8_t buf[5];
 
 // auxiliary methods
 
-#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_ADDR           0x00F30A14
-#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_MASK           (3 << 18)
+#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_ADDR   0x00F30A14
+#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_MASK   (3 << 18)
+#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_VAL    (1 << 19)
 
 void Lr20xxDriverBase::EnableSx127xCompatibility(void)
 {
     WriteRegMemMask32(
         LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_ADDR,
         LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_MASK,
-        (1 << 19));
+        LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_VAL);
 }

@@ -166,7 +166,8 @@ public:
                              uint8_t PacketFormat, uint8_t CrcLength,
                              uint16_t PayloadLength);
     void GetRxStatsFLRC(int16_t* stats); /* ?? */
-    void GetPacketStatusFLRC(int16_t* RssiSync); /*??*/
+    void GetPacketStatusFLRC(uint16_t* PktLen, int16_t* RssiAvg, int16_t* RssiSync, uint8_t* SyncWordNum);
+    void GetPacketStatusFLRC(int16_t* RssiAvg, int16_t* RssiSync);
     void SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord);
 
     // auxiliary methods
@@ -382,6 +383,16 @@ typedef enum {
 } LR20XX_ERROR_ENUM;
 
 // cmd 0x0112 void SetDioFunction(uint8_t Dio, uint8_t Func, uint8_t PullDrive)
+typedef enum {
+    LR20XX_DIO_5                            = 5, // helper
+    LR20XX_DIO_6                            = 6,
+    LR20XX_DIO_7                            = 7,
+    LR20XX_DIO_8                            = 8,
+    LR20XX_DIO_9                            = 9,
+    LR20XX_DIO_10                           = 10,
+    LR20XX_DIO_11                           = 11,
+} LR20XX_DIO_ENUM;
+
 typedef enum {
     LR20XX_DIO_FUNCTION_NONE                = 0, // table 6-44, page 115
     LR20XX_DIO_FUNCTION_IRQ                 = 1,
