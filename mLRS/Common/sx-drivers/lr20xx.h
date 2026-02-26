@@ -780,10 +780,10 @@ typedef enum {
 } LR20XX_FLRC_PREAMBLE_LENGTH_ENUM;
 
 typedef enum {
-    LR20XX_FLRC_SYNC_LEN_NONE               = 0, // table 18-5, page 204
-    LR20XX_FLRC_SYNC_LEN_16_BITS            = 1,
-    LR20XX_FLRC_SYNC_LEN_32_BITS            = 2,
-} LR20XX_FLRC_SYNC_LEN_ENUM;
+    LR20XX_FLRC_SYNCWORD_LEN_NONE           = 0, // table 18-5, page 204
+    LR20XX_FLRC_SYNCWORD_LEN_16_BITS        = 1,
+    LR20XX_FLRC_SYNCWORD_LEN_32_BITS        = 2,
+} LR20XX_FLRC_SYNCWORD_LEN_ENUM;
 
 typedef enum {
     LR20XX_FLRC_SYNC_TX_NONE                = 0, // table 18-5, page 204
@@ -814,6 +814,12 @@ typedef enum {
     LR20XX_FLRC_CRC_24_BITS                 = 2,
     LR20XX_FLRC_CRC_32_BITS                 = 3,
 } LR20XX_FLRC_CRC_ENUM;
+
+typedef enum {
+    LR20XX_FLRC_SYNCWORD_1                  = 1,
+    LR20XX_FLRC_SYNCWORD_2                  = 2,
+    LR20XX_FLRC_SYNCWORD_3                  = 3,
+} LR20XX_FLRC_SYNCWORD_ENUM;
 
 
 #endif // LR20XX_LIB_H

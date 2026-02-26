@@ -98,6 +98,23 @@ const tSxFskConfiguration Lr20xxFskConfiguration[] = {
     }
 };
 
+const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = {
+    // 2,4 GHz, FLRC 111 Hz
+    { .Bandwidth = LR20XX_FLRC_BR_650_BW_888, // SX1280_FLRC_BR_0_650_BW_0_6,
+      .CodingRate = LR20XX_FLRC_CR_1_2,
+      .Bt = LR20XX_FLRC_PULSESHAPE_BT_1,
+      .AGCPreambleLength = LR20XX_FLRC_PREAMBLE_LENGTH_32_BITS,
+      .SyncWordLength = LR20XX_FLRC_SYNCWORD_LEN_32_BITS,
+      .SyncWordMatch = LR20XX_FLRC_SYNC_MATCH_1,
+      .PacketType = LR20XX_FLRC_PKT_FORMAT_FIX_LEN,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CrcLength = LR20XX_FLRC_CRC_OFF,
+      .CrcSeed = 27368, // CrcSeed is 'j', 'p'. Not used.
+      .TimeOverAir = 2383,
+      .ReceiverSensitivity = -104,
+    }
+};
+
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const uint8_t frequency_band)
@@ -136,6 +153,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         gconfig = nullptr;
         lora_configuration = nullptr;
         fsk_configuration = nullptr;
+        flrc_configuration = nullptr;
     }
 
     bool isOk(void)
@@ -217,6 +235,33 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetFskConfiguration(fsk_configuration, sync_word);
     }
 
+    void SetFlrcConfiguration(const tSxFlrcConfiguration* const config, uint32_t sync_word)
+    {
+        SetModulationParamsFLRC(
+            config->Bandwidth,
+            config->CodingRate,
+            config->Bt);
+
+        SetPacketParamsFLRC(
+            config->AGCPreambleLength,
+            config->SyncWordLength,
+            LR20XX_FLRC_SYNC_TX_1,
+            LR20XX_FLRC_SYNC_MATCH_1, // config->SyncWordMatch,
+            config->PacketType,
+            config->CrcLength,
+            config->PayloadLength);
+
+        SetSyncWordFLRC(LR20XX_FLRC_SYNCWORD_1, sync_word);
+    }
+
+    void SetFlrcConfigurationByIndex(uint8_t index, uint32_t sync_word)
+    {
+        if (index >= sizeof(Lr20xxFlrcConfiguration)/sizeof(Lr20xxFlrcConfiguration[0])) while(1){} // must not happen
+
+        flrc_configuration = &(Lr20xxFlrcConfiguration[index]);
+        SetFlrcConfiguration(flrc_configuration, sync_word);
+    }
+
     void SetRfPower_dbm(int8_t power_dbm)
     {
         if (!gconfig) return;
@@ -291,6 +336,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         if (gconfig->modeIsLora()) {
             SetPacketType(LR20XX_PACKET_TYPE_LORA);
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
+        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+            SetPacketType(LR20XX_PACKET_TYPE_FLRC);
+            SetFlrcConfigurationByIndex(0, Config.FrameSyncWord);
         } else {
             SetPacketType(LR20XX_PACKET_TYPE_FSK);
             SetFskConfigurationByIndex(0, Config.FrameSyncWord);
@@ -378,6 +426,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             int16_t rssi_signal;
             GetLoraPacketStatus(&rssi, &rssi_signal, Snr);
             rssi = -(rssi / 2);
+        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+
         } else {
             int16_t rssi_sync;
             GetPacketStatusFSK(&rssi, &rssi_sync, Snr);
@@ -407,6 +457,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             uint8_t index = gconfig->LoraConfigIndex;
             if (index >= sizeof(Lr20xxLoraConfiguration)/sizeof(Lr20xxLoraConfiguration[0])) while(1){} // must not happen
             lora_configuration = &(Lr20xxLoraConfiguration[index]);
+        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+            flrc_configuration = &(Lr20xxFlrcConfiguration[0]);
         } else {
             fsk_configuration = &(Lr20xxFskConfiguration[0]);
         }
@@ -418,7 +470,13 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (lora_configuration == nullptr && fsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : fsk_configuration->TimeOverAir;
+        if (gconfig->modeIsLora()) {
+            return lora_configuration->TimeOverAir;
+        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+            return flrc_configuration->TimeOverAir;
+        } else {
+            return fsk_configuration->TimeOverAir;
+        }
     }
 
     int16_t ReceiverSensitivity_dbm(void)
@@ -427,7 +485,13 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         if (lora_configuration == nullptr && fsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : fsk_configuration->ReceiverSensitivity;
+        if (gconfig->modeIsLora()) {
+            return lora_configuration->ReceiverSensitivity;
+        } else if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+            return flrc_configuration->ReceiverSensitivity;
+        } else {
+            return fsk_configuration->ReceiverSensitivity;
+        }
     }
 
     int8_t RfPower_dbm(void)
@@ -445,6 +509,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
   private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxFskConfiguration* fsk_configuration;
+    const tSxFlrcConfiguration* flrc_configuration;
     int8_t sx_power;
     int8_t actual_power_dbm;
 

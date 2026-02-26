@@ -111,15 +111,17 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
-        SetModulationParams(config->SpreadingFactor,
-                            config->Bandwidth,
-                            config->CodingRate);
+        SetModulationParams(
+            config->SpreadingFactor,
+            config->Bandwidth,
+            config->CodingRate);
 
-        SetPacketParams(config->PreambleLength,
-                        config->HeaderType,
-                        config->PayloadLength,
-                        config->CrcEnabled,
-                        config->InvertIQ);
+        SetPacketParams(
+            config->PreambleLength,
+            config->HeaderType,
+            config->PayloadLength,
+            config->CrcEnabled,
+            config->InvertIQ);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -142,17 +144,19 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetFlrcConfiguration(const tSxFlrcConfiguration* const config, uint32_t sync_word)
     {
-        SetModulationParamsFLRC(config->Bandwidth,
-                                config->CodingRate,
-                                config->Bt);
+        SetModulationParamsFLRC(
+            config->Bandwidth,
+            config->CodingRate,
+            config->Bt);
 
-        SetPacketParamsFLRC(config->AGCPreambleLength,
-                            config->SyncWordLength,
-                            config->SyncWordMatch,
-                            config->PacketType,
-                            config->PayloadLength,
-                            config->CrcLength,
-                            config->CrcSeed);
+        SetPacketParamsFLRC(
+            config->AGCPreambleLength,
+            config->SyncWordLength,
+            config->SyncWordMatch,
+            config->PacketType,
+            config->PayloadLength,
+            config->CrcLength,
+            config->CrcSeed);
 
         SetSyncWordFLRC(sync_word, config->CodingRate);
     }

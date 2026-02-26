@@ -120,7 +120,7 @@ void setup_configure_metadata(void)
 #elif defined DEVICE_HAS_LR20xx
     // MULTIBAND
     // we cannot work out all cases here, as it depends on actual FrequencyBand selection, so we here just do what we can do
-    SetupMetaData.Mode_allowed_mask = 0b010111; // 50 Hz, 31 Hz, 19 Hz, FSK
+    SetupMetaData.Mode_allowed_mask = 0b111111; // 50 Hz, 31 Hz, 19 Hz, FLRC, FSK, 19 Hz 7x
     #define MODE_DEFAULT  MODE_31HZ
 #else
     #error Unknown Mode !
@@ -393,7 +393,7 @@ void setup_sanitize_config(uint8_t config_id)
     // we now know the frequency band, so can adjust the allowed mask for Mode and Ortho (Ortho is done below)
     switch (Setup.Common[config_id].FrequencyBand) {
     case SETUP_FREQUENCY_BAND_2P4_GHZ:
-        SetupMetaData.Mode_allowed_mask &= 0b000111; // filter down to 50 Hz, 31 Hz, 19 Hz
+        SetupMetaData.Mode_allowed_mask &= 0b001111; // filter down to 50 Hz, 31 Hz, 19 Hz, FLRC
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:

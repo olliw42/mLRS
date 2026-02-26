@@ -85,14 +85,7 @@ void Lr20xxDriverBase::ReadRadioRxFifo(uint8_t* data, uint8_t len)
 
 void Lr20xxDriverBase::WriteRegMem32(uint32_t addr, uint32_t* data, uint8_t len)
 {
-    WaitOnBusy();
-    SpiSelect();
-    SpiTransfer((uint8_t)((LR20XX_CMD_WRITE_REG_MEM_32 & 0xFF00) >> 8), &_status1);
-    SpiTransfer((uint8_t)(LR20XX_CMD_WRITE_REG_MEM_32 & 0x00FF), &_status2);
-    addr <<= 8;
-    SpiWrite((uint8_t*)&(addr), 3);
-    if (len > 0) SpiWrite((uint8_t*)data, 4*len);
-    SpiDeselect();
+    while(1){}
 }
 
 void Lr20xxDriverBase::WriteRegMemMask32(uint32_t addr, uint32_t mask, uint32_t data)
@@ -101,24 +94,25 @@ void Lr20xxDriverBase::WriteRegMemMask32(uint32_t addr, uint32_t mask, uint32_t 
     SpiSelect();
     SpiTransfer((uint8_t)((LR20XX_CMD_WRITE_REG_MEM_MASK_32 & 0xFF00) >> 8), &_status1);
     SpiTransfer((uint8_t)(LR20XX_CMD_WRITE_REG_MEM_MASK_32 & 0x00FF), &_status2);
-    addr <<= 8;
-    SpiWrite((uint8_t*)&(addr), 3);
-    SpiWrite((uint8_t*)&mask, 4);
-    SpiWrite((uint8_t*)&data, 4);
+    uint8_t buf[11];
+    buf[0] = addr >> 16;
+    buf[1] = addr >> 8;
+    buf[2] = addr;
+    buf[3] = mask >> 24;
+    buf[4] = mask >> 16;
+    buf[5] = mask >> 8;
+    buf[6] = mask;
+    buf[7] = data >> 24;
+    buf[8] = data >> 16;
+    buf[9] = data >> 8;
+    buf[10] = data;
+    SpiWrite(buf, 11);
     SpiDeselect();
 }
 
 void Lr20xxDriverBase::ReadRegMem32(uint32_t addr, uint32_t* data, uint8_t len)
 {
-    WaitOnBusy();
-    SpiSelect();
-    SpiTransfer((uint8_t)((LR20XX_CMD_READ_REG_MEM_32 & 0xFF00) >> 8), &_status1);
-    SpiTransfer((uint8_t)(LR20XX_CMD_READ_REG_MEM_32 & 0x00FF), &_status2);
-    addr <<= 8;
-    SpiWrite((uint8_t*)&(addr), 3);
-    // TODO: is a deselect, wait, select block required ??
-    if (len > 0) SpiRead((uint8_t*)data, 4*len);
-    SpiDeselect();
+    while(1){}
 }
 
 
@@ -780,7 +774,12 @@ uint8_t buf[8];
 
 void Lr20xxDriverBase::SetModulationParamsFLRC(uint8_t BitrateBw, uint8_t CodingRate, uint8_t PulseShape)
 {
+uint8_t buf[2];
 
+    buf[0] = BitrateBw;
+    buf[1] = ((CodingRate & 0x0F) << 4) + (PulseShape & 0x0F);
+
+    WriteCommand(LR20XX_CMD_SET_FLRC_MODULATION_PARAMS, buf, 2);
 }
 
 void Lr20xxDriverBase::SetPacketParamsFLRC(
@@ -789,7 +788,14 @@ void Lr20xxDriverBase::SetPacketParamsFLRC(
       uint8_t PacketFormat, uint8_t CrcLength,
       uint16_t PayloadLength)
 {
+uint8_t buf[4];
 
+    buf[0] = ((AgcPblLen & 0x0F) << 2) + (SyncWordLength & 0x03);
+    buf[1] = ((SyncWordTx & 0x03) << 6) + ((SyncWordMatch & 0x07) << 3) + ((PacketFormat & 0x01) << 2) + (CrcLength & 0x03);
+    buf[2] = (uint8_t)((PayloadLength & 0xFF00) >> 8);
+    buf[3] = (uint8_t) (PayloadLength & 0x00FF);
+
+    WriteCommand(LR20XX_CMD_SET_FLRC_PACKET_PARAMS, buf, 4);
 }
 
 void Lr20xxDriverBase::GetRxStatsFLRC(int16_t* stats)
@@ -804,13 +810,27 @@ void Lr20xxDriverBase::GetPacketStatusFLRC(int16_t* RssiSync)
 
 void Lr20xxDriverBase::SetSyncWordFLRC(uint8_t SyncWordNum, uint32_t SyncWord)
 {
+uint8_t buf[5];
 
+    buf[0] = SyncWordNum;
+    buf[1] = (uint8_t)((SyncWord & 0xFF000000) >> 24);
+    buf[2] = (uint8_t)((SyncWord & 0x00FF0000) >> 16);
+    buf[3] = (uint8_t)((SyncWord & 0x0000FF00) >> 8);
+    buf[4] = (uint8_t) (SyncWord & 0x000000FF);
+
+    WriteCommand(LR20XX_CMD_SET_FLRC_SYNCWORD, buf, 5);
 }
 
 
 // auxiliary methods
 
+#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_ADDR           0x00F30A14
+#define LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_MASK           (3 << 18)
+
 void Lr20xxDriverBase::EnableSx127xCompatibility(void)
 {
-
+    WriteRegMemMask32(
+        LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_ADDR,
+        LR20XX_WORKAROUND_LORA_SX1276_COMPAT_REG_MASK,
+        (1 << 19));
 }
