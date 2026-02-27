@@ -77,16 +77,16 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
 
 
 #if defined POWER_USE_DEFAULT_RFPOWER_CALC || defined POWER2_USE_DEFAULT_RFPOWER_CALC
-void sx128x_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1280_MAX_DBM)
+void sx128x_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
 {
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM + 18;
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm + 18;
 
     if (power_sx < SX1280_POWER_MIN) power_sx = SX1280_POWER_MIN;
     if (power_sx > SX1280_POWER_MAX) power_sx = SX1280_POWER_MAX;
-    if (power_sx > SX1280_MAX_DBM) power_sx = SX1280_MAX_DBM;
+    if (power_sx > sx_power_max) power_sx = sx_power_max;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + GAIN_DBM - 18;
+    *actual_power_dbm = power_sx + gain_dbm - 18;
 }
 #endif
 
@@ -276,7 +276,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     //-- RF power interface
 
-    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
@@ -328,7 +328,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
   private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxFlrcConfiguration* flrc_configuration;
-    uint8_t sx_power;
+    int8_t sx_power;
     int8_t actual_power_dbm;
 };
 
@@ -394,7 +394,7 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
@@ -544,7 +544,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
   #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC

@@ -104,16 +104,16 @@ const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr11xx_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const int8_t GAIN_DBM, const uint8_t LR11XX_MAX_DBM)
+void lr11xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
 {
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm;
 
     if (power_sx < LR11XX_POWER_MIN) power_sx = LR11XX_POWER_MIN;
     if (power_sx > LR11XX_POWER_MAX) power_sx = LR11XX_POWER_MAX;
-    if (power_sx > LR11XX_MAX_DBM) power_sx = LR11XX_MAX_DBM;
+    if (power_sx > sx_power_max) power_sx = sx_power_max;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + GAIN_DBM;
+    *actual_power_dbm = power_sx + gain_dbm;
 }
 #endif
 
@@ -323,7 +323,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     //-- RF power interface
 
-    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
@@ -374,7 +374,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
   private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
-    uint8_t sx_power;
+    int8_t sx_power;
     int8_t actual_power_dbm;
 };
 
@@ -439,7 +439,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
@@ -575,7 +575,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);

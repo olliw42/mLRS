@@ -71,6 +71,21 @@ const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
 };
 
 
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+void sx126x_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
+{
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm;
+
+    if (power_sx < SX126X_POWER_MIN) power_sx = SX126X_POWER_MIN;
+    if (power_sx > SX126X_POWER_MAX) power_sx = SX126X_POWER_MAX;
+    if (power_sx > sx_power_max) power_sx = sx_power_max;
+
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx + gain_dbm;
+}
+#endif
+
+
 typedef enum {
     SX12xx_OSCILLATOR_CONFIG_TCXO_1P6_V = SX126X_DIO3_OUTPUT_1_6,
     SX12xx_OSCILLATOR_CONFIG_TCXO_1P7_V = SX126X_DIO3_OUTPUT_1_7,
@@ -82,21 +97,6 @@ typedef enum {
     SX12xx_OSCILLATOR_CONFIG_TCXO_3P3_V = SX126X_DIO3_OUTPUT_3_3,
     SX12xx_OSCILLATOR_CONFIG_CRYSTAL = UINT8_MAX,
 } SX12xx_OSCILLATOR_CONFIG_ENUM;
-
-
-#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx126x_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
-{
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
-
-    if (power_sx < SX126X_POWER_MIN) power_sx = SX126X_POWER_MIN;
-    if (power_sx > SX126X_POWER_MAX) power_sx = SX126X_POWER_MAX;
-    if (power_sx > SX126X_MAX_DBM) power_sx = SX126X_MAX_DBM;
-
-    *sx_power = power_sx;
-    *actual_power_dbm = power_sx + GAIN_DBM;
-}
-#endif
 
 
 class Sx126xDriverCommon : public Sx126xDriverBase
@@ -320,7 +320,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     //-- RF power interface
 
-    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
@@ -373,7 +373,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
   private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
-    uint8_t sx_power;
+    int8_t sx_power;
     int8_t actual_power_dbm;
 };
 
@@ -436,7 +436,7 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
@@ -571,7 +571,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);

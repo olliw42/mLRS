@@ -70,7 +70,7 @@ const rfpower_t rfpower_list[] = {
 #include "../setup_types.h"
 
 // SX1280 power setting can vary from 0 .. 31 which corresponds to -18 dBm .. 13 dBm
-void sx128x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx128x_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
         *sx_power = 19;
@@ -111,7 +111,7 @@ const rfpower_t rfpower_list[] = {
 #if defined POWER2_PA_MATEK_MTX_DB30
 #define POWER_PA_DEFINED
 
-void sx128x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm)
+void sx128x_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm)
 {
     if (power_dbm >= POWER_30_DBM) {
         *sx_power = 19;
@@ -198,7 +198,7 @@ const rfpower_t rfpower_list[] = {
 // SX126X power setting can vary from -9 .. 22 which corresponds to -9 dBm .. 22 dBm
 #include "../setup_types.h"
 
-void sx126x_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+void sx126x_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (power_dbm >= POWER_30_DBM) {
         *sx_power = (frequency_band == SX_FHSS_FREQUENCY_BAND_868_MHZ) ? 10 : 10;
