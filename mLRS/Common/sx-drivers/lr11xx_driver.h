@@ -251,7 +251,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
             SetPacketType(LR11XX_PACKET_TYPE_GFSK);
-            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
+            SetGfskConfigurationByIndex(0, gconfig->FskSyncWord);
         }
 
         if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {

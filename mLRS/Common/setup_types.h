@@ -479,6 +479,7 @@ typedef struct
 typedef struct
 {
     uint8_t LoraConfigIndex;
+    uint16_t FskSyncWord;
     uint32_t FlrcSyncWord;
     int8_t Power_dbm;
     SX_FHSS_FREQUENCY_BAND_ENUM FrequencyBand;

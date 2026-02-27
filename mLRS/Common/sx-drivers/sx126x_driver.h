@@ -250,7 +250,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
-            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
+            SetGfskConfigurationByIndex(0, gconfig->FskSyncWord);
         }
 
         SetBufferBaseAddress(0, 0);
