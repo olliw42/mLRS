@@ -7,7 +7,6 @@
 // SX128x Driver
 //*******************************************************
 // Configuration defines:
-// #define LORA_SYNCWORD
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
 // #define SX_USE_REGULATOR_MODE_DCDC
 // #define POWER2_USE_DEFAULT_RFPOWER_CALC
@@ -23,7 +22,7 @@
 //-------------------------------------------------------
 
 const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
-    { .SpreadingFactor = SX1280_LORA_SF5,
+    { .SpreadingFactor = SX1280_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = SX1280_LORA_BW_800,
       .CodingRate = SX1280_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -34,7 +33,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
       .TimeOverAir = 7892,
       .ReceiverSensitivity = -105,
     },
-    { .SpreadingFactor = SX1280_LORA_SF6,
+    { .SpreadingFactor = SX1280_LORA_SF6, // 2.4 GHz, 50 Hz
       .Bandwidth = SX1280_LORA_BW_800,
       .CodingRate = SX1280_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -45,7 +44,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
       .TimeOverAir = 13418,
       .ReceiverSensitivity = -108,
     },
-    { .SpreadingFactor = SX1280_LORA_SF7,
+    { .SpreadingFactor = SX1280_LORA_SF7, // 2.4 GHz, 50 Hz
       .Bandwidth = SX1280_LORA_BW_800,
       .CodingRate = SX1280_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -58,8 +57,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
     }
 };
 
-
-const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = {
+const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = { // 2.4 GHz, 111 Hz FLRC
     { .Bandwidth = SX1280_FLRC_BR_0_650_BW_0_6,
       .CodingRate = SX1280_FLRC_CR_1_2,
       .Bt = SX1280_FLRC_BT_1,
@@ -195,10 +193,6 @@ class Sx128xDriverCommon : public Sx128xDriverBase
             SetRfPower_dbm(gconfig->Power_dbm);
 
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
-
-#ifdef LORA_SYNCWORD
-            SetSyncWord(LORA_SYNCWORD);
-#endif
         } else {
             SetPacketType(SX1280_PACKET_TYPE_FLRC);
             SetAutoFs(true);
@@ -397,7 +391,7 @@ class Sx128xDriver : public Sx128xDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX);
 #else
         sx128x_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
@@ -548,12 +542,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x
   #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC
-        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX_DBM);
+        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, POWER2_SX1280_MAX);
   #else
         sx128x_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
   #endif
 #elif defined POWER_USE_DEFAULT_RFPOWER_CALC
-        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX_DBM);
+        sx128x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1280_MAX);
 #else
         sx128x_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif

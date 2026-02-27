@@ -31,7 +31,7 @@ https://www.thethingsnetwork.org/forum/t/should-private-lorawan-networks-use-a-d
 //-------------------------------------------------------
 
 const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
-    { .SpreadingFactor = SX1276_LORA_SF6,
+    { .SpreadingFactor = SX1276_LORA_SF6, // 900 MHz, 19 Hz 7x
       .Bandwidth = SX1276_LORA_BW_500,
       .CodingRate = SX1276_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -312,16 +312,16 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         uint32_t bw = 7800;
         switch (Bandwidth) {
-          case SX1276_LORA_BW_7p8: bw = 7800; break;
-          case SX1276_LORA_BW_10p4: bw = 10400; break;
-          case SX1276_LORA_BW_15p6: bw = 15600; break;
-          case SX1276_LORA_BW_20p8: bw = 20800; break;
-          case SX1276_LORA_BW_31p25: bw = 31250; break;
-          case SX1276_LORA_BW_41p7: bw = 41700; break;
-          case SX1276_LORA_BW_62p5: bw = 62500; break;
-          case SX1276_LORA_BW_125: bw = 125000; break;
-          case SX1276_LORA_BW_250: bw = 250000; break;
-          case SX1276_LORA_BW_500: bw = 500000; break;
+            case SX1276_LORA_BW_7p8: bw = 7800; break;
+            case SX1276_LORA_BW_10p4: bw = 10400; break;
+            case SX1276_LORA_BW_15p6: bw = 15600; break;
+            case SX1276_LORA_BW_20p8: bw = 20800; break;
+            case SX1276_LORA_BW_31p25: bw = 31250; break;
+            case SX1276_LORA_BW_41p7: bw = 41700; break;
+            case SX1276_LORA_BW_62p5: bw = 62500; break;
+            case SX1276_LORA_BW_125: bw = 125000; break;
+            case SX1276_LORA_BW_250: bw = 250000; break;
+            case SX1276_LORA_BW_500: bw = 500000; break;
         };
 
         return ((1 << sf) * 1000000) / bw;
@@ -389,7 +389,7 @@ class Sx127xDriver : public Sx127xDriverCommon
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
 #elif defined POWER_USE_DEFAULT_RFPOWER_CALC
-        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX);
 #else
         sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
@@ -537,7 +537,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
 #elif defined POWER_USE_DEFAULT_RFPOWER_CALC
-        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX);
 #else
         sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif

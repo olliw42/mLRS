@@ -27,7 +27,7 @@
 //-------------------------------------------------------
 
 const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
-    { .SpreadingFactor = SX126X_LORA_SF5,
+    { .SpreadingFactor = SX126X_LORA_SF5, // 900 MHz, 31 Hz
       .Bandwidth = SX126X_LORA_BW_500,
       .CodingRate = SX126X_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -38,7 +38,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
       .TimeOverAir = 13200,
       .ReceiverSensitivity = -111,
     },
-    { .SpreadingFactor = SX126X_LORA_SF6,
+    { .SpreadingFactor = SX126X_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = SX126X_LORA_BW_500,
       .CodingRate = SX126X_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -51,8 +51,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
     }
 };
 
-
-const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
+const tSxGfskConfiguration Sx126xGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
     { .br_bps = 100000,
       .PulseShape = SX126X_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = SX126X_GFSK_BW_312000,
@@ -66,7 +65,7 @@ const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
       .CRCType = SX126X_GFSK_CRC_OFF,
       .Whitening = SX126X_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
+      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
 
@@ -133,7 +132,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         // set LoRaSymbNumTimeout for false detection of preamble
         // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
-        //fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
+        // fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -256,7 +255,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetBufferBaseAddress(0, 0);
 
         SetDioIrqParams(SX126X_IRQ_ALL,
-                        SX126X_IRQ_RX_DONE|SX126X_IRQ_TX_DONE|SX126X_IRQ_RX_TX_TIMEOUT,
+                        SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_TX_TIMEOUT,
                         SX126X_IRQ_NONE,
                         SX126X_IRQ_NONE);
         ClearIrqStatus(SX126X_IRQ_ALL);
@@ -279,7 +278,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
+        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 has 15p625 period, so 1 ms needs 64 ticks
     }
 
     void SetToRx(void)
@@ -439,7 +438,7 @@ class Sx126xDriver : public Sx126xDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -574,7 +573,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif

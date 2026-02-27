@@ -17,7 +17,7 @@
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_12p5_DBM // maximum allowed sx power
+#define POWER_SX1280_MAX          SX1280_POWER_12p5_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           2 // index into rfpower_list array
@@ -38,7 +38,7 @@ const rfpower_t rfpower_list[] = {
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            27 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER_SX1280_MAX          SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
@@ -56,7 +56,7 @@ const rfpower_t rfpower_list[] = {
 #define POWER_PA_DEFINED
 
 #define POWER2_GAIN_DBM           27 // gain of a PA stage if present
-#define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER2_SX1280_MAX         SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 #endif
@@ -151,7 +151,7 @@ void sx128x_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1276_MAX_DBM      SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
+#define POWER_SX1276_MAX          SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           1 // index into rfpower_list array
@@ -171,7 +171,7 @@ const rfpower_t rfpower_list[] = {
 #define POWER_PA_DEFINED
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
+#define POWER_SX126X_MAX          SX126X_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           2 // index into rfpower_list array

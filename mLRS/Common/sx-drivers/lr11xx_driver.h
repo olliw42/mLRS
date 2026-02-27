@@ -26,7 +26,7 @@
 
 // the first two are for 900 MHz and the last three are for 2.4 GHz
 const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
-    { .SpreadingFactor = LR11XX_LORA_SF5,
+    { .SpreadingFactor = LR11XX_LORA_SF5, // 900 MHz, 31 Hz
       .Bandwidth = LR11XX_LORA_BW_500,
       .CodingRate = LR11XX_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -37,7 +37,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .TimeOverAir = 13200,
       .ReceiverSensitivity = -111,
     },
-    { .SpreadingFactor = LR11XX_LORA_SF6,
+    { .SpreadingFactor = LR11XX_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_500,
       .CodingRate = LR11XX_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -48,7 +48,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .TimeOverAir = 22560,
       .ReceiverSensitivity = -112,
     },
-    { .SpreadingFactor = LR11XX_LORA_SF5,
+    { .SpreadingFactor = LR11XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
       .CodingRate = LR11XX_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -59,7 +59,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .TimeOverAir = 7892,
       .ReceiverSensitivity = -105,
     },
-    { .SpreadingFactor = LR11XX_LORA_SF6,
+    { .SpreadingFactor = LR11XX_LORA_SF6, // 2.4 GHz, 31 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
       .CodingRate = LR11XX_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -70,7 +70,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .TimeOverAir = 13418,
       .ReceiverSensitivity = -108,
     },
-    { .SpreadingFactor = LR11XX_LORA_SF7,
+    { .SpreadingFactor = LR11XX_LORA_SF7, // 2.4 GHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
       .CodingRate = LR11XX_LORA_CR_LI_4_5,
       .PreambleLength = 12,
@@ -83,8 +83,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
     }
 };
 
-
-const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
+const tSxGfskConfiguration Lr11xxGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
     { .br_bps = 100000,
       .PulseShape = LR11XX_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = LR11XX_GFSK_BW_312000,
@@ -98,7 +97,7 @@ const tSxGfskConfiguration Lr11xxGfskConfiguration[] = {
       .CRCType = LR11XX_GFSK_CRC_OFF,
       .Whitening = LR11XX_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
+      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
 
@@ -206,7 +205,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         if (!gconfig) return;
 
         _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
-        SetTxParams(sx_power, LR11XX_RAMPTIME_48_US); // Closest to 40 uS used by SX126x / SX127x
+        SetTxParams(sx_power, LR11XX_RAMPTIME_48_US); // closest to 40 us used by SX126x / SX127x
     }
 
     void UpdateRfPower(tSxGlobalConfig* const global_config)
@@ -223,13 +222,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetRxTxFallbackMode(LR11XX_RX_TX_FALLBACK_MODE_FS);
         SetRxBoosted(LR11XX_RX_GAIN_BOOSTED_GAIN);
 #ifndef SX_USE_RFSW_CTRL
-        SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1);  // Default ELRS selection
+        SetDioAsRfSwitch(15, 0, 4, 8, 8, 2, 0, 1); // default ELRS selection
 #else
         uint8_t RfswCtrl[8] = SX_USE_RFSW_CTRL;
         SetDioAsRfSwitch(RfswCtrl[0], RfswCtrl[1], RfswCtrl[2], RfswCtrl[3], 
                          RfswCtrl[4], RfswCtrl[5], RfswCtrl[6], RfswCtrl[7]);
 #endif
-        SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0);  // DIO1 only
+        SetDioIrqParams(LR11XX_IRQ_TX_DONE | LR11XX_IRQ_RX_DONE | LR11XX_IRQ_TIMEOUT, 0); // DIO1 only
 
         gconfig = global_config;
 
@@ -284,7 +283,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
     {
         WriteBuffer(data, len);
         ClearIrq(LR11XX_IRQ_ALL);
-        SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx have static 30.517 uS (1 / 32768) period base, so for 1 ms needs 33 tmo value
+        SetTx(tmo_ms * 33); // 0 = no timeout. TimeOut period in ms. LR11xx has 1/32768 = 30.517 us period, so 1 ms needs 33 ticks
     }
 
     void SetToRx(void)
@@ -319,7 +318,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         *RssiSync = rssi;
     }
 
-    void HandleAFC(void) {} // ???
+    void HandleAFC(void) {}
 
     //-- RF power interface
 
@@ -442,7 +441,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
+        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX);
 #else
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -578,7 +577,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX_DBM);
+        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX);
 #else
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
