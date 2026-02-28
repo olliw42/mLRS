@@ -91,7 +91,6 @@ typedef struct
     uint8_t PacketType;
     uint8_t PayloadLength;
     uint8_t CrcLength;
-    uint16_t CrcSeed;
     uint32_t TimeOverAir; // in us
     int16_t ReceiverSensitivity;
 } tSxFlrcConfiguration;
@@ -99,7 +98,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t br_bps;
+    uint32_t BitRate_bps;
     uint8_t PulseShape;
     uint8_t Bandwidth;
     uint32_t Fdev_hz;

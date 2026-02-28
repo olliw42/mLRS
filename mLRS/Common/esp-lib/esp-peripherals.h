@@ -136,7 +136,7 @@ void gpio_init(uint8_t GPIO_Pin, IOMODEENUM mode)
 GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32C3
-    GPIO.out_w1tc.out_w1tc = (1 << GPIO_Pin);
+    GPIO.out_w1tc.out_w1tc = ((uint32_t)1 << GPIO_Pin);
 #elif defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32S3
     if (GPIO_Pin < 32) {
         GPIO.out_w1tc = ((uint32_t)1 << GPIO_Pin);
@@ -145,7 +145,7 @@ GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
     }
 #elif defined ESP8266
     if (GPIO_Pin < 16) {
-        GPOC = (1 << GPIO_Pin);
+        GPOC = ((uint32_t)1 << GPIO_Pin);
     } else if (GPIO_Pin == 16) { // special handling needed for pin 16
         GP16O &=~ 1;
     }
@@ -156,7 +156,7 @@ GPIO_INLINE_FORCED void gpio_low(uint8_t GPIO_Pin)
 GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32C3
-    GPIO.out_w1ts.out_w1ts = (1 << GPIO_Pin);
+    GPIO.out_w1ts.out_w1ts = ((uint32_t)1 << GPIO_Pin);
 #elif defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32S3
     if (GPIO_Pin < 32) {
         GPIO.out_w1ts = ((uint32_t)1 << GPIO_Pin);
@@ -165,7 +165,7 @@ GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
     }
 #elif defined ESP8266
     if (GPIO_Pin < 16) {
-        GPOS = (1 << GPIO_Pin);
+        GPOS = ((uint32_t)1 << GPIO_Pin);
     } else if (GPIO_Pin == 16) { // special handling needed for pin 16
         GP16O |= 1;
     }
@@ -175,25 +175,59 @@ GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 
 GPIO_INLINE_FORCED void gpio_toggle(uint8_t GPIO_Pin)
 {
-    digitalWrite(GPIO_Pin, !digitalRead(GPIO_Pin));
+    if (gpio_readoutput(GPIO_Pin)) {
+        gpio_low(GPIO_Pin);
+    } else {
+        gpio_high(GPIO_Pin);
+    }
 }
 
 
 GPIO_INLINE_FORCED uint16_t gpio_read_activehigh(uint8_t GPIO_Pin)
 {
-    return (digitalRead(GPIO_Pin) == HIGH) ? 1 : 0;
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    return (GPIO.in.data >> GPIO_Pin) & 1;
+#elif defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32S3
+    if (GPIO_Pin < 32) {
+        return (GPIO.in >> GPIO_Pin) & 1;
+    } else {
+        return (GPIO.in1.data >> (GPIO_Pin - 32)) & 1;
+    }
+#elif defined ESP8266
+    if (GPIO_Pin < 16) {
+        return (GPI >> GPIO_Pin) & 1;
+    } else if (GPIO_Pin == 16) { // special handling needed for pin 16
+        return GP16I & 1;
+    }
+    return 0;
+#endif
 }
 
 
 GPIO_INLINE_FORCED uint16_t gpio_read_activelow(uint8_t GPIO_Pin)
 {
-    return (digitalRead(GPIO_Pin) != HIGH) ? 1 : 0;
+    return gpio_read_activehigh(GPIO_Pin) ^ 1;
 }
 
 
 GPIO_INLINE_FORCED uint16_t gpio_readoutput(uint8_t GPIO_Pin)
 {
-    return (digitalRead(GPIO_Pin) == HIGH) ? 1 : 0;
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    return (GPIO.out.out_data >> GPIO_Pin) & 1;
+#elif defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32S3
+    if (GPIO_Pin < 32) {
+        return (GPIO.out >> GPIO_Pin) & 1;
+    } else {
+        return (GPIO.out1.data >> (GPIO_Pin - 32)) & 1;
+    }
+#elif defined ESP8266
+    if (GPIO_Pin < 16) {
+        return (GPO >> GPIO_Pin) & 1;
+    } else if (GPIO_Pin == 16) { // special handling needed for pin 16
+        return GP16O & 1;
+    }
+    return 0;
+#endif
 }
 
 

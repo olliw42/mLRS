@@ -197,7 +197,7 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 #define SX_USE_RFSW_CTRL  {31, 0, 20, 24, 24, 2, 0, 1} // radio_rfsw_ctrl array
 #define SX_PA_DAC_IO      IO_P26
 
-void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
         if (power_dbm >= POWER_30_DBM) {

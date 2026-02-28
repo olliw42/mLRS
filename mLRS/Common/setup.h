@@ -741,10 +741,14 @@ void setup_configure_config(uint8_t config_id)
 
     //-- Sx12xx
     //     LoraConfigIndex; <- set by configure_mode()
+    //     FskSyncWord
     //     FlrcSyncWord;
     //     Power_dbm;
     //     FrequencyBand;
     //     is_lora;         <- set by configure_mode()
+
+    Config.Sx.FskSyncWord = Config.FrameSyncWord;
+    Config.Sx2.FskSyncWord = Config.Sx.FskSyncWord;
 
     Config.Sx.FlrcSyncWord = bind_dblword;
     Config.Sx2.FlrcSyncWord = Config.Sx.FlrcSyncWord;
