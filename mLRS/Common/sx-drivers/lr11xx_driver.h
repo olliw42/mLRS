@@ -14,7 +14,6 @@
 // #define SX_USE_RFSW_CTRL
 // #define SX_USE_LP_PA  
 //*******************************************************
-
 #ifndef LR11XX_DRIVER_H
 #define LR11XX_DRIVER_H
 #pragma once

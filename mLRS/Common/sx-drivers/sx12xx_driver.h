@@ -132,7 +132,7 @@ class SxDriverDummy
     void ResetToLoraConfiguration() {}
     void SetRfPower_dbm(int8_t power_dbm) {}
     void UpdateRfPower(tSxGlobalConfig* const global_config) {}
-    void ClearIrqStatus(uint16_t IrqMask) {}
+    void ClearIrqStatus(uint32_t IrqMask) {}
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }
     int8_t RfPower_dbm(void) { return INT8_MIN; }
@@ -150,6 +150,8 @@ class SxDriverDummy
   #include "sx128x_driver.h"
 #elif defined DEVICE_HAS_LR11xx
   #include "lr11xx_driver.h"
+#elif defined DEVICE_HAS_LR20xx
+  #include "lr20xx_driver.h"
 #else
   #include "sx128x_driver.h"
 #endif

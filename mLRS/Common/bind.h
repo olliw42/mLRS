@@ -143,7 +143,7 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
     // could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // for the moment reconstruct the info by explicit defines
-#if defined DEVICE_HAS_LR11xx
+#if defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx
     uint16_t mode_allowed_mask = 0b110111; // 50 Hz, 31 Hz, 19 Hz, 19 Hz 7x, FSK // only important that both 19Hz and 19Hz7x are set
 #elif defined DEVICE_HAS_SX127x
     uint16_t mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable // only important that only 19Hz7x is set
