@@ -94,7 +94,7 @@ const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
     }
 };
 
-const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = { // 2,4 GHz, FLRC 111 Hz
+const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = { // 2.4 GHz, FLRC 111 Hz
     { .Bandwidth = LR20XX_FLRC_BR_650_BW_888, // that's the closest to FLRC_BR_0_650_BW_0_6 used by sx128x
       .CodingRate = LR20XX_FLRC_CR_1_2,
       .Bt = LR20XX_FLRC_PULSESHAPE_BT_1,
@@ -270,10 +270,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void Configure(tSxGlobalConfig* const global_config)
     {
+        gconfig = global_config;
+
         // Order from DATASHEET:
         // SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
-
-        Calibrate(LR20XX_CALIBRATE_ALL);
 
         SetStandby(LR20XX_STANDBY_MODE_RC);
         //SetStandby(LR20XX_STANDBY_MODE_XOSC);
@@ -284,32 +284,29 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetRxTxFallbackMode(LR20XX_RX_TX_FALLBACK_MODE_FS);
         SetDefaultRxTxTimeout(0, 0);
 
-        gconfig = global_config;
-
-        // TODO:
-        // - calibrate front end
-        // - calibrate rssi values
-
-#if 0
-        switch (gconfig->FrequencyBand) {
-/*
-            case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibImage(LR20XX_CAL_IMG_902_MHZ_1, LR20XX_CAL_IMG_902_MHZ_2); break;
-            case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibImage(LR20XX_CAL_IMG_863_MHZ_1, LR20XX_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibImage(LR20XX_CAL_IMG_863_MHZ_1, LR20XX_CAL_IMG_863_MHZ_2); break;
-            case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibImage(LR20XX_CAL_IMG_430_MHZ_1, LR20XX_CAL_IMG_430_MHZ_2); break;
-            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibImage(LR20XX_CAL_IMG_430_MHZ_1, LR20XX_CAL_IMG_430_MHZ_2); break;
-*/
-// TODO ????
-        case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: CalibFE(LR20XX_CAL_FE_902_MHZ_1, LR20XX_CAL_FE_902_MHZ_2); break;
-        case SX_FHSS_FREQUENCY_BAND_868_MHZ: CalibFE(LR20XX_CAL_FE_863_MHZ_1, LR20XX_CAL_FE_863_MHZ_2); break;
-        case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: CalibFE(LR20XX_CAL_FE_863_MHZ_1, LR20XX_CAL_FE_863_MHZ_2); break;
-        case SX_FHSS_FREQUENCY_BAND_433_MHZ: CalibFE(LR20XX_CAL_FE_430_MHZ_1, LR20XX_CAL_FE_430_MHZ_2); break;
-        case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: CalibFE(LR20XX_CAL_FE_430_MHZ_1, LR20XX_CAL_FE_430_MHZ_2); break;
-            case SX_FHSS_FREQUENCY_BAND_2P4_GHZ: break;
-            default:
-                while(1){} // protection
+        if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+            SetRxPath(LR20XX_RX_PATH_HF, LR20XX_RX_BOOST_4_HF);
+        } else {
+            SetRxPath(LR20XX_RX_PATH_LF, LR20XX_RX_BOOST_0_LF); // hm, table 3-17 says rx_boost = 7
         }
-#endif
+
+        // calibrations
+        // datasheet says Calibrate() is done at startup for 915 MHz, but should be redone if
+        // frequency changes > 10 MHz or temperature changes > 10 °C
+        // not so clear what to do, I guess setting a frequency is what it needs
+        // datasheet says CalibFE() is done for the current frequency and rx path if no argument is given
+        switch (gconfig->FrequencyBand) {
+        case SX_FHSS_FREQUENCY_BAND_915_MHZ_FCC: SetRfFrequency(915000000); break;
+        case SX_FHSS_FREQUENCY_BAND_868_MHZ: SetRfFrequency(865500000); break;
+        case SX_FHSS_FREQUENCY_BAND_866_MHZ_IN: SetRfFrequency(866000000); break;
+        case SX_FHSS_FREQUENCY_BAND_433_MHZ: SetRfFrequency(440000000); break;
+        case SX_FHSS_FREQUENCY_BAND_70_CM_HAM: SetRfFrequency(440000000); break;
+        case SX_FHSS_FREQUENCY_BAND_2P4_GHZ: SetRfFrequency(2440000000); break;
+        default:
+            while(1){} // protection
+        }
+        Calibrate(LR20XX_CALIBRATE_ALL);
+        CalibFE();
 
         switch (mode()) {
         case IS_LORA:
@@ -323,12 +320,6 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         default: // IS_FLRC
             SetPacketType(LR20XX_PACKET_TYPE_FLRC);
             SetFlrcConfigurationByIndex(0, gconfig->FlrcSyncWord);
-        }
-
-        if (gconfig->FrequencyBand == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-            SetRxPath(LR20XX_RX_PATH_HF, LR20XX_RX_BOOST_4_HF);
-        } else {
-            SetRxPath(LR20XX_RX_PATH_LF, LR20XX_RX_BOOST_0_LF);
         }
 
         SetRfPower_dbm(gconfig->Power_dbm);

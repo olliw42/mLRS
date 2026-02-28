@@ -95,6 +95,7 @@ public:
     void SetRegMode(uint8_t SimoUsage);
     void Calibrate(uint8_t BlocksToCalibrate);
     void CalibFE(uint16_t Freq1, uint16_t Freq2, uint16_t Freq3);
+    void CalibFE(void);
     // GetVbat(), GetTemp(), GetRandomNumber(), SetSleep()
     void SetStandby(uint8_t StandbyMode);
     void SetFs(void);
@@ -102,7 +103,7 @@ public:
 
     // Common Radio Commands
 
-    void SetRfFrequency(uint32_t RfFreq);
+    void SetRfFrequency(uint32_t RfFreq_hz);
     void SetRxPath(uint8_t RxPath, uint8_t RxBoost);
     void SetPaConfig(uint8_t PaSel, uint8_t PaLfMode, uint8_t PaLfDutyCycle, uint8_t PaLfSlices, uint8_t PaHfDutyCycle);
     void SetPaConfig915Mhz(int8_t Power);
@@ -470,7 +471,15 @@ typedef enum {
 } LR20XX_RX_PATH_ENUM;
 
 typedef enum {
-    LR20XX_RX_BOOST_0_LF                    = 0, // table 7-2, page 127, recommended value for LF
+    LR20XX_RX_BOOST_0                       = 0, // table 7-2, page 127
+    LR20XX_RX_BOOST_1                       = 1,
+    LR20XX_RX_BOOST_2                       = 2,
+    LR20XX_RX_BOOST_3                       = 3,
+    LR20XX_RX_BOOST_4                       = 4,
+    LR20XX_RX_BOOST_5                       = 5,
+    LR20XX_RX_BOOST_6                       = 6,
+    LR20XX_RX_BOOST_7                       = 7,
+    LR20XX_RX_BOOST_0_LF                    = 0, // recommended value for LF
     LR20XX_RX_BOOST_4_HF                    = 4, // recommended value for HF
 } LR20XX_RX_BOOST_ENUM;
 

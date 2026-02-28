@@ -299,6 +299,11 @@ uint8_t buf[6];
     WriteCommand(LR20XX_CMD_CALIB_FE, buf, 6);
 }
 
+void Lr20xxDriverBase::CalibFE(void)
+{
+    WriteCommand(LR20XX_CMD_CALIB_FE);
+}
+
 void Lr20xxDriverBase::SetStandby(uint8_t StandbyMode)
 {
 uint8_t buf[1];
@@ -316,14 +321,14 @@ void Lr20xxDriverBase::SetFs(void)
 
 // Common Radio Commands
 
-void Lr20xxDriverBase::SetRfFrequency(uint32_t RfFreq)
+void Lr20xxDriverBase::SetRfFrequency(uint32_t RfFreq_hz)
 {
 uint8_t buf[4];
 
-    buf[0] = (uint8_t)((RfFreq & 0xFF000000) >> 24);
-    buf[1] = (uint8_t)((RfFreq & 0x00FF0000) >> 16);
-    buf[2] = (uint8_t)((RfFreq & 0x0000FF00) >> 8);
-    buf[3] = (uint8_t) (RfFreq & 0x000000FF);
+    buf[0] = (uint8_t)((RfFreq_hz & 0xFF000000) >> 24);
+    buf[1] = (uint8_t)((RfFreq_hz & 0x00FF0000) >> 16);
+    buf[2] = (uint8_t)((RfFreq_hz & 0x0000FF00) >> 8);
+    buf[3] = (uint8_t) (RfFreq_hz & 0x000000FF);
 
     WriteCommand(LR20XX_CMD_SET_RF_FREQUENCY, buf, 4);
 }

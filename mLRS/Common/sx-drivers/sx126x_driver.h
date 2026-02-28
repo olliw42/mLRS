@@ -301,7 +301,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         int16_t rssi;
         if (gconfig->modeIsLora()) {
             Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
-            // mimic behavior of sx128x , sx1276
+            // mimic behavior of sx128x, sx1276
             // not in the datasheet, but suggested by data
             if (*Snr < 0) rssi += *Snr;
         } else {
