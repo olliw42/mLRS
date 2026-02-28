@@ -203,7 +203,7 @@ GPIO_INLINE_FORCED uint16_t gpio_read_activelow(uint8_t GPIO_Pin)
 GPIO_INLINE_FORCED uint16_t gpio_readoutput(uint8_t GPIO_Pin)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32C3
-    return (GPIO.out.out_data >> GPIO_Pin) & 1;
+    return (GPIO.out.data >> GPIO_Pin) & 1;
 #elif defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32S3
     if (GPIO_Pin < 32) {
         return (GPIO.out >> GPIO_Pin) & 1;
