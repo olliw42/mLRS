@@ -173,16 +173,6 @@ GPIO_INLINE_FORCED void gpio_high(uint8_t GPIO_Pin)
 }
 
 
-GPIO_INLINE_FORCED void gpio_toggle(uint8_t GPIO_Pin)
-{
-    if (gpio_readoutput(GPIO_Pin)) {
-        gpio_low(GPIO_Pin);
-    } else {
-        gpio_high(GPIO_Pin);
-    }
-}
-
-
 GPIO_INLINE_FORCED uint16_t gpio_read_activehigh(uint8_t GPIO_Pin)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32C3
@@ -228,6 +218,16 @@ GPIO_INLINE_FORCED uint16_t gpio_readoutput(uint8_t GPIO_Pin)
     }
     return 0;
 #endif
+}
+
+
+GPIO_INLINE_FORCED void gpio_toggle(uint8_t GPIO_Pin)
+{
+    if (gpio_readoutput(GPIO_Pin)) {
+        gpio_low(GPIO_Pin);
+    } else {
+        gpio_high(GPIO_Pin);
+    }
 }
 
 
