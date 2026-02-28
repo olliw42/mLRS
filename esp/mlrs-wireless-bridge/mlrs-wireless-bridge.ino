@@ -128,7 +128,7 @@ int port_udp = 14550; // connect to this port per UDP // MissionPlanner default 
 // - a default password which includes the mLRS bindphrase, like "mLRS-mlrs.0"
 // for UDPCl both strings MUST be set to what your Wifi network requires
 String network_ssid = ""; // name of your WiFi network
-String network_password = "****"; // password to access your WiFi network (min 8 chars)
+String network_password = ""; // password to access your WiFi network (min 8 chars)
 
 IPAddress ip_udpcl(192, 168, 0, 164); // your network's IP (only for UDPCl) // MissionPlanner default is 127.0.0.1, so enter your home's IP in MP
 
