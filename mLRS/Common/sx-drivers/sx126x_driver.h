@@ -52,7 +52,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
 };
 
 const tSxGfskConfiguration Sx126xGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
-    { .br_bps = 100000,
+    { .BitRate_bps = 100000,
       .PulseShape = SX126X_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = SX126X_GFSK_BW_312000,
       .Fdev_hz = 50000,
@@ -155,7 +155,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsGFSK(config->br_bps,
+        SetModulationParamsGFSK(config->BitRate_bps,
                                 config->PulseShape,
                                 config->Bandwidth,
                                 config->Fdev_hz);

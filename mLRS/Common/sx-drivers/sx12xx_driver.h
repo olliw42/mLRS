@@ -98,7 +98,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t br_bps;
+    uint32_t BitRate_bps;
     uint8_t PulseShape;
     uint8_t Bandwidth;
     uint32_t Fdev_hz;

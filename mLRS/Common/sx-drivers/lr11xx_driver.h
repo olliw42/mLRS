@@ -84,7 +84,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
 };
 
 const tSxGfskConfiguration Lr11xxGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
-    { .br_bps = 100000,
+    { .BitRate_bps = 100000,
       .PulseShape = LR11XX_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = LR11XX_GFSK_BW_312000,
       .Fdev_hz = 50000,
@@ -175,7 +175,7 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsGFSK(config->br_bps,
+        SetModulationParamsGFSK(config->BitRate_bps,
                                 config->PulseShape,
                                 config->Bandwidth,
                                 config->Fdev_hz);
