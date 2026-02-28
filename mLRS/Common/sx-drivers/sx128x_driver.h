@@ -67,7 +67,6 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = { // 2.4 GHz, 111 Hz FLRC
       .PacketType = SX1280_FLRC_PACKET_TYPE_FIXED_LENGTH,
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcLength = SX1280_FLRC_CRC_DISABLE,
-      .CrcSeed = 27368, // CrcSeed is 'j', 'p'. Not used.
       .TimeOverAir = 2383,
       .ReceiverSensitivity = -104,
     }
@@ -149,8 +148,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
                             config->SyncWordMatch,
                             config->PacketType,
                             config->PayloadLength,
-                            config->CrcLength,
-                            config->CrcSeed);
+                            config->CrcLength);
 
         SetSyncWordFLRC(sync_word, config->CodingRate);
     }
@@ -185,13 +183,9 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
         if (gconfig->modeIsLora()) {
             SetPacketType(SX1280_PACKET_TYPE_LORA);
-
             SetAutoFs(true);
-
             SetLnaGainMode(SX1280_LNAGAIN_MODE_HIGH_SENSITIVITY);
-
             SetRfPower_dbm(gconfig->Power_dbm);
-
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
             SetPacketType(SX1280_PACKET_TYPE_FLRC);
