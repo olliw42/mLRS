@@ -201,7 +201,7 @@ bool AtMode::Do(void)
                         case AT_WIFIDEVICENAME_QUERY: SERIAL.print(device_name); break;
                         case AT_BINDPHRASE_QUERY: SERIAL.print(g_bindphrase); break;
                         case AT_PSWD_QUERY: SERIAL.print(g_password); break;
-                        case AT_NETSSID_QUERY: SERIAL.print(g_network_ssid); break;
+                        case AT_NETSSID_QUERY: SERIAL.print(device_name_STAUDP); break;
                     }
                     SERIAL.write("\r\n");
                 } else
