@@ -34,14 +34,20 @@
 #endif
 
 #include "../Common/hal/hal.h"
+#if defined STM32G4 || defined STM32F1
 #include "../Common/thirdparty/stdstm32-can.h"
+#elif defined ESP32
+#include "../Common/esp-lib/esp-can.h"
+#endif
 
+#if defined STM32G4 || defined STM32F1
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
 #endif
 
 #if FDCAN_IRQ_PRIORITY != DRONECAN_IRQ_PRIORITY
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
+#endif
 #endif
 
 extern tRxMavlink mavlink;
@@ -61,6 +67,8 @@ extern tGlobalConfig Config;
 #define CANARD_POOL_SIZE  4096
 #elif defined STM32F1
 #define CANARD_POOL_SIZE  1024
+#elif defined ESP32
+#define CANARD_POOL_SIZE  4096
 #endif
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size

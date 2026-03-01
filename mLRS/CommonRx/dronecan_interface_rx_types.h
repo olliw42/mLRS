@@ -14,8 +14,10 @@
 
 #include "../Common/libs/fifo.h"
 
+#if defined STM32G4 || defined STM32F1
 #include "../../../modules/stm32-dronecan-lib/stm32-dronecan-driver.h"
-#include "../../../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
+#endif
+#include "../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.NodeStatus.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.GetNodeInfo.h"
 #include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
