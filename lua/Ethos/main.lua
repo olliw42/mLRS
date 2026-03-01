@@ -749,7 +749,7 @@ local function init()
 
   -- otherwise, try to register as MLRS module if supported
   local v = system.getVersion()
-  if v.major >= 1 and v.minor >= 7 and system.registerMlrsModule then
+  if v.major >= 26 and v.minor >= 1 and system.registerMlrsModule then
     print("MLRS: registering as MLRS module")
     system.registerMlrsModule({
       configure = { name = "MLRS", create = create, wakeup = wakeup, event = event, close = close }
