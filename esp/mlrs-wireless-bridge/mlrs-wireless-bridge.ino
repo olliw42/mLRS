@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 23. Feb. 2026
+// 1. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -537,7 +537,7 @@ class tWifiHandler {
         }
     }
 
-    void SetDevicePassword(String forced_password, String std_password) {
+    void set_device_password(String forced_password, String std_password) {
         if (forced_password != "") {
             device_password = forced_password;
         } else if (g_password != "") {
@@ -547,12 +547,12 @@ class tWifiHandler {
         }
     }
 
-    void SetConnected() {
+    void set_connected() {
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
 
-    void SerialReadWifiWrite(uint8_t* buf, int sizeofbuf) {
+    void serial_read_wifi_write(uint8_t* buf, int sizeofbuf) {
         unsigned long tnow_ms = millis();
         int avail = SERIAL.available();
         if (avail <= 0) {
@@ -568,14 +568,19 @@ class tWifiHandler {
     virtual void wifi_setup() {}
     virtual void wifi_write(uint8_t* buf, int len) {}
 
+    void set_wifi_setup_trying() { _setup_state = 1; }
+    void set_wifi_setup_done() { _setup_state = 2; }
+
     bool Setup() { // true: setup has completed and is not called anymore
         if (_setup_state >= 2) return true;
         wifi_setup();
-        if (_setup_state == 1) {
-            return false;
-        }
+        if (_setup_state == 1) return false;
         _setup_state = 2; 
         return true;
+    }
+
+    bool IsSetUp() {
+        return (_setup_state >= 2);
     }
 
     virtual void Loop(uint8_t* buf, int sizeofbuf) {}
@@ -593,7 +598,7 @@ class tTCPHandler : public tWifiHandler {
     void Init(IPAddress __ip) {
         tWifiHandler::Init();
         device_name = (ssid != "") ? ssid : device_name + " AP TCP";
-        SetDevicePassword(password, "");
+        set_device_password(password, "");
         _ip = __ip;
     }
 
@@ -602,6 +607,7 @@ class tTCPHandler : public tWifiHandler {
         setup_wifipower();
         server.begin();
         server.setNoDelay(true);
+        set_wifi_setup_done();
     }
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
@@ -626,10 +632,10 @@ class tTCPHandler : public tWifiHandler {
         while (client.available()) {
             int len = client.read(buf, sizeofbuf);
             SERIAL.write(buf, len);
-            SetConnected();
+            set_connected();
         }
 
-        SerialReadWifiWrite(buf, sizeofbuf);
+        serial_read_wifi_write(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
@@ -652,7 +658,7 @@ class tUDPHandler : public tWifiHandler, tClientList {
         tWifiHandler::Init();
         tClientList::Init();
         device_name = (ssid != "") ? ssid : device_name + " AP UDP";
-        SetDevicePassword(password, "");
+        set_device_password(password, "");
         _ip = _ip_ap = __ip; 
         //_ip = WiFi.broadcastIP(); // seems to not work for AP mode
         _ip[3] = 255; // start with broadcast, the subnet mask is 255.255.255.0 so just last octet needs to change
@@ -664,20 +670,21 @@ class tUDPHandler : public tWifiHandler, tClientList {
         setup_ap_mode(_ip_ap); // AP mode
         setup_wifipower();
         udp.begin(_port);
+        set_wifi_setup_done();
     }
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
         int packetSize = udp.parsePacket();
-        if (packetSize) {
+        if (packetSize > 0) {
             int len = udp.read(buf, sizeofbuf);
             if (len > 0) { // let's assume that this is the GCS, so forward
                 SERIAL.write(buf, len);
             }
             Add(udp.remoteIP(), udp.remotePort()); 
-            SetConnected();
+            set_connected();
         }
 
-        SerialReadWifiWrite(buf, sizeofbuf);
+        serial_read_wifi_write(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
@@ -710,18 +717,18 @@ class tUDPSTAHandler : public tWifiHandler {
     void Init(int __port) {
         tWifiHandler::Init();
         device_name = (network_ssid != "") ? network_ssid : device_name_STAUDP;
-        SetDevicePassword(network_password, String("mLRS-") + g_bindphrase);
+        set_device_password(network_password, String("mLRS-") + g_bindphrase);
         _ip = WiFi.broadcastIP(); // start with broadcast
         _port = _initial_port = __port;
     }
 
     void wifi_setup() override {
         bool res = setup_sta_mode_nonblocking((_setup_state == 0), false, IPAddress()); // STA mode, without config ip, so dummy ip
-        _setup_state = 1; // switch to trying
+        set_wifi_setup_trying(); // switch to trying
         if (res) { // done
             setup_wifipower();
             udp.begin(_port);
-            _setup_state = 2; // we are actually connected, so signal done
+            set_wifi_setup_done(); // we are actually connected, so signal done
         }
     }
 
@@ -734,17 +741,17 @@ class tUDPSTAHandler : public tWifiHandler {
         }
 
         int packetSize = udp.parsePacket();
-        if (packetSize) {
+        if (packetSize > 0) {
             int len = udp.read(buf, sizeofbuf);
             SERIAL.write(buf, len);
             if (!is_connected) { // first received UDP packet
                 _ip = udp.remoteIP(); // stop broadcast, switch to unicast to avoid Aurdino performance issue
                 _port = udp.remotePort();
             }
-            SetConnected();
+            set_connected();
         }
 
-        SerialReadWifiWrite(buf, sizeofbuf);
+        serial_read_wifi_write(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
@@ -773,20 +780,20 @@ class tUDPClHandler : public tWifiHandler {
 
     void wifi_setup() override {
         bool res = setup_sta_mode_nonblocking((_setup_state == 0), true, _ip); // STA mode, with config ip
-        _setup_state = 1; // switch to trying
+        set_wifi_setup_trying(); // switch to trying
         if (res) { // done
             setup_wifipower();
             udp.begin(_port);
-            _setup_state = 2; // we are actually connected, so signal done
+            set_wifi_setup_done(); // we are actually connected, so signal done
         }
     }
 
     void Loop(uint8_t* buf, int sizeofbuf)  override {
         int packetSize = udp.parsePacket();
-        if (packetSize) {
+        if (packetSize > 0) {
             int len = udp.read(buf, sizeofbuf);
             SERIAL.write(buf, len);
-            SetConnected();
+            set_connected();
         }
 
         if (!is_connected) {
@@ -796,7 +803,7 @@ class tUDPClHandler : public tWifiHandler {
             return;
         }
 
-        SerialReadWifiWrite(buf, sizeofbuf);
+        serial_read_wifi_write(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
@@ -823,6 +830,7 @@ class tBTClassicHandler : public tWifiHandler {
     
     void wifi_setup() override {
         SerialBT.begin(device_name);
+        set_wifi_setup_done();
     }
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
@@ -831,10 +839,10 @@ class tBTClassicHandler : public tWifiHandler {
             if (len > sizeofbuf) len = sizeofbuf;
             for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
             SERIAL.write(buf, len);
-            SetConnected();
+            set_connected();
         }
 
-        SerialReadWifiWrite(buf, sizeofbuf);
+        serial_read_wifi_write(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
@@ -895,6 +903,8 @@ class tBLEHandler : public tWifiHandler {
         // Start advertising
         advertising->start();
         DBG_PRINTLN("BLE advertising started");
+        
+        set_wifi_setup_done();
     }
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
@@ -1050,7 +1060,7 @@ void loop()
         is_connected = false;
     }
 
-    if (tnow_ms - led_tlast_ms > (is_connected ? 500 : 200)) {
+    if (tnow_ms - led_tlast_ms > (is_connected ? 500 : (wifi_handler->IsSetUp()) ? 200 : 75)) {
         led_tlast_ms = tnow_ms;
         led_state = !led_state;
         if (led_state) led_on(is_connected); else led_off();
