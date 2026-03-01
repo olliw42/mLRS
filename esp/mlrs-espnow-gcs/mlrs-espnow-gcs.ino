@@ -8,7 +8,7 @@
 // For use with ESP8266, ESP32, ESP32C3 and ESP32S3 modules.
 // To use USB on ESP32C3 and ESP32S3, 'USB CDC On Boot' must be enabled in Tools.
 //********************************************************
-// 21. Feb. 2026
+// 1. Mar. 2026
 //********************************************************
 
 #ifdef ESP8266
@@ -22,6 +22,12 @@
 
 
 #define BAUD_RATE           115200 // baudrate for serial connection to GCS
+
+// wifi channel — must match WIFI_CHANNEL on the bridge
+// required for MSP systems, e.g. INAV
+// MSP uses send/request, so the bridge won't transmit until polled
+// for MAVLink systems this can be left commented out; scanning will find the bridge
+//#define WIFI_CHANNEL        6
 
 //#define USE_SERIAL1                // uncomment to use Serial1 instead of USB Serial for ESP32C3 and ESP32S3
 //#define TX_PIN              43     // Serial1 TX pin
@@ -210,7 +216,16 @@ void setup_wifi(void)
     esp_now_add_peer(&peer);
 #endif
 
+#ifdef WIFI_CHANNEL
+    // fixed channel — skip scanning, required for MSP (send/request) systems
+#ifdef ESP8266
+    wifi_set_channel(WIFI_CHANNEL);
+#else
+    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+#endif
+#else
     scan_for_bridge();
+#endif
 }
 
 
