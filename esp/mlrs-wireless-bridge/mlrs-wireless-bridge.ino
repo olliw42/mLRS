@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 12. Feb. 2026
+// 1. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -98,6 +98,7 @@ Troubleshooting:
 //     3 = Bluetooth (not available for all boards)
 //     4 = Wifi UDPCl
 //     5 = BLE (not available for all boards)
+//     6 = ESP-NOW broadcast
 // Note: If GPIO0_IO is defined, then this only sets the default protocol
 #define WIRELESS_PROTOCOL  1
 
@@ -216,6 +217,9 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 4)
     #define USE_WIRELESS_PROTOCOL_UDPCL
 #endif
+#if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 6)
+    #define USE_WIRELESS_PROTOCOL_ESPNOW
+#endif
 
 #ifndef ESP8266 // not ESP8266
 #ifdef CONFIG_IDF_TARGET_ESP32C3
@@ -257,6 +261,15 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
   #endif
 #endif
 #endif // #ifndef ESP8266
+
+#ifdef USE_WIRELESS_PROTOCOL_ESPNOW
+#ifdef ESP8266
+#include <espnow.h>
+#else
+#include <esp_now.h>
+#include "esp_wifi.h"
+#endif
+#endif
 
 
 //-------------------------------------------------------
@@ -326,6 +339,135 @@ class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
 };
 #endif // USE_WIRELESS_PROTOCOL_BLE
 
+
+//-------------------------------------------------------
+// ESP-NOW helpers
+//-------------------------------------------------------
+#ifdef USE_WIRELESS_PROTOCOL_ESPNOW
+
+// ring buffer for esp-now receive callback
+#define ESPNOW_RXBUF_SIZE  2048
+static uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
+static volatile uint16_t espnow_rxbuf_head;
+static volatile uint16_t espnow_rxbuf_tail;
+
+// mac latch: once a GCS sends us data, we lock to its MAC
+static volatile bool espnow_mac_latched;
+static uint8_t espnow_latched_mac[6];
+static bool espnow_latched_peer_added;
+static uint8_t espnow_broadcast_mac[6];
+
+static void espnow_rxbuf_push(const uint8_t* data, int len)
+{
+    for (int i = 0; i < len; i++) {
+        uint16_t next = (espnow_rxbuf_head + 1) % ESPNOW_RXBUF_SIZE;
+        if (next == espnow_rxbuf_tail) break; // full, drop
+        espnow_rxbuf[espnow_rxbuf_head] = data[i];
+        espnow_rxbuf_head = next;
+    }
+}
+
+static int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
+{
+    int cnt = 0;
+    while (espnow_rxbuf_tail != espnow_rxbuf_head && cnt < maxlen) {
+        buf[cnt++] = espnow_rxbuf[espnow_rxbuf_tail];
+        espnow_rxbuf_tail = (espnow_rxbuf_tail + 1) % ESPNOW_RXBUF_SIZE;
+    }
+    return cnt;
+}
+
+// platform-conditional receive callback
+#ifdef ESP8266
+static void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len)
+{
+    const uint8_t* sender_mac = mac;
+#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+static void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len)
+{
+    const uint8_t* sender_mac = mac;
+#else
+static void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len)
+{
+    const uint8_t* sender_mac = info->src_addr;
+#endif
+    // mac latch: accept only from the first sender we hear from
+    if (!espnow_mac_latched) {
+        memcpy(espnow_latched_mac, sender_mac, 6);
+        espnow_mac_latched = true;
+    } else {
+        if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
+    }
+    espnow_rxbuf_push(data, len);
+}
+
+
+static void espnow_setup(int wifi_channel)
+{
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+
+#ifdef ESP8266
+    // force 11b only for best reliability
+    wifi_set_phy_mode(PHY_MODE_11B);
+    wifi_set_channel(wifi_channel);
+#else
+    // set country to EU to enable channels 1-13 (default may restrict to 1-11)
+    wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
+    esp_wifi_set_country(&country);
+    esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+    // force 11b only for best reliability
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B);
+#endif
+
+    setup_wifipower();
+
+    if (esp_now_init() != 0) {
+        DBG_PRINTLN("ESP-NOW init failed");
+        return;
+    }
+
+#ifdef ESP8266
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+    esp_now_register_recv_cb(espnow_recv_cb);
+    esp_now_add_peer(espnow_broadcast_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+    esp_now_register_recv_cb(espnow_recv_cb);
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, espnow_broadcast_mac, 6);
+    peer.channel = wifi_channel;
+    peer.encrypt = false;
+    esp_now_add_peer(&peer);
+#endif
+    DBG_PRINTLN("ESP-NOW started");
+}
+
+
+static void espnow_send(int wifi_channel, uint8_t* buf, int len)
+{
+    // if latched, send unicast; otherwise broadcast
+    if (espnow_mac_latched) {
+        // ensure latched peer is registered
+        if (!espnow_latched_peer_added) {
+#ifdef ESP8266
+            esp_now_add_peer(espnow_latched_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+            esp_now_peer_info_t peer = {};
+            memcpy(peer.peer_addr, espnow_latched_mac, 6);
+            peer.channel = wifi_channel;
+            peer.encrypt = false;
+            esp_now_add_peer(&peer);
+#endif
+            espnow_latched_peer_added = true;
+        }
+        esp_now_send(espnow_latched_mac, buf, len);
+    } else {
+        esp_now_send(espnow_broadcast_mac, buf, len);
+    }
+}
+
+#endif // USE_WIRELESS_PROTOCOL_ESPNOW
+
 typedef enum {
     WIRELESS_PROTOCOL_TCP = 0,
     WIRELESS_PROTOCOL_UDP = 1,
@@ -333,6 +475,7 @@ typedef enum {
     WIRELESS_PROTOCOL_BT = 3,
     WIRELESS_PROTOCOL_UDPCl = 4,
     WIRELESS_PROTOCOL_BLE = 5,
+    WIRELESS_PROTOCOL_ESPNOW = 6,
 } WIRELESS_PROTOCOL_ENUM;
 
 typedef enum {
@@ -904,6 +1047,49 @@ tBLEHandler ble_handler;
 
 
 //-------------------------------------------------------
+//-- ESPNOW class
+#ifdef USE_WIRELESS_PROTOCOL_ESPNOW
+
+class tESPNOWHandler : public tWifiHandler {
+  public:
+    void Init() {
+        tWifiHandler::Init();
+        device_name = device_name + " ESPNOW";
+        memset(espnow_broadcast_mac, 0xFF, 6);
+    }
+
+    void Setup() override {
+        espnow_rxbuf_head = 0;
+        espnow_rxbuf_tail = 0;
+        espnow_mac_latched = false;
+        espnow_latched_peer_added = false;
+        espnow_setup(g_wifichannel);
+    }
+
+    void Loop(uint8_t* buf, int sizeofbuf) override {
+        // cap at 250 bytes (esp-now max payload)
+        if (sizeofbuf > 250) sizeofbuf = 250;
+
+        // drain received data to serial
+        int len = espnow_rxbuf_pop(buf, sizeofbuf);
+        if (len > 0) {
+            SERIAL.write(buf, len);
+            SetConnected();
+        }
+
+        SerialReadWifiWrite(buf, sizeofbuf);
+    }
+
+    void wifi_write(uint8_t* buf, int len) override {
+        espnow_send(g_wifichannel, buf, len);
+    }
+};
+tESPNOWHandler espnow_handler;
+
+#endif // USE_WIRELESS_PROTOCOL_ESPNOW
+
+
+//-------------------------------------------------------
 // setup() and loop()
 //-------------------------------------------------------
 
@@ -919,7 +1105,8 @@ void setup()
 
     g_protocol = preferences.getInt(G_PROTOCOL_STR, 255); // 255 indicates not available
     if (g_protocol != WIRELESS_PROTOCOL_TCP && g_protocol != WIRELESS_PROTOCOL_UDP && g_protocol != WIRELESS_PROTOCOL_UDPSTA &&
-        g_protocol != WIRELESS_PROTOCOL_UDPCl && g_protocol != WIRELESS_PROTOCOL_BT && g_protocol != WIRELESS_PROTOCOL_BLE) { // not a valid value
+        g_protocol != WIRELESS_PROTOCOL_UDPCl && g_protocol != WIRELESS_PROTOCOL_BT && g_protocol != WIRELESS_PROTOCOL_BLE &&
+        g_protocol != WIRELESS_PROTOCOL_ESPNOW) { // not a valid value
         g_protocol = PROTOCOL_DEFAULT;
         preferences.putInt(G_PROTOCOL_STR, g_protocol);
     }
@@ -969,6 +1156,9 @@ void setup()
 #endif
 #ifdef USE_WIRELESS_PROTOCOL_BLE
         case WIRELESS_PROTOCOL_BLE: ble_handler.Init(); wifi_handler = &ble_handler; break;
+#endif
+#ifdef USE_WIRELESS_PROTOCOL_ESPNOW
+        case WIRELESS_PROTOCOL_ESPNOW: espnow_handler.Init(); wifi_handler = &espnow_handler; break;
 #endif
     }
 
