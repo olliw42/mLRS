@@ -339,6 +339,135 @@ class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
 };
 #endif // USE_WIRELESS_PROTOCOL_BLE
 
+
+//-------------------------------------------------------
+// ESP-NOW helpers
+//-------------------------------------------------------
+#ifdef USE_WIRELESS_PROTOCOL_ESPNOW
+
+// ring buffer for esp-now receive callback
+#define ESPNOW_RXBUF_SIZE  2048
+static uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
+static volatile uint16_t espnow_rxbuf_head;
+static volatile uint16_t espnow_rxbuf_tail;
+
+// mac latch: once a GCS sends us data, we lock to its MAC
+static volatile bool espnow_mac_latched;
+static uint8_t espnow_latched_mac[6];
+static bool espnow_latched_peer_added;
+static uint8_t espnow_broadcast_mac[6];
+
+static void espnow_rxbuf_push(const uint8_t* data, int len)
+{
+    for (int i = 0; i < len; i++) {
+        uint16_t next = (espnow_rxbuf_head + 1) % ESPNOW_RXBUF_SIZE;
+        if (next == espnow_rxbuf_tail) break; // full, drop
+        espnow_rxbuf[espnow_rxbuf_head] = data[i];
+        espnow_rxbuf_head = next;
+    }
+}
+
+static int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
+{
+    int cnt = 0;
+    while (espnow_rxbuf_tail != espnow_rxbuf_head && cnt < maxlen) {
+        buf[cnt++] = espnow_rxbuf[espnow_rxbuf_tail];
+        espnow_rxbuf_tail = (espnow_rxbuf_tail + 1) % ESPNOW_RXBUF_SIZE;
+    }
+    return cnt;
+}
+
+// platform-conditional receive callback
+#ifdef ESP8266
+static void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len)
+{
+    const uint8_t* sender_mac = mac;
+#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+static void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len)
+{
+    const uint8_t* sender_mac = mac;
+#else
+static void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len)
+{
+    const uint8_t* sender_mac = info->src_addr;
+#endif
+    // mac latch: accept only from the first sender we hear from
+    if (!espnow_mac_latched) {
+        memcpy(espnow_latched_mac, sender_mac, 6);
+        espnow_mac_latched = true;
+    } else {
+        if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
+    }
+    espnow_rxbuf_push(data, len);
+}
+
+
+static void espnow_setup(int wifi_channel)
+{
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+
+#ifdef ESP8266
+    // force 11b only for best reliability
+    wifi_set_phy_mode(PHY_MODE_11B);
+    wifi_set_channel(wifi_channel);
+#else
+    // set country to EU to enable channels 1-13 (default may restrict to 1-11)
+    wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
+    esp_wifi_set_country(&country);
+    esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+    // force 11b only for best reliability
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B);
+#endif
+
+    setup_wifipower();
+
+    if (esp_now_init() != 0) {
+        DBG_PRINTLN("ESP-NOW init failed");
+        return;
+    }
+
+#ifdef ESP8266
+    esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+    esp_now_register_recv_cb(espnow_recv_cb);
+    esp_now_add_peer(espnow_broadcast_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+    esp_now_register_recv_cb(espnow_recv_cb);
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, espnow_broadcast_mac, 6);
+    peer.channel = wifi_channel;
+    peer.encrypt = false;
+    esp_now_add_peer(&peer);
+#endif
+    DBG_PRINTLN("ESP-NOW started");
+}
+
+
+static void espnow_send(int wifi_channel, uint8_t* buf, int len)
+{
+    // if latched, send unicast; otherwise broadcast
+    if (espnow_mac_latched) {
+        // ensure latched peer is registered
+        if (!espnow_latched_peer_added) {
+#ifdef ESP8266
+            esp_now_add_peer(espnow_latched_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+            esp_now_peer_info_t peer = {};
+            memcpy(peer.peer_addr, espnow_latched_mac, 6);
+            peer.channel = wifi_channel;
+            peer.encrypt = false;
+            esp_now_add_peer(&peer);
+#endif
+            espnow_latched_peer_added = true;
+        }
+        esp_now_send(espnow_latched_mac, buf, len);
+    } else {
+        esp_now_send(espnow_broadcast_mac, buf, len);
+    }
+}
+
+#endif // USE_WIRELESS_PROTOCOL_ESPNOW
+
 typedef enum {
     WIRELESS_PROTOCOL_TCP = 0,
     WIRELESS_PROTOCOL_UDP = 1,
@@ -921,118 +1050,26 @@ tBLEHandler ble_handler;
 //-- ESPNOW class
 #ifdef USE_WIRELESS_PROTOCOL_ESPNOW
 
-// ring buffer for esp-now receive callback
-#define ESPNOW_RXBUF_SIZE  2048
-static uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
-static volatile uint16_t espnow_rxbuf_head;
-static volatile uint16_t espnow_rxbuf_tail;
-
-// mac latch: once a GCS sends us data, we lock to its MAC
-static volatile bool espnow_mac_latched;
-static uint8_t espnow_latched_mac[6];
-
-static void espnow_rxbuf_push(const uint8_t* data, int len)
-{
-    for (int i = 0; i < len; i++) {
-        uint16_t next = (espnow_rxbuf_head + 1) % ESPNOW_RXBUF_SIZE;
-        if (next == espnow_rxbuf_tail) break; // full, drop
-        espnow_rxbuf[espnow_rxbuf_head] = data[i];
-        espnow_rxbuf_head = next;
-    }
-}
-
-static int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
-{
-    int cnt = 0;
-    while (espnow_rxbuf_tail != espnow_rxbuf_head && cnt < maxlen) {
-        buf[cnt++] = espnow_rxbuf[espnow_rxbuf_tail];
-        espnow_rxbuf_tail = (espnow_rxbuf_tail + 1) % ESPNOW_RXBUF_SIZE;
-    }
-    return cnt;
-}
-
-// platform-conditional receive callback
-#ifdef ESP8266
-static void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len)
-#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-static void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len)
-#else
-static void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len)
-#endif
-{
-#ifdef ESP8266
-    const uint8_t* sender_mac = mac;
-#elif ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-    const uint8_t* sender_mac = info->src_addr;
-#else
-    const uint8_t* sender_mac = mac;
-#endif
-    // mac latch: accept only from the first sender we hear from
-    if (!espnow_mac_latched) {
-        memcpy(espnow_latched_mac, sender_mac, 6);
-        espnow_mac_latched = true;
-    } else {
-        if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
-    }
-    espnow_rxbuf_push(data, len);
-}
-
-
 class tESPNOWHandler : public tWifiHandler {
   public:
-    uint8_t broadcast_mac[6];
-    bool latched_peer_added;
-
     void Init() {
         tWifiHandler::Init();
         device_name = device_name + " ESPNOW";
-        memset(broadcast_mac, 0xFF, 6);
-        espnow_rxbuf_head = 0;
-        espnow_rxbuf_tail = 0;
-        espnow_mac_latched = false;
-        latched_peer_added = false;
+        memset(espnow_broadcast_mac, 0xFF, 6);
     }
 
     void Setup() override {
-        WiFi.mode(WIFI_STA);
-        WiFi.disconnect();
-
-#ifdef ESP8266
-        // force 11b only for best reliability
-        wifi_set_phy_mode(PHY_MODE_11B);
-        wifi_set_channel(g_wifichannel);
-#else
-        // set country to EU to enable channels 1-13 (default may restrict to 1-11)
-        wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
-        esp_wifi_set_country(&country);
-        esp_wifi_set_channel(g_wifichannel, WIFI_SECOND_CHAN_NONE);
-        // force 11b only for best reliability
-        esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B);
-#endif
-
-        setup_wifipower();
-
-        if (esp_now_init() != 0) {
-            DBG_PRINTLN("ESP-NOW init failed");
-            return;
-        }
-
-#ifdef ESP8266
-        esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
-        esp_now_register_recv_cb(espnow_recv_cb);
-        esp_now_add_peer(broadcast_mac, ESP_NOW_ROLE_COMBO, g_wifichannel, NULL, 0);
-#else
-        esp_now_register_recv_cb(espnow_recv_cb);
-        esp_now_peer_info_t peer = {};
-        memcpy(peer.peer_addr, broadcast_mac, 6);
-        peer.channel = g_wifichannel;
-        peer.encrypt = false;
-        esp_now_add_peer(&peer);
-#endif
-        DBG_PRINTLN("ESP-NOW started");
+        espnow_rxbuf_head = 0;
+        espnow_rxbuf_tail = 0;
+        espnow_mac_latched = false;
+        espnow_latched_peer_added = false;
+        espnow_setup(g_wifichannel);
     }
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
+        // cap at 250 bytes (esp-now max payload)
+        if (sizeofbuf > 250) sizeofbuf = 250;
+
         // drain received data to serial
         int len = espnow_rxbuf_pop(buf, sizeofbuf);
         if (len > 0) {
@@ -1040,30 +1077,11 @@ class tESPNOWHandler : public tWifiHandler {
             SetConnected();
         }
 
-        // cap at 250 bytes (esp-now max payload) to ensure one send per loop
-        SerialReadWifiWrite(buf, (sizeofbuf > 250) ? 250 : sizeofbuf);
+        SerialReadWifiWrite(buf, sizeofbuf);
     }
 
     void wifi_write(uint8_t* buf, int len) override {
-        // if latched, send unicast; otherwise broadcast
-        if (espnow_mac_latched) {
-            // ensure latched peer is registered
-            if (!latched_peer_added) {
-#ifdef ESP8266
-                esp_now_add_peer(espnow_latched_mac, ESP_NOW_ROLE_COMBO, g_wifichannel, NULL, 0);
-#else
-                esp_now_peer_info_t peer = {};
-                memcpy(peer.peer_addr, espnow_latched_mac, 6);
-                peer.channel = g_wifichannel;
-                peer.encrypt = false;
-                esp_now_add_peer(&peer);
-#endif
-                latched_peer_added = true;
-            }
-            esp_now_send(espnow_latched_mac, buf, len);
-        } else {
-            esp_now_send(broadcast_mac, buf, len);
-        }
+        espnow_send(g_wifichannel, buf, len);
     }
 };
 tESPNOWHandler espnow_handler;
