@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 1. Mar. 2026
+// 2. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -347,17 +347,17 @@ class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
 
 // ring buffer for esp-now receive callback
 #define ESPNOW_RXBUF_SIZE  2048
-static uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
-static volatile uint16_t espnow_rxbuf_head;
-static volatile uint16_t espnow_rxbuf_tail;
+uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
+volatile uint16_t espnow_rxbuf_head;
+volatile uint16_t espnow_rxbuf_tail;
 
 // mac latch: once a GCS sends us data, we lock to its MAC
-static volatile bool espnow_mac_latched;
-static uint8_t espnow_latched_mac[6];
-static bool espnow_latched_peer_added;
-static uint8_t espnow_broadcast_mac[6];
+volatile bool espnow_latched_mac_available;
+uint8_t espnow_latched_mac[6];
+bool espnow_latched_peer_added;
+uint8_t espnow_broadcast_mac[6];
 
-static void espnow_rxbuf_push(const uint8_t* data, int len)
+void espnow_rxbuf_push(const uint8_t* data, int len)
 {
     for (int i = 0; i < len; i++) {
         uint16_t next = (espnow_rxbuf_head + 1) % ESPNOW_RXBUF_SIZE;
@@ -367,7 +367,7 @@ static void espnow_rxbuf_push(const uint8_t* data, int len)
     }
 }
 
-static int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
+int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
 {
     int cnt = 0;
     while (espnow_rxbuf_tail != espnow_rxbuf_head && cnt < maxlen) {
@@ -379,22 +379,22 @@ static int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
 
 // platform-conditional receive callback
 #ifdef ESP8266
-static void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len)
+void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len)
 {
     const uint8_t* sender_mac = mac;
 #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-static void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len)
+void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len)
 {
     const uint8_t* sender_mac = mac;
 #else
-static void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len)
+void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len)
 {
     const uint8_t* sender_mac = info->src_addr;
 #endif
     // mac latch: accept only from the first sender we hear from
-    if (!espnow_mac_latched) {
+    if (!espnow_latched_mac_available) {
         memcpy(espnow_latched_mac, sender_mac, 6);
-        espnow_mac_latched = true;
+        espnow_latched_mac_available = true;
     } else {
         if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
     }
@@ -402,7 +402,7 @@ static void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data,
 }
 
 
-static void espnow_setup(int wifi_channel)
+void espnow_setup(int wifi_channel)
 {
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
@@ -443,10 +443,10 @@ static void espnow_setup(int wifi_channel)
 }
 
 
-static void espnow_send(int wifi_channel, uint8_t* buf, int len)
+void espnow_send(int wifi_channel, uint8_t* buf, int len)
 {
     // if latched, send unicast; otherwise broadcast
-    if (espnow_mac_latched) {
+    if (espnow_latched_mac_available) {
         // ensure latched peer is registered
         if (!espnow_latched_peer_added) {
 #ifdef ESP8266
@@ -1061,7 +1061,7 @@ class tESPNOWHandler : public tWifiHandler {
     void Setup() override {
         espnow_rxbuf_head = 0;
         espnow_rxbuf_tail = 0;
-        espnow_mac_latched = false;
+        espnow_latched_mac_available = false;
         espnow_latched_peer_added = false;
         espnow_setup(g_wifichannel);
     }
