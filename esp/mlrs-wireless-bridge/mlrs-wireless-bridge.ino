@@ -360,7 +360,7 @@ uint8_t espnow_broadcast_mac[6];
 void espnow_rxbuf_push(const uint8_t* data, int len)
 {
     for (int i = 0; i < len; i++) {
-        uint16_t next = (espnow_rxbuf_head + 1) % ESPNOW_RXBUF_SIZE;
+        uint16_t next = (espnow_rxbuf_head + 1) & (ESPNOW_RXBUF_SIZE - 1);
         if (next == espnow_rxbuf_tail) break; // full, drop
         espnow_rxbuf[espnow_rxbuf_head] = data[i];
         espnow_rxbuf_head = next;
@@ -372,7 +372,7 @@ int espnow_rxbuf_pop(uint8_t* buf, int maxlen)
     int cnt = 0;
     while (espnow_rxbuf_tail != espnow_rxbuf_head && cnt < maxlen) {
         buf[cnt++] = espnow_rxbuf[espnow_rxbuf_tail];
-        espnow_rxbuf_tail = (espnow_rxbuf_tail + 1) % ESPNOW_RXBUF_SIZE;
+        espnow_rxbuf_tail = (espnow_rxbuf_tail + 1) & (ESPNOW_RXBUF_SIZE - 1);
     }
     return cnt;
 }
