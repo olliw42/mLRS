@@ -73,6 +73,15 @@ desired_dsdl_list = [
     'uavcan.tunnel.Protocol',
 
     'dronecan.protocol.FlexDebug',
+
+    'uavcan.protocol.file.BeginFirmwareUpdate',
+    'uavcan.protocol.file.BeginFirmwareUpdate_req',
+    'uavcan.protocol.file.BeginFirmwareUpdate_res',
+    'uavcan.protocol.file.Read',
+    'uavcan.protocol.file.Read_req',
+    'uavcan.protocol.file.Read_res',
+    'uavcan.protocol.file.Error',
+    'uavcan.protocol.file.Path',
 ]    
 
 
