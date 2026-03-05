@@ -99,7 +99,7 @@
   X( Setup.Tx[0].ChannelsSource,    LIST, "Tx Ch Source",     "TX_CH_SOURCE",     0,0,0,"", "none,crsf,in,mbridge", SETUP_MSK_TX_CH_SOURCE )\
   X( Setup.Tx[0].ChannelOrder,      LIST, "Tx Ch Order",      "TX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Tx[0].InMode,            LIST, "Tx In Mode",       "TX_IN_MODE",       0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
-  X( Setup.Tx[0].SerialDestination, LIST, "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,serial2,mbridge", SETUP_MSK_TX_SER_DEST )\
+  X( Setup.Tx[0].SerialDestination, LIST, "Tx Ser Dest",      "TX_SER_DEST",      0,0,0,"", "serial,serial2,mbridge,USB", SETUP_MSK_TX_SER_DEST )\
   X( Setup.Tx[0].SerialBaudrate,    LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx[0].SendRadioStatus,   LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx[0].MavlinkComponent,  LIST, "Tx Mav Component", "TX_MAV_COMPONENT", 0,0,0,"", "off,enabled", MSK_ALL )\

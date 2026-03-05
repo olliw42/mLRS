@@ -33,13 +33,24 @@
 
 #if defined DEVICE_IS_TRANSMITTER && defined USE_COM_ON_SERIAL
   // TODO: when we swap ser/com, we may want to flush, we need to change baudrate
-#ifdef DEVICE_HAS_SERIAL_ON_USB
+#if defined DEVICE_HAS_SERIAL_ON_USB || defined DEVICE_HAS_SERIAL_OR_COM_ON_USB
   #define SERORCOM_INIT  ser_or_com_init();
 #else
   #define SERORCOM_INIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
 #endif
   #define IFNSER(x)  if (!ser_or_com_serial()) return x;
   #define IFNCOM(x)  if (ser_or_com_serial()) return x;
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB
+  // settings-based selection: USB used for Serial when SerialDestination=USB
+  static bool _ser_or_com_force_com = false;
+  void ser_or_com_init(void) { _ser_or_com_force_com = false; }
+  bool ser_or_com_serial(void)
+  {
+      if (_ser_or_com_force_com) return false;
+      return (Setup.Tx[Config.ConfigId].SerialDestination == SERIAL_DESTINATION_USB);
+  }
+  void ser_or_com_set_to_com(void) { _ser_or_com_force_com = true; }
+#endif
 #else
   #define SERORCOM_INIT
   #define IFNSER(x)
@@ -67,6 +78,17 @@ class tSerialPort : public tSerialBase
     char getc(void) override { IFNSER(0); return usb_getc(); }
     void flush(void) override { IFNSER(); usb_flush(); }
     uint16_t bytes_available(void) override { IFNSER(0); return usb_rx_bytesavailable(); }
+#elif defined DEVICE_HAS_SERIAL_OR_COM_ON_USB // runtime switch: USB when SerialDestination=USB, else UARTB
+    void InitOnce(void) override { usb_init(); }
+    void Init(void) override { uartb_init(); SERORCOM_INIT; }
+    void SetBaudRate(uint32_t baud) override { if (!ser_or_com_serial()) uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    bool full(void) { return ser_or_com_serial() ? usb_tx_full() : !uartb_tx_notfull(); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { if (ser_or_com_serial()) usb_putbuf(buf, len); else uartb_putbuf(buf, len); }
+    bool available(void) override { return ser_or_com_serial() ? usb_rx_available() : uartb_rx_available(); }
+    char getc(void) override { return ser_or_com_serial() ? usb_getc() : uartb_getc(); }
+    void flush(void) override { if (ser_or_com_serial()) usb_flush(); else { uartb_rx_flush(); uartb_tx_flush(); } }
+    uint16_t bytes_available(void) override { return ser_or_com_serial() ? usb_rx_bytesavailable() : uartb_rx_bytesavailable(); }
+    bool has_systemboot(void) override { return uartb_has_systemboot(); }
 #else
     void Init(void) override { uartb_init(); SERORCOM_INIT; }
     void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
@@ -137,7 +159,7 @@ class tComPort : public tSerialBase
 #ifdef USE_COM_ON_SERIAL
   public:
     // we do not initialize it as it is initialized by serial
-#ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
+#if defined DEVICE_HAS_SERIAL_ON_USB || defined DEVICE_HAS_SERIAL_OR_COM_ON_USB // USE_USB
     bool full(void) { IFNCOM(false); return usb_tx_full(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { IFNCOM(); usb_putbuf(buf, len); }
     bool available(void) override { IFNCOM(0); return usb_rx_available(); }

@@ -283,7 +283,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 #define CLI_BUF_SIZE  128
 
 
-#ifdef DEVICE_HAS_COM_ON_USB
+#if defined(DEVICE_HAS_COM_ON_USB) || defined(DEVICE_HAS_SERIAL_OR_COM_ON_USB)
   #if USB_TXBUFSIZE >= 2048
     #define CLI_PRINT_CHUNKS_CNT_MAX  200
   #else // we assume 512
@@ -368,6 +368,11 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 
     state = CLI_STATE_NORMAL;
 
+    // USB is much faster than UART - allow more chunks per call
+#if defined(DEVICE_HAS_COM_ON_USB) || defined(DEVICE_HAS_SERIAL_OR_COM_ON_USB)
+    print_chunks_max = 32;
+#else
+    // UART: throttle based on frame rate to avoid TX buffer overflow
     // 9 ms, 20 ms, 32 ms, 53 ms
     if (_frame_rate_ms < 19) {
         print_chunks_max = 1;
@@ -378,6 +383,7 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
     } else {
         print_chunks_max = 8;
     }
+#endif
     if (print_chunks_max > CLI_PRINT_CHUNKS_CNT_MAX) print_chunks_max = CLI_PRINT_CHUNKS_CNT_MAX;
 
     print_index = 0;

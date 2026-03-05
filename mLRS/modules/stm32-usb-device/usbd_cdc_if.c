@@ -356,6 +356,7 @@ static int8_t CDC_Receive(uint8_t* pbuf, uint32_t* length)
 void _cdc_transmit(void)
 {
     USBD_CDC_HandleTypeDef* hcdc = (USBD_CDC_HandleTypeDef*)husbd_CDC.pClassData;
+    if (hcdc == NULL) return; // not yet enumerated by host
     if (hcdc->TxState != 0) return;
 
     uint8_t len = 0;

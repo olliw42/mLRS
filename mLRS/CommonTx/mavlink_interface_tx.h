@@ -167,6 +167,10 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
         ser = _mbridge;
         ser2 = nullptr;
         break;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialport; // serial object routes to USB internally via ser_or_com_serial()
+        ser2 = nullptr;
+        break;
     default:
         while(1){} // must not happen
     }

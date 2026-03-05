@@ -167,7 +167,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge"
+    // Tx SerialDestination: "serial,serial2,mbridge,USB"
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b001; // add serial
@@ -177,6 +177,9 @@ void setup_configure_metadata(void)
 #endif
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b100; // add mbridge
+#endif
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b1000; // add USB option
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"

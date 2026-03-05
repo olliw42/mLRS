@@ -26,8 +26,8 @@
 #define DEVICE_HAS_FAN_ONOFF // FAN_TEMPCONTROLLED_ONOFF was tested to work not so well
 
 // factory default for Tx module
-// USB-C = com, Tx1/Rx1 = serial w HC04, LPTx1/LPRx1 = serial2
-#define DEVICE_HAS_COM_ON_USB
+// USB-C = serial or com (selectable), Tx1/Rx1 = serial w HC04, LPTx1/LPRx1 = serial2
+#define DEVICE_HAS_SERIAL_OR_COM_ON_USB
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define DEVICE_HAS_HC04_MODULE_ON_SERIAL
 #define DEVICE_HAS_SERIAL2
