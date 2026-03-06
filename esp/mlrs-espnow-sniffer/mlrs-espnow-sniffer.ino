@@ -10,7 +10,7 @@
 // for use with ESP32, ESP32C3 and ESP32S3 modules.
 // to use USB on ESP32C3 and ESP32S3, 'USB CDC On Boot' must be enabled in Tools.
 //********************************************************
-// 28. feb. 2026
+// 6. Mar. 2026
 //********************************************************
 
 #include <WiFi.h>
@@ -88,7 +88,7 @@ void rxbuf_init(void)
 void rxbuf_push(const uint8_t* data, int len)
 {
     for (int i = 0; i < len; i++) {
-        uint16_t next = (rxbuf_head + 1) % RXBUF_SIZE;
+        uint16_t next = (rxbuf_head + 1) & (RXBUF_SIZE - 1);
         if (next == rxbuf_tail) break; // full, drop
         rxbuf[rxbuf_head] = data[i];
         rxbuf_head = next;
@@ -100,7 +100,7 @@ int rxbuf_pop(uint8_t* buf, int maxlen)
     int cnt = 0;
     while (rxbuf_tail != rxbuf_head && cnt < maxlen) {
         buf[cnt++] = rxbuf[rxbuf_tail];
-        rxbuf_tail = (rxbuf_tail + 1) % RXBUF_SIZE;
+        rxbuf_tail = (rxbuf_tail + 1) & (RXBUF_SIZE - 1);
     }
     return cnt;
 }
