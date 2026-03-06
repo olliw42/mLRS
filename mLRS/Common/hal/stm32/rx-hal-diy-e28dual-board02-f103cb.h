@@ -16,6 +16,7 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
+#define DEVICE_HAS_DRONECAN
 
 
 #ifdef MLRS_FEATURE_DIVERSITY
@@ -68,6 +69,11 @@
 #define UARTF_USE_TX_ISR
 //#define UARTF_USE_RX
 //#define UARTF_RXBUFSIZE           512
+
+
+//-- CAN BUS
+
+#define CAN_USE_CAN1_PA11PA12
 
 
 //-- SX1: SX12xx & SPI
