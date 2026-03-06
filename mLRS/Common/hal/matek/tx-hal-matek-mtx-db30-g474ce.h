@@ -39,6 +39,7 @@
 #define EE_START_PAGE             120 // 512 kB flash, 2 kB page, G474 has dual bank flash, hence only 256 kB available
 
 #define MICROS_TIMx               TIM3
+#define MICROS_TIM_NAMEPREFIX     TIM3_
 
 
 //-- UARTS
