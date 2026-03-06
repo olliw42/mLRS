@@ -15,6 +15,10 @@
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_DRONECAN
 
+// change these defaults
+#undef SETUP_RX_SERIAL_PORT
+#define SETUP_RX_SERIAL_PORT  1 // 0: serial, 1: can
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 

@@ -16,6 +16,10 @@
 
 #include "hal-matek-mr-g431kb-common.h"
 
+// change these defaults
+#undef SETUP_RX_SERIAL_PORT
+#define SETUP_RX_SERIAL_PORT  1 // 0: serial, 1: can
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
