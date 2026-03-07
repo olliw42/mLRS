@@ -71,8 +71,8 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_MATEK_MR900_TD30_G474CE
-  #define DEVICE_NAME "Matek mR900-TD30"
+#ifdef RX_MATEK_MR900_30TD_G474CE
+  #define DEVICE_NAME "Matek mR900-30TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
