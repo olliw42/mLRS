@@ -34,14 +34,20 @@
 #endif
 
 #include "../Common/hal/hal.h"
+#if defined STM32G4 || defined STM32F1
 #include "../Common/thirdparty/stdstm32-can.h"
+#elif defined ESP32
+#include "../Common/esp-lib/esp-can.h"
+#endif
 
+#if defined STM32G4 || defined STM32F1
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
 #endif
 
 #if FDCAN_IRQ_PRIORITY != DRONECAN_IRQ_PRIORITY
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
+#endif
 #endif
 
 extern tRxMavlink mavlink;
@@ -61,6 +67,8 @@ extern tGlobalConfig Config;
 #define CANARD_POOL_SIZE  4096
 #elif defined STM32F1
 #define CANARD_POOL_SIZE  1024
+#elif defined ESP32
+#define CANARD_POOL_SIZE  4096
 #endif
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
@@ -166,6 +174,8 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
 
     ser_over_can_enabled = ser_over_can_enable_flag;
 
+    firmware_update.Init();
+
     DBG_DC(dbg.puts("\n\n\nCAN init");)
 
     can_init();
@@ -237,17 +247,15 @@ uint8_t filter_num = 0;
         filter_num = 1;
 
     } else {
-        // set reduced filters as needed for normal operation, only accept
-        // - GETNODEINFO requests
-        // - TUNNEL_TARGETTED broadcasts
+        // set filters for normal operation, accept
+        // - all service frames (requests and responses) addressed to our node
+        // - TUNNEL_TARGETTED broadcasts (if serial-over-CAN enabled)
         filter_configs[0].rx_fifo = DC_HAL_RX_FIFO0;
         filter_configs[0].id =
-            DC_SERVICE_TYPE_TO_CAN_ID(UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_ID) |
-            DC_REQUEST_NOT_RESPONSE_TO_CAN_ID(0x01) |
             DC_DESTINATION_ID_TO_CAN_ID(canardGetLocalNodeID(&canard)) |
             DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x01);
         filter_configs[0].mask =
-            DC_SERVICE_TYPE_MASK | DC_REQUEST_NOT_RESPONSE_MASK | DC_DESTINATION_ID_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
+            DC_DESTINATION_ID_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
         filter_num = 1;
         if (ser_over_can_enabled) { // we do accept tunnel targetted transfers
             filter_configs[0].rx_fifo = DC_HAL_RX_FIFO1;
@@ -500,7 +508,9 @@ void tRxDroneCan::send_node_status(void)
 {
     _p.node_status.uptime_sec = millis32() / 1000;
     _p.node_status.health = UAVCAN_PROTOCOL_NODESTATUS_HEALTH_OK;
-    _p.node_status.mode = UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
+    _p.node_status.mode = firmware_update.IsActive()
+        ? UAVCAN_PROTOCOL_NODESTATUS_MODE_SOFTWARE_UPDATE
+        : UAVCAN_PROTOCOL_NODESTATUS_MODE_OPERATIONAL;
     _p.node_status.sub_mode = 0;
 
     // put something in vendor specific status, simply count up
@@ -539,8 +549,17 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
 
     _p.node_info_resp.software_version.major = major;
     _p.node_info_resp.software_version.minor = minor;
+    _p.node_info_resp.software_version.vcs_commit = 0;
+#ifdef ESP32
+    // populate image_crc from the first 8 bytes of the firmware SHA-256
+    _p.node_info_resp.software_version.optional_field_flags =
+        UAVCAN_PROTOCOL_SOFTWAREVERSION_OPTIONAL_FIELD_FLAG_IMAGE_CRC;
+    const esp_app_desc_t* app_desc = esp_ota_get_app_description();
+    memcpy(&_p.node_info_resp.software_version.image_crc, app_desc->app_elf_sha256, 8);
+#else
     _p.node_info_resp.software_version.optional_field_flags = patch;
-    _p.node_info_resp.software_version.vcs_commit = 0; // should put git hash in here
+    _p.node_info_resp.software_version.image_crc = 0; // should put git hash in here
+#endif
 
     _p.node_info_resp.hardware_version.major = 0; // we don't have such a thing
     _p.node_info_resp.hardware_version.minor = 0;
@@ -766,6 +785,83 @@ void tRxDroneCan::send_tunnel_targetted(void)
 
 
 //-------------------------------------------------------
+// firmware update handlers
+//-------------------------------------------------------
+
+void tRxDroneCan::handle_begin_firmware_update_request(CanardInstance* const ins, CanardRxTransfer* const transfer)
+{
+    firmware_update.HandleBeginFirmwareUpdateRequest(ins, transfer, _buf, sizeof(_buf));
+
+    if (!firmware_update.IsActive()) return; // rejected or decode error
+
+    DBG_DC(dbg.puts("\nOTA: entering blocking loop");)
+
+    // blocking loop — pump CAN and drive the firmware update state machine.
+    // on success, esp_restart() is called inside Tick_ms and we never return.
+    // on error/abort, state returns to IDLE and we break out.
+    // note: we must drain all available CAN frames per iteration, not just one.
+    // file.Read responses are multi-frame transfers (~38 CAN frames for 256 bytes)
+    // and the normal single-frame-per-call helpers would be far too slow.
+    uint32_t last_status_ms = 0;
+    while (firmware_update.IsActive()) {
+        uint32_t tnow_ms = millis32();
+
+        // drain all pending rx frames
+        while (1) {
+            CanardCANFrame frame;
+            int16_t res = dc_hal_receive(&frame);
+            if (res <= 0) break;
+            canardHandleRxFrame(&canard, &frame, micros64());
+        }
+
+        // drain the tx queue
+        while (1) {
+            const CanardCANFrame* frame = canardPeekTxQueue(&canard);
+            if (!frame) break;
+            int16_t res = dc_hal_transmit(frame, tnow_ms);
+            if (res != 0) { // successfully submitted or error, drop the frame
+                canardPopTxQueue(&canard);
+            } else {
+                break; // tx busy, try again next iteration
+            }
+        }
+
+        // drive firmware update state machine
+        firmware_update.Tick_ms(&canard, _buf, sizeof(_buf), tnow_ms);
+
+        // send any frames queued by Tick_ms immediately (e.g. file.Read request)
+        while (1) {
+            const CanardCANFrame* frame = canardPeekTxQueue(&canard);
+            if (!frame) break;
+            int16_t res = dc_hal_transmit(frame, tnow_ms);
+            if (res != 0) {
+                canardPopTxQueue(&canard);
+            } else {
+                break;
+            }
+        }
+
+        // periodically emit node status so the bus knows we're alive
+        if ((tnow_ms - last_status_ms) >= 1000) {
+            last_status_ms = tnow_ms;
+            send_node_status();
+            dronecan_process_tx_queue();
+        }
+
+        yield();
+    }
+
+    DBG_DC(dbg.puts("\nOTA: exited blocking loop");)
+}
+
+
+void tRxDroneCan::handle_file_read_response(CanardRxTransfer* const transfer)
+{
+    firmware_update.HandleFileReadResponse(transfer);
+}
+
+
+//-------------------------------------------------------
 // DroneCAN/Libcanard call backs
 //-------------------------------------------------------
 
@@ -788,6 +884,19 @@ bool dronecan_should_accept_transfer(
         case UAVCAN_PROTOCOL_GETNODEINFO_ID:
             if (!dronecan.id_is_allcoated()) return false;
             *out_data_type_signature = UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_SIGNATURE;
+            return true;
+        case UAVCAN_PROTOCOL_FILE_BEGINFIRMWAREUPDATE_REQUEST_ID:
+            if (!dronecan.id_is_allcoated()) return false;
+            *out_data_type_signature = UAVCAN_PROTOCOL_FILE_BEGINFIRMWAREUPDATE_REQUEST_SIGNATURE;
+            return true;
+        }
+    }
+    // handle service responses (we are a client for file.Read)
+    if (transfer_type == CanardTransferTypeResponse) {
+        switch (data_type_id) {
+        case UAVCAN_PROTOCOL_FILE_READ_RESPONSE_ID:
+            if (!dronecan.firmware_update.IsActive()) return false;
+            *out_data_type_signature = UAVCAN_PROTOCOL_FILE_READ_RESPONSE_SIGNATURE;
             return true;
         }
     }
@@ -817,6 +926,17 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
         switch (transfer->data_type_id) {
         case UAVCAN_PROTOCOL_GETNODEINFO_ID:
             dronecan.handle_get_node_info_request(ins, transfer);
+            return;
+        case UAVCAN_PROTOCOL_FILE_BEGINFIRMWAREUPDATE_REQUEST_ID:
+            dronecan.handle_begin_firmware_update_request(ins, transfer);
+            return;
+        }
+    }
+    // handle service responses
+    if (transfer->transfer_type == CanardTransferTypeResponse) {
+        switch (transfer->data_type_id) {
+        case UAVCAN_PROTOCOL_FILE_READ_RESPONSE_ID:
+            dronecan.handle_file_read_response(transfer);
             return;
         }
     }
