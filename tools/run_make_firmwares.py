@@ -454,6 +454,10 @@ MLRS_SOURCES_MODULES = [
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
     os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
+    
+    #os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'), ## TODO !!!!!!
+    os.path.join('Common','sx-drivers','lr20xx.cpp'), ## TODO !!!!!!
+    
     os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
     ]
 
@@ -1115,10 +1119,12 @@ TLIST = [
         'target' : 'rx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'RX_DIY_WIOE5_E22_WLE5JC',
         'extra_D_list' : [], 'appendix' : ''
     },{
+        'target' : 'rx-diy-NiceRF-LR2021-g431kb',       'target_D' : 'RX_DIY_NICERF_LR2021_G431KB',
+        'extra_D_list' : [], 'appendix' : ''
+    },{
 #-- rx WioE5 Mini, Grove
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
-    },{
 #        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
 #        'extra_D_list' : [], 'appendix' : '',
 #    },{
@@ -1158,6 +1164,9 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
+        'extra_D_list' : [], 'appendix' : ''
+    },{
+        'target' : 'tx-diy-NiceRF-LR2021-g431kb',       'target_D' : 'TX_DIY_NICERF_LR2021_G431KB',
         'extra_D_list' : [], 'appendix' : ''
     },{
 #-- tx WioE5 Mini
