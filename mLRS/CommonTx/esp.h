@@ -484,11 +484,6 @@ uint8_t len;
     if (version >= 10307) { // not available before v1.3.07
         esp_read("AT+WIFIDEVICENAME=?", s, &len);
         s[len-2] = '\0';
-
-com->puts("\r\nDBG!");
-com->puts(s);
-com->puts("!");
-
         if (len > 22) {
             strncpy(info.wireless.device_name, s + 18, sizeof(info.wireless.device_name)-1);
         }
