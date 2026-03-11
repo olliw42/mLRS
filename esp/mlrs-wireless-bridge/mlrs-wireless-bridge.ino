@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 4. Mar. 2026
+// 11. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -467,6 +467,8 @@ void espnow_send(int wifi_channel, uint8_t* buf, int len) {
             espnow_latched_peer_added = true;
         }
         esp_now_send(espnow_latched_mac, buf, len);
+        // broadcast a copy for passive listeners (sniffers)
+        esp_now_send(espnow_broadcast_mac, buf, len);
     } else {
         esp_now_send(espnow_broadcast_mac, buf, len);
     }
