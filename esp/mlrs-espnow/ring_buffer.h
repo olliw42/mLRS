@@ -6,14 +6,14 @@
 //*******************************************************
 // Ring Buffer
 //*******************************************************
-// 7. Mar. 2026
+// 11. Mar. 2026
 //*******************************************************
 #ifndef RING_BUFFER_H
 #define RING_BUFFER_H
 
 
-// power-of-two ring buffer for ISR -> loop data transfer.
-// push is safe to call from ISR / promiscuous callback.
+// power-of-two ring buffer for callback -> loop data transfer.
+// push is safe to call from ESP-NOW receive callback.
 // pop is called only from loop().
 
 #define RXBUF_SIZE  2048

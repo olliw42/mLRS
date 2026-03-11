@@ -4,12 +4,12 @@
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
-// Combined GCS bridge / promiscuous sniffer for ESP-NOW.
+// Combined GCS bridge / sniffer for ESP-NOW.
 // Select mode by defining ESPNOW_GCS or ESPNOW_SNIFFER below.
 // For use with ESP32, ESP32C3, and ESP32S3.
 // To use USB on ESP32C3 and ESP32S3, 'USB CDC On Boot' must be enabled in Tools.
 //********************************************************
-// 7. Mar. 2026
+// 11. Mar. 2026
 //********************************************************
 
 //-------------------------------------------------------
@@ -17,7 +17,7 @@
 //-------------------------------------------------------
 
 #define ESPNOW_GCS       // bidirectional GCS bridge
-//#define ESPNOW_SNIFFER   // passive promiscuous sniffer (ESP32 only)
+//#define ESPNOW_SNIFFER   // passive broadcast listener (receive-only)
 
 // validation
 #if defined(ESPNOW_GCS) && defined(ESPNOW_SNIFFER)
@@ -49,10 +49,6 @@
 //#define LED_ACTIVE_LOW             // uncomment if LED is active low (on = LOW)
 //#define RGB_LED_COUNT       1      // number of RGB LEDs (default 1)
 
-// sniffer mode only: hardcode the bridge MAC to skip auto-detection.
-// fill in the 6 bytes of the wireless bridge's MAC address, e.g.:
-//#define BRIDGE_MAC  { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF }
-
 
 //-------------------------------------------------------
 // platform includes
@@ -60,6 +56,10 @@
 
 #include <WiFi.h>
 #include <esp_wifi.h>
+
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+  #error "this sketch requires ESP Arduino Core 3.x or later (esp_now_recv_info_t with des_addr)"
+#endif
 
 
 //-------------------------------------------------------
@@ -82,6 +82,14 @@
 
 #include "leds.h"
 #include "ring_buffer.h"
+
+// shared ESP-NOW state (used by both GCS and sniffer headers)
+volatile bool espnow_latched_mac_available;
+uint8_t espnow_latched_mac[6];
+uint8_t broadcast_mac[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+#ifdef ESPNOW_GCS
+bool latched_peer_added;
+#endif
 
 #ifdef ESPNOW_SNIFFER
 #include "espnow_sniffer.h"
@@ -127,6 +135,27 @@ void scan_for_traffic(void)
     }
 }
 
+void setup_wifi_mode(void)
+{
+    esp_now_init();
+    esp_now_register_recv_cb(espnow_recv_cb);
+
+#ifdef ESPNOW_GCS
+    // GCS needs broadcast peer for TX
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, broadcast_mac, 6);
+    esp_now_add_peer(&peer);
+
+#ifdef WIFI_CHANNEL
+    // fixed channel — skip scanning, required for MSP (send/request) systems
+    esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+    return;
+#endif
+#endif
+
+    scan_for_traffic();
+}
+
 
 //-------------------------------------------------------
 // setup() and loop()
@@ -150,13 +179,6 @@ void setup()
 
     rxbuf_init();
 
-#ifdef ESPNOW_SNIFFER
-    detect_init();
-#else
-    espnow_latched_mac_available = false;
-    latched_peer_added = false;
-#endif
-
     is_connected = false;
     is_connected_tlast_ms = 0;
     wifi_initialized = false;
@@ -170,38 +192,18 @@ void loop()
         wifi_initialized = true;
         setup_wifi_common();
         setup_wifi_mode();
-#ifdef ESPNOW_SNIFFER
-        // arm the timeout monitor immediately upon channel lock
-        is_connected = true;
-        is_connected_tlast_ms = millis();
-#endif
         return;
     }
 
     unsigned long tnow_ms = millis();
 
-#ifdef ESPNOW_SNIFFER
-    // check if auto-detection is ready to decide
-    detect_check();
-
-    // timeout — rescan if no frames for 5 seconds
-    if (is_connected && (tnow_ms - is_connected_tlast_ms > 5000)) {
-        is_connected = false;
-        detect_init();
-        scan_for_traffic();
-        // re-arm the timeout monitor immediately upon channel lock
-        is_connected = true;
-        is_connected_tlast_ms = millis();
-    }
-#else
     // connection timeout — rescan if no frames for 2 seconds
     if (is_connected && (tnow_ms - is_connected_tlast_ms > 2000)) {
         is_connected = false;
-#ifndef WIFI_CHANNEL
+#if !defined(WIFI_CHANNEL) || defined(ESPNOW_SNIFFER)
         scan_for_traffic();
 #endif
     }
-#endif
 
     // LED: pattern based on connection state
     if (is_connected) {
