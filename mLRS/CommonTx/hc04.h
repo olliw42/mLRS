@@ -15,7 +15,7 @@
 #include <ctype.h>
 
 
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
+#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL && !defined DEVICE_HAS_SERIAL_OR_COM_ON_USB
   #error HC04 bluetooth module is on serial but board has serial/com !
 #endif
 
@@ -71,6 +71,9 @@ void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serial
     ser = _serialport;
     ser_baud = _serial_baudrate;
 
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB
+    if (ser_or_com_serial()) return; // serial routed to USB, HC04 is on UARTB so skip autoconfigure
+#endif
     run_autoconfigure();
 }
 
@@ -128,7 +131,7 @@ void tTxHc04Bridge::passthrough_do(void)
 {
     ser->SetBaudRate(ser_baud);
     ser->flush();
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
+#if defined USE_COM_ON_SERIAL && (defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 || defined DEVICE_HAS_SERIAL_OR_COM_ON_USB)
     ser_or_com_set_to_com();
 #endif
 

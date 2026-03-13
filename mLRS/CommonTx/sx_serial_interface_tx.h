@@ -43,6 +43,9 @@ void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbrid
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         break;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialport; // serial object routes to USB internally via ser_or_com_serial()
+        break;
     default:
         while(1){} // must not happen
     }

@@ -50,6 +50,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
+#define DEVICE_HAS_SERIAL_OR_COM_ON_USB  // board shares USB between Serial or Com, selected by SerialDestination setting
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
@@ -297,10 +298,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif // DEVICE_IS_RECEIVER
 
 #ifdef DEVICE_IS_TRANSMITTER
-#if defined DEVICE_HAS_SERIAL_OR_COM // some devices have device dependent ways to select serial or com
+#if defined DEVICE_HAS_SERIAL_OR_COM || defined DEVICE_HAS_SERIAL_OR_COM_ON_USB // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
+  #if defined DEVICE_HAS_SERIAL_ON_USB || defined DEVICE_HAS_SERIAL_OR_COM_ON_USB
     #define USE_USB
   #endif
   #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
