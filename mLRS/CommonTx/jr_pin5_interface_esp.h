@@ -216,7 +216,9 @@ IRAM_ATTR void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
     if (state == STATE_TRANSMIT_START) {
         pin5_tx_enable();
         transmit_start();
+#ifndef JR_PIN5_FULL_DUPLEX
         xTaskNotifyGive(tx_done_task_handle);
+#endif
     }
     
     state = STATE_IDLE;
