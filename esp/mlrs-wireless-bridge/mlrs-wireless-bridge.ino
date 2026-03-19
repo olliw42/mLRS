@@ -615,6 +615,11 @@ void setup_wifipower()
 void setup_ap_mode(IPAddress __ip)
 {
     WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
+#ifndef ESP8266
+    // set country to EU to enable channels 1-13 (default may restrict to 1-11)
+    wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
+    esp_wifi_set_country(&country);
+#endif
     WiFi.softAPConfig(__ip, ip_gateway, netmask);
     WiFi.softAP(device_name.c_str(), (device_password.length()) ? device_password.c_str() : NULL, g_wifichannel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
