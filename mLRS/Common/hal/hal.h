@@ -99,11 +99,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 //-- MATEKSYS mLRS devices
 
 #ifdef TX_MATEK_MTX_DB30_G474CE
-  #ifdef DEVICE_HAS_SX128x
-  #include "matek/tx-hal-matek-mtx-db30-g474ce-sx128x.h"
-  #else
-  #include "matek/tx-hal-matek-mtx-db30-g474ce.h"
-  #endif
+#include "matek/tx-hal-matek-mtx-db30-g474ce.h"
 #endif
 
 #ifdef RX_MATEK_MR24_30_G431KB
