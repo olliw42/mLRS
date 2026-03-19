@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 4. Mar. 2026
+// 19. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -371,11 +371,10 @@ void ble_setup(String device_name) {
 uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
 volatile uint16_t espnow_rxbuf_head;
 volatile uint16_t espnow_rxbuf_tail;
-// mac latch: once a GCS sends us data, we lock to its MAC
-volatile bool espnow_latched_mac_available;
-uint8_t espnow_latched_mac[6];
-bool espnow_latched_peer_added;
-uint8_t espnow_broadcast_mac[6];
+volatile bool espnow_gcs_mac_available; // once a GCS sends us data, we lock to its MAC
+uint8_t espnow_gcs_mac[6];
+bool espnow_gcs_peer_added;
+uint8_t espnow_broadcast_mac[6] = { 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF };
 
 void espnow_rxbuf_push(const uint8_t* data, int len) {
     for (int i = 0; i < len; i++) {
@@ -395,26 +394,40 @@ int espnow_rxbuf_pop(uint8_t* buf, int maxlen) {
     return cnt;
 }
 
-#ifdef ESP8266
-void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len) {
-    const uint8_t* sender_mac = mac;
-#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len) {
-    const uint8_t* sender_mac = mac;
-#else
-void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len) {
-    const uint8_t* sender_mac = info->src_addr;
-#endif
-    if (!espnow_latched_mac_available) { // mac latch: accept only from the first sender we hear from
-        memcpy(espnow_latched_mac, sender_mac, 6);
-        espnow_latched_mac_available = true;
+void espnow_recv_callback(const uint8_t* sender_mac, const uint8_t* data, int len) {
+    if (!espnow_gcs_mac_available) { // accept only from the first sender we hear from
+        memcpy(espnow_gcs_mac, sender_mac, 6);
+        espnow_gcs_mac_available = true;
     } else {
-        if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
+        if (memcmp(sender_mac, espnow_gcs_mac, 6) != 0) return; // ignore other senders
     }
     espnow_rxbuf_push(data, len);
 }
 
+#ifdef ESP8266
+void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len) { espnow_recv_callback(mac, data, len); }
+#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len) { espnow_recv_callback(mac, data, len); }
+#else
+void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len) { espnow_recv_callback(info->src_addr, data, len); }
+#endif
+
+void espnow_add_peer_mac(uint8_t* mac, int wifi_channel) {
+#ifdef ESP8266
+    esp_now_add_peer(mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, mac, 6);
+    peer.channel = wifi_channel;
+    peer.encrypt = false;
+    esp_now_add_peer(&peer);
+#endif
+}
+
 void espnow_setup(int wifi_channel) {
+    espnow_rxbuf_head = espnow_rxbuf_tail = 0;
+    espnow_gcs_mac_available = false;
+    espnow_gcs_peer_added = false;
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 #ifdef ESP8266
@@ -434,34 +447,19 @@ void espnow_setup(int wifi_channel) {
     }
 #ifdef ESP8266
     esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
-    esp_now_register_recv_cb(espnow_recv_cb);
-    esp_now_add_peer(espnow_broadcast_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
-#else
-    esp_now_register_recv_cb(espnow_recv_cb);
-    esp_now_peer_info_t peer = {};
-    memcpy(peer.peer_addr, espnow_broadcast_mac, 6);
-    peer.channel = wifi_channel;
-    peer.encrypt = false;
-    esp_now_add_peer(&peer);
 #endif
+    esp_now_register_recv_cb(espnow_recv_cb);
+    espnow_add_peer_mac(espnow_broadcast_mac, wifi_channel);
     DBG_PRINTLN("ESP-NOW started");
 }
 
 void espnow_send(int wifi_channel, uint8_t* buf, int len) {
-    if (espnow_latched_mac_available) { // if latched, send unicast; otherwise broadcast
-        if (!espnow_latched_peer_added) { // ensure latched peer is registered
-#ifdef ESP8266
-            esp_now_add_peer(espnow_latched_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
-#else
-            esp_now_peer_info_t peer = {};
-            memcpy(peer.peer_addr, espnow_latched_mac, 6);
-            peer.channel = wifi_channel;
-            peer.encrypt = false;
-            esp_now_add_peer(&peer);
-#endif
-            espnow_latched_peer_added = true;
+    if (espnow_gcs_mac_available) { // if gcs seen, send unicast; otherwise broadcast
+        if (!espnow_gcs_peer_added) { // ensure latched peer is registered
+            espnow_add_peer_mac(espnow_gcs_mac, wifi_channel);
+            espnow_gcs_peer_added = true;
         }
-        esp_now_send(espnow_latched_mac, buf, len);
+        esp_now_send(espnow_gcs_mac, buf, len);
     } else {
         esp_now_send(espnow_broadcast_mac, buf, len);
     }
@@ -1061,14 +1059,9 @@ class tESPNOWHandler : public tWifiHandler {
     void Init() {
         tWifiHandler::Init();
         device_name = device_name + " ESPNOW";
-        memset(espnow_broadcast_mac, 0xFF, 6);
     }
 
     void wifi_setup() override {
-        espnow_rxbuf_head = 0;
-        espnow_rxbuf_tail = 0;
-        espnow_latched_mac_available = false;
-        espnow_latched_peer_added = false;
         espnow_setup(g_wifichannel);
         set_wifi_setup_done();
     }
