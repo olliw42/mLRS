@@ -390,7 +390,7 @@ void setup_sanitize_config(uint8_t config_id)
         SetupMetaData.Rx_Diversity_allowed_mask = 0b00010; // antenna1
         break;
     case SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ:
-    case SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ:
+    case SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ:
         SetupMetaData.Mode_allowed_mask &= 0b010110; // filter down to 31 Hz, 19 Hz, FSK
         SetupMetaData.Tx_Diversity_allowed_mask = 0b00001; // diversity / both antenna
         SetupMetaData.Rx_Diversity_allowed_mask = 0b00001; // diversity / both antenna
@@ -424,7 +424,7 @@ void setup_sanitize_config(uint8_t config_id)
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_70_CM_HAM:
 //TODO    case SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ: // for the moment don't be concerned about ortho
-//TODO    case SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ:
+//TODO    case SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ:
         break;
     default:
         SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
@@ -773,7 +773,7 @@ void setup_configure_config(uint8_t config_id)
     if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ) {
         Config.FrameSyncWord += 0x5AA5;
     }
-    if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ) {
+    if (Setup.Common[config_id].FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ) {
         Config.FrameSyncWord += 0xA55A;
     }
 
@@ -791,7 +791,7 @@ void setup_configure_config(uint8_t config_id)
     Config.FrequencyBand = Setup.Common[config_id].FrequencyBand; // has hopefully been correctly sanitized in setup_sanitize_config()
 
     Config.IsDualBand = (Config.FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ ||
-                         Config.FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ);
+                         Config.FrequencyBand == SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ);
 
     //-- Mode, Mode dependent settings
 

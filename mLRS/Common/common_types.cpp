@@ -390,7 +390,7 @@ void frequency_band_str_to_strbuf(char* const s, uint8_t frequency_band, uint8_t
         case SETUP_FREQUENCY_BAND_70_CM_HAM: strbufstrcpy(s, "70cm", len); break;
         case SETUP_FREQUENCY_BAND_866_MHZ_IN: strbufstrcpy(s, "866M", len); break;
         case SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ: strbufstrcpy(s, "DUAL", len); break;
-        case SETUP_FREQUENCY_DUAL_BAND_866_MHZ_2P4_GHZ: strbufstrcpy(s, "DUAL", len); break;
+        case SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ: strbufstrcpy(s, "DUAL", len); break;
         default: strbufstrcpy(s, "?", len);
     }
 }
