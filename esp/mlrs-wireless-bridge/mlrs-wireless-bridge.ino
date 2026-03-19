@@ -64,7 +64,7 @@ Troubleshooting:
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
-//#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
+//#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
@@ -211,26 +211,30 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #define USE_WIRELESS_PROTOCOL_UDPCL
 #endif
 
-#ifndef ESP8266 // not ESP8266
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if defined CONFIG_IDF_TARGET_ESP32 
+  #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+    #error Version of your ESP Arduino Core below 3.0.0 !
+  #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 19.Mar.2026
+    #pragma message "Warning: Consider upgrading your ESP Arduino Core !"
+  #endif
+#elif defined CONFIG_IDF_TARGET_ESP32C3
   #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
     #error For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager.
   #endif
+#elif defined ESP8266
 #else
-  #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-    #error Version of your ESP Arduino Core below 3.0.0 !
-  #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
-    #warning Consider upgrading your ESP Arduino Core !
-  #endif
-#endif // CONFIG_IDF_TARGET_ESP32C3
+    #error Must be ESP32, ESP32-C3 or ESP82xx.
+#endif
 
 #if defined USE_AT_MODE && (defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3) && \
     !defined ARDUINO_PARTITION_no_ota
     #error Partition Scheme must be "No OTA (Large APP)", "No OTA (2MB APP/2MB SPIFFS)" or similar!
 #endif
 
+#ifndef ESP8266 // not ESP8266
 #include <WiFi.h>
 #include <esp_mac.h>
+#endif
 // for some reason checking
 // #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
 // does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work.
@@ -250,8 +254,6 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #include <BLE2902.h>
   #endif
 #endif
-#endif // #ifndef ESP8266
-
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 6)
   #define USE_WIRELESS_PROTOCOL_ESPNOW
   #ifdef ESP8266
