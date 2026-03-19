@@ -33,23 +33,15 @@ Definitions:
 
 For more details on the modules see mlrs-wireless-bridge-boards.h
 
-List of supported modules, and board which needs to be selected
-
-- ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module or Generic ESP8285 Module
-  is used in many ELRS Tx modules
-- ELRS Tx module ESP32C3 backpack   board: Generic ESP32C3 Module
-  Comment: ELRS Tx backpacks using ESP82xx or ESP32-C3 must have GPIO0 or GPIO9 controllable, respectively
-- Espressif ESP32-DevKitC V4        board: ESP32 Dev Module
-- NodeMCU ESP32-Wroom-32            board: ESP32 Dev Module
-- Espressif ESP32-PICO-KIT          board: ESP32 PICO-D4
-- Adafruit QT Py S2                 board: Adafruit QT Py ESP32-S2
-- Lilygo TTGO-MICRO32               board: ESP32 PICO-D4
-- M5Stack M5Stamp C3 Mate           board: ESP32C3 Dev Module
-  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack M5Stamp Pico              board: ESP32 PICO-D4
-- M5Stack M5Stamp C3U Mate          board: ESP32C3 Dev Module
-  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack ATOM Lite                 board: M5Stack-ATOM
+For a list of supported modules, and board which needs to be selected, see the 
+available defines below in the User Configuration - Module section.
+Additional comments for some modules:
+  - ELRS Tx module ESP82xx backpack, ELRS Tx module ESP32C3 backpack
+    ELRS Tx backpacks using ESP82xx or ESP32-C3 must have GPIO0 or GPIO9 controllable, respectively
+  - M5Stack M5Stamp C3 Mate
+    ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
+  - M5Stack M5Stamp C3U Mate
+    ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 
 Troubleshooting:
 - If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)" or "No OTA (2MB APP/2MB SPIFFS)" or similar
@@ -70,6 +62,7 @@ Troubleshooting:
 // Module
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
+//#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
 //#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
