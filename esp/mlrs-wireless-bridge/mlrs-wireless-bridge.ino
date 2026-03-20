@@ -673,7 +673,11 @@ class tWifiHandler {
         // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
         // MACs are different for STA and AP, BT
 #ifndef ESP8266
+#if defined CONFIG_IDF_TARGET_ESP32C3
+        esp_efuse_mac_get_default(MAC_buf);
+#else
         esp_base_mac_addr_get(MAC_buf);
+#endif
 #else
         wifi_get_macaddr(STATION_IF, MAC_buf);
 #endif
