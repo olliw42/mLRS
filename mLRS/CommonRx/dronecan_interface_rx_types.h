@@ -14,8 +14,10 @@
 
 #include "../Common/libs/fifo.h"
 
+#if defined STM32G4 || defined STM32F1
 #include "../../../modules/stm32-dronecan-lib/stm32-dronecan-driver.h"
-#include "../../../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
+#endif
+#include "../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.NodeStatus.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.GetNodeInfo.h"
 #include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
@@ -23,6 +25,11 @@
 #include "../Common/dronecan/out/include/uavcan.tunnel.Targetted.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Protocol.h"
 #include "../Common/dronecan/out/include/dronecan.protocol.FlexDebug.h"
+#include "../Common/dronecan/out/include/uavcan.protocol.file.BeginFirmwareUpdate.h"
+#include "../Common/dronecan/out/include/uavcan.protocol.file.Read.h"
+#include "../Common/dronecan/out/include/uavcan.protocol.file.Error.h"
+#include "../Common/dronecan/out/include/uavcan.protocol.file.Path.h"
+#include "dronecan_firmware_update.h"
 
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
@@ -46,6 +53,10 @@ class tRxDroneCan
     void handle_dynamic_node_id_allocation_broadcast(CanardInstance* const ins, CanardRxTransfer* const transfer);
     void send_dynamic_node_id_allocation_request(void);
 
+    // firmware update
+    void handle_begin_firmware_update_request(CanardInstance* const ins, CanardRxTransfer* const transfer);
+    void handle_file_read_response(CanardRxTransfer* const transfer);
+
     void putbuf(uint8_t* const buf, uint16_t len);
     bool available(void);
     uint8_t getc(void);
@@ -57,6 +68,7 @@ class tRxDroneCan
 
     bool id_is_allcoated(void);
     bool ser_over_can_enabled;
+    tDroneCanFirmwareUpdate firmware_update;
 
   private:
     int16_t set_can_filters(void);
