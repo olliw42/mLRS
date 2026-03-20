@@ -7,10 +7,9 @@
 // only init functions
 //*******************************************************
 // Interface:
-// CAN_USE_FDCAN1_PA11PA12
-// CAN_USE_FDCAN2_PB5PB6
-// CAN_USE_FDCAN_CLOCK_PCLK1
-// CAN_USE_FDCAN_CLOCK_PLL
+// CAN_USE_CAN1_PA11PA12, CAN_USE_CAN1_PB8PB9 (F1)
+// CAN_USE_FDCAN1_PA11PA12, CAN_USE_FDCAN2_PB5PB6 (G4)
+// CAN_USE_FDCAN_CLOCK_PCLK1, CAN_USE_FDCAN_CLOCK_PLL (G4)
 //*******************************************************
 #ifndef STDSTM32_CAN_H
 #define STDSTM32_CAN_H
@@ -24,6 +23,21 @@ extern "C" {
 //-------------------------------------------------------
 
 //#include "stdstm32-peripherals.h"
+
+#ifdef STM32F1
+#if defined CAN_USE_CAN1_PA11PA12
+    #define CAN_RX_IO           IO_PA11
+    #define CAN_TX_IO           IO_PA12
+#elif defined CAN_USE_CAN1_PB8PB9
+    #define CAN_RX_IO           IO_PB8
+    #define CAN_TX_IO           IO_PB9
+#else
+    #warning CAN_USE_CAN1_xxxx not defined! CAN_USE_CAN1_PA11PA12 assumed.
+    #define CAN_USE_CAN1_PA11PA12
+    #define CAN_RX_IO           IO_PA11
+    #define CAN_TX_IO           IO_PA12
+#endif
+#endif
 
 #ifdef STM32G4
 #if defined CAN_USE_FDCAN1_PA11PA12
@@ -65,8 +79,12 @@ void can_init(void)
 {
     // CAN peripheral initialization
 
-    gpio_init(IO_PA11, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-    gpio_init_af(IO_PA12, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
+#ifdef CAN_USE_CAN1_PB8PB9
+    __HAL_AFIO_REMAP_CAN1_2(); // remap CAN1 to PB8/PB9
+#endif
+
+    gpio_init(CAN_RX_IO, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init_af(CAN_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_9, IO_SPEED_VERYFAST);
 
     //__HAL_RCC_CAN1_CLK_ENABLE();
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CAN1);
