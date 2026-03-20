@@ -405,12 +405,6 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
-#define USE_FEATURE_MAVLINKX
-
-#define USE_FEATURE_FLRC
-
-
 #define USE_FEATURE_MAVLINK_COMPONENT
-#ifndef USE_FEATURE_MAVLINKX
-  #undef USE_FEATURE_MAVLINK_COMPONENT
-#endif
+
+
