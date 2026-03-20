@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 7.03.2026
+ version 20.03.2026
 ********************************************************
 '''
 import os
@@ -155,14 +155,15 @@ def mlrs_set_branch_hash(version_str):
     global HASHSTR
     import subprocess
 
+    v_patch = int(version_str.split('.')[2])
+
     git_branch = subprocess.getoutput("git branch --show-current")
-    if not git_branch == 'main':
+    if not git_branch == 'main' and v_patch != 0: # is a branch, but not a main release
         BRANCHSTR = '-'+git_branch
     if BRANCHSTR != '':
         print('BRANCHSTR =', BRANCHSTR)
 
     git_hash = subprocess.getoutput("git rev-parse --short HEAD")
-    v_patch = int(version_str.split('.')[2])
     if v_patch % 2 == 1: # odd firmware patch version, so is dev, so add git hash
         HASHSTR = '-@'+git_hash
     if HASHSTR != '':
