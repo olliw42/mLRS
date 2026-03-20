@@ -180,12 +180,6 @@ typedef enum {
     SERIAL_DESTINATION_MBRIDGE,
     SERIAL_DESTINATION_NUM,
 } TX_SERIAL_DESTINATION_ENUM;
-typedef enum {
-    L0329_SERIAL_DESTINATION_SERIAL = 0,
-    L0329_SERIAL_DESTINATION_MBRIDGE,
-    L0329_SERIAL_DESTINATION_SERIAL2,
-    L0329_SERIAL_DESTINATION_NUM,
-} L0329_TX_SERIAL_DESTINATION_ENUM;
 
 
 typedef enum {
@@ -195,13 +189,6 @@ typedef enum {
     CHANNEL_SOURCE_MBRIDGE, // JR pin5
     CHANNEL_SOURCE_NUM,
 } TX_CHANNELS_SOURCE_ENUM;
-typedef enum {
-    L0329_CHANNEL_SOURCE_NONE = 0,
-    L0329_CHANNEL_SOURCE_MBRIDGE,
-    L0329_CHANNEL_SOURCE_INPORT,
-    L0329_CHANNEL_SOURCE_CRSF,
-    L0329_CHANNEL_SOURCE_NUM,
-} L0329_TX_CHANNELS_SOURCE_ENUM;
 
 
 typedef enum {
@@ -361,10 +348,10 @@ typedef struct
     uint8_t InMode;
     uint8_t SerialDestination;
     uint8_t SerialBaudrate;
-    uint8_t __SerialLinkMode; // deprecated, substituted by Rx.SerialLinkMode
+    uint8_t __spare1;
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
-    uint8_t __CliLineEnd; // deprecated
+    uint8_t __spare2;
     uint8_t MavlinkComponent;
     uint8_t PowerSwitchChannel;
     uint8_t WifiProtocol;
@@ -386,9 +373,9 @@ typedef struct
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
-    uint8_t __Buzzer; // deprecated
+    uint8_t __spare1;
     uint8_t SendRcChannels;
-    uint8_t __RadioStatusMethod; // deprecated
+    uint8_t __spare2;
     uint8_t OutLqChannelMode;
     uint8_t PowerSwitchChannel;
     uint8_t SerialPort;
@@ -418,9 +405,9 @@ typedef struct
 
     // parameters common to both Tx and Rx
     // deprecated
-    char __BindPhrase[6+1];
-    SETUP_FREQUENCY_BAND_ENUM __FrequencyBand;
-    uint8_t __Mode;
+    char __spare1[6+1];
+    SETUP_FREQUENCY_BAND_ENUM __spare2;
+    uint8_t __spare3;
 
     uint8_t _ConfigId; // strange name to avoid mistake
 

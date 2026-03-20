@@ -502,10 +502,10 @@ void setup_sanitize_config(uint8_t config_id)
     //-- Spares and deprecated options:
     // should be 0xFF'ed
 
-    Setup.Tx[config_id].__SerialLinkMode = 0xFF;
-    Setup.Tx[config_id].__CliLineEnd = 0xFF;
-    Setup.Rx.__Buzzer = 0xFF;
-    Setup.Rx.__RadioStatusMethod = 0xFF;
+    Setup.Tx[config_id].__spare1 = 0xFF;
+    Setup.Tx[config_id].__spare2 = 0xFF;
+    Setup.Rx.__spare1 = 0xFF;
+    Setup.Rx.__spare2 = 0xFF;
 
     for (uint8_t n = 0; n < sizeof(Setup.spare)/sizeof(Setup.spare[0]); n++) Setup.spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Common[config_id].spare)/sizeof(Setup.Common[config_id].spare[0]); n++) Setup.Common[config_id].spare[n] = 0xFF;
