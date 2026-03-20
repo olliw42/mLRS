@@ -152,7 +152,7 @@ void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_E
     // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
     // could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
     // for the moment reconstruct the info by explicit defines
-#if defined DEVICE_HAS_LR11xx
+#if defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx
     // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
     if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
         configure_mode(MODE_19HZ, frequency_band);

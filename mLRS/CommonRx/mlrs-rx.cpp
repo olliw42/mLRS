@@ -169,8 +169,8 @@ void init_hw(void)
 // SX12xx
 //-------------------------------------------------------
 
-volatile uint16_t irq_status;
-volatile uint16_t irq2_status;
+volatile uint32_t irq_status;
+volatile uint32_t irq2_status;
 
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
