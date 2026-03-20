@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 19. Mar. 2026
+// 20. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -215,7 +215,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
   #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
     #error Version of your ESP Arduino Core below 3.0.0 !
   #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 19.Mar.2026
-    #pragma message "Warning: Consider upgrading your ESP Arduino Core !"
+    #pragma message "Warning: Consider upgrading your ESP Arduino Core !" // #warning doesn't show if not verbose, hence #pgrama message
   #endif
 #elif defined CONFIG_IDF_TARGET_ESP32C3
   #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
@@ -672,14 +672,14 @@ class tWifiHandler {
         uint8_t MAC_buf[6+2];
         // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
         // MACs are different for STA and AP, BT
-#ifndef ESP8266
-#if defined CONFIG_IDF_TARGET_ESP32C3
+#ifdef ESP8266
+       wifi_get_macaddr(STATION_IF, MAC_buf);
+#elif defined CONFIG_IDF_TARGET_ESP32C3
+        // 20.3.26: for ESP32C3 with Core2.X, esp_base_mac_addr_get() gives "random" results, hence ensure efurs MAC is used
         esp_efuse_mac_get_default(MAC_buf);
 #else
+        // TODO: check if esp_efuse_mac_get_default() can be used instead
         esp_base_mac_addr_get(MAC_buf);
-#endif
-#else
-        wifi_get_macaddr(STATION_IF, MAC_buf);
 #endif
         for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
         device_id += MAC_buf[5];
