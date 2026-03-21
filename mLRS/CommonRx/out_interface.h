@@ -24,7 +24,7 @@ extern tStats stats;
 // Interface Implementation
 
 #ifdef ESP32
-#include "../Common/esp-lib/esp-uart.h"
+#include "../modules/esp-lib/esp-uart.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 #endif

@@ -32,32 +32,32 @@
 
 #include "../Common/hal/esp-glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
-#include "../Common/esp-lib/esp-peripherals.h"
-#include "../Common/esp-lib/esp-mcu.h"
-//xx #include "../Common/esp-lib/esp-adc.h"
-#include "../Common/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-peripherals.h"
+#include "../modules/esp-lib/esp-mcu.h"
+//xx #include "../modules/esp-lib/esp-adc.h"
+#include "../modules/esp-lib/esp-stack.h"
 #include "../Common/hal/hal.h"
-#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
-#include "../Common/esp-lib/esp-eeprom.h"
-#include "../Common/esp-lib/esp-spi.h"
+#include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../modules/esp-lib/esp-eeprom.h"
+#include "../modules/esp-lib/esp-spi.h"
 #if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
-#include "../Common/esp-lib/esp-uartb.h"
+#include "../modules/esp-lib/esp-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
-#include "../Common/esp-lib/esp-uartc.h"
+#include "../modules/esp-lib/esp-uartc.h"
 #endif
 #ifdef USE_SERIAL2
-#include "../Common/esp-lib/esp-uartd.h"
+#include "../modules/esp-lib/esp-uartd.h"
 #endif
 #ifdef USE_DEBUG
 #ifdef DEVICE_HAS_DEBUG_SWUART
-#include "../Common/esp-lib/esp-uart-sw.h"
+#include "../modules/esp-lib/esp-uart-sw.h"
 #else
-#include "../Common/esp-lib/esp-uartf.h"
+#include "../modules/esp-lib/esp-uartf.h"
 #endif
 #endif
 #ifdef USE_I2C
-#include "../Common/esp-lib/esp-i2c.h"
+#include "../modules/esp-lib/esp-i2c.h"
 #endif
 #include "../Common/hal/esp-timer.h"
 
