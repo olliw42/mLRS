@@ -137,10 +137,6 @@ bool dronecan_should_accept_transfer(
 void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* const transfer);
 
 
-// CAN peripheral init, forward declaration
-void can_init(void);
-
-
 //-------------------------------------------------------
 // RxDroneCan class implementation
 //-------------------------------------------------------
