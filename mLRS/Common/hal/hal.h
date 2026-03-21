@@ -452,6 +452,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 
 //-------------------------------------------------------
+// Further Derived Defines
+// These defines don't derive from DEVICE_HAS_XXX defines, but also result in USE_XXX defines
+//-------------------------------------------------------
+
+#define USE_FEATURE_MAVLINK_COMPONENT
+
+
+//-------------------------------------------------------
 // Empty Prototypes
 //-------------------------------------------------------
 // should be in the device hal files, but is just so much more convenient to have them here

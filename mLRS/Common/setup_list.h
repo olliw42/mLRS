@@ -57,13 +57,8 @@
 #define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 
-#ifndef USE_FEATURE_MAVLINKX
-#define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink"
-#else
 #define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink,mavlinkX,mspX"
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"
-#endif
 
 #define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also used in e.g. cli
 #define SETUP_OPT_MODE_DISPSTR        "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, should be 6 chars however

@@ -101,11 +101,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Mode_allowed_mask = 0b000110; // 31 Hz, 19 Hz
     #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_SX128x
-  #ifdef USE_FEATURE_FLRC
     SetupMetaData.Mode_allowed_mask = 0b001111; // 50 Hz, 31 Hz, 19 Hz, FLRC
-  #else
-    SetupMetaData.Mode_allowed_mask = 0b000111; // 50 Hz, 31 Hz, 19 Hz
-  #endif
     #define MODE_DEFAULT  MODE_50HZ
 #elif defined DEVICE_HAS_SX126x
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
