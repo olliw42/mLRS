@@ -9,7 +9,7 @@
  run_make_esp_firmwares.py
  generate esp fimrware files
  renames and copies files into tools/esp-build/firmware
- version 20.03.2026
+ version 21.03.2026
 ********************************************************
 '''
 import os

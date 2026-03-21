@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 20.03.2026
+ version 21.03.2026
 ********************************************************
 '''
 import os
