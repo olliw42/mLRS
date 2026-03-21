@@ -10,7 +10,7 @@ mlrs-wireless-bridge-esp8266.ino.bin
 - date of creation: 20.03.2026
 - sketch version: 20.03.2026
 
-mlrs-wireless-bridge-matek-mtx-db30.ino.bin
+mlrs-wireless-bridge-matek-mtx-db30-esp32.ino.bin
 - date of creation: 21.03.2026
 - sketch version: 20.03.2026
 
