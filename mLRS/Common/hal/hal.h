@@ -153,9 +153,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #ifdef TX_R9M_868_F103C8
 #include "stm32/tx-hal-R9M-868-f103c8.h"
 #endif
-#ifdef TX_R9MX_868_L433CB
-#include "stm32/tx-hal-R9MX-868-l433cb.h"
-#endif
 
 
 //-- SeeedStudio WioE5 boards
@@ -183,22 +180,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-//-- FlySky FRM303 2.4 GHz Device
-
-#ifdef RX_FRM303_F072CB
-#include "stm32/rx-hal-FRM303-f072cb.h"
-#endif
-
-#ifdef TX_FRM303_F072CB
-#include "stm32/tx-hal-FRM303-f072cb.h"
-#endif
-
-
 //-- DIY Boards, 2.4 GHz Devices
 
-#ifdef RX_DIY_BOARD01_F103CB
-#include "stm32/rx-hal-diy-board01-f103cb.h"
-#endif
 #ifdef RX_DIY_E28DUAL_BOARD02_F103CB
 #include "stm32/rx-hal-diy-e28dual-board02-f103cb.h"
 #endif
@@ -211,12 +194,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 #ifdef TX_DIY_E28_G431KB
 #include "stm32/tx-hal-diy-e28-g431kb.h"
-#endif
-#ifdef TX_DIY_BOARD01_G491RE
-#include "stm32/tx-hal-diy-board01-g491re.h"
-#endif
-#ifdef TX_DIY_SXDUAL_MODULE02_G491RE
-#include "stm32/tx-hal-diy-sxdual-module02-g491re.h"
 #endif
 #ifdef TX_DIY_E28DUAL_MODULE02_G491RE
 #include "stm32/tx-hal-diy-e28dual-module02-g491re.h"
