@@ -422,6 +422,10 @@ MLRS_SOURCES_MODULES = [
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
     os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
+    
+    #os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'), ## TODO !!!!!!
+    os.path.join('Common','sx-drivers','lr20xx.cpp'), ## TODO !!!!!!
+    
     os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
     ]
 
