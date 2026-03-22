@@ -266,8 +266,6 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
-        SetBufferBaseAddress(0, 0);
-
         ClearIrq(LR11XX_IRQ_ALL);
 
         SetFs();
