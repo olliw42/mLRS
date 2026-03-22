@@ -444,14 +444,12 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         sx_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx_amp_receive();
         Sx128xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 
@@ -608,14 +606,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         sx2_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx2_amp_receive();
         Sx128xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 
