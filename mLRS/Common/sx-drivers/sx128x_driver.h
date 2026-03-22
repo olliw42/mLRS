@@ -212,14 +212,18 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         // rxPayloadLength is always 0 if no header
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
         // if one wants it, it could be obtained from what had been set
         // rxPayloadLength = ReadRegister(SX1280_REG_PayloadLength);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // rxPayloadLength is always 0 if no header
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)

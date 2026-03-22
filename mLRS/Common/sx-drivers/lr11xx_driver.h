@@ -265,7 +265,11 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         }
 
         SetRfPower_dbm(gconfig->Power_dbm);
+
+        SetBufferBaseAddress(0, 0);
+
         ClearIrq(LR11XX_IRQ_ALL);
+
         SetFs();
     }
 
@@ -273,11 +277,14 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)

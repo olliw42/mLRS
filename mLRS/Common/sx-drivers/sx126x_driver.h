@@ -269,11 +269,14 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
