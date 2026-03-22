@@ -79,10 +79,13 @@ typedef enum {
     SUBPAGE_DEFAULT = 0,
 
     // sub pages for main page
-    SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT,
-    SUBPAGE_MAIN_SUB1,
-    SUBPAGE_MAIN_SUB2,
-    SUBPAGE_MAIN_SUB3,
+    SUBPAGE_MAIN_SUB0 = SUBPAGE_DEFAULT, // Main
+    SUBPAGE_MAIN_SUB1, // Main/2, mode, power, diversity
+    SUBPAGE_MAIN_SUB2, // Main/3, statistics
+    SUBPAGE_MAIN_SUB3, // Main/4, tx, rx name, version
+#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE || defined USE_HC04_MODULE
+    SUBPAGE_MAIN_SUB4, // Main/5, network info
+#endif
 
     SUBPAGE_MAIN_NUM,
 } SUBPAGE_ENUM;
@@ -146,6 +149,7 @@ class tTxDisp
     void draw_page_main_sub1(void);
     void draw_page_main_sub2(void);
     void draw_page_main_sub3(void);
+    void draw_page_main_sub4(void);
 
     void draw_header(const char* const s);
     void draw_options(tParamList* const list);
@@ -712,7 +716,7 @@ int8_t power;
     }
     gdisp_puts(s);
     gdisp_setcurX(85);
-    power = sx.RfPower_dbm();
+    power = SX_OR_SX2( sx.RfPower_dbm() , sx2.RfPower_dbm() );
     if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     gdisp_setcurX(100);
     if (connected_and_rx_setup_available()) {
@@ -769,14 +773,14 @@ char s[32];
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
-    stoBCDstr(sx.ReceiverSensitivity_dbm(), s);
+    stoBCDstr(SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm()), s);
     gdisp_puts(s);
     gdisp_puts(" dB");
 
     gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Power");
     gdisp_setcurX(40);
-    stoBCDstr(sx.RfPower_dbm(), s);
+    stoBCDstr(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()), s);
     gdisp_puts(s);
     gdisp_setcurX(80);
     stoBCDstr(SetupMetaData.rx_actual_power_dbm, s);
@@ -894,10 +898,12 @@ char s[32];
     gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts(VERSIONONLYSTR);
 
+#if !(defined USE_ESP_WIFI_BRIDGE_CONFIGURE || defined USE_HC04_MODULE) // if defined, it is shown on Main/5 subpage
     if (info.WirelessDeviceName_disp(s)) {
         gdisp_setcurXY(60, 1 * 10 + DISP_CONTENT_Y_BASE);
         gdisp_puts(s);
     }
+#endif
 
     if (connected_and_rx_setup_available()) {
         gdisp_setcurXY(0, 3 * 10 + DISP_CONTENT_Y_BASE);
@@ -906,6 +912,30 @@ char s[32];
         version_to_str(s, SetupMetaData.rx_firmware_version);
         gdisp_puts(s);
     }
+}
+
+
+void tTxDisp::draw_page_main_sub4(void)
+{
+#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE || defined USE_HC04_MODULE
+char s[48];
+uint8_t yofs = 0;
+
+    draw_header("Main/5");
+
+    gdisp_setcurXY(0, 0 * 10 + DISP_CONTENT_Y_BASE);
+    if (!info.WirelessDeviceName_cli(s)) { // e.g., TxSerDest not set to correct serial
+        gdisp_puts("wireless bridge");
+        gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
+        gdisp_puts("not available/enabled");
+        return;
+    }
+
+    gdisp_puts(s);
+
+    yofs = (strlen(s) > 21) ? 1 : 0; // ssid consumed two lines
+    gdisp_setcurXY(0, (1 + yofs) * 10 + DISP_CONTENT_Y_BASE);
+#endif
 }
 
 
@@ -923,6 +953,12 @@ void tTxDisp::draw_page_main(void)
         if (!page_modified) return; // has no update elements
         draw_page_main_sub3();
         return;
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+    case SUBPAGE_MAIN_SUB4:
+        if (!page_modified) return; // has no update elements
+        draw_page_main_sub4();
+        return;
+#endif
     default:
         draw_page_main_sub0();
     }

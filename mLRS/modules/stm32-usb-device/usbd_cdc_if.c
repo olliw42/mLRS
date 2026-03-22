@@ -162,6 +162,23 @@ char usb_getc(void)
 }
 
 
+void usb_getbuf(uint8_t* const buf, uint16_t len)
+{
+    for (uint16_t i = 0; i < len; i++) {
+        usb_rxreadpos = (usb_rxreadpos + 1) & USB_RXBUFSIZEMASK;
+        buf[i] = usb_rxbuf[usb_rxreadpos];
+    }
+
+    // resume reception if NAK was pending and buffer now has space
+    if (usb_rx_nak_pending) {
+        if (usb_rx_bytesavailable() < USB_RXBUFSIZE - USB_RX_NAK_THRESHOLD) {
+            usb_rx_nak_pending = 0;
+            USBD_CDC_ReceivePacket(&husbd_CDC); // ready to receive again
+        }
+    }
+}
+
+
 uint8_t _usb_putc(uint8_t c)
 {
     uint16_t next = (usb_txwritepos + 1) & USB_TXBUFSIZEMASK;

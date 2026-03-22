@@ -6,21 +6,12 @@
 // hal
 //*******************************************************
 
-// MLRS_FEATURE defines usually must be defined very high up
-
-//#define MLRS_FEATURE_CAN
-
-
 //-------------------------------------------------------
 // MATEKSYS mR900-30 STM32G431KB, as receiver
 //-------------------------------------------------------
 
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_FAN_ONOFF
-
-#ifdef MLRS_FEATURE_CAN
-#define DEVICE_HAS_DRONECAN
-#endif
 
 #include "hal-matek-mr-g431kb-common.h"
 

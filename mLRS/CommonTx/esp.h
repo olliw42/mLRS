@@ -140,6 +140,7 @@ class tTxEspWifiBridge
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     bool esp_read(const char* const cmd, char* const res, uint8_t* const len);
     void esp_wait_after_read(const char* const res);
+    void esp_get_info(void);
     void esp_get_ssidpswd(const char* const net_cmd);
     void esp_set_ssidpswd(const char* const net_cmd, char* const str);
     void esp_configure_baudrate(void);
@@ -448,6 +449,7 @@ ESP_DBG(dbg.puts("\r\n");dbg.puts(cmd);dbg.puts(" -> ");)
 ESP_DBG(dbg.putc(c);)
             res[(*len)++] = c;
             if (c == '\n') { // 0x0A
+                res[*len] = '\0'; // terminate it properly
 ESP_DBG(dbg.puts("!ENDE!");)
                 return (*len > 3 && res[0] == 'O' && res[1] == 'K' && res[*len - 2] == '\r'); // 0x0D
             }
@@ -472,14 +474,39 @@ void tTxEspWifiBridge::esp_wait_after_read(const char* const res)
 }
 
 
+void tTxEspWifiBridge::esp_get_info(void)
+{
+char s[ESP_CMDRES_LEN+2];
+uint8_t len;
+
+    info.wireless.device_name[0] = '\0';
+    info.wireless.device_id = 0;
+    if (version >= 10307) { // not available before v1.3.07
+        esp_read("AT+WIFIDEVICENAME=?", s, &len);
+        s[len-2] = '\0';
+        if (len > 22) {
+            strncpy(info.wireless.device_name, s + 18, sizeof(info.wireless.device_name)-1);
+        }
+        if (strlen(info.wireless.device_name) > 9 && !strncmp(info.wireless.device_name, "mLRS-", 5)) {
+            info.wireless.device_id = atoi(info.wireless.device_name + 5);
+        }
+    }
+}
+
+
 void tTxEspWifiBridge::esp_get_ssidpswd(const char* const net_cmd)
 {
 char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
+    if (version < 10309) { // not available before v1.3.09
+        com->puts("  not supported by this wireless bridge version");
+        return;
+    }
+
     esp_gpio0_low(); // force AT mode
-    delay_ms(10); // give it some time
+    delay_ms(50); // give it some time // 10 ms was too short
 
     strcpy(cmd_str, "AT+"); strcat(cmd_str, net_cmd); strcat(cmd_str, "=?");
     com->puts("  ");com->puts(cmd_str);com->puts("->");
@@ -500,8 +527,13 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
+    if (version < 10309) { // not available before v1.3.09
+        com->puts("  not supported by this wireless bridge version");
+        return;
+    }
+
     esp_gpio0_low(); // force AT mode
-    delay_ms(10); // give it some time
+    delay_ms(50); // give it some time
 
     // AT+NETSSID=xxxxxxxxxxxxxxxxxxxxxxxx
     strcpy(cmd_str, "AT+"); strcat(cmd_str, net_cmd); strcat(cmd_str, "="); strncat(cmd_str, str, 62);
@@ -515,7 +547,13 @@ uint8_t len;
     }
     esp_wait_after_read(s);
     s[len-2] = '\0'; com->puts((char*)s); com->puts(CLI_LINEND); // esp_read() returns len>3 if true, so no danger with len-2
-    if (esp_read("AT+RESTART", s, &len)) delay_ms(1500);
+
+    if (esp_read("AT+RESTART", s, &len)) {
+        delay_ms(1500);
+    }
+    ser->flush();
+
+    esp_get_info();
 
     esp_gpio0_high(); // leave forced AT mode
 }
@@ -560,6 +598,7 @@ uint8_t len;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
         case WIFI_PROTOCOL_UDPSTA: strcat(cmd_str, "2"); break;
         case WIFI_PROTOCOL_BLE: strcat(cmd_str, "5"); break;
+        case WIFI_PROTOCOL_ESPNOW: strcat(cmd_str, "6"); break;
         default:
             strcat(cmd_str, "1"); // should not happen
     }
@@ -689,19 +728,6 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         } else {
             // Houston, we have a problem. UDPCl is not available but we allow the user to select
         }
-        if (version >= 10307) { // not available before v1.3.07
-//            esp_read("AT+WIFIDEVICEID=?", s, &len);
-//            if (len > 18) device_id = atoi(s + 16);
-            esp_read("AT+WIFIDEVICENAME=?", s, &len);
-            if (len > 22) {
-                strncpy(info.wireless.device_name, s + 18, sizeof(info.wireless.device_name)-1);
-                info.wireless.device_name[strlen(info.wireless.device_name)-1] = '\0'; // strip off '\n'
-                info.wireless.device_name[strlen(info.wireless.device_name)-1] = '\0'; // strip off '\r'
-            }
-            if (strlen(info.wireless.device_name) > 9 && !strncmp(info.wireless.device_name, "mLRS-", 5)) {
-                info.wireless.device_id = atoi(info.wireless.device_name + 5);
-            }
-        }
 
         if (esp_read("AT+RESTART", s, &len)) { // will respond with 'KO' if a restart isn't needed
             delay_ms(1500); // 500 ms is too short, 1000 ms is sometimes too short, 1200 ms works fine, play it safe
@@ -713,6 +739,10 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         ser->SetBaudRate(ser_baud);
     }
     ser->flush();
+
+    if (found) { // not available before v1.3.07 // needs to come after restart to get current name
+        esp_get_info();
+    }
 
 //ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
