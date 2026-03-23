@@ -3,16 +3,16 @@
 This folder contains pre-compiled wireless-bridge firmware binaries.
 
 mlrs-wireless-bridge-esp32c3.ino.bin
-- date of creation: 20.03.2026
-- sketch version: 20.03.2026
+- date of creation: 22.03.2026
+- sketch version: 21.03.2026
 
 mlrs-wireless-bridge-esp8266.ino.bin
 - date of creation: 20.03.2026
 - sketch version: 20.03.2026
 
 mlrs-wireless-bridge-matek-mtx-db30-esp32.ino.bin
-- date of creation: 21.03.2026
-- sketch version: 20.03.2026
+- date of creation: 22.03.2026
+- sketch version: 21.03.2026
 
 ## Notes for Devs ##
 
