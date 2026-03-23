@@ -266,6 +266,10 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
+        // according to datasheet, such a function exists, but the command does not appear to exist
+        // according to datasheet, txBaseAdress, rxBaseAdress are initialized with 0,0
+        //SetBufferBaseAddress(0, 0);
+
         ClearIrq(LR11XX_IRQ_ALL);
 
         SetFs();
