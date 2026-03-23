@@ -394,7 +394,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.firmware_version_u16 = version_to_u16(VERSION);
     rx_setupdata.setup_layout_u16 = version_to_u16(SETUPLAYOUT);
     strbufstrcpy(rx_setupdata.device_name_20, DEVICE_NAME, 20);
-    rx_setupdata.actual_power_dbm = sx.RfPower_dbm();
+    rx_setupdata.actual_power_dbm = SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());
     rx_setupdata.actual_diversity = Config.Diversity;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));

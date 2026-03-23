@@ -384,7 +384,7 @@ bool ser_or_com_serial(void)
 #include "../hal-power-pa.h"
 
 #define POWER2_GAIN_DBM           27 // gain of a PA stage if present
-#define POWER2_SX1280_MAX_DBM     SX1280_POWER_0_DBM // maximum allowed sx power
+#define POWER2_SX1280_MAX         SX1280_POWER_0_DBM // maximum allowed sx power
 #define POWER2_USE_DEFAULT_RFPOWER_CALC
 
 

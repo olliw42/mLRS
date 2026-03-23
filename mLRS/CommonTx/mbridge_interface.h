@@ -48,8 +48,8 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     bool CommandInFifo(uint8_t* const cmd);
     void Lock(uint8_t cmd);
     void Unlock(void);
-    uint8_t HandleRequestCmd(uint8_t* const payload);
-    uint8_t HandleCmd(uint8_t cmd);
+    void HandleRequestCmd(uint8_t* const payload);
+    void HandleCmd(uint8_t cmd);
 
     void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
     bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
@@ -482,7 +482,7 @@ void mbridge_start_ParamRequestList(void);
 void mbridge_start_ParamRequestByIndex(uint8_t idx);
 
 
-uint8_t tMBridge::HandleRequestCmd(uint8_t* const payload)
+void tMBridge::HandleRequestCmd(uint8_t* const payload)
 {
 tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
@@ -516,15 +516,13 @@ tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
         mbridge_start_ParamRequestByIndex(idx);
         break; }
     }
-
-    return request->cmd_requested;
 }
 
 
-uint8_t tMBridge::HandleCmd(uint8_t cmd)
+void tMBridge::HandleCmd(uint8_t cmd)
 {
-    // this is somewhat dirty, but does the job :)
-    return HandleRequestCmd(&cmd);
+    // this is somewhat dirty, since just the first byte of tMBridgeRequestCmd, but does the job :)
+    HandleRequestCmd(&cmd);
 }
 
 
@@ -535,6 +533,8 @@ void mbridge_send_LinkStats(void)
 {
 tMBridgeLinkStats lstats = {};
 
+    int16_t receiver_sensitivity_dbm = SX_OR_SX2(sx.ReceiverSensitivity_dbm(), sx2.ReceiverSensitivity_dbm());
+
     lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
     lstats.rssi1_instantaneous = stats.last_rssi1;
     lstats.rssi2_instantaneous = stats.last_rssi2;
@@ -544,7 +544,7 @@ tMBridgeLinkStats lstats = {};
     lstats.rx1_valid = stats.rx1_valid;
     lstats.rx2_valid = stats.rx2_valid;
 
-    lstats.rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    lstats.rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.GetLastRssi(), receiver_sensitivity_dbm);
 
     // receiver side of things
 
@@ -554,7 +554,7 @@ tMBridgeLinkStats lstats = {};
     lstats.receiver_receive_antenna = stats.received_antenna;
     lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
 
-    lstats.receiver_rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.received_rssi, sx.ReceiverSensitivity_dbm());
+    lstats.receiver_rssi_instantaneous_percent = crsf_cvt_rssi_percent(stats.received_rssi, receiver_sensitivity_dbm);
 
     // further stats acquired on transmitter side
 
@@ -609,9 +609,6 @@ tMBridgeInfo info = {};
 
     info.has_status = 1; // to indicate it has these flags
     info.binding = (bind.IsInBind()) ? 1 : 0;
-    info._connected = (connected()) ? 1 : 0;
-    info._rx_LQ_low = 0;
-    info._tx_LQ_low = 0;
 
     info.param_num = SETUP_PARAMETER_NUM; // non-zero if known
 
@@ -793,12 +790,12 @@ void mbridge_send_ParamItem(void)
         }
     } else
     if (param_itemtype_to_send == 2) {
-        tMBridgeParamItem3 item3 = {};
+        tMBridgeParamItem3_4 item3 = {};
         item3.index = param_idx;
         strbufstrcpy(item3.options2_23, param_optstr + 21, 23);
         if (strlen(param_optstr) >= 21+23) item3_needed = true; // we need yet another one
 
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item3);
 
         if (item3_needed) {
             param_itemtype_to_send = 3; // we need to send a 4th ParamItem
@@ -812,14 +809,14 @@ void mbridge_send_ParamItem(void)
 
     } else
     if (param_itemtype_to_send >= 3) {
-        tMBridgeParamItem3 item3 = {};
-        item3.index = param_idx;
-        strbufstrcpy(item3.options2_23, param_optstr + 21 + 23, 23);
+        tMBridgeParamItem3_4 item4 = {};
+        item4.index = param_idx;
+        strbufstrcpy(item4.options2_23, param_optstr + 21 + 23, 23);
 
         // we would have to match MAVLink4OpenTx code
         // to avoid this let's play foul: set highest bit of index
-        item3.index += 128;
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3, (uint8_t*)&item3);
+        item4.index += 128;
+        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item4);
 
         // next param item
         param_itemtype_to_send = 0; // done with this parameter

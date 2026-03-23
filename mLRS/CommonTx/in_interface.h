@@ -24,7 +24,7 @@
 // DEVICE_HAS_IN or DEVICE_HAS_IN_NORMAL or DEVICE_HAS_IN_INVERTED
 
 #if defined ESP8266 || defined ESP32
-#include "../Common/esp-lib/esp-uarte.h"
+#include "../modules/esp-lib/esp-uarte.h"
 #else
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
 #endif

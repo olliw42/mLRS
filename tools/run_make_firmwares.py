@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 29.01.2026
+ version 21.03.2026
 ********************************************************
 '''
 import os
@@ -155,14 +155,15 @@ def mlrs_set_branch_hash(version_str):
     global HASHSTR
     import subprocess
 
+    v_patch = int(version_str.split('.')[2])
+
     git_branch = subprocess.getoutput("git branch --show-current")
-    if not git_branch == 'main':
+    if not git_branch == 'main' and v_patch != 0: # is a branch, but not a main release
         BRANCHSTR = '-'+git_branch
     if BRANCHSTR != '':
         print('BRANCHSTR =', BRANCHSTR)
 
     git_hash = subprocess.getoutput("git rev-parse --short HEAD")
-    v_patch = int(version_str.split('.')[2])
     if v_patch % 2 == 1: # odd firmware patch version, so is dev, so add git hash
         HASHSTR = '-@'+git_hash
     if HASHSTR != '':
@@ -358,39 +359,6 @@ MLRS_SOURCES_HAL_STM32L4 = [
     os.path.join('Drivers','STM32L4xx_HAL_Driver','Src','stm32l4xx_ll_utils.c'),
     ]
 
-MLRS_SOURCES_HAL_STM32F0 = [
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_cortex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_dma.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_flash_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_i2c.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_i2c_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pwr_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_rcc_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_hal_pcd_ex.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_adc.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_comp.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crc.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_crs.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_dac.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_dma.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_exti.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_gpio.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_i2c.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_pwr.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_rcc.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_rtc.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_spi.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_tim.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_usart.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_usb.c'),
-    os.path.join('Drivers','STM32F0xx_HAL_Driver','Src','stm32f0xx_ll_utils.c'),
-    ]
-
 MLRS_SOURCES_HAL_STM32F3 = [
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal.c'),
     os.path.join('Drivers','STM32F3xx_HAL_Driver','Src','stm32f3xx_hal_cortex.c'),
@@ -454,6 +422,10 @@ MLRS_SOURCES_MODULES = [
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
     os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
+    
+    #os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'), ## TODO !!!!!!
+    os.path.join('Common','sx-drivers','lr20xx.cpp'), ## TODO !!!!!!
+    
     os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
     ]
 
@@ -542,8 +514,6 @@ class cTarget:
             self.mcu_family = 'l4'
         elif 'WL' in self.mcu_D and 'WL' in self.mcu_HAL:
             self.mcu_family = 'wl'
-        elif 'F0' in self.mcu_D and 'F0' in self.mcu_HAL:
-            self.mcu_family = 'f0'
         elif 'F3' in self.mcu_D and 'F3' in self.mcu_HAL:
             self.mcu_family = 'f3'
         else:
@@ -578,8 +548,6 @@ class cTarget:
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32WL
         elif self.mcu_family == 'l4':
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32L4
-        elif self.mcu_family == 'f0':
-            self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32F0
         elif self.mcu_family == 'f3':
             self.MLRS_SOURCES_HAL = MLRS_SOURCES_HAL_STM32F3
 
@@ -859,15 +827,6 @@ class cTargetL4(cTarget):
             ['-mcpu=cortex-m4', '-mfpu=fpv4-sp-d16', '-mfloat-abi=hard'],
             extra_D_list, build_dir, elf_name)
 
-class cTargetF0(cTarget):
-    def __init__(self, target, target_D, mcu_D, startup_script, linker_script, extra_D_list, build_dir, elf_name):
-        super().__init__(
-            target, target_D,
-            mcu_D, 'STM32F0xx',
-            startup_script, linker_script,
-            ['-mcpu=cortex-m0', '-mfloat-abi=soft'],
-            extra_D_list, build_dir, elf_name)
-
 class cTargetF3(cTarget):
     def __init__(self, target, target_D, mcu_D, startup_script, linker_script, extra_D_list, build_dir, elf_name):
         super().__init__(
@@ -971,14 +930,6 @@ class cTargetL433CB(cTargetL4):
             extra_D_list, build_dir, elf_name)
 
 
-class cTargetF072CB(cTargetF0):
-    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
-        super().__init__(
-            target, target_D,
-            'STM32F072xB', 'startup_stm32f072cbtx.s', 'STM32F072CBTX_FLASH.ld',
-            extra_D_list, build_dir, elf_name)
-
-
 class cTargetF303CC(cTargetF3):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'tx'
@@ -1006,12 +957,14 @@ TLIST = [
         'target' : 'rx-matek-mr900-22-wle5cc',          'target_D' : 'RX_MATEK_MR900_22_WLE5CC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-
-        'target' : 'rx-matek-mr24-30-g431kb',           'target_D' : 'RX_MATEK_MR24_30_G431KB',
-        'extra_D_list' : ['MLRS_FEATURE_CAN'], 'appendix' : '-can',
+        'target' : 'rx-matek-mr24-30c-g431kb',         'target_D' : 'RX_MATEK_MR24_30C_G431KB',
+        'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'rx-matek-mr900-30-g431kb',          'target_D' : 'RX_MATEK_MR900_30_G431KB',
-        'extra_D_list' : ['MLRS_FEATURE_CAN'], 'appendix' : '-can',
+        'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
+        'extra_D_list' : [], 'appendix' : '',
+    },{
+        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
+        'extra_D_list' : [], 'appendix' : '',
     },{
 
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
@@ -1025,13 +978,6 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
-        'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
-        'target' : 'rx-matek-mr900-td30-g474ce',        'target_D' : 'RX_MATEK_MR900_TD30_G474CE',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
-
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
     },{
@@ -1043,6 +989,10 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
+        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+    },{
+  
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '',
@@ -1079,35 +1029,9 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
-#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-#        'package' : 'ux',
-#        'extra_D_list' : [], 'appendix' : '',
-#    },{
-#        'target' : 'tx-R9MX-l433cb',                    'target_D' : 'TX_R9MX_868_L433CB',
-#        'package' : 'ux',
-#        'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
-#        'appendix' : '-elrs-bl',
-#    },{
-
-#-- FlySky FRM303
-#        'target' : 'rx-FRM303-f072cb',                  'target_D' : 'RX_FRM303_F072CB',
-#        'extra_D_list' : [], 'appendix' : '',
-#
-#    },{
-#        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
-#        'extra_D_list' : ['STDSTM32_USE_USB'],
-#        'appendix' : '-usb',
-#    },{
-#        'target' : 'tx-FRM303-f072cb',                  'target_D' : 'TX_FRM303_F072CB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_OLED'],
-#        'appendix' : '-oled',
-#    },{
 
 #RX
 #-- rx diy
-        'target' : 'rx-diy-board01-f103cb',             'target_D' : 'RX_DIY_BOARD01_F103CB',
-        'extra_D_list' : [], 'appendix' : ''
-    },{
         'target' : 'rx-diy-e22-g441kb',                 'target_D' : 'RX_DIY_E22_G441KB',
         'extra_D_list' : [], 'appendix' : ''
     },{
@@ -1124,9 +1048,6 @@ TLIST = [
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
     },{
-#        'target' : 'rx-Wio-E5-Grove-wle5jc',            'target_D' : 'RX_WIO_E5_GROVE_WLE5JC',
-#        'extra_D_list' : [], 'appendix' : '',
-#    },{
 #-- rx E77 MBL
         'target' : 'rx-E77-MBLKit-wle5cc',              'target_D' : 'RX_E77_MBLKIT_WLE5CC',
         'extra_D_list' : ['MLRS_FEATURE_868_MHZ','MLRS_FEATURE_915_MHZ_FCC'],
@@ -1157,9 +1078,6 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-diy-e28dual-module02-g491re',    'target_D' : 'TX_DIY_E28DUAL_MODULE02_G491RE',
-        'extra_D_list' : [], 'appendix' : ''
-    },{
-        'target' : 'tx-diy-sxdual-module02-g491re',     'target_D' : 'TX_DIY_SXDUAL_MODULE02_G491RE',
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
@@ -1289,8 +1207,6 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetWLE5JC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'l433cb' in t['target']:
             tlist.append( cTargetL433CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
-        elif 'f072cb' in t['target']:
-            tlist.append( cTargetF072CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'f303cc' in t['target']:
             tlist.append( cTargetF303CC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         else:
