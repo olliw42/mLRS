@@ -196,7 +196,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define SX_PA_DAC_CHANNEL1    LL_DAC_CHANNEL_1
 #define SX_PA_DAC_CHANNEL2    LL_DAC_CHANNEL_2
 
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tInternalDacBase* dac)
+void rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, tInternalDacBase* dac)
 {
     // -25 dBm 0,0 ... 1700
     // -15 dBm 1800

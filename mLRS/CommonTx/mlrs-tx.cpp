@@ -32,32 +32,32 @@
 
 #include "../Common/hal/esp-glue.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
-#include "../Common/esp-lib/esp-peripherals.h"
-#include "../Common/esp-lib/esp-mcu.h"
-//xx #include "../Common/esp-lib/esp-adc.h"
-#include "../Common/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-peripherals.h"
+#include "../modules/esp-lib/esp-mcu.h"
+//xx #include "../modules/esp-lib/esp-adc.h"
+#include "../modules/esp-lib/esp-stack.h"
 #include "../Common/hal/hal.h"
-#include "../Common/esp-lib/esp-delay.h" // these are dependent on hal
-#include "../Common/esp-lib/esp-eeprom.h"
-#include "../Common/esp-lib/esp-spi.h"
+#include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
+#include "../modules/esp-lib/esp-eeprom.h"
+#include "../modules/esp-lib/esp-spi.h"
 #if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
-#include "../Common/esp-lib/esp-uartb.h"
+#include "../modules/esp-lib/esp-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
-#include "../Common/esp-lib/esp-uartc.h"
+#include "../modules/esp-lib/esp-uartc.h"
 #endif
 #ifdef USE_SERIAL2
-#include "../Common/esp-lib/esp-uartd.h"
+#include "../modules/esp-lib/esp-uartd.h"
 #endif
 #ifdef USE_DEBUG
 #ifdef DEVICE_HAS_DEBUG_SWUART
-#include "../Common/esp-lib/esp-uart-sw.h"
+#include "../modules/esp-lib/esp-uart-sw.h"
 #else
-#include "../Common/esp-lib/esp-uartf.h"
+#include "../modules/esp-lib/esp-uartf.h"
 #endif
 #endif
 #ifdef USE_I2C
-#include "../Common/esp-lib/esp-i2c.h"
+#include "../modules/esp-lib/esp-i2c.h"
 #endif
 #include "../Common/hal/esp-timer.h"
 
@@ -295,8 +295,8 @@ void init_hw(void)
 // SX12xx
 //-------------------------------------------------------
 
-volatile uint16_t irq_status;
-volatile uint16_t irq2_status;
+volatile uint32_t irq_status;
+volatile uint32_t irq2_status;
 
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
@@ -497,9 +497,12 @@ uint8_t payload_len = 0;
     // Note: the receiver wants to see both bands, also single band receivers.
     // It is then important however that fhss1_curr_i and fhss2_curr_i are identical, as otherwise
     // the receiver would jump to wrong frequencies
+    // this must be ensured by setup
     uint8_t fhss_band = fhss_band_next(); // this randomly toggles between 0 and 1, but never has more than two symbols in a row
     frame_stats.tx_fhss_index_band = fhss_band;
     frame_stats.tx_fhss_index = ((fhss_band & 0x01) == 0) ? fhss1_curr_i : fhss2_curr_i;
+
+if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not happen, catch it
 
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
@@ -766,7 +769,7 @@ RESTARTCONTROLLER
 #else
     hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
-    fan.SetPower(sx.RfPower_dbm());
+    fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
     disp.Init();
     tasks.Init();
@@ -815,7 +818,7 @@ INITCONTROLLER_END
 
             bind.Tick_ms();
             disp.Tick_ms(); // can take long
-            fan.SetPower(sx.RfPower_dbm());
+            fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
             fan.Tick_ms();
             esp.Tick_ms();
 

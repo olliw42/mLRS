@@ -155,7 +155,7 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 #ifndef POWER_OVERLAY
 
 #define POWER_GAIN_DBM            22 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_3_DBM // maximum allowed sx power
+#define POWER_SX1280_MAX          SX1280_POWER_3_DBM // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array

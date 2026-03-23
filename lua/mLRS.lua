@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-02-14', -- add a '.01' if needed for the day
+    script = '2026-03-20', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -1137,6 +1137,7 @@ end
 
 local isEdgeTx = false
 local isFirstParamDownload = true
+local FirstParamDownloadTmo_10ms = 0
 
 
 local function drawSetuplayoutWarning(txt)
@@ -1451,7 +1452,16 @@ local function Do(event)
 
     -- OpenTx: must display
     -- EdgeTx: don't display everything in param upload, EdgeTx is super slow
+    -- 20.3.2026: hm, seems to work fine now
     if isEdgeTx and DEVICE_DOWNLOAD_is_running then
+        if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
+            if getTime() > FirstParamDownloadTmo_10ms then
+                local attr = RED+CENTER
+                if LCD_W >= 480 then attr = attr + MIDSIZE end
+                lcd.drawText(LAYOUT.W_HALF, LCD_H/4, "!! Please check if CRSF baudrate is 400k !!", attr)
+                FirstParamDownloadTmo_10ms = 0 -- disable
+            end  
+        end  
         if not isFirstParamDownload then drawParamDownload(); end
         return 
     end
@@ -1486,9 +1496,12 @@ local function scriptInit()
     setupColors()
     setupBridge()
 
+    local tnow_10ms = getTime()
+
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     isFirstParamDownload = true
-    local tnow_10ms = getTime()
+    FirstParamDownloadTmo_10ms = tnow_10ms + 500 --- drop a warning after 5 secs
+    
     if tnow_10ms < 300 then
         DEVICE_SAVE_t_last = 300 - tnow_10ms -- treat script start like a Save
     else

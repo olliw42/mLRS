@@ -27,7 +27,7 @@
 //-------------------------------------------------------
 
 const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
-    { .SpreadingFactor = SX126X_LORA_SF5,
+    { .SpreadingFactor = SX126X_LORA_SF5, // 900 MHz, 31 Hz
       .Bandwidth = SX126X_LORA_BW_500,
       .CodingRate = SX126X_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -38,7 +38,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
       .TimeOverAir = 13200,
       .ReceiverSensitivity = -111,
     },
-    { .SpreadingFactor = SX126X_LORA_SF6,
+    { .SpreadingFactor = SX126X_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = SX126X_LORA_BW_500,
       .CodingRate = SX126X_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -51,9 +51,8 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
     }
 };
 
-
-const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
-    { .br_bps = 100000,
+const tSxGfskConfiguration Sx126xGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
+    { .BitRate_bps = 100000,
       .PulseShape = SX126X_GFSK_PULSESHAPE_BT_1,
       .Bandwidth = SX126X_GFSK_BW_312000,
       .Fdev_hz = 50000,
@@ -66,9 +65,24 @@ const tSxGfskConfiguration Sx126xGfskConfiguration[] = {
       .CRCType = SX126X_GFSK_CRC_OFF,
       .Whitening = SX126X_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106  // This is a guess, data sheet is vague here
+      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
+
+
+#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
+void sx126x_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
+{
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm;
+
+    if (power_sx < SX126X_POWER_MIN) power_sx = SX126X_POWER_MIN;
+    if (power_sx > SX126X_POWER_MAX) power_sx = SX126X_POWER_MAX;
+    if (power_sx > sx_power_max) power_sx = sx_power_max;
+
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx + gain_dbm;
+}
+#endif
 
 
 typedef enum {
@@ -82,21 +96,6 @@ typedef enum {
     SX12xx_OSCILLATOR_CONFIG_TCXO_3P3_V = SX126X_DIO3_OUTPUT_3_3,
     SX12xx_OSCILLATOR_CONFIG_CRYSTAL = UINT8_MAX,
 } SX12xx_OSCILLATOR_CONFIG_ENUM;
-
-
-#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx126x_rfpower_calc_default(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX126X_MAX_DBM)
-{
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM;
-
-    if (power_sx < SX126X_POWER_MIN) power_sx = SX126X_POWER_MIN;
-    if (power_sx > SX126X_POWER_MAX) power_sx = SX126X_POWER_MAX;
-    if (power_sx > SX126X_MAX_DBM) power_sx = SX126X_MAX_DBM;
-
-    *sx_power = power_sx;
-    *actual_power_dbm = power_sx + GAIN_DBM;
-}
-#endif
 
 
 class Sx126xDriverCommon : public Sx126xDriverBase
@@ -133,7 +132,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         // set LoRaSymbNumTimeout for false detection of preamble
         // must come in this order, datasheet 14.5 Issuing Commands in the Right Order, p.103
-        //fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
+        // fails with corrected reg byte! SetSymbNumTimeout((config->PreambleLength * 3) >> 2);
     }
 
     void SetLoraConfigurationByIndex(uint8_t index)
@@ -144,9 +143,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
         delay_us(1000); // seems ok without, but do it
@@ -156,7 +157,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
     {
-        SetModulationParamsGFSK(config->br_bps,
+        SetModulationParamsGFSK(config->BitRate_bps,
                                 config->PulseShape,
                                 config->Bandwidth,
                                 config->Fdev_hz);
@@ -250,13 +251,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         if (gconfig->modeIsLora()) {
             SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
         } else {
-            SetGfskConfigurationByIndex(0, Config.FrameSyncWord);
+            SetGfskConfigurationByIndex(0, gconfig->FskSyncWord);
         }
 
         SetBufferBaseAddress(0, 0);
 
         SetDioIrqParams(SX126X_IRQ_ALL,
-                        SX126X_IRQ_RX_DONE|SX126X_IRQ_TX_DONE|SX126X_IRQ_RX_TX_TIMEOUT,
+                        SX126X_IRQ_RX_DONE | SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_TX_TIMEOUT,
                         SX126X_IRQ_NONE,
                         SX126X_IRQ_NONE);
         ClearIrqStatus(SX126X_IRQ_ALL);
@@ -268,18 +269,21 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX126X_IRQ_ALL);
-        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 have static 15p625 period base, so for 1 ms needs 64 tmo value
+        SetTx(tmo_ms * 64); // 0 = no timeout. TimeOut period in ms. sx1262 has 15p625 period, so 1 ms needs 64 ticks
     }
 
     void SetToRx(void)
@@ -302,7 +306,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         int16_t rssi;
         if (gconfig->modeIsLora()) {
             Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
-            // mimic behavior of sx128x , sx1276
+            // mimic behavior of sx128x, sx1276
             // not in the datasheet, but suggested by data
             if (*Snr < 0) rssi += *Snr;
         } else {
@@ -320,7 +324,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     //-- RF power interface
 
-    virtual void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
@@ -373,7 +377,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
   private:
     const tSxLoraConfiguration* lora_configuration;
     const tSxGfskConfiguration* gfsk_configuration;
-    uint8_t sx_power;
+    int8_t sx_power;
     int8_t actual_power_dbm;
 };
 
@@ -436,10 +440,10 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -484,13 +488,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx_dio_enable_exti_isr();
     }
 
@@ -500,14 +505,12 @@ class Sx126xDriver : public Sx126xDriverCommon
     {
         sx_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx_amp_receive();
         Sx126xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 
@@ -571,10 +574,10 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     //-- RF power interface
 
-    void _rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX_DBM);
+        sx126x_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX126X_MAX);
 #else
         sx126x_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -617,13 +620,14 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx2_dio_enable_exti_isr();
     }
 
@@ -633,14 +637,12 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     {
         sx2_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx2_amp_receive();
         Sx126xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 

@@ -66,7 +66,7 @@ typedef enum {
     MBRIDGE_CMD_PARAM_REQUEST_LIST    = 6, // len = 0
     MBRIDGE_CMD_PARAM_ITEM            = 7,
     MBRIDGE_CMD_PARAM_ITEM2           = 8,
-    MBRIDGE_CMD_PARAM_ITEM3           = 9,
+    MBRIDGE_CMD_PARAM_ITEM3_4         = 9,
     MBRIDGE_CMD_REQUEST_CMD           = 10,
     MBRIDGE_CMD_INFO                  = 11,
     MBRIDGE_CMD_PARAM_SET             = 12,
@@ -98,7 +98,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;
     case MBRIDGE_CMD_PARAM_ITEM: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     case MBRIDGE_CMD_PARAM_ITEM2: return MBRIDGE_CMD_PARAM_ITEM_LEN;
-    case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+    case MBRIDGE_CMD_PARAM_ITEM3_4: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     case MBRIDGE_CMD_REQUEST_CMD: return MBRIDGE_CMD_REQUEST_CMD_LEN;
     case MBRIDGE_CMD_INFO: return MBRIDGE_CMD_INFO_LEN;
     case MBRIDGE_CMD_PARAM_SET: return MBRIDGE_CMD_PARAM_SET_LEN; break;
@@ -234,9 +234,7 @@ typedef struct
 
     uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
     uint8_t binding : 1;
-    uint8_t _connected : 1; // not used, start deprecating (> v1.3.08)
-    uint8_t _rx_LQ_low : 1; // not used, start deprecating (> v1.3.08)
-    uint8_t _tx_LQ_low : 1; // not used, start deprecating (> v1.3.08)
+    uint8_t __deprecated2 : 3; // start deprecating (> v1.3.08)
     uint8_t spare1 : 3;
 
     int8_t tx_actual_power_dbm;
@@ -319,7 +317,7 @@ typedef struct
     MBRIDGE_PACKED(union {
         char options2_23[23];
     });
-}) tMBridgeParamItem3; // 24 bytes
+}) tMBridgeParamItem3_4; // 24 bytes
 
 
 MBRIDGE_PACKED(
@@ -342,7 +340,7 @@ STATIC_ASSERT(sizeof(tMBridgeInfo) == MBRIDGE_CMD_INFO_LEN, "tMBridgeInfo len mi
 STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBridgeDeviceItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamItem3_4) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamSet) == MBRIDGE_CMD_PARAM_SET_LEN, "tMBridgeParamSet len missmatch")
 
 

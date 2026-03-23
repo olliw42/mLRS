@@ -44,7 +44,7 @@ class tTxInfo
             } else {
                 strcpy(s, wireless.device_name);
                 s[9] = '\0';  // strip off " AP UDP" or whatever comes, note: strncpy() is not reliable
-dbg.puts(s);
+//dbg.puts(s);
             }
             return true;
         }

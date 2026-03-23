@@ -121,6 +121,14 @@ void SystemClock_Config(void)
   */
   HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
 
+  // Usually, we configure STM32G4 with 170 MHz SYSCLK -> PCLK1, and 170 MHz PLLQ.
+  // However, FDCAN should be clocked with 80 MHz, which implies 160 MHz SYSCLK/PCLK1 and 80 MHz PLLQ.
+  // In order to ensure correct clock settings, we do this nonsense:
+  // We define PLLN and PLLQ in main.h, such that if they are missing we can throw a
+  // compile error in the CAN lib.
+  // #define PLL_PLLN  80
+  // #define PLL_PLLQ  RCC_PLLQ_DIV4
+
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */

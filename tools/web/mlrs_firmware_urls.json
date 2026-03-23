@@ -1,4 +1,10 @@
 {
+    "v1.4.00": {
+        "uint": 10400,
+        "type": "release",
+        "commit": "c80bbfe3baa05cd9f7130f7c5377256d45da09c8",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.4/firmware"
+    },
     "v1.3.08": {
         "uint": 10308,
         "type": "pre-release",

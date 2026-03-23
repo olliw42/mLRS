@@ -9,7 +9,7 @@
 #define JRPIN5_INTERFACE_ESP_H
 
 
-#include "../Common/esp-lib/esp-uart.h"
+#include "../modules/esp-lib/esp-uart.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include <hal/uart_ll.h>
 
