@@ -114,7 +114,8 @@ IRAM_ATTR void uartb_rx_flush(void)
 
 IRAM_ATTR uint16_t uartb_rx_bytesavailable(void)
 {
-    return UARTB_SERIAL_NO.available();
+    int available = UARTB_SERIAL_NO.available();
+    return (available > 0) ? available : 0;
 }
 
 
