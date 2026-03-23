@@ -34,7 +34,7 @@
 #endif
 
 #include "../Common/hal/hal.h"
-#include "../Common/thirdparty/stdstm32-can.h"
+#include "../modules/stm32-dronecan-lib/stdstm32-can.h"
 
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
@@ -135,10 +135,6 @@ bool dronecan_should_accept_transfer(
 
 // DroneCAN/Libcanard callback, forward declaration
 void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* const transfer);
-
-
-// CAN peripheral init, forward declaration
-void can_init(void);
 
 
 //-------------------------------------------------------

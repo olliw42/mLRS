@@ -14,7 +14,6 @@
 // TODO: share fixed buffers with mavlink interface
 
 
-#ifdef USE_FEATURE_MAVLINKX
 #include "../Common/libs/fifo.h"
 #include "../Common/protocols/msp_protocol.h"
 #include "../Common/thirdparty/mspx.h"
@@ -506,25 +505,6 @@ tMspCommonSetMspRcInfo payload;
 
     serial.putbuf(_buf, len);
 }
-
-
-#else //!USE_FEATURE_MAVLINKX
-
-class tRxMsp
-{
-  public:
-    void Init(void) {}
-    void Do(void) {}
-    void SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe) {}
-    void FrameLost(void) {}
-
-    void putc(char c) {}
-    bool available(void) { return false; }
-    uint8_t getc(void) { return 0; }
-    void flush(void) {}
-};
-
-#endif //USE_FEATURE_MAVLINKX
 
 
 #endif // MSP_INTERFACE_RX_H

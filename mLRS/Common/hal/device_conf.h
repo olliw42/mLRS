@@ -33,6 +33,15 @@ The default selection of frequency bands can be overruled by feature defines.
 
 //-- MATEKSYS mLRS devices
 
+#ifdef TX_MATEK_MTX_DB30_G474CE
+  #define DEVICE_NAME "Matek mTX-DB30"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 #ifdef RX_MATEK_MR24_30_G431KB
   #define DEVICE_NAME "Matek mR24-30"
   #define DEVICE_IS_RECEIVER
@@ -71,12 +80,19 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_MATEK_MR900_TD30_G474CE
-  #define DEVICE_NAME "Matek mR900-TD30"
+#ifdef RX_MATEK_MR900_30TD_G474CE
+  #define DEVICE_NAME "Matek mR900-30TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
+#ifdef RX_MATEK_MR24_30C_G431KB
+  #define DEVICE_NAME "Matek mR24-30C"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 #ifdef RX_MATEK_MR900_30C_G431KB
@@ -129,15 +145,6 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #ifdef TX_R9M_868_F103C8
   #define DEVICE_NAME "Frsky R9M"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX127x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
-#endif
-
-#ifdef TX_R9MX_868_L433CB
-  #define DEVICE_NAME "Frsky R9MX"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -202,31 +209,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
-//-- FlySky FRM303 2.4 GHz Device
-
-#ifdef RX_FRM303_F072CB
-  #define DEVICE_NAME "FlySky FRM303"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-#ifdef TX_FRM303_F072CB
-  #define DEVICE_NAME "FlySky FRM303"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-
 //-- DIY Boards, 2.4 GHz Devices
-
-#ifdef RX_DIY_BOARD01_F103CB
-  #define DEVICE_NAME "DIY DualSX F103CB"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
 
 #ifdef RX_DIY_E28DUAL_BOARD02_F103CB
   #define DEVICE_NAME "DIY DualE28 F103CB"
@@ -252,20 +235,6 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #ifdef TX_DIY_E28_G431KB
   #define DEVICE_NAME "DIY E28 G431KB"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-#ifdef TX_DIY_BOARD01_G491RE
-  #define DEVICE_NAME "DIY DualSX G491RE"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
-#ifdef TX_DIY_SXDUAL_MODULE02_G491RE
-  #define DEVICE_NAME "DIY DualSX G491RE"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
@@ -428,20 +397,3 @@ The default selection of frequency bands can be overruled by feature defines.
   #endif
 #endif
 
-
-#define USE_FEATURE_MAVLINKX
-#if defined TX_FRM303_F072CB || defined RX_FRM303_F072CB // is short of RAM for tx, and possibly too slow
-  #undef USE_FEATURE_MAVLINKX
-#endif
-
-
-#define USE_FEATURE_FLRC
-#if defined TX_FRM303_F072CB || defined RX_FRM303_F072CB // is short of RAM for tx, and possibly too slow
-  #undef USE_FEATURE_FLRC
-#endif
-
-
-#define USE_FEATURE_MAVLINK_COMPONENT
-#ifndef USE_FEATURE_MAVLINKX
-  #undef USE_FEATURE_MAVLINK_COMPONENT
-#endif

@@ -8,7 +8,7 @@
 *******************************************************
  run_copy_st_drivers.py
  copy CMSIS and HAL files to project target folders
- version 17.04.2024
+ version 21.03.2026
 ********************************************************
 '''
 import os
@@ -91,11 +91,6 @@ for f in MLRS_SOURCES_HAL_STM32WL:
     if '_hal' in f:
         wlxx_hal_files_to_include.append(os.path.basename(f))
 
-f0xx_hal_files_to_include = []
-for f in MLRS_SOURCES_HAL_STM32F0:
-    if '_hal' in f:
-        f0xx_hal_files_to_include.append(os.path.basename(f))
-
 f3xx_hal_files_to_include = []
 for f in MLRS_SOURCES_HAL_STM32F3:
     if '_hal' in f:
@@ -164,8 +159,6 @@ def create_exclude_list(dirlist, chip_short):
         files_to_include = g4xx_hal_files_to_include
     if chip_short == 'wl':
         files_to_include = wlxx_hal_files_to_include
-    if chip_short == 'f0':
-        files_to_include = f0xx_hal_files_to_include
     if chip_short == 'f3':
         files_to_include = f3xx_hal_files_to_include
 

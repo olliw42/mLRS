@@ -142,7 +142,7 @@ void IRAM_ATTR timer1_isr() { event_callback(); }
 #endif
 
 //-------------------------------------------------------
-// RxClock Class
+// Rx Clock Class
 //-------------------------------------------------------
 
 class tRxClock

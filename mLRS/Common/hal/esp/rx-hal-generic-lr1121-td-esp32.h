@@ -151,7 +151,7 @@ IRAM_ATTR bool button_pressed(void)
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 
-void lr11xx_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
         if (power_dbm >= POWER_20_DBM) { // -> 20

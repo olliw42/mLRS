@@ -57,20 +57,15 @@
 #define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
 
-#ifndef USE_FEATURE_MAVLINKX
-#define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink"
-#else
 #define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink,mavlinkX,mspX"
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"
-#endif
 
 #define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also used in e.g. cli
 #define SETUP_OPT_MODE_DISPSTR        "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, should be 6 chars however
 
-#define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN" // used below in LIST_COMMON
-#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN" // used e.g. in cli
-#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN" // used in display, 7 chars max
+#define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN,915+2.4,868+2.4" // used below in LIST_COMMON
+#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN,915 MHz + 2.4 GHz,868 MHz + 2.4 GHz" // used e.g. in cli
+#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN,915+2.4,868+2.4" // used in display, 7 chars max
 
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
@@ -107,7 +102,7 @@
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )
 
 #define SETUP_PARAMETER_LIST_TX_ESP \
-  X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT,UDP STA,BLE", SETUP_MSK_TX_WIFIPROT )\
+  X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT,UDP STA,BLE,ESPNOW", SETUP_MSK_TX_WIFIPROT )\
   X( Setup.Tx[0].WifiChannel,       LIST, "Tx Wifi Channel",  "TX_WIFI_CHANNEL",  0,0,0,"", "1,6,11,13", MSK_ALL )\
   X( Setup.Tx[0].WifiPower,         LIST, "Tx Wifi Power",    "TX_WIFI_POWER",    0,0,0,"", "low,med,max", MSK_ALL )
 

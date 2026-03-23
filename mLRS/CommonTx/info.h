@@ -27,7 +27,7 @@ class tTxInfo
     bool WirelessDeviceName_cli(char* const s)
     {
         if (wireless.device_name[0]) {
-            strcpy(s, wireless.device_name);
+            strncpy(s, wireless.device_name, sizeof(wireless.device_name)-1);
             return true;
         }
         return false;
@@ -44,7 +44,7 @@ class tTxInfo
             } else {
                 strcpy(s, wireless.device_name);
                 s[9] = '\0';  // strip off " AP UDP" or whatever comes, note: strncpy() is not reliable
-dbg.puts(s);
+//dbg.puts(s);
             }
             return true;
         }

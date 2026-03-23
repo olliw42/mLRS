@@ -98,6 +98,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 //-- MATEKSYS mLRS devices
 
+#ifdef TX_MATEK_MTX_DB30_G474CE
+#include "matek/tx-hal-matek-mtx-db30-g474ce.h"
+#endif
+
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
 #endif
@@ -118,8 +122,12 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "matek/rx-hal-matek-mr900-22-wle5cc.h"
 #endif
 
-#ifdef RX_MATEK_MR900_TD30_G474CE
-#include "matek/rx-hal-matek-mr900-td30-g474ce.h"
+#ifdef RX_MATEK_MR900_30TD_G474CE
+#include "matek/rx-hal-matek-mr900-30td-g474ce.h"
+#endif
+
+#ifdef RX_MATEK_MR24_30C_G431KB
+#include "matek/rx-hal-matek-mr24-30c-g431kb.h"
 #endif
 
 #ifdef RX_MATEK_MR900_30C_G431KB
@@ -144,9 +152,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 
 #ifdef TX_R9M_868_F103C8
 #include "stm32/tx-hal-R9M-868-f103c8.h"
-#endif
-#ifdef TX_R9MX_868_L433CB
-#include "stm32/tx-hal-R9MX-868-l433cb.h"
 #endif
 
 
@@ -175,22 +180,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-//-- FlySky FRM303 2.4 GHz Device
-
-#ifdef RX_FRM303_F072CB
-#include "stm32/rx-hal-FRM303-f072cb.h"
-#endif
-
-#ifdef TX_FRM303_F072CB
-#include "stm32/tx-hal-FRM303-f072cb.h"
-#endif
-
-
 //-- DIY Boards, 2.4 GHz Devices
 
-#ifdef RX_DIY_BOARD01_F103CB
-#include "stm32/rx-hal-diy-board01-f103cb.h"
-#endif
 #ifdef RX_DIY_E28DUAL_BOARD02_F103CB
 #include "stm32/rx-hal-diy-e28dual-board02-f103cb.h"
 #endif
@@ -203,12 +194,6 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 #ifdef TX_DIY_E28_G431KB
 #include "stm32/tx-hal-diy-e28-g431kb.h"
-#endif
-#ifdef TX_DIY_BOARD01_G491RE
-#include "stm32/tx-hal-diy-board01-g491re.h"
-#endif
-#ifdef TX_DIY_SXDUAL_MODULE02_G491RE
-#include "stm32/tx-hal-diy-sxdual-module02-g491re.h"
 #endif
 #ifdef TX_DIY_E28DUAL_MODULE02_G491RE
 #include "stm32/tx-hal-diy-e28dual-module02-g491re.h"
@@ -382,6 +367,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define SX_DRIVER Sx127xDriver
 #elif defined DEVICE_HAS_LR11xx
   #define SX_DRIVER Lr11xxDriver
+#elif defined DEVICE_HAS_LR20xx
+  #define SX_DRIVER Lr20xxDriver
 #else
   #define SX_DRIVER Sx128xDriver
 #endif
@@ -393,6 +380,8 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     #define SX2_DRIVER Sx127xDriver2
   #elif defined DEVICE_HAS_LR11xx
     #define SX2_DRIVER Lr11xxDriver2
+  #elif defined DEVICE_HAS_LR20xx
+    #define SX2_DRIVER Lr20xxDriver2
   #else
     #define SX2_DRIVER Sx128xDriver2
   #endif
@@ -419,6 +408,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              (Config.ReceiveUseAntenna2)
   #define TRANSMIT_USE_ANTENNA1     (Config.TransmitUseAntenna1)
   #define TRANSMIT_USE_ANTENNA2     (Config.TransmitUseAntenna2)
+  #define SX_OR_SX2(x1,x2)          (Config.ReceiveUseAntenna1 || Config.TransmitUseAntenna1) ? x1 : x2
 #else
   #define IF_SX(x)                  x;
   #define IF_SX2(x)
@@ -428,6 +418,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #define USE_ANTENNA2              false
   #define TRANSMIT_USE_ANTENNA1     true
   #define TRANSMIT_USE_ANTENNA2     false
+  #define SX_OR_SX2(x1,x2)          x1
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5
@@ -452,9 +443,10 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
   #error Must be either transmitter or receiver !
 #endif
 
-#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && !defined DEVICE_HAS_LR11xx && \
+#if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
+    !defined DEVICE_HAS_LR11xx && !defined DEVICE_HAS_LR20xx && \
     !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
-  #error Must be either SX128x or SX127x or SX126x or LR11xx !
+  #error Must be either SX128x or SX127x or SX126x or LR11xx or LR20xx !
 #endif
 
 #if !defined FREQUENCY_BAND_2P4_GHZ && \
@@ -462,6 +454,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     !defined FREQUENCY_BAND_433_MHZ && !defined FREQUENCY_BAND_70_CM_HAM
   #error At least one frequency band must be defined !
 #endif
+
+
+//-------------------------------------------------------
+// Further Derived Defines
+// These defines don't derive from DEVICE_HAS_XXX defines, but also result in USE_XXX defines
+//-------------------------------------------------------
+
+#define USE_FEATURE_MAVLINK_COMPONENT
 
 
 //-------------------------------------------------------

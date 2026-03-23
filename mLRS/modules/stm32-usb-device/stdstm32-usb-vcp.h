@@ -40,6 +40,7 @@ extern "C" {
 uint8_t usb_rx_available(void);
 uint16_t usb_rx_bytesavailable(void);
 char usb_getc(void);
+void usb_getbuf(uint8_t* const buf, uint16_t len);
 
 uint8_t usb_tx_full(void);
 void usb_putc(uint8_t c);
