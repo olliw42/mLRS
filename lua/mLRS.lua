@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-03-20', -- add a '.01' if needed for the day
+    script = '2026-03-27', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -388,8 +388,12 @@ local DEVICE_INFO = nil
 local DEVICE_PARAM_LIST = nil
 local DEVICE_PARAM_LIST_expected_index = 0
 local DEVICE_PARAM_LIST_current_index = -1
-local DEVICE_PARAM_LIST_max_index = 0 -- 0: unknown, will be updated after each param upload
 local DEVICE_PARAM_LIST_errors = 0
+local DEVICE_PARAM_LIST_main_ready = false
+local DEVICE_PARAM_LIST_tx_ready = false
+local DEVICE_PARAM_LIST_rx_ready = false
+local DEVICE_PARAM_LIST_tx_cnt = 0
+local DEVICE_PARAM_LIST_rx_cnt = 0
 local DEVICE_PARAM_LIST_complete = false
 local DEVICE_DOWNLOAD_is_running = true -- we start the script with this
 local DEVICE_SAVE_t_last = 0
@@ -403,6 +407,11 @@ local function clearParams()
     DEVICE_PARAM_LIST_expected_index = 0
     DEVICE_PARAM_LIST_current_index = -1
     DEVICE_PARAM_LIST_errors = 0
+    DEVICE_PARAM_LIST_main_ready = false
+    DEVICE_PARAM_LIST_tx_ready = false
+    DEVICE_PARAM_LIST_rx_ready = false
+    DEVICE_PARAM_LIST_tx_cnt = 0
+    DEVICE_PARAM_LIST_rx_cnt = 0
     DEVICE_PARAM_LIST_complete = false
     DEVICE_DOWNLOAD_is_running = true
 end
@@ -571,46 +580,45 @@ end
 -- This protocol ensures that the next parameter is explicitely fetched after the current one is processed
 ----------------------------------------------------------------------
 
-local function updateDeviceParamCounts(f)
-    if f <= 1 then -- called when DEVICE_INFO is received 
-        if DEVICE_INFO.param_num > 0 then DEVICE_PARAM_LIST_max_index = DEVICE_INFO.param_num - 1 end
-    else -- called when end of param list is received
-        if DEVICE_INFO.param_num == 0 then DEVICE_PARAM_LIST_max_index = #DEVICE_PARAM_LIST end
+local function skipRxIfDisconnected()
+    if DEVICE_PARAM_LIST_tx_ready and not connected then
+        DEVICE_PARAM_LIST_rx_ready = true
+        DEVICE_PARAM_LIST_complete = true
+        DEVICE_DOWNLOAD_is_running = false
+        return true
     end
-end  
+    return false
+end
 
 
 local function doParamLoop()
     -- trigger getting device items and param items
     local t_10ms = getTime()
-    if t_10ms - paramloop_t_last > 33 then -- was 10 = 100 ms
-      paramloop_t_last = t_10ms
-      if t_10ms < DEVICE_SAVE_t_last + paramLoadDeadTime_10ms then
-          -- skip, we don't send a cmd if the last Save was recent
-          -- TODO: we could make deadtime dependend on whether a receiver was connected before the Save
-      elseif DEVICE_ITEM_TX == nil then
-          cmdPush(MBRIDGE_CMD.REQUEST_INFO, {}) -- triggers sending DEVICE_ITEM_TX, DEVICE_ITEM_RX, DEVICE_INFO
-          --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.REQUEST_INFO) -- alternative command for the same effect
-          -- these should have been set when we nil-ed DEVICE_PARAM_LIST
-          DEVICE_PARAM_LIST_expected_index = 0
-          DEVICE_PARAM_LIST_current_index = -1
-          DEVICE_PARAM_LIST_errors = 0
-          DEVICE_PARAM_LIST_complete = false
-      elseif DEVICE_PARAM_LIST == nil then
-          if DEVICE_INFO ~= nil then -- wait for DEVICE_INFO to be populated, indicates that MBRIDGE_CMD.REQUEST_INFO is completed
-              DEVICE_PARAM_LIST = {}
-              -- Old:
-              --cmdPush(MBRIDGE_CMD.PARAM_REQUEST_LIST, {}) -- triggers sending full list of PARAM_ITEMs
-              --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_REQUEST_LIST}) -- alternative command for the same effect
-              -- New: request parameters by index (request-response protocol)
-              -- request first parameter by index (is index = 0)
-              cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
-          end
-      end
+    if t_10ms < DEVICE_SAVE_t_last + paramLoadDeadTime_10ms then
+        -- skip, we don't send a cmd if the last Save was recent
+        -- TODO: we could make deadtime dependend on whether a receiver was connected before the Save
+    elseif DEVICE_ITEM_TX == nil then
+        cmdPush(MBRIDGE_CMD.REQUEST_INFO, {}) -- triggers sending DEVICE_ITEM_TX, DEVICE_ITEM_RX, DEVICE_INFO
+        --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.REQUEST_INFO) -- alternative command for the same effect
+        -- these should have been set when we nil-ed DEVICE_PARAM_LIST
+        DEVICE_PARAM_LIST_expected_index = 0
+        DEVICE_PARAM_LIST_current_index = -1
+        DEVICE_PARAM_LIST_errors = 0
+        DEVICE_PARAM_LIST_complete = false
+    elseif DEVICE_PARAM_LIST == nil then
+        if DEVICE_INFO ~= nil then -- wait for DEVICE_INFO to be populated, indicates that MBRIDGE_CMD.REQUEST_INFO is completed
+            DEVICE_PARAM_LIST = {}
+            -- Old:
+            --cmdPush(MBRIDGE_CMD.PARAM_REQUEST_LIST, {}) -- triggers sending full list of PARAM_ITEMs
+            --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_REQUEST_LIST}) -- alternative command for the same effect
+            -- New: request parameters by index (request-response protocol)
+            -- request first parameter by index (is index = 0)
+            cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+        end
     end
 
     -- handle received commands
-    for ijk = 1,24 do -- handle only up to 24 per lua cycle
+    while true do
         local cmd = cmdPop()
         if cmd == nil then break end
         if cmd.cmd == MBRIDGE_CMD.DEVICE_ITEM_TX then
@@ -644,7 +652,6 @@ local function doParamLoop()
             DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 7, 0, 0x0F)
             DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
             DEVICE_INFO.param_num = mb_to_u8(cmd.payload, 8)
-            updateDeviceParamCounts(1)
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM then
             -- MBRIDGE_CMD.PARAM_ITEM
             local index = cmd.payload[0]
@@ -666,9 +673,22 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].options = {}
                 DEVICE_PARAM_LIST[index].allowed_mask = 65536
                 DEVICE_PARAM_LIST[index].editable = true
+                -- detect tx/rx boundary and count params per group
+                local prefix = string.sub(DEVICE_PARAM_LIST[index].name, 1, 2)
+                if prefix == "Tx" then
+                    DEVICE_PARAM_LIST_tx_cnt = DEVICE_PARAM_LIST_tx_cnt + 1
+                elseif prefix == "Rx" then
+                    if not DEVICE_PARAM_LIST_tx_ready then
+                        DEVICE_PARAM_LIST_tx_ready = true
+                    end
+                    if connected then
+                        DEVICE_PARAM_LIST_rx_cnt = DEVICE_PARAM_LIST_rx_cnt + 1
+                    end
+                end
             elseif index == 255 then -- EOL (end of list)
                 if DEVICE_PARAM_LIST_errors == 0 then
-                    updateDeviceParamCounts(2)
+                    DEVICE_PARAM_LIST_tx_ready = true
+                    DEVICE_PARAM_LIST_rx_ready = true
                     DEVICE_PARAM_LIST_complete = true
                 else
                     -- Huston, we have a problem
@@ -708,8 +728,10 @@ local function doParamLoop()
                     paramsError()
                 end
                 if not item3_needed then
-                    -- request next parameter by index
-                    cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+                    if index == 3 then DEVICE_PARAM_LIST_main_ready = true end
+                    if not skipRxIfDisconnected() then
+                        cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+                    end
                 end
             end
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM3_4 then -- can be ITEM3 or ITEM4
@@ -748,8 +770,10 @@ local function doParamLoop()
                 DEVICE_PARAM_LIST[index].max = #DEVICE_PARAM_LIST[index].options - 1
                 s = nil
                 if not item4_needed then
-                    -- request next parameter by index
-                    cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+                    if index == 3 then DEVICE_PARAM_LIST_main_ready = true end
+                    if not skipRxIfDisconnected() then
+                        cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
+                    end
                 end
             end
         end
@@ -871,7 +895,7 @@ end
 
 local function cur_attr_x(idx, sidx) -- for Bind Phrase character editing
     local attr = THEME.textColor
-    if DEVICE_PARAM_LIST_complete and CURSOR.idx == idx then
+    if DEVICE_PARAM_LIST_main_ready and CURSOR.idx == idx then
         if CURSOR.edit then
             if CURSOR.sidx == sidx then attr = attr + BLINK + INVERS end
         else
@@ -884,7 +908,7 @@ end
 
 local function cur_attr_p(idx, pidx) -- used for parameters
     local attr = cur_attr(idx)
-    if DEVICE_PARAM_LIST_complete and not DEVICE_PARAM_LIST[pidx].editable then
+    if DEVICE_PARAM_LIST_main_ready and not DEVICE_PARAM_LIST[pidx].editable then
         lcd.setColor(CUSTOM_COLOR, GREY)
         attr = CUSTOM_COLOR
     end
@@ -893,7 +917,7 @@ end
 
 
 local function param_value_inc(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return end
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < MBRIDGE_PARAM_TYPE.LIST then
         p.value = p.value + 1
@@ -911,7 +935,7 @@ end
 
 
 local function param_value_dec(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return end
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < MBRIDGE_PARAM_TYPE.LIST then
         p.value = p.value - 1
@@ -929,7 +953,7 @@ end
 
 
 local function param_str6_inc(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return end
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == MBRIDGE_PARAM_TYPE.STR6 then
         local c = string.sub(p.value, CURSOR.sidx+1, CURSOR.sidx+1)
@@ -944,7 +968,7 @@ end
 
 
 local function param_str6_dec(idx)
-    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return end
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == MBRIDGE_PARAM_TYPE.STR6 then
         local c = string.sub(p.value, CURSOR.sidx+1, CURSOR.sidx+1)
@@ -959,7 +983,7 @@ end
 
 
 local function param_str6_next(idx)
-    if not DEVICE_PARAM_LIST_complete then return false end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return false end
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ == MBRIDGE_PARAM_TYPE.STR6 then
         CURSOR.sidx = CURSOR.sidx + 1
@@ -972,7 +996,7 @@ end
 
 
 local function param_focusable(idx)
-    if not DEVICE_PARAM_LIST_complete then return false end -- needed here??
+    if not DEVICE_PARAM_LIST_main_ready then return false end
     local p = DEVICE_PARAM_LIST[idx]
     if p == nil then return false end
     if p.editable == nil then return false end
@@ -1136,8 +1160,7 @@ end
 ----------------------------------------------------------------------
 
 local isEdgeTx = false
-local isFirstParamDownload = true
-local FirstParamDownloadTmo_10ms = 0
+local firstDownloadTmo_10ms = 0
 
 
 local function drawSetuplayoutWarning(txt)
@@ -1159,21 +1182,8 @@ local function drawSetuplayoutWarning(txt)
 end
 
 
-local function drawParamDownload()
-    local y = LAYOUT.INFO_Y
-    lcd.drawText(LAYOUT.W_HALF, y+LAYOUT.INFO_DY, " parameters loading ... ", THEME.textColor+BLINK+INVERS+CENTER)
-    local idx = DEVICE_PARAM_LIST_current_index
-    if idx < 0 then idx = 0 end
-    local s = "("..tostring(idx)
-    if DEVICE_PARAM_LIST_max_index > 0 then
-        s = s.."/"..tostring(DEVICE_PARAM_LIST_max_index)
-    end    
-    s = s..")"
-    if isEdgeTx then -- with OpenTx TEXT_BGCOLOR doesn't seem to work correctly
-        lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
-        lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
-    end    
-    lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
+local function drawButton(x, y, label, enabled, idx)
+    lcd.drawText(x, y, label, enabled and cur_attr(idx) or THEME.textDisableColor)
 end
 
 
@@ -1182,7 +1192,9 @@ local function drawPageMain()
 
     local y = 35
     lcd.drawText(5, y, "Tx:", THEME.textColor)
-    if DEVICE_ITEM_TX == nil then
+    if not DEVICE_PARAM_LIST_main_ready then
+        -- don't draw until main page params are loaded
+    elseif DEVICE_ITEM_TX == nil then
         lcd.drawText(35, y, "---", THEME.textColor)
     else
         lcd.drawText(35, y, DEVICE_ITEM_TX.name, THEME.textColor+SMLSIZE)
@@ -1193,8 +1205,8 @@ local function drawPageMain()
     end
 
     lcd.drawText(LAYOUT.W_HALF, y, "Rx:", THEME.textColor)
-    if not DEVICE_PARAM_LIST_complete then
-        -- don't do anything
+    if not DEVICE_PARAM_LIST_main_ready then
+        -- don't draw until main page params are loaded
     elseif not connected then
         lcd.drawText(LAYOUT.W_HALF+30, y, "not connected", THEME.textColor)
     elseif DEVICE_ITEM_RX == nil then
@@ -1220,7 +1232,7 @@ local function drawPageMain()
 
     y = 95 --90
     lcd.drawText(10, y, "Bind Phrase", THEME.textColor)
-    if DEVICE_PARAM_LIST_complete then
+    if DEVICE_PARAM_LIST_main_ready then
         local x = 140
         for i = 1,6 do
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
@@ -1235,7 +1247,7 @@ local function drawPageMain()
     end
 
     lcd.drawText(10, y + LAYOUT.DY, "Mode", THEME.textColor)
-    if DEVICE_PARAM_LIST_complete then
+    if DEVICE_PARAM_LIST_main_ready then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
             lcd.drawText(140, y+LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
@@ -1243,7 +1255,7 @@ local function drawPageMain()
     end
 
     lcd.drawText(10, y + 2*LAYOUT.DY, "RF Band", THEME.textColor)
-    if DEVICE_PARAM_LIST_complete then
+    if DEVICE_PARAM_LIST_main_ready then
         local p = DEVICE_PARAM_LIST[2] -- param_idx = 2 = RfBand
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
@@ -1255,7 +1267,7 @@ local function drawPageMain()
         end
     end
 
-    if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
+    if DEVICE_PARAM_LIST_main_ready and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
         local y_ortho = y
         if THEME.screenSize == 320240 then y_ortho = y + 42 end
 
@@ -1267,26 +1279,19 @@ local function drawPageMain()
     end
 
     y = LAYOUT.BUTTONS_Y
-    lcd.drawText(LAYOUT.EDIT_TX_X, y, "Edit Tx", cur_attr(IDX.EditTx_idx))
-    if not connected then
-        lcd.drawText(LAYOUT.EDIT_RX_X, y, "Edit Rx", THEME.textDisableColor)
-    else
-        lcd.drawText(LAYOUT.EDIT_RX_X, y, "Edit Rx", cur_attr(IDX.EditRx_idx))
-    end
-    lcd.drawText(LAYOUT.SAVE_X, y, "Save", cur_attr(IDX.Save_idx))
-    lcd.drawText(LAYOUT.RELOAD_X, y, "Reload", cur_attr(IDX.Reload_idx))
-    lcd.drawText(LAYOUT.BIND_X, y, "Bind", cur_attr(IDX.Bind_idx))
-    lcd.drawText(LAYOUT.TOOLS_X, y, "Tools", cur_attr(IDX.Tools_idx))
+    drawButton(LAYOUT.EDIT_TX_X, y, "Edit Tx", DEVICE_PARAM_LIST_tx_ready, IDX.EditTx_idx)
+    drawButton(LAYOUT.EDIT_RX_X, y, "Edit Rx", connected and DEVICE_PARAM_LIST_rx_ready, IDX.EditRx_idx)
+    drawButton(LAYOUT.SAVE_X, y, "Save", DEVICE_PARAM_LIST_complete, IDX.Save_idx)
+    drawButton(LAYOUT.RELOAD_X, y, "Reload", true, IDX.Reload_idx)
+    drawButton(LAYOUT.BIND_X, y, "Bind", true, IDX.Bind_idx)
+    drawButton(LAYOUT.TOOLS_X, y, "Tools", DEVICE_PARAM_LIST_complete, IDX.Tools_idx)
 
     -- show overview of some selected parameters
     y = LAYOUT.INFO_Y
     lcd.setColor(CUSTOM_COLOR, GREY)
     lcd.drawFilledRectangle(0, y-5, LAYOUT.W, 1, CUSTOM_COLOR)
-    
-    if DEVICE_DOWNLOAD_is_running then
-        drawParamDownload()
-        return
-    end    
+
+    if not DEVICE_PARAM_LIST_main_ready then return end
 
     lcd.drawText(LAYOUT.INFO_LEFT_X, y, "Tx Power", THEME.textColor)
     lcd.drawText(LAYOUT.INFO_LEFT_X, y+LAYOUT.INFO_DY, "Tx Diversity", THEME.textColor)
@@ -1326,6 +1331,14 @@ local function drawPageMain()
         lcd.drawText(LAYOUT.INFO_LEFT_VAL_X, y, tostring(DEVICE_INFO.receiver_sensitivity).." dBm", THEME.textColor)
     else
         lcd.drawText(LAYOUT.INFO_LEFT_VAL_X, y, "---", THEME.textColor)
+    end
+
+    -- show param loading progress
+    if not DEVICE_PARAM_LIST_tx_ready then
+        lcd.drawText(LAYOUT.INFO_RIGHT_X, y, "Tx Params ("..tostring(DEVICE_PARAM_LIST_tx_cnt).."/14)", THEME.textDisableColor)
+    elseif not DEVICE_PARAM_LIST_rx_ready then
+        local rx_total = DEVICE_INFO.param_num - 4 - DEVICE_PARAM_LIST_tx_cnt
+        lcd.drawText(LAYOUT.INFO_RIGHT_X, y, "Rx Params ("..tostring(DEVICE_PARAM_LIST_rx_cnt).."/"..tostring(rx_total)..")", THEME.textDisableColor)
     end
 
     -- setup layout warning
@@ -1450,22 +1463,19 @@ local function Do(event)
 
     doParamLoop()
 
-    -- OpenTx: must display
-    -- EdgeTx: don't display everything in param upload, EdgeTx is super slow
-    -- 20.3.2026: hm, seems to work fine now
-    if isEdgeTx and DEVICE_DOWNLOAD_is_running then
-        if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
-            if getTime() > FirstParamDownloadTmo_10ms then
-                local attr = RED+CENTER
-                if LCD_W >= 480 then attr = attr + MIDSIZE end
-                lcd.drawText(LAYOUT.W_HALF, LCD_H/4, "!! Please check if CRSF baudrate is 400k !!", attr)
-                FirstParamDownloadTmo_10ms = 0 -- disable
-            end  
-        end  
-        if not isFirstParamDownload then drawParamDownload(); end
-        return 
+    -- clear first download timeout once parameters have loaded
+    if DEVICE_PARAM_LIST_main_ready then firstDownloadTmo_10ms = 0 end
+
+    -- warn if first param download takes too long (crsf baudrate issue)
+    if isEdgeTx and firstDownloadTmo_10ms > 0 and getTime() > firstDownloadTmo_10ms then
+        local attr = RED+CENTER
+        if LCD_W >= 480 then attr = attr + MIDSIZE end
+        lcd.drawText(LAYOUT.W_HALF, LCD_H/4, "!! Please check if CRSF baudrate is 400k !!", attr)
+        return
     end
-    isFirstParamDownload = false
+
+    -- don't draw until main page params are loaded, avoids placeholder pop-in
+    if not DEVICE_PARAM_LIST_main_ready then return end
 
     lcd.clear()
 
@@ -1499,14 +1509,8 @@ local function scriptInit()
     local tnow_10ms = getTime()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
-    isFirstParamDownload = true
-    FirstParamDownloadTmo_10ms = tnow_10ms + 500 --- drop a warning after 5 secs
-    
-    if tnow_10ms < 300 then
-        DEVICE_SAVE_t_last = 300 - tnow_10ms -- treat script start like a Save
-    else
-        DEVICE_SAVE_t_last = 0
-    end
+    firstDownloadTmo_10ms = tnow_10ms + 500 -- warn after 5 secs
+    DEVICE_SAVE_t_last = 0
 end
 
 
