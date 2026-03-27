@@ -188,7 +188,7 @@ void Lr20xxDriverBase::SetDioRfSwitchConfig(uint8_t Dio, uint8_t Config)
 uint8_t buf[2];
 
     buf[0] = Dio; // allowed values are 5 - 11
-    buf[1] = (Config);
+    buf[1] = (Config & 0x1F);
 
     WriteCommand(LR20XX_CMD_SET_DIO_RF_SWITCH_CONFIG, buf, 2);
 }
