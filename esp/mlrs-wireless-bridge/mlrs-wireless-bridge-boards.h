@@ -167,8 +167,8 @@ GPIO15 = RTC_GPIO13
     #endif    
 
 
-//-- MatekSys TxM-TD30 mLRS Tx module
-#elif defined MODULE_MATEK_TXM_TD30
+//-- MatekSys mTX-DB30 mLRS Tx module
+#elif defined MODULE_MATEK_MTX_DB30
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
         #error Select board ESP32 PICO-D4!
     #endif

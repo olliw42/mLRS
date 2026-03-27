@@ -14,7 +14,6 @@
 // #define SX_USE_RFSW_CTRL
 // #define SX_USE_LP_PA  
 //*******************************************************
-
 #ifndef LR11XX_DRIVER_H
 #define LR11XX_DRIVER_H
 #pragma once
@@ -164,9 +163,11 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(LR11XX_STDBY_CONFIG_STDBY_RC);
         SetPacketType(LR11XX_PACKET_TYPE_LORA);
@@ -264,7 +265,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         }
 
         SetRfPower_dbm(gconfig->Power_dbm);
+
+        // according to datasheet, such a function exists, but the command does not appear to exist
+        // according to datasheet, txBaseAdress, rxBaseAdress are initialized with 0,0
+        //SetBufferBaseAddress(0, 0);
+
         ClearIrq(LR11XX_IRQ_ALL);
+
         SetFs();
     }
 
@@ -272,11 +279,14 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -474,11 +484,13 @@ class Lr11xxDriver : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif
+
         Configure(global_config);
-        
         sx_dio_enable_exti_isr();
     }
 
@@ -614,11 +626,13 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC
         SetRegMode(LR11XX_REGULATOR_MODE_DCDC);
 #endif
-        Configure(global_config);
 
+        Configure(global_config);
         sx2_dio_enable_exti_isr();
     }
 

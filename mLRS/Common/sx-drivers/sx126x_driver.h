@@ -143,9 +143,11 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(SX126X_STDBY_CONFIG_STDBY_RC);
         delay_us(1000); // seems ok without, but do it
@@ -267,11 +269,14 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -301,7 +306,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         int16_t rssi;
         if (gconfig->modeIsLora()) {
             Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
-            // mimic behavior of sx128x , sx1276
+            // mimic behavior of sx128x, sx1276
             // not in the datasheet, but suggested by data
             if (*Snr < 0) rssi += *Snr;
         } else {
@@ -483,13 +488,14 @@ class Sx126xDriver : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx_dio_enable_exti_isr();
     }
 
@@ -499,14 +505,12 @@ class Sx126xDriver : public Sx126xDriverCommon
     {
         sx_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx_amp_receive();
         Sx126xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 
@@ -616,13 +620,14 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX2_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX126X_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx2_dio_enable_exti_isr();
     }
 
@@ -632,14 +637,12 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     {
         sx2_amp_transmit();
         Sx126xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx2_amp_receive();
         Sx126xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 

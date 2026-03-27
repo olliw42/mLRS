@@ -127,9 +127,11 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(SX1280_STDBY_CONFIG_STDBY_RC);
         delay_us(1000); // seems ok without, but do it
@@ -210,14 +212,18 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         // rxPayloadLength is always 0 if no header
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
         // if one wants it, it could be obtained from what had been set
         // rxPayloadLength = ReadRegister(SX1280_REG_PayloadLength);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // rxPayloadLength is always 0 if no header
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -425,13 +431,14 @@ class Sx128xDriver : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 #ifdef SX_USE_REGULATOR_MODE_DCDC // here ??? ELRS does it as last !!!
         SetRegulatorMode(SX1280_REGULATOR_MODE_DCDC);
 #endif
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx_dio_enable_exti_isr();
     }
 
@@ -441,14 +448,12 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         sx_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx_amp_receive();
         Sx128xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 
@@ -585,6 +590,8 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 //XX        SetStandby(SX1280_STDBY_CONFIG_STDBY_RC); // should be in STDBY_RC after reset
 //XX        delay_us(1000); // this is important, 500 us ok
 
@@ -594,7 +601,6 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
         Configure(global_config);
         delay_us(125); // may not be needed if busy available
-
         sx2_dio_enable_exti_isr();
     }
 
@@ -604,14 +610,12 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         sx2_amp_transmit();
         Sx128xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
     }
 
     void SetToRx(void)
     {
         sx2_amp_receive();
         Sx128xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
     }
 };
 

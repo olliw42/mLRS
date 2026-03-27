@@ -1,5 +1,19 @@
 # mLRS - Release Notes #
 
+## v1.4.00 (official release) (20.3.2026) ##
+
+This version brings (as compared to v1.3.08):
+
+- add Matek MR24-30C, MR900-30C, MR900-30TD targets
+- tx, OLED, show wireless bridge info (page main/5)
+- color lua: download indicator
+- color lua: show warning if download timeout
+- wireless bridge: add ESPNOW option
+- wireless bridge: bug, make channel 13 to work
+- wireless bridge: bug, on ESP32-C3 MAC and hence device id were random
+
+The list of changes as compared to the previous official release v1.3 is massive, and hence not further elaborated on.
+
 ## v1.3.08 (pre-release) (13.2.2026) ##
 
 This version brings:

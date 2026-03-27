@@ -15,7 +15,7 @@ mLRS uses version numbers with format major.minor.patch (e.g., 1.3.06), where th
 ### Releases (00 version numbers)
 
 - the binaries of a release can go into whatever subfolders, for v1.3.00 they had been release-stm32, release-matek, release-esp
-- releases go into an extra branch, with, e.g., name "1.3", commit message "v1.3 (release)", and tag "v1.3-release"
+- releases go into an extra branch, with, e.g., branch name "1.3", commit message "v1.3 (release)", and tag "v1.3-release"
 - the tag needs to be added to the file tools/web/mlrs_firmware_urls.json, so that flash tools can find it
 
 ### Pre-releases (even version numbers)

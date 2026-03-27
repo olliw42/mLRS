@@ -7,14 +7,13 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 4. Mar. 2026
+// 21. Mar. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
 // - For ESP32 and ESP32C3: Partition Scheme needs to be changed to "No OTA (Large APP)" or "No OTA (2MB APP/2MB SPIFFS)" or similar!!
 // - Use upload speed 115200 if serial passthrough shall be used for flashing (else 921600 is fine)
 // - ArduinoIDE 2.3.2, esp32 by Espressif Systems 3.0.4
-// - For ESP32C3: ESP32 arduino core must be 2.0.17 !!
 // This can be useful: https://github.com/espressif/arduino-esp32/blob/master/libraries
 // Dependencies:
 // You need to have in File->Preferences->Additional Board managers URLs
@@ -33,23 +32,15 @@ Definitions:
 
 For more details on the modules see mlrs-wireless-bridge-boards.h
 
-List of supported modules, and board which needs to be selected
-
-- ELRS Tx module ESP82xx backpack   board: Generic ESP8266 Module or Generic ESP8285 Module
-  is used in many ELRS Tx modules
-- ELRS Tx module ESP32C3 backpack   board: Generic ESP32C3 Module
-  Comment: ELRS Tx backpacks using ESP82xx or ESP32-C3 must have GPIO0 or GPIO9 controllable, respectively
-- Espressif ESP32-DevKitC V4        board: ESP32 Dev Module
-- NodeMCU ESP32-Wroom-32            board: ESP32 Dev Module
-- Espressif ESP32-PICO-KIT          board: ESP32 PICO-D4
-- Adafruit QT Py S2                 board: Adafruit QT Py ESP32-S2
-- Lilygo TTGO-MICRO32               board: ESP32 PICO-D4
-- M5Stack M5Stamp C3 Mate           board: ESP32C3 Dev Module
-  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack M5Stamp Pico              board: ESP32 PICO-D4
-- M5Stack M5Stamp C3U Mate          board: ESP32C3 Dev Module
-  ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
-- M5Stack ATOM Lite                 board: M5Stack-ATOM
+For a list of supported modules, and board which needs to be selected, see the 
+available defines below in the User Configuration - Module section.
+Additional comments for some modules:
+  - ELRS Tx module ESP82xx backpack, ELRS Tx module ESP32C3 backpack
+    ELRS Tx backpacks using ESP82xx or ESP32-C3 must have GPIO0 or GPIO9 controllable, respectively
+  - M5Stack M5Stamp C3 Mate
+    ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
+  - M5Stack M5Stamp C3U Mate
+    ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 
 Troubleshooting:
 - If you get error "text section exceeds available space": Set Partition Scheme to "No OTA (Large APP)" or "No OTA (2MB APP/2MB SPIFFS)" or similar
@@ -70,8 +61,9 @@ Troubleshooting:
 // Module
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
+//#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
-//#define MODULE_ESP32C3_ELRS_TX                // board: Generic ESP32C3 Module
+//#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
@@ -218,26 +210,32 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #define USE_WIRELESS_PROTOCOL_UDPCL
 #endif
 
-#ifndef ESP8266 // not ESP8266
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-  #if ESP_ARDUINO_VERSION != ESP_ARDUINO_VERSION_VAL(2, 0, 17)
-    #error For ESP32-C3, you must use ESP Arduino Core 2.0.17. Version can be selected via the Arduino IDE Boards Manager.
-  #endif
-#else
+#if defined CONFIG_IDF_TARGET_ESP32 
   #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
     #error Version of your ESP Arduino Core below 3.0.0 !
-  #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 4)
-    #warning Consider upgrading your ESP Arduino Core !
+  #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 19.Mar.2026
+    #pragma message "Warning: Consider upgrading your ESP Arduino Core !" // #warning doesn't show if not verbose, hence #pgrama message
   #endif
-#endif // CONFIG_IDF_TARGET_ESP32C3
+#elif defined CONFIG_IDF_TARGET_ESP32C3
+  #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
+    #error Version of your ESP Arduino Core below 3.0.0 !
+  #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 21.Mar.2026
+    #pragma message "Warning: Consider upgrading your ESP Arduino Core !" // #warning doesn't show if not verbose, hence #pragma message
+  #endif
+#elif defined ESP8266
+#else
+    #error Must be ESP32, ESP32-C3 or ESP82xx.
+#endif
 
 #if defined USE_AT_MODE && (defined CONFIG_IDF_TARGET_ESP32 || defined CONFIG_IDF_TARGET_ESP32C3) && \
     !defined ARDUINO_PARTITION_no_ota
     #error Partition Scheme must be "No OTA (Large APP)", "No OTA (2MB APP/2MB SPIFFS)" or similar!
 #endif
 
+#ifndef ESP8266 // not ESP8266
 #include <WiFi.h>
 #include <esp_mac.h>
+#endif
 // for some reason checking
 // #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
 // does not work here. Also checking e.g. PLATFORM_ESP32_C3 seems not to work.
@@ -257,8 +255,6 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #include <BLE2902.h>
   #endif
 #endif
-#endif // #ifndef ESP8266
-
 #if defined USE_AT_MODE || (WIRELESS_PROTOCOL == 6)
   #define USE_WIRELESS_PROTOCOL_ESPNOW
   #ifdef ESP8266
@@ -322,11 +318,7 @@ class BLECharacteristicCallbacksHandler : public BLECharacteristicCallbacks {
         if (!ble_serial_started) {
             ble_serial_started = true;
         }
-#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-        std::string rxValue = pCharacteristic->getValue(); // Core 2.x
-#else
-        String rxValue = pCharacteristic->getValue(); // Core 3.x
-#endif
+        String rxValue = pCharacteristic->getValue();
         int len = rxValue.length();
         if (len > 0) {
             SERIAL.write((uint8_t*)rxValue.c_str(), len);
@@ -376,11 +368,10 @@ void ble_setup(String device_name) {
 uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
 volatile uint16_t espnow_rxbuf_head;
 volatile uint16_t espnow_rxbuf_tail;
-// mac latch: once a GCS sends us data, we lock to its MAC
-volatile bool espnow_latched_mac_available;
-uint8_t espnow_latched_mac[6];
-bool espnow_latched_peer_added;
-uint8_t espnow_broadcast_mac[6];
+volatile bool espnow_gcs_mac_available; // once a GCS sends us data, we lock to its MAC
+uint8_t espnow_gcs_mac[6];
+bool espnow_gcs_peer_added;
+uint8_t espnow_broadcast_mac[6] = { 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF };
 
 void espnow_rxbuf_push(const uint8_t* data, int len) {
     for (int i = 0; i < len; i++) {
@@ -400,26 +391,38 @@ int espnow_rxbuf_pop(uint8_t* buf, int maxlen) {
     return cnt;
 }
 
-#ifdef ESP8266
-void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len) {
-    const uint8_t* sender_mac = mac;
-#elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
-void espnow_recv_cb(const uint8_t* mac, const uint8_t* data, int len) {
-    const uint8_t* sender_mac = mac;
-#else
-void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len) {
-    const uint8_t* sender_mac = info->src_addr;
-#endif
-    if (!espnow_latched_mac_available) { // mac latch: accept only from the first sender we hear from
-        memcpy(espnow_latched_mac, sender_mac, 6);
-        espnow_latched_mac_available = true;
+void espnow_recv_callback(const uint8_t* sender_mac, const uint8_t* data, int len) {
+    if (!espnow_gcs_mac_available) { // accept only from the first sender we hear from
+        memcpy(espnow_gcs_mac, sender_mac, 6);
+        espnow_gcs_mac_available = true;
     } else {
-        if (memcmp(sender_mac, espnow_latched_mac, 6) != 0) return; // ignore other senders
+        if (memcmp(sender_mac, espnow_gcs_mac, 6) != 0) return; // ignore other senders
     }
     espnow_rxbuf_push(data, len);
 }
 
+#ifdef ESP8266
+void espnow_recv_cb(uint8_t* mac, uint8_t* data, uint8_t len) { espnow_recv_callback(mac, data, len); }
+#else
+void espnow_recv_cb(const esp_now_recv_info_t* info, const uint8_t* data, int len) { espnow_recv_callback(info->src_addr, data, len); }
+#endif
+
+void espnow_add_peer_mac(uint8_t* mac, int wifi_channel) {
+#ifdef ESP8266
+    esp_now_add_peer(mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
+#else
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, mac, 6);
+    peer.channel = wifi_channel;
+    peer.encrypt = false;
+    esp_now_add_peer(&peer);
+#endif
+}
+
 void espnow_setup(int wifi_channel) {
+    espnow_rxbuf_head = espnow_rxbuf_tail = 0;
+    espnow_gcs_mac_available = false;
+    espnow_gcs_peer_added = false;
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 #ifdef ESP8266
@@ -439,34 +442,19 @@ void espnow_setup(int wifi_channel) {
     }
 #ifdef ESP8266
     esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
-    esp_now_register_recv_cb(espnow_recv_cb);
-    esp_now_add_peer(espnow_broadcast_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
-#else
-    esp_now_register_recv_cb(espnow_recv_cb);
-    esp_now_peer_info_t peer = {};
-    memcpy(peer.peer_addr, espnow_broadcast_mac, 6);
-    peer.channel = wifi_channel;
-    peer.encrypt = false;
-    esp_now_add_peer(&peer);
 #endif
+    esp_now_register_recv_cb(espnow_recv_cb);
+    espnow_add_peer_mac(espnow_broadcast_mac, wifi_channel);
     DBG_PRINTLN("ESP-NOW started");
 }
 
 void espnow_send(int wifi_channel, uint8_t* buf, int len) {
-    if (espnow_latched_mac_available) { // if latched, send unicast; otherwise broadcast
-        if (!espnow_latched_peer_added) { // ensure latched peer is registered
-#ifdef ESP8266
-            esp_now_add_peer(espnow_latched_mac, ESP_NOW_ROLE_COMBO, wifi_channel, NULL, 0);
-#else
-            esp_now_peer_info_t peer = {};
-            memcpy(peer.peer_addr, espnow_latched_mac, 6);
-            peer.channel = wifi_channel;
-            peer.encrypt = false;
-            esp_now_add_peer(&peer);
-#endif
-            espnow_latched_peer_added = true;
+    if (espnow_gcs_mac_available) { // if gcs seen, send unicast; otherwise broadcast
+        if (!espnow_gcs_peer_added) { // ensure latched peer is registered
+            espnow_add_peer_mac(espnow_gcs_mac, wifi_channel);
+            espnow_gcs_peer_added = true;
         }
-        esp_now_send(espnow_latched_mac, buf, len);
+        esp_now_send(espnow_gcs_mac, buf, len);
     } else {
         esp_now_send(espnow_broadcast_mac, buf, len);
     }
@@ -615,6 +603,11 @@ void setup_wifipower()
 void setup_ap_mode(IPAddress __ip)
 {
     WiFi.mode(WIFI_AP); // seems not to be needed, done by WiFi.softAP()?
+#ifndef ESP8266
+    // set country to EU to enable channels 1-13 (default may restrict to 1-11)
+    wifi_country_t country = { .cc = "EU", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL };
+    esp_wifi_set_country(&country);
+#endif
     WiFi.softAPConfig(__ip, ip_gateway, netmask);
     WiFi.softAP(device_name.c_str(), (device_password.length()) ? device_password.c_str() : NULL, g_wifichannel); // channel = 1 is default
     DBG_PRINT("ap ip address: ");
@@ -674,10 +667,10 @@ class tWifiHandler {
         uint8_t MAC_buf[6+2];
         // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/misc_system_api.html#mac-address
         // MACs are different for STA and AP, BT
-#ifndef ESP8266
-        esp_base_mac_addr_get(MAC_buf);
+#ifdef ESP8266
+       wifi_get_macaddr(STATION_IF, MAC_buf);
 #else
-        wifi_get_macaddr(STATION_IF, MAC_buf);
+        esp_efuse_mac_get_default(MAC_buf);
 #endif
         for (uint8_t i = 0; i < 5; i++) device_id += MAC_buf[i] + ((uint16_t)MAC_buf[i + 1] << 8) / 39;
         device_id += MAC_buf[5];
@@ -1066,14 +1059,9 @@ class tESPNOWHandler : public tWifiHandler {
     void Init() {
         tWifiHandler::Init();
         device_name = device_name + " ESPNOW";
-        memset(espnow_broadcast_mac, 0xFF, 6);
     }
 
     void wifi_setup() override {
-        espnow_rxbuf_head = 0;
-        espnow_rxbuf_tail = 0;
-        espnow_latched_mac_available = false;
-        espnow_latched_peer_added = false;
         espnow_setup(g_wifichannel);
         set_wifi_setup_done();
     }

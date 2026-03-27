@@ -112,9 +112,11 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
         if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
@@ -194,11 +196,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
@@ -432,6 +437,8 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 //XX        // this is not nice, figure out where to place
 //XX#ifdef DEVICE_HAS_I2C_DAC
 //XX        dac.Init();
@@ -442,7 +449,6 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         Configure(global_config);
         delay_us(125); // may not be needed
-
         sx_dio_enable_exti_isr();
     }
 
@@ -584,6 +590,8 @@ class Sx127xDriver2 : public Sx127xDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
         Configure(global_config);
         delay_us(125); // may not be needed
         sx2_dio_enable_exti_isr();
