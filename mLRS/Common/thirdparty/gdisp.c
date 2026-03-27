@@ -221,7 +221,7 @@ HAL_StatusTypeDef ssd1306_put(uint8_t* buf, uint16_t len)
 
 HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* const buf, uint16_t len)
 {
-    //ssd1306_cmdhome();  not needed since we always do full buffer
+    ssd1306_cmdhome();  // could skip since we always do full buffer
     return i2c_put(SSD1306_DATA, buf, len);
 }
 
