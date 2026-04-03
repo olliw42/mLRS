@@ -19,6 +19,7 @@ mLRS/*/Drivers/STM32_USB_Device_Library/*
 .pio
 .vscode
 docs/MSP_CRSF_PASSTHROUGH_PLAN.md
+tools/msp-crsf-test.lua
 .DS_Store
 
 # Prerequisites
