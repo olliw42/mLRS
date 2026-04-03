@@ -54,6 +54,10 @@ class tRxMsp
     tFifo<char,1024> fifo_link_out; // needs to be at least ??
     void parse_serial_in_link_out(void);
 
+    // CRSF passthrough tracking: remember pending request function to force-tag responses
+    bool crsf_pt_pending;
+    uint16_t crsf_pt_function;
+
     // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
     tMspSetRawRc rc_channels; // holds the rc data in MSP format
     bool inject_rc_channels;
@@ -121,6 +125,9 @@ void tRxMsp::Init(void)
     status_link_in = {};
     status_ser_in = {};
     fifo_link_out.Init();
+
+    crsf_pt_pending = false;
+    crsf_pt_function = 0;
 
     inject_rc_channels = false;
     inject_rc_link_stats = false;
@@ -338,6 +345,13 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                 }
 
+                // Force CRSF passthrough flag on matching response if FC didn't preserve it
+                if (crsf_pt_pending && msp_msg_ser_in.function == crsf_pt_function &&
+                    (msp_msg_ser_in.type == MSP_TYPE_RESPONSE || msp_msg_ser_in.type == MSP_TYPE_ERROR)) {
+                    msp_msg_ser_in.flag |= MSP_FLAG_CRSF_PASSTHROUGH;
+                    crsf_pt_pending = false;
+                }
+
                 if (send) {
                     uint16_t len = msp_msg_to_frame_bufX(_buf, &msp_msg_ser_in); // converting to mspX
                     fifo_link_out.PutBuf(_buf, len);
@@ -361,6 +375,14 @@ void tRxMsp::parse_link_in_serial_out(char c)
 {
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
+        // Track CRSF passthrough requests so we can force-tag the response
+        // (FC may not preserve the MSP V2 flag byte)
+        if ((msp_msg_link_in.type == MSP_TYPE_REQUEST) &&
+            (msp_msg_link_in.flag & MSP_FLAG_CRSF_PASSTHROUGH)) {
+            crsf_pt_pending = true;
+            crsf_pt_function = msp_msg_link_in.function;
+        }
+
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
         serial.putbuf(_buf, len);
 

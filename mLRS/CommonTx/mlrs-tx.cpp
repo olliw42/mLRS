@@ -1190,6 +1190,7 @@ IF_CRSF(
             INCc(do_cnt, 3);
             break;
         case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
+        case TXCRSF_SEND_MSP_RESPONSE: crsf.SendMspResponseChunk(); break;
         }
     }
     if (crsf.CommandReceived(&crsfcmd)) {
@@ -1203,6 +1204,11 @@ IF_CRSF(
         case TXCRSF_CMD_MBRIDGE_IN:
 //dbg.puts("\ncrsf mbridge ");
             mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
+            break;
+        case TXCRSF_CMD_MSP_REQ:
+            if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+                msp.InjectCrsfMspRequest(crsf.GetMspCrsfMsg());
+            }
             break;
         }
     }

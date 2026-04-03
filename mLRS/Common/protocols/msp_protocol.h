@@ -84,6 +84,7 @@ typedef enum {
     MSP_FLAG_NONE               = 0,
     MSP_FLAG_NO_RESPONSE        = 0x01,
     MSP_FLAG_SOURCE_ID_RC_LINK  = 0x02,
+    MSP_FLAG_CRSF_PASSTHROUGH   = 0x04,
 } MSP_FLAG_ENUM;
 
 

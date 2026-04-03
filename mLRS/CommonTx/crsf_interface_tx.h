@@ -38,6 +38,7 @@ typedef enum {
     TXCRSF_SEND_LINK_STATISTICS_RX,
     TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
     TXCRSF_SEND_DEVICE_INFO,
+    TXCRSF_SEND_MSP_RESPONSE, // MSP-over-CRSF response chunk
 } TXCRSF_SEND_ENUM;
 
 
@@ -46,6 +47,7 @@ typedef enum {
     TXCRSF_CMD_BIND_START,
     TXCRSF_CMD_BIND_STOP,
     TXCRSF_CMD_MBRIDGE_IN,
+    TXCRSF_CMD_MSP_REQ,
 } TXCRSF_CMD_ENUM;
 
 
@@ -73,6 +75,13 @@ class tTxCrsf : public tPin5BridgeBase
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
+
+    // MSP-over-CRSF passthrough
+    bool MspCrsfReassemble(void); // reassemble chunks from frame[] into msp_crsf_msg, returns true when complete
+    void MspCrsfSendResponse(msp_message_t* const msg); // start chunking a response
+    void SendMspResponseChunk(void); // send next chunk of MSP response via CRSF 0x7B
+    bool MspCrsfResponsePending(void); // returns true if there are unsent chunks
+    msp_message_t* GetMspCrsfMsg(void); // get pointer to reassembled MSP message
 
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
@@ -141,6 +150,18 @@ class tTxCrsf : public tPin5BridgeBase
     // CRSF passthrough telemetry
 
     tPassThrough passthrough;
+
+    // MSP-over-CRSF passthrough state
+
+    volatile bool msp_cmd_received;
+    msp_message_t msp_crsf_msg; // reassembly buffer for incoming CRSF MSP chunks
+    uint16_t msp_crsf_rx_pos; // current position in msp_crsf_msg.payload during reassembly
+    uint8_t msp_crsf_rx_seq; // expected next sequence number
+
+    msp_message_t msp_crsf_resp; // response message to be chunked out
+    bool msp_crsf_resp_pending; // true if we have a response to send
+    uint16_t msp_crsf_tx_pos; // current position in msp_crsf_resp.payload during chunking
+    uint8_t msp_crsf_tx_seq; // current chunk sequence number
 
     // MSP handlers
 
@@ -249,6 +270,9 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
             ping_device_received = true;
         } else
+        if (frame[2] == CRSF_FRAME_ID_MSP_REQUSET || frame[2] == CRSF_FRAME_ID_MSP_WRITE) {
+            msp_cmd_received = true;
+        } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND && frame[5] == CRSF_COMMAND_ID) {
             switch (frame[6]) {
             case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
@@ -268,6 +292,161 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         }
         state = STATE_TRANSMIT_START;
         break;
+    }
+}
+
+
+//-------------------------------------------------------
+// MSP-over-CRSF chunk reassembly
+// CRSF MSP frame: [addr][len][frame_id][dest][orig][status_byte][msp_data...][crc8]
+// status_byte: bit7=error, bits5-6=MSP_version, bit4=start_flag, bits0-3=sequence
+
+#define CRSF_MSP_STATUS_START_FLAG  0x10
+#define CRSF_MSP_STATUS_SEQ_MASK    0x0F
+#define CRSF_MSP_STATUS_VERSION_V1  0x20 // bits5-6 = 01 for MSP V1
+#define CRSF_MSP_STATUS_VERSION_V2  0x40 // bits5-6 = 10 for MSP V2
+#define CRSF_MSP_STATUS_VERSION_MASK 0x60
+#define CRSF_MSP_STATUS_ERROR_FLAG  0x80
+#define CRSF_MSP_V1_HEADER_BYTES    2    // size, cmd
+#define CRSF_MSP_V2_HEADER_BYTES    5    // flag, function_lo, function_hi, len_lo, len_hi
+
+
+bool tTxCrsf::MspCrsfReassemble(void)
+{
+    // frame[] contains a complete CRSF frame: [addr][len][frame_id][dest][orig][status][msp_data...][crc8]
+    // frame[0]=addr, frame[1]=len, frame[2]=frame_id, frame[3]=dest, frame[4]=orig, frame[5]=status
+    // msp data bytes = frame[1] - 5 (frame_id + dest + orig + status + crc8 overhead)
+
+    uint8_t status = frame[5];
+    uint8_t seq = status & CRSF_MSP_STATUS_SEQ_MASK;
+    uint8_t msp_data_len = frame[1] - 5; // bytes of MSP data in this chunk
+    bool is_v2 = ((status & CRSF_MSP_STATUS_VERSION_MASK) == CRSF_MSP_STATUS_VERSION_V2);
+
+    if (status & CRSF_MSP_STATUS_START_FLAG) {
+        uint8_t header_bytes = is_v2 ? CRSF_MSP_V2_HEADER_BYTES : CRSF_MSP_V1_HEADER_BYTES;
+        if (msp_data_len < header_bytes) return false; // too short
+
+        // Always produce MSP V2 message internally
+        msp_crsf_msg.magic2 = MSP_MAGIC_2_V2;
+        msp_crsf_msg.type = MSP_TYPE_REQUEST;
+
+        if (is_v2) {
+            // V2 start chunk: [flag][func_lo][func_hi][len_lo][len_hi][payload...]
+            msp_crsf_msg.flag = frame[6];
+            msp_crsf_msg.function = frame[7] | ((uint16_t)frame[8] << 8);
+            msp_crsf_msg.len = frame[9] | ((uint16_t)frame[10] << 8);
+        } else {
+            // V1 start chunk: [size][cmd][payload...]
+            msp_crsf_msg.flag = 0;
+            msp_crsf_msg.function = frame[7]; // cmd is single byte
+            msp_crsf_msg.len = frame[6]; // size is single byte
+        }
+
+        if (msp_crsf_msg.len > MSP_PAYLOAD_LEN_MAX) return false; // too large
+
+        // copy payload bytes after the header
+        uint8_t payload_in_chunk = msp_data_len - header_bytes;
+        if (payload_in_chunk > msp_crsf_msg.len) payload_in_chunk = msp_crsf_msg.len;
+        memcpy(msp_crsf_msg.payload, &frame[6 + header_bytes], payload_in_chunk);
+        msp_crsf_rx_pos = payload_in_chunk;
+        msp_crsf_rx_seq = (seq + 1) & CRSF_MSP_STATUS_SEQ_MASK;
+    } else {
+        // continuation chunk
+        if (seq != msp_crsf_rx_seq) {
+            msp_crsf_rx_pos = 0; // sequence mismatch, discard
+            return false;
+        }
+
+        uint16_t remaining = msp_crsf_msg.len - msp_crsf_rx_pos;
+        uint8_t to_copy = (msp_data_len > remaining) ? remaining : msp_data_len;
+        memcpy(&msp_crsf_msg.payload[msp_crsf_rx_pos], &frame[6], to_copy);
+        msp_crsf_rx_pos += to_copy;
+        msp_crsf_rx_seq = (seq + 1) & CRSF_MSP_STATUS_SEQ_MASK;
+    }
+
+    return (msp_crsf_rx_pos >= msp_crsf_msg.len); // true when message is complete
+}
+
+
+msp_message_t* tTxCrsf::GetMspCrsfMsg(void)
+{
+    return &msp_crsf_msg;
+}
+
+
+//-------------------------------------------------------
+// MSP-over-CRSF response chunking
+
+void tTxCrsf::MspCrsfSendResponse(msp_message_t* const msg)
+{
+    msp_crsf_resp.type = msg->type;
+    msp_crsf_resp.flag = msg->flag & ~MSP_FLAG_CRSF_PASSTHROUGH; // strip internal routing flag
+    msp_crsf_resp.function = msg->function;
+    msp_crsf_resp.len = msg->len;
+    if (msg->len > 0) {
+        memcpy(msp_crsf_resp.payload, msg->payload, msg->len);
+    }
+    msp_crsf_tx_pos = 0;
+    msp_crsf_tx_seq = 0;
+    msp_crsf_resp_pending = true;
+}
+
+
+bool tTxCrsf::MspCrsfResponsePending(void)
+{
+    return msp_crsf_resp_pending;
+}
+
+
+void tTxCrsf::SendMspResponseChunk(void)
+{
+    if (!msp_crsf_resp_pending) return;
+
+    uint8_t payload[CRSF_FRAME_LEN_MAX]; // local buffer for CRSF payload (dest+orig+status+msp_data)
+    uint8_t pos = 0;
+
+    // dest = radio, origin = flight controller
+    payload[pos++] = CRSF_ADDRESS_RADIO;
+    payload[pos++] = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+
+    // status byte: MSP V2 (bits5-6=10), error from type
+    uint8_t status = CRSF_MSP_STATUS_VERSION_V2;
+    status |= (msp_crsf_tx_seq & CRSF_MSP_STATUS_SEQ_MASK);
+    if (msp_crsf_resp.type == MSP_TYPE_ERROR) status |= CRSF_MSP_STATUS_ERROR_FLAG;
+
+    bool is_start = (msp_crsf_tx_pos == 0);
+    if (is_start) status |= CRSF_MSP_STATUS_START_FLAG;
+
+    payload[pos++] = status;
+
+    // max msp data bytes per chunk: CRSF max payload = 60 bytes, minus dest+orig+status = 57
+    uint8_t max_msp_data = 57;
+
+    if (is_start) {
+        // start chunk: include MSP V2 header (flag, function_lo, function_hi, len_lo, len_hi)
+        payload[pos++] = msp_crsf_resp.flag;
+        payload[pos++] = msp_crsf_resp.function & 0xFF;
+        payload[pos++] = (msp_crsf_resp.function >> 8) & 0xFF;
+        payload[pos++] = msp_crsf_resp.len & 0xFF;
+        payload[pos++] = (msp_crsf_resp.len >> 8) & 0xFF;
+        max_msp_data -= CRSF_MSP_V2_HEADER_BYTES;
+    }
+
+    // copy payload bytes
+    uint16_t remaining = msp_crsf_resp.len - msp_crsf_tx_pos;
+    uint8_t to_copy = (remaining > max_msp_data) ? max_msp_data : remaining;
+    memcpy(&payload[pos], &msp_crsf_resp.payload[msp_crsf_tx_pos], to_copy);
+    pos += to_copy;
+    msp_crsf_tx_pos += to_copy;
+
+    msp_crsf_tx_seq = (msp_crsf_tx_seq + 1) & CRSF_MSP_STATUS_SEQ_MASK;
+
+    // send as CRSF 0x7B
+    send_frame(CRSF_FRAME_ID_MSP_RESPONSE, payload, pos);
+
+    // check if done
+    if (msp_crsf_tx_pos >= msp_crsf_resp.len) {
+        msp_crsf_resp_pending = false;
     }
 }
 
@@ -330,6 +509,13 @@ void tTxCrsf::Init(bool enable_flag)
     cmd_modelid_received = false;
     cmd_bind_set_received = false;
     cmd_bind_cancel_received = false;
+
+    msp_cmd_received = false;
+    msp_crsf_rx_pos = 0;
+    msp_crsf_rx_seq = 0;
+    msp_crsf_resp_pending = false;
+    msp_crsf_tx_pos = 0;
+    msp_crsf_tx_seq = 0;
 
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
@@ -430,6 +616,12 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
         return true;
     }
 
+    // if we have pending MSP-over-CRSF response chunks, send one
+    if (msp_crsf_resp_pending) {
+        *task = TXCRSF_SEND_MSP_RESPONSE;
+        return true;
+    }
+
     *task = TXCRSF_SEND_TELEMETRY_FRAME;
     return true;
 }
@@ -456,6 +648,21 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
         cmd_bind_cancel_received = false;
         *cmd = TXCRSF_CMD_BIND_STOP;
         return true;
+    }
+
+    if (msp_cmd_received) {
+        msp_cmd_received = false;
+
+        // check crc
+        uint8_t crc = crc8(frame);
+        if (crc != frame[frame[1] + 1]) return false;
+
+        // reassemble MSP chunks; returns true when complete message is ready
+        if (MspCrsfReassemble()) {
+            *cmd = TXCRSF_CMD_MSP_REQ;
+            return true;
+        }
+        return false; // partial chunk, need more
     }
 
     if (!cmd_received) return false;

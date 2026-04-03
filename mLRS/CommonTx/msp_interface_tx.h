@@ -37,6 +37,8 @@ class tTxMsp
     uint8_t getc(void);
     void flush(void);
 
+    void InjectCrsfMspRequest(msp_message_t* const msg); // inject CRSF MSP request into link
+
   private:
 
     tSerialBase* ser;
@@ -135,19 +137,24 @@ void tTxMsp::parse_link_in_serial_out(char c)
                 break;
             }
 
+            // route CRSF passthrough responses back to CRSF interface
+            if (msp_msg_link_in.flag & MSP_FLAG_CRSF_PASSTHROUGH) {
+                crsf.MspCrsfSendResponse(&msp_msg_link_in);
+                send = false;
+            } else
             if (msp_msg_link_in.flag & MSP_FLAG_SOURCE_ID_RC_LINK) {
                 // it's requested by the receiver, catch it
                 send = false;
             }
         }
 
-        if (send) {
+        if (send && ser) {
             uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
             ser->putbuf(_buf, len);
         }
 
-        // allow crsf class to capture it
-        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE) {
+        // allow crsf class to capture it (but not CRSF passthrough responses, those are already routed)
+        if (msp_msg_link_in.type == MSP_TYPE_RESPONSE && !(msp_msg_link_in.flag & MSP_FLAG_CRSF_PASSTHROUGH)) {
             crsf.TelemetryHandleMspMsg(&msp_msg_link_in);
         }
 
@@ -173,9 +180,7 @@ dbg.puts(u8toHEX_s(crc8));
 
 void tTxMsp::putc(char c)
 {
-    if (!ser) return;
-
-    // parse link in -> serial out
+    // parse link in -> serial out (also routes CRSF passthrough responses to CRSF)
     parse_link_in_serial_out(c);
 }
 
@@ -204,6 +209,18 @@ void tTxMsp::flush(void)
 
     fifo_link_out.Flush();
     ser->flush();
+}
+
+
+void tTxMsp::InjectCrsfMspRequest(msp_message_t* const msg)
+{
+    // set the CRSF passthrough flag so we can identify the response
+    msg->flag |= MSP_FLAG_CRSF_PASSTHROUGH;
+
+    if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) {
+        uint16_t len = msp_msg_to_frame_bufX(_buf, msg); // converting to mspX
+        fifo_link_out.PutBuf(_buf, len);
+    }
 }
 
 
