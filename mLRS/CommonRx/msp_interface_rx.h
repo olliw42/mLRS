@@ -292,10 +292,16 @@ void tRxMsp::parse_serial_in_link_out(void)
 
                         telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
 
+                        uint8_t resp_flags = MSP_FLAG_SOURCE_ID_RC_LINK;
+                        if (crsf_pt_pending && crsf_pt_function == MSP_BOXNAMES) {
+                            resp_flags |= MSP_FLAG_CRSF_PASSTHROUGH;
+                            crsf_pt_pending = false;
+                        }
+
                         uint16_t len = msp_generate_v2_frame_bufX(
                             _buf,
                             MSP_TYPE_RESPONSE,
-                            MSP_FLAG_SOURCE_ID_RC_LINK,
+                            resp_flags,
                             MSP_BOXNAMES,
                             new_payload,
                             new_len);
