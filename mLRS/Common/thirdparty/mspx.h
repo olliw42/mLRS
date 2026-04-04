@@ -274,7 +274,7 @@ typedef enum {
     MSPX_FLAGS_V1                 = 0x04,
     MSPX_FLAGS_NO_RESPONSE        = 0x08,
     MSPX_FLAGS_SOURCE_ID_RC_LINK  = 0x10,
-    MSPX_FLAGS_CRSF_PASSTHROUGH   = 0x20,
+    MSPX_FLAGS_SOURCE_ID_RADIO     = 0x20,
 } mspx_flags_e;
 
 
@@ -333,7 +333,7 @@ uint8_t msp_parseX_to_msg(msp_message_t* const msg, msp_status_t* const status, 
         if (mspx_status.flags & MSPX_FLAGS_SOURCE_ID_RC_LINK) {
             msg->flag |= MSP_FLAG_SOURCE_ID_RC_LINK;
         }
-        if (mspx_status.flags & MSPX_FLAGS_CRSF_PASSTHROUGH) {
+        if (mspx_status.flags & MSPX_FLAGS_SOURCE_ID_RADIO) {
             msg->flag |= MSP_FLAG_CRSF_PASSTHROUGH;
         }
         status->state = MSP_PARSE_STATE_FUNCTION_1;
@@ -472,7 +472,7 @@ uint16_t msp_msg_to_frame_bufX(uint8_t* const buf, msp_message_t* const msg)
         flags |= MSPX_FLAGS_SOURCE_ID_RC_LINK;
     }
     if (msg->flag & MSP_FLAG_CRSF_PASSTHROUGH) {
-        flags |= MSPX_FLAGS_CRSF_PASSTHROUGH;
+        flags |= MSPX_FLAGS_SOURCE_ID_RADIO;
     }
 
     buf[0] = MSP_MAGIC_1;
@@ -517,7 +517,7 @@ uint16_t msp_generate_v2_frame_bufX(uint8_t* const buf, uint8_t type, uint8_t fl
         flags |= MSPX_FLAGS_SOURCE_ID_RC_LINK;
     }
     if (flag & MSP_FLAG_CRSF_PASSTHROUGH) {
-        flags |= MSPX_FLAGS_CRSF_PASSTHROUGH;
+        flags |= MSPX_FLAGS_SOURCE_ID_RADIO;
     }
 
     buf[0] = MSP_MAGIC_1;
