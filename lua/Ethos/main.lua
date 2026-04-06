@@ -130,14 +130,21 @@ end
 ------------------------------------------------------------
 -- UI helpers
 ------------------------------------------------------------
-local function buildChoicesFromOptions(opts)
+local function buildChoicesFromOptions(opts, allowed_mask)
   local choices = {}
   opts = opts or {}
   for i = 1, #opts do
     local label = tostring(opts[i] or "")
     if label ~= "-" and label ~= "" then
-      -- Ethos choice tables are usually { {label, value}, ... }
-      choices[#choices + 1] = { label, i - 1 } -- 0-based values
+      local idx0 = i - 1
+      -- If allowed_mask is valid, only include options whose bit is set
+      if allowed_mask and allowed_mask > 0 then
+        if ((1 << idx0) & allowed_mask) ~= 0 then
+          choices[#choices + 1] = { label, idx0 }
+        end
+      else
+        choices[#choices + 1] = { label, idx0 }
+      end
     end
   end
   if #choices == 0 then
@@ -284,11 +291,8 @@ local function updateParamWidget(p)
   -- type-specific metadata
   if p.typ == 4 then
     -- LIST choices
-    local choices = buildChoicesFromOptions(p.options)
+    local choices = buildChoicesFromOptions(p.options, p.allowed_mask)
     safeCall(f, "values", choices)
-    -- Some firmwares expose min/max too; harmless if absent
-    safeCall(f, "minimum", 0)
-    safeCall(f, "maximum", math.max(#choices - 1, 0))
   elseif p.typ ~= 5 then
     -- numeric
     if p.min ~= nil then safeCall(f, "minimum", p.min) end
@@ -542,15 +546,14 @@ local function buildParamsForm()
 
             if p.typ == 4 then
               -- LIST
-              local choices = buildChoicesFromOptions(p.options)
+              local choices = buildChoicesFromOptions(p.options, p.allowed_mask)
               local getter = function()
-                local v = tonumber(p.value) or 0
-                if v < 0 then v = 0 end
-                if v > (#choices - 1) then v = (#choices - 1) end
-                return v
+                return tonumber(p.value) or 0
               end
               local setter = function(val)
-                commitParam(p, tonumber(val) or 0)
+                local newVal = tonumber(val) or 0
+                p.value = newVal  -- immediate update so getter reflects change
+                commitParam(p, newVal)
               end
 
               local f = form.addChoiceField(line, nil, choices, getter, setter)
@@ -569,7 +572,9 @@ local function buildParamsForm()
                 return sanitizeBindPhrase(p.value)
               end
               local setter = function(newValue)
-                commitParam(p, sanitizeBindPhrase(newValue))
+                local newVal = sanitizeBindPhrase(newValue)
+                p.value = newVal  -- immediate update so getter reflects change
+                commitParam(p, newVal)
               end
 
               local f = form.addTextField(line, nil, getter, setter)
@@ -582,7 +587,10 @@ local function buildParamsForm()
               local min = p.min or 0
               local max = p.max or 65535
               local getter = function() return p.value or 0 end
-              local setter = function(val) commitParam(p, val) end
+              local setter = function(val)
+                p.value = val  -- immediate update so getter reflects change
+                commitParam(p, val)
+              end
 
               local f = form.addNumberField(line, nil, min, max, getter, setter)
               ui.param[p.idx0] = f
