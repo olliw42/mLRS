@@ -350,7 +350,7 @@ uint8_t buf[3];
 
     buf[0] = (PaLfMode & 0x03) + ((PaSel & 0x01) << 7);
     buf[1] = (PaLfSlices & 0x0F) + ((PaLfDutyCycle & 0x0F) << 4);
-    buf[2] = (PaHfDutyCycle & 0x0F);
+    buf[2] = (PaHfDutyCycle & 0x1F);
 
     WriteCommand(LR20XX_CMD_SET_PA_CONFIG, buf, 3);
 }
