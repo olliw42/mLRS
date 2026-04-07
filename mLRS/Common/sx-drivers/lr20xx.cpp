@@ -177,6 +177,7 @@ void Lr20xxDriverBase::SetDioFunction(uint8_t Dio, uint8_t Func, uint8_t PullDri
 {
 uint8_t buf[2];
 
+    if (Dio == LR20XX_DIO_5) PullDrive = LR20XX_DIO_SLEEP_PULL_UP; // DIO5 only accepts PULL_UP per datasheet
     buf[0] = Dio; // allowed values are 5 - 11
     buf[1] = ((Func & 0x0F) << 4) + (PullDrive & 0xF);
 
