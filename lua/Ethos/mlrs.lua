@@ -1,3 +1,8 @@
+--[[
+  Copyright (C) 2025 Rob Thomson
+  GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
+  version 7. Apr. 2026
+]]--
 -- mlrs.lua
 -- Lightweight queued API for mLRS modules (Ethos / CRSF sensor frames)
 -- Pull-based parameter loading (REQUEST_CMD -> PARAM_ITEM by index), plus full ITEM2/3/4 enrichment.

@@ -7,6 +7,7 @@
 //*******************************************************
 // Configuration defines:
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_TCXO_VOLTAGE
 //*******************************************************
 #ifndef LR20XX_DRIVER_H
 #define LR20XX_DRIVER_H
@@ -278,10 +279,13 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         // SetPacketType, SetModulationParams, SetPacketParams, SetPAConfig, SetTxParams
 
         SetStandby(LR20XX_STANDBY_MODE_RC);
-        //SetStandby(LR20XX_STANDBY_MODE_XOSC);
 
-//??        SetTcxoMode(LR20XX_TCXO_SUPPLY_VOLTAGE_2_7, 25000); // set output to 1.6V-3.3V, ask specification of TCXO to maker board
 //??        SetRegMode(LR20XX_SIMO_USAGE_NORMAL); // Attention: requires DCDC workaround
+
+#ifdef SX_TCXO_VOLTAGE
+        SetTcxoMode(SX_TCXO_VOLTAGE, 64000); // 2 ms // functions correctly only when chip is in Standby RC mode
+        ClearErrors(); // we found: XOSC_START_ERR is (often) raised after SetTcxoMode, clear it
+#endif
 
         SetRxTxFallbackMode(LR20XX_RX_TX_FALLBACK_MODE_FS);
         SetDefaultRxTxTimeout(0, 0);
