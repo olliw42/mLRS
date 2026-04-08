@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-03-20', -- add a '.01' if needed for the day
+    script = '2026-04-08', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -56,6 +56,16 @@ local LAYOUT = {
     WARN_X = 30, -- LCD_W/2-210
     WARN_W = 420,
     WARN_H = 50,
+    -- main page header and params
+    MAIN_HDR_Y = 35,
+    MAIN_HDR_DY = 16,
+    MAIN_PARAM_Y = 95,
+    MAIN_PARAM_VAL_X = 140,
+    -- param download clear rect (offset from W_HALF, size)
+    DOWNLOAD_CLR_X = 90,
+    DOWNLOAD_CLR_W = 70,
+    DOWNLOAD_CLR_H = 30,
+    DOWNLOAD_TXT_X = 100,
     -- main page buttons, location of menu buttons on main page
     BUTTONS_Y = 171,
     EDIT_TX_X = 10,
@@ -64,8 +74,10 @@ local LAYOUT = {
     RELOAD_X = 10 + 225,
     BIND_X = 10 + 305,
     TOOLS_X = 10 + 365,
-    -- edit page, second column offset
+    -- edit page
     COL2_OFS = 230,
+    EDIT_X = 10,
+    EDIT_VAL_X = 140,
     -- info section, location of info section on main page
     INFO_Y = 210,
     INFO_DY = 20,
@@ -101,25 +113,35 @@ local function setupScreen()
         LAYOUT.page_N1 = 11
         LAYOUT.page_N = 2 * LAYOUT.page_N1
     elseif THEME.screenSize == 800480 then -- 800x480, TX16S MK3
-        LAYOUT.DY = 29
+        LAYOUT.DY = 27
         LAYOUT.CHAR_SCALE = 1.5
-        LAYOUT.page_N1 = 13
+        LAYOUT.page_N1 = 15
         LAYOUT.page_N = 2 * LAYOUT.page_N1
+        LAYOUT.MAIN_HDR_Y = 38
+        LAYOUT.MAIN_HDR_DY = 20
+        LAYOUT.MAIN_PARAM_Y = 150
+        LAYOUT.MAIN_PARAM_VAL_X = 185
+        LAYOUT.DOWNLOAD_CLR_X = 140
+        LAYOUT.DOWNLOAD_CLR_W = 100
+        LAYOUT.DOWNLOAD_CLR_H = 25
+        LAYOUT.DOWNLOAD_TXT_X = 150
+        LAYOUT.EDIT_X = 20
+        LAYOUT.EDIT_VAL_X = 215
         LAYOUT.COL2_OFS = 390
         LAYOUT.POPUP_X = 160
         LAYOUT.POPUP_W = 480
         LAYOUT.POPUP_Y = 130
         LAYOUT.WARN_X = 100
         LAYOUT.WARN_W = 600
-        LAYOUT.BUTTONS_Y = 310
+        LAYOUT.BUTTONS_Y = 260
         LAYOUT.EDIT_TX_X = 20
         LAYOUT.EDIT_RX_X = 150
         LAYOUT.SAVE_X = 285
         LAYOUT.RELOAD_X = 390
         LAYOUT.BIND_X = 525
         LAYOUT.TOOLS_X = 625
-        LAYOUT.INFO_Y = 370
-        LAYOUT.INFO_DY = 28
+        LAYOUT.INFO_Y = 320
+        LAYOUT.INFO_DY = 35
         LAYOUT.INFO_LEFT_X = 10
         LAYOUT.INFO_LEFT_VAL_X = 200
         LAYOUT.INFO_RIGHT_X = 410
@@ -1045,11 +1067,11 @@ local function drawPageEdit(page_str)
             local xofs = 0
             if shifted_idx >= LAYOUT.page_N1 then y = y - LAYOUT.page_N1 * LAYOUT.DY; xofs = LAYOUT.COL2_OFS end
 
-            lcd.drawText(10+xofs, y, name, THEME.textColor)
+            lcd.drawText(LAYOUT.EDIT_X+xofs, y, name, THEME.textColor)
             if p.typ < MBRIDGE_PARAM_TYPE.LIST then
-                lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))
+                lcd.drawText(LAYOUT.EDIT_VAL_X+xofs, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))
             elseif p.typ == MBRIDGE_PARAM_TYPE.LIST then
-                lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr_p(idx, pidx))
+                lcd.drawText(LAYOUT.EDIT_VAL_X+xofs, y, p.options[p.value+1], cur_attr_p(idx, pidx))
             end
         end
 
@@ -1199,24 +1221,24 @@ local function drawParamDownload()
     s = s..")"
     if isEdgeTx then -- with OpenTx TEXT_BGCOLOR doesn't seem to work correctly
         lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
-        lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
-    end    
-    lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
+        lcd.drawFilledRectangle(LAYOUT.W_HALF + LAYOUT.DOWNLOAD_CLR_X, y+LAYOUT.INFO_DY-5, LAYOUT.DOWNLOAD_CLR_W, LAYOUT.DOWNLOAD_CLR_H, CUSTOM_COLOR)
+    end
+    lcd.drawText(LAYOUT.W_HALF + LAYOUT.DOWNLOAD_TXT_X, y+LAYOUT.INFO_DY, s, THEME.textColor)
 end
 
 
 local function drawPageMain()
     lcd.setColor(CUSTOM_COLOR, RED)
 
-    local y = 35
+    local y = LAYOUT.MAIN_HDR_Y
     lcd.drawText(5, y, "Tx:", THEME.textColor)
     if DEVICE_ITEM_TX == nil then
         lcd.drawText(35, y, "---", THEME.textColor)
     else
         lcd.drawText(35, y, DEVICE_ITEM_TX.name, THEME.textColor+SMLSIZE)
-        lcd.drawText(35, y+16, DEVICE_ITEM_TX.version_str, THEME.textColor+SMLSIZE)
+        lcd.drawText(35, y+LAYOUT.MAIN_HDR_DY, DEVICE_ITEM_TX.version_str, THEME.textColor+SMLSIZE)
         if DEVICE_INFO ~= nil then
-            lcd.drawText(35, y+32, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), THEME.textColor+SMLSIZE)
+            lcd.drawText(35, y+2*LAYOUT.MAIN_HDR_DY, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), THEME.textColor+SMLSIZE)
         end
     end
 
@@ -1229,7 +1251,7 @@ local function drawPageMain()
         lcd.drawText(LAYOUT.W_HALF+30, y, "---", THEME.textColor)
     else
         lcd.drawText(LAYOUT.W_HALF+30, y, DEVICE_ITEM_RX.name, THEME.textColor+SMLSIZE)
-        lcd.drawText(LAYOUT.W_HALF+30, y+16, DEVICE_ITEM_RX.version_str, THEME.textColor+SMLSIZE)
+        lcd.drawText(LAYOUT.W_HALF+30, y+LAYOUT.MAIN_HDR_DY, DEVICE_ITEM_RX.version_str, THEME.textColor+SMLSIZE)
     end
 
     local version_error = false
@@ -1246,10 +1268,10 @@ local function drawPageMain()
         return
     end
 
-    y = 95 --90
+    y = LAYOUT.MAIN_PARAM_Y
     lcd.drawText(10, y, "Bind Phrase", THEME.textColor)
     if DEVICE_PARAM_LIST_complete then
-        local x = 140
+        local x = LAYOUT.MAIN_PARAM_VAL_X
         for i = 1,6 do
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
             local attr = cur_attr_x(0, i-1)
@@ -1257,7 +1279,7 @@ local function drawPageMain()
             --x = x + lcd.getTextWidth(c,1,attr)+1
             x = x + getCharWidth(c) + 1
             if i == 6 and DEVICE_PARAM_LIST[2].value == 0 then -- do only for 2.4GHz band
-                lcd.drawText(140 + 70, y, getExceptStrFromChar(c), THEME.textColor)
+                lcd.drawText(x + 5, y, getExceptStrFromChar(c), THEME.textColor)
             end
         end
     end
@@ -1266,7 +1288,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y+LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
+            lcd.drawText(LAYOUT.MAIN_PARAM_VAL_X, y+LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
         end
     end
 
@@ -1276,9 +1298,9 @@ local function drawPageMain()
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
             if p.value <= #freq_band_list then
-                lcd.drawText(140, y + 2*LAYOUT.DY, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(LAYOUT.MAIN_PARAM_VAL_X, y + 2*LAYOUT.DY, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
             else
-                lcd.drawText(140, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(LAYOUT.MAIN_PARAM_VAL_X, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
             end
         end
     end
