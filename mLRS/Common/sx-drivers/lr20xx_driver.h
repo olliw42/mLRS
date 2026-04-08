@@ -330,9 +330,22 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         SetRfPower_dbm(gconfig->Power_dbm);
 
-        SetDioFunction(LR20XX_DIO_7, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_DOWN);
-        SetDioIrqConfig(LR20XX_DIO_7, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
+        // DIO Setup
+        // IRQ is mandatory, other DIOs depend on the hardware design
+        // DIO 5 requires LR20XX_DIO_SLEEP_PULL_UP, so do for all
+
+        SetDioFunction(SX_DIO_IRQ_NO, LR20XX_DIO_FUNCTION_IRQ, LR20XX_DIO_SLEEP_PULL_UP);
+        SetDioIrqConfig(SX_DIO_IRQ_NO, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
         ClearIrq(LR20XX_IRQ_ALL);
+
+#ifdef SX_DIO_RFSW_NUM
+        const uint8_t lr_dio_rfsw[] = { SX_DIO_RFSW_DIOS };
+        const uint8_t lr_dio_rfsw_config[] = { SX_DIO_RFSW_CONFIGS };
+        for (uint8_t i = 0; i < SX_DIO_RFSW_NUM; i++) {
+            SetDioFunction(lr_dio_rfsw[i], LR20XX_DIO_FUNCTION_RF_SWITCH, LR20XX_DIO_SLEEP_PULL_UP);
+            SetDioRfSwitchConfig(lr_dio_rfsw[i], lr_dio_rfsw_config[i]);
+        }
+#endif
 
         SetFs();
     }
@@ -523,6 +536,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 #ifndef SX_RESET
   #error SX must have a RESET pin!
 #endif
+#ifndef SX_DIO_IRQ_NO
+  #error SX_DIO_IRQ_NO must be defined!
+#endif
 
 // map the irq bits
 typedef enum {
@@ -577,6 +593,8 @@ class Lr20xxDriver : public Lr20xxDriverCommon
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
         lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+#else
+        lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
     }
 
