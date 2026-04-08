@@ -8,6 +8,10 @@
 // Configuration defines:
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
 // #define SX_TCXO_VOLTAGE
+// #define SX_DIO_IRQ_NO
+// #define SX_DIO_RFSW_NUM
+// #define SX_DIO_RFSW_DIOS
+// #define SX_DIO_RFSW_CONFIGS
 //*******************************************************
 #ifndef LR20XX_DRIVER_H
 #define LR20XX_DRIVER_H
