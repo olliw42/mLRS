@@ -47,7 +47,7 @@ def generate_dsdl():
     #os.chdir(os.path.join(mLRSdirectory,'Common','mavlink'))
     
     os_system(
-        os.path.join('..','..','modules','dronecan','dronecan_dsdlc','dronecan_dsdlc.py')
+        sys.executable + ' ' + os.path.join('..','..','modules','dronecan','dronecan_dsdlc','dronecan_dsdlc.py')
         + ' -O ' + os.path.join(outdir)
         + ' ' + os.path.join('..','..','modules','dronecan','DSDL','dronecan')
         + ' ' + os.path.join('..','..','modules','dronecan','DSDL','uavcan')
