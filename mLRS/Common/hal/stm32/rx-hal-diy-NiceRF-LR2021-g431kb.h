@@ -81,6 +81,8 @@
 #define SX_DIO_EXTI_IRQHandler        EXTI4_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#define SX_USE_IRQ_DIO_NO             LR20XX_DIO_7
+
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
