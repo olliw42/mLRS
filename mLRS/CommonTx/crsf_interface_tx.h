@@ -338,20 +338,18 @@ void tTxCrsf::autobaud(void)
     if ((tnow_ms - autobaud_tlast_ms) > CRSF_AUTOBAUD_MS) {
         if (!autobaud_tlast_ms) { // this is the first occurrence, so skip
             autobaud_tlast_ms = tnow_ms;
-dbg.puts("X");dbg.putc(autobaud_cnt+'0');
             return;
         }
         autobaud_tlast_ms = tnow_ms;
+        autobaud_cycles_tmo_cnt--;
 
         INCc(autobaud_cnt, CRSF_AUTOBAUD_BAUDS_LEN);
         autobaud_valid_cnt = 0;
         pin5_tx_enable(); // disables isr
         uart_setbaudrate(txcrsf_bauds[autobaud_cnt]);
         pin5_rx_enable(); // enables isr
-dbg.puts("S");dbg.putc(autobaud_cnt+'0');
-
-        autobaud_cycles_tmo_cnt--;
     }
+
     if (!autobaud_cycles_tmo_cnt) autobaud_enabled = false; // disable, too many tries
     if (autobaud_valid_cnt > 5) autobaud_enabled = false; // disable, sufficiently many valid frames received
 }
