@@ -1190,6 +1190,7 @@ IF_CRSF(
             INCc(do_cnt, 3);
             break;
         case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
+        case TXCRSF_SEND_RADIO_TIMING_CORRECTION: crsf.SendRadioTimingCorrection(); break;
         }
     }
     if (crsf.CommandReceived(&crsfcmd)) {

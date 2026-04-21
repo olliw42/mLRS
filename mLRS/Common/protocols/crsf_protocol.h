@@ -82,8 +82,8 @@ typedef enum {
     CRSF_FRAME_ID_DEVICE_INFO           = 0x29,
     CRSF_FRAME_ID_REQUEST_SETTINGS      = 0x2A, // ??? not in TBS spec ???
     CRSF_FRAME_ID_PARAMETER_SETTINGS_ENTRY = 0x2B,
-    CRSF_FRAME_ID_PARAMETER_READ        = 0x2C,
-    CRSF_FRAME_ID_PARAMETER_WRITE       = 0x2D,
+    CRSF_FRAME_ID_PARAMETER_SETTINGS_READ  = 0x2C,
+    CRSF_FRAME_ID_PARAMETER_VALUE_WRITE    = 0x2D,
     CRSF_FRAME_ID_COMMAND               = 0x32,
     CRSF_FRAME_ID_RADIO                 = 0x3A,
 
@@ -103,12 +103,13 @@ typedef enum {
 } CRSF_FRAME_ID_ENUM;
 
 
+// SubType IDs for CRSF_FRAME_ID_COMMAND (0x32)
 typedef enum {
     CRSF_COMMAND_ID                     = 0x10, // 0x32.0x10 Crossfire
 } CRSF_COMMAND_ID_ENUM;
 
 
-// 0x32.0x10 Crossfire command options
+// 0x32.0x10 command options
 typedef enum {
     CRSF_COMMAND_SET_BIND_MODE          = 0x01, // command to enter bind mode
     CRSF_COMMAND_CANCEL_BIND_MODE       = 0x02, // command to cancel bind mode
@@ -118,7 +119,13 @@ typedef enum {
 } CRSF_COMMAND_ENUM;
 
 
-// SubType IDs for CRSF_FRAME_ID_AP_CUSTOM_TELEM
+// SubType IDs for CRSF_FRAME_ID_RADIO (0x3A)
+typedef enum {
+    CRSF_RADIO_TIMING_CORRECTION        = 0x10, // 0x3A.0x10 Timing Correction (CRSF Shot)
+} CRSF_RADIO_ENUM;
+
+
+// SubType IDs for CRSF_FRAME_ID_AP_CUSTOM_TELEM (0x80)
 typedef enum {
     CRSF_AP_CUSTOM_TELEM_TYPE_SINGLE_PACKET_PASSTHROUGH = 0xF0,
     CRSF_AP_CUSTOM_TELEM_TYPE_STATUS_TEXT = 0xF1,
@@ -328,6 +335,21 @@ typedef struct
 #define CRSF_DEVICE_INFO_FRAGMENT_LEN  14
 
 
+// 0x3A.0x10 Radio Timing Correction
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t dest_adress;
+    uint8_t src_adress;
+    uint8_t cmd_id;
+    uint32_t update_interval; // LSB = 100ns
+    int32_t offset; // LSB = 100ns, positive values = data came too early, negative = late.
+}) tCrsfRadioTimingCorrection;
+
+#define CRSF_RADIO_TIMING_CORRECTION_LEN  11
+
+
 //-- Telemetry data frames
 
 CRSF_PACKED(
@@ -403,11 +425,11 @@ typedef struct
     uint8_t src_adress;
     uint8_t cmd_id;
     uint8_t cmd;
-    uint8_t model_id;
+    uint8_t model_number;
     uint8_t crc8b;
-}) tCrsfCmdModelSelectId;
+}) tCrsfCmdModelSelection;
 
-#define CRSF_COMMAND_MODEL_SELECT_ID_LEN  8
+#define CRSF_COMMAND_MODEL_SELECTION_LEN  6
 
 
 //-- Passthrough payload frames

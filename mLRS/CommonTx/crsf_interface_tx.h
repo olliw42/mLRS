@@ -38,6 +38,7 @@ typedef enum {
     TXCRSF_SEND_LINK_STATISTICS_RX,
     TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
     TXCRSF_SEND_DEVICE_INFO,
+    TXCRSF_SEND_RADIO_TIMING_CORRECTION,
 } TXCRSF_SEND_ENUM;
 
 
@@ -69,6 +70,7 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
     void SendDeviceInfo(void);
+    void SendRadioTimingCorrection(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
@@ -98,6 +100,10 @@ class tTxCrsf : public tPin5BridgeBase
     volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
+
+    // auxiliary CRSF communication handling
+
+    uint32_t radio_timing_correction_send_tlast_ms;
 
     // CRSF telemetry
 
@@ -331,6 +337,8 @@ void tTxCrsf::Init(bool enable_flag)
     cmd_bind_set_received = false;
     cmd_bind_cancel_received = false;
 
+    radio_timing_correction_send_tlast_ms = 0;
+
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
     battery_updated = false;
@@ -427,6 +435,14 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
     if (ping_device_received) {
         ping_device_received = false;
         *task = TXCRSF_SEND_DEVICE_INFO;
+        return true;
+    }
+
+    // send radio timing correction every second
+    uint32_t tnow_ms = millis32();
+    if (tnow_ms - radio_timing_correction_send_tlast_ms >= 1000) {
+        radio_timing_correction_send_tlast_ms = tnow_ms;
+        *task = TXCRSF_SEND_RADIO_TIMING_CORRECTION;
         return true;
     }
 
@@ -1062,6 +1078,20 @@ char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of sp
 }
 
 
+void tTxCrsf::SendRadioTimingCorrection(void)
+{
+tCrsfRadioTimingCorrection p;
+
+    p.dest_adress = CRSF_ADDRESS_RADIO;
+    p.src_adress = CRSF_ADDRESS_TRANSMITTER_MODULE;
+    p.cmd_id = CRSF_RADIO_TIMING_CORRECTION;
+    p.update_interval = CRSF_REV_U32((uint32_t)40000); // 4 ms = 250 Hz, in 10ths of us or 100 ns
+    p.offset = 0;
+
+    send_frame(CRSF_FRAME_ID_RADIO, &p, CRSF_RADIO_TIMING_CORRECTION_LEN);
+}
+
+
 #else
 
 class tTxCrsfDummy
@@ -1079,6 +1109,7 @@ class tTxCrsfDummy
     void SendLinkStatisticsTx(void) {}
     void SendLinkStatisticsRx(void) {}
     void SendDevideInfo(void) {}
+    void SendRadioTimingCorrection(void) {}
 
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
