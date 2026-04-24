@@ -345,7 +345,7 @@ void tTxCrsf::autobaud(void)
 
         INCc(autobaud_cnt, CRSF_AUTOBAUD_BAUDS_LEN);
         autobaud_valid_cnt = 0;
-        pin5_set_protocol(txcrsf_bauds[autobaud_cnt], -1); // -1: don't change polarity
+        pin5_set_protocol(txcrsf_bauds[autobaud_cnt]);
     }
 
     if (!autobaud_cycles_tmo_cnt) autobaud_enabled = false; // disable, too many tries

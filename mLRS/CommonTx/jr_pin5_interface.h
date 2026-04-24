@@ -113,7 +113,7 @@ class tPin5BridgeBase
     void pin5_init(void);
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
-    void pin5_set_protocol(uint32_t baudrate, uint8_t polarity);
+    void pin5_set_protocol(uint32_t baudrate);
 
     // for in-isr processing
     void pin5_tx_enable(void);
@@ -268,7 +268,7 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
-void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, uint8_t polarity)
+void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate)
 {
     uart_rx_enableisr(DISABLE); // pin5_tx_enable(); // disables isr
     uart_setbaudrate(baudrate);
