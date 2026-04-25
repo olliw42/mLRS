@@ -50,6 +50,11 @@ typedef enum {
 } TXCRSF_CMD_ENUM;
 
 
+#define CRSF_AUTOBAUD_MS  50
+#define CRSF_AUTOBAUD_BAUDS_LEN  3
+static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 };
+
+
 class tTxCrsf : public tPin5BridgeBase
 {
   public:
@@ -100,6 +105,14 @@ class tTxCrsf : public tPin5BridgeBase
     volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
+
+    // autobaud handling
+    bool autobaud_enabled;
+    uint32_t autobaud_tlast_ms;
+    uint8_t autobaud_cycles_tmo_cnt;
+    uint8_t autobaud_cnt;
+    volatile uint8_t autobaud_valid_cnt;
+    void autobaud(void);
 
     // CRSF telemetry
 
@@ -269,6 +282,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             cmd_received = true;
         }
         state = STATE_TRANSMIT_START;
+        autobaud_valid_cnt++;
         break;
     }
 }
@@ -316,6 +330,32 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 
 
 //-------------------------------------------------------
+// autobaud handling
+
+void tTxCrsf::autobaud(void)
+{
+    if (!autobaud_enabled) return;
+
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - autobaud_tlast_ms) > CRSF_AUTOBAUD_MS) {
+        if (!autobaud_tlast_ms) { // this is the first occurrence, so skip
+            autobaud_tlast_ms = tnow_ms;
+            return;
+        }
+        autobaud_tlast_ms = tnow_ms;
+        autobaud_cycles_tmo_cnt--;
+
+        INCc(autobaud_cnt, CRSF_AUTOBAUD_BAUDS_LEN);
+        autobaud_valid_cnt = 0;
+        pin5_set_protocol(txcrsf_bauds[autobaud_cnt]);
+    }
+
+    if (!autobaud_cycles_tmo_cnt) autobaud_enabled = false; // disable, too many tries
+    if (autobaud_valid_cnt > 5) autobaud_enabled = false; // disable, sufficiently many valid frames received
+}
+
+
+//-------------------------------------------------------
 // CRSF user interface
 
 void tTxCrsf::Init(bool enable_flag)
@@ -324,8 +364,15 @@ void tTxCrsf::Init(bool enable_flag)
 
     if (!enabled) return;
 
+    autobaud_enabled = true; // start with doing autobaud
+    autobaud_tlast_ms = 0;
+    autobaud_cycles_tmo_cnt = 20;
+    autobaud_cnt = 0;
+    autobaud_valid_cnt = 0;
+
     tx_available = 0;
     tx_free = false;
+
     channels_received = false;
     cmd_received = false;
     ping_device_received = false;
@@ -371,6 +418,9 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     if (!enabled) return false;
 
     CheckAndRescue();
+
+    // hook into here and do autobaud
+    autobaud();
 
     if (!channels_received) return false;
     channels_received = false;
