@@ -588,6 +588,9 @@ void tTxCrsf::SendTelemetryFrame(void)
     if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
     if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
     if (baro_altitude_send_tlast_ms && (tnow_ms - baro_altitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
+    if (airspeed_send_tlast_ms && (tnow_ms - airspeed_send_tlast_ms) > CRSF_REFRESH_TIME_MS) airspeed_updated = true;
+    if (temp_ambient_send_tlast_ms && (tnow_ms - temp_ambient_send_tlast_ms) > CRSF_REFRESH_TIME_MS) temp_ambient_updated = true;
+    if (barometer_send_tlast_ms && (tnow_ms - barometer_send_tlast_ms) > CRSF_REFRESH_TIME_MS) barometer_updated = true;
 
     // one by one, order by desired priority
     // would be nice to have something smarter, at least round robin
