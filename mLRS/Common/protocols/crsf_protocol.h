@@ -70,6 +70,9 @@ typedef enum {
     CRSF_FRAME_ID_VARIO                 = 0x07,
     CRSF_FRAME_ID_BATTERY               = 0x08,
     CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
+    CRSF_FRAME_ID_AIRSPEED              = 0x0A,
+    CRSF_FRAME_ID_TEMP                  = 0x0D,
+    CRSF_FRAME_ID_BAROMETER             = 0x11,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
     CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
@@ -398,7 +401,7 @@ typedef struct
     char flight_mode[16]; // null-terminated string   // OpenTx -> "FM"
 }) tCrsfFlightMode;
 
-#define CRSF_FLIGHTMODE_LEN  16
+#define CRSF_FLIGHT_MODE_LEN  16
 
 
 CRSF_PACKED(
@@ -408,6 +411,35 @@ typedef struct
 }) tCrsfBaroAltitude;
 
 #define CRSF_BARO_ALTITUDE_LEN  2
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint16_t speed; // Airspeed in 0.1 * km/h (hectometers/h)    // EdgeTx -> "ASPD" ???
+}) tCrsfAirspeed;
+
+#define CRSF_AIRSPEED_LEN  2
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t temp_source_id; // Identifies the source of the temperature data (e.g., 0 = FC including all ESCs, 1 = Ambient, etc.)
+    int16_t temperature; // up to 20 temperature values in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+}) tCrsfTemp;
+
+#define CRSF_TEMP_LEN  3
+
+
+CRSF_PACKED(
+typedef struct
+{
+    int32_t pressure_pa; // Pascals
+    int32_t baro_temp; // centidegrees
+}) tCrsfBarometer;
+
+#define CRSF_BAROMETER_LEN  8
 
 
 //-- Command payload frames
