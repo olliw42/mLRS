@@ -655,15 +655,14 @@ void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
 
     time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
     struct tm* time_info = gmtime(&time_unix); // UTC
-    time_info = gmtime(&time_unix);
 
-    gps_time.year = time_info->tm_year;           // EdgeTx since v2.??.?=? -> "GPS" ????
-    gps_time.month = time_info->tm_mon;
-    gps_time.day = time_info->tm_wday;
+    gps_time.year = CRSF_REV_U16(time_info->tm_year + 1900);    // EdgeTx since v2.12.?=? -> Date
+    gps_time.month = time_info->tm_mon + 1;
+    gps_time.day = time_info->tm_mday;
     gps_time.hour = time_info->tm_hour;
     gps_time.minute = time_info->tm_min;
     gps_time.second = time_info->tm_sec;
-    gps_time.millisecond = (payload->time_unix_usec % 1000000) / 1000;
+    gps_time.millisecond = CRSF_REV_U16((payload->time_unix_usec % 1000000) / 1000);
 
     gps_time_updated = true;
 }
