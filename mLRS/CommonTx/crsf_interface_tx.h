@@ -17,6 +17,7 @@
 #ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
+#include "time.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include "../Common/protocols/passthrough_protocol.h"
@@ -109,6 +110,10 @@ class tTxCrsf : public tPin5BridgeBase
     bool flightmode_updated;
     uint32_t flightmode_send_tlast_ms;
 
+    tCrsfGpsTime gps_time; // collected from SYSTEM_TIME
+    bool gps_time_updated;
+    uint32_t gps_time_send_tlast_ms;
+
     tCrsfBattery battery; // collected from BATTERY_STATUS
     bool battery_updated;
     uint32_t battery_send_tlast_ms;
@@ -135,6 +140,7 @@ class tTxCrsf : public tPin5BridgeBase
     // MAVLink handlers
 
     void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);
+    void handle_mavlink_msg_system_time(fmav_system_time_t* const payload);
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);
     void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);
     void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);
@@ -338,6 +344,8 @@ void tTxCrsf::Init(bool enable_flag)
 
     flightmode_updated = false;
     flightmode_send_tlast_ms = 0;
+    gps_time_updated = false;
+    gps_time_send_tlast_ms = 0;
     battery_updated = false;
     battery_send_tlast_ms = 0;
     attitude_updated = false;
@@ -545,22 +553,20 @@ void tTxCrsf::SendTelemetryFrame(void)
 
     // auto update to prevent OTX telemetry/sensor lost message, do only if at least once seen
     if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
+    if (gps_time_send_tlast_ms && (tnow_ms - gps_time_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_time_updated = true;
     if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
     if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
     if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
     if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
     if (baro_send_tlast_ms && (tnow_ms - baro_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
 
+    // one by one, order by desired priority
+    // would be nice to have something smarter, at least round robin
+
     if (flightmode_updated) {
         flightmode_updated = false;
         flightmode_send_tlast_ms = tnow_ms;
         send_frame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
-        return; // only send one per slot
-    }
-    if (battery_updated) {
-        battery_updated = false;
-        battery_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
         return; // only send one per slot
     }
     if (gps_updated) {
@@ -569,22 +575,34 @@ void tTxCrsf::SendTelemetryFrame(void)
         send_frame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
         return; // only send one per slot
     }
-    if (vario_updated) {
-        vario_updated = false;
-        vario_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
-        return; // only send one per slot
-    }
     if (attitude_updated) {
         attitude_updated = false;
         attitude_send_tlast_ms = tnow_ms;
         send_frame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
         return; // only send one per slot
     }
+    if (vario_updated) {
+        vario_updated = false;
+        vario_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
+        return; // only send one per slot
+    }
     if (baro_altitude_updated) {
         baro_altitude_updated = false;
         baro_send_tlast_ms = tnow_ms;
         send_frame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
+        return; // only send one per slot
+    }
+    if (battery_updated) {
+        battery_updated = false;
+        battery_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
+        return; // only send one per slot
+    }
+    if (gps_time_updated) {
+        gps_time_updated = false;
+        gps_time_send_tlast_ms = tnow_ms;
+        send_frame(CRSF_FRAME_ID_GPS_TIME, &gps_time, CRSF_GPS_TIME_LEN);
         return; // only send one per slot
     }
 
@@ -627,6 +645,27 @@ void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload)
     }
 
     flightmode_updated = true;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
+{
+    // SYSTEM_TIME.time_unix_usec is != 0 if AP::rtc() gives a value, so not GPS time strictly
+    if (payload->time_unix_usec == 0) return; // not available
+
+    time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
+    struct tm* time_info = gmtime(&time_unix); // UTC
+    time_info = gmtime(&time_unix);
+
+    gps_time.year = time_info->tm_year;           // EdgeTx since v2.??.?=? -> "GPS" ????
+    gps_time.month = time_info->tm_mon;
+    gps_time.day = time_info->tm_wday;
+    gps_time.hour = time_info->tm_hour;
+    gps_time.minute = time_info->tm_min;
+    gps_time.second = time_info->tm_sec;
+    gps_time.millisecond = (payload->time_unix_usec % 1000000) / 1000;
+
+    gps_time_updated = true;
 }
 
 
@@ -743,6 +782,12 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         fmav_msg_heartbeat_decode(&payload, msg);
         handle_mavlink_msg_heartbeat(&payload);
         passthrough.handle_mavlink_msg_heartbeat(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_SYSTEM_TIME: { // not used by passthrough
+        fmav_system_time_t payload;
+        fmav_msg_system_time_decode(&payload, msg);
+        handle_mavlink_msg_system_time(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {

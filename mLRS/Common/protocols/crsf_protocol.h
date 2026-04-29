@@ -66,6 +66,7 @@ typedef enum {
 typedef enum {
     // normal frames
     CRSF_FRAME_ID_GPS                   = 0x02,
+    CRSF_FRAME_ID_GPS_TIME              = 0x03,
     CRSF_FRAME_ID_VARIO                 = 0x07,
     CRSF_FRAME_ID_BATTERY               = 0x08,
     CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
@@ -342,6 +343,21 @@ typedef struct
 }) tCrsfGps;
 
 #define CRSF_GPS_LEN  15
+
+
+CRSF_PACKED(
+typedef struct
+{
+    int16_t year;           // EdgeTx since v2.??.?=? -> "GPS" ????
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+    uint16_t millisecond;
+}) tCrsfGpsTime;
+
+#define CRSF_GPS_TIME_LEN  9
 
 
 CRSF_PACKED(
