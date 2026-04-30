@@ -114,6 +114,12 @@ local function setupColors()
         THEME.titleBgColor = COLOR_THEME_SECONDARY1
         THEME.menuTitleColor = COLOR_THEME_PRIMARY2
         THEME.textDisableColor = COLOR_THEME_DISABLED
+    elseif (osname == 'EdgeTXqw') then -- RM AX12
+        THEME.textColor = BLACK
+        THEME.textBgColor = BLACK
+        THEME.titleBgColor = BLACK
+        THEME.menuTitleColor = WHITE
+        THEME.textDisableColor = LIGHTGREY
     else
         THEME.textColor = TEXT_COLOR
         THEME.textBgColor = TEXT_BGCOLOR -- doesn't work in OTX !!
@@ -238,9 +244,20 @@ local MBRIDGE_PARAM_TYPE = {
 local function mbridgeCmdLen(cmd)
     return MBRIDGE_CMD_LEN[cmd] or 0 -- short for: if MBRIDGE_CMD_LEN[cmd] ~= nil then return MBRIDGE_CMD_LEN[cmd] else return 0 end
 end
-
+local is_available = false -- Workaround for AX12
 local function crsfIsConnected()
-    if getRSSI() ~= 0 then return true end
+
+    local ver, radio, maj, minor, rev, osname = getVersion()
+
+    if osname ~= 'EdgeTXqw' and getRSSI() ~= 0 then
+        return true
+    end
+
+    -- TODO. Substitute for getRSSI on AX12.  Needs reload to discover receiver (dis)connect
+    if osname == 'EdgeTXqw' and is_available then
+       return true
+    end
+
     return false
 end
 
@@ -640,6 +657,7 @@ local function doParamLoop()
             DEVICE_INFO.tx_power_dbm = mb_to_i8(cmd.payload, 3)
             DEVICE_INFO.rx_power_dbm = mb_to_i8(cmd.payload, 4)
             DEVICE_INFO.rx_available = mb_to_u8_bits(cmd.payload, 5, 0, 0x1)
+            is_available = DEVICE_INFO.rx_available == 1
             DEVICE_INFO.tx_config_id = mb_to_u8(cmd.payload, 6)
             DEVICE_INFO.tx_diversity = mb_to_u8_bits(cmd.payload, 7, 0, 0x0F)
             DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
@@ -1136,6 +1154,7 @@ end
 ----------------------------------------------------------------------
 
 local isEdgeTx = false
+local isAX12 = false
 local isFirstParamDownload = true
 local FirstParamDownloadTmo_10ms = 0
 
@@ -1453,7 +1472,7 @@ local function Do(event)
     -- OpenTx: must display
     -- EdgeTx: don't display everything in param upload, EdgeTx is super slow
     -- 20.3.2026: hm, seems to work fine now
-    if isEdgeTx and DEVICE_DOWNLOAD_is_running then
+    if (isEdgeTx or isAX12) and DEVICE_DOWNLOAD_is_running then
         if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
             if getTime() > FirstParamDownloadTmo_10ms then
                 local attr = RED+CENTER
@@ -1491,6 +1510,7 @@ end
 local function scriptInit()
     local ver, radio, maj, minor, rev, osname = getVersion()
     isEdgeTx = (osname == 'EdgeTX')
+    isAX12 = (osname == 'EdgeTXqw')
 
     setupScreen()
     setupColors()
@@ -1500,8 +1520,11 @@ local function scriptInit()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     isFirstParamDownload = true
-    FirstParamDownloadTmo_10ms = tnow_10ms + 500 --- drop a warning after 5 secs
-    
+    if isAX12 then
+        FirstParamDownloadTmo_10ms = tnow_10ms + 800 --- drop a warning after 8 secs
+    else
+        FirstParamDownloadTmo_10ms = tnow_10ms + 500 -- drop a warning after 5 secs
+    end
     if tnow_10ms < 300 then
         DEVICE_SAVE_t_last = 300 - tnow_10ms -- treat script start like a Save
     else
