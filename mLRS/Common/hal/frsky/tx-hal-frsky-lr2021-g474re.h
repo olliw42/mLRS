@@ -97,6 +97,7 @@
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
+#define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
 
 void sx_init_gpio(void)
 {
@@ -152,7 +153,7 @@ void sx_dio_exti_isr_clearflag(void)
 
 //-- Button
 
-#define BUTTON                    IO_PB3
+#define BUTTON                    IO_PB3 // left: PB3, right: PD2
 
 void button_init(void)
 {
@@ -161,7 +162,7 @@ void button_init(void)
 
 bool button_pressed(void)
 {
-    return gpio_read_activehigh(BUTTON);
+    return gpio_read_activelow(BUTTON);
 }
 
 
