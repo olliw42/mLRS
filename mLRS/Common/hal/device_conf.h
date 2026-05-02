@@ -104,7 +104,19 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
-//-- FrsKy R9 system
+//-- FrSky LR2021 system
+
+#ifdef TX_FRSKY_LR2021_G474RE
+  #define DEVICE_NAME "Frsky LR2021"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_LR20xx
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
+
+//-- FrSky R9 system
 
 #ifdef RX_R9MX_868_L433CB
   #define DEVICE_NAME "Frsky R9MX"

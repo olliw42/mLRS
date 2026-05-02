@@ -135,7 +135,14 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-//-- FrsKy R9 system
+//-- FrSky LR2021 system
+
+#ifdef TX_FRSKY_LR2021_G474RE
+#include "frsky/tx-hal-frsky-lr2021-g474re.h"
+#endif
+
+
+//-- FrSky R9 system
 
 #ifdef RX_R9MX_868_L433CB
 #include "stm32/rx-hal-R9MX-868-l433cb.h"
