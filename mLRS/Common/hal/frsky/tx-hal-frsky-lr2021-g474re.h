@@ -99,16 +99,16 @@
 #if 0
 // left RF chain, as seen from top
 // 2.4 GHz chain
-//    PAEN1     DIO11
-//    VDET1     PA0
-//    RF1_C0    PC15
+//    PAEN1     DIO11   likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    VDET1     PA0     likely: Analog output from the internal RF power detector
+//    RF1_C0    PC15    likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
 //    RF1_C1    PC14
 // 900 MHz chain
 //    900_CSD1  DIO10
 //    900_CPS1  DIO8
 //    900_CTX1  DIO7
 // switch
-//    VC1       DIO5
+//    VC1       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
@@ -129,17 +129,17 @@
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 #else
 // right RF chain, as seen from top
-// 2.4 GHz chain
-//    PAEN2     DIO11
-//    VDET2     PB3
-//    RF2_C0    PB9
+// 2.4 GHz chain (RF2 switch branch)
+//    PAEN2     DIO11 likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    VDET2     PB3   likely: Analog output from the internal RF power detector
+//    RF2_C0    PB9   likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
 //    RF2_C1    PB4
-// 900 MHz chain
+// 900 MHz chain (RF1 switch branch)
 //    900_CSD2  DIO10
 //    900_CPS2  DIO8
 //    900_CTX2  DIO7
 // switch
-//    VC2       DIO5
+//    VC2       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPI_USE_SPI2              // PB13, PB14, PB15
 #define SPI_CS_IO                 IO_PB12
@@ -162,21 +162,31 @@
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
 #define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
-/*
+
+/*            low band    high band
+              Tx  Rx      Tx  Rx
+VC    DIO5    1   1       0   0
+CPS   DIO8    x   1       0   0
+CSD   DIO10   1   1       0   0
+CTX   DIO7    1   0       0   0
+PAEN  DIO11   0   0       1   0
+C0    PB9     0   0       0   1
+C1    PB4     0   0       1   0 */
+
 #define SX_USE_RFSW_DIO_NOS       { LR20XX_DIO_5, LR20XX_DIO_7, LR20XX_DIO_8, LR20XX_DIO_10, LR20XX_DIO_11 }
-#define SX_USE_RFSW_DIO_CONFIGS   { LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF, \
+#define SX_USE_RFSW_DIO_CONFIGS   { LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF, \
                                     LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF, \
-                                    LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF | LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF, \
+                                    LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF, \
+                                    LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF, \
                                     LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }
-*/
 
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
     gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-//??    gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-//??    gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_C0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_C1, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_busy_read(void)
@@ -186,10 +196,16 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
+    // TODO: only do in 2.4GHz band
+//    gpio_high(SX_C1); doing this makes it hang up at startup
+    gpio_low(SX_C0);
 }
 
 void sx_amp_receive(void)
 {
+    // TODO: only do in 2.4GHz band
+    gpio_high(SX_C0);
+    gpio_low(SX_C1);
 }
 
 void sx_dio_init_exti_isroff(void)
