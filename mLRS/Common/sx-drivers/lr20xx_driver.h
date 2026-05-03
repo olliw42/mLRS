@@ -341,7 +341,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         SetDioIrqConfig(SX_USE_IRQ_DIO_NO, LR20XX_IRQ_TX_DONE | LR20XX_IRQ_RX_DONE | LR20XX_IRQ_TIMEOUT);
         ClearIrq(LR20XX_IRQ_ALL);
 
-#ifdef SX_USE_RFSW_DIO_NOS
+#ifdef SX_USE_RFSW_DIO_NOS // keep it for the moment
+        #warning Do not use SX_USE_RFSW_DIO_NOS anymore, replaced by SX_USE_RFSW_DIO_CONFIG!
         const uint8_t lr_dio_rfsw[] = SX_USE_RFSW_DIO_NOS;
         const uint8_t lr_dio_rfsw_config[] = SX_USE_RFSW_DIO_CONFIGS;
         for (uint8_t i = 0; i < sizeof(lr_dio_rfsw)/sizeof(lr_dio_rfsw[0]); i++) {
