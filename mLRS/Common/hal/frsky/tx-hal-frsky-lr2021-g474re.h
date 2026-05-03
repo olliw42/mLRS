@@ -15,13 +15,30 @@
 //-------------------------------------------------------
 // TX FRSKY LR2021 STM32G474RE
 //-------------------------------------------------------
+// com:     USB
+// serial:  UART2, PA2 PA3,   JST-GH connector, Vcc,Gnd,Tx,Rx
+// serial2: UART3, PB10 PB11, wired to ESP32
+// dbg:     UART1, PA9 PA10,  wired to JR pin header, 4 = Rx, 6 = Tx, 7 = Gnd
+// jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
+
+// BUTTONs  left: PB3, right: PD2
+// LEDs     left,red: PC9, right,blue: ESP32??, bottom two: PA15, are these PWM LEDs?
+
+// OLed:    I2C1, PA15, PB7, it seems that also PC11 goes to the OLEd ???
+// Fiveway: ADC12 IN8, PC2,  is the fiveway soldered in swapped?
+
+// CAN:     FDCAN2, PB5,PB6
+
+// ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
+
+// VT (main voltage detect):  PC1
 
 //#define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 //#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 //#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_COM_ON_USB
-#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 
 
@@ -43,7 +60,8 @@
 // UARTE = in port, SBus or whatever
 // UARTF = debug port
 
-#define UARTB_USE_UART2_PA2PA3 // serial
+//XX #define UARTB_USE_UART2_PA2PA3 // serial
+    #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -69,7 +87,8 @@
 #define UARTD_USE_RX
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTF_USE_UART1_PA9PA10 // debug
+//XX #define UARTF_USE_UART1_PA9PA10 // debug
+     #define UARTF_USE_UART2_PA2PA3 // misuse serial as debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
@@ -77,7 +96,8 @@
 
 
 //-- SX1262 & SPI
-
+#if 1
+// left RF chain, as seen from top
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
@@ -85,9 +105,9 @@
 
 #define SX_RESET                  IO_PC7
 #define SX_DIO1                   IO_PC4
-#define SX_BUSY                   IO_PC12
-#define SX_C0                     IO_PC15
-#define SX_C1                     IO_PC14
+#define SX_BUSY                   IO_PA1
+#define SX_C0                     IO_PC15 //?
+#define SX_C1                     IO_PC14 //?
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
 #define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE4
@@ -95,6 +115,26 @@
 #define SX_DIO_EXTI_IRQn             EXTI4_IRQn
 #define SX_DIO_EXTI_IRQHandler       EXTI4_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
+#else
+// right RF chain, as seen from top
+#define SPI_USE_SPI2              // PB13, PB14, PB15
+#define SPI_CS_IO                 IO_PB12
+#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+#define SPI_USE_CLOCKSPEED_9MHZ
+
+#define SX_RESET                  IO_PC6
+#define SX_DIO1                   IO_PC5
+#define SX_BUSY                   IO_PC12
+#define SX_C0                     IO_PB5 //?
+#define SX_C1                     IO_PB4 //?
+
+#define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
+#define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE5
+#define SX_DIO_EXTI_LINE_x           LL_EXTI_LINE_5
+#define SX_DIO_EXTI_IRQn             EXTI9_5_IRQn
+#define SX_DIO_EXTI_IRQHandler       EXTI9_5_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY    11
+#endif
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
 #define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
@@ -168,22 +208,22 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PA15
+#define LED_GREEN                 IO_PA0 //??? // is this a PWM LED?
 #define LED_RED                   IO_PC9
 
 
 void leds_init(void)
 {
-    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
 }
 
-void led_green_off(void) { gpio_low(LED_GREEN); }
-void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_off(void) { gpio_high(LED_GREEN); }
+void led_green_on(void) { gpio_low(LED_GREEN); }
 void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 
-void led_red_off(void) { gpio_low(LED_RED); }
-void led_red_on(void) { gpio_high(LED_RED); }
+void led_red_off(void) { gpio_high(LED_RED); }
+void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
@@ -191,7 +231,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #if 0
 #define DEVICE_HAS_FAN_ONOFF
 
-#define FAN_IO                    IO_PB7
+#define FAN_IO                    IO_PA8 // IO_PB0
 
 void fan_init(void)
 {
@@ -250,9 +290,12 @@ uint8_t fiveway_read(void)
 
 //-- Display I2C
 
-#define I2C_USE_I2C1              // PB6, PB7
+#define I2C_USE_I2C1              // PA15, PB7
 #define I2C_CLOCKSPEED_400KHZ
 #define I2C_USE_DMAMODE
+
+#define I2C_USE_SCL_IO            IO_PA15
+#define I2C_USE_SDA_IO            IO_PB7
 
 
 //-- ESP32 Wifi Bridge
