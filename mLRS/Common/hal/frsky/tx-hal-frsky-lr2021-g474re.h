@@ -173,11 +173,11 @@ PAEN  DIO11   0   0       1   0
 C0    PB9     0   0       0   1
 C1    PB4     0   0       1   0 */
 
-#define SX_USE_RFSW_DIO_CONFIG    {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                   {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
-                                   {LR20XX_DIO_8, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                   {LR20XX_DIO_10, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                   {LR20XX_DIO_11, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }}
+#define SX_USE_RFSW_DIO_CONFIG  {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
+                                 {LR20XX_DIO_8, LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_10, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_11, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }}
 
 void sx_init_gpio(void)
 {
@@ -196,15 +196,15 @@ bool sx_busy_read(void)
 void sx_amp_transmit(void)
 {
     // TODO: only do in 2.4GHz band
-//    gpio_high(SX_C1); //doing this makes it hang up at startup
     gpio_low(SX_C0);
+    gpio_high(SX_C1);
 }
 
 void sx_amp_receive(void)
 {
     // TODO: only do in 2.4GHz band
-    gpio_high(SX_C0);
     gpio_low(SX_C1);
+    gpio_high(SX_C0);
 }
 
 void sx_dio_init_exti_isroff(void)
@@ -366,7 +366,7 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_GAIN_DBM            31 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
