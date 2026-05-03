@@ -275,22 +275,62 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- Cooling Fan
 
-#define DEVICE_HAS_FAN_ONOFF
+#define DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
 
 #define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
+
+#define FAN_TSENSOR_ADCx          ADC2
+#define FAN_TSENSOR_ADC_IO        IO_PC0 // ADC12_IN6
+#define FAN_TSENSOR_ADC_CHANNELx  LL_ADC_CHANNEL_6
+
+extern "C" { void delay_us(uint32_t us); }
 
 void fan_init(void)
 {
     gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // high = on
+
+    adc_init_begin(FAN_TSENSOR_ADCx);
+    adc_init_one_channel(FAN_TSENSOR_ADCx);
+    adc_config_channel(FAN_TSENSOR_ADCx, LL_ADC_REG_RANK_1, FAN_TSENSOR_ADC_CHANNELx, FAN_TSENSOR_ADC_IO);
+    adc_enable(FAN_TSENSOR_ADCx);
+    delay_us(100);
+    adc_start_conversion(FAN_TSENSOR_ADCx);
 }
 
-void fan_set_power(int8_t power_dbm)
+int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
 {
-/*    if (power_dbm >= POWER_24_DBM) {
-        gpio_high(FAN_IO);
-    } else {
-        gpio_low(FAN_IO);
-    } */
+    uint16_t adc = LL_ADC_REG_ReadConversionData12(FAN_TSENSOR_ADCx);
+
+    // SDNT1608X104F3950: 25 °C = 100 kOhm, B constant (B25/50) = 3950 K
+    // R = 100 kOhm
+    // => 25 °C = 2048
+    static const uint16_t ntc_adc_table[9] = {
+    //  0.0,  12.5, 25.0, 37.5, 50.0, 62.5, 75.0, 87.5, 100.0 °C
+        3156, 2745, 2048, 1470, 1055,  760,  560,  420, 320
+    };
+    if (adc >= ntc_adc_table[0]) return 0; // 0 °C
+    if (adc <= ntc_adc_table[8]) return 1000; // 100 °C
+    for (uint8_t i = 0; i < 8 - 1; i++) {
+        uint16_t a1 = ntc_adc_table[i];
+        uint16_t a2 = ntc_adc_table[i + 1];
+        if (adc <= a1 && adc > a2) { // is in slot
+            // t = t1 + (adc - a1)*(t2 - t1)/(a2 - a1)
+            int32_t t1 = i * 125;
+            int32_t num = (int32_t)(adc - a1) * 125;
+            return t1 + num / (a2 - a1);
+        }
+    }
+    return 2000; // error
+}
+
+void fan_on(void)
+{
+    gpio_high(FAN_IO);
+}
+
+void fan_off(void)
+{
+    gpio_low(FAN_IO);
 }
 
 
