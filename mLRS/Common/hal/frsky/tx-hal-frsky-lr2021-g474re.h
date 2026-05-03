@@ -131,7 +131,7 @@
 // right RF chain, as seen from top
 // 2.4 GHz chain (RF2 switch branch)
 //    PAEN2     DIO11 likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    VDET2     PB3   likely: Analog output from the internal RF power detector
+//    VDET2     PC3   likely: Analog output from the internal RF power detector
 //    RF2_C0    PB9   likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
 //    RF2_C1    PB4
 // 900 MHz chain (RF1 switch branch)
