@@ -22,7 +22,7 @@
 // jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
 // BUTTONs  left: PB3, right: PD2
-// LEDs     left,red: PC9, right,blue: ESP32??, bottom two: PA15, are these PWM LEDs?
+// LEDs     left,red: PC9, right,blue: PC13, bottom two: PC8, are these PWM LEDs?
 
 // OLed:    I2C1, PA15, PB7, it seems that also PC11 goes to the OLEd ???
 // Fiveway: ADC12 IN8, PC2,  is the fiveway soldered in swapped?
@@ -96,8 +96,20 @@
 
 
 //-- SX1262 & SPI
-#if 1
+#if 0
 // left RF chain, as seen from top
+// 2.4 GHz chain
+//    PAEN1     DIO11
+//    VDET1     PA0
+//    RF1_C0    PC15
+//    RF1_C1    PC14
+// 900 MHz chain
+//    900_CSD1  DIO10
+//    900_CPS1  DIO8
+//    900_CTX1  DIO7
+// switch
+//    VC1       DIO5
+
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
@@ -106,8 +118,8 @@
 #define SX_RESET                  IO_PC7
 #define SX_DIO1                   IO_PC4
 #define SX_BUSY                   IO_PA1
-#define SX_C0                     IO_PC15 //?
-#define SX_C1                     IO_PC14 //?
+#define SX_C0                     IO_PC15
+#define SX_C1                     IO_PC14
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
 #define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE4
@@ -117,6 +129,18 @@
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 #else
 // right RF chain, as seen from top
+// 2.4 GHz chain
+//    PAEN2     DIO11
+//    VDET2     PB3
+//    RF2_C0    PB9
+//    RF2_C1    PB4
+// 900 MHz chain
+//    900_CSD2  DIO10
+//    900_CPS2  DIO8
+//    900_CTX2  DIO7
+// switch
+//    VC2       DIO5
+
 #define SPI_USE_SPI2              // PB13, PB14, PB15
 #define SPI_CS_IO                 IO_PB12
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
@@ -125,8 +149,8 @@
 #define SX_RESET                  IO_PC6
 #define SX_DIO1                   IO_PC5
 #define SX_BUSY                   IO_PC12
-#define SX_C0                     IO_PB5 //?
-#define SX_C1                     IO_PB4 //?
+#define SX_C0                     IO_PB9
+#define SX_C1                     IO_PB4
 
 #define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
 #define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE5
@@ -138,6 +162,13 @@
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
 #define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
+/*
+#define SX_USE_RFSW_DIO_NOS       { LR20XX_DIO_5, LR20XX_DIO_7, LR20XX_DIO_8, LR20XX_DIO_10, LR20XX_DIO_11 }
+#define SX_USE_RFSW_DIO_CONFIGS   { LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF, \
+                                    LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF, \
+                                    LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF | LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF, \
+                                    LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }
+*/
 
 void sx_init_gpio(void)
 {
@@ -208,9 +239,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PA0 //??? // is this a PWM LED?
+#define LED_GREEN                 IO_PC13 // IO_PC8 // is this a PWM LED?
 #define LED_RED                   IO_PC9
-
 
 void leds_init(void)
 {
@@ -345,11 +375,11 @@ uint32_t porta[] = {
 
 uint32_t portb[] = {
     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
+    LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
 };
 
 uint32_t portc[] = {
-    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
 };
 
