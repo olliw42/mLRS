@@ -21,11 +21,12 @@
 // dbg:     UART1, PA9 PA10,  wired to JR pin header, 4 = Rx, 6 = Tx, 7 = Gnd
 // jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
-// BUTTONs  left: PB3, right: PD2
-// LEDs     left,red: PC9, right,blue: PC13, bottom two: PC8, are these PWM LEDs?
-
-// OLed:    I2C1, PA15, PB7, it seems that also PC11 goes to the OLEd ???
-// Fiveway: ADC12 IN8, PC2,  is the fiveway soldered in swapped?
+// BUTTONs  PB3: left, PD2: right
+// LEDs     PC9: left,red, PC13: right,blue, PC8: bottom two, are these PWM LEDs?
+// OLed:    PA15, PB7: I2C1, it seems that also PC11 goes to the OLEd ???
+// Fiveway: PC2: ADC12 IN8,  is the fiveway soldered in swapped?
+// FAN:     PA8: PWM 0 = off, 1 = full, PB0: don't know what it is doing
+// NTC:     PC0: ADC12 IN6
 
 // CAN:     FDCAN2, PB5,PB6
 
@@ -273,26 +274,25 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
 //-- Cooling Fan
-#if 0
+
 #define DEVICE_HAS_FAN_ONOFF
 
-#define FAN_IO                    IO_PA8 // IO_PB0
+#define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
 
 void fan_init(void)
 {
     gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // high = on
-    gpio_low(FAN_IO);
 }
 
 void fan_set_power(int8_t power_dbm)
 {
-    if (power_dbm >= POWER_24_DBM) {
+/*    if (power_dbm >= POWER_24_DBM) {
         gpio_high(FAN_IO);
     } else {
         gpio_low(FAN_IO);
-    }
+    } */
 }
-#endif
+
 
 //-- 5 Way Switch
 //resistor chain Vcc - 4.7k - left - 1k - up - 2.2k - right - 4.7k - down - 15k - GND
@@ -369,14 +369,14 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           0 // index into rfpower_list array
+#define RFPOWER_DEFAULT           1 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
     { .dbm = POWER_0_DBM, .mW = 1 },
-//    { .dbm = POWER_10_DBM, .mW = 10 },
-//    { .dbm = POWER_14_DBM, .mW = 25 },
-//    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_14_DBM, .mW = 25 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
 //    { .dbm = POWER_22_DBM, .mW = 158 },
 };
 
