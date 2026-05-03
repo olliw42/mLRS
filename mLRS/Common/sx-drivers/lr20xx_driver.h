@@ -349,6 +349,13 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             SetDioRfSwitchConfig(lr_dio_rfsw[i], lr_dio_rfsw_config[i]);
         }
 #endif
+#ifdef SX_USE_RFSW_DIO_CONFIG
+        const struct { uint8_t dio; uint8_t config; } lr_dio_rfsw_config[] = SX_USE_RFSW_DIO_CONFIG;
+        for (uint8_t i = 0; i < sizeof(lr_dio_rfsw_config)/sizeof(lr_dio_rfsw_config[0]); i++) {
+            SetDioFunction(lr_dio_rfsw_config[i].dio, LR20XX_DIO_FUNCTION_RF_SWITCH, LR20XX_DIO_SLEEP_PULL_UP);
+            SetDioRfSwitchConfig(lr_dio_rfsw_config[i].dio, lr_dio_rfsw_config[i].config);
+        }
+#endif
 
         SetFs();
     }
