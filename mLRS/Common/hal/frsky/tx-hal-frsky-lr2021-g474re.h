@@ -254,7 +254,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
-
+#if 0
 #define LED_GREEN                 IO_PC13 // IO_PC8 // is this a PWM LED?
 #define LED_RED                   IO_PC9
 
@@ -271,6 +271,84 @@ void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
 void led_red_off(void) { gpio_high(LED_RED); }
 void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
+#endif
+
+#if 0
+#define DEVICE_HAS_SINGLE_LED_RGB
+#include "stm32g4xx_ll_dma.h"
+#include "../../thirdparty/stdstm32-ws2812.h"
+#define LED_RGB_OFF     0
+#define LED_RGB_RED     1
+#define LED_RGB_GREEN   2
+#define LED_RGB_BLUE    3
+#define LED_RGB_PURPLE  4
+
+uint8_t ledCurrentColorState;
+
+void leds_color_and_state(uint8_t newState, tWs2812Color color)
+{
+    if (ledCurrentColorState == newState) return;
+    ws2812_fill_all(color);
+    ws2812_send();
+}
+
+void leds_init(void)
+{
+    ws2812_init();
+    ledCurrentColorState = LED_RGB_OFF;
+}
+
+void led_red_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
+void led_red_on(void) { leds_color_and_state(LED_RGB_RED, WS2812_RED); }
+void led_red_toggle(void) { (ledCurrentColorState == LED_RGB_RED) ? led_red_off() : led_red_on(); }
+
+void led_green_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
+void led_green_on(void) { leds_color_and_state(LED_RGB_GREEN, WS2812_GREEN); }
+void led_green_toggle(void) { (ledCurrentColorState == LED_RGB_GREEN) ? led_green_off() : led_green_on(); }
+
+void led_blue_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
+void led_blue_on(void) { leds_color_and_state(LED_RGB_BLUE, WS2812_BLUE); }
+void led_blue_toggle(void) { (ledCurrentColorState == LED_RGB_BLUE) ? led_blue_off() : led_blue_on(); }
+
+void led_purple_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
+void led_purple_on(void) { leds_color_and_state(LED_RGB_PURPLE, WS2812_PURPLE); }
+void led_purple_toggle(void) { (ledCurrentColorState == LED_RGB_PURPLE) ? led_purple_off() : led_purple_on(); }
+#endif
+
+#if 1
+#define WS2812_NUMBER_OF_LEDS     2
+#define WS2812_IO                 IO_PC8
+#define WS2812_IO_AF              IO_AF_4
+#define WS2812_TIMx               TIM8
+#define WS2812_TIMno              8
+#define WS2812_CHno               3
+#define WS2812_DMAx               DMA2
+#define WS2812_DMA_CHANNEL_x      LL_DMA_CHANNEL_3
+#include "../../thirdparty/stdstm32-ws2812.h"
+
+tWs2812Color ledCurrentColor[2];
+
+void leds_color_and_state(uint8_t idx, tWs2812Color color)
+{
+    ledCurrentColor[idx] = color;
+    ws2812_fill(idx, color);
+    ws2812_send();
+}
+
+void leds_init(void)
+{
+    ledCurrentColor[0] = ledCurrentColor[1] = 1;
+    ws2812_init();
+}
+
+void led_red_off(void) { leds_color_and_state(1, 0); }
+void led_red_on(void) { leds_color_and_state(1, WS2812_RED); }
+void led_red_toggle(void) { (ledCurrentColor[1]) ? led_red_off() : led_red_on(); }
+
+void led_green_off(void) { leds_color_and_state(0, 0); }
+void led_green_on(void) { leds_color_and_state(0, WS2812_GREEN); }
+void led_green_toggle(void) { (ledCurrentColor[0]) ? led_green_off() : led_green_on(); }
+#endif
 
 
 //-- Cooling Fan
