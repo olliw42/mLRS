@@ -22,7 +22,8 @@
 // jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
 // BUTTONs  PB3: left, PD2: right
-// LEDs     PC9: left,red, PC13: right,blue, PC8: bottom two, are these PWM LEDs?
+// LEDs     PC9: left,red, PC13: right,blue,
+//          PC8: bottom two are WS2812-type LEDs  (TIM8, CH3, DMA2)
 // OLed:    PA15, PB7: I2C1, it seems that also PC11 goes to the OLEd ???
 // Fiveway: PC2: ADC12 IN8,  is the fiveway soldered in swapped?
 // FAN:     PA8: PWM 0 = off, 1 = full, PB0: don't know what it is doing
@@ -273,21 +274,24 @@ void led_red_on(void) { gpio_low(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #endif
 
-#if 0
+#if 1
 #define DEVICE_HAS_SINGLE_LED_RGB
-#include "stm32g4xx_ll_dma.h"
+#define WS2812_NUMBER_OF_LEDS     2
+#define WS2812_IO                 IO_PC8
+#define WS2812_IO_AF              IO_AF_4
+#define WS2812_TIMx               TIM8
+#define WS2812_TIMno              8
+#define WS2812_CHno               3
+#define WS2812_DMAx               DMA2
+#define WS2812_DMA_CHANNEL_x      LL_DMA_CHANNEL_3
 #include "../../thirdparty/stdstm32-ws2812.h"
-#define LED_RGB_OFF     0
-#define LED_RGB_RED     1
-#define LED_RGB_GREEN   2
-#define LED_RGB_BLUE    3
-#define LED_RGB_PURPLE  4
 
-uint8_t ledCurrentColorState;
+tWs2812Color ledCurrentColor;
 
-void leds_color_and_state(uint8_t newState, tWs2812Color color)
+void leds_color_and_state(tWs2812Color color)
 {
-    if (ledCurrentColorState == newState) return;
+    if (color == ledCurrentColor) return;
+    ledCurrentColor = color;
     ws2812_fill_all(color);
     ws2812_send();
 }
@@ -295,27 +299,27 @@ void leds_color_and_state(uint8_t newState, tWs2812Color color)
 void leds_init(void)
 {
     ws2812_init();
-    ledCurrentColorState = LED_RGB_OFF;
+    ledCurrentColor = 0;
 }
 
-void led_red_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
-void led_red_on(void) { leds_color_and_state(LED_RGB_RED, WS2812_RED); }
-void led_red_toggle(void) { (ledCurrentColorState == LED_RGB_RED) ? led_red_off() : led_red_on(); }
+void led_red_off(void) { leds_color_and_state(0); }
+void led_red_on(void) { leds_color_and_state(WS2812_RED); }
+void led_red_toggle(void) { (ledCurrentColor == WS2812_RED) ? led_red_off() : led_red_on(); }
 
-void led_green_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
-void led_green_on(void) { leds_color_and_state(LED_RGB_GREEN, WS2812_GREEN); }
-void led_green_toggle(void) { (ledCurrentColorState == LED_RGB_GREEN) ? led_green_off() : led_green_on(); }
+void led_green_off(void) { leds_color_and_state(0); }
+void led_green_on(void) { leds_color_and_state(WS2812_GREEN); }
+void led_green_toggle(void) { (ledCurrentColor == WS2812_GREEN) ? led_green_off() : led_green_on(); }
 
-void led_blue_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
-void led_blue_on(void) { leds_color_and_state(LED_RGB_BLUE, WS2812_BLUE); }
-void led_blue_toggle(void) { (ledCurrentColorState == LED_RGB_BLUE) ? led_blue_off() : led_blue_on(); }
+void led_blue_off(void) { leds_color_and_state(0); }
+void led_blue_on(void) { leds_color_and_state(WS2812_BLUE); }
+void led_blue_toggle(void) { (ledCurrentColor == WS2812_BLUE) ? led_blue_off() : led_blue_on(); }
 
-void led_purple_off(void) { leds_color_and_state(LED_RGB_OFF, 0); }
-void led_purple_on(void) { leds_color_and_state(LED_RGB_PURPLE, WS2812_PURPLE); }
-void led_purple_toggle(void) { (ledCurrentColorState == LED_RGB_PURPLE) ? led_purple_off() : led_purple_on(); }
+void led_purple_off(void) { leds_color_and_state(0); }
+void led_purple_on(void) { leds_color_and_state(WS2812_PURPLE); }
+void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_off() : led_purple_on(); }
 #endif
 
-#if 1
+#if 0
 #define WS2812_NUMBER_OF_LEDS     2
 #define WS2812_IO                 IO_PC8
 #define WS2812_IO_AF              IO_AF_4
