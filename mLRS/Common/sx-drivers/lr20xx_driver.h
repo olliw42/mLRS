@@ -727,13 +727,7 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
 
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
-#if defined DEVICE_HAS_DUAL_LR20xx_LR20xx
-  #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, gconfig->FrequencyBand);
-  #else
-        lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
-  #endif
-#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+#if defined POWER_USE_DEFAULT_RFPOWER_CALC
         lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);

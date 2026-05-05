@@ -499,9 +499,6 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define POWER2_GAIN_DBM           31
-#define POWER2_USE_DEFAULT_RFPOWER_CALC
-
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
