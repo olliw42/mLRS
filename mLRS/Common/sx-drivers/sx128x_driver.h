@@ -91,6 +91,7 @@ void sx128x_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_
 class Sx128xDriverCommon : public Sx128xDriverBase
 {
   public:
+
     void Init(void)
     {
         gconfig = nullptr;
@@ -208,7 +209,7 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         SetFs();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
@@ -251,7 +252,6 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
-
         if (gconfig->modeIsLora()) {
             Sx128xDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
@@ -438,11 +438,11 @@ class Sx128xDriver : public Sx128xDriverCommon
 #endif
 
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
@@ -485,6 +485,8 @@ typedef enum {
 class Sx128xDriver2 : public Sx128xDriverCommon
 {
   public:
+
+    //-- interface to SPI peripheral
 
     void WaitOnBusy(void) override
     {
@@ -600,11 +602,11 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 #endif
 
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
         sx2_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {

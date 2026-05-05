@@ -9,8 +9,9 @@
 // #define POWER_USE_DEFAULT_RFPOWER_CALC
 // #define SX_USE_TCXO_VOLTAGE
 // #define SX_USE_IRQ_DIO_NO
-// #define SX_USE_RFSW_DIO_NOS
-// #define SX_USE_RFSW_DIO_CONFIGS
+// #define SX_USE_RFSW_DIO_NOS - deprecated
+// #define SX_USE_RFSW_DIO_CONFIGS - deprecated
+// #define SX_USE_RFSW_DIO_CONFIG
 //*******************************************************
 #ifndef LR20XX_DRIVER_H
 #define LR20XX_DRIVER_H
@@ -145,6 +146,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         flrc_configuration = nullptr;
     }
 
+    //-- high level API functions
+
     bool isOk(void)
     {
         uint8_t fwMajor;
@@ -188,6 +191,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
         SetStandby(LR20XX_STANDBY_MODE_RC); // LR20XX_STANDBY_MODE_XOSC ?
+        delay_us(1000); // seems ok without, but do it
         SetPacketType(LR20XX_PACKET_TYPE_LORA);
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
@@ -374,7 +378,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     // So, as a temporary workaround we double buffer. At some point in time we need to find
     // a proper solution.
 
-    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len)
+    void ReadBuffer(uint8_t offset, uint8_t* const data, uint8_t len)
     {
         ReadRadioRxFifo(data, len);
 
@@ -428,6 +432,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             GetLoraPacketStatus(&rssi, &rssi_s, Snr);
             break;
         case IS_FLRC:
+            // FLRC has no SNR
             GetPacketStatusFLRC(&rssi, &rssi_s);
             *Snr = 0;
             break;
@@ -574,12 +579,12 @@ class Lr20xxDriver : public Lr20xxDriverCommon
     void SpiSelect(void) override
     {
         spi_select();
-        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50);
     }
 
     void SpiDeselect(void) override
     {
-        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50);
         spi_deselect();
     }
 
@@ -636,12 +641,14 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 
     void StartUp(tSxGlobalConfig* const global_config)
     {
-        Configure(global_config);
+        if (gconfig) return; // has been started up already
 
+        Configure(global_config);
+        delay_us(125); // may not be needed
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
@@ -660,7 +667,7 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -669,9 +676,120 @@ class Lr20xxDriver : public Lr20xxDriverCommon
   #error SX2 must have a RESET pin!
 #endif
 
+// map the irq bits
+typedef enum {
+    SX2_IRQ_TX_DONE = LR20XX_IRQ_TX_DONE,
+    SX2_IRQ_RX_DONE = LR20XX_IRQ_RX_DONE,
+    SX2_IRQ_TIMEOUT = LR20XX_IRQ_TIMEOUT,
+    SX2_IRQ_ALL     = LR20XX_IRQ_ALL,
+} SX2_IRQ_ENUM;
 
-#error SX2 is todo!
+
+class Lr20xxDriver2 : public Lr20xxDriverCommon
+{
+  public:
+
+    //-- interface to SPI peripheral
+
+    void WaitOnBusy(void) override
+    {
+        while (sx2_busy_read()) { __NOP(); };
+    }
+
+    void SpiSelect(void) override
+    {
+        spib_select();
+        delay_ns(50);
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50);
+        spib_deselect();
+    }
+
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spib_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spib_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spib_write(dataout, len);
+    }
+
+    //-- RF power interface
+
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+#if defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+  #ifdef POWER2_USE_DEFAULT_RFPOWER_CALC
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER2_GAIN_DBM, gconfig->FrequencyBand);
+  #else
+        lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
+  #endif
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+#else
+        lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
+#endif
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX2_RESET);
+        delay_ms(1);
+        gpio_high(SX2_RESET);
+        WaitOnBusy();
+    }
+
+    void Init(void)
+    {
+        Lr20xxDriverCommon::Init();
+
+        spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
+        sx2_init_gpio();
+        sx2_dio_exti_isr_clearflag();
+        sx2_dio_init_exti_isroff();
+
+        _reset(); // this is super crucial !
+    }
+
+    //-- high level API functions
+
+    void StartUp(tSxGlobalConfig* const global_config)
+    {
+        if (gconfig) return; // has been started up already
+
+        Configure(global_config);
+        delay_us(125); // may not be needed
+        sx2_dio_enable_exti_isr();
+    }
+
+    //-- these are the API functions used in the loop
+
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
+    {
+        sx2_amp_transmit();
+        Lr20xxDriverCommon::SendFrame(data, len, tmo_ms);
+    }
+
+    void SetToRx(void)
+    {
+        sx2_amp_receive();
+        Lr20xxDriverCommon::SetToRx();
+    }
+};
 
 #endif
+
 
 #endif // LR20XX_DRIVER_H
