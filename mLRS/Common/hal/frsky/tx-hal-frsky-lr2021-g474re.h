@@ -472,6 +472,14 @@ uint8_t fiveway_read(void)
 #define I2C_USE_SCL_IO            IO_PA15
 #define I2C_USE_SDA_IO            IO_PB7
 
+#define DISPLAY_INIT
+
+void display_init(void)
+{
+    gpio_init(IO_PC11, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+    delay_ms(10);
+}
+
 
 //-- ESP32 Wifi Bridge
 
