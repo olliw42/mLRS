@@ -242,12 +242,7 @@ void sx_dio_exti_isr_clearflag(void)
 
 #define SX2_USE_IRQ_DIO_NO        LR20XX_DIO_9
 #define SX2_USE_TCXO_VOLTAGE      LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
-
-#define SX2_USE_RFSW_DIO_CONFIG {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                 {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
-                                 {LR20XX_DIO_8, LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                 {LR20XX_DIO_10, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
-                                 {LR20XX_DIO_11, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }}
+#define SX2_USE_RFSW_DIO_CONFIG   SX_USE_RFSW_DIO_CONFIG // use same as for SX
 
 void sx2_init_gpio(void)
 {
