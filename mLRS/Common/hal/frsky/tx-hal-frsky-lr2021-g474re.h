@@ -9,7 +9,12 @@
 
 /*
   Flashing ESP32 wireless bridge:
-  ???
+  - ser dest: change to serial2 (wireless bridge is on serial)
+  - ser baudrate: does not matter
+  - connect board to USB (no need for manual intervention, Tx module is put into FLASH_ESP mode via esptool's DTR&RTS method)
+  - Board: ESP32 PICO-D4
+  - Upload Speed: can be 921600
+  - Reset Method: no dtr (aka ck) (the normal method)
 */
 
 //-------------------------------------------------------
@@ -30,13 +35,16 @@
 // NTC:     PC0: ADC12 IN6
 
 // CAN:     FDCAN2, PB5,PB6
-
 // ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
-
 // VT (main voltage detect):  PC1
 
 //#define DEVICE_HAS_JRPIN5
+#ifndef DEVICE_HAS_DUAL_LR20xx_LR20xx
+  #define DEVICE_HAS_DIVERSITY
+#endif
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
+#define DEVICE_HAS_SINGLE_LED_RGB
+#define DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_COM_ON_USB
@@ -97,9 +105,7 @@
 #define UARTF_USE_TX_ISR
 
 
-//-- SX1262 & SPI
-#if 0
-// left RF chain, as seen from top
+//-- SX1262 & SPI - left RF chain, as seen from top
 // 2.4 GHz chain
 //    PAEN1     DIO11   likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
 //    VDET1     PA0     likely: Analog output from the internal RF power detector
@@ -129,38 +135,6 @@
 #define SX_DIO_EXTI_IRQn             EXTI4_IRQn
 #define SX_DIO_EXTI_IRQHandler       EXTI4_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
-#else
-// right RF chain, as seen from top
-// 2.4 GHz chain (RF2 switch branch)
-//    PAEN2     DIO11 likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    VDET2     PC3   likely: Analog output from the internal RF power detector
-//    RF2_C0    PB9   likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF2_C1    PB4
-// 900 MHz chain (RF1 switch branch)
-//    900_CSD2  DIO10
-//    900_CPS2  DIO8
-//    900_CTX2  DIO7
-// switch
-//    VC2       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
-
-#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 IO_PB12
-#define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
-#define SPI_USE_CLOCKSPEED_9MHZ
-
-#define SX_RESET                  IO_PC6
-#define SX_DIO1                   IO_PC5
-#define SX_BUSY                   IO_PC12
-#define SX_C0                     IO_PB9
-#define SX_C1                     IO_PB4
-
-#define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
-#define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE5
-#define SX_DIO_EXTI_LINE_x           LL_EXTI_LINE_5
-#define SX_DIO_EXTI_IRQn             EXTI9_5_IRQn
-#define SX_DIO_EXTI_IRQHandler       EXTI9_5_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY    11
-#endif
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
 #define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
@@ -235,8 +209,98 @@ void sx_dio_exti_isr_clearflag(void)
 }
 
 
-//-- LR2021 & SPIB
+//-- LR2021 & SPIB - right RF chain, as seen from top
+// 2.4 GHz chain (RF2 switch branch)
+//    PAEN2     DIO11 likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    VDET2     PC3   likely: Analog output from the internal RF power detector
+//    RF2_C0    PB9   likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    RF2_C1    PB4
+// 900 MHz chain (RF1 switch branch)
+//    900_CSD2  DIO10
+//    900_CPS2  DIO8
+//    900_CTX2  DIO7
+// switch
+//    VC2       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
+#define SPIB_USE_SPI2             // PB13, PB14, PB15
+#define SPIB_CS_IO                IO_PB12
+#define SPIB_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+#define SPIB_USE_CLOCKSPEED_9MHZ
+
+#define SX2_RESET                 IO_PC6
+#define SX2_DIO1                  IO_PC5
+#define SX2_BUSY                  IO_PC12
+#define SX2_C0                    IO_PB9
+#define SX2_C1                    IO_PB4
+
+#define SX2_DIO1_SYSCFG_EXTI_PORTx   LL_SYSCFG_EXTI_PORTC
+#define SX2_DIO1_SYSCFG_EXTI_LINEx   LL_SYSCFG_EXTI_LINE5
+#define SX2_DIO_EXTI_LINE_x          LL_EXTI_LINE_5
+#define SX2_DIO_EXTI_IRQn            EXTI9_5_IRQn
+#define SX2_DIO_EXTI_IRQHandler      EXTI9_5_IRQHandler
+//#define SX2_DIO_EXTI_IRQ_PRIORITY    11
+
+#define SX2_USE_IRQ_DIO_NO        LR20XX_DIO_9
+#define SX2_USE_TCXO_VOLTAGE      LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
+
+#define SX2_USE_RFSW_DIO_CONFIG {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
+                                 {LR20XX_DIO_8, LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_10, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+                                 {LR20XX_DIO_11, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF }}
+
+void sx2_init_gpio(void)
+{
+    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
+    gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+    gpio_init(SX2_C0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX2_C1, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+}
+
+bool sx2_busy_read(void)
+{
+    return (gpio_read_activehigh(SX2_BUSY)) ? true : false;
+}
+
+void sx2_amp_transmit(void)
+{
+    // TODO: only do in 2.4GHz band
+    gpio_low(SX2_C0);
+    gpio_high(SX2_C1);
+}
+
+void sx2_amp_receive(void)
+{
+    // TODO: only do in 2.4GHz band
+    gpio_low(SX2_C1);
+    gpio_high(SX2_C0);
+}
+
+void sx2_dio_init_exti_isroff(void)
+{
+    LL_SYSCFG_SetEXTISource(SX2_DIO1_SYSCFG_EXTI_PORTx, SX2_DIO1_SYSCFG_EXTI_LINEx);
+
+    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
+    LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableIT_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_DisableFallingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableRisingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+
+    NVIC_SetPriority(SX2_DIO_EXTI_IRQn, SX2_DIO_EXTI_IRQ_PRIORITY);
+    NVIC_EnableIRQ(SX2_DIO_EXTI_IRQn);
+}
+
+void sx2_dio_enable_exti_isr(void)
+{
+    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    LL_EXTI_EnableIT_0_31(SX2_DIO_EXTI_LINE_x);
+}
+
+void sx2_dio_exti_isr_clearflag(void)
+{
+    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+}
 
 
 //-- Button
@@ -255,27 +319,7 @@ bool button_pressed(void)
 
 
 //-- LEDs
-#if 0
-#define LED_GREEN                 IO_PC13 // IO_PC8 // is this a PWM LED?
-#define LED_RED                   IO_PC9
 
-void leds_init(void)
-{
-    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
-    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
-}
-
-void led_green_off(void) { gpio_high(LED_GREEN); }
-void led_green_on(void) { gpio_low(LED_GREEN); }
-void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
-
-void led_red_off(void) { gpio_high(LED_RED); }
-void led_red_on(void) { gpio_low(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
-#endif
-
-#if 1
-#define DEVICE_HAS_SINGLE_LED_RGB
 #define WS2812_NUMBER_OF_LEDS     2
 #define WS2812_IO                 IO_PC8
 #define WS2812_IO_AF              IO_AF_4
@@ -317,66 +361,40 @@ void led_blue_toggle(void) { (ledCurrentColor == WS2812_BLUE) ? led_blue_off() :
 void led_purple_off(void) { leds_color_and_state(0); }
 void led_purple_on(void) { leds_color_and_state(WS2812_PURPLE); }
 void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_off() : led_purple_on(); }
-#endif
-
-#if 0
-#define WS2812_NUMBER_OF_LEDS     2
-#define WS2812_IO                 IO_PC8
-#define WS2812_IO_AF              IO_AF_4
-#define WS2812_TIMx               TIM8
-#define WS2812_TIMno              8
-#define WS2812_CHno               3
-#define WS2812_DMAx               DMA2
-#define WS2812_DMA_CHANNEL_x      LL_DMA_CHANNEL_3
-#include "../../thirdparty/stdstm32-ws2812.h"
-
-tWs2812Color ledCurrentColor[2];
-
-void leds_color_and_state(uint8_t idx, tWs2812Color color)
-{
-    ledCurrentColor[idx] = color;
-    ws2812_fill(idx, color);
-    ws2812_send();
-}
-
-void leds_init(void)
-{
-    ledCurrentColor[0] = ledCurrentColor[1] = 1;
-    ws2812_init();
-}
-
-void led_red_off(void) { leds_color_and_state(1, 0); }
-void led_red_on(void) { leds_color_and_state(1, WS2812_RED); }
-void led_red_toggle(void) { (ledCurrentColor[1]) ? led_red_off() : led_red_on(); }
-
-void led_green_off(void) { leds_color_and_state(0, 0); }
-void led_green_on(void) { leds_color_and_state(0, WS2812_GREEN); }
-void led_green_toggle(void) { (ledCurrentColor[0]) ? led_green_off() : led_green_on(); }
-#endif
 
 
 //-- Cooling Fan
 
-#define DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
-
 #define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
+#define FAN_TIMx              TIM1
+#define FAN_TIM_CHANNEL_CHx   LL_TIM_CHANNEL_CH1
 
 #define FAN_TSENSOR_ADCx          ADC2
 #define FAN_TSENSOR_ADC_IO        IO_PC0 // ADC12_IN6
 #define FAN_TSENSOR_ADC_CHANNELx  LL_ADC_CHANNEL_6
 
 extern "C" { void delay_us(uint32_t us); }
+#include "../../thirdparty/stdstm32-tim-ext.h"
 
 void fan_init(void)
 {
-    gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // high = on
-
     adc_init_begin(FAN_TSENSOR_ADCx);
     adc_init_one_channel(FAN_TSENSOR_ADCx);
     adc_config_channel(FAN_TSENSOR_ADCx, LL_ADC_REG_RANK_1, FAN_TSENSOR_ADC_CHANNELx, FAN_TSENSOR_ADC_IO);
     adc_enable(FAN_TSENSOR_ADCx);
     delay_us(100);
     adc_start_conversion(FAN_TSENSOR_ADCx);
+
+    gpio_init_af(FAN_IO, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_6, IO_SPEED_DEFAULT);
+    tim_config_up(FAN_TIMx, 400, TIMER_BASE_10MHZ); // 25 kHz, 400 steps
+    tim_config_oc(FAN_TIMx, FAN_TIM_CHANNEL_CHx);
+    tim_oc_enable(FAN_TIMx);
+    tim_enable(FAN_TIMx);
+}
+
+void fan_set_pwm(uint16_t pwm) // pwm in percent
+{
+    FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
 }
 
 int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
@@ -403,16 +421,6 @@ int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
         }
     }
     return 2000; // error
-}
-
-void fan_on(void)
-{
-    gpio_high(FAN_IO);
-}
-
-void fan_off(void)
-{
-    gpio_low(FAN_IO);
 }
 
 
@@ -491,15 +499,21 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 #define POWER_GAIN_DBM            31 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+#define POWER2_GAIN_DBM           31
+#define POWER2_USE_DEFAULT_RFPOWER_CALC
+
+#define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
+//    { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
+//    { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
-//    { .dbm = POWER_22_DBM, .mW = 158 },
+    { .dbm = POWER_24_DBM, .mW = 250 },
+    { .dbm = POWER_27_DBM, .mW = 500 },
+    { .dbm = POWER_30_DBM, .mW = 1000 },
 };
 
 

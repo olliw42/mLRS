@@ -22,6 +22,9 @@ extern "C" {
 #endif
 
 
+#include "stdstm32-tim-ext.h"
+
+
 //-------------------------------------------------------
 // WS2812 Defines
 //-------------------------------------------------------
@@ -67,20 +70,7 @@ void ws2812_periph_init(uint32_t buf_adr)
     gpio_init_af(WS2812_IO, IO_MODE_OUTPUT_ALTERNATE_PP, WS2812_IO_AF, IO_SPEED_FAST);
 
     tim_config_up(WS2812_TIMx, WS2812_PERIOD, TIMER_BASE_MAX);
-
-LL_TIM_OC_InitTypeDef TIM_OC_InitTypeDef = {};
-    TIM_OC_InitTypeDef.OCMode       = LL_TIM_OCMODE_PWM1;
-    TIM_OC_InitTypeDef.OCState      = LL_TIM_OCSTATE_ENABLE;
-    TIM_OC_InitTypeDef.OCNState     = LL_TIM_OCSTATE_DISABLE;
-    TIM_OC_InitTypeDef.CompareValue = 0;
-    TIM_OC_InitTypeDef.OCPolarity   = LL_TIM_OCPOLARITY_HIGH;
-    TIM_OC_InitTypeDef.OCNPolarity  = LL_TIM_OCPOLARITY_HIGH;
-    TIM_OC_InitTypeDef.OCIdleState  = LL_TIM_OCIDLESTATE_LOW;
-    TIM_OC_InitTypeDef.OCNIdleState = LL_TIM_OCIDLESTATE_LOW;
-    LL_TIM_OC_Init(WS2812_TIMx, WS2812_TIM_CHANNEL_CHx, &TIM_OC_InitTypeDef);
-
-    LL_TIM_OC_EnablePreload(WS2812_TIMx, WS2812_TIM_CHANNEL_CHx);
-    LL_TIM_CC_EnableChannel(WS2812_TIMx, WS2812_TIM_CHANNEL_CHx);
+    tim_config_oc(WS2812_TIMx, WS2812_TIM_CHANNEL_CHx);
 
     rcc_init_dma(WS2812_DMAx);
 
@@ -95,16 +85,14 @@ LL_DMA_InitTypeDef DMA_InitTypeDef = {};
     DMA_InitTypeDef.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_HALFWORD;
     DMA_InitTypeDef.NbData                 = WS2812_NUMBER_OF_LEDS * 24 + 2;
     DMA_InitTypeDef.Priority               = LL_DMA_PRIORITY_VERYHIGH;
-
     LL_DMA_DeInit(WS2812_DMAx, WS2812_DMA_CHANNEL_x);
     LL_DMA_Init(WS2812_DMAx, WS2812_DMA_CHANNEL_x, &DMA_InitTypeDef);
 
     LL_DMA_SetPeriphRequest(WS2812_DMAx, WS2812_DMA_CHANNEL_x, WS2812_DMAMUX_REQ_TIMx_CHy);
 
-    LL_TIM_EnableAllOutputs(WS2812_TIMx);
-    LL_TIM_EnableCounter(WS2812_TIMx);
+    tim_oc_enable(WS2812_TIMx);
+    tim_enable(WS2812_TIMx);
 }
-
 
 
 void ws2812_dma_stop(void)
