@@ -38,7 +38,7 @@
 // ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
 // VT (main voltage detect):  PC1
 
-//#define DEVICE_HAS_JRPIN5
+#define DEVICE_HAS_JRPIN5
 #ifndef DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define DEVICE_HAS_DIVERSITY
 #endif
