@@ -342,7 +342,7 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #endif
 
 
-#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
   #define USE_FAN
 #endif
 
