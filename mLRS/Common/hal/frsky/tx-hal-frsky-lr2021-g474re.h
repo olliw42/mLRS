@@ -499,7 +499,7 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            31 // gain of a PA stage if present
+#define POWER_GAIN_DBM            23 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
