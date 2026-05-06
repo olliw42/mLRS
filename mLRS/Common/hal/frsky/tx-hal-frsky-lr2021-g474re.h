@@ -107,16 +107,16 @@
 
 //-- SX1262 & SPI - left RF chain, as seen from top
 // 2.4 GHz chain
-//    PAEN1     DIO11   likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    VDET1     PA0     likely: Analog output from the internal RF power detector
-//    RF1_C0    PC15    likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    PAEN1     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    VDET1     PA0     Analog output from the internal RF power detector
+//    RF1_C0    PC15    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
 //    RF1_C1    PC14
 // 900 MHz chain
 //    900_CSD1  DIO10
 //    900_CPS1  DIO8
 //    900_CTX1  DIO7
 // switch
-//    VC1       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC1       DIO5    VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
@@ -146,8 +146,8 @@ CPS   DIO8    x   1       0   0
 CSD   DIO10   1   1       0   0
 CTX   DIO7    1   0       0   0
 PAEN  DIO11   0   0       1   0
-C0    PB9     0   0       0   1
-C1    PB4     0   0       1   0 */
+C0    PC15    0   0       0   1
+C1    PC14    0   0       1   0 */
 
 #define SX_USE_RFSW_DIO_CONFIG  {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
                                  {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
@@ -211,16 +211,16 @@ void sx_dio_exti_isr_clearflag(void)
 
 //-- LR2021 & SPIB - right RF chain, as seen from top
 // 2.4 GHz chain (RF2 switch branch)
-//    PAEN2     DIO11 likely: HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    VDET2     PC3   likely: Analog output from the internal RF power detector
-//    RF2_C0    PB9   likely: C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF2_C1    PB4
+//    PAEN2     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    VDET2     PC3     Analog output from the internal RF power detector
+//    RF2_C0    PB4     C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    RF2_C1    PB9
 // 900 MHz chain (RF1 switch branch)
 //    900_CSD2  DIO10
 //    900_CPS2  DIO8
 //    900_CTX2  DIO7
 // switch
-//    VC2       DIO5    likely: VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC2       DIO5    VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
@@ -230,8 +230,8 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_RESET                 IO_PC6
 #define SX2_DIO1                  IO_PC5
 #define SX2_BUSY                  IO_PC12
-#define SX2_C0                    IO_PB9
-#define SX2_C1                    IO_PB4
+#define SX2_C0                    IO_PB4
+#define SX2_C1                    IO_PB9
 
 #define SX2_DIO1_SYSCFG_EXTI_PORTx   LL_SYSCFG_EXTI_PORTC
 #define SX2_DIO1_SYSCFG_EXTI_LINEx   LL_SYSCFG_EXTI_LINE5
