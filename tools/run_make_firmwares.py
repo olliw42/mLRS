@@ -146,24 +146,36 @@ def mlrs_set_version():
     else:
         print('----------------------------------------')
         print('ERROR: VERSIONONLYSTR not found')
-        os.system('pause')
+        input('Press Enter to continue...')
         exit()
 
 
 def mlrs_set_branch_hash(version_str):
     global BRANCHSTR
     global HASHSTR
-    import subprocess
 
     v_patch = int(version_str.split('.')[2])
 
-    git_branch = subprocess.getoutput("git branch --show-current")
+    git_branch = ''
+    git_hash = ''
+    head_path = os.path.join('.git', 'HEAD')
+    if os.path.exists(head_path):
+        with open(head_path) as _f:
+            _head = _f.read().strip()
+        if _head.startswith('ref: refs/heads/'):
+            git_branch = _head[len('ref: refs/heads/'):]
+            _ref_path = os.path.join('.git', _head[5:])
+            if os.path.exists(_ref_path):
+                with open(_ref_path) as _f:
+                    git_hash = _f.read().strip()[:7]
+        elif len(_head) >= 7:
+            git_hash = _head[:7]
+
     if not git_branch == 'main' and v_patch != 0: # is a branch, but not a main release
         BRANCHSTR = '-'+git_branch
     if BRANCHSTR != '':
         print('BRANCHSTR =', BRANCHSTR)
 
-    git_hash = subprocess.getoutput("git rev-parse --short HEAD")
     if v_patch % 2 == 1: # odd firmware patch version, so is dev, so add git hash
         HASHSTR = '-@'+git_hash
     if HASHSTR != '':
@@ -173,16 +185,10 @@ def mlrs_set_branch_hash(version_str):
 #-- helper
 
 def remake_dir(path): # os dependent
-    if os.name == 'posix':
-        os.system('rm -r -f '+path)
-    else:
-        os.system('rmdir /s /q "'+path+'"')
+    shutil.rmtree(path, ignore_errors=True)
 
 def make_dir(path): # os dependent
-    if os.name == 'posix':
-        os.system('mkdir -p '+path)
-    else:
-        os.system('md "'+path+'"')
+    os.makedirs(path, exist_ok=True)
 
 
 def create_dir(path):
@@ -646,7 +652,7 @@ def mlrs_compile_file(target, file):
 
     # execute
     #print('run')
-    os.system(cmd)
+    subprocess.run(shlex.split(cmd), check=False)
 
 
 def mlrs_link_target(target):
@@ -716,7 +722,7 @@ def mlrs_link_target(target):
     #print(cmd)
 
     #print('run')
-    os.system(cmd)
+    os.system(cmd)  # nosec B605
 
 
 def mlrs_build_target(target, cmdline_D_list):
@@ -768,16 +774,16 @@ def mlrs_build_target(target, cmdline_D_list):
     print('linking')
 
     mlrs_link_target(target)
-    os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))
+    os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf'))  # nosec B605
 
     if 'MLRS_FEATURE_ELRS_BOOTLOADER' in target.extra_D_list:
-        os.system(
+        os.system(  # nosec B605
             os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O binary ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elrs')
         )
     else:
-        os.system(
+        os.system(  # nosec B605
             os.path.join(GCC_DIR,'arm-none-eabi-objcopy') + ' -O ihex ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.elf') + ' ' +
             os.path.join(MLRS_BUILD_DIR,target.build_dir,target.elf_name+'.hex')
@@ -1249,6 +1255,18 @@ if __name__ == "__main__":
             if sys.argv[cmd_pos+1] != '':
                 cmdline_version = sys.argv[cmd_pos+1]
 
+    _safe_arg_pattern = re.compile(r'^[A-Za-z0-9_\-\.]+$')
+    if cmdline_target and not _safe_arg_pattern.match(cmdline_target):
+        print('Invalid --target value: ' + cmdline_target)
+        exit(1)
+    for _d in cmdline_D_list:
+        if not _safe_arg_pattern.match(_d):
+            print('Invalid --define value: ' + _d)
+            exit(1)
+    if cmdline_version and not _safe_arg_pattern.match(cmdline_version):
+        print('Invalid --version value: ' + cmdline_version)
+        exit(1)
+
     #cmdline_target = 'tx-diy-e22dual-module02-g491re'
     #cmdline_target = 'tx-diy-sxdualXXX'
 
@@ -1274,4 +1292,4 @@ if __name__ == "__main__":
         mlrs_copy_all_hex_etc()
 
     if not cmdline_nopause:
-        os.system("pause")
+        os.system("pause")  # nosec B605,B607
