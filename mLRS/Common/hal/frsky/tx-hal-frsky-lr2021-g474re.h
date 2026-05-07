@@ -469,6 +469,8 @@ uint8_t fiveway_read(void)
 
 #define DISPLAY_INIT
 
+extern "C" { void delay_ms(uint16_t ms); }
+
 void display_init(void)
 {
     gpio_init(IO_PC11, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
