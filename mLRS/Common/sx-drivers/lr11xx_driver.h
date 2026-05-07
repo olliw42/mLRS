@@ -127,6 +127,8 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         gfsk_configuration = nullptr;
     }
 
+    //-- high level API functions
+
     bool isOk(void)
     {
         uint8_t hwVersion;
@@ -314,10 +316,10 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
-
         if (gconfig->modeIsLora()) {
             Lr11xxDriverBase::GetPacketStatus(&rssi, Snr);
         } else {
+            // FLRC has no SNR
             Lr11xxDriverBase::GetPacketStatusGFSK(&rssi);
             *Snr = 0;
         }
@@ -494,7 +496,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
@@ -534,6 +536,8 @@ typedef enum {
 class Lr11xxDriver2 : public Lr11xxDriverCommon
 {
   public:
+
+    //-- interface to SPI peripheral
 
     void WaitOnBusy(void) override
     {
@@ -636,7 +640,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
         sx2_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
@@ -652,5 +656,6 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 };
 
 #endif
+
 
 #endif // LR11XX_DRIVER_H

@@ -74,6 +74,7 @@ void sx1276_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_
 class Sx127xDriverCommon : public Sx127xDriverBase
 {
   public:
+
     void Init(void)
     {
         gconfig = nullptr;
@@ -192,7 +193,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
@@ -452,20 +453,20 @@ class Sx127xDriver : public Sx127xDriverCommon
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
     }
 
     void SetToRx(void)
     {
         sx_amp_receive();
         Sx127xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
     }
 };
 
@@ -491,6 +492,8 @@ typedef enum {
 class Sx127xDriver2 : public Sx127xDriverCommon
 {
   public:
+
+    //-- interface to SPI peripheral
 
     void SpiSelect(void) override
     {
@@ -536,7 +539,7 @@ class Sx127xDriver2 : public Sx127xDriverCommon
     }
 #endif
 
- //-- RF power interface
+    //-- RF power interface
 
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
@@ -597,24 +600,24 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         sx2_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx2_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
     }
 
     void SetToRx(void)
     {
         sx2_amp_receive();
         Sx127xDriverCommon::SetToRx();
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
     }
 };
 
-#endif // defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+#endif
 
 
 #endif // SX1276_DRIVER_H

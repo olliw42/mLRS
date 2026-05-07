@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 21.03.2026
+ version 7.05.2026
 ********************************************************
 '''
 import os
@@ -422,10 +422,7 @@ MLRS_SOURCES_MODULES = [
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
     os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
-    
-    #os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'), ## TODO !!!!!!
-    os.path.join('Common','sx-drivers','lr20xx.cpp'), ## TODO !!!!!!
-    
+    os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'),
     os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
     ]
 
