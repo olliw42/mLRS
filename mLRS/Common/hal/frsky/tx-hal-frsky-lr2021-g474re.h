@@ -361,15 +361,15 @@ void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_o
 //-- Cooling Fan
 
 #define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
-#define FAN_TIMx              TIM1
-#define FAN_TIM_CHANNEL_CHx   LL_TIM_CHANNEL_CH1
+#define FAN_TIMx                  TIM1
+#define FAN_TIM_CHANNEL_CHx       LL_TIM_CHANNEL_CH1
+#include "../../thirdparty/stdstm32-tim-ext.h"
 
 #define FAN_TSENSOR_ADCx          ADC2
 #define FAN_TSENSOR_ADC_IO        IO_PC0 // ADC12_IN6
 #define FAN_TSENSOR_ADC_CHANNELx  LL_ADC_CHANNEL_6
 
 extern "C" { void delay_us(uint32_t us); }
-#include "../../thirdparty/stdstm32-tim-ext.h"
 
 void fan_init(void)
 {
@@ -499,9 +499,28 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 
 //-- POWER
 
+#define POWER_SUPPLY_DETECT_IO            IO_PC1
+#define POWER_SUPPLY_LOW_POWER_LIMIT_DBM  20
+
 #define POWER_GAIN_DBM            23 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
+/*
+void lr20xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+{
+    // for now just mimics calc_default, is to be prepared for more sophisticated schemes
 
+    int16_t power_sx = ((int16_t)power_dbm - POWER_GAIN_DBM) * 2; // LR20xx power is in units of 0.5 dBm
+    if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        if (power_sx < LR20XX_POWER_HF_MIN) power_sx = LR20XX_POWER_HF_MIN;
+        if (power_sx > LR20XX_POWER_HF_MAX) power_sx = LR20XX_POWER_HF_MAX;
+    } else {
+        if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
+        if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
+    }
+    *sx_power = power_sx;
+    *actual_power_dbm = power_sx / 2 + POWER_GAIN_DBM;
+}
+*/
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
