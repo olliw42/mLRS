@@ -40,6 +40,7 @@ class tFan
   private:
     bool initialized;
     int8_t power_dbm_curr;
+    int32_t temp_filter;
 };
 
 
@@ -74,6 +75,37 @@ void tFan::Tick_ms(void)
     if (temp_dC < 400) { // 40.0 C
         fan_off();
     }
+#endif
+#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
+    int16_t temp_dC = fan_tempsensor_read_dC();
+
+    // temp_dC = 550; // for testing
+
+    // filter temperature
+    if (!initialized) {
+        initialized = true;
+        temp_filter = 128 * temp_dC;
+    }
+    temp_filter += temp_dC - temp_filter / 128;
+
+    int32_t temp_filtered = temp_filter / 128;
+
+    // < 40 °C: 0%
+    // 40 °C: 10%
+    // 70 °C: 100%
+    // > 70 °C: 100%
+    // pwm = (T - 400)*90/300 + 10 = (T - 400)*3/10 + 10 = (3*T - 1200 +100)/10
+    uint8_t pwm = 0;
+    if (temp_filtered < 400) { // < 40 °C
+        pwm = 0;
+    } else
+    if (temp_filtered > 700) { // > 70 °C
+        pwm = 100;
+    } else {
+        pwm = (3*temp_filtered - 1100)/10;
+    }
+
+    fan_set_pwm(pwm);
 #endif
 }
 

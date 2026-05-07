@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 21. Mar. 2026
+// 4. May. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -61,6 +61,7 @@ Troubleshooting:
 // Module
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
+#define MODULE_FRSKY_LR2021                   // board: ESP32 PICO-D4
 //#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
 //#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
