@@ -66,9 +66,13 @@ typedef enum {
 typedef enum {
     // normal frames
     CRSF_FRAME_ID_GPS                   = 0x02,
-    CRSF_FRAME_ID_VARIO                 = 0x07,
+    CRSF_FRAME_ID_GPS_TIME              = 0x03,
+    CRSF_FRAME_ID_VARIOMETER            = 0x07,
     CRSF_FRAME_ID_BATTERY               = 0x08,
     CRSF_FRAME_ID_BARO_ALTITUDE         = 0x09,
+    CRSF_FRAME_ID_AIRSPEED              = 0x0A,
+    CRSF_FRAME_ID_TEMP                  = 0x0D,
+    CRSF_FRAME_ID_BAROMETER             = 0x11,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
     CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
@@ -204,7 +208,8 @@ typedef union
 
 // frame: adr, len, frame id, data, crc
 CRSF_PACKED(
-typedef struct {
+typedef struct
+{
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
@@ -246,19 +251,6 @@ typedef struct
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
-
-
-// adr, len, frame id, data, crc
-CRSF_PACKED(
-typedef struct {
-    uint8_t address;
-    uint8_t len;
-    uint8_t frame_id;
-    tCrsfLinkStatistics ls;
-    uint8_t crc;
-}) tCrsfLinkStatisticsFrame;
-
-#define CRSF_LINK_STATISTICS_FRAME_LEN  (CRSF_LINK_STATISTICS_LEN + 4)
 
 
 /* 0x1C Link Statistics RX
@@ -312,7 +304,8 @@ typedef struct
   uint32_t    Hardware_ID;
   uint32_t    Firmware_ID;
   uint8_t     Parameters_total; // total amount of parameters
-  uint8_t     Parameter_version_number; *
+  uint8_t     Parameter_version_number;
+
   this cannot be put into a fixed struct, so we only define the last fragment here
 */
 CRSF_PACKED(
@@ -347,10 +340,25 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    int16_t climb_rate; // cm/s, m/s / 100 indirectly concluded from otx    // OpenTx -> "VSpd"
-}) tCrsfVario;
+    int16_t year;           // EdgeTx since v2.??.?=? -> "GPS" ????
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+    uint16_t millisecond;
+}) tCrsfGpsTime;
 
-#define CRSF_VARIO_LEN  2
+#define CRSF_GPS_TIME_LEN  9
+
+
+CRSF_PACKED(
+typedef struct
+{
+    int16_t v_speed; // Vertical speed cm/s           // OpenTx -> "VSpd"
+}) tCrsfVariometer;
+
+#define CRSF_VARIOMETER_LEN  2
 
 
 CRSF_PACKED(
@@ -382,16 +390,47 @@ typedef struct
     char flight_mode[16]; // null-terminated string   // OpenTx -> "FM"
 }) tCrsfFlightMode;
 
-#define CRSF_FLIGHTMODE_LEN  16
+#define CRSF_FLIGHT_MODE_LEN  16
 
 
 CRSF_PACKED(
 typedef struct
 {
-    uint16_t altitude; // dm -1000m if 0x8000 not set, else in m    // OpenTx -> "Alt"
+//??    uint16_t altitude; // dm -1000m if 0x8000 not set, else in m    // OpenTx -> "Alt"
+    uint16_t altitude_packed; // Altitude above start (calibration) point
+    int8_t vertical_speed_packed; // vertical speed
 }) tCrsfBaroAltitude;
 
-#define CRSF_BARO_ALTITUDE_LEN  2
+#define CRSF_BARO_ALTITUDE_LEN  3 // 2
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint16_t speed; // Airspeed in 0.1 * km/h (hectometers/h)       // EdgeTx -> "ASpd"
+}) tCrsfAirspeed;
+
+#define CRSF_AIRSPEED_LEN  2
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t temp_source_id; // Identifies the source of the temperature data (e.g., 0 = FC including all ESCs, 1 = Ambient, etc.)
+    int16_t temperature; // up to 20 temperature values in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+}) tCrsfTemp;
+
+#define CRSF_TEMP_LEN  3
+
+
+CRSF_PACKED(
+typedef struct
+{
+    int32_t pressure_pa; // Pascals
+    int32_t baro_temp; // centidegrees
+}) tCrsfBarometer;
+
+#define CRSF_BAROMETER_LEN  8
 
 
 //-- Command payload frames

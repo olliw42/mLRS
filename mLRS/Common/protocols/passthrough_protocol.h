@@ -66,7 +66,7 @@
   MavToPass uses
   - SYS_STATUS to get BATT1 volt and curr, and BATTERY_STATUS to get BATT1 mAh
   - BATTERY2 to get BATT2 volt and curr, and BATTERY_STATUS to get BATT2 mAh
-  we replace it with only using BATTERY_STATUS, see also MAVlink for OpenTx
+  we replace it with only using BATTERY_STATUS, see also MAVLink for OpenTx
 
   MavToPass uses
   - SCALED_IMU to get IMU temperature
