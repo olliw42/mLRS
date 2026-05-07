@@ -228,8 +228,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_IO            IO_PB4 // ADC_IN3
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_3
 
-extern "C" { void delay_us(uint32_t us); }
-
 void fiveway_init(void)
 {
     adc_init_begin(FIVEWAY_ADCx);

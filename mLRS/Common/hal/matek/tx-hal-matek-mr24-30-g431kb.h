@@ -205,7 +205,6 @@ void in_set_inverted(void)
 #define KEY_CENTER_THRESH         1205
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {

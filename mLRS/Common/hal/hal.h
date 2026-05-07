@@ -96,6 +96,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
 #include "device_conf.h"
 
 
+// these are frequently needed in the hal
+#if !(defined ESP8266 || defined ESP32)
+extern "C" { void delay_us(uint32_t us); }
+extern "C" { void delay_ms(uint16_t ms); }
+#endif
+
+
 //-- MATEKSYS mLRS devices
 
 #ifdef TX_MATEK_MTX_DB30_G474CE
@@ -453,6 +460,13 @@ Note: Some "high-level" features are set for each device in the device_conf.h fi
     !defined FREQUENCY_BAND_915_MHZ_FCC && !defined FREQUENCY_BAND_868_MHZ && !defined FREQUENCY_BAND_866_MHZ_IN && \
     !defined FREQUENCY_BAND_433_MHZ && !defined FREQUENCY_BAND_70_CM_HAM
   #error At least one frequency band must be defined !
+#endif
+
+
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+  #ifdef DEVICE_HAS_DIVERSITY
+    #error DEVICE_HAS_DIVERSITY cannot be defined for dual band devices !
+  #endif
 #endif
 
 

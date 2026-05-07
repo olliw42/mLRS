@@ -183,7 +183,6 @@ void fan_set_power(int8_t power_dbm)
 #ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
 #define FAN_TEMPSENS_ADCx         ADC1
 #include "../../thirdparty/stdstm32-adc-ext.h"
-extern "C" { void delay_us(uint32_t us); }
 
 void fan_adc_init(void)
 {

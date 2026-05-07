@@ -301,7 +301,6 @@ void fan_set_power(int8_t power_dbm)
 #define KEY_CENTER_THRESH         0
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
