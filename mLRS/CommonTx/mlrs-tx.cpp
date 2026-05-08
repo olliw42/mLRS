@@ -217,7 +217,7 @@ void tWhileTransmit::handle_once(void)
         disp.UpdateMain();
     }
 
-    if (bind.IsInBind()) disp.SetBind();
+    // if (bind.IsInBind()) disp.SetBind();
 
     // postpone to next cycle if just updated and it's a short time slot
     bool allow_draw = (dtmax_us() > 2000) || (main_tlast_ms != tnow_ms);
@@ -472,15 +472,26 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2
 		// read data from serial port
 		if (connected())
 		{
-			for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++)
-			{
-				if (!sx_serial.available()) break;
-				uint8_t c = sx_serial.getc();
-				payload[payload_len++] = c;
-			}
-			stats.bytes_transmitted.Add(payload_len);
-			stats.serial_data_transmitted.Inc();
-		} else {
+            uint16_t to_send = sx_serial.bytes_available();
+
+            if (to_send > FRAME_TX_PAYLOAD_LEN) 
+            {
+                to_send = FRAME_TX_PAYLOAD_LEN;
+            }
+
+            for (uint16_t i = 0U; i < to_send; i++)
+            {
+                payload[payload_len++] = sx_serial.getc();
+            }
+
+            if (payload_len > 0U)
+            {
+                stats.bytes_transmitted.Add(payload_len);
+                stats.serial_data_transmitted.Inc();
+            }
+		} 
+        else 
+        {
 			sx_serial.flush();
 		}
 	}
@@ -816,7 +827,6 @@ INITCONTROLLER_END
 			if (dt < 750) break;
 			isInTimeGuard = false;
 			rfpower.Update();
-			fhss.HopToNext();
 			sx.SetRfFrequency(fhss.GetCurrFreq());
 			sx2.SetRfFrequency(fhss.GetCurrFreq2());
 			do_transmit_send(tdiversity.Antenna());

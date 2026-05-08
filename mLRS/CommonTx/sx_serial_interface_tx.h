@@ -20,6 +20,7 @@ class tTxSxSerial : public tSerialBase
     void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
 
     bool available(void) override;
+    uint16_t bytes_available(void) override;
     char getc(void) override;
     void putbuf(uint8_t* const buf, uint16_t len) override;
     void flush(void) override;
@@ -63,6 +64,15 @@ bool tTxSxSerial::available(void)
     return ser->available(); // get from serial
 }
 
+uint16_t tTxSxSerial::bytes_available(void)
+{
+    if (!connected_and_rx_setup_available()) 
+    {
+        return 0U;
+    }
+
+    return ser ? ser->bytes_available() : 0U;
+}
 
 char tTxSxSerial::getc(void)
 {
