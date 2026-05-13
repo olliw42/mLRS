@@ -574,7 +574,7 @@ tMBridgeLinkStats lstats = {};
     lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
 
     lstats.link_state_connected = connected();
-    lstats.link_state_binding = bind.IsInBind();
+    // lstats.link_state_binding = bind.IsInBind();
 
     mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
 }
@@ -608,7 +608,7 @@ tMBridgeInfo info = {};
     }
 
     info.has_status = 1; // to indicate it has these flags
-    info.binding = (bind.IsInBind()) ? 1 : 0;
+    // info.binding = (bind.IsInBind()) ? 1 : 0;
     info._connected = (connected()) ? 1 : 0;
     info._rx_LQ_low = 0;
     info._tx_LQ_low = 0;
