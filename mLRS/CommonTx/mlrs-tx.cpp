@@ -709,7 +709,11 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
+#ifdef SERIAL_FIXED_BAUD
+    serial.SetBaudRate(SERIAL_FIXED_BAUD); // ignore user parameter
+#else
     serial.SetBaudRate(Config.SerialBaudrate);
+#endif
     serial2.SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life
