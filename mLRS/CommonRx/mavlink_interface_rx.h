@@ -350,8 +350,8 @@ void tRxMavlink::parse_serial_in_link_out(void)
     // parse serial in -> link out
     fmav_result_t result;
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
-        while (serial.available()) {
-            char c = serial.getc();
+        while (serial->available()) {
+            char c = serial->getc();
             bytes_parser_in++; // memorize it is still in processing
             fmav_parse_and_check_to_frame_buf(&result, buf_serial_in, &status_serial_in, c);
             if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
@@ -447,7 +447,7 @@ void tRxMavlink::send_msg_serial_out(void)
 {
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_serial_out);
 
-    serial.putbuf(_buf, len);
+    serial->putbuf(_buf, len);
 }
 
 
@@ -475,7 +475,7 @@ uint8_t tRxMavlink::getc(void)
 void tRxMavlink::flush(void)
 {
     fifo_link_out.Flush();
-    serial.flush();
+    serial->flush();
 }
 
 
@@ -487,7 +487,7 @@ void tRxMavlink::flush(void)
 uint16_t tRxMavlink::serial_in_available(void)
 {
     // count all bytes still in processing
-    return fifo_link_out.Available() + serial.bytes_available() + bytes_parser_in;
+    return fifo_link_out.Available() + serial->bytes_available() + bytes_parser_in;
 }
 
 
@@ -1104,7 +1104,7 @@ fmav_command_long_t payload;
     bool cmd_valid = false;
     switch (payload.command) {
         case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
-            if (!serial.has_systemboot()) break; // can't do uart flashing on this serial
+            if (!serial->has_systemboot()) break; // can't do uart flashing on this serial
             cmd_valid = (payload.param3 == REBOOT_SHUTDOWN_ACTION_REBOOT_TO_BOOTLOADER &&
                          payload.param4 == MAV_COMP_ID_TELEMETRY_RADIO &&
                          // we ignore param6 (REBOOT_SHUTDOWN_CONDITIONS)

@@ -210,10 +210,10 @@ void serial_ports_init(void)
 #ifdef DEVICE_IS_RECEIVER
 tDroneCANPort dronecan_port;
 
-void serial_ports_init(bool _ser)
+void serial_ports_init(bool is_serial)
 {
 #if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    if (_ser) {
+    if (is_serial) {
         serial = &uartb_port; // assign uartb to serial
     } else {
         serial = &dronecan_port; // assign dronecan to serial

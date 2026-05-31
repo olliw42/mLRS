@@ -146,7 +146,6 @@ void init_hw(void)
     leds_init();
     button_init();
 
-    serial.Init();
     out.Init();
 
     fan.Init();
@@ -160,8 +159,9 @@ void init_hw(void)
 
     rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
 
+    serial_ports_init(Setup.Rx.SerialPort != RX_SERIAL_PORT_CAN);
+    serial->Init();
     dronecan.Init(Setup.Rx.SerialPort == RX_SERIAL_PORT_CAN); // after delay_init() since it needs delay
-    serial.SetSerialIsSource(Setup.Rx.SerialPort != RX_SERIAL_PORT_CAN);
 }
 
 
@@ -540,7 +540,7 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-    serial.SetBaudRate(Config.SerialBaudrate);
+    serial->SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life
     leds.Init();
