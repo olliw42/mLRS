@@ -100,7 +100,7 @@
 #endif
 
 #ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
-#include "rx-flysky-pr02-2400-td-esp32s3.h"
+#include "rx-hal-flysky-pr02-2400-td-esp32s3.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
