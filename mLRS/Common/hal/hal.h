@@ -79,7 +79,7 @@ In rx-hal files:
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_DEBUG  // is selected by DEBUG_ENABLED define
+#define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
@@ -268,19 +268,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 
 #ifdef DEVICE_IS_RECEIVER
-#if defined DEVICE_HAS_SERIAL_OR_DEBUG
-  #if !defined DEBUG_ENABLED
-    #define USE_SERIAL
-  #else
-    #define USE_DEBUG
-  #endif
-#else
-  #if !defined DEVICE_HAS_NO_SERIAL
-    #define USE_SERIAL
-  #endif
-  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
-    #define USE_DEBUG
-  #endif
+#if !defined DEVICE_HAS_NO_SERIAL
+  #define USE_SERIAL
 #endif
 #endif // DEVICE_IS_RECEIVER
 
@@ -290,9 +279,6 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define USE_COM_ON_SERIAL
   #ifdef DEVICE_HAS_SERIAL_ON_USB
     #define USE_USB
-  #endif
-  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
-    #define USE_DEBUG
   #endif
 #else
   #if !defined DEVICE_HAS_NO_SERIAL
@@ -307,15 +293,16 @@ extern "C" { void delay_ms(uint16_t ms); }
       #define USE_USB
     #endif
   #endif
-  #if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
-    #define USE_DEBUG
-  #endif
 #endif
 
 #if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
   #define USE_SERIAL2
 #endif
 #endif // DEVICE_IS_TRANSMITTER
+
+#if defined DEBUG_ENABLED && !defined DEVICE_HAS_NO_DEBUG
+  #define USE_DEBUG
+#endif
 
 
 #if defined DEVICE_HAS_IN || defined DEVICE_HAS_IN_NORMAL || defined DEVICE_HAS_IN_INVERTED || \

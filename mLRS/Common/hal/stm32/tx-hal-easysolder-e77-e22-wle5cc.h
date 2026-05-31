@@ -311,7 +311,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool easysolder_ser_or_com_serial = true; // we use serial as default
+bool tx_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
@@ -320,12 +320,12 @@ void ser_or_com_init(void)
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    easysolder_ser_or_com_serial = !(cnt > 8);
+    tx_ser_or_com_serial = !(cnt > 8);
 }
 
 bool ser_or_com_serial(void)
 {
-    return easysolder_ser_or_com_serial;
+    return tx_ser_or_com_serial;
 }
 
 

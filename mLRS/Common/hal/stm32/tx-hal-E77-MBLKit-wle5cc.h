@@ -326,7 +326,7 @@ void systembootloader_init(void)
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool e77mblkit_ser_or_com_serial = true; // we use serial as default
+bool tx_ser_or_com_serial = true; // we use serial as default
 
 void ser_or_com_init(void)
 {
@@ -335,12 +335,12 @@ void ser_or_com_init(void)
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    e77mblkit_ser_or_com_serial = !(cnt > 8);
+    tx_ser_or_com_serial = !(cnt > 8);
 }
 
 bool ser_or_com_serial(void)
 {
-    return e77mblkit_ser_or_com_serial;
+    return tx_ser_or_com_serial;
 }
 
 
