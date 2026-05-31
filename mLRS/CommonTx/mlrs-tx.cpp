@@ -710,8 +710,7 @@ RESTARTCONTROLLER
 
     serial->SetBaudRate(Config.SerialBaudrate);
     serial2->SetBaudRate(Config.SerialBaudrate);
-    comport->SetBaudRate(TX_COM_BAUDRATE);
-    
+
     // startup sign of life
     leds.Init();
     info.Init();

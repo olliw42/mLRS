@@ -182,6 +182,8 @@ void serial_ports_init(void)
         ser_or_com_set_to_serial();
     } else {
         ser_or_com_set_to_com();
+        // ensure com has correct baud rate (for serial it will be set in main using Config.SerialBaudrate)
+        comport->SetBaudRate(TX_COM_BAUDRATE);
     }
     serial2 = &uartd_port;
 }
