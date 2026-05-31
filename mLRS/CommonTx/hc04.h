@@ -131,6 +131,7 @@ void tTxHc04Bridge::passthrough_do(void)
     ser->flush();
 #if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
     ser_or_com_set_to_com();
+    com = comport; // re-fetch: ser_or_com_set_to_com() reassigned the global comport pointer
 #endif
 
     leds.InitPassthrough();

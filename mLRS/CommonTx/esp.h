@@ -393,6 +393,7 @@ void tTxEspWifiBridge::passthrough_do(void)
     ser->SetBaudRate(baudrate);
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
     ser_or_com_set_to_com();
+    com = comport; // re-fetch: ser_or_com_set_to_com() reassigned the global comport pointer
 #endif
     ser->flush();
     com->flush();
