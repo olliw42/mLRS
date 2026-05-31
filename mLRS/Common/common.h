@@ -31,154 +31,62 @@
 // Serial Classes
 //-------------------------------------------------------
 
-#if defined DEVICE_IS_TRANSMITTER && defined USE_COM_ON_SERIAL
-  // TODO: when we swap ser/com, we may want to flush, we need to change baudrate
-#ifdef DEVICE_HAS_SERIAL_ON_USB
-  #define SERORCOM_INIT  ser_or_com_init();
-#else
-  #define SERORCOM_INIT  ser_or_com_init(); if (!ser_or_com_serial()) uartb_setbaudrate(TX_COM_BAUDRATE);
-#endif
-  #define IFNSER(x)  if (!ser_or_com_serial()) return x;
-  #define IFNCOM(x)  if (ser_or_com_serial()) return x;
-#else
-  #define SERORCOM_INIT
-  #define IFNSER(x)
-  #define IFNCOM(x)
-#endif
-
-
-// is always uartb (or usb)
-#if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
-#include "../CommonRx/dronecan_interface_rx_types.h"
-extern tRxDroneCan dronecan;
-static bool ser_not_can = true;
-#endif
-
-class tSerialPort : public tSerialBase
+// tx: serial or com, rx: serial
+class tUartBPort : public tSerialBase
 {
-#if defined DEVICE_IS_TRANSMITTER && defined USE_SERIAL
+#if (defined USE_SERIAL || defined USE_COM_ON_SERIAL) && !defined DEVICE_HAS_SERIAL_ON_USB
   public:
-#ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
-    void InitOnce(void) override { usb_init(); }
-    void Init(void) override { SERORCOM_INIT; }
-    bool full(void) { IFNSER(false); return usb_tx_full(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { IFNSER(); usb_putbuf(buf, len); }
-    bool available(void) override { IFNSER(0); return usb_rx_available(); }
-    char getc(void) override { IFNSER(0); return usb_getc(); }
-    void flush(void) override { IFNSER(); usb_flush(); }
-    uint16_t bytes_available(void) override { IFNSER(0); return usb_rx_bytesavailable(); }
-#else
-    void Init(void) override { uartb_init(); SERORCOM_INIT; }
-    void SetBaudRate(uint32_t baud) override { IFNSER(); uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    bool full(void) { IFNSER(false); return !uartb_tx_notfull(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { IFNSER(); uartb_putbuf(buf, len); }
-    bool available(void) override { IFNSER(0); return uartb_rx_available(); }
-    char getc(void) override { IFNSER(0); return uartb_getc(); }
-    void flush(void) override { IFNSER(); uartb_rx_flush(); uartb_tx_flush(); }
-    uint16_t bytes_available(void) override { IFNSER(0); return uartb_rx_bytesavailable(); }
-    bool has_systemboot(void) override { return uartb_has_systemboot(); }
-#endif
-#endif
-#ifdef DEVICE_IS_RECEIVER
-  public:
-#if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    void Init(void) override { ser_not_can = true; if (ser_not_can) uartb_init_isroff(); }
-    void SetSerialIsSource(bool _ser) { ser_not_can = _ser; if (ser_not_can) uartb_rx_enableisr(ENABLE); }
-    void SetBaudRate(uint32_t baud) override { if (ser_not_can) uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    void putbuf(uint8_t* buf, uint16_t len) override { if (ser_not_can) uartb_putbuf(buf, len); else dronecan.putbuf(buf, len); }
-    bool available(void) override { return (ser_not_can) ? uartb_rx_available() : dronecan.available(); }
-    char getc(void) override { return (ser_not_can) ? uartb_getc() : dronecan.getc(); }
-    void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); dronecan.flush(); }
-    uint16_t bytes_available(void) override { return (ser_not_can) ? uartb_rx_bytesavailable() : dronecan.bytes_available(); }
-    bool has_systemboot(void) override { return (ser_not_can) ? uartb_has_systemboot() : false; }
-#elif defined DEVICE_HAS_DRONECAN
-    void SetSerialIsSource(bool _ser) { ser_not_can = true; } // use ser_not_can to make compiler happy
-    void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
-    bool available(void) override { return dronecan.available(); }
-    char getc(void) override { return dronecan.getc(); }
-    void flush(void) override { dronecan.flush(); }
-    uint16_t bytes_available(void) override { return dronecan.bytes_available(); }
-#elif defined USE_SERIAL
     void Init(void) override { uartb_init(); }
-    void SetSerialIsSource(bool _ser) {}
     void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
+    bool full(void) override { return !uartb_tx_notfull(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { uartb_putbuf(buf, len); }
     bool available(void) override { return uartb_rx_available(); }
     char getc(void) override { return uartb_getc(); }
     void flush(void) override { uartb_rx_flush(); uartb_tx_flush(); }
     uint16_t bytes_available(void) override { return uartb_rx_bytesavailable(); }
     bool has_systemboot(void) override { return uartb_has_systemboot(); }
-#else
-    void SetSerialIsSource(bool _ser) {}
-#endif
 #endif
 };
 
 
-// is always uartf (or swuart)
-class tDebugPort : public tSerialBase
+// tx: com
+class tUartCPort : public tSerialBase
 {
-#ifdef USE_DEBUG
+#if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
   public:
-#ifdef DEVICE_HAS_DEBUG_SWUART
-    void Init(void) { swuart_init(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { swuart_putbuf(buf, len); }
-#else
-    void Init(void) { uartf_init(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { uartf_putbuf(buf, len); }
-#endif
-#endif
-};
-
-
-// is uartc or uartb (or usb)
-class tComPort : public tSerialBase
-{
-#ifdef USE_COM_ON_SERIAL
-  public:
-    // we do not initialize it as it is initialized by serial
-#ifdef DEVICE_HAS_SERIAL_ON_USB // USE_USB
-    bool full(void) { IFNCOM(false); return usb_tx_full(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { IFNCOM(); usb_putbuf(buf, len); }
-    bool available(void) override { IFNCOM(0); return usb_rx_available(); }
-    char getc(void) override { IFNCOM(0); return usb_getc(); }
-    void flush(void) override { IFNCOM(); usb_flush(); }
-#else
-    bool full(void) { IFNCOM(false); return !uartb_tx_notfull(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { IFNCOM(); uartb_putbuf(buf, len); }
-    bool available(void) override { IFNCOM(0); return uartb_rx_available(); }
-    char getc(void) override { IFNCOM(0); return uartb_getc(); }
-    void flush(void) override { IFNCOM(); uartb_rx_flush(); uartb_tx_flush(); }
-#endif
-#endif
-#ifdef USE_COM
-  public:
-#ifdef DEVICE_HAS_COM_ON_USB // USE_USB
-    void InitOnce(void) override { usb_init(); }
-    void Init(void) override { }
-    bool full(void) { return usb_tx_full(); }
-    void putbuf(uint8_t* const buf, uint16_t len) override { usb_putbuf(buf, len); }
-    bool available(void) override { return usb_rx_available(); }
-    char getc(void) override { return usb_getc(); }
-#else
     void Init(void) override { uartc_init(); }
-    bool full(void) { return !uartc_tx_notfull(); }
+    bool full(void) override { return !uartc_tx_notfull(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { uartc_putbuf(buf, len); }
     bool available(void) override { return uartc_rx_available(); }
     char getc(void) override { return uartc_getc(); }
 #endif
+};
+
+
+// tx: serial or com
+class tUsbPort : public tSerialBase
+{
+#ifdef USE_USB
+  public:
+    void InitOnce(void) override { usb_init(); }
+    bool full(void) override { return usb_tx_full(); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { usb_putbuf(buf, len); }
+    bool available(void) override { return usb_rx_available(); }
+    char getc(void) override { return usb_getc(); }
+    void flush(void) override { usb_flush(); }
+    uint16_t bytes_available(void) override { return usb_rx_bytesavailable(); }
 #endif
 };
 
 
-// is always uartd
-class tSerial2Port : public tSerialBase
+// tx: serial2
+class tUartDPort : public tSerialBase
 {
 #ifdef USE_SERIAL2
   public:
     void Init(void) override { uartd_init(); }
     void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    bool full(void) { return !uartd_tx_notfull(); }
+    bool full(void) override { return !uartd_tx_notfull(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { uartd_putbuf(buf, len); }
     bool available(void) override { return uartd_rx_available(); }
     char getc(void) override { return uartd_getc(); }
@@ -189,16 +97,134 @@ class tSerial2Port : public tSerialBase
 };
 
 
+// is always uartf (or swuart)
+class tDebugPort : public tSerialBase
+{
+#ifdef USE_DEBUG
+  public:
+#ifdef DEVICE_HAS_DEBUG_SWUART
+    void Init(void) override { swuart_init(); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { swuart_putbuf(buf, len); }
+#else
+    void Init(void) override { uartf_init(); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uartf_putbuf(buf, len); }
+#endif
+#endif
+};
+
+
+// rx: dronecan
+#if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
+#include "../CommonRx/dronecan_interface_rx_types.h"
+extern tRxDroneCan dronecan;
+#endif
+
+class tDroneCANPort : public tSerialBase
+{
+#ifdef DEVICE_HAS_DRONECAN
+  public:
+    void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
+    bool available(void) override { return dronecan.available(); }
+    char getc(void) override { return dronecan.getc(); }
+    void flush(void) override { dronecan.flush(); }
+    uint16_t bytes_available(void) override { return dronecan.bytes_available(); }
+#endif
+};
+
+
 //-------------------------------------------------------
 // Common Variables
 //-------------------------------------------------------
 
-tSerialPort serial;
+tSerialBase* serial;
+tUartBPort uartb_port;
 tDebugPort dbg;
+
 #ifdef DEVICE_IS_TRANSMITTER
-tSerial2Port serial2;
-tComPort comport;
+tSerialBase* serial2;
+tSerialBase* comport;
+tUartCPort uartc_port;
+tUsbPort usb_port;
+tUartDPort uartd_port;
+
+#ifdef USE_COM_ON_SERIAL
+// device does not have an extra com port, but allows us to use the serial port as com by e.g. a button thing
+// is determined at startup
+// note: in that case, UARTC is not used and tUartCPort is a dummy port
+// let's check that
+#if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
+  #error UARTC is not a dummy port!
 #endif
+
+void ser_or_com_set_to_serial(void)
+{
+  #ifdef DEVICE_HAS_SERIAL_ON_USB
+    serial = &usb_port;
+  #else
+    serial = &uartb_port;
+  #endif
+    comport = &uartc_port; // dummy port; TODO: can we use nullptr ?
+}
+
+void ser_or_com_set_to_com(void)
+{
+    serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
+  #ifdef DEVICE_HAS_SERIAL_ON_USB
+    comport = &usb_port;
+  #else
+    comport = &uartb_port;
+  #endif
+}
+
+void serial_ports_init(void)
+{
+    if (ser_or_com_init()) { // returns true if is_serial
+        ser_or_com_set_to_serial();
+    } else {
+        ser_or_com_set_to_com();
+        // ensure com has correct baud rate (for serial it will be set in main using Config.SerialBaudrate)
+        comport->SetBaudRate(TX_COM_BAUDRATE);
+    }
+    serial2 = &uartd_port;
+}
+
+#else
+
+void serial_ports_init(void)
+{
+#ifdef DEVICE_HAS_SERIAL_ON_USB
+    serial = &usb_port;
+#else
+    serial = &uartb_port;
+#endif
+#ifdef DEVICE_HAS_COM_ON_USB
+    comport = &usb_port;
+#else
+    comport = &uartc_port;
+#endif
+    serial2 = &uartd_port;
+}
+
+#endif
+#endif // DEVICE_IS_TRANSMITTER
+#ifdef DEVICE_IS_RECEIVER
+tDroneCANPort dronecan_port;
+
+void serial_ports_init(bool _ser)
+{
+#if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
+    if (_ser) {
+        serial = &uartb_port; // assign uartb to serial
+    } else {
+        serial = &dronecan_port; // assign dronecan to serial
+    }
+#elif defined DEVICE_HAS_DRONECAN
+    serial = &dronecan_port;
+#elif defined USE_SERIAL
+    serial = &uartb_port;
+#endif
+}
+#endif // DEVICE_IS_RECEIVER
 
 tRcData rcData;
 

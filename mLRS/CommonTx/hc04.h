@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include "../Common/hal/hal.h"
 
 
 #if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL

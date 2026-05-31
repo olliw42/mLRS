@@ -184,10 +184,7 @@ IRAM_ATTR bool button2_pressed(void) { return (gpio_read_activelow(BUTTON2)) ? t
 //-- Serial or Com Switch
 
 #ifdef DEVICE_HAS_SERIAL_OR_COM
-
-bool tx_ser_or_com_serial = true; // default is serial
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU);
     gpio_init(BUTTON2, IO_MODE_INPUT_PU);
@@ -195,14 +192,9 @@ void ser_or_com_init(void)
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON) || gpio_read_activelow(BUTTON2)) cnt++;
     }
-    tx_ser_or_com_serial = !(cnt > 8);
+    return !(cnt > 8);
 }
-
-IRAM_ATTR bool ser_or_com_serial(void) { return tx_ser_or_com_serial; }
-
-IRAM_ATTR void ser_or_com_set_to_com(void) { tx_ser_or_com_serial = false; }
-
-#endif // DEVICE_HAS_SERIAL_OR_COM
+#endif
 
 
 //-- Cooling Fan

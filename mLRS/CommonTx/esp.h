@@ -37,6 +37,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include "../Common/hal/hal.h"
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
@@ -290,7 +291,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
-    com->SetBaudRate(baudrate); // Standard tools should specify 115200 to avoid baudrate change
+    com->SetBaudRate(baudrate); // standard tools should specify 115200 to avoid baudrate change
     ser->flush();
     com->flush();
 

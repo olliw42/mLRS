@@ -217,22 +217,16 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define DIP1                      IO_PA12 // same a green
 #define DIP2                      IO_PA11 // same as red
 
-bool r9m_ser_or_com_serial = false;  // we use com as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(DIP1, IO_MODE_INPUT_PU, IO_SPEED_SLOW);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(DIP1)) cnt++;
     }
-    r9m_ser_or_com_serial = (cnt > 8);
+    bool r9m_ser_or_com_serial = (cnt > 8);
     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     led_green_off(); // LED_GREEN_OFF
-}
-
-bool ser_or_com_serial(void)
-{
     return r9m_ser_or_com_serial;
 }
 
