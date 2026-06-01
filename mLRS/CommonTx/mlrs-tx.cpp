@@ -708,7 +708,11 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+    serial->SetBaudRate(460800); // Fixed baud rate for AX12 due to RadioMaster limitation
+#else
     serial->SetBaudRate(Config.SerialBaudrate);
+#endif   
     serial2->SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life

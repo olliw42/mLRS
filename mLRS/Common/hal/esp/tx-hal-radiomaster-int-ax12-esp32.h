@@ -31,7 +31,6 @@
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
-#define SERIAL_FIXED_BAUD 460800
 
 
 //-- UARTS
@@ -43,7 +42,7 @@
 // UARTF = debug port
 
 #define UARTB_USE_SERIAL // serial connected to MCU for MAVLink/firmware update
-#define UARTB_BAUD                SERIAL_FIXED_BAUD
+#define UARTB_BAUD                460800 // Fixed baud rate!
 #define UARTB_USE_TX_IO           IO_P1
 #define UARTB_USE_RX_IO           IO_P3
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
