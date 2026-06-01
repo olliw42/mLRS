@@ -245,9 +245,7 @@ void enter_system_bootloader(void)
 
 void init_once(void)
 {
-    serial.InitOnce();
-    comport.InitOnce();
-    serial2.InitOnce();
+    usb_port.InitOnce();
 }
 
 
@@ -265,9 +263,10 @@ void init_hw(void)
     esp_init();
     fiveway_init();
 
-    serial.Init();
-    serial2.Init();
-    comport.Init();
+    serial_ports_init();
+    serial->Init();
+    serial2->Init();
+    comport->Init();
 
     buzzer.Init();
     fan.Init();
@@ -709,8 +708,8 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-    serial.SetBaudRate(Config.SerialBaudrate);
-    serial2.SetBaudRate(Config.SerialBaudrate);
+    serial->SetBaudRate(Config.SerialBaudrate);
+    serial2->SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life
     leds.Init();
@@ -750,21 +749,21 @@ RESTARTCONTROLLER
     rarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
-    mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
-    msp.Init(&serial, &serial2); // ports selected by SerialDestination
-    sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
-    cli.Init(&comport, Config.frame_rate_ms);
+    mavlink.Init(serial, &mbridge, serial2); // ports selected by SerialDestination, ChannelsSource
+    msp.Init(serial, serial2); // ports selected by SerialDestination
+    sx_serial.Init(serial, &mbridge, serial2); // ports selected by SerialDestination, ChannelsSource
+    cli.Init(comport, Config.frame_rate_ms);
 #ifdef USE_ESP_WIFI_BRIDGE
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    esp.Init(&jrpin5serial, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #else
-    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    esp.Init(comport, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #endif
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    hc04.Init(&comport, &serial2, Config.SerialBaudrate);
+    hc04.Init(comport, serial2, Config.SerialBaudrate);
 #else
-    hc04.Init(&comport, &serial, Config.SerialBaudrate);
+    hc04.Init(comport, serial, Config.SerialBaudrate);
 #endif
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();

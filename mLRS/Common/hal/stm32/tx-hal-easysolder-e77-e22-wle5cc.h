@@ -311,21 +311,14 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool tx_ser_or_com_serial = true; // we use serial as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    tx_ser_or_com_serial = !(cnt > 8);
-}
-
-bool ser_or_com_serial(void)
-{
-    return tx_ser_or_com_serial;
+    return !(cnt > 8);
 }
 
 

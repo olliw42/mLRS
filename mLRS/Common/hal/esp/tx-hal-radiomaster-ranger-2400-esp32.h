@@ -209,26 +209,14 @@ IRAM_ATTR uint8_t fiveway_read(void)
 // FIVEWAY-DONW becomes bind button later on
 
 #ifdef DEVICE_HAS_SERIAL_OR_COM
-bool tx_ser_or_com_serial = true; // we use serial as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         int16_t adc = analogRead(FIVEWAY_ADC_IO);
         if (adc > (KEY_DOWN_THRESH-200) && adc < (KEY_DOWN_THRESH+200)) cnt++;
     }
-    tx_ser_or_com_serial = !(cnt > 8);
-}
-
-IRAM_ATTR bool ser_or_com_serial(void)
-{
-    return tx_ser_or_com_serial;
-}
-
-IRAM_ATTR void ser_or_com_set_to_com(void)
-{
-    tx_ser_or_com_serial = false;
+    return !(cnt > 8);
 }
 #endif
 
