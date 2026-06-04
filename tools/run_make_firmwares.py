@@ -79,6 +79,7 @@ def findSTM32CubeIDEGnuTools(search_root):
 
 
 ST_DIR,GNU_DIR = '', ''
+GCC_DIR_OVERRIDE = '' # set when a standalone arm-none-eabi toolchain on PATH is used instead of CubeIDE
 
 # do this only when called from main context
 if __name__ == "__main__":
@@ -93,17 +94,24 @@ if __name__ == "__main__":
         GNU_DIR = os.getenv("MLRS_GNU_DIR")
 
     if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
-        print('ERROR: gnu-tools not found!')
-        exit(1)
-
-    print('STM32CubeIDE found in:', ST_DIR)
-    print('gnu-tools found in:', GNU_DIR)
+        # no STM32CubeIDE toolchain found, fall back to a standalone arm-none-eabi toolchain on PATH
+        gcc_path = shutil.which('arm-none-eabi-gcc')
+        if gcc_path:
+            GCC_DIR_OVERRIDE = os.path.dirname(gcc_path)
+            print('STM32CubeIDE not found, using arm-none-eabi toolchain on PATH:')
+            print(GCC_DIR_OVERRIDE)
+        else:
+            print('ERROR: gnu-tools not found! (neither STM32CubeIDE nor arm-none-eabi-gcc on PATH)')
+            exit(1)
+    else:
+        print('STM32CubeIDE found in:', ST_DIR)
+        print('gnu-tools found in:', GNU_DIR)
     print('------------------------------------------------------------')
 
 
 #-- GCC preliminaries
 
-GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
+GCC_DIR = GCC_DIR_OVERRIDE if GCC_DIR_OVERRIDE else os.path.join(ST_DIR,GNU_DIR,'tools','bin')
 
 # we need to modify the PATH so that the correct toolchain/compiler is used
 # why does sys.path.insert(0,xxx) not work?
