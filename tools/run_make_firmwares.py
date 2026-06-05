@@ -449,17 +449,12 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','tasks.cpp'),
     ]
 
-#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.sensors.rc.RCInput.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.dynamic_node_id.Allocation.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_req.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_res.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.HardwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.NodeStatus.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.SoftwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Protocol.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Targetted.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.protocol.FlexDebug.c'))
+# add all Common/dronecan/out/src/*.c (auto-generated dronecan message sources), if present
+_dronecan_src_dir = os.path.join('Common','dronecan','out','src')
+if os.path.isdir(os.path.join(MLRS_DIR, _dronecan_src_dir)):
+    for _f in sorted(os.listdir(os.path.join(MLRS_DIR, _dronecan_src_dir))):
+        if _f.endswith('.c'):
+            MLRS_SOURCES_COMMON.append(os.path.join(_dronecan_src_dir, _f))
 
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
