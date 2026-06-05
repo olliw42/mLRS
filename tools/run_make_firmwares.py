@@ -17,6 +17,8 @@ import pathlib
 import shutil
 import re
 import sys
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 
 #-- installation dependent
@@ -636,7 +638,7 @@ def mlrs_compile_file(target, file):
 
     # execute
     #print('run')
-    os.system(cmd)
+    subprocess.call(cmd, shell=True) # subprocess, not os.system, so parallel compiles aren't serialized
 
 
 def mlrs_link_target(target):
@@ -727,22 +729,22 @@ def mlrs_build_target(target, cmdline_D_list):
 
     print('compiling')
 
-    mlrs_compile_file(target, os.path.join(target.target,'Core','Startup',target.startup_script))
+    files = [os.path.join(target.target,'Core','Startup',target.startup_script)]
 
     for file in target.MLRS_SOURCES_HAL:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     for file in target.MLRS_SOURCES_CORE:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     for file in MLRS_SOURCES_MODULES:
-        mlrs_compile_file(target, file)
+        files.append(file)
 
     for file in MLRS_SOURCES_COMMON:
-        mlrs_compile_file(target, file)
+        files.append(file)
 
     for file in target.MLRS_SOURCES_EXTRA:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     MLRS_SOURCES_RXTX = []
     if target.rx_or_tx == 'rx':
@@ -753,7 +755,13 @@ def mlrs_build_target(target, cmdline_D_list):
         printError('akdfkahsfkuhafkhasfkdh')
         exit(1)
     for file in MLRS_SOURCES_RXTX:
-        mlrs_compile_file(target, file)
+        files.append(file)
+
+    # pre-create object dirs first so the parallel compiles don't race in create_dir()
+    for file in files:
+        create_dir(os.path.join(MLRS_BUILD_DIR,target.build_dir,os.path.dirname(file)))
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        pool.map(lambda file: mlrs_compile_file(target, file), files)
 
     print('linking')
 
