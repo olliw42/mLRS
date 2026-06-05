@@ -103,8 +103,11 @@ if __name__ == "__main__":
         ST_DIR = os.path.dirname(gcc_path)
         GNU_DIR = ''
 
-    print('STM32CubeIDE found in:', ST_DIR)
-    print('gnu-tools found in:', GNU_DIR)
+    if GNU_DIR:
+        print('STM32CubeIDE found in:', ST_DIR)
+        print('gnu-tools found in:', GNU_DIR)
+    else:
+        print('arm-none-eabi toolchain found in:', ST_DIR)
     print('------------------------------------------------------------')
 
 
