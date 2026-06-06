@@ -760,10 +760,8 @@ RESTARTCONTROLLER
     esp.Init(comport, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #endif
 #endif
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    hc04.Init(comport, serial2, Config.SerialBaudrate);
-#else
-    hc04.Init(comport, serial, Config.SerialBaudrate);
+#ifdef USE_HC04_MODULE
+    hc04.Init(comport, serial, serial2, Config.SerialBaudrate);
 #endif
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
