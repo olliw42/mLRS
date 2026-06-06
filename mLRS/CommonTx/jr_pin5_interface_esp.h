@@ -235,7 +235,7 @@ class tJrPin5SerialPort : public tSerialBase
   public:
     // void Init(void) override { uart_init(); }
     void SetBaudRate(uint32_t baud) override { uart_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
-    bool full(void) { return !uart_tx_notfull(); }
+    bool full(void) override { return !uart_tx_notfull(); }
     void putbuf(uint8_t* const buf, uint16_t len) override { uart_putbuf(buf, len); }
     bool available(void) override { return uart_rx_available(); }
     char getc(void) override { return uart_getc(); }
