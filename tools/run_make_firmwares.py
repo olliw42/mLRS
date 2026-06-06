@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 5.06.2026
+ version 6.06.2026
 ********************************************************
 '''
 import os
@@ -78,7 +78,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     return st_dir, gnu_dir
 
 
-ST_DIR,GNU_DIR,GCC_DIR = '', '', ''
+GCC_DIR = ''
 
 # do this only when called from main context
 if __name__ == "__main__":
