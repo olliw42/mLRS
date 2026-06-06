@@ -188,16 +188,12 @@ void tTxEspWifiBridge::Init(
 
     com = _comport;
     ser = nullptr;
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) {
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-        ser = _serialport;
+    ser = _serialport;
 #endif
-    } else
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) {
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-        ser = _serial2port;
+    ser = _serial2port;
 #endif
-    }
     ser_baud = _serial_baudrate;
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
