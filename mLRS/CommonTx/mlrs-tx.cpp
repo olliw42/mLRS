@@ -708,7 +708,11 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+    serial->SetBaudRate(460800); // Fixed baud rate for AX12 due to RadioMaster limitation
+#else
     serial->SetBaudRate(Config.SerialBaudrate);
+#endif   
     serial2->SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life
@@ -757,7 +761,11 @@ RESTARTCONTROLLER
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
     esp.Init(&jrpin5serial, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
   #else
-    esp.Init(comport, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
+      esp.Init(serial, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    #else
+      esp.Init(comport, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    #endif
   #endif
 #endif
 #ifdef USE_HC04_MODULE

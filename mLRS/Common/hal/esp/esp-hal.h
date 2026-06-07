@@ -135,6 +135,10 @@
 #include "tx-hal-radiomaster-int-tx16smk3-esp32.h"
 #endif
 
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+#include "tx-hal-radiomaster-int-ax12-esp32.h"
+#endif
+
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
 #include "tx-hal-betafpv-micro-1w-2400-esp32.h"
 #endif
