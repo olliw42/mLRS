@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 7.05.2026
+ version 5.06.2026
 ********************************************************
 '''
 import os
@@ -78,7 +78,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     return st_dir, gnu_dir
 
 
-ST_DIR,GNU_DIR = '', ''
+ST_DIR,GNU_DIR,GCC_DIR = '', '', ''
 
 # do this only when called from main context
 if __name__ == "__main__":
@@ -92,25 +92,20 @@ if __name__ == "__main__":
     if os.getenv("MLRS_GNU_DIR"):
         GNU_DIR = os.getenv("MLRS_GNU_DIR")
 
-    if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
-        print('ERROR: gnu-tools not found!')
-        exit(1)
-
-    print('STM32CubeIDE found in:', ST_DIR)
-    print('gnu-tools found in:', GNU_DIR)
+    if ST_DIR != '' and GNU_DIR != '' and os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+        # STM32CubeIDE toolchain, gnu-tools live in a tools/bin subpath of the plugin
+        GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
+        print('STM32CubeIDE found in:', ST_DIR)
+        print('gnu-tools found in:', GNU_DIR)
+    else:
+        # no STM32CubeIDE toolchain found, fall back to a standalone arm-none-eabi toolchain on PATH
+        gcc_path = shutil.which('arm-none-eabi-gcc')
+        if not gcc_path:
+            print('ERROR: gnu-tools not found! (neither STM32CubeIDE nor arm-none-eabi-gcc on PATH)')
+            exit(1)
+        GCC_DIR = os.path.dirname(gcc_path) # arm-none-eabi-gcc is directly in this dir
+        print('arm-none-eabi toolchain found in:', GCC_DIR)
     print('------------------------------------------------------------')
-
-
-#-- GCC preliminaries
-
-GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
-
-# we need to modify the PATH so that the correct toolchain/compiler is used
-# why does sys.path.insert(0,xxx) not work?
-# no, not needed anymore as we can call arm-none-eabi directly
-#envpath = os.environ["PATH"]
-#envpath = GCC_DIR + ';' + envpath
-#os.environ["PATH"] = envpath
 
 
 #-- mLRS directories
@@ -442,17 +437,12 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','tasks.cpp'),
     ]
 
-#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.sensors.rc.RCInput.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.dynamic_node_id.Allocation.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_req.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_res.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.HardwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.NodeStatus.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.SoftwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Protocol.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Targetted.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.protocol.FlexDebug.c'))
+# add all Common/dronecan/out/src/*.c (auto-generated dronecan message sources), if present
+_dronecan_src_dir = os.path.join('Common','dronecan','out','src')
+if os.path.isdir(os.path.join(MLRS_DIR, _dronecan_src_dir)):
+    for _f in sorted(os.listdir(os.path.join(MLRS_DIR, _dronecan_src_dir))):
+        if _f.endswith('.c'):
+            MLRS_SOURCES_COMMON.append(os.path.join(_dronecan_src_dir, _f))
 
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
