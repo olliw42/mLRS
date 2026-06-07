@@ -41,7 +41,10 @@
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error ESP: ESP wireless bridge is on serial but board has serial/com !
+  #error ESP: ESP wireless bridge is on serial but board has serial or com !
+#endif
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
+  #error ESP: ESP wireless bridge is on serial but board has com on serial !
 #endif
 
 
@@ -188,6 +191,9 @@ void tTxEspWifiBridge::Init(
 
     com = _comport;
     ser = nullptr;
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
+    com = _serialport;
+#endif
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
     ser = _serialport;
 #endif
