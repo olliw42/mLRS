@@ -1261,12 +1261,17 @@ if __name__ == "__main__":
     targetlist = mlrs_create_targetlist('-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR, [])
 
     target_cnt = 0
+    selected = []
     for target in targetlist:
         if ((cmdline_target == '') or
             (cmdline_target[0] != '!' and cmdline_target in target.target) or
             (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
-            mlrs_build_target(target, cmdline_D_list)
+            selected.append(target)
             target_cnt +=1
+
+    # build targets concurrently (each also compiles its own files in parallel)
+    with ThreadPoolExecutor(max_workers=int(os.getenv('MLRS_BUILD_JOBS', '4'))) as pool:
+        list(pool.map(lambda t: mlrs_build_target(t, cmdline_D_list), selected))
 
     if cmdline_target == '' or target_cnt > 0:
         mlrs_copy_all_hex_etc()
