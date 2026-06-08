@@ -7,8 +7,9 @@
  OlliW @ www.olliw.eu
 *******************************************************
  run_flash_stm32.py
+ Linux or MacOS flash utility for STM32 mLRS targets
  requires dfu-util (DFU) or st-flash (SWD)
- version 7.06.2026
+ version 8.06.2026
 ********************************************************
 '''
 import os
