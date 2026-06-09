@@ -4,9 +4,8 @@
  Copyright (c) MLRS project
  GPL3
  https://www.gnu.org/licenses/gpl-3.0.de.html
- OlliW @ www.olliw.eu
-*******************************************************
- run_flash_stm32.py
+ ******************************************************
+ run_flash_stm32_linux.py
  Linux or MacOS flash utility for STM32 mLRS targets
  requires dfu-util (DFU) or st-flash (SWD)
  version 8.06.2026
