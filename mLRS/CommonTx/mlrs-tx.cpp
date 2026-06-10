@@ -16,7 +16,7 @@
 /* LAS identity handshake — sent once by Python over UART at connect time.
  * Wire format: [LORA_MAGIC_LEN bytes magic][sys_id][show_group]
  */
-#define LORA_MAGIC              "LAS!LoRa:Identity:Handshake:v1!!"
+#define LORA_MAGIC              ".LAS!LoRa:Identity:Handshake:v1!"
 #define LORA_MAGIC_LEN          32U
 #define LORA_HANDSHAKE_ACK      ((uint16_t)0xACAC)  /* 2-byte ACK */
 
