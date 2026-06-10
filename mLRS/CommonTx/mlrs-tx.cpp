@@ -13,6 +13,21 @@
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
+/* LAS identity handshake — sent once by Python over UART at connect time.
+ * Wire format: [LORA_MAGIC_LEN bytes magic][sys_id][show_group]
+ */
+#define LORA_MAGIC              "LAS!LoRa:Identity:Handshake:v1!!"
+#define LORA_MAGIC_LEN          32U
+#define LORA_HANDSHAKE_ACK      ((uint16_t)0xACAC)  /* 2-byte ACK */
+
+typedef enum 
+{
+    HS_IDLE,        /*!< no match in progress, bytes route directly to payload */
+    HS_MATCHING,    /*!< partial magic match — accumulating position hs_pos */
+    HS_SYS_ID,      /*!< full magic matched, next byte is sys_id */
+    HS_SHOW_GROUP,  /*!< sys_id received, next byte is show_group */
+} tHsState;
+
 
 // we set the priorities here to have an overview, SysTick is at 15, I2C is at 15, USB is at 0
 #define UART_IRQ_PRIORITY           10 // jrpin5 bridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
@@ -467,34 +482,113 @@ void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2
 	uint8_t payload[FRAME_TX_PAYLOAD_LEN];
 	uint8_t payload_len = 0;
 
-	if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL)
-	{
-		// read data from serial port
-		if (connected())
-		{
-            uint16_t to_send = sx_serial.bytes_available();
+    if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL)
+    {
+        static tHsState hs_state  = HS_IDLE;
+        static uint8_t  hs_pos    = 0U;
+        static uint8_t  hs_sys_id = 0U;
 
-            if (to_send > FRAME_TX_PAYLOAD_LEN) 
+        uint16_t to_read = sx_serial.bytes_available();
+
+        if (to_read > FRAME_TX_PAYLOAD_LEN)
+        {
+            to_read = FRAME_TX_PAYLOAD_LEN;
+        }
+
+        for (uint16_t i = 0U; i < to_read; i++)
+        {
+            uint8_t byte = (uint8_t)sx_serial.getc();
+
+            /* handhshake FSM */ 
+            switch (hs_state)
             {
-                to_send = FRAME_TX_PAYLOAD_LEN;
-            }
+            case HS_IDLE:
+                if (byte == (uint8_t)LORA_MAGIC[0])
+                {
+                    hs_pos   = 1U;
+                    hs_state = HS_MATCHING;
+                }
+                else if (connected() && payload_len < FRAME_TX_PAYLOAD_LEN)
+                {
+                    payload[payload_len++] = byte;
+                }
+                break;
 
-            for (uint16_t i = 0U; i < to_send; i++)
-            {
-                payload[payload_len++] = sx_serial.getc();
-            }
+            case HS_MATCHING:
+                if (byte == (uint8_t)LORA_MAGIC[hs_pos])
+                {
+                    /* transition straight to HS_SYS_ID*/
+                    if (++hs_pos == LORA_MAGIC_LEN)
+                    {
+                        hs_state = HS_SYS_ID;
+                    }
+                }
+                else
+                {
+                    /* mismatch: forward the matched magic prefix directly to payload */
+                    for (uint8_t j = 0U; j < hs_pos; j++)
+                    {
+                        if (connected() && payload_len < FRAME_TX_PAYLOAD_LEN)
+                        {
+                            payload[payload_len++] = (uint8_t)LORA_MAGIC[j];
+                        }
+                    }
+                    /* re-evaluate current byte — may itself start a new match */
+                    if (byte == (uint8_t)LORA_MAGIC[0])
+                    {
+                        hs_pos   = 1U;
+                        hs_state = HS_MATCHING;
+                    }
+                    else
+                    {
+                        if (connected() && payload_len < FRAME_TX_PAYLOAD_LEN)
+                        {
+                            payload[payload_len++] = byte;
+                        }
+                        
+                        /* back to IDLE */
+                        hs_pos   = 0U;
+                        hs_state = HS_IDLE;
+                    }
+                }
+                break;
 
+            case HS_SYS_ID:
+                hs_sys_id = byte;
+                hs_state  = HS_SHOW_GROUP;
+                break;
+
+            case HS_SHOW_GROUP:
+                stats.sys_id     = hs_sys_id;
+                stats.show_group = byte;
+                stats.broadcast  = (stats.sys_id == 0x00 && stats.show_group == 0xFF) ? 1U : 0U;
+                
+                /* two-byte ACK */
+                serial.putc((uint8_t)(LORA_HANDSHAKE_ACK >> 8)); /* MSB */
+                serial.putc((uint8_t)(LORA_HANDSHAKE_ACK & 0xFF)); /* LSB */
+                
+                /* back to IDLE */
+                hs_pos   = 0U;
+                hs_state = HS_IDLE;
+                break;
+            }
+        }
+        
+        if (connected())
+        {
             if (payload_len > 0U)
             {
                 stats.bytes_transmitted.Add(payload_len);
                 stats.serial_data_transmitted.Inc();
             }
-		} 
-        else 
+        }
+        else
         {
-			sx_serial.flush();
-		}
-	}
+            hs_state = HS_IDLE;
+            hs_pos   = 0U;
+            sx_serial.flush();
+        }
+    }
 
     stats.last_transmit_antenna = antenna;
 
@@ -704,9 +798,9 @@ RESTARTCONTROLLER
     serial.SetBaudRate(Config.SerialBaudrate);
     serial2.SetBaudRate(Config.SerialBaudrate);
 
-    stats.broadcast = 1;
-    stats.sys_id = 0;
-    stats.show_group = 0;
+    stats.broadcast  = 1;
+    stats.sys_id     = 0x00;
+    stats.show_group = 0xFF;
 
     // startup sign of life
     leds.Init();
