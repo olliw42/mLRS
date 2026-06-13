@@ -50,6 +50,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
+#define DEVICE_HAS_SERIAL_OR_COM_ON_USB // board's native USB carries Com (default) or Serial, selected by the Serial Destination option; implies DEVICE_HAS_COM_ON_USB
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
@@ -275,6 +276,9 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif // DEVICE_IS_RECEIVER
 
 #ifdef DEVICE_IS_TRANSMITTER
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB // USB carries serial-or-com, so com is on USB by default
+  #define DEVICE_HAS_COM_ON_USB
+#endif
 #if defined DEVICE_HAS_SERIAL_OR_COM // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL

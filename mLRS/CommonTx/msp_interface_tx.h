@@ -62,6 +62,7 @@ class tTxMsp
 void tTxMsp::Init(tSerialPorts* const _serialports)
 {
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
+    case SERIAL_DESTINATION_USB: // serial was swapped to usb_port in SerialPorts.Configure(), so same as SERIAL
     case SERIAL_DESTINATION_SERIAL:
         ser = _serialports->serial;
         break;
