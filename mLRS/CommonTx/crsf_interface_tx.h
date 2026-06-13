@@ -792,7 +792,7 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
     barometer.baro_temp = CRSF_REV_U32(payload->temperature);
     crsf_status[CRSF_ITEM_BAROMETER].updated = true;
 
-    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0Â°C, -50 = -5.0Â°C)
     temp_ambient.temp_source_id = 1;
     temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
     crsf_status[CRSF_ITEM_TEMP].updated = true;
@@ -1186,7 +1186,7 @@ uint8_t len;
 
 #else
 
-class tTxCrsfDummy
+class tTxCrsf
 {
   public:
     void Init(bool enable_flag) {}
@@ -1200,7 +1200,7 @@ class tTxCrsfDummy
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
-tTxCrsfDummy crsf;
+tTxCrsf crsf;
 
 #endif // ifdef DEVICE_HAS_JRPIN5
 

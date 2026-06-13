@@ -21,10 +21,13 @@
 #include "../Common/mavlink/out/lib/fastmavlink_router.h"
 
 
-extern bool link_task_free(void);
-extern volatile uint32_t millis32(void);
-extern bool connected_and_rx_setup_available(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxCrsf crsf;
 extern tStats stats;
+extern volatile uint32_t millis32(void);
+extern bool link_task_free(void);
+extern bool connected_and_rx_setup_available(void);
 
 
 //#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
@@ -69,7 +72,7 @@ class tTxVehicle
 class tTxMavlink
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
+    void Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge);
     void Do(void);
     uint8_t Task(void);
     uint8_t VehicleState(void);
@@ -144,7 +147,7 @@ class tTxMavlink
 };
 
 
-void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
+void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge)
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
@@ -152,11 +155,11 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
     // => ser2 != nullptr indicates that router is to be used
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
-        ser = _serialport;
+        ser = _serialports->serial;
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
         break;
     case SERIAL_DESTINATION_SERIAL2:
-        ser = _serial2port;
+        ser = _serialports->serial2;
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
         break;
     case SERIAL_DESTINATION_MBRIDGE:

@@ -30,7 +30,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate) {}
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -47,7 +47,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate);
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -60,19 +60,21 @@ class tTxHc04Bridge
 
     void passthrough_do(void);
 
+    tSerialPorts* serialports;
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate)
+void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate)
 {
-    com = _comport;
+    serialports = _serialports;
+    com = _serialports->com;
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    ser = _serial2port;
+    ser = _serialports->serial2;
 #else
-    ser = _serialport;
+    ser = _serialports->serial;
 #endif
     ser_baud = _serial_baudrate;
 
@@ -136,7 +138,7 @@ void tTxHc04Bridge::passthrough_do(void)
     ser->SetBaudRate(ser_baud);
     ser->flush();
 #if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    com = ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
+    com = serialports->ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
 
     leds.InitPassthrough();

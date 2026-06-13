@@ -25,6 +25,7 @@
 #include "fan.h"
 #include "leds.h"
 #include "rf_power.h"
+#include "setup_types.h"
 
 
 //-------------------------------------------------------
@@ -133,19 +134,31 @@ class tDroneCANPort : public tSerialBase
 
 
 //-------------------------------------------------------
-// Common Variables
+// SerialPorts Class
 //-------------------------------------------------------
 
-tSerialBase* serial;
-tUartBPort uartb_port;
-tDebugPort dbg;
-
 #ifdef DEVICE_IS_TRANSMITTER
-tSerialBase* serial2;
-tSerialBase* comport;
-tUartCPort uartc_port;
+tUartBPort uartb_port; // usually serial port
+tUartCPort uartc_port; // usually COM/CLI port
+tUartDPort uartd_port; // usually serial2 BT/ESP port
 tUsbPort usb_port;
-tUartDPort uartd_port;
+
+typedef struct
+{
+    tSerialBase* serial;
+    tSerialBase* serial2;
+    tSerialBase* com;
+    tSerialBase* usb;
+    tSerialBase* jrpin5serial; // can be nullptr!
+
+    void Init(void);
+    void Configure(uint8_t serial_destination);
+
+#ifdef USE_COM_ON_SERIAL
+    void ser_or_com_set_to_serial(void);
+    tSerialBase* ser_or_com_set_to_com(void);
+#endif
+} tSerialPorts;
 
 #ifdef USE_COM_ON_SERIAL
 // device does not have an extra com port, but allows us to use the serial port as com by e.g. a button thing
@@ -156,42 +169,45 @@ tUartDPort uartd_port;
   #error UARTC is not a dummy port!
 #endif
 
-void ser_or_com_set_to_serial(void)
+void tSerialPorts::ser_or_com_set_to_serial(void)
 {
   #ifdef DEVICE_HAS_SERIAL_ON_USB
     serial = &usb_port;
   #else
     serial = &uartb_port;
   #endif
-    comport = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    com = &uartc_port; // dummy port; TODO: can we use nullptr ?
 }
 
-tSerialBase* ser_or_com_set_to_com(void)
+tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
     serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
   #ifdef DEVICE_HAS_SERIAL_ON_USB
-    comport = &usb_port;
+    com = &usb_port;
   #else
-    comport = &uartb_port;
+    com = &uartb_port;
   #endif
-    return comport;
+    return com;
 }
 
-void serial_ports_init(void)
+void tSerialPorts::Init(void)
 {
     if (ser_or_com_init()) { // returns true if is_serial
         ser_or_com_set_to_serial();
     } else {
         ser_or_com_set_to_com();
         // ensure com has correct baud rate (for serial it will be set in main using Config.SerialBaudrate)
-        comport->SetBaudRate(TX_COM_BAUDRATE);
+        com->SetBaudRate(TX_COM_BAUDRATE);
     }
     serial2 = &uartd_port;
+
+    usb = &usb_port;
+    jrpin5serial = nullptr;
 }
 
 #else
 
-void serial_ports_init(void)
+void tSerialPorts::Init(void)
 {
 #ifdef DEVICE_HAS_SERIAL_ON_USB
     serial = &usb_port;
@@ -199,17 +215,38 @@ void serial_ports_init(void)
     serial = &uartb_port;
 #endif
 #ifdef DEVICE_HAS_COM_ON_USB
-    comport = &usb_port;
+    com = &usb_port;
 #else
-    comport = &uartc_port;
+    com = &uartc_port;
 #endif
     serial2 = &uartd_port;
+
+    usb = &usb_port;
+    jrpin5serial = nullptr;
 }
 
-#endif
+#endif // USE_COM_ON_SERIAL
+
+void tSerialPorts::Configure(uint8_t serial_destination)
+{
+/* JLP: here we could do something like
+    if (serial_destination == SERIAL_DESTINATION_USB) {
+        // serial ports need to be reconfigured
+        // for the moment, simply swap serial and com
+        // TODO: work out the correct conditions!!
+        // TODO: if this is allowed as option, we maybe also want the general possibility to enforce com = usb with button
+        tSerialBase* s = serial;
+        serial = com;
+        com = s;
+    }
+*/
+}
+
 #endif // DEVICE_IS_TRANSMITTER
 #ifdef DEVICE_IS_RECEIVER
+tUartBPort uartb_port;
 tDroneCANPort dronecan_port;
+tSerialBase* serial;
 
 void serial_ports_init(bool is_serial)
 {
@@ -227,6 +264,16 @@ void serial_ports_init(bool is_serial)
 }
 #endif // DEVICE_IS_RECEIVER
 
+
+//-------------------------------------------------------
+// Common Variables
+//-------------------------------------------------------
+
+#ifdef DEVICE_IS_TRANSMITTER
+tSerialPorts SerialPorts;
+#endif
+tDebugPort dbg;
+
 tRcData rcData;
 
 #ifdef DEVICE_IS_RECEIVER
@@ -242,9 +289,7 @@ SX_DRIVER sx;
 SX2_DRIVER sx2;
 
 tStats stats;
-
 tFhss fhss;
-
 tBindBase bind;
 
 #ifdef DEVICE_IS_TRANSMITTER

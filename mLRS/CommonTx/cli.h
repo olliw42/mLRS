@@ -303,7 +303,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 class tTxCli
 {
   public:
-    void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
+    void Init(tSerialPorts* const _serialports, uint16_t _frame_rate_ms);
     void Do(void);
 
   private:
@@ -356,9 +356,9 @@ class tTxCli
 };
 
 
-void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
+void tTxCli::Init(tSerialPorts* const _serialports, uint16_t _frame_rate_ms)
 {
-    com = _comport;
+    com = _serialports->com;
 
     initialized = (com != nullptr) ? true : false;
 

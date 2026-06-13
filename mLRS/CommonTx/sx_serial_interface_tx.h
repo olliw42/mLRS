@@ -11,13 +11,17 @@
 #pragma once
 
 
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxMavlink mavlink;
+extern tTxMsp msp;
 extern bool connected_and_rx_setup_available(void);
 
 
 class tTxSxSerial : public tSerialBase
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
+    void Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge);
 
     bool available(void) override;
     char getc(void) override;
@@ -29,16 +33,16 @@ class tTxSxSerial : public tSerialBase
 };
 
 
-void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
+void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge)
 {
     tSerialBase::Init();
 
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
-        ser = _serialport;
+        ser = _serialports->serial;
         break;
     case SERIAL_DESTINATION_SERIAL2:
-        ser = _serial2port;
+        ser = _serialports->serial2;
         break;
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;

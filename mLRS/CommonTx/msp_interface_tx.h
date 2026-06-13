@@ -18,6 +18,9 @@
 #include "../Common/thirdparty/mspx.h"
 
 
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxCrsf crsf;
 extern volatile uint32_t millis32(void);
 extern bool connected_and_rx_setup_available(void);
 
@@ -28,7 +31,7 @@ extern bool connected_and_rx_setup_available(void);
 class tTxMsp
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _serial2port);
+    void Init(tSerialPorts* const _serialports);
     void Do(void);
     void FrameLost(void);
 
@@ -56,14 +59,14 @@ class tTxMsp
 };
 
 
-void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2port)
+void tTxMsp::Init(tSerialPorts* const _serialports)
 {
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
-        ser = _serialport;
+        ser = _serialports->serial;
         break;
     case SERIAL_DESTINATION_SERIAL2:
-        ser = _serial2port;
+        ser = _serialports->serial2;
         break;
     case SERIAL_DESTINATION_MBRIDGE:
         ser = nullptr;

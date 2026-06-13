@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
@@ -84,7 +85,7 @@ void esp_enable(uint8_t serial_destination)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
+    void Init(tSerialPorts* const _serialports, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
     void Tick_ms(void) {}
     void Do(void) {}
     void EnterFlash(void) {}
@@ -121,7 +122,7 @@ uint8_t esp_dtr_rts(void)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
+    void Init(tSerialPorts* const _serialports, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
     void Tick_ms(void);
     void Do(void);
 
@@ -161,6 +162,7 @@ class tTxEspWifiBridge
     tTxSetup* tx_setup;
     tCommonSetup* common_setup;
 
+    tSerialPorts* serialports;
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
@@ -179,9 +181,7 @@ class tTxEspWifiBridge
 
 
 void tTxEspWifiBridge::Init(
-    tSerialBase* const _comport,
-    tSerialBase* const _serialport,
-    tSerialBase* const _serial2port,
+    tSerialPorts* const _serialports,
     uint32_t _serial_baudrate,
     tTxSetup* const _tx_setup,
     tCommonSetup* const _common_setup)
@@ -189,16 +189,21 @@ void tTxEspWifiBridge::Init(
     tx_setup = _tx_setup;
     common_setup = _common_setup;
 
-    com = _comport;
-    ser = nullptr;
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
-    com = _serialport;
+    serialports = _serialports;
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+    if (!_serialports->jrpin5serial) while(1){}; // must not happen, play it safe
+    com = _serialports->jrpin5serial;
+#elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
+    com = _serialports->serial;
+#else
+    com = _serialports->com;
 #endif
+    ser = nullptr;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    ser = _serialport;
+    ser = _serialports->serial;
 #endif
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    ser = _serial2port;
+    ser = _serialports->serial2;
 #endif
     ser_baud = _serial_baudrate;
 
@@ -394,7 +399,7 @@ void tTxEspWifiBridge::passthrough_do(void)
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    com = ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
+    com = serialports->ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
     ser->flush();
     com->flush();
