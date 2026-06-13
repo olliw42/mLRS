@@ -154,6 +154,7 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
     //   SerialDestination = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
+    case SERIAL_DESTINATION_USB: // serial was swapped to usb_port in SerialPorts.Configure(), so same as SERIAL
     case SERIAL_DESTINATION_SERIAL:
         ser = _serialports->serial;
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;

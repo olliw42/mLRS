@@ -176,12 +176,12 @@ void tSerialPorts::ser_or_com_set_to_serial(void)
   #else
     serial = &uartb_port;
   #endif
-    com = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    com = &uartc_port; // dummy no-op port (inherits tSerialBase defaults); can't be nullptr, com is dereferenced unconditionally (com->Init(), CLI)
 }
 
 tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
-    serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    serial = &uartc_port; // dummy no-op port (inherits tSerialBase defaults); can't be nullptr, serial is dereferenced unconditionally (serial->Init()/SetBaudRate())
   #ifdef DEVICE_HAS_SERIAL_ON_USB
     com = &usb_port;
   #else
@@ -227,19 +227,28 @@ void tSerialPorts::Init(void)
 
 #endif // USE_COM_ON_SERIAL
 
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB
+// com is on USB by default (DEVICE_HAS_COM_ON_USB, implied in hal.h); the Configure() swap below
+// moves the serial stream onto USB. The button-based serial-or-com boards use a different scheme.
+#if defined DEVICE_HAS_SERIAL_OR_COM
+  #error DEVICE_HAS_SERIAL_OR_COM_ON_USB is not supported together with DEVICE_HAS_SERIAL_OR_COM!
+#endif
+#endif
+
+// called once after Init() with the configured serial destination, before the serial
+// interfaces (mavlink, msp, sx_serial, cli) fetch the serial/com pointers
 void tSerialPorts::Configure(uint8_t serial_destination)
 {
-/* JLP: here we could do something like
+#ifdef DEVICE_HAS_SERIAL_OR_COM_ON_USB
     if (serial_destination == SERIAL_DESTINATION_USB) {
-        // serial ports need to be reconfigured
-        // for the moment, simply swap serial and com
-        // TODO: work out the correct conditions!!
-        // TODO: if this is allowed as option, we maybe also want the general possibility to enforce com = usb with button
+        // route the serial data stream onto native USB
+        // com is on USB (DEVICE_HAS_COM_ON_USB), so swap serial <-> com:
+        // serial = usb_port (data stream on USB), com = former serial port (CLI moves there)
         tSerialBase* s = serial;
         serial = com;
         com = s;
     }
-*/
+#endif
 }
 
 #endif // DEVICE_IS_TRANSMITTER
