@@ -110,7 +110,7 @@ typedef enum {
 
 
 // these we find in ArduCopter/mode.h
-void ap_copter_flight_mode_name4(char* name4, uint8_t flight_mode)
+void ap_copter_flight_mode_name4(char* const name4, uint8_t flight_mode)
 {
     switch (flight_mode) {
     case AP_COPTER_FLIGHTMODE_STABILIZE:    strcpy(name4, "STAB"); break;
@@ -146,7 +146,7 @@ void ap_copter_flight_mode_name4(char* name4, uint8_t flight_mode)
 
 
 // these we find in ArduPlane/mode.h
-void ap_plane_flight_mode_name4(char* name4, uint8_t flight_mode)
+void ap_plane_flight_mode_name4(char* const name4, uint8_t flight_mode)
 {
     switch (flight_mode) {
     case AP_PLANE_FLIGHTMODE_MANUAL:        strcpy(name4, "MANU"); break;
@@ -181,7 +181,7 @@ void ap_plane_flight_mode_name4(char* name4, uint8_t flight_mode)
 
 
 // these we find in Rover/mode.h
-void ap_rover_flight_mode_name4(char* name4, uint8_t flight_mode)
+void ap_rover_flight_mode_name4(char* const name4, uint8_t flight_mode)
 {
     switch (flight_mode) {
     case AP_ROVER_FLIGHTMODE_MANUAL:        strcpy(name4, "MANU"); break;
@@ -204,7 +204,7 @@ void ap_rover_flight_mode_name4(char* name4, uint8_t flight_mode)
 
 
 // there are these? made them up myself
-void ap_sub_flight_mode_name4(char* name4, uint8_t flight_mode)
+void ap_sub_flight_mode_name4(char* const name4, uint8_t flight_mode)
 {
     switch (flight_mode) {
     case AP_SUB_FLIGHTMODE_STABILIZE:       strcpy(name4, "STAB"); break;
@@ -269,7 +269,7 @@ uint8_t ap_vehicle_from_mavtype(uint8_t mav_type)
 // more
 //-------------------------------------------------------
 
-void ap_flight_mode_name4(char* name4, uint8_t vehicle, uint8_t flight_mode)
+void ap_flight_mode_name4(char* const name4, uint8_t vehicle, uint8_t flight_mode)
 {
     switch (vehicle) {
     case AP_VEHICLE_COPTER:

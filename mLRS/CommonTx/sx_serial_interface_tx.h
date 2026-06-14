@@ -11,15 +11,17 @@
 #pragma once
 
 
+extern bool connected_and_rx_setup_available(void);
+
+
 class tTxSxSerial : public tSerialBase
 {
   public:
-    void Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port);
-    bool IsEnabled(void);
+    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
 
     bool available(void) override;
     char getc(void) override;
-    void putc(char c) override;
+    void putbuf(uint8_t* const buf, uint16_t len) override;
     void flush(void) override;
 
   private:
@@ -27,7 +29,7 @@ class tTxSxSerial : public tSerialBase
 };
 
 
-void tTxSxSerial::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialBase* _serial2port)
+void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
 {
     tSerialBase::Init();
 
@@ -38,19 +40,13 @@ void tTxSxSerial::Init(tSerialBase* _serialport, tSerialBase* _mbridge, tSerialB
     case SERIAL_DESTINATION_SERIAL2:
         ser = _serial2port;
         break;
-    case SERIAL_DESTINATION_MBRDIGE:
+    case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         break;
     default:
-        while (1) {} // must not happen
+        while(1){} // must not happen
     }
-    if (!ser) while (1) {} // must not happen
-}
-
-
-bool tTxSxSerial::IsEnabled(void)
-{
-    return true;
+    if (!ser) while(1){} // must not happen
 }
 
 
@@ -59,7 +55,10 @@ bool tTxSxSerial::available(void)
     if (!connected_and_rx_setup_available()) return 0;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.available(); // get from serial via mavlink parser
+        return mavlink.available(); // get from serial via MAVLink parser
+    }
+    if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+        return msp.available(); // get from serial via MSP parser
     }
     return ser->available(); // get from serial
 }
@@ -67,30 +66,38 @@ bool tTxSxSerial::available(void)
 
 char tTxSxSerial::getc(void)
 {
-    if (!connected_and_rx_setup_available()) return 0;
+    if (!connected_and_rx_setup_available()) return 0; // not needed as done already by available()
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.getc(); // get from serial via mavlink parser
+        return mavlink.getc(); // get from serial via MAVLink parser
+    }
+    if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+        return msp.getc(); // get from serial via MSP parser
     }
     return ser->getc(); // get from serial
 }
 
 
-void tTxSxSerial::putc(char c)
+void tTxSxSerial::putbuf(uint8_t* const buf, uint16_t len)
 {
     if (!connected_and_rx_setup_available()) return;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
-        mavlink.putc(c);
+        for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]);
         return;
     }
-    ser->putc(c);
+    if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
+        for (uint16_t i = 0; i < len; i++) msp.putc(buf[i]);
+        return;
+    }
+    ser->putbuf(buf, len);
 }
 
 
 void tTxSxSerial::flush(void)
 {
-    mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
+    mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
+    msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
     ser->flush();
 }
 

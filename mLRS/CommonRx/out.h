@@ -41,19 +41,19 @@ typedef struct
 } tOutLinkStats;
 
 
-class OutBase
+class tOutBase
 {
   public:
-    OutBase(void);
+    tOutBase(void);
 
-    void Init(tRxSetup* _setup);
+    void Init(tRxSetup* const _setup);
 
     void Configure(uint8_t new_config);
 
     void Do(void);
 
-    void SendRcData(tRcData* rc, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
-    void SendLinkStatistics(tOutLinkStats* lstats);
+    void SendRcData(tRcData* const rc_orig, bool frame_lost, bool failsafe, int8_t rssi, uint8_t lq);
+    void SendLinkStatistics(tOutLinkStats* const lstats);
     void SendLinkStatisticsDisconnected(void);
 
     void SetChannelOrder(uint8_t new_channel_order);
@@ -61,19 +61,17 @@ class OutBase
     tRcData* GetRcDataPtr(void) { return &rc; }
 
   private:
-    void send_sbus_rcdata(tRcData* rc, bool frame_lost, bool failsafe);
-    void send_crsf_rcdata(tRcData* rc);
-    void send_crsf_linkstatistics(tOutLinkStats* lstats);
+    void send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe);
+    void send_crsf_rcdata(tRcData* const rc);
+    void send_crsf_linkstatistics(tOutLinkStats* const lstats);
     void do_crsf(void);
 
-    void putbuf(uint8_t* buf, uint16_t len);
-
-    virtual void putc(char c) {}
+    virtual void putbuf(uint8_t* const buf, uint16_t len) {}
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_crsf(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
-    ChannelOrder channel_order;
+    tChannelOrder channel_order;
     tRxSetup* setup;
     uint8_t config;
     bool initialized;

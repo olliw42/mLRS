@@ -14,10 +14,11 @@
 #include <stdint.h>
 #include "common_conf.h"
 #include "hal/device_conf.h"
+#include "setup_types.h"
 
 
 extern volatile uint32_t millis32(void);
-static inline bool connected(void);
+extern bool connected(void);
 #ifdef DEVICE_IS_RECEIVER
 extern void clock_reset(void);
 #endif
@@ -25,20 +26,23 @@ extern void clock_reset(void);
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
-void sxReadFrame(uint8_t antenna, void* data, void* data2, uint8_t len);
-void sxSendFrame(uint8_t antenna, void* data, uint8_t len, uint16_t tmo_ms);
-void sxGetPacketStatus(uint8_t antenna, Stats* stats);
+void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len);
+void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms);
+void sxGetPacketStatus(uint8_t antenna, tStats* const stats);
 
-extern Stats stats;
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tStats stats;
 
 
 //-------------------------------------------------------
 // Bind Class
 //-------------------------------------------------------
 
-#define BIND_SIGNATURE_TX_STR  "mLRS\x01\x02\x03\x04"
-#define BIND_SIGNATURE_RX_STR  "mLRS\x04\x03\x02\x01"
-#define BIND_BUTTON_TMO_MS     4000
+#define BIND_SIGNATURE_TX_STR     "mLRS\x01\x02\x03\x04"
+#define BIND_SIGNATURE_RX_STR     "mLRS\x04\x03\x02\x01"
+#define BIND_BUTTON_DEBOUNCE_MS   50
+#define BIND_BUTTON_TMO_MS        4000
 
 
 typedef enum {
@@ -49,14 +53,16 @@ typedef enum {
 } BIND_TASK_ENUM;
 
 
-class BindBase
+class tBindBase
 {
   public:
     void Init(void);
     bool IsInBind(void) { return is_in_binding; }
-    void StartBind(void) { binding_requested = true; }
-    void StopBind(void) { binding_stop_requested = true; }
+    void StartBind(void) { if (!is_in_binding) binding_requested = true; }
+    void StopBind(void) { if (is_in_binding) binding_stop_requested = true; }
     void ConfigForBind(void);
+    void HopToNextBind(uint16_t frequency_band); // SETUP_FREQUENCY_BAND_ENUM
+    void Tick_ms(void);
     void Do(void);
     uint8_t Task(void);
 
@@ -76,13 +82,18 @@ class BindBase
     void handle_receive(uint8_t antenna, uint8_t rx_status);
     void do_transmit(uint8_t antenna);
     uint8_t do_receive(uint8_t antenna, bool do_clock_reset);
+    void config_rf(void);
 
     bool is_pressed;
     int8_t pressed_cnt;
+
+  private:
+    tSxGlobalConfig* gconfig;
+    uint16_t mode_mask; // mask to handle toggling between 19 Hz and 19 Hz7x mode
 };
 
 
-void BindBase::Init(void)
+void tBindBase::Init(void)
 {
     is_in_binding = false;
     binding_requested = false;
@@ -98,38 +109,108 @@ void BindBase::Init(void)
     memcpy(&RxSignature, BIND_SIGNATURE_RX_STR, 8);
 
     auto_bind_tmo_ms = 1000 * RX_BIND_MODE_AFTER_POWERUP_TIME_SEC;
+
+    mode_mask = 0;
 }
 
 
-void BindBase::ConfigForBind(void)
+void tBindBase::ConfigForBind(void)
 {
-    // switch to 19 Mode, select lowest possible power
-    configure_mode(MODE_19HZ);
+    // used by both the Tx and Rx, switch to 19Hz or 19Hz7x mode, select lowest possible power
+    // we have to distinguish between MODE_19HZ or MODE_19HZ_7X
+    // configure_mode() however does currently do the same for both cases
+    // for devices which can do both modes we need to toggle
+    if (Config.Mode == MODE_19HZ_7X) {
+        mode_mask = 0xFFFF;
+        configure_mode(MODE_19HZ_7X, Config.FrequencyBand);
+        mode_mask &=~ (1 << Config.FrequencyBand); // clear bit for current frequency band
+    } else {
+        mode_mask = 0;
+        configure_mode(MODE_19HZ, Config.FrequencyBand);
+        mode_mask |= (1 << Config.FrequencyBand); // set bit for current frequency band
+    }
+
+    // we may need them both, so ensure they are both started up
+    sx.StartUp(&Config.Sx);
+    sx2.StartUp(&Config.Sx2);
 
     sx.SetToIdle();
     sx2.SetToIdle();
     sx.SetRfPower_dbm(rfpower_list[0].dbm);
     sx2.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx.ResetToLoraConfiguration();
-    sx2.ResetToLoraConfiguration();
+
+    config_rf();
+}
+
+
+// used only by Rx
+// is called in rx main when fhss.HopToNextBind() returns true
+// the frequency band is obtained with fhss.GetCurrBindSetupFrequencyBand()
+void tBindBase::HopToNextBind(uint16_t frequency_band) // SETUP_FREQUENCY_BAND_ENUM
+{
+    // not nice
+    // we would need SetupMetaData.Mode_allowed_mask before it is adjusted for the selected frequency band
+    // could keep a copy of the un-adjusted SetupMetaData.Mode_allowed_mask
+    // for the moment reconstruct the info by explicit defines
+#if defined DEVICE_HAS_LR11xx || defined DEVICE_HAS_LR20xx
+    // if both 19Hz and 19Hz7X are set, we need to cycle with toggles
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        configure_mode(MODE_19HZ, frequency_band);
+    } else {
+        if (mode_mask & (1 << frequency_band)) {
+            configure_mode(MODE_19HZ_7X, frequency_band);
+            mode_mask &=~ (1 << frequency_band); // clear bit
+        } else {
+            configure_mode(MODE_19HZ, frequency_band);
+            mode_mask |= (1 << frequency_band); // set bit
+        }
+    }
+#endif
+
+    // not nice
+    // for dualband receivers with two different SXes we need to swap active RF stage
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x
+    if (frequency_band == SETUP_FREQUENCY_BAND_2P4_GHZ) {
+        configure_diversity(DIVERSITY_ANTENNA2);
+    } else {
+        configure_diversity(DIVERSITY_ANTENNA1);
+    }
+#endif
+
+    config_rf();
+}
+
+
+// StartUp() is called only for one SX/LR for single band operation, but on dual band hardware
+// the unused SX/LR is not a dummy. So, guard operations with IF_SX/IF_SX2 to avoid calling
+// functions on the unconfigured chip which use gconfig (which is nullptr).
+void tBindBase::config_rf(void)
+{
+    IF_SX(sx.ResetToLoraConfiguration(&Config.Sx));
+    IF_SX2(sx2.ResetToLoraConfiguration(&Config.Sx2));
     sx.SetToIdle();
     sx2.SetToIdle();
 }
 
 
-// called in each doPreTransmit or doPostReceive cycle
-void BindBase::Do(void)
+// called each ms
+void tBindBase::Tick_ms(void)
 {
-    uint32_t tnow = millis32();
-
     // a not so efficient but simple debounce
     if (!is_pressed) {
         if (button_pressed()) { pressed_cnt++; } else { pressed_cnt = 0; }
-        if (pressed_cnt >= 4) is_pressed = true;
+        if (pressed_cnt >= BIND_BUTTON_DEBOUNCE_MS) is_pressed = true;
     } else {
-        if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = 4; }
+        if (!button_pressed()) { pressed_cnt--; } else { pressed_cnt = BIND_BUTTON_DEBOUNCE_MS; }
         if (pressed_cnt <= 0) is_pressed = false;
     }
+}
+
+
+// called in each doPreTransmit or doPostReceive cycle
+void tBindBase::Do(void)
+{
+    uint32_t tnow = millis32();
 
     if (is_pressed) {
         if (tnow - button_tlast_ms > BIND_BUTTON_TMO_MS) {
@@ -160,7 +241,7 @@ void BindBase::Do(void)
 
 
 // called directly after bind.Do()
-uint8_t BindBase::Task(void)
+uint8_t tBindBase::Task(void)
 {
     switch (task) {
     case BIND_TASK_TX_RESTART_CONTROLLER:
@@ -176,7 +257,7 @@ uint8_t BindBase::Task(void)
 }
 
 
-void BindBase::AutoBind(void) // only for receiver, call every ms
+void tBindBase::AutoBind(void) // only for receiver, call every ms
 {
 #if defined DEVICE_IS_RECEIVER && defined RX_BIND_MODE_AFTER_POWERUP
     if (!auto_bind_tmo_ms) return;
@@ -196,7 +277,7 @@ tRxBindFrame rxBindFrame;
 
 #ifdef DEVICE_IS_TRANSMITTER
 
-void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
+void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
@@ -204,24 +285,23 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 }
 
 
-void BindBase::do_transmit(uint8_t antenna)
+void tBindBase::do_transmit(uint8_t antenna)
 {
-    memset(&txBindFrame, 0, sizeof(txBindFrame));
+    memset((uint8_t*)&txBindFrame, 0, sizeof(txBindFrame));
     txBindFrame.bind_signature = TxSignature;
 
     txBindFrame.connected = connected();
 
     strbufstrcpy(txBindFrame.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
-    // TODO txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
+    txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     txBindFrame.Mode = Setup.Common[Config.ConfigId].Mode;
     txBindFrame.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
-    sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
 }
 
 
-uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
+uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
     sxReadFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN);
 
@@ -241,12 +321,12 @@ uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 #endif
 #ifdef DEVICE_IS_RECEIVER
 
-void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
+void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 {
     if (rx_status == RX_STATUS_INVALID) return;
 
     strstrbufcpy(Setup.Common[0].BindPhrase, txBindFrame.BindPhrase_6, 6);
-    // TODO Setup.Common[0].FrequencyBand = txBindFrame.FrequencyBand;
+    Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)txBindFrame.FrequencyBand;
     Setup.Common[0].Mode = txBindFrame.Mode;
     Setup.Common[0].Ortho = txBindFrame.Ortho;
 
@@ -256,9 +336,9 @@ void BindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
 }
 
 
-void BindBase::do_transmit(uint8_t antenna)
+void tBindBase::do_transmit(uint8_t antenna)
 {
-    memset(&rxBindFrame, 0, sizeof(rxBindFrame));
+    memset((uint8_t*)&rxBindFrame, 0, sizeof(rxBindFrame));
     rxBindFrame.bind_signature = RxSignature;
 
     rxBindFrame.connected = connected();
@@ -271,7 +351,7 @@ void BindBase::do_transmit(uint8_t antenna)
 }
 
 
-uint8_t BindBase::do_receive(uint8_t antenna, bool do_clock_reset)
+uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
     sxReadFrame(antenna, &txBindFrame, &txBindFrame, FRAME_TX_RX_LEN);
 

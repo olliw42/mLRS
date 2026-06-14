@@ -14,8 +14,8 @@
 #include <inttypes.h>
 
 
-// simple rate filter for mavlink interface
-class LPFilterRate
+// simple rate filter for MAVLink interface
+class tLpFilterRate
 {
   public:
     void Reset(void);
@@ -27,6 +27,22 @@ class LPFilterRate
     int32_t tlast_ms;
     int32_t filt_internal;
     uint8_t state;
+};
+
+
+// simple LP filter
+
+class tLpFilter
+{
+  public:
+    void Init(uint32_t _T_ms, uint32_t _dt_ms, int32_t _yn_start = 0);
+    void Clear(void);
+    void Put(int32_t x);
+    int32_t Get(void);
+
+    float alpha;
+    int32_t yn_start;
+    float yn;
 };
 
 

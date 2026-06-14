@@ -16,12 +16,9 @@
 // no out port (not available, to make available change this hal accordingly)
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 //#define DEVICE_HAS_OUT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_SERIAL
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -41,7 +38,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PB6PB7 // serial // PB6,PB7 Grove plug
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -60,13 +57,13 @@
 //#define UART_RXBUFSIZE            512
 #define OUT_UARTx                 LPUART1 // UART_UARTx is not known yet, so define by hand
 
-#define UARTC_USE_UART1_PB6PB7 // debug // also UART1
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_UART1_PB6PB7 // debug // also UART1
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX12xx & SPI
@@ -189,19 +186,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

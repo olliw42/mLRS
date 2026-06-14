@@ -17,6 +17,7 @@
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -26,6 +27,7 @@
 #define EE_START_PAGE             250 // 512 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
+#define MICROS_TIM_NAMEPREFIX     TIM3_
 
 
 //-- UARTS
@@ -47,7 +49,7 @@
 #define UARTC_USE_UART1_PA9PA10 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
@@ -270,7 +272,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
@@ -331,7 +332,6 @@ uint8_t fiveway_read(void)
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
-//    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp is in reset
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // low -> esp is in reset
     gpio_init(ESP_DTR, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
     gpio_init(ESP_RTS, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT); // is normally high
@@ -352,19 +352,8 @@ uint8_t esp_dtr_rts(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            27 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
-};
+#define POWER_PA_E28_2G4M27SX
+#include "../hal-power-pa.h"
 
 
 //-- TEST

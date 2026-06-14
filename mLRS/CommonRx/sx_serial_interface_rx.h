@@ -14,41 +14,52 @@
 class tRxSxSerial : public tSerialBase
 {
   public:
-      void Init(void)
-      {
-          tSerialBase::Init();
-      }
+    void Init(void)
+    {
+        tSerialBase::Init();
+    }
 
-      virtual bool available(void)
-      {
-          if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-              return mavlink.available(); // get from serial via mavlink parser
-          }
-          return serial.available(); // get from serial
-      }
+    bool available(void) override
+    {
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            return mavlink.available(); // get from serial via MAVLink parser
+        }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            return msp.available(); // get from serial via MSP parser
+        }
+        return serial->available(); // get from serial
+    }
 
-      virtual char getc(void)
-      {
-          if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-              return mavlink.getc(); // get from serial via mavlink parser
-          }
-          return serial.getc(); // get from serial
-      }
+    char getc(void) override
+    {
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            return mavlink.getc(); // get from serial via MAVLink parser
+        }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            return msp.getc(); // get from serial via MSP parser
+        }
+        return serial->getc(); // get from serial
+    }
 
-      virtual void flush(void)
-      {
-          mavlink.flush(); // we don't distinguish here, can't harm to always flush mavlink handler
-          serial.flush();
-      }
+    void putbuf(uint8_t* const buf, uint16_t len) override
+    {
+        if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
+            for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]); // send to serial via MAVLink parser
+            return;
+        }
+        if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
+            for (uint16_t i = 0; i < len; i++) msp.putc(buf[i]); // send to serial via MSP parser
+            return;
+        }
+        serial->putbuf(buf, len); // send to serial
+    }
 
-      virtual void putc(char c)
-      {
-          if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-              mavlink.putc(c); // send to serial via mavlink parser
-          } else {
-              serial.putc(c); // send to serial
-          }
-      }
+    void flush(void) override
+    {
+        mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
+        msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
+        serial->flush();
+    }
 };
 
 

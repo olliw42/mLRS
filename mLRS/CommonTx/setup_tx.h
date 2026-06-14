@@ -21,50 +21,31 @@
 #include "../Common/setup_list.h"
 
 
-#define SETUP_PARAMETER_LIST \
-    SETUP_PARAMETER_LIST_COMMON \
-    SETUP_PARAMETER_LIST_TX \
-    SETUP_PARAMETER_LIST_RX
-
-
-typedef enum {
-    PARAM_INDEX_BIND_PHRASE = 0,
-    PARAM_INDEX_MODE = 1,
-    PARAM_INDEX_RF_BAND = 2,
-} PARAM_INDEX_ENUM;
-
-
 //-------------------------------------------------------
 // defines
 //-------------------------------------------------------
 
 // this must EXACTLY match MAV_PARAM_TYPE !! Otherwise Mavlink will be broken !!
 typedef enum {
-    SETUP_PARAM_TYPE_UINT8  = 1, // 8-bit unsigned integer
-    SETUP_PARAM_TYPE_INT8   = 2, // 8-bit signed integer
-    SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer
-    SETUP_PARAM_TYPE_INT16  = 4, // 16-bit signed integer
+    _SETUP_PARAM_TYPE_UINT8  = 1, // 8-bit unsigned integer  // not used
+    SETUP_PARAM_TYPE_INT8    = 2, // 8-bit signed integer
+    _SETUP_PARAM_TYPE_UINT16 = 3, // 16-bit unsigned integer // not used
+    _SETUP_PARAM_TYPE_INT16  = 4, // 16-bit signed integer   // not used
 
-    // our extensions, cannot be handled with mavlink!
+    // our extensions, cannot be handled with MAVLink!
     SETUP_PARAM_TYPE_LIST   = 254,
     SETUP_PARAM_TYPE_STR6   = 255,
 } SETUP_PARAM_TYPE;
 
 
-#define UINT8   uint8_t
 #define INT8    int8_t
-#define UINT16  uint16_t
-#define INT16   int16_t
 #define STR6    char
 #define LIST    uint8_t
 
 
 typedef union
 {
-    uint8_t UINT8_value;
     int8_t INT8_value;
-    uint16_t UINT16_value;
-    int16_t INT16_value;
     char* STR6_value;
     uint8_t LIST_value;
 } tSetupParameterValue;
@@ -97,7 +78,10 @@ const tSetupParameterItem SetupParameter[] = {
                 .max = {.t##_value=ma}, \
                 .optstr = s, \
                 .allowed_mask_ptr = amp },
-    SETUP_PARAMETER_LIST
+    SETUP_PARAMETER_LIST_COMMON_BINDPHRASE \
+    SETUP_PARAMETER_LIST_COMMON_FURTHER \
+    SETUP_PARAMETER_LIST_TX \
+    SETUP_PARAMETER_LIST_RX
     #undef X
 };
 
@@ -157,7 +141,6 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
     bool param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_LIST:
         if (*(uint8_t*)(SetupParameterPtr(param_idx)) != value.u8) {
             param_changed = true;
@@ -170,18 +153,6 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
             *(int8_t*)(SetupParameterPtr(param_idx)) = value.i8;
         }
         break;
-    case SETUP_PARAM_TYPE_UINT16:
-        if (*(uint16_t*)(SetupParameterPtr(param_idx)) != value.u16) {
-            param_changed = true;
-            *(uint16_t*)(SetupParameterPtr(param_idx)) = value.u16;
-        }
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        if (*(int16_t*)(SetupParameterPtr(param_idx)) != value.i16) {
-            param_changed = true;
-            *(int16_t*)(SetupParameterPtr(param_idx)) = value.i16;
-        }
-        break;
     }
 
     // if a RX parameter has changed, tell it to main
@@ -191,7 +162,7 @@ bool setup_set_param(uint8_t param_idx, tParamValue value)
 }
 
 
-bool setup_set_param_str6(uint8_t param_idx, char* str6_6)
+bool setup_set_param_str6(uint8_t param_idx, char* const str6_6)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) return false;
 

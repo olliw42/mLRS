@@ -10,8 +10,6 @@
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
 // 5.Sep.2023: jrpin5 and in simultaneously supported
 
-//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
-
 //-------------------------------------------------------
 // TX Seeedstudio Wio-E5 Mini Dev board STM32WLE5JC, https://wiki.seeedstudio.com/LoRa_E5_mini
 //-------------------------------------------------------
@@ -24,13 +22,6 @@
 //#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
-#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
-  #define DEVICE_HAS_JRPIN5
-  #undef DEVICE_HAS_IN
-  #undef DEVICE_HAS_IN_ON_JRPIN5_RX
-#endif
-
-
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
@@ -38,6 +29,7 @@
 #define EE_START_PAGE             120 // 256 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM16
+#define MICROS_TIM_NAMEPREFIX     TIM16_
 
 
 //-- UARTS
@@ -60,7 +52,7 @@
 #define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
@@ -73,11 +65,7 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
 #define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
-#else
-#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
-#endif
 
 #define UARTE_USE_LPUART1_PC1PC0 // in port // PC0
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
@@ -240,8 +228,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_IO            IO_PB4 // ADC_IN3
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_3
 
-extern "C" { void delay_us(uint32_t us); }
-
 void fiveway_init(void)
 {
     adc_init_begin(FIVEWAY_ADCx);
@@ -304,19 +290,8 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

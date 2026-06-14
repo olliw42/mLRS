@@ -26,8 +26,16 @@ extern "C" {
 // can we pl somehow do this elsewhere, better?
 // USB_RXBUFSIZE, USB_TXBUFSIZE we can do in stdstm32-usb-vcp.h, but not USBD_IRQ_PRIORITY
 // so we do all here to have them together, but not nice
+#if defined STM32F072xB
 #define USB_RXBUFSIZE       256
 #define USB_TXBUFSIZE       256
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#define USB_RXBUFSIZE       2048 // for serial
+#define USB_TXBUFSIZE       2048 // helps with cli
+#else
+#define USB_RXBUFSIZE       512
+#define USB_TXBUFSIZE       512
+#endif
 #define USBD_IRQ_PRIORITY   0
 
 
@@ -39,16 +47,19 @@ extern "C" {
   #include "stm32f1xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
-#elif defined STM32G431xx
+  #define USBD_INST         USB
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
   #include "stm32g4xx.h"
   #include "stm32g4xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
+  #define USBD_INST         USB
 #elif defined STM32F072xB
   #include "stm32f0xx.h"
   #include "stm32f0xx_hal.h"
   #define USBD_IRQn         USB_IRQn
   #define USBD_IRQHandler   USB_IRQHandler
+  #define USBD_INST         USB
 #else
   #error STM32 device not supported by USBD library !
 #endif
@@ -60,6 +71,7 @@ extern "C" {
 #define USBD_SELF_POWERED                           1U
 #define USBD_DEBUG_LEVEL                            0U
 /* #define USBD_USER_REGISTER_CALLBACK                 1U */
+#define USBD_LPM_ENABLED                            0U
 
 /* CDC Class Config */
 #define USBD_CDC_INTERVAL                           2000U

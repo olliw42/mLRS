@@ -18,14 +18,14 @@
 // Generic In Class
 //-------------------------------------------------------
 
-class InBase
+class tInBase
 {
   public:
     void Init(bool enable_flag);
 
     void Configure(uint8_t new_config);
 
-    bool Update(tRcData* rc);
+    bool ChannelsUpdated(tRcData* const rc);
 
 //XX  private:
     virtual bool available(void) { return false; }
@@ -34,8 +34,8 @@ class InBase
     virtual bool config_sbus(bool enable_flag) { return false; }
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
-    bool parse_sbus(tRcData* rc);
-    void get_sbus_data(tRcData* rc);
+    bool parse_sbus(tRcData* const rc);
+    void get_sbus_data(tRcData* const rc);
 
     bool enabled;
     uint8_t config;
@@ -46,7 +46,6 @@ class InBase
     uint8_t buf_pos;
     uint8_t _buf[32];
 };
-
 
 
 #endif // IN_H

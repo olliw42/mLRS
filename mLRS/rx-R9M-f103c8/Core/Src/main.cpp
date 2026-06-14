@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -31,6 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,6 +67,7 @@ char mlrs_elrs_bootloader;
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 #ifdef MLRS_FEATURE_ELRS_BOOTLOADER
   HAL_RCC_DeInit(); // Need to unconfigure clock/PLL since ELRS uses HSI clock
@@ -152,11 +154,15 @@ void SystemClock_Config(void)
   */
 static void MX_GPIO_Init(void)
 {
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOD);
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

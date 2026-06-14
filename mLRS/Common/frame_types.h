@@ -15,7 +15,7 @@
 
 
 #ifndef PACKED
-#  define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) //that's for __GNUC__
+  #define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) // that's for __GNUC__
 #endif
 
 
@@ -43,6 +43,9 @@ typedef struct
     uint8_t LQ_serial;
     uint8_t antenna;
     uint8_t transmit_antenna;
+    // not stats but needed
+    uint8_t tx_fhss_index_band;
+    uint8_t tx_fhss_index;
 } tFrameStats;
 
 
@@ -56,17 +59,34 @@ typedef struct
 PACKED(
 typedef struct
 {
-    uint8_t seq_no : 3;
-    uint8_t ack : 1;
-    uint8_t frame_type : 4;
+    uint32_t seq_no : 3;
+    uint32_t ack : 1;
+    uint32_t frame_type : 4;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
-    uint32_t LQ_rc : 7; // only Rx->Tx frame, not Tx->Rx
+    uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
+    uint32_t fhss_index : 6; // older versions have set that field to 63
     uint32_t LQ_serial : 7;
     uint32_t transmit_antenna : 1;
     uint32_t spare : 2;
     uint32_t payload_len : 7;
-}) tFrameStatus;
+}) tTxFrameStatus; // 5 bytes
+
+
+PACKED(
+typedef struct
+{
+    uint32_t seq_no : 3;
+    uint32_t ack : 1;
+    uint32_t frame_type : 4;
+    uint32_t antenna : 1;
+    uint32_t rssi_u7 : 7;
+    uint32_t LQ_rc : 7; // available only for Rx->Tx frame, not for Tx->Rx
+    uint32_t LQ_serial : 7;
+    uint32_t transmit_antenna : 1;
+    uint32_t spare : 2;
+    uint32_t payload_len : 7;
+}) tRxFrameStatus; // 5 bytes
 
 
 //-- Tx Frame ----------
@@ -103,7 +123,7 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tTxFrameStatus status; // 5 bytes
     tFrameRcData1 rc1; // 6 bytes
     uint16_t crc1;
     tFrameRcData2 rc2; // 10 bytes
@@ -118,7 +138,7 @@ PACKED(
 typedef struct
 {
     uint16_t sync_word; // 2 bytes
-    tFrameStatus status; // 5 bytes
+    tRxFrameStatus status; // 5 bytes
     uint8_t payload[82]; // = FRAME_RX_PAYLOAD_LEN
     uint16_t crc;
 }) tRxFrame; // 91 bytes
@@ -141,7 +161,7 @@ typedef struct
     uint8_t spare : 7;
 
     char BindPhrase_6[6];
-    uint8_t FrequencyBand_XXX : 4; // TODO
+    uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
@@ -168,7 +188,7 @@ typedef struct
 
     uint8_t spare2[55];
 
-    uint16_t crc; // 2bytes
+    uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
 
 
@@ -205,13 +225,15 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t Buzzer : 4;
+    uint8_t __Buzzer : 4; // deprecated
     uint8_t SendRcChannels : 4;
     uint8_t __RadioStatusMethod : 4; // deprecated
     uint8_t OutLqChannelMode : 4;
+    uint8_t PowerSwitchChannel : 4;
+    uint8_t SerialPort : 4;
+    uint8_t MavlinkSystemID : 4;
 
-    uint8_t spare : 4;
-    uint8_t spare2[4];
+    uint8_t spare2[3];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValue_Ch13 : 2;
@@ -229,8 +251,8 @@ typedef struct
     uint8_t spare;
 
     // rx setup meta data 1
-    uint16_t firmware_version_u16;
-    uint16_t setup_layout;
+    uint16_t firmware_version_u16; // 16.64.64
+    uint16_t setup_layout_u16; // 16.64.64
     char device_name_20[20];
     int8_t actual_power_dbm;
     uint8_t actual_diversity;
@@ -248,7 +270,7 @@ typedef struct
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
-    uint8_t Buzzer_allowed_mask;
+    uint8_t SerialPort_allowed_mask; // was uint8_t __Buzzer_allowed_mask; // deprecated
 
     uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes

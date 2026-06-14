@@ -8,7 +8,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// TX DIY E28 v007 STM32G431KB
+// TX DIY E22 v007 STM32G431KB
 //-------------------------------------------------------
 
 //#define DEVICE_HAS_DIVERSITY
@@ -25,6 +25,7 @@
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
+#define MICROS_TIM_NAMEPREFIX     TIM3_
 
 
 //-- UARTS
@@ -46,7 +47,7 @@
 #define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
@@ -63,7 +64,7 @@
 //#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
 #define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
-#define UARTE_USE_UART2_REMAPPED2 // in pin
+#define UARTE_USE_UART2_PB3PB4 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
@@ -227,19 +228,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

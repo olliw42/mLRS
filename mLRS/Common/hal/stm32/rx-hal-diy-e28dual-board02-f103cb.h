@@ -16,7 +16,6 @@
 
 #define DEVICE_HAS_DIVERSITY
 #define DEVICE_HAS_OUT
-#define DEVICE_HAS_BUZZER
 
 
 #ifdef MLRS_FEATURE_DIVERSITY
@@ -44,7 +43,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART3_PB10PB11 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -62,13 +61,13 @@
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
 
-#define UARTC_USE_UART1_PA9PA10 // debug
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_UART1_PA9PA10 // debug
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 
 
 //-- SX1: SX12xx & SPI
@@ -90,6 +89,8 @@
 #define SX_DIO_EXTI_IRQn              EXTI3_IRQn
 #define SX_DIO_EXTI_IRQHandler        EXTI3_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
+
+#define SX_USE_REGULATOR_MODE_DCDC
 
 void sx_init_gpio(void)
 {
@@ -162,6 +163,8 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_DIO_EXTI_IRQn             EXTI1_IRQn
 #define SX2_DIO_EXTI_IRQHandler       EXTI1_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
+
+#define SX2_USE_REGULATOR_MODE_DCDC
 
 void sx2_init_gpio(void)
 {
@@ -273,31 +276,10 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- Buzzer
-
-#define BUZZER                    IO_PB7
-#define BUZZER_TIMx               TIM4
-#define BUZZER_IRQn               TIM4_IRQn
-#define BUZZER_IRQHandler         TIM4_IRQHandler
-#define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH2
-//#define BUZZER_TIM_IRQ_PRIORITY   14
-
-
 //-- POWER
 
-#define POWER_GAIN_DBM            27 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
-};
+#define POWER_PA_E28_2G4M27SX
+#include "../hal-power-pa.h"
 
 
 //-- TEST

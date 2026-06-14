@@ -22,6 +22,10 @@
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
 
+// Note on SERIAL_OR_COM:
+// The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
+// The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -30,6 +34,7 @@
 #define EE_START_PAGE             124 // 128 kB flash, 1 kB page
 
 #define MICROS_TIMx               TIM3
+#define MICROS_TIM_NAMEPREFIX     TIM3_
 
 
 //-- UARTS
@@ -42,7 +47,7 @@
 #define UARTB_USE_UART1_PA9PA10 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE // TX_SERIAL_TXBUFSIZE // choose the bigger one
+#define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE_SMALL // TX_SERIAL_TXBUFSIZE // choose the bigger one
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
@@ -212,23 +217,17 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define DIP1                      IO_PA12 // same a green
 #define DIP2                      IO_PA11 // same as red
 
-bool r9m_ser_or_com_serial = false;  // we use com as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(DIP1, IO_MODE_INPUT_PU, IO_SPEED_SLOW);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(DIP1)) cnt++;
     }
-    r9m_ser_or_com_serial = (cnt > 8);
+    bool is_serial = (cnt > 8);
     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     led_green_off(); // LED_GREEN_OFF
-}
-
-bool ser_or_com_serial(void)
-{
-    return r9m_ser_or_com_serial;
+    return is_serial;
 }
 
 
@@ -278,7 +277,7 @@ void fan_set_power(int8_t power_dbm)
 #define I2C_CLOCKSPEED_400KHZ
 #define SX_PA_DAC_I2C_DEVICE_ADR  0x0C
 
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
+void rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, tI2cBase* dac)
 {
     // these are the values of ELRS
     // 10mW   10dbm   720

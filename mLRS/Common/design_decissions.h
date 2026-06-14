@@ -29,7 +29,7 @@ possibly uart BT module
 b) standard JR bay module
 
 rc channels via JR-Pin1
-uart for mavlink
+uart for MAVLink
 uart for BT module
 possibly mimic telemetry via JR-Pin5
 usb for config, upgrade
@@ -37,8 +37,8 @@ possibly LED for config
 
 c) mBridge JR bay
 
-rc channels & mavlink via Pin5
-uart for mavlink
+rc channels & MAVLink via Pin5
+uart for MAVLink
 uart for BT module
 usb for config, upgrade
 possibly LED for config
@@ -468,11 +468,13 @@ sx1280, sx1276, sx1262
 sx1280:  800kHz, SF5, LI4/5, 12: -105 dBm, 91 bytes payload =>  7.9 ms    -> 20 ms (50 Hz)
 sx1280:  800kHz, SF6, LI4/5, 12: -108 dBm, 91 bytes payload => 13.4 ms    -> 32 ms (31 Hz)
 sx1280:  800kHz, SF7, LI4/5, 12: -112 dBm, 91 bytes payload => 23.5 ms    -> 53 ms (19 Hz)
+sx1280:  FLRC, 650kHz, CR1/2   : -104 dBm, 91 bytes payload =>  2.4 ms    ->  9 ms (111 Hz)
 
 sx1276:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.3 ms    -> 53 ms (19 Hz)
 
 sx1262:  500kHz, SF5, CR4/5, 12: -111 dBm, 91 bytes payload => 13.2 ms    -> 32 ms (31 Hz)
 sx1262:  500kHz, SF6, CR4/5, 12: -112 dBm, 91 bytes payload => 22.6 ms    -> 53 ms (19 Hz)
+sx1276:  GFSK, 312kHz          : -106 dBm, 91 bytes payload =>  7.6 ms    -> 20 ms (50 Hz)
 
 
 -------------------------------------------------------
@@ -490,7 +492,7 @@ ArduPilot
 
 rssi goes from 0 - 255
 
-crsf rssi handling:
+CRSF rssi handling:
 AP converts it as follows into its own rssi value
 LINK_STATISTICS:
 50 - 120 -> 255 - 0
@@ -523,7 +525,7 @@ so:   1 ... 172 ... 1024 .. 1876 ... 2047
 100% = 852 span
 120% = 1023 span
 
-sbus/crsf:
+sBus/CRSF:
 11 bit
 +-100% = 173 ... 992 .. 1811
 
@@ -570,20 +572,20 @@ old 0..2047 = +-100% scaling:
 
  ArduPilot handles incoming rc data as
 
- crsf:
+ CRSF:
  https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_CRSF.cpp#L351
  decode_11bit_channels((const uint8_t*)(&_frame.payload), CRSF_MAX_CHANNELS, _channels, 5U, 8U, 880U)
    rc = x * 5 / 8 + 880  = (x - 992) * 5 / 8 + 1500
         [880 ... 2159]
 
- sbus:
+ sBus:
  https://github.com/ArduPilot/ardupilot/blob/Copter-4.2/libraries/AP_RCProtocol/AP_RCProtocol_SBUS.cpp#L118-L119
  decode_11bit_channels((const uint8_t*)(&frame[1]), SBUS_INPUT_CHANNELS, values, SBUS_TARGET_RANGE, SBUS_RANGE_RANGE, SBUS_SCALE_OFFSET)
                                                                                  1000,              1600,             875
    rc = x * 1000 / 1600 + 875  = (x - 1000) * 5 / 8 + 1500
         [875 ... 2154]
 
-=> for ArduPilot crsf is larger by 8*5/8 = 5 units than sbus for the same x
+=> for ArduPilot CRSF is larger by 8*5/8 = 5 units than sbus for the same x
 
  RC_CHANNELS_OVERRIDE:
    rc = chanX_raw
@@ -592,23 +594,23 @@ old 0..2047 = +-100% scaling:
 -------------------------------------------------------
 SX1280 power
 the sx power is calculated as
-  sx_power = LIMIT(SX1280_POWER_m18_DBM, power - POWER_GAIN_DBM + 18, POWER_SX1280_MAX_DBM)
+  sx_power = LIMIT(SX1280_POWER_m18_DBM, power - POWER_GAIN_DBM + 18, POWER_SX1280_MAX)
 
  example 1: no PA
   POWER_GAIN_DBM = 0
-  POWER_SX1280_MAX_DBM = SX1280_POWER_12p5_DBM
+  POWER_SX1280_MAX = SX1280_POWER_12p5_DBM
   => power = -18 ... 13
   => sx_power = 0 ... 31 = SX1280_POWER_m18_DBM ... SX1280_POWER_12p5_DBM
 
  example 2: E28 PA 27 dBm gain
   POWER_GAIN_DBM = 27
-  POWER_SX1280_MAX_DBM = SX1280_POWER_0_DBM
+  POWER_SX1280_MAX = SX1280_POWER_0_DBM
   => power = 9 ... 27
   => sx_power = 0 ... 18 = SX1280_POWER_m18_DBM ... SX1280_POWER_0_DBM
 
  example 2: siyi PA 22 dBm gain
   POWER_GAIN_DBM = 22
-  POWER_SX1280_MAX_DBM = SX1280_POWER_3_DBM
+  POWER_SX1280_MAX = SX1280_POWER_3_DBM
   => power = 4 ... 25
   => sx_power = 0 ... 21 = SX1280_POWER_m18_DBM ... SX1280_POWER_3_DBM
 
@@ -877,6 +879,25 @@ d
 our headroom is time_in_receive - toa = (52.0-24.5) ms - 23.6 ms = 3.9 ms
 
 => 53 ms is plenty, we could use 52 ms ...
+
+
+-------------------------------------------------------
+3rd order inter modulation
+-------------------------------------------------------
+
+https://www.cdt21.com/design_guide/third-order-intermodulation-channel-planning/
+https://www.cdt21.com/technical_tools/channel-planning/
+
+
+-------------------------------------------------------
+De-duplication
+-------------------------------------------------------
+
+https://discuss.ardupilot.org/t/connect-2-telemetry-devices/82424/10
+https://github.com/mavlink-router/mavlink-router/issues/139
+https://github.com/mavlink-router/mavlink-router/issues/240
+https://github.com/mavlink-router/mavlink-router/pull/338
+https://mavlink.io/en/guide/redundancy_deduplication.html
 
 */
 #endif // BLABLA_H

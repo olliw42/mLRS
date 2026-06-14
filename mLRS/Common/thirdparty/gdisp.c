@@ -12,6 +12,10 @@
 //   https://www.gnu.org/licenses/gpl-3.0.de.html
 //*******************************************************
 // Graphic Display Interface
+// simplified 7.5.2024
+// modified 17.8.2024, to do page cmds for ESP, makes it work for SSD1306 and NFP1115
+// modified 13.2.2026, remove ESP8266 paths, page mode only for ESP32 to handle NFP1115
+// modified 13.2.2026, consolidate ifdef pattern in init stream
 
 
 #include <string.h>
@@ -141,18 +145,25 @@ static const uint8_t ssd1306_initstream[] = {
     0xD3, 0x00,   // Display Offset
     0x40,         // Display Start Line
     0x8D, 0x14,   // enable charge pump regulator
-    0x20, 0x00,   // Memory Addressing Mode
+#ifdef ESP32
+    0x20, 0x10,   // Memory Addressing Mode, page mode (CH1115/NFP1115 compatible)
+#else
+    0x20, 0x00,   // Memory Addressing Mode, horizontal mode
+#endif
     0xA1,         // Segment re-map
     0xC8,         // COM Output Scan Direction
-    0xDA, 0x12,   // COM Pins hardware configuration
     0x81, 0xCF,   // Contrast Control
     0xD9, 0xF1,   // Pre-charge Period
     0xDB, 0x40,   // VCOMH Deselect Level
+    0x2E,         // Deactivate scroll // added 31.5.2024
     0xA4,         // Entire Display ON
     0xA6,         // Normal/Inverse Display
     0xAF,         // Display ON
+#ifndef ESP32
+    0xDA, 0x12,   // COM Pins hardware configuration
     0x21, 0, 127, // Column Address
     0x22, 0, 7    // Page Address
+#endif
 };
 
 
@@ -173,7 +184,9 @@ void ssd1306_cmd2(uint8_t _cmd, uint8_t _data)
 void ssd1306_cmdhome(void)
 {
     uint8_t cmd[6] = {0x21, 0, 127, 0x22, 0, 7};
-    i2c_put_blocked(SSD1306_CMD, cmd, 6);
+//    i2c_put_blocked(SSD1306_CMD, cmd, 6);
+    i2c_put_blocked(SSD1306_CMD, cmd + 0, 3);
+    i2c_put_blocked(SSD1306_CMD, cmd + 3, 3);
 }
 
 
@@ -206,9 +219,9 @@ HAL_StatusTypeDef ssd1306_put(uint8_t* buf, uint16_t len)
 } */
 
 
-HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* buf, uint16_t len)
+HAL_StatusTypeDef ssd1306_put_noblock(uint8_t* const buf, uint16_t len)
 {
-    ssd1306_cmdhome();
+    ssd1306_cmdhome();  // could skip since we always do full buffer
     return i2c_put(SSD1306_DATA, buf, len);
 }
 
@@ -244,7 +257,7 @@ void gdisp_hal_cmdhome(void)
 }
 
 
-HAL_StatusTypeDef gdisp_hal_put(uint8_t* buf, uint16_t len)
+HAL_StatusTypeDef gdisp_hal_put(uint8_t* const buf, uint16_t len)
 {
     switch (gdisp.type) {
         case GDISPLAY_TYPE_SSD1306: return ssd1306_put_noblock(buf, len);
@@ -289,25 +302,20 @@ void gdisp_hal_contrast(uint8_t c)
 
 void gdisp_update(void)
 {
-    // this must not be called too frequently, any I2C transfers must have been finsihed
+    // this must not be called too frequently, any I2C transfers must have been finished
 
     // for the moment we simply copy the complete buf to the display
     // we should be smarter and use the rectangle
 
     if (!gdisp.needsupdate) return;
 
-    //gdisp_hal_cmdhome(); // does not appear to make a difference
-
     HAL_StatusTypeDef res = gdisp_hal_put(gdisp.buf, GDISPLAY_BUFSIZE);
 //    HAL_StatusTypeDef res = ssd1306_put(gdisp.buf, GDISPLAY_BUFSIZE);
 //    HAL_StatusTypeDef res = ssd1306_put_noblock(gdisp.buf, GDISPLAY_BUFSIZE);
 //    while (i2c_device_ready() == HAL_BUSY) {};
 
-    if (res != HAL_OK) return; // retry, needs update is not reset, so it will tried the next time again
+    if (res != HAL_OK) return; // retry, needs update is not reset, so it will be tried next time again
 
-    gdisp.minx = gdisp.width;
-    gdisp.miny = gdisp.height;
-    gdisp.maxx = gdisp.maxy = 0;
     gdisp.needsupdate = 0;
 }
 
@@ -336,9 +344,6 @@ void gdisp_setrotation(uint16_t rotation)
     }
 
     // clear
-    gdisp.minx = gdisp.width;
-    gdisp.miny = gdisp.height;
-    gdisp.maxx = gdisp.maxy = 0;
     gdisp.needsupdate = 0;
     memset(gdisp.buf, 0, GDISPLAY_BUFSIZE);
 }
@@ -353,16 +358,6 @@ void gdisp_setrotation(uint16_t rotation)
 // helper
 // should never be directly called by the user
 //-------------------------------------------------------
-
-static inline void gdisp_u_(int16_t minx, int16_t maxx, int16_t miny, int16_t maxy)
-{
-    if (minx < gdisp.minx) gdisp.minx = minx;
-    if (miny < gdisp.miny) gdisp.miny = miny;
-    if (maxx > gdisp.maxx) gdisp.maxx = maxx;
-    if (maxy > gdisp.maxy) gdisp.maxy = maxy;
-    gdisp.needsupdate = 1;
-}
-
 
 void gdisp_setpixel_(uint16_t x, uint16_t y, uint16_t color)
 {
@@ -418,7 +413,7 @@ void gdisp_setpixelfuncptr_(uint16_t rotation)
 
 void gdisp_clear(void)
 {
-    gdisp_u_(0, 0, gdisp.width - 1, gdisp.height - 1);
+    gdisp.needsupdate = 1;
     memset(gdisp.buf, 0, GDISPLAY_BUFSIZE);
 }
 
@@ -459,7 +454,7 @@ void gdisp_drawbitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, i
 
 void gdisp_writeline(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
-    while (1) {} // TODO
+    while(1){} // TODO
 }
 
 
@@ -538,7 +533,7 @@ void gdisp_fillrect(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t col
 
 void gdisp_setfontbackground(void) { gdisp.font_background = GDISPLAY_FONT_BG_FULL; }
 void gdisp_unsetfontbackground(void) { gdisp.font_background = GDISPLAY_FONT_BG_NONE; }
-void gdisp_setfont(const GFXfont *f) { gdisp.font = (GFXfont*)f; }
+void gdisp_setfont(const GFXfont* const f) { gdisp.font = (GFXfont*)f; }
 void gdisp_unsetfont(void) { gdisp.font = NULL; }
 
 void gdisp_setkerning(int16_t k) { gdisp.kerning = k; }
@@ -698,10 +693,7 @@ void gdisp_init(uint16_t type)
     gdisp.kerning = 0;
     gdisp.inverted = 0;
 
-    //gdisp.minx = gdisp.miny = gdisp.maxx = gdisp.maxy = 0;
-    //  gdisp.needsupdate = 0;
-    gdisp.needsupdate = 1; // we fake this here
-    gdisp_clear();
+    gdisp_clear(); // sets also gdisp.needsupdate = 1;
     gdisp_update();
 }
 

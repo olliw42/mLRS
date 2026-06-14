@@ -8,8 +8,9 @@
 //*******************************************************
 // 5.Aug.2023: jrpin5 changed from JRPIN5_RX_TX_INVERT_INTERNAL to JRPIN5_FULL_INTERNAL
 // 5.Sep.2023: jrpin5 and in simultaneously supported
+// 23.Mar.2025: SDIODE removed
 
-//#define MLRS_DEV_FEATURE_JRPIN5_SDIODE
+//#define MLRS_FEATURE_E77_XTAL // must be defined high up, not here, affects main !
 
 //-------------------------------------------------------
 // TX EByte E77 MBL Kit, STM32WLE5CC
@@ -28,10 +29,9 @@
 #define DEVICE_HAS_SYSTEMBOOT
 
 
-#ifdef MLRS_DEV_FEATURE_JRPIN5_SDIODE
-  #define DEVICE_HAS_JRPIN5
-  #undef DEVICE_HAS_IN_ON_JRPIN5_RX
-#endif
+// Note on SERIAL_OR_COM:
+// The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
+// The TXBUFSIZE setting for the com affects however the CLI's chunkenizer behavior.
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -41,6 +41,7 @@
 #define EE_START_PAGE             120 // 256 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM16
+#define MICROS_TIM_NAMEPREFIX     TIM16_
 
 
 //-- UARTS
@@ -63,7 +64,7 @@
 #define UARTC_USE_UART2_PA2PA3 // com USB/CLI // PA2,PA3
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
@@ -76,11 +77,7 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#ifndef MLRS_DEV_FEATURE_JRPIN5_SDIODE
 #define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
-#else
-#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
-#endif
 
 /*
 #define UARTE_USE_UART1_PB6PB7 // in port // PB7
@@ -115,7 +112,9 @@
 #define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
+#ifdef MLRS_FEATURE_E77_XTAL
 #define SX_USE_CRYSTALOSCILLATOR
+#endif
 
 void sx_init_gpio(void)
 {
@@ -307,8 +306,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define BOOT_BUTTON               IO_PA1
 
-extern "C" { void delay_ms(uint16_t ms); }
-
 void systembootloader_init(void)
 {
     gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
@@ -329,21 +326,14 @@ void systembootloader_init(void)
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool e77mblkit_ser_or_com_serial = true; // we use serial as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    e77mblkit_ser_or_com_serial = !(cnt > 8);
-}
-
-bool ser_or_com_serial(void)
-{
-    return e77mblkit_ser_or_com_serial;
+    return !(cnt > 8);
 }
 
 
@@ -365,19 +355,8 @@ bool ser_or_com_serial(void)
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX126X_MAX_DBM      SX126X_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           2 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
-};
+#define POWER_PA_NONE_SX126X
+#include "../hal-power-pa.h"
 
 
 //-- TEST

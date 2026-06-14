@@ -8,6 +8,12 @@
 //*******************************************************
 
 
+// for as long as issues with gcc12 are not sorted
+#if __GNUC__ > 11
+  #error Must be gnu gcc 11 or lower!
+#endif
+
+
 //-------------------------------------------------------
 // what we'll use anyway
 //-------------------------------------------------------
@@ -52,7 +58,7 @@
 #include "stm32f3xx_hal_flash_ex.h"
 
 #endif
-#if defined STM32G491xx || defined STM32G441xx  || defined STM32G431xx
+#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
 
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_rcc.h"
@@ -103,29 +109,7 @@
 #include "stm32wlxx_hal_flash_ex.h"
 
 #endif
-#if defined STM32F070xB || defined  STM32F072xB
 
-#include "stm32f0xx_ll_cortex.h"
-#include "stm32f0xx_ll_bus.h"
-#include "stm32f0xx_ll_rcc.h"
-#include "stm32f0xx_ll_gpio.h"
-#include "stm32f0xx_ll_tim.h"
-#include "stm32f0xx_ll_usart.h"
-#include "stm32f0xx_ll_spi.h"
-#include "stm32f0xx_ll_system.h"
-#include "stm32f0xx_ll_exti.h"
-#include "stm32f0xx_ll_adc.h"
-#include "stm32f0xx_hal.h"
-#include "stm32f0xx_hal_flash.h"
-#include "stm32f0xx_hal_flash_ex.h"
-
-#endif
-
-
-void hal_init(void)
-{
-    // nothing to do
-}
 
 
 // setup(), loop() streamlining between Arduino/STM code

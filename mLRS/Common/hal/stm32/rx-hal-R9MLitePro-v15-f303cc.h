@@ -32,7 +32,7 @@
 //-- UARTS
 // UARTB = serial port
 // UART = output port, SBus or whatever
-// UARTC = debug port
+// UARTF = debug port
 
 #define UARTB_USE_UART2_PA2PA3 // serial PA2/PA3
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -53,13 +53,13 @@
 #define OUT_UARTx                 USART3 // UART_UARTx is not known yet, so define by hand
 
 /*
-#define UARTC_USE_UART2_PA2PA3 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
-#define UARTC_BAUD                115200
-#define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           512
-#define UARTC_USE_TX_ISR
-//#define UARTC_USE_RX
-//#define UARTC_RXBUFSIZE           512
+#define UARTF_USE_UART2_PA2PA3 // debug // Tx goes via an inverter to JR Pin2, solder to R15 for TTL UART signal, C23 provides GND
+#define UARTF_BAUD                115200
+#define UARTF_USE_TX
+#define UARTF_TXBUFSIZE           512
+#define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
 */
 
 //-- SX1: SX12xx & SPI
@@ -196,7 +196,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define SX_PA_DAC_CHANNEL1    LL_DAC_CHANNEL_1
 #define SX_PA_DAC_CHANNEL2    LL_DAC_CHANNEL_2
 
-void rfpower_calc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, tInternalDacBase* dac)
+void rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, tInternalDacBase* dac)
 {
     // -25 dBm 0,0 ... 1700
     // -15 dBm 1800

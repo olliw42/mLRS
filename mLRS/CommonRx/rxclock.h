@@ -29,82 +29,6 @@ uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need 
 
 
 //-------------------------------------------------------
-// Rx Clock Class
-//-------------------------------------------------------
-
-class RxClockBase
-{
-  public:
-    void Init(uint16_t period_ms);
-    void SetPeriod(uint16_t period_ms);
-    void Reset(void);
-
-    void init_isr_off(void);
-    void enable_isr(void);
-
-    uint16_t tim_10us(void);
-};
-
-
-void RxClockBase::Init(uint16_t period_ms)
-{
-    CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
-    doPostReceive = false;
-
-    init_isr_off();
-    enable_isr();
-}
-
-
-void RxClockBase::SetPeriod(uint16_t period_ms)
-{
-    CLOCK_PERIOD_10US = period_ms * 100;
-}
-
-
-void RxClockBase::Reset(void)
-{
-    if (!CLOCK_PERIOD_10US) while (1) {}
-
-    __disable_irq();
-    uint32_t CNT = CLOCK_TIMx->CNT; // works for both 16 and 32 bit timer
-    CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
-    CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
-    LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
-    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
-    __enable_irq();
-}
-
-
-void RxClockBase::init_isr_off(void)
-{
-    tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US); // works for both 16 and 32 bit timer
-
-    LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
-    TIM_OC_InitStruct.CompareValue = 100; // start in 1 ms;
-    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct); // pll.tick()
-
-    TIM_OC_InitStruct.CompareValue = 200; // only needs to be later than OC1
-    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct); // doPostReceive
-
-    nvic_irq_enable_w_priority(CLOCK_IRQn, CLOCK_IRQ_PRIORITY);
-}
-
-
-void RxClockBase::enable_isr(void)
-{
-    LL_TIM_EnableIT_CC1(CLOCK_TIMx);
-    LL_TIM_EnableIT_CC3(CLOCK_TIMx);
-}
-
-
-uint16_t RxClockBase::tim_10us(void)
-{
-    return CLOCK_TIMx->CNT; // return 16 bit even for 32 bit timer
-}
-
-
-//-------------------------------------------------------
 // Rx Clock ISR
 //-------------------------------------------------------
 
@@ -122,6 +46,80 @@ void CLOCK_IRQHandler(void)
         doPostReceive = true;
     }
 })
+
+
+//-------------------------------------------------------
+// Rx Clock Class
+//-------------------------------------------------------
+
+class tRxClock
+{
+  public:
+    void Init(uint16_t period_ms);
+    void SetPeriod(uint16_t period_ms);
+    void Reset(void);
+
+    void init_isr_off(void);
+    void enable_isr(void);
+};
+
+
+void tRxClock::Init(uint16_t period_ms)
+{
+    CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
+    doPostReceive = false;
+
+    init_isr_off();
+    enable_isr();
+}
+
+
+void tRxClock::SetPeriod(uint16_t period_ms)
+{
+    CLOCK_PERIOD_10US = period_ms * 100;
+}
+
+
+void tRxClock::Reset(void)
+{
+    if (!CLOCK_PERIOD_10US) while(1){}
+
+    __disable_irq();
+    uint32_t CNT = CLOCK_TIMx->CNT; // works for both 16 and 32 bit timer
+    CLOCK_TIMx->CCR1 = CNT + CLOCK_PERIOD_10US;
+    CLOCK_TIMx->CCR3 = CNT + CLOCK_SHIFT_10US;
+    LL_TIM_ClearFlag_CC1(CLOCK_TIMx); // important to do
+    LL_TIM_ClearFlag_CC3(CLOCK_TIMx);
+    __enable_irq();
+}
+
+
+void tRxClock::init_isr_off(void)
+{
+    tim_init_up(CLOCK_TIMx, 0xFFFFFFFF, TIMER_BASE_10US); // works for both 16 and 32 bit timer
+
+    LL_TIM_OC_InitTypeDef TIM_OC_InitStruct = {};
+    TIM_OC_InitStruct.CompareValue = 100; // start in 1 ms;
+    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct); // pll.tick()
+
+    TIM_OC_InitStruct.CompareValue = 200; // only needs to be later than OC1
+    LL_TIM_OC_Init(CLOCK_TIMx, LL_TIM_CHANNEL_CH3, &TIM_OC_InitStruct); // doPostReceive
+
+    nvic_irq_enable_w_priority(CLOCK_IRQn, CLOCK_IRQ_PRIORITY);
+}
+
+
+void tRxClock::enable_isr(void)
+{
+    LL_TIM_EnableIT_CC1(CLOCK_TIMx);
+    LL_TIM_EnableIT_CC3(CLOCK_TIMx);
+}
+
+
+uint16_t rxclock_tim_10us(void) // just a helper which is sometimes useful, e.g. for dev-ing
+{
+    return CLOCK_TIMx->CNT; // return 16 bit even for 32 bit timer
+}
 
 
 #endif // RXCLOCK_H

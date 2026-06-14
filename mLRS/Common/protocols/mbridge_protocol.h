@@ -63,10 +63,10 @@ typedef enum {
     MBRIDGE_CMD_REQUEST_INFO          = 3, // len = 0
     MBRIDGE_CMD_DEVICE_ITEM_TX        = 4,
     MBRIDGE_CMD_DEVICE_ITEM_RX        = 5,
-    MBRIDGE_CMD_PARAM_REQUEST_LIST    = 6, // len = 0
+    __MBRIDGE_CMD_PARAM_REQUEST_LIST    = 6, // len = 0 24.3.2026 deprecated
     MBRIDGE_CMD_PARAM_ITEM            = 7,
     MBRIDGE_CMD_PARAM_ITEM2           = 8,
-    MBRIDGE_CMD_PARAM_ITEM3           = 9,
+    MBRIDGE_CMD_PARAM_ITEM3_4         = 9,
     MBRIDGE_CMD_REQUEST_CMD           = 10,
     MBRIDGE_CMD_INFO                  = 11,
     MBRIDGE_CMD_PARAM_SET             = 12,
@@ -75,6 +75,7 @@ typedef enum {
     MBRIDGE_CMD_BIND_STOP             = 15, // len = 0
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
+    MBRIDGE_CMD_FLASH_ESP             = 18, // len = 0
 } MBRIDGE_CMD_ENUM;
 
 
@@ -94,10 +95,9 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_REQUEST_INFO: return 0;
     case MBRIDGE_CMD_DEVICE_ITEM_TX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
     case MBRIDGE_CMD_DEVICE_ITEM_RX: return MBRIDGE_CMD_DEVICE_ITEM_LEN;
-    case MBRIDGE_CMD_PARAM_REQUEST_LIST: return 0;
     case MBRIDGE_CMD_PARAM_ITEM: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     case MBRIDGE_CMD_PARAM_ITEM2: return MBRIDGE_CMD_PARAM_ITEM_LEN;
-    case MBRIDGE_CMD_PARAM_ITEM3: return MBRIDGE_CMD_PARAM_ITEM_LEN;
+    case MBRIDGE_CMD_PARAM_ITEM3_4: return MBRIDGE_CMD_PARAM_ITEM_LEN;
     case MBRIDGE_CMD_REQUEST_CMD: return MBRIDGE_CMD_REQUEST_CMD_LEN;
     case MBRIDGE_CMD_INFO: return MBRIDGE_CMD_INFO_LEN;
     case MBRIDGE_CMD_PARAM_SET: return MBRIDGE_CMD_PARAM_SET_LEN; break;
@@ -106,6 +106,7 @@ uint8_t mbridge_cmd_payload_len(uint8_t cmd)
     case MBRIDGE_CMD_BIND_STOP: return 0;
     case MBRIDGE_CMD_MODELID_SET: return MBRIDGE_CMD_MODELID_SET_LEN; break;
     case MBRIDGE_CMD_SYSTEM_BOOTLOADER: return 0;
+    case MBRIDGE_CMD_FLASH_ESP: return 0;
     }
     return 0;
 }
@@ -153,9 +154,10 @@ typedef struct
     int8_t rssi2_instantaneous;
     int8_t snr_instantaneous;
 
-    int8_t rssi1_filtered;
-    int8_t rssi2_filtered;
-    int8_t snr_filtered;
+    uint8_t spare1; // was rssi_instantaneous_percent; // was rssi1_filtered; // not used at all, appears pretty useless, so deprecate
+
+    int8_t spare2; // was rssi2_filtered;
+    int8_t spare3; // was snr_filtered;
 
     // receiver side of things
 
@@ -163,7 +165,7 @@ typedef struct
     uint8_t receiver_LQ_serial; // = receiver_LQ_valid_received; // number of completely valid packets received on receiver side
     int8_t receiver_rssi_instantaneous;
 
-    int8_t receiver_rssi_filtered;
+    uint8_t spare4; // was receiver_rssi_instantaneous_percent; // was receiver_rssi_filtered; // not used at all, appears pretty useless, so deprecate
 
     // both
 
@@ -172,8 +174,7 @@ typedef struct
     uint8_t transmit_antenna : 1;
     uint8_t receiver_receive_antenna : 1;
     uint8_t receiver_transmit_antenna : 1;
-    uint8_t _diversity : 1; // pretty useless, so deprecate
-    uint8_t _receiver_diversity : 1; // pretty useless, so deprecate
+    uint8_t spare5 : 2; // were diversity, receiver_diversity, pretty useless, so deprecate
     uint8_t rx1_valid : 1;
     uint8_t rx2_valid : 1;
 
@@ -194,17 +195,17 @@ typedef struct
     uint8_t LQ_fresh_serial_packets_received;
     uint8_t bytes_per_sec_received;
 
-    uint8_t _LQ_received; // pretty useless, so deprecate // number of packets received per sec, not practically relevant
+    uint8_t mavlink_packet_LQ_received; // MAVLink packet LQ, was LQ_received
 
     uint8_t fhss_curr_i;
     uint8_t fhss_cnt;
 
     uint8_t vehicle_state : 2; // 0 = disarmed, 1 = armed 2 = flying, 3 = invalid/unknown
-    uint8_t spare : 6;
+    uint8_t spare6 : 6;
 
     uint8_t link_state_connected : 1;
     uint8_t link_state_binding : 1;
-    uint8_t spare2 : 6;
+    uint8_t spare7 : 6;
 }) tMBridgeLinkStats; // 22 bytes
 
 
@@ -228,17 +229,27 @@ MBRIDGE_PACKED(
 typedef struct
 {
     int16_t receiver_sensitivity;
-    uint8_t spare1;
+
+    uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
+    uint8_t binding : 1;
+    uint8_t __deprecated2 : 3; // start deprecating (> v1.3.08)
+    uint8_t spare1 : 3;
+
     int8_t tx_actual_power_dbm;
-    int8_t rx_actual_power_dbm;
+    int8_t rx_actual_power_dbm; // available if rx_available = 1
+
     uint8_t rx_available : 1;
-    uint8_t __tx_actual_diversity : 2; // deprecated, since grew too large
-    uint8_t __rx_actual_diversity : 2; // deprecated, since grew too large
+    uint8_t __deprecated1 : 4;
     uint8_t spare2 : 3;
+
     uint8_t tx_config_id;
+
     uint8_t tx_actual_diversity : 4;
-    uint8_t rx_actual_diversity : 4;
-    uint8_t spare[16];
+    uint8_t rx_actual_diversity : 4; // available if rx_available = 1
+
+    uint8_t param_num; // 0 = unknown
+
+    uint8_t spare[15];
 }) tMBridgeInfo; // 24 bytes
 
 
@@ -247,8 +258,8 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    uint16_t firmware_version_u16;
-    uint16_t setup_layout;
+    uint16_t firmware_version_u16; // 16.64.64 format
+    uint16_t setup_layout_u16; // 16.64.64 format
     char device_name_20[20];
 }) tMBridgeDeviceItem; // 24 bytes
 
@@ -304,7 +315,7 @@ typedef struct
     MBRIDGE_PACKED(union {
         char options2_23[23];
     });
-}) tMBridgeParamItem3; // 24 bytes
+}) tMBridgeParamItem3_4; // 24 bytes
 
 
 MBRIDGE_PACKED(
@@ -327,7 +338,7 @@ STATIC_ASSERT(sizeof(tMBridgeInfo) == MBRIDGE_CMD_INFO_LEN, "tMBridgeInfo len mi
 STATIC_ASSERT(sizeof(tMBridgeDeviceItem) == MBRIDGE_CMD_DEVICE_ITEM_LEN, "tMBridgeDeviceItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamItem2) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem2 len missmatch")
-STATIC_ASSERT(sizeof(tMBridgeParamItem3) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
+STATIC_ASSERT(sizeof(tMBridgeParamItem3_4) == MBRIDGE_CMD_PARAM_ITEM_LEN, "tMBridgeParamItem3 len missmatch")
 STATIC_ASSERT(sizeof(tMBridgeParamSet) == MBRIDGE_CMD_PARAM_SET_LEN, "tMBridgeParamSet len missmatch")
 
 

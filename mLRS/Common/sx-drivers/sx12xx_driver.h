@@ -37,6 +37,8 @@ class tI2cDac : public tI2cBase
 
 tI2cDac dac;
 #endif
+
+
 #ifdef DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
 class tInternalDac : public tInternalDacBase
 {
@@ -78,23 +80,59 @@ typedef struct
 } tSxLoraConfiguration;
 
 
+typedef struct
+{
+    uint8_t Bandwidth;
+    uint8_t CodingRate;
+    uint8_t Bt;
+    uint8_t AGCPreambleLength;
+    uint8_t SyncWordLength;
+    uint8_t SyncWordMatch;
+    uint8_t PacketType;
+    uint8_t PayloadLength;
+    uint8_t CrcLength;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxFlrcConfiguration;
+
+
+typedef struct
+{
+    uint32_t BitRate_bps;
+    uint8_t PulseShape;
+    uint8_t Bandwidth;
+    uint32_t Fdev_hz;
+    uint16_t PreambleLength;
+    uint8_t PreambleDetectorLength;
+    uint8_t SyncWordLength;
+    uint8_t AddrComp;
+    uint8_t PacketType;
+    uint8_t PayloadLength;
+    uint8_t CRCType;
+    uint8_t Whitening;
+    uint32_t TimeOverAir; // in us
+    int16_t ReceiverSensitivity;
+} tSxGfskConfiguration;
+
+
 class SxDriverDummy
 {
   public:
     void Init(void) {}
     bool isOk(void) { return true; }
-    void StartUp(tSxGlobalConfig* global_config) {}
+    void StartUp(tSxGlobalConfig* const global_config) {}
     void SetPacketType(uint8_t PacketType) {}
     void SetRfFrequency(uint32_t RfFrequency) {}
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr) {}
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) {}
-    void ReadFrame(uint8_t* data, uint8_t len) {}
-    void SetToRx(uint16_t tmo_ms) {}
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr) {}
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) {}
+    void ReadFrame(uint8_t* const data, uint8_t len) {}
+    void SetToRx(void) {}
     void SetToIdle(void) {}
 
-    void ResetToLoraConfiguration() {}
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig) {}
     void SetRfPower_dbm(int8_t power_dbm) {}
-    void ClearIrqStatus(uint16_t IrqMask) {}
+    void UpdateRfPower(tSxGlobalConfig* const global_config) {}
+    void ClearIrqStatus(uint32_t IrqMask) {}
 
     int16_t ReceiverSensitivity_dbm(void) { return 0; }
     int8_t RfPower_dbm(void) { return INT8_MIN; }
@@ -103,12 +141,19 @@ class SxDriverDummy
 };
 
 
-#ifdef DEVICE_HAS_SX126x
-#include "sx126x_driver.h"
+#if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+  #include "sx126x_driver.h"
 #elif defined DEVICE_HAS_SX127x
-#include "sx127x_driver.h"
+  #include "sx127x_driver.h"
+#elif defined DEVICE_HAS_DUAL_SX126x_SX128x
+  #include "sx126x_driver.h"
+  #include "sx128x_driver.h"
+#elif defined DEVICE_HAS_LR11xx
+  #include "lr11xx_driver.h"
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+  #include "lr20xx_driver.h"
 #else
-#include "sx128x_driver.h"
+  #include "sx128x_driver.h"
 #endif
 
 

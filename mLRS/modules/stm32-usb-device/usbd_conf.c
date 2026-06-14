@@ -40,12 +40,36 @@ static USBD_StatusTypeDef USBD_Get_USB_Status(HAL_StatusTypeDef hal_status);
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
 {
-  if(pcdHandle->Instance==USB)
+  if(pcdHandle->Instance==USBD_INST)
   {
-    /* Peripheral clock enable */
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+    // initialize HSI48, copied with adaption from SystemClock_Config()
+    RCC_OscInitTypeDef RCC_OscInitStruct = {};
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // important, otherwise HAL_RCC_OscConfig() will modify the PLL setting
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        //Error_Handler();
+    }
+#endif
+
+    // copied from SystemClock_Config()
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USB;
+#if defined STM32F103xE
+    PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+    // CubeMX is not adding this to SystemClock_Config(), but it is needed
+    PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
+#elif defined STM32F072xB
+    PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+#endif
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+        //Error_Handler();
+    }
+
     __HAL_RCC_USB_CLK_ENABLE();
 
-    /* Peripheral interrupt init */
     //OW HAL_NVIC_SetPriority(USBD_IRQn, 0, 0);
     NVIC_SetPriority(USBD_IRQn, USBD_IRQ_PRIORITY);
     HAL_NVIC_EnableIRQ(USBD_IRQn);
@@ -55,7 +79,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
 
 void HAL_PCD_MspDeInit(PCD_HandleTypeDef* pcdHandle)
 {
-  if(pcdHandle->Instance==USB)
+  if(pcdHandle->Instance==USBD_INST)
   {
     /* Peripheral clock disable */
     __HAL_RCC_USB_CLK_DISABLE();
@@ -94,7 +118,11 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
   USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
 
-  if ( hpcd->Init.speed != PCD_SPEED_FULL)
+  if ( hpcd->Init.speed == PCD_SPEED_FULL)
+  {
+    speed = USBD_SPEED_FULL;
+  }
+  else
   {
     Error_Handler();
   }
@@ -167,7 +195,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   hpcd_USB_FS.pData = pdev;
   pdev->pData = &hpcd_USB_FS;
 
-  hpcd_USB_FS.Instance = USB;
+  hpcd_USB_FS.Instance = USBD_INST;
   hpcd_USB_FS.Init.dev_endpoints = 8;
   hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
   hpcd_USB_FS.Init.phy_itface = PCD_PHY_EMBEDDED;

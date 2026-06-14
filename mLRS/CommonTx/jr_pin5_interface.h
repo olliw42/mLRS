@@ -63,6 +63,9 @@ void (*uart_tc_callback_ptr)(void) = &uart_tc_callback_dummy;
 #define UART_RX_CALLBACK_FULL(c)    (*uart_rx_callback_ptr)(c)
 #define UART_TC_CALLBACK()          (*uart_tc_callback_ptr)()
 
+#if defined ESP32 || defined ESP8266
+#include "jr_pin5_interface_esp.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
 
 // not available in stdstm32-uart.h, used for half-duplex mode
@@ -81,7 +84,7 @@ void uart_tx_start(void)
     LL_USART_EnableIT_TXE(UART_UARTx); // initiates transmitting
 }
 
-// not available in stdstm32-uart.h, used for full-duplex mode
+// not available in stdstm32-uart.h, used for IN on JrPin5 mode
 void uart_rx_putc_torxbuf(uint8_t c)
 {
     uint16_t next = (uart_rxwritepos + 1) & UART_RXBUFSIZEMASK;
@@ -91,6 +94,9 @@ void uart_rx_putc_torxbuf(uint8_t c)
     }
 }
 
+
+//-------------------------------------------------------
+// Pin5BridgeBase class
 
 class tPin5BridgeBase
 {
@@ -103,18 +109,21 @@ class tPin5BridgeBase
 
     void TelemetryStart(void);
 
-    // interface to the uart hardware peripheral used for the bridge, called in isr context
+    // interface to the uart hardware peripheral used for the bridge, may be called in isr context
+    void pin5_init(void);
     void pin5_tx_start(void) { uart_tx_start(); }
-    void pin5_putc(char c) { uart_tx_putc_totxbuf(c); }
+    void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
 
     // for in-isr processing
-    void pin5_tx_enable(bool enable_flag);
+    void pin5_tx_enable(void);
+    void pin5_rx_enable(void);
     virtual void parse_nextchar(uint8_t c) = 0;
     virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
     // actual isr functions
-    void uart_rx_callback(uint8_t c);
-    void uart_tc_callback(void);
+    void pin5_rx_callback(uint8_t c);
+    void pin5_tc_callback(void);
+    void pin5_cc1_callback(void);
 
     // parser
     typedef enum {
@@ -127,13 +136,14 @@ class tPin5BridgeBase
         STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
         STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
 
-        // crsf receive states
+        // CRSF receive states
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,
 
         // transmit states, used by all
         STATE_TRANSMIT_START,
+        STATE_TRANSMIT_PENDING, // waiting for TX delay timer
         STATE_TRANSMITING,
     } STATE_ENUM;
 
@@ -164,6 +174,24 @@ void tPin5BridgeBase::Init(void)
 
     nottransmiting_tlast_ms = 0;
 
+    txclock.Init();
+
+    pin5_init();
+}
+
+
+void tPin5BridgeBase::TelemetryStart(void)
+{
+    telemetry_start_next_tick = true;
+}
+
+
+//-------------------------------------------------------
+// Interface to the uart hardware peripheral used for the bridge
+// except pin5_init() called in isr context
+
+void tPin5BridgeBase::pin5_init(void)
+{
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -231,92 +259,84 @@ void tPin5BridgeBase::Init(void)
     gpio_init(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
 #endif
 
-    pin5_tx_enable(false); // also enables rx isr
+    pin5_rx_enable(); // also enables rx isr
 
-#ifdef TX_FRM303_F072CB
-    gpio_init_outpp(IO_PB9);
-#endif
 #if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
     gpio_init_outpp(IO_PA0);
 #endif
 }
 
 
-void tPin5BridgeBase::TelemetryStart(void)
+void tPin5BridgeBase::pin5_tx_enable(void)
 {
-    telemetry_start_next_tick = true;
+    uart_rx_enableisr(DISABLE);
+
+#if defined JRPIN5_TX_OE
+    JRPIN5_TX_OE_ENABLED;
+#endif
+#if defined JRPIN5_DISABLE_TX_WHILE_RX
+    uart_tx_enablepin(ENABLE);
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_TX
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+    LL_USART_Enable(UART_UARTx);
+    gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_RX
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_Enable(UART_UARTx);
+    gpio_change_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx
+#endif
+#if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
+    gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+    gpio_change(UART_RX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Rx pin
+#endif
 }
 
 
-//-------------------------------------------------------
-// Interface to the uart hardware peripheral used for the bridge
-// called in isr context
-
-void tPin5BridgeBase::pin5_tx_enable(bool enable_flag)
+void tPin5BridgeBase::pin5_rx_enable(void)
 {
-    if (enable_flag) {
-        uart_rx_enableisr(DISABLE);
-
 #if defined JRPIN5_TX_OE
-        JRPIN5_TX_OE_ENABLED;
+    JRPIN5_TX_OE_DISABLED;
 #endif
 #if defined JRPIN5_DISABLE_TX_WHILE_RX
-        uart_tx_enablepin(ENABLE);
+    uart_tx_enablepin(DISABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
-        LL_USART_Disable(UART_UARTx);
-        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
-        LL_USART_Enable(UART_UARTx);
-        gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
+    LL_USART_Enable(UART_UARTx);
+    gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX
-        LL_USART_Disable(UART_UARTx);
-        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-        LL_USART_Enable(UART_UARTx);
-        gpio_change_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
+    LL_USART_Enable(UART_UARTx);
+    gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
-        gpio_change_af(UART_TX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now tx
-        gpio_change(UART_RX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Rx pin
+    gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+    gpio_change(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
 #endif
 
-    } else {
-#if defined JRPIN5_TX_OE
-        JRPIN5_TX_OE_DISABLED;
-#endif
-#if defined JRPIN5_DISABLE_TX_WHILE_RX
-        uart_tx_enablepin(DISABLE);
-#endif
-#if defined JRPIN5_FULL_INTERNAL_ON_TX
-        LL_USART_Disable(UART_UARTx);
-        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-        LL_USART_Enable(UART_UARTx);
-        gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
-#endif
-#if defined JRPIN5_FULL_INTERNAL_ON_RX
-        LL_USART_Disable(UART_UARTx);
-        LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
-        LL_USART_Enable(UART_UARTx);
-        gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
-#endif
-#if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
-        gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
-        gpio_change(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
-#endif
-
-        uart_rx_enableisr(ENABLE);
-    }
+    uart_rx_enableisr(ENABLE);
 }
 
 
 // we do not add a delay here before we transmit
 // the logic analyzer shows this gives a 30-35 us gap nevertheless, which is perfect
+// 25.Jan.2026: we add a non-blocking delay before transmitting, since EdgeTx has issues on H7.
+// This gives the radio time to switch from TX to RX before we start transmitting.
 
-void tPin5BridgeBase::uart_rx_callback(uint8_t c)
+void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     parse_nextchar(c);
 
     if (state < STATE_TRANSMIT_START) return; // we are in receiving
+
+    if (state == STATE_TRANSMIT_PENDING) return; // we are already in transmit delay
 
     if (state != STATE_TRANSMIT_START) { // we are in transmitting, should not happen! (does appear to not happen)
         state = STATE_IDLE;
@@ -324,18 +344,33 @@ void tPin5BridgeBase::uart_rx_callback(uint8_t c)
     }
 
     if (transmit_start()) { // check if a transmission waits, put it into buf and return true to start
-        pin5_tx_enable(true);
-        state = STATE_TRANSMITING;
-        pin5_tx_start();
+        if (txclock.HasCC1Callback()) {
+            txclock.StartCC1Delay(250); // 100 us delay, should be plenty, EdgeTx say 70 us or so is safe // 100 us was not sufficient on H7
+            state = STATE_TRANSMIT_PENDING;
+        } else {
+            pin5_tx_enable();
+            state = STATE_TRANSMITING;
+            pin5_tx_start();
+        }
     } else {
         state = STATE_IDLE;
     }
 }
 
 
-void tPin5BridgeBase::uart_tc_callback(void)
+void tPin5BridgeBase::pin5_cc1_callback(void)
 {
-    pin5_tx_enable(false); // switches on rx
+    if (state != STATE_TRANSMIT_PENDING) return; // anything else should not happen
+
+    pin5_tx_enable();
+    state = STATE_TRANSMITING;
+    pin5_tx_start();
+}
+
+
+void tPin5BridgeBase::pin5_tc_callback(void)
+{
+    pin5_rx_enable(); // switches on rx
     state = STATE_IDLE;
 }
 
@@ -356,19 +391,18 @@ void tPin5BridgeBase::CheckAndRescue(void)
         nottransmiting_tlast_ms = tnow_ms;
     } else {
         if (tnow_ms - nottransmiting_tlast_ms > 20) { // we are stuck, so rescue
-#ifdef TX_FRM303_F072CB
-            gpio_low(IO_PB9);
-#endif
 #if defined TX_DIY_SXDUAL_MODULE02_G491RE || defined TX_DIY_E28DUAL_MODULE02_G491RE || defined TX_DIY_E22DUAL_MODULE02_G491RE
             gpio_high(IO_PA0);
 #endif
             state = STATE_IDLE;
-            pin5_tx_enable(false);
+            pin5_rx_enable();
             LL_USART_DisableIT_TC(UART_UARTx);
             LL_USART_ClearFlag_TC(UART_UARTx);
         }
     }
 }
 
+
+#endif // !(defined ESP32 || defined ESP8266)
 
 #endif // JRPIN5_INTERFACE_H

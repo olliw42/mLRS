@@ -14,7 +14,7 @@
 extern uint16_t micros16(void);
 
 
-void WhileBase::Init(void)
+void tWhileBase::Init(void)
 {
     do_cnt = 0;
     tstart_us = 0;
@@ -22,7 +22,7 @@ void WhileBase::Init(void)
 }
 
 
-void WhileBase::Trigger(void)
+void tWhileBase::Trigger(void)
 {
     do_cnt = 10; // postpone action by few loops
     tstart_us = micros16();
@@ -30,9 +30,9 @@ void WhileBase::Trigger(void)
 }
 
 
-void WhileBase::Do(void)
+void tWhileBase::Do(void)
 {
-    if (tremaining_us <= 0) return;
+    if (tremaining_us == 0) return;
 
     if (do_cnt) { // count down
         do_cnt--;
@@ -40,8 +40,11 @@ void WhileBase::Do(void)
         return;
     }
 
-    tremaining_us = dtmax_us() - (int32_t)(micros16() - tstart_us);
-    if (tremaining_us <= 0) return;
+    uint16_t dt = micros16() - tstart_us;
+    if (dt > tremaining_us) {
+        tremaining_us = 0; // this ends it
+        return;
+    }
 
     handle();
 }

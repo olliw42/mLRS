@@ -13,12 +13,20 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
+#include "../Common/hal/hal.h"
+#include "../Common/tasks.h"
 #include "setup_tx.h"
 
 
 extern volatile uint32_t millis32(void);
-extern tTxStats txstats;
-extern tConfigId config_id;
+extern bool connected(void);
+extern tStats stats;
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxInfo info;
+extern tTasks tasks;
 
 
 //-------------------------------------------------------
@@ -34,7 +42,7 @@ typedef enum {
 
 // helper, extracts value as string from optstr for parameters of type LIST
 // "50 Hz,31 Hz,19 Hz" etc
-bool _param_get_listval_fromoptstr(char* s, uint8_t param_idx, uint8_t value, uint8_t format)
+bool _param_get_listval_fromoptstr(char* const s, uint8_t param_idx, uint8_t value, uint8_t format)
 {
 int8_t seps[24];
 uint8_t nr, n;
@@ -42,24 +50,27 @@ uint8_t nr, n;
     const char* optstr = SetupParameter[param_idx].optstr;
 
     if (format == PARAM_FORMAT_CLI) {
-         if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
+         if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
              optstr = SETUP_OPT_RF_BAND_LONGSTR;
          }
-         if ((SetupParameter[param_idx].ptr == &Setup.Tx[0].Diversity) ||
-             (SetupParameter[param_idx].ptr == &Setup.Rx.Diversity)) {
+         if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
+             (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
              optstr = SETUP_OPT_DIVERSITY_LONGSTR;
          }
     } else
     if (format == PARAM_FORMAT_DISPLAY) {
-        if (param_idx == PARAM_INDEX_RF_BAND) { // RF Band
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].FrequencyBand)) { // RF Band
             optstr = SETUP_OPT_RF_BAND_DISPSTR;
         }
-        if ((SetupParameter[param_idx].ptr == &Setup.Tx[0].Diversity) ||
-            (SetupParameter[param_idx].ptr == &Setup.Rx.Diversity)) {
+        if (SetupParameter[param_idx].ptr == &(Setup.Common[0].Mode)) { // Mode
+            optstr = SETUP_OPT_MODE_DISPSTR;
+        }
+        if ((SetupParameter[param_idx].ptr == &(Setup.Tx[0].Diversity)) ||
+            (SetupParameter[param_idx].ptr == &(Setup.Rx.Diversity))) {
             optstr = SETUP_OPT_DIVERSITY_DISPSTR;
         }
-        if (SetupParameter[param_idx].ptr == &Setup.Rx.SerialLinkMode) {
-            optstr = SETUP_OPT_SERIAL_LINK_MODE_DISPLAYSTR;
+        if (SetupParameter[param_idx].ptr == &(Setup.Rx.SerialLinkMode)) {
+            optstr = SETUP_OPT_SERIAL_LINK_MODE_DISPSTR;
         }
     }
 
@@ -107,7 +118,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 {
     if (SetupParameter[param_idx].type != SETUP_PARAM_TYPE_LIST) return UINT8_MAX;
 
-    uint16_t allowed_mask = param_get_allowed_mask(param_idx);
+    uint32_t allowed_mask = param_get_allowed_mask(param_idx);
 
     uint8_t num = 0;
     for (uint8_t i = 0; i < param_get_opt_num(param_idx); i++) {
@@ -118,7 +129,7 @@ uint8_t param_get_allowed_opt_num(uint8_t param_idx)
 
 
 // helper, finds index from name
-bool param_get_idx(uint8_t* param_idx, char* name)
+bool param_get_idx_fromname(uint8_t* const param_idx, char* const name)
 {
 char s[64];
 
@@ -140,11 +151,9 @@ char s[64];
 
 
 // helper, gets parameter value as formatted string, different formats can be specified
-bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
+bool param_get_val_formattedstr(char* const s, uint8_t param_idx, uint8_t format = PARAM_FORMAT_DEFAULT)
 {
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         int8_t i8 = *(int8_t*)(SetupParameterPtr(param_idx));
         stoBCDstr(i8, s);
@@ -154,10 +163,6 @@ bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PAR
         }
         return true;
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         uint8_t u8 = *(uint8_t*)(SetupParameterPtr(param_idx));
         return _param_get_listval_fromoptstr(s, param_idx, u8, format);
@@ -172,13 +177,11 @@ bool param_get_val_formattedstr(char* s, uint8_t param_idx, uint8_t format = PAR
 
 
 // helper, sets parameter value for integer-valued parameters
-bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_idx)
+bool param_set_val_fromint(bool* const rx_param_changed, int32_t value, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         // check
         int32_t i8 = SetupParameter[param_idx].min.INT8_value;
@@ -191,10 +194,6 @@ bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_
         *rx_param_changed = setup_set_param(param_idx, vv);
         return true;
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         // check
         if (value < 0) return false;
@@ -216,15 +215,12 @@ bool param_set_val_fromint(bool* rx_param_changed, int32_t value, uint8_t param_
 
 
 // helper, sets parameter value from an input string
-bool param_set_str6val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+bool param_set_str6val(bool* const rx_param_changed, char* const svalue, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_INT8:
-    case SETUP_PARAM_TYPE_UINT16:
-    case SETUP_PARAM_TYPE_INT16:
     case SETUP_PARAM_TYPE_LIST:
         // not a str6-valued parameter, so return false
         break;
@@ -245,15 +241,12 @@ bool param_set_str6val(bool* rx_param_changed, char* svalue, uint8_t param_idx)
 
 
 // helper, sets parameter value from an input string
-bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_idx)
+bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uint8_t param_idx)
 {
     *rx_param_changed = false;
 
     switch (SetupParameter[param_idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
     case SETUP_PARAM_TYPE_INT8:
-    case SETUP_PARAM_TYPE_UINT16:
-    case SETUP_PARAM_TYPE_INT16:
     case SETUP_PARAM_TYPE_LIST:{
         int32_t value = atoi(svalue);
         return param_set_val_fromint(rx_param_changed, value, param_idx);
@@ -266,121 +259,135 @@ bool param_set_val_fromstr(bool* rx_param_changed, char* svalue, uint8_t param_i
 }
 
 
+bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_t frequency_band)
+{
+    if (frequency_band != SETUP_FREQUENCY_BAND_2P4_GHZ) return false;
+
+    switch (except_from_bindphrase(bind_phrase)) {
+        case 0: strcpy(ext, " /--"); return true;
+        case 1: strcpy(ext, " /e1"); return true;
+        case 2: strcpy(ext, " /e6"); return true;
+        case 3: strcpy(ext, " /e11"); return true;
+        case 4: strcpy(ext, " /e13"); return true;
+    }
+
+    return false; // should not happen
+}
+
+
 //-------------------------------------------------------
 // CLI class
 //-------------------------------------------------------
 
-typedef enum {
-    CLI_TASK_NONE = 0,
-    CLI_TASK_RX_PARAM_SET,
-    CLI_TASK_PARAM_STORE,
-    CLI_TASK_BIND,
-    CLI_TASK_PARAM_RELOAD,
-    CLI_TASK_BOOT,
-    CLI_TASK_FLASH_ESP,
-    CLI_TASK_ESP_PASSTHROUGH,
-    CLI_TASK_ESP_CLI,
-    CLI_TASK_CHANGE_CONFIG_ID,
-} CLI_TASK_ENUM;
+#define CLI_LINEND  "\r\n"
+#define CLI_BUF_SIZE  128
+
+
+#ifdef DEVICE_HAS_COM_ON_USB
+  #if USB_TXBUFSIZE >= 2048
+    #define CLI_PRINT_CHUNKS_CNT_MAX  200
+  #else // we assume 512
+    #define CLI_PRINT_CHUNKS_CNT_MAX  8
+  #endif
+#elif UARTC_TXBUFSIZE >= 2048
+  #define CLI_PRINT_CHUNKS_CNT_MAX  200
+#elif UARTC_TXBUFSIZE >= 512
+  #define CLI_PRINT_CHUNKS_CNT_MAX  8
+#elif UARTC_TXBUFSIZE >= 256
+  #define CLI_PRINT_CHUNKS_CNT_MAX  4
+#else // esp tx: TXBUFSIZE = 0, which corresponds to 128 fifo
+  #define CLI_PRINT_CHUNKS_CNT_MAX  2 // only 2 chunks fit into 128 fifo
+#endif
 
 
 class tTxCli
 {
   public:
-    void Init(tSerialBase* _comport);
-    void Set(uint8_t new_line_end);
+    void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
     void Do(void);
-    uint8_t Task(void);
-    int32_t GetTaskValue(void) { return task_value; }
 
   private:
-    typedef enum {
-        CLI_STATE_NORMAL = 0,
-        CLI_STATE_STATS,
-    } CLI_STATE_ENUM;
-
     void addc(uint8_t c);
     void clear(void);
-    void print_help(void);
+    void print_help_do(void); // printed in chunks
     void print_param(uint8_t idx);
-    void print_param_list(uint8_t flag);
+    void print_param_list_do(void); // printed in chunks
     void print_param_opt_list(uint8_t idx);
     void print_device_version(void);
-    void print_frequencies(void);
+    void print_frequencies_do(void); // printed in chunks
     void stream(void);
 
-    bool is_cmd(const char* cmd);
-    bool is_cmd_param_set(char* name, char* svalue);
-    bool is_cmd_set_value(const char* cmd, int32_t* value);
+    bool is_cmd(const char* const cmd);
+    bool is_cmd_param_set(char* const name, char* const svalue);
+    bool is_cmd_set_value(const char* const cmd, int32_t* const value);
+    bool is_cmd_set_str(const char* const cmd, char* const str);
 
     void putc(char c) { com->putc(c); }
     void puts(const char* s) { com->puts(s); }
-    void putsn(const char* s) { com->puts(s); com->puts(ret); }
+    void putsn(const char* s) { com->puts(s); com->puts(CLI_LINEND); }
 
+    void print_layout_version_warning(void);
     void print_config_id(void);
 
     tSerialBase* com;
 
     bool initialized;
 
-    uint8_t line_end;
-    char ret[4];
-
-    char buf[128];
+    char buf[CLI_BUF_SIZE];
     uint8_t pos;
     uint32_t tlast_ms;
 
-    uint8_t task_pending;
-    int32_t task_value;
+    // variables needed for print state machine to print in junks
+    typedef enum {
+        CLI_STATE_NORMAL = 0,
+        CLI_STATE_STATS,
+        CLI_STATE_PRINT_HELP,
+        CLI_STATE_PRINT_PARAM_LIST,
+        CLI_STATE_PRINT_LISTFREQS,
+    } CLI_STATE_ENUM;
+
+    void print_it(uint8_t _state) { state = _state; print_index = 0; }
+    void print_it_reset(void) { state = CLI_STATE_NORMAL; }
 
     uint8_t state;
+    uint8_t print_chunks_max;
+    uint8_t print_index;
+    uint8_t print_pl_flag;
 };
 
 
-void tTxCli::Init(tSerialBase* _comport)
+void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
 {
     com = _comport;
 
     initialized = (com != nullptr) ? true : false;
 
-    line_end = CLI_LINE_END_CR;
-    strcpy(ret, "\r");
-
     pos = 0;
     buf[pos] = '\0';
     tlast_ms = 0;
 
-    task_pending = CLI_TASK_NONE;
-
     state = CLI_STATE_NORMAL;
-}
 
-
-void tTxCli::Set(uint8_t new_line_end)
-{
-    if (new_line_end == line_end) return;
-
-    line_end = new_line_end;
-
-    switch (line_end) {
-    case CLI_LINE_END_CR: strcpy(ret, "\r"); break;
-    case CLI_LINE_END_LF: strcpy(ret, "\n"); break;
-    case CLI_LINE_END_CRLF: strcpy(ret, "\r\n"); break;
+    // 9 ms, 20 ms, 32 ms, 53 ms
+    if (_frame_rate_ms < 19) {
+        print_chunks_max = 1;
+    } else if (_frame_rate_ms < 30) {
+        print_chunks_max = 3;
+    } else if (_frame_rate_ms < 50) {
+        print_chunks_max = 5;
+    } else {
+        print_chunks_max = 8;
     }
-}
+    if (print_chunks_max > CLI_PRINT_CHUNKS_CNT_MAX) print_chunks_max = CLI_PRINT_CHUNKS_CNT_MAX;
 
-
-uint8_t tTxCli::Task(void)
-{
-    uint8_t task = task_pending;
-    task_pending = 0;
-    return task;
+    print_index = 0;
+    print_pl_flag = 0;
 }
 
 
 void tTxCli::addc(uint8_t c)
 {
-    if (pos > 100) return;
+    if (pos > (CLI_BUF_SIZE-24)) return; // not full buffer size, play it safe
 
     buf[pos] = c;
     pos++;
@@ -396,14 +403,14 @@ void tTxCli::clear(void)
 
 
 // cmd;
-bool tTxCli::is_cmd(const char* cmd)
+bool tTxCli::is_cmd(const char* const cmd)
 {
     return (strcmp(buf, cmd) == 0) ? true : false;
 }
 
 
 // name = value or p name
-bool tTxCli::is_cmd_set_value(const char* cmd, int32_t* value)
+bool tTxCli::is_cmd_set_value(const char* const cmd, int32_t* const value)
 {
 char s[64];
 uint8_t n;
@@ -420,26 +427,73 @@ uint8_t n;
     }
     s[n] = '\0';
 
-    if (n != 2) return false;
+    if (n < 1) return false;
     if (s[0] != '=') return false;
-    if (s[1] < '0' || s[1] > '9') return false;
 
-    *value = s[1] - '0';
+    // cleanify: extract 'number'
+    s[0] = '0'; // trick to make it easy
+    for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
+
+    *value = atoi(s);
 
     return true;
 }
 
 
+// name = str value
+bool tTxCli::is_cmd_set_str(const char* const cmd, char* const str)
+{
+char s[64];
+uint8_t n;
+
+    uint8_t cmd_len = strlen(cmd);
+    uint8_t buf_len = strlen(buf);
+    if (buf_len < cmd_len + 2) return false;
+    if (strncmp(buf, cmd, cmd_len) != 0) return false;
+
+    // cleanify: extract '=string' // ATTENTION: it removes all blanks!
+    n = 0;
+    for (uint8_t i = cmd_len; i < buf_len; i++) {
+        if (buf[i] != ' ') s[n++] = buf[i];
+    }
+    s[n] = '\0';
+
+    if (n < 1) return false;
+    if (s[0] != '=') return false;
+
+    strcpy(str, &s[1]); // remove the '='
+
+    return true;
+}
+
+
+void tTxCli::print_layout_version_warning(void)
+{
+    if (!connected()) return;
+    if (!SetupMetaData.rx_available) return; // is always true when connected, except when some link task is going on or in bind
+    if (SetupMetaData.rx_setup_layout < SETUPLAYOUT) {
+        putsn("!! Rx param version smaller than Tx param version. !!");
+        putsn("!! Please upgrade receiver.                        !!");
+    } else
+    if (SETUPLAYOUT < SetupMetaData.rx_setup_layout) {
+        putsn("!! Tx param version smaller than Rx param version. !!");
+        putsn("!! Please upgrade Tx module.                       !!");
+    }
+}
+
+
 void tTxCli::print_config_id(void)
 {
+    print_layout_version_warning();
+
     puts("ConfigId:");
-    putc('0'+Config.ConfigId);
+    putc('0' + Config.ConfigId);
     putsn("");
 }
 
 
 // p name = value or p name
-bool tTxCli::is_cmd_param_set(char* name, char* svalue)
+bool tTxCli::is_cmd_param_set(char* const name, char* const svalue)
 {
 char s[64];
 uint8_t sep, n;
@@ -477,11 +531,9 @@ uint8_t sep, n;
 
 void tTxCli::print_param_opt_list(uint8_t idx)
 {
-char s[16];
+char s[32];
 
     switch (SetupParameter[idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:{
         int8_t i8 = SetupParameter[idx].min.INT8_value;
         puts("  min: ");
@@ -490,10 +542,6 @@ char s[16];
         puts("  max: ");
         stoBCDstr(i8, s); putsn(s);
         }break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
     case SETUP_PARAM_TYPE_LIST:{
         uint16_t i = 0;
         uint16_t allowed_mask = param_get_allowed_mask(idx);
@@ -526,50 +574,47 @@ void tTxCli::print_param(uint8_t idx)
     param_get_val_formattedstr(s, idx, PARAM_FORMAT_CLI);
     puts(s);
     switch (SetupParameter[idx].type) {
-    case SETUP_PARAM_TYPE_UINT8:
-        break;
     case SETUP_PARAM_TYPE_INT8:
         break;
-    case SETUP_PARAM_TYPE_UINT16:
-        break;
-    case SETUP_PARAM_TYPE_INT16:
-        break;
-    case SETUP_PARAM_TYPE_LIST:{
+    case SETUP_PARAM_TYPE_LIST: {
         uint8_t u8 = *(uint8_t*)(SetupParameterPtr(idx));
         puts(" ["); putc(u8 + '0'); puts("]");
         if (allowed_num == 1) puts("(unchangeable)"); // unmodifiable unalterable immutable unchangeable
         }break;
-    case SETUP_PARAM_TYPE_STR6:
-        if (Config.FrequencyBand != SETUP_FREQUENCY_BAND_2P4_GHZ) break;
-        switch (except_from_bindphrase(s)) {
-        case 0: puts(" /--"); break;
-        case 1: puts(" /e1"); break;
-        case 2: puts(" /e6"); break;
-        case 3: puts(" /e11"); break;
-        case 4: puts(" /e13"); break;
-        }
-        break;
+    case SETUP_PARAM_TYPE_STR6: {
+        char except_str[8];
+        if (except_str_from_bindphrase(except_str, s, Config.FrequencyBand)) puts(except_str);
+        }break;
     }
-    puts(ret);
+    putsn("");
 }
 
 
-void tTxCli::print_param_list(uint8_t flag)
+// is chunk-ed by state
+void tTxCli::print_param_list_do(void)
 {
-    if ((flag == 0 || flag == 1 || flag == 3) && !connected()) {
+    if (print_index == 0 && (print_pl_flag == 0 || print_pl_flag == 1 || print_pl_flag == 3) && !connected()) {
         putsn("warn: receiver not connected");
     }
 
-    for (uint8_t idx = 0; idx < SETUP_PARAMETER_NUM; idx++) {
-        if ((flag == 1) && (setup_param_is_tx(idx) || setup_param_is_rx(idx))) continue;
-        if ((flag == 2) && !setup_param_is_tx(idx)) continue;
-        if ((flag == 3) && !setup_param_is_rx(idx)) continue;
+    uint8_t count = 0;
+    while (print_index < SETUP_PARAMETER_NUM) {
+        uint8_t param_index = print_index;
+        print_index++;
 
-        if ((flag == 0 || flag == 3) && !connected() && setup_param_is_rx(idx)) continue;
+        if ((print_pl_flag == 1) && (setup_param_is_tx(param_index) || setup_param_is_rx(param_index))) continue;
+        if ((print_pl_flag == 2) && !setup_param_is_tx(param_index)) continue;
+        if ((print_pl_flag == 3) && !setup_param_is_rx(param_index)) continue;
 
-        print_param(idx);
-        delay_ms(10);
+        if ((print_pl_flag == 0 || print_pl_flag == 3) && !connected() && setup_param_is_rx(param_index)) continue;
+
+        print_param(param_index);
+
+        count++;
+        if (count > print_chunks_max) return; // only as many lines fit into tx buffer
     }
+
+    print_it_reset();
 }
 
 
@@ -581,7 +626,7 @@ void tTxCli::stream(void)
         if (tnow_ms - tlast_ms >= 500) {
             tlast_ms = tnow_ms;
 
-            puts(u8toBCD_s(txstats.GetLQ_serial()));
+            puts(u8toBCD_s(stats.GetLQ_serial()));
             puts("(");
             puts(u8toBCD_s(stats.valid_frames_received.GetLQ()));
             puts("),");
@@ -589,10 +634,14 @@ void tTxCli::stream(void)
             puts(", ");
 
             puts(s8toBCD_s(stats.last_rssi1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_rssi2));
             puts(",");
             puts(s8toBCD_s(stats.received_rssi));
             puts(", ");
             puts(s8toBCD_s(stats.last_snr1));
+            puts("/");
+            puts(s8toBCD_s(stats.last_snr2));
             puts("; ");
 
             puts(u16toBCD_s(stats.bytes_transmitted.GetBytesPerSec()));
@@ -606,7 +655,15 @@ void tTxCli::stream(void)
 
 void tTxCli::print_device_version(void)
 {
-    putsn("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    print_layout_version_warning();
+
+    puts("  Tx: " DEVICE_NAME ", " VERSIONONLYSTR);
+    char s[48];
+    if (info.WirelessDeviceName_cli(s)) {
+        puts(", ");
+        puts(s);
+    }
+    putsn("");
 
     puts("  Rx: ");
     if (connected()) {
@@ -625,57 +682,112 @@ void tTxCli::print_device_version(void)
 }
 
 
-void tTxCli::print_frequencies(void)
+void tTxCli::print_frequencies_do(void)
 {
 char s[32];
+char unit[32];
+static uint8_t cnt_max;
 
-    for (uint8_t i = 0; i < fhss.Cnt(); i++) {
-        puts(u8toBCD_s(i));
-        puts("  ch: ");
-        puts(u8toBCD_s(fhss.ChList(i)));
-        puts("  f_reg: ");
-        puts(u32toBCD_s(fhss.FhssList(i)));
-        puts("  f: ");
-        u32toBCDstr(fhss.GetFreq_x1000(i), s);
-        remove_leading_zeros(s);
-        puts(s);
-#if defined DEVICE_HAS_SX126x || defined  DEVICE_HAS_SX127x
-        putsn(" kHz");
-#else
-        putsn(" MHz");
-#endif
-        delay_ms(20);
+    if (print_index == 0) {
+        if (Config.IsDualBand) { // fhss1 & fhss2
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else
+        if (TRANSMIT_USE_ANTENNA2) { // only fhss2
+            print_index = fhss.Cnt();
+            cnt_max = fhss.Cnt() + fhss.Cnt2();
+        } else { // only fhss1
+            cnt_max = fhss.Cnt();
+        }
+    }
+
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
+        if (print_index >= cnt_max) {
+            print_it_reset();
+            return;
+        }
+
+        if (print_index < fhss.Cnt()) {
+            uint8_t i = print_index;
+            if (i == 0) { puts("fhss1 (");puts(u8toBCD_s(fhss.Cnt()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+        } else {
+            uint8_t i = print_index - fhss.Cnt();
+            if (i == 0) { puts("fhss2 (");puts(u8toBCD_s(fhss.Cnt2()));putsn(")"); }
+            puts(u8toBCD_s(i));
+            puts("  ch: ");
+            puts(u8toBCD_s(fhss.ChList2(i)));
+            puts("  f_reg: ");
+            puts(u32toBCD_s(fhss.FhssList2(i)));
+            puts("  f: ");
+            u32toBCDstr(fhss.GetFreq2_x1000(unit, i), s);
+            remove_leading_zeros(s);
+            puts(s);
+            putsn(unit);
+            i++;
+        }
+
+        print_index++;
     }
 }
 
 
-void tTxCli::print_help(void)
+void tTxCli::print_help_do(void)
 {
-    putsn("  help, h, ?  -> this help page");
-    putsn("  v           -> print device and version");
-    putsn("  pl          -> list all parameters");
-    putsn("  pl c        -> list common parameters");
-    putsn("  pl tx       -> list Tx parameters");
-    putsn("  pl rx       -> list Rx parameters");
-    delay_ms(10);
-    putsn("  p name          -> get parameter value");
-    putsn("  p name = value  -> set parameter value");
-    putsn("  p name = ?      -> get parameter value and list of allowed values");
-    putsn("  pstore      -> store parameters");
-    delay_ms(10);
-    putsn("  bind        -> start binding");
-    putsn("  reload      -> reload all parameter settings");
-    putsn("  stats       -> starts streaming statistics");
-    putsn("  listfreqs   -> lists frequencies used in fhss scheme");
-    delay_ms(10);
-
-    putsn("  systemboot  -> call system bootloader");
-
-#ifdef USE_ESP_WIFI_BRIDGE
-    putsn("  esppt       -> enter serial passthrough");
-    putsn("  espboot     -> reboot ESP and enter serial passthrough");
-    putsn("  espcli      -> GPIO0 = low and enter serial passthrough");
+    for (uint8_t count = 0; count < print_chunks_max; count++) { // only as many lines fit into tx buffer
+        switch (print_index) {
+        case 0:  print_layout_version_warning(); break;
+        case 1:  putsn("  help, h, ?      -> this help page"); break;
+        case 2:  putsn("  v               -> print device and version"); break;
+        case 3:  putsn("  pl              -> list all parameters"); break;
+        case 4:  putsn("  pl c            -> list common parameters"); break;
+        case 5:  putsn("  pl tx           -> list Tx parameters"); break;
+        case 6:  putsn("  pl rx           -> list Rx parameters"); break;
+        case 7:  putsn("  p name          -> get parameter value"); break;
+        case 8:  putsn("  p name = value  -> set parameter value"); break;
+        case 9:  putsn("  p name = ?      -> get parameter value and list of allowed values"); break;
+        case 10: putsn("  pstore          -> store parameters"); break;
+        case 11: putsn("  setconfigid     -> select config id"); break;
+        case 12: putsn("  bind            -> start binding"); break;
+        case 13: putsn("  reload          -> reload all parameter settings"); break;
+        case 14: putsn("  stats           -> starts streaming statistics"); break;
+        case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
+        case 16: putsn("  systemboot      -> call system bootloader"); break;
+#else
+        case 16: break;
 #endif
+#ifdef USE_ESP_WIFI_BRIDGE
+        case 17: putsn("  esppt           -> enter serial passthrough"); break;
+        case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
+  #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
+        case 19: putsn("  espname         -> get current name (TCP/UDP/UDPSTA/BT/BLE)"); break;
+        case 20: putsn("  esp get pswd          -> get current password (TCP/UDP/UDPSTA)"); break;
+        case 21: putsn("  esp set pswd = str    -> set password (24 chars max)"); break;
+        case 22: putsn("  esp get netssid       -> get network SSID (UDPSTA)"); break;
+        case 23: putsn("  esp set netssid = str -> set network SSID (24 chars max)"); break;
+  #endif
+#elif defined USE_HC04_MODULE // let's assume that not both ESP and HC04 can be true
+        case 17: putsn("  hc04 pt               -> enter serial passthrough"); break;
+        case 18: putsn("  hc04 getpin           -> get pin of HC04"); break;
+        case 19: putsn("  hc04 setpin = value   -> set pin of HC04"); break;
+#endif
+        default:
+            // last chunk, reset
+            print_it_reset();
+            return;
+        }
+
+        print_index++; // do next chunk
+    }
 }
 
 
@@ -690,13 +802,25 @@ bool rx_param_changed;
 
     //puts(".");
 
+    // we are in a print state
+    switch (state) {
+    case CLI_STATE_STATS:
+        if (com->available()) { com->getc(); print_it_reset(); putsn("  streaming stats stopped"); return; }
+        stream();
+        break;
+    case CLI_STATE_PRINT_HELP:
+        print_help_do();
+        return;
+    case CLI_STATE_PRINT_PARAM_LIST:
+        print_param_list_do();
+        return;
+    case CLI_STATE_PRINT_LISTFREQS:
+        print_frequencies_do();
+        return;
+    }
+
     uint32_t tnow_ms = millis32();
     if (pos && (tnow_ms - tlast_ms > 2000)) { putsn(">"); putsn("  timeout"); clear(); }
-
-    if (state != CLI_STATE_NORMAL) {
-        if (com->available()) { com->getc(); state = CLI_STATE_NORMAL; putsn("  streaming stats stopped"); return; }
-        stream();
-    }
 
     while (com->available()) {
         char c = com->getc();
@@ -710,18 +834,18 @@ bool rx_param_changed;
         putsn(">");
 
         //-- basic commands
-        if (is_cmd("h"))     { print_help(); } else
-        if (is_cmd("help"))  { print_help(); } else
-        if (is_cmd("?"))     { print_help(); } else
+        if (is_cmd("h"))     { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("help"))  { print_it(CLI_STATE_PRINT_HELP); } else
+        if (is_cmd("?"))     { print_it(CLI_STATE_PRINT_HELP); } else
         if (is_cmd("v"))     { print_device_version(); } else
-        if (is_cmd("pl"))    { print_config_id(); print_param_list(0); } else
-        if (is_cmd("pl c"))  { print_config_id(); print_param_list(1); } else
-        if (is_cmd("pl tx")) { print_config_id(); print_param_list(2); } else
-        if (is_cmd("pl rx")) { print_config_id(); print_param_list(3);
+        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = 0; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = 1; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = 2; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = 3; print_it(CLI_STATE_PRINT_PARAM_LIST);
 
         } else
         if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
-            if (!param_get_idx(&param_idx, sname)) {
+            if (!param_get_idx_fromname(&param_idx, sname)) {
                 putsn("err: invalid parameter name");
             } else if (!connected() && setup_param_is_rx(param_idx)) {
                 putsn("warn: receiver not connected");
@@ -736,12 +860,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) task_pending = CLI_TASK_RX_PARAM_SET;
+                if (rx_param_changed) tasks.SetCliTask(TX_TASK_RX_PARAM_SET);
             }
 
         } else
         if (is_cmd("pstore")) {
-            task_pending = CLI_TASK_PARAM_STORE;
+            tasks.SetCliTask(TX_TASK_PARAM_STORE);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -752,12 +876,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            task_pending = CLI_TASK_BIND;
+            tasks.SetCliTask(MAIN_TASK_BIND_START);
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            task_pending = CLI_TASK_PARAM_RELOAD;
+            tasks.SetCliTask(TX_TASK_PARAM_RELOAD);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -768,13 +892,16 @@ bool rx_param_changed;
 
         } else
         if (is_cmd_set_value("setconfigid", &value)) { // setconfigid = value
+            if (value < 0 || value > 9) {
+                putsn("err: invalid config id number (0-9)");
+            } else {
             print_config_id();
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                task_pending = CLI_TASK_CHANGE_CONFIG_ID;
-                task_value = value;
+                tasks.SetCliTask(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
+            }
             }
 
         } else
@@ -786,27 +913,81 @@ bool rx_param_changed;
         //-- miscellaneous
         } else
         if (is_cmd("listfreqs")) {
-          print_frequencies();
+            print_it(CLI_STATE_PRINT_LISTFREQS);
 
         //-- System Bootloader
+#if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
         } else
         if (is_cmd("systemboot")) {
-            task_pending = CLI_TASK_BOOT;
+            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
+#endif
 
         //-- ESP handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_PASSTHROUGH;
+            tasks.SetCliTask(TX_TASK_ESP_PASSTHROUGH);
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            task_pending = CLI_TASK_FLASH_ESP;
+            tasks.SetCliTask(TX_TASK_FLASH_ESP);
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
         } else
-        if (is_cmd("espcli")) {
-            // enter esp cli, can only be exited by re-powering
-            task_pending = CLI_TASK_ESP_CLI;
+        if (is_cmd("espname")) {
+            char s[48];
+            if (info.WirelessDeviceName_cli(s)) {
+                puts("  ");putsn(s);
+            } else {
+                putsn("  unknown (restart tx module)");
+            }
+        } else
+        if (is_cmd("esp get pswd")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
+        } else
+        if (is_cmd_set_str("esp set pswd", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp pswd: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_PASSWORD, svalue);
+            }
+        } else
+        if (is_cmd("esp get netssid")) {
+            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
+        } else
+        if (is_cmd_set_str("esp set netssid", svalue)) {
+            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
+                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            } else {
+                puts("  esp netssid: ");
+                putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
+                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+            }
+#endif
+#endif
+
+        //-- HC04 module handling
+#ifdef USE_HC04_MODULE
+        } else
+        if (is_cmd("hc04 pt")) {
+            // enter hc04 passthrough, can only be exited by re-powering
+            tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
+        } else
+        if (is_cmd("hc04 getpin")) { // getpin
+            tasks.SetCliTask(TX_TASK_CLI_HC04_GETPIN);
+        } else
+        if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
+            if (value < 1000 || value > 9999) {
+                putsn("err: invalid pin number");
+            } else {
+                char pin_str[32];
+                u16toBCDstr(value, pin_str);
+                remove_leading_zeros(pin_str);
+                puts("  hc04 pin: ");putsn(pin_str);
+                tasks.SetCliTask(TX_TASK_CLI_HC04_SETPIN, value);
+            }
 #endif
 
         //-- invalid command

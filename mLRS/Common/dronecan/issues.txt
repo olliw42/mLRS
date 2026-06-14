@@ -1,0 +1,27 @@
+
+
+one may have to set the path for pip to work
+C:\WinPython3-10-5\WPy64-31050\python-3.10.5.amd64
+C:\WinPython3-10-5\WPy64-31050\python-3.10.5.amd64\Scripts
+set PATH=%PATH%;C:\WinPython385\WPy64-3850\python-3.8.5.amd64;C:\WinPython385\WPy64-3850\python-3.8.5.amd64\Scripts
+
+
+error "No module named 'pkq_resources'"
+
+pip install setuptools
+
+https://discord.com/channels/1005096100572700794/1288190811875446918/1288903439664812143
+https://stackoverflow.com/questions/7446187/no-module-named-pkg-resources/10538412#10538412
+
+
+git submodule DSDL
+to update browse into folder, then
+git pull
+
+
+25.Jan.2026: 
+The empy aka @) issue is resolved with the latest dronecan_dsdlc update
+//pip uninstall em
+//https://github.com/dronecan/dronecan_dsdlc/issues/18
+//pip install --force-reinstall -v empy==3.3.4
+

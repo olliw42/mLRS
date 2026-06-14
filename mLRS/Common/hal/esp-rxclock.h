@@ -5,97 +5,209 @@
 //*******************************************************
 // ESP RxClock
 //********************************************************
+// architecture difference vs STM32 (rxclock.h):
+// - STM32 uses two compare channels: CCR1 fires at frame period boundaries,
+//   CCR3 fires CLOCK_SHIFT later to trigger doPostReceive
+// - ESP simplifies this to a single event timer that multiplexes the 1ms HAL
+//   tick and rx event, scheduling whichever is next
+//
+// benefits of on-demand scheduling vs fixed-interval polling:
+// - old 10µs ISR fired 100k times/sec 
+// - new approach fires no more than 1111 times/sec (1ms tick + rx events).
+// - timer resources: uses 1 timer for both ESP32 and ESP8266
+//
+// underlying timer hardware:
+// - ESP32: esp_timer uses a 64-bit µs counter
+// - ESP8266: timer1 is a 23-bit countdown timer at 5MHz, 0.2µs resolution
+//********************************************************
 #ifndef ESP_RXCLOCK_H
 #define ESP_RXCLOCK_H
 #pragma once
 
 
-#define CLOCK_SHIFT_10US          100 // 75 // 100 // 1 ms
-#define CLOCK_CNT_1MS             100 // 10us interval 10us x 100 = 1000us        
+#ifdef ESP32
+#include <esp_timer.h>
+#endif
+
+//-------------------------------------------------------
+// Platform abstractions
+//-------------------------------------------------------
+
+#ifdef ESP32
+  typedef int64_t tick_t;
+  #define GET_MICROS()            esp_timer_get_time()
+  #define ENTER_CRITICAL_ISR()    taskENTER_CRITICAL_ISR(&rx_spinlock)
+  #define EXIT_CRITICAL_ISR()     taskEXIT_CRITICAL_ISR(&rx_spinlock)
+  #define ENTER_CRITICAL_API()    taskENTER_CRITICAL(&rx_spinlock)
+  #define EXIT_CRITICAL_API()     taskEXIT_CRITICAL(&rx_spinlock)
+#elif defined ESP8266
+  typedef uint32_t tick_t;        // wraps at ~71 minutes
+  #define GET_MICROS()            micros()
+  #define ENTER_CRITICAL_ISR()    // not needed in ISR on ESP8266
+  #define EXIT_CRITICAL_ISR()
+  #define ENTER_CRITICAL_API()    noInterrupts()
+  #define EXIT_CRITICAL_API()     interrupts()
+#endif
+
+// time comparison: ESP32 uses simple >= (64-bit), ESP8266 needs signed diff for wraparound
+#ifdef ESP32
+  #define TIME_GE(now, target)  ((now) >= (target))
+#elif defined ESP8266
+  #define TIME_GE(now, target)  ((int32_t)((now) - (target)) >= 0)
+#endif
+
+//-------------------------------------------------------
+// Constants and variables
+//-------------------------------------------------------
+
+#define CLOCK_SHIFT_US  1000 // 1 ms
 
 volatile bool doPostReceive;
 
-uint16_t CLOCK_PERIOD_10US; // does not change while isr is enabled, so no need for volatile
+static uint32_t CLOCK_PERIOD_US;
+static volatile tick_t next_tick_us;
+static volatile tick_t next_rx_us;
 
-volatile uint32_t CNT_10us = 0;
-volatile uint32_t CCR1 = 0;
-volatile uint32_t CCR3 = 0;
-volatile uint32_t MS_C = 0;
-
+#ifdef ESP32
+static esp_timer_handle_t event_timer;
+static portMUX_TYPE rx_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#endif
 
 //-------------------------------------------------------
-// Clock ISR
+// Timer scheduling
 //-------------------------------------------------------
 
-IRQHANDLER(
-void CLOCK_IRQHandler(void)
+static void IRAM_ATTR schedule_next(tick_t now)
 {
-    CNT_10us++;
+#ifdef ESP32
+    tick_t diff_tick = next_tick_us - now;
+    tick_t diff_rx = next_rx_us - now;
+#elif defined ESP8266
+    // cast to signed: uint32_t subtraction can underflow near timer wrap
+    int32_t diff_tick = (int32_t)(next_tick_us - now);
+    int32_t diff_rx = (int32_t)(next_rx_us - now);
+#endif
 
-    // call HAL_IncTick every 1 ms
-    if (CNT_10us == MS_C) {
-        MS_C = CNT_10us + CLOCK_CNT_1MS; 
+    if (diff_tick < 10) diff_tick = 10;
+    if (diff_rx < 10) diff_rx = 10;
+
+    tick_t delay_us = (diff_tick < diff_rx) ? diff_tick : diff_rx;
+
+#ifdef ESP32
+    esp_timer_start_once(event_timer, delay_us);
+#elif defined ESP8266
+    timer1_write(delay_us * 5);
+#endif
+}
+
+//-------------------------------------------------------
+// Timer callback (shared logic)
+//-------------------------------------------------------
+
+static void IRAM_ATTR event_callback(void)
+{
+    ENTER_CRITICAL_ISR();
+
+    tick_t now = GET_MICROS();
+
+    // fire tick if due
+    if (TIME_GE(now, next_tick_us)) {
         HAL_IncTick();
+        next_tick_us += 1000;
+        while (TIME_GE(GET_MICROS(), next_tick_us)) {
+            next_tick_us += 1000;
+            HAL_IncTick();
+        }
     }
 
-    // this is at about when RX was or was supposed to be received
-    if (CNT_10us == CCR1) { 
-        CCR3 = CNT_10us + CLOCK_SHIFT_10US; // next doPostReceive
-        CCR1 = CNT_10us + CLOCK_PERIOD_10US; // next tick
-    }
-
-    // this is 1 ms after RX was or was supposed to be received
-    if (CNT_10us == CCR3) { 
+    // fire rx event if due
+    if (TIME_GE(now, next_rx_us)) {
         doPostReceive = true;
+        next_rx_us += CLOCK_PERIOD_US;
+        while (TIME_GE(GET_MICROS(), next_rx_us)) {
+            next_rx_us += CLOCK_PERIOD_US;
+        }
     }
 
-})
+    schedule_next(GET_MICROS());
 
+    EXIT_CRITICAL_ISR();
+}
+
+// wrappers: esp_timer requires void(*)(void*), timer1 requires void(*)(void)
+#ifdef ESP32
+static void IRAM_ATTR esp32_timer_callback(void* arg) { event_callback(); }
+#elif defined ESP8266
+void IRAM_ATTR timer1_isr() { event_callback(); }
+#endif
 
 //-------------------------------------------------------
-// RxClock Class
+// Rx Clock Class
 //-------------------------------------------------------
 
-class RxClockBase
+class tRxClock
 {
   public:
     void Init(uint16_t period_ms);
     void SetPeriod(uint16_t period_ms);
     void Reset(void);
-    void disable_isr(void);
+
+  private:
+    bool initialized = false;
 };
 
-void RxClockBase::Init(uint16_t period_ms)
+
+void tRxClock::Init(uint16_t period_ms)
 {
-    CLOCK_PERIOD_10US = period_ms * 100; // frame rate in units of 10us
+    CLOCK_PERIOD_US = period_ms * 1000;
     doPostReceive = false;
 
-    // initialise the timer
-    timer1_attachInterrupt(CLOCK_IRQHandler); 
-    timer1_enable(TIM_DIV16, TIM_EDGE, TIM_LOOP);
-    timer1_write(50); // 5 MHz (5 ticks/us - 1677721.4 us max), 50 ticks = 10us
-    Reset();
+    if (initialized) return;
+    initialized = true;
+
+    tick_t now = GET_MICROS();
+    next_tick_us = now + 1000;
+    next_rx_us = now + CLOCK_PERIOD_US;
+
+#ifdef ESP32
+    const esp_timer_create_args_t args = {
+            .callback = &esp32_timer_callback,
+            .name = "rxclock"
+    };
+    if (esp_timer_create(&args, &event_timer) != ESP_OK) {
+        while (1) {} // fatal: timer creation failed, halt
+    }
+#elif defined ESP8266
+    timer1_attachInterrupt(timer1_isr);
+    timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
+#endif
+
+    schedule_next(now);
 }
 
-void RxClockBase::disable_isr(void)
+
+IRAM_ATTR void tRxClock::SetPeriod(uint16_t period_ms)
 {
-    timer1_detachInterrupt(); 
+    ENTER_CRITICAL_API();
+    CLOCK_PERIOD_US = period_ms * 1000;
+    EXIT_CRITICAL_API();
 }
 
-void RxClockBase::SetPeriod(uint16_t period_ms)
-{
-    CLOCK_PERIOD_10US = period_ms * 100;
-}
 
-void RxClockBase::Reset(void)
+IRAM_ATTR void tRxClock::Reset(void)
 {
-    if (!CLOCK_PERIOD_10US) while (1) {}
+    ENTER_CRITICAL_API();
 
-    noInterrupts();
-    CCR1 = CNT_10us + CLOCK_PERIOD_10US;
-    CCR3 = CNT_10us + CLOCK_SHIFT_10US;
-    MS_C = CNT_10us + CLOCK_CNT_1MS;
-    interrupts();
+#ifdef ESP32
+    // esp_timer_start_once fails if already running; timer1_write just overwrites
+    esp_timer_stop(event_timer);
+#endif
+
+    tick_t now = GET_MICROS();
+    next_rx_us = now + CLOCK_SHIFT_US;
+    schedule_next(now);
+
+    EXIT_CRITICAL_API();
 }
 
 

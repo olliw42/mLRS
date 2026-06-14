@@ -1,0 +1,50 @@
+{
+    "v1.4.00": {
+        "uint": 10400,
+        "type": "release",
+        "commit": "c80bbfe3baa05cd9f7130f7c5377256d45da09c8",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.4/firmware"
+    },
+    "v1.3.08": {
+        "uint": 10308,
+        "type": "pre-release",
+        "commit": "f535487e2073382bf57adcebff306e2e3e1cb962",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3.08-pre-release/firmware"
+    },
+    "v1.3.06": {
+        "uint": 10306,
+        "type": "pre-release",
+        "commit": "7cfed635feaa68dac379b3ce86daed28649f9560",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3.06-pre-release/firmware"
+    },
+    "v1.3.04": {
+        "uint": 10304,
+        "type": "pre-release",
+        "commit": "ef92dfae18c8291a388e24a78971bc9661248001",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3.04-pre-release/firmware"
+    },
+    "v1.3.02": {
+        "uint": 10302,
+        "type": "pre-release",
+        "commit": "ec7a3827a34fa5d4caa05b107a7711884edea580",
+        "url": "https://github.com/olliw42/mLRS/tree/ec7a3827a34fa5d4caa05b107a7711884edea580/firmware"
+    },
+    "v1.3.00": {
+        "uint": 10300,
+        "type": "release",
+        "commit": "f12d680",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.3/firmware"
+    },
+    "v1.2.04": {
+        "uint": 10204,
+        "type": "pre-release",
+        "commit": "df814b64967213e9d157dff53e3749b54ac98949",
+        "url": "https://github.com/olliw42/mLRS/tree/df814b64967213e9d157dff53e3749b54ac98949/firmware"
+    },
+    "v1.2.00": {
+        "uint": 10200,
+        "type": "release",
+        "commit": "c93e759",
+        "url": "https://github.com/olliw42/mLRS/tree/v1.2/firmware/"
+    }
+}

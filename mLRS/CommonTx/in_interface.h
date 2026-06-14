@@ -21,16 +21,21 @@
 // Interface Implementation
 
 #if !(defined DEVICE_HAS_IN_ON_JRPIN5_RX || defined DEVICE_HAS_IN_ON_JRPIN5_TX)
+// DEVICE_HAS_IN or DEVICE_HAS_IN_NORMAL or DEVICE_HAS_IN_INVERTED
 
+#if defined ESP8266 || defined ESP32
+#include "../modules/esp-lib/esp-uarte.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uarte.h"
+#endif
 
 
-class tIn : public InBase
+class tIn : public tInBase
 {
   public:
     void Init(bool enable_flag)
     {
-        InBase::Init(enable_flag);
+        tInBase::Init(enable_flag);
         if (!enable_flag) return;
 
         in_init_gpio();
@@ -68,17 +73,23 @@ class tIn : public InBase
     char getc(void) override { return uarte_getc(); }
 };
 
-#else // DEVICE_HAS_IN_ON_JRPIN5_RX or DEVICE_HAS_IN_ON_JRPIN5_TX
 
+#else
+// DEVICE_HAS_IN_ON_JRPIN5_RX or DEVICE_HAS_IN_ON_JRPIN5_TX
+
+#if defined ESP8266 || defined ESP32
+#error DEVICE_HAS_IN_ON_JRPIN5_RX, DEVICE_HAS_IN_ON_JRPIN5_TX not supported for ESP targets!
+#else
 #include "jr_pin5_interface.h" // in case DEVICE_HAS_JRPIN5 was not defined
+#endif
 
 
-class tIn : public InBase
+class tIn : public tInBase
 {
   public:
     void Init(bool enable_flag)
     {
-        InBase::Init(enable_flag);
+        tInBase::Init(enable_flag);
         if (!enable_flag) return;
 
         uart_rx_callback_ptr = &uart_rx_putc_torxbuf;
@@ -151,19 +162,20 @@ class tIn : public InBase
     }
 };
 
+
 #endif
 
-tIn in;
-
-
 #else
+// !defined USE_IN
 
-class tIn : public InBase
+class tIn : public tInBase
 {
 };
 
+#endif // if (defined USE_IN)
+
+
 tIn in;
 
-#endif // if (defined USE_IN)
 
 #endif // IN_INTERFACE_H

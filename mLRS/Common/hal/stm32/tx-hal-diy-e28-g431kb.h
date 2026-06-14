@@ -24,6 +24,9 @@
 
 #define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
+#define MICROS_TIMx               TIM3
+#define MICROS_TIM_NAMEPREFIX     TIM3_
+
 
 //-- UARTS
 // UARTB = serial port
@@ -33,7 +36,7 @@
 // UARTE = in port, SBus or whatever
 // UARTF = -
 
-#define UARTB_USE_UART1 // serial
+#define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -41,15 +44,15 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_LPUART1 // com USB/CLI
+#define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
-#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
+#define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_UART2_REMAPPED2 // JR pin5, MBridge
+#define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -61,7 +64,7 @@
 //#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx
 #define JRPIN5_FULL_INTERNAL_ON_TX // does not require an external diode
 
-#define UARTE_USE_UART2_REMAPPED2 // in pin
+#define UARTE_USE_UART2_PB3PB4 // in pin
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
@@ -225,19 +228,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            27 // gain of a PA stage if present
-#define POWER_SX1280_MAX_DBM      SX1280_POWER_0_DBM // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_24_DBM, .mW = 250 },
-    { .dbm = POWER_27_DBM, .mW = 500 },
-};
+#define POWER_PA_E28_2G4M27SX
+#include "../hal-power-pa.h"
 
 
 //-- TEST

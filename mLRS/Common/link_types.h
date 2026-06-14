@@ -30,10 +30,10 @@ typedef enum {
 typedef enum {
     LINK_STATE_IDLE = 0,
     LINK_STATE_TRANSMIT,
+    LINK_STATE_TRANSMIT_SEND,
     LINK_STATE_TRANSMIT_WAIT,
     LINK_STATE_RECEIVE,
     LINK_STATE_RECEIVE_WAIT,
-    LINK_STATE_RECEIVE_DONE,
 } LINK_STATE_ENUM;
 #endif
 #ifdef DEVICE_IS_RECEIVER
@@ -54,12 +54,19 @@ typedef enum {
     RX_STATUS_VALID, // frame received and crc (and crc1) valid
 } RX_STATUS_ENUM;
 
+typedef enum {
+    TX_STATUS_NONE = 0,
+    TX_STATUS_TX1_DONE, // frame on SX1 transmitted
+    TX_STATUS_TX2_DONE, // frame on SX2 transmitted
+} TX_STATUS_ENUM;
+
 
 extern const char* connectstate_str[]; // for debug purposes
 #ifdef DEVICE_IS_TRANSMITTER
 extern const char* linkstate_str[]; // for debug purposes
 extern const char* rxstatus_str[];
-#else
+#endif
+#ifdef DEVICE_IS_RECEIVER
 extern const char* linkstate_str[]; // for debug purposes
 extern const char* rxstatus_str[];
 #endif

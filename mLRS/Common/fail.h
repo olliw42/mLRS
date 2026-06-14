@@ -35,7 +35,7 @@ typedef enum {
 uint16_t fail_dbg_cnt;
 
 
-void fail_do_dbg(tSerialBase* dbg, const char* msg)
+void fail_do_dbg(tSerialBase* const dbg, const char* const msg)
 {
     fail_dbg_cnt++;
     if (fail_dbg_cnt > 80) {
@@ -46,14 +46,16 @@ void fail_do_dbg(tSerialBase* dbg, const char* msg)
 }
 
 
-void fail(tSerialBase* dbg, uint8_t led_pattern, const char* msg)
+void fail(tSerialBase* const dbg, uint8_t led_pattern, const char* const msg)
 {
     dbg->puts("\n");
     dbg->puts(msg);
 
     fail_dbg_cnt = 0;
 
-#ifdef DEVICE_HAS_SINGLE_LED
+#ifdef DEVICE_HAS_NO_LED
+    while (1) { delay_ms(50); fail_do_dbg(dbg, msg); }
+#elif defined DEVICE_HAS_SINGLE_LED || defined DEVICE_HAS_SINGLE_LED_RGB
     while (1) { led_red_on(); delay_ms(25); led_red_off(); delay_ms(25); fail_do_dbg(dbg, msg); }
 #else
     if (led_pattern == FAIL_LED_PATTERN_GR_OFF_RD_BLINK /*1*/) {

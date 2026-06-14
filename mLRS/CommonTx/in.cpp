@@ -22,7 +22,7 @@ typedef enum {
 } IN_STATE_ENUM;
 
 
-void InBase::Init(bool enable_flag)
+void tInBase::Init(bool enable_flag)
 {
     enabled = enable_flag;
 
@@ -34,7 +34,7 @@ void InBase::Init(bool enable_flag)
 }
 
 
-void InBase::Configure(uint8_t new_config)
+void tInBase::Configure(uint8_t new_config)
 {
     if (!enabled) return;
     if (new_config == config) return;
@@ -45,7 +45,7 @@ void InBase::Configure(uint8_t new_config)
         config_sbus(false);
         break;
     case IN_CONFIG_SBUS_INVERTED:
-        config_sbus(false);
+        config_sbus_inverted(false);
         break;
     }
 
@@ -58,13 +58,13 @@ void InBase::Configure(uint8_t new_config)
         initialized = config_sbus(true);
         break;
     case IN_CONFIG_SBUS_INVERTED:
-        initialized = config_sbus(true);
+        initialized = config_sbus_inverted(true);
         break;
     }
 }
 
 
-bool InBase::Update(tRcData* rc)
+bool tInBase::ChannelsUpdated(tRcData* const rc)
 {
     if (!initialized) return false;
 
@@ -82,7 +82,7 @@ bool InBase::Update(tRcData* rc)
 // SBus
 //-------------------------------------------------------
 
-bool InBase::parse_sbus(tRcData* rc)
+bool tInBase::parse_sbus(tRcData* const rc)
 {
     uint16_t tnow_us = micros16();
     bool updated = false;
@@ -119,29 +119,11 @@ bool InBase::parse_sbus(tRcData* rc)
 }
 
 
-void InBase::get_sbus_data(tRcData* rc)
+void tInBase::get_sbus_data(tRcData* const rc)
 {
 tSBusChannelBuffer sbus_buf;
 
     memcpy(sbus_buf.c, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
-/*
-    rc->ch[0] = clip_rc( (((int32_t)(sbus_buf.ch0) - 992) * 2047) / 1966 + 1024 ); // see design_decissions.h
-    rc->ch[1] = clip_rc( (((int32_t)(sbus_buf.ch1) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[2] = clip_rc( (((int32_t)(sbus_buf.ch2) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[3] = clip_rc( (((int32_t)(sbus_buf.ch3) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[4] = clip_rc( (((int32_t)(sbus_buf.ch4) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[5] = clip_rc( (((int32_t)(sbus_buf.ch5) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[6] = clip_rc( (((int32_t)(sbus_buf.ch6) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[7] = clip_rc( (((int32_t)(sbus_buf.ch7) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[8] = clip_rc( (((int32_t)(sbus_buf.ch8) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[9] = clip_rc( (((int32_t)(sbus_buf.ch9) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[10] = clip_rc( (((int32_t)(sbus_buf.ch10) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[11] = clip_rc( (((int32_t)(sbus_buf.ch11) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[12] = clip_rc( (((int32_t)(sbus_buf.ch12) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[13] = clip_rc( (((int32_t)(sbus_buf.ch13) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[14] = clip_rc( (((int32_t)(sbus_buf.ch14) - 992) * 2047) / 1966 + 1024 );
-    rc->ch[15] = clip_rc( (((int32_t)(sbus_buf.ch15) - 992) * 2047) / 1966 + 1024 );
-*/
     rc->ch[0] = rc_from_sbus(sbus_buf.ch0);
     rc->ch[1] = rc_from_sbus(sbus_buf.ch1);
     rc->ch[2] = rc_from_sbus(sbus_buf.ch2);

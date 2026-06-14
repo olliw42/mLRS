@@ -14,6 +14,22 @@
 #include "hal/hal.h"
 
 
+#ifdef DEVICE_HAS_NO_LED
+
+class tLEDs
+{
+  public:
+    void Init(void) {}
+    void Tick_ms(bool connected) {}
+    void SetToBind(void) {}
+    void SetToParamStore(void) {}
+    void InitPassthrough(void) {}
+    void TickPassthrough_ms(void) {}
+};
+
+#else
+
+
 class tLEDs
 {
   public:
@@ -28,7 +44,34 @@ class tLEDs
 
     void Tick_ms(bool connected)
     {
-#ifndef DEVICE_HAS_SINGLE_LED
+#ifdef DEVICE_HAS_SINGLE_LED
+        if (!is_in_bind) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(100));
+        }
+
+        if (connected && !is_in_bind) {
+            led_red_on();
+        } else if (!blink) {
+            led_red_toggle();
+        }
+#elif defined DEVICE_HAS_SINGLE_LED_RGB 
+        if (connected) {
+            DECc(blink, SYSTICK_DELAY_MS(500));
+        } else {
+            DECc(blink, SYSTICK_DELAY_MS(200));
+        }
+
+        if (is_in_bind) {
+            if (!blink) { led_blue_toggle(); }
+        } else
+        if (connected) {
+            if (!blink) led_green_toggle();
+        } else {
+            if (!blink) led_red_toggle();
+        }
+#else
         if (connected) {
             DECc(blink, SYSTICK_DELAY_MS(500));
         } else {
@@ -44,18 +87,6 @@ class tLEDs
         } else {
             led_green_off();
             if (!blink) led_red_toggle();
-        }
-#else
-        if (!is_in_bind) {
-            DECc(blink, SYSTICK_DELAY_MS(500));
-        } else {
-            DECc(blink, SYSTICK_DELAY_MS(100));
-        }
-
-        if (connected && !is_in_bind) {
-            led_red_on();
-        } else if (!blink) {
-            led_red_toggle();
         }
 #endif
     }
@@ -88,10 +119,13 @@ class tLEDs
     void TickPassthrough_ms(void)
     {
         DECc(blink, SYSTICK_DELAY_MS(100));
-#ifndef DEVICE_HAS_SINGLE_LED
-        if (!blink) { led_green_toggle(); led_red_toggle(); }
-#else
+
+#ifdef DEVICE_HAS_SINGLE_LED
         if (!blink) { led_red_toggle(); }
+#elif defined DEVICE_HAS_SINGLE_LED_RGB
+        if (!blink) { led_purple_toggle(); }
+#else
+        if (!blink) { led_green_toggle(); led_red_toggle(); }
 #endif
     }
 
@@ -99,5 +133,8 @@ class tLEDs
     uint16_t blink;
     bool is_in_bind;
 };
+
+
+#endif // DEVICE_HAS_NO_LED
 
 #endif // LEDS_H

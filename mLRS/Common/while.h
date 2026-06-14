@@ -15,21 +15,21 @@
 // While transmit/receive tasks
 //-------------------------------------------------------
 
-class WhileBase
+class tWhileBase
 {
   public:
     void Init(void);
     void Trigger(void);
     void Do(void);
 
-    virtual void handle_once(void) {};
-    virtual void handle(void) {};
+    virtual void handle_once(void) {}
+    virtual void handle(void) {}
 
-    virtual int32_t dtmax_us(void) { return 1; }
+    virtual uint32_t dtmax_us(void) = 0;
 
     uint16_t do_cnt;
     uint16_t tstart_us;
-    int32_t tremaining_us;
+    uint16_t tremaining_us;
 };
 
 

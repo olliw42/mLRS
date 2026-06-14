@@ -15,7 +15,7 @@
 #include "out.h"
 
 
-extern tRxStats rxstats;
+extern tStats stats;
 
 
 #ifdef USE_OUT
@@ -23,15 +23,19 @@ extern tRxStats rxstats;
 //-------------------------------------------------------
 // Interface Implementation
 
+#ifdef ESP32
+#include "../modules/esp-lib/esp-uart.h"
+#else
 #include "../modules/stm32ll-lib/src/stdstm32-uart.h"
+#endif
 
 
-class tOut : public OutBase
+class tOut : public tOutBase
 {
   public:
     void Init(void)
     {
-        OutBase::Init(&Setup.Rx);
+        tOutBase::Init(&Setup.Rx);
         out_init_gpio();
         uart_init_isroff();
     }
@@ -67,14 +71,14 @@ class tOut : public OutBase
     }
 #endif
 
-    void putc(char c) override { uart_putc(c); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { uart_putbuf(buf, len); }
 
     void SendLinkStatistics(void)
     {
         tOutLinkStats lstats = {
           .receiver_rssi1 = stats.last_rssi1,
           .receiver_rssi2 = stats.last_rssi2,
-          .receiver_LQ = rxstats.GetLQ_rc(),
+          .receiver_LQ = stats.GetLQ_rc(),
           .receiver_snr = stats.GetLastSnr(),
           .receiver_antenna = stats.last_antenna,
           .receiver_transmit_antenna = stats.last_transmit_antenna,
@@ -93,7 +97,7 @@ class tOut : public OutBase
         } else {
             lstats.antenna_config = 1;
         }
-        OutBase::SendLinkStatistics(&lstats);
+        tOutBase::SendLinkStatistics(&lstats);
     }
 };
 
@@ -102,12 +106,12 @@ tOut out;
 
 #else
 
-class tOut : public OutBase
+class tOut : public tOutBase
 {
   public:
     void Init(void) 
     {
-        OutBase::Init(&Setup.Rx);
+        tOutBase::Init(&Setup.Rx);
     }
 
     void SendLinkStatistics(void) {}

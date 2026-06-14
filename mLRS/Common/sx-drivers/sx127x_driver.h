@@ -6,6 +6,12 @@
 //*******************************************************
 // SX1276 Driver
 //*******************************************************
+// Configuration defines:
+// #define POWER_USE_DEFAULT_RFPOWER_CALC
+// #define SX_USE_RFO
+// #define DEVICE_HAS_I2C_DAC
+// #define DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+//*******************************************************
 #ifndef SX1276_DRIVER_H
 #define SX1276_DRIVER_H
 #pragma once
@@ -25,7 +31,7 @@ https://www.thethingsnetwork.org/forum/t/should-private-lorawan-networks-use-a-d
 //-------------------------------------------------------
 
 const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
-    { .SpreadingFactor = SX1276_LORA_SF6,
+    { .SpreadingFactor = SX1276_LORA_SF6, // 900 MHz, 19 Hz 7x
       .Bandwidth = SX1276_LORA_BW_500,
       .CodingRate = SX1276_LORA_CR_4_5,
       .PreambleLength = 12,
@@ -40,17 +46,27 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm, const uint8_t GAIN_DBM, const uint8_t SX1276_MAX_DBM)
+void sx1276_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
 {
+#ifdef SX_USE_RFO
+    // Pout = OutputPower if PaSelect = 0 (RFO pin)
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm + 3;
+#else
     // Pout = 17 - (15 - OutputPower) if PaSelect = 1 (PA_BOOST pin)
-    int16_t power_sx = (int16_t)power_dbm - GAIN_DBM - 2;
+    int16_t power_sx = (int16_t)power_dbm - gain_dbm - 2;
+#endif
 
     if (power_sx < SX1276_OUTPUT_POWER_MIN) power_sx = SX1276_OUTPUT_POWER_MIN;
     if (power_sx > SX1276_OUTPUT_POWER_MAX) power_sx = SX1276_OUTPUT_POWER_MAX;
-    if (power_sx > SX1276_MAX_DBM) power_sx = SX1276_MAX_DBM;
+    if (power_sx > sx_power_max) power_sx = sx_power_max;
 
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx + GAIN_DBM + 2;
+
+#ifdef SX_USE_RFO
+    *actual_power_dbm = power_sx + gain_dbm - 3;
+#else
+    *actual_power_dbm = power_sx + gain_dbm + 2;
+#endif
 }
 #endif
 
@@ -58,9 +74,12 @@ void sx1276_rfpower_calc(const int8_t power_dbm, uint8_t* sx_power, int8_t* actu
 class Sx127xDriverCommon : public Sx127xDriverBase
 {
   public:
+
     void Init(void)
     {
+        gconfig = nullptr;
         lora_configuration = nullptr;
+        low_frequency_mode = 0;
     }
 
     //-- high level API functions
@@ -71,7 +90,7 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return (firmwareRev == 0x12);
     }
 
-    void SetLoraConfiguration(const tSxLoraConfiguration* config)
+    void SetLoraConfiguration(const tSxLoraConfiguration* const config)
     {
         SetModulationParams(config->SpreadingFactor,
                             config->Bandwidth,
@@ -88,41 +107,69 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetLoraConfigurationByIndex(uint8_t index)
     {
-        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
 
         lora_configuration = &(Sx127xLoraConfiguration[index]);
         SetLoraConfiguration(lora_configuration);
     }
 
-    void ResetToLoraConfiguration(void)
+    void ResetToLoraConfiguration(tSxGlobalConfig* const _gconfig)
     {
+        if (!gconfig) while(1){} // must not happen
+
+        gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
+
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        if (!gconfig) return;
+
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
         // there would be special setting for +20dBm mode, don't do it
         // 5 OcpOn, 4-0 OcpTrim
         ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
+#ifdef SX_USE_RFO
+        // was SX1276_MAX_POWER_15_DBM before
+        SetPowerParams(SX1276_PA_SELECT_RFO, SX1276_MAX_POWER_11p4_DBM, sx_power, SX1276_PA_RAMP_40_US);
+#else
         SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, sx_power, SX1276_PA_RAMP_40_US);
+#endif
     }
 
-    void Configure(tSxGlobalConfig* global_config)
+    void UpdateRfPower(tSxGlobalConfig* const global_config)
+    {
+        if (!gconfig) return;
+
+        gconfig->Power_dbm = global_config->Power_dbm;
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
+    void Configure(tSxGlobalConfig* const global_config)
     {
         gconfig = global_config;
+
+        switch (gconfig->FrequencyBand) {
+            case SX_FHSS_FREQUENCY_BAND_433_MHZ:
+            case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_ON;
+                break;
+            default:
+                low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
+        }
 
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
                                          SX1276_ACCESS_SHARED_REG_LORA |
-                                         SX1276_LOW_FREQUENCY_MODE_OFF |
+                                         low_frequency_mode |
                                          SX1276_MODE_SLEEP);
         SetStandby();
         //SetOperationMode(SX1276_PACKET_TYPE_LORA, SX1276_LOW_FREQUENCY_MODE_OFF);
 
         uint8_t band_width = Sx127xLoraConfiguration[gconfig->LoraConfigIndex].Bandwidth;
-        OptimizeSensitivity(band_width);
+        OptimizeSensitivity(band_width, low_frequency_mode);
         OptimizeReceiverResponse(band_width);
 
         SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
@@ -146,26 +193,30 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
-    void ReadFrame(uint8_t* data, uint8_t len)
+    void ReadFrame(uint8_t* const data, uint8_t len)
     {
-        uint8_t rxStartBufferPointer;
+/*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
         GetRxBufferStatus(&rxPayloadLength, &rxStartBufferPointer);
-        ReadBuffer(rxStartBufferPointer, data, len);
+        ReadBuffer(rxStartBufferPointer, data, len); */
+
+        // it seems that rxStartBufferPointer is always 0, so we assume that
+        ReadBuffer(0, data, len);
     }
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
     {
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX1276_IRQ_ALL);
         SetTx();
     }
 
-    void SetToRx(uint16_t tmo_ms)
+    void SetToRx(void)
     {
+        uint16_t tmo_ms = 0;
         WriteRegister(SX1276_REG_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
         if (tmo_ms == 0) { // 0 = no timeout
@@ -182,10 +233,12 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         ClearIrqStatus(SX1276_IRQ_ALL);
     }
 
-    void GetPacketStatus(int8_t* RssiSync, int8_t* Snr)
+    void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
     {
+        if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
+
         int16_t rssi;
-        Sx127xDriverBase::GetPacketStatus(&rssi, Snr);
+        Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -205,17 +258,17 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     //-- RF power interface
 
-    virtual void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) = 0;
+    virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
     //-- helper
 
-    void config_calc(void)
+    void _config_calc(void)
     {
         int8_t power_dbm = gconfig->Power_dbm;
-        RfPowerCalc(power_dbm, &sx_power, &actual_power_dbm);
+        _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
         uint8_t index = gconfig->LoraConfigIndex;
-        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while (1) {} // must not happen
+        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
         lora_configuration = &(Sx127xLoraConfiguration[index]);
 
         symbol_time_us = calc_symbol_time_us(lora_configuration->SpreadingFactor, lora_configuration->Bandwidth);
@@ -224,29 +277,38 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     // cumbersome to calculate in general, so use hardcoded for a specific settings
     uint32_t TimeOverAir_us(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return lora_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
-        if (lora_configuration == nullptr) config_calc(); // ensure it is set
+        if (!gconfig) return 0; // should not happen in practice
+
+        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
 
+  protected:
+    tSxGlobalConfig* gconfig;
+
   private:
     const tSxLoraConfiguration* lora_configuration;
-    tSxGlobalConfig* gconfig;
-    uint8_t sx_power;
+    uint8_t low_frequency_mode;
+    int8_t sx_power;
     int8_t actual_power_dbm;
     uint32_t symbol_time_us;
 
@@ -256,16 +318,16 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         uint32_t bw = 7800;
         switch (Bandwidth) {
-          case SX1276_LORA_BW_7p8: bw = 7800; break;
-          case SX1276_LORA_BW_10p4: bw = 10400; break;
-          case SX1276_LORA_BW_15p6: bw = 15600; break;
-          case SX1276_LORA_BW_20p8: bw = 20800; break;
-          case SX1276_LORA_BW_31p25: bw = 31250; break;
-          case SX1276_LORA_BW_41p7: bw = 41700; break;
-          case SX1276_LORA_BW_62p5: bw = 62500; break;
-          case SX1276_LORA_BW_125: bw = 125000; break;
-          case SX1276_LORA_BW_250: bw = 250000; break;
-          case SX1276_LORA_BW_500: bw = 500000; break;
+            case SX1276_LORA_BW_7p8: bw = 7800; break;
+            case SX1276_LORA_BW_10p4: bw = 10400; break;
+            case SX1276_LORA_BW_15p6: bw = 15600; break;
+            case SX1276_LORA_BW_20p8: bw = 20800; break;
+            case SX1276_LORA_BW_31p25: bw = 31250; break;
+            case SX1276_LORA_BW_41p7: bw = 41700; break;
+            case SX1276_LORA_BW_62p5: bw = 62500; break;
+            case SX1276_LORA_BW_125: bw = 125000; break;
+            case SX1276_LORA_BW_250: bw = 250000; break;
+            case SX1276_LORA_BW_500: bw = 500000; break;
         };
 
         return ((1 << sf) * 1000000) / bw;
@@ -328,12 +390,14 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- RF power interface
 
-    void RfPowerCalc(int8_t power_dbm, uint8_t* sx_power, int8_t* actual_power_dbm) override
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
         rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX);
 #else
-        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX_DBM);
+        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
 #endif
     }
 
@@ -372,8 +436,10 @@ class Sx127xDriver : public Sx127xDriverCommon
 
     //-- high level API functions
 
-    void StartUp(tSxGlobalConfig* global_config)
+    void StartUp(tSxGlobalConfig* const global_config)
     {
+        if (gconfig) return; // has been started up already
+
 //XX        // this is not nice, figure out where to place
 //XX#ifdef DEVICE_HAS_I2C_DAC
 //XX        dac.Init();
@@ -384,24 +450,23 @@ class Sx127xDriver : public Sx127xDriverCommon
 
         Configure(global_config);
         delay_us(125); // may not be needed
-
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
-    void SendFrame(uint8_t* data, uint8_t len, uint16_t tmo_ms = 0)
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
         sx_amp_transmit();
         Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
     }
 
-    void SetToRx(uint16_t tmo_ms = 0)
+    void SetToRx(void)
     {
         sx_amp_receive();
-        Sx127xDriverCommon::SetToRx(tmo_ms);
-        delay_us(125); // may not be needed if busy available
+        Sx127xDriverCommon::SetToRx();
+        delay_us(125); // may not be needed
     }
 };
 
@@ -409,8 +474,149 @@ class Sx127xDriver : public Sx127xDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#ifdef DEVICE_HAS_DIVERSITY
-  #error Diversity not yet supported for SX127x!
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+
+#ifndef SX2_RESET
+  #error SX2 must have a RESET pin!
+#endif
+
+// map the irq bits
+typedef enum {
+    SX2_IRQ_TX_DONE = SX1276_IRQ_TX_DONE,
+    SX2_IRQ_RX_DONE = SX1276_IRQ_RX_DONE,
+    SX2_IRQ_TIMEOUT = SX1276_IRQ_RX_TIMEOUT,
+    SX2_IRQ_ALL     = SX1276_IRQ_ALL,
+} SX2_IRQ_ENUM;
+
+
+class Sx127xDriver2 : public Sx127xDriverCommon
+{
+  public:
+
+    //-- interface to SPI peripheral
+
+    void SpiSelect(void) override
+    {
+        spib_select();
+        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+    }
+
+    void SpiDeselect(void) override
+    {
+        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        spib_deselect();
+    }
+
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spib_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spib_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spib_write(dataout, len);
+    }
+#else
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+#endif
+
+    //-- RF power interface
+
+    void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
+    {
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+        rfpower_calc(power_dbm, sx_power, actual_power_dbm, &dac);
+#elif defined POWER_USE_DEFAULT_RFPOWER_CALC
+        sx1276_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_SX1276_MAX);
+#else
+        sx1276_rfpower_calc(power_dbm, sx_power, actual_power_dbm);
+#endif
+    }
+
+    //-- init API functions
+
+    void _reset(void)
+    {
+        gpio_low(SX2_RESET);
+        delay_ms(5); // datasheet says > 100 us
+        gpio_high(SX2_RESET);
+        delay_ms(50); // datasheet says 5 ms
+    }
+
+    void Init(void)
+    {
+        Sx127xDriverCommon::Init();
+
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+        spib_init();
+        spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
+        sx2_init_gpio();
+        sx2_dio_exti_isr_clearflag();
+        sx2_dio_init_exti_isroff();
+
+        // no idea how long the SX1276 takes to boot up, so give it some good time
+        delay_ms(300);
+        _reset(); // this is super crucial ! was so for SX1280, is it also for the SX1276 ??
+
+        // this is not nice, figure out where to place
+#if defined DEVICE_HAS_I2C_DAC || defined DEVICE_HAS_INTERNAL_DAC_TWOCHANNELS
+        dac.Init();
+#endif
+
+        SetStandby(); // should be in STDBY after reset
+        delay_us(1000); // is this needed ????
+    }
+
+    //-- high level API functions
+
+    void StartUp(tSxGlobalConfig* const global_config)
+    {
+        if (gconfig) return; // has been started up already
+
+        Configure(global_config);
+        delay_us(125); // may not be needed
+        sx2_dio_enable_exti_isr();
+    }
+
+    //-- these are the API functions used in the loop
+
+    void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
+    {
+        sx2_amp_transmit();
+        Sx127xDriverCommon::SendFrame(data, len, tmo_ms);
+        delay_us(125); // may not be needed
+    }
+
+    void SetToRx(void)
+    {
+        sx2_amp_receive();
+        Sx127xDriverCommon::SetToRx();
+        delay_us(125); // may not be needed
+    }
+};
+
 #endif
 
 
