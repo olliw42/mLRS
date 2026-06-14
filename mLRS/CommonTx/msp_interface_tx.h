@@ -71,6 +71,9 @@ void tTxMsp::Init(tSerialPorts* const _serialports)
     case SERIAL_DESTINATION_MBRIDGE:
         ser = nullptr;
         break;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialports->usb;
+        break;
     default:
         while(1){} // must not happen
     }

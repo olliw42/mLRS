@@ -166,6 +166,10 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
         ser = _mbridge;
         ser2 = nullptr;
         break;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialports->usb;
+        ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
+        break;
     default:
         while(1){} // must not happen
     }

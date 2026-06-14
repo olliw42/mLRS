@@ -229,15 +229,12 @@ void tSerialPorts::Init(void)
 
 void tSerialPorts::Configure(uint8_t serial_destination)
 {
-/* JLP: here we could do something like
+/* TODO: here we need to work out on which port the COM/CLI should be
     if (serial_destination == SERIAL_DESTINATION_USB) {
-        // serial ports need to be reconfigured
-        // for the moment, simply swap serial and com
         // TODO: work out the correct conditions!!
-        // TODO: if this is allowed as option, we maybe also want the general possibility to enforce com = usb with button
-        tSerialBase* s = serial;
-        serial = com;
-        com = s;
+        if (com == usb) { // COM is on USB port, but we want to use it a serial destination, so reconfigure
+            com = &uartb_port; // map it on uartb, which usually is serial
+        }
     }
 */
 }

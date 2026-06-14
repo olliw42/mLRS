@@ -47,6 +47,9 @@ void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbr
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
         break;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialports->usb;
+        break;
     default:
         while(1){} // must not happen
     }
