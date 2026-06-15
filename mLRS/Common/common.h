@@ -176,12 +176,12 @@ void tSerialPorts::ser_or_com_set_to_serial(void)
   #else
     serial = &uartb_port;
   #endif
-    com = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    com = nullptr; // not used in serial mode; consumers null-guard
 }
 
 tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
-    serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    serial = nullptr; // not used in com mode; consumers null-guard
   #ifdef DEVICE_HAS_SERIAL_ON_USB
     com = &usb_port;
   #else
@@ -229,14 +229,15 @@ void tSerialPorts::Init(void)
 
 void tSerialPorts::Configure(uint8_t serial_destination)
 {
-/* TODO: here we need to work out on which port the COM/CLI should be
+    // serial destination and the COM/CLI can want the same port; the only collision is
+    // serial-destination USB with COM on USB (com == usb), where the CLI is moved onto
+    // uartb (the serial port), free since the data link now lives on USB. the other
+    // destinations use uartb/uartd/jrpin5 and never collide with COM, so need no remap.
     if (serial_destination == SERIAL_DESTINATION_USB) {
-        // TODO: work out the correct conditions!!
-        if (com == usb) { // COM is on USB port, but we want to use it a serial destination, so reconfigure
-            com = &uartb_port; // map it on uartb, which usually is serial
+        if (com != nullptr && com == usb) { // com is on USB, now also the serial destination
+            com = &uartb_port; // move onto uartb (usually the serial port)
         }
     }
-*/
 }
 
 #endif // DEVICE_IS_TRANSMITTER

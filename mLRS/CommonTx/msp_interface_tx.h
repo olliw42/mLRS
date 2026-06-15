@@ -107,6 +107,8 @@ void tTxMsp::Do(void)
 
 void tTxMsp::parse_serial_in_link_out(void)
 {
+    if (!ser) return; // no serial port (com mode or MBRIDGE dest), nothing to read
+
     // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (ser->available()) {
@@ -149,7 +151,7 @@ void tTxMsp::parse_link_in_serial_out(char c)
 
         if (send) {
             uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-            ser->putbuf(_buf, len);
+            if (ser) ser->putbuf(_buf, len); // ser may be nullptr (com mode or MBRIDGE dest)
         }
 
         // allow crsf class to capture it

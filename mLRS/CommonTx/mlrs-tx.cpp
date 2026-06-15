@@ -264,9 +264,9 @@ void init_hw(void)
     fiveway_init();
 
     SerialPorts.Init();
-    SerialPorts.serial->Init();
+    if (SerialPorts.serial) SerialPorts.serial->Init(); // serial can be nullptr in com mode
     SerialPorts.serial2->Init();
-    SerialPorts.com->Init();
+    if (SerialPorts.com) SerialPorts.com->Init(); // com can be nullptr in serial mode
 
     buzzer.Init();
     fan.Init();
@@ -709,11 +709,13 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
+    if (SerialPorts.serial) { // serial can be nullptr in com mode
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
-    SerialPorts.serial->SetBaudRate(460800); // dirty workaround, fixed baud rate for AX12 due to limitation
+        SerialPorts.serial->SetBaudRate(460800); // dirty workaround, fixed baud rate for AX12 due to limitation
 #else
-    SerialPorts.serial->SetBaudRate(Config.SerialBaudrate);
-#endif   
+        SerialPorts.serial->SetBaudRate(Config.SerialBaudrate);
+#endif
+    }
     SerialPorts.serial2->SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life

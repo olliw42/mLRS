@@ -173,7 +173,8 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
     default:
         while(1){} // must not happen
     }
-    if (!ser) while(1){} // must not happen
+    // ser may be nullptr (SERIAL destination on a serial/com board in com mode); the ser
+    // accesses below all guard for it, so the interface just stays inert in that case.
 
     fmav_init();
 
@@ -286,6 +287,8 @@ void tTxMavlink::parse_serial_in_link_out(void)
     // parse ser in -> link out
     fmav_result_t result;
 
+    if (!ser) return; // no serial port (com mode), nothing to read
+
 if (!do_router()) {
     // without router, parse ser in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
@@ -379,12 +382,12 @@ fmav_result_t result;
 
 if (!do_router()) {
             // without router
-            ser->putbuf(buf_link_in, result.frame_len);
+            if (ser) ser->putbuf(buf_link_in, result.frame_len); // fifo still drains even when ser is null
 } else {
             // with router
             fmav_router_handle_message(0, &result);
             if (fmav_router_send_to_link(1)) {
-                ser->putbuf(buf_link_in, result.frame_len);
+                if (ser) ser->putbuf(buf_link_in, result.frame_len);
             }
             if (fmav_router_send_to_link(2)) {
                 ser2->putbuf(buf_link_in, result.frame_len);
@@ -438,7 +441,7 @@ void tTxMavlink::send_msg_serial_out(void)
 
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf);
 
-    ser->putbuf(_buf, len);
+    if (ser) ser->putbuf(_buf, len);
 
     if (ser2) ser2->putbuf(_buf, len);
 }

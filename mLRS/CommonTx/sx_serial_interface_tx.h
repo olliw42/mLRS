@@ -53,7 +53,8 @@ void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbr
     default:
         while(1){} // must not happen
     }
-    if (!ser) while(1){} // must not happen
+    // ser may be nullptr (SERIAL destination on a serial/com board in com mode); the ser
+    // accesses below all guard for it, so the interface just stays inert in that case.
 }
 
 
@@ -67,7 +68,7 @@ bool tTxSxSerial::available(void)
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
         return msp.available(); // get from serial via MSP parser
     }
-    return ser->available(); // get from serial
+    return (ser != nullptr) ? ser->available() : false; // get from serial
 }
 
 
@@ -81,7 +82,7 @@ char tTxSxSerial::getc(void)
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
         return msp.getc(); // get from serial via MSP parser
     }
-    return ser->getc(); // get from serial
+    return (ser != nullptr) ? ser->getc() : 0; // get from serial
 }
 
 
@@ -97,7 +98,7 @@ void tTxSxSerial::putbuf(uint8_t* const buf, uint16_t len)
         for (uint16_t i = 0; i < len; i++) msp.putc(buf[i]);
         return;
     }
-    ser->putbuf(buf, len);
+    if (ser) ser->putbuf(buf, len);
 }
 
 
@@ -105,7 +106,7 @@ void tTxSxSerial::flush(void)
 {
     mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
     msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
-    ser->flush();
+    if (ser) ser->flush();
 }
 
 
