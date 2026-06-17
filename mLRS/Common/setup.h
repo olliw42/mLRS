@@ -171,16 +171,19 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge"
+    // Tx SerialDestination: "serial,serial2,mbridge,usb"
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b001; // add serial
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0001; // add serial
 #endif
 #ifdef USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b010; // add serial2
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0010; // add serial2
+#endif
+#ifdef USE_USB
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b1000; // add usb
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b100; // add mbridge
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0100; // add mbridge
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
