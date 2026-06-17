@@ -65,10 +65,10 @@ void tTxMsp::Init(tSerialPorts* const _serialports)
     case SERIAL_DESTINATION_SERIAL:
     case SERIAL_DESTINATION_SERIAL2:
     case SERIAL_DESTINATION_USB:
-        ser = _serialports->serial;
+        ser = _serialports->serial; // already sorted out in serialports.Init()
         break;
     case SERIAL_DESTINATION_MBRIDGE:
-        ser = nullptr;
+        ser = nullptr; // must not happen
         break;
     default:
         while(1){} // must not happen

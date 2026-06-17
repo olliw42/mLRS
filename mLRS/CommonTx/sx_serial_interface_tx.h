@@ -41,7 +41,7 @@ void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbr
     case SERIAL_DESTINATION_SERIAL:
     case SERIAL_DESTINATION_SERIAL2:
     case SERIAL_DESTINATION_USB:
-        ser = _serialports->serial;
+        ser = _serialports->serial; // already sorted out in serialports.Init()
         break;
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
