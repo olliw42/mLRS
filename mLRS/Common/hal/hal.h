@@ -48,7 +48,7 @@ In tx-hal files:
 #define DEVICE_HAS_SERIAL_OR_COM    // board has UART (or USB) which is shared between Serial and Com, or can be swapped, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
-#define DEVICE_HAS_COM_ON_USB       // board has a native USB port
+#define DEVICE_HAS_COM_ON_USB       // board has a native USB port // TODO: rename to DEVICE_HAS_USB ??
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART

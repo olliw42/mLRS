@@ -109,6 +109,41 @@ which allows us to check if it's a "old" or "new" frame, i.e., a frame carrying 
 
 
 
+============================================================
+  Serial Ports
+============================================================
+
+The hardware peripherals are named UART, UARTB, ..., UARTF or USB.
+These peripherals are assigned to a serial port and a com port. The assignment
+is controlled by the Tx-Ser-Dest parameter, which has the options "serial", serial2" and "usb".
+The hardware possibilities are determined by a number of DEVICE_HAS_xxx defines.
+
+1. no usb
+
+  "serial"      ser <- uartB    com <- uartC    <- default option
+  "serial2"     ser <- uartD    com <- uartC
+  "usb"         not available
+
+2. no usb, with HAS_SERIAL_OR_COM -> USE_COM_ON_SERIAL
+  as 1. but uartB and uartC can be swapped
+
+2a. normal
+  "serial"      ser <- uartB    com <- uartC    <- default option
+  "serial2"     ser <- uartD    com <- uartC
+  "usb"         not available
+
+2b. button pressed
+  "serial"      ser <- uartC    com <- uartB    <- default option
+  "serial2"     ser <- uartD    com <- uartB
+  "usb"         not available
+
+3. HAS_COM_ON_USB
+
+  "serial"      ser <- uartB    com <- usb    <- default option
+  "serial2"     ser <- uartD    com <- usb
+  "usb"         ser <- usb      com <- uartB
+
+  The flag HAS_SERIAL_OR_COM can be defined, which when allows to force com <- usb by a button press on powerup.
 
 
 */
