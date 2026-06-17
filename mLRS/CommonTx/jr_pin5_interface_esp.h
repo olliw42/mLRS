@@ -154,7 +154,7 @@ void tPin5BridgeBase::Init(void)
     pin5_init();
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    SerialPorts.jrpin5serial = &jrpin5serial;
+    serials.jrpin5serial = &jrpin5serial;
 #endif
 }
 
