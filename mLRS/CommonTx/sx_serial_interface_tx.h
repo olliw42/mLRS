@@ -39,16 +39,12 @@ void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbr
 
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
-        ser = _serialports->serial;
-        break;
     case SERIAL_DESTINATION_SERIAL2:
-        ser = _serialports->serial2;
+    case SERIAL_DESTINATION_USB:
+        ser = _serialports->serial;
         break;
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;
-        break;
-    case SERIAL_DESTINATION_USB:
-        ser = _serialports->usb;
         break;
     default:
         while(1){} // must not happen

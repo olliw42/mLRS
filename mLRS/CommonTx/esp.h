@@ -194,16 +194,16 @@ void tTxEspWifiBridge::Init(
     if (!_serialports->jrpin5serial) while(1){}; // must not happen, play it safe
     com = _serialports->jrpin5serial;
 #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
-    com = _serialports->serial;
+    com = _serialports->uartb;
 #else
     com = _serialports->com;
 #endif
     ser = nullptr;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    ser = _serialports->serial;
+    ser = _serialports->uartb;
 #endif
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    ser = _serialports->serial2;
+    ser = _serialports->uartd;
 #endif
     ser_baud = _serial_baudrate;
 

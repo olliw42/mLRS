@@ -72,9 +72,9 @@ void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _seria
     serialports = _serialports;
     com = _serialports->com;
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    ser = _serialports->serial2;
+    ser = _serialports->uartd;
 #else
-    ser = _serialports->serial;
+    ser = _serialports->uartb;
 #endif
     ser_baud = _serial_baudrate;
 

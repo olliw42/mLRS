@@ -146,13 +146,14 @@ tUsbPort usb_port;
 typedef struct
 {
     tSerialBase* serial;
-    tSerialBase* serial2;
     tSerialBase* com;
-    tSerialBase* usb;
     tSerialBase* jrpin5serial; // can be nullptr!
+    tSerialBase* uartb;
+    tSerialBase* uartc;
+    tSerialBase* uartd;
+    tSerialBase* usb;
 
-    void Init(void);
-    void Configure(uint8_t serial_destination);
+    void Init(uint8_t serial_destination, uint32_t baud);
 
 #ifdef USE_COM_ON_SERIAL
     void ser_or_com_set_to_serial(void);
@@ -189,54 +190,49 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
   #endif
     return com;
 }
+#endif
 
-void tSerialPorts::Init(void)
+void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
+#ifdef USE_COM_ON_SERIAL
     if (ser_or_com_init()) { // returns true if is_serial
         ser_or_com_set_to_serial();
     } else {
         ser_or_com_set_to_com();
-        // ensure com has correct baud rate (for serial it will be set in main using Config.SerialBaudrate)
+        // ensure com has correct baud rate
         com->SetBaudRate(TX_COM_BAUDRATE);
     }
-    serial2 = &uartd_port;
-
-    usb = &usb_port;
-    jrpin5serial = nullptr;
-}
-
-#else
-
-void tSerialPorts::Init(void)
-{
-#ifdef DEVICE_HAS_SERIAL_ON_USB
+#elif defined DEVICE_HAS_COM_ON_USB
+    switch (serial_destination) {
+    case SERIAL_DESTINATION_USB:
+        serial = &usb_port;
+        com = &uartb_port;
+        break;
+    default:
+        serial = &uartb_port;
+        com = &usb_port;
+    }
+#elif defined DEVICE_HAS_SERIAL_ON_USB
+    // TODO: that's the ugly duck, let's do it for the moment as it was before
     serial = &usb_port;
+    com = &uartc_port;
 #else
     serial = &uartb_port;
-#endif
-#ifdef DEVICE_HAS_COM_ON_USB
-    com = &usb_port;
-#else
     com = &uartc_port;
 #endif
-    serial2 = &uartd_port;
 
-    usb = &usb_port;
     jrpin5serial = nullptr;
-}
 
-#endif // USE_COM_ON_SERIAL
+    uartb = &uartb_port;
+    uartc = &uartc_port;
+    uartd = &uartd_port;
+    usb = &usb_port;
 
-void tSerialPorts::Configure(uint8_t serial_destination)
-{
-/* TODO: here we need to work out on which port the COM/CLI should be
-    if (serial_destination == SERIAL_DESTINATION_USB) {
-        // TODO: work out the correct conditions!!
-        if (com == usb) { // COM is on USB port, but we want to use it a serial destination, so reconfigure
-            com = &uartb_port; // map it on uartb, which usually is serial
-        }
-    }
-*/
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+    serial->SetBaudRate(460800); // dirty workaround, fixed baud rate for AX12 due to limitation
+#else
+    serial->SetBaudRate(Config.SerialBaudrate);
+#endif
 }
 
 #endif // DEVICE_IS_TRANSMITTER
@@ -267,7 +263,7 @@ void serial_ports_init(bool is_serial)
 //-------------------------------------------------------
 
 #ifdef DEVICE_IS_TRANSMITTER
-tSerialPorts SerialPorts;
+tSerialPorts serials;
 #endif
 tDebugPort dbg;
 

@@ -278,8 +278,9 @@ extern "C" { void delay_ms(uint16_t ms); }
 #if defined DEVICE_HAS_SERIAL_OR_COM // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    #define USE_USB
+  #if defined DEVICE_HAS_SERIAL_ON_USB || defined DEVICE_HAS_COM_ON_USB
+    //#define USE_USB
+    #error XXXX // currently no device is using this, all us a USB-TTL adapter for the USB port
   #endif
 #else
   #if !defined DEVICE_HAS_NO_SERIAL
