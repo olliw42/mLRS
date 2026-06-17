@@ -35,7 +35,7 @@
 // tx: serial or com, rx: serial
 class tUartBPort : public tSerialBase
 {
-#if (defined USE_SERIAL || defined USE_COM_ON_SERIAL) && !defined DEVICE_HAS_SERIAL_ON_USB
+#if defined USE_SERIAL || defined USE_COM_ON_SERIAL
   public:
     void Init(void) override { uartb_init(); }
     void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
@@ -208,10 +208,6 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
         serial = &uartb_port;
         com = &usb_port;
     }
-#elif defined DEVICE_HAS_SERIAL_ON_USB
-    // TODO: that's the ugly duck, let's do it for the moment as it was before
-    serial = &usb_port;
-    com = &uartc_port;
 #else
     serial = &uartb_port;
     com = &uartc_port;

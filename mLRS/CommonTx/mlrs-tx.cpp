@@ -41,7 +41,7 @@
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
 #include "../modules/esp-lib/esp-spi.h"
-#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
+#if defined USE_SERIAL
 #include "../modules/esp-lib/esp-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
@@ -80,7 +80,7 @@
 #ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
-#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
+#if defined USE_SERIAL
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB

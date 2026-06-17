@@ -45,14 +45,13 @@ In tx-hal files:
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_RX  // board shares IN with JRPin5 on RX pin, implies support of normal and inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
-#define DEVICE_HAS_SERIAL_OR_COM    // board has UART (or USB) which is shared between Serial or Com, selected by e.g. a switch
+#define DEVICE_HAS_SERIAL_OR_COM    // board has UART (or USB) which is shared between Serial and Com, or can be swapped, selected by e.g. a switch
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
-#define DEVICE_HAS_SERIAL_ON_USB    // board has the Serial port on native USB
 #define DEVICE_HAS_NO_COM           // board has no Com port
-#define DEVICE_HAS_COM_ON_USB       // board has the Com port on native USB
+#define DEVICE_HAS_COM_ON_USB       // board has a native USB port
+#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
 #define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180°, and 5-way switch
 #define DEVICE_HAS_FIVEWAY          // board has 5-way switch (without display)
@@ -278,22 +277,15 @@ extern "C" { void delay_ms(uint16_t ms); }
 #if defined DEVICE_HAS_SERIAL_OR_COM && !defined DEVICE_HAS_COM_ON_USB // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    //#define USE_USB
-    #error XXXX // currently no device is using this, all us a USB-TTL adapter for the USB port
-  #endif
 #else
   #if !defined DEVICE_HAS_NO_SERIAL
     #define USE_SERIAL
-    #ifdef DEVICE_HAS_SERIAL_ON_USB
-      #define USE_USB
-    #endif
   #endif
   #if !defined DEVICE_HAS_NO_COM
     #define USE_COM
-    #ifdef DEVICE_HAS_COM_ON_USB
-      #define USE_USB
-    #endif
+  #endif
+  #ifdef DEVICE_HAS_COM_ON_USB
+    #define USE_USB
   #endif
 #endif
 
