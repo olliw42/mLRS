@@ -172,22 +172,14 @@ typedef struct
 
 void tSerialPorts::ser_or_com_set_to_serial(void)
 {
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    serial = &usb_port;
-  #else
     serial = &uartb_port;
-  #endif
     com = &uartc_port; // dummy port; TODO: can we use nullptr ?
 }
 
 tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
     serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    com = &usb_port;
-  #else
     com = &uartb_port;
-  #endif
     return com;
 }
 #endif
@@ -203,6 +195,10 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
         com->SetBaudRate(TX_COM_BAUDRATE);
     }
 #elif defined DEVICE_HAS_COM_ON_USB
+  #ifdef DEVICE_HAS_SERIAL_OR_COM // device has a button to force com/cli to usb
+    if (!ser_or_com_init()) { serial_destination = 0; } // force default with com on usb, so set a value different from SERIAL_DESTINATION_USB
+  #endif
+
     switch (serial_destination) {
     case SERIAL_DESTINATION_USB:
         serial = &usb_port;
