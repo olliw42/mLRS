@@ -64,7 +64,7 @@ void tTxMsp::Init(tSerialPorts* const _serialports)
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
     case SERIAL_DESTINATION_SERIAL2:
-    case SERIAL_DESTINATION_USB:
+    case SERIAL_DESTINATION_COM:
         ser = _serialports->serial; // already sorted out in serialports.Init()
         break;
     case SERIAL_DESTINATION_MBRIDGE:

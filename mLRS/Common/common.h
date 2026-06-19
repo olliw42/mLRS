@@ -155,11 +155,35 @@ typedef struct
 
     void Init(uint8_t serial_destination, uint32_t baud);
 
+    tSerialBase* com_port(void);
+    void set_serial_com(void);
+    void set_serial_com_swapped(void);
+
 #ifdef USE_COM_ON_SERIAL
-    void ser_or_com_set_to_serial(void);
     tSerialBase* ser_or_com_set_to_com(void);
 #endif
 } tSerialPorts;
+
+tSerialBase* tSerialPorts::com_port(void) { // uartc or usb
+#ifdef DEVICE_HAS_COM_ON_USB
+    return &usb_port;
+#else
+    return &uartc_port;
+#endif
+}
+
+void tSerialPorts::set_serial_com(void)
+{
+    serial = &uartb_port;
+    com = com_port();
+}
+
+void tSerialPorts::set_serial_com_swapped(void)
+{
+    serial = &uartb_port;
+    com = com_port();
+}
+
 
 #ifdef USE_COM_ON_SERIAL
 // device does not have an extra com port, but allows us to use the serial port as com by e.g. a button thing
@@ -170,48 +194,26 @@ typedef struct
   #error UARTC is not a dummy port!
 #endif
 
-void tSerialPorts::ser_or_com_set_to_serial(void)
-{
-    serial = &uartb_port;
-    com = &uartc_port; // dummy port; TODO: can we use nullptr ?
-}
-
 tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
-    serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
-    com = &uartb_port;
+    set_serial_com_swapped();
     return com;
 }
 #endif
 
 void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
-#ifdef USE_COM_ON_SERIAL
-    if (ser_or_com_init()) { // returns true if is_serial
-        ser_or_com_set_to_serial();
-    } else {
-        ser_or_com_set_to_com();
-        // ensure com has correct baud rate
-        com->SetBaudRate(TX_COM_BAUDRATE);
-    }
-#elif defined DEVICE_HAS_COM_ON_USB
-  #ifdef DEVICE_HAS_SERIAL_OR_COM // device has a button to force com/cli to usb
-    if (!ser_or_com_init()) { serial_destination = 0; } // force default with com on usb, so set a value different from SERIAL_DESTINATION_USB
-  #endif
+#if defined USE_COM_ON_SERIAL || defined DEVICE_HAS_SERIAL_OR_COM // device has a button to force com/cli
+    if (!ser_or_com_init()) { serial_destination = 0; } // force default
+#endif
 
     switch (serial_destination) {
-    case SERIAL_DESTINATION_USB:
-        serial = &usb_port;
-        com = &uartb_port;
+    case SERIAL_DESTINATION_COM:
+        set_serial_com_swapped();
         break;
     default:
-        serial = &uartb_port;
-        com = &usb_port;
+        set_serial_com();
     }
-#else
-    serial = &uartb_port;
-    com = &uartc_port;
-#endif
 
     jrpin5serial = nullptr;
 
@@ -225,6 +227,8 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 #else
     serial->SetBaudRate(Config.SerialBaudrate);
 #endif
+    // ensure com has correct baud rate
+    com->SetBaudRate(TX_COM_BAUDRATE);
 }
 
 #endif // DEVICE_IS_TRANSMITTER

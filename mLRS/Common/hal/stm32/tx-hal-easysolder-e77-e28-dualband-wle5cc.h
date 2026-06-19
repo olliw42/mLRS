@@ -18,7 +18,7 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
-#define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
+#define DEVICE_HAS_COM_ON_SERIAL // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 
 

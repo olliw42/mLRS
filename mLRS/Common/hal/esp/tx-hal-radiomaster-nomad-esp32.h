@@ -26,7 +26,7 @@
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
 #define DEVICE_HAS_SINGLE_LED_RGB
-#define DEVICE_HAS_SERIAL_OR_COM
+#define DEVICE_HAS_COM_ON_SERIAL
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // requires backpack firmware to have AT mode enabled
@@ -183,7 +183,7 @@ IRAM_ATTR bool button2_pressed(void) { return (gpio_read_activelow(BUTTON2)) ? t
 
 //-- Serial or Com Switch
 
-#ifdef DEVICE_HAS_SERIAL_OR_COM
+#ifdef DEVICE_HAS_COM_ON_SERIAL
 bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU);

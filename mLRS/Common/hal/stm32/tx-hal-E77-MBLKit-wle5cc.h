@@ -24,7 +24,7 @@
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN_ON_JRPIN5_RX
-#define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
+#define DEVICE_HAS_COM_ON_SERIAL // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
 

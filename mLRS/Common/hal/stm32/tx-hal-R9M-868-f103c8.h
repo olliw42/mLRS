@@ -17,7 +17,7 @@
 
 #define DEVICE_HAS_IN_INVERTED
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
+#define DEVICE_HAS_COM_ON_SERIAL // is selected in device specific ways, here: dip switch
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF

@@ -23,7 +23,7 @@
 // Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
+#define DEVICE_HAS_COM_ON_SERIAL // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
@@ -220,7 +220,7 @@ IRAM_ATTR uint8_t fiveway_read(void)
 //-- Serial or Com Switch
 // use com if FIVEWAY is DOWN during power up, else use serial
 
-#ifdef DEVICE_HAS_SERIAL_OR_COM
+#ifdef DEVICE_HAS_COM_ON_SERIAL
 bool ser_or_com_init(void) // return true if is_serial
 {
     uint8_t cnt = 0;
