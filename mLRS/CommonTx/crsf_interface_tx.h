@@ -202,6 +202,23 @@ class tTxCrsf : public tPin5BridgeBase
 #ifdef USE_DEBUG
     uint16_t discarded = 0;
 #endif
+
+    // for relay operation
+  public:
+    bool IsRelayMain(void);
+    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg);
+    bool IsRelaySecondary(void);
+
+  private:
+    typedef enum {
+        RELAY_UNKNOWN = 0,
+        RELAY_NO,
+        RELAY_YES,
+    } RELAY_ENUM;
+    uint8_t relay;
+
+    bool main_radio_stats_receiving;
+    fmav_mlrs_main_radio_stats_t main_radio_stats;
 };
 
 tTxCrsf crsf;
@@ -259,7 +276,12 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
     switch (state) {
     case STATE_IDLE:
-        if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
+        if (relay == RELAY_UNKNOWN) {
+            if (c == CRSF_ADDRESS_TRANSMITTER_MODULE || c == CRSF_OPENTX_SYNC) relay = RELAY_NO;
+            if (c == CRSF_ADDRESS_RECEIVER) relay = RELAY_YES;
+        }
+        if ((relay == RELAY_NO && (c == CRSF_ADDRESS_TRANSMITTER_MODULE || c == CRSF_OPENTX_SYNC)) ||
+            (relay == RELAY_YES && c == CRSF_ADDRESS_RECEIVER)) {
             cnt = 0;
             frame[cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
@@ -396,6 +418,9 @@ void tTxCrsf::Init(bool enable_flag)
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
 
+    relay = RELAY_UNKNOWN;
+    main_radio_stats_receiving = false;
+
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
@@ -433,6 +458,8 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
     // check if we can transmit
     if (!tx_free) return false;
     tx_free = false;
+
+    if (relay != RELAY_NO) return false;
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
@@ -509,6 +536,8 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
     if (!cmd_received) return false;
     cmd_received = false;
+
+    if (relay != RELAY_NO) return false;
 
     // TODO: we could check crc if we wanted to
 
@@ -792,7 +821,7 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
     barometer.baro_temp = CRSF_REV_U32(payload->temperature);
     crsf_status[CRSF_ITEM_BAROMETER].updated = true;
 
-    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0ï¿½C, -50 = -5.0ï¿½C)
     temp_ambient.temp_source_id = 1;
     temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
     crsf_status[CRSF_ITEM_TEMP].updated = true;
@@ -803,6 +832,8 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
 // called by MAVLink interface, when a MAVLink frame has been received
 void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
 {
+    if (relay != RELAY_NO) return;
+
     if (msg->sysid == 0) return; // this can't be anything meaningful
 
     if (msg->compid != MAV_COMP_ID_AUTOPILOT1) return;
@@ -1072,6 +1103,23 @@ void tTxCrsf::SendLinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
+if (crsf.IsRelaySecondary()) {
+    clstats.uplink_rssi1 = crsf.main_radio_stats.uplink_rssi;
+    clstats.uplink_rssi2 = 0; // we don't know it
+    clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
+    clstats.uplink_snr = 0; // we don't know it
+    clstats.active_antenna = crsf.main_radio_stats.active_antenna;
+    clstats.mode = crsf.main_radio_stats.mode;
+    clstats.uplink_transmit_power = crsf.main_radio_stats.uplink_transmit_power_enum;
+
+    clstats.downlink_rssi = crsf.main_radio_stats.downlink_rssi;
+    clstats.downlink_LQ = crsf.main_radio_stats.downlink_LQ;
+    clstats.downlink_snr = crsf.main_radio_stats.downlink_snr;
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS, &clstats, CRSF_LINK_STATISTICS_LEN);
+    return;
+}
+
     clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);           // OpenTX -> "1RSS"
     clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
     clstats.uplink_LQ = stats.GetReceivedLQ_rc(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
@@ -1097,6 +1145,18 @@ void tTxCrsf::SendLinkStatisticsTx(void)
 {
 tCrsfLinkStatisticsTx clstats;
 
+if (crsf.IsRelaySecondary()) {
+    clstats.uplink_rssi = crsf.main_radio_stats.uplink_rssi;
+    clstats.uplink_rssi_percent = crsf.main_radio_stats.uplink_rssi_percent;
+    clstats.uplink_LQ = crsf.main_radio_stats.uplink_LQ;
+    clstats.uplink_snr = crsf.main_radio_stats.downlink_snr;
+    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it
+    clstats.uplink_fps = crsf.main_radio_stats.uplink_fps;
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
+    return;
+}
+
     clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
     clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(                          // OpenTx -> "TRSP" // ??? uplink but "T" ??
         stats.GetLastRssi(),
@@ -1114,6 +1174,17 @@ tCrsfLinkStatisticsTx clstats;
 void tTxCrsf::SendLinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
+
+if (crsf.IsRelaySecondary()) {
+    clstats.downlink_rssi = crsf.main_radio_stats.downlink_rssi;
+    clstats.downlink_rssi_percent = crsf.main_radio_stats.downlink_rssi_percent;
+    clstats.downlink_LQ = crsf.main_radio_stats.downlink_LQ;
+    clstats.downlink_snr = 0; // we don't know it
+    clstats.uplink_transmit_power = crsf.main_radio_stats.uplink_transmit_power_dbm;
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_RX, &clstats, CRSF_LINK_STATISTICS_RX_LEN);
+    return;
+}
 
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(                        // OpenTx -> "RRSP" // ??? downlink but "R" ??
@@ -1183,6 +1254,28 @@ uint8_t len;
     tx_available = len;
 }
 
+//-------------------------------------------------------
+// Relay handler
+
+bool tTxCrsf::IsRelayMain(void)
+{
+    return (relay == RELAY_YES);
+}
+
+
+void tTxCrsf::HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg)
+{
+    main_radio_stats_receiving = true;
+
+    fmav_msg_mlrs_main_radio_stats_decode(&main_radio_stats, msg);
+}
+
+
+bool tTxCrsf::IsRelaySecondary(void)
+{
+    return main_radio_stats_receiving;
+}
+
 
 #else
 
@@ -1198,6 +1291,10 @@ class tTxCrsfDummy
     void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
+
+    bool IsRelayMain(void) { return false; }
+    void HandleMainRadioStatsMavlinkMsg(fmav_message_t* msg) {}
+    bool IsRelaySecondary(void) { return false; }
 };
 
 tTxCrsfDummy crsf;
