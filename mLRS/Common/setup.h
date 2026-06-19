@@ -179,8 +179,8 @@ void setup_configure_metadata(void)
 #ifdef USE_SERIAL2
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0010; // add serial2
 #endif
-#ifdef USE_USB
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b1000; // add usb
+#ifdef USE_COM
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b1000; // add com
 #endif
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0100; // add mbridge
