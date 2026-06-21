@@ -215,7 +215,13 @@ void tTxEspWifiBridge::Init(
     version = 0; // unknown
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
-    run_configure();
+    // only auto-configure when the bridge is the selected serial destination; otherwise esp_enable() holds the
+    // ESP in reset and run_configure() would just spin through every baud rate until timeout (~2 s wasted at boot)
+  #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) run_configure();
+  #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) run_configure();
+  #endif
 #endif
 }
 
@@ -752,8 +758,7 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         esp_get_info();
     }
 
-//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
-if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
+ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 
     esp_gpio0_high(); // leave forced AT mode
 }

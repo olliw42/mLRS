@@ -30,7 +30,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate) {}
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -47,7 +47,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate);
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -67,7 +67,7 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate)
+void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination)
 {
     serialports = _serialports;
     com = _serialports->com;
@@ -78,7 +78,13 @@ void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _seria
 #endif
     ser_baud = _serial_baudrate;
 
-    run_autoconfigure();
+    // only auto-configure when the HC04 is the selected serial destination; otherwise run_autoconfigure() would
+    // just spin through every baud rate until timeout (wasted boot time), same issue as the esp run_configure()
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+    if (serial_destination == SERIAL_DESTINATION_SERIAL2) run_autoconfigure();
+#else
+    if (serial_destination == SERIAL_DESTINATION_SERIAL) run_autoconfigure();
+#endif
 }
 
 
