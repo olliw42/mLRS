@@ -451,6 +451,7 @@ typedef struct
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
+    char Tx_SerialDestination_optstr[26+1]; // worst case "serial,serial2,mbridge,com" = 26, generated from the hal
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 
