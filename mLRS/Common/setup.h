@@ -171,7 +171,19 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge,com" (serial/serial2 relabeled if a wireless module sits there)
+    // Tx SerialDestination: "serial,serial2,mbridge,com"
+    // serial/serial2 is relabeled if a wireless module sits there
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL
+    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "wbridge,");
+#else
+    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "serial,");
+#endif
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+    strcat(SetupMetaData.Tx_SerialDestination_optstr, "wbridge,");
+#else
+    strcat(SetupMetaData.Tx_SerialDestination_optstr, "serial2,");
+#endif
+    strcat(SetupMetaData.Tx_SerialDestination_optstr, "mbridge,com");
     SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0001; // add serial
@@ -184,15 +196,6 @@ void setup_configure_metadata(void)
 #endif
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0100; // add mbridge
-#endif
-#if   defined USE_HC04_MODULE // hc04 is only ever on serial
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "hc04,serial2,mbridge,com");
-#elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "bridge,serial2,mbridge,com");
-#elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "serial,bridge,mbridge,com");
-#else
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "serial,serial2,mbridge,com");
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"

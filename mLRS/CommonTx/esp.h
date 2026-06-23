@@ -216,11 +216,11 @@ void tTxEspWifiBridge::Init(
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     // only auto-configure when the bridge is the selected serial destination; otherwise esp_enable() holds the
-    // ESP in reset and run_configure() would just spin through every baud rate until timeout (~2 s wasted at boot)
+    // ESP in reset and run_configure() would spin through every baud rate until timeout (ca 2 sec wasted at boot)
   #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) run_configure();
+    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) { run_configure(); }
   #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) run_configure();
+    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) { run_configure(); }
   #endif
 #endif
 }

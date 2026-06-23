@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
 
 #if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
@@ -30,7 +31,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination) {}
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, tTxSetup* const _tx_setup) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -47,14 +48,14 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination);
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudratet, tTxSetup* const _tx_setup);
 
     void EnterPassthrough(void);
     void GetPin(void);
     void SetPin(uint16_t pin);
 
   private:
-    void run_autoconfigure(void);
+    void run_configure(void);
     bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(char* const ok_device_name);
 
@@ -67,7 +68,7 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, uint8_t serial_destination)
+void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, tTxSetup* const _tx_setup)
 {
     serialports = _serialports;
     com = _serialports->com;
@@ -78,12 +79,12 @@ void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _seria
 #endif
     ser_baud = _serial_baudrate;
 
-    // only auto-configure when the HC04 is the selected serial destination; otherwise run_autoconfigure() would
-    // just spin through every baud rate until timeout (wasted boot time), same issue as the esp run_configure()
+    // only auto-configure when the HC04 is the selected serial destination; otherwise run_configure() would
+    // spin through every baud rate until timeout (wasted time at boot)
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    if (serial_destination == SERIAL_DESTINATION_SERIAL2) run_autoconfigure();
+    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) { run_configure(); }
 #else
-    if (serial_destination == SERIAL_DESTINATION_SERIAL) run_autoconfigure();
+    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) { run_configure(); }
 #endif
 }
 
@@ -239,7 +240,7 @@ uint8_t len;
 }
 
 
-void tTxHc04Bridge::run_autoconfigure(void)
+void tTxHc04Bridge::run_configure(void)
 {
 uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;

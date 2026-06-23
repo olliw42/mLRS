@@ -48,6 +48,7 @@
 // for Tx,Rx, option strings
 #define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
 #define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
+#define SETUP_OPT_TX_SER_DEST         SetupMetaData.Tx_SerialDestination_optstr // this we generate from the hal
 
 #define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2,r:en t:ant1,r:en t:ant2"
 #define SETUP_OPT_DIVERSITY_LONGSTR   "enabled,antenna1,antenna2,r:en. t:ant1,r:en. t:ant2" // used e.g. in cli
@@ -66,9 +67,6 @@
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN,915+2.4,868+2.4" // used below in LIST_COMMON
 #define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN,915 MHz + 2.4 GHz,868 MHz + 2.4 GHz" // used e.g. in cli
 #define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN,915+2.4,868+2.4" // used in display, 7 chars max
-
-// tx ser dest: a wireless module (esp wifi bridge or hc04) relabels its serial/serial2 slot
-#define SETUP_OPT_TX_SER_DEST         SetupMetaData.Tx_SerialDestination_optstr // this we generate from the hal
 
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
