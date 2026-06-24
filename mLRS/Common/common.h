@@ -222,7 +222,7 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
     serial->SetBaudRate(460800); // dirty workaround, fixed baud rate for AX12 due to limitation
 #else
-    serial->SetBaudRate(Config.SerialBaudrate);
+    serial->SetBaudRate(baud);
 #endif
     // ensure com has correct baud rate
     com->SetBaudRate(TX_COM_BAUDRATE);
