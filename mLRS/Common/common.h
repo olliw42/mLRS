@@ -156,7 +156,6 @@ typedef struct
     void Init(uint8_t serial_destination, uint32_t baud);
 
     tSerialBase* com_port(void);
-    void set_serial_com(void);
     void set_serial_com_swapped(void);
 
 #ifdef USE_COM_ON_SERIAL
@@ -170,12 +169,6 @@ tSerialBase* tSerialPorts::com_port(void) { // uartc or usb
 #else
     return &uartc_port;
 #endif
-}
-
-void tSerialPorts::set_serial_com(void)
-{
-    serial = &uartb_port;
-    com = com_port();
 }
 
 void tSerialPorts::set_serial_com_swapped(void)
@@ -208,11 +201,15 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 #endif
 
     switch (serial_destination) {
+    case SERIAL_DESTINATION_SERIAL2:
+        serial = &uartd_port;
+        com = com_port();
     case SERIAL_DESTINATION_COM:
         set_serial_com_swapped();
         break;
     default:
-        set_serial_com();
+        serial = &uartb_port;
+        com = com_port();
     }
 
     jrpin5serial = nullptr;
