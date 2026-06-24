@@ -48,7 +48,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudratet, tTxSetup* const _tx_setup);
+    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, tTxSetup* const _tx_setup);
 
     void EnterPassthrough(void);
     void GetPin(void);
