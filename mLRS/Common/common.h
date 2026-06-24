@@ -196,6 +196,12 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 
 void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
+#if defined USE_COM_ON_SERIAL // button forces com onto the uartB serial pins (no separate com port)
+    if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
+#elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto usb
+    if (!ser_or_com_init()) { serial_destination = 0; } // force default
+#endif
+
     switch (serial_destination) {
     case SERIAL_DESTINATION_SERIAL2:
         serial = &uartd_port;
@@ -208,19 +214,6 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
         serial = &uartb_port;
         com = com_port();
     }
-
-#if defined USE_COM_ON_SERIAL || defined DEVICE_HAS_SERIAL_OR_COM // device has a button to force com/cli
-    // button pressed on power up -> force com/cli, serial2 stays on uartD
-    if (!ser_or_com_init()) {
-  #if defined DEVICE_HAS_COM_ON_USB
-        if (serial == &usb_port) serial = &uartb_port; // undo a "com" destination swap; com goes back to usb
-        com = &usb_port;
-  #else
-        if (serial == &uartb_port) serial = com_port(); // free the uartB pins for com (serial -> dummy uartC)
-        com = &uartb_port;
-  #endif
-    }
-#endif
 
     jrpin5serial = nullptr;
 
