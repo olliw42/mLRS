@@ -163,7 +163,9 @@ typedef struct
 #endif
 } tSerialPorts;
 
-tSerialBase* tSerialPorts::com_port(void) { // uartc or usb
+
+tSerialBase* tSerialPorts::com_port(void) // uartc or usb
+{
 #ifdef DEVICE_HAS_COM_ON_USB
     return &usb_port;
 #else
@@ -194,11 +196,12 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 }
 #endif
 
+
 void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
-#if defined USE_COM_ON_SERIAL && defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto the uartB serial pins (no separate com port)
+#if defined USE_COM_ON_SERIAL // button forces com onto uartB serial pins (no separate com port)
     if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
-#elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto usb
+#elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto uartC or usb
     if (!ser_or_com_init()) { serial_destination = 0; } // force default
 #endif
 
