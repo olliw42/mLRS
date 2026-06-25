@@ -173,8 +173,8 @@ tSerialBase* tSerialPorts::com_port(void) { // uartc or usb
 
 void tSerialPorts::set_serial_com_swapped(void)
 {
-    serial = &uartb_port;
-    com = com_port();
+    serial = com_port();
+    com = &uartb_port;
 }
 
 
@@ -196,7 +196,9 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 
 void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
-#if defined USE_COM_ON_SERIAL || defined DEVICE_HAS_SERIAL_OR_COM // device has a button to force com/cli
+#if defined USE_COM_ON_SERIAL && defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto the uartB serial pins (no separate com port)
+    if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
+#elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto usb
     if (!ser_or_com_init()) { serial_destination = 0; } // force default
 #endif
 
@@ -204,6 +206,7 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
     case SERIAL_DESTINATION_SERIAL2:
         serial = &uartd_port;
         com = com_port();
+        break;
     case SERIAL_DESTINATION_COM:
         set_serial_com_swapped();
         break;

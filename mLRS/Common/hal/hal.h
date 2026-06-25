@@ -278,6 +278,7 @@ extern "C" { void delay_ms(uint16_t ms); }
 #ifdef DEVICE_HAS_COM_ON_SERIAL // some devices have device dependent ways to select serial or com
   #define USE_SERIAL
   #define USE_COM_ON_SERIAL
+  #define DEVICE_HAS_SERIAL_OR_COM // COM_ON_SERIAL implies HAS_SERIAL_OR_COM (button forces com onto the serial pins)
 #else
   #if !defined DEVICE_HAS_NO_SERIAL
     #define USE_SERIAL
