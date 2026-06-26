@@ -186,11 +186,12 @@ void tTxEspWifiBridge::Init(
 #else
     com = _serialports->com;
 #endif
-    ser = nullptr;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // uartd is always available, but could be a dummy port
     ser = _serialports->uartd;
+#else
+    ser = nullptr;
 #endif
-    ser_baud = _serial_baudrate;
+    ser_baud = _serial_baudrate; // TODO: why not always 115200 ?
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
 
@@ -200,7 +201,7 @@ void tTxEspWifiBridge::Init(
     version = 0; // unknown
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
-    // only auto-configure when the bridge is the selected serial destination; otherwise esp_enable() holds the
+    // only auto-configure when the bridge is the selected; otherwise esp_enable() holds the
     // ESP in reset and run_configure() would spin through every baud rate until timeout (ca 2 sec wasted at boot)
     if (tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) { run_configure(); }
 #endif
