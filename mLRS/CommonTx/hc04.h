@@ -17,10 +17,6 @@
 #include "../Common/setup_types.h"
 
 
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error HC04 bluetooth module is on serial but board has serial/com !
-#endif
-
 
 //-------------------------------------------------------
 // HC04 Bridge class
@@ -72,20 +68,12 @@ void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _seria
 {
     serialports = _serialports;
     com = _serialports->com;
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
     ser = _serialports->uartd;
-#else
-    ser = _serialports->uartb;
-#endif
     ser_baud = _serial_baudrate;
 
     // only auto-configure when the HC04 is the selected serial destination; otherwise run_configure() would
     // spin through every baud rate until timeout (wasted time at boot)
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) { run_configure(); }
-#else
-    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) { run_configure(); }
-#endif
+    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) { run_configure(); }
 }
 
 
@@ -144,7 +132,7 @@ void tTxHc04Bridge::passthrough_do(void)
 {
     ser->SetBaudRate(ser_baud);
     ser->flush();
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
+#ifdef USE_COM_ON_SERIAL
     com = serialports->ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
 

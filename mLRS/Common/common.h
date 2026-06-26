@@ -32,7 +32,8 @@
 // Serial Classes
 //-------------------------------------------------------
 
-// tx: serial or com, rx: serial
+// tx: serial
+// rx: serial
 class tUartBPort : public tSerialBase
 {
 #if defined USE_SERIAL || defined USE_COM_ON_SERIAL
@@ -64,10 +65,10 @@ class tUartCPort : public tSerialBase
 };
 
 
-// tx: serial or com
+// tx: com
 class tUsbPort : public tSerialBase
 {
-#ifdef USE_USB
+#ifdef USE_USB // USE_COM && DEVICE_HAS_COM_ON_USB
   public:
     void InitOnce(void) override { usb_init(); }
     bool full(void) override { return usb_tx_full(); }
@@ -80,10 +81,10 @@ class tUsbPort : public tSerialBase
 };
 
 
-// tx: serial2
+// tx: serial2 or wireless bridge
 class tUartDPort : public tSerialBase
 {
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // DEVICE_HAS_SERIAL2 || USE_WIRELESS_BRIDGE
   public:
     void Init(void) override { uartd_init(); }
     void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
@@ -138,20 +139,20 @@ class tDroneCANPort : public tSerialBase
 //-------------------------------------------------------
 
 #ifdef DEVICE_IS_TRANSMITTER
-tUartBPort uartb_port; // usually serial port
-tUartCPort uartc_port; // usually COM/CLI port
-tUartDPort uartd_port; // usually serial2 BT/ESP port
+tUartBPort uartb_port;
+tUartCPort uartc_port;
+tUartDPort uartd_port;
 tUsbPort usb_port;
 
 typedef struct
 {
-    tSerialBase* serial;
-    tSerialBase* com;
-    tSerialBase* jrpin5serial; // can be nullptr!
-    tSerialBase* uartb;
-    tSerialBase* uartc;
-    tSerialBase* uartd;
-    tSerialBase* usb;
+    tSerialBase* serial; // assigned according to TxSerDest
+    tSerialBase* com; // assigned according to TxSerDest
+    tSerialBase* jrpin5serial; // can be nullptr! initialized in tPin5BridgeBase.Init()
+    tSerialBase* uartb; // serial port
+    tSerialBase* uartd; // serial2 or wireless bridge port
+    tSerialBase* uartc; // com port
+    tSerialBase* usb; // com port if on USB
 
     void Init(uint8_t serial_destination, uint32_t baud);
 
@@ -172,6 +173,7 @@ tSerialBase* tSerialPorts::com_port(void) // uartc or usb
     return &uartc_port;
 #endif
 }
+
 
 void tSerialPorts::set_serial_com_swapped(void)
 {
@@ -196,17 +198,22 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 }
 #endif
 
+// SERIAL          | SERIAL2         | WBRIDGE         | COM                | MBRIDGE
+//---------------------------------------------------------------------------------------
+// serial = uartb  | serial = uartd  | serial = uartd  | serial = uartc/usb | serial = any, use uartb
+// com = uartc/usb | com = uartc/usb | com = uartc/usb | com = uartb        | com = uartc/usb
 
 void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 {
 #if defined USE_COM_ON_SERIAL // button forces com onto uartB serial pins (no separate com port)
     if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
 #elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto uartC or usb
-    if (!ser_or_com_init()) { serial_destination = 0; } // force default
+    if (!ser_or_com_init()) { serial_destination = 0; } // force default, note: gets serial wrong if it should be uartd
 #endif
 
     switch (serial_destination) {
     case SERIAL_DESTINATION_SERIAL2:
+    case SERIAL_DESTINATION_WIRELESS_BRIDGE:
         serial = &uartd_port;
         com = com_port();
         break;

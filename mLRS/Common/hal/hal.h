@@ -45,14 +45,24 @@ In tx-hal files:
 #define DEVICE_HAS_IN_INVERTED      // board has an IN port, which supports only inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_RX  // board shares IN with JRPin5 on RX pin, implies support of normal and inverted UART signals
 #define DEVICE_HAS_IN_ON_JRPIN5_TX  // board shares IN with JRPin5 on TX pin, implies support of normal and inverted UART signals
+
+#define DEVICE_HAS_SERIAL_OR_COM    // board has a button or similar to force Com on power up
+
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_COM           // board has no Com port
 #define DEVICE_HAS_COM_ON_USB       // board has a native USB port // TODO: rename to DEVICE_HAS_USB ??
 #define DEVICE_HAS_COM_ON_SERIAL    // board has a UART or USB which is shared between Serial and Com, implies HAS_SERIAL_OR_COM
-#define DEVICE_HAS_SERIAL_OR_COM    // board has a button or similar to force Com on power up
-#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
+#define DEVICE_HAS_SERIAL2          // board has a Serial2 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE  // board has ESP32 or ESP82xx with RESET,GPIO support
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESP82xx with its passthrough via JRPin5 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL  // board has ESP32 or ESP82xx with its passthrough via Serial port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx in fact, not ESP32
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON2_FLASH    // board has button used to enter ESP flash mode
+#define DEVICE_HAS_HC04_MODULE      // board has HC04 module
+
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
 #define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180°, and 5-way switch
 #define DEVICE_HAS_FIVEWAY          // board has 5-way switch (without display)
@@ -61,15 +71,6 @@ In tx-hal files:
 #define DEVICE_HAS_NO_LED           // board has no LEDs at all
 #define DEVICE_HAS_BUZZER           // board has a Buzzer
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL  // board has ESP32 or ESP82xx with RESET,GPIO support, on Serial port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has ESP32 or ESP82xx with RESET,GPIO support, on Serial2 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESP82xx with its passthrough via JRPin5 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL  // board has ESP32 or ESP82xx with its passthrough via Serial port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx in fact, not ESP32
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON2_FLASH    // board has button used to enter ESP flash mode
-#define DEVICE_HAS_HC04_MODULE_ON_SERIAL      // board has HC04 module on Serial port
-#define DEVICE_HAS_HC04_MODULE_ON_SERIAL2     // board has HC04 module on Serial2 port
 #define DEVICE_HAS_SYSTEMBOOT       // board has a means to invoke the system bootloader on startup
 #define DEVICE_HAS_I2C_DAC          // board has a DAC for power control on I2C
 
@@ -290,7 +291,10 @@ extern "C" { void delay_ms(uint16_t ms); }
   #endif
 #endif
 
-#if defined DEVICE_HAS_SERIAL2 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE || defined DEVICE_HAS_HC04_MODULE
+  #define USE_WIRELESS_BRIDGE
+#endif
+#if defined DEVICE_HAS_SERIAL2 || defined USE_WIRELESS_BRIDGE
   #define USE_SERIAL2
 #endif
 #endif // DEVICE_IS_TRANSMITTER
@@ -329,7 +333,7 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE
   #define USE_ESP_WIFI_BRIDGE
   #if defined ESP_RESET && defined ESP_GPIO0
     #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
@@ -345,7 +349,7 @@ extern "C" { void delay_ms(uint16_t ms); }
   #endif
 #endif
 
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+#if defined DEVICE_HAS_HC04_MODULE
   #define USE_HC04_MODULE
 #endif
 
@@ -449,6 +453,27 @@ extern "C" { void delay_ms(uint16_t ms); }
   #ifdef DEVICE_HAS_DIVERSITY
     #error DEVICE_HAS_DIVERSITY cannot be defined for dual band devices !
   #endif
+#endif
+
+
+#if defined DEVICE_HAS_SERIAL2 && defined USE_WIRELESS_BRIDGE
+  #error Device cannot have HAS_SERIAL2 and HAS_WIRELESS_BRIDGE at the same time !
+#endif
+
+
+//-- checks for legacy flags
+
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+  #error DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL is deprecated, use DEVICE_HAS_ESP_WIFI_BRIDGE!
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+  #error DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 is deprecated, use DEVICE_HAS_ESP_WIFI_BRIDGE!
+#endif
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL
+  #error DEVICE_HAS_HC04_MODULE_ON_SERIAL is deprecated, use DEVICE_HAS_HC04_MODULE!
+#endif
+#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
+  #error DEVICE_HAS_HC04_MODULE_ON_SERIAL2 is deprecated, use DEVICE_HAS_HC04_MODULE!
 #endif
 
 

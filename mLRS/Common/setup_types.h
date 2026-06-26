@@ -172,11 +172,20 @@ typedef enum {
 
 typedef enum {
     SERIAL_DESTINATION_SERIAL = 0,
+    SERIAL_DESTINATION_WIRELESS_BRIDGE,
     SERIAL_DESTINATION_SERIAL2,
-    SERIAL_DESTINATION_MBRIDGE,
     SERIAL_DESTINATION_COM,
+    SERIAL_DESTINATION_MBRIDGE,
     SERIAL_DESTINATION_NUM,
 } TX_SERIAL_DESTINATION_ENUM;
+
+
+typedef enum {
+    L10304_SERIAL_DESTINATION_SERIAL = 0,
+    L10304_SERIAL_DESTINATION_SERIAL2,
+    L10304_SERIAL_DESTINATION_MBRIDGE,
+    L10304_SERIAL_DESTINATION_NUM,
+} L10304_TX_SERIAL_DESTINATION_ENUM;
 
 
 typedef enum {
@@ -447,7 +456,6 @@ typedef struct
     uint16_t Ortho_allowed_mask;
 
     char Tx_Power_optstr[67+1];
-    char Tx_SerialDestination_optstr[67+1];
     uint16_t Tx_Diversity_allowed_mask;
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;

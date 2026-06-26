@@ -41,13 +41,13 @@
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
 #include "../modules/esp-lib/esp-spi.h"
-#if defined USE_SERIAL
+#ifdef USE_SERIAL
 #include "../modules/esp-lib/esp-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
 #include "../modules/esp-lib/esp-uartc.h"
 #endif
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // is set when either HAS_SERIAL2 or USE_WIRELESS_BRIDGE
 #include "../modules/esp-lib/esp-uartd.h"
 #endif
 #ifdef USE_DEBUG
@@ -80,13 +80,13 @@
 #ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
-#if defined USE_SERIAL
+#ifdef USE_SERIAL
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
 #endif
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // is set when either HAS_SERIAL2 or USE_WIRELESS_BRIDGE
 #include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
 #endif
 #ifdef USE_USB

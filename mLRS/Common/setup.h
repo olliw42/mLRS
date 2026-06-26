@@ -171,32 +171,23 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge,com"
-    // serial/serial2 is relabeled if a wireless module sits there
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "wbridge,");
-#else
-    strcpy(SetupMetaData.Tx_SerialDestination_optstr, "serial,");
-#endif
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 || defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    strcat(SetupMetaData.Tx_SerialDestination_optstr, "wbridge,");
-#else
-    strcat(SetupMetaData.Tx_SerialDestination_optstr, "serial2,");
-#endif
-    strcat(SetupMetaData.Tx_SerialDestination_optstr, "mbridge,com");
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
+    // Tx SerialDestination: "serial,wbridge,serial2,com,mbridge"
 #ifdef USE_SERIAL
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0001; // add serial
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b00001; // add serial
 #endif
-#ifdef USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0010; // add serial2
+#ifdef USE_WIRELESS_BRIDGE
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b00010; // add wbridge
+#endif
+#ifdef DEVICE_HAS_SERIAL2 // attention: USE_SERIAL2 implies either serial2 or wireless bridge
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b00100; // add serial2
 #endif
 #ifdef USE_COM
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b1000; // add com
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b01000; // add com
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b0100; // add mbridge
+    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b10000; // add mbridge
 #endif
+
 
     // Tx Buzzer: ""off,LP,rxLQ"
 #ifdef DEVICE_HAS_BUZZER
@@ -1090,13 +1081,21 @@ bool doEEPROMwrite;
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
-            // was 335 or lower, there would be lots to do but didn't do layout version-ing properly so far
-
             // Note: In v1.3.05 Mode changed, so we would have to change to MODE_19HZ_7X if it's a Sx127x.
             // Luckily, the sanitizer will do that for us so we do not need to bother here.
-
+            // if it's lower than 10304, it's quite old, but
+            // TX_SERIAL_DESTINATION_ENUM has changed in 10401, it was L10304 before
+            for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
+                switch (Setup.Tx[id].SerialDestination) {
+                case L10304_SERIAL_DESTINATION_SERIAL: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL; break;
+                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL2; break;
+                case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_MBRIDGE; break;
+                default:
+                    Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+                }
+            }
         } else {
-            // ups, > 10304, should not happen
+            // ups, > 10401, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
         }
