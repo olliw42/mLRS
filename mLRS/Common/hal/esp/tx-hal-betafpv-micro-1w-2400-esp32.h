@@ -25,8 +25,8 @@
 // https://github.com/ExpressLRS/targets/blob/master/TX/BETAFPV%202400%20Micro%201W.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_COM_ON_SERIAL // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_IN
+#define DEVICE_HAS_COM_ON_SERIAL // hold 5-way in down direction at boot to enable com (CLI)
 #define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
@@ -39,25 +39,25 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC or USB = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_SERIAL // serial
+#define UARTB_USE_SERIAL // serial or com
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX_IO           IO_P1
 #define UARTB_USE_RX_IO           IO_P3
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL // COM (CLI)
+/* #define UARTC_USE_SERIAL // com
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX_IO           IO_P1
 #define UARTC_USE_RX_IO           IO_P3
 #define UARTC_TXBUFSIZE           0  // TX FIFO = 128
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
 
 #define UART_USE_SERIAL1 // JR bay pin5
 #define UART_BAUD                 400000
