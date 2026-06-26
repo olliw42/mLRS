@@ -44,7 +44,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, tTxSetup* const _tx_setup);
+    void Init(tSerialPorts* const _serialports, tTxSetup* const _tx_setup);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -64,15 +64,14 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialPorts* const _serialports, uint32_t const _serial_baudrate, tTxSetup* const _tx_setup)
+void tTxHc04Bridge::Init(tSerialPorts* const _serialports, tTxSetup* const _tx_setup)
 {
     serialports = _serialports;
     com = _serialports->com;
     ser = _serialports->uartd;
-    ser_baud = _serial_baudrate;
+    ser_baud = 115200; // it is always 115200
 
-    // only auto-configure when the HC04 is the selected serial destination; otherwise run_configure() would
-    // spin through every baud rate until timeout (wasted time at boot)
+    // only auto-configure when the HC04 is selected (no wasted time at boot if not used)
     if (_tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) { run_configure(); }
 }
 

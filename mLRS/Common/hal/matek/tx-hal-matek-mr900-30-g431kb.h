@@ -18,7 +18,7 @@
 //-------------------------------------------------------
 // MATEKSYS mR900-30 STM32G431KB, as Tx module
 //-------------------------------------------------------
-// USB-C = com, Tx1/Rx1 = serial2 w HC04, LPTx1/LPRx1 = serial1
+// USB-C = com, Tx1/Rx1 = serial2 w HC04, LPTx1/LPRx1 = serial
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
@@ -27,6 +27,7 @@
 #define DEVICE_HAS_COM_ON_USB
 #define DEVICE_HAS_HC04_MODULE
 #define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_SERIAL
 
 #if defined MLRS_FEATURE_MATEK_TXMODULE_MOD
 // for Tx module mods
