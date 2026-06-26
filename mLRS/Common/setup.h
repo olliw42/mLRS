@@ -1088,7 +1088,11 @@ bool doEEPROMwrite;
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
                 switch (Setup.Tx[id].SerialDestination) {
                 case L10304_SERIAL_DESTINATION_SERIAL: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL; break;
+                #ifdef USE_WIRELESS_BRIDGE
+                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_WIRELESS_BRIDGE; break;
+                #else
                 case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL2; break;
+                #endif
                 case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_MBRIDGE; break;
                 default:
                     Setup.Tx[id].SerialDestination = SERIAL_DESTINATION_SERIAL;
