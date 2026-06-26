@@ -179,7 +179,8 @@ void tTxEspWifiBridge::Init(
 
     serialports = _serialports;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    if (!_serialports->jrpin5serial) while(1){}; // must not happen, play it safe
+    // jrpin5serial is nullptr if the pin5 bridge wasn't initialized (e.g. ChannelsSource = none);
+    // leave com unassigned so passthrough is disabled gracefully instead of hanging
     com = _serialports->jrpin5serial;
 #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
     com = _serialports->uartb;
@@ -496,6 +497,8 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
+    if (!com) return; // no com port available (e.g. passthrough not possible)
+
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
         return;
@@ -522,6 +525,8 @@ void tTxEspWifiBridge::esp_set_ssidpswd(const char* const net_cmd, char* const s
 char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
+
+    if (!com) return; // no com port available (e.g. passthrough not possible)
 
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
