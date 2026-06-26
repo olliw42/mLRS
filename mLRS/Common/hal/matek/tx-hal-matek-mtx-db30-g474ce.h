@@ -23,15 +23,15 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_COM_ON_USB
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 
 //change these defaults
 #undef SETUP_TX_SERIAL_DESTINATION
-#define SETUP_TX_SERIAL_DESTINATION  1 // 0: serial port, 1: serial2 (BT/ESP) port, 2: mBridge
+#define SETUP_TX_SERIAL_DESTINATION  1 // 0: serial port, 1: wbridge port, 2: serial2 port, 3: com port, 4: mBridge
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -46,11 +46,11 @@
 
 //-- UARTS
 // UARTB = serial port
-// USB-C = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
 #define UARTB_USE_UART4_PC10PC11 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -59,6 +59,14 @@
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+
+#define UARTD_USE_UART1_PA9PA10 // serial2 or wireless bridge
+#define UARTD_BAUD                115200
+#define UARTD_USE_TX
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_USE_TX_ISR
+#define UARTD_USE_RX
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -69,14 +77,6 @@
 #define UART_RXBUFSIZE            512
 
 #define JRPIN5_FULL_INTERNAL_ON_TX
-
-#define UARTD_USE_UART1_PA9PA10 // serial2
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_USE_TX_ISR
-#define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTF_USE_UART4_PC10PC11 // debug
 #define UARTF_BAUD                115200
@@ -338,7 +338,7 @@ uint8_t fiveway_read(void)
 #define ESP_GPIO0                 IO_PB9
 #define ESP_DTR_RTS_USB
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode

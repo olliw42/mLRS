@@ -18,23 +18,22 @@
 //-------------------------------------------------------
 // MATEKSYS mR900-30 STM32G431KB, as Tx module
 //-------------------------------------------------------
-// USB-C = com, Tx1/Rx1 = serial w HC04, LPTx1/LPRx1 = serial2
+// USB-C = com, Tx1/Rx1 = serial2 w HC04, LPTx1/LPRx1 = serial1
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN_ON_JRPIN5_TX
-#define DEVICE_HAS_FAN_ONOFF // FAN_TEMPCONTROLLED_ONOFF was tested to work not so well
+#define DEVICE_HAS_FAN_ONOFF
 
 #define DEVICE_HAS_COM_ON_USB
-#define DEVICE_HAS_SERIAL2
+#define DEVICE_HAS_HC04_MODULE
 #define DEVICE_HAS_NO_DEBUG
-#define DEVICE_HAS_HC04_MODULE_ON_SERIAL
 
 #if defined MLRS_FEATURE_MATEK_TXMODULE_MOD
 // for Tx module mods
-#undef DEVICE_HAS_HC04_MODULE_ON_SERIAL
+#undef DEVICE_HAS_HC04_MODULE
 
 #ifdef MLRS_FEATURE_HC04_MODULE
-#define DEVICE_HAS_HC04_MODULE_ON_SERIAL
+#define DEVICE_HAS_HC04_MODULE
 #endif
 
 #ifdef MLRS_FEATURE_OLED
@@ -51,13 +50,13 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial
+#define UARTB_USE_LPUART1_PA2PA3 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -65,13 +64,21 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-// #define UARTC_USE_LPUART1_PA2PA3 // com USB/CLI
+/* #define UARTC_USE_LPUART1_PA2PA3 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
+
+#define UARTD_USE_UART1_PA9PA10 // serial2 or wireless bridge
+#define UARTD_BAUD                115200
+#define UARTD_USE_TX
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_USE_TX_ISR
+#define UARTD_USE_RX
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -90,14 +97,6 @@
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
 #define UARTE_RXBUFSIZE           512
-
-#define UARTD_USE_LPUART1_PA2PA3 // serial2
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_USE_TX_ISR
-#define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTF_USE_LPUART1_PA2PA3 // debug
 #define UARTF_BAUD                115200

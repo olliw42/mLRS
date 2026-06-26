@@ -46,14 +46,13 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = -- //serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = --
-// SWUART= debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
+#define UARTB_USE_UART2_PA2PA3 // serial or com
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -61,13 +60,13 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART2_PA2PA3 // com USB/CLI // PA2,PA3
+/* #define UARTC_USE_UART2_PA2PA3 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
 
 #define UART_USE_UART1_PB6PB7 // JR pin5, MBridge // PB6,PB7
 #define UART_BAUD                 400000
@@ -79,15 +78,13 @@
 
 #define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
 
-/*
-#define UARTE_USE_UART1_PB6PB7 // in port // PB7
+/* #define UARTE_USE_UART1_PB6PB7 // in port // PB7
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
-#define UARTE_RXBUFSIZE           512
-*/
+#define UARTE_RXBUFSIZE           512 */
 
 #define SWUART_USE_TIM17 // debug
 #define SWUART_TX_IO              IO_PA5

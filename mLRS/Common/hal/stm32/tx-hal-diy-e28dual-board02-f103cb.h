@@ -50,9 +50,11 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = USB (CLI) or debug port
-// UART = JR bay pin5 (SPORT)
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
+// UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
+// UARTF or SWUART = debug port
 
 #define UARTB_USE_UART3_PB10PB11 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -62,7 +64,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_PA9PA10 // COM (CLI)
+#define UARTC_USE_UART1_PA9PA10 // com
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_SMALL
