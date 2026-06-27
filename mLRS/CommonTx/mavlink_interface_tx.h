@@ -150,8 +150,8 @@ class tTxMavlink
 void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge)
 {
     // if ChannelsSource = MBRIDGE:
-    //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
-    //   SerialDestination = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
+    //   SerialDestination = SERIAL/SERIAL2/WBRIDGE/COM => router with ser = serial & ser2 = mbridge
+    //   SerialDestination = MBRIDGE                    => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
     //
     // 2\1      | SERIAL         | WBRIDGE/SERIAL2 | COM            | MBRIDGE

@@ -149,7 +149,7 @@ typedef struct
     tSerialBase* serial; // assigned according to TxSerDest
     tSerialBase* com; // assigned according to TxSerDest
     tSerialBase* serial2; // can be nullptr!
-    tSerialBase* jrpin5serial; // can be nullptr! initialized in tPin5BridgeBase.Init()
+    tSerialBase* jrpin5serial; // can be nullptr! assigned in init_hw() if DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5, else stays nullptr
     tSerialBase* uartb; // serial port
     tSerialBase* uartd; // serial2 or wireless bridge port
     tSerialBase* uartc; // com port
@@ -235,6 +235,8 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud, uint8_t seria
         serial2 = &uartb_port;
         if (serial_destination == SERIAL_DESTINATION_COM) { // this is the ugly duck
             com = &uartd_port;
+        } else if (serial_destination == SERIAL_DESTINATION_MBRIDGE) {
+            serial = &uartd_port; // serial is unused in mbridge mode; park it on uartd so serial2 owns uartb
         }
         break;
     case SERIAL_DESTINATION2_SERIAL2:

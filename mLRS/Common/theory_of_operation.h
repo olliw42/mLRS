@@ -135,10 +135,9 @@ The assignment is done in tSerialPorts::Init():
   "com"           uartC/usb       uartB           (serial and com swapped)
   "mbridge"       uartB           uartC/usb       (serial data is routed over JR pin5, not uartB)
 
-In addition, jrpin5serial is assigned in tPin5BridgeBase::Init() and is used for ESP
-passthrough flashing on boards with DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5. It is
-nullptr if the pin5 bridge was not initialized (e.g. ChannelsSource = none), and consumers
-must null-guard it.
+In addition, jrpin5serial is assigned in init_hw() (right after serials.Init()) and is used for
+ESP passthrough flashing on boards with DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5. On
+boards without that feature it stays nullptr, so consumers must null-guard it.
 
 Two boot-time button overrides exist:
 

@@ -193,8 +193,8 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b10000; // add mbridge
 #endif
-#if !(defined STM32G4 && defined USE_SERIAL && (defined USE_WIRELESS_BRIDGE || defined USE_SERIAL2))
-    SetupMetaData.Tx_SerialDestination2_allowed_mask = 0; // only for devices with fast processor and two serial ports
+#if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
+    SetupMetaData.Tx_SerialDestination2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -485,7 +485,6 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].SerialBaudrate2, SERIAL_BAUDRATE_NUM, SERIAL_BAUDRATE_115200, SERIAL_BAUDRATE_115200);
 
     SANITIZE(Tx[config_id].ChannelOrder, CHANNEL_ORDER_NUM, SETUP_TX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
-    SANITIZE(Tx[config_id].ChannelOrder, CHANNEL_ORDER_NUM, SETUP_TX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
 
     SANITIZE(Tx[config_id].SendRadioStatus, TX_SEND_RADIO_STATUS_NUM, SETUP_TX_SEND_RADIO_STATUS, TX_SEND_RADIO_STATUS_OFF);
     SANITIZE(Tx[config_id].MavlinkComponent, TX_MAVLINK_COMPONENT_NUM, SETUP_TX_MAV_COMPONENT, TX_MAVLINK_COMPONENT_OFF);
@@ -513,13 +512,14 @@ void setup_sanitize_config(uint8_t config_id)
         }
     }
 
-    // device cannot use same serial for both SerialDestination and SerialDestination2 !
+    // device cannot use same physical UART for both SerialDestination and SerialDestination2 !
+    // SERIAL is on uartB; WIRELESS_BRIDGE and SERIAL2 are both on uartD
     if ((  (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_SERIAL) &&
            (Setup.Tx[config_id].SerialDestination2 == SERIAL_DESTINATION2_SERIAL)  ) ||
-        (  (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) &&
-           (Setup.Tx[config_id].SerialDestination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE) ) ||
-        (  (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_SERIAL2) &&
-           (Setup.Tx[config_id].SerialDestination2 == SERIAL_DESTINATION2_SERIAL2) )){
+        (  (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE ||
+            Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_SERIAL2) &&
+           (Setup.Tx[config_id].SerialDestination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE ||
+            Setup.Tx[config_id].SerialDestination2 == SERIAL_DESTINATION2_SERIAL2) )){
         Setup.Tx[config_id].SerialDestination2 = SERIAL_DESTINATION2_NONE;
     }
 
