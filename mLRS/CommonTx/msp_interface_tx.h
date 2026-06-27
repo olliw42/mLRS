@@ -69,7 +69,7 @@ void tTxMsp::Init(tSerialPorts* const _serialports)
         ser = _serialports->serial; // already sorted out in serialports.Init()
         break;
     case SERIAL_DESTINATION_MBRIDGE:
-        ser = nullptr; // MSP is not supported over mBridge, leave unassigned (all methods null-guard ser)
+        ser = nullptr; // MSP is not supported over mBridge, set ser to nullptr to effectively disable it
         break;
     default:
         while(1){} // must not happen
@@ -95,7 +95,9 @@ void tTxMsp::Do(void)
         fifo_link_out.Flush();
     }
 
-    if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
+    if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return; // not selected
+
+    if (!ser) return; // needs a serial
 
     // parse serial in -> link out
     parse_serial_in_link_out();
@@ -104,8 +106,6 @@ void tTxMsp::Do(void)
 
 void tTxMsp::parse_serial_in_link_out(void)
 {
-    if (!ser) return; // no serial port (e.g. SerialDestination = mBridge)
-
     // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
         while (ser->available()) {

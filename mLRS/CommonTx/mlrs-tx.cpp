@@ -275,6 +275,9 @@ void init_hw(void)
 
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
     serials.Init(Setup.Tx[Config.ConfigId].SerialDestination, Config.SerialBaudrate);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+    serials.jrpin5serial = &jrpin5serial; // TODO: at some point we should make it a proper class in common.h
+#endif
 
     sx.Init(); // these take time
     sx2.Init();
@@ -750,12 +753,8 @@ RESTARTCONTROLLER
     msp.Init(&serials); // ports selected by SerialDestination
     sx_serial.Init(&serials, &mbridge); // ports selected by SerialDestination, ChannelsSource
     cli.Init(&serials, Config.frame_rate_ms);
-#ifdef USE_ESP_WIFI_BRIDGE
     esp.Init(&serials, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
-#endif
-#ifdef USE_HC04_MODULE
     hc04.Init(&serials, &Setup.Tx[Config.ConfigId]);
-#endif
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
     disp.Init();

@@ -179,8 +179,7 @@ void tTxEspWifiBridge::Init(
 
     serialports = _serialports;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    // jrpin5serial is nullptr if the pin5 bridge wasn't initialized (e.g. ChannelsSource = none);
-    // leave com unassigned so passthrough is disabled gracefully instead of hanging
+    if (!_serialports->jrpin5serial) while(1){}; // must not happen, play it safe
     com = _serialports->jrpin5serial;
 #elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
     com = _serialports->uartb;
@@ -350,7 +349,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 // enter ESP flashing, can only be exited by re-powering
 void tTxEspWifiBridge::EnterFlash(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("FLASH ESP");
     delay_ms(30);
@@ -372,7 +371,7 @@ void tTxEspWifiBridge::EnterFlash(void)
 // enter ESP passthrough, can only be exited by re-powering
 void tTxEspWifiBridge::EnterPassthrough(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("ESP\nPASSTHRU");
     delay_ms(30);
@@ -497,7 +496,7 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
-    if (!com) return; // no com port available (e.g. passthrough not possible)
+    if (!passthrough) return; // needs com and ser
 
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
@@ -526,7 +525,7 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
-    if (!com) return; // no com port available (e.g. passthrough not possible)
+    if (!passthrough) return; // needs com and ser
 
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
@@ -681,7 +680,7 @@ void tTxEspWifiBridge::run_configure(void)
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
-    if (ser == nullptr) return; // we need a serial
+    if (ser == nullptr) return; // needs a serial
 
     // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
     esp_gpio0_low(); // force AT mode

@@ -208,9 +208,7 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 #if defined USE_COM_ON_SERIAL // button forces com onto uartB serial pins (no separate com port)
     if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
 #elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto uartC or usb
-    // com is already on uartC/usb for all destinations except COM (where com is on uartB),
-    // so the button only needs to override the COM destination; other selections (e.g. serial2) are preserved
-    if (!ser_or_com_init() && serial_destination == SERIAL_DESTINATION_COM) { serial_destination = SERIAL_DESTINATION_SERIAL; }
+    if (!ser_or_com_init()) { serial_destination = 0; } // force default, note: gets serial wrong if it should be uartd
 #endif
 
     switch (serial_destination) {
