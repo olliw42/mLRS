@@ -47,10 +47,12 @@
 //-------------------------------------------------------
 
 // called in init_hw() to reset ESP early on, so it is hopefully booted when we attempt auto configure
-void esp_enable(uint8_t serial_destination)
+// the bridge can be selected on either serial destination, so check both
+void esp_enable(uint8_t serial_destination, uint8_t serial_destination2)
 {
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-    if (serial_destination == SERIAL_DESTINATION_WIRELESS_BRIDGE) {  // enable/disable ESP
+    if (serial_destination == SERIAL_DESTINATION_WIRELESS_BRIDGE ||
+        serial_destination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE) {  // enable/disable ESP
         esp_gpio0_high(); esp_reset_high();
     } else {
         esp_reset_low(); // hold it in reset, should be already so but ensure it
@@ -203,7 +205,8 @@ void tTxEspWifiBridge::Init(
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
     // only auto-configure when the bridge is the selected; otherwise esp_enable() holds the
     // ESP in reset and run_configure() would spin through every baud rate until timeout (ca 2 sec wasted at boot)
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) { run_configure(); }
+    if (tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE ||
+        tx_setup->SerialDestination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE) { run_configure(); }
 #endif
 }
 

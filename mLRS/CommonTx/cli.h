@@ -94,9 +94,41 @@ uint8_t nr, n;
 
 
 // helper, returns allowed mask for LIST
+// The two Tx serial destination parameters share physical UARTs (serial = uartB,
+// wbridge/serial2 = uartD), so the UART already claimed by one is removed dynamically from the
+// other's mask. This single chokepoint keeps CLI, OLED and the over-link Lua/configurator
+// consistent (set-validation, listing, OLED scrolling and the mBridge param messages all use it).
 uint16_t param_get_allowed_mask(uint8_t param_idx)
 {
-    return (SetupParameter[param_idx].allowed_mask_ptr) ? *(SetupParameter[param_idx].allowed_mask_ptr) : UINT16_MAX;
+    uint16_t* const allowed_mask_ptr = SetupParameter[param_idx].allowed_mask_ptr;
+    if (allowed_mask_ptr == nullptr) return UINT16_MAX;
+
+    uint16_t allowed_mask = *allowed_mask_ptr;
+
+    if (allowed_mask_ptr == &SetupMetaData.Tx_SerialDestination2_allowed_mask) {
+        switch (Setup.Tx[Config.ConfigId].SerialDestination) {
+        case SERIAL_DESTINATION_SERIAL: // uartB
+            allowed_mask &= ~(1 << SERIAL_DESTINATION2_SERIAL);
+            break;
+        case SERIAL_DESTINATION_WIRELESS_BRIDGE: // uartD
+        case SERIAL_DESTINATION_SERIAL2: // uartD
+            allowed_mask &= ~((1 << SERIAL_DESTINATION2_WIRELESS_BRIDGE) | (1 << SERIAL_DESTINATION2_SERIAL2));
+            break;
+        }
+    } else
+    if (allowed_mask_ptr == &SetupMetaData.Tx_SerialDestination_allowed_mask) {
+        switch (Setup.Tx[Config.ConfigId].SerialDestination2) {
+        case SERIAL_DESTINATION2_SERIAL: // uartB
+            allowed_mask &= ~(1 << SERIAL_DESTINATION_SERIAL);
+            break;
+        case SERIAL_DESTINATION2_WIRELESS_BRIDGE: // uartD
+        case SERIAL_DESTINATION2_SERIAL2: // uartD
+            allowed_mask &= ~((1 << SERIAL_DESTINATION_WIRELESS_BRIDGE) | (1 << SERIAL_DESTINATION_SERIAL2));
+            break;
+        }
+    }
+
+    return allowed_mask;
 }
 
 

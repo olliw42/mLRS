@@ -72,7 +72,8 @@ void tTxHc04Bridge::Init(tSerialPorts* const _serialports, tTxSetup* const _tx_s
     ser_baud = 115200; // it is always 115200
 
     // only auto-configure when the HC04 is selected (no wasted time at boot if not used)
-    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE) { run_configure(); }
+    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE ||
+        _tx_setup->SerialDestination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE) { run_configure(); }
 }
 
 
