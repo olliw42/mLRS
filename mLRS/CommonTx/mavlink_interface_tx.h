@@ -153,6 +153,18 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
     //   SerialDestination = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
     //   SerialDestination = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
+    //
+    // 2\1      | SERIAL         | WBRIDGE/SERIAL2 | COM            | MBRIDGE
+    // ------------------------------------------------------------------------------
+    // NONE     | ser = serial   | ser = serial    | ser = serial   | ser = mbridge
+    //          | ser2 = mbridge | ser2 = mbridge  | ser2 = mbridge | ser2 = null
+    // ------------------------------------------------------------------------------
+    // SERIAL   | should not     | ser = serial    | ser = serial   | ser = mbridge
+    //          | happen         | ser2 = serial2  | ser2 = serial2 | ser2 = serial2
+    // ------------------------------------------------------------------------------
+    // WBRIDGE/ | ser = serial   | should not      | ser = serial   | ser = mbridge
+    // SERIAL2  | ser2 = serial2 | happen          | ser2 = serial2 | ser2 = serial2
+    // ------------------------------------------------------------------------------
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
     case SERIAL_DESTINATION_SERIAL2:
@@ -169,6 +181,15 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
         while(1){} // must not happen
     }
     if (!ser) while(1){} // must not happen
+
+    switch (Setup.Tx[Config.ConfigId].SerialDestination2) {
+    case SERIAL_DESTINATION2_SERIAL:
+    case SERIAL_DESTINATION2_SERIAL2:
+    case SERIAL_DESTINATION2_WIRELESS_BRIDGE:
+        ser2 = _serialports->serial2; // already sorted out in serialports.Init(), can be nullptr
+        break;
+    }
+    if (ser == ser2) while(1){} // must not happen
 
     fmav_init();
 

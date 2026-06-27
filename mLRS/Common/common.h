@@ -148,16 +148,16 @@ typedef struct
 {
     tSerialBase* serial; // assigned according to TxSerDest
     tSerialBase* com; // assigned according to TxSerDest
+    tSerialBase* serial2; // can be nullptr!
     tSerialBase* jrpin5serial; // can be nullptr! initialized in tPin5BridgeBase.Init()
     tSerialBase* uartb; // serial port
     tSerialBase* uartd; // serial2 or wireless bridge port
     tSerialBase* uartc; // com port
     tSerialBase* usb; // com port if on USB
 
-    void Init(uint8_t serial_destination, uint32_t baud);
+    void Init(uint8_t serial_destination, uint32_t baud, uint8_t serial_destination2, uint32_t baud2);
 
     tSerialBase* com_port(void);
-    void set_serial_com_swapped(void);
 
 #ifdef USE_COM_ON_SERIAL
     tSerialBase* ser_or_com_set_to_com(void);
@@ -175,13 +175,6 @@ tSerialBase* tSerialPorts::com_port(void) // uartc or usb
 }
 
 
-void tSerialPorts::set_serial_com_swapped(void)
-{
-    serial = com_port();
-    com = &uartb_port;
-}
-
-
 #ifdef USE_COM_ON_SERIAL
 // device does not have an extra com port, but allows us to use the serial port as com by e.g. a button thing
 // is determined at startup
@@ -193,17 +186,28 @@ void tSerialPorts::set_serial_com_swapped(void)
 
 tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
-    set_serial_com_swapped();
+    serial = com_port();
+    com = &uartb_port;
     return com;
 }
 #endif
 
-// SERIAL          | SERIAL2         | WBRIDGE         | COM                | MBRIDGE
-//---------------------------------------------------------------------------------------
-// serial = uartb  | serial = uartd  | serial = uartd  | serial = uartc/usb | serial = any, use uartb
-// com = uartc/usb | com = uartc/usb | com = uartc/usb | com = uartb        | com = uartc/usb
+// 2\1      | SERIAL          | WBRIDGE/SERIAL2 | COM                | MBRIDGE
+// --------------------------------------------------------------------------------------------
+// NONE     | serial = uartb  | serial = uartd  | serial = uartc/usb | serial = is not used, assign uartb
+//          | com = uartc/usb | com = uartc/usb | com = uartb        | com = uartc/usb
+//          | serial2 = null  | serial2 = null  | serial2 = null     | serial2 = null
+// --------------------------------------------------------------------------------------------
+// SERIAL   | should not      | serial = uartd  | serial = uartc/usb | serial = is not used, assign uartd !!!
+//          | happen          | com = uartc/usb | com = uartd !!!    | com = uartc/usb
+//          |                 | serial2 = uartb | serial2 = uartb    | serial2 = uartb
+// --------------------------------------------------------------------------------------------
+// WBRIDGE/ | serial = uartb  | should not      | serial = uartc/usb | serial = is not used, assign uartb
+// SERIAL2  | com = uartc/usb | happen          | com = uartb        | com = uartc/usb
+//          | serial2 = uartd |                 | serial2 = uartd    | serial2 = uartd
+// --------------------------------------------------------------------------------------------
 
-void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
+void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud, uint8_t serial_destination2, uint32_t baud2)
 {
 #if defined USE_COM_ON_SERIAL // button forces com onto uartB serial pins (no separate com port)
     if (!ser_or_com_init()) { serial_destination = SERIAL_DESTINATION_COM; } // force swap
@@ -218,11 +222,27 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
         com = com_port();
         break;
     case SERIAL_DESTINATION_COM:
-        set_serial_com_swapped();
+        serial = com_port();
+        com = &uartb_port;
         break;
     default:
         serial = &uartb_port;
         com = com_port();
+    }
+
+    switch (serial_destination2) {
+    case SERIAL_DESTINATION2_SERIAL:
+        serial2 = &uartb_port;
+        if (serial_destination == SERIAL_DESTINATION_COM) { // this is the ugly duck
+            com = &uartd_port;
+        }
+        break;
+    case SERIAL_DESTINATION2_SERIAL2:
+    case SERIAL_DESTINATION2_WIRELESS_BRIDGE:
+        serial2 = &uartd_port;
+        break;
+    default:
+        serial2 = nullptr;
     }
 
     jrpin5serial = nullptr;
@@ -237,6 +257,7 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud)
 #else
     serial->SetBaudRate(baud);
 #endif
+    if (serial2) { serial2->SetBaudRate(baud2); }
     // ensure com has correct baud rate
     com->SetBaudRate(TX_COM_BAUDRATE);
 }

@@ -274,7 +274,7 @@ void init_hw(void)
     setup_init();
 
     esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
-    serials.Init(Setup.Tx[Config.ConfigId].SerialDestination, Config.SerialBaudrate);
+    serials.Init(Setup.Tx[Config.ConfigId].SerialDestination, Config.SerialBaudrate, Setup.Tx[Config.ConfigId].SerialDestination2, Config.SerialBaudrate2);
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
     serials.jrpin5serial = &jrpin5serial; // TODO: at some point we should make it a proper class in common.h
 #endif
