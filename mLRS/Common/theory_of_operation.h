@@ -115,35 +115,40 @@ which allows us to check if it's a "old" or "new" frame, i.e., a frame carrying 
 
 The hardware peripherals are named UART, UARTB, ..., UARTF or USB.
 These peripherals are assigned to a serial port and a com port. The assignment
-is controlled by the Tx-Ser-Dest parameter, which has the options "serial", serial2" and "usb".
-The hardware possibilities are determined by a number of DEVICE_HAS_xxx defines.
+is controlled by the Tx-Ser-Dest parameter, which has the options
+"serial", "wbridge", "serial2", "com" and "mbridge".
+Which options are available is determined by a number of DEVICE_HAS_xxx defines:
+  "serial"   available if USE_SERIAL          (board has a serial port)
+  "wbridge"  available if USE_WIRELESS_BRIDGE (board has an ESP or HC04 wireless bridge)
+  "serial2"  available if DEVICE_HAS_SERIAL2  (board has a serial2 port)
+  "com"      available if USE_COM             (board has a separate com port)
+  "mbridge"  available if DEVICE_HAS_JRPIN5   (serial is carried over mBridge on JR pin5)
 
-1. no usb
+The com port is on uartC, or on usb if the board has DEVICE_HAS_COM_ON_USB (call it uartC/usb).
+The assignment is done in tSerialPorts::Init():
 
-  "serial"      ser <- uartB    com <- uartC    <- default option
-  "serial2"     ser <- uartD    com <- uartC
-  "usb"         not available
+  Tx-Ser-Dest     serial          com
+  -----------------------------------------------
+  "serial"        uartB           uartC/usb       <- default option
+  "wbridge"       uartD           uartC/usb
+  "serial2"       uartD           uartC/usb
+  "com"           uartC/usb       uartB           (serial and com swapped)
+  "mbridge"       uartB           uartC/usb       (serial data is routed over JR pin5, not uartB)
 
-2. no usb, with HAS_SERIAL_OR_COM -> USE_COM_ON_SERIAL
-  as 1. but uartB and uartC can be swapped
+In addition, jrpin5serial is assigned in tPin5BridgeBase::Init() and is used for ESP
+passthrough flashing on boards with DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5. It is
+nullptr if the pin5 bridge was not initialized (e.g. ChannelsSource = none), and consumers
+must null-guard it.
 
-2a. normal
-  "serial"      ser <- uartB    com <- uartC    <- default option
-  "serial2"     ser <- uartD    com <- uartC
-  "usb"         not available
+Two boot-time button overrides exist:
 
-2b. button pressed
-  "serial"      ser <- uartC    com <- uartB    <- default option
-  "serial2"     ser <- uartD    com <- uartB
-  "usb"         not available
+  DEVICE_HAS_COM_ON_SERIAL (-> USE_COM_ON_SERIAL): the board has no separate com port, uartB is
+    shared between serial and com. A button press on powerup forces the "com" destination, which
+    swaps the assignment so the CLI runs on uartB (uartC is a dummy port in this case).
 
-3. HAS_COM_ON_USB
-
-  "serial"      ser <- uartB    com <- usb    <- default option
-  "serial2"     ser <- uartD    com <- usb
-  "usb"         ser <- usb      com <- uartB
-
-  The flag HAS_SERIAL_OR_COM can be defined, which when allows to force com <- usb by a button press on powerup.
+  DEVICE_HAS_SERIAL_OR_COM with DEVICE_HAS_COM_ON_USB: a button press on powerup forces com onto
+    usb. Since com is already on usb for every option except "com", the override only affects the
+    "com" destination, which is reverted to the default "serial".
 
 
 */
