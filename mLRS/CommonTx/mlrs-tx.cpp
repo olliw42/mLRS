@@ -752,7 +752,7 @@ RESTARTCONTROLLER
     mavlink.Init(&serials, &mbridge); // ports selected by SerialDestination, ChannelsSource
     msp.Init(&serials); // ports selected by SerialDestination
     sx_serial.Init(&serials, &mbridge); // ports selected by SerialDestination, ChannelsSource
-    cli.Init(&serials, Config.frame_rate_ms);
+    cli.Init(&serials);
     esp.Init(&serials, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
     hc04.Init(&serials, &Setup.Tx[Config.ConfigId]);
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));

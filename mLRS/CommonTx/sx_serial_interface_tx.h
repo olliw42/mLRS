@@ -11,11 +11,11 @@
 #pragma once
 
 
+extern bool connected_and_rx_setup_available(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tTxMavlink mavlink;
 extern tTxMsp msp;
-extern bool connected_and_rx_setup_available(void);
 
 
 class tTxSxSerial : public tSerialBase

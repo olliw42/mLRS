@@ -18,11 +18,11 @@
 #include "../Common/thirdparty/mspx.h"
 
 
+extern volatile uint32_t millis32(void);
+extern bool connected_and_rx_setup_available(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tTxCrsf crsf;
-extern volatile uint32_t millis32(void);
-extern bool connected_and_rx_setup_available(void);
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported MSP frame size
