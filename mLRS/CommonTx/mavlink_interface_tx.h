@@ -21,13 +21,13 @@
 #include "../Common/mavlink/out/lib/fastmavlink_router.h"
 
 
+extern volatile uint32_t millis32(void);
+extern bool connected_and_rx_setup_available(void);
+extern bool link_task_free(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tTxCrsf crsf;
 extern tStats stats;
-extern volatile uint32_t millis32(void);
-extern bool connected_and_rx_setup_available(void);
-extern bool link_task_free(void);
 
 
 //#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68

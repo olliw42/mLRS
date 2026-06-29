@@ -90,8 +90,8 @@ class tTxEspWifiBridge
 #include "../Common/tasks.h"
 
 
-extern tTasks tasks;
 extern volatile uint32_t millis32(void);
+extern tTasks tasks;
 
 
 typedef enum {
