@@ -159,8 +159,8 @@ void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbri
     // NONE     | ser = serial   | ser = serial    | ser = serial   | ser = mbridge
     //          | ser2 = mbridge | ser2 = mbridge  | ser2 = mbridge | ser2 = null
     // ------------------------------------------------------------------------------
-    // SERIAL   | should not     | ser = serial    | ser = serial   | ser = mbridge
-    //          | happen         | ser2 = serial2  | ser2 = serial2 | ser2 = serial2
+    // SERIAL   | should not     | ser = serial    | should not     | ser = mbridge
+    //          | happen         | ser2 = serial2  | happen         | ser2 = serial2
     // ------------------------------------------------------------------------------
     // WBRIDGE/ | ser = serial   | should not      | ser = serial   | ser = mbridge
     // SERIAL2  | ser2 = serial2 | happen          | ser2 = serial2 | ser2 = serial2

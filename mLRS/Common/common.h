@@ -149,7 +149,7 @@ typedef struct
     tSerialBase* serial; // assigned according to TxSerDest
     tSerialBase* com; // assigned according to TxSerDest
     tSerialBase* serial2; // can be nullptr!
-    tSerialBase* jrpin5serial; // can be nullptr! initialized in tPin5BridgeBase.Init()
+    tSerialBase* jrpin5serial; // can be nullptr! is initialized in init_hw()
     tSerialBase* uartb; // serial port
     tSerialBase* uartd; // serial2 or wireless bridge port
     tSerialBase* uartc; // com port
@@ -198,9 +198,9 @@ tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 //          | com = uartc/usb | com = uartc/usb | com = uartb        | com = uartc/usb
 //          | serial2 = null  | serial2 = null  | serial2 = null     | serial2 = null
 // --------------------------------------------------------------------------------------------
-// SERIAL   | should not      | serial = uartd  | serial = uartc/usb | serial = is not used, assign uartd !!!
-//          | happen          | com = uartc/usb | com = uartd !!!    | com = uartc/usb
-//          |                 | serial2 = uartb | serial2 = uartb    | serial2 = uartb
+// SERIAL   | should not      | serial = uartd  | should not         | serial = is not used, assign any
+//          | happen          | com = uartc/usb | happen             | com = uartc/usb
+//          |                 | serial2 = uartb |                    | serial2 = uartb
 // --------------------------------------------------------------------------------------------
 // WBRIDGE/ | serial = uartb  | should not      | serial = uartc/usb | serial = is not used, assign uartb
 // SERIAL2  | com = uartc/usb | happen          | com = uartb        | com = uartc/usb
@@ -233,9 +233,6 @@ void tSerialPorts::Init(uint8_t serial_destination, uint32_t baud, uint8_t seria
     switch (serial_destination2) {
     case SERIAL_DESTINATION2_SERIAL:
         serial2 = &uartb_port;
-        if (serial_destination == SERIAL_DESTINATION_COM) { // this is the ugly duck
-            com = &uartd_port;
-        }
         break;
     case SERIAL_DESTINATION2_SERIAL2:
     case SERIAL_DESTINATION2_WIRELESS_BRIDGE:
