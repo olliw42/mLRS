@@ -31,7 +31,8 @@
 // Serial Classes
 //-------------------------------------------------------
 
-// tx: serial or com, rx: serial
+// tx: serial or com
+// rx: serial
 class tUartBPort : public tSerialBase
 {
 #if (defined USE_SERIAL || defined USE_COM_ON_SERIAL) && !defined DEVICE_HAS_SERIAL_ON_USB
@@ -242,9 +243,7 @@ SX_DRIVER sx;
 SX2_DRIVER sx2;
 
 tStats stats;
-
 tFhss fhss;
-
 tBindBase bind;
 
 #ifdef DEVICE_IS_TRANSMITTER

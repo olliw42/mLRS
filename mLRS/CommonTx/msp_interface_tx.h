@@ -20,6 +20,9 @@
 
 extern volatile uint32_t millis32(void);
 extern bool connected_and_rx_setup_available(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxCrsf crsf;
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported MSP frame size
@@ -66,7 +69,7 @@ void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2por
         ser = _serial2port;
         break;
     case SERIAL_DESTINATION_MBRIDGE:
-        ser = nullptr;
+        ser = nullptr; // MSP is not supported over mBridge, set ser to nullptr to effectively disable it
         break;
     default:
         while(1){} // must not happen
@@ -92,7 +95,9 @@ void tTxMsp::Do(void)
         fifo_link_out.Flush();
     }
 
-    if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
+    if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return; // not selected
+
+    if (!ser) return; // needs a serial
 
     // parse serial in -> link out
     parse_serial_in_link_out();

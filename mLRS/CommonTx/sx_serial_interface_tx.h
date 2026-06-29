@@ -12,6 +12,10 @@
 
 
 extern bool connected_and_rx_setup_available(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tTxMavlink mavlink;
+extern tTxMsp msp;
 
 
 class tTxSxSerial : public tSerialBase

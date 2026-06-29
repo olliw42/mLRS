@@ -1186,7 +1186,7 @@ uint8_t len;
 
 #else
 
-class tTxCrsfDummy
+class tTxCrsf
 {
   public:
     void Init(bool enable_flag) {}
@@ -1200,7 +1200,7 @@ class tTxCrsfDummy
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
-tTxCrsfDummy crsf;
+tTxCrsf crsf;
 
 #endif // ifdef DEVICE_HAS_JRPIN5
 

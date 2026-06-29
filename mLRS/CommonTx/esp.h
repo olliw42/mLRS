@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
 
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
@@ -356,7 +357,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 // enter ESP flashing, can only be exited by re-powering
 void tTxEspWifiBridge::EnterFlash(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("FLASH ESP");
     delay_ms(30);
@@ -378,7 +379,7 @@ void tTxEspWifiBridge::EnterFlash(void)
 // enter ESP passthrough, can only be exited by re-powering
 void tTxEspWifiBridge::EnterPassthrough(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("ESP\nPASSTHRU");
     delay_ms(30);
@@ -503,6 +504,8 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
+    if (!passthrough) return; // needs com and ser
+
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
         return;
@@ -529,6 +532,8 @@ void tTxEspWifiBridge::esp_set_ssidpswd(const char* const net_cmd, char* const s
 char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
+
+    if (!passthrough) return; // needs com and ser
 
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
@@ -683,7 +688,7 @@ void tTxEspWifiBridge::run_configure(void)
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
-    if (ser == nullptr) return; // we need a serial
+    if (ser == nullptr) return; // needs a serial
 
     // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
     esp_gpio0_low(); // force AT mode
@@ -747,8 +752,7 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         esp_get_info();
     }
 
-//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
-if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
+ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 
     esp_gpio0_high(); // leave forced AT mode
 }

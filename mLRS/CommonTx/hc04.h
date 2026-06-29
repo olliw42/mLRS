@@ -54,7 +54,7 @@ class tTxHc04Bridge
     void SetPin(uint16_t pin);
 
   private:
-    void run_autoconfigure(void);
+    void run_configure(void);
     bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(char* const ok_device_name);
 
@@ -76,7 +76,7 @@ void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serial
 #endif
     ser_baud = _serial_baudrate;
 
-    run_autoconfigure();
+    run_configure();
 }
 
 
@@ -231,7 +231,7 @@ uint8_t len;
 }
 
 
-void tTxHc04Bridge::run_autoconfigure(void)
+void tTxHc04Bridge::run_configure(void)
 {
 uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;

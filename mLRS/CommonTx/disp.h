@@ -39,11 +39,11 @@ class tTxDisp
 
 extern bool connected(void);
 extern bool connected_and_rx_setup_available(void);
-extern tStats stats;
-extern tGDisplay gdisp;
-extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tSetupMetaData SetupMetaData;
+extern tStats stats;
+extern tGDisplay gdisp;
 extern tTxInfo info;
 extern tTasks tasks;
 
