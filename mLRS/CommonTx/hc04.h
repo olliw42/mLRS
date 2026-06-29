@@ -14,11 +14,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
-
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error HC04 bluetooth module is on serial but board has serial/com !
-#endif
 
 
 //-------------------------------------------------------
@@ -30,7 +27,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate) {}
+    void Init(tSerialPorts* const _serialports, tTxSetup* const _tx_setup) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -47,7 +44,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate);
+    void Init(tSerialPorts* const _serialports, tTxSetup* const _tx_setup);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -60,23 +57,25 @@ class tTxHc04Bridge
 
     void passthrough_do(void);
 
+    tSerialPorts* serialports;
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate)
+void tTxHc04Bridge::Init(tSerialPorts* const _serialports, tTxSetup* const _tx_setup)
 {
-    com = _comport;
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    ser = _serial2port;
-#else
-    ser = _serialport;
-#endif
-    ser_baud = _serial_baudrate;
+    serialports = _serialports;
+    com = _serialports->com;
+    ser = _serialports->uartd;
+    ser_baud = 115200; // it is always 115200
 
-    run_configure();
+    // only auto-configure when the HC04 is selected (no wasted time at boot if not used)
+    if (_tx_setup->SerialDestination == SERIAL_DESTINATION_WIRELESS_BRIDGE ||
+        _tx_setup->SerialDestination2 == SERIAL_DESTINATION2_WIRELESS_BRIDGE) {
+        run_configure();
+    }
 }
 
 
@@ -135,8 +134,8 @@ void tTxHc04Bridge::passthrough_do(void)
 {
     ser->SetBaudRate(ser_baud);
     ser->flush();
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    com = ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
+#ifdef USE_COM_ON_SERIAL
+    com = serialports->ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
 
     leds.InitPassthrough();

@@ -17,7 +17,7 @@
 
 #define DEVICE_HAS_IN_INVERTED
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
+#define DEVICE_HAS_COM_ON_SERIAL // is selected in device specific ways, here: dip switch
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
@@ -38,13 +38,14 @@
 
 
 //-- UARTS
-// UARTB = serial port or COM (CLI)
-// UARTC = --
-// UART = JR bay pin5 (SPORT)
+// UARTB = serial port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
+// UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
+#define UARTB_USE_UART1_PA9PA10 // serial or com (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE_SMALL // TX_SERIAL_TXBUFSIZE // choose the bigger one

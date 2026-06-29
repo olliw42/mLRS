@@ -172,10 +172,29 @@ typedef enum {
 
 typedef enum {
     SERIAL_DESTINATION_SERIAL = 0,
+    SERIAL_DESTINATION_WIRELESS_BRIDGE,
     SERIAL_DESTINATION_SERIAL2,
+    SERIAL_DESTINATION_COM,
     SERIAL_DESTINATION_MBRIDGE,
     SERIAL_DESTINATION_NUM,
 } TX_SERIAL_DESTINATION_ENUM;
+
+
+typedef enum {
+    L10304_SERIAL_DESTINATION_SERIAL = 0,
+    L10304_SERIAL_DESTINATION_SERIAL2,
+    L10304_SERIAL_DESTINATION_MBRIDGE,
+    L10304_SERIAL_DESTINATION_NUM,
+} L10304_TX_SERIAL_DESTINATION_ENUM;
+
+
+typedef enum {
+    SERIAL_DESTINATION2_NONE = 0,
+    SERIAL_DESTINATION2_SERIAL,
+    SERIAL_DESTINATION2_WIRELESS_BRIDGE,
+    SERIAL_DESTINATION2_SERIAL2,
+    SERIAL_DESTINATION2_NUM,
+} TX_SERIAL_DESTINATION2_ENUM;
 
 
 typedef enum {
@@ -354,10 +373,10 @@ typedef struct
     uint8_t InMode;
     uint8_t SerialDestination;
     uint8_t SerialBaudrate;
-    uint8_t __spare1;
+    uint8_t SerialDestination2;
     uint8_t SendRadioStatus;
     uint8_t Buzzer;
-    uint8_t __spare2;
+    uint8_t SerialBaudrate2;
     uint8_t MavlinkComponent;
     uint8_t PowerSwitchChannel;
     uint8_t WifiProtocol;
@@ -450,6 +469,7 @@ typedef struct
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
+    uint16_t Tx_SerialDestination2_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 
@@ -513,6 +533,7 @@ typedef struct
     uint16_t LQAveragingPeriod;
 
     uint32_t SerialBaudrate;
+    uint32_t SerialBaudrate2;
 
     uint16_t frame_rate_ms;
     uint16_t frame_rate_hz;

@@ -21,7 +21,7 @@ extern tTxMsp msp;
 class tTxSxSerial : public tSerialBase
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
+    void Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge);
 
     bool available(void) override;
     char getc(void) override;
@@ -33,16 +33,16 @@ class tTxSxSerial : public tSerialBase
 };
 
 
-void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
+void tTxSxSerial::Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge)
 {
     tSerialBase::Init();
 
     switch (Setup.Tx[Config.ConfigId].SerialDestination) {
     case SERIAL_DESTINATION_SERIAL:
-        ser = _serialport;
-        break;
     case SERIAL_DESTINATION_SERIAL2:
-        ser = _serial2port;
+    case SERIAL_DESTINATION_WIRELESS_BRIDGE:
+    case SERIAL_DESTINATION_COM:
+        ser = _serialports->serial; // already sorted out in serialports.Init()
         break;
     case SERIAL_DESTINATION_MBRIDGE:
         ser = _mbridge;

@@ -109,7 +109,46 @@ which allows us to check if it's a "old" or "new" frame, i.e., a frame carrying 
 
 
 
+============================================================
+  Serial Ports
+============================================================
 
+The hardware peripherals are named UART, UARTB, ..., UARTF or USB. These peripherals are assigned to
+serial ports and a com port. The assignment is controlled by the Tx_Ser_Dest parameter, which has the options
+"serial", "wbridge", "serial2", "com" and "mbridge".
+Which options are available is determined by a number of DEVICE_HAS_xxx defines:
+  "serial"   available if USE_SERIAL          (board has a serial port)
+  "wbridge"  available if USE_WIRELESS_BRIDGE (board has an ESP or HC04 wireless bridge)
+  "serial2"  available if DEVICE_HAS_SERIAL2  (board has a serial2 port)
+  "com"      available if USE_COM             (board has a separate com port)
+  "mbridge"  available if DEVICE_HAS_JRPIN5   (serial is carried over mBridge on JR pin5)
+
+The com port is on uartC, or on usb if the board has DEVICE_HAS_COM_ON_USB (call it uartC/usb).
+The assignment is done in tSerialPorts::Init():
+
+  Tx-Ser-Dest     serial          com
+  -----------------------------------------------
+  "serial"        uartB           uartC/usb       <- default option
+  "wbridge"       uartD           uartC/usb
+  "serial2"       uartD           uartC/usb
+  "com"           uartC/usb       uartB           (serial and com swapped)
+  "mbridge"       uartB           uartC/usb       (serial data is routed over JR pin5, not uartB)
+
+In addition, jrpin5serial is assigned in init_hw() and is used for ESP passthrough flashing on boards
+with DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5. It is nullptr if the pin5 bridge was not
+initialized (e.g. ChannelsSource = none), and consumers must null-guard it.
+
+Two boot-time button overrides exist:
+
+  DEVICE_HAS_COM_ON_SERIAL (-> USE_COM_ON_SERIAL):
+  the board has no separate com port, uartB is shared between serial and com. A button press on powerup
+  forces the "com" destination, which swaps the assignment so the CLI runs on uartB (uartC is a dummy
+  port in this case).
+
+  DEVICE_HAS_SERIAL_OR_COM:
+  a button press on powerup forces com onto uartC/usb, by reverting to the "serial" setting. Since com
+  is already on uartC/usb for every option except "com", concerning the com port the override only
+  affects the "com" destination, but it affects the serial ports settings in any case.
 
 */
 
