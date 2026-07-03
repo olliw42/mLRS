@@ -792,7 +792,7 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
     barometer.baro_temp = CRSF_REV_U32(payload->temperature);
     crsf_status[CRSF_ITEM_BAROMETER].updated = true;
 
-    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0Â°C, -50 = -5.0Â°C)
     temp_ambient.temp_source_id = 1;
     temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
     crsf_status[CRSF_ITEM_TEMP].updated = true;
@@ -912,6 +912,12 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         fmav_fence_status_t payload;
         fmav_msg_fence_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_fence_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_DISTANCE_SENSOR: {
+        fmav_distance_sensor_t payload;
+        fmav_msg_distance_sensor_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_distance_sensor(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RANGEFINDER: {
