@@ -274,7 +274,7 @@ void init_hw(void)
 
     setup_init();
 
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+    esp_enable(Setup.Tx[Config.ConfigId].SerialPort);
 
     sx.Init(); // these take time
     sx2.Init();
@@ -753,9 +753,9 @@ RESTARTCONTROLLER
     rarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
-    mavlink.Init(serial, &mbridge, serial2); // ports selected by SerialDestination, ChannelsSource
-    msp.Init(serial, serial2); // ports selected by SerialDestination
-    sx_serial.Init(serial, &mbridge, serial2); // ports selected by SerialDestination, ChannelsSource
+    mavlink.Init(serial, &mbridge, serial2); // ports selected by SerialPort, ChannelsSource
+    msp.Init(serial, serial2); // ports selected by SerialPort
+    sx_serial.Init(serial, &mbridge, serial2); // ports selected by SerialPort, ChannelsSource
     cli.Init(comport);
 #ifdef USE_ESP_WIFI_BRIDGE
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5

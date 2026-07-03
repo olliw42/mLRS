@@ -171,16 +171,16 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge"
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
+    // Tx SerialPort: "serial,serial2,mbridge"
+    SetupMetaData.Tx_SerialPort_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b001; // add serial
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b001; // add serial
 #endif
 #ifdef USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b010; // add serial2
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b010; // add serial2
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b100; // add mbridge
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b100; // add mbridge
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -310,7 +310,7 @@ void setup_default(uint8_t config_id)
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
-    Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
+    Setup.Tx[config_id].SerialPort = SETUP_TX_SERIAL_PORT;
     Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
     Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
@@ -459,8 +459,8 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].InMode, IN_CONFIG_NUM, SETUP_TX_IN_MODE, IN_CONFIG_SBUS);
     TST_NOTALLOWED(Tx_InMode_allowed_mask, Tx[config_id].InMode, IN_CONFIG_SBUS);
 
-    SANITIZE(Tx[config_id].SerialDestination, SERIAL_DESTINATION_NUM, SETUP_TX_SERIAL_DESTINATION, SERIAL_DESTINATION_SERIAL);
-    TST_NOTALLOWED(Tx_SerialDestination_allowed_mask, Tx[config_id].SerialDestination, SERIAL_DESTINATION_SERIAL);
+    SANITIZE(Tx[config_id].SerialPort, TX_SERIAL_PORT_NUM, SETUP_TX_SERIAL_PORT, TX_SERIAL_PORT_SERIAL);
+    TST_NOTALLOWED(Tx_SerialPort_allowed_mask, Tx[config_id].SerialPort, TX_SERIAL_PORT_SERIAL);
 
     SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
 
@@ -481,14 +481,14 @@ void setup_sanitize_config(uint8_t config_id)
     //  SERIAL2 |  -      | CRSF    | -       | mBridge
     //  MBRIDGE | mBridge | CRSF !! | mBridge | mBridge
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
-        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL)) {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
+        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL)) {
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL;
         } else
-        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL2)) {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL2;
+        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL2)) {
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL2;
         } else {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL; // hm ... we don't have any ??
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL; // hm ... we don't have any ??
         }
     }
 
@@ -981,7 +981,7 @@ void setup_configure_config(uint8_t config_id)
     // conflicts must have been sorted out before in setup_sanitize_config()
   #ifdef DEVICE_HAS_JRPIN5
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
+        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
         Config.UseMbridge = true;
     }
     if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {

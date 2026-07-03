@@ -54,14 +54,14 @@
 //-------------------------------------------------------
 
 // called in init_hw() to reset ESP early on, so it is hopefully booted when we attempt auto configure
-void esp_enable(uint8_t serial_destination)
+void esp_enable(uint8_t serial_port)
 {
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    if (serial_destination == SERIAL_DESTINATION_SERIAL) {  // enable/disable ESP on serial
+    if (serial_port == TX_SERIAL_PORT_SERIAL) { // enable/disable ESP on serial
   #endif
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    if (serial_destination == SERIAL_DESTINATION_SERIAL2) {  // enable/disable ESP on serial2
+    if (serial_port == TX_SERIAL_PORT_SERIAL2) { // enable/disable ESP on serial2
   #endif
         esp_gpio0_high(); esp_reset_high();
     } else {

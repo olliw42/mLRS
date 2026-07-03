@@ -37,14 +37,14 @@ void tTxSxSerial::Init(tSerialBase* const _serialport, tSerialBase* const _mbrid
 {
     tSerialBase::Init();
 
-    switch (Setup.Tx[Config.ConfigId].SerialDestination) {
-    case SERIAL_DESTINATION_SERIAL:
+    switch (Setup.Tx[Config.ConfigId].SerialPort) {
+    case TX_SERIAL_PORT_SERIAL:
         ser = _serialport;
         break;
-    case SERIAL_DESTINATION_SERIAL2:
+    case TX_SERIAL_PORT_SERIAL2:
         ser = _serial2port;
         break;
-    case SERIAL_DESTINATION_MBRIDGE:
+    case TX_SERIAL_PORT_MBRIDGE:
         ser = _mbridge;
         break;
     default:

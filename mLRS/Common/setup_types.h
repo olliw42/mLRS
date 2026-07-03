@@ -171,11 +171,11 @@ typedef enum {
 //-- Tx only
 
 typedef enum {
-    SERIAL_DESTINATION_SERIAL = 0,
-    SERIAL_DESTINATION_SERIAL2,
-    SERIAL_DESTINATION_MBRIDGE,
-    SERIAL_DESTINATION_NUM,
-} TX_SERIAL_DESTINATION_ENUM;
+    TX_SERIAL_PORT_SERIAL = 0,
+    TX_SERIAL_PORT_SERIAL2,
+    TX_SERIAL_PORT_MBRIDGE,
+    TX_SERIAL_PORT_NUM,
+} TX_SERIAL_PORT_ENUM;
 
 
 typedef enum {
@@ -352,7 +352,7 @@ typedef struct
     uint8_t ChannelsSource;
     uint8_t ChannelOrder;
     uint8_t InMode;
-    uint8_t SerialDestination;
+    uint8_t SerialPort;
     uint8_t SerialBaudrate;
     uint8_t __spare1;
     uint8_t SendRadioStatus;
@@ -449,7 +449,7 @@ typedef struct
     uint16_t Tx_Diversity_allowed_mask;
     uint16_t Tx_ChannelsSource_allowed_mask;
     uint16_t Tx_InMode_allowed_mask;
-    uint16_t Tx_SerialDestination_allowed_mask;
+    uint16_t Tx_SerialPort_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 

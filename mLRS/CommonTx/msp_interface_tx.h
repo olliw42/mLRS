@@ -61,14 +61,14 @@ class tTxMsp
 
 void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2port)
 {
-    switch (Setup.Tx[Config.ConfigId].SerialDestination) {
-    case SERIAL_DESTINATION_SERIAL:
+    switch (Setup.Tx[Config.ConfigId].SerialPort) {
+    case TX_SERIAL_PORT_SERIAL:
         ser = _serialport;
         break;
-    case SERIAL_DESTINATION_SERIAL2:
+    case TX_SERIAL_PORT_SERIAL2:
         ser = _serial2port;
         break;
-    case SERIAL_DESTINATION_MBRIDGE:
+    case TX_SERIAL_PORT_MBRIDGE:
         ser = nullptr; // MSP is not supported over mBridge, set ser to nullptr to effectively disable it
         break;
     default:
