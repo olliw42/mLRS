@@ -215,7 +215,7 @@ local MBRIDGE_PARAM_TYPE = {
 }
 
 local function mbridgeCmdLen(cmd)
-    return MBRIDGE_CMD_LEN[cmd] or 0
+    return MBRIDGE_CMD_LEN[cmd] or 0 -- short for: if MBRIDGE_CMD_LEN[cmd] ~= nil then return MBRIDGE_CMD_LEN[cmd] else return 0 end
 end
 
 local function crsfIsConnected()
@@ -412,6 +412,14 @@ local function mb_to_i16(payload, pos)
     return v
 end
 
+local function mb_to_u24(payload, pos)
+    return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256
+end
+
+local function mb_to_u32(payload, pos)
+    return payload[pos+0] + payload[pos+1]*256 + payload[pos+2]*256*256 + payload[pos+3]*256*256*256
+end
+
 local function mb_to_value(payload, pos, typ)
     if typ == MBRIDGE_PARAM_TYPE.UINT8 then -- UINT8
         return mb_to_u8(payload,pos)
@@ -473,6 +481,7 @@ end
 local function mb_allowed_mask_editable(allowed_mask)
     -- if none or only one option allowed -> not editable
     -- a value with at most one bit set satisfies (v & (v-1)) == 0; this also covers 0
+    -- (unlike the previous fixed list of literals, this is correct for any bit position)
     return bit32.band(allowed_mask, allowed_mask - 1) ~= 0
 end
 
@@ -518,7 +527,9 @@ end
 ----------------------------------------------------------------------
 -- looper to send and read command frames
 ----------------------------------------------------------------------
--- request-response-based parameter loading, see classic script for history
+-- 10.Jan.2026: Protocol change, switched from push-based to request-response-based parameter loading
+-- This protocol ensures that the next parameter is explicitely fetched after the current one is processed
+----------------------------------------------------------------------
 
 local function updateDeviceParamCounts(f)
     if f <= 1 then -- called when DEVICE_INFO is received
@@ -536,16 +547,23 @@ local function doParamLoop()
       paramloop_t_last = t_10ms
       if t_10ms < DEVICE_SAVE_t_last + paramLoadDeadTime_10ms then
           -- skip, we don't send a cmd if the last Save was recent
+          -- TODO: we could make deadtime dependend on whether a receiver was connected before the Save
       elseif DEVICE_ITEM_TX == nil then
           cmdPush(MBRIDGE_CMD.REQUEST_INFO, {}) -- triggers sending DEVICE_ITEM_TX, DEVICE_ITEM_RX, DEVICE_INFO
+          --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.REQUEST_INFO) -- alternative command for the same effect
+          -- these should have been set when we nil-ed DEVICE_PARAM_LIST
           DEVICE_PARAM_LIST_expected_index = 0
           DEVICE_PARAM_LIST_current_index = -1
           DEVICE_PARAM_LIST_errors = 0
           DEVICE_PARAM_LIST_complete = false
       elseif DEVICE_PARAM_LIST == nil then
-          if DEVICE_INFO ~= nil then -- wait for DEVICE_INFO to be populated
+          if DEVICE_INFO ~= nil then -- wait for DEVICE_INFO to be populated, indicates that MBRIDGE_CMD.REQUEST_INFO is completed
               DEVICE_PARAM_LIST = {}
-              -- request parameters by index (request-response protocol)
+              -- Old:
+              --cmdPush(MBRIDGE_CMD.PARAM_REQUEST_LIST, {}) -- triggers sending full list of PARAM_ITEMs
+              --cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_REQUEST_LIST}) -- alternative command for the same effect
+              -- New: request parameters by index (request-response protocol)
+              -- request first parameter by index (is index = 0)
               cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
           end
       end
@@ -702,7 +720,7 @@ end
 
 
 local function sendParamSet(idx)
-    if not DEVICE_PARAM_LIST_complete then return end
+    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     local p = DEVICE_PARAM_LIST[idx]
     if p.typ < MBRIDGE_PARAM_TYPE.LIST then
         cmdPush(MBRIDGE_CMD.PARAM_SET, {idx, p.value})
@@ -719,7 +737,7 @@ end
 
 
 local function sendParamStore()
-    if not DEVICE_PARAM_LIST_complete then return end
+    if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     cmdPush(MBRIDGE_CMD.PARAM_STORE, {})
     DEVICE_SAVE_t_last = getTime()
     setPopupWTmo("Save Parameters", 250)
@@ -727,6 +745,7 @@ end
 
 
 local function sendBind()
+    --if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD.BIND_START, {})
     setPopupBlocked("Binding")
@@ -734,6 +753,7 @@ end
 
 
 local function sendBoot()
+    --if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD.SYSTEM_BOOTLOADER, {})
     setPopupBlocked("In System Bootloader")
@@ -741,6 +761,7 @@ end
 
 
 local function sendFlashEsp()
+    --if not DEVICE_PARAM_LIST_complete then return end -- needed here??
     if DEVICE_DOWNLOAD_is_running then return end
     cmdPush(MBRIDGE_CMD.FLASH_ESP, {})
     setPopupBlocked("In Flash ESP")
