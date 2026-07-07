@@ -261,6 +261,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             SetPaConfig2p4Ghz(sx_power);
             break;
         case SX_FHSS_FREQUENCY_BAND_433_MHZ:
+        case SX_FHSS_FREQUENCY_BAND_70_CM_HAM:
             SetPaConfig433Mhz(sx_power);
             break;
         default:
