@@ -30,7 +30,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate) {}
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -47,7 +47,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate);
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -66,7 +66,7 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t const _serial_baudrate)
+void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port)
 {
     com = _comport;
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
@@ -74,7 +74,7 @@ void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serial
 #else
     ser = _serialport;
 #endif
-    ser_baud = _serial_baudrate;
+    ser_baud = 115200; // it is always 115200
 
     run_configure();
 }

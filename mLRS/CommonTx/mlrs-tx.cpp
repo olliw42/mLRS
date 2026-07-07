@@ -765,7 +765,7 @@ RESTARTCONTROLLER
   #endif
 #endif
 #ifdef USE_HC04_MODULE
-    hc04.Init(comport, serial, serial2, Config.SerialBaudrate);
+    hc04.Init(comport, serial, serial2);
 #endif
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
