@@ -36,6 +36,15 @@
 #include "../Common/hal/hal.h"
 #include "../modules/stm32-dronecan-lib/stdstm32-can.h"
 
+extern volatile uint32_t millis32(void);
+extern uint64_t micros64(void);
+extern bool connected(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tStats stats;
+extern tRxMavlink mavlink;
+extern tRxDroneCan dronecan;
+
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
 #endif
@@ -43,16 +52,6 @@
 #if FDCAN_IRQ_PRIORITY != DRONECAN_IRQ_PRIORITY
 #error FDCAN_IRQ_PRIORITY not eq DRONECAN_IRQ_PRIORITY !
 #endif
-
-extern tRxMavlink mavlink;
-extern tRxDroneCan dronecan;
-
-extern volatile uint32_t millis32(void);
-extern uint64_t micros64(void);
-extern bool connected(void);
-extern tStats stats;
-extern tSetup Setup;
-extern tGlobalConfig Config;
 
 //#define DRONECAN_PREFERRED_NODE_ID  68
 #define DRONECAN_PREFERRED_NODE_ID  RX_DRONECAN_PREFERRED_NODE_ID // moved to common_conf.h
@@ -272,7 +271,7 @@ void tRxDroneCan::Tick_ms(void)
     uint64_t tnow_us = micros64(); // call it every ms to ensure it is updated
 
     // do dynamic node allocation if still needed
-    if (!dronecan.id_is_allcoated()) {
+    if (!id_is_allcoated()) {
         node_id_allocation.is_running = true;
         if (millis32() > node_id_allocation.send_next_request_at_ms) {
             send_dynamic_node_id_allocation_request();
@@ -345,7 +344,7 @@ DBG_DC(
 // so after handling of channel order and failsafes by out class.
 void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 {
-    if (!dronecan.id_is_allcoated()) return;
+    if (!id_is_allcoated()) return;
 
     uint32_t tnow_ms = millis32();
     if ((tnow_ms - rc_input.tlast_ms) < 19) return; // don't send too fast, DroneCAN is not for racing ...
@@ -665,7 +664,7 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 // Handle a tunnel.Targetted message, check if it is for us and proper
 void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const transfer)
 {
-    if (!dronecan.id_is_allcoated()) { // this should never happen, but play it safe
+    if (!id_is_allcoated()) { // this should never happen, but play it safe
         tunnel_targetted_stats.error_cnt++;
         return;
     }

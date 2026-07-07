@@ -124,6 +124,7 @@ class tDroneCANPort : public tSerialBase
 {
 #ifdef DEVICE_HAS_DRONECAN
   public:
+    // no Init()
     void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
     bool available(void) override { return dronecan.available(); }
     char getc(void) override { return dronecan.getc(); }
