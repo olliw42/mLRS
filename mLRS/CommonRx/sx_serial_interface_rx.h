@@ -11,6 +11,9 @@
 #pragma once
 
 
+extern tSetup Setup;
+
+
 class tRxSxSerial : public tSerialBase
 {
   public:

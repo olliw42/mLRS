@@ -21,6 +21,9 @@
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tStats stats;
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
