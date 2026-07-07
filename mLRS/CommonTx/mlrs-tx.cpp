@@ -759,9 +759,9 @@ RESTARTCONTROLLER
     cli.Init(comport);
 #ifdef USE_ESP_WIFI_BRIDGE
   #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    esp.Init(&jrpin5serial, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    esp.Init(&jrpin5serial, serial, serial2);
   #else
-    esp.Init(comport, serial, serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
+    esp.Init(comport, serial, serial2);
   #endif
 #endif
 #ifdef USE_HC04_MODULE

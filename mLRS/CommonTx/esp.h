@@ -85,7 +85,7 @@ void esp_enable(uint8_t serial_port)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port) {}
     void Tick_ms(void) {}
     void Do(void) {}
     void EnterFlash(void) {}
@@ -102,6 +102,8 @@ class tTxEspWifiBridge
 
 
 extern volatile uint32_t millis32(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tTasks tasks;
 
 
@@ -122,7 +124,7 @@ uint8_t esp_dtr_rts(void)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
+    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port);
     void Tick_ms(void);
     void Do(void);
 
@@ -159,9 +161,6 @@ class tTxEspWifiBridge
     void passthrough_do_flashing(void);
     void passthrough_do(void);
 
-    tTxSetup* tx_setup;
-    tCommonSetup* common_setup;
-
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
@@ -182,14 +181,9 @@ class tTxEspWifiBridge
 void tTxEspWifiBridge::Init(
     tSerialBase* const _comport,
     tSerialBase* const _serialport,
-    tSerialBase* const _serial2port,
-    uint32_t _serial_baudrate,
-    tTxSetup* const _tx_setup,
-    tCommonSetup* const _common_setup)
+    tSerialBase* const _serial2port
+)
 {
-    tx_setup = _tx_setup;
-    common_setup = _common_setup;
-
     com = _comport;
     ser = nullptr;
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
@@ -201,7 +195,7 @@ void tTxEspWifiBridge::Init(
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
     ser = _serial2port;
 #endif
-    ser_baud = _serial_baudrate;
+    ser_baud = Config.SerialBaudrate; // TODO: why not always 115200 ?
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
 
@@ -600,7 +594,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+PROTOCOL=");
-    switch (tx_setup->WifiProtocol) {
+    switch (Setup.Tx[Config.ConfigId].WifiProtocol) {
         case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
         case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
@@ -626,7 +620,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+WIFICHANNEL=");
-    switch (tx_setup->WifiChannel) {
+    switch (Setup.Tx[Config.ConfigId].WifiChannel) {
         case WIFI_CHANNEL_1: strcat(cmd_str, "01"); break;
         case WIFI_CHANNEL_6: strcat(cmd_str, "06"); break;
         case WIFI_CHANNEL_11: strcat(cmd_str, "11"); break;
@@ -650,7 +644,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+WIFIPOWER=");
-    switch (tx_setup->WifiPower) {
+    switch (Setup.Tx[Config.ConfigId].WifiPower) {
         case WIFI_POWER_LOW: strcat(cmd_str, "0"); break;
         case WIFI_POWER_MED: strcat(cmd_str, "1"); break;
         case WIFI_POWER_MAX: strcat(cmd_str, "2"); break;
@@ -673,7 +667,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+BINDPHRASE=");
-    strcat(cmd_str, common_setup->BindPhrase);
+    strcat(cmd_str, Setup.Common[Config.ConfigId].BindPhrase);
 
     if (!esp_read(cmd_str, s, &len)) {
         return;
