@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 21. Mar. 2026
+// 11. July. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -235,6 +235,7 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #ifndef ESP8266 // not ESP8266
 #include <WiFi.h>
 #include <esp_mac.h>
+#include <esp_wifi.h>
 #endif
 // for some reason checking
 // #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
@@ -261,7 +262,6 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
     #include <espnow.h>
   #else
     #include <esp_now.h>
-    #include <esp_wifi.h>
   #endif
 #endif
 
