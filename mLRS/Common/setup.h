@@ -408,6 +408,8 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SETUP_FREQUENCY_BAND_433_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
         break;
     default:
@@ -422,6 +424,8 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SETUP_FREQUENCY_BAND_433_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
         break;
     default:
