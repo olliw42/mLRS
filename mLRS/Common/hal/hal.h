@@ -104,10 +104,6 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 //-- MATEKSYS mLRS devices
 
-#ifdef TX_MATEK_MTX_DB30_G474CE
-#include "matek/tx-hal-matek-mtx-db30-g474ce.h"
-#endif
-
 #ifdef RX_MATEK_MR24_30_G431KB
 #include "matek/rx-hal-matek-mr24-30-g431kb.h"
 #endif
@@ -126,10 +122,6 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 #ifdef RX_MATEK_MR900_22_WLE5CC
 #include "matek/rx-hal-matek-mr900-22-wle5cc.h"
-#endif
-
-#ifdef RX_MATEK_MR900_30TD_G474CE
-#include "matek/rx-hal-matek-mr900-30td-g474ce.h"
 #endif
 
 #ifdef RX_MATEK_MR24_30C_G431KB

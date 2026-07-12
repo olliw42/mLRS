@@ -33,15 +33,6 @@ The default selection of frequency bands can be overruled by feature defines.
 
 //-- MATEKSYS mLRS devices
 
-#ifdef TX_MATEK_MTX_DB30_G474CE
-  #define DEVICE_NAME "Matek mTX-DB30"
-  #define DEVICE_IS_TRANSMITTER
-  #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-  #define FREQUENCY_BAND_2P4_GHZ
-#endif
-
 #ifdef RX_MATEK_MR24_30_G431KB
   #define DEVICE_NAME "Matek mR24-30"
   #define DEVICE_IS_RECEIVER
@@ -74,14 +65,6 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #ifdef RX_MATEK_MR900_22_WLE5CC
   #define DEVICE_NAME "Matek mR900-22"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX126x
-  #define FREQUENCY_BAND_868_MHZ
-  #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
-#ifdef RX_MATEK_MR900_30TD_G474CE
-  #define DEVICE_NAME "Matek mR900-30TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ

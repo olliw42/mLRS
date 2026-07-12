@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 6.06.2026
+ version 12.07.2026
 ********************************************************
 '''
 import os
@@ -958,9 +958,9 @@ TLIST = [
         'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
+#        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
 
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
@@ -984,9 +984,9 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
-        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
-        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
-    },{
+#        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+#        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+#    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
