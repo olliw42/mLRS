@@ -29,39 +29,41 @@
 // https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20GX12.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_NO_SERIAL
+#define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- UARTS
-// UARTB = serial port BT/ESP port
-// UARTC = COM (CLI)
-// UARTD = serial2
+// UARTB = serial port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5, full duplex CRSF serial connection to radio - code still calls it JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_SERIAL // serial
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
-#define UARTB_USE_TX_IO           IO_P5
-#define UARTB_USE_RX_IO           IO_P18
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTD_USE_SERIAL // serial2 or wireless bridge
+#define UARTD_BAUD                TX_SERIAL_BAUDRATE
+#define UARTD_USE_TX_IO           IO_P5
+#define UARTD_USE_RX_IO           IO_P18
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define JR_PIN5_FULL_DUPLEX
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P1
 #define UART_USE_RX_IO            IO_P3
 #define UART_TXBUFSIZE            0  // TX FIFO = 128
 #define UART_RXBUFSIZE            0  // RX FIFO = 128 + 1
+
+#define JR_PIN5_FULL_DUPLEX
 
 
 //-- SX1: LR11xx & SPI

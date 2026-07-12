@@ -24,6 +24,7 @@ extern bool connected(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tSetupMetaData SetupMetaData;
+extern tSerialPorts Serials;
 extern tStats stats;
 extern tTxInfo info;
 extern tTasks tasks;
@@ -303,7 +304,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 class tTxCli
 {
   public:
-    void Init(tSerialBase* const _comport);
+    void Init(void);
     void Do(void);
 
   private:
@@ -356,9 +357,9 @@ class tTxCli
 };
 
 
-void tTxCli::Init(tSerialBase* const _comport)
+void tTxCli::Init(void)
 {
-    com = _comport;
+    com = Serials.com;
 
     initialized = (com != nullptr) ? true : false;
 

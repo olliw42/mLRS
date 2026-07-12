@@ -14,11 +14,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "../Common/hal/hal.h"
-
-
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error HC04 bluetooth module is on serial but board has serial/com !
-#endif
+#include "../Common/setup_types.h"
 
 
 //-------------------------------------------------------
@@ -30,7 +26,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port) {}
+    void Init(void) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -40,6 +36,9 @@ class tTxHc04Bridge
 #else
 
 extern volatile uint32_t millis32(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tSerialPorts Serials;
 extern tLEDs leds;
 extern tTxDisp disp;
 
@@ -47,7 +46,7 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port);
+    void Init(void);
 
     void EnterPassthrough(void);
     void GetPin(void);
@@ -66,17 +65,17 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port)
+void tTxHc04Bridge::Init(void)
 {
-    com = _comport;
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    ser = _serial2port;
-#else
-    ser = _serialport;
-#endif
+    com = Serials.com;
+    ser = Serials.uartd;
     ser_baud = 115200; // it is always 115200
 
-    run_configure();
+    // only auto-configure when the HC04 is selected (no wasted time at boot if not used)
+    if (Setup.Tx[Config.ConfigId].SerialPort == TX_SERIAL_PORT_WIRELESS_BRIDGE ||
+        Setup.Tx[Config.ConfigId].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE) {
+        run_configure();
+    }
 }
 
 
@@ -135,8 +134,8 @@ void tTxHc04Bridge::passthrough_do(void)
 {
     ser->SetBaudRate(ser_baud);
     ser->flush();
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    com = ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
+#ifdef USE_COM_ON_SERIAL
+    com = Serials.ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
 
     leds.InitPassthrough();

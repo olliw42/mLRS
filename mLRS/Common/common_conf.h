@@ -13,7 +13,7 @@
 
 #define VERSION             10401 // leading zero makes it octal!
 #define VERSIONONLYSTR      "v1.4.01"
-#define SETUPLAYOUT         10304 // this should be changed then Setup struct and/or serial changes
+#define SETUPLAYOUT         10401 // this should be changed then Setup struct and/or serial changes
 
 
 //-------------------------------------------------------
@@ -45,7 +45,7 @@
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: serial2 (BT/ESP) port, 2: mBridge
+#define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: mBridge
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 

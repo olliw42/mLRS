@@ -25,17 +25,18 @@
 #include "fan.h"
 #include "leds.h"
 #include "rf_power.h"
+#include "setup_types.h"
 
 
 //-------------------------------------------------------
 // Serial Classes
 //-------------------------------------------------------
 
-// tx: serial or com
+// tx: serial
 // rx: serial
 class tUartBPort : public tSerialBase
 {
-#if (defined USE_SERIAL || defined USE_COM_ON_SERIAL) && !defined DEVICE_HAS_SERIAL_ON_USB
+#if defined USE_SERIAL || defined USE_COM_ON_SERIAL
   public:
     void Init(void) override { uartb_init(); }
     void SetBaudRate(uint32_t baud) override { uartb_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
@@ -64,7 +65,7 @@ class tUartCPort : public tSerialBase
 };
 
 
-// tx: serial or com
+// tx: com
 class tUsbPort : public tSerialBase
 {
 #ifdef USE_USB
@@ -80,10 +81,10 @@ class tUsbPort : public tSerialBase
 };
 
 
-// tx: serial2
+// tx: serial2 or wireless bridge
 class tUartDPort : public tSerialBase
 {
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // DEVICE_HAS_SERIAL2 || USE_WIRELESS_BRIDGE
   public:
     void Init(void) override { uartd_init(); }
     void SetBaudRate(uint32_t baud) override { uartd_setprotocol(baud, XUART_PARITY_NO, UART_STOPBIT_1); }
@@ -114,7 +115,7 @@ class tDebugPort : public tSerialBase
 };
 
 
-// rx: dronecan
+// rx: dronecan // TODO: make tRxDroneCan a child of tSerialBase
 #if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
 #include "../CommonRx/dronecan_interface_rx_types.h"
 extern tRxDroneCan dronecan;
@@ -135,19 +136,45 @@ class tDroneCANPort : public tSerialBase
 
 
 //-------------------------------------------------------
-// Common Variables
+// SerialPorts Class
 //-------------------------------------------------------
 
-tSerialBase* serial;
-tUartBPort uartb_port;
-tDebugPort dbg;
-
 #ifdef DEVICE_IS_TRANSMITTER
-tSerialBase* serial2;
-tSerialBase* comport;
+tUartBPort uartb_port;
 tUartCPort uartc_port;
-tUsbPort usb_port;
 tUartDPort uartd_port;
+tUsbPort usb_port;
+
+typedef struct
+{
+    tSerialBase* serial; // assigned according to TxSerPort
+    tSerialBase* com; // assigned according to TxSerPort
+    tSerialBase* serial2; // can be nullptr!
+    tSerialBase* jrpin5serial; // can be nullptr! is initialized in init_hw()
+    tSerialBase* uartb; // serial port
+    tSerialBase* uartd; // serial2 or wireless bridge port
+    tSerialBase* uartc; // com port
+    tSerialBase* usb; // com port if on USB
+
+    void Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2, uint32_t baud2);
+
+    tSerialBase* com_port(void);
+
+#ifdef USE_COM_ON_SERIAL
+    tSerialBase* ser_or_com_set_to_com(void);
+#endif
+} tSerialPorts;
+
+
+tSerialBase* tSerialPorts::com_port(void) // uartc or usb
+{
+#ifdef DEVICE_HAS_COM_ON_USB
+    return &usb_port;
+#else
+    return &uartc_port;
+#endif
+}
+
 
 #ifdef USE_COM_ON_SERIAL
 // device does not have an extra com port, but allows us to use the serial port as com by e.g. a button thing
@@ -158,76 +185,120 @@ tUartDPort uartd_port;
   #error UARTC is not a dummy port!
 #endif
 
-void ser_or_com_set_to_serial(void)
+tSerialBase* tSerialPorts::ser_or_com_set_to_com(void)
 {
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    serial = &usb_port;
-  #else
-    serial = &uartb_port;
-  #endif
-    comport = &uartc_port; // dummy port; TODO: can we use nullptr ?
+    serial = com_port();
+    com = &uartb_port;
+    return com;
 }
+#endif
 
-tSerialBase* ser_or_com_set_to_com(void)
-{
-    serial = &uartc_port; // dummy port; TODO: can we use nullptr ?
-  #ifdef DEVICE_HAS_SERIAL_ON_USB
-    comport = &usb_port;
-  #else
-    comport = &uartb_port;
-  #endif
-    return comport;
-}
+// 2\1      | SERIAL          | WBRIDGE/SERIAL2 | COM                | MBRIDGE
+// --------------------------------------------------------------------------------------------
+// NONE     | serial = uartb  | serial = uartd  | serial = uartc/usb | serial = is not used, assign uartb
+//          | com = uartc/usb | com = uartc/usb | com = uartb        | com = uartc/usb
+//          | serial2 = null  | serial2 = null  | serial2 = null     | serial2 = null
+// --------------------------------------------------------------------------------------------
+// SERIAL   | should not      | serial = uartd  | should not         | serial = is not used, assign any
+//          | happen          | com = uartc/usb | happen             | com = uartc/usb
+//          |                 | serial2 = uartb |                    | serial2 = uartb
+// --------------------------------------------------------------------------------------------
+// WBRIDGE/ | serial = uartb  | should not      | serial = uartc/usb | serial = is not used, assign uartb
+// SERIAL2  | com = uartc/usb | happen          | com = uartb        | com = uartc/usb
+//          | serial2 = uartd |                 | serial2 = uartd    | serial2 = uartd
+// --------------------------------------------------------------------------------------------
 
-void serial_ports_init(void)
+void tSerialPorts::Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2, uint32_t baud2)
 {
-    if (ser_or_com_init()) { // returns true if is_serial
-        ser_or_com_set_to_serial();
-    } else {
-        ser_or_com_set_to_com();
-        // ensure com has correct baud rate (for serial it will be set in main using Config.SerialBaudrate)
-        comport->SetBaudRate(TX_COM_BAUDRATE);
+#if defined USE_COM_ON_SERIAL // button forces com onto uartB serial pins (no separate com port)
+    if (!ser_or_com_init()) { serial_port = TX_SERIAL_PORT_COM; } // force swap
+#elif defined DEVICE_HAS_SERIAL_OR_COM // button forces com onto uartC or usb
+    if (!ser_or_com_init()) { serial_port = 0; } // force default, note: gets serial wrong if it should be uartd
+#endif
+
+    switch (serial_port) {
+    case TX_SERIAL_PORT_SERIAL2:
+    case TX_SERIAL_PORT_WIRELESS_BRIDGE:
+        serial = &uartd_port;
+        com = com_port();
+        break;
+    case TX_SERIAL_PORT_COM:
+        serial = com_port();
+        com = &uartb_port;
+        break;
+    default:
+        serial = &uartb_port;
+        com = com_port();
     }
-    serial2 = &uartd_port;
+
+    switch (serial_port2) {
+    case TX_SERIAL_PORT2_SERIAL:
+        serial2 = &uartb_port;
+        break;
+    case TX_SERIAL_PORT2_SERIAL2:
+    case TX_SERIAL_PORT2_WIRELESS_BRIDGE:
+        serial2 = &uartd_port;
+        break;
+    default:
+        serial2 = nullptr;
+    }
+
+    jrpin5serial = nullptr;
+
+    uartb = &uartb_port;
+    uartc = &uartc_port;
+    uartd = &uartd_port;
+    usb = &usb_port;
+
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+    serial->SetBaudRate((serial == &uartb_port) ? 460800 : baud); // dirty workaround, fixed baud rate for AX12 due to limitation
+#else
+    serial->SetBaudRate(baud);
+#endif
+    if (serial2) { serial2->SetBaudRate(baud2); }
+    // ensure com has correct baud rate
+    com->SetBaudRate(TX_COM_BAUDRATE);
 }
 
-#else
-
-void serial_ports_init(void)
-{
-#ifdef DEVICE_HAS_SERIAL_ON_USB
-    serial = &usb_port;
-#else
-    serial = &uartb_port;
-#endif
-#ifdef DEVICE_HAS_COM_ON_USB
-    comport = &usb_port;
-#else
-    comport = &uartc_port;
-#endif
-    serial2 = &uartd_port;
-}
-
-#endif
 #endif // DEVICE_IS_TRANSMITTER
 #ifdef DEVICE_IS_RECEIVER
+tUartBPort uartb_port;
 tDroneCANPort dronecan_port;
+// in contrast to the tx code, in the rx code we directly use the pointer to serial
+// works here since we only have one serial, and makes the higher level code simpler
+tSerialBase* serial; // assigned according to RxSerPort
 
-void serial_ports_init(bool is_serial)
+typedef struct
+{
+    void Init(uint8_t serial_port, uint32_t baud);
+} tSerialPorts;
+
+
+void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)
 {
 #if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    if (is_serial) {
-        serial = &uartb_port; // assign uartb to serial
-    } else {
+    if (serial_port == RX_SERIAL_PORT_CAN) {
         serial = &dronecan_port; // assign dronecan to serial
+    } else {
+        serial = &uartb_port; // assign uartb to serial
     }
 #elif defined DEVICE_HAS_DRONECAN
     serial = &dronecan_port;
 #elif defined USE_SERIAL
     serial = &uartb_port;
 #endif
+
+    serial->SetBaudRate(baud);
 }
 #endif // DEVICE_IS_RECEIVER
+
+
+//-------------------------------------------------------
+// Common Variables
+//-------------------------------------------------------
+
+tSerialPorts Serials;
+tDebugPort dbg;
 
 tRcData rcData;
 

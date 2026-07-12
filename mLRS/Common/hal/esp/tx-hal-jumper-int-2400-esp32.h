@@ -15,29 +15,30 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_NO_LED
-#define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
+#define DEVICE_HAS_NO_SERIAL
+#define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- UARTS
-// UARTB = serial port BT/ESP port
-// UARTC = COM (CLI)
-// UARTD = serial2
+// UARTB = serial port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5, full duplex CRSF serial connection to radio - code still calls it JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_SERIAL // serial, is on P12/P13
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
-#define UARTB_USE_TX_IO           IO_P12
-#define UARTB_USE_RX_IO           IO_P13
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 2048
+#define UARTD_USE_SERIAL // serial2 or wireless bridge
+#define UARTD_BAUD                TX_SERIAL_BAUDRATE
+#define UARTD_USE_TX_IO           IO_P12
+#define UARTD_USE_RX_IO           IO_P13
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 2048
 
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
 #define UART_BAUD                 400000
@@ -136,8 +137,6 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 //-- ESP32 Wifi Bridge
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-
 #define ESP_RESET                 IO_P15 // backpack_en
 #define ESP_GPIO0                 IO_P2  // backpack_boot inverted?
 #define ESP_BOOT0                 IO_P0  // will always be IO_P0
@@ -159,8 +158,6 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
-
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
 //-- POWER

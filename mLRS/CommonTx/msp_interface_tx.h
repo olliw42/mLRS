@@ -22,6 +22,7 @@ extern volatile uint32_t millis32(void);
 extern bool connected_and_rx_setup_available(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tSerialPorts Serials;
 extern tTxCrsf crsf;
 
 
@@ -31,7 +32,7 @@ extern tTxCrsf crsf;
 class tTxMsp
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _serial2port);
+    void Init(void);
     void Do(void);
     void FrameLost(void);
 
@@ -59,14 +60,14 @@ class tTxMsp
 };
 
 
-void tTxMsp::Init(tSerialBase* const _serialport, tSerialBase* const _serial2port)
+void tTxMsp::Init(void)
 {
     switch (Setup.Tx[Config.ConfigId].SerialPort) {
     case TX_SERIAL_PORT_SERIAL:
-        ser = _serialport;
-        break;
     case TX_SERIAL_PORT_SERIAL2:
-        ser = _serial2port;
+    case TX_SERIAL_PORT_WIRELESS_BRIDGE:
+    case TX_SERIAL_PORT_COM:
+        ser = Serials.serial; // already sorted out in serialports.Init()
         break;
     case TX_SERIAL_PORT_MBRIDGE:
         ser = nullptr; // MSP is not supported over mBridge, set ser to nullptr to effectively disable it
