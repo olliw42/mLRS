@@ -155,7 +155,7 @@ class tTxCrsf : public tPin5BridgeBase
         CRSF_ITEM_BATTERY,          // CRSF_FRAME_ID_BATTERY (0x08),    collected from BATTERY_STATUS (SRy_EXTRA2)
         CRSF_ITEM_GPS_TIME,         // CRSF_FRAME_ID_GPS_TIME (0x03),   collected from SYSTEM_TIME (SRy_EXTRA2)
         CRSF_ITEMS_LEN,
-    } CRSFITEMENUM;
+    } CRSF_ITEM_ENUM;
 
     const tCrsfItem crsf_items[CRSF_ITEMS_LEN] = {
         { CRSF_FRAME_ID_FLIGHT_MODE, &flight_mode, CRSF_FLIGHT_MODE_LEN },        // flight_mode

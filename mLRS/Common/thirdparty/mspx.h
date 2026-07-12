@@ -699,7 +699,7 @@ void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const 
                     payload_out[(*len_out)++] = n;
                     found = true;
 
-                    if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want  to record im MSPX_STATUS
+                    if (inavBoxes[n].flightModeFlag < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want to record im MSPX_STATUS
                         inav_flight_modes_box_mode_flags[inavBoxes[n].flightModeFlag] = box; // inav_flight_modes_box_mode_flag handling
                     }
 

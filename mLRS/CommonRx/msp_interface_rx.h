@@ -280,7 +280,7 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
                         // compress, and also get inav_flight_modes_box_mode_flags[]
-                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1
+                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1, up to 646 in 9.1 counting chars in boxes[], hopefully compressed though
                         uint16_t new_len = 0;
                         mspX_boxnames_payload_compress(
                             new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
