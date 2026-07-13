@@ -52,8 +52,8 @@ void setup_configure_metadata(void)
     // MULTIBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.FrequencyBand_allowed_mask = 0b00000111; // 2.4 GHz, 915 FCC, 868
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
-#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ
-    // MULTIBAND 2.4 GHz & 433 MHz
+#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+    // MULTIBAND 2.4 GHz & 433 MHz/70 cm
     SetupMetaData.FrequencyBand_allowed_mask = 0b00011001; // 2.4 GHz, 433, 70
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_433_MHZ
 //** single band, multiple frequencies
