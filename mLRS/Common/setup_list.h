@@ -36,6 +36,7 @@
 // Tx only
 #define SETUP_MSK_TX_SER_PORT         &SetupMetaData.Tx_SerialPort_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_SER_PORT2        &SetupMetaData.Tx_SerialPort2_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_SER_BAUDRATE2    &SetupMetaData.Tx_SerialBaudrate2_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
@@ -98,7 +99,7 @@
   X( Setup.Tx[0].SerialPort,        LIST, "Tx Ser Port",      "TX_SER_PORT",      0,0,0,"", "serial,wbridge,serial2,com,mbridge", SETUP_MSK_TX_SER_PORT )\
   X( Setup.Tx[0].SerialBaudrate,    LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
   X( Setup.Tx[0].SerialPort2,       LIST, "Tx Ser Port2",     "TX_SER_PORT2",     0,0,0,"", "none,serial,wbridge,serial2", SETUP_MSK_TX_SER_PORT2 )\
-  X( Setup.Tx[0].SerialBaudrate2,   LIST, "Tx Ser Baudrate2", "TX_SER_BAUD2",     0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
+  X( Setup.Tx[0].SerialBaudrate2,   LIST, "Tx Ser Baudrate2", "TX_SER_BAUD2",     0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, SETUP_MSK_TX_SER_BAUDRATE2 )\
   X( Setup.Tx[0].SendRadioStatus,   LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx[0].MavlinkComponent,  LIST, "Tx Mav Component", "TX_MAV_COMPONENT", 0,0,0,"", "off,enabled", MSK_ALL )\
   X( Setup.Tx[0].PowerSwitchChannel,LIST, "Tx Power Sw Ch",   "TX_POWER_SW_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\

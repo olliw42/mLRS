@@ -201,6 +201,10 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
 #endif
 
+    // Tx SerialBaudrate2: "9600,19200,38400,57600,115200,230400"
+    // display only when a second serial port is available
+    SetupMetaData.Tx_SerialBaudrate2_allowed_mask = (SetupMetaData.Tx_SerialPort2_allowed_mask) ? UINT16_MAX : 0;
+
     // Tx Buzzer: ""off,LP,rxLQ"
 #ifdef DEVICE_HAS_BUZZER
     SetupMetaData.Tx_Buzzer_allowed_mask = UINT16_MAX; // all
