@@ -25,7 +25,8 @@
 #define FDCAN_IRQ_PRIORITY          14
 
 #include "../Common/common_conf.h"
-#include "../Common/common_types.h"
+#include "../Common/common_types.h" // includes setup_types.h
+#include "../Common/sx-drivers/sx12xx.h"
 
 #if defined ESP8266 || defined ESP32
 
@@ -89,7 +90,6 @@
 
 #endif //#if defined ESP8266 || defined ESP32
 
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
@@ -146,7 +146,6 @@ void init_hw(void)
     leds_init();
     button_init();
 
-    serial.Init();
     out.Init();
 
     fan.Init();
@@ -160,8 +159,10 @@ void init_hw(void)
 
     rxclock.Init(Config.frame_rate_ms); // rxclock needs Config, so call after setup_init()
 
+    uartb_port.Init();
+    dronecan_port.Init();
+    Serials.Init(Setup.Rx.SerialPort, Config.SerialBaudrate);
     dronecan.Init(Setup.Rx.SerialPort == RX_SERIAL_PORT_CAN); // after delay_init() since it needs delay
-    serial.SetSerialIsSource(Setup.Rx.SerialPort != RX_SERIAL_PORT_CAN);
 }
 
 
@@ -539,8 +540,6 @@ INITCONTROLLER_ONCE
 RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
-
-    serial.SetBaudRate(Config.SerialBaudrate);
 
     // startup sign of life
     leds.Init();

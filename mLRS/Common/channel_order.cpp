@@ -7,7 +7,7 @@
 // ChannelOrder
 //********************************************************
 
-#include "../Common/setup_types.h"
+#include "setup_types.h"
 #include "channel_order.h"
 
 

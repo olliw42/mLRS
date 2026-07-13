@@ -23,38 +23,45 @@
 
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN
-#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_DIVERSITY_SINGLE_SPI
 #define DEVICE_HAS_SINGLE_LED_RGB
-#define DEVICE_HAS_SERIAL_OR_COM
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#define DEVICE_HAS_COM_ON_SERIAL
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // requires backpack firmware to have AT mode enabled
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
+#define DEVICE_HAS_NO_DEBUG
 
 
 //-- UARTS
-// UARTB = serial port 
-// UARTC = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTB = serial port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_SERIAL // serial, is connected to USB-C via USB<>UART
+#define UARTB_USE_SERIAL // serial or com, is connected to USB-C via USB<>UART
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX_IO           IO_P1
 #define UARTB_USE_RX_IO           IO_P3
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL // COM (CLI), is connected to USB-C via USB<>UART
+/* #define UARTC_USE_SERIAL // com, is connected to USB-C via USB<>UART
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX_IO           IO_P1
 #define UARTC_USE_RX_IO           IO_P3
 #define UARTC_TXBUFSIZE           0  // TX FIFO = 128
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
+
+#define UARTD_USE_SERIAL2 // serial2 or wireless bridge, connected to ESP32C3 backpack
+#define UARTD_BAUD                TX_SERIAL_BAUDRATE
+#define UARTD_USE_TX_IO           IO_P5
+#define UARTD_USE_RX_IO           IO_P18
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_SERIAL1 // JR bay pin5
 #define UART_BAUD                 400000
@@ -62,13 +69,6 @@
 #define UART_USE_RX_IO            IO_P4
 #define UART_TXBUFSIZE            0  // TX FIFO = 128
 #define UART_RXBUFSIZE            0  // RX FIFO = 128 + 1
-
-#define UARTD_USE_SERIAL2 // serial2, connected to ESP32C3 backpack
-#define UARTD_BAUD                TX_SERIAL_BAUDRATE
-#define UARTD_USE_TX_IO           IO_P5
-#define UARTD_USE_RX_IO           IO_P18
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTE_USE_SERIAL1 // in port, uses JRPin5
 #define UARTE_BAUD                 100000
@@ -183,11 +183,8 @@ IRAM_ATTR bool button2_pressed(void) { return (gpio_read_activelow(BUTTON2)) ? t
 
 //-- Serial or Com Switch
 
-#ifdef DEVICE_HAS_SERIAL_OR_COM
-
-bool tx_ser_or_com_serial = true; // default is serial
-
-void ser_or_com_init(void)
+#ifdef DEVICE_HAS_COM_ON_SERIAL
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU);
     gpio_init(BUTTON2, IO_MODE_INPUT_PU);
@@ -195,14 +192,9 @@ void ser_or_com_init(void)
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON) || gpio_read_activelow(BUTTON2)) cnt++;
     }
-    tx_ser_or_com_serial = !(cnt > 8);
+    return !(cnt > 8);
 }
-
-IRAM_ATTR bool ser_or_com_serial(void) { return tx_ser_or_com_serial; }
-
-IRAM_ATTR void ser_or_com_set_to_com(void) { tx_ser_or_com_serial = false; }
-
-#endif // DEVICE_HAS_SERIAL_OR_COM
+#endif
 
 
 //-- Cooling Fan
@@ -220,11 +212,11 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 //-- ESP32 Wifi Bridge
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2  // this is an ESP32C3
-
 #define ESP_RESET                 IO_P19 // backpack_en
 #define ESP_GPIO0                 IO_P23 // backpack_boot
 #define ESP_BOOT0                 IO_P0  // will always be IO_P0
+
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // this is an ESP32C3
 
 uint8_t esp_boot0() { return gpio_read_activelow(ESP_BOOT0); }
 
@@ -241,7 +233,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE
 
 
 //-- POWER

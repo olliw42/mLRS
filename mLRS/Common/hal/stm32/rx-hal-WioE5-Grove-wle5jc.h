@@ -16,12 +16,9 @@
 // no out port (not available, to make available change this hal accordingly)
 
 #define DEVICE_HAS_SINGLE_LED
-#define DEVICE_HAS_SERIAL_OR_DEBUG // is selected by DEBUG_ENABLED define
 //#define DEVICE_HAS_OUT
-
-#ifdef DEBUG_ENABLED
-#undef DEBUG_ENABLED
-#endif
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_SERIAL
 
 
 //-- Timers, Timing, EEPROM, and such stuff

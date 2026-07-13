@@ -26,7 +26,8 @@
 #define BUZZER_TIM_IRQ_PRIORITY     14
 
 #include "../Common/common_conf.h"
-#include "../Common/common_types.h"
+#include "../Common/common_types.h" // includes setup_types.h
+#include "../Common/sx-drivers/sx12xx.h"
 
 #if defined ESP8266 || defined ESP32
 
@@ -40,13 +41,13 @@
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
 #include "../modules/esp-lib/esp-spi.h"
-#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
+#ifdef USE_SERIAL
 #include "../modules/esp-lib/esp-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
 #include "../modules/esp-lib/esp-uartc.h"
 #endif
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // is set when either HAS_SERIAL2 or USE_WIRELESS_BRIDGE
 #include "../modules/esp-lib/esp-uartd.h"
 #endif
 #ifdef USE_DEBUG
@@ -79,13 +80,13 @@
 #ifdef USE_SX2
 #include "../modules/stm32ll-lib/src/stdstm32-spib.h"
 #endif
-#if defined USE_SERIAL && !defined DEVICE_HAS_SERIAL_ON_USB
+#ifdef USE_SERIAL
 #include "../modules/stm32ll-lib/src/stdstm32-uartb.h"
 #endif
 #if defined USE_COM && !defined DEVICE_HAS_COM_ON_USB
 #include "../modules/stm32ll-lib/src/stdstm32-uartc.h"
 #endif
-#ifdef USE_SERIAL2
+#ifdef USE_SERIAL2 // is set when either HAS_SERIAL2 or USE_WIRELESS_BRIDGE
 #include "../modules/stm32ll-lib/src/stdstm32-uartd.h"
 #endif
 #ifdef USE_USB
@@ -106,7 +107,6 @@
 
 #endif //#if defined ESP8266 || defined ESP32
 
-#include "../Common/sx-drivers/sx12xx.h"
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
@@ -245,9 +245,7 @@ void enter_system_bootloader(void)
 
 void init_once(void)
 {
-    serial.InitOnce();
-    comport.InitOnce();
-    serial2.InitOnce();
+    usb_port.InitOnce();
 }
 
 
@@ -265,9 +263,9 @@ void init_hw(void)
     esp_init();
     fiveway_init();
 
-    serial.Init();
-    serial2.Init();
-    comport.Init();
+    uartb_port.Init();
+    uartc_port.Init();
+    uartd_port.Init();
 
     buzzer.Init();
     fan.Init();
@@ -275,7 +273,11 @@ void init_hw(void)
 
     setup_init();
 
-    esp_enable(Setup.Tx[Config.ConfigId].SerialDestination);
+    esp_enable(Setup.Tx[Config.ConfigId].SerialPort, Setup.Tx[Config.ConfigId].SerialPort2);
+    Serials.Init(Setup.Tx[Config.ConfigId].SerialPort, Config.SerialBaudrate, Setup.Tx[Config.ConfigId].SerialPort2, Config.SerialBaudrate2);
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+    Serials.jrpin5serial = &jrpin5serial; // TODO: at some point we should make it a proper class in common.h
+#endif
 
     sx.Init(); // these take time
     sx2.Init();
@@ -709,9 +711,6 @@ RESTARTCONTROLLER
     init_hw();
     DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
-    serial.SetBaudRate(Config.SerialBaudrate);
-    serial2.SetBaudRate(Config.SerialBaudrate);
-
     // startup sign of life
     leds.Init();
     info.Init();
@@ -750,22 +749,12 @@ RESTARTCONTROLLER
     rarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
-    mavlink.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
-    msp.Init(&serial, &serial2); // ports selected by SerialDestination
-    sx_serial.Init(&serial, &mbridge, &serial2); // ports selected by SerialDestination, ChannelsSource
-    cli.Init(&comport, Config.frame_rate_ms);
-#ifdef USE_ESP_WIFI_BRIDGE
-  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-    esp.Init(&jrpin5serial, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
-  #else
-    esp.Init(&comport, &serial, &serial2, Config.SerialBaudrate, &Setup.Tx[Config.ConfigId], &Setup.Common[Config.ConfigId]);
-  #endif
-#endif
-#ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
-    hc04.Init(&comport, &serial2, Config.SerialBaudrate);
-#else
-    hc04.Init(&comport, &serial, Config.SerialBaudrate);
-#endif
+    mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
+    msp.Init(); // serial port selected by SerialPort
+    sx_serial.Init(&mbridge); // serial port selected by SerialPort, ChannelsSource
+    cli.Init();
+    esp.Init();
+    hc04.Init();
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
     disp.Init();
@@ -1117,7 +1106,7 @@ IF_MBRIDGE(
         switch (mbtask) {
         case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
         case TXBRIDGE_SEND_CMD:
-            if (mbridge.CommandInFifo(&mbcmd)) mbridge_send_cmd(mbcmd);
+            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
             break;
         }
     }
@@ -1168,18 +1157,16 @@ IF_CRSF(
     if (crsf.ChannelsUpdated(&rcData)) {
         rc_data_updated = true;
     }
-    uint8_t crsftask; uint8_t crsfcmd;
-    uint8_t mbcmd; static uint8_t do_cnt = 0; // if it's too fast Lua script gets out of sync
+    uint8_t crsftask; uint8_t crsfcmd; uint8_t mbcmd;
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
         switch (crsftask) {
-        case TXCRSF_SEND_LINK_STATISTICS: crsf.SendLinkStatistics(); do_cnt = 0; break;
+        case TXCRSF_SEND_LINK_STATISTICS: crsf.SendLinkStatistics(); break;
         case TXCRSF_SEND_LINK_STATISTICS_TX: crsf.SendLinkStatisticsTx(); break;
         case TXCRSF_SEND_LINK_STATISTICS_RX: crsf.SendLinkStatisticsRx(); break;
+        case TXCRSF_SEND_LINK_STATISTICS_ALL: crsf.SendLinkStatisticsAll(); break;
         case TXCRSF_SEND_TELEMETRY_FRAME:
-            if (!do_cnt && mbridge.CommandInFifo(&mbcmd)) {
-                mbridge_send_cmd(mbcmd);
-            }
+            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
@@ -1187,7 +1174,6 @@ IF_CRSF(
                 (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode) || SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode))) {
                 crsf.SendTelemetryFrame();
             }
-            INCc(do_cnt, 3);
             break;
         case TXCRSF_SEND_DEVICE_INFO: crsf.SendDeviceInfo(); break;
         }

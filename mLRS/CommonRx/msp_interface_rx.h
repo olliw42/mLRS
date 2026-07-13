@@ -21,6 +21,9 @@
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tStats stats;
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported msp frame size
@@ -247,8 +250,8 @@ void tRxMsp::parse_serial_in_link_out(void)
 {
     // parse serial in -> link out
     if (fifo_link_out.HasSpace(MSP_FRAME_LEN_MAX + 16)) { // we have space for a full MSP message, so can safely parse
-        while (serial.available()) {
-            char c = serial.getc();
+        while (serial->available()) {
+            char c = serial->getc();
             if (msp_parse_to_msg(&msp_msg_ser_in, &status_ser_in, c)) {
                 bool send = true;
 
@@ -277,7 +280,7 @@ void tRxMsp::parse_serial_in_link_out(void)
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {
                         // compress, and also get inav_flight_modes_box_mode_flags[]
-                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1
+                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1, up to 646 in 9.1 counting chars in boxes[], hopefully compressed though
                         uint16_t new_len = 0;
                         mspX_boxnames_payload_compress(
                             new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
@@ -322,7 +325,7 @@ void tRxMsp::parse_serial_in_link_out(void)
                     if (msp_msg_ser_in.function == MSP_REBOOT && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
                         // handle MSP_REBOOT, only if MSP V2
                         uint32_t magic = ((tMspReboot*)msp_msg_ser_in.payload)->magic;
-                        if (serial.has_systemboot() && magic == MSP_REBOOT_MAGIC) {
+                        if (serial->has_systemboot() && magic == MSP_REBOOT_MAGIC) {
                             reboot_activate_ms = millis32(); // set to non zero to enter system bootloader
                             // send response back to the FC
                             uint16_t len = msp_generate_v2_frame_buf(
@@ -332,7 +335,7 @@ void tRxMsp::parse_serial_in_link_out(void)
                                 MSP_REBOOT,
                                 0, // dummy pointer
                                 0);
-                            serial.putbuf(_buf, len);
+                            serial->putbuf(_buf, len);
                         }
                         send = false; // don't forward to ground
                     }
@@ -362,7 +365,7 @@ void tRxMsp::parse_link_in_serial_out(char c)
     // parse link in -> serial out
     if (msp_parseX_to_msg(&msp_msg_link_in, &status_link_in, c)) { // converting from mspX
         uint16_t len = msp_msg_to_frame_buf(_buf, &msp_msg_link_in);
-        serial.putbuf(_buf, len);
+        serial->putbuf(_buf, len);
 
         if (msp_msg_link_in.type == MSP_TYPE_REQUEST) { // this is a request from a gcs
             for (uint8_t n = 0; n < MSP_TELM_COUNT; n++) {
@@ -427,7 +430,7 @@ void tRxMsp::send_request(uint16_t function)
         MSP_FLAG_SOURCE_ID_RC_LINK,
         function);
 
-    serial.putbuf(_buf, len);
+    serial->putbuf(_buf, len);
 }
 
 
@@ -445,7 +448,7 @@ void tRxMsp::send_rc_channels(void)
         (uint8_t*)&rc_channels,
         MSP_SET_RAW_RC_LEN);
 
-    serial.putbuf(_buf, len);
+    serial->putbuf(_buf, len);
 }
 
 
@@ -473,7 +476,7 @@ tMspCommonSetMspRcLinkStats payload;
         (uint8_t*)&payload,
         MSP_COMMON_SET_MSP_RC_LINK_STATS_LEN);
 
-    serial.putbuf(_buf, len);
+    serial->putbuf(_buf, len);
 }
 
 
@@ -503,7 +506,7 @@ tMspCommonSetMspRcInfo payload;
         (uint8_t*)&payload,
         MSP_COMMON_SET_MSP_RC_INFO_LEN);
 
-    serial.putbuf(_buf, len);
+    serial->putbuf(_buf, len);
 }
 
 

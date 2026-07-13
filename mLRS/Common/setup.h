@@ -52,6 +52,10 @@ void setup_configure_metadata(void)
     // MULTIBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.FrequencyBand_allowed_mask = 0b00000111; // 2.4 GHz, 915 FCC, 868
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
+#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ
+    // MULTIBAND 2.4 GHz & 433 MHz
+    SetupMetaData.FrequencyBand_allowed_mask = 0b00011001; // 2.4 GHz, 433, 70
+    #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_433_MHZ
 //** single band, multiple frequencies
 #elif defined FREQUENCY_BAND_915_MHZ_FCC && defined FREQUENCY_BAND_868_MHZ && \
       defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
@@ -171,16 +175,30 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialDestination: "serial,serial2,mbridge"
-    SetupMetaData.Tx_SerialDestination_allowed_mask = 0; // not available, do not display
+    // Tx SerialPort: "serial,wbridge,serial2,com,mbridge"
+    // Tx SerialPort2: "none,serial,wbridge,serial2"
+    SetupMetaData.Tx_SerialPort_allowed_mask = 0; // not available, do not display
+    SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b001; // add serial
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00001; // add serial
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b0011; // add none, serial
 #endif
-#ifdef USE_SERIAL2
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b010; // add serial2
+#ifdef USE_WIRELESS_BRIDGE
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00010; // add wbridge
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b0101; // add none, wbridge
+#endif
+#ifdef DEVICE_HAS_SERIAL2 // attention: USE_SERIAL2 implies either serial2 or wireless bridge
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00100; // add serial2
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b1001; // add none, serial2
+#endif
+#ifdef USE_COM
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b01000; // add com
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialDestination_allowed_mask |= 0b100; // add mbridge
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add mbridge
+#endif
+#if !(defined STM32G4 && defined USE_SERIAL && defined USE_SERIAL2)
+    SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
 #endif
 
     // Tx Buzzer: ""off,LP,rxLQ"
@@ -310,11 +328,13 @@ void setup_default(uint8_t config_id)
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
-    Setup.Tx[config_id].SerialDestination = SETUP_TX_SERIAL_DESTINATION;
+    Setup.Tx[config_id].SerialPort = SETUP_TX_SERIAL_PORT;
+    Setup.Tx[config_id].SerialPort2 = TX_SERIAL_PORT2_NONE;
+    Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
+    Setup.Tx[config_id].SerialBaudrate2 = SERIAL_BAUDRATE_115200;
     Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
     Setup.Tx[config_id].ChannelOrder = SETUP_TX_CHANNEL_ORDER;
     Setup.Tx[config_id].InMode = SETUP_TX_IN_MODE;
-    Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
     Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
     Setup.Tx[config_id].MavlinkComponent = SETUP_TX_MAV_COMPONENT;
@@ -408,6 +428,8 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SETUP_FREQUENCY_BAND_433_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
         break;
     default:
@@ -422,6 +444,8 @@ void setup_sanitize_config(uint8_t config_id)
         break;
     case SETUP_FREQUENCY_BAND_915_MHZ_FCC:
     case SETUP_FREQUENCY_BAND_868_MHZ:
+    case SETUP_FREQUENCY_BAND_70_CM_HAM:
+    case SETUP_FREQUENCY_BAND_433_MHZ:
         SetupMetaData.Mode_allowed_mask &= 0b110110; // filter down to 31 Hz, 19 Hz, FSK, 19 Hz 7x
         break;
     default:
@@ -459,12 +483,16 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].InMode, IN_CONFIG_NUM, SETUP_TX_IN_MODE, IN_CONFIG_SBUS);
     TST_NOTALLOWED(Tx_InMode_allowed_mask, Tx[config_id].InMode, IN_CONFIG_SBUS);
 
-    SANITIZE(Tx[config_id].SerialDestination, SERIAL_DESTINATION_NUM, SETUP_TX_SERIAL_DESTINATION, SERIAL_DESTINATION_SERIAL);
-    TST_NOTALLOWED(Tx_SerialDestination_allowed_mask, Tx[config_id].SerialDestination, SERIAL_DESTINATION_SERIAL);
+    SANITIZE(Tx[config_id].SerialPort, TX_SERIAL_PORT_NUM, SETUP_TX_SERIAL_PORT, TX_SERIAL_PORT_SERIAL);
+    TST_NOTALLOWED(Tx_SerialPort_allowed_mask, Tx[config_id].SerialPort, TX_SERIAL_PORT_SERIAL);
 
-    SANITIZE(Tx[config_id].ChannelOrder, CHANNEL_ORDER_NUM, SETUP_TX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
+    SANITIZE(Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NUM, TX_SERIAL_PORT2_NONE, TX_SERIAL_PORT2_SERIAL);
+    TST_NOTALLOWED(Tx_SerialPort2_allowed_mask, Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NONE);
 
     SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
+    SANITIZE(Tx[config_id].SerialBaudrate2, SERIAL_BAUDRATE_NUM, SERIAL_BAUDRATE_115200, SERIAL_BAUDRATE_115200);
+
+    SANITIZE(Tx[config_id].ChannelOrder, CHANNEL_ORDER_NUM, SETUP_TX_CHANNEL_ORDER, CHANNEL_ORDER_AETR);
 
     SANITIZE(Tx[config_id].SendRadioStatus, TX_SEND_RADIO_STATUS_NUM, SETUP_TX_SEND_RADIO_STATUS, TX_SEND_RADIO_STATUS_OFF);
     SANITIZE(Tx[config_id].MavlinkComponent, TX_MAVLINK_COMPONENT_NUM, SETUP_TX_MAV_COMPONENT, TX_MAVLINK_COMPONENT_OFF);
@@ -481,15 +509,28 @@ void setup_sanitize_config(uint8_t config_id)
     //  SERIAL2 |  -      | CRSF    | -       | mBridge
     //  MBRIDGE | mBridge | CRSF !! | mBridge | mBridge
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
-        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL)) {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL;
+        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
+        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL)) {
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL;
         } else
-        if (SetupMetaData.Tx_SerialDestination_allowed_mask & (1 << SERIAL_DESTINATION_SERIAL2)) {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL2;
+        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL2)) {
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL2;
         } else {
-            Setup.Tx[config_id].SerialDestination = SERIAL_DESTINATION_SERIAL; // hm ... we don't have any ??
+            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL; // hm ... we don't have any ??
         }
+    }
+
+    // device cannot use same serial for both SerialPort and SerialPort2 !
+    // also exclude "com" & "serial"
+    if ( ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_SERIAL) &&
+          (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_SERIAL)) ||
+         ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_WIRELESS_BRIDGE) &&
+          (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE)) ||
+         ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_SERIAL2) &&
+          (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_SERIAL2)) ||
+         ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_COM) &&
+          (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_SERIAL)) ){
+        Setup.Tx[config_id].SerialPort2 = TX_SERIAL_PORT2_NONE;
     }
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
@@ -548,8 +589,6 @@ void setup_sanitize_config(uint8_t config_id)
     //-- Spares and deprecated options:
     // should be 0xFF'ed
 
-    Setup.Tx[config_id].__spare1 = 0xFF;
-    Setup.Tx[config_id].__spare2 = 0xFF;
     Setup.Rx.__spare1 = 0xFF;
     Setup.Rx.__spare2 = 0xFF;
 
@@ -972,6 +1011,19 @@ void setup_configure_config(uint8_t config_id)
 #endif
     }
 
+#ifdef DEVICE_IS_TRANSMITTER
+    switch (Setup.Tx[config_id].SerialBaudrate2) {
+    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate2 = 9600; break;
+    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate2 = 19200; break;
+    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate2 = 38400; break;
+    case SERIAL_BAUDRATE_57600: Config.SerialBaudrate2 = 57600; break;
+    case SERIAL_BAUDRATE_115200: Config.SerialBaudrate2 = 115200; break;
+    case SERIAL_BAUDRATE_230400: Config.SerialBaudrate2 = 230400; break;
+    default:
+        Config.SerialBaudrate2 = 115200;
+    }
+#endif
+
     //-- Mbridge, Crsf, In
 
     Config.UseMbridge = false;
@@ -981,7 +1033,7 @@ void setup_configure_config(uint8_t config_id)
     // conflicts must have been sorted out before in setup_sanitize_config()
   #ifdef DEVICE_HAS_JRPIN5
     if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
-        (Setup.Tx[config_id].SerialDestination == SERIAL_DESTINATION_MBRIDGE)) {
+        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
         Config.UseMbridge = true;
     }
     if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {
@@ -1075,13 +1127,25 @@ bool doEEPROMwrite;
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
-            // was 335 or lower, there would be lots to do but didn't do layout version-ing properly so far
-
             // Note: In v1.3.05 Mode changed, so we would have to change to MODE_19HZ_7X if it's a Sx127x.
             // Luckily, the sanitizer will do that for us so we do not need to bother here.
-
+            // if it's lower than 10304, it's quite old, but
+            // TX_SERIAL_PORT_ENUM has changed in 10401, it was L10304 before
+            for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
+                switch (Setup.Tx[id].SerialPort) {
+                case L10304_SERIAL_DESTINATION_SERIAL: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL; break;
+                #ifdef USE_WIRELESS_BRIDGE
+                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_WIRELESS_BRIDGE; break;
+                #else
+                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL2; break;
+                #endif
+                case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_MBRIDGE; break;
+                default:
+                    Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL;
+                }
+            }
         } else {
-            // ups, > 10304, should not happen
+            // ups, > 10401, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
             Setup._ConfigId = 0;
         }

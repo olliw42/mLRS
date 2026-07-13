@@ -17,6 +17,7 @@
 #ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
+#include "time.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include "../Common/protocols/passthrough_protocol.h"
@@ -32,10 +33,15 @@ extern tStats stats;
 //-------------------------------------------------------
 // Interface Implementation
 
+#define CRSF_FRAME_BUNDLING // bundle several CRSF frames into one slot, only momentarily
+
+#define CRSF_BUF_SIZE  (CRSF_FRAME_LEN_MAX + 16)
+
 typedef enum {
     TXCRSF_SEND_LINK_STATISTICS = 0,
     TXCRSF_SEND_LINK_STATISTICS_TX,
     TXCRSF_SEND_LINK_STATISTICS_RX,
+    TXCRSF_SEND_LINK_STATISTICS_ALL,
     TXCRSF_SEND_TELEMETRY_FRAME, // native or passthrough telemetry frame
     TXCRSF_SEND_DEVICE_INFO,
 } TXCRSF_SEND_ENUM;
@@ -69,11 +75,13 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatisticsTx(void);
     void SendLinkStatisticsRx(void);
     void SendDeviceInfo(void);
+    void SendLinkStatisticsAll(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
 
+  private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
@@ -86,7 +94,7 @@ class tTxCrsf : public tPin5BridgeBase
 
     bool enabled;
 
-    uint8_t frame[CRSF_FRAME_LEN_MAX + 16];
+    uint8_t frame[CRSF_BUF_SIZE]; // received frame
     volatile bool channels_received;
     volatile bool cmd_received;
     volatile bool ping_device_received;
@@ -96,47 +104,89 @@ class tTxCrsf : public tPin5BridgeBase
     volatile bool cmd_bind_cancel_received;
 
     volatile bool tx_free; // to signal that the tx buffer can be filled
-    uint8_t tx_frame[CRSF_FRAME_LEN_MAX + 16];
+    uint8_t tx_frame[CRSF_BUF_SIZE];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
     // CRSF telemetry
 
-    tCrsfFlightMode flightmode; // collected from HEARTBEAT
-    bool flightmode_updated;
-    uint32_t flightmode_send_tlast_ms;
-
-    tCrsfBattery battery; // collected from BATTERY_STATUS
-    bool battery_updated;
-    uint32_t battery_send_tlast_ms;
-
-    tCrsfAttitude attitude; // collected from ATTITUDE
-    bool attitude_updated;
-    uint32_t attitude_send_tlast_ms;
-
+    // CRSF_FRAME_ID_GPS (0x02), collected from several MAVLink messages:
+    //   GPS_RAW_INT, GPS2_RAW (SRy_EXTENDED_STATUS), VFR_HUD (SRy_EXTRA2), GLOBAL_POSITION_INT (SRy_POSITION)
     uint8_t gps_raw_int_sat;
     uint8_t gps2_raw_sat;
     float vfr_hud_groundspd_mps;
-    tCrsfGps gps; // collected from several MAVLink messages: GPS_RAW_INT, GPS2_RAW, VFR_HUD, GLOBAL_POSITION_INT
-    bool gps_updated;
-    uint32_t gps_send_tlast_ms;
+    tCrsfGps gps;
 
-    tCrsfVario vario; // collected from VFR_HUD
-    bool vario_updated;
-    uint32_t vario_send_tlast_ms;
+    // Note: ArduPilot sends in GPS_RAW_INT.time_usec the last fix time in ms since boot, so cannot be used.
+    // We thus grab SYSTEM_TIME.time_unix_usec, which ArduPilot takes from AP::rtc().
+    // This can be set to various sources in parameter RTC_TYPES: 0:GPS,1:MAVLINK_SYSTEM_TIME,2:HW.
+    tCrsfGpsTime gps_time;
 
-    tCrsfBaroAltitude baro_altitude; // not yet populated from a MAVLink message, AP does not appear to provide baro alt at all
-    bool baro_altitude_updated;
-    uint32_t baro_send_tlast_ms;
+    tCrsfFlightMode flight_mode;
+    tCrsfBattery battery;
+    tCrsfAttitude attitude;
+    tCrsfVariometer variometer;
+    tCrsfBaroAltitude baro_altitude;
+    tCrsfAirspeed airspeed;
+    tCrsfTemp temp_ambient;
+    tCrsfBarometer barometer;
+
+    typedef struct {
+        bool updated;
+        uint32_t send_tlast_ms;
+    } tCrsfStatus;
+
+    typedef struct {
+        uint8_t frame_id;
+        void* payload_ptr;
+        uint8_t payload_len;
+    } tCrsfItem;
+
+    // the sequence gives the priority
+    // Note: sequence in CRSFITEMENUM and crsf_items[] must match!
+    typedef enum {
+        CRSF_ITEM_FLIGHT_MODE = 0,  // CRSF_FRAME_ID_FLIGHT_MODE (0x21), collected from HEARTBEAT
+        CRSF_ITEM_GPS,              // CRSF_FRAME_ID_GPS (0x02),        collected from several MAVLink messages (SRy_EXTENDED_STATUS,SRy_EXTRA2,SRy_POSITION)
+        CRSF_ITEM_ATTITUDE,         // CRSF_FRAME_ID_ATTITUDE (0x1E),   collected from ATTITUDE (SRy_EXTRA1)
+        CRSF_ITEM_VARIOMETER,       // CRSF_FRAME_ID_VARIOMETER (0x07), collected from VFR_HUD (SRy_EXTRA2)
+        CRSF_ITEM_BARO_ALTITUDE,    // not yet populated from a MAVLink message, AP does not appear to provide baro alt at all
+        CRSF_ITEM_AIRSPEED,         // CRSF_FRAME_ID_AIRSPEED (0x0A),   collected from VFR_HUD (SRy_EXTRA2)
+        CRSF_ITEM_TEMP,             // CRSF_FRAME_ID_TEMP (0x0D),       collected from SCALED_PRESSURE (SRy_RAW_SENSORS)
+        CRSF_ITEM_BAROMETER,        // CRSF_FRAME_ID_BAROMETER (0x11),  collected from SCALED_PRESSURE (SRy_RAW_SENSORS)
+        CRSF_ITEM_BATTERY,          // CRSF_FRAME_ID_BATTERY (0x08),    collected from BATTERY_STATUS (SRy_EXTRA2)
+        CRSF_ITEM_GPS_TIME,         // CRSF_FRAME_ID_GPS_TIME (0x03),   collected from SYSTEM_TIME (SRy_EXTRA2)
+        CRSF_ITEMS_LEN,
+    } CRSF_ITEM_ENUM;
+
+    const tCrsfItem crsf_items[CRSF_ITEMS_LEN] = {
+        { CRSF_FRAME_ID_FLIGHT_MODE, &flight_mode, CRSF_FLIGHT_MODE_LEN },        // flight_mode
+        { CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN },                                // gps
+        { CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN },                 // attitude
+        { CRSF_FRAME_ID_VARIOMETER, &variometer, CRSF_VARIOMETER_LEN },           // variometer
+        { CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN },  // baro_alt
+        { CRSF_FRAME_ID_AIRSPEED, &airspeed, CRSF_AIRSPEED_LEN },                 // airspeed
+        { CRSF_FRAME_ID_TEMP, &temp_ambient, CRSF_TEMP_LEN },                     // temp_ambient
+        { CRSF_FRAME_ID_BAROMETER, &barometer, CRSF_BAROMETER_LEN },              // barometer
+        { CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN },                    // battery
+        { CRSF_FRAME_ID_GPS_TIME, &gps_time, CRSF_GPS_TIME_LEN },                 // gps_time
+    };
+
+    tCrsfStatus crsf_status[CRSF_ITEMS_LEN];
+
+    // CS(CF_RPM_ID,      0, STR_DEF(STR_SENSOR_RPM),           UNIT_RPMS,              0),
+    // CS(CELLS_ID,       0, STR_DEF(STR_SENSOR_CELLS),         UNIT_CELLS,             2),
+    // CS(VOLT_ARRAY_ID,  0, STR_DEF(STR_SENSOR_VOLT),          UNIT_VOLTS,             2),
 
     // MAVLink handlers
 
     void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);
+    void handle_mavlink_msg_system_time(fmav_system_time_t* const payload);
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);
     void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);
     void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);
     void handle_mavlink_msg_gps2_raw(fmav_gps2_raw_t* const payload);
     void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);
     void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);
+    void handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const payload);
 
     // CRSF passthrough telemetry
 
@@ -228,6 +278,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         break;
 
     case STATE_RECEIVE_CRSF_LEN:
+        if (c >= (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
         frame[cnt++] = c;
         len = c;
         state = STATE_RECEIVE_CRSF_PAYLOAD;
@@ -331,21 +382,13 @@ void tTxCrsf::Init(bool enable_flag)
     cmd_bind_set_received = false;
     cmd_bind_cancel_received = false;
 
-    flightmode_updated = false;
-    flightmode_send_tlast_ms = 0;
-    battery_updated = false;
-    battery_send_tlast_ms = 0;
-    attitude_updated = false;
-    attitude_send_tlast_ms = 0;
+    for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
+        crsf_status[i].updated = false;
+        crsf_status[i].send_tlast_ms = 0;
+    }
     gps_raw_int_sat = UINT8_MAX; // unknown
     gps2_raw_sat = UINT8_MAX; // unknown
     vfr_hud_groundspd_mps = NAN; // unknown
-    gps_updated = false;
-    gps_send_tlast_ms = 0;
-    vario_updated = false;
-    vario_send_tlast_ms = 0;
-    baro_altitude_updated = false;
-    baro_send_tlast_ms = 0;
 
     passthrough.Init();
 
@@ -398,9 +441,8 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
         // slow it down if frame time is too short
         if (frame_rate_ms <= 19) {
             static uint8_t cnt = 0;
+            DECc(cnt, 2);
             if (!cnt) telemetry_state = 0;
-            cnt++;
-            if (cnt > 2) cnt = 0;
         } else {
             telemetry_state = 0;
         }
@@ -412,16 +454,23 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
 
     // now determine what to transmit
     // frame rate is
-    //   20 ms -> ca 5  = 3  + 2
-    //   32 ms -> ca 8  = 3 + 5
-    //   53 ms -> ca 13 = 3 + 10
-    //   7 ms  -> 3x = 21 ms -> ca 5 = 3 + 2
-
+    //   50 Hz:  20 ms -> ca 5  = 3 + 2
+    //   31 Hz:  32 ms -> ca 8  = 3 + 5
+    //   19 Hz:  53 ms -> ca 13 = 3 + 10
+    //   111 Hz:  9 ms -> 3x = 27 ms -> ca 6 = 3 + 3
+#ifndef CRSF_FRAME_BUNDLING
+    // this is what it was before, keep it for now just in case
     switch (curr_telemetry_state) {
         case 0: *task = TXCRSF_SEND_LINK_STATISTICS; return true;
         case 1: *task = TXCRSF_SEND_LINK_STATISTICS_TX; return true;
         case 2: *task = TXCRSF_SEND_LINK_STATISTICS_RX; return true;
     }
+#else
+    if (curr_telemetry_state == 0) {
+        *task = TXCRSF_SEND_LINK_STATISTICS_ALL;
+        return true;
+    }
+#endif
 
     // if we got a PING_DEVICE, send a DEVICE_INFO instead of a telemetry frame
     if (ping_device_received) {
@@ -527,61 +576,55 @@ void tTxCrsf::send_frame(const uint8_t frame_id, void* const payload, uint8_t pa
 // called in main loop, when crsf.TelemetryUpdate() true
 void tTxCrsf::SendTelemetryFrame(void)
 {
+uint8_t data[CRSF_BUF_SIZE];
+uint8_t len;
+
     // native CRSF
 
     uint32_t tnow_ms = millis32();
 
     #define CRSF_REFRESH_TIME_MS  2500 // what is actually a proper value ??
 
-    // auto update to prevent OTX telemetry/sensor lost message, do only if at least once seen
-    if (flightmode_send_tlast_ms && (tnow_ms - flightmode_send_tlast_ms) > CRSF_REFRESH_TIME_MS) flightmode_updated = true;
-    if (battery_send_tlast_ms && (tnow_ms - battery_send_tlast_ms) > CRSF_REFRESH_TIME_MS) battery_updated = true;
-    if (gps_send_tlast_ms && (tnow_ms - gps_send_tlast_ms) > CRSF_REFRESH_TIME_MS) gps_updated = true;
-    if (vario_send_tlast_ms && (tnow_ms - vario_send_tlast_ms) > CRSF_REFRESH_TIME_MS) vario_updated = true;
-    if (attitude_send_tlast_ms && (tnow_ms - attitude_send_tlast_ms) > CRSF_REFRESH_TIME_MS) attitude_updated = true;
-    if (baro_send_tlast_ms && (tnow_ms - baro_send_tlast_ms) > CRSF_REFRESH_TIME_MS) baro_altitude_updated = true;
+    // auto update to prevent EdgeTx/OpenTx telemetry/sensor lost message, do only if at least once seen
+    for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
+        if (!crsf_status[i].send_tlast_ms) continue;
+        if ((tnow_ms - crsf_status[i].send_tlast_ms) > CRSF_REFRESH_TIME_MS) { crsf_status[i].updated = true; }
+    }
 
-    if (flightmode_updated) {
-        flightmode_updated = false;
-        flightmode_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_FLIGHT_MODE, &flightmode, CRSF_FLIGHTMODE_LEN);
+    // one by one, order by desired priority
+#ifndef CRSF_FRAME_BUNDLING
+    for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
+        if (crsf_status[i].updated) {
+            crsf_status[i].updated = false;
+            crsf_status[i].send_tlast_ms = tnow_ms;
+            send_frame(crsf_items[i].frame_id, crsf_items[i].payload_ptr, crsf_items[i].payload_len);
+            return; // only send one per slot
+        }
+    }
+#else
+    len = 0;
+
+    for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
+        if (!crsf_status[i].updated) continue;
+
+        uint8_t payload_len = crsf_items[i].payload_len;
+        if (len + payload_len >= CRSF_FRAME_LEN_MAX - 4 - 16) break; // no space left
+        crsf_status[i].updated = false;
+        crsf_status[i].send_tlast_ms = tnow_ms;
+
+        send_frame(crsf_items[i].frame_id, crsf_items[i].payload_ptr, payload_len);
+        memcpy(data + len, tx_frame, tx_available);
+        len += tx_available;
+    }
+
+    if (len) {
+        memcpy(tx_frame, data, len);
+        tx_available = len;
         return; // only send one per slot
     }
-    if (battery_updated) {
-        battery_updated = false;
-        battery_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_BATTERY, &battery, CRSF_BATTERY_LEN);
-        return; // only send one per slot
-    }
-    if (gps_updated) {
-        gps_updated = false;
-        gps_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_GPS, &gps, CRSF_GPS_LEN);
-        return; // only send one per slot
-    }
-    if (vario_updated) {
-        vario_updated = false;
-        vario_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_VARIO, &vario, CRSF_VARIO_LEN);
-        return; // only send one per slot
-    }
-    if (attitude_updated) {
-        attitude_updated = false;
-        attitude_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_ATTITUDE, &attitude, CRSF_ATTITUDE_LEN);
-        return; // only send one per slot
-    }
-    if (baro_altitude_updated) {
-        baro_altitude_updated = false;
-        baro_send_tlast_ms = tnow_ms;
-        send_frame(CRSF_FRAME_ID_BARO_ALTITUDE, &baro_altitude, CRSF_BARO_ALTITUDE_LEN);
-        return; // only send one per slot
-    }
+#endif
 
     // passthrough
-
-    uint8_t data[64+10];
-    uint8_t len;
 
     if (passthrough.GetTelemetryFrameMulti(data, &len)) {
         send_frame(CRSF_FRAME_ID_AP_CUSTOM_TELEM, data, len);
@@ -605,18 +648,38 @@ void tTxCrsf::SendTelemetryFrame(void)
 
 void tTxCrsf::handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload)
 {
-    memset(flightmode.flight_mode, 0, sizeof(flightmode.flight_mode));
+    memset(flight_mode.flight_mode, 0, sizeof(flight_mode.flight_mode));
 
     if (payload->autopilot == MAV_AUTOPILOT_ARDUPILOTMEGA) {
-        ap_flight_mode_name4(flightmode.flight_mode, ap_vehicle_from_mavtype(payload->type), payload->custom_mode);
+        ap_flight_mode_name4(flight_mode.flight_mode, ap_vehicle_from_mavtype(payload->type), payload->custom_mode);
 
         if ((payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) == 0) {
-            // if (flightmode.flight_mode[3] == ' ') flightmode.flight_mode[3] = '\0';
-            strcat(flightmode.flight_mode, "*");
+            // if (flight_mode.flight_mode[3] == ' ') flight_mode.flight_mode[3] = '\0';
+            strcat(flight_mode.flight_mode, "*");
         }
     }
 
-    flightmode_updated = true;
+    crsf_status[CRSF_ITEM_FLIGHT_MODE].updated = true;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
+{
+    // SYSTEM_TIME.time_unix_usec is != 0 if AP::rtc() gives a value, so not GPS time strictly
+    if (payload->time_unix_usec == 0) return; // not available
+
+    time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
+    struct tm* time_info = gmtime(&time_unix); // UTC
+
+    gps_time.year = CRSF_REV_U16(time_info->tm_year + 1900); // EdgeTx since v2.12.?=? -> Date
+    gps_time.month = time_info->tm_mon + 1;
+    gps_time.day = time_info->tm_mday;
+    gps_time.hour = time_info->tm_hour;
+    gps_time.minute = time_info->tm_min;
+    gps_time.second = time_info->tm_sec;
+    gps_time.millisecond = CRSF_REV_U16((payload->time_unix_usec % 1000000) / 1000);
+
+    crsf_status[CRSF_ITEM_GPS_TIME].updated = true;
 }
 
 
@@ -649,7 +712,7 @@ void tTxCrsf::handle_mavlink_msg_battery_status(fmav_battery_status_t* const pay
     battery.capacity[1] = (capacity >> 8);
     battery.capacity[2] = capacity;
     battery.remaining = (payload->battery_remaining == -1) ? 0 : payload->battery_remaining;
-    battery_updated = true;
+    crsf_status[CRSF_ITEM_BATTERY].updated = true;
 }
 
 
@@ -658,7 +721,7 @@ void tTxCrsf::handle_mavlink_msg_attitude(fmav_attitude_t* const payload)
     attitude.pitch = CRSF_REV_I16(10000.0f * payload->pitch);
     attitude.roll = CRSF_REV_I16(10000.0f * payload->roll);
     attitude.yaw = CRSF_REV_I16(10000.0f * payload->yaw);
-    attitude_updated = true;
+    crsf_status[CRSF_ITEM_ATTITUDE].updated = true;
 }
 
 
@@ -702,16 +765,38 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
     }
 
     // mark as updated
-    gps_updated = true;
+    crsf_status[CRSF_ITEM_GPS].updated = true;
 }
 
 
 void tTxCrsf::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload)
 {
+    // MAVLink: m/s -> CRSF: 0.1 * km/h (hectometers/h)
+    airspeed.speed = CRSF_REV_U16(36.0f * payload->airspeed);
+    crsf_status[CRSF_ITEM_AIRSPEED].updated = true;
+
+    // MAVLink: m/s
     vfr_hud_groundspd_mps = payload->groundspeed;
 
-    vario.climb_rate = CRSF_REV_I16(100.0f * payload->climb);
-    vario_updated = true;
+    // MAVLink: m/s -> CRSF: Vertical speed cm/s
+    variometer.v_speed = CRSF_REV_I16(100.0f * payload->climb);
+    crsf_status[CRSF_ITEM_VARIOMETER].updated = true;
+}
+
+
+void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const payload)
+{
+    // MAVLink: hPa -> CRSF: Pascals
+    barometer.pressure_pa = CRSF_REV_U32(100.0f * payload->press_abs);
+    // MAVLink: cdegC -> CRSF: centidegrees
+    barometer.baro_temp = CRSF_REV_U32(payload->temperature);
+    crsf_status[CRSF_ITEM_BAROMETER].updated = true;
+
+    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    temp_ambient.temp_source_id = 1;
+    temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
+    crsf_status[CRSF_ITEM_TEMP].updated = true;
+
 }
 
 
@@ -733,6 +818,12 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         fmav_msg_heartbeat_decode(&payload, msg);
         handle_mavlink_msg_heartbeat(&payload);
         passthrough.handle_mavlink_msg_heartbeat(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_SYSTEM_TIME: { // not used by passthrough
+        fmav_system_time_t payload;
+        fmav_msg_system_time_decode(&payload, msg);
+        handle_mavlink_msg_system_time(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_BATTERY_STATUS: {
@@ -776,6 +867,13 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         passthrough.handle_mavlink_msg_global_position_int(&payload);
         }break;
 
+    case FASTMAVLINK_MSG_ID_SCALED_PRESSURE: { // not used by passthrough
+        fmav_scaled_pressure_t payload;
+        fmav_msg_scaled_pressure_decode(&payload, msg);
+        handle_mavlink_msg_scaled_pressure(&payload);
+        }break;
+
+
     // these are for passthrough only
 
     // case FASTMAVLINK_MSG_ID_PARAM_VALUE, is handled by mavlink/vehicle class as needed
@@ -814,6 +912,12 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         fmav_fence_status_t payload;
         fmav_msg_fence_status_decode(&payload, msg);
         passthrough.handle_mavlink_msg_fence_status(&payload);
+        }break;
+
+    case FASTMAVLINK_MSG_ID_DISTANCE_SENSOR: {
+        fmav_distance_sensor_t payload;
+        fmav_msg_distance_sensor_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_distance_sensor(&payload);
         }break;
 
     case FASTMAVLINK_MSG_ID_RANGEFINDER: {
@@ -865,8 +969,8 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
 
     // to suppress sensor auto updating
     // assumes that this function is being called within 1500 ms
-    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) gps_send_tlast_ms = 0;
-    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) baro_send_tlast_ms = 0;
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_GPS))) crsf_status[CRSF_ITEM_GPS].send_tlast_ms = 0;
+    if (!(msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO))) crsf_status[CRSF_ITEM_BARO_ALTITUDE].send_tlast_ms = 0;
 
     switch (msg->function) {
 #if 0 // was a test to see if one can provide more sensors for Yaapu
@@ -887,7 +991,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         attitude.pitch = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->pitch)); // int16_t rad * 1e4  // cdeg -> rad * 1e4
         attitude.roll = CRSF_REV_I16((DEG2RADF * 1000.0f) * wrap180_cdeg(payload->roll));   // int16_t rad * 1e4  // cdeg -> rad * 1e4
         attitude.yaw = CRSF_REV_I16((DEG2RADF * 10000.0f) * wrap180_cdeg(payload->yaw));    // int16_t rad * 1e4  // deg -> rad * 1e4
-        attitude_updated = true;
+        crsf_status[CRSF_ITEM_ATTITUDE].updated = true;
         }break;
 
     case MSP2_INAV_ANALOG: { // tCrsfBattery, CRSF_FRAME_ID_BATTERY = 0x08
@@ -899,7 +1003,7 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         battery.capacity[1] = (capacity >> 8);
         battery.capacity[2] = capacity;
         battery.remaining = payload->battery_percentage;                // uint8_t percent        // uint8_t
-        battery_updated = true;
+        crsf_status[CRSF_ITEM_BATTERY].updated = true;
         }break;
 
     case MSP_RAW_GPS: { // tCrsfGps, CRSF_FRAME_ID_GPS = 0x02
@@ -913,25 +1017,27 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         //gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
         gps.altitude = CRSF_REV_U16(inav_baro_altitude / 100 + 1000);
         gps.satellites = payload->numSat;                             // uint8_t                        // uint8_t
-        gps_updated = true;
+        crsf_status[CRSF_ITEM_GPS].updated = true;
         }break;
 
     case MSP_ALTITUDE: {
         tMspAltitude* payload = (tMspAltitude*)(msg->payload);
-        // tCrsfVario, CRSF_FRAME_ID_VARIO = 0x07
-        vario.climb_rate = CRSF_REV_I16(payload->estimated_velocity_z);   // int16_t cm/s    // int16_t  cm/s
-        vario_updated = true;
+        // tCrsfVariometer, CRSF_FRAME_ID_VARIOMETER = 0x07
+        variometer.v_speed = CRSF_REV_I16(payload->estimated_velocity_z);   // int16_t cm/s    // int16_t  cm/s
+        crsf_status[CRSF_ITEM_VARIOMETER].updated = true;
         // tCrsfBaroAltitude, CRSF_FRAME_ID_BARO_ALTITUDE = 0x09
         if (msp_inav_status_sensor_status & (1 << INAV_SENSOR_STATUS_BARO)) {
+/*
             int32_t alt = payload->baro_altitude / 10 + 10000; // uint32_t seems to be cm, convert to dm - 1000m
             if (alt < 0) alt = 0;
             if (alt > 0x7FFF) alt = 0x7FFF; // 0x7FFF = 32767
             baro_altitude.altitude = CRSF_REV_U16(alt); // uint16_t dm -1000m if 0x8000 not set
+            crsf_status[CRSF_ITEM_BARO_ALTITUDE].updated = true;
+*/
             // INAV wants the baro alt in the gps alt field
             // so we store the baro altitude, and tell that gps is updated
-            //baro_altitude_updated = true;
             inav_baro_altitude = payload->baro_altitude;
-            gps_updated = true;
+            crsf_status[CRSF_ITEM_GPS].updated = true;
         }
         }break;
 
@@ -943,9 +1049,9 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         }break;
 
     case MSPX_STATUS: { // this is send by the rx shortly after MSP2_INAV_STATUS
-        uint32_t flight_mode = *(uint32_t*)(msg->payload);
-        inav_flight_mode_str5(flightmode.flight_mode, flight_mode, msp_inav_status_arming_flags);
-        flightmode_updated = true;
+        uint32_t flightmode = *(uint32_t*)(msg->payload);
+        inav_flight_mode_str5(flight_mode.flight_mode, flightmode, msp_inav_status_arming_flags);
+        crsf_status[CRSF_ITEM_FLIGHT_MODE].updated = true;
         }break;
     }
 }
@@ -1042,7 +1148,7 @@ uint32_t version_to_u32(uint32_t version)
 
 void tTxCrsf::SendDeviceInfo(void)
 {
-char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
+char buf[CRSF_BUF_SIZE]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of space
 
     // extended frame, so need to send destination and origin addresses
     buf[0] = CRSF_ADDRESS_RADIO; // destination address, ignored by EdgeTx (ELRS uses BROADCAST)
@@ -1062,9 +1168,31 @@ char buf[64]; // DEVICE_NAME is limited to 20 chars max, so this is plenty of sp
 }
 
 
+void tTxCrsf::SendLinkStatisticsAll(void)
+{
+uint8_t data[CRSF_BUF_SIZE];
+uint8_t len;
+
+    SendLinkStatistics();
+    memcpy(data, tx_frame, tx_available);
+    len = tx_available;
+
+    SendLinkStatisticsTx();
+    memcpy(data + len, tx_frame, tx_available);
+    len += tx_available;
+
+    SendLinkStatisticsRx();
+    memcpy(data + len, tx_frame, tx_available);
+    len += tx_available;
+
+    memcpy(tx_frame, data, len);
+    tx_available = len;
+}
+
+
 #else
 
-class tTxCrsfDummy
+class tTxCrsf
 {
   public:
     void Init(bool enable_flag) {}
@@ -1075,15 +1203,10 @@ class tTxCrsfDummy
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg) {}
     void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 
-    void SendLinkStatistics(void) {}
-    void SendLinkStatisticsTx(void) {}
-    void SendLinkStatisticsRx(void) {}
-    void SendDevideInfo(void) {}
-
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
-tTxCrsfDummy crsf;
+tTxCrsf crsf;
 
 #endif // ifdef DEVICE_HAS_JRPIN5
 

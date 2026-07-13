@@ -24,7 +24,7 @@
 //#define DEVICE_HAS_DIVERSITY // TODO, could be an add-on board/shield for the MBL Kit
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_IN_ON_JRPIN5_RX
-#define DEVICE_HAS_SERIAL_OR_COM // serial or com is selected by pressing BUTTON during power on
+#define DEVICE_HAS_COM_ON_SERIAL // serial or com is selected by pressing BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SYSTEMBOOT
 
@@ -46,14 +46,13 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = -- //serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = --
-// SWUART= debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
+#define UARTB_USE_UART2_PA2PA3 // serial or com
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -61,13 +60,13 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART2_PA2PA3 // com USB/CLI // PA2,PA3
+/* #define UARTC_USE_UART2_PA2PA3 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
 
 #define UART_USE_UART1_PB6PB7 // JR pin5, MBridge // PB6,PB7
 #define UART_BAUD                 400000
@@ -79,15 +78,13 @@
 
 #define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
 
-/*
-#define UARTE_USE_UART1_PB6PB7 // in port // PB7
+/* #define UARTE_USE_UART1_PB6PB7 // in port // PB7
 #define UARTE_BAUD                100000 // SBus normal baud rate, is being set later anyhow
 //#define UARTE_USE_TX
 //#define UARTE_TXBUFSIZE           512
 //#define UARTE_USE_TX_ISR
 #define UARTE_USE_RX
-#define UARTE_RXBUFSIZE           512
-*/
+#define UARTE_RXBUFSIZE           512 */
 
 #define SWUART_USE_TIM17 // debug
 #define SWUART_TX_IO              IO_PA5
@@ -306,8 +303,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define BOOT_BUTTON               IO_PA1
 
-extern "C" { void delay_ms(uint16_t ms); }
-
 void systembootloader_init(void)
 {
     gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
@@ -328,21 +323,14 @@ void systembootloader_init(void)
 // use com if BUTTON is pressed during power up, else use serial
 // BUTTON becomes bind button later on
 
-bool e77mblkit_ser_or_com_serial = true; // we use serial as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
-    e77mblkit_ser_or_com_serial = !(cnt > 8);
-}
-
-bool ser_or_com_serial(void)
-{
-    return e77mblkit_ser_or_com_serial;
+    return !(cnt > 8);
 }
 
 

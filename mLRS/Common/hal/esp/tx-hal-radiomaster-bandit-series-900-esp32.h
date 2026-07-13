@@ -23,11 +23,8 @@
 // Bandit Micro: https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20Bandit%20Micro.json
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // hold 5-way in down direction at boot to enable CLI
 #define DEVICE_HAS_IN
-#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_NO_SERIAL
-//#define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_FAN_ONOFF
 
 #ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
 #define DEVICE_HAS_SINGLE_LED_RGB
@@ -37,10 +34,13 @@
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #endif
 
-#define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 // board has an ESP8285 wireless bridge with GPIO,RST
+#define DEVICE_HAS_COM_ON_SERIAL // hold 5-way in down direction at boot to enable com (CLI)
+#define DEVICE_HAS_ESP_WIFI_BRIDGE // board has an ESP8285 wireless bridge with GPIO,RST
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
+#define DEVICE_HAS_NO_DEBUG
+//#define DEVICE_HAS_NO_SERIAL
+//#define DEVICE_HAS_NO_COM
 
 // Note on SERIAL_OR_COM:
 // The com uart is not initialized, the serial uart is, So, buffers are set as by the RX/TXBUFSIZE defines for serial.
@@ -49,27 +49,27 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC or USB = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_SERIAL // serial, is connected to USB-C via USB<>UART also RT connector
+#define UARTB_USE_SERIAL // serial or com, is connected to USB-C via USB<>UART also RT connector
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX_IO           IO_P1
 #define UARTB_USE_RX_IO           IO_P3
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_SERIAL // COM (CLI), is connected to USB-C via USB<>UART also RT connector
+/* #define UARTC_USE_SERIAL // com, is connected to USB-C via USB<>UART also RT connector
 #define UARTC_BAUD                115200
 #define UARTC_USE_TX_IO           IO_P1
 #define UARTC_USE_RX_IO           IO_P3
 #define UARTC_TXBUFSIZE           0 // TX FIFO = 128
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
 
-#define UARTD_USE_SERIAL2 // serial2 BT/ESP
+#define UARTD_USE_SERIAL2 // serial2 or wireless bridge
 #define UARTD_BAUD                115200
 #define UARTD_USE_TX_IO           IO_P17
 #define UARTD_USE_RX_IO           IO_P16
@@ -220,27 +220,15 @@ IRAM_ATTR uint8_t fiveway_read(void)
 //-- Serial or Com Switch
 // use com if FIVEWAY is DOWN during power up, else use serial
 
-#ifdef DEVICE_HAS_SERIAL_OR_COM
-bool tx_ser_or_com_serial = true; // we use serial as default
-
-void ser_or_com_init(void)
+#ifdef DEVICE_HAS_COM_ON_SERIAL
+bool ser_or_com_init(void) // return true if is_serial
 {
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         int16_t adc = analogRead(FIVEWAY_ADC_IO);
         if (adc > (KEY_DOWN_THRESH-200) && adc < (KEY_DOWN_THRESH+200)) cnt++;
     }
-    tx_ser_or_com_serial = !(cnt > 8);
-}
-
-IRAM_ATTR bool ser_or_com_serial(void)
-{
-    return tx_ser_or_com_serial;
-}
-
-IRAM_ATTR void ser_or_com_set_to_com(void)
-{
-    tx_ser_or_com_serial = false;
+    return !(cnt > 8);
 }
 #endif
 
@@ -270,7 +258,7 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P32 // backpack_boot, seems to be inverted
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
 
 void esp_init(void)
 {
@@ -284,7 +272,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE
 
 
 //-- POWER

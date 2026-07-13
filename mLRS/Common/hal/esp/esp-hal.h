@@ -100,7 +100,7 @@
 #endif
 
 #ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
-#include "rx-flysky-pr02-2400-td-esp32s3.h"
+#include "rx-hal-flysky-pr02-2400-td-esp32s3.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
@@ -129,6 +129,14 @@
 
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_GX12_ESP32
 #include "tx-hal-radiomaster-int-gx12-esp32.h"
+#endif
+
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX16SMK3_ESP32
+#include "tx-hal-radiomaster-int-tx16smk3-esp32.h"
+#endif
+
+#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+#include "tx-hal-radiomaster-int-ax12-esp32.h"
 #endif
 
 #ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32

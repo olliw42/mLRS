@@ -6,7 +6,7 @@
  https://www.gnu.org/licenses/gpl-3.0.de.html
  OlliW @ www.olliw.eu
 *******************************************************
- version 26.10.2024
+ version 19.04.2026
 *******************************************************
 '''
 import os
@@ -27,7 +27,7 @@ def kill_outdir():
     try:
         shutil.rmtree(outdir)
     except:
-        pass    
+        pass
     os.mkdir(outdir)
     print('----------')
 
@@ -45,9 +45,9 @@ def generate_dsdl():
     print(' run dronecan_dsdlc/dronecan_dsdlc.py')
     print('----------------------------------------')
     #os.chdir(os.path.join(mLRSdirectory,'Common','mavlink'))
-    
+
     os_system(
-        os.path.join('..','..','modules','dronecan','dronecan_dsdlc','dronecan_dsdlc.py')
+        sys.executable + ' ' + os.path.join('..','..','modules','dronecan','dronecan_dsdlc','dronecan_dsdlc.py')
         + ' -O ' + os.path.join(outdir)
         + ' ' + os.path.join('..','..','modules','dronecan','DSDL','dronecan')
         + ' ' + os.path.join('..','..','modules','dronecan','DSDL','uavcan')
@@ -58,22 +58,22 @@ def generate_dsdl():
 
 desired_dsdl_list = [
     'dronecan.sensors.rc.RCInput',
-    
+
     'uavcan.protocol.NodeStatus',
-    
+
     'uavcan.protocol.GetNodeInfo',
     'uavcan.protocol.GetNodeInfo_req',
     'uavcan.protocol.GetNodeInfo_res',
     'uavcan.protocol.HardwareVersion',
     'uavcan.protocol.SoftwareVersion',
-    
+
     'uavcan.protocol.dynamic_node_id.Allocation',
-    
+
     'uavcan.tunnel.Targetted',
     'uavcan.tunnel.Protocol',
 
     'dronecan.protocol.FlexDebug',
-]    
+]
 
 
 def remove_dsdl():
@@ -108,7 +108,7 @@ def call_replace_h(filepath, filename):
     F = open(os.path.join(filepath,filename), mode='w')
     F.write(content2)
     F.close()
-    
+
 
 def call_replace_c(filepath, filename):
     F = open(os.path.join(filepath,filename), mode='r')
@@ -132,7 +132,7 @@ def correct_dsdl():
         for file in files:
             print(file)
             call_replace_h(os.path.join(outdir,'include'), file)
-            
+
     for path, subdirs, files in os.walk(os.path.join(outdir,'src')):
         for file in files:
             print(file)

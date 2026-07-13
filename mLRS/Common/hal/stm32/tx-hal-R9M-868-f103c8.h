@@ -17,7 +17,7 @@
 
 #define DEVICE_HAS_IN_INVERTED
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_SERIAL_OR_COM // is selected in device specific ways, here: dip switch
+#define DEVICE_HAS_COM_ON_SERIAL // is selected in device specific ways, here: dip switch
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_BUZZER
 #define DEVICE_HAS_FAN_ONOFF
@@ -38,13 +38,14 @@
 
 
 //-- UARTS
-// UARTB = serial port or COM (CLI)
-// UARTC = --
-// UART = JR bay pin5 (SPORT)
+// UARTB = serial port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
+// UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART1_PA9PA10 // serial or COM (CLI) // goes via inverter to RX/TX of RS232 port
+#define UARTB_USE_UART1_PA9PA10 // serial or com (CLI) // goes via inverter to RX/TX of RS232 port
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_COM_TXBUFSIZE_SMALL // TX_SERIAL_TXBUFSIZE // choose the bigger one
@@ -217,23 +218,17 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define DIP1                      IO_PA12 // same a green
 #define DIP2                      IO_PA11 // same as red
 
-bool r9m_ser_or_com_serial = false;  // we use com as default
-
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(DIP1, IO_MODE_INPUT_PU, IO_SPEED_SLOW);
     uint8_t cnt = 0;
     for (uint8_t i = 0; i < 16; i++) {
         if (gpio_read_activelow(DIP1)) cnt++;
     }
-    r9m_ser_or_com_serial = (cnt > 8);
+    bool is_serial = (cnt > 8);
     gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
     led_green_off(); // LED_GREEN_OFF
-}
-
-bool ser_or_com_serial(void)
-{
-    return r9m_ser_or_com_serial;
+    return is_serial;
 }
 
 

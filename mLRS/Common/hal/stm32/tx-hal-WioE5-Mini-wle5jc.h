@@ -19,7 +19,6 @@
 #define DEVICE_HAS_IN_ON_JRPIN5_RX
 #define DEVICE_HAS_DEBUG_SWUART
 #define DEVICE_HAS_SINGLE_LED
-//#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -33,15 +32,15 @@
 
 
 //-- UARTS
+//-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = --
-// SWUART= debug port
+// UARTF or SWUART = debug port
 
-#define UARTB_USE_UART2_PA2PA3 // serial // PA2,PA3
+#define UARTB_USE_UART2_PA2PA3 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -49,7 +48,7 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_PB6PB7 // com USB/CLI // PB6,PB7
+#define UARTC_USE_UART1_PB6PB7 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
@@ -57,7 +56,7 @@
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
-#define UART_USE_LPUART1_PC1PC0 // JR pin5, MBridge // PC1,PC0
+#define UART_USE_LPUART1_PC1PC0 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
@@ -228,8 +227,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_IO            IO_PB4 // ADC_IN3
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_3
 
-extern "C" { void delay_us(uint32_t us); }
-
 void fiveway_init(void)
 {
     adc_init_begin(FIVEWAY_ADCx);
@@ -267,27 +264,6 @@ uint8_t fiveway_read(void)
 #define BUZZER_IRQHandler         TIM1_UP_IRQHandler
 #define BUZZER_TIM_CHANNEL        LL_TIM_CHANNEL_CH3N
 //#define BUZZER_TIM_IRQ_PRIORITY   14
-
-
-//-- ESP32 Wifi Bridge
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-
-#define ESP_RESET                 IO_PA9
-#define ESP_GPIO0                 IO_PB10
-
-void esp_init(void)
-{
-    gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low = esp will start in bootloader mode
-//    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low = esp is in reset
-    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // low = esp is in reset
-}
-
-void esp_reset_high(void) { gpio_high(ESP_RESET); }
-void esp_reset_low(void) { gpio_low(ESP_RESET); }
-
-void esp_gpio0_high(void) { gpio_high(ESP_GPIO0); }
-void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
-#endif
 
 
 //-- POWER

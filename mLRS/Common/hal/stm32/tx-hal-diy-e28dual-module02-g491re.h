@@ -15,8 +15,7 @@
 #define DEVICE_HAS_JRPIN5
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_BUZZER
-#define DEVICE_HAS_SERIAL2
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
@@ -32,11 +31,11 @@
 
 //-- UARTS
 // UARTB = serial port
-// UARTC = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
 
 #define UARTB_USE_UART4_PC10PC11 // serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
@@ -46,13 +45,21 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_PA9PA10 // com USB/CLI
+#define UARTC_USE_UART1_PA9PA10 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE // TX_COM_TXBUFSIZE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+
+#define UARTD_USE_UART3_PB10PB11 // serial2 or wireless bridge
+#define UARTD_BAUD                115200
+#define UARTD_USE_TX
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_USE_TX_ISR
+#define UARTD_USE_RX
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
@@ -63,14 +70,6 @@
 #define UART_RXBUFSIZE            512
 
 #define JRPIN5_RX_TX_INVERT_INTERNAL
-
-#define UARTD_USE_UART3_PB10PB11 // serial2 BT/ESP
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_USE_TX_ISR
-#define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 #define UARTF_USE_LPUART1_PC1PC0 // debug
 #define UARTF_BAUD                115200
@@ -272,7 +271,6 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
@@ -329,7 +327,7 @@ uint8_t fiveway_read(void)
 #define ESP_DTR                   IO_PC14 // DTR from USB-TTL adapter -> GPIO
 #define ESP_RTS                   IO_PC3  // RTS from USB-TTL adapter -> RESET
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode

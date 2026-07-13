@@ -21,10 +21,11 @@
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
-extern tStats stats;
-extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
+extern tSetupMetaData SetupMetaData;
+extern tSerialPorts Serials;
+extern tStats stats;
 extern tTxInfo info;
 extern tTasks tasks;
 
@@ -303,7 +304,7 @@ bool except_str_from_bindphrase(char* const ext, char* const bind_phrase, uint8_
 class tTxCli
 {
   public:
-    void Init(tSerialBase* const _comport, uint16_t _frame_rate_ms);
+    void Init(void);
     void Do(void);
 
   private:
@@ -356,9 +357,9 @@ class tTxCli
 };
 
 
-void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
+void tTxCli::Init(void)
 {
-    com = _comport;
+    com = Serials.com;
 
     initialized = (com != nullptr) ? true : false;
 
@@ -369,11 +370,11 @@ void tTxCli::Init(tSerialBase* const _comport, uint16_t _frame_rate_ms)
     state = CLI_STATE_NORMAL;
 
     // 9 ms, 20 ms, 32 ms, 53 ms
-    if (_frame_rate_ms < 19) {
+    if (Config.frame_rate_ms < 19) {
         print_chunks_max = 1;
-    } else if (_frame_rate_ms < 30) {
+    } else if (Config.frame_rate_ms < 30) {
         print_chunks_max = 3;
-    } else if (_frame_rate_ms < 50) {
+    } else if (Config.frame_rate_ms < 50) {
         print_chunks_max = 5;
     } else {
         print_chunks_max = 8;

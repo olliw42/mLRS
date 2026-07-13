@@ -8,7 +8,7 @@
 //********************************************************
 //
 // USE_ESP_WIFI_BRIDGE
-//   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+//   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE
 //
 // USE_ESP_WIFI_BRIDGE_RST_GPIO0
 //   is defined when RESET & GPIO0 pin handling is available (ESP_RESET & ESP_GPIO0 defined)
@@ -37,11 +37,8 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-
-
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error ESP: ESP wireless bridge is on serial but board has serial/com !
-#endif
+#include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
 
 //-------------------------------------------------------
@@ -49,15 +46,11 @@
 //-------------------------------------------------------
 
 // called in init_hw() to reset ESP early on, so it is hopefully booted when we attempt auto configure
-void esp_enable(uint8_t serial_destination)
+void esp_enable(uint8_t serial_port, uint8_t serial_port2)
 {
 #ifdef USE_ESP_WIFI_BRIDGE_RST_GPIO0
-  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-    if (serial_destination == SERIAL_DESTINATION_SERIAL) {  // enable/disable ESP on serial
-  #endif
-  #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-    if (serial_destination == SERIAL_DESTINATION_SERIAL2) {  // enable/disable ESP on serial2
-  #endif
+    if (serial_port == TX_SERIAL_PORT_WIRELESS_BRIDGE ||
+        serial_port2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE ) { // enable/disable ESP
         esp_gpio0_high(); esp_reset_high();
     } else {
         esp_reset_low(); // hold it in reset, should be already so but ensure it
@@ -80,7 +73,7 @@ void esp_enable(uint8_t serial_destination)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup) {}
+    void Init(void) {}
     void Tick_ms(void) {}
     void Do(void) {}
     void EnterFlash(void) {}
@@ -97,6 +90,9 @@ class tTxEspWifiBridge
 
 
 extern volatile uint32_t millis32(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tSerialPorts Serials;
 extern tTasks tasks;
 
 
@@ -117,7 +113,7 @@ uint8_t esp_dtr_rts(void)
 class tTxEspWifiBridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, tSerialBase* const _serial2port, uint32_t _serial_baudrate, tTxSetup* const _tx_setup, tCommonSetup* const _common_setup);
+    void Init(void);
     void Tick_ms(void);
     void Do(void);
 
@@ -154,9 +150,6 @@ class tTxEspWifiBridge
     void passthrough_do_flashing(void);
     void passthrough_do(void);
 
-    tTxSetup* tx_setup;
-    tCommonSetup* common_setup;
-
     tSerialBase* com;
     tSerialBase* ser;
     uint32_t ser_baud;
@@ -174,30 +167,22 @@ class tTxEspWifiBridge
 };
 
 
-void tTxEspWifiBridge::Init(
-    tSerialBase* const _comport,
-    tSerialBase* const _serialport,
-    tSerialBase* const _serial2port,
-    uint32_t _serial_baudrate,
-    tTxSetup* const _tx_setup,
-    tCommonSetup* const _common_setup)
+void tTxEspWifiBridge::Init(void)
 {
-    tx_setup = _tx_setup;
-    common_setup = _common_setup;
-
-    com = _comport;
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
+    if (!Serials.jrpin5serial) while(1){}; // must not happen, play it safe
+    com = Serials.jrpin5serial;
+#elif defined DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL
+    com = Serials.uartb;
+#else
+    com = Serials.com;
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // uartd is always available, but could be a dummy port
+    ser = Serials.uartd;
+#else
     ser = nullptr;
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL) {
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL
-        ser = _serialport;
 #endif
-    } else
-    if (tx_setup->SerialDestination == SERIAL_DESTINATION_SERIAL2) {
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-        ser = _serial2port;
-#endif
-    }
-    ser_baud = _serial_baudrate;
+    ser_baud = Config.SerialBaudrate; // TODO: why not always 115200 ?
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
 
@@ -207,7 +192,12 @@ void tTxEspWifiBridge::Init(
     version = 0; // unknown
 
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
-    run_configure();
+    // only auto-configure when the bridge is the selected; otherwise esp_enable() holds the
+    // ESP in reset and run_configure() would spin through every baud rate until timeout (ca 2 sec wasted at boot)
+    if (Setup.Tx[Config.ConfigId].SerialPort == TX_SERIAL_PORT_WIRELESS_BRIDGE ||
+        Setup.Tx[Config.ConfigId].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE) {
+        run_configure();
+    }
 #endif
 }
 
@@ -290,7 +280,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
-    com->SetBaudRate(baudrate); // Standard tools should specify 115200 to avoid baudrate change
+    com->SetBaudRate(baudrate); // standard tools should specify 115200 to avoid baudrate change
     ser->flush();
     com->flush();
 
@@ -353,7 +343,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 // enter ESP flashing, can only be exited by re-powering
 void tTxEspWifiBridge::EnterFlash(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("FLASH ESP");
     delay_ms(30);
@@ -375,7 +365,7 @@ void tTxEspWifiBridge::EnterFlash(void)
 // enter ESP passthrough, can only be exited by re-powering
 void tTxEspWifiBridge::EnterPassthrough(void)
 {
-    if (!passthrough) return;
+    if (!passthrough) return; // needs com and ser
 
     disp.DrawNotify("ESP\nPASSTHRU");
     delay_ms(30);
@@ -390,8 +380,8 @@ void tTxEspWifiBridge::passthrough_do(void)
 
     uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
     ser->SetBaudRate(baudrate);
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    ser_or_com_set_to_com();
+#ifdef USE_COM_ON_SERIAL
+    com = Serials.ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
     ser->flush();
     com->flush();
@@ -500,6 +490,8 @@ char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
+    if (!passthrough) return; // needs com and ser
+
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
         return;
@@ -526,6 +518,8 @@ void tTxEspWifiBridge::esp_set_ssidpswd(const char* const net_cmd, char* const s
 char cmd_str[64];
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
+
+    if (!passthrough) return; // needs com and ser
 
     if (version < 10309) { // not available before v1.3.09
         com->puts("  not supported by this wireless bridge version");
@@ -592,7 +586,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+PROTOCOL=");
-    switch (tx_setup->WifiProtocol) {
+    switch (Setup.Tx[Config.ConfigId].WifiProtocol) {
         case WIFI_PROTOCOL_TCP: strcat(cmd_str, "0"); break;
         case WIFI_PROTOCOL_UDP: strcat(cmd_str, "1"); break;
         case WIFI_PROTOCOL_BT: strcat(cmd_str, "3"); break;
@@ -618,7 +612,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+WIFICHANNEL=");
-    switch (tx_setup->WifiChannel) {
+    switch (Setup.Tx[Config.ConfigId].WifiChannel) {
         case WIFI_CHANNEL_1: strcat(cmd_str, "01"); break;
         case WIFI_CHANNEL_6: strcat(cmd_str, "06"); break;
         case WIFI_CHANNEL_11: strcat(cmd_str, "11"); break;
@@ -642,7 +636,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+WIFIPOWER=");
-    switch (tx_setup->WifiPower) {
+    switch (Setup.Tx[Config.ConfigId].WifiPower) {
         case WIFI_POWER_LOW: strcat(cmd_str, "0"); break;
         case WIFI_POWER_MED: strcat(cmd_str, "1"); break;
         case WIFI_POWER_MAX: strcat(cmd_str, "2"); break;
@@ -665,7 +659,7 @@ char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
     strcpy(cmd_str, "AT+BINDPHRASE=");
-    strcat(cmd_str, common_setup->BindPhrase);
+    strcat(cmd_str, Setup.Common[Config.ConfigId].BindPhrase);
 
     if (!esp_read(cmd_str, s, &len)) {
         return;
@@ -680,7 +674,7 @@ void tTxEspWifiBridge::run_configure(void)
 char s[ESP_CMDRES_LEN+2];
 uint8_t len;
 
-    if (ser == nullptr) return; // we need a serial
+    if (ser == nullptr) return; // needs a serial
 
     // needs a delay of e.g 1 ms from the reset, but this should be ensured by calling esp_enable() early
     esp_gpio0_low(); // force AT mode
@@ -744,8 +738,7 @@ esp_read("dAT+BINDPHRASE=?", s, &len);)
         esp_get_info();
     }
 
-//ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
-if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); }
+ESP_DBG(if (esp_read("AT+NAME=?", s, &len)) { dbg.puts("!ALL GOOD!\r\n"); } else { dbg.puts("!F IT!\r\n"); })
 
     esp_gpio0_high(); // leave forced AT mode
 }

@@ -265,7 +265,7 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         SetFs();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
@@ -406,6 +406,8 @@ class Sx126xDriver : public Sx126xDriverCommon
 {
   public:
 
+    //-- interface to SPI peripheral
+
     void WaitOnBusy(void) override
     {
         while (sx_busy_read()) { __NOP(); };
@@ -495,11 +497,11 @@ class Sx126xDriver : public Sx126xDriverCommon
 #endif
 
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
         sx_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {
@@ -539,6 +541,8 @@ typedef enum {
 class Sx126xDriver2 : public Sx126xDriverCommon
 {
   public:
+
+    //-- interface to SPI peripheral
 
     void WaitOnBusy(void) override
     {
@@ -604,8 +608,8 @@ class Sx126xDriver2 : public Sx126xDriverCommon
         spib_init();
         spib_setnop(0x00); // 0x00 = NOP
         sx2_init_gpio();
-        sx2_dio_init_exti_isroff();
         sx2_dio_exti_isr_clearflag();
+        sx2_dio_init_exti_isroff();
 
         // no idea how long the SX126x takes to boot up, so give it some good time
         // we could probably speed up by using WaitOnBusy()
@@ -627,11 +631,11 @@ class Sx126xDriver2 : public Sx126xDriverCommon
 #endif
 
         Configure(global_config);
-        delay_us(125); // may not be needed if busy available
+        delay_us(125); // may not be needed
         sx2_dio_enable_exti_isr();
     }
 
-    //-- this are the API functions used in the loop
+    //-- these are the API functions used in the loop
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
     {

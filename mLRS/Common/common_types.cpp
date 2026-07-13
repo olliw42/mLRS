@@ -9,9 +9,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "common_types.h"
-#include "setup_types.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "protocols/crsf_protocol.h"
 
 

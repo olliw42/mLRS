@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 21.03.2026
+ version 12.07.2026
 ********************************************************
 '''
 import os
@@ -17,6 +17,8 @@ import pathlib
 import shutil
 import re
 import sys
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 
 #-- installation dependent
@@ -78,7 +80,7 @@ def findSTM32CubeIDEGnuTools(search_root):
     return st_dir, gnu_dir
 
 
-ST_DIR,GNU_DIR = '', ''
+GCC_DIR = ''
 
 # do this only when called from main context
 if __name__ == "__main__":
@@ -92,25 +94,20 @@ if __name__ == "__main__":
     if os.getenv("MLRS_GNU_DIR"):
         GNU_DIR = os.getenv("MLRS_GNU_DIR")
 
-    if ST_DIR == '' or GNU_DIR == '' or not os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
-        print('ERROR: gnu-tools not found!')
-        exit(1)
-
-    print('STM32CubeIDE found in:', ST_DIR)
-    print('gnu-tools found in:', GNU_DIR)
+    if ST_DIR != '' and GNU_DIR != '' and os.path.exists(os.path.join(ST_DIR,GNU_DIR)):
+        # STM32CubeIDE toolchain, gnu-tools live in a tools/bin subpath of the plugin
+        GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
+        print('STM32CubeIDE found in:', ST_DIR)
+        print('gnu-tools found in:', GNU_DIR)
+    else:
+        # no STM32CubeIDE toolchain found, fall back to a standalone arm-none-eabi toolchain on PATH
+        gcc_path = shutil.which('arm-none-eabi-gcc')
+        if not gcc_path:
+            print('ERROR: gnu-tools not found! (neither STM32CubeIDE nor arm-none-eabi-gcc on PATH)')
+            exit(1)
+        GCC_DIR = os.path.dirname(gcc_path) # arm-none-eabi-gcc is directly in this dir
+        print('arm-none-eabi toolchain found in:', GCC_DIR)
     print('------------------------------------------------------------')
-
-
-#-- GCC preliminaries
-
-GCC_DIR = os.path.join(ST_DIR,GNU_DIR,'tools','bin')
-
-# we need to modify the PATH so that the correct toolchain/compiler is used
-# why does sys.path.insert(0,xxx) not work?
-# no, not needed anymore as we can call arm-none-eabi directly
-#envpath = os.environ["PATH"]
-#envpath = GCC_DIR + ';' + envpath
-#os.environ["PATH"] = envpath
 
 
 #-- mLRS directories
@@ -422,10 +419,7 @@ MLRS_SOURCES_MODULES = [
     os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
     os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
     os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
-    
-    #os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'), ## TODO !!!!!!
-    os.path.join('Common','sx-drivers','lr20xx.cpp'), ## TODO !!!!!!
-    
+    os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'),
     os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
     ]
 
@@ -445,17 +439,12 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','tasks.cpp'),
     ]
 
-#add Common/dronecan/out/src/*.c if they exists # TODO: add a function to include them all
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.sensors.rc.RCInput.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.dynamic_node_id.Allocation.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_req.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.GetNodeInfo_res.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.HardwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.NodeStatus.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.protocol.SoftwareVersion.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Protocol.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','uavcan.tunnel.Targetted.c'))
-MLRS_SOURCES_COMMON.append(os.path.join('Common','dronecan','out','src','dronecan.protocol.FlexDebug.c'))
+# add all Common/dronecan/out/src/*.c (auto-generated dronecan message sources), if present
+_dronecan_src_dir = os.path.join('Common','dronecan','out','src')
+if os.path.isdir(os.path.join(MLRS_DIR, _dronecan_src_dir)):
+    for _f in sorted(os.listdir(os.path.join(MLRS_DIR, _dronecan_src_dir))):
+        if _f.endswith('.c'):
+            MLRS_SOURCES_COMMON.append(os.path.join(_dronecan_src_dir, _f))
 
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
@@ -649,7 +638,7 @@ def mlrs_compile_file(target, file):
 
     # execute
     #print('run')
-    os.system(cmd)
+    subprocess.call(cmd, shell=True) # subprocess, not os.system, so parallel compiles aren't serialized
 
 
 def mlrs_link_target(target):
@@ -740,22 +729,22 @@ def mlrs_build_target(target, cmdline_D_list):
 
     print('compiling')
 
-    mlrs_compile_file(target, os.path.join(target.target,'Core','Startup',target.startup_script))
+    files = [os.path.join(target.target,'Core','Startup',target.startup_script)]
 
     for file in target.MLRS_SOURCES_HAL:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     for file in target.MLRS_SOURCES_CORE:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     for file in MLRS_SOURCES_MODULES:
-        mlrs_compile_file(target, file)
+        files.append(file)
 
     for file in MLRS_SOURCES_COMMON:
-        mlrs_compile_file(target, file)
+        files.append(file)
 
     for file in target.MLRS_SOURCES_EXTRA:
-        mlrs_compile_file(target, os.path.join(target.target,file))
+        files.append(os.path.join(target.target,file))
 
     MLRS_SOURCES_RXTX = []
     if target.rx_or_tx == 'rx':
@@ -766,7 +755,13 @@ def mlrs_build_target(target, cmdline_D_list):
         printError('akdfkahsfkuhafkhasfkdh')
         exit(1)
     for file in MLRS_SOURCES_RXTX:
-        mlrs_compile_file(target, file)
+        files.append(file)
+
+    # pre-create object dirs first so the parallel compiles don't race in create_dir()
+    for file in files:
+        create_dir(os.path.join(MLRS_BUILD_DIR,target.build_dir,os.path.dirname(file)))
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        pool.map(lambda file: mlrs_compile_file(target, file), files)
 
     print('linking')
 
@@ -963,9 +958,9 @@ TLIST = [
         'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
         'extra_D_list' : [], 'appendix' : '',
     },{
-        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
-        'extra_D_list' : [], 'appendix' : '',
-    },{
+#        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
+#        'extra_D_list' : [], 'appendix' : '',
+#    },{
 
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
@@ -989,9 +984,9 @@ TLIST = [
 #        'appendix' : '-oled',
 #    },{
 
-        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
-        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
-    },{
+#        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
+#        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+#    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',

@@ -13,11 +13,8 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-
-
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL && defined USE_COM_ON_SERIAL
-  #error HC04 bluetooth module is on serial but board has serial/com !
-#endif
+#include "../Common/hal/hal.h"
+#include "../Common/setup_types.h"
 
 
 //-------------------------------------------------------
@@ -29,7 +26,7 @@
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate) {}
+    void Init(void) {}
 
     void EnterPassthrough(void) {}
     void GetPin(void) {}
@@ -39,6 +36,9 @@ class tTxHc04Bridge
 #else
 
 extern volatile uint32_t millis32(void);
+extern tSetup Setup;
+extern tGlobalConfig Config;
+extern tSerialPorts Serials;
 extern tLEDs leds;
 extern tTxDisp disp;
 
@@ -46,14 +46,14 @@ extern tTxDisp disp;
 class tTxHc04Bridge
 {
   public:
-    void Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate);
+    void Init(void);
 
     void EnterPassthrough(void);
     void GetPin(void);
     void SetPin(uint16_t pin);
 
   private:
-    void run_autoconfigure(void);
+    void run_configure(void);
     bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(char* const ok_device_name);
 
@@ -65,13 +65,17 @@ class tTxHc04Bridge
 };
 
 
-void tTxHc04Bridge::Init(tSerialBase* const _comport, tSerialBase* const _serialport, uint32_t const _serial_baudrate)
+void tTxHc04Bridge::Init(void)
 {
-    com = _comport;
-    ser = _serialport;
-    ser_baud = _serial_baudrate;
+    com = Serials.com;
+    ser = Serials.uartd;
+    ser_baud = 115200; // it is always 115200
 
-    run_autoconfigure();
+    // only auto-configure when the HC04 is selected (no wasted time at boot if not used)
+    if (Setup.Tx[Config.ConfigId].SerialPort == TX_SERIAL_PORT_WIRELESS_BRIDGE ||
+        Setup.Tx[Config.ConfigId].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE) {
+        run_configure();
+    }
 }
 
 
@@ -120,7 +124,9 @@ uint8_t len;
         delay_ms(1500);
         s[len-2] = '\0';
         com->puts((char*)s);
-    } else com->puts("set pin failed");
+    } else {
+        com->puts("set pin failed");
+    }
 }
 
 
@@ -128,8 +134,8 @@ void tTxHc04Bridge::passthrough_do(void)
 {
     ser->SetBaudRate(ser_baud);
     ser->flush();
-#if defined DEVICE_HAS_HC04_MODULE_ON_SERIAL2 && defined USE_COM_ON_SERIAL
-    ser_or_com_set_to_com();
+#ifdef USE_COM_ON_SERIAL
+    com = Serials.ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
 
     leds.InitPassthrough();
@@ -224,7 +230,7 @@ uint8_t len;
 }
 
 
-void tTxHc04Bridge::run_autoconfigure(void)
+void tTxHc04Bridge::run_configure(void)
 {
 uint8_t s[HC04_CMDRES_LEN+2];
 uint8_t len;

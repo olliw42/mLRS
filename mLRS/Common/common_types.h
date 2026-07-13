@@ -13,6 +13,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include "setup_types.h"
 
 
 #define ARRAY_LEN(x)  sizeof(x)/sizeof(x[0])

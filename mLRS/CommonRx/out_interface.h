@@ -15,6 +15,8 @@
 #include "out.h"
 
 
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tStats stats;
 
 

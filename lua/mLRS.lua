@@ -9,11 +9,11 @@
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
 -- works with mLRS v1.3.03 and later, mOTX v33
--- 13.02.2026: Many constants/variables put into tables. 
+-- 13.02.2026: Many constants/variables put into tables.
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-03-20', -- add a '.01' if needed for the day
+    script = '2026-05-30', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -45,7 +45,7 @@ local LAYOUT = {
     W = LCD_W,
     W_HALF = LCD_W / 2,
     DY = 21, -- default line distance
-    -- popup box, location of popup box 
+    -- popup box, location of popup box
     POPUP_X = 80, -- LCD_W/2-160
     POPUP_Y = 76,
     POPUP_W = 320,
@@ -114,6 +114,12 @@ local function setupColors()
         THEME.titleBgColor = COLOR_THEME_SECONDARY1
         THEME.menuTitleColor = COLOR_THEME_PRIMARY2
         THEME.textDisableColor = COLOR_THEME_DISABLED
+    elseif (osname == 'EdgeTXqw') then -- RadioMaster AX12
+        THEME.textColor = BLACK
+        THEME.textBgColor = BLACK
+        THEME.titleBgColor = BLACK
+        THEME.menuTitleColor = WHITE
+        THEME.textDisableColor = LIGHTGREY
     else
         THEME.textColor = TEXT_COLOR
         THEME.textBgColor = TEXT_BGCOLOR -- doesn't work in OTX !!
@@ -189,6 +195,7 @@ end
 local isConnected = nil
 local cmdPush = nil
 local cmdPop = nil
+local deviceInfoRxIsAvailable = false -- workaround for AX12
 
 local MBRIDGE_COMMANDPACKET_STX  = 0xA0
 local MBRIDGE_COMMANDPACKET_MASK = 0xE0
@@ -225,7 +232,7 @@ local MBRIDGE_CMD_LEN = {
     [MBRIDGE_CMD.PARAM_SET]       = 7,  -- MBRIDGE_CMD_PARAM_SET_LEN
     [MBRIDGE_CMD.MODELID_SET]     = 3,  -- MBRIDGE_CMD_MODELID_SET_LEN
 }
-    
+
 local MBRIDGE_PARAM_TYPE = {
     UINT8       = 0,
     INT8        = 1,
@@ -240,7 +247,14 @@ local function mbridgeCmdLen(cmd)
 end
 
 local function crsfIsConnected()
-    if getRSSI() ~= 0 then return true end
+    local ver, radio, maj, minor, rev, osname = getVersion()
+    if osname ~= 'EdgeTXqw' and getRSSI() ~= 0 then
+        return true
+    end
+    -- substitute for getRSSI() on AX12, needs reload to discover receiver (dis)connect.
+    if osname == 'EdgeTXqw' and deviceInfoRxIsAvailable then
+       return true
+    end
     return false
 end
 
@@ -572,12 +586,12 @@ end
 ----------------------------------------------------------------------
 
 local function updateDeviceParamCounts(f)
-    if f <= 1 then -- called when DEVICE_INFO is received 
+    if f <= 1 then -- called when DEVICE_INFO is received
         if DEVICE_INFO.param_num > 0 then DEVICE_PARAM_LIST_max_index = DEVICE_INFO.param_num - 1 end
     else -- called when end of param list is received
         if DEVICE_INFO.param_num == 0 then DEVICE_PARAM_LIST_max_index = #DEVICE_PARAM_LIST end
     end
-end  
+end
 
 
 local function doParamLoop()
@@ -645,6 +659,7 @@ local function doParamLoop()
             DEVICE_INFO.rx_diversity = mb_to_u8_bits(cmd.payload, 7, 4, 0x0F)
             DEVICE_INFO.param_num = mb_to_u8(cmd.payload, 8)
             updateDeviceParamCounts(1)
+            deviceInfoRxIsAvailable = (DEVICE_INFO.rx_available == 1) -- to signal if reciever is available
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM then
             -- MBRIDGE_CMD.PARAM_ITEM
             local index = cmd.payload[0]
@@ -855,7 +870,7 @@ local CURSOR = {
     sidx = 0, -- index into string for string edits
     top_idx = 0, -- index of first displayed option on Edit Tx/Rx pages
 }
-  
+
 local bindphrase_chars = "abcdefghijklmnopqrstuvwxyz0123456789_#-."
 
 
@@ -1136,6 +1151,7 @@ end
 ----------------------------------------------------------------------
 
 local isEdgeTx = false
+local isAX12 = false
 local isFirstParamDownload = true
 local FirstParamDownloadTmo_10ms = 0
 
@@ -1167,12 +1183,12 @@ local function drawParamDownload()
     local s = "("..tostring(idx)
     if DEVICE_PARAM_LIST_max_index > 0 then
         s = s.."/"..tostring(DEVICE_PARAM_LIST_max_index)
-    end    
+    end
     s = s..")"
     if isEdgeTx then -- with OpenTx TEXT_BGCOLOR doesn't seem to work correctly
         lcd.setColor(CUSTOM_COLOR, THEME.textBgColor)
         lcd.drawFilledRectangle(LAYOUT.W_HALF + 90, y+LAYOUT.INFO_DY-5, 70, 30, CUSTOM_COLOR)
-    end    
+    end
     lcd.drawText(LAYOUT.W_HALF + 100, y+LAYOUT.INFO_DY, s, THEME.textColor)
 end
 
@@ -1282,11 +1298,11 @@ local function drawPageMain()
     y = LAYOUT.INFO_Y
     lcd.setColor(CUSTOM_COLOR, GREY)
     lcd.drawFilledRectangle(0, y-5, LAYOUT.W, 1, CUSTOM_COLOR)
-    
+
     if DEVICE_DOWNLOAD_is_running then
         drawParamDownload()
         return
-    end    
+    end
 
     lcd.drawText(LAYOUT.INFO_LEFT_X, y, "Tx Power", THEME.textColor)
     lcd.drawText(LAYOUT.INFO_LEFT_X, y+LAYOUT.INFO_DY, "Tx Diversity", THEME.textColor)
@@ -1453,17 +1469,17 @@ local function Do(event)
     -- OpenTx: must display
     -- EdgeTx: don't display everything in param upload, EdgeTx is super slow
     -- 20.3.2026: hm, seems to work fine now
-    if isEdgeTx and DEVICE_DOWNLOAD_is_running then
+    if (isEdgeTx or isAX12) and DEVICE_DOWNLOAD_is_running then
         if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
             if getTime() > FirstParamDownloadTmo_10ms then
                 local attr = RED+CENTER
                 if LCD_W >= 480 then attr = attr + MIDSIZE end
                 lcd.drawText(LAYOUT.W_HALF, LCD_H/4, "!! Please check if CRSF baudrate is 400k !!", attr)
                 FirstParamDownloadTmo_10ms = 0 -- disable
-            end  
-        end  
+            end
+        end
         if not isFirstParamDownload then drawParamDownload(); end
-        return 
+        return
     end
     isFirstParamDownload = false
 
@@ -1491,6 +1507,7 @@ end
 local function scriptInit()
     local ver, radio, maj, minor, rev, osname = getVersion()
     isEdgeTx = (osname == 'EdgeTX')
+    isAX12 = (osname == 'EdgeTXqw')
 
     setupScreen()
     setupColors()
@@ -1500,8 +1517,10 @@ local function scriptInit()
 
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     isFirstParamDownload = true
-    FirstParamDownloadTmo_10ms = tnow_10ms + 500 --- drop a warning after 5 secs
-    
+    FirstParamDownloadTmo_10ms = tnow_10ms + 500 -- drop a warning after 5 secs
+    if isAX12 then
+        FirstParamDownloadTmo_10ms = FirstParamDownloadTmo_10ms + 300 -- for AX12, drop a warning after 8 secs
+    end
     if tnow_10ms < 300 then
         DEVICE_SAVE_t_last = 300 - tnow_10ms -- treat script start like a Save
     else

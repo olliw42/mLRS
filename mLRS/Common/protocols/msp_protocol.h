@@ -102,7 +102,7 @@ typedef enum {
     MSP_ANALOG                    = 110, // better use MSP_INAV_ANALOG
     MSP_ACTIVEBOXES               = 113,
     MSP_MISC                      = 114, // better use MSP_INAV_MISC
-    MSP_BOXNAMES                  = 116, // len = 340
+    MSP_BOXNAMES                  = 116, // len = 340, up to 646 in 9.1 counting chars in boxes[], https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp_box.c
     MSP_BOXIDS                    = 119,
     MSP_SERVO_CONFIGURATIONS      = 120, // len = 224
     MSP_NAV_STATUS                = 121,
@@ -458,9 +458,11 @@ typedef enum {
 // modes we can extract from BOX_NAMES, and which are of interest to us
 // this is different to but mostly mirrors INAV's flightModeFlags_e enum
 // https://github.com/iNavFlight/inav/blob/master/src/main/fc/runtime_config.h#L89-L109
-// adds ARM mode
-// includes all INAV modes (in different order though), except
-//    NAV_FW_AUTOLAND
+// includes all INAV modes (in different order though), except (as we can't get them from BOXNAMES)
+//    NAV_FW_AUTOLAND, NAV_SEND_TO
+// adds these modes
+//    ARM, AIR_MODE, NAV_CRUISE
+// is stored in MSPX_STATUS as a uint32, so need to be <= 32 flight modes
 typedef enum {
     INAV_FLIGHT_MODES_ARM = 0,
     INAV_FLIGHT_MODES_FAILSAFE,
@@ -493,7 +495,7 @@ typedef struct {
 } tMspBoxArray;
 
 
-#define INAV_BOXES_COUNT  55
+#define INAV_BOXES_COUNT  59
 
 // mirrors INAV's static const box_t boxes[]
 // https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp_box.c
@@ -553,6 +555,10 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
     { .boxName = "MIXER PROFILE 2",   .flightModeFlag = 255 },
     { .boxName = "MIXER TRANSITION",  .flightModeFlag = 255 },
     { .boxName = "ANGLE HOLD",        .flightModeFlag = INAV_FLIGHT_MODES_ANGLE_HOLD },
+    { .boxName = "GIMBAL LEVEL TILT", .flightModeFlag = 255 },
+    { .boxName = "GIMBAL LEVEL ROLL", .flightModeFlag = 255 },
+    { .boxName = "GIMBAL CENTER",     .flightModeFlag = 255 },
+    { .boxName = "GIMBAL HEADTRACKER",.flightModeFlag = 255 },
 };
 
 
@@ -578,6 +584,8 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
         strcpy(s, "!FS!");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
         strcpy(s, "MANU");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_TURTLE)) {
+        strcpy(s, "TURT");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_RTH)) {
         strcpy(s, "RTH"); // shown as "WRTH" in OSD if waypoint mission RTH is active
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_POSHOLD)) {

@@ -21,16 +21,16 @@
   MISSION_CURRENT       #42   -> 0x500D WAYPOINT_V2                       SRx_EXT_STAT
   NAV_CONTROLLER_OUTPUT #62   -> 0x5009 WAYPOINT_V1, 0x500D WAYPOINT V2   SRx_EXT_STAT
   VFR_HUD               #74   -> 0x5005 VEL_YAW, 0x50F2 VFR_HUD           SRx_EXTRA2
+  DISTANCE_SENSOR       #132  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3
   TERRAIN_REPORT        #136  -> 0x500B TERRAIN                           -
   BATTERY_STATUS        #147  -> 0x5003 BATT_1, 0x5008 BATT_2             SRx_EXTRA3
   FENCE_STATUS          #162  -> 0x5001 AP_STATUS                         SRx_EXT_STAT
   // #173, #181, #226 are ArduPilot dialect specific
-  RANGEFINDER           #173  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3
+  RANGEFINDER           #173  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3 !!   since AP 4.7 not streamed anymore
   BATTERY2              #181  -> 0x5008 BATT_2                            SRx_EXTRA3      not used, replaced by BATTERY_STATUS
   RPM                   #226  -> 0x500A RPM                               SRx_EXTRA3
   HOME_POSITION         #242  -> 0x5004 HOME                              -
 
-  DISTANCE_SENSOR       #132                                              SRx_EXTRA3
   EKF_STATUS_REPORT     #193                                              SRx_EXTRA3
   WIND_COV              #231                                              -
   EXTENDED_SYS_STATE    #245                                              -
@@ -51,12 +51,12 @@
                             FENCE_STATUS            -> (AP_STATUS_0x5001)
   SRx_EXTRA1   (4 Hz)   ->  ATTITUDE                -> ATTITUDE_RANGE_0x5006
   SRx_EXTRA2   (4 Hz)   ->  VFR_HUD                 -> VEL_YAW_0x5005, VEL_YAW_0x5005_AIR (AP_STATUS_0x5001)
-  SRx_EXTRA3   (1/2 Hz) ->  RANGEFINDER             -> ATTITUDE_RANGE_0x5006
+  SRx_EXTRA3   (1/2 Hz) ->  DISTANCE_SENSOR         -> ATTITUDE_RANGE_0x5006
                             BATTERY_STATUS          -> BATT_1_0x5003, BATT_2_0x5008
                             TERRAIN_REPORT          -> TERRAIN_0x500B
+                            RANGEFINDER !!          -> ATTITUDE_RANGE_0x5006  since AP 4.7 not streamed anymore
                             RPM                     -> RPM_0x500A
                             WIND ?useful?
-                            DISTANCE_SENSOR ?useful? yes, we want to digest it if we get it
   SRx_POSITION (2 Hz)   ->  GLOBAL_POSITION_INT     -> GPS_LAT_0x800, GPS_LON_0x800, HOME_0x5004
   SRx_RAW_SENS (0 Hz)   ->  RAW_IMU                 -> (AP_STATUS_0x5001)
 
@@ -66,7 +66,7 @@
   MavToPass uses
   - SYS_STATUS to get BATT1 volt and curr, and BATTERY_STATUS to get BATT1 mAh
   - BATTERY2 to get BATT2 volt and curr, and BATTERY_STATUS to get BATT2 mAh
-  we replace it with only using BATTERY_STATUS, see also MAVlink for OpenTx
+  we replace it with only using BATTERY_STATUS, see also MAVLink for OpenTx
 
   MavToPass uses
   - SCALED_IMU to get IMU temperature
@@ -130,22 +130,23 @@ class tPassThrough
 
     // these read a MAVLink message and convert data into passthrough data fields
     
-    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);           // #0
-    void handle_mavlink_msg_sys_status(fmav_sys_status_t* const payload);         // #1
-    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);       // #24
-    void handle_mavlink_msg_raw_imu(fmav_raw_imu_t* const payload);               // #27
-    void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);             // #30
+    void handle_mavlink_msg_heartbeat(fmav_heartbeat_t* const payload);             // #0
+    void handle_mavlink_msg_sys_status(fmav_sys_status_t* const payload);           // #1
+    void handle_mavlink_msg_gps_raw_int(fmav_gps_raw_int_t* const payload);         // #24
+    void handle_mavlink_msg_raw_imu(fmav_raw_imu_t* const payload);                 // #27
+    void handle_mavlink_msg_attitude(fmav_attitude_t* const payload);               // #30
     void handle_mavlink_msg_global_position_int(fmav_global_position_int_t* const payload);     // #33
     void handle_mavlink_msg_mission_current(fmav_mission_current_t* const payload);             // #42
     void handle_mavlink_msg_nav_controller_output(fmav_nav_controller_output_t* const payload); // #62
-    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);               // #74
-    void handle_mavlink_msg_terrain_report(fmav_terrain_report_t* const payload); // #136
-    void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload); // #147
-    void handle_mavlink_msg_fence_status(fmav_fence_status_t* const payload);     // #162
-    void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload);       // #173, ArduPilot dialect specific
-    void handle_mavlink_msg_rpm(fmav_rpm_t* const payload);                       // #226, ArduPilot dialect specific
-    void handle_mavlink_msg_home_position(fmav_home_position_t* const payload);   // #242
-    void handle_mavlink_msg_statustext(fmav_statustext_t* const payload);         // #253
+    void handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload);                 // #74
+    void handle_mavlink_msg_distance_sensor(fmav_distance_sensor_t* const payload); // #132, since AP4.7 the default
+    void handle_mavlink_msg_terrain_report(fmav_terrain_report_t* const payload);   // #136
+    void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);   // #147
+    void handle_mavlink_msg_fence_status(fmav_fence_status_t* const payload);       // #162
+    void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload);         // #173, ArduPilot dialect specific
+    void handle_mavlink_msg_rpm(fmav_rpm_t* const payload);                         // #226, ArduPilot dialect specific
+    void handle_mavlink_msg_home_position(fmav_home_position_t* const payload);     // #242
+    void handle_mavlink_msg_statustext(fmav_statustext_t* const payload);           // #253
 
     // methods to convert MAVLink data to passthrough (OpenTX) format
 
@@ -191,6 +192,7 @@ class tPassThrough
     fmav_nav_controller_output_t nav_controller_output = {};
     fmav_mission_current_t mission_current = {};
     fmav_vfr_hud_t vfr_hud = {};
+    fmav_distance_sensor_t distance_sensor = {};
     fmav_terrain_report_t terrain_report = {};
     fmav_battery_status_t battery_status_id0 = {};
     fmav_battery_status_t battery_status_id1 = {};
@@ -206,6 +208,8 @@ class tPassThrough
     uint8_t statustext_cur_chunk_index;
 
     bool global_position_int_received_once;
+    bool distance_sensor_received_once;
+    uint8_t distance_sensor_lowest_id_received;
     bool fence_status_received_once;
     bool home_position_received_once;
 
@@ -224,6 +228,8 @@ void tPassThrough::Init(void)
     statustext_cur_chunk_index = 0;
 
     global_position_int_received_once = false;
+    distance_sensor_received_once = false;
+    distance_sensor_lowest_id_received = UINT8_MAX;
     fence_status_received_once = false;
     home_position_received_once = false;
 
@@ -325,6 +331,18 @@ void tPassThrough::handle_mavlink_msg_vfr_hud(fmav_vfr_hud_t* const payload) // 
     // we do not update, AP_STATUS reads vfr_hud.throttle, but no urgent reason to update IS THIS WHAT WE WANT ???
     // pt_update[AP_STATUS_0x5001] = true;
     // pt_update[VFR_HUD_0x50F2] = true; // we don't use it
+}
+
+
+void tPassThrough::handle_mavlink_msg_distance_sensor(fmav_distance_sensor_t* const payload) // #132 -> 0x5006 ATTITUDE_RANGE
+{
+    if (payload->orientation != MAV_SENSOR_ROTATION_PITCH_270) return; // not downward facing
+    if (payload->id > distance_sensor_lowest_id_received) return; // we have seen one with lower id
+    if (payload->signal_quality == 1) return; // 0: unknown, 1: invalid, 100: perfect // always 0 in AP
+    memcpy(&distance_sensor, payload, sizeof(fmav_distance_sensor_t));
+    pt_update[ATTITUDE_RANGE_0x5006] = true;
+    distance_sensor_received_once = true;
+    distance_sensor_lowest_id_received = payload->id;
 }
 
 
@@ -713,7 +731,12 @@ bool tPassThrough::get_AttitudeRange_0x5006(uint32_t* const data)
 
     int32_t pt_roll = roundf((RAD2DEGF * attitude.roll * 5.0f) + 900.0f); // rad -> 0.2 deg
     int32_t pt_pitch = roundf((RAD2DEGF * attitude.pitch * 5.0f) + 450.0f); // rad ->  0.2 deg
-    int32_t pt_dist = roundf(rangefinder.distance * 100.0f); // m -> cm
+    int32_t pt_dist = 0;
+    if (distance_sensor_received_once) { // we got a DISTANCE_SENSOR message, so use them over RANGEFINDER messages
+        pt_dist = distance_sensor.current_distance; // cm -> cm
+    } else {
+        pt_dist = roundf(rangefinder.distance * 100.0f); // m -> cm
+    }
 
     *data = 0;
     pt_pack32(data, pt_roll, 0, 11);
