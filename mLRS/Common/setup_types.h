@@ -470,6 +470,7 @@ typedef struct
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialPort_allowed_mask;
     uint16_t Tx_SerialPort2_allowed_mask;
+    uint16_t Tx_SerialBaudrate2_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 
