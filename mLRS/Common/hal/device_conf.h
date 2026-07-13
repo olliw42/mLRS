@@ -340,6 +340,37 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 
+//-- DIY Boards, LR2021 Devices
+
+#ifdef RX_DIY_NICERF_LR2021_G431KB
+  #define DEVICE_NAME "DIY LR2021 G431KB"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_LR20xx
+  #define FREQUENCY_BAND_2P4_GHZ
+#if 1
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#else
+  #define FREQUENCY_BAND_433_MHZ
+  #define FREQUENCY_BAND_70_CM_HAM
+#endif
+#endif
+
+#ifdef TX_DIY_NICERF_LR2021_G431KB
+  #define DEVICE_NAME "DIY LR2021 G431KB"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_LR20xx
+  #define FREQUENCY_BAND_2P4_GHZ
+#if 1
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#else
+  #define FREQUENCY_BAND_433_MHZ
+  #define FREQUENCY_BAND_70_CM_HAM
+#endif
+#endif
+
+
 //-------------------------------------------------------
 // ESP Boards
 //-------------------------------------------------------

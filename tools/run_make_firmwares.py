@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 12.07.2026
+ version 13.07.2026
 ********************************************************
 '''
 import os
@@ -1039,6 +1039,9 @@ TLIST = [
         'target' : 'rx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'RX_DIY_WIOE5_E22_WLE5JC',
         'extra_D_list' : [], 'appendix' : ''
     },{
+        'target' : 'rx-diy-NiceRF-LR2021-g431kb',       'target_D' : 'RX_DIY_NICERF_LR2021_G431KB',
+        'extra_D_list' : [], 'appendix' : ''
+    },{
 #-- rx WioE5 Mini, Grove
         'target' : 'rx-Wio-E5-Mini-wle5jc',             'target_D' : 'RX_WIO_E5_MINI_WLE5JC',
         'extra_D_list' : [], 'appendix' : '',
@@ -1076,6 +1079,9 @@ TLIST = [
         'extra_D_list' : [], 'appendix' : ''
     },{
         'target' : 'tx-diy-WioE5-E22-dual-wle5jc',      'target_D' : 'TX_DIY_WIOE5_E22_WLE5JC',
+        'extra_D_list' : [], 'appendix' : ''
+    },{
+        'target' : 'tx-diy-NiceRF-LR2021-g431kb',       'target_D' : 'TX_DIY_NICERF_LR2021_G431KB',
         'extra_D_list' : [], 'appendix' : ''
     },{
 #-- tx WioE5 Mini
