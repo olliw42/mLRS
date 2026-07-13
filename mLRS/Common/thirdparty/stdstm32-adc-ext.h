@@ -40,7 +40,7 @@ int16_t adc_tempsensor_convert_dC(uint16_t ts_data)
 {
 #ifdef STM32G4
     // RM0440, 21.4.31
-    // T in °C( ) = (TS_CAL2_TEMP - TS_CAL1_TEMP)/(TS_CAL2 - TS_CAL1) * (TS_DATA - TS_CAL1) + TS_CAL1_TEMP
+    // T in Celsius( ) = (TS_CAL2_TEMP - TS_CAL1_TEMP)/(TS_CAL2 - TS_CAL1) * (TS_DATA - TS_CAL1) + TS_CAL1_TEMP
     // DS13122, 3.18.1, table 5
     #define TS_CAL1_TEMP  30*10 // @ VDDA= VREF+ = 3.0 V  // *10 to get deziCelsius
     #define TS_CAL2_TEMP  130*10                          // *10 to get deziCelsius

@@ -792,7 +792,7 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
     barometer.baro_temp = CRSF_REV_U32(payload->temperature);
     crsf_status[CRSF_ITEM_BAROMETER].updated = true;
 
-    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    // MAVLink: cdegC -> CRSF: in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0 Celsius, -50 = -5.0 Celsius)
     temp_ambient.temp_source_id = 1;
     temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
     crsf_status[CRSF_ITEM_TEMP].updated = true;
@@ -1011,10 +1011,10 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         tMspRawGps* payload = (tMspRawGps*)(msg->payload);
         gps.latitude = CRSF_REV_U32(payload->lat);                    // int32_t degree / 1e7           // uint32_t  1 / 10 000 000 deg
         gps.longitude = CRSF_REV_U32(payload->lon);                   // int32_t degree / 1e7           // uint32_t 1 / 10 000 000 deg
-        gps.groundspeed = CRSF_REV_U16((payload->ground_speed * 36 + 50) / 100);  // uint16_t km/h / 100            // uint16_t  cm/s
+        gps.groundspeed = CRSF_REV_U16((payload->ground_speed * 36 + 50) / 100);  // uint16_t km/h / 100  // uint16_t  cm/s
         gps.gps_heading = CRSF_REV_U16(payload->ground_course * 10);  // uint16_t degree / 100          // uint16_t  degree*10
         // INAV wants the baro alt in the gps alt field
-        //gps.altitude = CRSF_REV_U16(payload->alt + 1000);             // uint16_t meter - 1000m offset  // uint16_t  meters
+        //gps.altitude = CRSF_REV_U16(payload->alt + 1000);           // uint16_t meter - 1000m offset  // uint16_t  meters
         gps.altitude = CRSF_REV_U16(inav_baro_altitude / 100 + 1000);
         gps.satellites = payload->numSat;                             // uint8_t                        // uint8_t
         crsf_status[CRSF_ITEM_GPS].updated = true;
