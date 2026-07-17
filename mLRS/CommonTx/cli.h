@@ -959,8 +959,8 @@ bool rx_param_changed;
             tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
         } else
         if (is_cmd_set_str("esp set netssid", svalue)) {
-            if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
-                putsn("err: invalid string (min 8 chars, max 24 chars, or empty to clear)");
+            if (strlen(svalue) > 24) {
+                putsn("err: invalid string (max 24 chars, or empty to clear)");
             } else {
                 puts("  esp netssid: ");
                 putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
