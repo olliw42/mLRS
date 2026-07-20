@@ -197,7 +197,7 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add mbridge
 #endif
-#if !(defined STM32G4 && defined USE_SERIAL && defined USE_SERIAL2)
+#if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
     SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
 #endif
 
