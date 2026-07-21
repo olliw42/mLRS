@@ -899,6 +899,14 @@ class cTargetG474CE(cTargetG4):
             'STM32G474xx', 'startup_stm32g474ce'+package.lower()+'.s', 'STM32G474CE'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
+class cTargetG474RE(cTargetG4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'tx'
+        super().__init__(
+            target, target_D,
+            'STM32G474xx', 'startup_stm32g474re'+package.lower()+'.s', 'STM32G474RE'+package.upper()+'_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
 
 class cTargetWLE5CC(cTargetWL):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name):
@@ -1024,6 +1032,11 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_ELRS_BOOTLOADER'],
         'appendix' : '-elrs-bl',
     },{
+#-- FrSky LR2021
+        'target' : 'tx-frsky-lr2021-g474re',            'target_D' : 'TX_FRSKY_LR2021_G474RE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
+    },{
+
 
 #RX
 #-- rx diy
@@ -1202,6 +1215,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetG491RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g474ce' in t['target']:
             tlist.append( cTargetG474CE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
+        elif 'g474re' in t['target']:
+            tlist.append( cTargetG474RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'wle5cc' in t['target']:
             tlist.append( cTargetWLE5CC(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name) )
         elif 'wle5jc' in t['target']:
