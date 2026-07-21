@@ -67,13 +67,13 @@
 #define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB6
-#define SX_DIO1                   IO_PB4
+#define SX_DIO                    IO_PB4
 #define SX_BUSY                   IO_PB5
 #define SX_RX_EN                  IO_PB0
 #define SX_TX_EN                  IO_PB7
 
-#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
-#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
+#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTB
+#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE4
 #define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_4
 #define SX_DIO_EXTI_IRQn              EXTI4_IRQn
 #define SX_DIO_EXTI_IRQHandler        EXTI4_IRQHandler
@@ -82,7 +82,7 @@
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
@@ -107,7 +107,7 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX_DIO1_SYSCFG_EXTI_PORTx, SX_DIO1_SYSCFG_EXTI_LINEx);
+    LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);

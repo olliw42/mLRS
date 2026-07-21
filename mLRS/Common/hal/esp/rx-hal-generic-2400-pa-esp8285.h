@@ -34,8 +34,8 @@
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             16000000L
 #define SX_RESET                  IO_P2
+#define SX_DIO                    IO_P4
 #define SX_BUSY                   IO_P5
-#define SX_DIO1                   IO_P4
 #define SX_TX_EN                  IO_P10
 #define SX_RX_EN                  IO_P9
 
@@ -43,17 +43,14 @@ IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
+    gpio_init(SX_DIO, IO_MODE_INPUT_ANALOG);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
 }
 
-IRAM_ATTR bool sx_busy_read(void)
-{
-    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
-}
+IRAM_ATTR bool sx_busy_read(void) { return (gpio_read_activehigh(SX_BUSY)) ? true : false; }
 
 IRAM_ATTR void sx_amp_transmit(void)
 {
@@ -68,12 +65,7 @@ IRAM_ATTR void sx_amp_receive(void)
 }
 
 void sx_dio_init_exti_isroff(void) {}
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO1, SX_DIO_EXTI_IRQHandler, RISING);
-}
-
+void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO, SX_DIO_EXTI_IRQHandler, RISING); }
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 

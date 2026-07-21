@@ -78,13 +78,13 @@
 #define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB5
-#define SX_DIO1                   IO_PB3
+#define SX_DIO                    IO_PB3
 #define SX_BUSY                   IO_PB4
 #define SX_RX_EN                  IO_PB8
 #define SX_TX_EN                  IO_PB12
 
-#define SX_DIO1_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTB
-#define SX_DIO1_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE3
+#define SX_DIO_GPIO_AF_EXTI_PORTx     LL_GPIO_AF_EXTI_PORTB
+#define SX_DIO_GPIO_AF_EXTI_LINEx     LL_GPIO_AF_EXTI_LINE3
 #define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_3
 #define SX_DIO_EXTI_IRQn              EXTI3_IRQn
 #define SX_DIO_EXTI_IRQHandler        EXTI3_IRQHandler
@@ -95,7 +95,7 @@
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
@@ -120,7 +120,7 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_GPIO_AF_SetEXTISource(SX_DIO1_GPIO_AF_EXTI_PORTx, SX_DIO1_GPIO_AF_EXTI_LINEx);
+    LL_GPIO_AF_SetEXTISource(SX_DIO_GPIO_AF_EXTI_PORTx, SX_DIO_GPIO_AF_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
@@ -152,13 +152,13 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PA4
-#define SX2_DIO1                  IO_PA1
+#define SX2_DIO                   IO_PA1
 #define SX2_BUSY                  IO_PA0
 #define SX2_RX_EN                 IO_PB6
 #define SX2_TX_EN                 IO_PB1
 
-#define SX2_DIO1_GPIO_AF_EXTI_PORTx   LL_GPIO_AF_EXTI_PORTA
-#define SX2_DIO1_GPIO_AF_EXTI_LINEx   LL_GPIO_AF_EXTI_LINE1
+#define SX2_DIO_GPIO_AF_EXTI_PORTx    LL_GPIO_AF_EXTI_PORTA
+#define SX2_DIO_GPIO_AF_EXTI_LINEx    LL_GPIO_AF_EXTI_LINE1
 #define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_1
 #define SX2_DIO_EXTI_IRQn             EXTI1_IRQn
 #define SX2_DIO_EXTI_IRQHandler       EXTI1_IRQHandler
@@ -169,7 +169,7 @@ void sx_dio_exti_isr_clearflag(void)
 void sx2_init_gpio(void)
 {
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX2_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
     gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
@@ -194,7 +194,7 @@ void sx2_amp_receive(void)
 
 void sx2_dio_init_exti_isroff(void)
 {
-    LL_GPIO_AF_SetEXTISource(SX2_DIO1_GPIO_AF_EXTI_PORTx, SX2_DIO1_GPIO_AF_EXTI_LINEx);
+    LL_GPIO_AF_SetEXTISource(SX2_DIO_GPIO_AF_EXTI_PORTx, SX2_DIO_GPIO_AF_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);

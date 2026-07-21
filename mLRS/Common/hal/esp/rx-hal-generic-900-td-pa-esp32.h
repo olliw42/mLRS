@@ -38,9 +38,9 @@
 #define SPI_MOSI                  IO_P32
 #define SPI_SCK                   IO_P25
 #define SPI_FREQUENCY             10000000L
-#define SX_DIO0                   IO_P39
-#define SX_DIO1                   IO_P34
 #define SX_RESET                  IO_P21
+#define SX_DIO                    IO_P39
+//#define SX_DIO1                   IO_P34
 #define SX_RX_EN                  IO_P9
 #define SX_TX_EN                  IO_P15
 
@@ -48,11 +48,10 @@ IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    gpio_init(SX_DIO0, IO_MODE_INPUT_PU);
-    gpio_init(SX_DIO1, IO_MODE_INPUT_PU);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_DIO, IO_MODE_INPUT_PU);
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX_RX_EN, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
 IRAM_ATTR void sx_amp_transmit(void)
@@ -67,16 +66,8 @@ IRAM_ATTR void sx_amp_receive(void)
     gpio_high(SX_RX_EN);
 }
 
-void sx_dio_init_exti_isroff(void)
-{
-    detachInterrupt(SX_DIO0);
-}
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
-}
-
+void sx_dio_init_exti_isroff(void) { detachInterrupt(SX_DIO); }
+void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO, SX_DIO_EXTI_IRQHandler, RISING); }
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
@@ -84,9 +75,9 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 // antenna2 = right ufl
 
 #define SX2_CS_IO                 IO_P27
-#define SX2_DIO0                  IO_P36
-#define SX2_DIO1                  IO_P37
 #define SX2_RESET                 IO_P26
+#define SX2_DIO                   IO_P36
+//#define SX2_DIO1                  IO_P37
 #define SX2_RX_EN                 IO_P10
 #define SX2_TX_EN                 IO_P14
 
@@ -95,22 +86,14 @@ IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
 void sx2_init_gpio(void)
 {
     gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
-    gpio_init(SX2_DIO0, IO_MODE_INPUT_PU);
-    gpio_init(SX2_DIO1, IO_MODE_INPUT_PU);
+    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX2_DIO, IO_MODE_INPUT_PU);
     gpio_init(SX2_TX_EN, IO_MODE_OUTPUT_PP_LOW);
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR void spib_select(void)
-{
-    gpio_low(SX2_CS_IO);
-}
-
-IRAM_ATTR void spib_deselect(void)
-{
-    gpio_high(SX2_CS_IO);
-}
+IRAM_ATTR void spib_select(void) { gpio_low(SX2_CS_IO); }
+IRAM_ATTR void spib_deselect(void) { gpio_high(SX2_CS_IO); }
 
 IRAM_ATTR void sx2_amp_transmit(void)
 {
@@ -124,16 +107,8 @@ IRAM_ATTR void sx2_amp_receive(void)
     gpio_high(SX2_RX_EN);
 }
 
-void sx2_dio_init_exti_isroff(void)
-{
-    detachInterrupt(SX2_DIO0);
-}
-
-void sx2_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX2_DIO0, SX2_DIO_EXTI_IRQHandler, RISING);
-}
-
+void sx2_dio_init_exti_isroff(void) { detachInterrupt(SX2_DIO); }
+void sx2_dio_enable_exti_isr(void) { attachInterrupt(SX2_DIO, SX2_DIO_EXTI_IRQHandler, RISING); }
 void sx2_dio_exti_isr_clearflag(void) {}
 
 

@@ -34,26 +34,22 @@
 #define SPI_CS_IO                 IO_P15
 #define SPI_FREQUENCY             10000000L
 #define SX_RESET                  IO_P2
-#define SX_DIO0                   IO_P4
+#define SX_DIO                    IO_P4
 //#define SX_DIO1                   IO_P5
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    gpio_init(SX_DIO0, IO_MODE_INPUT_ANALOG);
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
+    gpio_init(SX_DIO, IO_MODE_INPUT_ANALOG);
 }
 
 IRAM_ATTR void sx_amp_transmit(void) {}
 IRAM_ATTR void sx_amp_receive(void) {}
+
 void sx_dio_init_exti_isroff(void) {}
-
-void sx_dio_enable_exti_isr(void)
-{
-    attachInterrupt(SX_DIO0, SX_DIO_EXTI_IRQHandler, RISING);
-}
-
+void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO, SX_DIO_EXTI_IRQHandler, RISING); }
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 
 
