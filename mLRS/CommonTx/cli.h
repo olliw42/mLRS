@@ -21,6 +21,7 @@
 
 extern volatile uint32_t millis32(void);
 extern bool connected(void);
+extern bool connected_and_rx_setup_available(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tSetupMetaData SetupMetaData;
@@ -470,8 +471,7 @@ uint8_t n;
 
 void tTxCli::print_layout_version_warning(void)
 {
-    if (!connected()) return;
-    if (!SetupMetaData.rx_available) return; // is always true when connected, except when some link task is going on or in bind
+    if (!connected_and_rx_setup_available()) return;
     if (SetupMetaData.rx_setup_layout < SETUPLAYOUT) {
         putsn("!! Rx param version smaller than Tx param version. !!");
         putsn("!! Please upgrade receiver.                        !!");
