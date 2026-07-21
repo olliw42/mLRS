@@ -133,7 +133,14 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-//-- FrsKy R9 system
+//-- FrSky LR2021 system
+
+#ifdef TX_FRSKY_LR2021_G474RE
+#include "frsky/tx-hal-frsky-lr2021-g474re.h"
+#endif
+
+
+//-- FrSky R9 system
 
 #ifdef RX_R9MX_868_L433CB
 #include "stm32/rx-hal-R9MX-868-l433cb.h"
@@ -328,7 +335,7 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
   #define USE_FAN
 #endif
 
