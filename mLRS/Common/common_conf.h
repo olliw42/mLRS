@@ -46,6 +46,7 @@
 
 
 #define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: mBridge
+#define SETUP_TX_SERIAL_PORT2           0 // 0: none, 1: serial port, 2: wbridge (BT/ESP) port, 3: serial2
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 

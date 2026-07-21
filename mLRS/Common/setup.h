@@ -333,7 +333,7 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
     Setup.Tx[config_id].SerialPort = SETUP_TX_SERIAL_PORT;
-    Setup.Tx[config_id].SerialPort2 = TX_SERIAL_PORT2_NONE;
+    Setup.Tx[config_id].SerialPort2 = SETUP_TX_SERIAL_PORT2;
     Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].SerialBaudrate2 = SERIAL_BAUDRATE_115200;
     Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -490,7 +490,7 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].SerialPort, TX_SERIAL_PORT_NUM, SETUP_TX_SERIAL_PORT, TX_SERIAL_PORT_SERIAL);
     TST_NOTALLOWED(Tx_SerialPort_allowed_mask, Tx[config_id].SerialPort, TX_SERIAL_PORT_SERIAL);
 
-    SANITIZE(Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NUM, TX_SERIAL_PORT2_NONE, TX_SERIAL_PORT2_SERIAL);
+    SANITIZE(Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NUM, SETUP_TX_SERIAL_PORT2, TX_SERIAL_PORT2_SERIAL);
     TST_NOTALLOWED(Tx_SerialPort2_allowed_mask, Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NONE);
 
     SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
