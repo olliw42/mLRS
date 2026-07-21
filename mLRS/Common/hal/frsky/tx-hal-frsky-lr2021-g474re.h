@@ -42,14 +42,14 @@
 #ifndef DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define DEVICE_HAS_DIVERSITY
 #endif
-#define DEVICE_HAS_I2C_DISPLAY_ROT180
-#define DEVICE_HAS_SINGLE_LED_RGB
-#define DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_COM_ON_USB
 //#define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
+#define DEVICE_HAS_I2C_DISPLAY_ROT180
+#define DEVICE_HAS_SINGLE_LED_RGB
+#define DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
+#define DEVICE_HAS_ESP_WIFI_BRIDGE
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -64,11 +64,12 @@
 
 //-- UARTS
 // UARTB = serial port
-// USB-C = COM (CLI)
-// UARTD = serial2 BT/ESP port
+// UARTC (or USB) = com (CLI) port
+// UARTD = serial2 port or wireless bridge port
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
-// UARTF = debug port
+// UARTF or SWUART = debug port
+
 
 //XX #define UARTB_USE_UART2_PA2PA3 // serial
     #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
@@ -79,6 +80,14 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
+#define UARTD_USE_UART3_PB10PB11 // serial2 or wireless bridge
+#define UARTD_BAUD                115200
+#define UARTD_USE_TX
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTD_USE_TX_ISR
+#define UARTD_USE_RX
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+
 #define UART_USE_UART4_PC10PC11 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
@@ -88,14 +97,6 @@
 #define UART_RXBUFSIZE            512
 
 #define JRPIN5_FULL_INTERNAL_ON_TX
-
-#define UARTD_USE_UART3_PB10PB11 // serial2
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_USE_TX_ISR
-#define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
 //XX #define UARTF_USE_UART1_PA9PA10 // debug
      #define UARTF_USE_UART2_PA2PA3 // misuse serial as debug
@@ -484,7 +485,7 @@ void display_init(void)
 #define ESP_GPIO0                 IO_PB2
 #define ESP_DTR_RTS_USB
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ON_SERIAL2
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
