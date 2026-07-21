@@ -96,12 +96,10 @@
 #define SX_RX_EN                  IO_PC4
 #define SX_TX_EN                  IO_PC5
 
-#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTA
-#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE1
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_1
-#define SX_DIO_EXTI_IRQn              EXTI1_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI1_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY    11
+#define SX_DIO_EXTI               EXTI_IO_PA1
+#define SX_DIO_EXTI_IRQn          EXTI1_IRQn
+#define SX_DIO_EXTI_IRQHandler    EXTI1_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY  11
 
 void sx_init_gpio(void)
 {
@@ -131,13 +129,7 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
-
-    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    exti_init_isroff(SX_DIO_EXTI, EXTI_TRIG_RISING);
 
     NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
     NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
@@ -145,13 +137,12 @@ void sx_dio_init_exti_isroff(void)
 
 void sx_dio_enable_exti_isr(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+    exti_enableisr(SX_DIO_EXTI);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    exti_clearisrflag(SX_DIO_EXTI);
 }
 
 
@@ -168,12 +159,10 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_RX_EN                 IO_PA11
 #define SX2_TX_EN                 IO_PA12
 
-#define SX2_DIO_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
-#define SX2_DIO_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE0
-#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_0
-#define SX2_DIO_EXTI_IRQn             EXTI0_IRQn
-#define SX2_DIO_EXTI_IRQHandler       EXTI0_IRQHandler
-//#define SX2_DIO_EXTI_IRQ_PRIORITY   11
+#define SX2_DIO_EXTI              EXTI_IO_PB0
+#define SX2_DIO_EXTI_IRQn         EXTI0_IRQn
+#define SX2_DIO_EXTI_IRQHandler   EXTI0_IRQHandler
+//#define SX2_DIO_EXTI_IRQ_PRIORITY 11
 
 void sx2_init_gpio(void)
 {
@@ -203,13 +192,7 @@ void sx2_amp_receive(void)
 
 void sx2_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX2_DIO_SYSCFG_EXTI_PORTx, SX2_DIO_SYSCFG_EXTI_LINEx);
-
-    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-    LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableIT_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableFallingTrig_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableRisingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_init_isroff(SX2_DIO_EXTI, EXTI_TRIG_RISING);
 
     NVIC_SetPriority(SX2_DIO_EXTI_IRQn, SX2_DIO_EXTI_IRQ_PRIORITY);
     NVIC_EnableIRQ(SX2_DIO_EXTI_IRQn);
@@ -217,13 +200,12 @@ void sx2_dio_init_exti_isroff(void)
 
 void sx2_dio_enable_exti_isr(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableIT_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_enableisr(SX2_DIO_EXTI);
 }
 
 void sx2_dio_exti_isr_clearflag(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_clearisrflag(SX2_DIO_EXTI);
 }
 
 

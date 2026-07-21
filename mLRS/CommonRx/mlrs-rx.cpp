@@ -61,6 +61,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-mcu.h"
 #include "../modules/stm32ll-lib/src/stdstm32-dac.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
+#include "../Common/thirdparty/stdstm32-exti.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif

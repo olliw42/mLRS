@@ -71,8 +71,8 @@
 #define SX_RX_EN                  IO_PA4
 #define SX_TX_EN                  IO_PA5
 
-#define SX_DIO_EXTI_IRQn              SUBGHZ_Radio_IRQn
-#define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
+#define SX_DIO_EXTI_IRQn          SUBGHZ_Radio_IRQn
+#define SX_DIO_EXTI_IRQHandler    SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 void sx_init_gpio(void)
@@ -137,11 +137,9 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_RX_EN                 IO_PA15
 #define SX2_TX_EN                 IO_PB4
 
-#define SX2_DIO_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
-#define SX2_DIO_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE15
-#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_15
-#define SX2_DIO_EXTI_IRQn             EXTI15_10_IRQn
-#define SX2_DIO_EXTI_IRQHandler       EXTI15_10_IRQHandler
+#define SX2_DIO_EXTI              EXTI_IO_PB15
+#define SX2_DIO_EXTI_IRQn         EXTI15_10_IRQn
+#define SX2_DIO_EXTI_IRQHandler   EXTI15_10_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx2_init_gpio(void)
@@ -172,13 +170,7 @@ void sx2_amp_receive(void)
 
 void sx2_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX2_DIO_SYSCFG_EXTI_PORTx, SX2_DIO_SYSCFG_EXTI_LINEx);
-
-    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-    LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableIT_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableFallingTrig_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableRisingTrig_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_init_isroff(SX2_DIO_EXTI, EXTI_TRIG_RISING);
 
     NVIC_SetPriority(SX2_DIO_EXTI_IRQn, SX2_DIO_EXTI_IRQ_PRIORITY);
     NVIC_EnableIRQ(SX2_DIO_EXTI_IRQn);
@@ -186,13 +178,12 @@ void sx2_dio_init_exti_isroff(void)
 
 void sx2_dio_enable_exti_isr(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableIT_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_enableisr(SX2_DIO_EXTI);
 }
 
 void sx2_dio_exti_isr_clearflag(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX2_DIO_EXTI_LINE_x);
+    exti_clearisrflag(SX2_DIO_EXTI);
 }
 
 
