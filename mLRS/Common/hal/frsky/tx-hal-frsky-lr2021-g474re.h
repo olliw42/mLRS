@@ -52,6 +52,10 @@
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
+#undef SETUP_TX_SERIAL_PORT2
+#define SETUP_TX_SERIAL_PORT2  2
+
+
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
