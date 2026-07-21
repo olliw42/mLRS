@@ -18,23 +18,21 @@
 */
 
 //-------------------------------------------------------
-// TX FRSKY LR2021 STM32G474RE
+// TX FRSKY LR2021 STM32G474RE V1.2
 //-------------------------------------------------------
 // com:     USB
 // serial:  UART2, PA2 PA3,   JST-GH connector, Vcc,Gnd,Tx,Rx
-// serial2: UART3, PB10 PB11, wired to ESP32
+// wbridge: UART3, PB10 PB11, wired to ESP32
 // dbg:     UART1, PA9 PA10,  wired to JR pin header, 4 = Rx, 6 = Tx, 7 = Gnd
 // jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
 // BUTTONs  PB3: left, PD2: right
-// LEDs     PC9: left,red, PC13: right,blue,
-//          PC8: bottom two are WS2812-type LEDs  (TIM8, CH3, DMA2)
-// OLed:    PA15, PB7: I2C1, it seems that also PC11 goes to the OLEd ???
-// Fiveway: PC2: ADC12 IN8,  is the fiveway soldered in swapped?
-// FAN:     PA8: PWM 0 = off, 1 = full, PB0: don't know what it is doing
+// LEDs     PC8: left, right, bottom two are WS2812-type LEDs  (TIM8, CH3, DMA2)
+// OLed:    PA15, PB7: I2C1, PC11: OLED Reset
+// Fiveway: PC2: ADC12 IN8
+// FAN:     PA8: PWM 0 = off, 1 = full, PA8: Enable, PB0: FOO
 // NTC:     PC0: ADC12 IN6
-
-// CAN:     FDCAN2, PB5,PB6
+// CAN:     FDCAN2, PB5,PB6, PC14: CAN_STB
 // ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
 // VT (main voltage detect):  PC1
 
@@ -114,14 +112,14 @@
 // 2.4 GHz chain
 //    PAEN1     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
 //    VDET1     PA0     Analog output from the internal RF power detector
-//    RF1_C0    PC15    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF1_C1    PC14
+//    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    RF1_C1    DIO6
 // 900 MHz chain
 //    900_CSD1  DIO10
 //    900_CPS1  DIO8
 //    900_CTX1  DIO7
 // switch
-//    VC1       DIO5    VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC1       PB9     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
@@ -129,13 +127,12 @@
 #define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PC7
-#define SX_DIO1                   IO_PC4
+#define SX_DIO                    IO_PC4
 #define SX_BUSY                   IO_PA1
-#define SX_C0                     IO_PC15
-#define SX_C1                     IO_PC14
+#define SX_VC                     IO_PB9
 
-#define SX_DIO1_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
-#define SX_DIO1_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE4
+#define SX_DIO_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
+#define SX_DIO_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE4
 #define SX_DIO_EXTI_LINE_x           LL_EXTI_LINE_4
 #define SX_DIO_EXTI_IRQn             EXTI4_IRQn
 #define SX_DIO_EXTI_IRQHandler       EXTI4_IRQHandler
@@ -146,15 +143,16 @@
 
 /*            low band    high band
               Tx  Rx      Tx  Rx
-VC    DIO5    1   1       0   0
+VC    PB9     1   1       0   0
 CPS   DIO8    x   1       0   0
 CSD   DIO10   1   1       0   0
 CTX   DIO7    1   0       0   0
 PAEN  DIO11   0   0       1   0
-C0    PC15    0   0       0   1
-C1    PC14    0   0       1   0 */
+C0    DIO5    0   0       0   1
+C1    DIO6    0   0       1   0 */
 
-#define SX_USE_RFSW_DIO_CONFIG  {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
+#define SX_USE_RFSW_DIO_CONFIG  {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF}, \
+                                 {LR20XX_DIO_6, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF}, \
                                  {LR20XX_DIO_7, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF}, \
                                  {LR20XX_DIO_8, LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
                                  {LR20XX_DIO_10, LR20XX_DIO_RF_SWITCH_CONFIG_TX_LF | LR20XX_DIO_RF_SWITCH_CONFIG_RX_LF}, \
@@ -163,10 +161,9 @@ C1    PC14    0   0       1   0 */
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-    gpio_init(SX_C0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-    gpio_init(SX_C1, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX_VC, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx_busy_read(void)
@@ -176,21 +173,22 @@ bool sx_busy_read(void)
 
 void sx_amp_transmit(void)
 {
-    // TODO: only do in 2.4GHz band
-    gpio_low(SX_C0);
-    gpio_high(SX_C1);
+    // done via DIO
 }
 
 void sx_amp_receive(void)
 {
-    // TODO: only do in 2.4GHz band
-    gpio_low(SX_C1);
-    gpio_high(SX_C0);
+    // done via DIO
+}
+
+void sx_band(bool high_band)
+{
+    if (high_band) gpio_low(SX_VC); else gpio_high(SX_VC);
 }
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX_DIO1_SYSCFG_EXTI_PORTx, SX_DIO1_SYSCFG_EXTI_LINEx);
+    LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
@@ -215,17 +213,17 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- LR2021 & SPIB - right RF chain, as seen from top
-// 2.4 GHz chain (RF2 switch branch)
+// 2.4 GHz chain
 //    PAEN2     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
 //    VDET2     PC3     Analog output from the internal RF power detector
-//    RF2_C0    PB4     C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF2_C1    PB9
-// 900 MHz chain (RF1 switch branch)
-//    900_CSD2  DIO10
-//    900_CPS2  DIO8
-//    900_CTX2  DIO7
+//    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    RF1_C1    DIO6
+// 900 MHz chain
+//    900_CSD1  DIO10
+//    900_CPS1  DIO8
+//    900_CTX1  DIO7
 // switch
-//    VC2       DIO5    VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC2       PB4     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
@@ -233,13 +231,12 @@ void sx_dio_exti_isr_clearflag(void)
 #define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PC6
-#define SX2_DIO1                  IO_PC5
+#define SX2_DIO                   IO_PC5
 #define SX2_BUSY                  IO_PC12
-#define SX2_C0                    IO_PB4
-#define SX2_C1                    IO_PB9
+#define SX2_VC                    IO_PB4
 
-#define SX2_DIO1_SYSCFG_EXTI_PORTx   LL_SYSCFG_EXTI_PORTC
-#define SX2_DIO1_SYSCFG_EXTI_LINEx   LL_SYSCFG_EXTI_LINE5
+#define SX2_DIO_SYSCFG_EXTI_PORTx    LL_SYSCFG_EXTI_PORTC
+#define SX2_DIO_SYSCFG_EXTI_LINEx    LL_SYSCFG_EXTI_LINE5
 #define SX2_DIO_EXTI_LINE_x          LL_EXTI_LINE_5
 #define SX2_DIO_EXTI_IRQn            EXTI9_5_IRQn
 #define SX2_DIO_EXTI_IRQHandler      EXTI9_5_IRQHandler
@@ -252,10 +249,9 @@ void sx_dio_exti_isr_clearflag(void)
 void sx2_init_gpio(void)
 {
     gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX2_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX2_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
     gpio_init(SX2_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
-    gpio_init(SX2_C0, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
-    gpio_init(SX2_C1, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
+    gpio_init(SX2_VC, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_VERYFAST);
 }
 
 bool sx2_busy_read(void)
@@ -265,21 +261,22 @@ bool sx2_busy_read(void)
 
 void sx2_amp_transmit(void)
 {
-    // TODO: only do in 2.4GHz band
-    gpio_low(SX2_C0);
-    gpio_high(SX2_C1);
+    // done via DIO
 }
 
 void sx2_amp_receive(void)
 {
-    // TODO: only do in 2.4GHz band
-    gpio_low(SX2_C1);
-    gpio_high(SX2_C0);
+    // done via DIO
+}
+
+void sx2_band(bool high_band)
+{
+    if (high_band) gpio_low(SX2_VC); else gpio_high(SX2_VC);
 }
 
 void sx2_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX2_DIO1_SYSCFG_EXTI_PORTx, SX2_DIO1_SYSCFG_EXTI_LINEx);
+    LL_SYSCFG_SetEXTISource(SX2_DIO_SYSCFG_EXTI_PORTx, SX2_DIO_SYSCFG_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX2_DIO_EXTI_LINE_x);
@@ -557,6 +554,6 @@ uint32_t portb[] = {
 
 uint32_t portc[] = {
     LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
-    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_13, LL_GPIO_PIN_14, LL_GPIO_PIN_15,
+    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_12, LL_GPIO_PIN_14,
 };
 

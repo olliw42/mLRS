@@ -304,6 +304,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             SetRxPath(LR20XX_RX_PATH_LF, LR20XX_RX_BOOST_0_LF); // hm, table 3-17 says rx_boost = 7
         }
 
+        _set_band(gconfig->FrequencyBand);
+
         // calibrations
         // datasheet says Calibrate() is done at startup for 915 MHz, but should be redone if
         // frequency changes > 10 MHz or temperature changes > 10 Celsius
@@ -453,6 +455,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     //-- RF power interface
 
     virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
+
+    //-- high/low band interface
+
+    virtual void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) = 0;
 
     //-- helper
 
@@ -615,6 +621,13 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 #endif
     }
 
+    //-- high/low band interface
+
+    void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) override
+    {
+        sx_band(frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
+    }
+
     //-- init API functions
 
     void _reset(void)
@@ -733,6 +746,13 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
+    }
+
+    //-- high/low band interface
+
+    void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) override
+    {
+        sx2_band(frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
     }
 
     //-- init API functions
