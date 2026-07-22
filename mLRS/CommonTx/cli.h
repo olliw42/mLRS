@@ -354,6 +354,13 @@ class tTxCli
     uint8_t state;
     uint8_t print_chunks_max;
     uint8_t print_index;
+
+    typedef enum {
+        PL_ALL = 0,
+        PL_C,
+        PL_TX,
+        PL_RX,
+    } CLI_PL_ENUM;
     uint8_t print_pl_flag;
 };
 
@@ -594,8 +601,11 @@ void tTxCli::print_param(uint8_t idx)
 // is chunk-ed by state
 void tTxCli::print_param_list_do(void)
 {
-    if (print_index == 0 && (print_pl_flag == 0 || print_pl_flag == 1 || print_pl_flag == 3) && !connected()) {
-        putsn("warn: receiver not connected");
+    if (print_index == 0) {
+        if ((print_pl_flag == PL_ALL || print_pl_flag == PL_C || print_pl_flag == PL_RX) &&
+            !connected_and_rx_setup_available()) {
+            putsn("warn: receiver not connected");
+        }
     }
 
     uint8_t count = 0;
@@ -603,11 +613,12 @@ void tTxCli::print_param_list_do(void)
         uint8_t param_index = print_index;
         print_index++;
 
-        if ((print_pl_flag == 1) && (setup_param_is_tx(param_index) || setup_param_is_rx(param_index))) continue;
-        if ((print_pl_flag == 2) && !setup_param_is_tx(param_index)) continue;
-        if ((print_pl_flag == 3) && !setup_param_is_rx(param_index)) continue;
+        if ((print_pl_flag == PL_C) && (setup_param_is_tx(param_index) || setup_param_is_rx(param_index))) continue;
+        if ((print_pl_flag == PL_TX) && !setup_param_is_tx(param_index)) continue;
+        if ((print_pl_flag == PL_RX) && !setup_param_is_rx(param_index)) continue;
 
-        if ((print_pl_flag == 0 || print_pl_flag == 3) && !connected() && setup_param_is_rx(param_index)) continue;
+        if ((print_pl_flag == PL_ALL || print_pl_flag == PL_RX) && setup_param_is_rx(param_index) &&
+            !connected_and_rx_setup_available()) continue;
 
         print_param(param_index);
 
@@ -839,16 +850,16 @@ bool rx_param_changed;
         if (is_cmd("help"))  { print_it(CLI_STATE_PRINT_HELP); } else
         if (is_cmd("?"))     { print_it(CLI_STATE_PRINT_HELP); } else
         if (is_cmd("v"))     { print_device_version(); } else
-        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = 0; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
-        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = 1; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
-        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = 2; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
-        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = 3; print_it(CLI_STATE_PRINT_PARAM_LIST);
+        if (is_cmd("pl"))    { print_config_id(); print_pl_flag = PL_ALL; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl c"))  { print_config_id(); print_pl_flag = PL_C; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl tx")) { print_config_id(); print_pl_flag = PL_TX; print_it(CLI_STATE_PRINT_PARAM_LIST); } else
+        if (is_cmd("pl rx")) { print_config_id(); print_pl_flag = PL_RX; print_it(CLI_STATE_PRINT_PARAM_LIST);
 
         } else
         if (is_cmd_param_set(sname, svalue)) { // p name, p name = value
             if (!param_get_idx_fromname(&param_idx, sname)) {
                 putsn("err: invalid parameter name");
-            } else if (!connected() && setup_param_is_rx(param_idx)) {
+            } else if (setup_param_is_rx(param_idx) && !connected_and_rx_setup_available()) {
                 putsn("warn: receiver not connected");
             } else if (svalue[0] == '?') {
                 print_config_id();
