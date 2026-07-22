@@ -7,7 +7,7 @@
 // Basic but effective & reliable transparent WiFi or Bluetooth <-> serial bridge.
 // Minimizes wireless traffic while respecting latency by better packeting algorithm.
 //*******************************************************
-// 11. July. 2026
+// 12. July. 2026
 //*********************************************************/
 // inspired by examples from Arduino
 // NOTES:
@@ -368,9 +368,23 @@ void ble_setup(String device_name) {
 uint8_t espnow_rxbuf[ESPNOW_RXBUF_SIZE];
 volatile uint16_t espnow_rxbuf_head;
 volatile uint16_t espnow_rxbuf_tail;
-volatile bool espnow_gcs_mac_available; // once a GCS sends us data, we lock to its MAC
-uint8_t espnow_gcs_mac[6];
-bool espnow_gcs_peer_added;
+
+// beacon: includes bind phrase so only matching systems pair
+#define ESPNOW_BEACON_LEN   11
+uint8_t espnow_beacon[ESPNOW_BEACON_LEN] = { 'm','L','R','S','-', 0,0,0,0,0,0 };
+
+// multi-peer: track up to 4 GCS peers
+#define ESPNOW_MAX_PEERS  4
+
+struct espnow_peer_t {
+    uint8_t mac[6];
+    bool registered;                // esp_now_add_peer() done (main loop only)
+    volatile bool active;           // slot occupied (set by callback, read by main loop)
+    volatile bool confirm_needed;   // set by callback, cleared by main loop after sending confirm beacon
+};
+
+volatile espnow_peer_t espnow_peers[ESPNOW_MAX_PEERS];
+
 uint8_t espnow_broadcast_mac[6] = { 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF };
 
 void espnow_rxbuf_push(const uint8_t* data, int len) {
@@ -392,13 +406,30 @@ int espnow_rxbuf_pop(uint8_t* buf, int maxlen) {
 }
 
 void espnow_recv_callback(const uint8_t* sender_mac, const uint8_t* data, int len) {
-    if (!espnow_gcs_mac_available) { // accept only from the first sender we hear from
-        memcpy(espnow_gcs_mac, sender_mac, 6);
-        espnow_gcs_mac_available = true;
-    } else {
-        if (memcmp(sender_mac, espnow_gcs_mac, 6) != 0) return; // ignore other senders
+    bool is_beacon = (len == ESPNOW_BEACON_LEN && memcmp(data, "mLRS-", 5) == 0);
+    if (is_beacon && memcmp(data, espnow_beacon, ESPNOW_BEACON_LEN) != 0) return; // wrong bind phrase
+    // known peer
+    for (int i = 0; i < ESPNOW_MAX_PEERS; i++) {
+        if (espnow_peers[i].active && memcmp((void*)espnow_peers[i].mac, sender_mac, 6) == 0) {
+            if (is_beacon) {
+                espnow_peers[i].confirm_needed = true;
+            } else {
+                espnow_rxbuf_push(data, len);
+            }
+            return;
+        }
     }
-    espnow_rxbuf_push(data, len);
+    // unknown — claim first free slot
+    for (int i = 0; i < ESPNOW_MAX_PEERS; i++) {
+        if (!espnow_peers[i].active) {
+            memcpy((void*)espnow_peers[i].mac, sender_mac, 6);
+            espnow_peers[i].registered = false;
+            espnow_peers[i].confirm_needed = true;
+            espnow_peers[i].active = true; // publish last — main loop reads this
+            if (!is_beacon) espnow_rxbuf_push(data, len);
+            return;
+        }
+    }
 }
 
 #ifdef ESP8266
@@ -419,10 +450,27 @@ void espnow_add_peer_mac(uint8_t* mac, int wifi_channel) {
 #endif
 }
 
+void espnow_register_peers(int wifi_channel) {
+    for (int i = 0; i < ESPNOW_MAX_PEERS; i++) {
+        if (!espnow_peers[i].active) continue;
+        if (!espnow_peers[i].registered) {
+            espnow_add_peer_mac((uint8_t*)espnow_peers[i].mac, wifi_channel);
+            espnow_peers[i].registered = true;
+        }
+        if (espnow_peers[i].confirm_needed) {
+            espnow_peers[i].confirm_needed = false;
+            esp_now_send((uint8_t*)espnow_peers[i].mac, (uint8_t*)espnow_beacon, ESPNOW_BEACON_LEN);
+        }
+    }
+}
+
 void espnow_setup(int wifi_channel) {
     espnow_rxbuf_head = espnow_rxbuf_tail = 0;
-    espnow_gcs_mac_available = false;
-    espnow_gcs_peer_added = false;
+    for (int i = 0; i < ESPNOW_MAX_PEERS; i++) {
+        espnow_peers[i].active = false;
+        espnow_peers[i].registered = false;
+        espnow_peers[i].confirm_needed = false;
+    }
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
 #ifdef ESP8266
@@ -448,14 +496,15 @@ void espnow_setup(int wifi_channel) {
     DBG_PRINTLN("ESP-NOW started");
 }
 
-void espnow_send(int wifi_channel, uint8_t* buf, int len) {
-    if (espnow_gcs_mac_available) { // if gcs seen, send unicast; otherwise broadcast
-        if (!espnow_gcs_peer_added) { // ensure latched peer is registered
-            espnow_add_peer_mac(espnow_gcs_mac, wifi_channel);
-            espnow_gcs_peer_added = true;
+void espnow_send(uint8_t* buf, int len) {
+    bool any = false;
+    for (int i = 0; i < ESPNOW_MAX_PEERS; i++) {
+        if (espnow_peers[i].active && espnow_peers[i].registered) {
+            esp_now_send((uint8_t*)espnow_peers[i].mac, buf, len);
+            any = true;
         }
-        esp_now_send(espnow_gcs_mac, buf, len);
-    } else {
+    }
+    if (!any) {
         esp_now_send(espnow_broadcast_mac, buf, len);
     }
 }
@@ -1059,6 +1108,10 @@ class tESPNOWHandler : public tWifiHandler {
     void Init() {
         tWifiHandler::Init();
         device_name = device_name + " ESPNOW";
+        // populate beacon with bind phrase
+        for (int i = 0; i < 6 && i < (int)g_bindphrase.length(); i++) {
+            espnow_beacon[5 + i] = g_bindphrase[i];
+        }
     }
 
     void wifi_setup() override {
@@ -1068,6 +1121,7 @@ class tESPNOWHandler : public tWifiHandler {
 
     void Loop(uint8_t* buf, int sizeofbuf) override {
         if (sizeofbuf > 250) sizeofbuf = 250; // cap at 250 bytes (esp-now max payload)
+        espnow_register_peers(g_wifichannel);
         int len = espnow_rxbuf_pop(buf, sizeofbuf);
         if (len > 0) {
             SERIAL.write(buf, len);
@@ -1077,7 +1131,7 @@ class tESPNOWHandler : public tWifiHandler {
     }
 
     void wifi_write(uint8_t* buf, int len) override {
-        espnow_send(g_wifichannel, buf, len);
+        espnow_send(buf, len);
     }
 };
 tESPNOWHandler espnow_handler;
