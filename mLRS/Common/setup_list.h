@@ -56,8 +56,8 @@
 #define SETUP_OPT_DIVERSITY_DISPSTR   "enabled,antenna1,antenna2,ren ta1,ren ta2" // used in display, 7 chars max
 
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
-#define SETUP_OPT_TX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
-#define SETUP_OPT_RX_SERIAL_BAUDRATE  "9600,19200,38400,57600,115200,230400"
+#define SETUP_OPT_TX_SERIAL_BAUDRATE  "57600,115200,230400"
+#define SETUP_OPT_RX_SERIAL_BAUDRATE  "57600,115200,230400"
 
 #define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink,mavlinkX,mspX"
 #define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"

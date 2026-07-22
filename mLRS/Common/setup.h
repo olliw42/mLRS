@@ -1007,9 +1007,6 @@ void setup_configure_config(uint8_t config_id)
 #else // DEVICE_IS_RECEIVER
     switch (Setup.Rx.SerialBaudrate) {
 #endif
-    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate = 9600; break;
-    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate = 19200; break;
-    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
     case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 230400; break;
@@ -1023,9 +1020,6 @@ void setup_configure_config(uint8_t config_id)
 
 #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].SerialBaudrate2) {
-    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate2 = 9600; break;
-    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate2 = 19200; break;
-    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate2 = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate2 = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate2 = 115200; break;
     case SERIAL_BAUDRATE_230400: Config.SerialBaudrate2 = 230400; break;
@@ -1153,7 +1147,26 @@ bool doEEPROMwrite;
                 default:
                     Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL;
                 }
+
+                switch (Setup.Tx[id].SerialBaudrate) {
+                case L10304_SERIAL_BAUDRATE_57600: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_57600; break;
+                case L10304_SERIAL_BAUDRATE_115200: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_115200; break;
+                case L10304_SERIAL_BAUDRATE_230400: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_230400; break;
+                default:
+                    Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_115200;
+                }
+
+                Setup.Tx[id].SerialBaudrate2 = SERIAL_BAUDRATE_115200;
             }
+
+            switch (Setup.Rx.SerialBaudrate) {
+            case L10304_SERIAL_BAUDRATE_57600: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600; break;
+            case L10304_SERIAL_BAUDRATE_115200: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_115200; break;
+            case L10304_SERIAL_BAUDRATE_230400: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_230400; break;
+            default:
+                Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+            }
+
         } else {
             // ups, > 10401, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);
