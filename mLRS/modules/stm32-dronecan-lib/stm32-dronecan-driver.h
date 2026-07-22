@@ -14,6 +14,8 @@
 #ifndef STM32_DRONECAN_DRIVER_H
 #define STM32_DRONECAN_DRIVER_H
 
+// CAN FD and the TAO option are enabled library-wide in libcanard/canard.h.
+// TAO is off for FD frames: encode call sites pass !dc_hal_is_fd_mode().
 #include "libcanard/canard.h"
 
 // library configuration
@@ -95,6 +97,16 @@ typedef struct
     uint32_t tfqf_count;            // TFQF, Tx Fifo Queue Full
     // total sum of counts, calculated in dc_hal_get_stats()
     uint32_t error_sum_count;
+    // CAN FD specific diagnostics
+    uint32_t ack_err_count;         // LEC = 3 (ACK Error)
+    uint32_t dlec_count;            // DLEC, Data phase Last Error Code (CAN FD)
+    uint32_t dlec_stuff_count;      // DLEC = 1 (Stuff Error)
+    uint32_t dlec_form_count;       // DLEC = 2 (Form Error)
+    uint32_t dlec_ack_count;        // DLEC = 3 (ACK Error)
+    uint32_t dlec_bit1_count;       // DLEC = 4 (Bit1 Error - recessive sent, dominant read)
+    uint32_t dlec_bit0_count;       // DLEC = 5 (Bit0 Error - dominant sent, recessive read)
+    uint32_t dlec_crc_count;        // DLEC = 6 (CRC Error)
+    uint32_t last_dlec;             // last data-phase LEC
 } tDcHalStatistics;
 
 
@@ -123,6 +135,15 @@ typedef struct
 } tDcHalCanTimings;
 
 
+typedef struct
+{
+    uint16_t bit_rate_prescaler;
+    uint8_t bit_segment_1;
+    uint8_t bit_segment_2;
+    uint8_t sync_jump_width;
+} tDcHalDataTimings;
+
+
 typedef enum
 {
     DC_HAL_CAN1 = 0,
@@ -133,6 +154,7 @@ typedef enum
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
+    const tDcHalDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode);
 
 int16_t dc_hal_start(void);
@@ -158,6 +180,13 @@ int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bitrate,
     tDcHalCanTimings* const timings);
+
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bitrate,
+    tDcHalDataTimings* const timings);
+
+bool dc_hal_is_fd_mode(void);
 
 
 #ifdef __cplusplus

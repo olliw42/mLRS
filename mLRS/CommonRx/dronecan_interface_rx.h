@@ -329,9 +329,24 @@ DBG_DC(
     dbg.puts(" err tx_fifo: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt));
     tunnel_targetted_stats.Init();
     tDcHalStatistics dc_stats = dc_hal_get_stats();
+    dbg.puts("\nCANFD: ");dbg.puts(dc_hal_is_fd_mode() ? "YES" : "NO");
+    dbg.puts(", Speed: ");dbg.puts(u16toBCD_s(CAN_FD_DATA_BITRATE / 1000000));dbg.puts(" Mbps");
     dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
     dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
     dbg.puts(" rec: ");dbg.puts(utoBCD_s(dc_stats.rec_count));
+    // TDCV (PSR[22:16]) is the secondary sample point position = measured transceiver delay + TDCO(=10),
+    // in FDCAN clock cycles (12.5ns @ 80MHz); so actual transceiver loop delay = TDCV - TDCO
+    dbg.puts(" TDCV:");dbg.puts(u16toBCD_s((dc_stats.last_psr >> 16) & 0x7F));
+    // error-type breakdown: LEC = arbitration phase (e.g. ACK = fc not acking),
+    // DLEC = data phase (bit0/bit1 point at TDC/transceiver issues)
+    dbg.puts("\n   LEC ack:");dbg.puts(u16toBCD_s(dc_stats.ack_err_count));
+    dbg.puts(" lec:");dbg.puts(u16toBCD_s(dc_stats.lec_count));
+    dbg.puts("  DLEC bit1:");dbg.puts(u16toBCD_s(dc_stats.dlec_bit1_count));
+    dbg.puts(" bit0:");dbg.puts(u16toBCD_s(dc_stats.dlec_bit0_count));
+    dbg.puts(" ack:");dbg.puts(u16toBCD_s(dc_stats.dlec_ack_count));
+    dbg.puts(" stuff:");dbg.puts(u16toBCD_s(dc_stats.dlec_stuff_count));
+    dbg.puts(" form:");dbg.puts(u16toBCD_s(dc_stats.dlec_form_count));
+    dbg.puts(" crc:");dbg.puts(u16toBCD_s(dc_stats.dlec_crc_count));
 )
 }
 
@@ -415,7 +430,10 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.rcin.data[i] = (((int32_t)(rc_out->ch[i]) - 1024) * 601) / 1024 + 1500;
     }
 
-    uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf);
+    // sample fd mode once, so the encoding (TAO) and the canfd frame flag stay consistent
+    // even if FD detection latches (in isr) between the two calls
+    bool canfd = dc_hal_is_fd_mode();
+    uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf, !canfd);
 
     canardBroadcast(
         &canard,
@@ -424,7 +442,8 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         &rc_input.transfer_id,
         CANARD_TRANSFER_PRIORITY_HIGH,
         _buf,
-        len);
+        len,
+        canfd);
 
 #if 0
     _p.flex_debug.id = DRONECAN_PROTOCOL_FLEXDEBUG_MLRS_RESERVE_START; // we 8mLRS) got this officially
@@ -434,7 +453,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     _p.flex_debug.u8.data[0] = cnt++; // currently just something to test
     _p.flex_debug.u8.len = 1;
 
-    len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf);
+    len = dronecan_protocol_FlexDebug_encode(&_p.flex_debug, _buf, !canfd);
 
     canardBroadcast(
         &canard,
@@ -443,7 +462,8 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         &flex_debug.transfer_id,
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
-        len);
+        len,
+        canfd);
 #endif
 }
 
@@ -503,7 +523,8 @@ void tRxDroneCan::send_node_status(void)
     _p.node_status.vendor_specific_status_code = cnt;
     cnt++;
 
-    uint32_t len = uavcan_protocol_NodeStatus_encode(&_p.node_status, _buf);
+    bool canfd = dc_hal_is_fd_mode(); // sample once, keep encoding (TAO) and canfd flag consistent
+    uint32_t len = uavcan_protocol_NodeStatus_encode(&_p.node_status, _buf, !canfd);
 
     canardBroadcast(
         &canard,
@@ -512,7 +533,8 @@ void tRxDroneCan::send_node_status(void)
         &node_status_transfer_id,
         CANARD_TRANSFER_PRIORITY_LOW,
         _buf,
-        len);
+        len,
+        canfd);
 }
 
 
@@ -553,7 +575,8 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
     }
     _p.node_info_resp.name.len = strlen((char*)_p.node_info_resp.name.data);
 
-    uint16_t len = uavcan_protocol_GetNodeInfoResponse_encode(&_p.node_info_resp, _buf);
+    bool canfd = dc_hal_is_fd_mode(); // sample once, keep encoding (TAO) and canfd flag consistent
+    uint16_t len = uavcan_protocol_GetNodeInfoResponse_encode(&_p.node_info_resp, _buf, !canfd);
 
     canardRequestOrRespond(
         ins,
@@ -564,7 +587,8 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
         transfer->priority,
         CanardResponse,
         _buf,
-        len);
+        len,
+        canfd);
 }
 
 
@@ -650,7 +674,8 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
         &node_id_allocation.transfer_id,
         CANARD_TRANSFER_PRIORITY_LOW,
         allocation_request,
-        uid_size + 1);
+        uid_size + 1,
+        dc_hal_is_fd_mode());
 
     // Preparing for timeout; if response is received, this value will be updated from the callback.
     node_id_allocation.unique_id_offset = 0;
@@ -745,7 +770,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
     _p.tunnel_targetted.buffer.len = data_len;
     for (uint8_t n = 0; n < data_len; n++) _p.tunnel_targetted.buffer.data[n] = fifo_ser_to_fc.Get();
 
-    uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf);
+    bool canfd = dc_hal_is_fd_mode(); // sample once, keep encoding (TAO) and canfd flag consistent
+    uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf, !canfd);
 
     canardBroadcast(
         &canard,
@@ -754,7 +780,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
         &tunnel_targetted.transfer_id,
         CANARD_TRANSFER_PRIORITY_MEDIUM,
         _buf,
-        len);
+        len,
+        canfd);
 
     tunnel_targetted_stats.send_rate += _p.tunnel_targetted.buffer.len;
 }

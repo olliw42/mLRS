@@ -25,6 +25,13 @@ extern "C" {
 
 //#include "stdstm32-peripherals.h"
 
+// CAN FD data bitrate - can be overridden in the device hal
+// with 80 MHz FDCAN clock the G4 supports: 1000000, 2000000, 4000000, 5000000
+// ignored on platforms without CAN FD support (STM32F1)
+#ifndef CAN_FD_DATA_BITRATE
+#define CAN_FD_DATA_BITRATE  1000000
+#endif
+
 #ifdef STM32G4
 #if defined CAN_USE_FDCAN1_PA11PA12
     #define CAN_DC_HAL_INTFC    DC_HAL_CAN1 // TODO: this is currently defined in stm32-dronecan-driver.h
@@ -87,7 +94,7 @@ void can_init(void)
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width)));
     // 4, 7, 1, 1
 
-    res = dc_hal_init(DC_HAL_CAN1, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    res = dc_hal_init(DC_HAL_CAN1, &timings, NULL, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
     if (res < 0) {
         dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));
         return;
@@ -165,7 +172,15 @@ void can_init(void)
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
 
-    res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    tDcHalDataTimings data_timings;
+    res = dc_hal_compute_data_timings(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN), CAN_FD_DATA_BITRATE, &data_timings);
+
+    if (res == 0) {
+        res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, &data_timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    } else {
+        res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, NULL, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    }
+
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)
         return;
