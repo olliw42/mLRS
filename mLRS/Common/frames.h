@@ -371,6 +371,9 @@ tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
+    rx_params.tx_firmware_version_u16 = version_to_u16(VERSION);
+    rx_params.tx_setup_layout_u16 = version_to_u16(SETUPLAYOUT);
+
     strbufstrcpy(rx_params.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
     rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
@@ -426,6 +429,11 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
+
+    // don't take over Rx parameters if there is a layout version missmatch
+    // tx_setup_layout_u16 is 0 for versions < 10401
+    // TODO: conversion ?
+    if (version_from_u16(rx_params->tx_setup_layout_u16) != (uint32_t)SETUPLAYOUT) return;
 
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
 }

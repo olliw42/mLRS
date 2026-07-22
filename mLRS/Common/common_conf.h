@@ -15,6 +15,9 @@
 #define VERSIONONLYSTR      "v1.4.01"
 #define SETUPLAYOUT         10401 // this should be changed then Setup struct and/or serial changes
 
+// Note: The setup layout version does not need to be changed when parameter option lists
+// are merely extended. This is handled gracefully by sanitize.
+
 
 //-------------------------------------------------------
 // Selectable System Configs

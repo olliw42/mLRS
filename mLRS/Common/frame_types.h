@@ -294,7 +294,10 @@ typedef struct
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[28];
+    uint8_t spare3[24];
+
+    uint16_t tx_firmware_version_u16; // 16.64.64
+    uint16_t tx_setup_layout_u16; // 16.64.64
 }) tTxCmdFrameRxParams; // 64 bytes
 
 
