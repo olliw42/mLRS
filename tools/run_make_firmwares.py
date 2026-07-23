@@ -643,51 +643,17 @@ def mlrs_compile_file(target, file):
 
 def mlrs_link_target(target):
     # generate object list from actually created .o files
+    build_dir = os.path.join(MLRS_BUILD_DIR,target.build_dir)
     objlist = []
-    for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
+    for path, subdirs, files in os.walk(build_dir):
         for file in files:
             if os.path.splitext(file)[1] == '.o':
-                obj = os.path.join(path,file).replace(os.path.join(MLRS_BUILD_DIR,target.build_dir), '')
-                objlist.append(obj.replace('\\','/'))
+                objlist.append(os.path.join(path,file).replace('\\','/'))
 
-    # check for a STM32CubeIDE object list
-    objlist_cube_file = os.path.join(MLRS_DIR,target.target,'Release','objects.list')
-    if not os.path.exists(objlist_cube_file):
-        # generate object list
-        printWarning('WARNING: no objects.list found, use generated objects.list')
-        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
-        for obj in sorted(objlist): # we use sorted, this at least makes it that it is somehow standardized, thus repeatable
-            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
-        F.close()
-    else :
-        # read STM32CubeIDE object list, and modify paths accordingly
-        print('use available objects.list')
-        F = open(objlist_cube_file, mode='r')
-        objlist_cube = F.read()
-        F.close()
-        objlist_cube_list = objlist_cube.split()
-        # correct list
-        objlist_cube_list_corrected = []
-        for obj in objlist_cube_list:
-            #o = obj.replace('./', os.path.join(MLRS_BUILD_DIR,target.build_dir)+'/')
-            o = obj.replace('./', '/').replace('"', '')
-            if obj[3:7] == 'Core':
-                o = o.replace('/Core', '/'+target.target+'/Core')
-            if obj[3:10] == 'Drivers':
-                o = o.replace('/Drivers', '/'+target.target+'/Drivers')
-            objlist_cube_list_corrected.append(o.replace('\\','/'))
-        # check lists
-        for obj in objlist:
-            if not obj in objlist_cube_list_corrected:
-                printWarning('objlist: '+obj+' not in Cube objlist')
-        for obj in objlist_cube_list_corrected:
-            if not obj in objlist:
-                printWarning('Cube objlist: '+obj+' not in objlist')
-        # write out
-        F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
-        for obj in objlist_cube_list_corrected:
-            F.write('"'+os.path.join(MLRS_BUILD_DIR,target.build_dir).replace('\\','/')+obj+'"\n')
-        F.close()
+    # sorted so the order is standardized, thus the build is repeatable
+    with open(os.path.join(build_dir,'objects.list'), mode='w') as F:
+        for obj in sorted(objlist):
+            F.write('"'+obj+'"\n')
 
     # generate command line
     cmd = ''
