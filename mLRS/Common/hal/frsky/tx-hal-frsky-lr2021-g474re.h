@@ -30,7 +30,7 @@
 // LEDs     PC8: left, right, bottom two are WS2812-type LEDs  (TIM8, CH3, DMA2)
 // OLed:    PA15, PB7: I2C1, PC11: OLED Reset
 // Fiveway: PC2: ADC12 IN8
-// FAN:     PA8: PWM 0 = off, 1 = full, PA8: Enable, PB0: FOO
+// FAN:     PA8: PWM 0 = off, 1 = full, PC9: Enable, PB0: FOO
 // NTC:     PC0: ADC12 IN6
 // CAN:     FDCAN2, PB5,PB6, PC14: CAN_STB
 // ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
@@ -111,15 +111,15 @@
 //-- SX1262 & SPI - left RF chain, as seen from top
 // 2.4 GHz chain
 //    PAEN1     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    VDET1     PA0     Analog output from the internal RF power detector
 //    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
 //    RF1_C1    DIO6
+//    VDET1     PA0     Analog output from the internal RF power detector
 // 900 MHz chain
 //    900_CSD1  DIO10
 //    900_CPS1  DIO8
 //    900_CTX1  DIO7
 // switch
-//    VC1       PB9     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC1       PB9     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L, RF1: 900, RF2: 2.4
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
@@ -215,19 +215,19 @@ void sx_dio_exti_isr_clearflag(void)
 //-- LR2021 & SPIB - right RF chain, as seen from top
 // 2.4 GHz chain
 //    PAEN2     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
+//    RF2_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
+//    RF2_C1    DIO6
 //    VDET2     PC3     Analog output from the internal RF power detector
-//    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF1_C1    DIO6
 // 900 MHz chain
-//    900_CSD1  DIO10
-//    900_CPS1  DIO8
-//    900_CTX1  DIO7
+//    900_CSD2  DIO10
+//    900_CPS2  DIO8
+//    900_CTX2  DIO7
 // switch
-//    VC2       PB4     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L
+//    VC2       PB4     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L, RF1: 900, RF2: 2.4
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
-#define SPIB_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
+#define SPIB_USE_CLK_LOW_1EDGE    // datasheet says CPHA = 0  CPOL = 0
 #define SPIB_USE_CLOCKSPEED_9MHZ
 
 #define SX2_RESET                 IO_PC6
@@ -362,6 +362,8 @@ void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_o
 
 //-- Cooling Fan
 
+#define FAN_EN                    IO_PC9 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
+
 #define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
 #define FAN_TIMx                  TIM1
 #define FAN_TIM_CHANNEL_CHx       LL_TIM_CHANNEL_CH1
@@ -375,6 +377,8 @@ extern "C" { void delay_us(uint32_t us); }
 
 void fan_init(void)
 {
+    gpio_init(FAN_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // hold in reset
+
     adc_init_begin(FAN_TSENSOR_ADCx);
     adc_init_one_channel(FAN_TSENSOR_ADCx);
     adc_config_channel(FAN_TSENSOR_ADCx, LL_ADC_REG_RANK_1, FAN_TSENSOR_ADC_CHANNELx, FAN_TSENSOR_ADC_IO);
@@ -391,6 +395,8 @@ void fan_init(void)
 
 void fan_set_pwm(uint16_t pwm) // pwm in percent
 {
+    if (pwm == 0) { gpio_low(FAN_EN); } else { gpio_high(FAN_EN); }
+
     FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
 }
 
@@ -422,17 +428,22 @@ int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
 
 
 //-- 5 Way Switch
-//resistor chain Vcc - 4.7k - left - 1k - up - 2.2k - right - 4.7k - down - 15k - GND
+//resistor dividers
+// Vcc - 10k - 47K  center (2.72 V)
+//           - 15k  right  (1.98 V)
+//           - 6.8k left   (1.33 V)
+//           - 2.2k up     (0.60 V)
+//           - gnd  down   (0 V)
 
 #define FIVEWAY_ADCx              ADC1
 #define FIVEWAY_ADC_IO            IO_PC2 // ADC12_IN8
 #define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
 
-#define KEY_LEFT_THRESH           3300
-#define KEY_UP_THRESH             2550
-#define KEY_RIGHT_THRESH          1770
-#define KEY_DOWN_THRESH           940
-#define KEY_CENTER_THRESH         0
+#define KEY_CENTER_THRESH         3375
+#define KEY_RIGHT_THRESH          2455
+#define KEY_LEFT_THRESH           1645
+#define KEY_UP_THRESH             740
+#define KEY_DOWN_THRESH           0
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
 extern "C" { void delay_us(uint32_t us); }
@@ -465,17 +476,17 @@ uint8_t fiveway_read(void)
 #define I2C_USE_I2C1              // PA15, PB7
 #define I2C_CLOCKSPEED_400KHZ
 #define I2C_USE_DMAMODE
-
 #define I2C_USE_SCL_IO            IO_PA15
 #define I2C_USE_SDA_IO            IO_PB7
 
+#define DISPLAY_RESET_ACTIVELOW   IO_PC11
 #define DISPLAY_INIT
 
 extern "C" { void delay_ms(uint16_t ms); }
 
 void display_init(void)
 {
-    gpio_init(IO_PC11, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT);
+    gpio_init(DISPLAY_RESET_ACTIVELOW, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // release reset line
     delay_ms(10);
 }
 
