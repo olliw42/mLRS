@@ -15,7 +15,7 @@
 #define STM32_DRONECAN_DRIVER_H
 
 // CAN FD and the TAO option are enabled library-wide in libcanard/canard.h.
-// TAO is off for FD frames: encode call sites pass !dc_hal_is_fd_mode().
+// TAO is off for FD frames: encode call sites pass !dc_hal_is_canfd().
 #include "libcanard/canard.h"
 
 // library configuration
@@ -73,7 +73,9 @@ typedef struct
     uint32_t rec_count;             // ECR reg: REC, Receive Error Counter
     uint32_t cel_count;             // ECR reg: CEL, Can Error Logging
     uint32_t last_lec;
-    uint32_t last_psr;
+    uint32_t last_psr;              // PSR reg; TDCV is bits [22:16] = secondary sample point =
+                                    // measured transceiver delay + TDCO (in FDCAN clock cycles,
+                                    // 12.5ns @ 80MHz), so actual transceiver loop delay = TDCV - TDCO
     uint32_t last_ecr;
     uint32_t last_cccr;
 #ifdef DRONECAN_USE_RX_ISR
@@ -98,6 +100,8 @@ typedef struct
     // total sum of counts, calculated in dc_hal_get_stats()
     uint32_t error_sum_count;
     // CAN FD specific diagnostics
+    // error-type breakdown: LEC is the arbitration phase (e.g. ACK = fc not acking),
+    // DLEC is the data phase (bit0/bit1 point at TDC/transceiver issues)
     uint32_t ack_err_count;         // LEC = 3 (ACK Error)
     uint32_t dlec_count;            // DLEC, Data phase Last Error Code (CAN FD)
     uint32_t dlec_stuff_count;      // DLEC = 1 (Stuff Error)
@@ -141,6 +145,7 @@ typedef struct
     uint8_t bit_segment_1;
     uint8_t bit_segment_2;
     uint8_t sync_jump_width;
+    uint8_t tdco; // transceiver delay compensation offset, in FDCAN clock cycles; 0 disables TDC
 } tDcHalDataTimings;
 
 
@@ -176,17 +181,17 @@ tDcHalStatistics dc_hal_get_stats(void);
 const char* dc_hal_psr_lec_to_str(uint32_t psr);
 const char* dc_hal_psr_act_to_str(uint32_t psr);
 
+// Computes the nominal (arbitration) and/or the CAN FD data phase bit timings.
+// Each output is optional (NULL to skip, its target bitrate is then ignored), similar in
+// spirit to the libcanard timing helpers. Classic-CAN-only platforms pass data_timings = NULL.
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bitrate,
-    tDcHalCanTimings* const timings);
-
-int16_t dc_hal_compute_data_timings(
-    const uint32_t peripheral_clock_rate,
+    tDcHalCanTimings* const timings,
     const uint32_t target_data_bitrate,
-    tDcHalDataTimings* const timings);
+    tDcHalDataTimings* const data_timings);
 
-bool dc_hal_is_fd_mode(void);
+bool dc_hal_is_canfd(void);
 
 
 #ifdef __cplusplus

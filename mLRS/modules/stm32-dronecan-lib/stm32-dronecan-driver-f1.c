@@ -67,8 +67,6 @@ int16_t dc_hal_init(
     const tDcHalDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
-    (void)can_instance;
-    (void)data_timings;
     if ((iface_mode != DC_HAL_IFACE_MODE_NORMAL) &&
         (iface_mode != DC_HAL_IFACE_MODE_SILENT) &&
         (iface_mode != DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR)) {
@@ -344,38 +342,35 @@ tDcHalStatistics dc_hal_get_stats(void)
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bitrate,
-    tDcHalCanTimings* const timings)
+    tDcHalCanTimings* const timings,
+    const uint32_t target_data_bitrate,
+    tDcHalDataTimings* const data_timings)
 {
-    if (target_bitrate != 1000000) {
+    // STM32F1 is classic CAN only, it has no CAN FD data phase
+    if (data_timings != NULL) {
         return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
     }
-    if (peripheral_clock_rate != 36000000) { // 36 MHz, CAN is on slower APB1 bus
-        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
-    }
 
-    // determined using original libcanard function
-    timings->bit_rate_prescaler = 4; // -> tq = 36/4 = 9
-    timings->bit_segment_1 = 7;
-    timings->bit_segment_2 = 1; // -> SP = (1 + BS1)/(1 + BS1 + BS2) = 8/9 = 88.89%
-    timings->sync_jump_width = 1;
+    if (timings != NULL) {
+        if (target_bitrate != 1000000) {
+            return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+        }
+        if (peripheral_clock_rate != 36000000) { // 36 MHz, CAN is on slower APB1 bus
+            return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+        }
+
+        // determined using original libcanard function
+        timings->bit_rate_prescaler = 4; // -> tq = 36/4 = 9
+        timings->bit_segment_1 = 7;
+        timings->bit_segment_2 = 1; // -> SP = (1 + BS1)/(1 + BS1 + BS2) = 8/9 = 88.89%
+        timings->sync_jump_width = 1;
+    }
 
     return 0;
 }
 
 
-int16_t dc_hal_compute_data_timings(
-    const uint32_t peripheral_clock_rate,
-    const uint32_t target_data_bitrate,
-    tDcHalDataTimings* const timings)
-{
-    (void)peripheral_clock_rate;
-    (void)target_data_bitrate;
-    (void)timings;
-    return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
-}
-
-
-bool dc_hal_is_fd_mode(void) { return false; }
+bool dc_hal_is_canfd(void) { return false; }
 
 
 #endif // HAL_PCD_MODULE_ENABLED

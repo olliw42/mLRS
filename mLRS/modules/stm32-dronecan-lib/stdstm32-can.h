@@ -81,7 +81,7 @@ void can_init(void)
     // DroneCAN Hal initialization
 
     tDcHalCanTimings timings;
-    int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), 1000000, &timings); // = 36000000, CAN is on slow APB1 bus
+    int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), 1000000, &timings, 0, NULL); // = 36000000, CAN is on slow APB1 bus
     if (res < 0) {
         dbg.puts("\nERROR: Solution for CAN timings could not be found");
         return;
@@ -159,7 +159,7 @@ void can_init(void)
     // DroneCAN HAL initialization
 
     tDcHalCanTimings timings;
-    int16_t res = dc_hal_compute_timings(peripheral_clock_rate, 1000000, &timings);
+    int16_t res = dc_hal_compute_timings(peripheral_clock_rate, 1000000, &timings, 0, NULL);
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Solution for CAN timings could not be found");)
         return;
@@ -172,14 +172,15 @@ void can_init(void)
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
 
+    // try to additionally compute the CAN FD data phase timings; if unsupported (e.g. the
+    // configured bitrate has no solution), fall back to classic CAN with data_timings = NULL
     tDcHalDataTimings data_timings;
-    res = dc_hal_compute_data_timings(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN), CAN_FD_DATA_BITRATE, &data_timings);
-
-    if (res == 0) {
-        res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, &data_timings, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
-    } else {
-        res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, NULL, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    tDcHalDataTimings* data_timings_ptr = NULL;
+    if (dc_hal_compute_timings(peripheral_clock_rate, 0, NULL, CAN_FD_DATA_BITRATE, &data_timings) == 0) {
+        data_timings_ptr = &data_timings;
     }
+
+    res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, data_timings_ptr, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
 
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)

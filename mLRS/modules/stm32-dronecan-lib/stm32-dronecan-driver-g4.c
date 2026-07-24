@@ -225,11 +225,10 @@ int16_t dc_hal_init(
         return -DC_HAL_ERROR_CAN_INIT;
     }
 
-    if (data_timings != NULL && data_timings->bit_rate_prescaler <= 2) {
-        // enable transceiver delay compensation for CAN FD (see DC_HAL_TDCO)
-        // RM0440: TDC is intended for data prescaler 1 or 2, i.e. the faster data bitrates,
-        // slower ones (prescaler > 2) don't need it
-        HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan, DC_HAL_TDCO, 0);
+    if (data_timings != NULL && data_timings->tdco > 0) {
+        // enable transceiver delay compensation for CAN FD; the offset (and whether TDC is
+        // needed at all) is derived from the data prescaler in dc_hal_compute_timings()
+        HAL_FDCAN_ConfigTxDelayCompensation(&hfdcan, data_timings->tdco, 0);
         HAL_FDCAN_EnableTxDelayCompensation(&hfdcan); // sets DBTP.TDC
     }
 
@@ -772,114 +771,124 @@ const char* dc_hal_psr_act_to_str(uint32_t psr)
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bit_rate,
-    tDcHalCanTimings* const timings)
-{
-    if (target_bit_rate != 1000000) {
-        return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
-    }
-
-    // general rule:
-    // tq = peripheral_clock_rate / bit_rate / prescaler
-    // BS1 = SP * tq - 1, where SP is e.g. 3/4 = 75% or 7/8 = 87.5%
-    // BS2 = tq - 1 - BS1 = (1 - SP) * tq
-    // -> SP = (1 + BS1)/(1 + BS1 + BS2)
-
-    // Note: ChatGPT was very clear on that one should use 80 MHz clock for FDCAN
-    // we used 170 MHz before for classic CAN, but 80 MHz is said to be just better
-
-    // timings by ArduPilot (confirmed by ChatGPT, by JLP, by myself using AP's code explicitly)
-    // 10 tq
-    // prescaler 8
-    // BS1 = 8
-    // BS2 = 1
-    // SJW = 1
-    // -> SP = 90.0%
-    // Note: this is somewhat weird. AP cites a source that says that 8 tq would be optimal,
-    // which can be achieved with prescaler 10, BS1 = 6, BS2 = 1, SJW = 1, -> SP = 7/8 = 87.5%.
-    // It also would give SP 87.5% which ChatGPT says is industry standard. ??
-    // only the 80 MHz FDCAN clock is supported (160 MHz SYSCLK / 80 MHz PLLQ)
-    if (peripheral_clock_rate == 80000000) { // 80 MHz
-        // 80MHz / 1Mbps = 80 tq. Using prescaler 8 -> 10 tq.
-        // 90% sample point: (1 + 8) / 10 = 90.0%, matches ArduPilot computeTimings logic for 80MHz
-        timings->bit_rate_prescaler = 8;
-        timings->bit_segment_1 = 8;
-        timings->bit_segment_2 = 1;
-        timings->sync_jump_width = 1;
-    } else {
-        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
-    }
-
-    // let's do a check
-    // datasheet:
-    //   tq = prescaler * 1/f_clk
-    //   bit_time = (1 + BS1 + BS2) * tq
-    // =>
-    //   bit_time = (1 + BS1 + BS2) * prescaler * 1/f_clk
-    // we want bit_time = 1/1000000
-    // =>
-    //   (1 + BS1 + BS2) * prescaler = f_clk / 1000000
-    const uint32_t bit_time = (1 + timings->bit_segment_1 + timings->bit_segment_2) * timings->bit_rate_prescaler;
-    const uint32_t f_clk_MHz = peripheral_clock_rate / 1000000;
-    if (bit_time != f_clk_MHz) {
-        return -DC_HAL_ERROR_TIMING;
-    }
-
-    return 0;
-}
-
-
-int16_t dc_hal_compute_data_timings(
-    const uint32_t peripheral_clock_rate,
+    tDcHalCanTimings* const timings,
     const uint32_t target_data_bitrate,
-    tDcHalDataTimings* const timings)
+    tDcHalDataTimings* const data_timings)
 {
-    if (timings == NULL) {
-        return -DC_HAL_ERROR_INVALID_ARGUMENT;
-    }
-
-    // only the 80 MHz FDCAN clock is supported (160 MHz SYSCLK / 80 MHz PLLQ).
-    // transceivers on mLRS rx hardware (TCAN34xx) support up to 5 Mbps.
-    if (peripheral_clock_rate == 80000000) {
-        // ArduPilot Table for 80MHz
-        // note: mLRS hardware supports up to 5 Mbps max, 8 Mbps not supported
-        if (target_data_bitrate == 1000000) {
-            timings->bit_rate_prescaler = 4;
-            timings->bit_segment_1 = 14;
-            timings->bit_segment_2 = 5;
-            timings->sync_jump_width = 5;
-        } else if (target_data_bitrate == 2000000) {
-            timings->bit_rate_prescaler = 2;
-            timings->bit_segment_1 = 14;
-            timings->bit_segment_2 = 5;
-            timings->sync_jump_width = 5;
-        } else if (target_data_bitrate == 4000000) {
-            timings->bit_rate_prescaler = 1;
-            timings->bit_segment_1 = 14;
-            timings->bit_segment_2 = 5;
-            timings->sync_jump_width = 5;
-        } else if (target_data_bitrate == 5000000) {
-            timings->bit_rate_prescaler = 1;
-            timings->bit_segment_1 = 11;
-            timings->bit_segment_2 = 4;
-            timings->sync_jump_width = 4;
-        } else {
+    // nominal (arbitration) phase timings
+    if (timings != NULL) {
+        if (target_bit_rate != 1000000) {
             return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
         }
-    } else {
-        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+
+        // general rule:
+        // tq = peripheral_clock_rate / bit_rate / prescaler
+        // BS1 = SP * tq - 1, where SP is e.g. 3/4 = 75% or 7/8 = 87.5%
+        // BS2 = tq - 1 - BS1 = (1 - SP) * tq
+        // -> SP = (1 + BS1)/(1 + BS1 + BS2)
+
+        // Note: ChatGPT was very clear on that one should use 80 MHz clock for FDCAN
+        // we used 170 MHz before for classic CAN, but 80 MHz is said to be just better
+
+        // timings by ArduPilot (confirmed by ChatGPT, by JLP, by myself using AP's code explicitly)
+        // 10 tq
+        // prescaler 8
+        // BS1 = 8
+        // BS2 = 1
+        // SJW = 1
+        // -> SP = 90.0%
+        // Note: this is somewhat weird. AP cites a source that says that 8 tq would be optimal,
+        // which can be achieved with prescaler 10, BS1 = 6, BS2 = 1, SJW = 1, -> SP = 7/8 = 87.5%.
+        // It also would give SP 87.5% which ChatGPT says is industry standard. ??
+        // 80 MHz is the clock actually used (160 MHz SYSCLK / 80 MHz PLLQ) and the preferred one;
+        // the 160/170 MHz branches are not currently used but kept for reference
+        if (peripheral_clock_rate == 80000000) { // 80 MHz, preferred
+            // 80MHz / 1Mbps = 80 tq. Using prescaler 8 -> 10 tq.
+            // 90% sample point: (1 + 8) / 10 = 90.0%, matches ArduPilot computeTimings logic for 80MHz
+            timings->bit_rate_prescaler = 8;
+            timings->bit_segment_1 = 8;
+            timings->bit_segment_2 = 1;
+            timings->sync_jump_width = 1;
+        } else if (peripheral_clock_rate == 160000000) { // 160 MHz, NOT PREFERRED, but not terrible
+            timings->bit_rate_prescaler = 16;
+            timings->bit_segment_1 = 8;
+            timings->bit_segment_2 = 1;
+            timings->sync_jump_width = 1;
+        } else if (peripheral_clock_rate == 170000000) { // 170 MHz, NOT PREFERRED
+            timings->bit_rate_prescaler = 17;
+            timings->bit_segment_1 = 8;
+            timings->bit_segment_2 = 1;
+            timings->sync_jump_width = 1;
+        } else {
+            return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+        }
+
+        // let's do a check
+        // datasheet:
+        //   tq = prescaler * 1/f_clk
+        //   bit_time = (1 + BS1 + BS2) * tq
+        // =>
+        //   bit_time = (1 + BS1 + BS2) * prescaler * 1/f_clk
+        // we want bit_time = 1/1000000
+        // =>
+        //   (1 + BS1 + BS2) * prescaler = f_clk / 1000000
+        const uint32_t bit_time = (1 + timings->bit_segment_1 + timings->bit_segment_2) * timings->bit_rate_prescaler;
+        const uint32_t f_clk_MHz = peripheral_clock_rate / 1000000;
+        if (bit_time != f_clk_MHz) {
+            return -DC_HAL_ERROR_TIMING;
+        }
     }
 
-    const uint32_t bit_time = (1 + timings->bit_segment_1 + timings->bit_segment_2) * timings->bit_rate_prescaler;
-    const uint32_t expected = peripheral_clock_rate / target_data_bitrate;
-    if (bit_time != expected) {
-        return -DC_HAL_ERROR_TIMING;
+    // CAN FD data phase timings
+    if (data_timings != NULL) {
+        // only the 80 MHz FDCAN clock is supported (160 MHz SYSCLK / 80 MHz PLLQ).
+        // transceivers on mLRS rx hardware (TCAN34xx) support up to 5 Mbps.
+        if (peripheral_clock_rate == 80000000) {
+            // ArduPilot Table for 80MHz
+            // note: mLRS hardware supports up to 5 Mbps max, 8 Mbps not supported
+            if (target_data_bitrate == 1000000) {
+                data_timings->bit_rate_prescaler = 4;
+                data_timings->bit_segment_1 = 14;
+                data_timings->bit_segment_2 = 5;
+                data_timings->sync_jump_width = 5;
+            } else if (target_data_bitrate == 2000000) {
+                data_timings->bit_rate_prescaler = 2;
+                data_timings->bit_segment_1 = 14;
+                data_timings->bit_segment_2 = 5;
+                data_timings->sync_jump_width = 5;
+            } else if (target_data_bitrate == 4000000) {
+                data_timings->bit_rate_prescaler = 1;
+                data_timings->bit_segment_1 = 14;
+                data_timings->bit_segment_2 = 5;
+                data_timings->sync_jump_width = 5;
+            } else if (target_data_bitrate == 5000000) {
+                data_timings->bit_rate_prescaler = 1;
+                data_timings->bit_segment_1 = 11;
+                data_timings->bit_segment_2 = 4;
+                data_timings->sync_jump_width = 4;
+            } else {
+                return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
+            }
+        } else {
+            return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
+        }
+
+        const uint32_t bit_time = (1 + data_timings->bit_segment_1 + data_timings->bit_segment_2) * data_timings->bit_rate_prescaler;
+        const uint32_t expected = peripheral_clock_rate / target_data_bitrate;
+        if (bit_time != expected) {
+            return -DC_HAL_ERROR_TIMING;
+        }
+
+        // transceiver delay compensation is only needed at the fast data prescalers.
+        // RM0440: TDC is intended for data prescaler 1 or 2, slower ones (prescaler > 2) don't need it
+        data_timings->tdco = (data_timings->bit_rate_prescaler <= 2) ? DC_HAL_TDCO : 0;
     }
 
     return 0;
 }
 
 
-bool dc_hal_is_fd_mode(void) { return dc_hal_fd_mode_detected; }
+bool dc_hal_is_canfd(void) { return dc_hal_fd_mode_detected; }
 
 
 /*
