@@ -163,7 +163,8 @@ void init_hw(void)
     uartb_port.Init();
     dronecan_port.Init();
     Serials.Init(Setup.Rx.SerialPort, Config.SerialBaudrate);
-    dronecan.Init(Setup.Rx.SerialPort == RX_SERIAL_PORT_CAN); // after delay_init() since it needs delay
+    // after delay_init() since it needs delay
+    dronecan.Init(RX_SERIAL_PORT_IS_CAN(Setup.Rx.SerialPort), Setup.Rx.SerialPort == RX_SERIAL_PORT_CANFD);
 }
 
 

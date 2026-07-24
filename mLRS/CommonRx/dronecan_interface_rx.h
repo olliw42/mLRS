@@ -140,7 +140,7 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
 // RxDroneCan class implementation
 //-------------------------------------------------------
 
-void tRxDroneCan::Init(bool ser_over_can_enable_flag)
+void tRxDroneCan::Init(bool ser_over_can_enable_flag, bool canfd_enable_flag)
 {
     tick_1Hz = 0;
     node_status_transfer_id = 0;
@@ -160,10 +160,11 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag)
     tunnel_targetted_stats.Init();
 
     ser_over_can_enabled = ser_over_can_enable_flag;
+    canfd_enabled = canfd_enable_flag;
 
     DBG_DC(dbg.puts("\n\n\nCAN init");)
 
-    can_init();
+    can_init(canfd_enabled);
 
     canardInit(
         &canard,                          // uninitialized library instance
@@ -329,7 +330,7 @@ DBG_DC(
     dbg.puts(" err tx_fifo: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt));
     tunnel_targetted_stats.Init();
     tDcHalStatistics dc_stats = dc_hal_get_stats();
-    dbg.puts("\n bitrate: ");dbg.puts(u16toBCD_s(CAN_FD_DATA_BITRATE / 1000000));dbg.puts(" Mbps");dbg.puts(dc_hal_is_canfd() ? " canfd" : "");
+    dbg.puts("\n bitrate: ");dbg.puts(u16toBCD_s(canfd_enabled ? (CAN_FD_DATA_BITRATE / 1000000) : 1));dbg.puts(" Mbps");dbg.puts(dc_hal_is_canfd() ? " canfd" : "");
     dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
     dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
     dbg.puts(" rec: ");dbg.puts(utoBCD_s(dc_stats.rec_count));

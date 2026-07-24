@@ -68,7 +68,7 @@ extern "C" {
 #endif
 
 
-void can_init(void)
+void can_init(bool canfd_enable) // canfd_enable is ignored, STM32F1 is classic CAN only
 {
     // CAN peripheral initialization
 
@@ -119,7 +119,7 @@ void can_init(void)
 #endif
 
 
-void can_init(void)
+void can_init(bool canfd_enable)
 {
     // GPIO initialization
     // PA11 = FDCAN1_RX
@@ -172,11 +172,11 @@ void can_init(void)
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
 
-    // try to additionally compute the CAN FD data phase timings; if unsupported (e.g. the
-    // configured bitrate has no solution), fall back to classic CAN with data_timings = NULL
+    // if CAN FD is wanted, try to additionally compute the CAN FD data phase timings; if not wanted
+    // or unsupported (e.g. the configured bitrate has no solution), do classic CAN with data_timings = NULL
     tDcHalDataTimings data_timings;
     tDcHalDataTimings* data_timings_ptr = NULL;
-    if (dc_hal_compute_timings(peripheral_clock_rate, 0, NULL, CAN_FD_DATA_BITRATE, &data_timings) == 0) {
+    if (canfd_enable && dc_hal_compute_timings(peripheral_clock_rate, 0, NULL, CAN_FD_DATA_BITRATE, &data_timings) == 0) {
         data_timings_ptr = &data_timings;
     }
 

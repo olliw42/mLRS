@@ -35,7 +35,7 @@
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag);
+    void Init(bool ser_over_can_enable_flag, bool canfd_enable_flag);
     void Start(void); // do this as closely as possible before the loop
     void Tick_ms(void);
     void Do(void);
@@ -57,6 +57,7 @@ class tRxDroneCan
 
     bool id_is_allcoated(void);
     bool ser_over_can_enabled;
+    bool canfd_enabled; // CAN FD was requested, the iface then also accepts and sends CAN FD frames
 
   private:
     int16_t set_can_filters(void);
@@ -119,7 +120,7 @@ class tRxDroneCan
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag) {}
+    void Init(bool ser_over_can_enable_flag, bool canfd_enable_flag) {}
     void Start(void) {}
     void Tick_ms(void) {}
     void Do(void) {}
