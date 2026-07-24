@@ -59,6 +59,10 @@
 //#define UARTF_RXBUFSIZE           512
 
 
+//-- CAN BUS
+#define CAN_FD_DATA_BITRATE       4000000 // 4 Mbps CAN FD data rate (80 MHz FDCAN clock)
+
+
 //-- SX1: SX12xx & SPI
 
 
