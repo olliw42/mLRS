@@ -11,7 +11,7 @@
 #pragma once
 
 
-#define DBG_DC(x) x // enabled for buffer usage measurements
+#define DBG_DC(x)
 
 
 #include "dronecan_interface_rx_types.h"
