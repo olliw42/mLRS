@@ -445,6 +445,11 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
             RxAddress++;
         }
 
+        // track the high water mark, to judge if the rx frame buffer is oversized.
+        // fill can reach DRONECAN_RXFRAMEBUFSIZE - 1 at most, one slot is always kept free.
+        uint16_t fill = (next - dronecan_rxreadpos) & DRONECAN_RXFRAMEBUFSIZEMASK;
+        if (fill > dc_hal_stats.rx_fifo_peak) dc_hal_stats.rx_fifo_peak = fill;
+
     } else {
         dc_hal_stats.rx_overflow_count++; // rx frame buffer overflow
     }

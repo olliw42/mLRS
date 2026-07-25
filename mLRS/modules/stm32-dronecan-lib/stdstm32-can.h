@@ -29,7 +29,7 @@ extern "C" {
 // with 80 MHz FDCAN clock the G4 supports: 1000000, 2000000, 4000000, 5000000
 // ignored on platforms without CAN FD support (STM32F1)
 #ifndef CAN_FD_DATA_BITRATE
-#define CAN_FD_DATA_BITRATE  1000000
+#define CAN_FD_DATA_BITRATE  4000000
 #endif
 
 #ifdef STM32G4

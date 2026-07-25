@@ -93,6 +93,11 @@ typedef struct
     uint32_t isr_rf1l_count;        // RF1L, Rx Fifo 1 Message Lost
     uint32_t isr_errors_count;      // IR reg: ELO, WDI, PEA, PED, ARA errors
     uint32_t isr_errorstatus_count; // IR reg: EP, EW, BO errors
+    // buffer usage high water mark, to judge if the rx frame buffer is oversized.
+    // this is a peak since init, it is not cleared by dc_hal_rx_flush().
+    // CAN FD frames are assumed, so a slot always holds a full 64 byte payload and only
+    // the depth DRONECAN_RXFRAMEBUFSIZE is up for sizing
+    uint16_t rx_fifo_peak;          // peak fill of the rx frame buffer, in frames
 #endif
     // raised in dc_hal_transmit()
     uint32_t tffl_count;            // TFFL, Tx Fifo Free Level
