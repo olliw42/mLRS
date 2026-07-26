@@ -116,8 +116,10 @@ const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = { // 2.4 GHz, FLRC 111 Hz
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const uint8_t frequency_band)
+void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm_hf, const int8_t gain_dbm_lf, const uint8_t frequency_band)
 {
+    int8_t gain_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) ? gain_dbm_hf : gain_dbm_lf;
+
     int16_t power_sx = ((int16_t)power_dbm - gain_dbm) * 2; // LR20xx power is in units of 0.5 dBm
 
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
@@ -615,7 +617,7 @@ class Lr20xxDriver : public Lr20xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -742,7 +744,7 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined POWER_USE_DEFAULT_RFPOWER_CALC
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif

@@ -73,8 +73,8 @@
 // UARTF or SWUART = debug port
 
 
-//XX #define UARTB_USE_UART2_PA2PA3 // serial
-    #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
+#define UARTB_USE_UART2_PA2PA3 // serial
+//    #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -100,8 +100,8 @@
 
 #define JRPIN5_FULL_INTERNAL_ON_TX
 
-//XX #define UARTF_USE_UART1_PA9PA10 // debug
-     #define UARTF_USE_UART2_PA2PA3 // misuse serial as debug
+#define UARTF_USE_UART1_PA9PA10 // debug
+//     #define UARTF_USE_UART2_PA2PA3 // misuse serial as debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
@@ -517,25 +517,30 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 #define POWER_SUPPLY_DETECT_IO            IO_PC1
 #define POWER_SUPPLY_LOW_POWER_LIMIT_DBM  20
 
-#define POWER_GAIN_DBM            23 // gain of a PA stage if present
+#define POWER_GAIN_DBM_HF          18 // gain of a PA stage if present
+#define POWER_GAIN_DBM_LF          20 // gain of a PA stage if present
 #define POWER_USE_DEFAULT_RFPOWER_CALC
-/*
+
+#ifndef POWER_USE_DEFAULT_RFPOWER_CALC
 void lr20xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     // for now just mimics calc_default, is to be prepared for more sophisticated schemes
-
-    int16_t power_sx = ((int16_t)power_dbm - POWER_GAIN_DBM) * 2; // LR20xx power is in units of 0.5 dBm
+    int8_t gain_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) ? POWER_GAIN_DBM_HF : POWER_GAIN_DBM_LF;
+    int16_t power_sx = ((int16_t)power_dbm - gain_dbm) * 2; // LR20xx power is in units of 0.5 dBm
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+power_sx = -10; // -5 dBm
         if (power_sx < LR20XX_POWER_HF_MIN) power_sx = LR20XX_POWER_HF_MIN;
         if (power_sx > LR20XX_POWER_HF_MAX) power_sx = LR20XX_POWER_HF_MAX;
     } else {
+power_sx = -10; // -5 dBm
         if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
         if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
     }
     *sx_power = power_sx;
-    *actual_power_dbm = power_sx / 2 + POWER_GAIN_DBM;
+    *actual_power_dbm = power_sx / 2 + gain_dbm;
 }
-*/
+#endif
+
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
