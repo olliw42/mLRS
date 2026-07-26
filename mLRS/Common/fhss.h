@@ -56,7 +56,7 @@
 #elif defined DEVICE_HAS_LR11xx
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  LR11XX_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  LR11XX_FREQ_GHZ_TO_REG(f_ghz)
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  LR20XX_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  LR20XX_FREQ_GHZ_TO_REG(f_ghz)
 #else // DEVICE_HAS_SX128x

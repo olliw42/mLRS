@@ -367,7 +367,7 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define SX_DRIVER Sx127xDriver
 #elif defined DEVICE_HAS_LR11xx
   #define SX_DRIVER Lr11xxDriver
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define SX_DRIVER Lr20xxDriver
 #else
   #define SX_DRIVER Sx128xDriver
@@ -389,13 +389,16 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define SX2_DRIVER Sx128xDriver2
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX2_DRIVER Sx126xDriver2
+#elif defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+  #define SX2_DRIVER Lr20xxDriver2
 #else
   #define SX2_DRIVER SxDriverDummy
 #endif
 
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
-    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define USE_SX2
 #endif
 
@@ -445,7 +448,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
     !defined DEVICE_HAS_LR11xx && !defined DEVICE_HAS_LR20xx && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && \
+    !defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #error Must be either SX128x or SX127x or SX126x or LR11xx or LR20xx !
 #endif
 
