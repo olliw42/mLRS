@@ -21,8 +21,7 @@
 // waits for notification from pin5_rx_callback, then uses uart_wait_tx_done()
 // which blocks on the IDF driver's internal TX_DONE interrupt/semaphore.
 // runs on Core 0, mLRS uses Core 1 on dual-core chips, so no impact on radio loop.
-// on single-core chips (ESP32-C3) it briefly preempts the loop task, but it only
-// wakes once per telemetry frame and does just a few gpio calls.
+// on single-core chips (ESP32-C3) it briefly preempts the loop task.
 
 TaskHandle_t tx_done_task_handle = nullptr;
 
