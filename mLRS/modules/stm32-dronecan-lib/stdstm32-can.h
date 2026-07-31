@@ -25,13 +25,6 @@ extern "C" {
 
 //#include "stdstm32-peripherals.h"
 
-// CAN FD data bitrate - can be overridden in the device hal
-// with 80 MHz FDCAN clock the G4 supports: 1000000, 2000000, 4000000, 5000000
-// ignored on platforms without CAN FD support (STM32F1)
-#ifndef CAN_FD_DATA_BITRATE
-#define CAN_FD_DATA_BITRATE  4000000
-#endif
-
 #ifdef STM32G4
 #if defined CAN_USE_FDCAN1_PA11PA12
     #define CAN_DC_HAL_INTFC    DC_HAL_CAN1 // TODO: this is currently defined in stm32-dronecan-driver.h
@@ -54,6 +47,10 @@ extern "C" {
 #endif
 
 
+#define CAN_BITRATE             1000000
+#define CAN_FD_DATA_BITRATE     4000000
+
+
 //-------------------------------------------------------
 // INIT routines
 //-------------------------------------------------------
@@ -68,7 +65,7 @@ extern "C" {
 #endif
 
 
-void can_init(bool canfd_enable) // canfd_enable is ignored, STM32F1 is classic CAN only
+void can_init(uint8_t canfd_enable) // canfd_enable is ignored, STM32F1 is classic CAN only
 {
     // CAN peripheral initialization
 
@@ -81,7 +78,7 @@ void can_init(bool canfd_enable) // canfd_enable is ignored, STM32F1 is classic 
     // DroneCAN Hal initialization
 
     tDcHalCanTimings timings;
-    int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), 1000000, &timings, 0, NULL); // = 36000000, CAN is on slow APB1 bus
+    int16_t res = dc_hal_compute_timings(HAL_RCC_GetPCLK1Freq(), CAN_BITRATE, &timings); // = 36000000, CAN is on slow APB1 bus
     if (res < 0) {
         dbg.puts("\nERROR: Solution for CAN timings could not be found");
         return;
@@ -107,7 +104,7 @@ void can_init(bool canfd_enable) // canfd_enable is ignored, STM32F1 is classic 
 // FDCAN can be clocked by either PCLK1 or PLLQ.
 // JLP found:
 // - with 170 MHz, FDCAN works reasonable only for 1 Mbps data rate, not useful for FDCAN.
-// - 170 MHz PCLK1 with 85 MHz for FDCAN was found to causes excessive stuff errors
+// - 170 MHz PCLK1 with 85 MHz for FDCAN was found to cause excessive stuff errors
 //   and timing incompatibilities with ArduPilot at 5 Mbps. ArduPilot uses 80 MHz FDCAN clock,
 //   and the sample point / TDC timing differences at 85 MHz are problematic.
 // ChatGPT is very clear on that 80 MHz is the best choice, giving many reasons, e.g.,
@@ -119,7 +116,7 @@ void can_init(bool canfd_enable) // canfd_enable is ignored, STM32F1 is classic 
 #endif
 
 
-void can_init(bool canfd_enable)
+void can_init(uint8_t canfd_enable)
 {
     // GPIO initialization
     // PA11 = FDCAN1_RX
@@ -159,7 +156,7 @@ void can_init(bool canfd_enable)
     // DroneCAN HAL initialization
 
     tDcHalCanTimings timings;
-    int16_t res = dc_hal_compute_timings(peripheral_clock_rate, 1000000, &timings, 0, NULL);
+    int16_t res = dc_hal_compute_timings(peripheral_clock_rate, CAN_BITRATE, &timings);
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Solution for CAN timings could not be found");)
         return;
@@ -172,16 +169,18 @@ void can_init(bool canfd_enable)
     dbg.puts("\n  BS2: ");dbg.puts(u8toBCD_s(timings.bit_segment_2));
     dbg.puts("\n  SJW: ");dbg.puts(u8toBCD_s(timings.sync_jump_width));)
 
-    // if CAN FD is wanted, try to additionally compute the CAN FD data phase timings; if not wanted
-    // or unsupported (e.g. the configured bitrate has no solution), do classic CAN with data_timings = NULL
-    tDcHalDataTimings data_timings;
-    tDcHalDataTimings* data_timings_ptr = NULL;
-    if (canfd_enable && dc_hal_compute_timings(peripheral_clock_rate, 0, NULL, CAN_FD_DATA_BITRATE, &data_timings) == 0) {
-        data_timings_ptr = &data_timings;
+    tDcHalCanDataTimings data_timings;
+    if (canfd_enable) {
+        res = dc_hal_compute_data_timings(peripheral_clock_rate, CAN_FD_DATA_BITRATE, &data_timings);
+        if (res < 0) {
+            DBG_DC(dbg.puts("\nERROR: Solution for CAN FD data timings could not be found");)
+            return;
+        }
     }
 
-    res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, data_timings_ptr, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    tDcHalCanDataTimings* data_timings_ptr = (canfd_enable) ? &data_timings : NULL;
 
+    res = dc_hal_init(CAN_DC_HAL_INTFC, &timings, data_timings_ptr, DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
     if (res < 0) {
         DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)
         return;

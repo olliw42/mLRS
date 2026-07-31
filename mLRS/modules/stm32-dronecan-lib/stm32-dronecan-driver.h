@@ -14,8 +14,8 @@
 #ifndef STM32_DRONECAN_DRIVER_H
 #define STM32_DRONECAN_DRIVER_H
 
-// CAN FD and the TAO option are enabled library-wide in libcanard/canard.h.
-// TAO is off for FD frames: encode call sites pass !dc_hal_is_canfd().
+// CAN FD is enabled in libcanard/canard.h, brings in TAO flag in canard functions
+// TAO must be off for FD frames, use dc_hal_is_canfd()
 #include "libcanard/canard.h"
 
 // library configuration
@@ -73,19 +73,19 @@ typedef struct
     uint32_t rec_count;             // ECR reg: REC, Receive Error Counter
     uint32_t cel_count;             // ECR reg: CEL, Can Error Logging
     uint32_t last_lec;
-    uint32_t last_psr;              // PSR reg; TDCV is bits [22:16] = secondary sample point =
-                                    // measured transceiver delay + TDCO (in FDCAN clock cycles,
-                                    // 12.5ns @ 80MHz), so actual transceiver loop delay = TDCV - TDCO
+    uint32_t last_psr;
     uint32_t last_ecr;
     uint32_t last_cccr;
+    uint32_t lec_ack_count;         // PSR reg, LEC: ACK error
 #ifdef DRONECAN_USE_RX_ISR
     // raised in _dc_hal_receive_isr() (which is called by _dc_hal_isr_handler())
     uint32_t rx_overflow_count;     // rx frame buffer overflow
+    uint32_t rx_fifo_peak;          // rx frame buffer peak filling, in frames
     uint32_t isr_xtd_count;         // XTD, received frame is not a EXT frame
     uint32_t isr_rtr_count;         // RTR, received frame is RTR frame
     uint32_t isr_fdf_count;         // FDF, received frame is RTR frame
     uint32_t isr_brs_count;         // BRS, received frame has bit rate switch
-    uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8
+    uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8 (only if CANFD is not enabled)
     // raised in _dc_hal_isr_handler()
     uint32_t isr_rf0f_count;        // RF0F, Rx Fifo 0 Full
     uint32_t isr_rf0l_count;        // RF0L, Rx Fifo 0 Message Lost
@@ -93,29 +93,21 @@ typedef struct
     uint32_t isr_rf1l_count;        // RF1L, Rx Fifo 1 Message Lost
     uint32_t isr_errors_count;      // IR reg: ELO, WDI, PEA, PED, ARA errors
     uint32_t isr_errorstatus_count; // IR reg: EP, EW, BO errors
-    // buffer usage high water mark, to judge if the rx frame buffer is oversized.
-    // this is a peak since init, it is not cleared by dc_hal_rx_flush().
-    // CAN FD frames are assumed, so a slot always holds a full 64 byte payload and only
-    // the depth DRONECAN_RXFRAMEBUFSIZE is up for sizing
-    uint16_t rx_fifo_peak;          // peak fill of the rx frame buffer, in frames
 #endif
     // raised in dc_hal_transmit()
     uint32_t tffl_count;            // TFFL, Tx Fifo Free Level
     uint32_t tfqf_count;            // TFQF, Tx Fifo Queue Full
     // total sum of counts, calculated in dc_hal_get_stats()
     uint32_t error_sum_count;
-    // CAN FD specific diagnostics
-    // error-type breakdown: LEC is the arbitration phase (e.g. ACK = fc not acking),
-    // DLEC is the data phase (bit0/bit1 point at TDC/transceiver issues)
-    uint32_t ack_err_count;         // LEC = 3 (ACK Error)
-    uint32_t dlec_count;            // DLEC, Data phase Last Error Code (CAN FD)
-    uint32_t dlec_stuff_count;      // DLEC = 1 (Stuff Error)
-    uint32_t dlec_form_count;       // DLEC = 2 (Form Error)
-    uint32_t dlec_ack_count;        // DLEC = 3 (ACK Error)
-    uint32_t dlec_bit1_count;       // DLEC = 4 (Bit1 Error - recessive sent, dominant read)
-    uint32_t dlec_bit0_count;       // DLEC = 5 (Bit0 Error - dominant sent, recessive read)
-    uint32_t dlec_crc_count;        // DLEC = 6 (CRC Error)
-    uint32_t last_dlec;             // last data-phase LEC
+    // CAN FD diagnostics
+    uint32_t dlec_count;            // PSR reg: DLEC, Data-phase Last Error Code
+    uint32_t last_dlec;
+    uint32_t dlec_stuff_count;      // PSR reg, DLEC: breakdown
+    uint32_t dlec_form_count;
+    uint32_t dlec_ack_count;
+    uint32_t dlec_bit1_count;       // bit1/bit0 point at TDC/transceiver issues
+    uint32_t dlec_bit0_count;
+    uint32_t dlec_crc_count;
 } tDcHalStatistics;
 
 
@@ -150,8 +142,8 @@ typedef struct
     uint8_t bit_segment_1;
     uint8_t bit_segment_2;
     uint8_t sync_jump_width;
-    uint8_t tdco; // transceiver delay compensation offset, in FDCAN clock cycles; 0 disables TDC
-} tDcHalDataTimings;
+    uint8_t tdco; // transceiver delay compensation offset, in FDCAN clock cycles; 0: disabled
+} tDcHalCanDataTimings;
 
 
 typedef enum
@@ -164,10 +156,12 @@ typedef enum
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
-    const tDcHalDataTimings* const data_timings,
+    const tDcHalCanDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode);
 
 int16_t dc_hal_start(void);
+
+uint8_t dc_hal_is_canfd(void);
 
 int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms);
 
@@ -186,17 +180,15 @@ tDcHalStatistics dc_hal_get_stats(void);
 const char* dc_hal_psr_lec_to_str(uint32_t psr);
 const char* dc_hal_psr_act_to_str(uint32_t psr);
 
-// Computes the nominal (arbitration) and/or the CAN FD data phase bit timings.
-// Each output is optional (NULL to skip, its target bitrate is then ignored), similar in
-// spirit to the libcanard timing helpers. Classic-CAN-only platforms pass data_timings = NULL.
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
-    const uint32_t target_bitrate,
-    tDcHalCanTimings* const timings,
-    const uint32_t target_data_bitrate,
-    tDcHalDataTimings* const data_timings);
+    const uint32_t target_bit_rate,
+    tDcHalCanTimings* const timings);
 
-bool dc_hal_is_canfd(void);
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bit_rate,
+    tDcHalCanDataTimings* const data_timings);
 
 
 #ifdef __cplusplus

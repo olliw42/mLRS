@@ -10,7 +10,7 @@
 #define DRONECAN_INTERFACE_RX_TYPES_H
 #pragma once
 
-#ifdef DEVICE_HAS_DRONECAN
+#ifdef USE_DRONECAN
 
 #include "../Common/libs/fifo.h"
 
@@ -35,7 +35,7 @@
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag, bool canfd_enable_flag);
+    void Init(uint8_t serial_port);
     void Start(void); // do this as closely as possible before the loop
     void Tick_ms(void);
     void Do(void);
@@ -57,7 +57,6 @@ class tRxDroneCan
 
     bool id_is_allcoated(void);
     bool ser_over_can_enabled;
-    bool canfd_enabled; // CAN FD was requested, the iface then also accepts and sends CAN FD frames
 
   private:
     int16_t set_can_filters(void);
@@ -100,18 +99,6 @@ class tRxDroneCan
         uint8_t transfer_id;
     } flex_debug;
 
-    // buffer usage high water marks, to judge if the buffers are oversized.
-    // these are peaks since Init(), they are not cleared each debug tick.
-    struct {
-        uint16_t fc_to_ser_peak; // peak fill of fifo_fc_to_ser, in bytes
-        uint16_t ser_to_fc_peak; // peak fill of fifo_ser_to_fc, in bytes
-        uint16_t enc_peak;       // peak encoded transfer length put into _buf, in bytes
-        void Init(void) { fc_to_ser_peak = ser_to_fc_peak = enc_peak = 0; }
-        void TrackFcToSer(uint16_t v) { if (v > fc_to_ser_peak) fc_to_ser_peak = v; }
-        void TrackSerToFc(uint16_t v) { if (v > ser_to_fc_peak) ser_to_fc_peak = v; }
-        void TrackEnc(uint16_t v) { if (v > enc_peak) enc_peak = v; }
-    } buf_usage;
-
     // to not burden the stack
     union {
         struct uavcan_protocol_NodeStatus node_status;
@@ -132,7 +119,7 @@ class tRxDroneCan
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag, bool canfd_enable_flag) {}
+    void Init(uint8_t serial_port) {}
     void Start(void) {}
     void Tick_ms(void) {}
     void Do(void) {}
@@ -140,6 +127,6 @@ class tRxDroneCan
 };
 
 
-#endif // DEVICE_HAS_DRONECAN
+#endif // USE_DRONECAN
 
 #endif // DRONECAN_INTERFACE_RX_TYPES_H

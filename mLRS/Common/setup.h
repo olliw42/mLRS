@@ -257,9 +257,8 @@ void setup_configure_metadata(void)
 #endif
 #ifdef DEVICE_HAS_DRONECAN
     SetupMetaData.Rx_SerialPort_allowed_mask |= 0b010; // add can
-#endif
-#ifdef DEVICE_HAS_DRONECAN_FD
-    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b100; // add canfd
+#elif defined DEVICE_HAS_DRONECAN_FD
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b110; // add can, canfd
 #endif
 
     //-- Tx: Receiver setup meta data

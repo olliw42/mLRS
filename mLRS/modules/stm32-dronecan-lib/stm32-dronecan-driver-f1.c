@@ -33,7 +33,7 @@
 
 static tDcHalStatistics dc_hal_stats;
 
-static bool dc_hal_abort_tx_on_error;
+static uint8_t abort_tx_on_error;
 
 static CAN_HandleTypeDef hcan;
 
@@ -50,7 +50,7 @@ static void _process_error_status(void)
         CLEAR_BIT(hcan.Instance->ESR, CAN_ESR_LEC);
         dc_hal_stats.error_sum_count++;
 
-        if (dc_hal_abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
+        if (abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
             HAL_CAN_AbortTxRequest(&hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
         }
     }
@@ -64,7 +64,6 @@ static void _process_error_status(void)
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance, // irrelevant for STM32F1
     const tDcHalCanTimings* const timings,
-    const tDcHalDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
     if ((iface_mode != DC_HAL_IFACE_MODE_NORMAL) &&
@@ -82,7 +81,7 @@ int16_t dc_hal_init(
     }
 
     memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
-    dc_hal_abort_tx_on_error = (iface_mode == DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    abort_tx_on_error = (iface_mode == DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
 
     hcan.Instance = CAN1;
     __HAL_CAN_DISABLE_IT(&hcan, 0);
@@ -150,6 +149,12 @@ int16_t dc_hal_start(void)
     HAL_StatusTypeDef hres = HAL_CAN_Start(&hcan);
     if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_START; }
 
+    return 0;
+}
+
+
+uint8_t dc_hal_is_canfd(void)
+{ 
     return 0;
 }
 
@@ -342,35 +347,32 @@ tDcHalStatistics dc_hal_get_stats(void)
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
     const uint32_t target_bitrate,
-    tDcHalCanTimings* const timings,
-    const uint32_t target_data_bitrate,
-    tDcHalDataTimings* const data_timings)
+    tDcHalCanTimings* const timings)
 {
-    // STM32F1 is classic CAN only, it has no CAN FD data phase
-    if (data_timings != NULL) {
+    if (target_bitrate != 1000000) {
         return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
     }
-
-    if (timings != NULL) {
-        if (target_bitrate != 1000000) {
-            return -DC_HAL_ERROR_UNSUPPORTED_BIT_RATE;
-        }
-        if (peripheral_clock_rate != 36000000) { // 36 MHz, CAN is on slower APB1 bus
-            return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
-        }
-
-        // determined using original libcanard function
-        timings->bit_rate_prescaler = 4; // -> tq = 36/4 = 9
-        timings->bit_segment_1 = 7;
-        timings->bit_segment_2 = 1; // -> SP = (1 + BS1)/(1 + BS1 + BS2) = 8/9 = 88.89%
-        timings->sync_jump_width = 1;
+    if (peripheral_clock_rate != 36000000) { // 36 MHz, CAN is on slower APB1 bus
+        return -DC_HAL_ERROR_UNSUPPORTED_CLOCK_FREQUENCY;
     }
+
+    // determined using original libcanard function
+    timings->bit_rate_prescaler = 4; // -> tq = 36/4 = 9
+    timings->bit_segment_1 = 7;
+    timings->bit_segment_2 = 1; // -> SP = (1 + BS1)/(1 + BS1 + BS2) = 8/9 = 88.89%
+    timings->sync_jump_width = 1;
 
     return 0;
 }
 
 
-bool dc_hal_is_canfd(void) { return false; }
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bit_rate,
+    tDcHalCanDataTimings* const data_timings)
+{
+    return -DC_HAL_ERROR_TIMING;
+}
 
 
 #endif // HAL_PCD_MODULE_ENABLED

@@ -12,7 +12,6 @@
 
 #define DEVICE_HAS_OUT
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_DRONECAN
 #define DEVICE_HAS_DRONECAN_FD
 
 #include "hal-matek-mr-g431kb-common.h"
@@ -58,10 +57,6 @@
 #define UARTF_USE_TX_ISR
 //#define UARTF_USE_RX
 //#define UARTF_RXBUFSIZE           512
-
-
-//-- CAN BUS
-#define CAN_FD_DATA_BITRATE       4000000 // 4 Mbps CAN FD data rate (80 MHz FDCAN clock)
 
 
 //-- SX1: SX12xx & SPI

@@ -16,7 +16,7 @@
 
 #include "dronecan_interface_rx_types.h"
 
-#ifdef DEVICE_HAS_DRONECAN
+#ifdef USE_DRONECAN
 #ifdef STM32G4
   // check that we have 160 MHz SYSCLK,PCLK1 and 80 MHz PLLQ
   // for the reasons see comment in stdstm32-can.h
@@ -140,7 +140,7 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
 // RxDroneCan class implementation
 //-------------------------------------------------------
 
-void tRxDroneCan::Init(bool ser_over_can_enable_flag, bool canfd_enable_flag)
+void tRxDroneCan::Init(uint8_t serial_port)
 {
     tick_1Hz = 0;
     node_status_transfer_id = 0;
@@ -158,14 +158,12 @@ void tRxDroneCan::Init(bool ser_over_can_enable_flag, bool canfd_enable_flag)
     flex_debug.transfer_id = 0;
 
     tunnel_targetted_stats.Init();
-    buf_usage.Init();
 
-    ser_over_can_enabled = ser_over_can_enable_flag;
-    canfd_enabled = canfd_enable_flag;
+    ser_over_can_enabled = RX_SERIAL_PORT_IS_CAN(serial_port);
 
     DBG_DC(dbg.puts("\n\n\nCAN init");)
 
-    can_init(canfd_enabled);
+    can_init(serial_port == RX_SERIAL_PORT_CANFD);
 
     canardInit(
         &canard,                          // uninitialized library instance
@@ -228,7 +226,7 @@ uint8_t filter_num = 0;
         filter_configs[0].rx_fifo = DC_HAL_RX_FIFO0;
         filter_configs[0].id =
             DC_MESSAGE_TYPE_TO_CAN_ID(UAVCAN_PROTOCOL_DYNAMIC_NODE_ID_ALLOCATION_ID) |
-            DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x00);
+            DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x00); // 0 to indicate broadcast
         filter_configs[0].mask =
             DC_MESSAGE_TYPE_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
         filter_num = 1;
@@ -242,15 +240,15 @@ uint8_t filter_num = 0;
             DC_SERVICE_TYPE_TO_CAN_ID(UAVCAN_PROTOCOL_GETNODEINFO_REQUEST_ID) |
             DC_REQUEST_NOT_RESPONSE_TO_CAN_ID(0x01) |
             DC_DESTINATION_ID_TO_CAN_ID(canardGetLocalNodeID(&canard)) |
-            DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x01);
+            DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x01); // 1 to indicate request
         filter_configs[0].mask =
             DC_SERVICE_TYPE_MASK | DC_REQUEST_NOT_RESPONSE_MASK | DC_DESTINATION_ID_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
         filter_num = 1;
         if (ser_over_can_enabled) { // we do accept tunnel targetted transfers
-            filter_configs[0].rx_fifo = DC_HAL_RX_FIFO1;
+            filter_configs[1].rx_fifo = DC_HAL_RX_FIFO1;
             filter_configs[1].id =
                 DC_MESSAGE_TYPE_TO_CAN_ID(UAVCAN_TUNNEL_TARGETTED_ID) |
-                DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x00);
+                DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x00); // 0 to indicate broadcast
             filter_configs[1].mask =
                 DC_MESSAGE_TYPE_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
             filter_num = 2;
@@ -331,32 +329,10 @@ DBG_DC(
     dbg.puts(" err tx_fifo: ");dbg.puts(u16toBCD_s(tunnel_targetted_stats.fc_to_ser_tx_full_error_cnt));
     tunnel_targetted_stats.Init();
     tDcHalStatistics dc_stats = dc_hal_get_stats();
-    dbg.puts("\n bitrate: ");dbg.puts(u16toBCD_s(canfd_enabled ? (CAN_FD_DATA_BITRATE / 1000000) : 1));dbg.puts(" Mbps");dbg.puts(dc_hal_is_canfd() ? " canfd" : "");
+    dbg.puts("\n can: ");dbg.puts(dc_hal_is_canfd() ? " fd" : " classic");
     dbg.puts("\n   err dc sum: ");dbg.puts(u16toBCD_s(dc_stats.error_sum_count));
     dbg.puts(" tec: ");dbg.puts(utoBCD_s(dc_stats.tec_count));
     dbg.puts(" rec: ");dbg.puts(utoBCD_s(dc_stats.rec_count));
-    dbg.puts(" TDCV:");dbg.puts(u16toBCD_s((dc_stats.last_psr >> 16) & 0x7F));
-    dbg.puts("\n   LEC ack:");dbg.puts(u16toBCD_s(dc_stats.ack_err_count));
-    dbg.puts(" lec:");dbg.puts(u16toBCD_s(dc_stats.lec_count));
-    dbg.puts("  DLEC bit1:");dbg.puts(u16toBCD_s(dc_stats.dlec_bit1_count));
-    dbg.puts(" bit0:");dbg.puts(u16toBCD_s(dc_stats.dlec_bit0_count));
-    dbg.puts(" ack:");dbg.puts(u16toBCD_s(dc_stats.dlec_ack_count));
-    dbg.puts(" stuff:");dbg.puts(u16toBCD_s(dc_stats.dlec_stuff_count));
-    dbg.puts(" form:");dbg.puts(u16toBCD_s(dc_stats.dlec_form_count));
-    dbg.puts(" crc:");dbg.puts(u16toBCD_s(dc_stats.dlec_crc_count));
-    // buffer usage, peak since Init() vs size, to judge if the buffers are oversized
-    CanardPoolAllocatorStatistics pool_stats = canardGetPoolAllocatorStatistics(&canard);
-    dbg.puts("\n buffers peak/size:");
-    dbg.puts("\n   can rx: ");dbg.puts(u16toBCD_s(dc_stats.rx_fifo_peak));
-    dbg.puts("/");dbg.puts(u16toBCD_s(DRONECAN_RXFRAMEBUFSIZE));dbg.puts(" frames");
-    dbg.puts("\n   pool:   ");dbg.puts(u16toBCD_s(pool_stats.peak_usage_blocks));
-    dbg.puts("/");dbg.puts(u16toBCD_s(pool_stats.capacity_blocks));dbg.puts(" blocks");
-    dbg.puts("\n   fc->ser fifo: ");dbg.puts(u16toBCD_s(buf_usage.fc_to_ser_peak));
-    dbg.puts("/");dbg.puts(u16toBCD_s(RX_SERIAL_RXBUFSIZE));dbg.puts(" B");
-    dbg.puts("\n   ser->fc fifo: ");dbg.puts(u16toBCD_s(buf_usage.ser_to_fc_peak));
-    dbg.puts("/");dbg.puts(u16toBCD_s(RX_SERIAL_TXBUFSIZE));dbg.puts(" B");
-    dbg.puts("\n   enc buf:      ");dbg.puts(u16toBCD_s(buf_usage.enc_peak));
-    dbg.puts("/");dbg.puts(u16toBCD_s(DRONECAN_BUF_SIZE));dbg.puts(" B");
 )
 }
 
@@ -440,11 +416,11 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.rcin.data[i] = (((int32_t)(rc_out->ch[i]) - 1024) * 601) / 1024 + 1500;
     }
 
-    // read fd mode into a local so the encode below (TAO is disabled for FD, via !canfd) and the
-    // canfd frame flag passed to canardBroadcast() use the same value; the isr can flip fd detection
+    // TAO needs to be disabled for FD frame
+    // receive isr can flip FD status, but both encode() and Broadcast() must use same value
+    // hence read into variable, before calling them
     bool canfd = dc_hal_is_canfd();
     uint16_t len = dronecan_sensors_rc_RCInput_encode(&_p.rc_input, _buf, !canfd);
-    buf_usage.TrackEnc(len);
 
     canardBroadcast(
         &canard,
@@ -486,7 +462,6 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
 void tRxDroneCan::putbuf(uint8_t* const buf, uint16_t len)
 {
     fifo_ser_to_fc.PutBuf(buf, len);
-    buf_usage.TrackSerToFc(fifo_ser_to_fc.Available());
     tunnel_targetted_stats.ser_to_fc_rate += len;
 }
 
@@ -535,9 +510,8 @@ void tRxDroneCan::send_node_status(void)
     _p.node_status.vendor_specific_status_code = cnt;
     cnt++;
 
-    bool canfd = dc_hal_is_canfd(); // one read: encode (TAO off for FD) and frame flag must agree, isr may flip it
+    bool canfd = dc_hal_is_canfd();
     uint32_t len = uavcan_protocol_NodeStatus_encode(&_p.node_status, _buf, !canfd);
-    buf_usage.TrackEnc(len);
 
     canardBroadcast(
         &canard,
@@ -571,33 +545,30 @@ void tRxDroneCan::handle_get_node_info_request(CanardInstance* const ins, Canard
     _p.node_info_resp.software_version.minor = minor;
     _p.node_info_resp.software_version.optional_field_flags = patch;
     _p.node_info_resp.software_version.vcs_commit = 0; // should put git hash in here
+    _p.node_info_resp.software_version.image_crc = 0;
 
     _p.node_info_resp.hardware_version.major = 0; // we don't have such a thing
     _p.node_info_resp.hardware_version.minor = 0;
-
     dronecan_uid(_p.node_info_resp.hardware_version.unique_id);
-
-    // we do not have a certificate of authenticity, so tell the encoder to emit none.
-    // this MUST be set: _p is a union, and the byte backing this len field is also
-    // tunnel_targetted.buffer.data[41] and part of rc_input, so it holds stale payload
-    // data from the previous message. Without this the response carries up to 255 bytes
-    // of garbage, which bloats it from ~60 to up to 377 bytes.
+    // must be set; _p is a union, and may hold stale data
+    // without this the response may carry up to 255 bytes of garbage
     _p.node_info_resp.hardware_version.certificate_of_authenticity.len = 0;
+    // _p.node_info_resp.hardware_version.certificate_of_authenticity.data can be garbage
 
     // data can be 80 chars, which is always larger than our device name, so no need to worry about too long string
     strcpy((char*)_p.node_info_resp.name.data, "mlrs.");
     strcat((char*)_p.node_info_resp.name.data, DEVICE_NAME);
-    for (uint8_t n = 0; n < strlen((char*)_p.node_info_resp.name.data); n ++) {
+    uint16_t name_len = strlen((char*)_p.node_info_resp.name.data);
+    for (uint8_t n = 0; n < name_len; n++) {
         if (_p.node_info_resp.name.data[n] == ' ') _p.node_info_resp.name.data[n] = '_';
         if (_p.node_info_resp.name.data[n] >= 'A' && _p.node_info_resp.name.data[n] <= 'Z') {
             _p.node_info_resp.name.data[n] = _p.node_info_resp.name.data[n] - 'A' + 'a';
         }
     }
-    _p.node_info_resp.name.len = strlen((char*)_p.node_info_resp.name.data);
+    _p.node_info_resp.name.len = name_len;
 
-    bool canfd = dc_hal_is_canfd(); // one read: encode (TAO off for FD) and frame flag must agree, isr may flip it
+    bool canfd = dc_hal_is_canfd();
     uint16_t len = uavcan_protocol_GetNodeInfoResponse_encode(&_p.node_info_resp, _buf, !canfd);
-    buf_usage.TrackEnc(len);
 
     canardRequestOrRespond(
         ins,
@@ -670,7 +641,8 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 
     // Structure of the request is documented in the DSDL definition
     // See http://uavcan.org/Specification/6._Application_level_functions/#dynamic-node-id-allocation
-    uint8_t allocation_request[CANARD_CAN_FRAME_MAX_DATA_LEN - 1];
+    // we send as classic CAN frame, so CANARD_CAN_FRAME_MAX_DATA_LEN should be ok, but play it safe
+    uint8_t allocation_request[CANARD_CANFD_FRAME_MAX_DATA_LEN - 1];
     allocation_request[0] = DRONECAN_PREFERRED_NODE_ID << 1;
 
     if (node_id_allocation.unique_id_offset == 0) {
@@ -768,7 +740,6 @@ void tRxDroneCan::handle_tunnel_targetted_broadcast(CanardRxTransfer* const tran
     }
 
     fifo_fc_to_ser.PutBuf(_p.tunnel_targetted.buffer.data, _p.tunnel_targetted.buffer.len);
-    buf_usage.TrackFcToSer(fifo_fc_to_ser.Available());
 
     tunnel_targetted_stats.handle_rate += _p.tunnel_targetted.buffer.len;
 }
@@ -792,9 +763,8 @@ void tRxDroneCan::send_tunnel_targetted(void)
     _p.tunnel_targetted.buffer.len = data_len;
     for (uint8_t n = 0; n < data_len; n++) _p.tunnel_targetted.buffer.data[n] = fifo_ser_to_fc.Get();
 
-    bool canfd = dc_hal_is_canfd(); // one read: encode (TAO off for FD) and frame flag must agree, isr may flip it
+    bool canfd = dc_hal_is_canfd();
     uint16_t len = uavcan_tunnel_Targetted_encode(&_p.tunnel_targetted, _buf, !canfd);
-    buf_usage.TrackEnc(len);
 
     canardBroadcast(
         &canard,
@@ -889,6 +859,6 @@ STATIC_ASSERT(DRONECAN_BUF_SIZE >= DRONECAN_SENSORS_RC_RCINPUT_MAX_SIZE, "DRONEC
 STATIC_ASSERT(DRONECAN_BUF_SIZE >= UAVCAN_TUNNEL_TARGETTED_MAX_SIZE, "DRONECAN_BUF_SIZE too small")
 
 
-#endif // DEVICE_HAS_DRONECAN
+#endif // USE_DRONECAN
 
 #endif // DRONECAN_INTERFACE_RX_H

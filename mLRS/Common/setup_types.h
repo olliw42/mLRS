@@ -304,8 +304,8 @@ typedef enum {
 
 typedef enum {
     RX_SERIAL_PORT_SERIAL = 0,
-    RX_SERIAL_PORT_CAN,     // classic CAN only
-    RX_SERIAL_PORT_CANFD,   // CAN FD, data phase at CAN_FD_DATA_BITRATE
+    RX_SERIAL_PORT_CAN,
+    RX_SERIAL_PORT_CANFD,
     RX_SERIAL_PORT_NUM,
 } RX_SERIAL_PORT_ENUM;
 
