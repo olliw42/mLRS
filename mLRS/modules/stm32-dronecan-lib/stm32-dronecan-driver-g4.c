@@ -596,7 +596,9 @@ HAL_StatusTypeDef hres;
 //        FDCAN_IT_LIST_RX_FIFO0 | FDCAN_IT_LIST_RX_FIFO1 |
 //        FDCAN_IT_LIST_BIT_LINE_ERROR | FDCAN_IT_LIST_PROTOCOL_ERROR,
         0);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_ISR_CONFIG; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_ISR_CONFIG;
+    }
 
     hfdcan.Instance->IR = 0xFFFFFFFF; // clear all flags by writing 1 to them
 

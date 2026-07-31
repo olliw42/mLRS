@@ -47,6 +47,8 @@ extern tRxDroneCan dronecan;
 
 #ifndef DRONECAN_USE_RX_ISR
 #error DRONECAN_USE_RX_ISR not defined !
+int16_t dc_hal_enable_isr(void) { return 0; } // dummies to avoid #ifdefs below
+void dc_hal_rx_flush(void) {}
 #endif
 
 #if FDCAN_IRQ_PRIORITY != DRONECAN_IRQ_PRIORITY
