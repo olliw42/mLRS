@@ -18,10 +18,9 @@
 #include "../../../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.NodeStatus.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.GetNodeInfo.h"
-#include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.dynamic_node_id.Allocation.h"
+#include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Targetted.h"
-#include "../Common/dronecan/out/include/uavcan.tunnel.Protocol.h"
 #include "../Common/dronecan/out/include/dronecan.protocol.FlexDebug.h"
 
 
