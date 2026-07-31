@@ -161,6 +161,10 @@ void tRxDroneCan::Init(uint8_t serial_port)
 
     ser_over_can_enabled = RX_SERIAL_PORT_IS_CAN(serial_port);
 
+    can_config.fd_data_bitrate = 0;
+    can_config.is_canfd = false;
+    can_config.has_been_seen = false;
+
     DBG_DC(dbg.puts("\n\n\nCAN init");)
 
     can_init(serial_port == RX_SERIAL_PORT_CANFD);
@@ -217,7 +221,7 @@ bool tRxDroneCan::id_is_allcoated(void)
 
 int16_t tRxDroneCan::set_can_filters(void)
 {
-tDcHalAcceptanceFilterConfiguration filter_configs[2];
+tDcHalAcceptanceFilterConfiguration filter_configs[3];
 uint8_t filter_num = 0;
 
     if (!id_is_allcoated()) {
@@ -254,6 +258,16 @@ uint8_t filter_num = 0;
             filter_num = 2;
         }
     }
+
+    // set these always
+    // - CANCONFIG broadcasts
+    filter_configs[filter_num].rx_fifo = DC_HAL_RX_FIFO0;
+    filter_configs[filter_num].id =
+        DC_MESSAGE_TYPE_TO_CAN_ID(DRONECAN_PROTOCOL_CANCONFIG_ID) |
+        DC_SERVICE_NOT_MESSAGE_TO_CAN_ID(0x00); // 0 to indicate broadcast
+    filter_configs[filter_num].mask =
+        DC_MESSAGE_TYPE_MASK | DC_SERVICE_NOT_MESSAGE_MASK;
+    filter_num++;
 
     DBG_DC(dbg.puts("\nFilter");
     for (uint8_t n = 0; n < filter_num; n++) {
@@ -676,6 +690,25 @@ void tRxDroneCan::send_dynamic_node_id_allocation_request(void)
 
 
 //-------------------------------------------------------
+// DroneCAN can config handling
+//-------------------------------------------------------
+
+void tRxDroneCan::handle_can_config_broadcast(CanardRxTransfer* const transfer)
+{
+    if (dronecan_protocol_CanConfig_decode(transfer, &_p.can_config)) { // something is wrong here
+      //can_config_stats.error_cnt++;
+      return;
+    }
+
+    if (!can_config.has_been_seen && _p.can_config.variant == DRONECAN_PROTOCOL_CANCONFIG_CAN_FD) { // only take first
+        can_config.fd_data_bitrate = _p.can_config.bit_rate;
+        can_config.is_canfd = true;
+    }
+    can_config.has_been_seen = true;
+}
+
+
+//-------------------------------------------------------
 // DroneCAN tunnel handling
 //-------------------------------------------------------
 
@@ -818,6 +851,11 @@ bool dronecan_should_accept_transfer(
             if (!dronecan.id_is_allcoated()) return false;
             *out_data_type_signature = UAVCAN_TUNNEL_TARGETTED_SIGNATURE;
             return true;
+        case DRONECAN_PROTOCOL_CANCONFIG_ID:
+            // ??if (dronecan.can_config.has_been_seen) return false; // only take first
+            if (!dronecan.id_is_allcoated()) return false;
+            *out_data_type_signature = DRONECAN_PROTOCOL_CANCONFIG_SIGNATURE;
+            return true;
         }
     }
     return false;
@@ -843,6 +881,9 @@ void dronecan_on_transfer_received(CanardInstance* const ins, CanardRxTransfer* 
             return;
         case UAVCAN_TUNNEL_TARGETTED_ID:
             dronecan.handle_tunnel_targetted_broadcast(transfer);
+            return;
+        case DRONECAN_PROTOCOL_CANCONFIG_ID:
+            dronecan.handle_can_config_broadcast(transfer);
             return;
         }
     }

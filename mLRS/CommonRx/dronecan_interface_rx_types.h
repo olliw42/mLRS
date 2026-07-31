@@ -22,6 +22,7 @@
 #include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Targetted.h"
 #include "../Common/dronecan/out/include/dronecan.protocol.FlexDebug.h"
+#include "../Common/dronecan-dev/out/include/dronecan.protocol.CanConfig.h"
 
 
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
@@ -44,6 +45,13 @@ class tRxDroneCan
     void handle_get_node_info_request(CanardInstance* const ins, CanardRxTransfer* const transfer);
     void handle_dynamic_node_id_allocation_broadcast(CanardInstance* const ins, CanardRxTransfer* const transfer);
     void send_dynamic_node_id_allocation_request(void);
+
+    struct {
+        uint32_t fd_data_bitrate;
+        bool is_canfd;
+        bool has_been_seen;
+    } can_config;
+    void handle_can_config_broadcast(CanardRxTransfer* const transfer); // ins (= instance) not needed
 
     void putbuf(uint8_t* const buf, uint16_t len);
     bool available(void);
@@ -105,6 +113,7 @@ class tRxDroneCan
         struct dronecan_sensors_rc_RCInput rc_input;
         struct uavcan_tunnel_Targetted tunnel_targetted;
         struct dronecan_protocol_FlexDebug flex_debug;
+        struct dronecan_protocol_CanConfig can_config;
     } _p;
     uint8_t _buf[DRONECAN_BUF_SIZE];
 
