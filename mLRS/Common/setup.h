@@ -250,13 +250,16 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_OutMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Rx SerialPort: "serial,can"
+    // Rx SerialPort: "serial,can,canfd"
     SetupMetaData.Rx_SerialPort_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
-    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b01; // add serial
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b001; // add serial
 #endif
 #ifdef DEVICE_HAS_DRONECAN
-    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b10; // add can
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b010; // add can
+#endif
+#ifdef DEVICE_HAS_DRONECAN_FD
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b100; // add canfd
 #endif
 
     //-- Tx: Receiver setup meta data

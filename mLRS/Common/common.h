@@ -277,7 +277,7 @@ typedef struct
 void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)
 {
 #if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    if (serial_port == RX_SERIAL_PORT_CAN) {
+    if (RX_SERIAL_PORT_IS_CAN(serial_port)) {
         serial = &dronecan_port; // assign dronecan to serial
     } else {
         serial = &uartb_port; // assign uartb to serial

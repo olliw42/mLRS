@@ -82,6 +82,7 @@ In rx-hal files:
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_DRONECAN         // board has a DroneCAN port
+#define DEVICE_HAS_DRONECAN_FD      // board's DroneCAN port also supports CAN FD
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
