@@ -13,7 +13,7 @@
 
 #ifdef HAL_CAN_MODULE_ENABLED
 
-#error The F1 CAN driver is likely out of date and needs revisting !
+//XX#error The F1 CAN driver is likely out of date and needs revisting !
 
 #include "stm32-dronecan-driver.h"
 #include <string.h>
@@ -51,7 +51,8 @@ static void _process_error_status(void)
         dc_hal_stats.error_sum_count++;
 
         if (abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
-            HAL_CAN_AbortTxRequest(&hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
+            //HAL_CAN_AbortTxRequest(&hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
+            SET_BIT(hcan.Instance->TSR, CAN_TSR_ABRQ0 | CAN_TSR_ABRQ1 | CAN_TSR_ABRQ2);
         }
     }
 }
@@ -272,13 +273,205 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
 
 #else
 //-- ISR
-#warning CAN ISR not supported, DRONECAN_USE_RX_ISR must not be defined !
+
+typedef struct
+{
+    uint32_t rir;
+    uint32_t rdtr;
+    union {
+        uint8_t data[CANARD_CAN_FRAME_MAX_DATA_LEN];
+        uint32_t data_32[CANARD_CAN_FRAME_MAX_DATA_LEN / 4]; // CANARD_CAN_FRAME_MAX_DATA_LEN should be divisible by 4
+    };
+} tDcRxFifoElement;
+
+
+typedef enum // see RM0008, CAN receive FIFO mailbox identifier register & data length control register
+{
+    DC_RX_FIFO_RIR_RTR_BIT    = 0x00000002U, // remote transmission request, bit 1 (RTR), equals CAN_RTR_REMOTE, CAN_RIxR_RTR
+    DC_RX_FIFO_RIR_XTD_BIT    = 0x40000004U, // extended identifier, bit 2 (IDE), equals CAN_ID_EXT, CAN_RIxR_IDE
+    DC_RX_FIFO_RIR_EXTID_MASK = 0xFFFFFFF8U, // remote transmission request, bits 3-31
+    DC_RX_FIFO_RDTR_DLC_MASK  = 0x0000000FU, // data length code, bits 0-3, equals CAN_RDTxR_DLC
+} DC_RX_FIFO_ELEMENT_ENUM;
+
+
+#define DRONECAN_RXFRAMEBUFSIZEMASK  (DRONECAN_RXFRAMEBUFSIZE - 1)
+
+
+volatile tDcRxFifoElement dronecan_rxbuf[DRONECAN_RXFRAMEBUFSIZE];
+volatile uint16_t dronecan_rxwritepos; // pos at which the last frame was stored
+volatile uint16_t dronecan_rxreadpos; // pos at which the next frame is to be fetched
+
+
+void _dc_hal_receive_isr(uint32_t rxfifo)
+{
+    CAN_FIFOMailBox_TypeDef* rx = &hcan.Instance->sFIFOMailBox[rxfifo];
+
+    uint32_t rir = rx->RIR;
+    uint32_t rdtr = rx->RDTR;
+
+    if ((rir & DC_RX_FIFO_RIR_XTD_BIT) == 0) { // DroneCAN uses only EXT frames, so this should be an error
+        dc_hal_stats.isr_xtd_count++;
+        return;
+    }
+    if ((rir & DC_RX_FIFO_RIR_RTR_BIT) != 0) { // DroneCAN does not use RTR frames, so this should be an error
+        dc_hal_stats.isr_rtr_count++;
+        return;
+    }
+
+    // reject frames with DLC > 8
+    if ((rdtr & DC_RX_FIFO_RDTR_DLC_MASK) > 8) { // shouldn't it be also > 0, as 0 is remote frame??
+        dc_hal_stats.isr_dlc_count++;
+        return;
+    }
+
+    uint16_t next = (dronecan_rxwritepos + 1) & DRONECAN_RXFRAMEBUFSIZEMASK;
+    if (dronecan_rxreadpos != next) { //fifo not full
+        dronecan_rxwritepos = next;
+
+        dronecan_rxbuf[next].rir = rir;
+        dronecan_rxbuf[next].rdtr = rdtr;
+        dronecan_rxbuf[next].data_32[0] = rx->RDLR;
+        dronecan_rxbuf[next].data_32[1] = rx->RDHR;
+
+        //old: if (BXCAN->RFxR[0] & CANARD_STM32_CAN_RFR_FOVR) dc_hal_stats.rx_overflow_count++; // rx frame buffer overflow
+        //?? if (READ_BIT(CAN1->RF0R, CAN_RF0R_FOVR0)) dc_hal_stats.rx_overflow_count++; // rx frame buffer overflow
+
+        // fill can reach DRONECAN_RXFRAMEBUFSIZE - 1 at most, one slot is always kept free
+        uint16_t fill = (next - dronecan_rxreadpos) & DRONECAN_RXFRAMEBUFSIZEMASK;
+        if (fill > dc_hal_stats.rx_fifo_peak) dc_hal_stats.rx_fifo_peak = fill;
+
+    } else {
+        dc_hal_stats.rx_overflow_count++; // rx frame buffer overflow
+        dc_hal_stats.rx_fifo_peak = DRONECAN_RXFRAMEBUFSIZE; // full
+    }
+}
+
+
+// is already C context, not C++ !
+void USB_LP_CAN1_RX0_IRQHandler(void)
+{
+// see HAL_CAN_IRQHandler()
+// user should call HAL_StatusTypeDef HAL_CAN_GetRxMessage() in callback
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO0_MSG_PENDING) != 0) { // ISR is enabled
+        if ((hcan.Instance->RF0R & CAN_RF0R_FMP0) != 0) { // message still pending, Rx FIFO 0 not empty
+            _dc_hal_receive_isr(CAN_RX_FIFO0);
+        }
+    }
+
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO0_FULL) != 0 && (hcan.Instance->RF0R & CAN_RF0R_FULL0) != 0) {
+        dc_hal_stats.isr_rf0f_count++; // RF0F, Rx Fifo 0 Full
+    }
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO0_OVERRUN) != 0 && (hcan.Instance->RF0R & CAN_RF0R_FOVR0) != 0) {
+        dc_hal_stats.isr_rf0l_count++; // RF0L, Rx Fifo 0 Message Lost
+    }
+
+    // release FIFO entry we just read
+    SET_BIT(CAN1->RF0R, CAN_RF0R_RFOM0 | CAN_RF0R_FOVR0 | CAN_RF0R_FULL0);
+
+    // TODO: handle errors, BUSOFF etc
+}
+
+
+void CAN1_RX1_IRQHandler(void)
+{
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO1_MSG_PENDING) != 0) { // ISR is enabled
+        if ((hcan.Instance->RF1R & CAN_RF1R_FMP1) != 0) { // message still pending, Rx FIFO 1 not empty
+            _dc_hal_receive_isr(CAN_RX_FIFO1);
+        }
+    }
+
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO1_FULL) != 0 && (hcan.Instance->RF1R & CAN_RF1R_FULL1) != 0) {
+        dc_hal_stats.isr_rf1f_count++; // RF1F, Rx Fifo 1 Full
+    }
+    if ((hcan.Instance->IER & CAN_IT_RX_FIFO1_OVERRUN) != 0 && (hcan.Instance->RF1R & CAN_RF1R_FOVR1) != 0) {
+        dc_hal_stats.isr_rf1l_count++; // RF1L, Rx Fifo 1 Message Lost
+    }
+
+    // release FIFO entry we just read
+    SET_BIT(CAN1->RF1R, CAN_RF1R_RFOM1 | CAN_RF1R_FOVR1 | CAN_RF1R_FULL1);
+
+    // TODO: handle errors, BUSOFF etc
+}
+
 
 //-- API
 
-int16_t dc_hal_enable_isr(void) { return 0; } // dummies
-int16_t dc_hal_receive(CanardCANFrame* const frame) { return 0; }
-void dc_hal_rx_flush(void) {}
+int16_t dc_hal_enable_isr(void)
+{
+HAL_StatusTypeDef hres;
+
+    dronecan_rxwritepos = 0;
+    dronecan_rxreadpos = 0;
+    memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
+
+    hres = HAL_CAN_ActivateNotification(
+        &hcan,
+        CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_FULL |
+        CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_FULL |
+        CAN_IT_RX_FIFO0_OVERRUN | CAN_IT_RX_FIFO1_OVERRUN
+//        CAN_IT_BUSOFF
+//        CAN_IT_ERROR_WARNING | CAN_IT_ERROR_PASSIVE | CAN_IT_ERROR
+//        CAN_IT_LAST_ERROR_CODE
+        );
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_ISR_CONFIG;
+    }
+
+    __HAL_CAN_CLEAR_FLAG(&hcan, CAN_FLAG_FF0 | CAN_FLAG_FOV0); // clear RxFIFO0 flags
+    __HAL_CAN_CLEAR_FLAG(&hcan, CAN_FLAG_FF1 | CAN_FLAG_FOV1); // clear RxFIFO1 flags
+
+    NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, DRONECAN_IRQ_PRIORITY);
+    NVIC_SetPriority(CAN1_RX1_IRQn, DRONECAN_IRQ_PRIORITY);
+    NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+    NVIC_EnableIRQ(CAN1_RX1_IRQn);
+
+    return 0;
+}
+
+
+int16_t dc_hal_receive(CanardCANFrame* const frame)
+{
+    if (frame == NULL) {
+        return -DC_HAL_ERROR_INVALID_ARGUMENT;
+    }
+
+    _process_error_status();
+
+    if (dronecan_rxwritepos == dronecan_rxreadpos) {
+        return 0; // fifo empty
+    }
+
+    uint16_t rxreadpos = (dronecan_rxreadpos + 1) & DRONECAN_RXFRAMEBUFSIZEMASK;
+    dronecan_rxreadpos = rxreadpos;
+
+    frame->id = (dronecan_rxbuf[rxreadpos].rir & DC_RX_FIFO_RIR_EXTID_MASK) >> 3;
+    frame->id |= CANARD_CAN_FRAME_EFF; // libcanard wants the CANARD_CAN_FRAME_EFF flag be set
+
+    // convert DLC to actual byte count
+    uint32_t dlc = (dronecan_rxbuf[rxreadpos].rdtr & DC_RX_FIFO_RDTR_DLC_MASK) >> 0;
+    frame->data_len = dlc;
+    if (frame->data_len > CANARD_CAN_FRAME_MAX_DATA_LEN) frame->data_len = CANARD_CAN_FRAME_MAX_DATA_LEN; // should not happen, but play it safe
+
+    // copy data bytes, and zero-fill
+    for (uint8_t n = 0; n < CANARD_CANFD_FRAME_MAX_DATA_LEN; n++) {
+        frame->data[n] = (n < frame->data_len) ? dronecan_rxbuf[rxreadpos].data[n] : 0;
+    }
+
+    frame->iface_id = 0;
+    frame->canfd = 0; // bxCAN is classic CAN only
+
+    dc_hal_stats.received_frame_count++;
+
+    return 1;
+}
+
+
+void dc_hal_rx_flush(void)
+{
+    dronecan_rxwritepos = 0;
+    dronecan_rxreadpos = 0;
+    dc_hal_stats.rx_overflow_count = 0;
+}
 
 #endif // DRONECAN_USE_RX_ISR
 
@@ -312,7 +505,7 @@ int16_t dc_hal_config_acceptance_filters(
         }
         sFilterConfig.FilterBank = n;
 
-        // in the STM32F103 the CAN id's are store left aligned
+        // in the STM32F103 the CAN id's are stored left aligned
         // the filter doesn't distinguish between STD and EXT ID, so we need to correct here
         // DroneCAN uses only EXT frames, so nothing to do else here
         // libcanard has the CANARD_CAN_FRAME_EFF flag set, but it is filtered out here anyway

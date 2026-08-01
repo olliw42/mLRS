@@ -83,7 +83,7 @@ typedef struct
     uint32_t rx_fifo_peak;          // rx frame buffer peak filling, in frames
     uint32_t isr_xtd_count;         // XTD, received frame is not a EXT frame
     uint32_t isr_rtr_count;         // RTR, received frame is RTR frame
-    uint32_t isr_fdf_count;         // FDF, received frame is RTR frame
+    uint32_t isr_fdf_count;         // FDF, received frame is FD frame
     uint32_t isr_brs_count;         // BRS, received frame has bit rate switch
     uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8 (only if CANFD is not enabled)
     // raised in _dc_hal_isr_handler()
