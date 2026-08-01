@@ -261,12 +261,12 @@ void tRxMsp::parse_serial_in_link_out(void)
                         // send out our home-brewed MSPX_STATUS message in addition
                         // do only after we have seen MSP_BOXNAMES
                         // is being send before original message
-                        uint32_t flight_mode = 0;
+                        uint32_t flight_mode_flags = 0;
                         uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
                         for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
                             if (inav_flight_modes_box_mode_flags[n] == 255) continue; // is empty
                             if (boxflags[inav_flight_modes_box_mode_flags[n] / 8] & (1 << (inav_flight_modes_box_mode_flags[n] % 8))) {
-                                flight_mode |= ((uint32_t)1 << n);
+                                flight_mode_flags |= ((uint32_t)1 << n);
                             }
                         }
                         uint16_t len = msp_generate_v2_frame_bufX(
@@ -274,8 +274,8 @@ void tRxMsp::parse_serial_in_link_out(void)
                             MSP_TYPE_RESPONSE,
                             MSP_FLAG_SOURCE_ID_RC_LINK,
                             MSPX_STATUS,
-                            (uint8_t*)(&flight_mode),
-                            sizeof(flight_mode));
+                            (uint8_t*)(&flight_mode_flags),
+                            sizeof(flight_mode_flags));
                         fifo_link_out.PutBuf(_buf, len);
                     }
                     if (msp_msg_ser_in.function == MSP_BOXNAMES) {

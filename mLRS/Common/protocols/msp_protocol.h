@@ -335,9 +335,9 @@ typedef enum {
 
 // see src/main/fc/runtime_config.h, armingFlag_e
 typedef enum {
-    INAV_ARMING_FLAGS_ARMED           = (1 << 2),
-    INAV_ARMING_FLAGS_WAS_EVER_ARMED  = (1 << 3),
-    INAV_ARMING_FLAGS_ARMING_DISABLED = 0xFFFFFFC0, // all ARMING_DISABLED_ flags, bits 6 and up
+    INAV_ARMING_FLAGS_ARMED                     = (1 << 2),
+    INAV_ARMING_FLAGS_WAS_EVER_ARMED            = (1 << 3),
+    INAV_ARMING_FLAGS_ARMING_DISABLED_ALL_FLAGS = 0x7FFFFFC0, // all ARMING_DISABLED_xxx flags, currently bits 6 to 30
 } INAV_ARMING_FLAGS_ENUM;
 
 
@@ -464,27 +464,28 @@ typedef enum {
 // adds these modes
 //    ARM, AIR_MODE, NAV_CRUISE
 // is stored in MSPX_STATUS as a uint32, so need to be <= 32 flight modes
+// must always only be extended, to not break backwards compatibility
 typedef enum {
     INAV_FLIGHT_MODES_ARM = 0,
     INAV_FLIGHT_MODES_FAILSAFE,
     INAV_FLIGHT_MODES_ANGLE,
     INAV_FLIGHT_MODES_HORIZON,
     INAV_FLIGHT_MODES_NAV_ALTHOLD,
-    INAV_FLIGHT_MODES_HEADING_HOLD,
-    INAV_FLIGHT_MODES_HEADFREE,
+    INAV_FLIGHT_MODES_HEADING_HOLD,     // not used in flight_mode_str5() ??
+    INAV_FLIGHT_MODES_HEADFREE,         // not used in flight_mode_str5() ??
     INAV_FLIGHT_MODES_NAV_RTH,
     INAV_FLIGHT_MODES_NAV_POSHOLD,
     INAV_FLIGHT_MODES_MANUAL,
-    INAV_FLIGHT_MODES_AUTO_TUNE,
+    INAV_FLIGHT_MODES_AUTO_TUNE,        // not used in flight_mode_str5() ??
     INAV_FLIGHT_MODES_NAV_WP,
-    INAV_FLIGHT_MODES_AIR_MODE,
-    INAV_FLIGHT_MODES_FLAPERON,
-    INAV_FLIGHT_MODES_TURN_ASSIST,
-    INAV_FLIGHT_MODES_NAV_LAUNCH,
+    INAV_FLIGHT_MODES_AIR_MODE,         // not used in flight_mode_str5() ??
+    INAV_FLIGHT_MODES_FLAPERON,         // not used in flight_mode_str5() ??
+    INAV_FLIGHT_MODES_TURN_ASSIST,      // not used in flight_mode_str5() ??
+    INAV_FLIGHT_MODES_NAV_LAUNCH,       // not used in flight_mode_str5() ??
     INAV_FLIGHT_MODES_NAV_COURSE_HOLD,
     INAV_FLIGHT_MODES_TURTLE,
-    INAV_FLIGHT_MODES_NAV_CRUISE,
-    INAV_FLIGHT_MODES_SOARING,
+    INAV_FLIGHT_MODES_NAV_CRUISE,       // not used in flight_mode_str5() ??
+    INAV_FLIGHT_MODES_SOARING,          // not used in flight_mode_str5() ??
     INAV_FLIGHT_MODES_ANGLE_HOLD,
     INAV_FLIGHT_MODES_COUNT,
 } MSP_INAV_FLIGHT_MODES_ENUM;
@@ -492,7 +493,8 @@ typedef enum {
 
 typedef struct {
     const char* boxName;
-    uint8_t flightModeFlag;
+    uint8_t permanentId;
+    uint8_t flightMode;
 } tMspBoxArray;
 
 
@@ -500,77 +502,82 @@ typedef struct {
 
 // mirrors INAV's static const box_t boxes[]
 // https://github.com/iNavFlight/inav/blob/master/src/main/fc/fc_msp_box.c
+// as of 1.Aug.2026
 const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
-    { .boxName = "ARM",               .flightModeFlag = INAV_FLIGHT_MODES_ARM }, // 0
-    { .boxName = "ANGLE",             .flightModeFlag = INAV_FLIGHT_MODES_ANGLE },
-    { .boxName = "HORIZON",           .flightModeFlag = INAV_FLIGHT_MODES_HORIZON },
-    { .boxName = "NAV ALTHOLD",       .flightModeFlag = INAV_FLIGHT_MODES_NAV_ALTHOLD },
-    { .boxName = "HEADING HOLD",      .flightModeFlag = INAV_FLIGHT_MODES_HEADING_HOLD },
-    { .boxName = "HEADFREE",          .flightModeFlag = INAV_FLIGHT_MODES_HEADFREE },
-    { .boxName = "HEADADJ",           .flightModeFlag = 255 },
-    { .boxName = "CAMSTAB",           .flightModeFlag = 255 },
-    { .boxName = "NAV RTH",           .flightModeFlag = INAV_FLIGHT_MODES_NAV_RTH },
-    { .boxName = "NAV POSHOLD",       .flightModeFlag = INAV_FLIGHT_MODES_NAV_POSHOLD },
-    { .boxName = "MANUAL",            .flightModeFlag = INAV_FLIGHT_MODES_MANUAL }, // 10
-    { .boxName = "BEEPER",            .flightModeFlag = 255 },
-    { .boxName = "LEDS OFF",          .flightModeFlag = 255 },
-    { .boxName = "LIGHTS",            .flightModeFlag = 255 },
-    { .boxName = "OSD OFF",           .flightModeFlag = 255 },
-    { .boxName = "TELEMETRY",         .flightModeFlag = 255 },
-    { .boxName = "AUTO TUNE",         .flightModeFlag = INAV_FLIGHT_MODES_AUTO_TUNE },
-    { .boxName = "BLACKBOX",          .flightModeFlag = 255 },
-    { .boxName = "FAILSAFE",          .flightModeFlag = INAV_FLIGHT_MODES_FAILSAFE },
-    { .boxName = "NAV WP",            .flightModeFlag = INAV_FLIGHT_MODES_NAV_WP },
-    { .boxName = "AIR MODE",          .flightModeFlag = INAV_FLIGHT_MODES_AIR_MODE }, // 20
-    { .boxName = "HOME RESET",        .flightModeFlag = 255 },
-    { .boxName = "GCS NAV",           .flightModeFlag = 255 },
-    { .boxName = "FPV ANGLE MIX",     .flightModeFlag = 255 },
-    { .boxName = "SURFACE",           .flightModeFlag = 255 },
-    { .boxName = "FLAPERON",          .flightModeFlag = INAV_FLIGHT_MODES_FLAPERON },
-    { .boxName = "TURN ASSIST",       .flightModeFlag = INAV_FLIGHT_MODES_TURN_ASSIST },
-    { .boxName = "NAV LAUNCH",        .flightModeFlag = INAV_FLIGHT_MODES_NAV_LAUNCH },
-    { .boxName = "SERVO AUTOTRIM",    .flightModeFlag = 255 },
-    { .boxName = "CAMERA CONTROL 1",  .flightModeFlag = 255 },
-    { .boxName = "CAMERA CONTROL 2",  .flightModeFlag = 255 }, // 30
-    { .boxName = "CAMERA CONTROL 3",  .flightModeFlag = 255 },
-    { .boxName = "OSD ALT 1",         .flightModeFlag = 255 },
-    { .boxName = "OSD ALT 2",         .flightModeFlag = 255 },
-    { .boxName = "OSD ALT 3",         .flightModeFlag = 255 },
-    { .boxName = "NAV COURSE HOLD",   .flightModeFlag = INAV_FLIGHT_MODES_NAV_COURSE_HOLD },
-    { .boxName = "MC BRAKING",        .flightModeFlag = 255 },
-    { .boxName = "USER1",             .flightModeFlag = 255 },
-    { .boxName = "USER2",             .flightModeFlag = 255 },
-    { .boxName = "USER3",             .flightModeFlag = 255 },
-    { .boxName = "USER4",             .flightModeFlag = 255 }, // 40
-    { .boxName = "LOITER CHANGE",     .flightModeFlag = 255 },
-    { .boxName = "MSP RC OVERRIDE",   .flightModeFlag = 255 },
-    { .boxName = "PREARM",            .flightModeFlag = 255 },
-    { .boxName = "TURTLE",            .flightModeFlag = INAV_FLIGHT_MODES_TURTLE },
-    { .boxName = "NAV CRUISE",        .flightModeFlag = INAV_FLIGHT_MODES_NAV_CRUISE },
-    { .boxName = "AUTO LEVEL TRIM",   .flightModeFlag = 255 },
-    { .boxName = "WP PLANNER",        .flightModeFlag = 255 },
-    { .boxName = "SOARING",           .flightModeFlag = INAV_FLIGHT_MODES_SOARING },
-    { .boxName = "MISSION CHANGE",    .flightModeFlag = 255 },
-    { .boxName = "BEEPER MUTE",       .flightModeFlag = 255 }, // 50
-    { .boxName = "MULTI FUNCTION",    .flightModeFlag = 255 },
-    { .boxName = "MIXER PROFILE 2",   .flightModeFlag = 255 },
-    { .boxName = "MIXER TRANSITION",  .flightModeFlag = 255 },
-    { .boxName = "ANGLE HOLD",        .flightModeFlag = INAV_FLIGHT_MODES_ANGLE_HOLD },
-    { .boxName = "GIMBAL LEVEL TILT", .flightModeFlag = 255 },
-    { .boxName = "GIMBAL LEVEL ROLL", .flightModeFlag = 255 },
-    { .boxName = "GIMBAL CENTER",     .flightModeFlag = 255 },
-    { .boxName = "GIMBAL HEADTRACKER",.flightModeFlag = 255 },
+    { .boxName = "ARM",                 .permanentId = 0,     .flightMode = INAV_FLIGHT_MODES_ARM }, // 0
+    { .boxName = "ANGLE",               .permanentId = 1,     .flightMode = INAV_FLIGHT_MODES_ANGLE },
+    { .boxName = "HORIZON",             .permanentId = 2,     .flightMode = INAV_FLIGHT_MODES_HORIZON },
+    { .boxName = "NAV ALTHOLD",         .permanentId = 3,     .flightMode = INAV_FLIGHT_MODES_NAV_ALTHOLD },
+    { .boxName = "HEADING HOLD",        .permanentId = 5,     .flightMode = INAV_FLIGHT_MODES_HEADING_HOLD },
+    { .boxName = "HEADFREE",            .permanentId = 6,     .flightMode = INAV_FLIGHT_MODES_HEADFREE },
+    { .boxName = "HEADADJ",             .permanentId = 7,     .flightMode = 255 },
+    { .boxName = "CAMSTAB",             .permanentId = 8,     .flightMode = 255 },
+    { .boxName = "NAV RTH",             .permanentId = 10,    .flightMode = INAV_FLIGHT_MODES_NAV_RTH },
+    { .boxName = "NAV POSHOLD",         .permanentId = 11,    .flightMode = INAV_FLIGHT_MODES_NAV_POSHOLD },
+    { .boxName = "MANUAL",              .permanentId = 12,    .flightMode = INAV_FLIGHT_MODES_MANUAL }, // 10
+    { .boxName = "BEEPER",              .permanentId = 13,    .flightMode = 255 },
+    { .boxName = "LEDS OFF",            .permanentId = 15,    .flightMode = 255 },
+    { .boxName = "LIGHTS",              .permanentId = 16,    .flightMode = 255 },
+    { .boxName = "OSD OFF",             .permanentId = 19,    .flightMode = 255 },
+    { .boxName = "TELEMETRY",           .permanentId = 20,    .flightMode = 255 },
+    { .boxName = "AUTO TUNE",           .permanentId = 21,    .flightMode = INAV_FLIGHT_MODES_AUTO_TUNE },
+    { .boxName = "BLACKBOX",            .permanentId = 26,    .flightMode = 255 },
+    { .boxName = "FAILSAFE",            .permanentId = 27,    .flightMode = INAV_FLIGHT_MODES_FAILSAFE },
+    { .boxName = "NAV WP",              .permanentId = 28,    .flightMode = INAV_FLIGHT_MODES_NAV_WP },
+    { .boxName = "AIR MODE",            .permanentId = 29,    .flightMode = INAV_FLIGHT_MODES_AIR_MODE }, // 20
+    { .boxName = "HOME RESET",          .permanentId = 30,    .flightMode = 255 },
+    { .boxName = "GCS NAV",             .permanentId = 31,    .flightMode = 255 },
+    { .boxName = "FPV ANGLE MIX",       .permanentId = 32,    .flightMode = 255 },
+    { .boxName = "SURFACE",             .permanentId = 33,    .flightMode = 255 },
+    { .boxName = "FLAPERON",            .permanentId = 34,    .flightMode = INAV_FLIGHT_MODES_FLAPERON },
+    { .boxName = "TURN ASSIST",         .permanentId = 35,    .flightMode = INAV_FLIGHT_MODES_TURN_ASSIST },
+    { .boxName = "NAV LAUNCH",          .permanentId = 36,    .flightMode = INAV_FLIGHT_MODES_NAV_LAUNCH },
+    { .boxName = "SERVO AUTOTRIM",      .permanentId = 37,    .flightMode = 255 },
+    { .boxName = "CAMERA CONTROL 1",    .permanentId = 39,    .flightMode = 255 },
+    { .boxName = "CAMERA CONTROL 2",    .permanentId = 40,    .flightMode = 255 }, // 30
+    { .boxName = "CAMERA CONTROL 3",    .permanentId = 41,    .flightMode = 255 },
+    { .boxName = "OSD ALT 1",           .permanentId = 42,    .flightMode = 255 },
+    { .boxName = "OSD ALT 2",           .permanentId = 43,    .flightMode = 255 },
+    { .boxName = "OSD ALT 3",           .permanentId = 44,    .flightMode = 255 },
+    { .boxName = "NAV COURSE HOLD",     .permanentId = 45,    .flightMode = INAV_FLIGHT_MODES_NAV_COURSE_HOLD },
+    { .boxName = "MC BRAKING",          .permanentId = 46,    .flightMode = 255 },
+    { .boxName = "USER1",               .permanentId = 47,    .flightMode = 255 }, // BOX_PERMANENT_ID_USER1
+    { .boxName = "USER2",               .permanentId = 48,    .flightMode = 255 }, // BOX_PERMANENT_ID_USER2
+    { .boxName = "USER3",               .permanentId = 57,    .flightMode = 255 }, // BOX_PERMANENT_ID_USER3
+    { .boxName = "USER4",               .permanentId = 58,    .flightMode = 255 }, // BOX_PERMANENT_ID_USER4 // 40
+    { .boxName = "LOITER CHANGE",       .permanentId = 49,    .flightMode = 255 },
+    { .boxName = "MSP RC OVERRIDE",     .permanentId = 50,    .flightMode = 255 },
+    { .boxName = "PREARM",              .permanentId = 51,    .flightMode = 255 },
+    { .boxName = "TURTLE",              .permanentId = 52,    .flightMode = INAV_FLIGHT_MODES_TURTLE },
+    { .boxName = "NAV CRUISE",          .permanentId = 53,    .flightMode = INAV_FLIGHT_MODES_NAV_CRUISE },
+    { .boxName = "AUTO LEVEL TRIM",     .permanentId = 54,    .flightMode = 255 },
+    { .boxName = "WP PLANNER",          .permanentId = 55,    .flightMode = 255 },
+    { .boxName = "SOARING",             .permanentId = 56,    .flightMode = INAV_FLIGHT_MODES_SOARING },
+    { .boxName = "MISSION CHANGE",      .permanentId = 59,    .flightMode = 255 },
+    { .boxName = "BEEPER MUTE",         .permanentId = 60,    .flightMode = 255 }, // 50
+    { .boxName = "MULTI FUNCTION",      .permanentId = 61,    .flightMode = 255 },
+    { .boxName = "MIXER PROFILE 2",     .permanentId = 62,    .flightMode = 255 },
+    { .boxName = "MIXER TRANSITION",    .permanentId = 63,    .flightMode = 255 },
+    { .boxName = "ANGLE HOLD",          .permanentId = 64,    .flightMode = INAV_FLIGHT_MODES_ANGLE_HOLD },
+    { .boxName = "GIMBAL LEVEL TILT",   .permanentId = 65,    .flightMode = 255 },
+    { .boxName = "GIMBAL LEVEL ROLL",   .permanentId = 66,    .flightMode = 255 },
+    { .boxName = "GIMBAL CENTER",       .permanentId = 67,    .flightMode = 255 },
+    { .boxName = "GIMBAL HEADTRACKER",  .permanentId = 68,    .flightMode = 255 },
 };
 
 
-void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_flags)
+void inav_flight_mode_str5(char* const s, uint32_t flight_mode_flags, uint32_t arming_flags)
 {
     // follow INAV's static void crsfFrameFlightMode()
-    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c
-    // we don't do "WAIT", "HRST", "LAND", "GEO", "WRTH", "LOTR"
+    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
+    // 1.Aug.2026: crsfFrameFlightMode() appears to have changed, e.g. 'AIR' not longer done
+    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L459-L527
+    // we don't do "LAND", "HRST", "GEO", "WAIT"
+    // "WRTH" shows as "RTH"
+    // "LOTR" shows as "HOLD"
 
-    if (!(arming_flags & INAV_ARMING_FLAGS_ARMED)) { // disarmed
-        if (arming_flags & INAV_ARMING_FLAGS_ARMING_DISABLED) {
+    if ((arming_flags & INAV_ARMING_FLAGS_ARMED) == 0) { // arming flag not raised, equals !INAV_ARMING_FLAG(ARMED)
+        if ((arming_flags & INAV_ARMING_FLAGS_ARMING_DISABLED_ALL_FLAGS) != 0) { // some arming disabled flag raised, equals isArmingDisabled()
             strcpy(s, "!ERR");
         } else {
             strcpy(s, "OK");
@@ -578,7 +585,7 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
         return;
     }
 
-    #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
+    #define MSP_FLIGHT_MODE(fm) (flight_mode_flags & ((uint32_t)1 << (fm)))
 
     strcpy(s, "ACRO");
 
@@ -607,6 +614,11 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
         strcpy(s, "ANGH");
     }
+
+/* hmmm, sad to lose, check BF
+    if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ARM)) {
+        strcat(s, "*");
+    } */
 }
 
 
