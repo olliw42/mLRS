@@ -158,7 +158,7 @@ int16_t dc_hal_start(void)
 
 uint8_t dc_hal_is_canfd(void)
 { 
-    return 0;
+    return 0; // bxCAN is classic CAN only
 }
 
 
@@ -256,12 +256,12 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
                 continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE;
             }
 
-            frame->id = (pRxHeader.ExtId & CANARD_CAN_EXT_ID_MASK);
+            frame->id = pRxHeader.ExtId; // HAL_CAN_GetRxMessage() ensures that it is in range, no masking needed
             frame->id |= CANARD_CAN_FRAME_EFF; // libcanard wants the CANARD_CAN_FRAME_EFF flag be set
 
             frame->data_len = pRxHeader.DLC;
             frame->iface_id = 0;
-            frame->canfd = false; // bxCAN is classic CAN only
+            frame->canfd = 0; // bxCAN is classic CAN only
 
             return 1;
         }

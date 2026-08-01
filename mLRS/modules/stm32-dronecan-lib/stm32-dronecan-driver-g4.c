@@ -369,7 +369,7 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms)
 #else
 //-- ISR
 
-#define DC_FDCAN_RX_FIFO_ELEMENT_SIZE  (18U * 4U) // Rx FIFO 0/1 element size in bytes, 2 words + 64 bytes = 18*4
+#define DC_FDCAN_RX_FIFO_ELEMENT_SIZE  (18U * 4U) // Rx FIFO 0/1 element size in bytes, 2 words + 64 bytes = 18*4, equals SRAMCAN_RFx_SIZE
 
 
 typedef struct
@@ -383,13 +383,14 @@ typedef struct
 } tDcRxFifoElement;
 
 
-typedef enum // see table 400 in datasheet
+typedef enum // see table 400 in datasheet, unfortunately defined in stm32g4xx_hal_fdcan.c and not in .h file
 {
-    DC_RX_FIFO_R0_XTD_BIT   = 0x40000000U, // extended identifier
-    DC_RX_FIFO_R0_RTR_BIT   = 0x20000000U, // remote transmission request
-    DC_RX_FIFO_R1_FDF_BIT   = 0x00200000U, // FD format
-    DC_RX_FIFO_R1_BRS_BIT   = 0x00100000U, // bit rate switch
-    DC_RX_FIFO_R1_DLC_MASK  = 0x000F0000U, // data length code, equals FDCAN_DLC_BYTES_64
+    DC_RX_FIFO_R0_XTD_BIT     = 0x40000000U, // extended identifier, equals FDCAN_ELEMENT_MASK_XTD
+    DC_RX_FIFO_R0_RTR_BIT     = 0x20000000U, // remote transmission request, equals FDCAN_ELEMENT_MASK_RTR
+    DC_RX_FIFO_R0_EXTID_MASK  = 0x1FFFFFFFU, // identifier, equals FDCAN_ELEMENT_MASK_EXTID, CANARD_CAN_EXT_ID_MASK
+    DC_RX_FIFO_R1_FDF_BIT     = 0x00200000U, // FD format, equals FDCAN_ELEMENT_MASK_FDF
+    DC_RX_FIFO_R1_BRS_BIT     = 0x00100000U, // bit rate switch, equals FDCAN_ELEMENT_MASK_BRS
+    DC_RX_FIFO_R1_DLC_MASK    = 0x000F0000U, // data length code, equals FDCAN_ELEMENT_MASK_DLC, FDCAN_DLC_BYTES_64
 } DC_RX_FIFO_ELEMENT_ENUM;
 
 
@@ -430,7 +431,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
     }
 
     // for classic CAN, reject frames with DLC > 8
-    if (!is_fd_frame && ((r1 & DC_RX_FIFO_R1_DLC_MASK) > FDCAN_DLC_BYTES_8)) {
+    if (!is_fd_frame && ((r1 & DC_RX_FIFO_R1_DLC_MASK) > FDCAN_DLC_BYTES_8)) { // this is somewhat dirty, but ok
         dc_hal_stats.isr_dlc_count++;
         return;
     }
@@ -464,7 +465,7 @@ void _dc_hal_receive_isr(uint32_t* RxAddress)
 
 void _dc_hal_isr_handler(void)
 {
-    //HAL_FDCAN_IRQHandler(&hfdcan);
+    //HAL_FDCAN_IRQHandler(&hfdcan); HAL_FDCAN_GetRxMessage();
     // copy the part relevant to us
     // flags:
     //   FDCAN_IR_RF0L           // Rx FIFO 0 message lost
@@ -478,9 +479,9 @@ void _dc_hal_isr_handler(void)
     //   FDCAN_IE_RF0NE          // New message written to Rx FIFO 0
     // for which there are also more descriptive defines in the HAL, like FDCAN_IT_RX_FIFO0_NEW_MESSAGE
 
-    uint32_t RxFifo0ITs = hfdcan.Instance->IR & (FDCAN_IR_RF0N | FDCAN_IR_RF0F | FDCAN_IR_RF0L); // __HAL_FDCAN_GET_FLAG()
+    uint32_t RxFifo0ITs = hfdcan.Instance->IR & (FDCAN_IR_RF0N | FDCAN_IR_RF0F | FDCAN_IR_RF0L); // __HAL_FDCAN_GET_FLAG(), equals FDCAN_RX_FIFO0_MASK
     RxFifo0ITs &= hfdcan.Instance->IE; // __HAL_FDCAN_GET_IT_SOURCE()
-    uint32_t RxFifo1ITs = hfdcan.Instance->IR & (FDCAN_IR_RF1N | FDCAN_IR_RF1F | FDCAN_IR_RF1L);
+    uint32_t RxFifo1ITs = hfdcan.Instance->IR & (FDCAN_IR_RF1N | FDCAN_IR_RF1F | FDCAN_IR_RF1L); // equals FDCAN_RX_FIFO1_MASK
     RxFifo1ITs &= hfdcan.Instance->IE;
 
     if (RxFifo0ITs != 0) {
@@ -632,7 +633,7 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
     uint16_t rxreadpos = (dronecan_rxreadpos + 1) & DRONECAN_RXFRAMEBUFSIZEMASK;
     dronecan_rxreadpos = rxreadpos;
 
-    frame->id = (dronecan_rxbuf[rxreadpos].r0 & CANARD_CAN_EXT_ID_MASK);
+    frame->id = (dronecan_rxbuf[rxreadpos].r0 & DC_RX_FIFO_R0_EXTID_MASK) >> 0;
     frame->id |= CANARD_CAN_FRAME_EFF;
 
     // convert DLC to actual byte count
@@ -697,8 +698,8 @@ int16_t dc_hal_config_acceptance_filters(
             sFilterConfig.FilterConfig = ((n & 0x01) == 0) ? FDCAN_FILTER_TO_RXFIFO0 : FDCAN_FILTER_TO_RXFIFO1;
         }
         sFilterConfig.FilterIndex = n;
-        sFilterConfig.FilterID1 = (filter_configs[n].id & CANARD_CAN_EXT_ID_MASK);
-        sFilterConfig.FilterID2 = (filter_configs[n].mask & CANARD_CAN_EXT_ID_MASK);
+        sFilterConfig.FilterID1 = (filter_configs[n].id & CANARD_CAN_EXT_ID_MASK) << 0;
+        sFilterConfig.FilterID2 = (filter_configs[n].mask & CANARD_CAN_EXT_ID_MASK) << 0;
         HAL_StatusTypeDef hres = HAL_FDCAN_ConfigFilter(&hfdcan, &sFilterConfig);
         if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_CONFIG_FILTER; }
     }
