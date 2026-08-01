@@ -284,36 +284,18 @@ void tRxMsp::parse_serial_in_link_out(void)
                         memset(inav_flight_modes_box_mode_flags, 255, INAV_FLIGHT_MODES_COUNT); // 255 = is empty
                         for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
                             for (uint8_t n = 0; n < INAV_BOXES_COUNT; n++) {
-                                if (inavBoxes[n].permanentId == msp_msg_ser_in.payload[i]) {
-                                    if (inavBoxes[n].flightMode < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want to record in MSPX_STATUS
-                                        inav_flight_modes_box_mode_flags[inavBoxes[n].flightMode] = i;
-                                    }
-                                    break; // found, no need to look further
-                                }
+                                if (inavBoxes[n].permanentId != msp_msg_ser_in.payload[i]) continue; // not what we look for
+                                if (inavBoxes[n].flightMode >= INAV_FLIGHT_MODES_COUNT) continue; // is empty
+                                inav_flight_modes_box_mode_flags[inavBoxes[n].flightMode] = i;
+                                break; // found
                             }
                         }
 
                         telm[MSP_TELM_BOXIDS_ID].rate = 0; // disable MSP_BOXIDS requesting
-                    }
-                    if (msp_msg_ser_in.function == MSP_BOXNAMES) {
-                        // compress, is requested by a gcs, we don't request it ourselves
-                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1, up to 646 in 9.1 counting chars in boxes[], hopefully compressed though
-                        uint16_t new_len = 0;
-                        uint8_t box_mode_flags_unused[INAV_FLIGHT_MODES_COUNT];
-                        mspX_boxnames_payload_compress(
-                            new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
-                            box_mode_flags_unused);
 
-                        uint16_t len = msp_generate_v2_frame_bufX(
-                            _buf,
-                            MSP_TYPE_RESPONSE,
-                            MSP_FLAG_SOURCE_ID_RC_LINK,
-                            MSP_BOXNAMES,
-                            new_payload,
-                            new_len);
-                        fifo_link_out.PutBuf(_buf, len);
+                        // it's requested by the receiver, catch it
+                        if (msp_msg_ser_in.flag & MSP_FLAG_SOURCE_ID_RC_LINK) { send = false; } // don't forward to ground
 
-                        send = false; // mark as handled
                     }
                     if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
                         // handle MSP2_RX_BIND, only if MSP V2

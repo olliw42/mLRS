@@ -676,8 +676,7 @@ void msp_function_str_from_msg(char* s, msp_message_t* const msg)
 //-------------------------------------------------------
 
 // compress
-// also set inav_flight_modes_box_mode_flags[]
-void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, uint8_t* const payload, uint16_t len, uint8_t* const inav_flight_modes_box_mode_flags)
+void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const len_out, uint8_t* const payload, uint16_t len)
 {
     char s[48];
     uint8_t pos = 0;
@@ -698,11 +697,6 @@ void mspX_boxnames_payload_compress(uint8_t* const payload_out, uint16_t* const 
                     if (state != 0xFF) { state = 0xFF; payload_out[(*len_out)++] = 0xFF; }
                     payload_out[(*len_out)++] = n;
                     found = true;
-
-                    if (inavBoxes[n].flightMode < INAV_FLIGHT_MODES_COUNT) { // is a flight mode we want to record im MSPX_STATUS
-                        inav_flight_modes_box_mode_flags[inavBoxes[n].flightMode] = box; // inav_flight_modes_box_mode_flag handling
-                    }
-
                     break; // found, no need to look further
                 }
             }
