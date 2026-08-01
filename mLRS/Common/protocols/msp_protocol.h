@@ -337,6 +337,7 @@ typedef enum {
 typedef enum {
     INAV_ARMING_FLAGS_ARMED           = (1 << 2),
     INAV_ARMING_FLAGS_WAS_EVER_ARMED  = (1 << 3),
+    INAV_ARMING_FLAGS_ARMING_DISABLED = 0xFFFFFFC0, // all ARMING_DISABLED_ flags, bits 6 and up
 } INAV_ARMING_FLAGS_ENUM;
 
 
@@ -564,21 +565,22 @@ const tMspBoxArray inavBoxes[INAV_BOXES_COUNT] = {
 
 void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_flags)
 {
-    if ((arming_flags & ((uint32_t)1 << INAV_ARMING_FLAGS_ARMED)) != 0) { // some arming flags are raised
-        strcpy(s, "!ERR");
+    // follow INAV's static void crsfFrameFlightMode()
+    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c
+    // we don't do "WAIT", "HRST", "LAND", "GEO", "WRTH", "LOTR"
+
+    if (!(arming_flags & INAV_ARMING_FLAGS_ARMED)) { // disarmed
+        if (arming_flags & INAV_ARMING_FLAGS_ARMING_DISABLED) {
+            strcpy(s, "!ERR");
+        } else {
+            strcpy(s, "OK");
+        }
         return;
     }
 
     #define MSP_FLIGHT_MODE(fm) (flight_mode & ((uint32_t)1 << (fm)))
 
-    // follow INAV's static void crsfFrameFlightMode()
-    // https://github.com/iNavFlight/inav/blob/master/src/main/telemetry/crsf.c#L317-L374
-    // we don't do "HRST" and "LAND"
-    if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AIR_MODE)) {
-        strcpy(s, "AIR"); // not shown in OSD
-    } else {
-        strcpy(s, "ACRO");
-    }
+    strcpy(s, "ACRO");
 
     if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
         strcpy(s, "!FS!");
@@ -604,10 +606,6 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode, uint32_t arming_
         strcpy(s, "HOR");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ANGLE_HOLD)) {
         strcpy(s, "ANGH");
-    }
-
-    if (!MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_ARM)) {
-        strcat(s, "*");
     }
 }
 
