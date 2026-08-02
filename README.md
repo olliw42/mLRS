@@ -29,7 +29,7 @@ There is still plenty of room for ideas and improvement, and in this sense the p
 
 The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (formerly MAVLink for OpenTx) project, which yields a most fluid user experience.
 
-It supports the SX1280/1, SX1276, SX1262, LLCC68 and LR1121 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
+It supports the SX1280/1, SX1276, SX1262, LLCC68, LR1121 and LR2021 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
 It provides 16 RC channels with the following layout (layout is equal in all operation modes):
 - CH1 - CH8: 8 channels with 11 bit resolution (CH1 - CH4 have a higher reliability margin)
@@ -41,7 +41,7 @@ It provides these operation modes:
 |  | 50 Hz | 31 Hz | 19 Hz | 19 Hz 7x | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- | --- |
 | frequency<br>bands | 2.4 GHz | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 2.4 GHz<br>915/868 MHz<br>433 MHz/70 cm | 915/868 MHz | 2.4 GHz | 915/868 MHz<br>433 MHz/70 cm |
-| chip sets | SX128x<br>LR1121 | SX128x<br>SX126x/LLCC68<br>LR1121 | SX128x<br>SX126x/LLCC68<br>LR1121 | SX1276<br>LR1121 | SX128x | SX126x/LLCC68<br>LR1121 |
+| chip sets | SX128x<br>LR1121<br>LR2021 | SX128x<br>SX126x/LLCC68<br>LR1121<br>LR2021 | SX128x<br>SX126x/LLCC68<br>LR1121<br>LR2021 | SX1276<br>LR1121<br>LR2021 | SX128x<br>LR2021 | SX126x/LLCC68<br>LR1121<br>LR2021 |
 | downlink<br>serial rate | 4100 Bytes/sec | 2562 Bytes/sec | 1547 Bytes/sec | 1547 Bytes/sec | 9111 Bytes/sec | 4100 Bytes/sec |
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | -112 dBm | not for LR | not for LR |
@@ -64,7 +64,7 @@ Further features:
 - "except" and "ortho" features
 - support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
-- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121.
+- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121, LR2021.
 
 ## Community ##
 
