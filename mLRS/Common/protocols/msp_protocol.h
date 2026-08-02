@@ -575,6 +575,12 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode_flags, uint32_t a
     // we don't do "LAND", "HRST", "GEO", "WAIT"
     // "WRTH" shows as "RTH"
     // "LOTR" shows as "HOLD"
+    // Extra modes:
+    // HEADING_HOLD: only active in combination with ANGLE or HORIZON (and copters), so handle before
+    // AUTO_TUNE: always with ACRO, lowest priority, so handle where it is convenient
+    // NAV_LAUNCH: always in combination with ANGLE, so handle before
+    // NAV_CRUISE: stand alone, is the same as NAV_COURSE_HOLD + NAV_ALTHOLD, so handle as alternative
+    // SOARING: can be combined with several modes, difficult
 
     if ((arming_flags & INAV_ARMING_FLAGS_ARMED) == 0) { // arming flag not raised, equals !INAV_ARMING_FLAG(ARMED)
         if ((arming_flags & INAV_ARMING_FLAGS_ARMING_DISABLED_ALL_FLAGS) != 0) { // some arming disabled flag raised, equals isArmingDisabled()
@@ -591,6 +597,12 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode_flags, uint32_t a
 
     if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_FAILSAFE)) {
         strcpy(s, "!FS!");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_HEADING_HOLD)) { // extra mode !
+        strcpy(s, "HH");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_AUTO_TUNE)) { // extra mode !
+        strcpy(s, "ATUN");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_LAUNCH)) { // extra mode !
+        strcpy(s, "LNCH");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_MANUAL)) {
         strcpy(s, "MANU");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_TURTLE)) {
@@ -600,6 +612,8 @@ void inav_flight_mode_str5(char* const s, uint32_t flight_mode_flags, uint32_t a
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_POSHOLD)) {
         strcpy(s, "HOLD"); // shown as "LOTR" in OSD if it is an airplane
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD) && MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_ALTHOLD)) {
+        strcpy(s, "CRUZ");
+    } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_CRUISE)) { // extra mode !, same as previous
         strcpy(s, "CRUZ");
     } else if (MSP_FLIGHT_MODE(INAV_FLIGHT_MODES_NAV_COURSE_HOLD)) {
         strcpy(s, "CRSH");
