@@ -37,7 +37,7 @@ class tCrypto
   public:
     void Init(void);
 
-    void SetKey(uint8_t tx_uid[12], uint8_t rx_uid[12]);
+    void SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t random); // 6 + 12 + 12 + 8 = 38
 
     void Encrypt(uint8_t* const payload, uint16_t len);
     void Decrypt(uint8_t* const payload, uint16_t len);
@@ -45,8 +45,6 @@ class tCrypto
   private:
     uint8_t _key[32];
     uint8_t _nonce[12];
-    uint8_t _buf[128];
-
 };
 
 
