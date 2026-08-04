@@ -362,6 +362,11 @@ STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
 STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup len missmatch")
 
+// FanMode was taken from tTxSetup.spare[0], so it must sit at that very offset, else the EEPROM
+// layout would silently shift and SETUPLAYOUT would have to be bumped
+STATIC_ASSERT(offsetof(tTxSetup, FanMode) == 16, "tTxSetup.FanMode offset missmatch")
+STATIC_ASSERT(SETUP_TX_FAN < FAN_MODE_NUM, "SETUP_TX_FAN out of range")
+
 STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
 
 #endif // COMMON_H

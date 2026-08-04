@@ -24,11 +24,12 @@
 // un-comment to enable Rx module to go into bind mode after power up
 //#define RX_BIND_MODE_AFTER_POWERUP
 
-// un-comment to run the cooling fan always, independent of the rf power setting and of the temperature
-// has no effect on devices without a fan
-#define FAN_ALWAYS_ON
+// un-comment to hard-force the cooling fan to always run, independent of the rf power setting and of
+// the temperature. The "Tx Fan" setup parameter is then locked to "always on".
+// Only needed for devices which have no way to change the setup, e.g. an Rx with a fan.
+//#define FAN_ALWAYS_ON
 
-// the fan setting used when FAN_ALWAYS_ON is enabled, POWER_MAX selects the highest setting the device offers
+// the fan setting used for "always on", POWER_MAX selects the highest setting the device offers
 // only relevant for devices with DEVICE_HAS_FAN_ONOFF, on/off fans are simply switched on
 //#define FAN_ALWAYS_ON_DBM               POWER_MAX
 
@@ -44,7 +45,7 @@
 // user can modify them to their liking
 
 // un-comment to force setup to the below defines, else setup is taken from EEPROM
-#define SETUP_FORCE_COMMON_CONF
+//#define SETUP_FORCE_COMMON_CONF
 
 
 #define CPOWER                          RFPOWER_DEFAULT
@@ -71,6 +72,8 @@
 #define SETUP_TX_MAV_COMPONENT          0 // 0: off, 1: enabled
 
 #define SETUP_TX_BUZZER                 0 // 0: off, 1: LP, 2: rxLQ
+
+#define SETUP_TX_FAN                    1 // 0: auto, 1: always on
 
 
 #define SETUP_RX_CHANNEL_ORDER          CHANNEL_ORDER_AETR

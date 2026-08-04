@@ -38,6 +38,7 @@
 #define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_FAN              &SetupMetaData.Tx_FanMode_allowed_mask // this we generate from the hal
 #define SETUP_MSK_TX_WIFIPROT         &SetupMetaData.Tx_WiFiProt_allowed_mask // this we generate from the hal
 
 // Rx only
@@ -106,15 +107,24 @@
   X( Setup.Tx[0].PowerSwitchChannel,LIST, "Tx Power Sw Ch",   "TX_POWER_SW_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )
 
+#define SETUP_PARAMETER_LIST_TX_FAN \
+  X( Setup.Tx[0].FanMode,           LIST, "Tx Fan",           "TX_FAN",           0,0,0,"", "auto,on", SETUP_MSK_TX_FAN )
+
 #define SETUP_PARAMETER_LIST_TX_ESP \
   X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT,UDP STA,BLE", SETUP_MSK_TX_WIFIPROT )\
   X( Setup.Tx[0].WifiChannel,       LIST, "Tx Wifi Channel",  "TX_WIFI_CHANNEL",  0,0,0,"", "1,6,11,13", MSK_ALL )\
   X( Setup.Tx[0].WifiPower,         LIST, "Tx Wifi Power",    "TX_WIFI_POWER",    0,0,0,"", "low,med,max", MSK_ALL )
 
-#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE
-#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_ESP
+#if defined USE_FAN
+#define SETUP_PARAMETER_LIST_TX_MAIN_ SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_FAN
 #else
-#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN
+#define SETUP_PARAMETER_LIST_TX_MAIN_ SETUP_PARAMETER_LIST_TX_MAIN
+#endif
+
+#if defined USE_ESP_WIFI_BRIDGE_CONFIGURE
+#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN_  SETUP_PARAMETER_LIST_TX_ESP
+#else
+#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN_
 #endif
 
 #define SETUP_PARAMETER_LIST_RX \

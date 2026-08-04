@@ -220,6 +220,13 @@ typedef enum {
 
 
 typedef enum {
+    FAN_MODE_AUTO = 0,   // fan follows the rf power setting, resp. the temperature
+    FAN_MODE_ALWAYS_ON,  // fan runs always, whatever the rf power setting is
+    FAN_MODE_NUM,
+} TX_FAN_MODE_ENUM;
+
+
+typedef enum {
     WIFI_PROTOCOL_TCP = 0,
     WIFI_PROTOCOL_UDP,
     WIFI_PROTOCOL_BT,
@@ -369,8 +376,9 @@ typedef struct
     uint8_t WifiProtocol;
     uint8_t WifiChannel;
     uint8_t WifiPower;
+    uint8_t FanMode; // taken from spare, so layout is unchanged, 0xFF from an older EEPROM is caught by the sanitizer
 
-    uint8_t spare[4];
+    uint8_t spare[3];
 } tTxSetup; // 20 bytes
 
 
@@ -457,6 +465,7 @@ typedef struct
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialDestination_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
+    uint16_t Tx_FanMode_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 
     char Rx_Power_optstr[67+1];

@@ -855,6 +855,7 @@ RESTARTCONTROLLER
 #else
     hc04.Init(&comport, &serial, Config.SerialBaudrate);
 #endif
+    fan.SetMode(Setup.Tx[Config.ConfigId].FanMode);
     fan.SetPower(sx.RfPower_dbm());
     whileTransmit.Init();
     disp.Init();
@@ -897,6 +898,7 @@ INITCONTROLLER_END
             DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
             disp.Tick_ms(); // can take long
+            fan.SetMode(Setup.Tx[Config.ConfigId].FanMode); // picked up here, so a change is effective immediately
             fan.SetPower(sx.RfPower_dbm());
             fan.Tick_ms();
             esp.Tick_ms();

@@ -186,6 +186,15 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
+    // Tx Fan: "auto,always on"
+#if defined USE_FAN && !defined FAN_ALWAYS_ON
+    SetupMetaData.Tx_FanMode_allowed_mask = UINT16_MAX; // all
+#elif defined USE_FAN
+    SetupMetaData.Tx_FanMode_allowed_mask = 0b10; // always on, not editable, it is forced by FAN_ALWAYS_ON
+#else
+    SetupMetaData.Tx_FanMode_allowed_mask = 0; // not available, do not display
+#endif
+
     // Tx Bridge WiFi Protocol : "TCP,UDP,BT,UDPSTA,BLE"
 #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
     SetupMetaData.Tx_WiFiProt_allowed_mask = 0b01011; // TCP, UDP, UDPSTA (no BT, no BLE)
@@ -311,6 +320,7 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].SendRadioStatus = SETUP_TX_SEND_RADIO_STATUS;
     Setup.Tx[config_id].Buzzer = SETUP_TX_BUZZER;
+    Setup.Tx[config_id].FanMode = SETUP_TX_FAN;
     Setup.Tx[config_id].MavlinkComponent = SETUP_TX_MAV_COMPONENT;
     Setup.Tx[config_id].PowerSwitchChannel = POWER_SWITCH_CHANNEL_OFF;
 
@@ -425,6 +435,9 @@ void setup_sanitize_config(uint8_t config_id)
 
     SANITIZE(Tx[config_id].Buzzer, BUZZER_NUM, SETUP_TX_BUZZER, BUZZER_OFF);
     TST_NOTALLOWED(Tx_Buzzer_allowed_mask, Tx[config_id].Buzzer, BUZZER_OFF);
+
+    SANITIZE(Tx[config_id].FanMode, FAN_MODE_NUM, SETUP_TX_FAN, FAN_MODE_AUTO);
+    TST_NOTALLOWED(Tx_FanMode_allowed_mask, Tx[config_id].FanMode, FAN_MODE_AUTO);
 
     SANITIZE(Tx[config_id].PowerSwitchChannel, POWER_SWITCH_CHANNEL_NUM, POWER_SWITCH_CHANNEL_OFF, POWER_SWITCH_CHANNEL_OFF);
 
