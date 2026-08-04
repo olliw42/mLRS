@@ -18,6 +18,10 @@
 
 #ifndef USE_FAN
 
+#ifdef FAN_ALWAYS_ON
+  #warning FAN_ALWAYS_ON is defined, but the device has no fan!
+#endif
+
 class tFan
 {
   public:
@@ -28,6 +32,13 @@ class tFan
 };
 
 #else
+
+#ifdef FAN_ALWAYS_ON
+  #ifndef FAN_ALWAYS_ON_DBM
+    #define FAN_ALWAYS_ON_DBM  POWER_MAX // POWER_MAX selects the highest fan setting the device offers
+  #endif
+#endif
+
 
 class tFan
 {
@@ -48,11 +59,17 @@ void tFan::Init(void)
     fan_init();
     initialized = false;
     power_dbm_curr = POWER_MIN;
+#if defined FAN_ALWAYS_ON && defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+    fan_on(); // temperature controlled fans are only switched here, Tick_ms() is disabled
+#endif
 }
 
 
 void tFan::SetPower(int8_t power_dbm)
 {
+#ifdef FAN_ALWAYS_ON
+    power_dbm = FAN_ALWAYS_ON_DBM; // ignore the rf power, the fan runs always
+#endif
 #ifdef DEVICE_HAS_FAN_ONOFF
     if (power_dbm_curr != power_dbm || !initialized) {
         initialized = true;
@@ -65,7 +82,7 @@ void tFan::SetPower(int8_t power_dbm)
 
 void tFan::Tick_ms(void)
 {
-#ifdef DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#if defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF && !defined FAN_ALWAYS_ON
     int16_t temp_dC = fan_tempsensor_read_dC();
 
     if (temp_dC > 500) { // 50.0 C

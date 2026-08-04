@@ -24,6 +24,14 @@
 // un-comment to enable Rx module to go into bind mode after power up
 //#define RX_BIND_MODE_AFTER_POWERUP
 
+// un-comment to run the cooling fan always, independent of the rf power setting and of the temperature
+// has no effect on devices without a fan
+#define FAN_ALWAYS_ON
+
+// the fan setting used when FAN_ALWAYS_ON is enabled, POWER_MAX selects the highest setting the device offers
+// only relevant for devices with DEVICE_HAS_FAN_ONOFF, on/off fans are simply switched on
+//#define FAN_ALWAYS_ON_DBM               POWER_MAX
+
 
 // Development features. Note: They are offered for testing, but they are not for production
 //currently none
