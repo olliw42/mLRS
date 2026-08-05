@@ -23,6 +23,7 @@ class tLEDs
     void Tick_ms(bool connected) {}
     void SetToBind(void) {}
     void SetToParamStore(void) {}
+    void SetWarning(bool flag) {}
     void InitPassthrough(void) {}
     void TickPassthrough_ms(void) {}
 };
@@ -37,6 +38,7 @@ class tLEDs
     {
         blink = 0;
         is_in_bind = false;
+        is_warning = false;
 
         led_red_off();
         for (uint8_t i = 0; i < 7; i++) { led_red_toggle(); delay_ms(50); }
@@ -44,6 +46,18 @@ class tLEDs
 
     void Tick_ms(bool connected)
     {
+        if (is_warning) { // fast blink, overrides the connection indication
+            DECc(blink, SYSTICK_DELAY_MS(150));
+            if (!blink) {
+#ifdef DEVICE_HAS_SINGLE_LED_RGB
+                led_amber_toggle();
+#else
+                led_red_toggle(); // no color available, so the blink rate is all we have
+#endif
+            }
+            return;
+        }
+
 #ifdef DEVICE_HAS_SINGLE_LED
         if (!is_in_bind) {
             DECc(blink, SYSTICK_DELAY_MS(500));
@@ -108,6 +122,14 @@ class tLEDs
 #endif
      }
 
+    // used to warn the user, e.g. while a destructive action is waiting for confirmation
+    void SetWarning(bool flag)
+    {
+        if (is_warning == flag) return;
+        is_warning = flag;
+        blink = 0; // so the warning starts immediately, and the normal indication resumes immediately
+    }
+
     void InitPassthrough(void)
     {
         led_red_off();
@@ -132,6 +154,7 @@ class tLEDs
   private:
     uint16_t blink;
     bool is_in_bind;
+    bool is_warning;
 };
 
 

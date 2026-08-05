@@ -1157,30 +1157,19 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
         switch (mbcmd) {
         case MBRIDGE_CMD_REQUEST_INFO:
             setup_reload();
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
-            } else {
-                mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
-            }
+            // answer right away, no LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD, see the note at the tx_task
+            // switch below. Waiting for the Rx setup data would wedge link_task and keep mBridge locked.
+            mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
             break;
         case MBRIDGE_CMD_PARAM_REQUEST_LIST: mbridge.HandleCmd(MBRIDGE_CMD_PARAM_REQUEST_LIST); break;
         case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
         case MBRIDGE_CMD_PARAM_SET: {
             bool rx_param_changed;
-            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-            if (param_changed && rx_param_changed && connected()) {
-                link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-                mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mBridge
-            }
+            mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+            // no LINK_TASK_TX_SET_RX_PARAMS, see the note at the tx_task switch below
             }break;
         case MBRIDGE_CMD_PARAM_STORE:
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-                mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mBridge
-            } else {
-                doParamsStore = true;
-            }
+            doParamsStore = true; // store locally, we cannot wait for an Rx confirmation
             break;
         case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(MAIN_TASK_BIND_START); break;
         case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(MAIN_TASK_BIND_STOP); break;
@@ -1264,26 +1253,34 @@ IF_IN(
     if (tx_task == MAIN_TASK_NONE) tx_task = mavlink.Task();
 
     switch (tx_task) {
+    // Note on the Rx link tasks: we broadcast, the receivers never talk back, and pack_txcmdframe() has all
+    // its cmd frames commented out. LINK_TASK_TX_SET_RX_PARAMS and LINK_TASK_TX_GET_RX_SETUPDATA* are only
+    // cleared in process_received_rxcmdframe(), i.e. by a reply we can never get, and connect_state is
+    // hardwired to CONNECT_STATE_CONNECTED. Entering one wedges link_task forever, which pins
+    // transmit_frame_type to CMD so no normal frame goes out any more, and makes every later
+    // link_task_set() fail, e.g. the store below would then never happen. So we do not enter them at all.
     case TX_TASK_RX_PARAM_SET:
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_SET_RX_PARAMS);
-            mbridge.Lock(); // lock mBridge
-        }
+        // nothing to do, there is no receiver we could hand the parameter to
         break;
     case TX_TASK_PARAM_STORE:
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-            mbridge.Lock(); // lock mBridge
-        } else {
-            doParamsStore = true;
-        }
+        doParamsStore = true; // store locally, instead of via the Rx round trip
         break;
     case TX_TASK_PARAM_RELOAD:
         setup_reload();
-        if (connected()) {
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-            mbridge.Lock(); // lock mBridge
-        }
+        break;
+    case TX_TASK_PARAM_DEFAULTS:
+        // load the defaults, store them, and restart. The restart re-runs setup_init(), and hence also
+        // setup_configure_config(), so we never run with Setup and Config out of sync.
+        // setup_default() covers Common[ConfigId], Tx[ConfigId] and Rx, note that Rx is not per config id.
+        // The bind phrase is defaulted along on purpose, this is meant to be a full reset. Setting it is a
+        // manual step here, to be done once the receivers are on the wanted phrase. So do not "fix" this by
+        // preserving the old phrase, the user is warned on the confirm page instead.
+        // We also do not push the defaulted Rx params via LINK_TASK_TX_SET_RX_PARAMS: we broadcast and the
+        // receivers never talk back, and that link task is only cleared by an Rx reply, so it would pin
+        // transmit_frame_type to CMD and normal frames would stop
+        setup_default(Config.ConfigId);
+        setup_sanitize_config(Config.ConfigId); // so we do not store what the hardware cannot do
+        doParamsStore = true; // stores to EEPROM and restarts the controller
         break;
     case MAIN_TASK_BIND_START: /*bind.StartBind();*/ break;
     case MAIN_TASK_BIND_STOP: /*bind.StopBind();*/ break;

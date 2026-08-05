@@ -62,6 +62,8 @@ typedef enum {
     PAGE_STARTUP = 0,
     PAGE_NOTIFY_BIND,
     PAGE_NOTIFY_STORE,
+    PAGE_NOTIFY_DEFAULTS,
+    PAGE_CONFIRM_DEFAULTS, // asks before the defaults are loaded, since that cannot be undone
 
     // left-right navigation menu
     PAGE_MAIN,
@@ -90,7 +92,7 @@ typedef enum {
 
 typedef enum {
     DISP_ACTION_STORE = 0,
-    DISP_ACTION_BIND,
+    DISP_ACTION_DEFAULTS,
     DISP_ACTION_BOOT,
     DISP_ACTION_FLASH_ESP,
 } DISP_ACTION_ENUM;
@@ -98,7 +100,7 @@ typedef enum {
 
 const uint8_t disp_actions[] = {
     DISP_ACTION_STORE,
-    DISP_ACTION_BIND,
+    DISP_ACTION_DEFAULTS,
 #if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
     DISP_ACTION_BOOT,
 #endif
@@ -141,6 +143,7 @@ class tTxDisp
     void draw_page_tx(void);
     void draw_page_rx(void);
     void draw_page_actions(void);
+    void draw_page_confirm_defaults(void);
 
     void draw_page_main_sub0(void);
     void draw_page_main_sub1(void);
@@ -164,6 +167,7 @@ class tTxDisp
 
     uint8_t page;
     uint16_t page_startup_tmo;
+    bool confirm_yes; // selection on the confirm page, starts on NO
     bool page_modified; // requires complete redraw of page
     bool page_update; // only update some elements of page
 
@@ -218,6 +222,7 @@ void tTxDisp::Init(void)
 
     page = PAGE_STARTUP; // start with startup page
     page_startup_tmo = DISP_START_PAGE_TMO_MS;
+    confirm_yes = false;
     page_modified = true;
     page_update = false;
 
@@ -326,6 +331,33 @@ uint16_t keys, i, keys_new;
 
     // store
     if (page == PAGE_NOTIFY_STORE) {
+        return;
+    }
+
+    // defaults are being loaded and stored, the controller restart takes it from here
+    if (page == PAGE_NOTIFY_DEFAULTS) {
+        return;
+    }
+
+    // ask before the defaults are loaded, NO is preselected
+    if (page == PAGE_CONFIRM_DEFAULTS) {
+        leds.SetWarning(true); // blinking amber, to underline that this cannot be undone
+        if (key_has_been_pressed(KEY_LEFT) || key_has_been_pressed(KEY_UP)) {
+            if (confirm_yes) { confirm_yes = false; page_modified = true; }
+        } else
+        if (key_has_been_pressed(KEY_RIGHT) || key_has_been_pressed(KEY_DOWN)) {
+            if (!confirm_yes) { confirm_yes = true; page_modified = true; }
+        } else
+        if (key_has_been_pressed(KEY_CENTER)) {
+            leds.SetWarning(false);
+            if (confirm_yes) {
+                page = PAGE_NOTIFY_DEFAULTS;
+                tasks.SetDisplayTask(TX_TASK_PARAM_DEFAULTS);
+            } else {
+                page = PAGE_ACTIONS; // idx_focused is left untouched, so the cursor stays on DEFAULT
+            }
+            page_modified = true;
+        }
         return;
     }
 
@@ -458,8 +490,11 @@ void tTxDisp::run_action(void)
         page_modified = true;
         tasks.SetDisplayTask(TX_TASK_PARAM_STORE);
         break;
-    case DISP_ACTION_BIND:
-        tasks.SetDisplayTask(MAIN_TASK_BIND_START);
+    case DISP_ACTION_DEFAULTS:
+        // loads, stores and restarts, so ask first
+        page = PAGE_CONFIRM_DEFAULTS;
+        confirm_yes = false; // NO preselected
+        page_modified = true;
         break;
     case DISP_ACTION_BOOT:
         tasks.SetDisplayTask(MAIN_TASK_SYSTEM_BOOT);
@@ -523,6 +558,8 @@ void tTxDisp::Draw(void)
             case PAGE_ACTIONS: draw_page_actions(); break;
             case PAGE_NOTIFY_BIND: draw_page_notify("BINDING"); break;
             case PAGE_NOTIFY_STORE: draw_page_notify("STORE"); break;
+            case PAGE_NOTIFY_DEFAULTS: draw_page_notify("DEFAULT"); break;
+            case PAGE_CONFIRM_DEFAULTS: draw_page_confirm_defaults(); break;
         }
 
 //uint32_t t2 = micros16(); //HAL_GetTick();
@@ -994,7 +1031,7 @@ void tTxDisp::draw_page_actions(void)
 
     gdisp_setcurXY(5, idx * 16 + DISP_CONTENT_Y_BASE + 5);
     if (idx == idx_focused) gdisp_setinverted();
-    gdisp_puts("BIND");
+    gdisp_puts("DEFAULT"); // 7 chars * 11 px + x offset 5 = 82 px, so it fits
     gdisp_unsetinverted();
     idx++;
 
@@ -1015,6 +1052,33 @@ void tTxDisp::draw_page_actions(void)
         gdisp_unsetinverted();
         idx++;
     }
+}
+
+
+void tTxDisp::draw_page_confirm_defaults(void)
+{
+    if (!page_modified) return;
+
+    draw_header("Defaults");
+
+    // default font is 6 px wide, so up to 21 chars fit on a 128 px line
+    gdisp_setcurY(DISP_CONTENT_Y_BASE + 2); gdisp_puts_XCentered("Load defaults and");
+    gdisp_setcurY(DISP_CONTENT_Y_BASE + 12); gdisp_puts_XCentered("restart? Settings");
+    gdisp_setcurY(DISP_CONTENT_Y_BASE + 22); gdisp_puts_XCentered("+ bind phrase lost!");
+
+    gdisp_setfont(&FreeMono9pt7b);
+
+    gdisp_setcurXY(25, DISP_CONTENT_Y_BASE + 40);
+    if (!confirm_yes) gdisp_setinverted();
+    gdisp_puts("NO");
+    gdisp_unsetinverted();
+
+    gdisp_setcurXY(70, DISP_CONTENT_Y_BASE + 40);
+    if (confirm_yes) gdisp_setinverted();
+    gdisp_puts("YES");
+    gdisp_unsetinverted();
+
+    gdisp_unsetfont();
 }
 
 
