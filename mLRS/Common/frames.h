@@ -72,8 +72,11 @@ void _pack_txframe_w_type(
     }
 
     // finalize, crc
+    // covers the whole frame except the crc field itself: the hop index,
+    // payload_len and the payload all sit outside the header and were
+    // previously unprotected. Must match check_txframe() and the receiver.
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
     frame->crc = crc;
 }
 
@@ -101,8 +104,9 @@ uint16_t crc;
 
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
+    // full-frame coverage, must match _pack_txframe_w_type()
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
