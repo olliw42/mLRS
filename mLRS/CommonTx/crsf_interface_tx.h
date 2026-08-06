@@ -920,6 +920,12 @@ void tTxCrsf::TelemetryHandleMavlinkMsg(fmav_message_t* const msg)
         passthrough.handle_mavlink_msg_distance_sensor(&payload);
         }break;
 
+    case FASTMAVLINK_MSG_ID_WIND: {
+        fmav_wind_t payload;
+        fmav_msg_wind_decode(&payload, msg);
+        passthrough.handle_mavlink_msg_wind(&payload);
+        }break;
+
     case FASTMAVLINK_MSG_ID_RANGEFINDER: {
         fmav_rangefinder_t payload;
         fmav_msg_rangefinder_decode(&payload, msg);
