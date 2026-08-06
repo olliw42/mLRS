@@ -1275,9 +1275,6 @@ IF_IN(
         // The bind phrase is defaulted along on purpose, this is meant to be a full reset. Setting it is a
         // manual step here, to be done once the receivers are on the wanted phrase. So do not "fix" this by
         // preserving the old phrase, the user is warned on the confirm page instead.
-        // We also do not push the defaulted Rx params via LINK_TASK_TX_SET_RX_PARAMS: we broadcast and the
-        // receivers never talk back, and that link task is only cleared by an Rx reply, so it would pin
-        // transmit_frame_type to CMD and normal frames would stop
         setup_default(Config.ConfigId);
         setup_sanitize_config(Config.ConfigId); // so we do not store what the hardware cannot do
         doParamsStore = true; // stores to EEPROM and restarts the controller

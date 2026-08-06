@@ -186,7 +186,7 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Buzzer_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx Fan: "auto,always on"
+    // Tx Fan: "auto,on"
 #if defined USE_FAN && !defined FAN_ALWAYS_ON
     SetupMetaData.Tx_FanMode_allowed_mask = UINT16_MAX; // all
 #elif defined USE_FAN
