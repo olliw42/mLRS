@@ -1243,7 +1243,7 @@ if __name__ == "__main__":
         cmd_pos += 1
         if cmd == '--target' or cmd == '-t' or cmd == '-T':
             if sys.argv[cmd_pos+1] != '':
-                cmdline_target = sys.argv[cmd_pos+1]
+                cmdline_target = sys.argv[cmd_pos+1].lower() # target matching is case insensitive
         if cmd == '--define' or cmd == '-d' or cmd == '-D':
             if sys.argv[cmd_pos+1] != '':
                 cmdline_D_list.append(sys.argv[cmd_pos+1])
@@ -1268,9 +1268,10 @@ if __name__ == "__main__":
 
     target_cnt = 0
     for target in targetlist:
+        target_name = target.target.lower()
         if ((cmdline_target == '') or
-            (cmdline_target[0] != '!' and cmdline_target in target.target) or
-            (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target)):
+            (cmdline_target[0] != '!' and cmdline_target in target_name) or
+            (cmdline_target[0] == '!' and not cmdline_target[1:] in target_name)):
             mlrs_build_target(target, cmdline_D_list)
             target_cnt +=1
 
