@@ -203,17 +203,13 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 #define ESP_RESET                 IO_P19 // backpack_en
 #define ESP_GPIO0                 IO_P23 // backpack_boot
-#define ESP_BOOT0                 IO_P0  // will always be IO_P0
 
 #ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // this is an ESP32C3
-
-uint8_t esp_boot0() { return gpio_read_activelow(ESP_BOOT0); }
 
 void esp_init(void)
 {
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW); // low -> esp is in reset
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
-    // no need to configure ESP_BOOT0 which will always be IO_P0 and is pull-up by default
 }
 
 IRAM_ATTR void esp_reset_high(void) { gpio_high(ESP_RESET); }
