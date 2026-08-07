@@ -15,6 +15,8 @@
 #include "hal/hal.h"
 
 
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
 extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
@@ -360,6 +362,11 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     SetupMetaData.Rx_Diversity_allowed_mask = rx_setupdata->Diversity_allowed_mask;
     SetupMetaData.Rx_OutMode_allowed_mask = rx_setupdata->OutMode_allowed_mask;
     SetupMetaData.Rx_SerialPort_allowed_mask = rx_setupdata->SerialPort_allowed_mask;
+
+    // ensure that Tx has receiver settings which are compatible with its layout, to avoid index issues
+    if (SetupMetaData.rx_setup_layout != (uint32_t)SETUPLAYOUT) {
+        setup_sanitize_rx_config();
+    }
 }
 
 
@@ -370,6 +377,9 @@ void pack_txcmdframe_setrxparams(tTxFrame* const frame, tFrameStats* const frame
 tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
+
+    rx_params.tx_firmware_version_u16 = version_to_u16(VERSION);
+    rx_params.tx_setup_layout_u16 = version_to_u16(SETUPLAYOUT);
 
     strbufstrcpy(rx_params.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
     rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
@@ -427,7 +437,13 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
 
+    // don't take over Rx parameters if there is a layout version missmatch
+    // tx_setup_layout_u16 is 0 for versions < 10401
+    // TODO: conversion ?
+    if (version_from_u16(rx_params->tx_setup_layout_u16) != (uint32_t)SETUPLAYOUT) return;
+
     cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
+    // setup_sanitize_rx_config(); // should not ever be needed !
 }
 
 #endif

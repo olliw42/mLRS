@@ -10,7 +10,7 @@
 #define DRONECAN_INTERFACE_RX_TYPES_H
 #pragma once
 
-#ifdef DEVICE_HAS_DRONECAN
+#ifdef USE_DRONECAN
 
 #include "../Common/libs/fifo.h"
 
@@ -18,10 +18,9 @@
 #include "../../../modules/stm32-dronecan-lib/stm32-dronecan-protocol.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.NodeStatus.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.GetNodeInfo.h"
-#include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
 #include "../Common/dronecan/out/include/uavcan.protocol.dynamic_node_id.Allocation.h"
+#include "../Common/dronecan/out/include/dronecan.sensors.rc.RCInput.h"
 #include "../Common/dronecan/out/include/uavcan.tunnel.Targetted.h"
-#include "../Common/dronecan/out/include/uavcan.tunnel.Protocol.h"
 #include "../Common/dronecan/out/include/dronecan.protocol.FlexDebug.h"
 
 
@@ -35,7 +34,7 @@
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag);
+    void Init(uint8_t serial_port);
     void Start(void); // do this as closely as possible before the loop
     void Tick_ms(void);
     void Do(void);
@@ -119,7 +118,7 @@ class tRxDroneCan
 class tRxDroneCan
 {
   public:
-    void Init(bool ser_over_can_enable_flag) {}
+    void Init(uint8_t serial_port) {}
     void Start(void) {}
     void Tick_ms(void) {}
     void Do(void) {}
@@ -127,6 +126,6 @@ class tRxDroneCan
 };
 
 
-#endif // DEVICE_HAS_DRONECAN
+#endif // USE_DRONECAN
 
 #endif // DRONECAN_INTERFACE_RX_TYPES_H
