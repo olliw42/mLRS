@@ -81,7 +81,8 @@ In rx-hal files:
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_DRONECAN         // board has a DroneCAN port
+#define DEVICE_HAS_DRONECAN         // board has a DroneCAN port, supporting only classic CAN
+#define DEVICE_HAS_DRONECAN_FD      // board has a DroneCAN port, supporting CAN FD
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
@@ -321,6 +322,10 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define USE_OUT
 #endif
 
+#if defined DEVICE_HAS_DRONECAN || defined DEVICE_HAS_DRONECAN_FD
+  #define USE_DRONECAN
+#endif
+
 
 #if defined DEVICE_HAS_I2C_DISPLAY || defined DEVICE_HAS_I2C_DISPLAY_ROT180
   #define USE_DISPLAY
@@ -460,7 +465,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #ifdef DEVICE_HAS_DIVERSITY
     #error DEVICE_HAS_DIVERSITY cannot be defined for dual band devices !
   #endif

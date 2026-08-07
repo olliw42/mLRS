@@ -46,8 +46,10 @@ extern "C" {
 #define CANARD_VERSION_MINOR                        2
 
 
+// Enabling CAN FD must be done here, not higher up, as e.g. in stm32-dronecan-driver.h.
+// This is because generated DSDL files include canard.h, so needs to be defined here.
 #ifndef CANARD_ENABLE_CANFD
-#define CANARD_ENABLE_CANFD                         0
+#define CANARD_ENABLE_CANFD                         1
 #endif
 
 #ifndef CANARD_MULTI_IFACE

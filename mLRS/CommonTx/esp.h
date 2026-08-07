@@ -378,11 +378,12 @@ void tTxEspWifiBridge::passthrough_do(void)
 {
     leds.InitPassthrough();
 
-    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
-    ser->SetBaudRate(baudrate);
 #ifdef USE_COM_ON_SERIAL
     com = Serials.ser_or_com_set_to_com(); // also re-fetch, ser_or_com_set_to_com() reassigned comport pointer
 #endif
+    uint32_t baudrate = 115200; // Note: this is what is used for flashing, can be different to ESP_CONFIGURE setting
+    ser->SetBaudRate(baudrate);
+    com->SetBaudRate(baudrate); // standard tools should specify 115200 to avoid baudrate change
     ser->flush();
     com->flush();
 
