@@ -103,6 +103,10 @@
 #include "rx-hal-flysky-pr02-2400-td-esp32s3.h"
 #endif
 
+#ifdef RX_BAYCK_UR1000_LR1121_ESP32C3
+#include "rx-hal-bayck-ur1000-lr1121-esp32c3.h"
+#endif
+
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
 #include "tx-hal-radiomaster-rp4td-2400-esp32.h"
 #endif
