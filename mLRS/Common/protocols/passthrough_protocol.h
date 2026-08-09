@@ -25,7 +25,8 @@
   TERRAIN_REPORT        #136  -> 0x500B TERRAIN                           -
   BATTERY_STATUS        #147  -> 0x5003 BATT_1, 0x5008 BATT_2             SRx_EXTRA3
   FENCE_STATUS          #162  -> 0x5001 AP_STATUS                         SRx_EXT_STAT
-  // #173, #181, #226 are ArduPilot dialect specific
+  // #168, #173, #181, #226 are ArduPilot dialect specific
+  WIND                  #168  -> 0x500C WIND                              SRx_EXTRA3
   RANGEFINDER           #173  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3 !!   since AP 4.7 not streamed anymore
   BATTERY2              #181  -> 0x5008 BATT_2                            SRx_EXTRA3      not used, replaced by BATTERY_STATUS
   RPM                   #226  -> 0x500A RPM                               SRx_EXTRA3
@@ -34,9 +35,6 @@
   EKF_STATUS_REPORT     #193                                              SRx_EXTRA3
   WIND_COV              #231                                              -
   EXTENDED_SYS_STATE    #245                                              -
-
-  // #168 is ArduPilot dialect specific
-  WIND                  #168  -> 0x500C WIND                              SRx_EXTRA3
 
   GPS2_RAW              #124
   HIGH_LATENCY          #234
