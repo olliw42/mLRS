@@ -43,12 +43,12 @@ def build_target(target, defines):
 
 
 def find_firmware_hex(target):
-    # .hex files in tools/build/firmware/ whose name contains the target substring
+    # .hex files in tools/build/firmware/ whose name contains the target substring (case insensitive)
     if not os.path.isdir(MLRS_FIRMWARE_DIR):
         return []
     hexes = []
     for path in sorted(glob.glob(os.path.join(MLRS_FIRMWARE_DIR, '*.hex'))):
-        if target in os.path.basename(path):
+        if target.lower() in os.path.basename(path).lower():
             hexes.append(path)
     return hexes
 
@@ -126,7 +126,7 @@ FLASH_METHODS = {
 def main():
     parser = argparse.ArgumentParser(description='Build an STM32 mLRS target and flash it to the board.')
     parser.add_argument('-t', '--target', required=True,
-        help='target name (substring) to build and flash, e.g. tx-matek-mr24-30-g431kb')
+        help='target name (substring, case insensitive) to build and flash, e.g. tx-matek-mr24-30-g431kb')
     parser.add_argument('-m', '--method', choices=sorted(FLASH_METHODS.keys()), default='dfu',
         help='flashing method (default: dfu)')
     parser.add_argument('-d', '--define', action='append', default=[], metavar='DEFINE',
