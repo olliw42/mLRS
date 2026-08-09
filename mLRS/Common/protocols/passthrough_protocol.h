@@ -29,7 +29,7 @@
   WIND                  #168  -> 0x500C WIND                              SRx_EXTRA3
   RANGEFINDER           #173  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3 !!   since AP 4.7 not streamed anymore
   BATTERY2              #181  -> 0x5008 BATT_2                            SRx_EXTRA3      not used, replaced by BATTERY_STATUS
-  RPM                   #226  -> 0x500A RPM                               SRx_EXTRA3
+  RPM                   #226  -> 0x500A RPM                               SRx_EXTRA1 !!   SRx_EXTRA3 on Copter/Rover/Sub/Blimp up to AP 4.6, SRx_EXTRA1 on Plane, SRx_EXTRA1 on all vehicles since AP 4.7
   HOME_POSITION         #242  -> 0x5004 HOME                              -
 
   EKF_STATUS_REPORT     #193                                              SRx_EXTRA3
@@ -48,12 +48,12 @@
                             NAV_CONTROLLER_OUTPUT   -> WAYPOINT_V2_0x500D
                             FENCE_STATUS            -> (AP_STATUS_0x5001)
   SRx_EXTRA1   (4 Hz)   ->  ATTITUDE                -> ATTITUDE_RANGE_0x5006
+                            RPM !!                  -> RPM_0x500A            SRx_EXTRA3 on Copter/Rover/Sub/Blimp up to AP 4.6
   SRx_EXTRA2   (4 Hz)   ->  VFR_HUD                 -> VEL_YAW_0x5005, VEL_YAW_0x5005_AIR (AP_STATUS_0x5001)
   SRx_EXTRA3   (1/2 Hz) ->  DISTANCE_SENSOR         -> ATTITUDE_RANGE_0x5006
                             BATTERY_STATUS          -> BATT_1_0x5003, BATT_2_0x5008
                             TERRAIN_REPORT          -> TERRAIN_0x500B
                             RANGEFINDER !!          -> ATTITUDE_RANGE_0x5006  since AP 4.7 not streamed anymore
-                            RPM                     -> RPM_0x500A
                             WIND                    -> WIND_0x500C
   SRx_POSITION (2 Hz)   ->  GLOBAL_POSITION_INT     -> GPS_LAT_0x800, GPS_LON_0x800, HOME_0x5004
   SRx_RAW_SENS (0 Hz)   ->  RAW_IMU                 -> (AP_STATUS_0x5001)
