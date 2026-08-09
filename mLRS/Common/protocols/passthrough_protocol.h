@@ -25,18 +25,16 @@
   TERRAIN_REPORT        #136  -> 0x500B TERRAIN                           -
   BATTERY_STATUS        #147  -> 0x5003 BATT_1, 0x5008 BATT_2             SRx_EXTRA3
   FENCE_STATUS          #162  -> 0x5001 AP_STATUS                         SRx_EXT_STAT
-  // #173, #181, #226 are ArduPilot dialect specific
+  // #168, #173, #181, #226 are ArduPilot dialect specific
+  WIND                  #168  -> 0x500C WIND                              SRx_EXTRA3
   RANGEFINDER           #173  -> 0x5006 ATTITUDE_RANGE                    SRx_EXTRA3 !!   since AP 4.7 not streamed anymore
   BATTERY2              #181  -> 0x5008 BATT_2                            SRx_EXTRA3      not used, replaced by BATTERY_STATUS
-  RPM                   #226  -> 0x500A RPM                               SRx_EXTRA3
+  RPM                   #226  -> 0x500A RPM                               SRx_EXTRA1 !!   SRx_EXTRA3 on Copter/Rover/Sub/Blimp up to AP 4.6, SRx_EXTRA1 on Plane, SRx_EXTRA1 on all vehicles since AP 4.7
   HOME_POSITION         #242  -> 0x5004 HOME                              -
 
   EKF_STATUS_REPORT     #193                                              SRx_EXTRA3
   WIND_COV              #231                                              -
   EXTENDED_SYS_STATE    #245                                              -
-
-  // #168 is ArduPilot dialect specific
-  WIND                  #168                                              SRx_EXTRA3
 
   GPS2_RAW              #124
   HIGH_LATENCY          #234
@@ -50,13 +48,13 @@
                             NAV_CONTROLLER_OUTPUT   -> WAYPOINT_V2_0x500D
                             FENCE_STATUS            -> (AP_STATUS_0x5001)
   SRx_EXTRA1   (4 Hz)   ->  ATTITUDE                -> ATTITUDE_RANGE_0x5006
+                            RPM !!                  -> RPM_0x500A            SRx_EXTRA3 on Copter/Rover/Sub/Blimp up to AP 4.6
   SRx_EXTRA2   (4 Hz)   ->  VFR_HUD                 -> VEL_YAW_0x5005, VEL_YAW_0x5005_AIR (AP_STATUS_0x5001)
   SRx_EXTRA3   (1/2 Hz) ->  DISTANCE_SENSOR         -> ATTITUDE_RANGE_0x5006
                             BATTERY_STATUS          -> BATT_1_0x5003, BATT_2_0x5008
                             TERRAIN_REPORT          -> TERRAIN_0x500B
                             RANGEFINDER !!          -> ATTITUDE_RANGE_0x5006  since AP 4.7 not streamed anymore
-                            RPM                     -> RPM_0x500A
-                            WIND ?useful?
+                            WIND                    -> WIND_0x500C
   SRx_POSITION (2 Hz)   ->  GLOBAL_POSITION_INT     -> GPS_LAT_0x800, GPS_LON_0x800, HOME_0x5004
   SRx_RAW_SENS (0 Hz)   ->  RAW_IMU                 -> (AP_STATUS_0x5001)
 
@@ -143,6 +141,7 @@ class tPassThrough
     void handle_mavlink_msg_terrain_report(fmav_terrain_report_t* const payload);   // #136
     void handle_mavlink_msg_battery_status(fmav_battery_status_t* const payload);   // #147
     void handle_mavlink_msg_fence_status(fmav_fence_status_t* const payload);       // #162
+    void handle_mavlink_msg_wind(fmav_wind_t* const payload);                       // #168, ArduPilot dialect specific
     void handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload);         // #173, ArduPilot dialect specific
     void handle_mavlink_msg_rpm(fmav_rpm_t* const payload);                         // #226, ArduPilot dialect specific
     void handle_mavlink_msg_home_position(fmav_home_position_t* const payload);     // #242
@@ -197,6 +196,7 @@ class tPassThrough
     fmav_battery_status_t battery_status_id0 = {};
     fmav_battery_status_t battery_status_id1 = {};
     fmav_fence_status_t fence_status = {};
+    fmav_wind_t wind = {};
     fmav_rangefinder_t rangefinder = {};
     fmav_rpm_t rpm = {};
     fmav_home_position_t home_position = {};
@@ -375,6 +375,13 @@ void tPassThrough::handle_mavlink_msg_fence_status(fmav_fence_status_t* const pa
 }
 
 
+void tPassThrough::handle_mavlink_msg_wind(fmav_wind_t* const payload) // #168 -> 0x500C WIND
+{
+    memcpy(&wind, payload, sizeof(fmav_wind_t));
+    pt_update[WIND_0x500C] = true;
+}
+
+
 void tPassThrough::handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payload) // #173 -> 0x5006 ATTITUDE_RANGE
 {
     memcpy(&rangefinder, payload, sizeof(fmav_rangefinder_t));
@@ -385,7 +392,7 @@ void tPassThrough::handle_mavlink_msg_rangefinder(fmav_rangefinder_t* const payl
 void tPassThrough::handle_mavlink_msg_rpm(fmav_rpm_t* const payload) // #226 -> 0x500A RPM
 {
     memcpy(&rpm, payload, sizeof(fmav_rpm_t));
-    pt_update[RPM_0x500A] = true; // TODO
+    pt_update[RPM_0x500A] = true;
 }
 
 
@@ -806,7 +813,15 @@ bool tPassThrough::get_Rpm_0x500A(uint32_t* const data)
     if (!pt_update[RPM_0x500A]) return false;
     pt_update[RPM_0x500A] = false;
 
+    // both sensors are sent as rpm * 0.1, as signed 16 bit, the Yaapu script scales them back up
+    int32_t pt_rpm1 = roundf(rpm.rpm1 * 0.1f); // rpm -> 10 rpm // range is limited to [INT16_MIN..INT16_MAX]
+    int32_t pt_rpm2 = roundf(rpm.rpm2 * 0.1f); // rpm -> 10 rpm // range is limited to [INT16_MIN..INT16_MAX]
+    if (pt_rpm1 > INT16_MAX) pt_rpm1 = INT16_MAX; else if (pt_rpm1 < INT16_MIN) pt_rpm1 = INT16_MIN;
+    if (pt_rpm2 > INT16_MAX) pt_rpm2 = INT16_MAX; else if (pt_rpm2 < INT16_MIN) pt_rpm2 = INT16_MIN;
+
     *data = 0;
+    pt_pack32(data, pt_rpm1, 0, 16);
+    pt_pack32(data, pt_rpm2, 16, 16);
 
     return true;
 }
@@ -828,7 +843,17 @@ bool tPassThrough::get_Wind_0x500C(uint32_t* const data)
     if (!pt_update[WIND_0x500C]) return false;
     pt_update[WIND_0x500C] = false;
 
+    // WIND reports the direction the wind is blowing from, as atan2() result, so it is -180..180 and we wrap it
+    float direction = wind.direction;
+    if (direction < 0.0f) direction += 360.0f;
+
+    int32_t pt_direction = roundf(direction * (1.0f/3.0f)); // deg -> 3 deg
+    int32_t pt_speed = roundf(wind.speed * 10.0f); // m/s -> dm/s
+
     *data = 0;
+    pt_pack32(data, prep_number(pt_direction, 2, 0), 0, 7);
+    pt_pack32(data, prep_number(pt_speed, 2, 1), 7, 8);
+    // the apparent wind fields at bits 15 and 22 are Rover WindVane only, MAVLink does not report them
 
     return true;
 }
@@ -976,6 +1001,18 @@ bool tPassThrough::GetTelemetryFrameMulti(uint8_t* const data, uint8_t* const le
 
     if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Battery2_0x5008(&pd)) {
         pm.packet[pm.count].packet_type = pt_id[BATT_2_0x5008];
+        pm.packet[pm.count].data = pd;
+        pm.count++;
+    }
+
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Rpm_0x500A(&pd)) {
+        pm.packet[pm.count].packet_type = pt_id[RPM_0x500A];
+        pm.packet[pm.count].data = pd;
+        pm.count++;
+    }
+
+    if ((pm.count < CRSF_PASSTHROUGH_MULTI_COUNT_MAX) && get_Wind_0x500C(&pd)) {
+        pm.packet[pm.count].packet_type = pt_id[WIND_0x500C];
         pm.packet[pm.count].data = pd;
         pm.count++;
     }
