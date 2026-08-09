@@ -1268,10 +1268,9 @@ if __name__ == "__main__":
 
     target_cnt = 0
     for target in targetlist:
-        target_name = target.target.lower()
         if ((cmdline_target == '') or
-            (cmdline_target[0] != '!' and cmdline_target in target_name) or
-            (cmdline_target[0] == '!' and not cmdline_target[1:] in target_name)):
+            (cmdline_target[0] != '!' and cmdline_target in target.target.lower()) or
+            (cmdline_target[0] == '!' and not cmdline_target[1:] in target.target.lower())):
             mlrs_build_target(target, cmdline_D_list)
             target_cnt +=1
 

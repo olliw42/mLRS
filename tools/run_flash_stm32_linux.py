@@ -46,10 +46,9 @@ def find_firmware_hex(target):
     # .hex files in tools/build/firmware/ whose name contains the target substring (case insensitive)
     if not os.path.isdir(MLRS_FIRMWARE_DIR):
         return []
-    target = target.lower()
     hexes = []
     for path in sorted(glob.glob(os.path.join(MLRS_FIRMWARE_DIR, '*.hex'))):
-        if target in os.path.basename(path).lower():
+        if target.lower() in os.path.basename(path).lower():
             hexes.append(path)
     return hexes
 
