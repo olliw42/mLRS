@@ -7,8 +7,8 @@
  ******************************************************
  run_flash_stm32_linux.py
  Linux or MacOS flash utility for STM32 mLRS targets
- requires dfu-util (DFU) or st-flash (SWD)
- version 8.06.2026
+ uses STM32CubeProgrammer CLI when available, else dfu-util (DFU) or st-flash (SWD)
+ version 12.08.2026
 ********************************************************
 '''
 import os
@@ -29,6 +29,21 @@ RUN_MAKE_FIRMWARES = os.path.join(MLRS_TOOLS_DIR, 'run_make_firmwares.py')
 
 STM32_DFU_VID_PID = '0483:df11' # STM32 system (ROM) bootloader, as seen by dfu-util
 STM32_FLASH_BASE = 0x08000000   # all STM32 mLRS targets load here
+
+# STM32CubeProgrammer CLI install locations, globs are tried in order
+# set the STM32_PROGRAMMER_CLI env var to override
+CUBEPROG_CLI_NAME = 'STM32_Programmer_CLI'
+CUBEPROG_GLOBS = [
+    # MacOS
+    '/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/MacOs/bin/' + CUBEPROG_CLI_NAME,
+    os.path.expanduser('~/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/MacOs/bin/' + CUBEPROG_CLI_NAME),
+    # Linux
+    '/opt/st/stm32cubeprog*/bin/' + CUBEPROG_CLI_NAME,
+    '/opt/stm32cubeprog*/bin/' + CUBEPROG_CLI_NAME,
+    '/usr/local/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/' + CUBEPROG_CLI_NAME,
+    os.path.expanduser('~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/' + CUBEPROG_CLI_NAME),
+    os.path.expanduser('~/st/stm32cubeprog*/bin/' + CUBEPROG_CLI_NAME),
+]
 
 
 #-- build & firmware lookup
@@ -82,12 +97,53 @@ def hex_to_bin(hex_path):
     return bin_path
 
 
+#-- STM32CubeProgrammer
+
+no_cubeprog = False # set by --no-cubeprog, forces the dfu-util / st-flash fallbacks
+
+
+def find_cubeprog():
+    # locate the STM32CubeProgrammer CLI, env var first, then PATH, then the usual install dirs
+    if no_cubeprog:
+        return None
+    cli = os.environ.get('STM32_PROGRAMMER_CLI')
+    if cli:
+        if os.path.isfile(cli) and os.access(cli, os.X_OK):
+            return cli
+        print('WARNING: STM32_PROGRAMMER_CLI is set but not an executable file:', cli)
+    cli = shutil.which(CUBEPROG_CLI_NAME)
+    if cli is not None:
+        return cli
+    for pattern in CUBEPROG_GLOBS:
+        for path in sorted(glob.glob(pattern), reverse=True): # prefer the newest versioned dir
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return path
+    return None
+
+
+def flash_cubeprog(cli, hex_path, connect_args, reset=True):
+    # flash a .hex with the CubeProgrammer CLI; it reads ihex directly, so no objcopy needed
+    cmd = [cli, '-c'] + connect_args + ['-w', hex_path, '-v']
+    if reset:
+        cmd += ['-rst']
+    print('flashing (cubeprogrammer):', ' '.join(cmd))
+    return subprocess.call(cmd)
+
+
 #-- flash methods
 
 def flash_dfu(hex_path, target=None):
-    # flash via USB DFU with dfu-util; board must already be in DFU mode
+    # flash via USB DFU; board must already be in DFU mode
+    cli = find_cubeprog()
+    if cli is not None:
+        # no -rst, reset is only available on the JTAG/SWD interface and would fail the run
+        rc = flash_cubeprog(cli, hex_path, ['port=usb1'], reset=False)
+        if rc == 0:
+            print('flash complete - power-cycle / reset the board to run the new firmware')
+        return rc
     if shutil.which('dfu-util') is None:
-        print('ERROR: dfu-util not found on PATH (e.g. brew install dfu-util)')
+        print('ERROR: neither STM32CubeProgrammer CLI nor dfu-util found')
+        print('       install STM32CubeProgrammer, or set STM32_PROGRAMMER_CLI, or e.g. brew install dfu-util')
         return 1
     bin_path = hex_to_bin(hex_path)
     if bin_path is None:
@@ -106,9 +162,13 @@ def flash_dfu(hex_path, target=None):
 
 
 def flash_swd(hex_path, target=None):
-    # flash via SWD with st-link (st-flash reads ihex directly; --reset runs it after)
+    # flash via SWD, CubeProgrammer preferred as st-flash lacks newer chips (H503, C5, ...)
+    cli = find_cubeprog()
+    if cli is not None:
+        return flash_cubeprog(cli, hex_path, ['port=SWD', 'mode=UR'])
     if shutil.which('st-flash') is None:
-        print('ERROR: st-flash not found on PATH (e.g. brew install stlink)')
+        print('ERROR: neither STM32CubeProgrammer CLI nor st-flash found')
+        print('       install STM32CubeProgrammer, or set STM32_PROGRAMMER_CLI, or e.g. brew install stlink')
         return 1
     cmd = ['st-flash', '--reset', '--format', 'ihex', 'write', hex_path]
     print('flashing (swd):', ' '.join(cmd))
@@ -131,7 +191,12 @@ def main():
         help='flashing method (default: dfu)')
     parser.add_argument('-d', '--define', action='append', default=[], metavar='DEFINE',
         help='extra -D define forwarded to the build (repeatable)')
+    parser.add_argument('--no-cubeprog', action='store_true',
+        help='do not use STM32CubeProgrammer, force the dfu-util (DFU) / st-flash (SWD) fallbacks')
     args = parser.parse_args()
+
+    global no_cubeprog
+    no_cubeprog = args.no_cubeprog
 
     ret = build_target(args.target, args.define)
     if ret != 0:
