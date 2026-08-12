@@ -7,7 +7,7 @@
 // SX Serial Interface
 //********************************************************
 #ifndef SX_SERIAL_INTERFACE_RX_H
-#define SX_SERIAL_INTERFACE_TX_H
+#define SX_SERIAL_INTERFACE_RX_H
 #pragma once
 
 
