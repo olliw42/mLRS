@@ -134,7 +134,14 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-//-- FrsKy R9 system
+//-- FrSky LR2021 system
+
+#ifdef TX_FRSKY_LR2021_G474RE
+#include "frsky/tx-hal-frsky-lr2021-g474re.h"
+#endif
+
+
+//-- FrSky R9 system
 
 #ifdef RX_R9MX_868_L433CB
 #include "stm32/rx-hal-R9MX-868-l433cb.h"
@@ -333,7 +340,7 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF
+#if defined DEVICE_HAS_FAN_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_ONOFF || defined DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
   #define USE_FAN
 #endif
 
@@ -365,7 +372,7 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define SX_DRIVER Sx127xDriver
 #elif defined DEVICE_HAS_LR11xx
   #define SX_DRIVER Lr11xxDriver
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define SX_DRIVER Lr20xxDriver
 #else
   #define SX_DRIVER Sx128xDriver
@@ -387,13 +394,16 @@ extern "C" { void delay_ms(uint16_t ms); }
   #define SX2_DRIVER Sx128xDriver2
 #elif defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX2_DRIVER Sx126xDriver2
+#elif defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+  #define SX2_DRIVER Lr20xxDriver2
 #else
   #define SX2_DRIVER SxDriverDummy
 #endif
 
 
 #if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || \
-    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+    defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define USE_SX2
 #endif
 
@@ -443,7 +453,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 #if !defined DEVICE_HAS_SX128x && !defined DEVICE_HAS_SX127x && !defined DEVICE_HAS_SX126x && \
     !defined DEVICE_HAS_LR11xx && !defined DEVICE_HAS_LR20xx && \
-    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+    !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && \
+    !defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #error Must be either SX128x or SX127x or SX126x or LR11xx or LR20xx !
 #endif
 
@@ -454,7 +465,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #ifdef DEVICE_HAS_DIVERSITY
     #error DEVICE_HAS_DIVERSITY cannot be defined for dual band devices !
   #endif
