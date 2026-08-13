@@ -460,7 +460,8 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #ifdef DEVICE_HAS_DIVERSITY
     #error DEVICE_HAS_DIVERSITY cannot be defined for dual band devices !
   #endif
