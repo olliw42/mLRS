@@ -45,6 +45,8 @@ class tCrypto
   private:
     uint8_t _key[32];
     uint8_t _nonce[12];
+
+    void _crypt_it(uint8_t* const payload, uint16_t len);
 };
 
 

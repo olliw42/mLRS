@@ -35,28 +35,33 @@ void tCrypto::SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], 
 
 void tCrypto::Encrypt(uint8_t* const payload, uint16_t len)
 {
-    uint32_t counter = 0;
-
-    crypto_chacha20_ietf(
-        payload,    // cipher_text,
-        NULL,       // plain_text, in-place encoding
-        len,        // text_size,
-        _key,       // key[32],
-        _nonce,     // nonce[12],
-        counter);   // ctr
+    _crypt_it(payload, len);
 }
 
 
 void tCrypto::Decrypt(uint8_t* const payload, uint16_t len)
 {
+    _crypt_it(payload, len);
+}
+
+
+void tCrypto::_crypt_it(uint8_t* const payload, uint16_t len)
+{
     uint32_t counter = 0;
 
-    crypto_chacha20_ietf(
-        payload,    // cipher_text,
-        NULL,       // plain_text, in-place encoding
-        len,        // text_size,
-        _key,       // key[32],
-        _nonce,     // nonce[12],
-        counter);   // ctr
+    while (len > 0) {
+        uint16_t chunk_len = (len > 64) ? 64 : len;
+
+        crypto_chacha20_ietf(
+            payload + counter * 64, // cipher_text,
+            NULL,                   // plain_text, in-place encoding
+            chunk_len,              // text_size,
+            _key,                   // key[32],
+            _nonce,                 // nonce[12],
+            counter);               // ctr
+
+        len -= chunk_len;
+        counter++;
+    }
 }
 
