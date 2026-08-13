@@ -7,7 +7,7 @@
 // M Bridge Protocol
 //*******************************************************
 #ifndef MBRIDGE_PROTOCOL_H
-#define MMBRIDGE_PROTOCOL_H
+#define MBRIDGE_PROTOCOL_H
 #pragma once
 
 #include <inttypes.h>
