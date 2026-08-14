@@ -828,11 +828,7 @@ INITCONTROLLER_END
 
                 dbg.puts(" \n");dbg.puts(u16toBCD_s(fan_tempsensor_read_raw()));dbg.puts(",");
                 dbg.puts(s16toBCD_s(fan_tempsensor_read_dC()));dbg.puts("dC,");
-                //dbg.puts(s16toBCD_s(fan.temp_filter/64));dbg.puts("dC,");
                 dbg.puts(u8toBCD_s(fan.pwm_curr));dbg.puts("%");
-
-                dbg.puts(" \n0x");dbg.puts(u32toHEX_s(DBGMCU->IDCODE));
-
             }
         } // end of if (!doPreTransmit)
     }
