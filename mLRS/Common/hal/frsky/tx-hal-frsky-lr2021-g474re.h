@@ -27,7 +27,7 @@
 // jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
 // BUTTONs  PB3: left, PD2: right
-// LEDs     PC8: left, right, bottom two are WS2812-type LEDs  (TIM8, CH3, DMA2)
+// LEDs     PC8: bottom two on left, right and two below buttons are WS2812-type LEDs  (TIM8, CH3, DMA2)
 // OLed:    PA15, PB7: I2C1, PC11: OLED Reset
 // Fiveway: PC2: ADC12 IN8
 // FAN:     PA8: PWM 0 = off, 1 = full, PC9: Enable, PB0: FOO
@@ -50,8 +50,8 @@
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
-#undef SETUP_TX_SERIAL_PORT2
-#define SETUP_TX_SERIAL_PORT2  2
+//#undef SETUP_TX_SERIAL_PORT2
+//#define SETUP_TX_SERIAL_PORT2  2 // 2: wbridge
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -71,7 +71,6 @@
 // UART  = JR bay pin5
 // UARTE = in port, SBus or whatever
 // UARTF or SWUART = debug port
-
 
 #define UARTB_USE_UART2_PA2PA3 // serial
 //    #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
@@ -301,23 +300,26 @@ void sx2_dio_exti_isr_clearflag(void)
 
 
 //-- Button
+// let both buttons do the same
 
-#define BUTTON                    IO_PB3 // left: PB3, right: PD2
+#define BUTTON_LEFT               IO_PB3 // left: PB3, right: PD2
+#define BUTTON_RIGHT              IO_PD2
 
 void button_init(void)
 {
-    gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON_LEFT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+    gpio_init(BUTTON_RIGHT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
 }
 
 bool button_pressed(void)
 {
-    return gpio_read_activelow(BUTTON);
+    return gpio_read_activelow(BUTTON_LEFT) || gpio_read_activelow(BUTTON_RIGHT);
 }
 
 
 //-- LEDs
 
-#define WS2812_NUMBER_OF_LEDS     2
+#define WS2812_NUMBER_OF_LEDS     4
 #define WS2812_IO                 IO_PC8
 #define WS2812_IO_AF              IO_AF_4
 #define WS2812_TIMx               TIM8
@@ -327,44 +329,45 @@ bool button_pressed(void)
 #define WS2812_DMA_CHANNEL_x      LL_DMA_CHANNEL_3
 #include "../../thirdparty/stdstm32-ws2812.h"
 
-tWs2812Color ledCurrentColor;
+tWs2812Color leds_current_color;
 
-void leds_color_and_state(tWs2812Color color)
+void leds_set_color(tWs2812Color color)
 {
-    if (color == ledCurrentColor) return;
-    ledCurrentColor = color;
-    ws2812_fill_all(color);
+    if (color == leds_current_color) return;
+    leds_current_color = color;
+    ws2812_fill(0, color);
+    ws2812_fill(1, color);
     ws2812_send();
 }
 
 void leds_init(void)
 {
     ws2812_init();
-    ledCurrentColor = 0;
+    leds_current_color = 0;
 }
 
-void led_red_off(void) { leds_color_and_state(0); }
-void led_red_on(void) { leds_color_and_state(WS2812_RED); }
-void led_red_toggle(void) { (ledCurrentColor == WS2812_RED) ? led_red_off() : led_red_on(); }
+void led_red_off(void) { leds_set_color(0); }
+void led_red_on(void) { leds_set_color(WS2812_RED); }
+void led_red_toggle(void) { (leds_current_color == WS2812_RED) ? led_red_off() : led_red_on(); }
 
-void led_green_off(void) { leds_color_and_state(0); }
-void led_green_on(void) { leds_color_and_state(WS2812_GREEN); }
-void led_green_toggle(void) { (ledCurrentColor == WS2812_GREEN) ? led_green_off() : led_green_on(); }
+void led_green_off(void) { leds_set_color(0); }
+void led_green_on(void) { leds_set_color(WS2812_GREEN); }
+void led_green_toggle(void) { (leds_current_color == WS2812_GREEN) ? led_green_off() : led_green_on(); }
 
-void led_blue_off(void) { leds_color_and_state(0); }
-void led_blue_on(void) { leds_color_and_state(WS2812_BLUE); }
-void led_blue_toggle(void) { (ledCurrentColor == WS2812_BLUE) ? led_blue_off() : led_blue_on(); }
+void led_blue_off(void) { leds_set_color(0); }
+void led_blue_on(void) { leds_set_color(WS2812_BLUE); }
+void led_blue_toggle(void) { (leds_current_color == WS2812_BLUE) ? led_blue_off() : led_blue_on(); }
 
-void led_purple_off(void) { leds_color_and_state(0); }
-void led_purple_on(void) { leds_color_and_state(WS2812_PURPLE); }
-void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_off() : led_purple_on(); }
+void led_purple_off(void) { leds_set_color(0); }
+void led_purple_on(void) { leds_set_color(WS2812_PURPLE); }
+void led_purple_toggle(void) { (leds_current_color == WS2812_PURPLE) ? led_purple_off() : led_purple_on(); }
 
 
 //-- Cooling Fan
 
-#define FAN_EN                    IO_PC9 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
+#define FAN_EN                    IO_PC9 // enables 12 V switch regulator
 
-#define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full, don't know what PB0 is doing
+#define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full
 #define FAN_TIMx                  TIM1
 #define FAN_TIM_CHANNEL_CHx       LL_TIM_CHANNEL_CH1
 #include "../../thirdparty/stdstm32-tim-ext.h"
@@ -372,8 +375,6 @@ void led_purple_toggle(void) { (ledCurrentColor == WS2812_PURPLE) ? led_purple_o
 #define FAN_TSENSOR_ADCx          ADC2
 #define FAN_TSENSOR_ADC_IO        IO_PC0 // ADC12_IN6
 #define FAN_TSENSOR_ADC_CHANNELx  LL_ADC_CHANNEL_6
-
-extern "C" { void delay_us(uint32_t us); }
 
 void fan_init(void)
 {
@@ -446,7 +447,6 @@ int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
 #define KEY_DOWN_THRESH           0
 
 #ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-extern "C" { void delay_us(uint32_t us); }
 
 void fiveway_init(void)
 {
@@ -482,8 +482,6 @@ uint8_t fiveway_read(void)
 #define DISPLAY_RESET_ACTIVELOW   IO_PC11
 #define DISPLAY_INIT
 
-extern "C" { void delay_ms(uint16_t ms); }
-
 void display_init(void)
 {
     gpio_init(DISPLAY_RESET_ACTIVELOW, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // release reset line
@@ -512,10 +510,28 @@ void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
 #endif
 
 
-//-- POWER
+//-- Power Supply Detect
 
-#define POWER_SUPPLY_DETECT_IO            IO_PC1
-#define POWER_SUPPLY_LOW_POWER_LIMIT_DBM  20
+#define POWER_SUPPLY_DETECT_IO    IO_PC1
+#define POWER_SUPPLY_LOW_POWER_MAX_IDX  2 // see below in rfpower_list[]
+
+void power_supply_detect_init(void)
+{
+    gpio_init(POWER_SUPPLY_DETECT_IO, IO_MODE_INPUT_PD, IO_SPEED_DEFAULT);
+}
+
+bool power_supply_ok(void)
+{
+    return gpio_read_activehigh(POWER_SUPPLY_DETECT_IO);
+}
+
+void power_supply_set_leds(tWs2812Color color)
+{
+    ws2812_fill(2, color);
+    ws2812_fill(3, color);
+    ws2812_send();
+}
+
 
 #define POWER_GAIN_DBM_HF          18 // gain of a PA stage if present
 #define POWER_GAIN_DBM_LF          20 // gain of a PA stage if present
@@ -545,7 +561,6 @@ power_sx = -10; // -5 dBm
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
-//    { .dbm = POWER_0_DBM, .mW = 1 },
     { .dbm = POWER_10_DBM, .mW = 10 },
     { .dbm = POWER_14_DBM, .mW = 25 },
 //    { .dbm = POWER_17_DBM, .mW = 50 },
