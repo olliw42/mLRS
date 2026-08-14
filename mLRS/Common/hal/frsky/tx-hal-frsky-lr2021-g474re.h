@@ -396,8 +396,7 @@ void fan_init(void)
 
 void fan_set_pwm(uint16_t pwm) // pwm in percent
 {
-//    if (pwm == 0) { gpio_low(FAN_EN); } else { gpio_high(FAN_EN); }
-pwm = 35;
+    if (pwm < 14) { gpio_low(FAN_EN); pwm = 0; } else { gpio_high(FAN_EN); }
 
     FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
 }
