@@ -73,8 +73,8 @@
 #define SX_RX_EN                  IO_PA4
 #define SX_TX_EN                  IO_PA5
 
-//#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTA
-//#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE1
+//#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTA
+//#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE1
 //#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_1 // not defining SX_DIO_EXTI_LINE_x has impact on ISR routine
 #define SX_DIO_EXTI_IRQn              SUBGHZ_Radio_IRQn
 #define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler

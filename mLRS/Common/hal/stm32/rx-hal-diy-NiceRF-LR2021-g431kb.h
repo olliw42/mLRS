@@ -8,31 +8,17 @@
 //********************************************************
 
 //-------------------------------------------------------
-// R9MM RX Module STM32F103RB
+// RX_DIY_NICERF_LR2021_G431KB v002 STM32G431KB
 //-------------------------------------------------------
-// https://github.com/ExpressLRS/ExpressLRS/blob/master/src/include/target/Frsky_RX_R9M.h
-// many THX to the ExpressLRS project !
-// Connection pads:
-//   Pin1 Inv SPort   PB11 (??)
-//   Pin2 VCC
-//   Pin3 GND
-//   Pin4 SPort/FPort PA5  (??, looks strange, something is inbetween)
-//   Pin5 SBusOut     PA2 / U2Tx inverted
-//   Ch1    PA8           -> unused (TIM1)
-//   Ch2    PA11          -> Debug Tx (TIM4)
-//   Ch3    PA9 / U1Tx    -> Serial Tx
-//   Ch4    PA10 / U1Rx   -> Serial Rx
 
-#define DEVICE_HAS_OUT_INVERTED
-#define DEVICE_HAS_DEBUG_SWUART
-#define DEVICE_HAS_SYSTEMBOOT
+#define DEVICE_HAS_OUT
 
 
 //-- Timers, Timing, EEPROM, and such stuff
 
 #define DELAY_USE_DWT
 
-#define EE_START_PAGE             124 // 128 kB flash, 1 kB page
+#define EE_START_PAGE             60 // 128 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
 
@@ -55,56 +41,58 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
-#define UART_USE_UART2_PA2PA3 // out pin
+#define UART_USE_UART2_PB3PA15 // out pin
 #define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
 #define UART_TXBUFSIZE            256 // 512
 #define UART_USE_TX_ISR
 //#define UART_USE_RX
 //#define UART_RXBUFSIZE            512
+#define OUT_UARTx                 USART2 // UART_UARTx is not known yet, so define by hand
 
-/*
-#define UARTF_USE_UART1_PA9PA10 //3 // debug
+#define UARTF_USE_LPUART1_PA2PA3 // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
 #define UARTF_USE_TX_ISR
 //#define UARTF_USE_RX
 //#define UARTF_RXBUFSIZE           512
-*/
-
-#define SWUART_USE_TIM4 // debug
-#define SWUART_TX_IO              IO_PA11
-#define SWUART_BAUD               115200
-#define SWUART_USE_TX
-#define SWUART_TXBUFSIZE          512
-//#define SWUART_TIM_IRQ_PRIORITY   9
 
 
 //-- SX1: SX12xx & SPI
 
-#define SPI_USE_SPI2              // PB13, PB14, PB15
-#define SPI_CS_IO                 IO_PB12
+#define SPI_USE_SPI1              // PA5, PA6, PA7
+#define SPI_CS_IO                 IO_PA4
 #define SPI_USE_CLK_LOW_1EDGE     // datasheet says CPHA = 0  CPOL = 0
 #define SPI_USE_CLOCKSPEED_9MHZ
 
-#define SX_RESET                  IO_PC14
-#define SX_DIO                    IO_PA15
-#define SX_DIO1                   // IO_PA1 ???
-#define SX_RX_EN                  //
-#define SX_TX_EN                  //
+#define SX_RESET                  IO_PB6
+#define SX_DIO                    IO_PB4 // DIO7
+#define SX_BUSY                   IO_PB0
 
-#define SX_DIO_GPIO_AF_EXTI_PORTx     LL_GPIO_AF_EXTI_PORTA
-#define SX_DIO_GPIO_AF_EXTI_LINEx     LL_GPIO_AF_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
+#define SX_DIO7                   IO_PB4
+#define SX_DIO8                   IO_PB9
+#define SX_DIO9                   IO_PB7
+
+#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTB
+#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE4
+#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_4
+#define SX_DIO_EXTI_IRQn              EXTI4_IRQn
+#define SX_DIO_EXTI_IRQHandler        EXTI4_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
+
+#define SX_USE_IRQ_DIO_NO             LR20XX_DIO_7
 
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
     gpio_init(SX_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU, IO_SPEED_VERYFAST);
+}
+
+bool sx_busy_read(void)
+{
+    return (gpio_read_activehigh(SX_BUSY)) ? true : false;
 }
 
 void sx_amp_transmit(void)
@@ -117,7 +105,7 @@ void sx_amp_receive(void)
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_GPIO_AF_SetEXTISource(SX_DIO_GPIO_AF_EXTI_PORTx, SX_DIO_GPIO_AF_EXTI_LINEx);
+    LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
 
     // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
     LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
@@ -149,16 +137,22 @@ void out_init_gpio(void)
 
 void out_set_normal(void)
 {
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 void out_set_inverted(void)
 {
+    LL_USART_Disable(OUT_UARTx);
+    LL_USART_SetTXPinLevel(OUT_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(OUT_UARTx);
 }
 
 
 //-- Button
 
-#define BUTTON                    IO_PC13
+#define BUTTON                    IO_PA11
 
 void button_init(void)
 {
@@ -173,8 +167,8 @@ bool button_pressed(void)
 
 //-- LEDs
 
-#define LED_GREEN                 IO_PB3
-#define LED_RED                   IO_PC1
+#define LED_GREEN 		            IO_PA1
+#define LED_RED		                IO_PA0
 
 void leds_init(void)
 {
@@ -193,42 +187,38 @@ void led_red_on(void) { gpio_high(LED_RED); }
 void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 
-//-- SystemBootLoader
-
-#define BOOT_BUTTON               BUTTON
-
-void systembootloader_init(void)
-{
-    gpio_init(BOOT_BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
-    uint8_t cnt = 0;
-    for (uint8_t i = 0; i < 16; i++) {
-        if (gpio_read_activelow(BOOT_BUTTON)) cnt++;
-    }
-    if (cnt > 12) {
-        BootLoaderInit();
-    }
-}
-
-
 //-- POWER
 
-#define POWER_PA_NONE_SX127X
-#include "../hal-power-pa.h"
+//#define POWER_PA_NONE_LR20XX
+//#include "../hal-power-pa.h"
+
+#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_USE_DEFAULT_RFPOWER_CALC
+
+#define RFPOWER_DEFAULT           2 // index into rfpower_list array
+
+const rfpower_t rfpower_list[] = {
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
+    { .dbm = POWER_0_DBM, .mW = 1 },
+    { .dbm = POWER_10_DBM, .mW = 10 },
+    { .dbm = POWER_14_DBM, .mW = 25 },
+    { .dbm = POWER_20_DBM, .mW = 100 },
+    { .dbm = POWER_22_DBM, .mW = 158 },
+};
 
 
 //-- TEST
 
 uint32_t porta[] = {
-    LL_GPIO_PIN_2, LL_GPIO_PIN_5,
-    LL_GPIO_PIN_8, LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_1, LL_GPIO_PIN_2, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
+    LL_GPIO_PIN_9, LL_GPIO_PIN_10, LL_GPIO_PIN_11, LL_GPIO_PIN_15,
 };
 
 uint32_t portb[] = {
-    LL_GPIO_PIN_3,
-    LL_GPIO_PIN_11,
+    LL_GPIO_PIN_0, LL_GPIO_PIN_3, LL_GPIO_PIN_4, LL_GPIO_PIN_5, LL_GPIO_PIN_6, LL_GPIO_PIN_7,
 };
 
 uint32_t portc[] = {
-    LL_GPIO_PIN_1,
 };
+
 

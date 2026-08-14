@@ -14,6 +14,8 @@
 #ifndef STM32_DRONECAN_DRIVER_H
 #define STM32_DRONECAN_DRIVER_H
 
+// CAN FD is enabled in libcanard/canard.h, brings in TAO flag in canard functions
+// TAO must be off for FD frames, use dc_hal_is_canfd()
 #include "libcanard/canard.h"
 
 // library configuration
@@ -74,14 +76,16 @@ typedef struct
     uint32_t last_psr;
     uint32_t last_ecr;
     uint32_t last_cccr;
+    uint32_t lec_ack_count;         // PSR reg, LEC: ACK error
 #ifdef DRONECAN_USE_RX_ISR
     // raised in _dc_hal_receive_isr() (which is called by _dc_hal_isr_handler())
     uint32_t rx_overflow_count;     // rx frame buffer overflow
+    uint32_t rx_fifo_peak;          // rx frame buffer peak filling, in frames
     uint32_t isr_xtd_count;         // XTD, received frame is not a EXT frame
     uint32_t isr_rtr_count;         // RTR, received frame is RTR frame
     uint32_t isr_fdf_count;         // FDF, received frame is RTR frame
     uint32_t isr_brs_count;         // BRS, received frame has bit rate switch
-    uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8
+    uint32_t isr_dlc_count;         // DLC, received frame has DLC > 8 (only if CANFD is not enabled)
     // raised in _dc_hal_isr_handler()
     uint32_t isr_rf0f_count;        // RF0F, Rx Fifo 0 Full
     uint32_t isr_rf0l_count;        // RF0L, Rx Fifo 0 Message Lost
@@ -95,6 +99,15 @@ typedef struct
     uint32_t tfqf_count;            // TFQF, Tx Fifo Queue Full
     // total sum of counts, calculated in dc_hal_get_stats()
     uint32_t error_sum_count;
+    // CAN FD diagnostics
+    uint32_t dlec_count;            // PSR reg: DLEC, Data-phase Last Error Code
+    uint32_t last_dlec;
+    uint32_t dlec_stuff_count;      // PSR reg, DLEC: breakdown
+    uint32_t dlec_form_count;
+    uint32_t dlec_ack_count;
+    uint32_t dlec_bit1_count;       // bit1/bit0 point at TDC/transceiver issues
+    uint32_t dlec_bit0_count;
+    uint32_t dlec_crc_count;
 } tDcHalStatistics;
 
 
@@ -123,6 +136,16 @@ typedef struct
 } tDcHalCanTimings;
 
 
+typedef struct
+{
+    uint16_t bit_rate_prescaler;
+    uint8_t bit_segment_1;
+    uint8_t bit_segment_2;
+    uint8_t sync_jump_width;
+    uint8_t tdco; // transceiver delay compensation offset, in FDCAN clock cycles; 0: disabled
+} tDcHalCanDataTimings;
+
+
 typedef enum
 {
     DC_HAL_CAN1 = 0,
@@ -133,9 +156,12 @@ typedef enum
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance,
     const tDcHalCanTimings* const timings,
+    const tDcHalCanDataTimings* const data_timings,
     const DC_HAL_IFACE_MODE_ENUM iface_mode);
 
 int16_t dc_hal_start(void);
+
+uint8_t dc_hal_is_canfd(void);
 
 int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms);
 
@@ -156,8 +182,13 @@ const char* dc_hal_psr_act_to_str(uint32_t psr);
 
 int16_t dc_hal_compute_timings(
     const uint32_t peripheral_clock_rate,
-    const uint32_t target_bitrate,
+    const uint32_t target_bit_rate,
     tDcHalCanTimings* const timings);
+
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bit_rate,
+    tDcHalCanDataTimings* const data_timings);
 
 
 #ifdef __cplusplus

@@ -11,9 +11,12 @@
 #pragma once
 
 
-#define VERSION             10401 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.4.01"
+#define VERSION             10403 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.4.03"
 #define SETUPLAYOUT         10401 // this should be changed then Setup struct and/or serial changes
+
+// Note: The setup layout version does not need to be changed when parameter option lists
+// are merely extended. This is handled gracefully by sanitize.
 
 
 //-------------------------------------------------------
@@ -46,6 +49,7 @@
 
 
 #define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: mBridge
+#define SETUP_TX_SERIAL_PORT2           0 // 0: none, 1: serial port, 2: wbridge (BT/ESP) port, 3: serial2
 
 #define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
 
@@ -53,7 +57,7 @@
 
 #define SETUP_TX_IN_MODE                0 // 0: IN_CONFIG_SBUS, 1: IN_CONFIG_SBUS_INVERTED
 
-#define SETUP_TX_SERIAL_BAUDRATE        4 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200, 5: 230400
+#define SETUP_TX_SERIAL_BAUDRATE        1 // 0: 57600, 1: 115200, 2: 230400
 
 #define SETUP_TX_POWER                  CPOWER
 
@@ -71,9 +75,9 @@
 
 #define SETUP_RX_FAILSAFE_MODE          0 // 0: no signal 1: low throttle, 4: CH1-CH4 center signal
 
-#define SETUP_RX_SERIAL_PORT            0 // 0: serial, 1: can
+#define SETUP_RX_SERIAL_PORT            0 // 0: serial, 1: can, 2: canfd
 
-#define SETUP_RX_SERIAL_BAUDRATE        3 // 0: 9600, 1: 19200, 2: 38400, 3: 57600, 4: 115200, 5: 230400
+#define SETUP_RX_SERIAL_BAUDRATE        0 // 0: 57600, 1: 115200, 2: 230400
 
 #define SETUP_RX_POWER                  CPOWER
 

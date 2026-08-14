@@ -116,14 +116,14 @@ class tDebugPort : public tSerialBase
 
 
 // rx: dronecan // TODO: make tRxDroneCan a child of tSerialBase
-#if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
+#if defined USE_DRONECAN && defined DEVICE_IS_RECEIVER
 #include "../CommonRx/dronecan_interface_rx_types.h"
 extern tRxDroneCan dronecan;
 #endif
 
 class tDroneCANPort : public tSerialBase
 {
-#ifdef DEVICE_HAS_DRONECAN
+#ifdef USE_DRONECAN
   public:
     // no Init()
     void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
@@ -276,13 +276,16 @@ typedef struct
 
 void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)
 {
-#if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    if (serial_port == RX_SERIAL_PORT_CAN) {
+#if defined USE_SERIAL && defined USE_DRONECAN
+    switch (serial_port) {
+    case RX_SERIAL_PORT_CAN:
+    case RX_SERIAL_PORT_CANFD:
         serial = &dronecan_port; // assign dronecan to serial
-    } else {
+        break;
+    default:
         serial = &uartb_port; // assign uartb to serial
     }
-#elif defined DEVICE_HAS_DRONECAN
+#elif defined USE_DRONECAN
     serial = &dronecan_port;
 #elif defined USE_SERIAL
     serial = &uartb_port;

@@ -988,9 +988,19 @@ void tTxDisp::draw_page_rx(void)
 
     draw_header("Rx");
 
-    if (!connected()) {
+    if (!connected_and_rx_setup_available()) {
         gdisp_setcurXY(0, DISP_CONTENT_Y_BASE + 4);
         gdisp_puts("not connected!");
+        return;
+    }
+
+    if (SetupMetaData.rx_setup_layout < SETUPLAYOUT || SETUPLAYOUT < SetupMetaData.rx_setup_layout) {
+        // Rx param version smaller than Tx param version
+        // Tx param version smaller than Rx param version
+        gdisp_setcurXY(0, DISP_CONTENT_Y_BASE + 4);
+        gdisp_puts("not editable");
+        gdisp_setcurXY(0, 2 * 10 + DISP_CONTENT_Y_BASE + 4);
+        gdisp_puts("parameter version\nmissmatch");
         return;
     }
 

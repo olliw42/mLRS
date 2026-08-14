@@ -306,7 +306,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
         // calibrations
         // datasheet says Calibrate() is done at startup for 915 MHz, but should be redone if
-        // frequency changes > 10 MHz or temperature changes > 10 °C
+        // frequency changes > 10 MHz or temperature changes > 10 Celsius
         // not so clear what to do, I guess setting a frequency is what it needs
         // datasheet says CalibFE() is done for the current frequency and rx path if no argument is given
         switch (gconfig->FrequencyBand) {

@@ -421,7 +421,7 @@ void tRxMavlink::parse_link_in_serial_out(char c)
             }
         }
 
-#ifdef DEVICE_HAS_DRONECAN
+#ifdef USE_DRONECAN
         // Two issues, which have been resolved but are present in some versions of
         // MissionPlanner and ArduPilot.
         // MissionPlanner: Always sends out MAV_CMD_CAN_FORWARD commands after initial connection, but shouldn't.

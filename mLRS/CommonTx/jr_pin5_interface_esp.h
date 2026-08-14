@@ -13,13 +13,15 @@
 #include "../Common/protocols/crsf_protocol.h"
 #include <hal/uart_ll.h>
 #include <driver/uart.h>
+#include <soc/gpio_pins.h>
 
 
 //-------------------------------------------------------
 // task to switch back to receive after transmit completes in half-duplex mode
 // waits for notification from pin5_rx_callback, then uses uart_wait_tx_done()
 // which blocks on the IDF driver's internal TX_DONE interrupt/semaphore.
-// runs on Core 0, mLRS uses Core 1, so no impact on radio loop.
+// runs on Core 0, mLRS uses Core 1 on dual-core chips, so no impact on radio loop.
+// on single-core chips (ESP32-C3) it briefly preempts the loop task.
 
 TaskHandle_t tx_done_task_handle = nullptr;
 
@@ -197,9 +199,8 @@ void tPin5BridgeBase::pin5_init(void)
 IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
 {
 #ifndef JR_PIN5_FULL_DUPLEX
-constexpr uint8_t MATRIX_DETACH_IN_LOW = 0x30; // routes 0 to matrix slot
-    
-    gpio_matrix_in(MATRIX_DETACH_IN_LOW, U1RXD_IN_IDX, true); // disconnect RX from all pads, true here important
+    // GPIO_MATRIX_CONST_ZERO_INPUT routes constant 0 to the matrix slot, per-chip value (ESP32 0x30, C3 0x1F, S3 0x3C)
+    gpio_matrix_in(GPIO_MATRIX_CONST_ZERO_INPUT, U1RXD_IN_IDX, true); // disconnect RX from all pads, true here important
     gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0); // set inverted level
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_OUTPUT);
     gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);

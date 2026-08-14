@@ -33,7 +33,7 @@
 
 static tDcHalStatistics dc_hal_stats;
 
-static bool dc_hal_abort_tx_on_error;
+static uint8_t abort_tx_on_error;
 
 static CAN_HandleTypeDef hcan;
 
@@ -50,7 +50,7 @@ static void _process_error_status(void)
         CLEAR_BIT(hcan.Instance->ESR, CAN_ESR_LEC);
         dc_hal_stats.error_sum_count++;
 
-        if (dc_hal_abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
+        if (abort_tx_on_error || ((esr & CAN_ESR_BOFF) != 0)) {
             HAL_CAN_AbortTxRequest(&hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
         }
     }
@@ -64,6 +64,7 @@ static void _process_error_status(void)
 int16_t dc_hal_init(
     DC_HAL_CAN_ENUM can_instance, // irrelevant for STM32F1
     const tDcHalCanTimings* const timings,
+    const tDcHalCanDataTimings* const data_timings, // irrelevant for STM32F1
     const DC_HAL_IFACE_MODE_ENUM iface_mode)
 {
     if ((iface_mode != DC_HAL_IFACE_MODE_NORMAL) &&
@@ -81,7 +82,7 @@ int16_t dc_hal_init(
     }
 
     memset(&dc_hal_stats, 0, sizeof(dc_hal_stats));
-    dc_hal_abort_tx_on_error = (iface_mode == DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
+    abort_tx_on_error = (iface_mode == DC_HAL_IFACE_MODE_AUTOMATIC_TX_ABORT_ON_ERROR);
 
     hcan.Instance = CAN1;
     __HAL_CAN_DISABLE_IT(&hcan, 0);
@@ -115,7 +116,9 @@ int16_t dc_hal_init(
     hcan.Init.ReceiveFifoLocked = DISABLE;
     hcan.Init.TransmitFifoPriority = DISABLE;
     HAL_StatusTypeDef hres = HAL_CAN_Init(&hcan);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_INIT; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_CAN_INIT;
+    }
 
     // libcanard's default filter setup is to set all filters to
     // - identifier mask mode
@@ -150,6 +153,12 @@ int16_t dc_hal_start(void)
     if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_START; }
 
     return 0;
+}
+
+
+uint8_t dc_hal_is_canfd(void)
+{ 
+    return 0; // bxCAN is classic CAN only
 }
 
 
@@ -207,7 +216,9 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms) // 
     uint32_t pTxMailbox;
 
     HAL_StatusTypeDef hres = HAL_CAN_AddTxMessage(&hcan, &pTxHeader, frame->data, &pTxMailbox);
-    if (hres != HAL_OK) { return -DC_HAL_ERROR_CAN_ADD_TX_MESSAGE; }
+    if (hres != HAL_OK) {
+        return -DC_HAL_ERROR_CAN_ADD_TX_MESSAGE;
+    }
 
     return 1;
 }
@@ -216,12 +227,8 @@ int16_t dc_hal_transmit(const CanardCANFrame* const frame, uint32_t tnow_ms) // 
 //-------------------------------------------------------
 // Receive
 //-------------------------------------------------------
-
-#ifdef DRONECAN_USE_RX_ISR
-int16_t dc_hal_enable_isr(void) { return 0; }
-void dc_hal_rx_flush(void) {}
-#endif
-
+#ifndef DRONECAN_USE_RX_ISR
+//-- Polling
 
 int16_t dc_hal_receive(CanardCANFrame* const frame)
 {
@@ -249,11 +256,12 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
                 continue; // return -DC_HAL_ERROR_CAN_GET_RX_MESSAGE;
             }
 
-            frame->id = (pRxHeader.ExtId & CANARD_CAN_EXT_ID_MASK);
+            frame->id = pRxHeader.ExtId; // HAL_CAN_GetRxMessage() ensures that it is in range, no masking needed
             frame->id |= CANARD_CAN_FRAME_EFF; // libcanard wants the CANARD_CAN_FRAME_EFF flag be set
 
             frame->data_len = pRxHeader.DLC;
             frame->iface_id = 0;
+            frame->canfd = 0; // bxCAN is classic CAN only
 
             return 1;
         }
@@ -261,6 +269,18 @@ int16_t dc_hal_receive(CanardCANFrame* const frame)
 
     return 0;
 }
+
+#else
+//-- ISR
+#warning CAN ISR not supported, DRONECAN_USE_RX_ISR must not be defined !
+
+//-- API
+
+int16_t dc_hal_enable_isr(void) { return 0; } // dummies
+int16_t dc_hal_receive(CanardCANFrame* const frame) { return 0; }
+void dc_hal_rx_flush(void) {}
+
+#endif // DRONECAN_USE_RX_ISR
 
 
 //-------------------------------------------------------
@@ -356,6 +376,15 @@ int16_t dc_hal_compute_timings(
     timings->sync_jump_width = 1;
 
     return 0;
+}
+
+
+int16_t dc_hal_compute_data_timings(
+    const uint32_t peripheral_clock_rate,
+    const uint32_t target_data_bit_rate,
+    tDcHalCanDataTimings* const data_timings)
+{
+    return -DC_HAL_ERROR_TIMING;
 }
 
 

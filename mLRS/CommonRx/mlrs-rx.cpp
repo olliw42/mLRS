@@ -61,6 +61,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-mcu.h"
 #include "../modules/stm32ll-lib/src/stdstm32-dac.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
+#include "../Common/thirdparty/stdstm32-exti.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -162,7 +163,7 @@ void init_hw(void)
     uartb_port.Init();
     dronecan_port.Init();
     Serials.Init(Setup.Rx.SerialPort, Config.SerialBaudrate);
-    dronecan.Init(Setup.Rx.SerialPort == RX_SERIAL_PORT_CAN); // after delay_init() since it needs delay
+    dronecan.Init(Setup.Rx.SerialPort); // after delay_init() since it needs delay
 }
 
 

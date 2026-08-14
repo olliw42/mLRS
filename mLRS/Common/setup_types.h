@@ -97,14 +97,21 @@ typedef enum {
 
 
 typedef enum {
-    SERIAL_BAUDRATE_9600 = 0,
-    SERIAL_BAUDRATE_19200,
-    SERIAL_BAUDRATE_38400,
-    SERIAL_BAUDRATE_57600,
+    SERIAL_BAUDRATE_57600 = 0,
     SERIAL_BAUDRATE_115200,
     SERIAL_BAUDRATE_230400,
     SERIAL_BAUDRATE_NUM,
 } SERIAL_BAUDRATE_ENUM;
+
+typedef enum {
+    L10304_SERIAL_BAUDRATE_9600 = 0,
+    L10304_SERIAL_BAUDRATE_19200,
+    L10304_SERIAL_BAUDRATE_38400,
+    L10304_SERIAL_BAUDRATE_57600,
+    L10304_SERIAL_BAUDRATE_115200,
+    L10304_SERIAL_BAUDRATE_230400,
+    L10304_SERIAL_BAUDRATE_NUM,
+} L10304_SERIAL_BAUDRATE_ENUM;
 
 
 typedef enum {
@@ -298,8 +305,11 @@ typedef enum {
 typedef enum {
     RX_SERIAL_PORT_SERIAL = 0,
     RX_SERIAL_PORT_CAN,
+    RX_SERIAL_PORT_CANFD,
     RX_SERIAL_PORT_NUM,
 } RX_SERIAL_PORT_ENUM;
+
+#define RX_SERIAL_PORT_IS_CAN(x)  ((x) == RX_SERIAL_PORT_CAN || (x) == RX_SERIAL_PORT_CANFD)
 
 
 //-------------------------------------------------------
@@ -470,6 +480,7 @@ typedef struct
     uint16_t Tx_InMode_allowed_mask;
     uint16_t Tx_SerialPort_allowed_mask;
     uint16_t Tx_SerialPort2_allowed_mask;
+    uint16_t Tx_SerialBaudrate2_allowed_mask;
     uint16_t Tx_Buzzer_allowed_mask;
     uint16_t Tx_WiFiProt_allowed_mask;
 

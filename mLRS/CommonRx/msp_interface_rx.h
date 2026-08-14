@@ -78,7 +78,7 @@ class tRxMsp
     uint32_t tick_tlast_ms;
 
     #define MSP_TELM_COUNT  6
-    #define MSP_TELM_BOXNAMES_ID  5
+    #define MSP_TELM_BOXIDS_ID  5
 
     const uint16_t telm_function[MSP_TELM_COUNT] = {
         MSP2_INAV_STATUS,
@@ -86,7 +86,7 @@ class tRxMsp
         MSP2_INAV_ANALOG,
         MSP_RAW_GPS,
         MSP_ALTITUDE,
-        MSP_BOXNAMES, // MSP_BOXIDS, seems to hold incorrect flags ??
+        MSP_BOXIDS, // permanent box ids, stable across INAV versions, much smaller reply than MSP_BOXNAMES
     };
 
     const uint8_t telm_freq[MSP_TELM_COUNT] = {
@@ -95,7 +95,7 @@ class tRxMsp
         1,  // 1 Hz = 10*100 ms, MSP_INAV_ANALOG
         2,  // 2 Hz = 5*100 ms, MSP_RAW_GPS
         2,  // 2 Hz = 5*100 ms, MSP_ALTITUDE
-        1,  // this is set to zero once MSP_BOXNAMES has been gotten once, disables request
+        1,  // this is set to zero once MSP_BOXIDS has been gotten once, disables request
     };
 
     typedef struct {
@@ -107,7 +107,7 @@ class tRxMsp
 
     void telm_set_default_rate(uint8_t n) { telm[n].rate = (telm_freq[n] > 0) ? 10 / telm_freq[n] : 0; }
 
-    uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXNAMES
+    uint8_t inav_flight_modes_box_mode_flags[INAV_FLIGHT_MODES_COUNT]; // store info from MSP_BOXIDS
 
     // to handle command MSP_REBOOT
     uint32_t reboot_activate_ms;
@@ -181,7 +181,7 @@ void tRxMsp::Do(void)
 {
     if (!connected()) {
         fifo_link_out.Flush();
-        telm_set_default_rate(MSP_TELM_BOXNAMES_ID);
+        telm_set_default_rate(MSP_TELM_BOXIDS_ID);
     }
 
     if (!SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) return;
@@ -256,17 +256,17 @@ void tRxMsp::parse_serial_in_link_out(void)
                 bool send = true;
 
                 if (msp_msg_ser_in.type == MSP_TYPE_RESPONSE) { // this is a response from the FC
-                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXNAMES_ID].rate == 0) {
+                    if (msp_msg_ser_in.function == MSP2_INAV_STATUS && telm[MSP_TELM_BOXIDS_ID].rate == 0) {
                         // when we get a MSP2_INAV_STATUS
                         // send out our home-brewed MSPX_STATUS message in addition
-                        // do only after we have seen MSP_BOXNAMES
+                        // do only after we have seen MSP_BOXIDS
                         // is being send before original message
-                        uint32_t flight_mode = 0;
+                        uint32_t flight_mode_flags = 0;
                         uint8_t* boxflags = ((tMspInavStatus*)(msp_msg_ser_in.payload))->msp_box_mode_flags;
                         for (uint8_t n = 0; n < INAV_FLIGHT_MODES_COUNT; n++) {
                             if (inav_flight_modes_box_mode_flags[n] == 255) continue; // is empty
                             if (boxflags[inav_flight_modes_box_mode_flags[n] / 8] & (1 << (inav_flight_modes_box_mode_flags[n] % 8))) {
-                                flight_mode |= ((uint32_t)1 << n);
+                                flight_mode_flags |= ((uint32_t)1 << n);
                             }
                         }
                         uint16_t len = msp_generate_v2_frame_bufX(
@@ -274,30 +274,28 @@ void tRxMsp::parse_serial_in_link_out(void)
                             MSP_TYPE_RESPONSE,
                             MSP_FLAG_SOURCE_ID_RC_LINK,
                             MSPX_STATUS,
-                            (uint8_t*)(&flight_mode),
-                            sizeof(flight_mode));
+                            (uint8_t*)(&flight_mode_flags),
+                            sizeof(flight_mode_flags));
                         fifo_link_out.PutBuf(_buf, len);
                     }
-                    if (msp_msg_ser_in.function == MSP_BOXNAMES) {
-                        // compress, and also get inav_flight_modes_box_mode_flags[]
-                        uint8_t new_payload[512]; // MSP_BOXNAMES is 340 bytes in INAV 7.1, up to 646 in 9.1 counting chars in boxes[], hopefully compressed though
-                        uint16_t new_len = 0;
-                        mspX_boxnames_payload_compress(
-                            new_payload, &new_len, msp_msg_ser_in.payload, msp_msg_ser_in.len,
-                            inav_flight_modes_box_mode_flags);
+                    if (msp_msg_ser_in.function == MSP_BOXIDS) {
+                        // build inav_flight_modes_box_mode_flags[] from the permanent ids
+                        // the position in the reply is the box's bit position in MSP2_INAV_STATUS's box mode flags
+                        memset(inav_flight_modes_box_mode_flags, 255, INAV_FLIGHT_MODES_COUNT); // 255 = is empty
+                        for (uint16_t i = 0; i < msp_msg_ser_in.len; i++) {
+                            for (uint8_t n = 0; n < INAV_BOXES_COUNT; n++) {
+                                if (inavBoxes[n].permanentId != msp_msg_ser_in.payload[i]) continue; // not what we look for
+                                if (inavBoxes[n].flightMode >= INAV_FLIGHT_MODES_COUNT) continue; // is empty
+                                inav_flight_modes_box_mode_flags[inavBoxes[n].flightMode] = i;
+                                break; // found
+                            }
+                        }
 
-                        telm[MSP_TELM_BOXNAMES_ID].rate = 0; // disable MSP_BOXNAMES requesting
+                        telm[MSP_TELM_BOXIDS_ID].rate = 0; // disable MSP_BOXIDS requesting
 
-                        uint16_t len = msp_generate_v2_frame_bufX(
-                            _buf,
-                            MSP_TYPE_RESPONSE,
-                            MSP_FLAG_SOURCE_ID_RC_LINK,
-                            MSP_BOXNAMES,
-                            new_payload,
-                            new_len);
-                        fifo_link_out.PutBuf(_buf, len);
+                        // it's requested by the receiver, catch it
+                        if (msp_msg_ser_in.flag & MSP_FLAG_SOURCE_ID_RC_LINK) { send = false; } // don't forward to ground
 
-                        send = false; // mark as handled
                     }
                     if (msp_msg_ser_in.function == MSP2_RX_BIND && msp_msg_ser_in.magic2 == MSP_MAGIC_2_V2) {
                         // handle MSP2_RX_BIND, only if MSP V2

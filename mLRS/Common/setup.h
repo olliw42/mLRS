@@ -52,8 +52,8 @@ void setup_configure_metadata(void)
     // MULTIBAND 2.4 GHz & 868/915 MHz
     SetupMetaData.FrequencyBand_allowed_mask = 0b00000111; // 2.4 GHz, 915 FCC, 868
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_868_MHZ
-#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ
-    // MULTIBAND 2.4 GHz & 433 MHz
+#elif defined FREQUENCY_BAND_2P4_GHZ && defined FREQUENCY_BAND_433_MHZ && defined FREQUENCY_BAND_70_CM_HAM
+    // MULTIBAND 2.4 GHz & 433 MHz/70 cm
     SetupMetaData.FrequencyBand_allowed_mask = 0b00011001; // 2.4 GHz, 433, 70
     #define FREQUENCY_BAND_DEFAULT  SETUP_FREQUENCY_BAND_433_MHZ
 //** single band, multiple frequencies
@@ -197,9 +197,13 @@ void setup_configure_metadata(void)
 #ifdef DEVICE_HAS_JRPIN5
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add mbridge
 #endif
-#if !(defined STM32G4 && defined USE_SERIAL && defined USE_SERIAL2)
+#if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
     SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
 #endif
+
+    // Tx SerialBaudrate2: "9600,19200,38400,57600,115200,230400"
+    // display only when a second serial port is available
+    SetupMetaData.Tx_SerialBaudrate2_allowed_mask = (SetupMetaData.Tx_SerialPort2_allowed_mask) ? UINT16_MAX : 0;
 
     // Tx Buzzer: ""off,LP,rxLQ"
 #ifdef DEVICE_HAS_BUZZER
@@ -246,13 +250,15 @@ void setup_configure_metadata(void)
     SetupMetaData.Rx_OutMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Rx SerialPort: "serial,can"
+    // Rx SerialPort: "serial,can,canfd"
     SetupMetaData.Rx_SerialPort_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
-    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b01; // add serial
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b001; // add serial
 #endif
 #ifdef DEVICE_HAS_DRONECAN
-    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b10; // add can
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b010; // add can
+#elif defined DEVICE_HAS_DRONECAN_FD
+    SetupMetaData.Rx_SerialPort_allowed_mask |= 0b110; // add can, canfd
 #endif
 
     //-- Tx: Receiver setup meta data
@@ -329,7 +335,7 @@ void setup_default(uint8_t config_id)
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
     Setup.Tx[config_id].SerialPort = SETUP_TX_SERIAL_PORT;
-    Setup.Tx[config_id].SerialPort2 = TX_SERIAL_PORT2_NONE;
+    Setup.Tx[config_id].SerialPort2 = SETUP_TX_SERIAL_PORT2;
     Setup.Tx[config_id].SerialBaudrate = SETUP_TX_SERIAL_BAUDRATE;
     Setup.Tx[config_id].SerialBaudrate2 = SERIAL_BAUDRATE_115200;
     Setup.Tx[config_id].ChannelsSource = SETUP_TX_CHANNELS_SOURCE;
@@ -362,7 +368,7 @@ void setup_default(uint8_t config_id)
 }
 
 
-void setup_sanitize_config(uint8_t config_id)
+void _setup_sanitize_config(uint8_t config_id, bool only_rx)
 {
 // note: if allowed_mask = 0, this also triggers
 // we may have to distinguish between not editable and not displayed, but currently
@@ -380,9 +386,9 @@ void setup_sanitize_config(uint8_t config_id)
       for (uint8_t i = 0; i < 16; i++) { if (SetupMetaData.amask & (1 << i)) { Setup.pfield = i; break; } } \
     }
 
-#define SANITIZE(pfield,max,setupval,val) \
+#define SANITIZE(pfield,max,setupval,defaultval) \
     if (Setup.pfield >= max) { Setup.pfield = setupval; } \
-    if (Setup.pfield >= max) { Setup.pfield = val; }
+    if (Setup.pfield >= max) { Setup.pfield = defaultval; }
 
     //-- BindPhrase, FrequencyBand, Mode, Ortho
 
@@ -471,6 +477,7 @@ void setup_sanitize_config(uint8_t config_id)
     TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho, ORTHO_NONE);
 
     //-- Tx:
+if (!only_rx) {
 
     SANITIZE(Tx[config_id].Power, RFPOWER_LIST_NUM, SETUP_TX_POWER, RFPOWER_LIST_NUM - 1);
 
@@ -486,7 +493,7 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Tx[config_id].SerialPort, TX_SERIAL_PORT_NUM, SETUP_TX_SERIAL_PORT, TX_SERIAL_PORT_SERIAL);
     TST_NOTALLOWED(Tx_SerialPort_allowed_mask, Tx[config_id].SerialPort, TX_SERIAL_PORT_SERIAL);
 
-    SANITIZE(Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NUM, TX_SERIAL_PORT2_NONE, TX_SERIAL_PORT2_SERIAL);
+    SANITIZE(Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NUM, SETUP_TX_SERIAL_PORT2, TX_SERIAL_PORT2_SERIAL);
     TST_NOTALLOWED(Tx_SerialPort2_allowed_mask, Tx[config_id].SerialPort2, TX_SERIAL_PORT2_NONE);
 
     SANITIZE(Tx[config_id].SerialBaudrate, SERIAL_BAUDRATE_NUM, SETUP_TX_SERIAL_BAUDRATE, SERIAL_BAUDRATE_115200);
@@ -543,6 +550,7 @@ void setup_sanitize_config(uint8_t config_id)
     Setup.Tx[config_id].WifiChannel = WIFI_CHANNEL_6;
     Setup.Tx[config_id].WifiPower = WIFI_POWER_MED;
 #endif
+}
 
     //-- Rx:
 
@@ -556,9 +564,9 @@ void setup_sanitize_config(uint8_t config_id)
     SANITIZE(Rx.OutMode, OUT_CONFIG_NUM, SETUP_RX_OUT_MODE, OUT_CONFIG_SBUS);
     TST_NOTALLOWED(Rx_OutMode_allowed_mask, Rx.OutMode, OUT_CONFIG_SBUS);
 
-    SANITIZE(Rx.OutRssiChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_RSSI_CHANNEL, 0);
+    SANITIZE(Rx.OutRssiChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_RSSI_CHANNEL, OUT_RSSI_LQ_CHANNEL_OFF);
 
-    SANITIZE(Rx.OutLqChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_LQ_CHANNEL, 0);
+    SANITIZE(Rx.OutLqChannelMode, OUT_RSSI_LQ_CHANNEL_NUM, SETUP_RX_OUT_LQ_CHANNEL, OUT_RSSI_LQ_CHANNEL_OFF);
 
     SANITIZE(Rx.FailsafeMode, FAILSAFE_MODE_NUM, SETUP_RX_FAILSAFE_MODE, FAILSAFE_MODE_NO_SIGNAL);
 
@@ -597,6 +605,10 @@ void setup_sanitize_config(uint8_t config_id)
     for (uint8_t n = 0; n < sizeof(Setup.Tx[config_id].spare)/sizeof(Setup.Tx[config_id].spare[0]); n++) Setup.Tx[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Rx.spare)/sizeof(Setup.Rx.spare[0]); n++) Setup.Rx.spare[n] = 0xFF;
 }
+
+
+void setup_sanitize_config(uint8_t config_id) { _setup_sanitize_config(config_id, false); }
+void setup_sanitize_rx_config(void) { _setup_sanitize_config(0, true); }
 
 
 //-------------------------------------------------------
@@ -997,9 +1009,6 @@ void setup_configure_config(uint8_t config_id)
 #else // DEVICE_IS_RECEIVER
     switch (Setup.Rx.SerialBaudrate) {
 #endif
-    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate = 9600; break;
-    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate = 19200; break;
-    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate = 115200; break;
     case SERIAL_BAUDRATE_230400: Config.SerialBaudrate = 230400; break;
@@ -1013,9 +1022,6 @@ void setup_configure_config(uint8_t config_id)
 
 #ifdef DEVICE_IS_TRANSMITTER
     switch (Setup.Tx[config_id].SerialBaudrate2) {
-    case SERIAL_BAUDRATE_9600: Config.SerialBaudrate2 = 9600; break;
-    case SERIAL_BAUDRATE_19200: Config.SerialBaudrate2 = 19200; break;
-    case SERIAL_BAUDRATE_38400: Config.SerialBaudrate2 = 38400; break;
     case SERIAL_BAUDRATE_57600: Config.SerialBaudrate2 = 57600; break;
     case SERIAL_BAUDRATE_115200: Config.SerialBaudrate2 = 115200; break;
     case SERIAL_BAUDRATE_230400: Config.SerialBaudrate2 = 230400; break;
@@ -1127,23 +1133,42 @@ bool doEEPROMwrite;
     doEEPROMwrite = false;
     if (Setup.Layout != SETUPLAYOUT) {
         if (Setup.Layout < SETUPLAYOUT) {
-            // Note: In v1.3.05 Mode changed, so we would have to change to MODE_19HZ_7X if it's a Sx127x.
-            // Luckily, the sanitizer will do that for us so we do not need to bother here.
-            // if it's lower than 10304, it's quite old, but
-            // TX_SERIAL_PORT_ENUM has changed in 10401, it was L10304 before
+            // changes in L10401: TX_SERIAL_PORT_ENUM, SERIAL_BAUDRATE_ENUM
+            // was L10304 before
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) {
                 switch (Setup.Tx[id].SerialPort) {
                 case L10304_SERIAL_DESTINATION_SERIAL: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL; break;
-                #ifdef USE_WIRELESS_BRIDGE
-                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_WIRELESS_BRIDGE; break;
-                #else
-                case L10304_SERIAL_DESTINATION_SERIAL2: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL2; break;
-                #endif
+                case L10304_SERIAL_DESTINATION_SERIAL2:
+                    #ifdef USE_WIRELESS_BRIDGE
+                    Setup.Tx[id].SerialPort = TX_SERIAL_PORT_WIRELESS_BRIDGE;
+                    #else
+                    Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL2;
+                    #endif
+                    break;
                 case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_MBRIDGE; break;
                 default:
                     Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL;
                 }
+
+                switch (Setup.Tx[id].SerialBaudrate) {
+                case L10304_SERIAL_BAUDRATE_57600: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_57600; break;
+                case L10304_SERIAL_BAUDRATE_115200: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_115200; break;
+                case L10304_SERIAL_BAUDRATE_230400: Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_230400; break;
+                default:
+                    Setup.Tx[id].SerialBaudrate = SERIAL_BAUDRATE_115200;
+                }
+
+                Setup.Tx[id].SerialBaudrate2 = SERIAL_BAUDRATE_115200;
             }
+
+            switch (Setup.Rx.SerialBaudrate) {
+            case L10304_SERIAL_BAUDRATE_57600: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600; break;
+            case L10304_SERIAL_BAUDRATE_115200: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_115200; break;
+            case L10304_SERIAL_BAUDRATE_230400: Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_230400; break;
+            default:
+                Setup.Rx.SerialBaudrate = SERIAL_BAUDRATE_57600;
+            }
+
         } else {
             // ups, > 10401, should not happen
             for (uint8_t id = 0; id < SETUP_CONFIG_NUM; id++) setup_default(id);

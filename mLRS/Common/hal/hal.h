@@ -61,7 +61,7 @@ In tx-hal files:
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON2_FLASH    // board has button used to enter ESP flash mode
 #define DEVICE_HAS_HC04_MODULE      // board has HC04 module
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
-#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180°, and 5-way switch
+#define DEVICE_HAS_I2C_DISPLAY_ROT180   // board has a DISPLAY on I2C, rotated 180 degree, and 5-way switch
 #define DEVICE_HAS_FIVEWAY          // board has 5-way switch (without display)
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812, and thus can do more colors
@@ -81,7 +81,8 @@ In rx-hal files:
 #define DEVICE_HAS_NO_SERIAL        // board has no Serial port
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
-#define DEVICE_HAS_DRONECAN         // board has a DroneCAN port
+#define DEVICE_HAS_DRONECAN         // board has a DroneCAN port, supporting only classic CAN
+#define DEVICE_HAS_DRONECAN_FD      // board has a DroneCAN port, supporting CAN FD
 #define DEVICE_HAS_SINGLE_LED       // board has only one LED
 #define DEVICE_HAS_SINGLE_LED_RGB   // board has only one LED which is RGB WS2812
 #define DEVICE_HAS_FAN_ONOFF        // board has a Fan, which can be set on or off
@@ -248,6 +249,17 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
+//-- DIY Boards, LR2021 Devices
+
+#if defined RX_DIY_NICERF_LR2021_G431KB
+#include "stm32/rx-hal-diy-NiceRF-LR2021-g431kb.h"
+#endif
+
+#if defined TX_DIY_NICERF_LR2021_G431KB
+#include "stm32/tx-hal-diy-NiceRF-LR2021-g431kb.h"
+#endif
+
+
 //-------------------------------------------------------
 // ESP Boards
 //-------------------------------------------------------
@@ -309,6 +321,10 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 #if defined DEVICE_HAS_OUT || defined DEVICE_HAS_OUT_NORMAL || defined DEVICE_HAS_OUT_INVERTED
   #define USE_OUT
+#endif
+
+#if defined DEVICE_HAS_DRONECAN || defined DEVICE_HAS_DRONECAN_FD
+  #define USE_DRONECAN
 #endif
 
 
