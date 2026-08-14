@@ -37,10 +37,11 @@ class tFan
     void SetPower(int8_t power_dbm);
     void Tick_ms(void);
 
-  private:
+//  private:
     bool initialized;
     int8_t power_dbm_curr;
     int32_t temp_filter;
+    uint8_t pwm_curr;
 };
 
 
@@ -49,6 +50,7 @@ void tFan::Init(void)
     fan_init();
     initialized = false;
     power_dbm_curr = POWER_MIN;
+    pwm_curr = 0;
 }
 
 
@@ -86,26 +88,26 @@ void tFan::Tick_ms(void)
         initialized = true;
         temp_filter = 128 * temp_dC;
     }
-    temp_filter += temp_dC - temp_filter / 128;
+    temp_filter += temp_dC - temp_filter / 64;
 
-    int32_t temp_filtered = temp_filter / 128;
+    int32_t temp_filtered = temp_filter / 64;
 
     // < 40 °C: 0%
     // 40 °C: 10%
     // 70 °C: 100%
     // > 70 °C: 100%
     // pwm = (T - 400)*90/300 + 10 = (T - 400)*3/10 + 10 = (3*T - 1200 +100)/10
-    uint8_t pwm = 0;
+    // corresponds to pwm = P*(T - Tsp) with P = 3/10 and Tsp = 366.666
     if (temp_filtered < 400) { // < 40 °C
-        pwm = 0;
+        pwm_curr = 0;
     } else
     if (temp_filtered > 700) { // > 70 °C
-        pwm = 100;
+        pwm_curr = 100;
     } else {
-        pwm = (3*temp_filtered - 1100)/10;
+        pwm_curr = (3*temp_filtered - 1100)/10;
     }
 
-    fan_set_pwm(pwm);
+    fan_set_pwm(pwm_curr);
 #endif
 }
 

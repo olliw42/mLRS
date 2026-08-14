@@ -397,8 +397,14 @@ void fan_init(void)
 void fan_set_pwm(uint16_t pwm) // pwm in percent
 {
     if (pwm < 14) { gpio_low(FAN_EN); pwm = 0; } else { gpio_high(FAN_EN); }
+    if (pwm > 100) pwm = 100;
 
     FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
+}
+
+uint16_t fan_tempsensor_read_raw(void)
+{
+    return LL_ADC_REG_ReadConversionData12(FAN_TSENSOR_ADCx);
 }
 
 int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
@@ -414,7 +420,7 @@ int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
     };
     if (adc >= ntc_adc_table[0]) return 0; // 0 °C
     if (adc <= ntc_adc_table[8]) return 1000; // 100 °C
-    for (uint8_t i = 0; i < 8 - 1; i++) {
+    for (uint8_t i = 0; i < 9 - 1; i++) {
         uint16_t a1 = ntc_adc_table[i];
         uint16_t a2 = ntc_adc_table[i + 1];
         if (adc <= a1 && adc > a2) { // is in slot
