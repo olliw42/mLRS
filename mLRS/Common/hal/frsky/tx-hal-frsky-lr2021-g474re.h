@@ -396,7 +396,8 @@ void fan_init(void)
 
 void fan_set_pwm(uint16_t pwm) // pwm in percent
 {
-    if (pwm == 0) { gpio_low(FAN_EN); } else { gpio_high(FAN_EN); }
+//    if (pwm == 0) { gpio_low(FAN_EN); } else { gpio_high(FAN_EN); }
+pwm = 35;
 
     FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
 }
@@ -533,27 +534,44 @@ void power_supply_set_leds(tWs2812Color color)
 }
 
 
-#define POWER_GAIN_DBM_HF          18 // gain of a PA stage if present
-#define POWER_GAIN_DBM_LF          20 // gain of a PA stage if present
-#define POWER_USE_DEFAULT_RFPOWER_CALC
+//-- POWER
+
+#define POWER_GAIN_DBM_HF         26 // gain of a PA stage if present
+#define POWER_GAIN_DBM_LF         20 // gain of a PA stage if present
+//#define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #ifndef POWER_USE_DEFAULT_RFPOWER_CALC
 void lr20xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
-    // for now just mimics calc_default, is to be prepared for more sophisticated schemes
-    int8_t gain_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) ? POWER_GAIN_DBM_HF : POWER_GAIN_DBM_LF;
-    int16_t power_sx = ((int16_t)power_dbm - gain_dbm) * 2; // LR20xx power is in units of 0.5 dBm
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-power_sx = -10; // -5 dBm
-        if (power_sx < LR20XX_POWER_HF_MIN) power_sx = LR20XX_POWER_HF_MIN;
-        if (power_sx > LR20XX_POWER_HF_MAX) power_sx = LR20XX_POWER_HF_MAX;
+      if (power_dbm >= POWER_30_DBM) { // -> 30
+          *sx_power = 24; // LR20XX_POWER_HF_MAX
+          *actual_power_dbm = 30;
+      } else if (power_dbm >= POWER_27_DBM) { // -> 27
+          *sx_power = 10;
+          *actual_power_dbm = 27;
+      } else {
+          *sx_power = ((int16_t)power_dbm - POWER_GAIN_DBM_HF) * 2; // LR20xx power is in units of 0.5 dBm
+          *actual_power_dbm = *sx_power / 2 + POWER_GAIN_DBM_HF;
+      }
+
     } else {
-power_sx = -10; // -5 dBm
-        if (power_sx < LR20XX_POWER_LF_MIN) power_sx = LR20XX_POWER_LF_MIN;
-        if (power_sx > LR20XX_POWER_LF_MAX) power_sx = LR20XX_POWER_LF_MAX;
+        if (power_dbm >= POWER_30_DBM) { // -> 30
+            *sx_power = LR20XX_POWER_LF_22_DBM;
+            *actual_power_dbm = 44; // LR20XX_POWER_LF_MAX
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+            *sx_power = LR20XX_POWER_LF_22_DBM;
+            *actual_power_dbm = 27;
+        } else if (power_dbm >= POWER_24_DBM) { // -> 24
+            *sx_power = LR20XX_POWER_LF_22_DBM;
+            *actual_power_dbm = 24;
+        } else {
+            *sx_power = ((int16_t)power_dbm - POWER_GAIN_DBM_LF) * 2;
+            if (*sx_power < LR20XX_POWER_LF_MIN) *sx_power = LR20XX_POWER_LF_MIN;
+            if (*sx_power > LR20XX_POWER_LF_MAX) *sx_power = LR20XX_POWER_LF_MAX;
+            *actual_power_dbm = *sx_power / 2 + POWER_GAIN_DBM_LF;
+        }
     }
-    *sx_power = power_sx;
-    *actual_power_dbm = power_sx / 2 + gain_dbm;
 }
 #endif
 
