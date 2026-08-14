@@ -56,7 +56,7 @@
 #elif defined DEVICE_HAS_LR11xx
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  LR11XX_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  LR11XX_FREQ_GHZ_TO_REG(f_ghz)
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
   #define SX12XX_FREQ_MHZ_TO_REG(f_mhz)  LR20XX_FREQ_MHZ_TO_REG(f_mhz)
   #define SX12XX_FREQ_GHZ_TO_REG(f_ghz)  LR20XX_FREQ_GHZ_TO_REG(f_ghz)
 #else // DEVICE_HAS_SX128x
@@ -635,7 +635,8 @@ class tFhssBase
 };
 
 
-#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x
+#if !defined DEVICE_HAS_DUAL_SX126x_SX128x && !defined DEVICE_HAS_DUAL_SX126x_SX126x && \
+    !defined DEVICE_HAS_DUAL_LR20xx_LR20xx
 // SINGLE BAND
 
 class tFhss : public tFhssBase
@@ -729,6 +730,8 @@ class tFhss
         return 1.0E3f * SX126X_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
         return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq2());
+#elif defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+        return 1.0E3f * LR20XX_REG_TO_FREQ_KHZ(GetCurrFreq2());
 #else
         #error Something wrong with dual band config !
 #endif
@@ -751,6 +754,9 @@ class tFhss
 #elif defined DEVICE_HAS_DUAL_SX126x_SX128x
         strcpy(unit_str, " MHz");
         return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss2ndBand.FhssList(i));
+#elif defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+        strcpy(unit_str, " kHz");
+        return (uint32_t)LR20XX_REG_TO_FREQ_KHZ(fhss2ndBand.FhssList(i));
 #endif
     }
 

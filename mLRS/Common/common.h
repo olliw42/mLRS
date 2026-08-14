@@ -345,7 +345,8 @@ void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t l
 
 void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
 {
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // DUAL BAND
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx // DUAL BAND
     if (Config.IsDualBand) {
         sx.SendFrame((uint8_t*)data, len, tmo_ms);
         sx2.SendFrame((uint8_t*)data, len, tmo_ms);
@@ -470,5 +471,7 @@ STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
 STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup len missmatch")
 
 STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
+
+STATIC_ASSERT(RFPOWER_LIST_NUM <= sizeof(((tRxCmdFrameRxSetupData *)0)->Power_list)/sizeof(int16_t), "too many power options")
 
 #endif // COMMON_H

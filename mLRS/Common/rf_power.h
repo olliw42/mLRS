@@ -32,11 +32,24 @@ void tRfPower::Init(void)
 {
     rfpower_current_idx = UINT8_MAX;  // to initialize properly
     rfpower_new_idx = rfpower_current_idx; // to prevent update before first Set
+
+#ifdef POWER_SUPPLY_DETECT_IO
+    power_supply_detect_init();
+#endif
 }
 
 
 void tRfPower::Update(void)
 {
+#ifdef POWER_SUPPLY_DETECT_IO
+    if (!power_supply_ok()) {
+        if (rfpower_current_idx > POWER_SUPPLY_LOW_POWER_MAX_IDX) rfpower_new_idx = POWER_SUPPLY_LOW_POWER_MAX_IDX;
+        power_supply_set_leds(0x001000);
+    } else {
+        power_supply_set_leds(0x101010);
+    }
+#endif
+
     if (rfpower_new_idx == rfpower_current_idx) return; // no change required
 
     rfpower_current_idx = rfpower_new_idx;
