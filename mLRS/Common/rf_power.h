@@ -18,6 +18,7 @@ class tRfPower
 {
   public:
     void Init(void);
+    void Tick_ms(void);
     void Update(void);
     void Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t power);
     void Set(uint8_t power);
@@ -39,14 +40,23 @@ void tRfPower::Init(void)
 }
 
 
+void tRfPower::Tick_ms(void)
+{
+#ifdef POWER_SUPPLY_DETECT_IO
+    if (!power_supply_ok()) {
+        power_supply_set_leds(0x001000);
+    } else {
+        power_supply_set_leds(0x101010);
+    }
+#endif
+}
+
+
 void tRfPower::Update(void)
 {
 #ifdef POWER_SUPPLY_DETECT_IO
     if (!power_supply_ok()) {
         if (rfpower_current_idx > POWER_SUPPLY_LOW_POWER_MAX_IDX) rfpower_new_idx = POWER_SUPPLY_LOW_POWER_MAX_IDX;
-        power_supply_set_leds(0x001000);
-    } else {
-        power_supply_set_leds(0x101010);
     }
 #endif
 

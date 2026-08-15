@@ -794,6 +794,7 @@ INITCONTROLLER_END
 
         if (!doPreTransmit) {
             leds.Tick_ms(connected()); // can take long
+            rfpower.Tick_ms();
 
             DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 
