@@ -73,7 +73,6 @@
 // UARTF or SWUART = debug port
 
 #define UARTB_USE_UART2_PA2PA3 // serial
-//    #define UARTB_USE_UART1_PA9PA10 // misuse debug as serial
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -100,14 +99,13 @@
 #define JRPIN5_FULL_INTERNAL_ON_TX
 
 #define UARTF_USE_UART1_PA9PA10 // debug
-//     #define UARTF_USE_UART2_PA2PA3 // misuse serial as debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
 #define UARTF_TXBUFSIZE           512
 #define UARTF_USE_TX_ISR
 
 
-//-- SX1262 & SPI - left RF chain, as seen from top
+//-- LR2021 & SPI - left RF chain, as seen from top
 // 2.4 GHz chain
 //    PAEN1     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
 //    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
