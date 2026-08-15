@@ -560,7 +560,7 @@ class tFhssBase
         return 1.0E3f * SX127X_REG_TO_FREQ_KHZ(GetCurrFreq());
 #elif defined DEVICE_HAS_LR11xx
         return 1.0E3f * LR11XX_REG_TO_FREQ_KHZ(GetCurrFreq());
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
         return 1.0E3f * LR20XX_REG_TO_FREQ_KHZ(GetCurrFreq());
 #else // DEVICE_HAS_SX128x
         return 1.0E6f * SX128X_REG_TO_FREQ_MHZ(GetCurrFreq());
@@ -597,7 +597,7 @@ class tFhssBase
 #elif defined DEVICE_HAS_LR11xx
         strcpy(unit_str, " kHz");
         return (uint32_t)LR11XX_REG_TO_FREQ_KHZ(fhss_list[i]);
-#elif defined DEVICE_HAS_LR20xx
+#elif defined DEVICE_HAS_LR20xx || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
         strcpy(unit_str, " kHz");
         return (uint32_t)LR20XX_REG_TO_FREQ_KHZ(fhss_list[i]);
 #else // DEVICE_HAS_SX128x
