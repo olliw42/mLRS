@@ -62,6 +62,14 @@ extern "C" {
 #define WS2812_TIMHIGH           140 // ~ 0.82 us
 #define WS2812_PERIOD            212
 
+// trailing zero-duty periods appended to each frame, they hold the data line low and thus
+// make the strip latch; 240 * 1.25 us = 300 us, enough also for WS2812B-V5 which wants 280 us
+#ifndef WS2812_RESET_PERIODS
+#define WS2812_RESET_PERIODS     240
+#endif
+
+#define WS2812_BUF_LEN           (WS2812_NUMBER_OF_LEDS * 24 + WS2812_RESET_PERIODS)
+
 
 void ws2812_periph_init(uint32_t buf_adr)
 {
@@ -83,7 +91,7 @@ LL_DMA_InitTypeDef DMA_InitTypeDef = {};
     DMA_InitTypeDef.MemoryOrM2MDstIncMode  = LL_DMA_MEMORY_INCREMENT;
     DMA_InitTypeDef.PeriphOrM2MSrcDataSize = LL_DMA_PDATAALIGN_HALFWORD;
     DMA_InitTypeDef.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_HALFWORD;
-    DMA_InitTypeDef.NbData                 = WS2812_NUMBER_OF_LEDS * 24 + 2;
+    DMA_InitTypeDef.NbData                 = WS2812_BUF_LEN;
     DMA_InitTypeDef.Priority               = LL_DMA_PRIORITY_VERYHIGH;
     LL_DMA_DeInit(WS2812_DMAx, WS2812_DMA_CHANNEL_x);
     LL_DMA_Init(WS2812_DMAx, WS2812_DMA_CHANNEL_x, &DMA_InitTypeDef);
@@ -105,7 +113,7 @@ void ws2812_dma_stop(void)
 
 void ws2812_dma_start(void)
 {
-    LL_DMA_SetDataLength(WS2812_DMAx, WS2812_DMA_CHANNEL_x, WS2812_NUMBER_OF_LEDS * 24 + 2);
+    LL_DMA_SetDataLength(WS2812_DMAx, WS2812_DMA_CHANNEL_x, WS2812_BUF_LEN);
     WS2812_DMA_ClearFlag_TCx(WS2812_DMAx);
     LL_DMA_EnableChannel(WS2812_DMAx, WS2812_DMA_CHANNEL_x);
     WS2812_TIM_EnableDMAReq_CCx(WS2812_TIMx);
@@ -165,9 +173,9 @@ tWs2812Color ws2812_scalecolor(tWs2812Color color, uint16_t brightness)
 
 
 typedef struct {
-    uint16_t state;
-    uint16_t tlast_send_us;
-    uint16_t buf[WS2812_NUMBER_OF_LEDS * 24 + 8];
+    uint16_t state; // 1 = a frame is on the wire
+    uint16_t pending; // 1 = buf holds data not yet sent out
+    uint16_t buf[WS2812_BUF_LEN];
 } tWs2812Handler;
 
 tWs2812Handler ws2812handler;
@@ -180,9 +188,9 @@ void ws2812_init(void)
     ws2812_periph_init((uint32_t)(ws2812handler.buf));
 
     ws2812handler.state = 0;
-    ws2812handler.tlast_send_us = 0;
+    ws2812handler.pending = 0;
 
-    memset(ws2812handler.buf, 0, sizeof(ws2812handler.buf));
+    memset(ws2812handler.buf, 0, sizeof(ws2812handler.buf)); // the tail must stay zero, it is the latch gap
     ws2812_fill_all(0);
 }
 
@@ -220,32 +228,34 @@ uint16_t p;
 }
 
 
-void ws2812_send(void)
+// starts a frame if the wire is free, else leaves it pending
+// a pending frame goes out on the next call, so if no writer calls regularly, call this from the loop
+void ws2812_do(void)
 {
+    if (ws2812handler.state > 0) {
+        if (!ws2812_dma_isready()) return; // frame incl. its latch gap still going out, never abort it
+        ws2812handler.state = 0;
+    }
+
+    if (!ws2812handler.pending) return;
+    ws2812handler.pending = 0;
     ws2812handler.state = 1;
 
-    ws2812_dma_stop();
     ws2812_dma_start();
+}
+
+
+// several writers may share the strip, they all just fill buf and call this
+void ws2812_send(void)
+{
+    ws2812handler.pending = 1; // buf always holds the newest data for all leds, so coalescing is fine
+    ws2812_do();
 }
 
 
 void ws2812_trigger(void)
 {
-    if (ws2812handler.state > 0) return; // ERROR
-    ws2812handler.state = 1;
-
-    ws2812_dma_start();
-}
-
-
-// call in the loop at high frequency
-void ws2812_do(void)
-{
-    if (ws2812handler.state == 0) return; // not DMA running
-
-    if (ws2812_dma_isready()) {
-        ws2812handler.state = 0;
-    }
+    ws2812_send();
 }
 
 
