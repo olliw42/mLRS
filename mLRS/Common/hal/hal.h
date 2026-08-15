@@ -58,6 +58,7 @@ In tx-hal files:
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL  // board has ESP32 or ESP82xx with its passthrough via Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx in fact, not ESP32
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3    // board has ESP82-C3 in fact, not ESP32
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON2_FLASH    // board has button used to enter ESP flash mode
 #define DEVICE_HAS_HC04_MODULE      // board has HC04 module
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
