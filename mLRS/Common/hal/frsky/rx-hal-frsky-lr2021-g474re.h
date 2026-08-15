@@ -7,51 +7,13 @@
 // hal
 //*******************************************************
 
-/*
-  Flashing ESP32 wireless bridge:
-  - ser dest: change to serial2 (wireless bridge is on serial)
-  - ser baudrate: does not matter
-  - connect board to USB (no need for manual intervention, Tx module is put into FLASH_ESP mode via esptool's DTR&RTS method)
-  - Board: ESP32 PICO-D4
-  - Upload Speed: can be 921600
-  - Reset Method: no dtr (aka ck) (the normal method)
-*/
-
 //-------------------------------------------------------
-// TX FRSKY LR2021 STM32G474RE V1.2
+// RX FRSKY LR2021 STM32G474RE V1.2, as receiver
 //-------------------------------------------------------
-// com:     USB
-// serial:  UART2, PA2 PA3,   JST-GH connector, Vcc,Gnd,Tx,Rx
-// wbridge: UART3, PB10 PB11, wired to ESP32
-// dbg:     UART1, PA9 PA10,  wired to JR pin header, 4 = Rx, 6 = Tx, 7 = Gnd
-// jrpin5:  UART4, PC10,      wired to JR pin header, 5 = SPort
 
-// BUTTONs  PB3: left, PD2: right
-// LEDs     PC8: bottom two on left, right and two below buttons are WS2812-type LEDs  (TIM8, CH3, DMA2)
-// OLed:    PA15, PB7: I2C1, PC11: OLED Reset
-// Fiveway: PC2: ADC12 IN8
-// FAN:     PA8: PWM 0 = off, 1 = full, PC9: Enable, PB0: FOO
-// NTC:     PC0: ADC12 IN6
-// CAN:     FDCAN2, PB5,PB6, PC14: CAN_STB
-// ESP32:   RESET: PB1, GPIO: PB2, U0: PB10,PB11
-// VT (main voltage detect):  PC1
-
-#define DEVICE_HAS_JRPIN5
-#ifndef DEVICE_HAS_DUAL_LR20xx_LR20xx
-  #define DEVICE_HAS_DIVERSITY
-#endif
-#define DEVICE_HAS_COM_ON_USB
-//#define DEVICE_HAS_NO_DEBUG
-//#define DEVICE_HAS_NO_SERIAL
-#define DEVICE_HAS_I2C_DISPLAY_ROT180
+#define DEVICE_HAS_OUT
+#define DEVICE_HAS_DRONECAN_FD
 #define DEVICE_HAS_SINGLE_LED_RGB
-#define DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
-#define DEVICE_HAS_ESP_WIFI_BRIDGE
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-
-
-//#undef SETUP_TX_SERIAL_PORT2
-//#define SETUP_TX_SERIAL_PORT2  2 // 2: wbridge
 
 
 //-- Timers, Timing, EEPROM, and such stuff
@@ -61,62 +23,50 @@
 #define EE_START_PAGE             120 // 512 kB flash, 2 kB page, G474 has dual bank flash, hence only 256 kB available
 
 #define MICROS_TIMx               TIM3
-#define MICROS_TIM_NAMEPREFIX     TIM3_
+
+#define CLOCK_TIMx                TIM2
+#define CLOCK_IRQn                TIM2_IRQn
+#define CLOCK_IRQHandler          TIM2_IRQHandler
+//#define CLOCK_IRQ_PRIORITY        10
 
 
 //-- UARTS
 // UARTB = serial port
-// UARTC (or USB) = com (CLI) port
-// UARTD = serial2 port or wireless bridge port
-// UART  = JR bay pin5
-// UARTE = in port, SBus or whatever
+// UART = output port, SBus or whatever
 // UARTF or SWUART = debug port
 
 #define UARTB_USE_UART2_PA2PA3 // serial
-#define UARTB_BAUD                TX_SERIAL_BAUDRATE
+#define UARTB_BAUD                RX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
-#define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
+#define UARTB_TXBUFSIZE           RX_SERIAL_TXBUFSIZE // 1024 // 512
 #define UARTB_USE_TX_ISR
 #define UARTB_USE_RX
-#define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTB_RXBUFSIZE           RX_SERIAL_RXBUFSIZE // 1024 // 512
 
-#define UARTD_USE_UART3_PB10PB11 // serial2 or wireless bridge
-#define UARTD_BAUD                115200
-#define UARTD_USE_TX
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_USE_TX_ISR
-#define UARTD_USE_RX
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
-
-#define UART_USE_UART4_PC10PC11 // JR pin5, MBridge
-#define UART_BAUD                 400000
+#define UART_USE_UART4_PC10PC11 // out pin
+#define UART_BAUD                 100000 // SBus normal baud rate, is being set later anyhow
 #define UART_USE_TX
-#define UART_TXBUFSIZE            512
+#define UART_TXBUFSIZE            256 // 512
 #define UART_USE_TX_ISR
-#define UART_USE_RX
-#define UART_RXBUFSIZE            512
-
-#define JRPIN5_FULL_INTERNAL_ON_TX
+//#define UART_USE_RX
+//#define UART_RXBUFSIZE            512
 
 #define UARTF_USE_UART1_PA9PA10 // debug
 #define UARTF_BAUD                115200
 #define UARTF_USE_TX
-#define UARTF_TXBUFSIZE           512
+#define UARTF_TXBUFSIZE           1024 // for CAN debug
 #define UARTF_USE_TX_ISR
+//#define UARTF_USE_RX
+//#define UARTF_RXBUFSIZE           512
+
+
+//-- CAN
+
+#define CAN_USE_FDCAN2_PB5PB6
+#define CAN_STB_NORMAL_LOW        IO_PC14 // TCAN1044: low: normal mode, high: standby mode, integrated pull up
 
 
 //-- LR2021 & SPI - left RF chain, as seen from top
-// 2.4 GHz chain
-//    PAEN1     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    RF1_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF1_C1    DIO6
-//    VDET1     PA0     Analog output from the internal RF power detector
-// 900 MHz chain
-//    900_CSD1  DIO10
-//    900_CPS1  DIO8
-//    900_CTX1  DIO7
-// switch
-//    VC1       PB9     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L, RF1: 900, RF2: 2.4
 
 #define SPI_USE_SPI1              // PA5, PA6, PA7
 #define SPI_CS_IO                 IO_PA4
@@ -137,16 +87,6 @@
 
 #define SX_USE_IRQ_DIO_NO         LR20XX_DIO_9
 #define SX_USE_TCXO_VOLTAGE       LR20XX_TCXO_SUPPLY_VOLTAGE_3_3
-
-/*            low band    high band
-              Tx  Rx      Tx  Rx
-VC    PB9     1   1       0   0
-CPS   DIO8    x   1       0   0
-CSD   DIO10   1   1       0   0
-CTX   DIO7    1   0       0   0
-PAEN  DIO11   0   0       1   0
-C0    DIO5    0   0       0   1
-C1    DIO6    0   0       1   0 */
 
 #define SX_USE_RFSW_DIO_CONFIG  {{LR20XX_DIO_5, LR20XX_DIO_RF_SWITCH_CONFIG_RX_HF}, \
                                  {LR20XX_DIO_6, LR20XX_DIO_RF_SWITCH_CONFIG_TX_HF}, \
@@ -210,17 +150,6 @@ void sx_dio_exti_isr_clearflag(void)
 
 
 //-- LR2021 & SPIB - right RF chain, as seen from top
-// 2.4 GHz chain
-//    PAEN2     DIO11   HIGH → PA ON (transmit mode), LOW → PA OFF (receive or idle)
-//    RF2_C0    DIO5    C1,C0 =  0 0 Shutdown/bypass, 0 1 Receive (LNA active), 1 0 Transmit (PA path), 1 1 Test/bypass/alt mode
-//    RF2_C1    DIO6
-//    VDET2     PC3     Analog output from the internal RF power detector
-// 900 MHz chain
-//    900_CSD2  DIO10
-//    900_CPS2  DIO8
-//    900_CTX2  DIO7
-// switch
-//    VC2       PB4     VC = HIGH selects RF1 (RFC ↔ RF1 ON, RF2 OFF) for KCT2827L, RF1: 900, RF2: 2.4
 
 #define SPIB_USE_SPI2             // PB13, PB14, PB15
 #define SPIB_CS_IO                IO_PB12
@@ -297,16 +226,43 @@ void sx2_dio_exti_isr_clearflag(void)
 }
 
 
+//-- Out port
+// this is nasty, UART defines not yet known, but cumbersome to add, so we include the lib
+#include "../../../modules/stm32ll-lib/src/stdstm32-uart.h"
+
+void out_init_gpio(void)
+{
+}
+
+void out_set_normal(void)
+{
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(UART_UARTx);
+}
+
+void out_set_inverted(void)
+{
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
+    LL_USART_Enable(UART_UARTx);
+}
+
+
 //-- Button
 // let both buttons do the same
+// we misuse the button init to keep the wireless ESP in reset
 
 #define BUTTON_LEFT               IO_PB3 // left: PB3, right: PD2
 #define BUTTON_RIGHT              IO_PD2
+#define ESP_WIFI_BRIDGE_RESET     IO_PB1
 
 void button_init(void)
 {
     gpio_init(BUTTON_LEFT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
     gpio_init(BUTTON_RIGHT, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
+
+    gpio_init(ESP_WIFI_BRIDGE_RESET, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // low -> esp is in reset
 }
 
 bool button_pressed(void)
@@ -325,6 +281,7 @@ bool button_pressed(void)
 #define WS2812_CHno               3
 #define WS2812_DMAx               DMA2
 #define WS2812_DMA_CHANNEL_x      LL_DMA_CHANNEL_3
+#define WS2812_FREQUENCY          160
 #include "../../thirdparty/stdstm32-ws2812.h"
 
 tWs2812Color leds_current_color;
@@ -359,159 +316,6 @@ void led_blue_toggle(void) { (leds_current_color == WS2812_BLUE) ? led_blue_off(
 void led_purple_off(void) { leds_set_color(0); }
 void led_purple_on(void) { leds_set_color(WS2812_PURPLE); }
 void led_purple_toggle(void) { (leds_current_color == WS2812_PURPLE) ? led_purple_off() : led_purple_on(); }
-
-
-//-- Cooling Fan
-
-#define FAN_EN                    IO_PC9 // enables 12 V switch regulator
-
-#define FAN_IO                    IO_PA8 // PA8 is the PWM, 0 = off, 1 = full
-#define FAN_TIMx                  TIM1
-#define FAN_TIM_CHANNEL_CHx       LL_TIM_CHANNEL_CH1
-#include "../../thirdparty/stdstm32-tim-ext.h"
-
-#define FAN_TSENSOR_ADCx          ADC2
-#define FAN_TSENSOR_ADC_IO        IO_PC0 // ADC12_IN6
-#define FAN_TSENSOR_ADC_CHANNELx  LL_ADC_CHANNEL_6
-
-void fan_init(void)
-{
-    gpio_init(FAN_EN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // hold in reset
-
-    adc_init_begin(FAN_TSENSOR_ADCx);
-    adc_init_one_channel(FAN_TSENSOR_ADCx);
-    adc_config_channel(FAN_TSENSOR_ADCx, LL_ADC_REG_RANK_1, FAN_TSENSOR_ADC_CHANNELx, FAN_TSENSOR_ADC_IO);
-    adc_enable(FAN_TSENSOR_ADCx);
-    delay_us(100);
-    adc_start_conversion(FAN_TSENSOR_ADCx);
-
-    gpio_init_af(FAN_IO, IO_MODE_OUTPUT_ALTERNATE_PP, IO_AF_6, IO_SPEED_DEFAULT);
-    tim_config_up(FAN_TIMx, 400, TIMER_BASE_10MHZ); // 25 kHz, 400 steps
-    tim_config_oc(FAN_TIMx, FAN_TIM_CHANNEL_CHx);
-    tim_oc_enable(FAN_TIMx);
-    tim_enable(FAN_TIMx);
-}
-
-void fan_set_pwm(uint16_t pwm) // pwm in percent
-{
-    if (pwm < 14) { gpio_low(FAN_EN); pwm = 0; } else { gpio_high(FAN_EN); }
-    if (pwm > 100) pwm = 100;
-
-    FAN_TIMx->CCR1 = 4*pwm; // LL_TIM_OC_SetCompareCH1(FAN_TIMx, pwm);
-}
-
-uint16_t fan_tempsensor_read_raw(void)
-{
-    return LL_ADC_REG_ReadConversionData12(FAN_TSENSOR_ADCx);
-}
-
-int16_t fan_tempsensor_read_dC(void) // 300 = 30.0 °C
-{
-    uint16_t adc = LL_ADC_REG_ReadConversionData12(FAN_TSENSOR_ADCx);
-
-    // SDNT1608X104F3950: 25 °C = 100 kOhm, B constant (B25/50) = 3950 K
-    // R = 100 kOhm
-    // => 25 °C = 2048
-    static const uint16_t ntc_adc_table[9] = {
-    //  0.0,  12.5, 25.0, 37.5, 50.0, 62.5, 75.0, 87.5, 100.0 °C
-        3156, 2745, 2048, 1470, 1055,  760,  560,  420, 320
-    };
-    if (adc >= ntc_adc_table[0]) return 0; // 0 °C
-    if (adc <= ntc_adc_table[8]) return 1000; // 100 °C
-    for (uint8_t i = 0; i < 9 - 1; i++) {
-        uint16_t a1 = ntc_adc_table[i];
-        uint16_t a2 = ntc_adc_table[i + 1];
-        if (adc <= a1 && adc > a2) { // is in slot
-            // t = t1 + (adc - a1)*(t2 - t1)/(a2 - a1)
-            int32_t t1 = i * 125;
-            int32_t num = (int32_t)(adc - a1) * 125;
-            return t1 + num / (a2 - a1);
-        }
-    }
-    return 2000; // error
-}
-
-
-//-- 5 Way Switch
-//resistor dividers
-// Vcc - 10k - 47K  center (2.72 V)
-//           - 15k  right  (1.98 V)
-//           - 6.8k left   (1.33 V)
-//           - 2.2k up     (0.60 V)
-//           - gnd  down   (0 V)
-
-#define FIVEWAY_ADCx              ADC1
-#define FIVEWAY_ADC_IO            IO_PC2 // ADC12_IN8
-#define FIVEWAY_ADC_CHANNELx      LL_ADC_CHANNEL_8
-
-#define KEY_CENTER_THRESH         3375
-#define KEY_RIGHT_THRESH          2455
-#define KEY_LEFT_THRESH           1645
-#define KEY_UP_THRESH             740
-#define KEY_DOWN_THRESH           0
-
-#ifdef DEVICE_HAS_I2C_DISPLAY_ROT180
-
-void fiveway_init(void)
-{
-    adc_init_begin(FIVEWAY_ADCx);
-    adc_init_one_channel(FIVEWAY_ADCx);
-    adc_config_channel(FIVEWAY_ADCx, LL_ADC_REG_RANK_1, FIVEWAY_ADC_CHANNELx, FIVEWAY_ADC_IO);
-    adc_enable(FIVEWAY_ADCx);
-    delay_us(100);
-    adc_start_conversion(FIVEWAY_ADCx);
-}
-
-uint8_t fiveway_read(void)
-{
-    int16_t adc = LL_ADC_REG_ReadConversionData12(FIVEWAY_ADCx);
-    if (adc > (KEY_CENTER_THRESH-150) && adc < (KEY_CENTER_THRESH+150)) return (1 << KEY_CENTER);
-    if (adc > (KEY_LEFT_THRESH-150) && adc < (KEY_LEFT_THRESH+150)) return (1 << KEY_LEFT);
-    if (adc > (KEY_DOWN_THRESH-150) && adc < (KEY_DOWN_THRESH+150)) return (1 << KEY_DOWN);
-    if (adc > (KEY_UP_THRESH-150) && adc < (KEY_UP_THRESH+150)) return (1 << KEY_UP);
-    if (adc > (KEY_RIGHT_THRESH-150) && adc < (KEY_RIGHT_THRESH+150)) return (1 << KEY_RIGHT);
-    return 0;
-}
-#endif
-
-
-//-- Display I2C
-
-#define I2C_USE_I2C1              // PA15, PB7
-#define I2C_CLOCKSPEED_400KHZ
-#define I2C_USE_DMAMODE
-#define I2C_USE_SCL_IO            IO_PA15
-#define I2C_USE_SDA_IO            IO_PB7
-
-#define DISPLAY_RESET_ACTIVELOW   IO_PC11
-#define DISPLAY_INIT
-
-void display_init(void)
-{
-    gpio_init(DISPLAY_RESET_ACTIVELOW, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // release reset line
-    delay_ms(10);
-}
-
-
-//-- ESP32 Wifi Bridge
-
-#define ESP_RESET                 IO_PB1
-#define ESP_GPIO0                 IO_PB2
-#define ESP_DTR_RTS_USB
-
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
-void esp_init(void)
-{
-    gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
-    gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT); // low -> esp is in reset
-}
-
-void esp_reset_high(void) { gpio_high(ESP_RESET); }
-void esp_reset_low(void) { gpio_low(ESP_RESET); }
-
-void esp_gpio0_high(void) { gpio_high(ESP_GPIO0); }
-void esp_gpio0_low(void) { gpio_low(ESP_GPIO0); }
-#endif
 
 
 //-- Power Supply Detect

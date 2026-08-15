@@ -58,9 +58,15 @@ extern "C" {
 //#define WS2812_TIMHIGH           32-2  //was +3 // 0.90 us, measured to ca. 0.64us
 //#define WS2812_PERIOD_US         5   // shouldn't be larger than 9us //WRONG, seems not to matter
 
+#ifndef WS2812_FREQUENCY
 #define WS2812_TIMLOW             70 // ~ 0,41 us
 #define WS2812_TIMHIGH           140 // ~ 0.82 us
 #define WS2812_PERIOD            212
+#else
+#define WS2812_TIMLOW            (uint16_t)(70.0f / 170.0f * WS2812_FREQUENCY + 0.4f)
+#define WS2812_TIMHIGH           (uint16_t)(140.0f / 170.0f * WS2812_FREQUENCY + 0.4f)
+#define WS2812_PERIOD            (uint16_t)(212.0f / 170.0f * WS2812_FREQUENCY + 0.4f)
+#endif
 
 
 void ws2812_periph_init(uint32_t buf_adr)

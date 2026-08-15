@@ -136,6 +136,10 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 //-- FrSky LR2021 system
 
+#ifdef RX_FRSKY_LR2021_G474RE
+#include "frsky/rx-hal-frsky-lr2021-g474re.h"
+#endif
+
 #ifdef TX_FRSKY_LR2021_G474RE
 #include "frsky/tx-hal-frsky-lr2021-g474re.h"
 #endif

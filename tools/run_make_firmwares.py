@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 22.07.2026
+ version 15.08.2026
 ********************************************************
 '''
 import os
@@ -1035,6 +1035,9 @@ TLIST = [
 #-- FrSky LR2021
         'target' : 'tx-frsky-lr2021-g474re',            'target_D' : 'TX_FRSKY_LR2021_G474RE',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
+    },{
+        'target' : 'rx-frsky-lr2021-g474re',            'target_D' : 'RX_FRSKY_LR2021_G474RE',
+        'extra_D_list' : [], 'appendix' : '',
     },{
 
 
