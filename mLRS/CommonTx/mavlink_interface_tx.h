@@ -319,7 +319,7 @@ if (!do_router()) {
 } else {
     // with router, parse ser in, ser2 in -> link out
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
-        // link 0 = sx_serial
+        // link 0 = fifo_link_out
         // link 1 = ser
         // link 2 = ser2
 
@@ -332,7 +332,7 @@ if (!do_router()) {
             char c = ser->getc();
             if (fmav_parse_and_check_to_frame_buf(&result, buf_ser_in, &status_ser_in, c)) {
                 fmav_router_handle_message(1, &result);
-                if (fmav_router_send_to_link(1)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
+                if (fmav_router_send_to_link(1)) {} // DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
                 if (fmav_router_send_to_link(2)) {
                     ser2->putbuf(buf_ser_in, result.frame_len);
                 }
@@ -356,7 +356,7 @@ if (!do_router()) {
                 if (fmav_router_send_to_link(1)) {
                     ser->putbuf(buf_ser2_in, result.frame_len);
                 }
-                if (fmav_router_send_to_link(2)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
+                if (fmav_router_send_to_link(2)) {} // DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
                 if (result.res == FASTMAVLINK_PARSE_RESULT_OK) {
                     fmav_frame_buf_to_msg(&msg_buf, &result, buf_ser2_in); // requires RESULT_OK
                     if (fmav_router_send_to_link(0)) {
@@ -402,7 +402,7 @@ if (!do_router()) {
             if (fmav_router_send_to_link(2)) {
                 ser2->putbuf(buf_link_in, result.frame_len);
             }
-            if (fmav_router_send_to_link(0)) {} // WE DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
+            if (fmav_router_send_to_link(0)) {} // DO NOT REFLECT, SO THIS MUST NEVER HAPPEN !!
 } // end if(do_router())
 
             fmav_frame_buf_to_msg(&msg_buf, &result, buf_link_in); // requires RESULT_OK
@@ -1059,25 +1059,23 @@ void tTxVehicle::handle_extended_sys_state(fmav_extended_sys_state_t* const payl
 /*
 sx_serial:
 
-  serial   o --\
-  serial2  o -- o <====> o  sx_serial
-  mbridge  o --/
-  mavlink  o --/
-
-    ---> sx_serial.available() ---> transmit ~~~>
-         sx_serial.putc()
-
-    <--- sx_serial.getc()      <--- receive <~~~
-
+            TxSerialPort
+  serial  o --\ :                  RxLinkMode
+  serial2 o ---\:                      :
+  wbridge o --- o <=====> transp. o --\:
+  com     o ---/          msp     o -- o  sx_serial  ---> sx_serial.available() ---> transmit ~~~>
+  mbridge o --/           mavlink o --/                   sx_serial.putc()
+                                                     <--- sx_serial.getc()      <--- receive <~~~
 
 mavlink (without router):
 
-  serial   o --\                     sx_serial
-  serial2  o -- o <=============> o
-  mbridge  o --/      mavlink        available()  ~~transmit~~>
-                                     getc()
+            TxSerialPort
+  serial  o --\ :
+  serial2 o ---\:
+  wbridge o --- o <====> o mavlink  ---> fifo_link_out ---> available(), getc() ---> sx_serial
+  com     o ---/                    <--- fifo_link_in  <--- getc()              <---
+  mbridge o --/
 
-                                     putc()       <~~receive~~
   Do:
     ser->available()  --->  parse&check  --->  msg_to_buf(X)
     ser->getc()             buf_serial_in      fifo_link_out.PutBuf()
