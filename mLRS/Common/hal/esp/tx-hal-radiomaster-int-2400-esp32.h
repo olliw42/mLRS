@@ -137,16 +137,16 @@ IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P15 // backpack_boot inverted?
-#define ESP_BOOT0                 IO_P0 // Will always be IO_P0
+#define ESP_BOOTPIN               IO_P0  // will always be IO_P0
 
-uint8_t esp_boot0()
+uint8_t esp_bootpin()
 {
-    return gpio_read_activelow(ESP_BOOT0);
+    return gpio_read_activelow(ESP_BOOTPIN);
 }
 
 void esp_init(void)
 {
-    // No need to configure ESP_BOOT0 which will always be IO_P0 and is pull-up by default
+    // no need to configure ESP_BOOTPIN which will always be IO_P0 and is pull-up by default
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW); // low -> esp is in reset
 }
