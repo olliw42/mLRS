@@ -38,7 +38,7 @@ typedef enum {
 class tMBridge : public tPin5BridgeBase, public tSerialBase
 {
   public:
-    using tSerialBase::Init; // would be hidden by Init(bool,bool) otherwise
+    using tSerialBase::Init; // tMBridge redefines Init(), incompatible with tSerialBase's Init()
     void Init(bool enable_flag, bool crsf_emulation_flag);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task);
