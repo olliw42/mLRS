@@ -197,7 +197,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
             *sx_power = 0;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
-            *sx_power = -14;
+            *sx_power = -4;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) { // -> 17
             *sx_power = -7;
