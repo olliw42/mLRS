@@ -142,7 +142,7 @@ IRAM_ATTR bool button_pressed(void) { return gpio_read_activelow(BUTTON) ? true 
 
 #define LED_RGB                   IO_P22
 #define LED_RGB_PIXEL_NUM         1
-#include "../esp-hal-led-rgb.h"
+#include "esp-hal-led-rgb.h"
 
 
 //-- POWER
