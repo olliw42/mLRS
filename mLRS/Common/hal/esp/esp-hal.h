@@ -123,6 +123,10 @@
 #include "tx-hal-jumper-int-900-esp32.h"
 #endif
 
+#ifdef TX_ELRS_JUMPER_INTERNAL_LR1121_ESP32
+#include "tx-hal-jumper-int-lr1121-esp32.h"
+#endif
+
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
 #include "tx-hal-radiomaster-int-tx15-esp32.h"
 #endif
