@@ -34,6 +34,8 @@ typedef enum : uint8_t {
     SETUP_FREQUENCY_BAND_NUM,
 } SETUP_FREQUENCY_BAND_ENUM;
 
+#define FREQUENCY_BAND_IS_DUALBAND(x)  ((x) == SETUP_FREQUENCY_DUAL_BAND_915_MHZ_2P4_GHZ || (x) == SETUP_FREQUENCY_DUAL_BAND_868_MHZ_2P4_GHZ)
+
 
 // these are the frequency band options available to the hardware
 // used in the SX12xx drivers and FHSS class
@@ -129,7 +131,6 @@ typedef enum {
     SERIAL_LINK_MODE_MSP_X,
     SERIAL_LINK_MODE_NUM,
 } SERIAL_LINK_MODE_ENUM;
-
 
 #define SERIAL_LINK_MODE_IS_MAVLINK(x)  ((x) == SERIAL_LINK_MODE_MAVLINK || (x) == SERIAL_LINK_MODE_MAVLINK_X)
 #define SERIAL_LINK_MODE_IS_MSP(x)      ((x) == SERIAL_LINK_MODE_MSP_X)
