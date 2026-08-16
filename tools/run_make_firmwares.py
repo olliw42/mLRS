@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 13.07.2026
+ version 16.08.2026
 ********************************************************
 '''
 import os
@@ -436,7 +436,6 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','link_types.cpp'),
     os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
-    os.path.join('Common','tasks.cpp'),
     ]
 
 # add all Common/dronecan/out/src/*.c (auto-generated dronecan message sources), if present
@@ -452,6 +451,7 @@ MLRS_SOURCES_RX = [
     ]
 
 MLRS_SOURCES_TX = [
+    os.path.join('CommonTx','tasks.cpp'),
     os.path.join('CommonTx','config_id.cpp'),
     os.path.join('CommonTx','in.cpp'),
     os.path.join('CommonTx','mlrs-tx.cpp'),

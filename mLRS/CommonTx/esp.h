@@ -39,6 +39,7 @@
 #include <ctype.h>
 #include "../Common/hal/hal.h"
 #include "../Common/setup_types.h"
+#include "tasks.h"
 
 
 //-------------------------------------------------------
@@ -76,24 +77,16 @@ class tTxEspWifiBridge
     void Init(void) {}
     void Tick_ms(void) {}
     void Do(void) {}
-    void EnterFlash(void) {}
-    void EnterPassthrough(void) {}
-    void GetPassword(void) {}
-    void SetPassword(char* str) {}
-    void GetNetSsid(void) {}
-    void SetNetSsid(char* str) {}
+    void HandleTask(uint8_t task, char* str) {}
 };
 
 #else
-
-#include "../Common/tasks.h"
-
 
 extern volatile uint32_t millis32(void);
 extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tSerialPorts Serials;
-extern tTasks tasks;
+extern tTxTasks tasks;
 
 
 typedef enum {
@@ -116,21 +109,7 @@ class tTxEspWifiBridge
     void Init(void);
     void Tick_ms(void);
     void Do(void);
-
-    void EnterFlash(void);
-    void EnterPassthrough(void);
-
-#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
-    void GetPassword(void);
-    void SetPassword(char* str);
-    void GetNetSsid(void);
-    void SetNetSsid(char* str);
-#else
-    void GetPassword(void) {}
-    void SetPassword(char* str) {}
-    void GetNetSsid(void) {}
-    void SetNetSsid(char* str) {}
-#endif
+    void HandleTask(uint8_t task, char* str);
 
   private:
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
@@ -147,6 +126,8 @@ class tTxEspWifiBridge
     void run_configure(void);
 #endif
 
+    void enter_flash(void);
+    void enter_passthrough(void);
     void passthrough_do_flashing(void);
     void passthrough_do(void);
 
@@ -224,7 +205,7 @@ void tTxEspWifiBridge::Do(void)
 
     if (is_pressed) {
         if (tnow - button_tlast_ms > ESP_BUTTON_TMO_MS) {
-            EnterFlash();
+            enter_flash();
         }
     } else {
         button_tlast_ms = tnow;
@@ -239,7 +220,7 @@ void tTxEspWifiBridge::Do(void)
 
     if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && (dtr_rts == ESP_DTR_SET)) { // toggle 0x03 -> 0x01
         passthrough_do_flashing();
-        tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
+        tasks.SetEspTask(TASK_RESTART_CONTROLLER);
     }
 
     dtr_rts_last = dtr_rts;
@@ -249,12 +230,27 @@ void tTxEspWifiBridge::Do(void)
 
     if (boot0_last == 1 && boot0 == 0) { // toggle 1 -> 0
         passthrough_do_flashing();
-        tasks.SetEspTask(MAIN_TASK_RESTART_CONTROLLER);
+        tasks.SetEspTask(TASK_RESTART_CONTROLLER);
     }
 
     boot0_last = boot0;
 #endif
 #endif // USE_ESP_WIFI_BRIDGE_RST_GPIO0 && (USE_ESP_WIFI_BRIDGE_DTR_RTS || USE_ESP_WIFI_BRIDGE_BOOT0)
+}
+
+
+void tTxEspWifiBridge::HandleTask(uint8_t task, char* str)
+{
+    switch (task) {
+    case TASK_ESP_FLASH:             enter_flash(); break;
+    case TASK_ESP_PASSTHROUGH:       enter_passthrough(); break;
+#ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
+    case TASK_ESP_GET_PASSWORD:      esp_get_ssidpswd("PSWD"); break;
+    case TASK_ESP_SET_PASSWORD:      esp_set_ssidpswd("PSWD", str); break;
+    case TASK_ESP_GET_NETWORK_SSID:  esp_get_ssidpswd("NETSSID"); break;
+    case TASK_ESP_SET_NETWORK_SSID:  esp_set_ssidpswd("NETSSID", str); break;
+#endif
+    }
 }
 
 
@@ -341,7 +337,7 @@ void tTxEspWifiBridge::passthrough_do_flashing(void)
 
 
 // enter ESP flashing, can only be exited by re-powering
-void tTxEspWifiBridge::EnterFlash(void)
+void tTxEspWifiBridge::enter_flash(void)
 {
     if (!passthrough) return; // needs com and ser
 
@@ -363,7 +359,7 @@ void tTxEspWifiBridge::EnterFlash(void)
 
 
 // enter ESP passthrough, can only be exited by re-powering
-void tTxEspWifiBridge::EnterPassthrough(void)
+void tTxEspWifiBridge::enter_passthrough(void)
 {
     if (!passthrough) return; // needs com and ser
 
@@ -552,12 +548,6 @@ uint8_t len;
 
     esp_gpio0_high(); // leave forced AT mode
 }
-
-
-void tTxEspWifiBridge::GetPassword(void) { esp_get_ssidpswd("PSWD"); }
-void tTxEspWifiBridge::SetPassword(char* str) { esp_set_ssidpswd("PSWD", str); }
-void tTxEspWifiBridge::GetNetSsid(void) { esp_get_ssidpswd("NETSSID"); }
-void tTxEspWifiBridge::SetNetSsid(char* str) { esp_set_ssidpswd("NETSSID", str); }
 
 
 void tTxEspWifiBridge::esp_configure_baudrate(void)

@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include "../Common/hal/hal.h"
 #include "../Common/setup_types.h"
+#include "tasks.h"
 
 
 //-------------------------------------------------------
@@ -27,10 +28,7 @@ class tTxHc04Bridge
 {
   public:
     void Init(void) {}
-
-    void EnterPassthrough(void) {}
-    void GetPin(void) {}
-    void SetPin(uint16_t pin) {}
+    void HandleTask(uint8_t task, uint32_t value) {}
 };
 
 #else
@@ -47,15 +45,16 @@ class tTxHc04Bridge
 {
   public:
     void Init(void);
-
-    void EnterPassthrough(void);
-    void GetPin(void);
-    void SetPin(uint16_t pin);
+    void HandleTask(uint8_t task, uint32_t value);
 
   private:
     void run_configure(void);
     bool hc04_read(const char* const cmd, uint8_t* const res, uint8_t* const len);
     void hc04_configure(char* const ok_device_name);
+
+    void enter_passthrough(void);
+    void get_pin(void);
+    void set_pin(uint16_t pin);
 
     void passthrough_do(void);
 
@@ -79,8 +78,18 @@ void tTxHc04Bridge::Init(void)
 }
 
 
+void tTxHc04Bridge::HandleTask(uint8_t task, uint32_t value)
+{
+    switch (task) {
+    case TASK_HC04_PASSTHROUGH: enter_passthrough(); break;
+    case TASK_HC04_GETPIN: get_pin(); break;
+    case TASK_HC04_SETPIN: set_pin(value); break;
+    }
+}
+
+
 // enter HC04 passthrough, can only be exited by re-powering
-void tTxHc04Bridge::EnterPassthrough(void)
+void tTxHc04Bridge::enter_passthrough(void)
 {
     if (com == nullptr || ser == nullptr) return; // we need both for passthrough
 
@@ -88,7 +97,7 @@ void tTxHc04Bridge::EnterPassthrough(void)
 }
 
 
-void tTxHc04Bridge::GetPin(void)
+void tTxHc04Bridge::get_pin(void)
 {
 uint8_t s[34];
 uint8_t len;
@@ -104,7 +113,7 @@ char cmd_str[16];
 }
 
 
-void tTxHc04Bridge::SetPin(uint16_t pin)
+void tTxHc04Bridge::set_pin(uint16_t pin)
 {
 uint8_t s[34];
 uint8_t len;

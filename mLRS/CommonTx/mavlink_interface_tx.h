@@ -19,6 +19,7 @@
 #define FASTMAVLINK_ROUTER_COMPONENTS_MAX  12
 #define FASTMAVLINK_ROUTER_LINK_PROPERTY_DEFAULT  FASTMAVLINK_ROUTER_LINK_PROPERTY_FLAG_ALWAYS_SEND_HEARTBEAT
 #include "../Common/mavlink/out/lib/fastmavlink_router.h"
+#include "tasks.h"
 
 
 extern volatile uint32_t millis32(void);
@@ -29,6 +30,7 @@ extern tGlobalConfig Config;
 extern tSerialPorts Serials;
 extern tTxCrsf crsf;
 extern tStats stats;
+extern tTxTasks tasks;
 
 
 //#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
@@ -75,7 +77,6 @@ class tTxMavlink
   public:
     void Init(tSerialBase* const _mbridge);
     void Do(void);
-    uint8_t Task(void);
     uint8_t VehicleState(void);
     void FrameLost(void);
 
@@ -280,21 +281,16 @@ void tTxMavlink::Do(void)
 
 #ifdef USE_FEATURE_MAVLINK_COMPONENT
     component_do(); // may send to serial_out, so should come last
-#endif
-}
 
-
-uint8_t tTxMavlink::Task(void)
-{
-#ifdef USE_FEATURE_MAVLINK_COMPONENT
     uint8_t task;
     if (component_task(&task)) {
-        return task;
+        // if true, can be TX_TASK_RX_PARAM_SET, TASK_NONE, TX_TASK_PARAM_STORE
+        // TASK_NONE then means to wait with processing of next task
+        if (task != TASK_NONE) tasks.SetMavlinkTask(task);
+        return;
     }
+    task_pending_mask = 0; // should not be needed, but play it safe
 #endif
-
-    task_pending_mask = 0;
-    return MAIN_TASK_NONE;
 }
 
 
@@ -761,7 +757,7 @@ void tTxMavlink::component_handle_msg(fmav_message_t* const msg)
                 // if PSTORE invoke paramstore
                 if (param_idx == MAV_PARAM_PSTORE_IDX && pstore_u8) {
                     pstore_u8 = 0;
-                    task_pending_mask = (1 << TX_TASK_RX_PARAM_SET) | (1 << TX_TASK_PARAM_STORE);
+                    task_pending_mask = (1 << TASK_RX_PARAM_SET) | (1 << TASK_PARAM_STORE);
                     task_pending_delay_ms = millis32();
                     if (task_pending_delay_ms == 0) task_pending_delay_ms = -1; // 0 indicates disabled
                 }
@@ -878,37 +874,37 @@ void tTxMavlink::component_do(void)
 bool tTxMavlink::component_task(uint8_t* const task)
 {
     if (Setup.Tx[Config.ConfigId].MavlinkComponent != TX_MAVLINK_COMPONENT_ENABLED) {
-        *task = MAIN_TASK_NONE;
+        *task = TASK_NONE;
         return false;
     }
 
-    if (task_pending_mask & (1 << TX_TASK_RX_PARAM_SET)) {
-        task_pending_mask &=~ (1 << TX_TASK_RX_PARAM_SET);
-        *task = TX_TASK_RX_PARAM_SET;
+    if (task_pending_mask & (1 << TASK_RX_PARAM_SET)) {
+        task_pending_mask &=~ (1 << TASK_RX_PARAM_SET);
+        *task = TASK_RX_PARAM_SET;
         return true;
     }
 
-    if (task_pending_mask & (1 << TX_TASK_PARAM_STORE)) {
+    if (task_pending_mask & (1 << TASK_PARAM_STORE)) {
         // we need to wait for the previous link task to finish
         // link task is not free in connection stage, so skip if not in connection stage
         if (connected_and_rx_setup_available() && !link_task_free()) {
-            *task = MAIN_TASK_NONE;
+            *task = TASK_NONE;
             return true;
         }
         // delay by 50 ms, so a response message is send
         if (task_pending_delay_ms) {
             if ((millis32() - task_pending_delay_ms) < 50) {
-                *task = MAIN_TASK_NONE;
+                *task = TASK_NONE;
                 return true;
             }
             task_pending_delay_ms = 0;
         }
-        task_pending_mask &=~ (1 << TX_TASK_PARAM_STORE);
-        *task = TX_TASK_PARAM_STORE;
+        task_pending_mask &=~ (1 << TASK_PARAM_STORE);
+        *task = TASK_PARAM_STORE;
         return true;
     }
 
-    *task = MAIN_TASK_NONE;
+    *task = TASK_NONE;
     return false;
 }
 
