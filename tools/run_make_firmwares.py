@@ -63,6 +63,8 @@ def findSTM32CubeIDEGnuTools(search_root):
     try:
         for dirpath in os.listdir(st_dir):
             if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and gnu_dir_os_name in dirpath:
+                # the numbers after the string 'gnu-tools-for-stm32' contains the gnutools ver number, like .11.3
+                gnuver = int(dirpath.split('gnu-tools-for-stm32',1)[1][1:3])
                 # the string after the last . contains a datum plus some other number
                 ver = int(dirpath[dirpath.rindex('.')+1:])
                 if ver > ver_nr:
