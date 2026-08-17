@@ -467,7 +467,7 @@ void tTxDisp::run_action(void)
         tasks.SetDisplayTask(TASK_SYSTEM_BOOT);
         break;
     case DISP_ACTION_FLASH_ESP:
-        tasks.SetDisplayTask(TASK_ESP_FLASH);
+        tasks.SetDisplayTask(TASK_ESPBRIDGE_FLASH);
         break;
     }
 }

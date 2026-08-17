@@ -224,7 +224,7 @@ void tTxEspWifiBridge::Do(void)
 
     if ((dtr_rts_last == (ESP_DTR_SET | ESP_RTS_SET)) && (dtr_rts == ESP_DTR_SET)) { // toggle 0x03 -> 0x01
         enter_do_flashing();
-        tasks.SetEspTask(TASK_RESTART_CONTROLLER);
+        tasks.SetEspBridgeTask(TASK_RESTART_CONTROLLER);
     }
 
     dtr_rts_last = dtr_rts;
@@ -234,7 +234,7 @@ void tTxEspWifiBridge::Do(void)
 
     if (bootpin_last == 1 && bootpin == 0) { // toggle 1 -> 0
         enter_do_flashing();
-        tasks.SetEspTask(TASK_RESTART_CONTROLLER);
+        tasks.SetEspBridgeTask(TASK_RESTART_CONTROLLER);
     }
 
     bootpin_last = bootpin;
@@ -246,13 +246,13 @@ void tTxEspWifiBridge::Do(void)
 void tTxEspWifiBridge::HandleTask(uint8_t task, char* str)
 {
     switch (task) {
-    case TASK_ESP_FLASH:             enter_flash(); break;
-    case TASK_ESP_PASSTHROUGH:       enter_passthrough(); break;
+    case TASK_ESPBRIDGE_FLASH:             enter_flash(); break;
+    case TASK_ESPBRIDGE_PASSTHROUGH:       enter_passthrough(); break;
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
-    case TASK_ESP_GET_PASSWORD:      esp_get_ssidpswd("PSWD"); break;
-    case TASK_ESP_SET_PASSWORD:      esp_set_ssidpswd("PSWD", str); break;
-    case TASK_ESP_GET_NETWORK_SSID:  esp_get_ssidpswd("NETSSID"); break;
-    case TASK_ESP_SET_NETWORK_SSID:  esp_set_ssidpswd("NETSSID", str); break;
+    case TASK_ESPBRIDGE_GET_PASSWORD:      esp_get_ssidpswd("PSWD"); break;
+    case TASK_ESPBRIDGE_SET_PASSWORD:      esp_set_ssidpswd("PSWD", str); break;
+    case TASK_ESPBRIDGE_GET_NETWORK_SSID:  esp_get_ssidpswd("NETSSID"); break;
+    case TASK_ESPBRIDGE_SET_NETWORK_SSID:  esp_set_ssidpswd("NETSSID", str); break;
 #endif
     }
 }

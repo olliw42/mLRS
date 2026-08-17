@@ -178,11 +178,11 @@ tTxDisp disp;
 
 #include "esp-wifi-bridge.h"
 
-tTxEspWifiBridge espWifiBridge;
+tTxEspWifiBridge espbridge;
 
-#include "hc04.h"
+#include "hc04-bridge.h"
 
-tTxHc04Bridge hc04;
+tTxHc04Bridge hc04bridge;
 
 
 //-------------------------------------------------------
@@ -754,8 +754,8 @@ RESTARTCONTROLLER
     msp.Init(); // serial port selected by SerialPort
     sx_serial.Init(&mbridge); // serial port selected by SerialPort, ChannelsSource
     cli.Init();
-    espWifiBridge.Init();
-    hc04.Init();
+    espbridge.Init();
+    hc04bridge.Init();
     fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
     whileTransmit.Init();
     disp.Init();
@@ -807,7 +807,7 @@ INITCONTROLLER_END
             disp.Tick_ms(); // can take long
             fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
             fan.Tick_ms();
-            espWifiBridge.Tick_ms();
+            espbridge.Tick_ms();
 
             if (!tick_1hz) {
                 dbg.puts(".");
@@ -1146,7 +1146,7 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
         case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(TASK_BIND_START); break;
         case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(TASK_BIND_STOP); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(TASK_SYSTEM_BOOT); break;
-        case MBRIDGE_CMD_FLASH_ESP: tasks.SetMBridgeTask(TASK_ESP_FLASH); break;
+        case MBRIDGE_CMD_FLASH_ESP: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
         case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
             config_id.Change(mbridge.GetModelId());
@@ -1246,13 +1246,13 @@ IF_IN(
     case TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
     case TASK_CHANGE_CONFIG_ID: config_id.Change(tasks.GetConfigIdValue()); break;
     }
-    espWifiBridge.HandleTask(tx_task, tasks.GetEspStr());
-    hc04.HandleTask(tx_task, tasks.GetHc04Value());
+    espbridge.HandleTask(tx_task, tasks.GetEspBridgeStr());
+    hc04bridge.HandleTask(tx_task, tasks.GetHc04BridgeValue());
     if (tx_task == TASK_RESTART_CONTROLLER) { GOTO_RESTARTCONTROLLER; }
 
     //-- Handle ESP wifi bridge
 
-    espWifiBridge.Do();
+    espbridge.Do();
 
     //-- more
 

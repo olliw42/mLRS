@@ -81,9 +81,9 @@ void tTxHc04Bridge::Init(void)
 void tTxHc04Bridge::HandleTask(uint8_t task, uint32_t value)
 {
     switch (task) {
-    case TASK_HC04_PASSTHROUGH: enter_passthrough(); break;
-    case TASK_HC04_GETPIN: get_pin(); break;
-    case TASK_HC04_SETPIN: set_pin(value); break;
+    case TASK_HC04BRIDGE_PASSTHROUGH: enter_passthrough(); break;
+    case TASK_HC04BRIDGE_GETPIN: get_pin(); break;
+    case TASK_HC04BRIDGE_SETPIN: set_pin(value); break;
     }
 }
 

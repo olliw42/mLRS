@@ -939,11 +939,11 @@ bool rx_param_changed;
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            tasks.SetCliTask(TASK_ESP_PASSTHROUGH);
+            tasks.SetCliTask(TASK_ESPBRIDGE_PASSTHROUGH);
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            tasks.SetCliTask(TASK_ESP_FLASH);
+            tasks.SetCliTask(TASK_ESPBRIDGE_FLASH);
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
         } else
         if (is_cmd("espname")) {
@@ -955,7 +955,7 @@ bool rx_param_changed;
             }
         } else
         if (is_cmd("esp get pswd")) {
-            tasks.SetCliTask(TASK_ESP_GET_PASSWORD);
+            tasks.SetCliTask(TASK_ESPBRIDGE_GET_PASSWORD);
         } else
         if (is_cmd_set_str("esp set pswd", svalue)) {
             if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
@@ -963,11 +963,11 @@ bool rx_param_changed;
             } else {
                 puts("  esp pswd: ");
                 putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
-                tasks.SetCliTaskEspStr(TASK_ESP_SET_PASSWORD, svalue);
+                tasks.SetCliTaskEspBridgeStr(TASK_ESPBRIDGE_SET_PASSWORD, svalue);
             }
         } else
         if (is_cmd("esp get netssid")) {
-            tasks.SetCliTask(TASK_ESP_GET_NETWORK_SSID);
+            tasks.SetCliTask(TASK_ESPBRIDGE_GET_NETWORK_SSID);
         } else
         if (is_cmd_set_str("esp set netssid", svalue)) {
             if (strlen(svalue) > 24) {
@@ -975,7 +975,7 @@ bool rx_param_changed;
             } else {
                 puts("  esp netssid: ");
                 putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
-                tasks.SetCliTaskEspStr(TASK_ESP_SET_NETWORK_SSID, svalue);
+                tasks.SetCliTaskEspBridgeStr(TASK_ESPBRIDGE_SET_NETWORK_SSID, svalue);
             }
 #endif
 #endif
@@ -985,10 +985,10 @@ bool rx_param_changed;
         } else
         if (is_cmd("hc04 pt")) {
             // enter hc04 passthrough, can only be exited by re-powering
-            tasks.SetCliTask(TASK_HC04_PASSTHROUGH);
+            tasks.SetCliTask(TASK_HC04BRIDGE_PASSTHROUGH);
         } else
         if (is_cmd("hc04 getpin")) { // getpin
-            tasks.SetCliTask(TASK_HC04_GETPIN);
+            tasks.SetCliTask(TASK_HC04BRIDGE_GETPIN);
         } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
@@ -998,7 +998,7 @@ bool rx_param_changed;
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
                 puts("  hc04 pin: ");putsn(pin_str);
-                tasks.SetCliTaskHc04Value(TASK_HC04_SETPIN, value);
+                tasks.SetCliTaskHc04BridgeValue(TASK_HC04BRIDGE_SETPIN, value);
             }
 #endif
 

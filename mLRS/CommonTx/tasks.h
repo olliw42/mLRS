@@ -28,16 +28,16 @@ typedef enum {
     TASK_PARAM_RELOAD,
     TASK_CHANGE_CONFIG_ID,
 
-    TASK_ESP_FLASH,
-    TASK_ESP_PASSTHROUGH,
-    TASK_ESP_GET_PASSWORD, // TCP, UDP, UDPSTA
-    TASK_ESP_SET_PASSWORD,
-    TASK_ESP_GET_NETWORK_SSID, // UDPSTA
-    TASK_ESP_SET_NETWORK_SSID,
+    TASK_ESPBRIDGE_FLASH,
+    TASK_ESPBRIDGE_PASSTHROUGH,
+    TASK_ESPBRIDGE_GET_PASSWORD, // TCP, UDP, UDPSTA
+    TASK_ESPBRIDGE_SET_PASSWORD,
+    TASK_ESPBRIDGE_GET_NETWORK_SSID, // UDPSTA
+    TASK_ESPBRIDGE_SET_NETWORK_SSID,
 
-    TASK_HC04_PASSTHROUGH,
-    TASK_HC04_GETPIN,
-    TASK_HC04_SETPIN,
+    TASK_HC04BRIDGE_PASSTHROUGH,
+    TASK_HC04BRIDGE_GETPIN,
+    TASK_HC04BRIDGE_SETPIN,
 } TX_TASK_ENUM;
 
 
@@ -52,25 +52,25 @@ class tTxTasks
     void SetDisplayTask(uint8_t task);
     void SetCliTask(uint8_t task);
     void SetCliTaskConfigIdValue(uint8_t task, int32_t value);
-    void SetCliTaskHc04Value(uint8_t task, int32_t value);
-    void SetCliTaskEspStr(uint8_t task, char* str);
-    void SetEspTask(uint8_t task);
+    void SetCliTaskHc04BridgeValue(uint8_t task, int32_t value);
+    void SetCliTaskEspBridgeStr(uint8_t task, char* str);
+    void SetEspBridgeTask(uint8_t task);
     void SetMavlinkTask(uint8_t task);
 
     uint32_t GetConfigIdValue(void);
-    uint32_t GetHc04Value(void);
-    char* GetEspStr(void);
+    uint32_t GetHc04BridgeValue(void);
+    char* GetEspBridgeStr(void);
 
   private:
     uint8_t mbridge_crsf_task_pending;
     uint8_t display_task_pending;
     uint8_t cli_task_pending;
-    uint8_t esp_task_pending;
+    uint8_t espbridge_task_pending;
     uint8_t mavlink_task_pending;
 
     uint32_t config_id_value;
-    uint32_t hc04_value;
-    char esp_str[32+1];
+    uint32_t hc04bridge_value;
+    char espbridge_str[32+1];
 };
 
 
