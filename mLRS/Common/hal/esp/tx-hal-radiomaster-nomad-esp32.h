@@ -167,7 +167,7 @@ IRAM_ATTR bool button2_pressed(void) { return (gpio_read_activelow(BUTTON2)) ? t
 
 #define LED_RGB                   IO_P22
 #define LED_RGB_PIXEL_NUM         2
-#include "../esp-hal-led-rgb.h"
+#include "esp-hal-led-rgb.h"
 
 
 //-- Serial or Com Switch
@@ -194,8 +194,7 @@ void fan_init(void) { gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW); }
 
 IRAM_ATTR void fan_set_power(int8_t power_dbm)
 {
-    if (power_dbm >= POWER_23_DBM) { gpio_high(FAN_IO); } 
-    else { gpio_low(FAN_IO); }
+    if (power_dbm >= POWER_23_DBM) { gpio_high(FAN_IO); } else { gpio_low(FAN_IO); }
 }
 
 
@@ -237,7 +236,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
             *sx_power = 3;
             *actual_power_dbm = 27;
         } else if (power_dbm >= POWER_24_DBM) { // -> 24
-            *sx_power = 2;
+            *sx_power = -2;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
             *sx_power = -6;

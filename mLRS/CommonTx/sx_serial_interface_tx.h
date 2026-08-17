@@ -22,6 +22,7 @@ extern tTxMsp msp;
 class tTxSxSerial : public tSerialBase
 {
   public:
+    using tSerialBase::Init; // tTxSxSerial redefines Init(), incompatible with tSerialBase's Init()
     void Init(tSerialBase* const _mbridge);
 
     bool available(void) override;
