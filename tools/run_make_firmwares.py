@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 16.08.2026
+ version 17.08.2026
 ********************************************************
 '''
 import os
@@ -65,9 +65,9 @@ def findSTM32CubeIDEGnuTools(search_root):
             if 'mcu.externaltools.gnu-tools-for-stm32' in dirpath and gnu_dir_os_name in dirpath:
                 # the numbers after the string 'gnu-tools-for-stm32' contains the gnutools ver number, like .11.3
                 gnuver = int(dirpath.split('gnu-tools-for-stm32',1)[1][1:3])
-                if gnuver >= 12:
-                    print("WARNING: gnu-tools ver >= 12 found but skipped")
-                    continue
+                #if gnuver >= 12:
+                #    print("WARNING: gnu-tools ver >= 12 found but skipped")
+                #    continue
                 # the string after the last . contains a datum plus some other number
                 ver = int(dirpath[dirpath.rindex('.')+1:])
                 if ver > ver_nr:
