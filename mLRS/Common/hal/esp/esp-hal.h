@@ -163,6 +163,10 @@
 #include "tx-hal-bayck-ur500-esp32c3.h"
 #endif
 
+#ifdef TX_BAYCK_UR1000_ESP32C3
+#include "tx-hal-bayck-ur1000-esp32c3.h"
+#endif
+
 #ifdef TX_ELRS_FLYSKY_INTERNAL_PA01_2400_ESP32S3
 #include "tx-hal-flysky-int-pa01-2400-esp32s3.h"
 #endif

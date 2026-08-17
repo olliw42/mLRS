@@ -235,6 +235,15 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
+#ifdef TX_BAYCK_UR1000_ESP32C3 // receiver used as Tx module
+  #define DEVICE_NAME "BAYCK UR1000"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_LR11xx
+  #define FREQUENCY_BAND_2P4_GHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 
 //-- ELRS Internal Tx Modules
 
