@@ -46,7 +46,7 @@
 #define DEVICE_HAS_I2C_DISPLAY_ROT180
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_TEMPCONTROLLED_PWM
-#define DEVICE_HAS_ESP_WIFI_BRIDGE
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 
 
@@ -499,7 +499,7 @@ void display_init(void)
 #define ESP_GPIO0                 IO_PB2
 #define ESP_DTR_RTS_USB
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32
 void esp_init(void)
 {
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // low -> esp will start in bootloader mode
