@@ -121,8 +121,34 @@ GPIO15 = RTC_GPIO13
 // Module details
 //-------------------------------------------------------
 
+//-- FrSky LR2021 mLRS Tx module
+#if defined MODULE_FRSKY_LR2021
+    #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
+        #error Select board ESP32 PICO-D4!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #define SERIAL_RXD 3 // = RX
+    #define SERIAL_TXD 1 // = TX
+
+    #undef LED_IO
+    #define LED_IO  25
+    #define USE_LED
+
+    #undef GPIO0_IO
+    #define GPIO0_IO  0
+    #if WIRELESS_PROTOCOL != 4
+        #undef WIRELESS_PROTOCOL
+        #define WIRELESS_PROTOCOL 1 // make UDP the default
+    #endif    
+    #define DEVICE_NAME_HEAD "FrSky"
+
+
 //-- ELRS Tx Module ESP82xx backpack
-#if defined MODULE_ESP82XX_ELRS_TX
+#elif defined MODULE_ESP82XX_ELRS_TX
     // board = Generic ESP8266 Module: -DARDUINO_ESP8266_GENERIC -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_GENERIC" -DARDUINO_BOARD_ID="generic"
     // board = Generic ESP8285 Module: -DARDUINO_ESP8266_ESP01 -DARDUINO_ARCH_ESP8266 -DARDUINO_BOARD="ESP8266_ESP01" -DARDUINO_BOARD_ID="esp8285"
     #if !(defined ARDUINO_ESP8266_GENERIC || defined ARDUINO_ESP8266_ESP01)
