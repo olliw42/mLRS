@@ -31,9 +31,8 @@
 #define DEVICE_HAS_I2C_DISPLAY
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
-#define DEVICE_HAS_ESP_WIFI_BRIDGE // board has an ESP8285 wireless bridge with GPIO,RST
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 // board has an ESP8285 wireless bridge with GPIO,RST
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 // Note on SERIAL_OR_COM:
 // The com uart is not initialized, the serial uart is. So, buffers are set as by the RX/TXBUFSIZE defines for serial.
@@ -236,7 +235,7 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P26 // backpack_boot, seems to be inverted
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 void esp_init(void)
 {
@@ -250,7 +249,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 
 //-- POWER

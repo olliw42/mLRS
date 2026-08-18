@@ -27,9 +27,8 @@
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_COM_ON_SERIAL
-#define DEVICE_HAS_ESP_WIFI_BRIDGE
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // requires backpack firmware to have AT mode enabled
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON_FLASH
 #define DEVICE_HAS_NO_DEBUG
 
@@ -203,7 +202,7 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 #define ESP_RESET                 IO_P19 // backpack_en
 #define ESP_GPIO0                 IO_P23 // backpack_boot
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // this is an ESP32C3
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 
 void esp_init(void)
 {
@@ -217,7 +216,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 
 
 //-- POWER

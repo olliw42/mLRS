@@ -35,9 +35,8 @@
 #endif
 
 #define DEVICE_HAS_COM_ON_SERIAL // hold 5-way in down direction at boot to enable com (CLI)
-#define DEVICE_HAS_ESP_WIFI_BRIDGE // board has an ESP8285 wireless bridge with GPIO,RST
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 // board has an ESP8285 wireless bridge with GPIO,RST
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE // requires backpack firmware to have AT mode enabled
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 //#define DEVICE_HAS_NO_COM
@@ -241,7 +240,7 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 #define ESP_RESET                 IO_P25 // backpack_en
 #define ESP_GPIO0                 IO_P32 // backpack_boot, seems to be inverted
 
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 void esp_init(void)
 {
@@ -255,7 +254,7 @@ IRAM_ATTR void esp_reset_low(void) { gpio_low(ESP_RESET); }
 IRAM_ATTR void esp_gpio0_high(void) { gpio_low(ESP_GPIO0); }
 IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
-#endif // DEVICE_HAS_ESP_WIFI_BRIDGE
+#endif // DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266
 
 
 //-- POWER
