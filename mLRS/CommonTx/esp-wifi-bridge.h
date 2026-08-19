@@ -8,7 +8,8 @@
 //********************************************************
 //
 // USE_ESP_WIFI_BRIDGE
-//   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE
+//   is defined when DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32/ESP8266/ESP32C3
+//   currently also requires RESET & GPIO0 pin handling
 //
 // USE_ESP_WIFI_BRIDGE_RST_GPIO0
 //   is defined when RESET & GPIO0 pin handling is available (ESP_RESET & ESP_GPIO0 defined)
@@ -23,7 +24,7 @@
 //   - ESP TX parameters, ESP configuration at startup
 //
 // USE_ESP_WIFI_BRIDGE_DTR_RTS
-//   is defined when DTR & RTS pin handling is available (ESP_DTR & ESP_RTS defined)
+//   is defined when DTR & RTS pin handling is available (ESP_DTR & ESP_RTS defined or ESP_DTR_RTS_USB defined)
 //   requires either (a) wires from a USB-TTL adapter to two MCU pins or (b) native USB
 //   this allows in addition:
 //   - flashing via passthrough, flash mode entered via DTR/RTS, no need for invoking "FLASH ESP" command

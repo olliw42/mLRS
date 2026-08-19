@@ -1146,7 +1146,7 @@ IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
         case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(TASK_BIND_START); break;
         case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(TASK_BIND_STOP); break;
         case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(TASK_SYSTEM_BOOT); break;
-        case MBRIDGE_CMD_FLASH_ESP: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
+        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
         case MBRIDGE_CMD_MODELID_SET:
 //dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
             config_id.Change(mbridge.GetModelId());
