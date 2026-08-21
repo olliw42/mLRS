@@ -524,6 +524,17 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         return actual_power_dbm;
     }
 
+    //-- PRAM
+
+    void _pram_load(void)
+    {
+        for (uint8_t i = 0; i < 3; i++) { // no idea what we should do if it fails, so give it 3 chances
+            LoadPram();
+            EnablePram();
+            if (CheckPram()) return; // all good // CheckPram() requires both LoadPram() & EnablePram() to be executed
+        }
+    }
+
   protected:
     tSxGlobalConfig* gconfig;
 
@@ -651,6 +662,7 @@ class Lr20xxDriver : public Lr20xxDriverCommon
         sx_dio_init_exti_isroff();
 
         _reset(); // this is super crucial !
+        _pram_load();
     }
 
     //-- high level API functions
@@ -778,6 +790,7 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
         sx2_dio_init_exti_isroff();
 
         _reset(); // this is super crucial !
+        _pram_load();
     }
 
     //-- high level API functions
