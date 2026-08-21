@@ -869,7 +869,9 @@ uint8_t tx_rssi1, tx_rssi2;
     float freq1 = fhss.GetCurrFreq_Hz();
     float freq2 = fhss.GetCurrFreq2_Hz();
 
-#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // dual band device
+#if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x || \
+    defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+    // DUALBAND device
     // Note: We must assume that for both the tx module and receiver the same antenna is used for the same band,
     // such that A1 corresponds to band 1, and A2 to band 2.
     if (Config.IsDualBand) {
