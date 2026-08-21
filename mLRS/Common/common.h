@@ -471,4 +471,6 @@ STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+8+2, "tSetup l
 
 STATIC_ASSERT(sizeof(fhss_config) == sizeof(tFhssConfig) * SX_FHSS_FREQUENCY_BAND_NUM, "fhss_config size missmatch")
 
+STATIC_ASSERT(RFPOWER_LIST_NUM <= sizeof(((tRxCmdFrameRxSetupData *)0)->Power_list)/sizeof(int16_t), "too many power options")
+
 #endif // COMMON_H
