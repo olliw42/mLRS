@@ -114,6 +114,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -126,6 +127,7 @@
 #include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
+tCrypto crypto;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
@@ -167,7 +169,7 @@ tTxSxSerial sx_serial;
 // doing one, draw or update, every cycle in 50 Hz mode works, but
 // doing both every cycle does not work! why ???
 
-#include "../CommonTx/disp.h"
+#include "disp.h"
 
 tTxDisp disp;
 
@@ -183,6 +185,7 @@ tTxEspWifiBridge espbridge;
 #include "hc04-bridge.h"
 
 tTxHc04Bridge hc04bridge;
+
 
 
 //-------------------------------------------------------
@@ -507,6 +510,7 @@ if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
+        crypto.Encrypt(payload, payload_len);
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
