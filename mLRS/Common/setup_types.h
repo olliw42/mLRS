@@ -501,7 +501,7 @@ typedef struct
 
 // global configuration values, not stored in EEPROM
 // can be/are derived from setup parameters, from defines, or otherwise
-typedef struct
+struct tSxGlobalConfig
 {
     uint8_t LoraConfigIndex;
     uint16_t FskSyncWord;
@@ -511,7 +511,7 @@ typedef struct
     // helper
     bool is_lora;
     bool modeIsLora(void) { return is_lora; }
-} tSxGlobalConfig;
+};
 
 
 typedef struct 

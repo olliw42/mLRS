@@ -145,7 +145,7 @@ tUartCPort uartc_port;
 tUartDPort uartd_port;
 tUsbPort usb_port;
 
-typedef struct
+struct tSerialPorts
 {
     tSerialBase* serial; // assigned according to TxSerPort
     tSerialBase* com; // assigned according to TxSerPort
@@ -163,7 +163,7 @@ typedef struct
 #ifdef USE_COM_ON_SERIAL
     tSerialBase* ser_or_com_set_to_com(void);
 #endif
-} tSerialPorts;
+};
 
 
 tSerialBase* tSerialPorts::com_port(void) // uartc or usb
@@ -268,10 +268,10 @@ tDroneCANPort dronecan_port;
 // works here since we only have one serial, and makes the higher level code simpler
 tSerialBase* serial; // assigned according to RxSerPort
 
-typedef struct
+struct tSerialPorts
 {
     void Init(uint8_t serial_port, uint32_t baud);
-} tSerialPorts;
+};
 
 
 void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)

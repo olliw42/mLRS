@@ -125,13 +125,13 @@ class tTxDisp
     void DrawBoot(void);
 
 
-    typedef struct {
+    struct tParamList {
         uint8_t list[SETUP_PARAMETER_NUM];
         uint8_t num;
         uint8_t allowed_num[SETUP_PARAMETER_NUM];
         void clear(void) { num = 0; }
         void add(uint8_t param_idx) { list[num] = param_idx; allowed_num[num] = param_get_allowed_opt_num(param_idx); num++; }
-    } tParamList;
+    };
 
     bool key_has_been_pressed(uint8_t key_idx);
 
