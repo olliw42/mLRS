@@ -32,21 +32,25 @@ SecretKey handling:
 #endif
 
 
+#define NONCE_LEN   3
+
+
 class tCrypto
 {
   public:
     void Init(void);
 
-    void SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t random); // 6 + 12 + 12 + 8 = 38
+    void SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
 
-    void Encrypt(uint8_t* const payload, uint16_t len);
-    void Decrypt(uint8_t* const payload, uint16_t len);
+    void Encrypt(uint8_t* const payload, uint8_t* len);
+    void Decrypt(uint8_t* const payload, uint8_t* len);
 
   private:
     uint8_t _key[32];
     uint8_t _nonce[12];
+    uint32_t _nonce_u32;
 
-    void _crypt_it(uint8_t* const payload, uint16_t len);
+    void _crypt_it(uint8_t* payload, uint16_t len);
 };
 
 

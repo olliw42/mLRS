@@ -96,6 +96,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -107,6 +108,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tCrypto crypto;
 
 
 // is required in bind.h
@@ -577,6 +579,8 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    crypto.Init();
+    crypto.SetKey(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid);
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();

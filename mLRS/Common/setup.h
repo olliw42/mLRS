@@ -601,6 +601,7 @@ if (!only_rx) {
     Setup.Rx.__spare2 = 0xFF;
 
     for (uint8_t n = 0; n < sizeof(Setup.spare)/sizeof(Setup.spare[0]); n++) Setup.spare[n] = 0xFF;
+    for (uint8_t n = 0; n < sizeof(Setup.spare1)/sizeof(Setup.spare1[0]); n++) Setup.spare1[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Common[config_id].spare)/sizeof(Setup.Common[config_id].spare[0]); n++) Setup.Common[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Tx[config_id].spare)/sizeof(Setup.Tx[config_id].spare[0]); n++) Setup.Tx[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Rx.spare)/sizeof(Setup.Rx.spare[0]); n++) Setup.Rx.spare[n] = 0xFF;
@@ -1057,6 +1058,13 @@ void setup_configure_config(uint8_t config_id)
         while(1){} // In and mBridge or CRSF cannot be used simultaneously, must not happen
     }
   #endif
+#endif
+
+    //-- Crypto
+#if !(defined ESP8266 || defined ESP32)
+    mcu_uid(Config.Uid);
+#else
+    memset(Config.Uid, 0xFF, 12);
 #endif
 }
 

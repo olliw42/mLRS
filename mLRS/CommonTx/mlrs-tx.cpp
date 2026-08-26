@@ -127,10 +127,10 @@
 #include "in_interface.h" // this includes uarte.h, in.h, declares tIn in
 
 
-tCrypto crypto;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tCrypto crypto;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxInfo info;
@@ -510,7 +510,6 @@ if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not
     frame_stats.LQ_serial = stats.GetLQ_serial();
 
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
-        crypto.Encrypt(payload, payload_len);
         pack_txframe(&txFrame, &frame_stats, &rcData, payload, payload_len);
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
@@ -752,6 +751,8 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    crypto.Init();
+    crypto.SetKey(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId]);
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource

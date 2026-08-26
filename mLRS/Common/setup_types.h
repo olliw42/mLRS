@@ -440,13 +440,11 @@ typedef struct
 
     // parameters common to both Tx and Rx
     // deprecated
-    char __spare1[6+1];
-    SETUP_FREQUENCY_BAND_ENUM __spare2;
-    uint8_t __spare3;
+    uint8_t spare[9];
 
     uint8_t _ConfigId; // strange name to avoid mistake
 
-    uint8_t spare[6];
+    uint8_t spare1[6];
 
     // parameters specific to Rx, can be changed on the fly
     // for transmitters this is populated upon first connection, see SetupMetaData.rx_available mechanism
@@ -459,6 +457,9 @@ typedef struct
     // parameters common to both Tx and Rx
     // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
     tCommonSetup Common[SETUP_CONFIG_NUM];
+
+    // crypto
+    uint8_t peer_uid[SETUP_CONFIG_NUM][12]; // 12 bytes = 96 bits, FF: unknown
 
     char MarkerEnd[8];
 } tSetup;
@@ -562,6 +563,9 @@ typedef struct
     bool UseMbridge;
     bool UseCrsf;
     bool UseIn;
+
+    // crypto
+    uint8_t Uid[12];
 } tGlobalConfig;
 
 

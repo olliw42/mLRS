@@ -166,7 +166,9 @@ typedef struct
     uint8_t Ortho : 4;
 
     uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare2[71 - 12];
+
+    uint8_t tx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -186,7 +188,9 @@ typedef struct
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55];
+    uint8_t spare2[55 - 12];
+
+    uint8_t rx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
@@ -225,15 +229,15 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t __Buzzer : 4; // deprecated
+    uint8_t spare1 : 4;
     uint8_t SendRcChannels : 4;
-    uint8_t __RadioStatusMethod : 4; // deprecated
+    uint8_t spare2 : 4;
     uint8_t OutLqChannelMode : 4;
     uint8_t PowerSwitchChannel : 4;
     uint8_t SerialPort : 4;
     uint8_t MavlinkSystemID : 4;
 
-    uint8_t spare2[3];
+    uint8_t spare3[3];
 
     int8_t FailsafeOutChannelValues_Ch1_Ch12[12]; // -120 .. +120
     uint8_t FailsafeOutChannelValue_Ch13 : 2;
@@ -265,14 +269,15 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
     uint8_t Ortho_allowed_mask_XXX; // TODO
-    uint8_t spare2[2];
+
+    uint8_t spare1[2];
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
     uint8_t SerialPort_allowed_mask; // was uint8_t __Buzzer_allowed_mask; // deprecated
 
-    uint8_t spare3[5];
+    uint8_t spare2[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 
