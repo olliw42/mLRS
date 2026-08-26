@@ -489,7 +489,6 @@ uint8_t payload_len = 0;
 
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
         crypto.Encrypt(payload, &payload_len);
-//crypto.Decrypt(payload, &payload_len);
     }
 
     stats.last_transmit_antenna = antenna;
