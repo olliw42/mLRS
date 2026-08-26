@@ -1075,13 +1075,6 @@ IF_SX2(
             if (!valid_frame_received) buzzer.BeepLP();
         }
 
-        // store parameters
-        if (doParamsStore) {
-            leds.SetToParamStore();
-            setup_store_to_EEPROM();
-            GOTO_RESTARTCONTROLLER;
-        }
-
         bind.Do();
         switch (bind.Task()) {
         case BIND_TASK_CHANGED_TO_BIND:
@@ -1091,7 +1084,18 @@ IF_SX2(
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER:
+            doParamsStore = true;
+            break;
+        }
+
+        // store parameters
+        if (doParamsStore) {
+            sx.SetToIdle();
+            sx2.SetToIdle();
+            leds.SetToParamStore();
+            setup_store_to_EEPROM();
+            GOTO_RESTARTCONTROLLER;
         }
 
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");

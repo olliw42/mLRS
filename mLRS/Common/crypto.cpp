@@ -28,11 +28,10 @@ void tCrypto::SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
 
     memcpy(key_source,                "mLRS key",   8);  //  8 bytes
     memcpy(key_source + 8,            bind_phrase,  6);  //  6 bytes
-//    memcpy(key_source + 8 + 6,        tx_uid,       12); // 12 bytes
-//    memcpy(key_source + 8 + 6 + 12,   rx_uid,       12); // 12 bytes // sum = 38 bytes
+    memcpy(key_source + 8 + 6,        tx_uid,       12); // 12 bytes
+    memcpy(key_source + 8 + 6 + 12,   rx_uid,       12); // 12 bytes // sum = 38 bytes
 
-//    crypto_blake2b(_key, 32, key_source, 38);
-    crypto_blake2b(_key, 32, key_source, 14);
+    crypto_blake2b(_key, 32, key_source, 38);
 }
 
 

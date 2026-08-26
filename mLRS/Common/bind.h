@@ -246,7 +246,7 @@ uint8_t tBindBase::Task(void)
     switch (task) {
     case BIND_TASK_TX_RESTART_CONTROLLER:
     case BIND_TASK_RX_STORE_PARAMS:
-        // postpone until button is released, prevents jumping to RESTART while button is till pressed by user
+        // postpone until button is released, prevents jumping to RESTART while button is still pressed by user
         if (is_pressed) return BIND_TASK_NONE;
         break;
     }
