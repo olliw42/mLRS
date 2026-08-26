@@ -39,11 +39,37 @@ void tCrypto::SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
 
 void tCrypto::Encrypt(uint8_t* const payload, uint8_t* len)
 {
+    _nonce_u32++;
+
+    // encrypt data at payload
+memset(_nonce, 0, sizeof(_nonce));
+    _crypt_it(payload, *len);
+
+    // move data to payload + 3
+    memmove(payload + NONCE_LEN, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
+
+    // correct len for the nonce
+    *len += NONCE_LEN;
+
+    // copy nonce into payload
+    payload[0] = _nonce[0];
+    payload[1] = _nonce[1];
+    payload[2] = _nonce[2];
 }
 
 
 void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 {
+    _nonce[0] = payload[0];
+    _nonce[1] = payload[1];
+    _nonce[2] = payload[2];
+
+    *len -= NONCE_LEN;
+
+    memmove(payload, payload + NONCE_LEN, *len);
+
+memset(_nonce, 0, sizeof(_nonce));
+    _crypt_it(payload, *len);
 }
 
 

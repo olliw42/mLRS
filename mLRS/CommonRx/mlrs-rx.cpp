@@ -310,7 +310,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - NONCE_LEN; i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
@@ -321,6 +321,10 @@ uint8_t payload_len = 0;
             } else {
                 sx_serial.flush();
             }
+
+            // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
+            crypto.Encrypt(payload, &payload_len);
+//crypto.Decrypt(payload, &payload_len);
         }
     }
 
@@ -390,9 +394,13 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // output data on serial, but only if connected
     if (!connected()) return;
-    sx_serial.putbuf(frame->payload, frame->status.payload_len);
+    // remove nonce from payload, decrypt data, correct len for the nonce
+    uint8_t payload_len = frame->status.payload_len;
+    crypto.Decrypt(frame->payload, &payload_len);
 
-    stats.bytes_received.Add(frame->status.payload_len);
+    sx_serial.putbuf(frame->payload, payload_len);
+
+    stats.bytes_received.Add(payload_len);
     stats.serial_data_received.Inc();
 }
 
