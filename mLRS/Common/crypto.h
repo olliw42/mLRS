@@ -22,14 +22,6 @@ SecretKey handling:
 
 
 #include <inttypes.h>
-#include <string.h>
-
-
-#define ARRAY_LEN(x)  sizeof(x)/sizeof(x[0])
-
-#ifndef PACKED
-  #define PACKED(__Declaration__)  __Declaration__ __attribute__((packed)) // that's for __GNUC__
-#endif
 
 
 #define NONCE_LEN   3
@@ -38,24 +30,28 @@ SecretKey handling:
 class tCrypto
 {
   public:
-    void Init(void);
+    void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
 
-    void SetKey(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
+    void SetSessionKey(uint64_t random);
+    void SetSessionKey(uint8_t random[8]) { uint64_t r; memcpy(&r, random, 8); SetSessionKey(r); }
+
+    void Disconnected(void) { _random = 0; }
 
     void Encrypt(uint8_t* const payload, uint8_t* len);
     void Decrypt(uint8_t* const payload, uint8_t* len);
 
+    uint64_t Random(void) { return _random; }
+
   private:
+    uint8_t _static_key[64];
+    uint64_t _random;
+
     uint8_t _key[32];
     uint8_t _nonce[12];
     uint32_t _nonce_u32;
 
     void _crypt_it(uint8_t* payload, uint16_t len);
 };
-
-
-
-
 
 
 #endif // CRYPTO_H

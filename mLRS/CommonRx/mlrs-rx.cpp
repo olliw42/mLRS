@@ -258,6 +258,9 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        // crypto
+        crypto.SetSessionKey(&frame->payload[1]);
+        Config.Random = crypto.Random();
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
@@ -586,8 +589,7 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
-    crypto.Init();
-    crypto.SetKey(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid);
+    crypto.Init(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid);
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
@@ -890,6 +892,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
+        if (!connected()) crypto.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

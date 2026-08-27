@@ -37,6 +37,7 @@
 #include "../modules/esp-lib/esp-mcu.h"
 //xx #include "../modules/esp-lib/esp-adc.h"
 #include "../modules/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-trng.h"
 #include "../Common/hal/hal.h"
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
@@ -71,6 +72,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-adc.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #include "../Common/thirdparty/stdstm32-exti.h"
+#include "../Common/thirdparty/stdstm32-trng.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -261,6 +263,7 @@ void init_hw(void)
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
+    trng_init();
 
     leds_init();
     button_init();
@@ -758,8 +761,8 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
-    crypto.Init();
-    crypto.SetKey(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId]);
+    crypto.Init(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId]);
+    crypto.SetSessionKey(Config.Random);
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource

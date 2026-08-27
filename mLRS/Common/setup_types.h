@@ -565,7 +565,9 @@ typedef struct
     bool UseIn;
 
     // crypto
+    bool UseCrypto;
     uint8_t Uid[12];
+    uint64_t Random;
 } tGlobalConfig;
 
 

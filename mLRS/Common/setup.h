@@ -1059,12 +1059,28 @@ void setup_configure_config(uint8_t config_id)
     }
   #endif
 #endif
+}
 
-    //-- Crypto
-#if !(defined ESP8266 || defined ESP32)
-    mcu_uid(Config.Uid);
-#else
+
+//-------------------------------------------------------
+// Crypto
+//-------------------------------------------------------
+
+void setup_configure_config_crypto(void)
+{
+    Config.UseCrypto = false;
     memset(Config.Uid, 0xFF, 12);
+    Config.Random = UINT64_MAX;
+
+    mcu_uid(Config.Uid);
+#ifdef DEVICE_IS_TRANSMITTER
+    // UINT64_MAX indicates that a TRNG is not available
+    for (uint8_t i = 0; i < 6; i++) { // trng_get32() can return UINT32_MAX, so give it few chances, but terminate
+        if (Config.Random == 0 || Config.Random == UINT64_MAX) {
+            Config.Random = ((uint64_t)trng_get32() << 32) + trng_get32();
+        }
+    }
+    Config.UseCrypto = (Config.Random != UINT64_MAX);
 #endif
 }
 
@@ -1217,6 +1233,8 @@ bool doEEPROMwrite;
     setup_sanitize_config(Config.ConfigId);
 
     setup_configure_config(Config.ConfigId);
+
+    setup_configure_config_crypto();
 }
 
 
