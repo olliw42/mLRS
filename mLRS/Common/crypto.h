@@ -9,11 +9,19 @@
 // Based on Monocypher, https://github.com/LoupVaillant/monocypher
 /*
 SecretKey handling:
-- on bind, a secret key root is exchanged, which is based bind phrase, tx uid, rx uid
-- on first connection, a session secret key is generated, which is based on
-  secret key root plus some randomized data (e.g. from a trng, or startup ms counter)
-- the nonce is build, which is based on a 3 bytes partial nonce + header data, such as
-  seq_no : 3, rssi_u7 : 7, LQ_serial : 7
+- on bind, a key root is exchanged, which is based on bind phrase, tx uid, rx uid
+  from that a secret static key is generated
+- on first connection two things happen
+    - a 8 byte random number from a TRNG is exchanged; the exchange is encrypted and
+      authenticated with 4 byte nonce and 4 byte mac using the static key
+    - a secret session key is generated, which is based on
+      the key root data plus the 8-byte random value
+- depending on the privacy level, the nonce is 3 or 4 bytes, and a mac for authentication is 0, 3, or 8 bytes
+- privacy levels
+    off: nothing
+    level 1: only encryption
+    level 2: encryption + authentication
+    level 3: stronger encryption + authentication
 */
 //*******************************************************
 #ifndef CRYPTO_H
@@ -28,6 +36,7 @@ class tCrypto
 {
   public:
     void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
+    void SetPrivacyLevel(uint8_t privacy_level);
 
     void SetSessionKey(uint64_t random);
     void GetEncryptedRandom(uint8_t random[16]);
@@ -42,6 +51,8 @@ class tCrypto
     uint64_t Random(void) { return _random; }
 
   private:
+    uint8_t _privacy_level;
+
     uint8_t _static[64];
     uint8_t _static_key[32];
     uint32_t _static_nonce_u32;

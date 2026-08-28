@@ -77,6 +77,15 @@ typedef enum {
 
 
 typedef enum {
+    PRIVACY_NONE = 0,
+    PRIVACY_LEVEL1,
+    PRIVACY_LEVEL2,
+    PRIVACY_LEVEL3,
+    PRIVACY_NUM,
+} PRIVACY_ENUM;
+
+
+typedef enum {
     EXCEPT_NONE = 0,
     EXCEPT_2P4_GHZ_WIFIBAND_1,
     EXCEPT_2P4_GHZ_WIFIBAND_6,
@@ -369,8 +378,9 @@ typedef struct
     SETUP_FREQUENCY_BAND_ENUM FrequencyBand;
     uint8_t Mode;
     uint8_t Ortho;
+    uint8_t Privacy;
 
-    uint8_t spare[6];
+    uint8_t spare[5];
 } tCommonSetup; // 16 bytes
 
 
@@ -474,6 +484,7 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask;
     uint16_t Mode_allowed_mask;
     uint16_t Ortho_allowed_mask;
+    uint16_t Privacy_allowed_mask;
 
     char Tx_Power_optstr[67+1];
     uint16_t Tx_Diversity_allowed_mask;

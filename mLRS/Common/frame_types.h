@@ -164,9 +164,9 @@ typedef struct
     uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[71 - 12];
+    uint8_t spare2[59];
 
     uint8_t tx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
 
@@ -188,7 +188,7 @@ typedef struct
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55 - 12];
+    uint8_t spare2[43];
 
     uint8_t rx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
 
@@ -269,8 +269,9 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
     uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t Privacy_allowed_mask_XXX; // TODO
 
-    uint8_t spare1[2];
+    uint8_t spare1;
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
@@ -293,8 +294,8 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes

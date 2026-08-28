@@ -364,6 +364,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     //SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
     //SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
     //SetupMetaData.Ortho_allowed_mask = rx_setupdata->Ortho_allowed_mask;
+    //SetupMetaData.Privacy_allowed_mask = rx_setupdata->Privacy_allowed_mask;
 
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
@@ -394,6 +395,7 @@ tTxCmdFrameRxParams rx_params = {};
     rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
     rx_params.Ortho = Setup.Common[Config.ConfigId].Ortho;
+    rx_params.Privacy = Setup.Common[Config.ConfigId].Privacy;
 
     cmdframerxparameters_rxparams_from_rxsetup(&(rx_params.RxParams));
 
@@ -445,6 +447,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
+    Setup.Common[0].Privacy = rx_params->Privacy;
 
     // don't take over Rx parameters if there is a layout version missmatch
     // tx_setup_layout_u16 is 0 for versions < 10401

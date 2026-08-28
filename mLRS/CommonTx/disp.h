@@ -966,8 +966,10 @@ void tTxDisp::draw_page_common(void)
 
     char except_str[8];
     if (except_str_from_bindphrase(except_str, Setup.Common[Config.ConfigId].BindPhrase, Config.FrequencyBand)) {
-        gdisp_setcurXY(0, 4 * 10 + DISP_CONTENT_Y_BASE); // last line
-        gdisp_puts("except ");
+//xx        gdisp_setcurXY(0, 4 * 10 + DISP_CONTENT_Y_BASE); // last line
+//xx        gdisp_puts("except ");
+        gdisp_setcurXY(91, 6);
+        gdisp_puts("e:");
         gdisp_puts(except_str);
     }
 }

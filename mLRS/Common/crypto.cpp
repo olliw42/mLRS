@@ -23,8 +23,14 @@
 #define LVL3_MAC_LEN    8
 
 
+//-------------------------------------------------------
+// Crypto API
+//-------------------------------------------------------
+
 void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
 {
+    _privacy_level = 0;
+
     memset(_static, 0, sizeof(_static));
     memcpy(_static,               "mLRS key",    8); //  8 bytes
     memcpy(_static + 8,           bind_phrase,   6); //  6 bytes
@@ -38,8 +44,15 @@ void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
     memset(_nonce, 0, sizeof(_nonce));
     _nonce_u32 = 0;
 
+    // construct static key
     crypto_blake2b(_static_key, 32, _static, 38);
     memcpy(_key, _static_key, 32);
+}
+
+
+void tCrypto::SetPrivacyLevel(uint8_t privacy_level)
+{
+    _privacy_level = privacy_level;
 }
 
 
