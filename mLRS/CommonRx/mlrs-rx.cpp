@@ -313,7 +313,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - NONCE_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
