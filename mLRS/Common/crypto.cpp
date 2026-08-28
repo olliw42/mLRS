@@ -23,17 +23,18 @@
 
 void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
 {
-    _random = 0; // 0 means session key not yet set
-
-    memset(_key, 0, sizeof(_key));
-    memset(_nonce, 0, sizeof(_nonce));
-    _nonce_u32 = 0;
-
     memset(_static, 0, sizeof(_static));
     memcpy(_static,               "mLRS key",    8); //  8 bytes
     memcpy(_static + 8,           bind_phrase,   6); //  6 bytes
     memcpy(_static + 8 + 6,       tx_uid,       12); // 12 bytes
     memcpy(_static + 8 + 6 + 12,  rx_uid,       12); // 12 bytes // sum 38 bytes
+
+    _random = 0; // 0 means session key not yet set
+    _static_nonce_u32 = 0;
+
+    memset(_key, 0, sizeof(_key));
+    memset(_nonce, 0, sizeof(_nonce));
+    _nonce_u32 = 0;
 
     crypto_blake2b(_static_key, 32, _static, 38);
     memcpy(_key, _static_key, 32);
@@ -67,11 +68,11 @@ uint8_t mac[16];
     memcpy(nonce_buf, &_static_nonce_u32, 4);
     _static_nonce_u32++; // ready it for next use
 
-    crypto_chacha20_ietf(random, (uint8_t*)&_random, 8, _static_key, nonce_buf, 1234567);
+    crypto_chacha20_ietf(random, (uint8_t*)&_random, 8, _static_key, nonce_buf, 1);
 
     memcpy(random + 8, nonce_buf, 4); // random[8] ... random[11]
 
-    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 1234568);
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 0);
     crypto_poly1305(mac, random, 12, poly1305_key);
 
     memcpy(random + 12, mac, 4); // random[12] ... random[15]
@@ -88,11 +89,11 @@ uint64_t rand;
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, random + 8, 4); // random[8] ... random[11]
 
-    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 1234568);
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 0);
     crypto_poly1305(mac, random, 12, poly1305_key);
-    for (uint8_t i = 0; i < 4; i++) if (random[12 + i] != mac[i]) return; // fail
+    for (uint8_t i = 0; i < 4; i++) { if (random[12 + i] != mac[i]) return; } // authentication failed
 
-    crypto_chacha20_ietf((uint8_t*)&rand, random, 8, _static_key, nonce_buf, 1234567);
+    crypto_chacha20_ietf((uint8_t*)&rand, random, 8, _static_key, nonce_buf, 1);
 
     SetSessionKey(rand);
 }
@@ -129,13 +130,15 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 }
 
 
+//-------------------------------------------------------
+// Level 1: Encryption, nonce = 3 bytes
+//-------------------------------------------------------
+
 void tCrypto::_encrypt(uint8_t* const payload, uint8_t* len)
 {
+    // update nonce
     _nonce_u32++;
-
-    _nonce[0] = (_nonce_u32 & 0x00FF0000) >> 16;
-    _nonce[1] = (_nonce_u32 & 0x0000FF00) >> 8;
-    _nonce[2] = (_nonce_u32 & 0x000000FF);
+    memcpy(_nonce, &_nonce_u32, NONCE_LEN); // _nonce[0] ... _nonce[2] = 24bit of _nonce_u32
 
     // encrypt data at payload
     _crypt_it(payload, *len);
@@ -147,9 +150,7 @@ void tCrypto::_encrypt(uint8_t* const payload, uint8_t* len)
     *len += NONCE_LEN;
 
     // copy nonce into payload
-    payload[0] = _nonce[0];
-    payload[1] = _nonce[1];
-    payload[2] = _nonce[2];
+    memcpy(payload, _nonce, NONCE_LEN); // payload[0] ... payload[2] = _nonce[0] ... _nonce[2]
 }
 
 
@@ -160,9 +161,7 @@ void tCrypto::_decrypt(uint8_t* const payload, uint8_t* len)
         return;
     }
 
-    _nonce[0] = payload[0];
-    _nonce[1] = payload[1];
-    _nonce[2] = payload[2];
+    memcpy(_nonce, payload, NONCE_LEN); // _nonce[0] ... _nonce[2] = payload[0] ... payload[2]
 
     *len -= NONCE_LEN;
 
@@ -172,15 +171,17 @@ void tCrypto::_decrypt(uint8_t* const payload, uint8_t* len)
 }
 
 
+//-------------------------------------------------------
+// Level 2: Encryption + Authentication, nonce = 3 bytes, mac = 3 bytes
+//-------------------------------------------------------
+
 void tCrypto::_encrypt_w_auth(uint8_t* const payload, uint8_t* len)
 {
 uint8_t mac[16];
 
+    // update nonce
     _nonce_u32++;
-
-    _nonce[0] = (_nonce_u32 & 0x00FF0000) >> 16;
-    _nonce[1] = (_nonce_u32 & 0x0000FF00) >> 8;
-    _nonce[2] = (_nonce_u32 & 0x000000FF);
+    memcpy(_nonce, &_nonce_u32, NONCE_LEN); // _nonce[0] ... _nonce[2] = 24bit of _nonce_u32
 
     // encrypt data at payload
     _crypt_it(payload, *len);
@@ -195,14 +196,10 @@ uint8_t mac[16];
     *len += MAC_LEN + NONCE_LEN;
 
     // copy mac into payload
-    payload[0] = mac[0];
-    payload[1] = mac[1];
-    payload[2] = mac[2];
+    memcpy(payload, mac, MAC_LEN); // payload[0] ... payload[2]
 
     // copy nonce into payload
-    payload[3] = _nonce[0];
-    payload[4] = _nonce[1];
-    payload[5] = _nonce[2];
+    memcpy(payload + MAC_LEN, _nonce, NONCE_LEN); // payload[3] ... payload[5]
 }
 
 
@@ -216,16 +213,10 @@ uint8_t mac[16];
         return;
     }
 
-    received_mac[0] = payload[0];
-    received_mac[1] = payload[1];
-    received_mac[2] = payload[2];
-
-    _nonce[0] = payload[3];
-    _nonce[1] = payload[4];
-    _nonce[2] = payload[5];
+    memcpy(received_mac, payload, MAC_LEN); // payload[0] ... payload[2]
+    memcpy(_nonce, payload + MAC_LEN, NONCE_LEN); // payload[3] ... payload[5]
 
     *len -= MAC_LEN + NONCE_LEN;
-
     memmove(payload, payload + MAC_LEN + NONCE_LEN, *len);
 
     // calculate MAC over nonce + payload
@@ -243,6 +234,10 @@ uint8_t mac[16];
     _crypt_it(payload, *len);
 }
 
+
+//-------------------------------------------------------
+// Monocypher interface
+//-------------------------------------------------------
 
 void tCrypto::_crypt_it(uint8_t* payload, uint16_t len)
 {
