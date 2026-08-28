@@ -8,7 +8,7 @@
 //*******************************************************
 
 
-#define PRIVACY_LEVEL   2 // 0: nothing, 1: encryption, 2: encryption + authentication
+#define PRIVACY_LEVEL   1 // 0: nothing, 1: encryption, 2: encryption + authentication, 3: e+a with 12 bytes
 
 
 #include <stdlib.h>
@@ -17,8 +17,10 @@
 #include "thirdparty/monocypher/src/monocypher.h"
 
 
-#define NONCE_LEN   3
-#define MAC_LEN     3
+#define NONCE_LEN       3
+#define MAC_LEN         3
+#define LVL3_NONCE_LEN  4
+#define LVL3_MAC_LEN    8
 
 
 void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
@@ -105,6 +107,8 @@ uint16_t tCrypto::NonceLen(void)
     return NONCE_LEN;
 #elif PRIVACY_LEVEL == 2
     return MAC_LEN + NONCE_LEN;
+#elif PRIVACY_LEVEL == 3
+    return LVL3_MAC_LEN + LVL3_NONCE_LEN;
 #endif
     return 0;
 }
@@ -116,6 +120,8 @@ void tCrypto::Encrypt(uint8_t* const payload, uint8_t* len)
     _encrypt(payload, len);
 #elif PRIVACY_LEVEL == 2
     _encrypt_w_auth(payload, len);
+#elif PRIVACY_LEVEL == 3
+    _encrypt_w_auth_lvl3(payload, len);
 #endif
 }
 
@@ -126,6 +132,8 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
     _decrypt(payload, len);
 #elif PRIVACY_LEVEL == 2
     _decrypt_w_auth(payload, len);
+#elif PRIVACY_LEVEL == 3
+    _decrypt_w_auth_lvl3(payload, len);
 #endif
 }
 
@@ -224,7 +232,69 @@ uint8_t mac[16];
 
     // comparison of 3-byte mac
     bool ok = true;
-    for (uint8_t i = 0; i < MAC_LEN; i++) if (mac[i] != received_mac[i]) ok = false;
+    for (uint8_t i = 0; i < MAC_LEN; i++) { if (mac[i] != received_mac[i]) ok = false; }
+
+    if (!ok) { // authentication failed
+        *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
+        return;
+    }
+
+    _crypt_it(payload, *len);
+}
+
+
+//-------------------------------------------------------
+// Level 3: Encryption + Authentication, nonce = 4 bytes, mac = 8 bytes
+//-------------------------------------------------------
+
+void tCrypto::_encrypt_w_auth_lvl3(uint8_t* const payload, uint8_t* len)
+{
+uint8_t mac[16];
+
+    // update nonce
+    _nonce_u32++;
+    memcpy(_nonce, &_nonce_u32, LVL3_NONCE_LEN); // _nonce[0] ... _nonce[3] = _nonce_u32
+
+    // encrypt data at payload
+    _crypt_it(payload, *len);
+
+    // MAC = poly1305(nonce || ciphertext)
+    _mac_it(mac, payload, *len);
+
+    // move data to payload + 12
+    memmove(payload + LVL3_MAC_LEN + LVL3_NONCE_LEN, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
+    // correct len for the nonce
+    *len += LVL3_MAC_LEN + LVL3_NONCE_LEN;
+
+    // copy mac into payload
+    memcpy(payload, mac, LVL3_MAC_LEN); // payload[0] ... payload[7]
+    // copy nonce into payload
+    memcpy(payload + LVL3_MAC_LEN, _nonce, LVL3_NONCE_LEN); // payload[8] ... payload[11]
+}
+
+
+void tCrypto::_decrypt_w_auth_lvl3(uint8_t* const payload, uint8_t* len)
+{
+uint8_t received_mac[LVL3_MAC_LEN];
+uint8_t mac[16];
+
+    if (*len < LVL3_MAC_LEN + LVL3_NONCE_LEN) {
+        *len = 0; // TODO: what should we do ?
+        return;
+    }
+
+    memcpy(received_mac, payload, LVL3_MAC_LEN); // payload[0] ... payload[7]
+    memcpy(_nonce, payload + LVL3_MAC_LEN, LVL3_NONCE_LEN); // payload[8] ... payload[11]
+
+    *len -= LVL3_MAC_LEN + LVL3_NONCE_LEN;
+    memmove(payload, payload + LVL3_MAC_LEN + LVL3_NONCE_LEN, *len);
+
+    // calculate MAC over nonce + payload
+    _mac_it(mac, payload, *len);
+
+    // comparison of 8-byte mac
+    bool ok = true;
+    for (uint8_t i = 0; i < LVL3_MAC_LEN; i++) { if (mac[i] != received_mac[i]) ok = false; }
 
     if (!ok) { // authentication failed
         *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
