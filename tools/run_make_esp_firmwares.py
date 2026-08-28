@@ -166,7 +166,7 @@ if __name__ == "__main__":
         cmd_pos += 1
         if cmd == '--target' or cmd == '-t' or cmd == '-T':
             if sys.argv[cmd_pos+1] != '':
-                cmdline_target = sys.argv[cmd_pos+1]
+                cmdline_target = sys.argv[cmd_pos+1].lower() # target matching is case insensitive
         if cmd == '--define' or cmd == '-d' or cmd == '-D':
             if sys.argv[cmd_pos+1] != '':
                 cmdline_D_list.append(sys.argv[cmd_pos+1])

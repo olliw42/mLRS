@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "../Common/hal/hal.h"
-#include "../Common/tasks.h"
+#include "tasks.h"
 #include "setup_tx.h"
 
 
@@ -28,7 +28,7 @@ extern tSetupMetaData SetupMetaData;
 extern tSerialPorts Serials;
 extern tStats stats;
 extern tTxInfo info;
-extern tTasks tasks;
+extern tTxTasks tasks;
 
 
 //-------------------------------------------------------
@@ -872,12 +872,12 @@ bool rx_param_changed;
             } else {
                 print_config_id();
                 print_param(param_idx);
-                if (rx_param_changed) tasks.SetCliTask(TX_TASK_RX_PARAM_SET);
+                if (rx_param_changed) tasks.SetCliTask(TASK_RX_PARAM_SET);
             }
 
         } else
         if (is_cmd("pstore")) {
-            tasks.SetCliTask(TX_TASK_PARAM_STORE);
+            tasks.SetCliTask(TASK_PARAM_STORE);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -888,12 +888,12 @@ bool rx_param_changed;
 
         } else
         if (is_cmd("bind")) {
-            tasks.SetCliTask(MAIN_TASK_BIND_START);
+            tasks.SetCliTask(TASK_BIND_START);
             putsn("  Tx entered bind mode");
 
         } else
         if (is_cmd("reload")) {
-            tasks.SetCliTask(TX_TASK_PARAM_RELOAD);
+            tasks.SetCliTask(TASK_PARAM_RELOAD);
             print_config_id();
             if (!connected()) {
                 putsn("warn: receiver not connected");
@@ -911,7 +911,7 @@ bool rx_param_changed;
             if (value == Config.ConfigId) {
                 putsn("  no change required");
             } else {
-                tasks.SetCliTask(TX_TASK_CLI_CHANGE_CONFIG_ID, value);
+                tasks.SetCliTaskConfigIdValue(TASK_CHANGE_CONFIG_ID, value);
                 puts("  change ConfigId to ");putc('0'+value);putsn("");
             }
             }
@@ -931,19 +931,19 @@ bool rx_param_changed;
 #if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
         } else
         if (is_cmd("systemboot")) {
-            tasks.SetCliTask(MAIN_TASK_SYSTEM_BOOT);
+            tasks.SetCliTask(TASK_SYSTEM_BOOT);
 #endif
 
-        //-- ESP handling
+        //-- ESP wireless bridge handling
 #ifdef USE_ESP_WIFI_BRIDGE
         } else
         if (is_cmd("esppt")) {
             // enter esp passthrough, can only be exited by re-powering
-            tasks.SetCliTask(TX_TASK_ESP_PASSTHROUGH);
+            tasks.SetCliTask(TASK_ESPBRIDGE_PASSTHROUGH);
         } else
         if (is_cmd("espboot")) {
             // enter esp flashing, can only be exited by re-powering
-            tasks.SetCliTask(TX_TASK_FLASH_ESP);
+            tasks.SetCliTask(TASK_ESPBRIDGE_FLASH);
 #ifdef USE_ESP_WIFI_BRIDGE_CONFIGURE
         } else
         if (is_cmd("espname")) {
@@ -955,7 +955,7 @@ bool rx_param_changed;
             }
         } else
         if (is_cmd("esp get pswd")) {
-            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_PASSWORD);
+            tasks.SetCliTask(TASK_ESPBRIDGE_GET_PASSWORD);
         } else
         if (is_cmd_set_str("esp set pswd", svalue)) {
             if (strlen(svalue) != 0 && (strlen(svalue) < 8 || strlen(svalue) > 24)) {
@@ -963,11 +963,11 @@ bool rx_param_changed;
             } else {
                 puts("  esp pswd: ");
                 putsn((svalue[0] != '\0') ? svalue : "empty value -> clears pswd");
-                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_PASSWORD, svalue);
+                tasks.SetCliTaskEspBridgeStr(TASK_ESPBRIDGE_SET_PASSWORD, svalue);
             }
         } else
         if (is_cmd("esp get netssid")) {
-            tasks.SetCliTask(TX_TASK_CLI_ESP_GET_NETWORK_SSID);
+            tasks.SetCliTask(TASK_ESPBRIDGE_GET_NETWORK_SSID);
         } else
         if (is_cmd_set_str("esp set netssid", svalue)) {
             if (strlen(svalue) > 24) {
@@ -975,7 +975,7 @@ bool rx_param_changed;
             } else {
                 puts("  esp netssid: ");
                 putsn((svalue[0] != '\0') ? svalue : "empty value -> clears ssid");
-                tasks.SetCliTask(TX_TASK_CLI_ESP_SET_NETWORK_SSID, svalue);
+                tasks.SetCliTaskEspBridgeStr(TASK_ESPBRIDGE_SET_NETWORK_SSID, svalue);
             }
 #endif
 #endif
@@ -985,10 +985,10 @@ bool rx_param_changed;
         } else
         if (is_cmd("hc04 pt")) {
             // enter hc04 passthrough, can only be exited by re-powering
-            tasks.SetCliTask(TX_TASK_HC04_PASSTHROUGH);
+            tasks.SetCliTask(TASK_HC04BRIDGE_PASSTHROUGH);
         } else
         if (is_cmd("hc04 getpin")) { // getpin
-            tasks.SetCliTask(TX_TASK_CLI_HC04_GETPIN);
+            tasks.SetCliTask(TASK_HC04BRIDGE_GETPIN);
         } else
         if (is_cmd_set_value("hc04 setpin", &value)) { // setpin = value
             if (value < 1000 || value > 9999) {
@@ -998,7 +998,7 @@ bool rx_param_changed;
                 u16toBCDstr(value, pin_str);
                 remove_leading_zeros(pin_str);
                 puts("  hc04 pin: ");putsn(pin_str);
-                tasks.SetCliTask(TX_TASK_CLI_HC04_SETPIN, value);
+                tasks.SetCliTaskHc04BridgeValue(TASK_HC04BRIDGE_SETPIN, value);
             }
 #endif
 

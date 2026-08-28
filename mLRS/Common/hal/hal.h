@@ -53,11 +53,12 @@ In tx-hal files:
 #define DEVICE_HAS_NO_DEBUG         // board has no Debug port
 #define DEVICE_HAS_DEBUG_SWUART     // implement Debug as software UART
 #define DEVICE_HAS_SERIAL2          // board has a Serial2 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE  // board has ESP32 or ESP82xx with RESET,GPIO support
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESP32 or ESP82xx with its passthrough via JRPin5 port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL  // board has ESP32 or ESP82xx with its passthrough via Serial port
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESP32 which allows configuration
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx in fact, not ESP32
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32      // board has ESP32 with RESET,GPIO support
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266    // board has ESP82xx with RESET,GPIO support
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3    // board has ESP32-C3 with RESET,GPIO support
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE  // board has ESPxx which allows configuration
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5  // board has ESPxx with its passthrough via JRPin5 port
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_SERIAL  // board has ESPxx with its passthrough via Serial port
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_BUTTON2_FLASH    // board has button used to enter ESP flash mode
 #define DEVICE_HAS_HC04_MODULE      // board has HC04 module
 #define DEVICE_HAS_I2C_DISPLAY          // board has a DISPLAY on I2C, and 5-way switch
@@ -292,7 +293,8 @@ extern "C" { void delay_ms(uint16_t ms); }
   #endif
 #endif
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE || defined DEVICE_HAS_HC04_MODULE
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 || \
+    defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3 || defined DEVICE_HAS_HC04_MODULE
   #define USE_WIRELESS_BRIDGE
 #endif
 #if defined DEVICE_HAS_SERIAL2 || defined USE_WIRELESS_BRIDGE
@@ -338,19 +340,21 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
-#if defined DEVICE_HAS_ESP_WIFI_BRIDGE
+#if defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32 || defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 || \
+    defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
   #define USE_ESP_WIFI_BRIDGE
-  #if defined ESP_RESET && defined ESP_GPIO0
-    #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
-    #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
-      #define USE_ESP_WIFI_BRIDGE_CONFIGURE
-    #endif
+  #if !(defined ESP_RESET && defined ESP_GPIO0)
+    #error ESP_RESET and ESP_GPIO0 must be defined!
+  #endif
+  #define USE_ESP_WIFI_BRIDGE_RST_GPIO0
+  #if defined DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
+    #define USE_ESP_WIFI_BRIDGE_CONFIGURE
   #endif
   #if (defined ESP_DTR && defined ESP_RTS) || defined ESP_DTR_RTS_USB
     #define USE_ESP_WIFI_BRIDGE_DTR_RTS
   #endif
-  #if defined ESP_BOOT0
-    #define USE_ESP_WIFI_BRIDGE_BOOT0
+  #if defined ESP_BOOTPIN
+    #define USE_ESP_WIFI_BRIDGE_BOOTPIN
   #endif
 #endif
 
@@ -465,6 +469,12 @@ extern "C" { void delay_ms(uint16_t ms); }
   #error Device cannot have HAS_SERIAL2 and HAS_WIRELESS_BRIDGE at the same time !
 #endif
 
+#if (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266) || \
+    (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3) || \
+    (defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 && defined DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3)
+  #error Must be either DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32, DEVICE_HAS_ESP_WIFI_BRIDGE_ESP8266 or DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
+#endif
+
 
 //-- checks for legacy flags
 
@@ -479,6 +489,9 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 #ifdef DEVICE_HAS_HC04_MODULE_ON_SERIAL2
   #error DEVICE_HAS_HC04_MODULE_ON_SERIAL2 is deprecated, use DEVICE_HAS_HC04_MODULE!
+#endif
+#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE
+  #error DEVICE_HAS_ESP_WIFI_BRIDGE is deprecated, use DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32!
 #endif
 
 

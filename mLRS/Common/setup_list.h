@@ -105,13 +105,13 @@
   X( Setup.Tx[0].PowerSwitchChannel,LIST, "Tx Power Sw Ch",   "TX_POWER_SW_CH",   0,0,0,"", "off,5,6,7,8,9,10,11,12,13,14,15,16", MSK_ALL )\
   X( Setup.Tx[0].Buzzer,            LIST, "Tx Buzzer",        "TX_BUZZER",        0,0,0,"", "off,LP,rxLQ", SETUP_MSK_TX_BUZZER )
 
-#define SETUP_PARAMETER_LIST_TX_ESP \
+#define SETUP_PARAMETER_LIST_TX_ESP_WIFI_BRIDGE \
   X( Setup.Tx[0].WifiProtocol,      LIST, "Tx Wifi Protocol", "TX_WIFI_PROT",     0,0,0,"", "TCP,UDP,BT,UDP STA,BLE,ESPNOW", SETUP_MSK_TX_WIFIPROT )\
   X( Setup.Tx[0].WifiChannel,       LIST, "Tx Wifi Channel",  "TX_WIFI_CHANNEL",  0,0,0,"", "1,6,11,13", MSK_ALL )\
   X( Setup.Tx[0].WifiPower,         LIST, "Tx Wifi Power",    "TX_WIFI_POWER",    0,0,0,"", "low,med,max", MSK_ALL )
 
 #if defined USE_ESP_WIFI_BRIDGE_CONFIGURE
-#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_ESP
+#define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN  SETUP_PARAMETER_LIST_TX_ESP_WIFI_BRIDGE
 #else
 #define SETUP_PARAMETER_LIST_TX  SETUP_PARAMETER_LIST_TX_MAIN
 #endif

@@ -103,6 +103,10 @@ void sx_amp_receive(void)
 {
 }
 
+void sx_band(bool high_band)
+{
+}
+
 void sx_dio_init_exti_isroff(void)
 {
     LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
@@ -192,7 +196,8 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 //#define POWER_PA_NONE_LR20XX
 //#include "../hal-power-pa.h"
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
+#define POWER_GAIN_DBM_HF         0 // gain of a PA stage if present
+#define POWER_GAIN_DBM_LF         0
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
 #define RFPOWER_DEFAULT           2 // index into rfpower_list array

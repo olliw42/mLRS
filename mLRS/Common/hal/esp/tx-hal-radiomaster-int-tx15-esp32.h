@@ -32,9 +32,8 @@
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_NO_SERIAL
 #define DEVICE_HAS_NO_COM
-#define DEVICE_HAS_ESP_WIFI_BRIDGE
-#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
+#define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
 #define DEVICE_HAS_NO_DEBUG
 
@@ -106,7 +105,7 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 #define LED_RGB                   IO_P22
 #define LED_RGB_PIXEL_NUM         1
-#include "../esp-hal-led-rgb.h"
+#include "esp-hal-led-rgb.h"
 
 
 //-- Cooling Fan
@@ -131,16 +130,16 @@ IRAM_ATTR void fan_set_power(int8_t power_dbm)
 
 #define ESP_RESET                 IO_P19 // backpack_en
 #define ESP_GPIO0                 IO_P23 // backpack_boot inverted?
-#define ESP_BOOT0                 IO_P0 // Will always be IO_P0
+#define ESP_BOOTPIN               IO_P0  // will always be IO_P0
 
-uint8_t esp_boot0()
+uint8_t esp_bootpin()
 {
-    return gpio_read_activelow(ESP_BOOT0);
+    return gpio_read_activelow(ESP_BOOTPIN);
 }
 
 void esp_init(void)
 {
-    // No need to configure ESP_BOOT0 which will always be IO_P0 and is pull-up by default
+    // no need to configure ESP_BOOTPIN which will always be IO_P0 and is pull-up by default
     gpio_init(ESP_GPIO0, IO_MODE_OUTPUT_PP_LOW); // high -> esp will start in bootloader mode
     gpio_init(ESP_RESET, IO_MODE_OUTPUT_PP_LOW); // low -> esp is in reset
 }
@@ -197,7 +196,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
             *sx_power = 0;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
-            *sx_power = -14;
+            *sx_power = -4;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) { // -> 17
             *sx_power = -7;

@@ -116,8 +116,10 @@ const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = { // 2.4 GHz, FLRC 111 Hz
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const uint8_t frequency_band)
+void lr20xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm_hf, const int8_t gain_dbm_lf, const uint8_t frequency_band)
 {
+    int8_t gain_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) ? gain_dbm_hf : gain_dbm_lf;
+
     int16_t power_sx = ((int16_t)power_dbm - gain_dbm) * 2; // LR20xx power is in units of 0.5 dBm
 
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
@@ -304,6 +306,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             SetRxPath(LR20XX_RX_PATH_LF, LR20XX_RX_BOOST_0_LF); // hm, table 3-17 says rx_boost = 7
         }
 
+        _set_band(gconfig->FrequencyBand);
+
         // calibrations
         // datasheet says Calibrate() is done at startup for 915 MHz, but should be redone if
         // frequency changes > 10 MHz or temperature changes > 10 Celsius
@@ -454,6 +458,10 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     virtual void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) = 0;
 
+    //-- high/low band interface
+
+    virtual void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) = 0;
+
     //-- helper
 
     void _config_calc(void)
@@ -514,6 +522,17 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         }
 
         return actual_power_dbm;
+    }
+
+    //-- PRAM
+
+    void _pram_load(void)
+    {
+        for (uint8_t i = 0; i < 3; i++) { // no idea what we should do if it fails, so give it 3 chances
+            LoadPram();
+            EnablePram();
+            if (CheckPram()) return; // all good // CheckPram() requires both LoadPram() & EnablePram() to be executed
+        }
     }
 
   protected:
@@ -609,10 +628,17 @@ class Lr20xxDriver : public Lr20xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
+    }
+
+    //-- high/low band interface
+
+    void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) override
+    {
+        sx_band(frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
     }
 
     //-- init API functions
@@ -636,6 +662,7 @@ class Lr20xxDriver : public Lr20xxDriverCommon
         sx_dio_init_exti_isroff();
 
         _reset(); // this is super crucial !
+        _pram_load();
     }
 
     //-- high level API functions
@@ -729,10 +756,17 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #if defined POWER_USE_DEFAULT_RFPOWER_CALC
-        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, gconfig->FrequencyBand);
+        lr20xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr20xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
+    }
+
+    //-- high/low band interface
+
+    void _set_band(SX_FHSS_FREQUENCY_BAND_ENUM frequency_band) override
+    {
+        sx2_band(frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ);
     }
 
     //-- init API functions
@@ -756,6 +790,7 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
         sx2_dio_init_exti_isroff();
 
         _reset(); // this is super crucial !
+        _pram_load();
     }
 
     //-- high level API functions
