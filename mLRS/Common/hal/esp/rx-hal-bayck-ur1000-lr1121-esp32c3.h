@@ -45,6 +45,7 @@
 #define SX_USE_RFSW_CTRL {15, 0, 4, 12, 0, 2, 0, 1}
 
 #define SX_USE_REGULATOR_MODE_DCDC
+#define SX_USE_LP_PA             // 900 MHz PA is fed from the LP PA output (ELRS radio_rfo_hf)
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
