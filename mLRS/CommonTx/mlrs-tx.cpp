@@ -189,7 +189,6 @@ tTxEspWifiBridge espbridge;
 tTxHc04Bridge hc04bridge;
 
 
-
 //-------------------------------------------------------
 // While transmit/receive tasks
 //-------------------------------------------------------
@@ -548,6 +547,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     // output data on serial
     // remove nonce from payload, decrypt data, correct len for the nonce
     uint8_t payload_len = frame->status.payload_len;
+
     crypto.Decrypt(frame->payload, &payload_len);
 
     sx_serial.putbuf(frame->payload, payload_len);

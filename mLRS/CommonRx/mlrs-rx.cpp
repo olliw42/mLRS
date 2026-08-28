@@ -396,8 +396,10 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // output data on serial, but only if connected
     if (!connected()) return;
+
     // remove nonce from payload, decrypt data, correct len for the nonce
     uint8_t payload_len = frame->status.payload_len;
+
     crypto.Decrypt(frame->payload, &payload_len);
 
     sx_serial.putbuf(frame->payload, payload_len);
