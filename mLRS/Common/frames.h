@@ -12,6 +12,7 @@
 
 
 #include "frame_types.h"
+#include "crypto.h"
 #include "hal/hal.h"
 
 
@@ -20,6 +21,7 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
+extern tCrypto crypto;
 
 
 //-------------------------------------------------------
@@ -327,15 +329,15 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
 // Tx: send cmd to Rx
 void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
-uint8_t payload[16]; // 1 + 8 = 9
+uint8_t payload[32]; // 1 + 16 = 17
 uint8_t len;
 
     payload[0] = cmd;
     len = 1;
 
     if (cmd == FRAME_CMD_GET_RX_SETUPDATA) { // add random session key
-        memcpy(&(payload[1]), &Config.Random, 8);
-        len += 8;
+        crypto.GetEncryptedRandom(&(payload[1]));
+        len += 16;
     }
 
     _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, len);

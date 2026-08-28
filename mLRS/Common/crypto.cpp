@@ -29,13 +29,14 @@ void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
     memset(_nonce, 0, sizeof(_nonce));
     _nonce_u32 = 0;
 
-    memset(_static_key, 0, sizeof(_static_key));
-    memcpy(_static_key,                   "mLRS key",    8); //  8 bytes
-    memcpy(_static_key + 8,               bind_phrase,   6); //  6 bytes
-    memcpy(_static_key + 8 + 6,           tx_uid,       12); // 12 bytes
-    memcpy(_static_key + 8 + 6 + 12,      rx_uid,       12); // 12 bytes // sum 38 bytes
+    memset(_static, 0, sizeof(_static));
+    memcpy(_static,               "mLRS key",    8); //  8 bytes
+    memcpy(_static + 8,           bind_phrase,   6); //  6 bytes
+    memcpy(_static + 8 + 6,       tx_uid,       12); // 12 bytes
+    memcpy(_static + 8 + 6 + 12,  rx_uid,       12); // 12 bytes // sum 38 bytes
 
-    crypto_blake2b(_key, 32, _static_key, 38);
+    crypto_blake2b(_static_key, 32, _static, 38);
+    memcpy(_key, _static_key, 32);
 }
 
 
@@ -47,10 +48,53 @@ uint8_t key_source[64]; // 38 + 8 = 46
 
     _random = random;
 
-    memcpy(key_source, _static_key,  38); // 38 bytes
+    memcpy(key_source, _static,      38); // 38 bytes
     memcpy(key_source + 38, &_random, 8); // 8 bytes // sum = 46 bytes
 
     crypto_blake2b(_key, 32, key_source, 46);
+}
+
+
+void tCrypto::GetEncryptedRandom(uint8_t random[16])
+{
+uint8_t nonce_buf[12];
+uint8_t poly1305_key[32];
+uint8_t mac[16];
+
+    if (_random == 0) while(1){} // must have been set before, must not happen
+
+    memset(nonce_buf, 0, 12);
+    memcpy(nonce_buf, &_static_nonce_u32, 4);
+    _static_nonce_u32++; // ready it for next use
+
+    crypto_chacha20_ietf(random, (uint8_t*)&_random, 8, _static_key, nonce_buf, 1234567);
+
+    memcpy(random + 8, nonce_buf, 4); // random[8] ... random[11]
+
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 1234568);
+    crypto_poly1305(mac, random, 12, poly1305_key);
+
+    memcpy(random + 12, mac, 4); // random[12] ... random[15]
+}
+
+
+void tCrypto::SetSessionKeyFromEncryptedRandom(uint8_t random[16])
+{
+uint8_t nonce_buf[12];
+uint8_t poly1305_key[32];
+uint8_t mac[16];
+uint64_t rand;
+
+    memset(nonce_buf, 0, 12);
+    memcpy(nonce_buf, random + 8, 4); // random[8] ... random[11]
+
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 1234568);
+    crypto_poly1305(mac, random, 12, poly1305_key);
+    for (uint8_t i = 0; i < 4; i++) if (random[12 + i] != mac[i]) return; // fail
+
+    crypto_chacha20_ietf((uint8_t*)&rand, random, 8, _static_key, nonce_buf, 1234567);
+
+    SetSessionKey(rand);
 }
 
 

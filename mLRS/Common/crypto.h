@@ -30,8 +30,9 @@ class tCrypto
     void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
 
     void SetSessionKey(uint64_t random);
-    void SetSessionKey(uint8_t random[8]) { uint64_t r; memcpy(&r, random, 8); SetSessionKey(r); }
+    void GetEncryptedRandom(uint8_t random[16]);
 
+    void SetSessionKeyFromEncryptedRandom(uint8_t random[16]);
     void Disconnected(void) { _random = 0; }
 
     uint16_t NonceLen(void);
@@ -41,7 +42,9 @@ class tCrypto
     uint64_t Random(void) { return _random; }
 
   private:
-    uint8_t _static_key[64];
+    uint8_t _static[64];
+    uint8_t _static_key[32];
+    uint32_t _static_nonce_u32;
     uint64_t _random;
     uint8_t _key[32];
     uint32_t _nonce_u32;

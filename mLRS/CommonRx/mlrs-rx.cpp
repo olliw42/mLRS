@@ -259,7 +259,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         // crypto
-        crypto.SetSessionKey(&frame->payload[1]);
+        crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
         Config.Random = crypto.Random();
         break;
     case FRAME_CMD_SET_RX_PARAMS:
