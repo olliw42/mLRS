@@ -86,22 +86,12 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 
 void tCrypto::_crypt_it(uint8_t* payload, uint16_t len)
 {
-    uint32_t counter = 0;
-
-    while (len > 0) {
-        uint16_t chunk_len = (len > 64) ? 64 : len;
-
-        crypto_chacha20_ietf(
-            payload,      // cipher_text,
-            payload,      // plain_text, same as cipher = in-place encoding
-            chunk_len,    // text_size,
-            _key,         // key[32],
-            _nonce,       // nonce[12],
-            counter);     // ctr
-
-        payload += chunk_len;
-        len -= chunk_len;
-        counter++;
-    }
+    crypto_chacha20_ietf(
+        payload,      // cipher_text,
+        payload,      // plain_text, same as cipher = in-place encoding
+        len,          // text_size,
+        _key,         // key[32],
+        _nonce,       // nonce[12],
+        0);           // ctr
 }
 

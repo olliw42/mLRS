@@ -82,9 +82,9 @@ void trng_init(void)
 #else
 
 void trng_init(void) {}
-uint32_t trng_get32(void) { return 0xFFFFFFFF; }
+uint32_t trng_get32(void) { return UINT32_MAX; }
 
-#endif // #ifdef STM32G4
+#endif
 
 
 //-------------------------------------------------------
