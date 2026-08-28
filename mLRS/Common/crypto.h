@@ -61,14 +61,10 @@ class tCrypto
     uint32_t _nonce_u32;
     uint8_t _nonce[12];
 
-    void _encrypt(uint8_t* const payload, uint8_t* len);
-    void _decrypt(uint8_t* const payload, uint8_t* len);
+    uint32_t _nonce_u32_last_received;
 
-    void _encrypt_w_auth(uint8_t* const payload, uint8_t* len);
-    void _decrypt_w_auth(uint8_t* const payload, uint8_t* len);
-
-    void _encrypt_w_auth_lvl3(uint8_t* const payload, uint8_t* len);
-    void _decrypt_w_auth_lvl3(uint8_t* const payload, uint8_t* len);
+    void _encrypt_it(uint8_t* const payload, uint8_t* len);
+    void _decrypt_it(uint8_t* const payload, uint8_t* len);
 
     void _crypt_it(uint8_t* payload, uint16_t len);
     void _mac_it(uint8_t mac[16], uint8_t* const payload, uint16_t len);
