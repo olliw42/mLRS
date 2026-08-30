@@ -60,6 +60,7 @@ class tCrypto
     uint8_t _key[32];
     uint32_t _nonce_u32;
     uint8_t _nonce[12];
+    uint8_t _nonce_len;
 
     uint32_t _nonce_u32_last_received;
 

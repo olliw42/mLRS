@@ -163,12 +163,12 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 void tCrypto::_encrypt_it(uint8_t* const payload, uint8_t* len)
 {
 uint8_t mac[16];
-uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     // update nonce
     _nonce_u32++;
-    memcpy(_nonce, &_nonce_u32, nonce_len); // _nonce[0] ... _nonce[nonce_len-1] = _nonce_u32
+    _nonce_len = crypto_list[_privacy_level].nonce_len;
+    memcpy(_nonce, &_nonce_u32, _nonce_len); // _nonce[0] ... _nonce[nonce_len-1] = _nonce_u32
 
     // encrypt data at payload[0]
     _crypt_it(payload, *len);
@@ -179,16 +179,16 @@ if (mac_len) {
 }
 
     // move data to payload + mac_len + nonce_len
-    memmove(payload + mac_len + nonce_len, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
+    memmove(payload + mac_len + _nonce_len, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
 
     // correct len for the mac and nonce
-    *len += mac_len + nonce_len;
+    *len += mac_len + _nonce_len;
 
     // copy mac into payload
     memcpy(payload, mac, mac_len); // payload[0] ... payload[mac_len-1]
 
     // copy nonce into payload
-    memcpy(payload + mac_len, _nonce, nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
+    memcpy(payload + mac_len, _nonce, _nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
 }
 
 
@@ -197,10 +197,11 @@ void tCrypto::_decrypt_it(uint8_t* const payload, uint8_t* len)
 uint8_t received_mac[LVL3_MAC_LEN];
 uint32_t received_nonce_u32;
 uint8_t mac[16];
-uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
-    if (*len < mac_len + nonce_len) {
+    _nonce_len = crypto_list[_privacy_level].nonce_len;
+
+    if (*len < mac_len + _nonce_len) {
         *len = 0; // TODO: what should we do ?
         return;
     }
@@ -209,13 +210,13 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     memcpy(received_mac, payload, mac_len); // payload[0] ... payload[mac_len-1]
 
     // get nonce
-    memcpy(_nonce, payload + mac_len, nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
+    memcpy(_nonce, payload + mac_len, _nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
 
     // correct len for the mac and nonce
-    *len -= mac_len + nonce_len;
+    *len -= mac_len + _nonce_len;
 
     // move data to payload[0]
-    memmove(payload, payload + mac_len + nonce_len, *len);
+    memmove(payload, payload + mac_len + _nonce_len, *len);
 
 if (mac_len) {
     // calculate MAC over nonce + payload
@@ -223,7 +224,7 @@ if (mac_len) {
 
     // comparison of 8-byte mac
     bool ok = true;
-    for (uint8_t i = 0; i < LVL3_MAC_LEN; i++) { if (mac[i] != received_mac[i]) ok = false; }
+    for (uint8_t i = 0; i < mac_len; i++) { if (mac[i] != received_mac[i]) ok = false; }
 
     if (!ok) { // authentication failed
         *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
@@ -233,7 +234,7 @@ if (mac_len) {
 
     // check nonce, don't accept previously seen nonces, to prvent replay attacks
     // TODO: what needs to be done upon connection loss?
-    memcpy(&received_nonce_u32, _nonce, nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
+    memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
     //if (received_nonce_u32 >= _nonce_u32_last_received) {
     //    *len = 0;
     //    return;
@@ -282,7 +283,7 @@ crypto_poly1305_ctx ctx;
         0);           // ctr
 
     crypto_poly1305_init(&ctx, poly1305_key);
-    crypto_poly1305_update(&ctx, _nonce, NONCE_LEN);
+    crypto_poly1305_update(&ctx, _nonce, _nonce_len);
     crypto_poly1305_update(&ctx, payload, len);
     crypto_poly1305_final(&ctx, mac);
 }
