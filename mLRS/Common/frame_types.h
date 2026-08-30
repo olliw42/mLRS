@@ -166,9 +166,10 @@ typedef struct
     uint8_t Ortho : 4;
     uint8_t Privacy : 4;
 
-    uint8_t spare2[59];
+    uint8_t spare2[51];
 
-    uint8_t tx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
+    uint8_t tx_uid[12]; // 12 bytes = 96 bits
+    uint64_t tx_random; //  8 bytes = 64 bits
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -190,7 +191,7 @@ typedef struct
 
     uint8_t spare2[43];
 
-    uint8_t rx_uid[12]; // 12 bytes = 96 bits, ensure it's not all FF
+    uint8_t rx_uid[12]; // 12 bytes = 96 bits
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes

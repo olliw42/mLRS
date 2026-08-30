@@ -761,9 +761,9 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
-    crypto.Init(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId]);
+    crypto.Init(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId]);
     crypto.SetPrivacyLevel(Setup.Common[Config.ConfigId].Privacy);
-    crypto.SetSessionKey(Config.Random);
+    crypto.SetSessionKey(Config.SessionRandom);
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource

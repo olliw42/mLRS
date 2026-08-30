@@ -35,7 +35,7 @@ SecretKey handling:
 class tCrypto
 {
   public:
-    void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12]);
+    void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
     void SetPrivacyLevel(uint8_t privacy_level);
 
     void SetSessionKey(uint64_t random);

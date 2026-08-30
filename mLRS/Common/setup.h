@@ -1083,19 +1083,23 @@ void setup_configure_config(uint8_t config_id)
 
 void setup_configure_config_crypto(void)
 {
-    Config.UseCrypto = false;
     memset(Config.Uid, 0xFF, 12);
-    Config.Random = UINT64_MAX;
+    Config.BindRandom = UINT64_MAX;
+    Config.SessionRandom = UINT64_MAX;
 
     mcu_uid(Config.Uid);
 #ifdef DEVICE_IS_TRANSMITTER
     // UINT64_MAX indicates that a TRNG is not available
-    for (uint8_t i = 0; i < 6; i++) { // trng_get32() can return UINT32_MAX, so give it few chances, but terminate
-        if (Config.Random == 0 || Config.Random == UINT64_MAX) {
-            Config.Random = ((uint64_t)trng_get32() << 32) + trng_get32();
-        }
+    // trng_get32() can return UINT32_MAX, so give it few chances, but terminate
+    for (uint8_t i = 0; i < 4; i++) {
+        Config.BindRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.BindRandom != 0 && Config.BindRandom != UINT64_MAX) break;
     }
-    Config.UseCrypto = (Config.Random != UINT64_MAX);
+    for (uint8_t i = 0; i < 4; i++) {
+        Config.SessionRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.SessionRandom != 0 && Config.SessionRandom != UINT64_MAX) break;
+    }
+    // TODO: what to do if either is invalid?
 #endif
 }
 

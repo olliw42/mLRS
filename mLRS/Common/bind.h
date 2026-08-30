@@ -301,6 +301,8 @@ void tBindBase::do_transmit(uint8_t antenna)
     txBindFrame.Privacy = Setup.Common[Config.ConfigId].Privacy;
 
     memcpy(txBindFrame.tx_uid, Config.Uid, 12); // send own uid to receiver // must both be 12 bytes
+    txBindFrame.tx_random = Config.BindRandom;  // send own random to receiver
+    Setup.tx_random[Config.ConfigId] = Config.BindRandom; // store the used random
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
 }
@@ -337,6 +339,7 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
     Setup.Common[0].Privacy = txBindFrame.Privacy;
 
     memcpy(Setup.peer_uid[0], txBindFrame.tx_uid, 12); // store transmitter uid // must both be 12 bytes
+    Setup.tx_random[0] = txBindFrame.tx_random; // store transmitter random
 
     if (txBindFrame.connected) {
         task = BIND_TASK_RX_STORE_PARAMS;

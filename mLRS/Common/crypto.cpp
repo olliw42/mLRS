@@ -41,15 +41,16 @@ const crypto_level_t crypto_list[] = {
 // Crypto API
 //-------------------------------------------------------
 
-void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
+void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
 {
     _privacy_level = 0;
 
     memset(_static, 0, sizeof(_static));
-    memcpy(_static,               "mLRS key",    8); //  8 bytes
-    memcpy(_static + 8,           bind_phrase,   6); //  6 bytes
-    memcpy(_static + 8 + 6,       tx_uid,       12); // 12 bytes
-    memcpy(_static + 8 + 6 + 12,  rx_uid,       12); // 12 bytes // sum 38 bytes
+    memcpy(_static,                   "mLRS key",    8); //  8 bytes
+    memcpy(_static + 8,               bind_phrase,   6); //  6 bytes
+    memcpy(_static + 8 + 6,           tx_uid,       12); // 12 bytes
+    memcpy(_static + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
+    memcpy(_static + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
 
     _random = 0; // 0 means session key not yet set
     _static_nonce_u32 = 0;
@@ -61,7 +62,7 @@ void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12])
     _nonce_u32_last_received = 0;
 
     // construct static key
-    crypto_blake2b(_static_key, 32, _static, 38);
+    crypto_blake2b(_static_key, 32, _static, 46);
     memcpy(_key, _static_key, 32);
 }
 
@@ -76,16 +77,16 @@ void tCrypto::SetPrivacyLevel(uint8_t privacy_level)
 
 void tCrypto::SetSessionKey(uint64_t random)
 {
-uint8_t key_source[64]; // 38 + 8 = 46
+uint8_t key_source[64]; // 46 + 8 = 54
 
     if (_random != 0) return; // has been set already
 
     _random = random;
 
-    memcpy(key_source, _static,      38); // 38 bytes
-    memcpy(key_source + 38, &_random, 8); // 8 bytes // sum = 46 bytes
+    memcpy(key_source,      _static,  46); // 46 bytes
+    memcpy(key_source + 46, &_random,  8); //  8 bytes // sum = 54 bytes
 
-    crypto_blake2b(_key, 32, key_source, 46);
+    crypto_blake2b(_key, 32, key_source, 54);
 }
 
 

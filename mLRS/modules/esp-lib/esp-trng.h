@@ -21,7 +21,7 @@ uint32_t trng_get32(void) { return UINT32_MAX; } // indicates TRNG not available
 #include "bootloader_random.h"
 
 
-#define ESP_TRNG_POOL_LEN  8 // 2 are needed for the session key, rest is head room
+#define ESP_TRNG_POOL_LEN  16 // 2 are needed for bind key, 2 for session key, rest are head room
 
 uint32_t esp_trng_pool[ESP_TRNG_POOL_LEN];
 

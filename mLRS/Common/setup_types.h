@@ -469,7 +469,8 @@ typedef struct
     tCommonSetup Common[SETUP_CONFIG_NUM];
 
     // crypto
-    uint8_t peer_uid[SETUP_CONFIG_NUM][12]; // 12 bytes = 96 bits, FF: unknown
+    uint8_t peer_uid[SETUP_CONFIG_NUM][12]; // 12 bytes = 96 bits
+    uint64_t tx_random[SETUP_CONFIG_NUM];   //  8 bytes = 64 bits
 
     char MarkerEnd[8];
 } tSetup;
@@ -576,9 +577,9 @@ typedef struct
     bool UseIn;
 
     // crypto
-    bool UseCrypto;
     uint8_t Uid[12];
-    uint64_t Random;
+    uint64_t BindRandom;
+    uint64_t SessionRandom;
 } tGlobalConfig;
 
 

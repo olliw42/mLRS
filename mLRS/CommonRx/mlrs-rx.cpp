@@ -260,7 +260,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         // crypto
         crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
-        Config.Random = crypto.Random();
+        Config.SessionRandom = crypto.Random();
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
@@ -591,7 +591,7 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
-    crypto.Init(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid);
+    crypto.Init(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid, Setup.tx_random[0]);
     crypto.SetPrivacyLevel(Setup.Common[0].Privacy);
 
     out.Configure(Setup.Rx.OutMode);

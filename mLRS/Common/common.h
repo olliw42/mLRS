@@ -467,7 +467,7 @@ STATIC_ASSERT(sizeof(tRxCmdFrameRxSetupData) == FRAME_RX_PAYLOAD_LEN, "tRxCmdFra
 STATIC_ASSERT(sizeof(tRxSetup) == 36, "tRxSetup len missmatch")
 STATIC_ASSERT(sizeof(tTxSetup) == 20, "tTxSetup len missmatch")
 STATIC_ASSERT(sizeof(tCommonSetup) == 16, "tCommonSetup len missmatch")
-STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16)*SETUP_CONFIG_NUM+SETUP_CONFIG_NUM*12+8+2, "tSetup len missmatch")
+STATIC_ASSERT(sizeof(tSetup) == 22+16+36+(20+16+12+8)*SETUP_CONFIG_NUM+8+6, "tSetup len missmatch")
 STATIC_ASSERT(sizeof(((tSetup*)0)->peer_uid[0]) == 12, "hardware_uid = 12 len missmatch")
 STATIC_ASSERT(sizeof(((tSetup*)0)->peer_uid[0]) == sizeof(((tTxBindFrame*)0)->tx_uid), "tx_uid len missmatch")
 STATIC_ASSERT(sizeof(((tSetup*)0)->peer_uid[0]) == sizeof(((tRxBindFrame*)0)->rx_uid), "rx_uid len missmatch")
