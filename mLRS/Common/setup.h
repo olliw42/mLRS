@@ -597,13 +597,13 @@ if (!only_rx) {
     //-- Spares and deprecated options:
     // should be 0xFF'ed
 
-    Setup.Rx.__spare1 = 0xFF;
-    Setup.Rx.__spare2 = 0xFF;
-
     for (uint8_t n = 0; n < sizeof(Setup.spare)/sizeof(Setup.spare[0]); n++) Setup.spare[n] = 0xFF;
+    for (uint8_t n = 0; n < sizeof(Setup.spare1)/sizeof(Setup.spare1[0]); n++) Setup.spare1[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Common[config_id].spare)/sizeof(Setup.Common[config_id].spare[0]); n++) Setup.Common[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Tx[config_id].spare)/sizeof(Setup.Tx[config_id].spare[0]); n++) Setup.Tx[config_id].spare[n] = 0xFF;
     for (uint8_t n = 0; n < sizeof(Setup.Rx.spare)/sizeof(Setup.Rx.spare[0]); n++) Setup.Rx.spare[n] = 0xFF;
+    Setup.Rx.spare1 = 0xFF;
+    Setup.Rx.spare2 = 0xFF;
 }
 
 
