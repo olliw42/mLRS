@@ -45,7 +45,6 @@
 #define SX_USE_RFSW_CTRL {15, 0, 4, 12, 0, 2, 0, 1}
 
 #define SX_USE_REGULATOR_MODE_DCDC
-#define SX_USE_LP_PA             // 900 MHz PA is fed from the LP PA output (ELRS radio_rfo_hf)
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
@@ -92,6 +91,8 @@ IRAM_ATTR bool button_pressed(void)
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 
+#define SX_USE_LP_PA             // 900 MHz PA is fed from the LP PA output (ELRS radio_rfo_hf)
+
 void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
@@ -126,7 +127,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
     }
 }
 
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+#define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_20_DBM, .mW = 100 },
