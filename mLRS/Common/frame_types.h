@@ -272,14 +272,14 @@ typedef struct
     uint8_t Ortho_allowed_mask_XXX; // TODO
     uint8_t Privacy_allowed_mask_XXX; // TODO
 
-    uint8_t spare1;
+    uint8_t spare2;
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
     uint8_t OutMode_allowed_mask;
     uint8_t SerialPort_allowed_mask; // was uint8_t __Buzzer_allowed_mask; // deprecated
 
-    uint8_t spare2[5];
+    uint8_t spare3[5];
 }) tRxCmdFrameRxSetupData; // 82 bytes
 
 

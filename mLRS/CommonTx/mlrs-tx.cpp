@@ -1095,7 +1095,7 @@ IF_SX2(
 
         // store parameters
         if (doParamsStore) {
-            sx.SetToIdle();
+            sx.SetToIdle(); // should not be needed, should not hurt either
             sx2.SetToIdle();
             leds.SetToParamStore();
             setup_store_to_EEPROM();

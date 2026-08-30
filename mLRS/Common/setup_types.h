@@ -418,9 +418,9 @@ typedef struct
     uint8_t SerialBaudrate;
     uint8_t SerialLinkMode;
     uint8_t SendRadioStatus;
-    uint8_t __spare1;
+    uint8_t spare1;
     uint8_t SendRcChannels;
-    uint8_t __spare2;
+    uint8_t spare2;
     uint8_t OutLqChannelMode;
     uint8_t PowerSwitchChannel;
     uint8_t SerialPort;
@@ -448,8 +448,7 @@ typedef struct
     uint32_t Version;
     uint16_t Layout;
 
-    // parameters common to both Tx and Rx
-    // deprecated
+    // auxilliary
     uint8_t spare[9];
 
     uint8_t _ConfigId; // strange name to avoid mistake
