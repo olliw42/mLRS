@@ -41,7 +41,7 @@ const crypto_level_t crypto_list[] = {
 // Crypto API
 //-------------------------------------------------------
 
-void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
+void tCrypto::Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
 {
     _privacy_level = 0;
 
@@ -57,12 +57,15 @@ void tCrypto::Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], ui
 
     memset(_key, 0, sizeof(_key));
     memset(_nonce, 0, sizeof(_nonce));
+    _nonce_len = 0;
     _nonce_u32 = 0;
 
     _nonce_u32_last_received = 0;
 
     // construct static key
     crypto_blake2b(_static_key, 32, _static, 46);
+
+    // set key to static key to have some default
     memcpy(_key, _static_key, 32);
 }
 
@@ -90,6 +93,11 @@ uint8_t key_source[64]; // 46 + 8 = 54
 }
 
 
+// The session random is transmitted encrypted, in the following format:
+//  0 ..  7: 8 bytes random
+//  8 .. 11: 4 bytes nonce, starts with 0
+// 12 .. 15: 4 bytes mac
+
 void tCrypto::GetEncryptedRandom(uint8_t random[16])
 {
 uint8_t nonce_buf[12];
@@ -100,6 +108,7 @@ uint8_t mac[16];
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, &_static_nonce_u32, 4);
+
     _static_nonce_u32++; // ready it for next use
 
     crypto_chacha20_ietf(random, (uint8_t*)&_random, 8, _static_key, nonce_buf, 1);
@@ -161,6 +170,11 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 // Encryption handlers
 //-------------------------------------------------------
 
+// The payload is transmitted encrypted, in the following format:
+//   3/4 bytes nonce
+//   0/3/8 bytes mac
+//   payload
+
 void tCrypto::_encrypt_it(uint8_t* const payload, uint8_t* len)
 {
 uint8_t mac[16];
@@ -174,10 +188,10 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // encrypt data at payload[0]
     _crypt_it(payload, *len);
 
-if (mac_len) {
-    // MAC = poly1305(nonce || ciphertext)
-    _mac_it(mac, payload, *len);
-}
+    if (mac_len) {
+        // MAC = poly1305(nonce || ciphertext)
+        _mac_it(mac, payload, *len);
+    }
 
     // move data to payload + mac_len + nonce_len
     memmove(payload + mac_len + _nonce_len, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
@@ -219,27 +233,28 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // move data to payload[0]
     memmove(payload, payload + mac_len + _nonce_len, *len);
 
-if (mac_len) {
-    // calculate MAC over nonce + payload
-    _mac_it(mac, payload, *len);
+    if (mac_len) {
+        // calculate MAC over nonce + payload
+        _mac_it(mac, payload, *len);
 
-    // comparison of 8-byte mac
-    bool ok = true;
-    for (uint8_t i = 0; i < mac_len; i++) { if (mac[i] != received_mac[i]) ok = false; }
+        // comparison of mac_len byte mac
+        bool ok = true;
+        for (uint8_t i = 0; i < mac_len; i++) { if (mac[i] != received_mac[i]) ok = false; }
 
-    if (!ok) { // authentication failed
-        *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
-        return;
+        if (!ok) { // authentication failed
+            *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
+            return;
+        }
     }
-}
 
-    // check nonce, don't accept previously seen nonces, to prvent replay attacks
+    // check nonce, don't accept previously seen nonces, to prevent replay attacks
+    // do only for privacy levels > 1
     // TODO: what needs to be done upon connection loss?
     memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
-    //if (received_nonce_u32 >= _nonce_u32_last_received) {
+    if (_privacy_level >= 2 && received_nonce_u32 >= _nonce_u32_last_received) {
     //    *len = 0;
     //    return;
-    //}
+    }
     _nonce_u32_last_received = received_nonce_u32;
 
     // decrypt data at payload[0]

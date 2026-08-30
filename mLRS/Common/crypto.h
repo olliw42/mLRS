@@ -9,7 +9,7 @@
 // Based on Monocypher, https://github.com/LoupVaillant/monocypher
 /*
 SecretKey handling:
-- on bind, a key root is exchanged, which is based on bind phrase, tx uid, rx uid
+- on bind, a key root is exchanged, which is based on bind phrase, tx uid, rx uid, 8 byte random number
   from that a secret static key is generated
 - on first connection two things happen
     - a 8 byte random number from a TRNG is exchanged; the exchange is encrypted and
@@ -17,11 +17,12 @@ SecretKey handling:
     - a secret session key is generated, which is based on
       the key root data plus the 8-byte random value
 - depending on the privacy level, the nonce is 3 or 4 bytes, and a mac for authentication is 0, 3, or 8 bytes
+- replay attacks can be prevented by requiring the nonce to monotonously increase
 - privacy levels
     off: nothing
-    level 1: only encryption
-    level 2: encryption + authentication
-    level 3: stronger encryption + authentication
+    level 1: only encryption                      (3 bytes nonce, no authentication, no replay attack prevention)
+    level 2: encryption + authentication          (3 bytes nonce, 3 bytes mac, replay attack prevention)
+    level 3: stronger encryption + authentication (4 bytes nonce, 8 bytes mac, replay attack prevention)
 */
 //*******************************************************
 #ifndef CRYPTO_H
@@ -35,7 +36,7 @@ SecretKey handling:
 class tCrypto
 {
   public:
-    void Init(char* bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
+    void Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
     void SetPrivacyLevel(uint8_t privacy_level);
 
     void SetSessionKey(uint64_t random);
