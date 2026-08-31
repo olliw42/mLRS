@@ -49,7 +49,7 @@ class tCrypto
     void Encrypt(uint8_t* const payload, uint8_t* len);
     void Decrypt(uint8_t* const payload, uint8_t* len);
 
-    uint64_t Random(void) { return _random; }
+    uint64_t Random(void) { return (_random_valid) ? _random : 0; }
 
   private:
     uint8_t _privacy_level;
