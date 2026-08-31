@@ -52,8 +52,11 @@ void tCrypto::Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[1
     memcpy(_static + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
     memcpy(_static + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
 
-    _random = 0; // 0 means session key not yet set
+    // is reused on each Tx power cycle, if there is concern, re-bind. TODO: should we set it randomly?
     _static_nonce_u32 = 0;
+
+    _random = 0;
+    _random_valid = false; // session key not yet set
 
     memset(_key, 0, sizeof(_key));
     memset(_nonce, 0, sizeof(_nonce));
@@ -82,9 +85,11 @@ void tCrypto::SetSessionKey(uint64_t random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
-    if (_random != 0) return; // has been set already
+    if (random == 0 || random == UINT64_MAX) return; // don't accept these
+    if (_random_valid) return; // has been set already
 
     _random = random;
+    _random_valid = true;
 
     memcpy(key_source,      _static,  46); // 46 bytes
     memcpy(key_source + 46, &_random,  8); //  8 bytes // sum = 54 bytes
@@ -104,7 +109,7 @@ uint8_t nonce_buf[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
 
-    if (_random == 0) while(1){} // must have been set before, must not happen
+    if (!_random_valid) while(1){} // must have been set before, must not happen
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, &_static_nonce_u32, 4);
@@ -139,6 +144,12 @@ uint64_t rand;
     crypto_chacha20_ietf((uint8_t*)&rand, random, 8, _static_key, nonce_buf, 1);
 
     SetSessionKey(rand);
+}
+
+
+void tCrypto::Disconnected(void)
+{
+    _random_valid = false;
 }
 
 
@@ -249,9 +260,9 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     // check nonce, don't accept previously seen nonces, to prevent replay attacks
     // do only for privacy levels > 1
-    // TODO: what needs to be done upon connection loss?
+    // TODO: what needs to be done upon connection loss? does it play well with ARQ?
     memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
-    if (_privacy_level >= 2 && received_nonce_u32 >= _nonce_u32_last_received) {
+    if (_privacy_level >= 2 && received_nonce_u32 <= _nonce_u32_last_received) {
     //    *len = 0;
     //    return;
     }

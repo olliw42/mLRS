@@ -43,7 +43,7 @@ class tCrypto
     void GetEncryptedRandom(uint8_t random[16]);
 
     void SetSessionKeyFromEncryptedRandom(uint8_t random[16]);
-    void Disconnected(void) { _random = 0; }
+    void Disconnected(void);
 
     uint16_t NonceLen(void);
     void Encrypt(uint8_t* const payload, uint8_t* len);
@@ -58,6 +58,7 @@ class tCrypto
     uint8_t _static_key[32];
     uint32_t _static_nonce_u32;
     uint64_t _random;
+    bool _random_valid;
     uint8_t _key[32];
     uint32_t _nonce_u32;
     uint8_t _nonce[12];

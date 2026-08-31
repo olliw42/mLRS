@@ -137,7 +137,7 @@ void setup_configure_metadata(void)
 
     //-- Privacy: "off,lvl1,lvl2,lvl3"
 #if defined DEVICE_IS_TRANSMITTER && defined ESP8266
-    SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
+    SetupMetaData.Privacy_allowed_mask = 0; // not available, do not display
 #else
     SetupMetaData.Privacy_allowed_mask = 0b1111; // all
 #endif
