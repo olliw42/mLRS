@@ -8,12 +8,12 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v1.3.03 and later, mOTX v33
+-- works with mLRS v1.4.03 and later, mOTX v33
 -- 13.02.2026: Many constants/variables put into tables.
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-05-30', -- add a '.01' if needed for the day
+    script = '2026-08-31', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -405,6 +405,7 @@ local DEVICE_PARAM_LIST_current_index = -1
 local DEVICE_PARAM_LIST_max_index = 0 -- 0: unknown, will be updated after each param upload
 local DEVICE_PARAM_LIST_errors = 0
 local DEVICE_PARAM_LIST_complete = false
+local DEVICE_PARAM_LIST_common_count = 0
 local DEVICE_DOWNLOAD_is_running = true -- we start the script with this
 local DEVICE_SAVE_t_last = 0
 
@@ -418,6 +419,7 @@ local function clearParams()
     DEVICE_PARAM_LIST_current_index = -1
     DEVICE_PARAM_LIST_errors = 0
     DEVICE_PARAM_LIST_complete = false
+    DEVICE_PARAM_LIST_common_count = 0
     DEVICE_DOWNLOAD_is_running = true
 end
 
@@ -593,6 +595,17 @@ local function updateDeviceParamCounts(f)
     end
 end
 
+local function countCommonParams()
+    local count = 0
+    for i = 0, #DEVICE_PARAM_LIST - 1 do
+        local param = DEVICE_PARAM_LIST[i]
+        local prefix = string.sub(param.name, 1, 2) 
+        if prefix ~= "Tx" and prefix ~= "Rx" then -- no need to check for if param ~= nil and param.name ~= nil and       
+            count = count + 1
+        end
+    end
+    return count
+end
 
 local function doParamLoop()
     -- trigger getting device items and param items
@@ -610,6 +623,7 @@ local function doParamLoop()
           DEVICE_PARAM_LIST_current_index = -1
           DEVICE_PARAM_LIST_errors = 0
           DEVICE_PARAM_LIST_complete = false
+          DEVICE_PARAM_LIST_common_count = 0
       elseif DEVICE_PARAM_LIST == nil then
           if DEVICE_INFO ~= nil then -- wait for DEVICE_INFO to be populated, indicates that MBRIDGE_CMD.REQUEST_INFO is completed
               DEVICE_PARAM_LIST = {}
@@ -685,9 +699,11 @@ local function doParamLoop()
                 if DEVICE_PARAM_LIST_errors == 0 then
                     updateDeviceParamCounts(2)
                     DEVICE_PARAM_LIST_complete = true
+                    DEVICE_PARAM_LIST_common_count = countCommonParams()
                 else
                     -- Huston, we have a problem
                     DEVICE_PARAM_LIST_complete = false
+                    DEVICE_PARAM_LIST_common_count = 0
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end
                 DEVICE_DOWNLOAD_is_running = false
@@ -847,14 +863,15 @@ local IDX = {
     Mode_idx = 1,
     RFBand_idx = 2,
     RFOrtho_idx = 3,
-    EditTx_idx = 4,
-    EditRx_idx = 5,
-    Save_idx = 6,
-    Reload_idx = 7,
-    Bind_idx = 8,
-    Tools_idx = 9,
-    MAIN_CURSOR_IDX_MAX = 9,
-    COMMON_PARAM_IDX_MAX = 3, -- note: for common parameters it is assumed that cursor idx = param idx
+    Privacy_idx = 4,
+    COMMON_PARAM_IDX_MAX = 4, -- note: for common parameters it is assumed that cursor idx = param idx
+    EditTx_idx = 5,
+    EditRx_idx = 6,
+    Save_idx = 7,
+    Reload_idx = 8,
+    Bind_idx = 9,
+    Tools_idx = 10,
+    MAIN_CURSOR_IDX_MAX = 10,
     -- Page Tools, idxes of options on tools page
     Tools_Boot_idx = 0,
     Tools_FlashEsp_idx = 1,
@@ -1250,36 +1267,48 @@ local function drawPageMain()
         end
     end
 
-    lcd.drawText(10, y + LAYOUT.DY, "Mode", THEME.textColor)
+    y = y + LAYOUT.DY
+    lcd.drawText(10, y, "Mode", THEME.textColor)
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y+LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
+            lcd.drawText(140, y, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
         end
     end
 
-    lcd.drawText(10, y + 2*LAYOUT.DY, "RF Band", THEME.textColor)
+    y = y + LAYOUT.DY
+    lcd.drawText(10, y, "RF Band", THEME.textColor)
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[2] -- param_idx = 2 = RfBand
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
             if p.value <= #freq_band_list then
-                lcd.drawText(140, y + 2*LAYOUT.DY, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(140, y, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
             else
                 lcd.drawText(140, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
             end
         end
     end
 
-    if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
-        local y_ortho = y
-        if THEME.screenSize == 320240 then y_ortho = y + 42 end
+    y = 95
+    if THEME.screenSize == 320240 then y = y + 2*LAYOUT.DY end -- not to the right, but continue
 
-        lcd.drawText(LAYOUT.W_HALF+30, y_ortho, "Ortho", THEME.textColor)
+    if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
+        lcd.drawText(LAYOUT.W_HALF+30, y, "Ortho", THEME.textColor)
         local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(LAYOUT.W_HALF+90, y_ortho, p.options[p.value+1], cur_attr_p(IDX.RFOrtho_idx,3))
+            lcd.drawText(LAYOUT.W_HALF+90, y, p.options[p.value+1], cur_attr_p(IDX.RFOrtho_idx,3))
         end
+        y = y + LAYOUT.DY -- prepare for the next
+    end
+
+    if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST_common_count > 4 and DEVICE_PARAM_LIST[4].allowed_mask > 0 then
+        lcd.drawText(LAYOUT.W_HALF+30, y, "Privacy", THEME.textColor)
+        local p = DEVICE_PARAM_LIST[4] -- param_idx = 4 = Privacy
+        if p.options[p.value+1] ~= nil then
+            lcd.drawText(LAYOUT.W_HALF+100, y, p.options[p.value+1], cur_attr_p(IDX.Privacy_idx,4))
+        end
+        y = y + LAYOUT.DY -- prepare for the next
     end
 
     y = LAYOUT.BUTTONS_Y
@@ -1394,23 +1423,30 @@ local function doPageMain(event)
         elseif event == EVT_VIRTUAL_NEXT then -- and DEVICE_PARAM_LIST_complete then
             CURSOR.idx = CURSOR.idx + 1
             if CURSOR.idx > IDX.MAIN_CURSOR_IDX_MAX then CURSOR.idx = IDX.MAIN_CURSOR_IDX_MAX end
-
+            if CURSOR.idx >= DEVICE_PARAM_LIST_common_count and CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then
+                CURSOR.idx = IDX.COMMON_PARAM_IDX_MAX + 1
+                
+            end            
             if CURSOR.idx == IDX.Mode_idx and not param_focusable(1) then CURSOR.idx = CURSOR.idx + 1 end
             if CURSOR.idx == IDX.RFBand_idx and not param_focusable(2) then CURSOR.idx = CURSOR.idx + 1 end
             if CURSOR.idx == IDX.RFOrtho_idx and not param_focusable(3) then CURSOR.idx = CURSOR.idx + 1 end
+            if CURSOR.idx == IDX.Privacy_idx and not param_focusable(4) then CURSOR.idx = CURSOR.idx + 1 end
             if CURSOR.idx == IDX.EditRx_idx and not connected then CURSOR.idx = CURSOR.idx + 1 end
         elseif event == EVT_VIRTUAL_PREV then -- and DEVICE_PARAM_LIST_complete then
             CURSOR.idx = CURSOR.idx - 1
             if CURSOR.idx < 0 then CURSOR.idx = 0 end
-
+            if CURSOR.idx >= DEVICE_PARAM_LIST_common_count and CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then
+                CURSOR.idx = DEVICE_PARAM_LIST_common_count - 1
+            end            
             if CURSOR.idx == IDX.EditRx_idx and not connected then CURSOR.idx = CURSOR.idx - 1 end
+            if CURSOR.idx == IDX.Privacy_idx and not param_focusable(4) then CURSOR.idx = CURSOR.idx - 1 end
             if CURSOR.idx == IDX.RFOrtho_idx and not param_focusable(3) then CURSOR.idx = CURSOR.idx - 1 end
             if CURSOR.idx == IDX.RFBand_idx and not param_focusable(2) then CURSOR.idx = CURSOR.idx - 1 end
             if CURSOR.idx == IDX.Mode_idx and not param_focusable(1) then CURSOR.idx = CURSOR.idx - 1 end
         end
     else
         if event == EVT_VIRTUAL_EXIT then
-            if CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- BindPhrase, Mode, RF Band, RF Ortho
+            if CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- BindPhrase, Mode, RF Band, RF Ortho, Privacy
                 sendParamSet(CURSOR.idx)
             end
             CURSOR.edit = false
@@ -1420,7 +1456,7 @@ local function doPageMain(event)
                     sendParamSet(0)
                     CURSOR.edit = false
                 end
-            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
+            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho, Privacy
                 sendParamSet(CURSOR.idx)
                 CURSOR.edit = false
             else
@@ -1429,13 +1465,13 @@ local function doPageMain(event)
         elseif event == EVT_VIRTUAL_NEXT then
             if CURSOR.idx == IDX.BindPhrase_idx then -- BindPhrase
                 param_str6_inc(0)
-            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
+            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho, Privacy
                 param_value_inc(CURSOR.idx)
             end
         elseif event == EVT_VIRTUAL_PREV then
             if CURSOR.idx == IDX.BindPhrase_idx then -- BindPhrase
                 param_str6_dec(0)
-            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho
+            elseif CURSOR.idx <= IDX.COMMON_PARAM_IDX_MAX then -- Mode, RF Band, RF Ortho, Privacy
                 param_value_dec(CURSOR.idx)
             end
         end
