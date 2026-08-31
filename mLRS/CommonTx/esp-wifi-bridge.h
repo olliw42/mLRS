@@ -163,11 +163,7 @@ void tTxEspWifiBridge::Init(void)
 #else
     com = Serials.com;
 #endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // uartd is always available, but could be a dummy port
-    ser = Serials.uartd;
-#else
-    ser = nullptr;
-#endif
+    ser = Serials.uartd; // uartd is always available, but could be a dummy port
     ser_baud = Config.SerialBaudrate; // TODO: why not always 115200 ?
 
     passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
