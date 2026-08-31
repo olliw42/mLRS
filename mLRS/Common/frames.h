@@ -336,6 +336,7 @@ uint8_t len;
     len = 1;
 
     if (cmd == FRAME_CMD_GET_RX_SETUPDATA) { // add random session key
+        // TODO: should we only send after startup, if privacy level >= 2?
         crypto.GetEncryptedRandom(&(payload[1]));
         len += 16;
     }

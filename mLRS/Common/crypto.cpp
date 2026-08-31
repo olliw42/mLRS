@@ -81,12 +81,19 @@ void tCrypto::SetPrivacyLevel(uint8_t privacy_level)
 }
 
 
+//-- handle session random and session key
+// The session random is transmitted encrypted, in the following format:
+//  0 ..  7: 8 bytes random
+//  8 .. 11: 4 bytes nonce, starts with 0
+// 12 .. 15: 4 bytes mac
+
+// Tx: called in init sequence
+// Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA frame is received
 void tCrypto::SetSessionKey(uint64_t random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
-    if (random == 0 || random == UINT64_MAX) return; // don't accept these
-    if (_random_valid) return; // has been set already
+    if (random == 0 || random == UINT64_MAX) return; // don't accept these, should not happen TODO: what to do if it does?
 
     _random = random;
     _random_valid = true;
@@ -98,18 +105,14 @@ uint8_t key_source[64]; // 46 + 8 = 54
 }
 
 
-// The session random is transmitted encrypted, in the following format:
-//  0 ..  7: 8 bytes random
-//  8 .. 11: 4 bytes nonce, starts with 0
-// 12 .. 15: 4 bytes mac
-
+// only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA frame
 void tCrypto::GetEncryptedRandom(uint8_t random[16])
 {
 uint8_t nonce_buf[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
 
-    if (!_random_valid) while(1){} // must have been set before, must not happen
+    if (!_random_valid) while(1){} // must not happen, must have been set before, just to ensure proper code flow
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, &_static_nonce_u32, 4);
@@ -127,12 +130,15 @@ uint8_t mac[16];
 }
 
 
+// only Rx: called upon receive of a FRAME_CMD_GET_RX_SETUPDATA frame
 void tCrypto::SetSessionKeyFromEncryptedRandom(uint8_t random[16])
 {
 uint8_t nonce_buf[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
 uint64_t rand;
+
+    if (_random_valid) return; // has been set already
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, random + 8, 4); // random[8] ... random[11]
@@ -147,15 +153,24 @@ uint64_t rand;
 }
 
 
+// only Rx: called when receiver is disconnected
 void tCrypto::Disconnected(void)
 {
-    _random_valid = false;
+    // TODO: this needs carefully thinking through.
+    // one needs to consider differences between re-powered, reconnected
+    // currently: for privacy level >= 2, session key stays always persistent
+
+    if (_privacy_level <= 1) { // accept potentially new session random/session key
+        _random_valid = false;
+    }
 }
 
 
+//-- API miscellaneous
+
 uint16_t tCrypto::NonceLen(void)
 {
-    if (!_privacy_level) return 0;
+    if (!_privacy_level) return 0; // no encryption
 
     return crypto_list[_privacy_level].nonce_len + crypto_list[_privacy_level].mac_len;
 }
@@ -163,7 +178,7 @@ uint16_t tCrypto::NonceLen(void)
 
 void tCrypto::Encrypt(uint8_t* const payload, uint8_t* len)
 {
-    if (!_privacy_level) return;
+    if (!_privacy_level) return; // no encryption
 
     _encrypt_it(payload, len);
 }
@@ -171,7 +186,7 @@ void tCrypto::Encrypt(uint8_t* const payload, uint8_t* len)
 
 void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 {
-    if (!_privacy_level) return;
+    if (!_privacy_level) return; // no encryption
 
     _decrypt_it(payload, len);
 }
