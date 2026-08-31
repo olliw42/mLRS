@@ -225,9 +225,9 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t _spare1 : 4;
+    uint8_t spare1 : 4;
     uint8_t SendRcChannels : 4;
-    uint8_t _spare2 : 4;
+    uint8_t spare2 : 4;
     uint8_t OutLqChannelMode : 4;
     uint8_t PowerSwitchChannel : 4;
     uint8_t SerialPort : 4;
