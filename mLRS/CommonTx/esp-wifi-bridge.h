@@ -163,14 +163,17 @@ void tTxEspWifiBridge::Init(void)
 #else
     com = Serials.com;
 #endif
-#ifdef DEVICE_HAS_ESP_WIFI_BRIDGE // uartd is always available, but could be a dummy port
+    // this code is compiled only when USE_ESP_WIFI_BRIDGE, which implies USE_WIRELESS_BRIDGE
+    // and hence USE_SERIAL2, so uartd is always a real port here and never nullptr
     ser = Serials.uartd;
-#else
-    ser = nullptr;
-#endif
-    ser_baud = Config.SerialBaudrate; // TODO: why not always 115200 ?
+    // uartd is assigned to serial2 when the bridge is on SerialPort2, so it got baud2 in Serials.Init()
+    // TODO: why not always 115200 ?
+    if (Setup.Tx[Config.ConfigId].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE)
+        ser_baud = Config.SerialBaudrate2;
+    else
+        ser_baud = Config.SerialBaudrate;
 
-    passthrough = (com != nullptr && ser != nullptr); // we need both for passthrough
+    passthrough = (com != nullptr); // we need a com port for passthrough
 
     dtr_rts_last = 0;
     bootpin_last = 0;
