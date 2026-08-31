@@ -90,7 +90,7 @@
   X( Setup.Common[0].Mode,          LIST, "Mode",             "MODE",             0,0,0,"", SETUP_OPT_MODE, SETUP_MSK_MODE )\
   X( Setup.Common[0].FrequencyBand, LIST, "RF Band",          "RF_BAND",          0,0,0,"", SETUP_OPT_RFBAND, SETUP_MSK_RFBAND )\
   X( Setup.Common[0].Ortho,         LIST, "RF Ortho",         "RF_ORTHO",         0,0,0,"", "off,1/3,2/3,3/3", SETUP_MSK_RFORTHO ) \
-  X( Setup.Common[0].Privacy,       LIST, "Privacy",          "PRIVACY",          0,0,0,"", "off,lvl1,lvl2,lvl3", SETUP_MSK_PRIVACY )
+  X( Setup.Common[0].Privacy,       LIST, "Privacy",          "PRIVACY",          0,0,0,"", "off,lvl 1,lvl 2,lvl 3", SETUP_MSK_PRIVACY )
 
 #define SETUP_PARAMETER_LIST_TX_MAIN \
   X( Setup.Tx[0].Power,             LIST, "Tx Power",         "TX_POWER",         0,0,0,"", SETUP_OPT_TX_POWER, MSK_ALL )\
