@@ -96,6 +96,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -107,6 +108,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tCrypto crypto;
 
 
 // is required in bind.h
@@ -256,6 +258,9 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        // crypto
+        crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
+        Config.SessionRandom = crypto.Random(); // only for reporting
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
@@ -308,7 +313,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
@@ -369,6 +374,11 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     stats.received_LQ_serial = frame->status.LQ_serial;
 
+    // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
+    // currently no way to detect that RC data should not be used
+    // would then have to do check_txframe() for both frames in case of diversity/dualband
+    unpack_txframe(frame);
+
     // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
@@ -388,6 +398,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // output data on serial, but only if connected
     if (!connected()) return;
+
     sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -577,6 +588,8 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    crypto.Init(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid, Setup.tx_random[0]);
+    crypto.SetPrivacyLevel(Setup.Common[0].Privacy);
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
@@ -879,6 +892,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
+        if (!connected()) crypto.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

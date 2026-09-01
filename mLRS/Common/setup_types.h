@@ -77,6 +77,15 @@ typedef enum {
 
 
 typedef enum {
+    PRIVACY_NONE = 0,
+    PRIVACY_LEVEL1,
+    PRIVACY_LEVEL2,
+    PRIVACY_LEVEL3,
+    PRIVACY_NUM,
+} PRIVACY_ENUM;
+
+
+typedef enum {
     EXCEPT_NONE = 0,
     EXCEPT_2P4_GHZ_WIFIBAND_1,
     EXCEPT_2P4_GHZ_WIFIBAND_6,
@@ -369,8 +378,9 @@ typedef struct
     SETUP_FREQUENCY_BAND_ENUM FrequencyBand;
     uint8_t Mode;
     uint8_t Ortho;
+    uint8_t Privacy;
 
-    uint8_t spare[6];
+    uint8_t spare[5];
 } tCommonSetup; // 16 bytes
 
 
@@ -457,6 +467,10 @@ typedef struct
     // cannot be changed on the fly, loss of connection will happen, needs restart/reconnect
     tCommonSetup Common[SETUP_CONFIG_NUM];
 
+    // crypto
+    uint8_t peer_uid[SETUP_CONFIG_NUM][12]; // 12 bytes = 96 bits
+    uint64_t tx_random[SETUP_CONFIG_NUM];   //  8 bytes = 64 bits
+
     char MarkerEnd[8];
 } tSetup;
 
@@ -470,6 +484,7 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask;
     uint16_t Mode_allowed_mask;
     uint16_t Ortho_allowed_mask;
+    uint16_t Privacy_allowed_mask;
 
     char Tx_Power_optstr[67+1];
     uint16_t Tx_Diversity_allowed_mask;
@@ -559,6 +574,11 @@ typedef struct
     bool UseMbridge;
     bool UseCrsf;
     bool UseIn;
+
+    // crypto
+    uint8_t Uid[12];
+    uint64_t BindRandom;
+    uint64_t SessionRandom;
 } tGlobalConfig;
 
 
