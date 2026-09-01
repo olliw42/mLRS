@@ -94,16 +94,25 @@ uint16_t crc;
     // crypto
     if ((type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
-        crypto.Encrypt(frame->payload, payload_len, &payload_len);
+        if (crypto.PrivacyLevel() >= 2) {
+            crypto.Encrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
+        } else {
+            crypto.Encrypt(frame->payload, payload_len, &payload_len); // only payload
+        }
         frame->status.payload_len = payload_len;
     }
 
     // finalize, crc
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    frame->crc1 = crc;
+    if ((type == FRAME_TYPE_TX) && (crypto.PrivacyLevel() >= 2)) {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
+    } else {
+        fmav_crc_init(&crc);
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+        frame->crc1 = crc;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    }
     frame->crc = crc;
 }
 
@@ -133,11 +142,17 @@ uint16_t crc;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    if (crc != frame->crc1) return CHECK_ERROR_CRC1;
+    if ((frame->status.frame_type == FRAME_TYPE_TX) && (crypto.PrivacyLevel() >= 2)) {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
+    } else {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+        if (crc != frame->crc1) return CHECK_ERROR_CRC1;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    }
     if (crc != frame->crc) return CHECK_ERROR_CRC;
+
+    // TODO: should we do the encryption here to capture RC data fakes ??
 
     return CHECK_OK;
 }
@@ -147,7 +162,11 @@ void unpack_txframe(tTxFrame* const frame)
 {
     if ((frame->status.frame_type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         uint8_t payload_len = frame->status.payload_len;
-        crypto.Decrypt(frame->payload, payload_len, &payload_len);
+        if (crypto.PrivacyLevel() >= 2) {
+            crypto.Decrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
+        } else {
+            crypto.Decrypt(frame->payload, payload_len, &payload_len); // only payload
+        }
         frame->status.payload_len = payload_len;
     }
 }

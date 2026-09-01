@@ -374,6 +374,9 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     stats.received_LQ_serial = frame->status.LQ_serial;
 
+    // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
+    // currently no way to detect that RC data should not be used
+    // would then have to do check_txframe() for both frames in case of diversity/dualband
     unpack_txframe(frame);
 
     // copy rc1 data
