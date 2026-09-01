@@ -169,17 +169,21 @@ uint16_t crc;
 
 
 // unpack a normal tTxFrame, comes before any RC data and payload processing
-void unpack_txframe(tTxFrame* const frame)
+bool unpack_txframe(tTxFrame* const frame)
 {
+bool ok = true;
+
     if ((frame->status.frame_type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         uint8_t payload_len = frame->status.payload_len;
         if (crypto.PrivacyLevel() >= 2) {
-            crypto.Decrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
+            ok = crypto.Decrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
         } else {
-            crypto.Decrypt(frame->payload, payload_len, &payload_len); // only payload
+            ok = crypto.Decrypt(frame->payload, payload_len, &payload_len); // only payload
         }
         frame->status.payload_len = payload_len;
     }
+
+    return ok;
 }
 
 

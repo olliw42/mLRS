@@ -197,11 +197,12 @@ void tCrypto::Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 }
 
 
-void tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+bool tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
-    if (!_privacy_level) return; // no encryption
+    if (!_privacy_level) return true; // no encryption
 
     _decrypt_ok = _decrypt_it(data, len, payload_len);
+    return _decrypt_ok;
 }
 
 

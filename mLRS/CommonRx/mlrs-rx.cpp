@@ -380,16 +380,16 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
     // currently no way to detect that RC data should not be used
     // would then have to do check_txframe() for both frames in case of diversity/dualband
-    unpack_txframe(frame);
+    bool ok = unpack_txframe(frame);
 
     // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
-        rcdata_rc1_from_txframe(&rcData, frame);
+        if (ok) rcdata_rc1_from_txframe(&rcData, frame);
         return;
     }
 
-    rcdata_from_txframe(&rcData, frame);
+    if (ok) rcdata_from_txframe(&rcData, frame);
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
