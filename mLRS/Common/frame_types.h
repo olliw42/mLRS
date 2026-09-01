@@ -164,9 +164,12 @@ typedef struct
     uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare2[51];
+
+    uint8_t tx_uid[12]; // 12 bytes = 96 bits
+    uint64_t tx_random; //  8 bytes = 64 bits
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -186,7 +189,9 @@ typedef struct
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55];
+    uint8_t spare2[43];
+
+    uint8_t rx_uid[12]; // 12 bytes = 96 bits
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
@@ -265,8 +270,9 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
     uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t Privacy_allowed_mask_XXX; // TODO
 
-    uint8_t spare2[2];
+    uint8_t spare2;
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
@@ -289,8 +295,8 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes

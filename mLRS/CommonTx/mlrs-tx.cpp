@@ -37,6 +37,7 @@
 #include "../modules/esp-lib/esp-mcu.h"
 //xx #include "../modules/esp-lib/esp-adc.h"
 #include "../modules/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-trng.h"
 #include "../Common/hal/hal.h"
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
@@ -71,6 +72,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-adc.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #include "../Common/thirdparty/stdstm32-exti.h"
+#include "../Common/thirdparty/stdstm32-trng.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -114,6 +116,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -129,6 +132,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tCrypto crypto;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxInfo info;
@@ -258,6 +262,7 @@ void init_hw(void)
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
+    trng_init();
 
     leds_init();
     button_init();
@@ -465,7 +470,8 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> process_received_rxcmdframe(frame)
+//                               -> unpack_rxframe(frame)
+//                                  process_received_rxcmdframe(frame)
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
@@ -475,7 +481,7 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                 if (!sx_serial.available()) break;
                 uint8_t c = sx_serial.getc();
                 payload[payload_len++] = c;
@@ -532,6 +538,8 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     }
 
     if (!accept_payload) return; // frame has no fresh payload
+
+    unpack_rxframe(frame);
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
@@ -751,6 +759,9 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    crypto.Init(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId]);
+    crypto.SetPrivacyLevel(Setup.Common[Config.ConfigId].Privacy);
+    crypto.SetSessionKey(Config.SessionRandom);
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
@@ -1075,7 +1086,9 @@ IF_SX2(
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER:
+            doParamsStore = true;
+            break;
         }
 
         // store parameters

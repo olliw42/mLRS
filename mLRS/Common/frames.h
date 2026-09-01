@@ -12,6 +12,7 @@
 
 
 #include "frame_types.h"
+#include "crypto.h"
 #include "hal/hal.h"
 
 
@@ -20,6 +21,7 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
+extern tCrypto crypto;
 
 
 //-------------------------------------------------------
@@ -98,12 +100,27 @@ uint16_t crc;
         frame->payload[i] = payload[i];
     }
 
+    // crypto
+    if ((type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
+        // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
+        if (crypto.PrivacyLevel() >= 2) {
+            crypto.Encrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
+        } else {
+            crypto.Encrypt(frame->payload, payload_len, &payload_len); // only payload
+        }
+        frame->status.payload_len = payload_len;
+    }
+
     // finalize, crc
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    frame->crc1 = crc;
+    if (crypto.PrivacyLevel() >= 2) {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
+    } else {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+        frame->crc1 = crc;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    }
     frame->crc = crc;
 }
 
@@ -135,13 +152,34 @@ uint16_t crc;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    if (crc != frame->crc1) return CHECK_ERROR_CRC1;
+    if (crypto.PrivacyLevel() >= 2) {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
+    } else {
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
+        if (crc != frame->crc1) return CHECK_ERROR_CRC1;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+        fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    }
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
+    // TODO: should we do the encryption here to capture RC data fakes ??
+
     return CHECK_OK;
+}
+
+
+// unpack a normal tTxFrame, comes before any RC data and payload processing
+void unpack_txframe(tTxFrame* const frame)
+{
+    if ((frame->status.frame_type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
+        uint8_t payload_len = frame->status.payload_len;
+        if (crypto.PrivacyLevel() >= 2) {
+            crypto.Decrypt((uint8_t*)&frame->rc1, 18 + payload_len, &payload_len); // all, RC data + payload
+        } else {
+            crypto.Decrypt(frame->payload, payload_len, &payload_len); // only payload
+        }
+        frame->status.payload_len = payload_len;
+    }
 }
 
 
@@ -246,6 +284,13 @@ uint16_t crc;
         frame->payload[i] = payload[i];
     }
 
+    // crypto
+    if ((type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
+        // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
+        crypto.Encrypt(frame->payload, payload_len, &payload_len);
+        frame->status.payload_len = payload_len;
+    }
+
     // finalize, crc
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
@@ -283,6 +328,17 @@ uint16_t crc;
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
+}
+
+
+// unpack a normal tRxFrame, comes before any payload processing
+void unpack_rxframe(tRxFrame* const frame)
+{
+    if ((frame->status.frame_type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
+        uint8_t payload_len = frame->status.payload_len;
+        crypto.Decrypt(frame->payload, payload_len, &payload_len);
+        frame->status.payload_len = payload_len;
+    }
 }
 
 
@@ -351,11 +407,19 @@ void _copy_cmdframerxparameters_to_rxsetup(tCmdFrameRxParameters* const rx_param
 // Tx: send cmd to Rx
 void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
-uint8_t payload[1];
+uint8_t payload[32]; // 1 + 16 = 17
+uint8_t len;
 
     payload[0] = cmd;
+    len = 1;
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, 1);
+    if (cmd == FRAME_CMD_GET_RX_SETUPDATA) { // add random session key
+        // TODO: should we only send after startup, if privacy level >= 2?
+        crypto.GetEncryptedRandom(&(payload[1]));
+        len += 16;
+    }
+
+    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, len);
 }
 
 
@@ -379,6 +443,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     //SetupMetaData.FrequencyBand_allowed_mask = rx_setupdata->FrequencyBand_allowed_mask;
     //SetupMetaData.Mode_allowed_mask = rx_setupdata->Mode_allowed_mask;
     //SetupMetaData.Ortho_allowed_mask = rx_setupdata->Ortho_allowed_mask;
+    //SetupMetaData.Privacy_allowed_mask = rx_setupdata->Privacy_allowed_mask;
 
     int16_t power_list[8];
     for (uint8_t i = 0; i < 8; i++) power_list[i] = rx_setupdata->Power_list[i]; // to avoid unaligned warning
@@ -409,6 +474,7 @@ tTxCmdFrameRxParams rx_params = {};
     rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
     rx_params.Ortho = Setup.Common[Config.ConfigId].Ortho;
+    rx_params.Privacy = Setup.Common[Config.ConfigId].Privacy;
 
     _copy_rxsetup_to_cmdframerxparameters(&(rx_params.RxParams));
 
@@ -460,6 +526,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)rx_params->FrequencyBand;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
+    Setup.Common[0].Privacy = rx_params->Privacy;
 
     // don't take over Rx parameters if there is a layout version missmatch
     // tx_setup_layout_u16 is 0 for versions < 10401

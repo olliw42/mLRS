@@ -96,6 +96,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -107,6 +108,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tCrypto crypto;
 
 
 // is required in bind.h
@@ -256,6 +258,9 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        // crypto
+        crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
+        Config.SessionRandom = crypto.Random(); // only for reporting
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
@@ -297,7 +302,8 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
+//                               -> unpack_txframe(frame)
+//                                  rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
@@ -310,7 +316,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
@@ -370,6 +376,11 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     stats.received_fhss_index = frame->status.fhss_index;
 
     stats.received_LQ_serial = frame->status.LQ_serial;
+
+    // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
+    // currently no way to detect that RC data should not be used
+    // would then have to do check_txframe() for both frames in case of diversity/dualband
+    unpack_txframe(frame);
 
     // copy rc1 data
     if (!do_payload) {
@@ -580,6 +591,8 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    crypto.Init(Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid, Setup.tx_random[0]);
+    crypto.SetPrivacyLevel(Setup.Common[0].Privacy);
 
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
@@ -865,14 +878,14 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         // we didn't receive a valid frame
         frame_missed = false;
-        if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
+        if ((connect_state >= CONNECT_STATE_SYNC) && valid_frame_received && !crypto.InvalidFrameDecrypted()) {
             frame_missed = true;
             // reset sync counter, relevant if in sync
             // connect_sync_cnt = 0; // NO!! when in sync this means that we need to get five in a row, right!?!
             // switch to transmit state
             // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
             // we are on the correct frequency, so no need to hop
-            link_state = LINK_STATE_TRANSMIT;
+            link_state = LINK_STATE_TRANSMIT; // TODO: is superfluous, isn't it? no path for which it would not be TX
         }
 
         if ((connect_state >= CONNECT_STATE_SYNC) ||
@@ -882,6 +895,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
+        if (!connected()) crypto.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
