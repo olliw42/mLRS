@@ -113,12 +113,14 @@ class tTxCrsf : public tPin5BridgeBase
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
     // autobaud handling
-    bool autobaud_enabled;
-    uint32_t autobaud_tlast_ms;
-    uint8_t autobaud_cycles_tmo_cnt;
-    uint8_t autobaud_cnt;
-    volatile uint8_t autobaud_valid_cnt;
-    void autobaud(void);
+    struct {
+        bool is_running;
+        uint32_t tlast_ms;
+        uint8_t cycles_cnt;
+        uint8_t baudrate_idx;
+        uint8_t channels_received_cnt;
+    } autobaud;
+    void autobaud_do(void);
 
     // CRSF telemetry
 
@@ -331,7 +333,6 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             cmd_received = true;
         }
         state = STATE_TRANSMIT_START;
-        autobaud_valid_cnt++;
         break;
     }
 }
@@ -381,26 +382,27 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 //-------------------------------------------------------
 // autobaud handling
 
-void tTxCrsf::autobaud(void)
+void tTxCrsf::autobaud_do(void)
 {
-    if (!autobaud_enabled) return;
+    if (!autobaud.is_running) return;
 
     uint32_t tnow_ms = millis32();
-    if ((tnow_ms - autobaud_tlast_ms) > CRSF_AUTOBAUD_MS) {
-        if (!autobaud_tlast_ms) { // this is the first occurrence, so skip
-            autobaud_tlast_ms = tnow_ms;
-            return;
-        }
-        autobaud_tlast_ms = tnow_ms;
-        autobaud_cycles_tmo_cnt--;
 
-        INCc(autobaud_cnt, CRSF_AUTOBAUD_BAUDS_LEN);
-        autobaud_valid_cnt = 0;
-        pin5_set_protocol(txcrsf_bauds[autobaud_cnt]);
+    if (!autobaud.tlast_ms) { // this is the first occurrence, so skip
+        autobaud.tlast_ms = tnow_ms;
     }
 
-    if (!autobaud_cycles_tmo_cnt) autobaud_enabled = false; // disable, too many tries
-    if (autobaud_valid_cnt > 5) autobaud_enabled = false; // disable, sufficiently many valid frames received
+    if ((tnow_ms - autobaud.tlast_ms) > CRSF_AUTOBAUD_MS) {
+        autobaud.tlast_ms = tnow_ms;
+        autobaud.cycles_cnt--;
+
+        INCc(autobaud.baudrate_idx, CRSF_AUTOBAUD_BAUDS_LEN); // try next baudrate
+        autobaud.channels_received_cnt = 0;
+        pin5_set_protocol(txcrsf_bauds[autobaud.baudrate_idx]);
+    }
+
+    if (autobaud.channels_received_cnt > 5) autobaud.is_running = false; // disable, sufficiently many valid frames received
+    if (!autobaud.cycles_cnt) autobaud.is_running = false; // disable, too many tries
 }
 
 
@@ -413,11 +415,11 @@ void tTxCrsf::Init(bool enable_flag)
 
     if (!enabled) return;
 
-    autobaud_enabled = true; // start with doing autobaud
-    autobaud_tlast_ms = 0;
-    autobaud_cycles_tmo_cnt = 20;
-    autobaud_cnt = 0;
-    autobaud_valid_cnt = 0;
+    autobaud.is_running = true; // start with doing autobaud
+    autobaud.tlast_ms = 0;
+    autobaud.cycles_cnt = 20;
+    autobaud.baudrate_idx = 0;
+    autobaud.channels_received_cnt = 0;
 
     tx_available = 0;
     tx_free = false;
@@ -460,8 +462,8 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 
     CheckAndRescue();
 
-    // hook into here and do autobaud
-    autobaud();
+    // hook into here for autobaud
+    autobaud_do();
 
     if (!channels_received) return false;
     channels_received = false;
@@ -469,6 +471,8 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     // check crc before we accept it
     uint8_t crc = crc8(frame);
     if (crc != frame[frame[1] + 1]) return false;
+
+    autobaud.channels_received_cnt++;
 
     fill_rcdata(rc);
     return true;
@@ -479,6 +483,8 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
 {
     if (!enabled) return false;
+
+    if (autobaud.is_running) return false; // don't send any telemetry while in startup sequence
 
     // check if we can transmit
     if (!tx_free) return false;

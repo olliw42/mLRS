@@ -61,9 +61,6 @@
 #define UARTD_USE_RX
 #define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define ESP_RESET                 IO_PC8
-#define ESP_GPIO0                 IO_PB1
-
 #define UART_USE_UART2_PB3PB4 // JR pin5, MBridge
 #define UART_BAUD                 400000
 #define UART_USE_TX
@@ -72,7 +69,8 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_RX_TX_INVERT_INTERNAL
+#define JRPIN5_FULL_INTERNAL_ON_RX
 
 #define UARTF_USE_LPUART1_PC1PC0 // debug
 #define UARTF_BAUD                115200
