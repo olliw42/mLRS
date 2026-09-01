@@ -107,7 +107,6 @@ uint16_t crc;
     if ((type == FRAME_TYPE_TX) && (crypto.PrivacyLevel() >= 2)) {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
     } else {
-        fmav_crc_init(&crc);
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
         frame->crc1 = crc;
 
