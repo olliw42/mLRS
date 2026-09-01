@@ -39,18 +39,19 @@ class tCrypto
     void Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
     void SetPrivacyLevel(uint8_t privacy_level);
 
-    void SetSessionKey(uint64_t random);
-    void GetEncryptedRandom(uint8_t random[16]);
+    void SetSessionKey(uint64_t random); // Tx only
+    void GetEncryptedRandom(uint8_t random[16]); // Tx only
 
-    void SetSessionKeyFromEncryptedRandom(uint8_t random[16]);
-    void Disconnected(void);
+    void SetSessionKeyFromEncryptedRandom(uint8_t random[16]); // Rx only
+    bool InvalidFrameDecrypted(void); // Rx only
+    void Disconnected(void); // Rx only
 
     uint8_t PrivacyLevel(void) { return _privacy_level; }
     uint16_t NonceLen(void);
     void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
     void Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
-    uint64_t Random(void) { return (_random_valid) ? _random : 0; }
+    uint64_t Random(void) { return (_random_valid) ? _random : 0; } // Rx only
 
   private:
     uint8_t _privacy_level;
@@ -67,8 +68,10 @@ class tCrypto
 
     uint32_t _nonce_u32_last_received;
 
+    bool _decrypt_ok;
+
     void _encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
-    void _decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
+    bool _decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
     void _crypt_it(uint8_t* data, uint16_t len);
     void _mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len);

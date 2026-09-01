@@ -65,6 +65,8 @@ void tCrypto::Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[1
 
     _nonce_u32_last_received = 0;
 
+    _decrypt_ok = true;
+
     // construct static key
     crypto_blake2b(_static_key, 32, _static, 46);
 
@@ -153,6 +155,17 @@ uint64_t rand;
 }
 
 
+// only Rx
+bool tCrypto::InvalidFrameDecrypted(void)
+{
+    if (!_privacy_level) return false;
+
+    bool ok = _decrypt_ok;
+    _decrypt_ok = true; // reset it for next use, implies that InvalidFrameDecrypted() is only called once per cycle
+    return !ok;
+}
+
+
 // only Rx: called when receiver is disconnected
 void tCrypto::Disconnected(void)
 {
@@ -188,7 +201,7 @@ void tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
     if (!_privacy_level) return; // no encryption
 
-    _decrypt_it(data, len, payload_len);
+    _decrypt_ok = _decrypt_it(data, len, payload_len);
 }
 
 
@@ -233,7 +246,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 }
 
 
-void tCrypto::_decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+bool tCrypto::_decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
 uint8_t received_mac[LVL3_MAC_LEN];
 uint32_t received_nonce_u32;
@@ -244,7 +257,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     if (len < mac_len + _nonce_len) {
         *payload_len = 0; // TODO: what should we do ?
-        return;
+        return false;
     }
 
     // get mac
@@ -270,7 +283,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
         if (!ok) { // authentication failed
             *payload_len = 0; // pretend we didn't got data at all // TODO: what should we do ?
-            return;
+            return false;
         }
     }
 
@@ -286,6 +299,8 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     // decrypt data at data[0]
     _crypt_it(data, len);
+
+    return true;
 }
 
 
