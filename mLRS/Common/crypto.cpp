@@ -176,19 +176,19 @@ uint16_t tCrypto::NonceLen(void)
 }
 
 
-void tCrypto::Encrypt(uint8_t* const payload, uint8_t* len)
+void tCrypto::Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
     if (!_privacy_level) return; // no encryption
 
-    _encrypt_it(payload, len);
+    _encrypt_it(data, len, payload_len);
 }
 
 
-void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
+void tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
     if (!_privacy_level) return; // no encryption
 
-    _decrypt_it(payload, len);
+    _decrypt_it(data, len, payload_len);
 }
 
 
@@ -196,12 +196,12 @@ void tCrypto::Decrypt(uint8_t* const payload, uint8_t* len)
 // Encryption handlers
 //-------------------------------------------------------
 
-// The payload is transmitted encrypted, in the following format:
+// The data is transmitted encrypted, in the following format:
 //   3/4 bytes nonce
 //   0/3/8 bytes mac
-//   payload
+//   data
 
-void tCrypto::_encrypt_it(uint8_t* const payload, uint8_t* len)
+void tCrypto::_encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
 uint8_t mac[16];
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
@@ -211,29 +211,29 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     _nonce_len = crypto_list[_privacy_level].nonce_len;
     memcpy(_nonce, &_nonce_u32, _nonce_len); // _nonce[0] ... _nonce[nonce_len-1] = _nonce_u32
 
-    // encrypt data at payload[0]
-    _crypt_it(payload, *len);
+    // encrypt data at data[0]
+    _crypt_it(data, len);
 
     if (mac_len) {
         // MAC = poly1305(nonce || ciphertext)
-        _mac_it(mac, payload, *len);
+        _mac_it(mac, data, len);
     }
 
     // move data to payload + mac_len + nonce_len
-    memmove(payload + mac_len + _nonce_len, payload, *len); // NOT memcpy(), needs to copy from end towards beginning !!
+    memmove(data + mac_len + _nonce_len, data, len); // NOT memcpy(), needs to copy from end towards beginning !!
 
-    // correct len for the mac and nonce
-    *len += mac_len + _nonce_len;
+    // correct payload len for the mac and nonce
+    *payload_len += mac_len + _nonce_len;
 
-    // copy mac into payload
-    memcpy(payload, mac, mac_len); // payload[0] ... payload[mac_len-1]
+    // copy mac into data
+    memcpy(data, mac, mac_len); // data[0] ... data[mac_len-1]
 
-    // copy nonce into payload
-    memcpy(payload + mac_len, _nonce, _nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
+    // copy nonce into data
+    memcpy(data + mac_len, _nonce, _nonce_len); // data[mac_len] ... data[mac_len+nonce_len-1]
 }
 
 
-void tCrypto::_decrypt_it(uint8_t* const payload, uint8_t* len)
+void tCrypto::_decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
 uint8_t received_mac[LVL3_MAC_LEN];
 uint32_t received_nonce_u32;
@@ -242,33 +242,34 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     _nonce_len = crypto_list[_privacy_level].nonce_len;
 
-    if (*len < mac_len + _nonce_len) {
-        *len = 0; // TODO: what should we do ?
+    if (len < mac_len + _nonce_len) {
+        *payload_len = 0; // TODO: what should we do ?
         return;
     }
 
     // get mac
-    memcpy(received_mac, payload, mac_len); // payload[0] ... payload[mac_len-1]
+    memcpy(received_mac, data, mac_len); // data[0] ... data[mac_len-1]
 
     // get nonce
-    memcpy(_nonce, payload + mac_len, _nonce_len); // payload[mac_len] ... payload[mac_len+nonce_len-1]
+    memcpy(_nonce, data + mac_len, _nonce_len); // data[mac_len] ... data[mac_len+nonce_len-1]
 
-    // correct len for the mac and nonce
-    *len -= mac_len + _nonce_len;
+    // correct len, payload_len for the mac and nonce
+    *payload_len -= mac_len + _nonce_len;
+    len -= mac_len + _nonce_len;
 
-    // move data to payload[0]
-    memmove(payload, payload + mac_len + _nonce_len, *len);
+    // move data to data[0]
+    memmove(data, data + mac_len + _nonce_len, len); // NOT memcpy(), needs to copy from beginning towards end !!
 
     if (mac_len) {
         // calculate MAC over nonce + payload
-        _mac_it(mac, payload, *len);
+        _mac_it(mac, data, len);
 
         // comparison of mac_len byte mac
         bool ok = true;
         for (uint8_t i = 0; i < mac_len; i++) { if (mac[i] != received_mac[i]) ok = false; }
 
         if (!ok) { // authentication failed
-            *len = 0; // pretend we didn't got data at all // TODO: what should we do ?
+            *payload_len = 0; // pretend we didn't got data at all // TODO: what should we do ?
             return;
         }
     }
@@ -283,8 +284,8 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     }
     _nonce_u32_last_received = received_nonce_u32;
 
-    // decrypt data at payload[0]
-    _crypt_it(payload, *len);
+    // decrypt data at data[0]
+    _crypt_it(data, len);
 }
 
 
@@ -292,22 +293,22 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 // Monocypher interface
 //-------------------------------------------------------
 
-void tCrypto::_crypt_it(uint8_t* payload, uint16_t len)
+void tCrypto::_crypt_it(uint8_t* data, uint16_t len)
 {
 // Note: the counter does not have to start at 0, one just needs to use
 // different counter for each block, so always starting with 1 is fine
 
     crypto_chacha20_ietf(
-        payload,      // cipher_text,
-        payload,      // plain_text, same as cipher = in-place encoding
-        len,          // text_size,
-        _key,         // key[32],
-        _nonce,       // nonce[12],
-        1);           // ctr
+        data,     // cipher_text,
+        data,     // plain_text, same as cipher = in-place encoding
+        len,      // text_size,
+        _key,     // key[32],
+        _nonce,   // nonce[12],
+        1);       // ctr
 }
 
 
-void tCrypto::_mac_it(uint8_t mac[16], uint8_t* const payload, uint16_t len)
+void tCrypto::_mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len)
 {
 uint8_t poly1305_key[32];
 crypto_poly1305_ctx ctx;
@@ -326,7 +327,7 @@ crypto_poly1305_ctx ctx;
 
     crypto_poly1305_init(&ctx, poly1305_key);
     crypto_poly1305_update(&ctx, _nonce, _nonce_len);
-    crypto_poly1305_update(&ctx, payload, len);
+    crypto_poly1305_update(&ctx, data, len);
     crypto_poly1305_final(&ctx, mac);
 }
 

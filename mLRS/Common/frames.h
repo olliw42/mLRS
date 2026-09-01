@@ -94,7 +94,7 @@ uint16_t crc;
     // crypto
     if ((type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
-        crypto.Encrypt(frame->payload, &payload_len);
+        crypto.Encrypt(frame->payload, payload_len, &payload_len);
         frame->status.payload_len = payload_len;
     }
 
@@ -147,7 +147,7 @@ void unpack_txframe(tTxFrame* const frame)
 {
     if ((frame->status.frame_type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         uint8_t payload_len = frame->status.payload_len;
-        crypto.Decrypt(frame->payload, &payload_len);
+        crypto.Decrypt(frame->payload, payload_len, &payload_len);
         frame->status.payload_len = payload_len;
     }
 }
@@ -245,7 +245,7 @@ uint16_t crc;
     // crypto
     if ((type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
-        crypto.Encrypt(frame->payload, &payload_len);
+        crypto.Encrypt(frame->payload, payload_len, &payload_len);
         frame->status.payload_len = payload_len;
     }
 
@@ -290,7 +290,7 @@ void unpack_rxframe(tRxFrame* const frame)
 {
     if ((frame->status.frame_type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
         uint8_t payload_len = frame->status.payload_len;
-        crypto.Decrypt(frame->payload, &payload_len);
+        crypto.Decrypt(frame->payload, payload_len, &payload_len);
         frame->status.payload_len = payload_len;
     }
 }

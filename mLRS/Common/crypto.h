@@ -47,8 +47,8 @@ class tCrypto
 
     uint8_t PrivacyLevel(void) { return _privacy_level; }
     uint16_t NonceLen(void);
-    void Encrypt(uint8_t* const payload, uint8_t* len);
-    void Decrypt(uint8_t* const payload, uint8_t* len);
+    void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
+    void Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
     uint64_t Random(void) { return (_random_valid) ? _random : 0; }
 
@@ -67,11 +67,11 @@ class tCrypto
 
     uint32_t _nonce_u32_last_received;
 
-    void _encrypt_it(uint8_t* const payload, uint8_t* len);
-    void _decrypt_it(uint8_t* const payload, uint8_t* len);
+    void _encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
+    void _decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
-    void _crypt_it(uint8_t* payload, uint16_t len);
-    void _mac_it(uint8_t mac[16], uint8_t* const payload, uint16_t len);
+    void _crypt_it(uint8_t* data, uint16_t len);
+    void _mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len);
 };
 
 
