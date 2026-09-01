@@ -104,7 +104,7 @@ uint16_t crc;
 
     // finalize, crc
     fmav_crc_init(&crc);
-    if ((type == FRAME_TYPE_TX) && (crypto.PrivacyLevel() >= 2)) {
+    if (crypto.PrivacyLevel() >= 2) {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
     } else {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
@@ -141,7 +141,7 @@ uint16_t crc;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
     fmav_crc_init(&crc);
-    if ((frame->status.frame_type == FRAME_TYPE_TX) && (crypto.PrivacyLevel() >= 2)) {
+    if (crypto.PrivacyLevel() >= 2) {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
     } else {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
