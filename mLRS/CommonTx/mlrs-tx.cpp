@@ -455,14 +455,17 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 
 //-- normal Tx, Rx frames handling
 // transmit
-//   -> do_transmit()
-//       -> prepare_transmit_frame()
+//   -> do_transmit_prepare(antenna, fhss1_curr_i, fhss2_curr_i)
+//       -> prepare_transmit_frame(antenna, fhss1_curr_i, fhss2_curr_i)
+//           -> pack_txframe(...) or pack_txcmdframe(...)
+//   -> do_transmit_send(antenna)
 // receive
 //   isr:        -> irq2_status
-//   isr loop:   -> do_receive()
+//   isr loop:   -> do_receive(antenna)
 //               -> link_rx1_status
-//   post loop:  -> handle_receive() or handle_receive_none()
-//                   if valid -> process_received_frame()
+//   post loop:  -> handle_receive(antenna) or handle_receive_none()
+//                  if valid -> process_received_frame(do_payload, frame)
+//                               -> process_received_rxcmdframe(frame)
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
@@ -544,7 +547,63 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
 }
 
 
-//-- receive/transmit handling api
+//-- transmit/receive handling api
+
+void do_transmit_prepare(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i) // we prepare a TX frame to be send to receiver
+{
+    if (bind.IsInBind()) {
+        bind.do_transmit(antenna);
+        return;
+    }
+
+    stats.transmit_seq_no++;
+
+    prepare_transmit_frame(antenna, fhss1_curr_i, fhss2_curr_i);
+}
+
+
+void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
+{
+    if (bind.IsInBind()) {
+       sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
+       return;
+    }
+
+    sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
+}
+
+
+uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
+{
+uint8_t res;
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
+
+    if (bind.IsInBind()) {
+        return bind.do_receive(antenna, false);
+    }
+
+    // we don't need to read sx.GetRxBufferStatus(), but hey
+    // we could save 2 byte's time by not reading sync_word again, but hey
+    sxReadFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN);
+    res = (antenna == ANTENNA_1) ? check_rxframe(&rxFrame) : check_rxframe(&rxFrame2);
+
+    if (res) {
+        DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
+//dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
+    }
+
+    if (res == CHECK_ERROR_SYNCWORD) return RX_STATUS_INVALID; // must not happen !
+
+    if (res == CHECK_OK) {
+        rx_status = RX_STATUS_VALID;
+    }
+
+    // we want to have the rssi,snr stats even if it's a bad packet
+    sxGetPacketStatus(antenna, &stats);
+
+    return rx_status;
+}
+
 
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
 {
@@ -602,62 +661,6 @@ tRxFrame* frame;
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     rarq.FrameMissed();
-}
-
-
-void do_transmit_prepare(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i) // we prepare a TX frame to be send to receiver
-{
-    if (bind.IsInBind()) {
-        bind.do_transmit(antenna);
-        return;
-    }
-
-    stats.transmit_seq_no++;
-
-    prepare_transmit_frame(antenna, fhss1_curr_i, fhss2_curr_i);
-}
-
-
-void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
-{
-    if (bind.IsInBind()) {
-       sxSendFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
-       return;
-    }
-
-    sxSendFrame(antenna, &txFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10 ms tmo
-}
-
-
-uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
-{
-uint8_t res;
-uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
-
-    if (bind.IsInBind()) {
-        return bind.do_receive(antenna, false);
-    }
-
-    // we don't need to read sx.GetRxBufferStatus(), but hey
-    // we could save 2 byte's time by not reading sync_word again, but hey
-    sxReadFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN);
-    res = (antenna == ANTENNA_1) ? check_rxframe(&rxFrame) : check_rxframe(&rxFrame2);
-
-    if (res) {
-        DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
-//dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
-    }
-
-    if (res == CHECK_ERROR_SYNCWORD) return RX_STATUS_INVALID; // must not happen !
-
-    if (res == CHECK_OK) {
-        rx_status = RX_STATUS_VALID;
-    }
-
-    // we want to have the rssi,snr stats even if it's a bad packet
-    sxGetPacketStatus(antenna, &stats);
-
-    return rx_status;
 }
 
 

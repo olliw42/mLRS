@@ -287,15 +287,17 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 
 
 //-- normal Tx, Rx frames handling
+// transmit
+//   -> do_transmit(antenna)
+//       -> prepare_transmit_frame(antenna)
+//           -> pack_rx_frame(...) or pack_rxcmdframe(...)
 // receive
 //   isr:        -> irq2_status
-//   isr loop:   -> do_receive()
+//   isr loop:   -> do_receive(antenna, do_clock_reset)
 //               -> link_rx1_status
-//   post loop:  -> handle_receive() or handle_receive_none()
-//                   if valid -> process_received_frame()
-// transmit
-//   -> do_transmit()
-//       -> prepare_transmit_frame()
+//   post loop:  -> handle_receive(antenna) or handle_receive_none()
+//                  if valid -> process_received_frame(do_payload, frame)
+//                               -> rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
@@ -388,6 +390,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // output data on serial, but only if connected
     if (!connected()) return;
+
     sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
     stats.bytes_received.Add(frame->status.payload_len);
@@ -395,7 +398,58 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 }
 
 
-//-- receive/transmit handling api
+//-- transmit/receive handling api
+
+void do_transmit(uint8_t antenna) // we send a frame to transmitter
+{
+    if (bind.IsInBind()) {
+        bind.do_transmit(antenna);
+        return;
+    }
+
+    prepare_transmit_frame(antenna);
+
+    // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
+    sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10ms tmo
+}
+
+
+uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
+{
+uint8_t res;
+uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
+
+    if (bind.IsInBind()) {
+        return bind.do_receive(antenna, do_clock_reset);
+    }
+
+    // we don't need to read sx.GetRxBufferStatus(), but hey
+    // we could save 2 byte's time by not reading sync_word again, but hey
+    sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
+    res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
+
+    if (res) {
+        DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
+dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
+    }
+
+    // must not happen !
+    // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
+    if (res == CHECK_ERROR_SYNCWORD) { FAIL_WMSG("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
+
+    if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
+
+        if (do_clock_reset) rxclock.Reset();
+
+        rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
+    }
+
+    // we want to have the rssi,snr stats even if it's a bad packet
+    sxGetPacketStatus(antenna, &stats);
+
+    return rx_status;
+}
+
 
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
@@ -449,57 +503,6 @@ tTxFrame* frame;
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     tarq.FrameMissed();
-}
-
-
-void do_transmit(uint8_t antenna) // we send a frame to transmitter
-{
-    if (bind.IsInBind()) {
-        bind.do_transmit(antenna);
-        return;
-    }
-
-    prepare_transmit_frame(antenna);
-
-    // to test asymmetric connection, fake rxFrame, to no send doesn't work as it blocks the sx
-    sxSendFrame(antenna, &rxFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS); // 10ms tmo
-}
-
-
-uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
-{
-uint8_t res;
-uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was received
-
-    if (bind.IsInBind()) {
-        return bind.do_receive(antenna, do_clock_reset);
-    }
-
-    // we don't need to read sx.GetRxBufferStatus(), but hey
-    // we could save 2 byte's time by not reading sync_word again, but hey
-    sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
-    res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
-
-    if (res) {
-        DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
-dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
-    }
-
-    // must not happen !
-    // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
-    if (res == CHECK_ERROR_SYNCWORD) { FAIL_WMSG("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
-
-    if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
-
-        if (do_clock_reset) rxclock.Reset();
-
-        rx_status = (res == CHECK_OK) ? RX_STATUS_VALID : RX_STATUS_CRC1_VALID;
-    }
-
-    // we want to have the rssi,snr stats even if it's a bad packet
-    sxGetPacketStatus(antenna, &stats);
-
-    return rx_status;
 }
 
 

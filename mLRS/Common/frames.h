@@ -35,6 +35,15 @@ typedef enum {
 } CHECK_ENUM;
 
 
+//-------------------------------------------------------
+// Tx Frames (send from Tx to Rx)
+//-------------------------------------------------------
+
+// lowest level routine to construct a tTxFrame, finalizes it
+// used by
+//   pack_txframe()
+//   pack_txcmdframe_cmd()
+//   pack_txcmdframe_setrxparams()
 void _pack_txframe_w_type(
     tTxFrame* const frame,
     uint8_t type,
@@ -99,6 +108,7 @@ uint16_t crc;
 }
 
 
+// construct a normal tTxFrame
 void pack_txframe(
     tTxFrame* const frame,
     tFrameStats* const frame_stats,
@@ -110,6 +120,7 @@ void pack_txframe(
 }
 
 
+// check credentials of a tTxFrame (sync word, frame type, payload len, CRC1, CRC)
 // returns 0 if OK !!
 uint8_t check_txframe(tTxFrame* const frame)
 {
@@ -134,6 +145,7 @@ uint16_t crc;
 }
 
 
+// fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
@@ -146,6 +158,7 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 }
 
 
+// fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     rc->ch[0] = frame->rc1.ch0;
@@ -173,7 +186,11 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 }
 
 
-// update header info with new data, keep payload
+//-------------------------------------------------------
+// Rx Frames (send from Rx to Tx)
+//-------------------------------------------------------
+
+// update header info of a tRxFrame with new data, keep payload
 void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
 uint16_t crc;
@@ -195,6 +212,10 @@ uint16_t crc;
 }
 
 
+// lowest level routine to construct a tRxFrame, finalizes it
+// used by
+//   pack_rxframe()
+//   pack_rxcmdframe_rxsetupdata()
 void _pack_rxframe_w_type(
     tRxFrame* const frame,
     uint8_t type,
@@ -208,6 +229,7 @@ uint16_t crc;
 
     memset((uint8_t*)frame, 0, sizeof(tRxFrame));
 
+    // generate header
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
@@ -219,16 +241,19 @@ uint16_t crc;
     frame->status.LQ_serial = frame_stats->LQ_serial;
     frame->status.payload_len = payload_len;
 
+    // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
         frame->payload[i] = payload[i];
     }
 
+    // finalize, crc
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2);
     frame->crc = crc;
 }
 
 
+// construct a normal tRxFrame
 void pack_rxframe(
     tRxFrame* const frame,
     tFrameStats* const frame_stats,
@@ -239,6 +264,7 @@ void pack_rxframe(
 }
 
 
+// check credentials of a tRxFrame (sync word, frame type, payload len, CRC)
 // returns 0 if OK !!
 uint8_t check_rxframe(tRxFrame* const frame)
 {
@@ -264,7 +290,8 @@ uint16_t crc;
 // Tx/Rx Cmd Frames
 //-------------------------------------------------------
 
-void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_params)
+// lowest level routine to copy Rx.Setup values to tCmdFrameRxParameters frame
+void _copy_rxsetup_to_cmdframerxparameters(tCmdFrameRxParameters* const rx_params)
 {
     rx_params->Power = Setup.Rx.Power;
     rx_params->Diversity = Setup.Rx.Diversity;
@@ -277,9 +304,7 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
     rx_params->SerialBaudrate = Setup.Rx.SerialBaudrate;
     rx_params->SerialLinkMode = Setup.Rx.SerialLinkMode;
     rx_params->SendRadioStatus = Setup.Rx.SendRadioStatus;
-    // deprecated rx_params->Buzzer = Setup.Rx.Buzzer;
     rx_params->SendRcChannels = Setup.Rx.SendRcChannels;
-    // deprecated rx_params->RadioStatusMethod = Setup.Rx.RadioStatusMethod;
     rx_params->PowerSwitchChannel = Setup.Rx.PowerSwitchChannel;
     rx_params->MavlinkSystemID = Setup.Rx.MavlinkSystemID;
 
@@ -293,7 +318,8 @@ void cmdframerxparameters_rxparams_from_rxsetup(tCmdFrameRxParameters* const rx_
 }
 
 
-void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_params)
+// lowest level routine to copy tCmdFrameRxParameters frame to Rx.Setup values
+void _copy_cmdframerxparameters_to_rxsetup(tCmdFrameRxParameters* const rx_params)
 {
     Setup.Rx.Power = rx_params->Power;
     Setup.Rx.Diversity = rx_params->Diversity;
@@ -306,9 +332,7 @@ void cmdframerxparameters_rxparams_to_rxsetup(tCmdFrameRxParameters* const rx_pa
     Setup.Rx.SerialBaudrate = rx_params->SerialBaudrate;
     Setup.Rx.SerialLinkMode = rx_params->SerialLinkMode;
     Setup.Rx.SendRadioStatus = rx_params->SendRadioStatus;
-    // deprecated Setup.Rx.Buzzer = rx_params->Buzzer;
     Setup.Rx.SendRcChannels = rx_params->SendRcChannels;
-    // deprecated Setup.Rx.RadioStatusMethod = rx_params->RadioStatusMethod;
     Setup.Rx.PowerSwitchChannel = rx_params->PowerSwitchChannel;
     Setup.Rx.MavlinkSystemID = rx_params->MavlinkSystemID;
 
@@ -348,7 +372,7 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
     SetupMetaData.rx_actual_power_dbm = rx_setupdata->actual_power_dbm;
     SetupMetaData.rx_actual_diversity = rx_setupdata->actual_diversity;
 
-    cmdframerxparameters_rxparams_to_rxsetup(&(rx_setupdata->RxParams));
+    _copy_cmdframerxparameters_to_rxsetup(&(rx_setupdata->RxParams));
 
     // TODO
     // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
@@ -386,7 +410,7 @@ tTxCmdFrameRxParams rx_params = {};
     rx_params.Mode = Setup.Common[Config.ConfigId].Mode;
     rx_params.Ortho = Setup.Common[Config.ConfigId].Ortho;
 
-    cmdframerxparameters_rxparams_from_rxsetup(&(rx_params.RxParams));
+    _copy_rxsetup_to_cmdframerxparameters(&(rx_params.RxParams));
 
     _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
 }
@@ -407,7 +431,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.actual_power_dbm = SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());
     rx_setupdata.actual_diversity = Config.Diversity;
 
-    cmdframerxparameters_rxparams_from_rxsetup(&(rx_setupdata.RxParams));
+    _copy_rxsetup_to_cmdframerxparameters(&(rx_setupdata.RxParams));
 
     // TODO
     // These are for common parameters. It should work such, that the Tx only provides options also allowed by the Rx.
@@ -442,7 +466,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     // TODO: conversion ?
     if (version_from_u16(rx_params->tx_setup_layout_u16) != (uint32_t)SETUPLAYOUT) return;
 
-    cmdframerxparameters_rxparams_to_rxsetup(&(rx_params->RxParams));
+    _copy_cmdframerxparameters_to_rxsetup(&(rx_params->RxParams));
     // setup_sanitize_rx_config(); // should not ever be needed !
 }
 
@@ -462,6 +486,7 @@ uint32_t nr_randq1(void)
 }
 
 
+// randomly toggle between 0 and 1, but never have more than two equal symbols in a row
 uint8_t fhss_band_next(void)
 {
     static uint8_t fhss_band = 0;
@@ -474,7 +499,7 @@ uint8_t fhss_band_next(void)
         if (nr_randq1() < UINT32_MAX/2) fhss_band++;
     }
 
-    return fhss_band & 0x01;
+    return (fhss_band & 0x01);
 }
 
 
