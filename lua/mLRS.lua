@@ -8,7 +8,7 @@
 -- Lua TOOLS script
 ----------------------------------------------------------------------
 -- copy script to SCRIPTS\TOOLS folder on OpenTx SD card
--- works with mLRS v1.4.03 and later, mOTX v33
+-- works with mLRS v1.3.03 and later, mOTX v33
 -- 13.02.2026: Many constants/variables put into tables.
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
