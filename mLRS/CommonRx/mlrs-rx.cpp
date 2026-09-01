@@ -882,7 +882,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             // switch to transmit state
             // only do it if receiving, else keep it in RX mode, otherwise chances to connect are dim
             // we are on the correct frequency, so no need to hop
-            link_state = LINK_STATE_TRANSMIT;
+            link_state = LINK_STATE_TRANSMIT; // TODO: is superfluous, isn't it? no path for which it would not be TX
         }
 
         if ((connect_state >= CONNECT_STATE_SYNC) ||
