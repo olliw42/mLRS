@@ -72,6 +72,17 @@
 #include "rx-hal-iflight-elrs-2400-esp8285.h"
 #endif
 
+#ifdef RX_ELRS_FLYSKY_PR02_2400_TD_ESP32S3
+#include "rx-hal-flysky-pr02-2400-td-esp32s3.h"
+#endif
+
+
+//-- Generic LR1121 ELRS boards with overlays or other variations
+
+#ifdef RX_ELRS_BAYCK_UR1000_LR1121_ESP32C3
+#include "rx-hal-bayck-ur1000-lr1121-esp32c3.h"
+#endif
+
 
 //-- ELRS Selected Devices
 
@@ -97,14 +108,6 @@
 
 #ifdef RX_ELRS_RADIOMASTER_XR1_ESP32C3
 #include "rx-hal-radiomaster-xr1-esp32c3.h"
-#endif
-
-#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
-#include "rx-hal-flysky-pr02-2400-td-esp32s3.h"
-#endif
-
-#ifdef RX_BAYCK_UR1000_LR1121_ESP32C3
-#include "rx-hal-bayck-ur1000-lr1121-esp32c3.h"
 #endif
 
 #ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
