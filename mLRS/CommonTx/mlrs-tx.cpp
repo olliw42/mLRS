@@ -488,9 +488,6 @@ uint8_t payload_len = 0;
         } else {
             sx_serial.flush();
         }
-
-        // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
-        crypto.Encrypt(payload, &payload_len);
     }
 
     stats.last_transmit_antenna = antenna;
@@ -538,6 +535,8 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
 
     if (!accept_payload) return; // frame has no fresh payload
 
+    unpack_rxframe(frame);
+
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
         process_received_rxcmdframe(frame);
@@ -545,14 +544,9 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     }
 
     // output data on serial
-    // remove nonce from payload, decrypt data, correct len for the nonce
-    uint8_t payload_len = frame->status.payload_len;
+    sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-    crypto.Decrypt(frame->payload, &payload_len);
-
-    sx_serial.putbuf(frame->payload, payload_len);
-
-    stats.bytes_received.Add(payload_len);
+    stats.bytes_received.Add(frame->status.payload_len);
     stats.serial_data_received.Inc();
 }
 

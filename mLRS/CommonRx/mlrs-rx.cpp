@@ -324,9 +324,6 @@ uint8_t payload_len = 0;
             } else {
                 sx_serial.flush();
             }
-
-            // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
-            crypto.Encrypt(payload, &payload_len);
         }
     }
 
@@ -377,6 +374,8 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     stats.received_LQ_serial = frame->status.LQ_serial;
 
+    unpack_txframe(frame);
+
     // copy rc1 data
     if (!do_payload) {
         // copy only channels 1-4,12,13 and jump out
@@ -397,14 +396,9 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     // output data on serial, but only if connected
     if (!connected()) return;
 
-    // remove nonce from payload, decrypt data, correct len for the nonce
-    uint8_t payload_len = frame->status.payload_len;
+    sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-    crypto.Decrypt(frame->payload, &payload_len);
-
-    sx_serial.putbuf(frame->payload, payload_len);
-
-    stats.bytes_received.Add(payload_len);
+    stats.bytes_received.Add(frame->status.payload_len);
     stats.serial_data_received.Inc();
 }
 

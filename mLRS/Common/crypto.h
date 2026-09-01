@@ -45,6 +45,7 @@ class tCrypto
     void SetSessionKeyFromEncryptedRandom(uint8_t random[16]);
     void Disconnected(void);
 
+    uint8_t PrivacyLevel(void) { return _privacy_level; }
     uint16_t NonceLen(void);
     void Encrypt(uint8_t* const payload, uint8_t* len);
     void Decrypt(uint8_t* const payload, uint8_t* len);
