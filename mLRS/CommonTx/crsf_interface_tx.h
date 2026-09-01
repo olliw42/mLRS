@@ -55,6 +55,8 @@ typedef enum {
 } TXCRSF_CMD_ENUM;
 
 
+// NOTE: not all hardware supports more than 400k (e.g. those with diodes may not)
+// TODO: I guess we want a define to enable/disable autobauding
 #define CRSF_AUTOBAUD_MS  50
 #define CRSF_AUTOBAUD_BAUDS_LEN  3
 static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 };
