@@ -90,6 +90,7 @@ class tPin5BridgeBase
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
     void pin5_getbuf(char* const buf, uint16_t len) { uart_getbuf(buf, len); }
     uint16_t pin5_bytes_available(void) { return uart_rx_bytesavailable(); }
+    void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate);
 
     // only for half-duplex
     IRAM_ATTR void pin5_tx_enable(void);
@@ -174,18 +175,14 @@ void tPin5BridgeBase::pin5_init(void)
 {
     uart_init();
 
-    // onReceive uses the pin5_rx_callback function
-    // true means trigger only on a symbol timeout
-    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, true);
-    
+    pin5_rx_enable(); // registers onReceive and configures rx pin in half-duplex
+
 #ifndef JR_PIN5_FULL_DUPLEX
 
 #ifndef UART_USE_SERIAL1
   #error JRPin5 must use Serial1!
 #endif
-    
-    pin5_rx_enable();  // configure the pin for receive  
-    
+
     // setup tx done task, only needs to be done on first boot
     if (pin5_clock_initialized) return;
 
@@ -193,6 +190,14 @@ void tPin5BridgeBase::pin5_init(void)
 
     pin5_clock_initialized = true;
 #endif
+}
+
+
+IRAM_ATTR void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate)
+{
+    pin5_tx_enable();
+    uart_setbaudrate(baudrate);
+    pin5_rx_enable();
 }
 
 
@@ -210,6 +215,11 @@ IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
 
 IRAM_ATTR void tPin5BridgeBase::pin5_rx_enable(void)
 {
+    // onReceive uses the pin5_rx_callback function
+    // true means trigger only on a symbol timeout
+    // uart_setbaudrate() does UART.end()+begin(), so need to re-register callback for autobaud
+    UART_SERIAL_NO.onReceive((void (*)(void)) uart_rx_callback_ptr, true);
+
 #ifndef JR_PIN5_FULL_DUPLEX
     gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // enable pulldown permanently
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
