@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-08-31', -- add a '.01' if needed for the day
+    script = '2026-98-02', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -29,6 +29,7 @@ local paramLoadDeadTime_10ms = 300 -- 150 was a bit too short, also 200 was too 
 -- TX16, T16, etc.:    480 x 272
 -- T15, TX15:          480 x 320
 -- PA01:               320 x 240
+-- TX16MK3:            800 x 480
 
 local THEME = {
     screenSize = nil,
@@ -45,6 +46,9 @@ local LAYOUT = {
     W = LCD_W,
     W_HALF = LCD_W / 2,
     DY = 21, -- default line distance
+    -- parameter names & values
+    PARAM_VALUE_DX = 130,
+    PARAM_RIGHT_X = 240,
     -- popup box, location of popup box
     POPUP_X = 80, -- LCD_W/2-160
     POPUP_Y = 76,
@@ -54,6 +58,8 @@ local LAYOUT = {
     WARN_X = 30, -- LCD_W/2-210
     WARN_W = 420,
     WARN_H = 50,
+    -- main page common parameters
+    COMMON_Y = 95,
     -- main page buttons, location of menu buttons on main page
     BUTTONS_Y = 171,
     EDIT_TX_X = 10,
@@ -73,7 +79,17 @@ local LAYOUT = {
 
 local function setupScreen()
     THEME.screenSize = LCD_W * 1000 + LCD_H
-    if THEME.screenSize == 320240 then -- 320x240, PA01
+    if THEME.screenSize == 800480 then -- 800x480, TX16SMK3
+        LAYOUT.page_N1 = 14
+        LAYOUT.page_N = 2 * LAYOUT.page_N1
+        LAYOUT.DY = 28 -- default line distance
+        LAYOUT.PARAM_VALUE_DX = 130 + 40
+        LAYOUT.PARAM_RIGHT_X = 240 + 100
+        LAYOUT.COMMON_Y = 95 + 20
+        LAYOUT.BUTTONS_Y = 171 + 45
+        LAYOUT.INFO_Y = 210 + 60
+        LAYOUT.INFO_DY = 28
+    elseif THEME.screenSize == 320240 then -- 320x240, PA01
         LAYOUT.page_N1 = 7
         LAYOUT.page_N = 7 -- single column
         LAYOUT.POPUP_X = 10
@@ -1046,14 +1062,14 @@ local function drawPageEdit(page_str)
 
             y = y0 + shifted_idx * LAYOUT.DY
 
-            local xofs = 0
-            if shifted_idx >= LAYOUT.page_N1 then y = y - LAYOUT.page_N1 * LAYOUT.DY; xofs = 230 end
+            local xofs = 10
+            if shifted_idx >= LAYOUT.page_N1 then y = y - LAYOUT.page_N1 * LAYOUT.DY; xofs = LAYOUT.PARAM_RIGHT_X end
 
-            lcd.drawText(10+xofs, y, name, THEME.textColor)
+            lcd.drawText(xofs, y, name, THEME.textColor)
             if p.typ < MBRIDGE_PARAM_TYPE.LIST then
-                lcd.drawText(140+xofs, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))
+                lcd.drawText(xofs+LAYOUT.PARAM_VALUE_DX, y, p.value.." "..p.unit, cur_attr_p(idx, pidx))
             elseif p.typ == MBRIDGE_PARAM_TYPE.LIST then
-                lcd.drawText(140+xofs, y, p.options[p.value+1], cur_attr_p(idx, pidx))
+                lcd.drawText(xofs+LAYOUT.PARAM_VALUE_DX, y, p.options[p.value+1], cur_attr_p(idx, pidx))
             end
         end
 
@@ -1214,14 +1230,17 @@ local function drawPageMain()
     lcd.setColor(CUSTOM_COLOR, RED)
 
     local y = 35
+    local xofs = 30
+    local yofs = 16
+    if THEME.screenSize == 800480 then xofs = 40; yofs = 19 end
     lcd.drawText(5, y, "Tx:", THEME.textColor)
     if DEVICE_ITEM_TX == nil then
-        lcd.drawText(35, y, "---", THEME.textColor)
+        lcd.drawText(5+xofs, y, "---", THEME.textColor)
     else
-        lcd.drawText(35, y, DEVICE_ITEM_TX.name, THEME.textColor+SMLSIZE)
-        lcd.drawText(35, y+16, DEVICE_ITEM_TX.version_str, THEME.textColor+SMLSIZE)
+        lcd.drawText(5+xofs, y, DEVICE_ITEM_TX.name, THEME.textColor+SMLSIZE)
+        lcd.drawText(5+xofs, y+yofs, DEVICE_ITEM_TX.version_str, THEME.textColor+SMLSIZE)
         if DEVICE_INFO ~= nil then
-            lcd.drawText(35, y+32, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), THEME.textColor+SMLSIZE)
+            lcd.drawText(5+xofs, y+2*yofs, "ConfigId "..tostring(DEVICE_INFO.tx_config_id), THEME.textColor+SMLSIZE)
         end
     end
 
@@ -1229,12 +1248,12 @@ local function drawPageMain()
     if not DEVICE_PARAM_LIST_complete then
         -- don't do anything
     elseif not connected then
-        lcd.drawText(LAYOUT.W_HALF+30, y, "not connected", THEME.textColor)
+        lcd.drawText(LAYOUT.W_HALF+xofs, y, "not connected", THEME.textColor)
     elseif DEVICE_ITEM_RX == nil then
-        lcd.drawText(LAYOUT.W_HALF+30, y, "---", THEME.textColor)
+        lcd.drawText(LAYOUT.W_HALF+xofs, y, "---", THEME.textColor)
     else
-        lcd.drawText(LAYOUT.W_HALF+30, y, DEVICE_ITEM_RX.name, THEME.textColor+SMLSIZE)
-        lcd.drawText(LAYOUT.W_HALF+30, y+16, DEVICE_ITEM_RX.version_str, THEME.textColor+SMLSIZE)
+        lcd.drawText(LAYOUT.W_HALF+xofs, y, DEVICE_ITEM_RX.name, THEME.textColor+SMLSIZE)
+        lcd.drawText(LAYOUT.W_HALF+xofs, y+yofs, DEVICE_ITEM_RX.version_str, THEME.textColor+SMLSIZE)
     end
 
     local version_error = false
@@ -1251,10 +1270,10 @@ local function drawPageMain()
         return
     end
 
-    y = 95 --90
+    y = LAYOUT.COMMON_Y
     lcd.drawText(10, y, "Bind Phrase", THEME.textColor)
     if DEVICE_PARAM_LIST_complete then
-        local x = 140
+        local x = 10 + LAYOUT.PARAM_VALUE_DX
         for i = 1,6 do
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
             local attr = cur_attr_x(0, i-1)
@@ -1262,7 +1281,7 @@ local function drawPageMain()
             --x = x + lcd.getTextWidth(c,1,attr)+1
             x = x + getCharWidth(c) + 1
             if i == 6 and DEVICE_PARAM_LIST[2].value == 0 then -- do only for 2.4GHz band
-                lcd.drawText(140 + 70, y, getExceptStrFromChar(c), THEME.textColor)
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX + 70, y, getExceptStrFromChar(c), THEME.textColor)
             end
         end
     end
@@ -1272,7 +1291,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(140, y, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
+            lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
         end
     end
 
@@ -1283,30 +1302,30 @@ local function drawPageMain()
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
             if p.value <= #freq_band_list then
-                lcd.drawText(140, y, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
             else
-                lcd.drawText(140, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
             end
         end
     end
 
-    y = 95
+    y = LAYOUT.COMMON_Y
     if THEME.screenSize == 320240 then y = y + 2*LAYOUT.DY end -- not to the right, but continue
 
     if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST[3].allowed_mask > 0 then
-        lcd.drawText(LAYOUT.W_HALF+30, y, "Ortho", THEME.textColor)
+        lcd.drawText(LAYOUT.PARAM_RIGHT_X, y, "Ortho", THEME.textColor)
         local p = DEVICE_PARAM_LIST[3] -- param_idx = 3 = RfOrtho
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(LAYOUT.W_HALF+90, y, p.options[p.value+1], cur_attr_p(IDX.RFOrtho_idx,3))
+            lcd.drawText(LAYOUT.PARAM_RIGHT_X+LAYOUT.PARAM_VALUE_DX-60, y, p.options[p.value+1], cur_attr_p(IDX.RFOrtho_idx,3))
         end
         y = y + LAYOUT.DY -- prepare for the next
     end
 
     if DEVICE_PARAM_LIST_complete and DEVICE_PARAM_LIST_common_count > 4 and DEVICE_PARAM_LIST[4].allowed_mask > 0 then
-        lcd.drawText(LAYOUT.W_HALF+30, y, "Privacy", THEME.textColor)
+        lcd.drawText(LAYOUT.PARAM_RIGHT_X, y, "Privacy", THEME.textColor)
         local p = DEVICE_PARAM_LIST[4] -- param_idx = 4 = Privacy
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(LAYOUT.W_HALF+100, y, p.options[p.value+1], cur_attr_p(IDX.Privacy_idx,4))
+            lcd.drawText(LAYOUT.PARAM_RIGHT_X+LAYOUT.PARAM_VALUE_DX-60, y, p.options[p.value+1], cur_attr_p(IDX.Privacy_idx,4))
         end
         y = y + LAYOUT.DY -- prepare for the next
     end
