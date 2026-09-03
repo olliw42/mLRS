@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-98-02', -- add a '.01' if needed for the day
+    script = '2026-09-03', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -47,7 +47,7 @@ local LAYOUT = {
     W_HALF = LCD_W / 2,
     DY = 21, -- default line distance
     -- parameter names & values
-    PARAM_VALUE_DX = 130,
+    PARAM_VALUE_DX = 135,
     PARAM_RIGHT_X = 240,
     -- popup box, location of popup box
     POPUP_X = 80, -- LCD_W/2-160
