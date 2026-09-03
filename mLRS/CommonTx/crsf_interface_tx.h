@@ -107,6 +107,8 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t tx_frame[CRSF_BUF_SIZE];
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
+    bool startup_passed; // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
+
     // CRSF telemetry
 
     // CRSF_FRAME_ID_GPS (0x02), collected from several MAVLink messages:
@@ -379,6 +381,9 @@ void tTxCrsf::Init(bool enable_flag)
 
     tx_available = 0;
     tx_free = false;
+
+    startup_passed = false;
+
     channels_received = false;
     cmd_received = false;
     ping_device_received = false;
@@ -424,6 +429,8 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     uint8_t crc = crc8(frame);
     if (crc != frame[frame[1] + 1]) return false;
 
+    startup_passed = true;
+
     fill_rcdata(rc);
     return true;
 }
@@ -437,6 +444,8 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
     // check if we can transmit
     if (!tx_free) return false;
     tx_free = false;
+
+    if (!startup_passed) return false; // not yet ready to send CRSF frames to the radio
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
