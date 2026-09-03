@@ -79,13 +79,11 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
     volatile uint8_t cmd_m2r_available;
 
     // front end to communicate with mBridge
-    // mimics a serial interface to the main code
-    // note: we don't override, so must instantiate as tMBridge, tSerialBase* won't work
-    void putc(char c) { tx_fifo.Put(c); }
-    void putbuf(uint8_t* const buf, uint16_t len) { tx_fifo.PutBuf(buf, len); }
-    bool available(void) { return rx_fifo.Available(); }
-    char getc(void) { return rx_fifo.Get(); }
-    void flush(void) { rx_fifo.Flush(); }
+    // provides serial interface to the main code
+    void putbuf(uint8_t* const buf, uint16_t len) override { tx_fifo.PutBuf(buf, len); }
+    bool available(void) override { return rx_fifo.Available(); }
+    char getc(void) override { return rx_fifo.Get(); }
+    void flush(void) override { rx_fifo.Flush(); }
 
     // backend
     // fills/reads the fifos with the mBridge uart
