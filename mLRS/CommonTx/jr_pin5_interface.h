@@ -20,14 +20,7 @@
 //
 // 2. Methods which use the swap and invert capability of more modern UART peripherals
 //   but need an external Schottky diode
-//
-//   #define JRPIN5_RX_TX_INVERT_INTERNAL
-//     internal peripheral inverter method, needs a diode from Tx to Rx
-//     the jrpin5 signal is on the Rx pin
-//
-//   #define JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
-//     internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
-//     the jrpin5 signal is on the Tx pin
+//   removed 3.Sep.2026
 //
 // 3. Methods which use the swap and invert capability of more modern UART peripherals
 //   but avoid the need of an external Schottky diode
@@ -48,6 +41,16 @@
 
 
 extern volatile uint32_t millis32(void);
+
+
+#if defined JRPIN5_RX_TX_INVERT_INTERNAL
+  // internal peripheral inverter method, needs a diode from Tx to Rx
+  #error JRPIN5_RX_TX_INVERT_INTERNAL not suppoerted anymore. Use JRPIN5_FULL_INTERNAL_ON_TX/RX/TX_RX !
+#endif
+#if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
+  // internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
+#error JRPIN5_RX_TX_INVERT_SWAP_INTERNAL not suppoerted anymore. Use JRPIN5_FULL_INTERNAL_ON_TX/RX/TX_RX !
+#endif
 
 
 //-------------------------------------------------------
@@ -208,24 +211,6 @@ void tPin5BridgeBase::pin5_init(void)
 
     uart_init_isroff();
 
-// internal peripheral inverter method, needs a diode from Tx to Rx
-#if defined JRPIN5_RX_TX_INVERT_INTERNAL
-    LL_USART_Disable(UART_UARTx);
-    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_Enable(UART_UARTx);
-    gpio_init_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST);
-#endif
-// internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
-#if defined JRPIN5_RX_TX_INVERT_SWAP_INTERNAL
-    LL_USART_Disable(UART_UARTx);
-    LL_USART_SetTXPinLevel(UART_UARTx, LL_USART_TXPIN_LEVEL_INVERTED);
-    LL_USART_SetRXPinLevel(UART_UARTx, LL_USART_RXPIN_LEVEL_INVERTED);
-    LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
-    LL_USART_Enable(UART_UARTx);
-    gpio_init_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx after swap
-    gpio_init_af(UART_RX_IO, IO_MODE_OUTPUT_ALTERNATE_PP, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now tx after swap
-#endif
 // experimental, but seems to work
 // first attempt with
 //  LL_USART_ConfigHalfDuplexMode(UART_UARTx);

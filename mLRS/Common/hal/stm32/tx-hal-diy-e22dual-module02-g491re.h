@@ -72,7 +72,8 @@
 #define UART_USE_RX
 #define UART_RXBUFSIZE            512
 
-#define JRPIN5_RX_TX_INVERT_INTERNAL
+//#define JRPIN5_RX_TX_INVERT_INTERNAL // requires external diode from Tx to Rx, gives issues on H7
+#define JRPIN5_FULL_INTERNAL_ON_RX // does not require an external diode
 
 #define UARTF_USE_LPUART1_PC1PC0 // debug
 #define UARTF_BAUD                115200
