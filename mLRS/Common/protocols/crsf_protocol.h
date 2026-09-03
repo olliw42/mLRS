@@ -127,7 +127,7 @@ typedef enum {
     CRSF_AP_CUSTOM_TELEM_TYPE_SINGLE_PACKET_PASSTHROUGH = 0xF0,
     CRSF_AP_CUSTOM_TELEM_TYPE_STATUS_TEXT = 0xF1,
     CRSF_AP_CUSTOM_TELEM_TYPE_MULTI_PACKET_PASSTHROUGH = 0xF2,
-}CRSF_AP_CUSTOM_TELEM_TYPE_ENUM;
+} CRSF_AP_CUSTOM_TELEM_TYPE_ENUM;
 
 
 typedef enum {
@@ -430,7 +430,7 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t temp_source_id; // Identifies the source of the temperature data (e.g., 0 = FC including all ESCs, 1 = Ambient, etc.)
-    int16_t temperature; // up to 20 temperature values in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0°C, -50 = -5.0°C)
+    int16_t temperature; // up to 20 temperature values in deci-degree (tenths of a degree) Celsius (e.g., 250 = 25.0 Celsius, -50 = -5.0 Celsius)
 }) tCrsfTemp;
 
 #define CRSF_TEMP_LEN  3

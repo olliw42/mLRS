@@ -437,7 +437,7 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
     // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
     if (res == CHECK_ERROR_SYNCWORD) { FAIL_WMSG("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
 
-    if (res == CHECK_OK || res == CHECK_ERROR_CRC) {
+    if (res == CHECK_OK || res == CHECK_ERROR_CRC) { // at least crc1 must be valid
 
         if (do_clock_reset) rxclock.Reset();
 

@@ -142,7 +142,7 @@ class tTxCrsf : public tPin5BridgeBase
     } tCrsfItem;
 
     // the sequence gives the priority
-    // Note: sequence in CRSFITEMENUM and crsf_items[] must match!
+    // Note: sequence in CRSF_ITEM_ENUM and crsf_items[] must match!
     typedef enum {
         CRSF_ITEM_FLIGHT_MODE = 0,  // CRSF_FRAME_ID_FLIGHT_MODE (0x21), collected from HEARTBEAT
         CRSF_ITEM_GPS,              // CRSF_FRAME_ID_GPS (0x02),        collected from several MAVLink messages (SRy_EXTENDED_STATUS,SRy_EXTRA2,SRy_POSITION)
@@ -333,6 +333,10 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 // 120% = 983 span
 // rcData: 11 bits,  1 .. 1024 .. 2047 for +-120%
 // see design_decissions.h
+// Comment: technically, according to the CRSF spec, frame's len is allowed to be smaller
+// than CRSF_RCCHANNELPACKET_LEN, in which case we would have to not set high rc data.
+// We assume that's not happening. Note, that len can also be larger, which is in fact
+// done by EdgeTx to provide an additional status byte carrying arming info for ELRS.
 
 void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
