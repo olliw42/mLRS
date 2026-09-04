@@ -101,6 +101,13 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef RX_ELRS_FLYSKY_PR02_2400_TD_ESP32S3
+  #define DEVICE_NAME "Flysky PR02 2400"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_SX128x
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 //-- ELRS 2.4 GHz & 868/915 MHz Generic Devices (LR1121)
 
 #ifdef RX_ELRS_GENERIC_LR1121_TD_ESP32
@@ -120,6 +127,18 @@
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
+
+//-- Generic LR1121 ELRS devices with overlays or other variations
+
+#ifdef RX_ELRS_BAYCK_UR1000_LR1121_ESP32C3
+  #define DEVICE_NAME "BAYCK UR1000"
+  #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_LR11xx
+  #define FREQUENCY_BAND_2P4_GHZ
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+#endif
+
 
 //-- ELRS Selected Receivers
 
@@ -168,13 +187,6 @@
   #define FREQUENCY_BAND_2P4_GHZ
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-#endif
-
-#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
-  #define DEVICE_NAME "Flysky PR02 2400"
-  #define DEVICE_IS_RECEIVER
-  #define DEVICE_HAS_SX128x
-  #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
 
