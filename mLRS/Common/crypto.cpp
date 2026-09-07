@@ -73,6 +73,10 @@ void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], ui
 
     // set key to static key to have some default
     memcpy(_key, _static_key, 32);
+
+    // statistics
+    mac_errors = 0;
+    replay_counts = 0;
 }
 
 
@@ -291,6 +295,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
         if (!ok) { // authentication failed
             *payload_len = 0; // pretend we didn't got data at all // TODO: what should we do ?
+            mac_errors++;
             return false;
         }
     }
@@ -301,6 +306,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     received_nonce_u32 = 0;
     memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
     if (_privacy_level >= 2 && received_nonce_u32 <= _nonce_u32_last_received) {
+        replay_counts++;
         //*payload_len = 0;
         //return false;
     }

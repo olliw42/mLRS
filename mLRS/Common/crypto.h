@@ -58,6 +58,9 @@ class tCrypto
 
     uint64_t Random(void) { return (_random_valid) ? _random : 0; } // Rx only
 
+    uint32_t mac_errors;
+    uint32_t replay_counts;
+
   private:
     uint8_t _role;
     uint8_t _privacy_level;
