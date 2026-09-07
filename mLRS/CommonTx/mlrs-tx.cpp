@@ -759,7 +759,7 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
-    crypto.Init(Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId]);
+    crypto.Init(tCrypto::TX, Setup.Common[Config.ConfigId].BindPhrase, Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId]);
     crypto.SetPrivacyLevel(Setup.Common[Config.ConfigId].Privacy);
     crypto.SetSessionKey(Config.SessionRandom);
 

@@ -41,8 +41,9 @@ const crypto_level_t crypto_list[] = {
 // Crypto API
 //-------------------------------------------------------
 
-void tCrypto::Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
+void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
 {
+    _role = role;
     _privacy_level = 0;
 
     memset(_static, 0, sizeof(_static));
@@ -225,6 +226,9 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     _nonce_len = crypto_list[_privacy_level].nonce_len;
     memcpy(_nonce, &_nonce_u32, _nonce_len); // _nonce[0] ... _nonce[nonce_len-1] = _nonce_u32
 
+    // fake the nonce for role
+    _nonce[11] = (_role == RX) ? 0xAA : 0x55;
+
     // encrypt data at data[0]
     _crypt_it(data, len);
 
@@ -261,10 +265,10 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
         return false;
     }
 
-    // get mac
+    // get mac from data
     memcpy(received_mac, data, mac_len); // data[0] ... data[mac_len-1]
 
-    // get nonce
+    // get nonce from data
     memcpy(_nonce, data + mac_len, _nonce_len); // data[mac_len] ... data[mac_len+nonce_len-1]
 
     // correct len, payload_len for the mac and nonce
@@ -273,6 +277,9 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     // move data to data[0]
     memmove(data, data + mac_len + _nonce_len, len); // NOT memcpy(), needs to copy from beginning towards end !!
+
+    // fake the nonce for role
+    _nonce[11] = (_role == TX) ? 0xAA : 0x55;
 
     if (mac_len) {
         // calculate MAC over nonce + payload
@@ -291,10 +298,11 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // check nonce, don't accept previously seen nonces, to prevent replay attacks
     // do only for privacy levels > 1
     // TODO: what needs to be done upon connection loss? does it play well with ARQ?
+    received_nonce_u32 = 0;
     memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
     if (_privacy_level >= 2 && received_nonce_u32 <= _nonce_u32_last_received) {
-    //    *len = 0;
-    //    return;
+        //*payload_len = 0;
+        //return false;
     }
     _nonce_u32_last_received = received_nonce_u32;
 

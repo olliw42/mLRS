@@ -36,7 +36,12 @@ SecretKey handling:
 class tCrypto
 {
   public:
-    void Init(char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
+    typedef enum {
+        TX = 0,
+        RX,
+    } ROLE_ENUM;
+
+    void Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random);
     void SetPrivacyLevel(uint8_t privacy_level);
 
     void SetSessionKey(uint64_t random); // Tx only
@@ -54,6 +59,7 @@ class tCrypto
     uint64_t Random(void) { return (_random_valid) ? _random : 0; } // Rx only
 
   private:
+    uint8_t _role;
     uint8_t _privacy_level;
 
     uint8_t _static[64];
