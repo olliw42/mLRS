@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 17.08.2026
+ version 28.08.2026
 ********************************************************
 '''
 import os
@@ -436,6 +436,9 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','link_types.cpp'),
     os.path.join('Common','lq_counter.cpp'),
     os.path.join('Common','while.cpp'),
+    os.path.join('Common','crypto.cpp'),
+    os.path.join('Common','thirdparty','monocypher','src','monocypher.c'),
+    os.path.join('Common','thirdparty','monocypher','src','optional','monocypher-ed25519.c'),
     ]
 
 # add all Common/dronecan/out/src/*.c (auto-generated dronecan message sources), if present

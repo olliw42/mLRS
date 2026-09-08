@@ -135,6 +135,13 @@ void setup_configure_metadata(void)
     SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
 #endif
 
+    //-- Privacy: "off,lvl1,lvl2,lvl3"
+#if defined DEVICE_IS_TRANSMITTER && (defined ESP8266 || !(defined STM32G4 || defined STM32WLE))
+    SetupMetaData.Privacy_allowed_mask = 0; // not available, do not display
+#else
+    SetupMetaData.Privacy_allowed_mask = 0b1111; // all
+#endif
+
     //-- Tx:
 
     power_optstr_from_rfpower_list(SetupMetaData.Tx_Power_optstr, rfpower_list, RFPOWER_LIST_NUM, 67);
@@ -331,6 +338,7 @@ void setup_default(uint8_t config_id)
     Setup.Common[config_id].FrequencyBand = SETUP_RF_BAND;
     Setup.Common[config_id].Mode = SETUP_MODE;
     Setup.Common[config_id].Ortho = SETUP_RF_ORTHO;
+    Setup.Common[config_id].Privacy = SETUP_PRIVACY;
 
     Setup.Tx[config_id].Power = SETUP_TX_POWER;
     Setup.Tx[config_id].Diversity = SETUP_TX_DIVERSITY;
@@ -475,6 +483,9 @@ void _setup_sanitize_config(uint8_t config_id, bool only_rx)
         SetupMetaData.Ortho_allowed_mask = 0; // not available, do not display
     }
     TST_NOTALLOWED(Ortho_allowed_mask, Common[config_id].Ortho, ORTHO_NONE);
+
+    SANITIZE(Common[config_id].Privacy, PRIVACY_NUM, SETUP_PRIVACY, PRIVACY_NONE);
+    TST_NOTALLOWED(Privacy_allowed_mask, Common[config_id].Privacy, PRIVACY_NONE);
 
     //-- Tx:
 if (!only_rx) {
@@ -864,6 +875,10 @@ void setup_configure_config(uint8_t config_id)
         Config.FrameSyncWord += 0xA55A;
     }
 
+    if (Setup.Common[config_id].Privacy > PRIVACY_NONE) {
+        Config.FrameSyncWord += 0x1212 * Setup.Common[config_id].Privacy;
+    }
+
     //-- Diversity
     // Config.Diversity is not actually used for anything besides reporting to disp, cli, etc.
 
@@ -1062,6 +1077,33 @@ void setup_configure_config(uint8_t config_id)
 
 
 //-------------------------------------------------------
+// Crypto
+//-------------------------------------------------------
+
+void setup_configure_config_crypto(void)
+{
+    memset(Config.Uid, 0xFF, 12);
+    Config.BindRandom = UINT64_MAX;
+    Config.SessionRandom = UINT64_MAX;
+
+    mcu_uid(Config.Uid);
+#ifdef DEVICE_IS_TRANSMITTER
+    // UINT64_MAX indicates that a TRNG is not available
+    // trng_get32() can return UINT32_MAX, so give it few chances, but terminate
+    for (uint8_t i = 0; i < 4; i++) {
+        Config.BindRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.BindRandom != 0 && Config.BindRandom != UINT64_MAX) break;
+    }
+    for (uint8_t i = 0; i < 4; i++) {
+        Config.SessionRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.SessionRandom != 0 && Config.SessionRandom != UINT64_MAX) break;
+    }
+    // TODO: what to do if either is invalid?
+#endif
+}
+
+
+//-------------------------------------------------------
 // helper
 //-------------------------------------------------------
 
@@ -1209,6 +1251,8 @@ bool doEEPROMwrite;
     setup_sanitize_config(Config.ConfigId);
 
     setup_configure_config(Config.ConfigId);
+
+    setup_configure_config_crypto();
 }
 
 
