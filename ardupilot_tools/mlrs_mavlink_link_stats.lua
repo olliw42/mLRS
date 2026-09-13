@@ -8,7 +8,7 @@
 ----------------------------------------------------------------------
 -- contributed by twistedwings
 ----------------------------------------------------------------------
--- Version 2026-09-07.04
+-- Version 2026-09-13.00
 ----------------------------------------------------------------------
 -- To install the script:
 --   - set SCR_ENABLE = 1
@@ -166,7 +166,7 @@ local function handle_mlrs_radio_link_stats(msg, pos)
     end
 
     -- logging
-	local unit23 = ap_fwversion >= 4.8 and 'RRRRz' or '----z'
+	local unit23 = ap_fwversion >= 40702 and 'RRRRz' or '----z'
 	
     logger:write('MLR1',
         'rx_lq_rc,rx_lq_ser,tx_lq_ser,flags',
@@ -213,8 +213,8 @@ local function handle_mlrs_radio_link_information(msg, pos)
 
     -- 50 0 50 0 128 12 4 16 0 0 6 0 127 13 53 48 72 122 0 0 50 46 52 71 0 0 151 151
 
-	local unit4 = ap_fwversion >= 4.8 and "z-RR" or 'z---'
-	local unit5 = ap_fwversion >= 4.8 and "BBRR" or 'BB--'
+	local unit4 = ap_fwversion >= 40702 and "z-RR" or 'z---'
+	local unit5 = ap_fwversion >= 40702 and "BBRR" or 'BB--'
 
     logger:write('MLR4',
         'fr_rate,mode,tx_pwr,rx_pwr',
