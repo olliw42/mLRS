@@ -261,6 +261,12 @@ void tOutBase::send_crsf_rcdata(tRcData* const rc)
 {
 tCrsfRcChannelFrame crsf_buf;
 
+// TODO: handle has_32channels
+// we need to decide what to do here. Either
+// (i) send extended 0x16 frame
+// (ii) send 0x16 and 0x17 frame in alternation
+// (iii) send 0x16 + 0x17 at once (need to check how ArduPilot, INAV behave, maybe not preferred option)
+
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
     crsf_buf.ch.ch0 = rc_to_crsf(rc->ch[0]);
     crsf_buf.ch.ch1 = rc_to_crsf(rc->ch[1]);

@@ -132,7 +132,7 @@ uint16_t lq_to_rc(uint8_t lq);
 
 //-- rc data
 
-#define RC_DATA_LEN     18
+#define RC_DATA_LEN     32
 
 #define RC_DATA_MIN     1
 #define RC_DATA_CENTER  1024
@@ -141,6 +141,7 @@ uint16_t lq_to_rc(uint8_t lq);
 typedef struct
 {
     uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
+    bool has_32channels;
 } tRcData;
 
 // clip a value for rcData to range

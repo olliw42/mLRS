@@ -27,6 +27,7 @@ typedef enum {
     FRAME_TYPE_TX = 0x00,
     FRAME_TYPE_RX = 0x01,
     FRAME_TYPE_TX_RX_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
+    FRAME_TYPE_TX2 = 0x03,
 } FRAME_TYPE_ENUM;
 
 
@@ -49,11 +50,13 @@ typedef struct
 } tFrameStats;
 
 
-#define FRAME_TX_RX_HEADER_LEN  7
-#define FRAME_TX_RCDATA1_LEN    6
-#define FRAME_TX_RCDATA2_LEN    10
-#define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
-#define FRAME_RX_PAYLOAD_LEN    82
+#define FRAME_TX_RX_HEADER_LEN      7
+#define FRAME_TX_RCDATAV1_RC1_LEN   6
+// not used #define FRAME_TX_RCDATAV1_RC2_LEN   10
+#define FRAME_TX_RCDATAV2_RC1_LEN   11
+// not used #define FRAME_TX_RCDATAV2_RC2_LEN   5
+#define FRAME_TX_PAYLOAD_LEN        64 // 82 - 10-6(rcdata) - 2(crc) = 64
+#define FRAME_RX_PAYLOAD_LEN        82
 
 
 PACKED(
@@ -100,12 +103,7 @@ typedef struct
     uint16_t ch3  : 11;
     uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
     uint16_t ch13 :  2;
-}) tFrameRcData1; // 6 bytes
-
-
-PACKED(
-typedef struct
-{
+    uint16_t crc1;
     uint16_t ch4  : 11; // 0 .. 1024 .. 2047, 11 bits
     uint16_t ch5  : 11;
     uint16_t ch6  : 11;
@@ -116,7 +114,30 @@ typedef struct
     uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
     uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
     uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
-}) tFrameRcData2; // 10 bytes
+}) tFrameRcDataV1; // 6 bytes rc1 + 2 bytes crc1 + 10 bytes rc2 = 18 bytes
+
+
+PACKED(
+typedef struct
+{
+    uint16_t ch0  : 11; // 0 .. 1024 .. 2047, 11 bits
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t crc1;
+    uint8_t ch8_12;     // 0 .. 128 .. 255, 8 bits.  interlaced with :2
+    uint8_t ch9_13;     // 0 .. 128 .. 255, 8 bits
+    uint8_t ch10_14;    // 0 .. 128 .. 255, 8 bits
+    uint8_t ch11_15;    // 0 .. 128 .. 255, 8 bits
+    uint8_t ch16_20_24_28: 2; // 0 .. 1 .. 2, 2 bits, 3-way.  interlaced with :4
+    uint8_t ch17_21_25_29: 2;
+    uint8_t ch18_22_26_30: 2;
+    uint8_t ch19_23_27_31: 2;
+}) tFrameRcDataV2; // 11 bytes rc1 + 2 bytes crc1 + 5 bytes rc2 interlaced = 18 bytes
 
 
 PACKED(
@@ -124,9 +145,10 @@ typedef struct
 {
     uint16_t sync_word; // 2 bytes
     tTxFrameStatus status; // 5 bytes
-    tFrameRcData1 rc1; // 6 bytes
-    uint16_t crc1;
-    tFrameRcData2 rc2; // 10 bytes
+    PACKED(union{
+        tFrameRcDataV1 rcV1; // 6 bytes + 2 bytes + 10 bytes
+        tFrameRcDataV2 rcV2; // 11 bytes + 2 bytes + 5 bytes
+    });
     uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
 }) tTxFrame; // 91 bytes
