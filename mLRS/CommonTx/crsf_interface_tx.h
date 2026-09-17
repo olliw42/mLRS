@@ -96,6 +96,9 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     uint8_t mavlink_envelop_out_sequence;
     tCrsfMavlinkEnvelope mavlink_envelope_out;
 
+    uint8_t crsf_mb_envelop_out_sequence;
+    tCrsfMbEnvelope crsf_mb_envelope_out;
+
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
@@ -313,6 +316,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
+#ifndef USE_CRSF_MB
 //        if (frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE && frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
         if (frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
 
@@ -323,6 +327,11 @@ dbg.puts(" ");dbg.puts(u8toBCD_s(frame[3] & 0x0F));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
 
             get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
+#else
+        if (frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE &&
+            frame[2] == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[4] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, 0x81, 0x66
+            get_fifo.PutBuf(&frame[6], frame[5]);
+#endif
         } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
             // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
@@ -636,6 +645,7 @@ uint8_t len;
 
     // MAVLink envelope
     if (put_fifo.Available()) {
+#ifndef USE_CRSF_MB
         mavlink_envelope_out.total_chunks = 0;
         mavlink_envelope_out.current_chunk = mavlink_envelop_out_sequence;
         mavlink_envelope_out.data_size = 0;
@@ -650,6 +660,22 @@ uint8_t len;
             mavlink_envelope_out.data_size + 2);
 
         mavlink_envelop_out_sequence++;
+#else
+        crsf_mb_envelope_out.cmd = CRSF_MB_ENVELOPE_CMD;
+        crsf_mb_envelope_out.seq = crsf_mb_envelop_out_sequence;
+        crsf_mb_envelope_out.data_size = 0;
+        for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) {
+            if (!put_fifo.Available()) break;
+            crsf_mb_envelope_out.data[i] = put_fifo.Get();
+            crsf_mb_envelope_out.data_size++;
+        }
+        send_frame(
+            CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, 0x82, 0x66
+            &(crsf_mb_envelope_out),
+            crsf_mb_envelope_out.data_size + 2);
+
+        crsf_mb_envelop_out_sequence++;
+#endif
 
 //dbg.puts("\nc tx ");dbg.puts(u8toHEX_s(tx_frame[0]));
 //dbg.puts(" ");dbg.puts(u8toBCD_s(tx_frame[1]));

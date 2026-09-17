@@ -504,4 +504,21 @@ typedef struct
 #define CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX  58
 
 
+//-- 0x81/0x82 envelope frame
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t cmd;       // always 0x66
+    uint8_t seq : 4;
+    uint8_t spare : 4;
+    uint8_t data_size; // size of data (max 57)
+    uint8_t data[57];  // data array (57 bytes max)
+}) tCrsfMbEnvelope;
+
+#define CRSF_MB_ENVELOPE_CMD  0x66
+#define CRSF_MB_ENVELOPE_LEN_MAX  60
+#define CRSF_MB_ENVELOPE_DATA_LEN_MAX  57
+
+
 #endif // CRSF_PROTOCOL_H
