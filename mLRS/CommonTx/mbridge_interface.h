@@ -15,7 +15,6 @@
 
 #include "../Common/libs/fifo.h"
 #include "setup_tx.h"
-#include "jr_pin5_interface.h"
 #include "../Common/protocols/mbridge_protocol.h"
 
 
@@ -29,19 +28,10 @@ extern tStats stats;
 //-------------------------------------------------------
 // Interface Implementation
 
-typedef enum {
-    TXBRIDGE_SEND_LINK_STATS = 0,
-    TXBRIDGE_SEND_CMD,
-} TXMBRIDGE_SEND_ENUM;
-
-
-class tMBridge : public tPin5BridgeBase, public tSerialBase
+class tMBridge
 {
   public:
-    using tSerialBase::Init; // tMBridge redefines Init(), incompatible with tSerialBase's Init()
-    void Init(bool enable_flag, bool crsf_emulation_flag);
-    bool ChannelsUpdated(tRcData* const rc);
-    bool TelemetryUpdate(uint8_t* const task);
+    void Init(bool crsf_emulation_flag);
 
     bool CommandReceived(uint8_t* const cmd);
     uint8_t* GetPayloadPtr(void);
@@ -55,44 +45,31 @@ class tMBridge : public tPin5BridgeBase, public tSerialBase
 
     void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
     bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
-
-    // helper
-    void fill_rcdata(tRcData* const rc);
-
-    // for in-isr processing
-    void parse_nextchar(uint8_t c) override;
-    bool transmit_start(void) override; // returns true if transmission should be started
-    uint8_t send_serial(void);
-    void send_command(void);
+    void parse_nextchar(uint8_t c);
 
     bool enabled;
     bool crsf_emulation;
 
-    volatile bool channels_received;
-    tMBridgeChannelBuffer channels;
+    typedef enum {
+        STATE_IDLE = 0,
+        STATE_RECEIVE_MBRIDGE_STX2,
+        STATE_RECEIVE_MBRIDGE_LEN,
+        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
+        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
+        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
+        STATE_TRANSMIT_START,
+    } STATE_ENUM;
+
+    uint8_t state;
+    uint8_t len;
+    uint8_t cnt;
+    uint16_t tlast_us;
 
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
     volatile bool cmd_received;
 
-    volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
     volatile uint8_t cmd_m2r_available;
-
-    // front end to communicate with mBridge
-    // provides serial interface to the main code
-    void putbuf(uint8_t* const buf, uint16_t len) override { tx_fifo.PutBuf(buf, len); }
-    bool available(void) override { return rx_fifo.Available(); }
-    char getc(void) override { return rx_fifo.Get(); }
-    void flush(void) override { rx_fifo.Flush(); }
-
-    // backend
-    // fills/reads the fifos with the mBridge uart
-    void serial_putc(char c) { rx_fifo.Put(c); }
-    bool serial_rx_available(void) { return tx_fifo.Available(); }
-    char serial_getc(void) { return tx_fifo.Get(); }
-
-    tFifo<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo; // TODO: how large do they really need to be?
-    tFifo<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
     tFifo<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
@@ -111,63 +88,12 @@ tMBridge mbridge;
 
 
 //-------------------------------------------------------
-// MBridge half-duplex interface, used for radio <-> mLRS tx module
-
-// to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
-void mbridge_pin5_rx_callback(uint8_t c) { mbridge.pin5_rx_callback(c); }
-void mbridge_pin5_tc_callback(void) { mbridge.pin5_tc_callback(); }
-
-
-// is called in isr context
-bool tMBridge::transmit_start(void)
-{
-    if (crsf_emulation) while(1){}; // must not happen
-
-    tx_free = true; // tell external code that next slot can be filled
-
-    if (cmd_m2r_available) {
-        send_command(); // uses cmd_m2r_available
-        cmd_m2r_available = 0;
-        return true;
-    }
-
-    if (!serial_rx_available()) { // nothing to do
-        return false;
-    }
-
-    send_serial();
-
-    return true;
-}
-
-
-// is called in isr context
-// we can assume that there is at least one byte available
-// send in one chunk to help ensure it is transmitted with no gaps
-uint8_t tMBridge::send_serial(void)
-{
-    uint8_t buf[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1];
-    uint8_t cnt = 0;
-    buf[cnt++] = 0x00; // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
-    while (serial_rx_available() && cnt < (MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1)) {
-        buf[cnt++] = serial_getc();
-    }
-    pin5_putbuf(buf, cnt);
-    return 1;
-}
-
-
-// is called in isr context
-void tMBridge::send_command(void)
-{
-    pin5_putbuf(cmd_m2r_frame, cmd_m2r_available);
-}
-
+// MBridge parser
 
 #define MBRIDGE_TMO_US  250
 
 
-// is called in isr context, or in ParseCrsfFrame() in case of CRSF emulation
+// is called in ParseCrsfFrame() for CRSF emulation
 void tMBridge::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros16();
@@ -205,7 +131,6 @@ void tMBridge::parse_nextchar(uint8_t c)
         if (c == MBRIDGE_CHANNELPACKET_STX) {
             len = MBRIDGE_CHANNELPACKET_SIZE;
             state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
-            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
         } else
         if (c >= MBRIDGE_COMMANDPACKET_STX) {
             uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
@@ -224,20 +149,16 @@ void tMBridge::parse_nextchar(uint8_t c)
         if (c > 0) {
             len = c;
             state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
-            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
         } else {
             state = STATE_TRANSMIT_START; // tx_len = 0, no payload
         }
         break;
     case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
-        serial_putc(c);
         cnt++;
         if (cnt >= len) state = STATE_TRANSMIT_START;
         break;
     case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
-        channels.c[cnt++] = c;
         if (cnt >= len) {
-            channels_received = true;
             state = STATE_TRANSMIT_START;
         }
         break;
@@ -253,50 +174,17 @@ void tMBridge::parse_nextchar(uint8_t c)
 
 
 //-------------------------------------------------------
-// miscellaneous
-
-// mBridge: ch0-15    11 bits, 1 .. 1024 .. 2047 for +-120%
-//          ch16-17:  1 bit, 0 .. 1
-// rcData:            11 bit, 1 .. 1024 .. 2047 for +-120%
-
-void tMBridge::fill_rcdata(tRcData* const rc)
-{
-    rc->ch[0] = channels.ch0;
-    rc->ch[1] = channels.ch1;
-    rc->ch[2] = channels.ch2;
-    rc->ch[3] = channels.ch3;
-    rc->ch[4] = channels.ch4;
-    rc->ch[5] = channels.ch5;
-    rc->ch[6] = channels.ch6;
-    rc->ch[7] = channels.ch7;
-    rc->ch[8] = channels.ch8;
-    rc->ch[9] = channels.ch9;
-    rc->ch[10] = channels.ch10;
-    rc->ch[11] = channels.ch11;
-    rc->ch[12] = channels.ch12;
-    rc->ch[13] = channels.ch13;
-    rc->ch[14] = channels.ch14;
-    rc->ch[15] = channels.ch15;
-    rc->ch[16] = (channels.ch16) ? 1876 : 172; // +-100%
-    rc->ch[17] = (channels.ch17) ? 1876 : 172; // +-100%
-}
-
-
-//-------------------------------------------------------
 // CRSF MBridge emulation
 
 void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
 {
     if (!crsf_emulation) return;
 
-// UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant, is synchronized through tx_free variable
-
     state = STATE_IDLE; // to start the parser, also resets time gap check
 
     for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
 
     state = STATE_IDLE; // this is to suppress that mBridge sends
-    channels_received = false; // this should not have happened, but let's play it safe
 
     // we should have now a good cmd in cmd_r2m_frame[]
     // mbridge.ChannelsUpdated() should not trigger
@@ -323,84 +211,18 @@ bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
 //-------------------------------------------------------
 // MBridge user interface
 
-void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
+void tMBridge::Init(bool crsf_emulation_flag)
 {
-    enabled = enable_flag;
-    crsf_emulation = crsf_emulation_flag;
-    if (crsf_emulation) enabled = true;
+    enabled = crsf_emulation = crsf_emulation_flag;
 
     if (!enabled) return;
 
-    tx_free = false;
-    channels_received = false;
     cmd_received = false;
     cmd_m2r_available = 0;
-
-    tx_fifo.Init();
-    rx_fifo.Init();
 
     cmd_fifo.Init();
     cmd_in_process = 0;
     cmd_processed_tlast_ms = 0;
-
-    if (!crsf_emulation) {
-        uart_rx_callback_ptr = &mbridge_pin5_rx_callback;
-        uart_tc_callback_ptr = &mbridge_pin5_tc_callback;
-
-        tPin5BridgeBase::Init();
-        tSerialBase::Init();
-    }
-}
-
-
-// polled in main loop
-bool tMBridge::ChannelsUpdated(tRcData* const rc)
-{
-    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
-
-    if (!enabled) return false;
-
-    CheckAndRescue();
-
-    if (!channels_received) return false;
-    channels_received = false;
-
-    fill_rcdata(rc);
-    return true;
-}
-
-
-// polled in main loop
-bool tMBridge::TelemetryUpdate(uint8_t* const task)
-{
-    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
-
-    if (!enabled) return false;
-
-    // check if we can handle the next slot
-    if (!tx_free) return false;
-    tx_free = false;
-
-    // check if we should restart telemetry sequence
-    if (telemetry_start_next_tick) {
-        telemetry_start_next_tick = false;
-        telemetry_state = 0;
-    }
-
-    // next slot
-    uint8_t curr_telemetry_state = telemetry_state;
-    telemetry_state++;
-
-    switch (curr_telemetry_state) {
-    case 1:
-        *task = TXBRIDGE_SEND_LINK_STATS;
-        return true;
-    case 5: case 9:
-        *task = TXBRIDGE_SEND_CMD;
-        return true;
-    }
-
-    return false;
 }
 
 
@@ -871,13 +693,11 @@ void mbridge_send_cmd(uint8_t cmd)
 
 #else
 
-class tMBridge : public tSerialBase
+class tMBridge
 {
   public:
-    using tSerialBase::Init; // would be hidden by Init(bool,bool) otherwise
-    void Init(bool enable_flag, bool crsf_emulation_flag) {}
+    void Init(bool crsf_emulation_flag) {}
     void TelemetryStart(void) {}
-    void TelemetryTick_ms(void) {}
     void Lock(void) {}
     void Unlock(void) {}
 };

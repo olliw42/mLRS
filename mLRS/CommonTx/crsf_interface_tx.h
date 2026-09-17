@@ -55,9 +55,10 @@ typedef enum {
 } TXCRSF_CMD_ENUM;
 
 
-class tTxCrsf : public tPin5BridgeBase
+class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
+    using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
     void Init(bool enable_flag);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
@@ -409,6 +410,7 @@ void tTxCrsf::Init(bool enable_flag)
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
     tPin5BridgeBase::Init();
+    tSerialBase::Init();
 
     // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
     txclock.SetCC1Callback(crsf_pin5_cc1_callback);
@@ -1211,14 +1213,13 @@ uint8_t len;
 
 #else
 
-class tTxCrsf
+class tTxCrsf : public tSerialBase
 {
   public:
     void Init(bool enable_flag) {}
-    bool Update(tRcData* const rc) { return false;}
+    bool Update(tRcData* const rc) { return false; }
     void TelemetryStart(void) {}
-    void TelemetryTick_ms(void) {}
-    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg) {}
     void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 

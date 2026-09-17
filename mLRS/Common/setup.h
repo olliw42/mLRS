@@ -153,15 +153,15 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_Diversity_allowed_mask = 0b00010; // antenna1, not editable
 #endif
 
-    // Tx ChannelSource: "none,crsf,in,mbridge"
+    // Tx ChannelSource: "none,crsf,in"
 #if defined DEVICE_HAS_JRPIN5 && defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1111; // none, crsf, in, mBridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b111; // none, crsf, in
 #elif defined DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b1011; // none, crsf, mBridge
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b011; // none, crsf
 #elif defined USE_IN
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0101; // none, in
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b101; // none, in
 #else
-    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b0001; // none, not editable
+    SetupMetaData.Tx_ChannelsSource_allowed_mask = 0b001; // none, not editable
 #endif
 
     // Tx InMode: "sbus,sbus inv"
@@ -175,27 +175,29 @@ void setup_configure_metadata(void)
     SetupMetaData.Tx_InMode_allowed_mask = 0; // not available, do not display
 #endif
 
-    // Tx SerialPort: "serial,wbridge,serial2,com,mbridge"
-    // Tx SerialPort2: "none,serial,wbridge,serial2"
+    // Tx SerialPort: "serial,wbridge,serial2,com,crsf"
+    // Tx SerialPort2: "none,serial,wbridge,serial2,crsf"
     SetupMetaData.Tx_SerialPort_allowed_mask = 0; // not available, do not display
     SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // not available, do not display
 #ifdef USE_SERIAL
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00001; // add serial
-    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b0011; // add none, serial
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b00011; // add none, serial
 #endif
 #ifdef USE_WIRELESS_BRIDGE
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00010; // add wbridge
-    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b0101; // add none, wbridge
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b00101; // add none, wbridge
 #endif
 #ifdef DEVICE_HAS_SERIAL2 // attention: USE_SERIAL2 implies either serial2 or wireless bridge
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b00100; // add serial2
-    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b1001; // add none, serial2
+    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b01001; // add none, serial2
 #endif
 #ifdef USE_COM
     SetupMetaData.Tx_SerialPort_allowed_mask |= 0b01000; // add com
 #endif
 #ifdef DEVICE_HAS_JRPIN5
-    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add mbridge
+    // we cannot work out all cases here, as it depends on actual serial port selections, so we here just do what we can do
+//TODO    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add crsfbridge
+//TODO    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b10000; // add crsfbridge
 #endif
 #if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
     SetupMetaData.Tx_SerialPort2_allowed_mask = 0; // only for devices with a fast processor and two serial ports
@@ -509,24 +511,6 @@ if (!only_rx) {
 
     SANITIZE(Tx[config_id].PowerSwitchChannel, POWER_SWITCH_CHANNEL_NUM, POWER_SWITCH_CHANNEL_OFF, POWER_SWITCH_CHANNEL_OFF);
 
-    // device cannot use mBridge (pin5) and CRSF (pin5) at the same time !
-    // dest\src | NONE    | CRSF    | INPORT  | MBRIDGE
-    // -------------------------------------------------
-    //  SERIAL  |  -      | CRSF    | -       | mBridge
-    //  SERIAL2 |  -      | CRSF    | -       | mBridge
-    //  MBRIDGE | mBridge | CRSF !! | mBridge | mBridge
-    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) &&
-        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
-        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL)) {
-            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL;
-        } else
-        if (SetupMetaData.Tx_SerialPort_allowed_mask & (1 << TX_SERIAL_PORT_SERIAL2)) {
-            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL2;
-        } else {
-            Setup.Tx[config_id].SerialPort = TX_SERIAL_PORT_SERIAL; // hm ... we don't have any ??
-        }
-    }
-
     // device cannot use same serial for both SerialPort and SerialPort2 !
     // also exclude "com" & "serial"
     if ( ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_SERIAL) &&
@@ -535,6 +519,8 @@ if (!only_rx) {
           (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_WIRELESS_BRIDGE)) ||
          ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_SERIAL2) &&
           (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_SERIAL2)) ||
+         ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_CRSF_BRIDGE) &&
+          (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_CRSF_BRIDGE)) ||
          ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_COM) &&
           (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_SERIAL)) ){
         Setup.Tx[config_id].SerialPort2 = TX_SERIAL_PORT2_NONE;
@@ -1032,29 +1018,25 @@ void setup_configure_config(uint8_t config_id)
 
     //-- Mbridge, Crsf, In
 
-    Config.UseMbridge = false;
     Config.UseCrsf = false;
     Config.UseIn = false;
 #ifdef DEVICE_IS_TRANSMITTER
     // conflicts must have been sorted out before in setup_sanitize_config()
   #ifdef DEVICE_HAS_JRPIN5
-    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ||
-        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_MBRIDGE)) {
-        Config.UseMbridge = true;
+    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) ||
+        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_CRSF_BRIDGE)) {
+        Config.UseCrsf = true;
     }
     if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {
         Config.UseCrsf = true;
-    }
-    if (Config.UseMbridge && Config.UseCrsf) {
-        while(1){} // mBridge and CRSF cannot be used simultaneously, must not happen
     }
   #endif
   #ifdef USE_IN
     if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_INPORT) {
         Config.UseIn = true;
     }
-    if ((Config.UseMbridge && Config.UseIn) || (Config.UseCrsf && Config.UseIn)) {
-        while(1){} // In and mBridge or CRSF cannot be used simultaneously, must not happen
+    if (Config.UseCrsf && Config.UseIn) {
+        while(1){} // In and CRSF cannot be used simultaneously, must not happen
     }
   #endif
 #endif
@@ -1145,7 +1127,7 @@ bool doEEPROMwrite;
                     Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL2;
                     #endif
                     break;
-                case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_MBRIDGE; break;
+                case L10304_SERIAL_DESTINATION_MBRIDGE: Setup.Tx[id].SerialPort = TX_SERIAL_PORT_CRSF_BRIDGE; break;
                 default:
                     Setup.Tx[id].SerialPort = TX_SERIAL_PORT_SERIAL;
                 }

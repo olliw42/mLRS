@@ -283,7 +283,7 @@ void init_hw(void)
     sx.Init(); // these take time
     sx2.Init();
 
-    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
+    mbridge.Init(Config.UseCrsf); // these affect peripherals, hence do here
     crsf.Init(Config.UseCrsf);
     in.Init(Config.UseIn);
 
@@ -753,9 +753,9 @@ RESTARTCONTROLLER
     rarq.Init();
 
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
-    mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
+    mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
     msp.Init(); // serial port selected by SerialPort
-    sx_serial.Init(&mbridge); // serial port selected by SerialPort, ChannelsSource
+    sx_serial.Init(&crsf); // serial port selected by SerialPort, ChannelsSource
     cli.Init();
     espbridge.Init();
     hc04bridge.Init();
@@ -1094,30 +1094,7 @@ IF_SX2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-IF_MBRIDGE(
-    // mBridge sends channels in regular 20 ms intervals, this we can use as sync
-    if (mbridge.ChannelsUpdated(&rcData)) {
-        // update channels, do only if we use mBridge also as channels source
-        // note: mBridge is used when either CHANNEL_SOURCE_MBRIDGE or SERIAL_DESTINATION_MBRDIGE, so need to check here
-        if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-            rc_data_updated = true;
-        }
-        // when we receive channels packet from transmitter, we send link stats to transmitter
-        mbridge.TelemetryStart();
-    }
-    // mBridge sends mBridge cmd twice per 20 ms cycle, so we have 10 ms time to process
-    // we can't send too fast, in OTX the receive buffer can hold 64 cmds
-    uint8_t mbtask; uint8_t mbcmd;
-    if (mbridge.TelemetryUpdate(&mbtask)) {
-        switch (mbtask) {
-        case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
-        case TXBRIDGE_SEND_CMD:
-            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
-            break;
-        }
-    }
-);
-IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
+IF_CRSF( // CRSF mBridge emulation
     // handle an incoming command
     uint8_t mbcmd;
     if (mbridge.CommandReceived(&mbcmd)) {

@@ -23,7 +23,7 @@ class tTxSxSerial : public tSerialBase
 {
   public:
     using tSerialBase::Init; // tTxSxSerial redefines Init(), incompatible with tSerialBase's Init()
-    void Init(tSerialBase* const _mbridge);
+    void Init(tSerialBase* const _crsfbridge);
 
     bool available(void) override;
     char getc(void) override;
@@ -35,7 +35,7 @@ class tTxSxSerial : public tSerialBase
 };
 
 
-void tTxSxSerial::Init(tSerialBase* const _mbridge)
+void tTxSxSerial::Init(tSerialBase* const _crsfbridge)
 {
     tSerialBase::Init();
 
@@ -46,8 +46,8 @@ void tTxSxSerial::Init(tSerialBase* const _mbridge)
     case TX_SERIAL_PORT_COM:
         ser = Serials.serial; // already sorted out in serialports.Init()
         break;
-    case TX_SERIAL_PORT_MBRIDGE:
-        ser = _mbridge;
+    case TX_SERIAL_PORT_CRSF_BRIDGE:
+        ser = _crsfbridge;
         break;
     default:
         while(1){} // must not happen

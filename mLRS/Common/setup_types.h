@@ -182,7 +182,7 @@ typedef enum {
     TX_SERIAL_PORT_WIRELESS_BRIDGE,
     TX_SERIAL_PORT_SERIAL2,
     TX_SERIAL_PORT_COM,
-    TX_SERIAL_PORT_MBRIDGE,
+    TX_SERIAL_PORT_CRSF_BRIDGE,
     TX_SERIAL_PORT_NUM,
 } TX_SERIAL_PORT_ENUM;
 
@@ -200,6 +200,7 @@ typedef enum {
     TX_SERIAL_PORT2_SERIAL,
     TX_SERIAL_PORT2_WIRELESS_BRIDGE,
     TX_SERIAL_PORT2_SERIAL2,
+    TX_SERIAL_PORT2_CRSF_BRIDGE,
     TX_SERIAL_PORT2_NUM,
 } TX_SERIAL_PORT2_ENUM;
 
@@ -208,7 +209,6 @@ typedef enum {
     CHANNEL_SOURCE_NONE = 0,
     CHANNEL_SOURCE_CRSF, // JR pin5
     CHANNEL_SOURCE_INPORT, // In port
-    CHANNEL_SOURCE_MBRIDGE, // JR pin5
     CHANNEL_SOURCE_NUM,
 } TX_CHANNELS_SOURCE_ENUM;
 
@@ -556,7 +556,6 @@ typedef struct
     bool TransmitUseAntenna2;
     bool IsDualBand;
 
-    bool UseMbridge;
     bool UseCrsf;
     bool UseIn;
 } tGlobalConfig;

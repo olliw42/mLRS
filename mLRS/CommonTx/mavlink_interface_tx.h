@@ -75,7 +75,7 @@ class tTxVehicle
 class tTxMavlink
 {
   public:
-    void Init(tSerialBase* const _mbridge);
+    void Init(tSerialBase* const _crsfbridge);
     void Do(void);
     uint8_t VehicleState(void);
     void FrameLost(void);
@@ -149,34 +149,38 @@ class tTxMavlink
 };
 
 
-void tTxMavlink::Init(tSerialBase* const _mbridge)
+void tTxMavlink::Init(tSerialBase* const _crsfbridge)
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialPort = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
     //   SerialPort = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
     //
-    // 2\1      | SERIAL         | WBRIDGE/SERIAL2 | COM            | MBRIDGE
-    // ------------------------------------------------------------------------------
-    // NONE     | ser = serial   | ser = serial    | ser = serial   | ser = mbridge
-    //          | ser2 = mbridge | ser2 = mbridge  | ser2 = mbridge | ser2 = null
-    // ------------------------------------------------------------------------------
-    // SERIAL   | should not     | ser = serial    | should not     | ser = mbridge
-    //          | happen         | ser2 = serial2  | happen         | ser2 = serial2
-    // ------------------------------------------------------------------------------
-    // WBRIDGE/ | ser = serial   | should not      | ser = serial   | ser = mbridge
-    // SERIAL2  | ser2 = serial2 | happen          | ser2 = serial2 | ser2 = serial2
-    // ------------------------------------------------------------------------------
+    // 2\1      | SERIAL            | WBRIDGE/SERIAL2   | COM               | CRSF
+    // ----------------------------------------------------------------------------------------
+    // NONE     | ser = serial      | ser = serial2     | ser = com         | ser = crsfbridge
+    //          | ser2 = null       | ser2 = null       | ser2 = null       | ser2 = null
+    // ----------------------------------------------------------------------------------------
+    // SERIAL   | should not        | ser = serial2     | should not        | ser = crsfbridge
+    //          | happen            | ser2 = serial     | happen            | ser2 = serial
+    // ----------------------------------------------------------------------------------------
+    // WBRIDGE/ | ser = serial      | should not        | ser = com         | ser = crsfbridge
+    // SERIAL2  | ser2 = serial2    | happen            | ser2 = serial2    | ser2 = serial2
+    // ----------------------------------------------------------------------------------------
+    // CRSF     | ser = serial      | ser = serial2     | ser = com         | should not
+    //          | ser2 = crsfbridge | ser2 = crsfbridge | ser2 = crsfbridge | happen
+    // ----------------------------------------------------------------------------------------
     switch (Setup.Tx[Config.ConfigId].SerialPort) {
     case TX_SERIAL_PORT_SERIAL:
     case TX_SERIAL_PORT_SERIAL2:
     case TX_SERIAL_PORT_WIRELESS_BRIDGE:
     case TX_SERIAL_PORT_COM:
         ser = Serials.serial; // already sorted out in serialports.Init()
-        ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
+//        ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _crsfbridge : nullptr;
+        ser2 = nullptr;
         break;
-    case TX_SERIAL_PORT_MBRIDGE:
-        ser = _mbridge;
+    case TX_SERIAL_PORT_CRSF_BRIDGE:
+        ser = _crsfbridge;
         ser2 = nullptr;
         break;
     default:
@@ -189,6 +193,10 @@ void tTxMavlink::Init(tSerialBase* const _mbridge)
     case TX_SERIAL_PORT2_SERIAL2:
     case TX_SERIAL_PORT2_WIRELESS_BRIDGE:
         ser2 = Serials.serial2; // already sorted out in serialports.Init(), can be nullptr
+        break;
+    case TX_SERIAL_PORT2_CRSF_BRIDGE:
+        ser = nullptr;
+        ser2 = _crsfbridge;
         break;
     }
     if (ser == ser2) while(1){} // must not happen
