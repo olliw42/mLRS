@@ -287,7 +287,7 @@ void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)
     }
 #elif defined USE_DRONECAN
     serial = &dronecan_port;
-#elif defined USE_SERIAL
+#else // USE_SERIAL or DEVICE_HAS_NO_SERIAL, uartb_port is always defined
     serial = &uartb_port;
 #endif
 
