@@ -72,6 +72,10 @@ uint16_t crc;
     frame->status.payload_len = payload_len;
 
     // pack rc data
+
+// TODO: is this the correct way? FRAME_TYPE_TX_RX_CMD probably also should have the correct rc data
+//       so, do we need a bit ?
+
     if (frame->status.frame_type != FRAME_TYPE_TX2) {
         // rcData: 0 .. 1024 .. 2047, 11 bits
         frame->rcV1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
@@ -142,6 +146,9 @@ void pack_txframe(
     uint8_t* const payload,
     uint8_t payload_len)
 {
+
+// TODO: handle 32 channels
+
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
@@ -154,7 +161,9 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_TX) &&
+        (frame->status.frame_type != FRAME_TYPE_TX2) &&
+        (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
