@@ -82,6 +82,20 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
 
+    // CRSF MAVLink envelope handling
+    // front end to communicate with mBridge
+    // provides serial interface to the main code
+    void putbuf(uint8_t* const buf, uint16_t len) override { put_fifo.PutBuf(buf, len); }
+    bool available(void) override { return get_fifo.Available(); }
+    char getc(void) override { return get_fifo.Get(); }
+    void flush(void) override { get_fifo.Flush(); }
+
+    tFifo<char,TX_MBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_MBRIDGE_RXBUFSIZE> get_fifo;
+
+    uint8_t mavlink_envelop_out_sequence;
+    tCrsfMavlinkEnvelope mavlink_envelope_out;
+
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
@@ -299,6 +313,17 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
+//        if (frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE && frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+        if (frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+
+dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame[0]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[1]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[2]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[3] & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
+
+            get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
+        } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
             // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
             ping_device_received = true;
@@ -405,6 +430,9 @@ void tTxCrsf::Init(bool enable_flag)
     inav_baro_altitude = 0;
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
+
+    put_fifo.Init();
+    get_fifo.Init();
 
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
@@ -604,6 +632,29 @@ uint8_t len;
     for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
         if (!crsf_status[i].send_tlast_ms) continue;
         if ((tnow_ms - crsf_status[i].send_tlast_ms) > CRSF_REFRESH_TIME_MS) { crsf_status[i].updated = true; }
+    }
+
+    // MAVLink envelope
+    if (put_fifo.Available()) {
+        mavlink_envelope_out.total_chunks = 0;
+        mavlink_envelope_out.current_chunk = mavlink_envelop_out_sequence;
+        mavlink_envelope_out.data_size = 0;
+        for (uint8_t i = 0; i < 58; i++) {
+            if (!put_fifo.Available()) break;
+            mavlink_envelope_out.data[i] = put_fifo.Get();
+            mavlink_envelope_out.data_size++;
+        }
+        send_frame(
+            CRSF_FRAME_ID_MAVLINK_ENVELOPE,
+            &(mavlink_envelope_out),
+            mavlink_envelope_out.data_size + 2);
+
+        mavlink_envelop_out_sequence++;
+
+//dbg.puts("\nc tx ");dbg.puts(u8toHEX_s(tx_frame[0]));
+//dbg.puts(" ");dbg.puts(u8toBCD_s(tx_frame[1]));
+//dbg.puts(" ");dbg.puts(u8toHEX_s(tx_frame[2]));
+        return; // send only one per slot
     }
 
     // one by one, order by desired priority

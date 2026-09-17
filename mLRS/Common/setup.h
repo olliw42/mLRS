@@ -196,7 +196,7 @@ void setup_configure_metadata(void)
 #endif
 #ifdef DEVICE_HAS_JRPIN5
     // we cannot work out all cases here, as it depends on actual serial port selections, so we here just do what we can do
-//TODO    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add crsfbridge
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add crsfbridge
 //TODO    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b10000; // add crsfbridge
 #endif
 #if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
