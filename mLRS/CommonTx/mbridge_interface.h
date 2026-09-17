@@ -357,51 +357,6 @@ void tMBridge::HandleCmd(uint8_t cmd)
 //-------------------------------------------------------
 // convenience helper
 
-void mbridge_send_LinkStats(void)
-{
-tMBridgeLinkStats lstats = {};
-
-    lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
-    lstats.rssi1_instantaneous = stats.last_rssi1;
-    lstats.rssi2_instantaneous = stats.last_rssi2;
-    lstats.snr_instantaneous = stats.GetLastSnr();
-    lstats.receive_antenna = stats.last_antenna;
-    lstats.transmit_antenna = stats.last_transmit_antenna;
-    lstats.rx1_valid = stats.rx1_valid;
-    lstats.rx2_valid = stats.rx2_valid;
-
-    // receiver side of things
-
-    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc(); // valid_crc1_received, number of rc data packets received on receiver side
-    lstats.receiver_LQ_serial = stats.received_LQ_serial; // valid_frames_received, number of completely valid packets received on receiver side
-    lstats.receiver_rssi_instantaneous = stats.received_rssi;
-    lstats.receiver_receive_antenna = stats.received_antenna;
-    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-
-    // further stats acquired on transmitter side
-
-    lstats.LQ_fresh_serial_packets_transmitted = stats.serial_data_transmitted.GetLQ();
-    lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
-
-    lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
-    lstats.LQ_fresh_serial_packets_received = stats.serial_data_received.GetLQ();
-    lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
-
-    //lstats.__LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, pretty useless, so deprecated
-    lstats.mavlink_packet_LQ_received = stats.GetMavlinkLQ();
-
-    lstats.fhss_curr_i = stats.fhss_curr_i;
-    lstats.fhss_cnt = fhss.Cnt();
-
-    lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
-
-    lstats.link_state_connected = connected();
-    lstats.link_state_binding = bind.IsInBind();
-
-    mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
-}
-
-
 void mbridge_send_Info(void)
 {
 tMBridgeInfo info = {};
