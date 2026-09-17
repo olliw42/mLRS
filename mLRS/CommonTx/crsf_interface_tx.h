@@ -29,7 +29,7 @@ extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
 extern tStats stats;
 
-
+#define USE_CRSF_MB
 //-------------------------------------------------------
 // Interface Implementation
 
@@ -322,15 +322,24 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame[0]));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[1]));
 dbg.puts(" ");dbg.puts(u8toHEX_s(frame[2]));
-dbg.puts(" ");dbg.puts(u8toBCD_s(frame[3] & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s((frame[3] >> 4) & 0x0F));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
 
             get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
 #else
         if (crsfbridge_enabled &&
             frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE &&
-            frame[2] == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[4] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, 0x81, 0x66
+            frame[2] == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[3] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
             get_fifo.PutBuf(&frame[6], frame[5]);
+
+dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame[0]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[1]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[2]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[3]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4] & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[5]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));
+
 #endif
         } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
@@ -671,9 +680,9 @@ uint8_t len;
             crsf_mb_envelope_out.data_size++;
         }
         send_frame(
-            CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, 0x82, 0x66
+            CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
             &(crsf_mb_envelope_out),
-            crsf_mb_envelope_out.data_size + 2);
+            crsf_mb_envelope_out.data_size + 3);
 
         crsf_mb_envelop_out_sequence++;
 #endif
