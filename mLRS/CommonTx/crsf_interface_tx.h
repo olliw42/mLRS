@@ -59,7 +59,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
     using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
-    void Init(bool enable_flag);
+    void Init(bool enable_flag, bool crsfbridge_enable_flag);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
@@ -82,10 +82,9 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
 
-    // CRSF MAVLink envelope handling
-    // front end to communicate with mBridge
+    // CRSF envelope handling
     // provides serial interface to the main code
-    void putbuf(uint8_t* const buf, uint16_t len) override { put_fifo.PutBuf(buf, len); }
+    void putbuf(uint8_t* const buf, uint16_t len) override { if (crsfbridge_enabled) put_fifo.PutBuf(buf, len); }
     bool available(void) override { return get_fifo.Available(); }
     char getc(void) override { return get_fifo.Get(); }
     void flush(void) override { get_fifo.Flush(); }
@@ -111,6 +110,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
+    bool crsfbridge_enabled;
 
     uint8_t frame[CRSF_BUF_SIZE]; // received frame
     volatile bool channels_received;
@@ -317,8 +317,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             channels_received = true;
         } else
 #ifndef USE_CRSF_MB
-//        if (frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE && frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
-        if (frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+        if (crsfbridge_enabled && frame[2] == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
 
 dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame[0]));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[1]));
@@ -328,7 +327,8 @@ dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
 
             get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
 #else
-        if (frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE &&
+        if (crsfbridge_enabled &&
+            frame[0] == CRSF_ADDRESS_TRANSMITTER_MODULE &&
             frame[2] == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[4] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, 0x81, 0x66
             get_fifo.PutBuf(&frame[6], frame[5]);
 #endif
@@ -408,9 +408,10 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 //-------------------------------------------------------
 // CRSF user interface
 
-void tTxCrsf::Init(bool enable_flag)
+void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 {
     enabled = enable_flag;
+    crsfbridge_enabled = (enabled) ? crsfbridge_enable_flag : false;
 
     if (!enabled) return;
 
@@ -644,7 +645,7 @@ uint8_t len;
     }
 
     // MAVLink envelope
-    if (put_fifo.Available()) {
+    if (crsfbridge_enabled && put_fifo.Available()) {
 #ifndef USE_CRSF_MB
         mavlink_envelope_out.total_chunks = 0;
         mavlink_envelope_out.current_chunk = mavlink_envelop_out_sequence;
@@ -1293,7 +1294,7 @@ uint8_t len;
 class tTxCrsf : public tSerialBase
 {
   public:
-    void Init(bool enable_flag) {}
+    void Init(bool enable_flag, bool crsfbridge_enable_flag) {}
     bool Update(tRcData* const rc) { return false; }
     void TelemetryStart(void) {}
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms) { return false; }

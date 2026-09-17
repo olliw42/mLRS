@@ -557,6 +557,7 @@ typedef struct
     bool IsDualBand;
 
     bool UseCrsf;
+    bool UseCrsfBridge;
     bool UseIn;
 } tGlobalConfig;
 
