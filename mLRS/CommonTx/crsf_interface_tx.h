@@ -77,6 +77,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     void SendLinkStatisticsRx(void);
     void SendDeviceInfo(void);
     void SendLinkStatisticsAll(void);
+    void SendMbStatistics(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
@@ -1281,20 +1282,104 @@ void tTxCrsf::SendLinkStatisticsAll(void)
 uint8_t data[CRSF_BUF_SIZE];
 uint8_t len;
 
-    SendLinkStatistics();
+    SendLinkStatistics(); // 3 + 10 + 1 = 14
     memcpy(data, tx_frame, tx_available);
     len = tx_available;
 
-    SendLinkStatisticsTx();
+    SendLinkStatisticsTx(); // 3 + 6 + 1 = 10
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    SendLinkStatisticsRx();
+    SendLinkStatisticsRx(); // 3 + 5 + 1 = 9
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    memcpy(tx_frame, data, len);
+    SendMbStatistics(); // 3 + 18 + 1 = 22
+    memcpy(data + len, tx_frame, tx_available);
+    len += tx_available;
+
+    memcpy(tx_frame, data, len); // 14 + 10 + 9 + 22 = 55
     tx_available = len;
+}
+
+
+//-------------------------------------------------------
+// CRSF Mb Statistics
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t cmd;
+
+    uint8_t connected : 1;
+    uint8_t binding : 1;
+    uint8_t dualband : 1;
+    uint8_t rx_available : 1;
+    uint8_t spare : 4;
+
+    uint8_t rx_actual_diversity : 4;
+    uint8_t tx_actual_diversity : 4;
+
+    uint8_t receive_antenna : 1;
+    uint8_t transmit_antenna : 1;
+    uint8_t receiver_receive_antenna : 1;
+    uint8_t receiver_transmit_antenna : 1;
+    uint8_t spare2 : 4;
+
+    int8_t rssi1_instantaneous;
+    int8_t rssi2_instantaneous;
+    int8_t receiver_rssi_instantaneous;
+
+    uint8_t LQ_serial;
+    uint8_t receiver_LQ_rc;
+    uint8_t receiver_LQ_serial;
+
+    uint16_t bytes_transmitted;
+    uint16_t bytes_received;
+
+    uint8_t fhss1_curr_i;
+    uint8_t fhss1_cnt;
+    uint8_t fhss2_curr_i;
+    uint8_t fhss2_cnt;
+}) tCrsfMbStatistics; // 18 bytes
+
+
+void tTxCrsf::SendMbStatistics(void)
+{
+tCrsfMbStatistics lstats = {};
+
+    lstats.cmd = 0x65;
+
+    lstats.connected = connected();
+    lstats.binding = bind.IsInBind();
+    lstats.dualband = Config.IsDualBand;
+    lstats.rx_available = SetupMetaData.rx_available;
+
+    lstats.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
+    lstats.tx_actual_diversity = Config.Diversity;
+
+    lstats.receive_antenna = stats.last_antenna;
+    lstats.transmit_antenna = stats.last_transmit_antenna;
+    lstats.receiver_receive_antenna = stats.received_antenna;
+    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
+
+    lstats.rssi1_instantaneous = stats.last_rssi1;
+    lstats.rssi2_instantaneous = stats.last_rssi2;
+    lstats.receiver_rssi_instantaneous = stats.received_rssi;
+
+    lstats.LQ_serial = stats.GetLQ_serial();
+    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc();
+    lstats.receiver_LQ_serial = stats.received_LQ_serial;
+
+    lstats.bytes_transmitted = stats.bytes_transmitted.GetBytesPerSec();
+    lstats.bytes_received = stats.bytes_received.GetBytesPerSec();
+
+    lstats.fhss1_curr_i = stats.fhss_curr_i;
+    lstats.fhss1_cnt = fhss.Cnt();
+    lstats.fhss2_curr_i = 0;
+    lstats.fhss2_cnt = 0;
+
+    send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, &lstats, sizeof(tCrsfMbStatistics));
 }
 
 
