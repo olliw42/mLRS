@@ -34,7 +34,9 @@ STM32_FLASH_BASE = 0x08000000   # all STM32 mLRS targets load here
 # set the STM32_PROGRAMMER_CLI env var to override
 CUBEPROG_CLI_NAME = 'STM32_Programmer_CLI'
 CUBEPROG_GLOBS = [
-    # MacOS
+    # MacOS, v2.2x puts the binaries in Contents/Resources/bin, older ones in Contents/MacOs/bin
+    '/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/' + CUBEPROG_CLI_NAME,
+    os.path.expanduser('~/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/Resources/bin/' + CUBEPROG_CLI_NAME),
     '/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/MacOs/bin/' + CUBEPROG_CLI_NAME,
     os.path.expanduser('~/Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/MacOs/bin/' + CUBEPROG_CLI_NAME),
     # Linux
@@ -163,6 +165,7 @@ def flash_dfu(hex_path, target=None):
 
 def flash_swd(hex_path, target=None):
     # flash via SWD, CubeProgrammer preferred as st-flash lacks newer chips (H503, C5, ...)
+    # and does not see an STLINK-V3 at all
     cli = find_cubeprog()
     if cli is not None:
         return flash_cubeprog(cli, hex_path, ['port=SWD', 'mode=UR'])
