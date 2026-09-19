@@ -170,3 +170,6 @@
 #include "tx-hal-flysky-int-pa01-2400-esp32s3.h"
 #endif
 
+#ifdef TX_ELRS_SENDUWING_INTERNAL_2400_ESP32
+#include "tx-hal-senduwing-int-2400-esp32.h"
+#endif
