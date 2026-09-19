@@ -32,6 +32,12 @@
 //
 //   #define JRPIN5_FULL_INTERNAL_ON_RX_TX  : in cases there Rx & Tx pins are electrically connected
 //
+// 4. Full duplex method
+//   Tx and Rx are on two separate, non-inverted pins, so there is no bus turn-around at all.
+//   Not a JR bay pin5 wiring, but the same mBridge/CRSF protocol on a normal 2-wire uart.
+//
+//   #define JRPIN5_FULL_DUPLEX
+//
 #ifndef JRPIN5_INTERFACE_H
 #define JRPIN5_INTERFACE_H
 #pragma once
@@ -254,7 +260,9 @@ void tPin5BridgeBase::pin5_init(void)
 
 void tPin5BridgeBase::pin5_tx_enable(void)
 {
-    uart_rx_enableisr(DISABLE);
+#if !defined JRPIN5_FULL_DUPLEX
+    uart_rx_enableisr(DISABLE); // in full duplex we must keep receiving while we transmit
+#endif
 
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_ENABLED;
@@ -319,6 +327,16 @@ void tPin5BridgeBase::pin5_rx_callback(uint8_t c)
 {
     parse_nextchar(c);
 
+#if defined JRPIN5_FULL_DUPLEX
+    // nothing to switch over, so just kick off the response and let the parser carry on
+    if (state != STATE_TRANSMIT_START) return;
+    state = STATE_IDLE;
+    if (transmit_start()) { // the uart tx fifo serializes, so no need to track the transmission
+        pin5_tx_start();
+    }
+    return;
+#endif
+
     if (state < STATE_TRANSMIT_START) return; // we are in receiving
 
     if (state == STATE_TRANSMIT_PENDING) return; // we are already in transmit delay
@@ -355,8 +373,10 @@ void tPin5BridgeBase::pin5_cc1_callback(void)
 
 void tPin5BridgeBase::pin5_tc_callback(void)
 {
+#if !defined JRPIN5_FULL_DUPLEX // in full duplex rx was never switched off, and state belongs to the parser
     pin5_rx_enable(); // switches on rx
     state = STATE_IDLE;
+#endif
 }
 
 
