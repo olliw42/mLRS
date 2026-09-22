@@ -42,14 +42,15 @@ local function outputToCrsf(value)
 end
 
 
-local function sendChannels()
+local function sendChannels0x17()
     local data = {}
+    local pos = 1
     
-    data[1] = 0x20 + 16 -- 11 bit, 16 channel start = 0x20 + 0x10 = 0x30
+    data[pos] = 0x20 + 16 -- 11 bit, 16 channel start = 0x20 + 0x10 = 0x30
+    pos = pos + 1
     
     local bitBuffer = 0
     local bitCount = 0
-    local dataIndex = 2
 --    for ch = 16, 31 do 
 -- for the moment, for testing, we simply mirror channels 1 - 16
     for ch = 0, 15 do
@@ -57,18 +58,59 @@ local function sendChannels()
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
         while bitCount >= 8 do
-            data[dataIndex] = bitBuffer & 0xFF
-            dataIndex = dataIndex + 1
+            data[pos] = bitBuffer & 0xFF
+            pos = pos + 1
             bitBuffer = bitBuffer >> 8
             bitCount = bitCount - 8
         end
     end
     -- with 16 x 11 bits this isn't actually needed, 176 bits divides exactly into 22 bytes
     if bitCount > 0 then
-        data[dataIndex] = bitBuffer & 0xFF
+        data[pos] = bitBuffer & 0xFF
     end
     
     return crossfireTelemetryPush(0x17, data)
+end
+
+
+local function sendChannels0x16()
+    local data = {}
+    local pos = 1
+    
+    local bitBuffer = 0
+    local bitCount = 0
+    for ch = 0, 15 do
+        value = outputToCrsf(getOutputValue(ch))
+        bitBuffer = bitBuffer | (value << bitCount)
+        bitCount = bitCount + 11
+        while bitCount >= 8 do
+            data[pos] = bitBuffer & 0xFF
+            pos = pos + 1
+            bitBuffer = bitBuffer >> 8
+            bitCount = bitCount - 8
+        end
+    end
+    
+    data[pos] = 0
+    pos = pos + 1
+    
+--    for ch = 16, 31 do 
+-- for the moment, for testing, we simply mirror channels 1 - 16
+    bitBuffer = 0
+    bitCount = 0
+    for ch = 0, 15 do
+        value = outputToCrsf(getOutputValue(ch))
+        bitBuffer = bitBuffer | (value << bitCount)
+        bitCount = bitCount + 11
+        while bitCount >= 8 do
+            data[pos] = bitBuffer & 0xFF
+            pos = pos + 1
+            bitBuffer = bitBuffer >> 8
+            bitCount = bitCount - 8
+        end
+    end
+    
+    return crossfireTelemetryPush(0x16, data)
 end
 
 
@@ -95,7 +137,8 @@ local function background(widget)
 
     if tnow_10ms - widget.tlast_10ms >= 20 then
         widget.tlast_10ms = tnow_10ms
-        sendChannels()
+        sendChannels0x17()
+        --sendChannels0x16() -- just for testing
     end
 end
 
