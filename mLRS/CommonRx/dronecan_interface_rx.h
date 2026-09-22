@@ -410,7 +410,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
     }
 
-    _p.rc_input.rcin.len = (rc_out->has_32channels) ? RC_DATA_LEN : 16;
+    _p.rc_input.rcin.len = (rc_out->do_32channels) ? RC_DATA_LEN : 16;
     if (_p.rc_input.rcin.len > 32) _p.rc_input.rcin.len = 32; // should not happen, but play it safe
     for (uint8_t i = 0; i < _p.rc_input.rcin.len; i++) {
         // to get the same as mavlink rc we have

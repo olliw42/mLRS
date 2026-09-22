@@ -163,7 +163,9 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
         send_sbus_rcdata(&rc, frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
-        send_crsf_rcdata(&rc);
+        // for testing we don't send 0x16 but send 0x17 with start channel = 0!
+        //send_crsf_rcdata(&rc);
+        if (rc.do_32channels) send_crsf_rcdata_0x17(&rc);
         break;
     }
 }
@@ -218,25 +220,25 @@ void tOutBase::SendLinkStatisticsDisconnected(void)
 
 void tOutBase::send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe)
 {
-tSBusFrame sbus_buf;
+tSBusFrame frame;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
-    sbus_buf.ch.ch0 = rc_to_sbus(rc->ch[0]);
-    sbus_buf.ch.ch1 = rc_to_sbus(rc->ch[1]);
-    sbus_buf.ch.ch2 = rc_to_sbus(rc->ch[2]);
-    sbus_buf.ch.ch3 = rc_to_sbus(rc->ch[3]);
-    sbus_buf.ch.ch4 = rc_to_sbus(rc->ch[4]);
-    sbus_buf.ch.ch5 = rc_to_sbus(rc->ch[5]);
-    sbus_buf.ch.ch6 = rc_to_sbus(rc->ch[6]);
-    sbus_buf.ch.ch7 = rc_to_sbus(rc->ch[7]);
-    sbus_buf.ch.ch8 = rc_to_sbus(rc->ch[8]);
-    sbus_buf.ch.ch9 = rc_to_sbus(rc->ch[9]);
-    sbus_buf.ch.ch10 = rc_to_sbus(rc->ch[10]);
-    sbus_buf.ch.ch11 = rc_to_sbus(rc->ch[11]);
-    sbus_buf.ch.ch12 = rc_to_sbus(rc->ch[12]);
-    sbus_buf.ch.ch13 = rc_to_sbus(rc->ch[13]);
-    sbus_buf.ch.ch14 = rc_to_sbus(rc->ch[14]);
-    sbus_buf.ch.ch15 = rc_to_sbus(rc->ch[15]);
+    frame.ch.ch0 = rc_to_sbus(rc->ch[0]);
+    frame.ch.ch1 = rc_to_sbus(rc->ch[1]);
+    frame.ch.ch2 = rc_to_sbus(rc->ch[2]);
+    frame.ch.ch3 = rc_to_sbus(rc->ch[3]);
+    frame.ch.ch4 = rc_to_sbus(rc->ch[4]);
+    frame.ch.ch5 = rc_to_sbus(rc->ch[5]);
+    frame.ch.ch6 = rc_to_sbus(rc->ch[6]);
+    frame.ch.ch7 = rc_to_sbus(rc->ch[7]);
+    frame.ch.ch8 = rc_to_sbus(rc->ch[8]);
+    frame.ch.ch9 = rc_to_sbus(rc->ch[9]);
+    frame.ch.ch10 = rc_to_sbus(rc->ch[10]);
+    frame.ch.ch11 = rc_to_sbus(rc->ch[11]);
+    frame.ch.ch12 = rc_to_sbus(rc->ch[12]);
+    frame.ch.ch13 = rc_to_sbus(rc->ch[13]);
+    frame.ch.ch14 = rc_to_sbus(rc->ch[14]);
+    frame.ch.ch15 = rc_to_sbus(rc->ch[15]);
 
     uint8_t flags = 0;
     if (rc->ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
@@ -244,87 +246,121 @@ tSBusFrame sbus_buf;
     if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
     if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
-    sbus_buf.stx = SBUS_STX;
+    frame.stx = SBUS_STX;
 
-    sbus_buf.flags = flags;
-    sbus_buf.end_stx = SBUS_END_STX;
+    frame.flags = flags;
+    frame.end_stx = SBUS_END_STX;
 
-    putbuf((uint8_t*)&sbus_buf, SBUS_FRAME_SIZE);
+    putbuf((uint8_t*)&frame, SBUS_FRAME_SIZE);
 }
 
 
 //-------------------------------------------------------
 // Crsf
 //-------------------------------------------------------
-
-void tOutBase::send_crsf_rcdata(tRcData* const rc)
-{
-tCrsfRcChannelFrame crsf_buf;
-
 // TODO: handle has_32channels
 // we need to decide what to do here. Either
 // (i) send extended 0x16 frame
 // (ii) send 0x16 and 0x17 frame in alternation
 // (iii) send 0x16 + 0x17 at once (need to check how ArduPilot, INAV behave, maybe not preferred option)
 
+void tOutBase::send_crsf_rcdata(tRcData* const rc)
+{
+tCrsfRcChannelV1Frame frame;
+
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
-    crsf_buf.ch.ch0 = rc_to_crsf(rc->ch[0]);
-    crsf_buf.ch.ch1 = rc_to_crsf(rc->ch[1]);
-    crsf_buf.ch.ch2 = rc_to_crsf(rc->ch[2]);
-    crsf_buf.ch.ch3 = rc_to_crsf(rc->ch[3]);
-    crsf_buf.ch.ch4 = rc_to_crsf(rc->ch[4]);
-    crsf_buf.ch.ch5 = rc_to_crsf(rc->ch[5]);
-    crsf_buf.ch.ch6 = rc_to_crsf(rc->ch[6]);
-    crsf_buf.ch.ch7 = rc_to_crsf(rc->ch[7]);
-    crsf_buf.ch.ch8 = rc_to_crsf(rc->ch[8]);
-    crsf_buf.ch.ch9 = rc_to_crsf(rc->ch[9]);
-    crsf_buf.ch.ch10 = rc_to_crsf(rc->ch[10]);
-    crsf_buf.ch.ch11 = rc_to_crsf(rc->ch[11]);
-    crsf_buf.ch.ch12 = rc_to_crsf(rc->ch[12]);
-    crsf_buf.ch.ch13 = rc_to_crsf(rc->ch[13]);
-    crsf_buf.ch.ch14 = rc_to_crsf(rc->ch[14]);
-    crsf_buf.ch.ch15 = rc_to_crsf(rc->ch[15]);
+    frame.ch.ch0 = rc_to_crsf(rc->ch[0]);
+    frame.ch.ch1 = rc_to_crsf(rc->ch[1]);
+    frame.ch.ch2 = rc_to_crsf(rc->ch[2]);
+    frame.ch.ch3 = rc_to_crsf(rc->ch[3]);
+    frame.ch.ch4 = rc_to_crsf(rc->ch[4]);
+    frame.ch.ch5 = rc_to_crsf(rc->ch[5]);
+    frame.ch.ch6 = rc_to_crsf(rc->ch[6]);
+    frame.ch.ch7 = rc_to_crsf(rc->ch[7]);
+    frame.ch.ch8 = rc_to_crsf(rc->ch[8]);
+    frame.ch.ch9 = rc_to_crsf(rc->ch[9]);
+    frame.ch.ch10 = rc_to_crsf(rc->ch[10]);
+    frame.ch.ch11 = rc_to_crsf(rc->ch[11]);
+    frame.ch.ch12 = rc_to_crsf(rc->ch[12]);
+    frame.ch.ch13 = rc_to_crsf(rc->ch[13]);
+    frame.ch.ch14 = rc_to_crsf(rc->ch[14]);
+    frame.ch.ch15 = rc_to_crsf(rc->ch[15]);
 
-    crsf_buf.address = CRSF_ADDRESS_FLIGHT_CONTROLLER; // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
-    crsf_buf.len = CRSF_RCCHANNELPACKET_LEN + 2;
-    crsf_buf.frame_id = CRSF_FRAME_ID_RC_CHANNELS;
+    frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER; // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
+    frame.len = CRSF_RCCHANNEL_V1_LEN + 2;
+    frame.frame_id = CRSF_FRAME_ID_RC_CHANNELS;
 
-    crsf_buf.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(crsf_buf.frame_id), CRSF_RCCHANNELPACKET_LEN + 1);
+    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_RCCHANNEL_V1_LEN + 1);
 
-    putbuf((uint8_t*)&crsf_buf, CRSF_RCCHANNELPACKET_LEN + 4);
+    putbuf((uint8_t*)&frame, CRSF_RCCHANNEL_V1_LEN + 4);
+}
+
+
+void tOutBase::send_crsf_rcdata_0x17(tRcData* const rc)
+{
+tCrsfSubsetRcChannelsPackedFrame_16x11bit frame;
+
+    frame.ch.starting_channel = 0; // for testing we don't send 0x16 but send 0x17 with start channel = 0!
+    frame.ch.res_configuration = 1;
+    frame.ch.digital_switch_flag = 0;
+
+    frame.ch.ch_16x11bit.ch0 = rc_to_crsf_0x17_11bit(rc->ch[16]);
+    frame.ch.ch_16x11bit.ch1 = rc_to_crsf_0x17_11bit(rc->ch[17]);
+    frame.ch.ch_16x11bit.ch2 = rc_to_crsf_0x17_11bit(rc->ch[18]);
+    frame.ch.ch_16x11bit.ch3 = rc_to_crsf_0x17_11bit(rc->ch[19]);
+    frame.ch.ch_16x11bit.ch4 = rc_to_crsf_0x17_11bit(rc->ch[20]);
+    frame.ch.ch_16x11bit.ch5 = rc_to_crsf_0x17_11bit(rc->ch[21]);
+    frame.ch.ch_16x11bit.ch6 = rc_to_crsf_0x17_11bit(rc->ch[22]);
+    frame.ch.ch_16x11bit.ch7 = rc_to_crsf_0x17_11bit(rc->ch[23]);
+    frame.ch.ch_16x11bit.ch8 = rc_to_crsf_0x17_11bit(rc->ch[24]);
+    frame.ch.ch_16x11bit.ch9 = rc_to_crsf_0x17_11bit(rc->ch[25]);
+    frame.ch.ch_16x11bit.ch10 = rc_to_crsf_0x17_11bit(rc->ch[26]);
+    frame.ch.ch_16x11bit.ch11 = rc_to_crsf_0x17_11bit(rc->ch[27]);
+    frame.ch.ch_16x11bit.ch12 = rc_to_crsf_0x17_11bit(rc->ch[28]);
+    frame.ch.ch_16x11bit.ch13 = rc_to_crsf_0x17_11bit(rc->ch[29]);
+    frame.ch.ch_16x11bit.ch14 = rc_to_crsf_0x17_11bit(rc->ch[30]);
+    frame.ch.ch_16x11bit.ch15 = rc_to_crsf_0x17_11bit(rc->ch[31]);
+
+    frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    frame.len = CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 2;
+    frame.frame_id = CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED;
+
+    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 1);
+
+    putbuf((uint8_t*)&frame, CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 4);
 }
 
 
 void tOutBase::send_crsf_linkstatistics(tOutLinkStats* const lstats)
 {
-tCrsfLinkStatisticsFrame crsf_buf;
+tCrsfLinkStatisticsFrame frame;
 
     if (lstats->antenna_config == 3) {
-        crsf_buf.ls.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
-        crsf_buf.ls.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
+        frame.ls.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
+        frame.ls.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
     } else if (lstats->antenna_config == 2) {
-        crsf_buf.ls.uplink_rssi1 = 255;
-        crsf_buf.ls.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
+        frame.ls.uplink_rssi1 = 255;
+        frame.ls.uplink_rssi2 = crsf_cvt_rssi_rx(lstats->receiver_rssi2);
     } else {
-        crsf_buf.ls.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
-        crsf_buf.ls.uplink_rssi2 = 255;
+        frame.ls.uplink_rssi1 = crsf_cvt_rssi_rx(lstats->receiver_rssi1);
+        frame.ls.uplink_rssi2 = 255;
     }
-    crsf_buf.ls.uplink_LQ = lstats->receiver_LQ;
-    crsf_buf.ls.uplink_snr = lstats->receiver_snr;
-    crsf_buf.ls.active_antenna = lstats->receiver_antenna;
-    crsf_buf.ls.mode = crsf_cvt_mode(lstats->mode);
-    crsf_buf.ls.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm); // actually wrong, should be Tx tx power, but hey ...
-    crsf_buf.ls.downlink_rssi = crsf_cvt_rssi_rx(lstats->transmitter_rssi);
-    crsf_buf.ls.downlink_LQ = lstats->transmitter_LQ;
-    crsf_buf.ls.downlink_snr = lstats->transmitter_snr;
+    frame.ls.uplink_LQ = lstats->receiver_LQ;
+    frame.ls.uplink_snr = lstats->receiver_snr;
+    frame.ls.active_antenna = lstats->receiver_antenna;
+    frame.ls.mode = crsf_cvt_mode(lstats->mode);
+    frame.ls.uplink_transmit_power = crsf_cvt_power(lstats->receiver_power_dbm); // actually wrong, should be Tx tx power, but hey ...
+    frame.ls.downlink_rssi = crsf_cvt_rssi_rx(lstats->transmitter_rssi);
+    frame.ls.downlink_LQ = lstats->transmitter_LQ;
+    frame.ls.downlink_snr = lstats->transmitter_snr;
 
-    crsf_buf.address = CRSF_ADDRESS_FLIGHT_CONTROLLER;
-    crsf_buf.len = CRSF_LINK_STATISTICS_LEN + 2;
-    crsf_buf.frame_id = CRSF_FRAME_ID_LINK_STATISTICS;
+    frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    frame.len = CRSF_LINK_STATISTICS_LEN + 2;
+    frame.frame_id = CRSF_FRAME_ID_LINK_STATISTICS;
 
-    crsf_buf.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(crsf_buf.frame_id), CRSF_LINK_STATISTICS_LEN + 1);
+    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_LINK_STATISTICS_LEN + 1);
 
-    putbuf((uint8_t*)&crsf_buf, CRSF_LINK_STATISTICS_LEN + 4);
+    putbuf((uint8_t*)&frame, CRSF_LINK_STATISTICS_LEN + 4);
 }
 
 

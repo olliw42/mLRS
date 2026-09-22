@@ -27,7 +27,6 @@ typedef enum {
     FRAME_TYPE_TX = 0x00,
     FRAME_TYPE_RX = 0x01,
     FRAME_TYPE_TX_RX_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
-    FRAME_TYPE_TX2 = 0x03,
 } FRAME_TYPE_ENUM;
 
 
@@ -51,10 +50,10 @@ typedef struct
 
 
 #define FRAME_TX_RX_HEADER_LEN      7
-#define FRAME_TX_RCDATAV1_RC1_LEN   6
-// not used #define FRAME_TX_RCDATAV1_RC2_LEN   10
-#define FRAME_TX_RCDATAV2_RC1_LEN   11
-// not used #define FRAME_TX_RCDATAV2_RC2_LEN   5
+#define FRAME_TX_RCDATA_V1_RC1_LEN   6
+// not used #define FRAME_TX_RCDATA_V1_RC2_LEN   10
+#define FRAME_TX_RCDATA_V2_RC1_LEN   11
+// not used #define FRAME_TX_RCDATA_V2_RC2_LEN   5
 #define FRAME_TX_PAYLOAD_LEN        64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN        82
 
@@ -64,7 +63,8 @@ typedef struct
 {
     uint32_t seq_no : 3;
     uint32_t ack : 1;
-    uint32_t frame_type : 4;
+    uint32_t frame_type : 3;
+    uint32_t is_32channels : 1;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
     uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
@@ -81,7 +81,8 @@ typedef struct
 {
     uint32_t seq_no : 3;
     uint32_t ack : 1;
-    uint32_t frame_type : 4;
+    uint32_t frame_type : 3;
+    uint32_t spare1 : 1;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
     uint32_t LQ_rc : 7; // available only for Rx->Tx frame, not for Tx->Rx
@@ -177,18 +178,19 @@ typedef struct
     uint64_t bind_signature; // 8 bytes // different for Tx and Rx
     uint8_t seq_no : 3;
     uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
+    uint8_t frame_type : 3; // 1 byte // not used currently
+    uint8_t spare : 1;
 
     uint8_t connected : 1;
-    uint8_t spare : 7;
+    uint8_t spare2 : 7;
 
     char BindPhrase_6[6];
     uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare3 : 4;
+    uint8_t spare4[71];
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -200,15 +202,16 @@ typedef struct
     uint64_t bind_signature; // 8 bytes // different for Tx and Rx
     uint8_t seq_no : 3;
     uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
+    uint8_t frame_type : 3; // 1 byte // not used currently
+    uint8_t spare : 1;
 
     uint8_t connected : 1;
-    uint8_t spare : 7;
+    uint8_t spare2 : 7;
 
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55];
+    uint8_t spare3[55];
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
@@ -247,7 +250,7 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t spare1 : 4;
+    uint8_t spare : 4;
     uint8_t SendRcChannels : 4;
     uint8_t spare2 : 4;
     uint8_t OutLqChannelMode : 4;
@@ -312,12 +315,12 @@ typedef struct
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[2];
+    uint8_t spare2 : 4;
+    uint8_t spare3[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[24];
+    uint8_t spare4[24];
 
     uint16_t tx_firmware_version_u16; // 16.64.64
     uint16_t tx_setup_layout_u16; // 16.64.64

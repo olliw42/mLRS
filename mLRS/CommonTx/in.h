@@ -35,7 +35,7 @@ class tInBase
     virtual bool config_sbus_inverted(bool enable_flag) { return false; }
 
     bool parse_sbus(tRcData* const rc);
-    void get_sbus_data(tRcData* const rc);
+    void fill_rcdata(tRcData* const rc);
 
     bool enabled;
     uint8_t config;

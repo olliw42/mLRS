@@ -232,7 +232,7 @@ void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool fails
         }
     }
 
-    rc_len = (rc_out->has_32channels) ? RC_DATA_LEN : 16;
+    rc_len = (rc_out->do_32channels) ? RC_DATA_LEN : 16;
     if (rc_len > 32) rc_len = 32; // should not happen, but play it safe
     for (uint8_t i = 0; i < rc_len; i++) {
         rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);

@@ -581,6 +581,7 @@ RESTARTCONTROLLER
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
 
+    rcData.Init();
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
     msp.Init();

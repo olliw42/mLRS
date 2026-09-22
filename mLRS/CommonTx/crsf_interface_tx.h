@@ -88,6 +88,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 
     uint8_t crc8(const uint8_t* const buf);
     void fill_rcdata(tRcData* const rc);
+    void fill_rcdata_0x17(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -299,6 +300,9 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
             channels_received = true;
         } else
+        if (frame[2] == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) { // frame_id
+            channels_received = true;
+        } else
         if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
             // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
             ping_device_received = true;
@@ -343,9 +347,22 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
 void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfRcChannelBuffer buf;
+tCrsfRcChannelV2Buffer buf;
+bool is_32channels;
 
-    memcpy(buf.c, &(frame[3]), CRSF_RCCHANNELPACKET_SIZE);
+    // TODO: variable size frames ??
+
+    if (frame[1] >= 1 + 22 + 1 && frame[1] <= 1 + 23 + 1) { // V1 frame, we only accept frames with 16 channels
+        is_32channels = false;
+        memcpy(&buf, &(frame[3]), CRSF_RCCHANNEL_V1_LEN);
+    } else if (frame[1] == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
+        rc->do_32channels = true;
+        is_32channels = true;
+        memcpy(&buf, &(frame[4]), CRSF_RCCHANNEL_V2_LEN);
+    } else {
+        return;
+    }
+
     rc->ch[0] = rc_from_crsf(buf.ch0);
     rc->ch[1] = rc_from_crsf(buf.ch1);
     rc->ch[2] = rc_from_crsf(buf.ch2);
@@ -362,6 +379,51 @@ tCrsfRcChannelBuffer buf;
     rc->ch[13] = rc_from_crsf(buf.ch13);
     rc->ch[14] = rc_from_crsf(buf.ch14);
     rc->ch[15] = rc_from_crsf(buf.ch15);
+
+    if (is_32channels) {
+        rc->ch[16] = rc_from_crsf(buf.ch16);
+        rc->ch[17] = rc_from_crsf(buf.ch17);
+        rc->ch[18] = rc_from_crsf(buf.ch18);
+        rc->ch[19] = rc_from_crsf(buf.ch19);
+        rc->ch[20] = rc_from_crsf(buf.ch20);
+        rc->ch[21] = rc_from_crsf(buf.ch21);
+        rc->ch[22] = rc_from_crsf(buf.ch22);
+        rc->ch[23] = rc_from_crsf(buf.ch23);
+        rc->ch[24] = rc_from_crsf(buf.ch24);
+        rc->ch[25] = rc_from_crsf(buf.ch25);
+        rc->ch[26] = rc_from_crsf(buf.ch26);
+        rc->ch[27] = rc_from_crsf(buf.ch27);
+        rc->ch[28] = rc_from_crsf(buf.ch28);
+        rc->ch[29] = rc_from_crsf(buf.ch29);
+        rc->ch[30] = rc_from_crsf(buf.ch30);
+        rc->ch[31] = rc_from_crsf(buf.ch31);
+    }
+}
+
+
+void tTxCrsf::fill_rcdata_0x17(tRcData* const rc)
+{
+tCrsfRcChannelV1Buffer buf; // we can reuse/misuse this structure
+
+    rc->do_32channels = true;
+    memcpy(&buf, &(frame[4]), CRSF_RCCHANNEL_V1_LEN);
+
+    rc->ch[16] = rc_from_crsf_0x17_11bit(buf.ch0);
+    rc->ch[17] = rc_from_crsf_0x17_11bit(buf.ch1);
+    rc->ch[18] = rc_from_crsf_0x17_11bit(buf.ch2);
+    rc->ch[19] = rc_from_crsf_0x17_11bit(buf.ch3);
+    rc->ch[20] = rc_from_crsf_0x17_11bit(buf.ch4);
+    rc->ch[21] = rc_from_crsf_0x17_11bit(buf.ch5);
+    rc->ch[22] = rc_from_crsf_0x17_11bit(buf.ch6);
+    rc->ch[23] = rc_from_crsf_0x17_11bit(buf.ch7);
+    rc->ch[24] = rc_from_crsf_0x17_11bit(buf.ch8);
+    rc->ch[25] = rc_from_crsf_0x17_11bit(buf.ch9);
+    rc->ch[26] = rc_from_crsf_0x17_11bit(buf.ch10);
+    rc->ch[27] = rc_from_crsf_0x17_11bit(buf.ch11);
+    rc->ch[28] = rc_from_crsf_0x17_11bit(buf.ch12);
+    rc->ch[29] = rc_from_crsf_0x17_11bit(buf.ch13);
+    rc->ch[30] = rc_from_crsf_0x17_11bit(buf.ch14);
+    rc->ch[31] = rc_from_crsf_0x17_11bit(buf.ch15);
 }
 
 
@@ -430,6 +492,12 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     // check crc before we accept it
     uint8_t crc = crc8(frame);
     if (crc != frame[frame[1] + 1]) return false;
+
+    if (frame[2] == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
+        if (frame[1] != 25 || frame[3] != 0x30) return false; // we only accept 0x17 with 11 bit, 16 channels, ch 16 start
+        fill_rcdata_0x17(rc);
+        return true;
+    }
 
     startup_passed = true;
 

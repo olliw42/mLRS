@@ -74,7 +74,8 @@ typedef enum {
     CRSF_FRAME_ID_TEMP                  = 0x0D,
     CRSF_FRAME_ID_BAROMETER             = 0x11,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
-    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx adds a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
+    CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED = 0x17,
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
     CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
     CRSF_FRAME_ID_ATTITUDE              = 0x1E,
@@ -177,33 +178,27 @@ typedef struct
 // #define TICKS_TO_US(x)  ((x - 992) * 5 / 8 + 1500)
 // #define US_TO_TICKS(x)  ((x - 1500) * 8 / 5 + 992)
 
-#define CRSF_RCCHANNELPACKET_SIZE  22
+CRSF_PACKED(
+typedef struct {
+    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t ch8  : 11;
+    uint16_t ch9  : 11;
+    uint16_t ch10 : 11;
+    uint16_t ch11 : 11;
+    uint16_t ch12 : 11;
+    uint16_t ch13 : 11;
+    uint16_t ch14 : 11;
+    uint16_t ch15 : 11;
+}) tCrsfRcChannelV1Buffer;
 
-typedef union
-{
-    uint8_t c[CRSF_RCCHANNELPACKET_SIZE];
-    CRSF_PACKED(
-    struct {
-        uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-        uint16_t ch1  : 11;
-        uint16_t ch2  : 11;
-        uint16_t ch3  : 11;
-        uint16_t ch4  : 11;
-        uint16_t ch5  : 11;
-        uint16_t ch6  : 11;
-        uint16_t ch7  : 11;
-        uint16_t ch8  : 11;
-        uint16_t ch9  : 11;
-        uint16_t ch10 : 11;
-        uint16_t ch11 : 11;
-        uint16_t ch12 : 11;
-        uint16_t ch13 : 11;
-        uint16_t ch14 : 11;
-        uint16_t ch15 : 11;
-    });
-} tCrsfRcChannelBuffer;
-
-#define CRSF_RCCHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+#define CRSF_RCCHANNEL_V1_LEN  22 // LEN vs SIZE style guide ??
 
 
 // frame: adr, len, frame id, data, crc
@@ -213,11 +208,95 @@ typedef struct
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfRcChannelBuffer ch;
+    tCrsfRcChannelV1Buffer ch;
     uint8_t crc;
-}) tCrsfRcChannelFrame;
+}) tCrsfRcChannelV1Frame;
 
-#define CRSF_RCCHANNELPACKET_FRAME_LEN  (CRSF_RCCHANNELPACKET_LEN + 4)
+#define CRSF_RCCHANNEL_V1_FRAME_LEN  (CRSF_RCCHANNEL_V1_LEN + 4)
+
+
+CRSF_PACKED(
+typedef struct {
+    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t ch8  : 11;
+    uint16_t ch9  : 11;
+    uint16_t ch10 : 11;
+    uint16_t ch11 : 11;
+    uint16_t ch12 : 11;
+    uint16_t ch13 : 11;
+    uint16_t ch14 : 11;
+    uint16_t ch15 : 11;
+    uint8_t status;
+    uint16_t ch16 : 11;
+    uint16_t ch17 : 11;
+    uint16_t ch18 : 11;
+    uint16_t ch19 : 11;
+    uint16_t ch20 : 11;
+    uint16_t ch21 : 11;
+    uint16_t ch22 : 11;
+    uint16_t ch23 : 11;
+    uint16_t ch24 : 11;
+    uint16_t ch25 : 11;
+    uint16_t ch26 : 11;
+    uint16_t ch27 : 11;
+    uint16_t ch28 : 11;
+    uint16_t ch29 : 11;
+    uint16_t ch30 : 11;
+    uint16_t ch31 : 11;
+}) tCrsfRcChannelV2Buffer;
+
+#define CRSF_RCCHANNEL_V2_LEN  (22 + 1 + 22)
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfRcChannelV2Buffer ch;
+    uint8_t crc;
+}) tCrsfRcChannelV2Frame;
+
+#define CRSF_RCCHANNEL_V2_FRAME_LEN  (CRSF_RCCHANNEL_V2_LEN + 4)
+
+
+//-- Subset RC Channels Packed frame
+// ArduPilot 0x17, 11 bit: pwm = x / 2 + 988
+//   => x =    0 for pwm = 988
+//      x = 1024 for pwm = 1500
+//      x = 2047 for pwm = 2011
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t starting_channel    : 5; // channel number of the first channel in the frame
+    uint8_t res_configuration   : 2; // configuration for the RC data resolution, 10 - 13 bits
+    uint8_t digital_switch_flag : 1; // configuration bit for digital channel
+    tCrsfRcChannelV1Buffer ch_16x11bit;
+}) tCrsfSubsetRcChannelsPacked_16x11bit;
+
+#define CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN  (1 + 22)
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfSubsetRcChannelsPacked_16x11bit ch;
+    uint8_t crc;
+}) tCrsfSubsetRcChannelsPackedFrame_16x11bit;
+
+#define CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_FRAME_LEN  (CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 4)
 
 
 //-- Link statistics frames

@@ -752,6 +752,7 @@ RESTARTCONTROLLER
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
 
+    rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
     msp.Init(); // serial port selected by SerialPort

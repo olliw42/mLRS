@@ -39,6 +39,8 @@ typedef enum {
 // Tx Frames (send from Tx to Rx)
 //-------------------------------------------------------
 
+#ifdef DEVICE_IS_TRANSMITTER
+
 // lowest level routine to construct a tTxFrame, finalizes it
 // used by
 //   pack_txframe()
@@ -69,14 +71,11 @@ uint16_t crc;
     frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
     frame->status.fhss_index = frame_stats->tx_fhss_index;
     frame->status.LQ_serial = frame_stats->LQ_serial;
+    frame->status.is_32channels = (rc->do_32channels) ? 1 : 0;
     frame->status.payload_len = payload_len;
 
     // pack rc data
-
-// TODO: is this the correct way? FRAME_TYPE_TX_RX_CMD probably also should have the correct rc data
-//       so, do we need a bit ?
-
-    if (frame->status.frame_type != FRAME_TYPE_TX2) {
+    if (!frame->status.is_32channels) {
         // rcData: 0 .. 1024 .. 2047, 11 bits
         frame->rcV1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
         frame->rcV1.ch1  = rc->ch[1];
@@ -107,13 +106,13 @@ uint16_t crc;
         frame->rcV2.ch6  = rc->ch[6];
         frame->rcV2.ch7  = rc->ch[7];
 
-        uint8_t ofs = (frame->status.seq_no >> 2) * 4;
+        uint8_t ofs = (frame->status.seq_no & 0x01) * 4; // seq is 3 bits, so result is 0/1 -> ofs = 0 or 4
         frame->rcV2.ch8_12  = rc->ch[8 + ofs] / 8; // 0 .. 128 .. 255, 8 bits
         frame->rcV2.ch9_13  = rc->ch[9 + ofs] / 8;
         frame->rcV2.ch10_14 = rc->ch[10 + ofs] / 8;
         frame->rcV2.ch11_15 = rc->ch[11 + ofs] / 8;
 
-        ofs = (frame->status.seq_no >> 1) * 4;
+        ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
         frame->rcV2.ch16_20_24_28 = (rc->ch[16 + ofs] >= 1536) ? 2 : ((rc->ch[16 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
         frame->rcV2.ch17_21_25_29 = (rc->ch[17 + ofs] >= 1536) ? 2 : ((rc->ch[17 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
         frame->rcV2.ch18_22_26_30 = (rc->ch[18 + ofs] >= 1536) ? 2 : ((rc->ch[18 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
@@ -126,12 +125,11 @@ uint16_t crc;
     }
 
     // finalize, crc
-    uint8_t rc1_len =
-        (frame->status.frame_type == FRAME_TYPE_TX2) ? FRAME_TX_RCDATAV2_RC1_LEN : FRAME_TX_RCDATAV1_RC1_LEN;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RCDATA_V2_RC1_LEN : FRAME_TX_RCDATA_V1_RC1_LEN;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
-    frame->rcV1.crc1 = crc;
+    if (frame->status.is_32channels) { frame->rcV2.crc1 = crc; } else { frame->rcV1.crc1 = crc; }
 
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + rc1_len,  FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - rc1_len - 2);
     frame->crc = crc;
@@ -146,12 +144,11 @@ void pack_txframe(
     uint8_t* const payload,
     uint8_t payload_len)
 {
-
-// TODO: handle 32 channels
-
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
+#endif
+#ifdef DEVICE_IS_RECEIVER
 
 // check credentials of a tTxFrame (sync word, frame type, payload len, CRC1, CRC)
 // returns 0 if OK !!
@@ -161,20 +158,18 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_TX) &&
-        (frame->status.frame_type != FRAME_TYPE_TX2) &&
-        (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
-    uint8_t rc1_len =
-        (frame->status.frame_type == FRAME_TYPE_TX2) ? FRAME_TX_RCDATAV2_RC1_LEN : FRAME_TX_RCDATAV1_RC1_LEN;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RCDATA_V2_RC1_LEN : FRAME_TX_RCDATA_V1_RC1_LEN;
+    uint16_t crc1 = (frame->status.is_32channels) ? frame->rcV2.crc1 : frame->rcV1.crc1;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
-    if (crc != frame->rcV1.crc1) return CHECK_ERROR_CRC1;
+    if (crc != crc1) return CHECK_ERROR_CRC1;
 
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + rc1_len, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - rc1_len - 2);
     if (crc != frame->crc) return CHECK_ERROR_CRC;
@@ -186,8 +181,11 @@ uint16_t crc;
 // fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->has_32channels = (frame->status.frame_type == FRAME_TYPE_TX2);
-    if (!rc->has_32channels) {
+    if (frame->status.is_32channels) {
+        rc->do_32channels = true;
+    }
+
+    if (!frame->status.is_32channels) {
         rc->ch[0] = frame->rcV1.ch0;
         rc->ch[1] = frame->rcV1.ch1;
         rc->ch[2] = frame->rcV1.ch2;
@@ -211,8 +209,11 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 // fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->has_32channels = (frame->status.frame_type == FRAME_TYPE_TX2);
-    if (!rc->has_32channels) {
+    if (frame->status.is_32channels) {
+        rc->do_32channels = true;
+    }
+
+    if (!frame->status.is_32channels) {
         rc->ch[0] = frame->rcV1.ch0;
         rc->ch[1] = frame->rcV1.ch1;
         rc->ch[2] = frame->rcV1.ch2;
@@ -232,8 +233,6 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
         rc->ch[13] = (frame->rcV1.ch13 > 1) ? 2047 : ((frame->rcV1.ch13 < 1) ? 0 : 1024);
         rc->ch[14] = (frame->rcV1.ch14 > 1) ? 2047 : ((frame->rcV1.ch14 < 1) ? 0 : 1024);
         rc->ch[15] = (frame->rcV1.ch15 > 1) ? 2047 : ((frame->rcV1.ch15 < 1) ? 0 : 1024);
-
-        for (uint8_t ch = 16; ch < RC_DATA_LEN; ch++) rc->ch[ch] = 1024;
     } else {
         rc->ch[0] = frame->rcV2.ch0;
         rc->ch[1] = frame->rcV2.ch1;
@@ -244,13 +243,13 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
         rc->ch[6] = frame->rcV2.ch6;
         rc->ch[7] = frame->rcV2.ch7;
 
-        uint8_t ofs = (frame->status.seq_no >> 2) * 4; // seq is 3 bits, so result is 0/1 -> ofs = 0/4
+        uint8_t ofs = (frame->status.seq_no & 0x01) * 4; // seq is 3 bits, so result is 0/1 -> ofs = 0 or 4
         rc->ch[8 + ofs] = frame->rcV2.ch8_12 * 8;
         rc->ch[9 + ofs] = frame->rcV2.ch9_13 * 8;
         rc->ch[10 + ofs] = frame->rcV2.ch10_14 * 8;
         rc->ch[11 + ofs] = frame->rcV2.ch11_15 * 8;
 
-        ofs = (frame->status.seq_no >> 1) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0/4/8/12
+        ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
         rc->ch[16 + ofs] = (frame->rcV2.ch16_20_24_28 > 1) ? 2047 : ((frame->rcV2.ch16_20_24_28 < 1) ? 0 : 1024);
         rc->ch[17 + ofs] = (frame->rcV2.ch17_21_25_29 > 1) ? 2047 : ((frame->rcV2.ch17_21_25_29 < 1) ? 0 : 1024);
         rc->ch[18 + ofs] = (frame->rcV2.ch18_22_26_30 > 1) ? 2047 : ((frame->rcV2.ch18_22_26_30 < 1) ? 0 : 1024);
@@ -258,6 +257,7 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
     }
 }
 
+#endif
 
 //-------------------------------------------------------
 // Rx Frames (send from Rx to Tx)
