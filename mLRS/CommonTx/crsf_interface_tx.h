@@ -358,7 +358,7 @@ bool is_32channels;
     } else if (frame[1] == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
         rc->do_32channels = true;
         is_32channels = true;
-        memcpy(&buf, &(frame[4]), CRSF_RCCHANNEL_V2_LEN);
+        memcpy(&buf, &(frame[3]), CRSF_RCCHANNEL_V2_LEN);
     } else {
         return;
     }
