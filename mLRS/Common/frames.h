@@ -106,7 +106,7 @@ uint16_t crc;
     if ((type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
         if (crypto.PrivacyLevel() >= 2) {
-            crypto.Encrypt((uint8_t*)&frame->rc, 18 + payload_len, &payload_len); // all, RC data + payload
+            crypto.Encrypt((uint8_t*)&(frame->rc), 18 + payload_len, &payload_len); // all, RC data + payload
         } else {
             crypto.Encrypt(frame->payload, payload_len, &payload_len); // only payload
         }
