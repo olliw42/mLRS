@@ -27,7 +27,7 @@ class tInBase
 
     bool ChannelsUpdated(tRcData* const rc);
 
-//XX  private:
+  private:
     virtual bool available(void) { return false; }
     virtual char getc(void) { return 0; }
 

@@ -49,13 +49,13 @@ typedef struct
 } tFrameStats;
 
 
-#define FRAME_TX_RX_HEADER_LEN      7
-#define FRAME_TX_RCDATA_V1_RC1_LEN   6
-// not used #define FRAME_TX_RCDATA_V1_RC2_LEN   10
-#define FRAME_TX_RCDATA_V2_RC1_LEN   11
-// not used #define FRAME_TX_RCDATA_V2_RC2_LEN   5
-#define FRAME_TX_PAYLOAD_LEN        64 // 82 - 10-6(rcdata) - 2(crc) = 64
-#define FRAME_RX_PAYLOAD_LEN        82
+#define FRAME_TX_RX_HEADER_LEN  7
+#define FRAME_TX_RC1_V1_LEN     6
+// not used #define FRAME_TX_RC2_V1_LEN   10
+#define FRAME_TX_RC1_V2_LEN     11
+// not used #define FRAME_TX_RC2_V2_LEN   5
+#define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
+#define FRAME_RX_PAYLOAD_LEN    82
 
 
 PACKED(

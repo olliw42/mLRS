@@ -165,7 +165,7 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
     case OUT_CONFIG_CRSF:
         // for testing we don't send 0x16 but send 0x17 with start channel = 0!
         //send_crsf_rcdata(&rc);
-        if (rc.do_32channels) send_crsf_rcdata_0x17(&rc);
+        if (rc.do_32channels) send_crsf_rcdata_0x17(&rc); else send_crsf_rcdata(&rc);
         break;
     }
 }

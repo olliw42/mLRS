@@ -158,16 +158,16 @@ typedef enum {
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t address;
-    uint8_t len;
-    uint8_t frame_id;
+    uint8_t address;  // [0]
+    uint8_t len;      // [1]
+    uint8_t frame_id; // [2]
     CRSF_PACKED(union {
-        uint8_t payload[64 - 4 + 1]; // +1 for crc
+        uint8_t payload[64 - 4 + 1];  // [3], +1 for crc
         CRSF_PACKED(struct {
-            uint8_t cmd_dest_adress;
-            uint8_t cmd_src_adress;
-            uint8_t cmd_id;
-            uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
+            uint8_t cmd_dest_address; // [3]
+            uint8_t cmd_src_address;  // [4]
+            uint8_t cmd_id;           // [5]
+            uint8_t cmd_data[64 - 4 - 3 + 1]; // [6], +1 for crc
         });
     });
 }) tCrsfFrame;
@@ -196,7 +196,7 @@ typedef struct {
     uint16_t ch13 : 11;
     uint16_t ch14 : 11;
     uint16_t ch15 : 11;
-}) tCrsfRcChannelV1Buffer;
+}) tCrsfRcChannelV1;
 
 #define CRSF_RCCHANNEL_V1_LEN  22 // LEN vs SIZE style guide ??
 
@@ -208,7 +208,7 @@ typedef struct
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfRcChannelV1Buffer ch;
+    tCrsfRcChannelV1 ch;
     uint8_t crc;
 }) tCrsfRcChannelV1Frame;
 
@@ -250,7 +250,7 @@ typedef struct {
     uint16_t ch29 : 11;
     uint16_t ch30 : 11;
     uint16_t ch31 : 11;
-}) tCrsfRcChannelV2Buffer;
+}) tCrsfRcChannelV2;
 
 #define CRSF_RCCHANNEL_V2_LEN  (22 + 1 + 22)
 
@@ -261,7 +261,7 @@ typedef struct
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfRcChannelV2Buffer ch;
+    tCrsfRcChannelV2 ch;
     uint8_t crc;
 }) tCrsfRcChannelV2Frame;
 
@@ -280,7 +280,7 @@ typedef struct
     uint8_t starting_channel    : 5; // channel number of the first channel in the frame
     uint8_t res_configuration   : 2; // configuration for the RC data resolution, 10 - 13 bits
     uint8_t digital_switch_flag : 1; // configuration bit for digital channel
-    tCrsfRcChannelV1Buffer ch_16x11bit;
+    tCrsfRcChannelV1 ch_16x11bit;
 }) tCrsfSubsetRcChannelsPacked_16x11bit;
 
 #define CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN  (1 + 22)

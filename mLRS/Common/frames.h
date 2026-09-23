@@ -64,7 +64,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD, FRAME_TYPE_TX2
+    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -125,7 +125,7 @@ uint16_t crc;
     }
 
     // finalize, crc
-    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RCDATA_V2_RC1_LEN : FRAME_TX_RCDATA_V1_RC1_LEN;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RC1_V2_LEN : FRAME_TX_RC1_V1_LEN;
 
     fmav_crc_init(&crc);
     fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
@@ -164,7 +164,7 @@ uint16_t crc;
 
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
-    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RCDATA_V2_RC1_LEN : FRAME_TX_RCDATA_V1_RC1_LEN;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RC1_V2_LEN : FRAME_TX_RC1_V1_LEN;
     uint16_t crc1 = (frame->status.is_32channels) ? frame->rcV2.crc1 : frame->rcV1.crc1;
 
     fmav_crc_init(&crc);
