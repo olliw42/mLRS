@@ -346,28 +346,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
 void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-/*
-tCrsfRcChannel buf;
-
-    memcpy(&buf, &(frame[3]), CRSF_RCCHANNEL_LEN);
-    rc->ch[0] = rc_from_crsf(buf.ch0);
-    rc->ch[1] = rc_from_crsf(buf.ch1);
-    rc->ch[2] = rc_from_crsf(buf.ch2);
-    rc->ch[3] = rc_from_crsf(buf.ch3);
-    rc->ch[4] = rc_from_crsf(buf.ch4);
-    rc->ch[5] = rc_from_crsf(buf.ch5);
-    rc->ch[6] = rc_from_crsf(buf.ch6);
-    rc->ch[7] = rc_from_crsf(buf.ch7);
-    rc->ch[8] = rc_from_crsf(buf.ch8);
-    rc->ch[9] = rc_from_crsf(buf.ch9);
-    rc->ch[10] = rc_from_crsf(buf.ch10);
-    rc->ch[11] = rc_from_crsf(buf.ch11);
-    rc->ch[12] = rc_from_crsf(buf.ch12);
-    rc->ch[13] = rc_from_crsf(buf.ch13);
-    rc->ch[14] = rc_from_crsf(buf.ch14);
-    rc->ch[15] = rc_from_crsf(buf.ch15); */
-
-tCrsfRcChannel* buf = (tCrsfRcChannel*)framep->payload; //&(frame[3]);
+tCrsfRcChannel* buf = (tCrsfRcChannel*)framep->payload;
 
     rc->ch[0] = rc_from_crsf(buf->ch0);
     rc->ch[1] = rc_from_crsf(buf->ch1);
