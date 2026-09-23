@@ -13,6 +13,9 @@
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
+#define DBG_CRSF_ENVELOPE(x)
+#define DBG_CRSF_32CH(x)
+
 
 // we set the priorities here to have an overview, SysTick is at 15, I2C is at 15, USB is at 0
 #define UART_IRQ_PRIORITY           10 // jrpin5 bridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
@@ -520,6 +523,10 @@ if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
     }
+
+DBG_CRSF_32CH(dbg.puts("\nf ");
+dbg.puts(txFrame.status.is_32channels ? "32 " : "16 ");
+dbg.puts(u16toBCD_s(rcData.ch[16]));)
 }
 
 

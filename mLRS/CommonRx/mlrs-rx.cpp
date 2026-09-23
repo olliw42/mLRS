@@ -13,6 +13,8 @@
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
+#define DBG_CRSF_32CH(x)
+
 
 // we set the priorities here to have an overview, SysTick is at 15
 #define CLOCK_IRQ_PRIORITY          10
@@ -382,14 +384,18 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     // would then have to do check_txframe() for both frames in case of diversity/dualband
     bool ok = unpack_txframe(frame);
 
+DBG_CRSF_32CH(dbg.puts("\nf ");dbg.puts(frame->status.is_32channels ? "32 " : "16 ");)
+
     // copy rc1 data
     if (!do_payload) {
         // copy only channels of rc1 section and jump out
         if (ok) rcdata_rc1_from_txframe(&rcData, frame);
+DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
         return;
     }
 
     if (ok) rcdata_from_txframe(&rcData, frame);
+DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
@@ -751,6 +757,9 @@ IF_SX2(
     // this happens ca 1 ms after a frame was or should have been received
     if (doPostReceive) {
         doPostReceive = false;
+
+DBG_CRSF_32CH(dbg.puts("\nr ");dbg.puts(rcData.do_32channels ? "32 " : "16 ");
+dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
         bool frame_received, valid_frame_received, invalid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {

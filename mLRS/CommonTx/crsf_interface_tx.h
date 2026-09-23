@@ -322,15 +322,20 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         } else
         if (framep->frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
             channels_received = true;
+
+DBG_CRSF_32CH(dbg.puts(" c0x17 ");
+//dbg.puts(u8toHEX_s(frame[4]));
+dbg.puts(u16toBCD_s(rcData.ch[16]));)
+
         } else
 #ifndef USE_CRSF_MB
         if (crsfbridge_enabled && framep->frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
 
-dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
+DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
 dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
 dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
 dbg.puts(" ");dbg.puts(u8toBCD_s((frame[3] >> 4) & 0x0F));
-dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));)
 
             get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
 #else
@@ -339,13 +344,13 @@ dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
             framep->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[3] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
             get_fifo.PutBuf(&frame[6], frame[5]);
 
-dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
+DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
 dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
 dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
 dbg.puts(" ");dbg.puts(u8toHEX_s(frame[3]));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4] & 0x0F));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame[5]));
-dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));)
 
 #endif
         } else
