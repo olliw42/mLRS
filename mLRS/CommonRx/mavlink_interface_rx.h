@@ -348,8 +348,9 @@ typedef enum {
 
 void tRxMavlink::parse_serial_in_link_out(void)
 {
+fmav_result_t result;
+
     // parse serial in -> link out
-    fmav_result_t result;
     if (fifo_link_out.HasSpace(290)) { // we have space for a full MAVLink message, so can safely parse
         while (serial->available()) {
             char c = serial->getc();
@@ -383,8 +384,9 @@ void tRxMavlink::parse_serial_in_link_out(void)
 
 void tRxMavlink::parse_link_in_serial_out(char c)
 {
+fmav_result_t result;
+
     // parse link in -> serial out
-    fmav_result_t result;
     if (Setup.Rx.SerialLinkMode == SERIAL_LINK_MODE_MAVLINK_X) {
         fmavX_parse_and_checkX_to_frame_buf(&result, buf_link_in, &status_link_in, c);
     } else {

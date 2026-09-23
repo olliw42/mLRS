@@ -39,6 +39,8 @@ typedef enum {
 // Tx Frames (send from Tx to Rx)
 //-------------------------------------------------------
 
+#ifdef DEVICE_IS_TRANSMITTER
+
 // lowest level routine to construct a tTxFrame, finalizes it
 // used by
 //   pack_txframe()
@@ -73,25 +75,25 @@ uint16_t crc;
 
     // pack rc data
     // rcData: 0 .. 1024 .. 2047, 11 bits
-    frame->rc1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc1.ch1  = rc->ch[1];
-    frame->rc1.ch2  = rc->ch[2];
-    frame->rc1.ch3  = rc->ch[3];
+    frame->rc.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
+    frame->rc.ch1  = rc->ch[1];
+    frame->rc.ch2  = rc->ch[2];
+    frame->rc.ch3  = rc->ch[3];
 
-    frame->rc2.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc2.ch5  = rc->ch[5];
-    frame->rc2.ch6  = rc->ch[6];
-    frame->rc2.ch7  = rc->ch[7];
+    frame->rc.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
+    frame->rc.ch5  = rc->ch[5];
+    frame->rc.ch6  = rc->ch[6];
+    frame->rc.ch7  = rc->ch[7];
 
-    frame->rc2.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
-    frame->rc2.ch9  = rc->ch[9] / 8;
-    frame->rc2.ch10 = rc->ch[10] / 8;
-    frame->rc2.ch11 = rc->ch[11] / 8;
+    frame->rc.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
+    frame->rc.ch9  = rc->ch[9] / 8;
+    frame->rc.ch10 = rc->ch[10] / 8;
+    frame->rc.ch11 = rc->ch[11] / 8;
 
-    frame->rc1.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-    frame->rc1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
-    frame->rc2.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
-    frame->rc2.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+    frame->rc.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+    frame->rc.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
+    frame->rc.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
+    frame->rc.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -100,10 +102,10 @@ uint16_t crc;
 
     // finalize, crc
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    frame->crc1 = crc;
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN);
+    frame->rc.crc1 = crc;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RC1_LEN - 2);
     frame->crc = crc;
 }
 
@@ -119,6 +121,8 @@ void pack_txframe(
     _pack_txframe_w_type(frame, FRAME_TYPE_TX, frame_stats, rc, payload, payload_len);
 }
 
+#endif
+#ifdef DEVICE_IS_RECEIVER
 
 // check credentials of a tTxFrame (sync word, frame type, payload len, CRC1, CRC)
 // returns 0 if OK !!
@@ -135,10 +139,10 @@ uint16_t crc;
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
     fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN);
-    if (crc != frame->crc1) return CHECK_ERROR_CRC1;
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN);
+    if (crc != frame->rc.crc1) return CHECK_ERROR_CRC1;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RCDATA1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RCDATA1_LEN - 2);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RC1_LEN - 2);
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
@@ -148,43 +152,44 @@ uint16_t crc;
 // fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->ch[0] = frame->rc1.ch0;
-    rc->ch[1] = frame->rc1.ch1;
-    rc->ch[2] = frame->rc1.ch2;
-    rc->ch[3] = frame->rc1.ch3;
+    rc->ch[0] = frame->rc.ch0;
+    rc->ch[1] = frame->rc.ch1;
+    rc->ch[2] = frame->rc.ch2;
+    rc->ch[3] = frame->rc.ch3;
 
-    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
+    rc->ch[12] = (frame->rc.ch12 > 1) ? 2047 : ((frame->rc.ch12 < 1) ? 0 : 1024);
+    rc->ch[13] = (frame->rc.ch13 > 1) ? 2047 : ((frame->rc.ch13 < 1) ? 0 : 1024);
 }
 
 
 // fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->ch[0] = frame->rc1.ch0;
-    rc->ch[1] = frame->rc1.ch1;
-    rc->ch[2] = frame->rc1.ch2;
-    rc->ch[3] = frame->rc1.ch3;
+    rc->ch[0] = frame->rc.ch0;
+    rc->ch[1] = frame->rc.ch1;
+    rc->ch[2] = frame->rc.ch2;
+    rc->ch[3] = frame->rc.ch3;
 
-    rc->ch[4] = frame->rc2.ch4;
-    rc->ch[5] = frame->rc2.ch5;
-    rc->ch[6] = frame->rc2.ch6;
-    rc->ch[7] = frame->rc2.ch7;
+    rc->ch[4] = frame->rc.ch4;
+    rc->ch[5] = frame->rc.ch5;
+    rc->ch[6] = frame->rc.ch6;
+    rc->ch[7] = frame->rc.ch7;
 
-    rc->ch[8] = frame->rc2.ch8 * 8;
-    rc->ch[9] = frame->rc2.ch9 * 8;
-    rc->ch[10] = frame->rc2.ch10 * 8;
-    rc->ch[11] = frame->rc2.ch11 * 8;
+    rc->ch[8] = frame->rc.ch8 * 8;
+    rc->ch[9] = frame->rc.ch9 * 8;
+    rc->ch[10] = frame->rc.ch10 * 8;
+    rc->ch[11] = frame->rc.ch11 * 8;
 
-    rc->ch[12] = (frame->rc1.ch12 > 1) ? 2047 : ((frame->rc1.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc1.ch13 > 1) ? 2047 : ((frame->rc1.ch13 < 1) ? 0 : 1024);
-    rc->ch[14] = (frame->rc2.ch14 > 1) ? 2047 : ((frame->rc2.ch14 < 1) ? 0 : 1024);
-    rc->ch[15] = (frame->rc2.ch15 > 1) ? 2047 : ((frame->rc2.ch15 < 1) ? 0 : 1024);
+    rc->ch[12] = (frame->rc.ch12 > 1) ? 2047 : ((frame->rc.ch12 < 1) ? 0 : 1024);
+    rc->ch[13] = (frame->rc.ch13 > 1) ? 2047 : ((frame->rc.ch13 < 1) ? 0 : 1024);
+    rc->ch[14] = (frame->rc.ch14 > 1) ? 2047 : ((frame->rc.ch14 < 1) ? 0 : 1024);
+    rc->ch[15] = (frame->rc.ch15 > 1) ? 2047 : ((frame->rc.ch15 < 1) ? 0 : 1024);
 
     rc->ch[16] = 1024;
     rc->ch[17] = 1024;
 }
 
+#endif
 
 //-------------------------------------------------------
 // Rx Frames (send from Rx to Tx)

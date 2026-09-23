@@ -414,7 +414,7 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
     for (uint8_t i = 0; i < 16; i++) {
         // to get the same as mavlink rc we have
         // pwm = [ (rc-1024)*15/4 ] * 5/32 + 1500 = (rc - 1024) * 75 / 128 + 1500
-        // in order to get the full range we x8 sso we can add +1 to the multiplier
+        // in order to get the full range we x8 so we can add +1 to the multiplier
         _p.rc_input.rcin.data[i] = (((int32_t)(rc_out->ch[i]) - 1024) * 601) / 1024 + 1500;
     }
 

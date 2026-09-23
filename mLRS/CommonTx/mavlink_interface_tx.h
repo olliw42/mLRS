@@ -570,7 +570,8 @@ uint8_t rssi, remrssi, txbuf, noise;
 
 void tTxMavlink::send_param_request_read(const char* const requested_param_id)
 {
-    char param_id[16+1];
+char param_id[16+1];
+
     strbufstrcpy(param_id, requested_param_id, 16);
 
     // goes to link out send_msg_serial_out();

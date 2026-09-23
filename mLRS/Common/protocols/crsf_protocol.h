@@ -74,7 +74,7 @@ typedef enum {
     CRSF_FRAME_ID_TEMP                  = 0x0D,
     CRSF_FRAME_ID_BAROMETER             = 0x11,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
-    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx adds a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
     CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
     CRSF_FRAME_ID_ATTITUDE              = 0x1E,
@@ -157,16 +157,16 @@ typedef enum {
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t address;
-    uint8_t len;
-    uint8_t frame_id;
+    uint8_t address;  // [0]
+    uint8_t len;      // [1]
+    uint8_t frame_id; // [2]
     CRSF_PACKED(union {
-        uint8_t payload[64 - 4 + 1]; // +1 for crc
+        uint8_t payload[64 - 4 + 1];  // [3], +1 for crc
         CRSF_PACKED(struct {
-            uint8_t cmd_dest_adress;
-            uint8_t cmd_src_adress;
-            uint8_t cmd_id;
-            uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
+            uint8_t cmd_dest_address; // [3]
+            uint8_t cmd_src_address;  // [4]
+            uint8_t cmd_id;           // [5]
+            uint8_t cmd_data[64 - 4 - 3 + 1]; // [6], +1 for crc
         });
     });
 }) tCrsfFrame;
@@ -177,33 +177,27 @@ typedef struct
 // #define TICKS_TO_US(x)  ((x - 992) * 5 / 8 + 1500)
 // #define US_TO_TICKS(x)  ((x - 1500) * 8 / 5 + 992)
 
-#define CRSF_RCCHANNELPACKET_SIZE  22
+CRSF_PACKED(
+typedef struct {
+    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t ch8  : 11;
+    uint16_t ch9  : 11;
+    uint16_t ch10 : 11;
+    uint16_t ch11 : 11;
+    uint16_t ch12 : 11;
+    uint16_t ch13 : 11;
+    uint16_t ch14 : 11;
+    uint16_t ch15 : 11;
+}) tCrsfRcChannel;
 
-typedef union
-{
-    uint8_t c[CRSF_RCCHANNELPACKET_SIZE];
-    CRSF_PACKED(
-    struct {
-        uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-        uint16_t ch1  : 11;
-        uint16_t ch2  : 11;
-        uint16_t ch3  : 11;
-        uint16_t ch4  : 11;
-        uint16_t ch5  : 11;
-        uint16_t ch6  : 11;
-        uint16_t ch7  : 11;
-        uint16_t ch8  : 11;
-        uint16_t ch9  : 11;
-        uint16_t ch10 : 11;
-        uint16_t ch11 : 11;
-        uint16_t ch12 : 11;
-        uint16_t ch13 : 11;
-        uint16_t ch14 : 11;
-        uint16_t ch15 : 11;
-    });
-} tCrsfRcChannelBuffer;
-
-#define CRSF_RCCHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+#define CRSF_RCCHANNEL_LEN  22 // LEN vs SIZE style guide ??
 
 
 // frame: adr, len, frame id, data, crc
@@ -213,11 +207,11 @@ typedef struct
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfRcChannelBuffer ch;
+    tCrsfRcChannel ch;
     uint8_t crc;
 }) tCrsfRcChannelFrame;
 
-#define CRSF_RCCHANNELPACKET_FRAME_LEN  (CRSF_RCCHANNELPACKET_LEN + 4)
+#define CRSF_RCCHANNEL_FRAME_LEN  (CRSF_RCCHANNEL_LEN + 4)
 
 
 //-- Link statistics frames

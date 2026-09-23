@@ -373,7 +373,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     // copy rc1 data
     if (!do_payload) {
-        // copy only channels 1-4,12,13 and jump out
+        // copy only channels of rc1 section and jump out
         rcdata_rc1_from_txframe(&rcData, frame);
         return;
     }

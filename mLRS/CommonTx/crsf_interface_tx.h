@@ -96,6 +96,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool enabled;
 
     uint8_t frame[CRSF_BUF_SIZE]; // received frame
+    const tCrsfFrame* framep = (tCrsfFrame*)frame;
     volatile bool channels_received;
     volatile bool cmd_received;
     volatile bool ping_device_received;
@@ -296,26 +297,28 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         frame[cnt++] = c;
         // let's ignore the crc here
         // this is called in isr, so we want to do crc check later, if we want to do it all
-        if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
+        if (framep->frame_id == CRSF_FRAME_ID_RC_CHANNELS) { // len = 24 or 25
+            // EdgeTx sets frame[0] = MODULE_ADDRESS
             channels_received = true;
         } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
-            // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
+        if (framep->address == CRSF_OPENTX_SYNC && framep->frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
+            // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
             ping_device_received = true;
         } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND && frame[5] == CRSF_COMMAND_ID) {
-            switch (frame[6]) {
-            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
-                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS
-                cmd_modelid_received = true;
-                cmd_modelid_value = frame[7];
-                break;
+        if (framep->address == CRSF_OPENTX_SYNC && framep->frame_id == CRSF_FRAME_ID_COMMAND &&
+            framep->cmd_id == CRSF_COMMAND_ID) {
+            switch (framep->cmd_data[0]) {
             case CRSF_COMMAND_SET_BIND_MODE: // len = 7
-                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
-                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+                if (framep->cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
             case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
-                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
-                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+                // not used by EdgeTx
+                if (framep->cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
+                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+                cmd_modelid_received = true;
+                cmd_modelid_value = framep->cmd_data[1];
+                break;
             }
         } else {
             cmd_received = true;
@@ -343,9 +346,10 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
 void tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfRcChannelBuffer buf;
+/*
+tCrsfRcChannel buf;
 
-    memcpy(buf.c, &(frame[3]), CRSF_RCCHANNELPACKET_SIZE);
+    memcpy(&buf, &(frame[3]), CRSF_RCCHANNEL_LEN);
     rc->ch[0] = rc_from_crsf(buf.ch0);
     rc->ch[1] = rc_from_crsf(buf.ch1);
     rc->ch[2] = rc_from_crsf(buf.ch2);
@@ -361,7 +365,26 @@ tCrsfRcChannelBuffer buf;
     rc->ch[12] = rc_from_crsf(buf.ch12);
     rc->ch[13] = rc_from_crsf(buf.ch13);
     rc->ch[14] = rc_from_crsf(buf.ch14);
-    rc->ch[15] = rc_from_crsf(buf.ch15);
+    rc->ch[15] = rc_from_crsf(buf.ch15); */
+
+tCrsfRcChannel* buf = (tCrsfRcChannel*)framep->payload; //&(frame[3]);
+
+    rc->ch[0] = rc_from_crsf(buf->ch0);
+    rc->ch[1] = rc_from_crsf(buf->ch1);
+    rc->ch[2] = rc_from_crsf(buf->ch2);
+    rc->ch[3] = rc_from_crsf(buf->ch3);
+    rc->ch[4] = rc_from_crsf(buf->ch4);
+    rc->ch[5] = rc_from_crsf(buf->ch5);
+    rc->ch[6] = rc_from_crsf(buf->ch6);
+    rc->ch[7] = rc_from_crsf(buf->ch7);
+    rc->ch[8] = rc_from_crsf(buf->ch8);
+    rc->ch[9] = rc_from_crsf(buf->ch9);
+    rc->ch[10] = rc_from_crsf(buf->ch10);
+    rc->ch[11] = rc_from_crsf(buf->ch11);
+    rc->ch[12] = rc_from_crsf(buf->ch12);
+    rc->ch[13] = rc_from_crsf(buf->ch13);
+    rc->ch[14] = rc_from_crsf(buf->ch14);
+    rc->ch[15] = rc_from_crsf(buf->ch15);
 }
 
 
@@ -429,7 +452,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 
     // check crc before we accept it
     uint8_t crc = crc8(frame);
-    if (crc != frame[frame[1] + 1]) return false;
+    if (crc != frame[framep->len + 1]) return false;
 
     startup_passed = true;
 
@@ -527,11 +550,9 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
     // TODO: we could check crc if we wanted to
 
-    tCrsfFrame* header = (tCrsfFrame*)frame;
-
     // mBridge emulation
-    if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
-        header->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
+    if (framep->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
+        framep->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
         *cmd = TXCRSF_CMD_MBRIDGE_IN;
         return true;
     }
@@ -542,13 +563,13 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
 uint8_t* tTxCrsf::GetPayloadPtr(void)
 {
-    return ((tCrsfFrame*)frame)->payload;
+    return (uint8_t*)framep->payload;
 }
 
 
 uint8_t tTxCrsf::GetPayloadLen(void)
 {
-    return ((tCrsfFrame*)frame)->len - 2;
+    return framep->len - 2;
 }
 
 

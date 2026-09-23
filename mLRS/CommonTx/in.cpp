@@ -101,7 +101,7 @@ bool tInBase::parse_sbus(tRcData* const rc)
             _buf[buf_pos] = c;
             buf_pos++;
             if (buf_pos >= SBUS_FRAME_SIZE) {
-                get_sbus_data(rc);
+                fill_rcdata(rc);
                 updated = true;
                 state = IN_STATE_IDLE;
                 break; // is this what we want, or shouldn't we catch all?
@@ -119,11 +119,11 @@ bool tInBase::parse_sbus(tRcData* const rc)
 }
 
 
-void tInBase::get_sbus_data(tRcData* const rc)
+void tInBase::fill_rcdata(tRcData* const rc)
 {
 tSBusChannelBuffer sbus_buf;
 
-    memcpy(sbus_buf.c, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
+    memcpy(&sbus_buf, &(_buf[1]), SBUS_CHANNELPACKET_SIZE);
     rc->ch[0] = rc_from_sbus(sbus_buf.ch0);
     rc->ch[1] = rc_from_sbus(sbus_buf.ch1);
     rc->ch[2] = rc_from_sbus(sbus_buf.ch2);
@@ -144,7 +144,6 @@ tSBusChannelBuffer sbus_buf;
     rc->ch[16] = 1024;
     rc->ch[17] = 1024;
 }
-
 
 
 //-------------------------------------------------------

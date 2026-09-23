@@ -50,8 +50,8 @@ typedef struct
 
 
 #define FRAME_TX_RX_HEADER_LEN  7
-#define FRAME_TX_RCDATA1_LEN    6
-#define FRAME_TX_RCDATA2_LEN    10
+#define FRAME_TX_RC1_LEN        6
+#define FRAME_TX_RC2_LEN        10
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN    82
 
@@ -100,12 +100,7 @@ typedef struct
     uint16_t ch3  : 11;
     uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
     uint16_t ch13 :  2;
-}) tFrameRcData1; // 6 bytes
-
-
-PACKED(
-typedef struct
-{
+    uint16_t crc1;
     uint16_t ch4  : 11; // 0 .. 1024 .. 2047, 11 bits
     uint16_t ch5  : 11;
     uint16_t ch6  : 11;
@@ -116,7 +111,7 @@ typedef struct
     uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
     uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
     uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
-}) tFrameRcData2; // 10 bytes
+}) tFrameRcData; // 6 bytes rc1 + 2 bytes crc1 + 10 bytes rc2 = 18 bytes
 
 
 PACKED(
@@ -124,9 +119,7 @@ typedef struct
 {
     uint16_t sync_word; // 2 bytes
     tTxFrameStatus status; // 5 bytes
-    tFrameRcData1 rc1; // 6 bytes
-    uint16_t crc1;
-    tFrameRcData2 rc2; // 10 bytes
+    tFrameRcData rc; // 6 bytes + 2 bytes + 10 bytes
     uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
 }) tTxFrame; // 91 bytes
@@ -165,8 +158,8 @@ typedef struct
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare2 : 4;
+    uint8_t spare3[71];
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -225,7 +218,7 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t spare1 : 4;
+    uint8_t spare : 4;
     uint8_t SendRcChannels : 4;
     uint8_t spare2 : 4;
     uint8_t OutLqChannelMode : 4;
@@ -290,12 +283,12 @@ typedef struct
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[2];
+    uint8_t spare2 : 4;
+    uint8_t spare3[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[24];
+    uint8_t spare4[24];
 
     uint16_t tx_firmware_version_u16; // 16.64.64
     uint16_t tx_setup_layout_u16; // 16.64.64
