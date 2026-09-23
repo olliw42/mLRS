@@ -282,6 +282,8 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
     if (rx_status == RX_STATUS_INVALID) return;
 
     // do stuff
+
+    memcpy(Setup.peer_uid[Config.ConfigId], rxBindFrame.rx_uid, 12); // store receiver uid // must both be 12 bytes
 }
 
 
@@ -296,6 +298,11 @@ void tBindBase::do_transmit(uint8_t antenna)
     txBindFrame.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
     txBindFrame.Mode = Setup.Common[Config.ConfigId].Mode;
     txBindFrame.Ortho = Setup.Common[Config.ConfigId].Ortho;
+    txBindFrame.Privacy = Setup.Common[Config.ConfigId].Privacy;
+
+    memcpy(txBindFrame.tx_uid, Config.Uid, 12); // send own uid to receiver // must both be 12 bytes
+    txBindFrame.tx_random = Config.BindRandom;  // send own random to receiver
+    Setup.tx_random[Config.ConfigId] = Config.BindRandom; // store the used random
 
     txBindFrame.crc = fmav_crc_calculate((uint8_t*)&txBindFrame, FRAME_TX_RX_LEN - 2);
 }
@@ -329,6 +336,10 @@ void tBindBase::handle_receive(uint8_t antenna, uint8_t rx_status)
     Setup.Common[0].FrequencyBand = (SETUP_FREQUENCY_BAND_ENUM)txBindFrame.FrequencyBand;
     Setup.Common[0].Mode = txBindFrame.Mode;
     Setup.Common[0].Ortho = txBindFrame.Ortho;
+    Setup.Common[0].Privacy = txBindFrame.Privacy;
+
+    memcpy(Setup.peer_uid[0], txBindFrame.tx_uid, 12); // store transmitter uid // must both be 12 bytes
+    Setup.tx_random[0] = txBindFrame.tx_random; // store transmitter random
 
     if (txBindFrame.connected) {
         task = BIND_TASK_RX_STORE_PARAMS;
@@ -345,6 +356,8 @@ void tBindBase::do_transmit(uint8_t antenna)
 
     rxBindFrame.firmware_version = VERSION;
     strbufstrcpy(rxBindFrame.device_name_20, DEVICE_NAME, 20);
+
+    memcpy(rxBindFrame.rx_uid, Config.Uid, 12); // send own uid to transmitter // must both be 12 bytes
 
     rxBindFrame.crc = fmav_crc_calculate((uint8_t*)&rxBindFrame, FRAME_TX_RX_LEN - 2);
     sxSendFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN, SEND_FRAME_TMO_MS);
