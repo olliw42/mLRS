@@ -167,6 +167,8 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
         }
     }
 
+// TODO: can MSP do 32 channels?
+
     for (uint8_t i = 0; i < 16; i++) {
         rc_channels.rc[i] = rc_to_mavlink(rc_out->ch[i]);
     }

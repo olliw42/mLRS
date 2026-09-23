@@ -410,8 +410,9 @@ void tRxDroneCan::SendRcData(tRcData* const rc_out, bool failsafe)
         _p.rc_input.status |= DRONECAN_SENSORS_RC_RCINPUT_STATUS_QUALITY_VALID;
     }
 
-    _p.rc_input.rcin.len = 16;
-    for (uint8_t i = 0; i < 16; i++) {
+    _p.rc_input.rcin.len = (rc_out->do_32channels) ? RC_DATA_LEN : 16;
+    if (_p.rc_input.rcin.len > 32) _p.rc_input.rcin.len = 32; // should not happen, but play it safe
+    for (uint8_t i = 0; i < _p.rc_input.rcin.len; i++) {
         // to get the same as mavlink rc we have
         // pwm = [ (rc-1024)*15/4 ] * 5/32 + 1500 = (rc - 1024) * 75 / 128 + 1500
         // in order to get the full range we x8 so we can add +1 to the multiplier

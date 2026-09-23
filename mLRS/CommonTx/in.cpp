@@ -140,9 +140,6 @@ tSBusChannelBuffer sbus_buf;
     rc->ch[13] = rc_from_sbus(sbus_buf.ch13);
     rc->ch[14] = rc_from_sbus(sbus_buf.ch14);
     rc->ch[15] = rc_from_sbus(sbus_buf.ch15);
-
-    rc->ch[16] = 1024;
-    rc->ch[17] = 1024;
 }
 
 

@@ -132,7 +132,7 @@ uint16_t lq_to_rc(uint8_t lq);
 
 //-- rc data
 
-#define RC_DATA_LEN     18
+#define RC_DATA_LEN     32
 
 #define RC_DATA_MIN     1
 #define RC_DATA_CENTER  1024
@@ -141,6 +141,11 @@ uint16_t lq_to_rc(uint8_t lq);
 typedef struct
 {
     uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
+    bool do_32channels;
+    void Init(void) {
+        for (uint8_t n = 0; n < RC_DATA_LEN; n++) { ch[n] = 1024; }
+        do_32channels = false;
+    }
 } tRcData;
 
 // clip a value for rcData to range
@@ -148,8 +153,10 @@ uint16_t clip_rc(int32_t x);
 
 uint16_t rc_from_sbus(uint16_t sbus_ch);
 uint16_t rc_from_crsf(uint16_t crsf_ch);
+uint16_t rc_from_crsf_0x17_11bit(uint16_t crsf_ch);
 uint16_t rc_to_sbus(uint16_t rc_ch);
 uint16_t rc_to_crsf(uint16_t rc_ch);
+uint16_t rc_to_crsf_0x17_11bit(uint16_t rc_ch);
 uint16_t rc_to_mavlink(uint16_t rc_ch);
 int16_t rc_to_mavlink_13bcentered(uint16_t rc_ch);
 

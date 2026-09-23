@@ -163,7 +163,9 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
         send_sbus_rcdata(&rc, frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
-        send_crsf_rcdata(&rc);
+        // for testing we don't send 0x16 but send 0x17 with start channel = 0!
+        //send_crsf_rcdata(&rc);
+        if (rc.do_32channels) send_crsf_rcdata_0x17(&rc); else send_crsf_rcdata(&rc);
         break;
     }
 }
@@ -256,10 +258,15 @@ tSBusFrame frame;
 //-------------------------------------------------------
 // Crsf
 //-------------------------------------------------------
+// TODO: handle has_32channels
+// we need to decide what to do here. Either
+// (i) send extended 0x16 frame
+// (ii) send 0x16 and 0x17 frame in alternation
+// (iii) send 0x16 + 0x17 at once (need to check how ArduPilot, INAV behave, maybe not preferred option)
 
 void tOutBase::send_crsf_rcdata(tRcData* const rc)
 {
-tCrsfRcChannelFrame frame;
+tCrsfRcChannelV1Frame frame;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
     frame.ch.ch0 = rc_to_crsf(rc->ch[0]);
@@ -280,12 +287,47 @@ tCrsfRcChannelFrame frame;
     frame.ch.ch15 = rc_to_crsf(rc->ch[15]);
 
     frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER; // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
-    frame.len = CRSF_RCCHANNEL_LEN + 2;
+    frame.len = CRSF_RCCHANNEL_V1_LEN + 2;
     frame.frame_id = CRSF_FRAME_ID_RC_CHANNELS;
 
-    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_RCCHANNEL_LEN + 1);
+    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_RCCHANNEL_V1_LEN + 1);
 
-    putbuf((uint8_t*)&frame, CRSF_RCCHANNEL_LEN + 4);
+    putbuf((uint8_t*)&frame, CRSF_RCCHANNEL_V1_LEN + 4);
+}
+
+
+void tOutBase::send_crsf_rcdata_0x17(tRcData* const rc)
+{
+tCrsfSubsetRcChannelsPackedFrame_16x11bit frame;
+
+    frame.ch.starting_channel = 0; // for testing we don't send 0x16 but send 0x17 with start channel = 0!
+    frame.ch.res_configuration = 1;
+    frame.ch.digital_switch_flag = 0;
+
+    frame.ch.ch_16x11bit.ch0 = rc_to_crsf_0x17_11bit(rc->ch[16]);
+    frame.ch.ch_16x11bit.ch1 = rc_to_crsf_0x17_11bit(rc->ch[17]);
+    frame.ch.ch_16x11bit.ch2 = rc_to_crsf_0x17_11bit(rc->ch[18]);
+    frame.ch.ch_16x11bit.ch3 = rc_to_crsf_0x17_11bit(rc->ch[19]);
+    frame.ch.ch_16x11bit.ch4 = rc_to_crsf_0x17_11bit(rc->ch[20]);
+    frame.ch.ch_16x11bit.ch5 = rc_to_crsf_0x17_11bit(rc->ch[21]);
+    frame.ch.ch_16x11bit.ch6 = rc_to_crsf_0x17_11bit(rc->ch[22]);
+    frame.ch.ch_16x11bit.ch7 = rc_to_crsf_0x17_11bit(rc->ch[23]);
+    frame.ch.ch_16x11bit.ch8 = rc_to_crsf_0x17_11bit(rc->ch[24]);
+    frame.ch.ch_16x11bit.ch9 = rc_to_crsf_0x17_11bit(rc->ch[25]);
+    frame.ch.ch_16x11bit.ch10 = rc_to_crsf_0x17_11bit(rc->ch[26]);
+    frame.ch.ch_16x11bit.ch11 = rc_to_crsf_0x17_11bit(rc->ch[27]);
+    frame.ch.ch_16x11bit.ch12 = rc_to_crsf_0x17_11bit(rc->ch[28]);
+    frame.ch.ch_16x11bit.ch13 = rc_to_crsf_0x17_11bit(rc->ch[29]);
+    frame.ch.ch_16x11bit.ch14 = rc_to_crsf_0x17_11bit(rc->ch[30]);
+    frame.ch.ch_16x11bit.ch15 = rc_to_crsf_0x17_11bit(rc->ch[31]);
+
+    frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER;
+    frame.len = CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 2;
+    frame.frame_id = CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED;
+
+    frame.crc = crsf_crc8_update(CRSF_CRC8_INIT, &(frame.frame_id), CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 1);
+
+    putbuf((uint8_t*)&frame, CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 4);
 }
 
 
