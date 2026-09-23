@@ -196,7 +196,7 @@ void setup_configure_metadata(void)
 #endif
 #ifdef DEVICE_HAS_JRPIN5
     // we cannot work out all cases here, as it depends on actual serial port selections, so we here just do what we can do
-//TODO    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add crsfbridge
+    SetupMetaData.Tx_SerialPort_allowed_mask |= 0b10000; // add crsfbridge
 //TODO    SetupMetaData.Tx_SerialPort2_allowed_mask |= 0b10000; // add crsfbridge
 #endif
 #if !((defined STM32G4 || defined ESP32) && defined USE_SERIAL && defined USE_SERIAL2)
@@ -1019,16 +1019,18 @@ void setup_configure_config(uint8_t config_id)
     //-- Mbridge, Crsf, In
 
     Config.UseCrsf = false;
+    Config.UseCrsfBridge = false;
     Config.UseIn = false;
 #ifdef DEVICE_IS_TRANSMITTER
     // conflicts must have been sorted out before in setup_sanitize_config()
   #ifdef DEVICE_HAS_JRPIN5
-    if ((Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) ||
-        (Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_CRSF_BRIDGE)) {
-        Config.UseCrsf = true;
-    }
     if (Setup.Tx[config_id].ChannelsSource == CHANNEL_SOURCE_CRSF) {
         Config.UseCrsf = true;
+    }
+    if ((Setup.Tx[config_id].SerialPort == TX_SERIAL_PORT_CRSF_BRIDGE) ||
+        (Setup.Tx[config_id].SerialPort2 == TX_SERIAL_PORT2_CRSF_BRIDGE)) {
+        Config.UseCrsf = true;
+        Config.UseCrsfBridge = true;
     }
   #endif
   #ifdef USE_IN

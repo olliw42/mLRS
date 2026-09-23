@@ -29,7 +29,7 @@ extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
 extern tStats stats;
 
-
+#define USE_CRSF_MB
 //-------------------------------------------------------
 // Interface Implementation
 
@@ -59,7 +59,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
     using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
-    void Init(bool enable_flag);
+    void Init(bool enable_flag, bool crsfbridge_enable_flag);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
@@ -77,10 +77,27 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     void SendLinkStatisticsRx(void);
     void SendDeviceInfo(void);
     void SendLinkStatisticsAll(void);
+    void SendMbStatistics(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
+
+    // CRSF envelope handling
+    // provides serial interface to the main code
+    void putbuf(uint8_t* const buf, uint16_t len) override { if (crsfbridge_enabled) put_fifo.PutBuf(buf, len); }
+    bool available(void) override { return get_fifo.Available(); }
+    char getc(void) override { return get_fifo.Get(); }
+    void flush(void) override { get_fifo.Flush(); }
+
+    tFifo<char,TX_MBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_MBRIDGE_RXBUFSIZE> get_fifo;
+
+    uint8_t mavlink_envelop_out_sequence;
+    tCrsfMavlinkEnvelope mavlink_envelope_out;
+
+    uint8_t crsf_mb_envelop_out_sequence;
+    tCrsfMbEnvelope crsf_mb_envelope_out;
 
   private:
     // helper
@@ -94,6 +111,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
+    bool crsfbridge_enabled;
 
     uint8_t frame[CRSF_BUF_SIZE]; // received frame
     const tCrsfFrame* framep = (tCrsfFrame*)frame;
@@ -301,6 +319,32 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             // EdgeTx sets frame[0] = MODULE_ADDRESS
             channels_received = true;
         } else
+#ifndef USE_CRSF_MB
+        if (crsfbridge_enabled && framep->frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+
+dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
+dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
+dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
+dbg.puts(" ");dbg.puts(u8toBCD_s((frame[3] >> 4) & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));
+
+            get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
+#else
+        if (crsfbridge_enabled &&
+            framep->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
+            framep->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[3] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
+            get_fifo.PutBuf(&frame[6], frame[5]);
+
+dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
+dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
+dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[3]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4] & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame[5]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));
+
+#endif
+        } else
         if (framep->address == CRSF_OPENTX_SYNC && framep->frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
             // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
             ping_device_received = true;
@@ -376,9 +420,10 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 //-------------------------------------------------------
 // CRSF user interface
 
-void tTxCrsf::Init(bool enable_flag)
+void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 {
     enabled = enable_flag;
+    crsfbridge_enabled = (enabled) ? crsfbridge_enable_flag : false;
 
     if (!enabled) return;
 
@@ -407,6 +452,9 @@ void tTxCrsf::Init(bool enable_flag)
     inav_baro_altitude = 0;
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
+
+    put_fifo.Init();
+    get_fifo.Init();
 
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
@@ -604,6 +652,46 @@ uint8_t len;
     for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
         if (!crsf_status[i].send_tlast_ms) continue;
         if ((tnow_ms - crsf_status[i].send_tlast_ms) > CRSF_REFRESH_TIME_MS) { crsf_status[i].updated = true; }
+    }
+
+    // MAVLink envelope
+    if (crsfbridge_enabled && put_fifo.Available()) {
+#ifndef USE_CRSF_MB
+        mavlink_envelope_out.total_chunks = 0;
+        mavlink_envelope_out.current_chunk = mavlink_envelop_out_sequence;
+        mavlink_envelope_out.data_size = 0;
+        for (uint8_t i = 0; i < 58; i++) {
+            if (!put_fifo.Available()) break;
+            mavlink_envelope_out.data[i] = put_fifo.Get();
+            mavlink_envelope_out.data_size++;
+        }
+        send_frame(
+            CRSF_FRAME_ID_MAVLINK_ENVELOPE,
+            &(mavlink_envelope_out),
+            mavlink_envelope_out.data_size + 2);
+
+        mavlink_envelop_out_sequence++;
+#else
+        crsf_mb_envelope_out.cmd = CRSF_MB_ENVELOPE_CMD;
+        crsf_mb_envelope_out.seq = crsf_mb_envelop_out_sequence;
+        crsf_mb_envelope_out.data_size = 0;
+        for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) {
+            if (!put_fifo.Available()) break;
+            crsf_mb_envelope_out.data[i] = put_fifo.Get();
+            crsf_mb_envelope_out.data_size++;
+        }
+        send_frame(
+            CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
+            &(crsf_mb_envelope_out),
+            crsf_mb_envelope_out.data_size + 3);
+
+        crsf_mb_envelop_out_sequence++;
+#endif
+
+//dbg.puts("\nc tx ");dbg.puts(u8toHEX_s(tx_frame[0]));
+//dbg.puts(" ");dbg.puts(u8toBCD_s(tx_frame[1]));
+//dbg.puts(" ");dbg.puts(u8toHEX_s(tx_frame[2]));
+        return; // send only one per slot
     }
 
     // one by one, order by desired priority
@@ -1194,20 +1282,104 @@ void tTxCrsf::SendLinkStatisticsAll(void)
 uint8_t data[CRSF_BUF_SIZE];
 uint8_t len;
 
-    SendLinkStatistics();
+    SendLinkStatistics(); // 3 + 10 + 1 = 14
     memcpy(data, tx_frame, tx_available);
     len = tx_available;
 
-    SendLinkStatisticsTx();
+    SendLinkStatisticsTx(); // 3 + 6 + 1 = 10
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    SendLinkStatisticsRx();
+    SendLinkStatisticsRx(); // 3 + 5 + 1 = 9
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    memcpy(tx_frame, data, len);
+    SendMbStatistics(); // 3 + 18 + 1 = 22
+    memcpy(data + len, tx_frame, tx_available);
+    len += tx_available;
+
+    memcpy(tx_frame, data, len); // 14 + 10 + 9 + 22 = 55
     tx_available = len;
+}
+
+
+//-------------------------------------------------------
+// CRSF Mb Statistics
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t cmd;
+
+    uint8_t connected : 1;
+    uint8_t binding : 1;
+    uint8_t dualband : 1;
+    uint8_t rx_available : 1;
+    uint8_t spare : 4;
+
+    uint8_t rx_actual_diversity : 4;
+    uint8_t tx_actual_diversity : 4;
+
+    uint8_t receive_antenna : 1;
+    uint8_t transmit_antenna : 1;
+    uint8_t receiver_receive_antenna : 1;
+    uint8_t receiver_transmit_antenna : 1;
+    uint8_t spare2 : 4;
+
+    int8_t rssi1_instantaneous;
+    int8_t rssi2_instantaneous;
+    int8_t receiver_rssi_instantaneous;
+
+    uint8_t LQ_serial;
+    uint8_t receiver_LQ_rc;
+    uint8_t receiver_LQ_serial;
+
+    uint16_t bytes_transmitted;
+    uint16_t bytes_received;
+
+    uint8_t fhss1_curr_i;
+    uint8_t fhss1_cnt;
+    uint8_t fhss2_curr_i;
+    uint8_t fhss2_cnt;
+}) tCrsfMbStatistics; // 18 bytes
+
+
+void tTxCrsf::SendMbStatistics(void)
+{
+tCrsfMbStatistics lstats = {};
+
+    lstats.cmd = 0x65;
+
+    lstats.connected = connected();
+    lstats.binding = bind.IsInBind();
+    lstats.dualband = Config.IsDualBand;
+    lstats.rx_available = SetupMetaData.rx_available;
+
+    lstats.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
+    lstats.tx_actual_diversity = Config.Diversity;
+
+    lstats.receive_antenna = stats.last_antenna;
+    lstats.transmit_antenna = stats.last_transmit_antenna;
+    lstats.receiver_receive_antenna = stats.received_antenna;
+    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
+
+    lstats.rssi1_instantaneous = stats.last_rssi1;
+    lstats.rssi2_instantaneous = stats.last_rssi2;
+    lstats.receiver_rssi_instantaneous = stats.received_rssi;
+
+    lstats.LQ_serial = stats.GetLQ_serial();
+    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc();
+    lstats.receiver_LQ_serial = stats.received_LQ_serial;
+
+    lstats.bytes_transmitted = stats.bytes_transmitted.GetBytesPerSec();
+    lstats.bytes_received = stats.bytes_received.GetBytesPerSec();
+
+    lstats.fhss1_curr_i = stats.fhss_curr_i;
+    lstats.fhss1_cnt = fhss.Cnt();
+    lstats.fhss2_curr_i = 0;
+    lstats.fhss2_cnt = 0;
+
+    send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, &lstats, sizeof(tCrsfMbStatistics));
 }
 
 
@@ -1216,7 +1388,7 @@ uint8_t len;
 class tTxCrsf : public tSerialBase
 {
   public:
-    void Init(bool enable_flag) {}
+    void Init(bool enable_flag, bool crsfbridge_enable_flag) {}
     bool Update(tRcData* const rc) { return false; }
     void TelemetryStart(void) {}
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms) { return false; }
