@@ -59,12 +59,14 @@ class tRxMsp
 
     // to inject MSP_SET_RAW_RC, MSP2_COMMON_SET_MSP_RC_LINK_STATS, MSP2_COMMON_SET_MSP_RC_INFO
     tMspSetRawRc rc_channels; // holds the rc data in MSP format
+    tMspInavSetAuxRc_16x2bit rc_channels_16to32;
     bool inject_rc_channels;
     bool inject_rc_link_stats;
     bool inject_rc_info;
     bool rc_link_stats_disabled;
     bool rc_info_disabled;
     uint32_t rc_channels_tlast_ms;
+    bool rc_channels_do_32;
     uint32_t rc_link_stats_tlast_ms;
     uint32_t rc_info_tlast_ms = 0;
     int8_t rc_info_power_dbm_last = 125;
@@ -131,6 +133,7 @@ void tRxMsp::Init(void)
     rc_link_stats_disabled = false;
     rc_info_disabled = false;
     rc_channels_tlast_ms = 0;
+    rc_channels_do_32 = false;
     rc_link_stats_tlast_ms = 0;
     rc_info_tlast_ms = 0;
     rc_info_power_dbm_last = 125;
@@ -167,10 +170,31 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
         }
     }
 
-// TODO: can MSP do 32 channels?
-
     for (uint8_t i = 0; i < 16; i++) {
         rc_channels.rc[i] = rc_to_mavlink(rc_out->ch[i]);
+    }
+
+    if (rc_out->do_32channels) {
+        #define MSP_RC_2BIT(v)  (v >= 1536) ? 3 : ((v <= 512) ? 1 : 2) // 1 .. 2 .. 3, bits, 3-way
+        rc_channels_do_32 = true;
+        rc_channels_16to32.resolutionMode = 0;
+        rc_channels_16to32.startChannel = 16;
+        rc_channels_16to32.ch0 = MSP_RC_2BIT(rc_out->ch[16]);
+        rc_channels_16to32.ch1 = MSP_RC_2BIT(rc_out->ch[17]);
+        rc_channels_16to32.ch2 = MSP_RC_2BIT(rc_out->ch[18]);
+        rc_channels_16to32.ch3 = MSP_RC_2BIT(rc_out->ch[19]);
+        rc_channels_16to32.ch4 = MSP_RC_2BIT(rc_out->ch[20]);
+        rc_channels_16to32.ch5 = MSP_RC_2BIT(rc_out->ch[21]);
+        rc_channels_16to32.ch6 = MSP_RC_2BIT(rc_out->ch[22]);
+        rc_channels_16to32.ch7 = MSP_RC_2BIT(rc_out->ch[23]);
+        rc_channels_16to32.ch8 = MSP_RC_2BIT(rc_out->ch[24]);
+        rc_channels_16to32.ch9 = MSP_RC_2BIT(rc_out->ch[25]);
+        rc_channels_16to32.ch10 = MSP_RC_2BIT(rc_out->ch[26]);
+        rc_channels_16to32.ch11 = MSP_RC_2BIT(rc_out->ch[27]);
+        rc_channels_16to32.ch12 = MSP_RC_2BIT(rc_out->ch[28]);
+        rc_channels_16to32.ch13 = MSP_RC_2BIT(rc_out->ch[29]);
+        rc_channels_16to32.ch14 = MSP_RC_2BIT(rc_out->ch[30]);
+        rc_channels_16to32.ch15 = MSP_RC_2BIT(rc_out->ch[31]);
     }
 
     inject_rc_channels = true;
@@ -447,6 +471,18 @@ void tRxMsp::send_rc_channels(void)
         MSP_SET_RAW_RC,
         (uint8_t*)&rc_channels,
         MSP_SET_RAW_RC_LEN);
+
+    serial->putbuf(_buf, len);
+
+    if (!rc_channels_do_32) return;
+
+    len = msp_generate_v2_frame_buf(
+        _buf,
+        MSP_TYPE_REQUEST,
+        MSP_FLAG_SOURCE_ID_RC_LINK | MSP_FLAG_NO_RESPONSE, // avoid response message from flight controller
+        MSP2_INAV_SET_AUX_RC,
+        (uint8_t*)&rc_channels_16to32,
+        MSP_INAV_SET_AUX_RC_16X2BIT);
 
     serial->putbuf(_buf, len);
 }
