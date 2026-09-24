@@ -85,6 +85,10 @@ local function setupScreen()
         LAYOUT.DY = 28 -- default line distance
         LAYOUT.PARAM_VALUE_DX = 130 + 40
         LAYOUT.PARAM_RIGHT_X = 240 + 100
+        LAYOUT.POPUP_W = 640
+        LAYOUT.POPUP_H = 100
+        LAYOUT.WARN_W = 740
+        LAYOUT.WARN_H = 65
         LAYOUT.COMMON_Y = 95 + 20
         LAYOUT.BUTTONS_Y = 171 + 45
         LAYOUT.INFO_Y = 210 + 60
