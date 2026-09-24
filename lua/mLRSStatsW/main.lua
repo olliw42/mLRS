@@ -56,7 +56,7 @@ local function decodeCrsfMbStatistics(command, packet)
     mbStats.rssi1 = packet[5];
     if mbStats.rssi1 >= 128 then mbStats.rssi1 = mbStats.rssi1 - 256 end
     mbStats.rssi2 = packet[6];
-    if mbStats.rssi2 >= 128 then mbStats.rssi1 = mbStats.rssi2 - 256 end
+    if mbStats.rssi2 >= 128 then mbStats.rssi2 = mbStats.rssi2 - 256 end
     mbStats.receiver_rssi = packet[7];
     if mbStats.receiver_rssi >= 128 then mbStats.receiver_rssi = mbStats.receiver_rssi - 256 end
 
