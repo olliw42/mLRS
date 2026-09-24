@@ -107,6 +107,7 @@ local function drawIt(widget, event)
         return
     end
   
+    lcd.resetBacklightTimeout()  
     lcd.clear(ui.COLOR_BACKGROUND)
   
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
