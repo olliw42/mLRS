@@ -52,18 +52,18 @@ class tMBridge
 
     typedef enum {
         STATE_IDLE = 0,
-        STATE_RECEIVE_MBRIDGE_STX2,
-        STATE_RECEIVE_MBRIDGE_LEN,
-        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
-        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
-        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
-        STATE_TRANSMIT_START,
+        STATE_RECEIVE_STX2,
+        STATE_RECEIVE_LEN,
+        STATE_RECEIVE_SERIALPACKET,
+        STATE_RECEIVE_CHANNELPACKET,
+        STATE_RECEIVE_COMMANDPACKET,
+        STATE_RECEIVE_COMPLETED,
+        STATE_RECEIVE_ERROR,
     } STATE_ENUM;
 
     uint8_t state;
     uint8_t len;
     uint8_t cnt;
-    uint16_t tlast_us;
 
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
     volatile bool cmd_received;
@@ -77,11 +77,6 @@ class tMBridge
     uint32_t cmd_processed_tlast_ms;
     uint8_t ack_cmd;
     bool ack_ok;
-
-    // momentarily for debug, detect discarded bytes
-#ifdef USE_DEBUG
-    uint16_t discarded = 0;
-#endif
 };
 
 tMBridge mbridge;
@@ -96,41 +91,18 @@ tMBridge mbridge;
 // is called in ParseCrsfFrame() for CRSF emulation
 void tMBridge::parse_nextchar(uint8_t c)
 {
-    uint16_t tnow_us = micros16();
-
-    if (state != STATE_IDLE) {
-        uint16_t dt = tnow_us - tlast_us;
-        if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-    }
-
-    tlast_us = tnow_us;
-
     switch (state) {
     case STATE_IDLE:
-        if (c == MBRIDGE_STX1) {
-            state = STATE_RECEIVE_MBRIDGE_STX2;
-#ifdef USE_DEBUG
-            if (discarded) {
-                if (discarded > 1) {
-                    dbg.puts(u16toBCD_s(discarded));
-                    dbg.puts(" bytes lost!\n");
-                }
-                discarded = 0;
-            }
-        } else {
-            discarded++;
-#endif
-        }
+        if (c == MBRIDGE_STX1) state = STATE_RECEIVE_STX2;
         break;
-
-    case STATE_RECEIVE_MBRIDGE_STX2:
-        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_MBRIDGE_LEN; else state = STATE_IDLE; // error
+    case STATE_RECEIVE_STX2:
+        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_LEN; else state = STATE_RECEIVE_ERROR; // error
         break;
-    case STATE_RECEIVE_MBRIDGE_LEN:
+    case STATE_RECEIVE_LEN:
         cnt = 0;
         if (c == MBRIDGE_CHANNELPACKET_STX) {
             len = MBRIDGE_CHANNELPACKET_SIZE;
-            state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
+            state = STATE_RECEIVE_CHANNELPACKET;
         } else
         if (c >= MBRIDGE_COMMANDPACKET_STX) {
             uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
@@ -138,35 +110,35 @@ void tMBridge::parse_nextchar(uint8_t c)
             len = mbridge_cmd_payload_len(cmd);
             if (len == 0) {
                 cmd_received = true;
-                state = STATE_TRANSMIT_START;
+                state = STATE_RECEIVE_COMPLETED;
             } else {
-                state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
+                state = STATE_RECEIVE_COMMANDPACKET;
             }
         } else
         if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
-            state = STATE_IDLE; // error
+            state = STATE_RECEIVE_ERROR; // error
         } else
         if (c > 0) {
             len = c;
-            state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
+            state = STATE_RECEIVE_SERIALPACKET;
         } else {
-            state = STATE_TRANSMIT_START; // tx_len = 0, no payload
+            state = STATE_RECEIVE_COMPLETED; // tx_len = 0, no payload
         }
         break;
-    case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
+    case STATE_RECEIVE_SERIALPACKET:
         cnt++;
-        if (cnt >= len) state = STATE_TRANSMIT_START;
+        if (cnt >= len) state = STATE_RECEIVE_COMPLETED;
         break;
-    case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
+    case STATE_RECEIVE_CHANNELPACKET:
         if (cnt >= len) {
-            state = STATE_TRANSMIT_START;
+            state = STATE_RECEIVE_COMPLETED;
         }
         break;
-    case STATE_RECEIVE_MBRIDGE_COMMANDPACKET:
+    case STATE_RECEIVE_COMMANDPACKET:
         cmd_r2m_frame[cnt++] = c;
         if (cnt >= len + 1) {
             cmd_received = true;
-            state = STATE_TRANSMIT_START;
+            state = STATE_RECEIVE_COMPLETED;
         }
         break;
     }
@@ -180,16 +152,10 @@ void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
 {
     if (!crsf_emulation) return;
 
-    state = STATE_IDLE; // to start the parser, also resets time gap check
-
+    state = STATE_IDLE; // start the parser
     for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
 
-    state = STATE_IDLE; // this is to suppress that mBridge sends
-
     // we should have now a good cmd in cmd_r2m_frame[]
-    // mbridge.ChannelsUpdated() should not trigger
-    // mbridge.TelemetryUpdate() should not trigger, since mbridge.TelemetryStart() not called
-    // mbridge.CommandReceived() should however trigger and should be called"
 }
 
 
@@ -250,15 +216,6 @@ uint8_t tMBridge::GetModelId(void)
 {
     return cmd_r2m_frame[1];
 }
-
-
-/* void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
-{
-    *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
-
-    uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
-    memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
-} */
 
 
 void tMBridge::SendCommand(uint8_t cmd, uint8_t* const payload)
@@ -356,51 +313,6 @@ void tMBridge::HandleCmd(uint8_t cmd)
 
 //-------------------------------------------------------
 // convenience helper
-
-void mbridge_send_LinkStats(void)
-{
-tMBridgeLinkStats lstats = {};
-
-    lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
-    lstats.rssi1_instantaneous = stats.last_rssi1;
-    lstats.rssi2_instantaneous = stats.last_rssi2;
-    lstats.snr_instantaneous = stats.GetLastSnr();
-    lstats.receive_antenna = stats.last_antenna;
-    lstats.transmit_antenna = stats.last_transmit_antenna;
-    lstats.rx1_valid = stats.rx1_valid;
-    lstats.rx2_valid = stats.rx2_valid;
-
-    // receiver side of things
-
-    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc(); // valid_crc1_received, number of rc data packets received on receiver side
-    lstats.receiver_LQ_serial = stats.received_LQ_serial; // valid_frames_received, number of completely valid packets received on receiver side
-    lstats.receiver_rssi_instantaneous = stats.received_rssi;
-    lstats.receiver_receive_antenna = stats.received_antenna;
-    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-
-    // further stats acquired on transmitter side
-
-    lstats.LQ_fresh_serial_packets_transmitted = stats.serial_data_transmitted.GetLQ();
-    lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
-
-    lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
-    lstats.LQ_fresh_serial_packets_received = stats.serial_data_received.GetLQ();
-    lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
-
-    //lstats.__LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, pretty useless, so deprecated
-    lstats.mavlink_packet_LQ_received = stats.GetMavlinkLQ();
-
-    lstats.fhss_curr_i = stats.fhss_curr_i;
-    lstats.fhss_cnt = fhss.Cnt();
-
-    lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
-
-    lstats.link_state_connected = connected();
-    lstats.link_state_binding = bind.IsInBind();
-
-    mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
-}
-
 
 void mbridge_send_Info(void)
 {

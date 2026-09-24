@@ -1137,6 +1137,7 @@ IF_CRSF( // CRSF mBridge emulation
     }
 );
 IF_CRSF(
+    crsf.Do();
     if (crsf.ChannelsUpdated(&rcData)) {
         rc_data_updated = true;
     }
