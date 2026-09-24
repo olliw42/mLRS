@@ -1,4 +1,4 @@
-local widgetName = "mLRS 32Ch"
+local widgetName = "mLRS 32Ch Widget"
 ----------------------------------------------------------------------
 -- Copyright (c) OlliW @ www.olliw.eu
 -- GPL3
@@ -10,12 +10,13 @@ local widgetName = "mLRS 32Ch"
 
 
 local VERSION = {
-    script = '2026-09-22.00', -- add a '.01' if needed for the day
+    script = '2026-09-24.00', -- add a '.01' if needed for the day
 }
 
 
 local options = {
-  { "Color", COLOR, lcd.RGB(255, 255, 255) },
+    { "Color", COLOR, lcd.RGB(255, 255, 255) },
+    { "Enabled", BOOL, 1 },
 }
 
 
@@ -52,7 +53,7 @@ local function sendChannels0x17()
     local bitBuffer = 0
     local bitCount = 0
 --    for ch = 16, 31 do 
--- for the moment, for testing, we simply mirror channels 1 - 16
+-- momentarily, for testing, we simply mirror channels 1 - 16
     for ch = 0, 15 do
         value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
@@ -73,7 +74,7 @@ local function sendChannels0x17()
 end
 
 
-local function sendChannels0x16()
+local function sendChannels0x16() -- just for testing
     local data = {}
     local pos = 1
     
@@ -94,10 +95,10 @@ local function sendChannels0x16()
     data[pos] = 0
     pos = pos + 1
     
---    for ch = 16, 31 do 
--- for the moment, for testing, we simply mirror channels 1 - 16
     bitBuffer = 0
     bitCount = 0
+--    for ch = 16, 31 do 
+-- momentarily, for testing, we simply mirror channels 1 - 16
     for ch = 0, 15 do
         value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
@@ -133,6 +134,8 @@ end
 
 
 local function background(widget)
+    if widget.options.Enabled == 0 then return end
+  
     local tnow_10ms = getTime()
 
     if tnow_10ms - widget.tlast_10ms >= 20 then
@@ -144,15 +147,18 @@ end
 
 
 local function refresh(widget, event, touchState)
-    background(widget)  
+    lcd.drawText(0, 0, "32Ch", widget.options.Color)
+    
+    if widget.options.Enabled == 0 then 
+        lcd.drawText(0, 20, "off", widget.options.Color)
+        return 
+    end
+    lcd.drawNumber(0, 20, outputToCrsf(getOutputValue(0)), widget.options.Color) -- to just show something moving
+  
+    background(widget)
   
     local zone = widget.zone
-
-    lcd.drawText(0, 0, "Ch32", widget.options.Color)
-    local value = outputToCrsf(getOutputValue(0))
-    lcd.drawNumber(0, 20, value, widget.options.Color)
-
-    if zone.w ~= LCD_W or zone.h ~= LCD_H then return end
+    if zone.w ~= LCD_W or zone.h ~= LCD_H then return end -- skip out if not full size widget
 
     local columns = 4
     local rows = 8
