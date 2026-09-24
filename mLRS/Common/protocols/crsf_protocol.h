@@ -156,18 +156,21 @@ typedef enum {
 
 // final crc8 included in payload or cmd_data, hence these fields are one byte longer
 CRSF_PACKED(
-typedef struct
+typedef union
 {
-    uint8_t address;  // [0]
-    uint8_t len;      // [1]
-    uint8_t frame_id; // [2]
-    CRSF_PACKED(union {
-        uint8_t payload[64 - 4 + 1];  // [3], +1 for crc
-        CRSF_PACKED(struct {
-            uint8_t cmd_dest_address; // [3]
-            uint8_t cmd_src_address;  // [4]
-            uint8_t cmd_id;           // [5]
-            uint8_t cmd_data[64 - 4 - 3 + 1]; // [6], +1 for crc
+    uint8_t c[64];
+    CRSF_PACKED(struct {
+        uint8_t address;  // [0]
+        uint8_t len;      // [1]
+        uint8_t frame_id; // [2]
+        CRSF_PACKED(union {
+            uint8_t payload[64 - 4 + 1];  // [3], +1 for crc
+            CRSF_PACKED(struct {
+                uint8_t cmd_dest_address; // [3]
+                uint8_t cmd_src_address;  // [4]
+                uint8_t cmd_id;           // [5]
+                uint8_t cmd_data[64 - 4 - 3 + 1]; // [6], +1 for crc
+            });
         });
     });
 }) tCrsfFrame;

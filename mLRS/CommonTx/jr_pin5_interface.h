@@ -132,20 +132,13 @@ class tPin5BridgeBase
     typedef enum {
         STATE_IDLE = 0,
 
-        // mBridge receive states
-        STATE_RECEIVE_MBRIDGE_STX2,
-        STATE_RECEIVE_MBRIDGE_LEN,
-        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
-        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
-        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
-
         // CRSF receive states
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,
 
         // transmit states, used by all
-        STATE_TRANSMIT_START,
+        STATE_TRANSMIT_START = 100,
         STATE_TRANSMIT_PENDING, // waiting for TX delay timer
         STATE_TRANSMITING,
     } STATE_ENUM;
@@ -153,9 +146,6 @@ class tPin5BridgeBase
     // not used in this class, but required by the children, so just add them here
     // no need for volatile since used only in isr context
     uint8_t state;
-    uint8_t len;
-    uint8_t cnt;
-    uint16_t tlast_us;
 
     // check and rescue
     // the FRM303 can get stuck, whatever we tried, so brutal rescue
@@ -168,9 +158,6 @@ class tPin5BridgeBase
 void tPin5BridgeBase::Init(void)
 {
     state = STATE_IDLE;
-    len = 0;
-    cnt = 0;
-    tlast_us = 0;
 
     telemetry_start_next_tick = false;
     telemetry_state = 0;

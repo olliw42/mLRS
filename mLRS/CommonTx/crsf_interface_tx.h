@@ -27,6 +27,9 @@
 
 extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tStats stats;
 
 #define USE_CRSF_MB
@@ -60,6 +63,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
   public:
     using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
     void Init(bool enable_flag, bool crsfbridge_enable_flag);
+    void Do(void);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
@@ -90,22 +94,13 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     char getc(void) override { return get_fifo.Get(); }
     void flush(void) override { get_fifo.Flush(); }
 
-    tFifo<char,TX_MBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
-    tFifo<char,TX_MBRIDGE_RXBUFSIZE> get_fifo;
-
-    uint8_t mavlink_envelop_out_sequence;
-    tCrsfMavlinkEnvelope mavlink_envelope_out;
-
-    uint8_t crsf_mb_envelop_out_sequence;
-    tCrsfMbEnvelope crsf_mb_envelope_out;
-
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
     uint8_t crc8(const uint8_t* const buf);
-    void fill_rcdata(tRcData* const rc);
-    void fill_rcdata_0x17(tRcData* const rc);
+    bool fill_rcdata(tRcData* const rc);
+    bool fill_rcdata_0x17(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -114,18 +109,25 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool enabled;
     bool crsfbridge_enabled;
 
-    uint8_t frame[CRSF_BUF_SIZE]; // received frame
-    const tCrsfFrame* framep = (tCrsfFrame*)frame;
-    volatile bool channels_received;
-    volatile bool cmd_received;
-    volatile bool ping_device_received;
-    volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
-    volatile uint8_t cmd_modelid_value;
-    volatile bool cmd_bind_set_received;
-    volatile bool cmd_bind_cancel_received;
+    // parser, state is defined in tPin5BridgeBase
+    // no need for volatile since used only in isr context
+    uint8_t rx_frame[CRSF_BUF_SIZE]; // received frame
+    uint8_t rx_len;
+    uint8_t rx_cnt;
+    uint16_t rx_tlast_us;
+    volatile bool rx_frame_received;
+    tCrsfFrame frame; // double buffered received frame
 
-    volatile bool tx_free; // to signal that the tx buffer can be filled
+    bool channels_received;
+    bool mbridge_cmd_received;
+    bool ping_device_received;
+    bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
+    uint8_t cmd_modelid_value;
+    bool cmd_bind_set_received;
+    bool cmd_bind_cancel_received;
+
     uint8_t tx_frame[CRSF_BUF_SIZE];
+    volatile bool tx_free; // to signal that the tx buffer can be filled
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
     bool startup_passed; // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
@@ -221,6 +223,19 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     uint16_t msp_inav_status_sensor_status;
     uint32_t msp_inav_status_arming_flags;
 
+    // CRSF envelope
+
+    tFifo<char,TX_CRSFBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_CRSFBRIDGE_RXBUFSIZE> get_fifo;
+
+    union {
+        tCrsfMbEnvelope mb;           // 0xEA, len, 0x82, 0x66
+        tCrsfMavlinkEnvelope mavlink; // 0xEA, len, 0xAA
+    } crsf_envelope_out;
+    uint8_t crsf_envelop_out_sequence;
+    bool crsf_envelop_use_mb;
+    uint32_t crsf_envelop_out_tlast_ms;
+
     // momentarily for debug, detect discarded bytes
 #ifdef USE_DEBUG
     uint16_t discarded = 0;
@@ -272,19 +287,19 @@ void tTxCrsf::parse_nextchar(uint8_t c)
     uint16_t tnow_us = micros16();
 
     if (state != STATE_IDLE) {
-        uint16_t dt = tnow_us - tlast_us;
+        uint16_t dt = tnow_us - rx_tlast_us;
         if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
 
-        if (cnt >= sizeof(frame)) state = STATE_IDLE; // prevent buffer overflow
+        if (rx_cnt >= sizeof(rx_frame)) state = STATE_IDLE; // prevent buffer overflow
     }
 
-    tlast_us = tnow_us;
+    rx_tlast_us = tnow_us;
 
     switch (state) {
     case STATE_IDLE:
         if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
-            cnt = 0;
-            frame[cnt++] = c;
+            rx_cnt = 0;
+            rx_frame[rx_cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
 #ifdef USE_DEBUG
             if (discarded) {
@@ -302,80 +317,20 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
     case STATE_RECEIVE_CRSF_LEN:
         if (c >= (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
-        frame[cnt++] = c;
-        len = c;
+        rx_frame[rx_cnt++] = c;
+        rx_len = c;
         state = STATE_RECEIVE_CRSF_PAYLOAD;
         break;
     case STATE_RECEIVE_CRSF_PAYLOAD:
-        frame[cnt++] = c;
-        if (cnt >= len + 1) {
+        rx_frame[rx_cnt++] = c;
+        if (rx_cnt >= rx_len + 1) {
             state = STATE_RECEIVE_CRSF_CRC;
         }
         break;
     case STATE_RECEIVE_CRSF_CRC:
-        frame[cnt++] = c;
-        // let's ignore the crc here
-        // this is called in isr, so we want to do crc check later, if we want to do it all
-        if (framep->frame_id == CRSF_FRAME_ID_RC_CHANNELS) { // len = 24 or 25
-            // EdgeTx sets frame[0] = MODULE_ADDRESS
-            channels_received = true;
-        } else
-        if (framep->frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
-            channels_received = true;
-
-DBG_CRSF_32CH(dbg.puts(" c0x17 ");
-//dbg.puts(u8toHEX_s(frame[4]));
-dbg.puts(u16toBCD_s(rcData.ch[16]));)
-
-        } else
-#ifndef USE_CRSF_MB
-        if (crsfbridge_enabled && framep->frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
-
-DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
-dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
-dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
-dbg.puts(" ");dbg.puts(u8toBCD_s((frame[3] >> 4) & 0x0F));
-dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4]));)
-
-            get_fifo.PutBuf(&frame[5], frame[4]); // serial_putbuf(&frame[5], len);
-#else
-        if (crsfbridge_enabled &&
-            framep->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
-            framep->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE && frame[3] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
-            get_fifo.PutBuf(&frame[6], frame[5]);
-
-DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(framep->address));
-dbg.puts(" ");dbg.puts(u8toBCD_s(framep->len));
-dbg.puts(" ");dbg.puts(u8toHEX_s(framep->frame_id));
-dbg.puts(" ");dbg.puts(u8toHEX_s(frame[3]));
-dbg.puts(" ");dbg.puts(u8toBCD_s(frame[4] & 0x0F));
-dbg.puts(" ");dbg.puts(u8toBCD_s(frame[5]));
-dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));)
-
-#endif
-        } else
-        if (framep->address == CRSF_OPENTX_SYNC && framep->frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
-            // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
-            ping_device_received = true;
-        } else
-        if (framep->address == CRSF_OPENTX_SYNC && framep->frame_id == CRSF_FRAME_ID_COMMAND &&
-            framep->cmd_id == CRSF_COMMAND_ID) {
-            switch (framep->cmd_data[0]) {
-            case CRSF_COMMAND_SET_BIND_MODE: // len = 7
-                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
-                if (framep->cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
-            case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
-                // not used by EdgeTx
-                if (framep->cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
-            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
-                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
-                cmd_modelid_received = true;
-                cmd_modelid_value = framep->cmd_data[1];
-                break;
-            }
-        } else {
-            cmd_received = true;
-        }
+        rx_frame[rx_cnt++] = c;
+        memcpy(&frame, rx_frame, rx_cnt);
+        rx_frame_received = true;
         state = STATE_TRANSMIT_START;
         break;
     }
@@ -397,20 +352,20 @@ dbg.puts(" ");dbg.puts(u8toHEX_s(frame[6]));)
 // We assume that's not happening. Note, that len can also be larger, which is in fact
 // done by EdgeTx to provide an additional status byte carrying arming info for ELRS.
 
-void tTxCrsf::fill_rcdata(tRcData* const rc)
+bool tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfRcChannelV2* buf = (tCrsfRcChannelV2*)framep->payload;
+tCrsfRcChannelV2* buf = (tCrsfRcChannelV2*)frame.payload;
 bool is_32channels;
 
     // TODO: variable size frames ??
 
-    if (frame[1] >= 1 + 22 + 1 && frame[1] <= 1 + 23 + 1) { // V1 frame, we only accept frames with 16 channels
+    if (frame.len >= 1 + 22 + 1 && frame.len <= 1 + 23 + 1) { // V1 frame, we only accept frames with 16 channels
         is_32channels = false;
-    } else if (frame[1] == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
+    } else if (frame.len == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
         rc->do_32channels = true;
         is_32channels = true;
     } else {
-        return;
+        return false;
     }
 
     rc->ch[0] = rc_from_crsf(buf->ch0);
@@ -448,31 +403,41 @@ bool is_32channels;
         rc->ch[30] = rc_from_crsf(buf->ch30);
         rc->ch[31] = rc_from_crsf(buf->ch31);
     }
+
+    return true;
 }
 
 
-void tTxCrsf::fill_rcdata_0x17(tRcData* const rc)
+bool tTxCrsf::fill_rcdata_0x17(tRcData* const rc)
 {
-tCrsfRcChannelV1* buf = (tCrsfRcChannelV1*)framep->payload; // we can reuse/misuse the V1 structure
+tCrsfSubsetRcChannelsPacked_16x11bit* buf = (tCrsfSubsetRcChannelsPacked_16x11bit*)frame.payload;
+
+    if (frame.len != 25 || frame.payload[0] != 0x30) { // we only accept 0x17 with 11 bit, 16 channels, ch 16 start
+DBG_CRSF_32CH(dbg.puts(" err");)
+        return false;
+    }
+DBG_CRSF_32CH(dbg.puts(" ok");)
 
     rc->do_32channels = true;
 
-    rc->ch[16] = rc_from_crsf_0x17_11bit(buf->ch0);
-    rc->ch[17] = rc_from_crsf_0x17_11bit(buf->ch1);
-    rc->ch[18] = rc_from_crsf_0x17_11bit(buf->ch2);
-    rc->ch[19] = rc_from_crsf_0x17_11bit(buf->ch3);
-    rc->ch[20] = rc_from_crsf_0x17_11bit(buf->ch4);
-    rc->ch[21] = rc_from_crsf_0x17_11bit(buf->ch5);
-    rc->ch[22] = rc_from_crsf_0x17_11bit(buf->ch6);
-    rc->ch[23] = rc_from_crsf_0x17_11bit(buf->ch7);
-    rc->ch[24] = rc_from_crsf_0x17_11bit(buf->ch8);
-    rc->ch[25] = rc_from_crsf_0x17_11bit(buf->ch9);
-    rc->ch[26] = rc_from_crsf_0x17_11bit(buf->ch10);
-    rc->ch[27] = rc_from_crsf_0x17_11bit(buf->ch11);
-    rc->ch[28] = rc_from_crsf_0x17_11bit(buf->ch12);
-    rc->ch[29] = rc_from_crsf_0x17_11bit(buf->ch13);
-    rc->ch[30] = rc_from_crsf_0x17_11bit(buf->ch14);
-    rc->ch[31] = rc_from_crsf_0x17_11bit(buf->ch15);
+    rc->ch[16] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch0);
+    rc->ch[17] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch1);
+    rc->ch[18] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch2);
+    rc->ch[19] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch3);
+    rc->ch[20] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch4);
+    rc->ch[21] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch5);
+    rc->ch[22] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch6);
+    rc->ch[23] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch7);
+    rc->ch[24] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch8);
+    rc->ch[25] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch9);
+    rc->ch[26] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch10);
+    rc->ch[27] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch11);
+    rc->ch[28] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch12);
+    rc->ch[29] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch13);
+    rc->ch[30] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch14);
+    rc->ch[31] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch15);
+
+    return true;
 }
 
 
@@ -492,13 +457,18 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 
     if (!enabled) return;
 
+    rx_len = 0;
+    rx_cnt = 0;
+    rx_tlast_us = 0;
+    rx_frame_received = false;
+
     tx_available = 0;
     tx_free = false;
 
     startup_passed = false;
 
     channels_received = false;
-    cmd_received = false;
+    mbridge_cmd_received = false;
     ping_device_received = false;
     cmd_modelid_received = false;
     cmd_bind_set_received = false;
@@ -520,6 +490,9 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 
     put_fifo.Init();
     get_fifo.Init();
+    crsf_envelop_out_sequence = 0;
+    crsf_envelop_use_mb = true;
+    crsf_envelop_out_tlast_ms = 0;
 
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
@@ -528,7 +501,78 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
     tSerialBase::Init();
 
     // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
-    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
+//    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
+}
+
+// polled in main loop
+void tTxCrsf::Do(void)
+{
+    if (!enabled) return;
+
+    CheckAndRescue();
+
+    if (!rx_frame_received) return;
+    rx_frame_received = false;
+
+    if (frame.frame_id == CRSF_FRAME_ID_RC_CHANNELS) { // len = 24 or 25
+        // EdgeTx sets frame[0] = MODULE_ADDRESS
+        channels_received = true;
+    } else
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) { // len = 25
+        channels_received = true;
+
+DBG_CRSF_32CH(dbg.puts(" c0x17 ");/*dbg.puts(u8toHEX_s(frame.c[4]));*/)
+
+    } else
+    if (crsfbridge_enabled &&
+        frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE &&
+        frame.payload[0] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
+        get_fifo.PutBuf(&frame.c[6], frame.c[5]);
+        crsf_envelop_use_mb = true;
+
+DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame.address));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame.len));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame.frame_id));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame.c[3]));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[4] & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[5]));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame.c[6]));)
+
+    } else
+    if (crsfbridge_enabled && frame.frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+        get_fifo.PutBuf(&frame.c[5], frame.c[4]);
+        crsf_envelop_use_mb = false;
+
+DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame.address));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame.len));
+dbg.puts(" ");dbg.puts(u8toHEX_s(frame.frame_id));
+dbg.puts(" ");dbg.puts(u8toBCD_s((frame.c[3] >> 4) & 0x0F));
+dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[4]));)
+
+    } else
+    if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
+        // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
+        ping_device_received = true;
+    } else
+    if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_COMMAND &&
+        frame.cmd_id == CRSF_COMMAND_ID) {
+        switch (frame.cmd_data[0]) {
+        case CRSF_COMMAND_SET_BIND_MODE: // len = 7
+            // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+            if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+        case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
+            // not used by EdgeTx
+            if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+        case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
+            // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+            cmd_modelid_received = true;
+            cmd_modelid_value = frame.cmd_data[1];
+            break;
+        }
+    } else
+    if (frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
+        mbridge_cmd_received = true;
+    }
 }
 
 
@@ -537,25 +581,24 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
-    CheckAndRescue();
-
     if (!channels_received) return false;
     channels_received = false;
 
     // check crc before we accept it
-    uint8_t crc = crc8(frame);
-    if (crc != frame[framep->len + 1]) return false;
+    uint8_t crc = crc8(frame.c);
+    if (crc != frame.c[frame.len + 1]) {
+DBG_CRSF_32CH(dbg.puts(" crc err");)
+      return false;
+    }
 
-    if (framep->frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
-        if (framep->len != 25 || framep->payload[0] != 0x30) return false; // we only accept 0x17 with 11 bit, 16 channels, ch 16 start
-        fill_rcdata_0x17(rc);
-        return true;
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
+DBG_CRSF_32CH(dbg.puts(" 0x17");)
+        return fill_rcdata_0x17(rc);
     }
 
     startup_passed = true;
 
-    fill_rcdata(rc);
-    return true;
+    return fill_rcdata(rc);
 }
 
 
@@ -643,14 +686,9 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
         return true;
     }
 
-    if (!cmd_received) return false;
-    cmd_received = false;
-
-    // TODO: we could check crc if we wanted to
-
-    // mBridge emulation
-    if (framep->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
-        framep->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
+    if (mbridge_cmd_received) {
+        mbridge_cmd_received = false;
+        // TODO: we could check crc if we wanted to
         *cmd = TXCRSF_CMD_MBRIDGE_IN;
         return true;
     }
@@ -661,13 +699,13 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
 
 uint8_t* tTxCrsf::GetPayloadPtr(void)
 {
-    return (uint8_t*)framep->payload;
+    return frame.payload;
 }
 
 
 uint8_t tTxCrsf::GetPayloadLen(void)
 {
-    return framep->len - 2;
+    return frame.len - 2;
 }
 
 
@@ -726,38 +764,37 @@ uint8_t len;
     }
 
     // MAVLink envelope
-    if (crsfbridge_enabled && put_fifo.Available()) {
-#ifndef USE_CRSF_MB
-        mavlink_envelope_out.total_chunks = 0;
-        mavlink_envelope_out.current_chunk = mavlink_envelop_out_sequence;
-        mavlink_envelope_out.data_size = 0;
-        for (uint8_t i = 0; i < 58; i++) {
-            if (!put_fifo.Available()) break;
-            mavlink_envelope_out.data[i] = put_fifo.Get();
-            mavlink_envelope_out.data_size++;
+    uint16_t available = put_fifo.Available();
+    if (crsfbridge_enabled && (available > 20 || (tnow_ms - crsf_envelop_out_tlast_ms) > 9)) {
+        if (crsf_envelop_use_mb) {
+            crsf_envelope_out.mb.cmd = CRSF_MB_ENVELOPE_CMD;
+            crsf_envelope_out.mb.seq = crsf_envelop_out_sequence;
+            crsf_envelope_out.mb.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) { // 57
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mb.data[i] = put_fifo.Get();
+                crsf_envelope_out.mb.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
+                &(crsf_envelope_out),
+                crsf_envelope_out.mb.data_size + 3);
+        } else {
+            crsf_envelope_out.mavlink.total_chunks = 0;
+            crsf_envelope_out.mavlink.current_chunk = crsf_envelop_out_sequence;
+            crsf_envelope_out.mavlink.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX; i++) { // 58
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mavlink.data[i] = put_fifo.Get();
+                crsf_envelope_out.mavlink.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MAVLINK_ENVELOPE, // 0xEA, len, 0xAA
+                &(crsf_envelope_out),
+                crsf_envelope_out.mavlink.data_size + 2);
         }
-        send_frame(
-            CRSF_FRAME_ID_MAVLINK_ENVELOPE,
-            &(mavlink_envelope_out),
-            mavlink_envelope_out.data_size + 2);
-
-        mavlink_envelop_out_sequence++;
-#else
-        crsf_mb_envelope_out.cmd = CRSF_MB_ENVELOPE_CMD;
-        crsf_mb_envelope_out.seq = crsf_mb_envelop_out_sequence;
-        crsf_mb_envelope_out.data_size = 0;
-        for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) {
-            if (!put_fifo.Available()) break;
-            crsf_mb_envelope_out.data[i] = put_fifo.Get();
-            crsf_mb_envelope_out.data_size++;
-        }
-        send_frame(
-            CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
-            &(crsf_mb_envelope_out),
-            crsf_mb_envelope_out.data_size + 3);
-
-        crsf_mb_envelop_out_sequence++;
-#endif
+        crsf_envelop_out_sequence++;
+        crsf_envelop_out_tlast_ms = tnow_ms;
 
 //dbg.puts("\nc tx ");dbg.puts(u8toHEX_s(tx_frame[0]));
 //dbg.puts(" ");dbg.puts(u8toBCD_s(tx_frame[1]));
@@ -1380,13 +1417,14 @@ uint8_t len;
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t cmd;
+    uint8_t cmd; // always 0x65
 
     uint8_t connected : 1;
     uint8_t binding : 1;
     uint8_t dualband : 1;
     uint8_t rx_available : 1;
-    uint8_t spare : 4;
+    uint8_t privacy : 2;
+    uint8_t spare : 2;
 
     uint8_t rx_actual_diversity : 4;
     uint8_t tx_actual_diversity : 4;
@@ -1405,13 +1443,15 @@ typedef struct
     uint8_t receiver_LQ_rc;
     uint8_t receiver_LQ_serial;
 
-    uint16_t bytes_transmitted;
-    uint16_t bytes_received;
+    uint32_t bytes_transmitted : 14;
+    uint32_t bytes_received : 14;
+    uint32_t spare3 : 4;
 
-    uint8_t fhss1_curr_i;
-    uint8_t fhss1_cnt;
-    uint8_t fhss2_curr_i;
-    uint8_t fhss2_cnt;
+    uint32_t fhss1_curr_i : 5;
+    uint32_t fhss1_cnt : 5;
+    uint32_t fhss2_curr_i : 5;
+    uint32_t fhss2_cnt : 5;
+    uint32_t spare4 : 12;
 }) tCrsfMbStatistics; // 18 bytes
 
 
@@ -1425,6 +1465,7 @@ tCrsfMbStatistics lstats = {};
     lstats.binding = bind.IsInBind();
     lstats.dualband = Config.IsDualBand;
     lstats.rx_available = SetupMetaData.rx_available;
+    lstats.privacy = Setup.Common[Config.ConfigId].Privacy;
 
     lstats.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
     lstats.tx_actual_diversity = Config.Diversity;
