@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-09-03', -- add a '.01' if needed for the day
+    script = '2026-09-24', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -331,6 +331,7 @@ local POPUP = {
     active = false,
     text = "",
     tend_10ms = 0,
+    is_error = false,
 }
 
 local function setPopupWTmo(txt, tmo_10ms)
@@ -346,6 +347,11 @@ local function setPopupBlocked(txt)
     POPUP.tend_10ms = -1
 end
 
+local function setPopupError(txt)
+    setPopupBlocked(txt)
+    POPUP.is_error = true
+end
+
 local function clearPopup()
     POPUP.active = false
     POPUP.tend_10ms = 0
@@ -356,8 +362,12 @@ local function clearPopupIfBlocked()
 end
 
 local function drawPopup()
-    lcd.drawFilledRectangle(LAYOUT.POPUP_X-2, LAYOUT.POPUP_Y-2, LAYOUT.POPUP_W+4, LAYOUT.POPUP_H+4, THEME.textColor) --TITLE_BGCOLOR)
-    lcd.drawFilledRectangle(LAYOUT.POPUP_X, LAYOUT.POPUP_Y, LAYOUT.POPUP_W, LAYOUT.POPUP_H, THEME.titleBgColor) --TEXT_BGCOLOR) --TITLE_BGCOLOR)
+    lcd.drawFilledRectangle(LAYOUT.POPUP_X-2, LAYOUT.POPUP_Y-2, LAYOUT.POPUP_W+4, LAYOUT.POPUP_H+4, THEME.textColor)
+    if POPUP.is_error then
+        lcd.drawFilledRectangle(LAYOUT.POPUP_X, LAYOUT.POPUP_Y, LAYOUT.POPUP_W, LAYOUT.POPUP_H, COLOR_THEME_WARNING)
+    else    
+        lcd.drawFilledRectangle(LAYOUT.POPUP_X, LAYOUT.POPUP_Y, LAYOUT.POPUP_W, LAYOUT.POPUP_H, THEME.titleBgColor)
+    end    
 
     local i = string.find(POPUP.text, "\n")
     local attr = THEME.menuTitleColor + MIDSIZE + CENTER
@@ -1521,22 +1531,16 @@ local function Do(event)
 
     doParamLoop()
 
-    -- OpenTx: must display
-    -- EdgeTx: don't display everything in param upload, EdgeTx is super slow
-    -- 20.3.2026: hm, seems to work fine now
-    if (isEdgeTx or isAX12) and DEVICE_DOWNLOAD_is_running then
+    if DEVICE_DOWNLOAD_is_running then
         if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
             if getTime() > FirstParamDownloadTmo_10ms then
-                local attr = RED+CENTER
-                if LCD_W >= 480 then attr = attr + MIDSIZE end
-                lcd.drawText(LAYOUT.W_HALF, LCD_H/4, "!! Please check if CRSF baudrate is 400k !!", attr)
+                setPopupError("Please check if\nCRSF baudrate is 400k")                
                 FirstParamDownloadTmo_10ms = 0 -- disable
             end
         end
-        if not isFirstParamDownload then drawParamDownload(); end
-        return
+    else    
+        isFirstParamDownload = false
     end
-    isFirstParamDownload = false
 
     lcd.clear()
 
