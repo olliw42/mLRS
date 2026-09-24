@@ -63,6 +63,7 @@ class tOutBase
   private:
     void send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe);
     void send_crsf_rcdata(tRcData* const rc);
+    void send_crsf_rcdata_0x17(tRcData* const rc);
     void send_crsf_linkstatistics(tOutLinkStats* const lstats);
     void do_crsf(void);
 

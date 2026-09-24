@@ -135,8 +135,9 @@ class tRxMavlink
 
     // to inject RC_CHANNELS_OVERRIDE or RADIO_RC_CHANNELS & RADIO_LINK_STATS
     bool inject_rc_channels;
-    uint16_t rc_chan[16]; // holds the rc data in MAVLink format
-    int16_t rc_chan_13b[16]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
+    uint8_t rc_len;
+    uint16_t rc_chan[32]; // holds the rc data in MAVLink format
+    int16_t rc_chan_13b[32]; // holds the rc data in MAVLink RADIO_RC_CHANNELS format
     bool rc_failsafe;
     uint32_t rc_channels_tupdated_ms; // time of last update of RC channels values
     bool rc_channels_uptodate;
@@ -190,7 +191,8 @@ void tRxMavlink::Init(void)
     bytes_link_out_rate_filt.Reset();
 
     inject_rc_channels = false;
-    for (uint8_t i = 0; i < 16; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
+    rc_len = 16;
+    for (uint8_t i = 0; i < 32; i++) { rc_chan[i] = 0; rc_chan_13b[i] = 0; }
     rc_failsafe = false;
     rc_channels_tupdated_ms = 0;
     rc_channels_uptodate = false;
@@ -230,7 +232,9 @@ void tRxMavlink::SendRcData(tRcData* const rc_out, bool frame_missed, bool fails
         }
     }
 
-    for (uint8_t i = 0; i < 16; i++) {
+    rc_len = (rc_out->do_32channels) ? RC_DATA_LEN : 16;
+    if (rc_len > 32) rc_len = 32; // should not happen, but play it safe
+    for (uint8_t i = 0; i < rc_len; i++) {
         rc_chan[i] = rc_to_mavlink(rc_out->ch[i]);
         rc_chan_13b[i] = rc_to_mavlink_13bcentered(rc_out->ch[i]);
     }
@@ -788,8 +792,8 @@ void tRxMavlink::send_radio_rc_channels(void)
 {
 int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 32
 
-    memcpy(channels, rc_chan_13b, 16*2); // for (uint8_t n = 0; n < 16; n++) channels[n] = rc_chan_13b[n];
-    for (uint8_t n = 16; n < 32; n++) channels[n] = 0;
+    memcpy(channels, rc_chan_13b, rc_len*2); // for (uint8_t n = 0; n < rc_len; n++) channels[n] = rc_chan_13b[n];
+    for (uint8_t n = rc_len; n < 32; n++) channels[n] = 0;
 
     uint8_t flags = 0;
     if (rc_failsafe) flags |= RADIO_RC_CHANNELS_FLAGS_FAILSAFE;
@@ -800,7 +804,7 @@ int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 
         RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,
         autopilot.sysid, 0, // targets, we send to our autopilot sysid only, if not known it is zero // 0, 0,
         rc_channels_tupdated_ms, flags,
-        16, channels,
+        rc_len, channels,
         //uint8_t target_system, uint8_t target_component,
         //uint32_t time_last_update_ms, uint16_t flags,
         //uint8_t count, const int16_t* channels,
