@@ -186,7 +186,6 @@ void tTxMavlink::Init(tSerialBase* const _crsfbridge)
     default:
         while(1){} // must not happen
     }
-    if (!ser) while(1){} // must not happen
 
     switch (Setup.Tx[Config.ConfigId].SerialPort2) {
     case TX_SERIAL_PORT2_SERIAL:
@@ -194,11 +193,12 @@ void tTxMavlink::Init(tSerialBase* const _crsfbridge)
     case TX_SERIAL_PORT2_WIRELESS_BRIDGE:
         ser2 = Serials.serial2; // already sorted out in serialports.Init(), can be nullptr
         break;
-    case TX_SERIAL_PORT2_CRSF_BRIDGE:
-        ser = nullptr;
+    case TX_SERIAL_PORT2_CRSF_BRIDGE: // setup sanitize() must prevent that CRSF_BRIDGE is set for both ports
         ser2 = _crsfbridge;
         break;
     }
+
+    if (!ser) while(1){} // must not happen
     if (ser == ser2) while(1){} // must not happen
 
     fmav_init();
@@ -258,7 +258,7 @@ void tTxMavlink::Do(void)
         msg_seq_initialized = false;
     }
 
-    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return;
+    if (!SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) return; // not selected
 
     // parse link in -> serial out, do it before parse_serial_in_link_out()
     parse_link_in_serial_out();
@@ -473,27 +473,21 @@ void tTxMavlink::putc(char c)
 
 bool tTxMavlink::available(void)
 {
-    if (!ser) return false; // should not happen
-
     return fifo_link_out.Available();
 }
 
 
 uint8_t tTxMavlink::getc(void)
 {
-    if (!ser) return 0; // should not happen
-
     return fifo_link_out.Get();
 }
 
 
 void tTxMavlink::flush(void)
 {
-    if (!ser) return; // should not happen
-
     fifo_link_out.Flush();
-    if (ser2) ser2->flush();
     ser->flush();
+    if (ser2) ser2->flush();
 }
 
 
