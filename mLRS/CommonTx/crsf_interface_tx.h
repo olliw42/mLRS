@@ -58,6 +58,13 @@ typedef enum {
 } TXCRSF_CMD_ENUM;
 
 
+// NOTE: not all hardware supports more than 400k (e.g. those with diodes may not)
+// TODO: I guess we want a define to enable/disable autobauding
+#define CRSF_AUTOBAUD_MS  50
+#define CRSF_AUTOBAUD_BAUDS_LEN  3
+static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 }; // 1843200 }; //
+
+
 class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
@@ -130,7 +137,19 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     volatile bool tx_free; // to signal that the tx buffer can be filled
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
-    bool startup_passed; // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
+    // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
+    // tx modules which do autobauding do this automatically
+    bool startup_passed;
+
+    // autobaud handling
+    struct {
+        bool is_running;
+        uint32_t tlast_ms;
+        uint8_t cycles_cnt;
+        uint8_t baudrate_idx;
+        uint8_t channels_received_cnt;
+    } autobaud;
+    void autobaud_do(void);
 
     // CRSF telemetry
 
@@ -448,6 +467,33 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 
 
 //-------------------------------------------------------
+// autobaud handling
+
+void tTxCrsf::autobaud_do(void)
+{
+    if (!autobaud.is_running) return;
+
+    uint32_t tnow_ms = millis32();
+
+    if (!autobaud.tlast_ms) { // this is the first occurrence, so skip
+        autobaud.tlast_ms = tnow_ms;
+    }
+
+    if ((tnow_ms - autobaud.tlast_ms) > CRSF_AUTOBAUD_MS) {
+        autobaud.tlast_ms = tnow_ms;
+        autobaud.cycles_cnt--;
+
+        INCc(autobaud.baudrate_idx, CRSF_AUTOBAUD_BAUDS_LEN); // try next baudrate
+        autobaud.channels_received_cnt = 0;
+        pin5_set_protocol(txcrsf_bauds[autobaud.baudrate_idx]);
+    }
+
+    if (autobaud.channels_received_cnt > 5) autobaud.is_running = false; // disable, sufficiently many valid frames received
+    if (!autobaud.cycles_cnt) autobaud.is_running = false; // disable, too many tries
+}
+
+
+//-------------------------------------------------------
 // CRSF user interface
 
 void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
@@ -466,6 +512,15 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
     tx_free = false;
 
     startup_passed = false;
+
+    autobaud.is_running = false;
+    autobaud.tlast_ms = 0;
+    autobaud.cycles_cnt = 20;
+    autobaud.baudrate_idx = 0;
+    autobaud.channels_received_cnt = 0;
+#if defined STM32G4 and defined ESP32
+    autobaud.is_running = true; // start with doing autobaud
+#endif
 
     channels_received = false;
     mbridge_cmd_received = false;
@@ -511,6 +566,9 @@ void tTxCrsf::Do(void)
     if (!enabled) return;
 
     CheckAndRescue();
+
+    // hook into here for autobaud
+    autobaud_do();
 
     if (!rx_frame_received) return;
     rx_frame_received = false;
@@ -587,10 +645,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 
     // check crc before we accept it
     uint8_t crc = crc8(frame.c);
-    if (crc != frame.c[frame.len + 1]) {
-DBG_CRSF_32CH(dbg.puts(" crc err");)
-      return false;
-    }
+    if (crc != frame.c[frame.len + 1]) { DBG_CRSF_32CH(dbg.puts(" crc err");) return false; }
 
     if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
 DBG_CRSF_32CH(dbg.puts(" 0x17");)
@@ -598,6 +653,7 @@ DBG_CRSF_32CH(dbg.puts(" 0x17");)
     }
 
     startup_passed = true;
+    autobaud.channels_received_cnt++;
 
     return fill_rcdata(rc);
 }
@@ -613,6 +669,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
     tx_free = false;
 
     if (!startup_passed) return false; // not yet ready to send CRSF frames to the radio
+    if (autobaud.is_running) return false; // don't send any telemetry while in startup sequence
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
