@@ -78,7 +78,10 @@ if "ESP32S3" in env.BoardConfig().get("build.mcu", "esp32").upper():
 env.Replace(UPLOADERFLAGS=[
     "-b", "$UPLOAD_SPEED", "-p", "$UPLOAD_PORT",
     "-c", chip, "--before", "no_reset", "--after", "hard_reset",
-    "write_flash", "-z", "--flash_mode", "dio", "--flash_freq", "80m",
-    "--flash_size", "detect"
+    "write_flash", "-z", "--flash_mode", "${__get_board_flash_mode(__env__)}",
+    "--flash_freq", "${__get_board_f_image(__env__)}", "--flash_size", "detect"
 ])
+# Replace() dropped the bootloader, partition table and boot_app0 images, so add them back
+for image in env.get("FLASH_EXTRA_IMAGES", []):
+    env.Append(UPLOADERFLAGS=[image[0], env.subst(image[1])])
 env.AddPreAction("upload", init_passthrough)
