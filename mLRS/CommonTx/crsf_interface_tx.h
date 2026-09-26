@@ -518,7 +518,7 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
     autobaud.cycles_cnt = 20;
     autobaud.baudrate_idx = 0;
     autobaud.channels_received_cnt = 0;
-#if defined STM32G4 and defined ESP32
+#if defined STM32G4 || defined ESP32
     autobaud.is_running = true; // start with doing autobaud
 #endif
 
