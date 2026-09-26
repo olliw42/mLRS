@@ -90,7 +90,7 @@
 
 #define SX_RESET                  IO_PC14
 #define SX_DIO                    IO_PA15
-#define SX_DIO1                   // I believe it doesn't have a connection to DIO1
+//#define SX_DIO1                 // I believe it doesn't have a connection to DIO1
 #define SX_SWITCH_RX_EN           IO_PB3
 #define SX_PA_EN                  IO_PA6
 

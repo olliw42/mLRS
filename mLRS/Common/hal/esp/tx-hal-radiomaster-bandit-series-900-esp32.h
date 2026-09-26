@@ -101,19 +101,22 @@
 #define SPI_MISO                  IO_P19
 #define SPI_MOSI                  IO_P23
 #define SPI_SCK                   IO_P18
-#define SPI_FREQUENCY             10000000L
+#define SPI_FREQUENCY             8000000L // FSK FIFO writes fail at 10 MHz
 #define SX_RESET                  IO_P5
 #define SX_DIO                    IO_P22
+#define SX_DIO1                   IO_P21
 #define SX_TX_EN                  IO_P33
 
 #define SX_USE_RFO
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
+IRQHANDLER(void SX_DIO1_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
     gpio_init(SX_DIO, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_DIO1, IO_MODE_INPUT_ANALOG);
     gpio_init(SX_TX_EN, IO_MODE_OUTPUT_PP_LOW);
 }
 
@@ -123,6 +126,10 @@ IRAM_ATTR void sx_amp_receive(void) { gpio_low(SX_TX_EN); }
 void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO, SX_DIO_EXTI_IRQHandler, RISING); }
 void sx_dio_init_exti_isroff(void) { detachInterrupt(SX_DIO); }
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
+
+void sx_dio1_enable_exti_isr(void) { attachInterrupt(SX_DIO1, SX_DIO1_EXTI_IRQHandler, CHANGE); }
+void sx_dio1_init_exti_isroff(void) { detachInterrupt(SX_DIO1); }
+IRAM_ATTR void sx_dio1_exti_isr_clearflag(void) {}
 
 
 //-- In port

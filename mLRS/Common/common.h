@@ -317,6 +317,24 @@ tRxFrame rxFrame, rxFrame2;
 SX_DRIVER sx;
 SX2_DRIVER sx2;
 
+#ifdef DEVICE_HAS_SX127x_FSK
+// DIO1 is FifoLevel in FSK mode, needed to stream frames larger than the SX127x FIFO
+IRQHANDLER(
+void SX_DIO1_EXTI_IRQHandler(void)
+{
+    sx_dio1_exti_isr_clearflag();
+    sx.HandleDio1Irq();
+})
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI
+IRQHANDLER(
+void SX2_DIO1_EXTI_IRQHandler(void)
+{
+    sx2_dio1_exti_isr_clearflag();
+    sx2.HandleDio1Irq();
+})
+#endif
+#endif
+
 tStats stats;
 tFhss fhss;
 tBindBase bind;
