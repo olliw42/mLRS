@@ -118,6 +118,13 @@ typedef enum {
     MSP2_COMMON_SET_MSP_RC_LINK_STATS   = 0x100D, // 4109
     MSP2_COMMON_SET_MSP_RC_INFO         = 0x100E, // 4110
 
+    MSP2_SENSOR_RANGEFINDER             = 0x1F01,
+    MSP2_SENSOR_OPTIC_FLOW              = 0x1F02,
+    MSP2_SENSOR_GPS                     = 0x1F03,
+    MSP2_SENSOR_COMPASS                 = 0x1F04,
+    MSP2_SENSOR_BAROMETER               = 0x1F05,
+    MSP2_SENSOR_AIRSPEED                = 0x1F06,
+
     MSP2_INAV_STATUS                    = 0x2000,
     MSP2_INAV_ANALOG                    = 0x2002,
     MSP2_INAV_MISC                      = 0x2003,
@@ -127,13 +134,6 @@ typedef enum {
     MSP2_INAV_LOGIC_CONDITIONS_STATUS   = 0x2026, // 8230, len = 256
     MSP2_INAV_MISC2                     = 0x203A,
     MSP2_INAV_LED_STRIP_CONFIG_EX       = 0x2048, // 8264, len = 640
-
-    MSP2_SENSOR_RANGEFINDER             = 0x1F01,
-    MSP2_SENSOR_OPTIC_FLOW              = 0x1F02,
-    MSP2_SENSOR_GPS                     = 0x1F03,
-    MSP2_SENSOR_COMPASS                 = 0x1F04,
-    MSP2_SENSOR_BAROMETER               = 0x1F05,
-    MSP2_SENSOR_AIRSPEED                = 0x1F06,
 
     MSP2_RX_BIND                        = 0x3001, // 12289, len = 4
 } MSP_FUNCTION_ENUM;
