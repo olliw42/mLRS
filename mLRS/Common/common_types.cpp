@@ -124,6 +124,12 @@ uint16_t rc_from_crsf(uint16_t crsf_ch)
 }
 
 
+uint16_t rc_from_crsf_0x17_11bit(uint16_t crsf_ch)
+{
+    return clip_rc(crsf_ch);
+}
+
+
 uint16_t rc_to_sbus(uint16_t rc_ch)
 {
     return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 992;
@@ -133,6 +139,12 @@ uint16_t rc_to_sbus(uint16_t rc_ch)
 uint16_t rc_to_crsf(uint16_t rc_ch)
 {
     return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 992;
+}
+
+
+uint16_t rc_to_crsf_0x17_11bit(uint16_t rc_ch)
+{
+    return rc_ch;
 }
 
 
