@@ -489,9 +489,11 @@ void tTxCrsf::Do(void)
         case CRSF_COMMAND_SET_BIND_MODE: // len = 7
             // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
             if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+            break;
         case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
             // not used by EdgeTx
             if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+            break;
         case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
             // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
             cmd_modelid_received = true;
