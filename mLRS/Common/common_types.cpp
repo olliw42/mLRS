@@ -214,11 +214,13 @@ uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8)
 }
 
 
-// tx module side: OpenTx/EdgeTx radios can handle rssi as negative value, and this seems to be preferred
+// tx module side: EdgeTx/OpenTx radios can handle rssi as negative value, and this seems to be preferred
+// attention: -1 is treated by EdgeTx as invalid result, which makes it ignoreing it
 uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
-    if (rssi_i8 > RSSI_MAX) return RSSI_MAX; // limit to -1
+//    if (rssi_i8 > RSSI_MAX) return RSSI_MAX; // limit to -1
+    if (rssi_i8 > -2) return -2; // limit to -2
     return rssi_i8;
 }
 

@@ -62,7 +62,7 @@ typedef enum {
 // TODO: I guess we want a define to enable/disable autobauding
 #define CRSF_AUTOBAUD_MS  50
 #define CRSF_AUTOBAUD_BAUDS_LEN  3
-static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 }; // 1843200 }; //
+static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 }; // 1843200
 
 
 class tTxCrsf : public tPin5BridgeBase, public tSerialBase
@@ -1349,23 +1349,24 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
 // somehow the OpenTx naming/usage doesn't make fully sense
 // so we "correct" things here such that the names make sense, irrespective of uplink/downlink notation
 
+// 26.Sep.2026: all stats reworked according to EdgeTx v2.12.4
+
 void tTxCrsf::SendLinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
-    clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);           // OpenTX -> "1RSS"
-    clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
-    clstats.uplink_LQ = stats.GetReceivedLQ_rc(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
-    clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
-    clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
-    clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(                         // OpenTx -> "TPw2"
+    clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);     // EdgeTX -> "1RSS"   dBm
+    clstats.uplink_rssi2 = UINT8_MAX;                                 // EdgeTX -> "2RSS"   dBm,  we don't know it
+    clstats.uplink_LQ = stats.GetReceivedLQ_rc();                     // EdgeTx -> "RQly"   %     this sets main rssi, 0 = resets main rssi
+    clstats.uplink_snr = UINT8_MAX;                                   // EdgeTx -> "RSNR"   dB,   we don't know it
+    clstats.active_antenna = stats.received_antenna;                  // EdgeTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                        // EdgeTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(                   // EdgeTx -> "TPWR"   mW    ?OpenTx -> "TPw2"
         SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm())
         );
-
-    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());          // OpenTx -> "TRSS"
-    clstats.downlink_LQ = stats.GetLQ_serial();                             // OpenTx -> "TQly"
-    clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
+    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());    // EdgeTx -> "TRSS"   dBm
+    clstats.downlink_LQ = stats.GetLQ_serial();                       // EdgeTx -> "TQly"   %
+    clstats.downlink_snr = stats.GetLastSnr();                        // EdgeTx -> "TSNR"   dB
 
     // misuse 2RSS for reporting the MAVLink packet link quality
     clstats.uplink_rssi2 = stats.GetMavlinkLQ();
@@ -1374,38 +1375,39 @@ tCrsfLinkStatistics clstats;
 }
 
 
-void tTxCrsf::SendLinkStatisticsTx(void)
-{
-tCrsfLinkStatisticsTx clstats;
-
-    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(                          // OpenTx -> "TRSP" // ??? uplink but "T" ??
-        stats.GetLastRssi(),
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
-        );
-    clstats.uplink_LQ = stats.GetLQ_serial();                                     // ignored by OpenTx
-    clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
-    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
-    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
-
-    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
-}
-
-
 void tTxCrsf::SendLinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
-    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(                        // OpenTx -> "RRSP" // ??? downlink but "R" ??
+    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);    // ignored by EdgeTx
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(            // EdgeTx -> "RRSP"   %     ?downlink but "R"?
         stats.received_rssi,
         SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
         );
-    clstats.downlink_LQ = stats.GetReceivedLQ_rc();                               // ignored by OpenTx
-    clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
-    clstats.uplink_transmit_power = SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());// OpenTx -> "TPWR"
+    clstats.downlink_LQ = stats.GetReceivedLQ_rc();                   // ignored by EdgeTx
+    clstats.downlink_snr = UINT8_MAX;                                 // ignored by EdgeTx,       we don't know it
+    clstats.uplink_transmit_power =                                   // EdgeTx -> "TPWR"   dBm
+        SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS_RX, &clstats, CRSF_LINK_STATISTICS_RX_LEN);
+}
+
+
+void tTxCrsf::SendLinkStatisticsTx(void)
+{
+tCrsfLinkStatisticsTx clstats;
+
+    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());      // ignored by EdgeTx
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(              // EdgeTx -> "TRSP"   %     ?uplink but "T"?
+        stats.GetLastRssi(),
+        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        );
+    clstats.uplink_LQ = stats.GetLQ_serial();                         // ignored by EdgeTx
+    clstats.uplink_snr = stats.GetLastSnr();                          // ignored by EdgeTx
+    clstats.downlink_transmit_power = UINT8_MAX;                      // EdgeTx -> "RPWR"   dBm,  we don't know it
+    clstats.uplink_fps = crsf_cvt_fps(Config.Mode);                   // EdgeTx -> "TFPS"   Hz,   *10
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
 }
 
 

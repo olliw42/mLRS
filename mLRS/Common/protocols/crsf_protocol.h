@@ -320,16 +320,16 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t uplink_rssi1;               // OpenTX -> "1RSS"
-    uint8_t uplink_rssi2;               // OpenTX -> "2RSS"
-    uint8_t uplink_LQ;                  // OpenTx -> "RQly"
-    int8_t uplink_snr;                  // OpenTx -> "RSNR"
-    uint8_t active_antenna;             // OpenTx -> "ANT"
-    uint8_t mode;                       // OpenTx -> "RFMD"
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPw2", in CRSF units
-    uint8_t downlink_rssi;              // OpenTx -> "TRSS"
-    uint8_t downlink_LQ;                // OpenTx -> "TQly"
-    int8_t downlink_snr;                // OpenTx -> "TSNR"
+    uint8_t uplink_rssi1;               // EdgeTx -> "1RSS"   dBm
+    uint8_t uplink_rssi2;               // EdgeTx -> "2RSS"   dBm
+    uint8_t uplink_LQ;                  // EdgeTx -> "RQly"   %
+    int8_t uplink_snr;                  // EdgeTx -> "RSNR"   dB
+    uint8_t active_antenna;             // EdgeTx -> "ANT"
+    uint8_t mode;                       // EdgeTx -> "RFMD"
+    uint8_t uplink_transmit_power;      // EdgeTx -> "TPWR"   mW    ?OpenTx -> "TPw2", in CRSF units
+    uint8_t downlink_rssi;              // EdgeTx -> "TRSS"   dBm
+    uint8_t downlink_LQ;                // EdgeTx -> "TQly"   %
+    int8_t downlink_snr;                // EdgeTx -> "TSNR"   dB
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
@@ -360,10 +360,10 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t downlink_rssi;
-    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
+    uint8_t downlink_rssi_percent;      // EdgeTx -> "RRSP"   %
     uint8_t downlink_LQ;
     int8_t downlink_snr;
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
+    uint8_t uplink_transmit_power;      // EdgeTx -> "TPWR"   dBm   !duplicate name!
 }) tCrsfLinkStatisticsRx;
 
 #define CRSF_LINK_STATISTICS_RX_LEN  5
@@ -382,11 +382,11 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t uplink_rssi;
-    uint8_t uplink_rssi_percent;        // OpenTx -> "TRSP"
+    uint8_t uplink_rssi_percent;        // EdgeTx -> "TRSP"   %
     uint8_t uplink_LQ;
     int8_t uplink_snr;
-    uint8_t downlink_transmit_power;    // OpenTx -> "RPWR"
-    uint8_t uplink_fps;                 // OpenTx -> "TFPS"
+    uint8_t downlink_transmit_power;    // EdgeTx -> "RPWR"   dBm
+    uint8_t uplink_fps;                 // EdgeTx -> "TFPS"   Hz
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
