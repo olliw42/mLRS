@@ -135,6 +135,8 @@ typedef enum {
     MSP2_INAV_MISC2                     = 0x203A,
     MSP2_INAV_LED_STRIP_CONFIG_EX       = 0x2048, // 8264, len = 640
 
+    MSP2_INAV_SET_AUX_RC                = 0x2230, // 8752
+
     MSP2_RX_BIND                        = 0x3001, // 12289, len = 4
 } MSP_FUNCTION_ENUM;
 
@@ -403,6 +405,33 @@ typedef struct
 }) tMspSetRawRc; // 32 bytes
 
 #define MSP_SET_RAW_RC_LEN  32
+
+
+// MSP2_INAV_SET_AUX_RC  0x2230, // 8752
+MSP_PACKED(
+typedef struct
+{
+    uint8_t resolutionMode : 3;                 // 0: 2 bit, 1: 4 bit, 2: 8 bit, 3: 16 bit, 4-7: reserved/error
+    uint8_t startChannel : 5;                   // 12 - 31: CH13 - CH32, 0 - 11: rejected as error
+    uint32_t ch0 : 2;                           // 0: ignore (no update), 1: 1000. 2: 1500, 3: 2000
+    uint32_t ch1 : 2;
+    uint32_t ch2 : 2;
+    uint32_t ch3 : 2;
+    uint32_t ch4 : 2;
+    uint32_t ch5 : 2;
+    uint32_t ch6 : 2;
+    uint32_t ch7 : 2;
+    uint32_t ch8 : 2;
+    uint32_t ch9 : 2;
+    uint32_t ch10 : 2;
+    uint32_t ch11 : 2;
+    uint32_t ch12 : 2;
+    uint32_t ch13 : 2;
+    uint32_t ch14 : 2;
+    uint32_t ch15 : 2;
+}) tMspInavSetAuxRc_16x2bit; // 5 bytes
+
+#define MSP_INAV_SET_AUX_RC_16X2BIT  5
 
 
 // MSP2_COMMON_SET_MSP_RC_LINK_STATS  0x100D, // 4109
