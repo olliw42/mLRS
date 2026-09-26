@@ -200,24 +200,24 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 //-- POWER
 
 // ELRS power_values [-18,-16,-13,-10,-5] for 10,25,50,100,250 mW, i.e. 28...30 dB PA gain
-void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
+void sx128x_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm)
 {
-        if (power_dbm >= POWER_24_DBM) {
-            *sx_power = -5;
-            *actual_power_dbm = 24;
-        } else if (power_dbm >= POWER_20_DBM) {
-            *sx_power = -10;
-            *actual_power_dbm = 20;
-        } else if (power_dbm >= POWER_17_DBM) {
-            *sx_power = -13;
-            *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) {
-            *sx_power = -16;
-            *actual_power_dbm = 14;
-        } else {
-            *sx_power = -18;
-            *actual_power_dbm = 10;
-        }
+    if (power_dbm >= POWER_24_DBM) {
+        *sx_power = -5;
+        *actual_power_dbm = 24;
+    } else if (power_dbm >= POWER_20_DBM) {
+        *sx_power = -10;
+        *actual_power_dbm = 20;
+    } else if (power_dbm >= POWER_17_DBM) {
+        *sx_power = -13;
+        *actual_power_dbm = 17;
+    } else if (power_dbm >= POWER_14_DBM) {
+        *sx_power = -16;
+        *actual_power_dbm = 14;
+    } else {
+        *sx_power = -18;
+        *actual_power_dbm = 10;
+    }
 }
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
