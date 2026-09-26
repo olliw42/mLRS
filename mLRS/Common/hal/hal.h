@@ -363,6 +363,10 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 
+#if defined DEVICE_HAS_SX127x && defined SX_DIO1
+  #define DEVICE_HAS_SX127x_FSK // FSK needs the DIO1 FifoLevel irq to stream frames larger than the FIFO
+#endif
+
 #if defined DEVICE_HAS_SX126x || defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x
   #define SX_DRIVER Sx126xDriver
 #elif defined DEVICE_HAS_SX127x

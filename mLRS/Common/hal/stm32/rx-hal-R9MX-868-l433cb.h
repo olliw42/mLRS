@@ -82,7 +82,7 @@
 
 #define SX_RESET                  IO_PC14
 #define SX_DIO                    IO_PA15
-#define SX_DIO1                   // IO_PA1 ???
+//#define SX_DIO1                 // IO_PA1 ???
 #define SX_RX_EN                  //
 #define SX_TX_EN                  //
 
