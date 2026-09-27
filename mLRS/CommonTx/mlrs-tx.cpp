@@ -1042,8 +1042,10 @@ IF_SX2(
                     if (!connect_occured_once) {
                         stats.JustConnected();
                     }
-                    connect_state = CONNECT_STATE_CONNECTED;
-                    connect_occured_once = true;
+                    if (!crypto.InvalidKeys()) { // can't connect if crypto doesn't allow
+                        connect_state = CONNECT_STATE_CONNECTED;
+                        connect_occured_once = true;
+                    }
                 }
                 break;
             }

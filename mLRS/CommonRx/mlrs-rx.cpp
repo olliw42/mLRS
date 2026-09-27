@@ -848,7 +848,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
                 }
-                if (connect_sync_cnt >= connect_sync_cnt_max) {
+                if (connect_sync_cnt >= connect_sync_cnt_max && !crypto.InvalidKeys()) { // can't connect if crypto doesn't allow
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }

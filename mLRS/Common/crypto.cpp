@@ -46,6 +46,10 @@ void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], ui
     _role = role;
     _privacy_level = 0;
 
+    // static secrets
+
+    _static_random = tx_random;
+
     memset(_static, 0, sizeof(_static));
     memcpy(_static,                   "mLRS key",    8); //  8 bytes
     memcpy(_static + 8,               bind_phrase,   6); //  6 bytes
@@ -53,26 +57,27 @@ void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], ui
     memcpy(_static + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
     memcpy(_static + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
 
-    // is reused on each Tx power cycle, if there is concern, re-bind. TODO: should we set it randomly?
-    _static_nonce_u32 = 0;
+    crypto_blake2b(_static_key, 32, _static, 46); // construct static key
+
+    _static_nonce_u32 = 0; // is reused on each Tx power cycle, if there is concern, re-bind
+
+    // session secrets
 
     _random = 0;
-    _random_valid = false; // session key not yet set
+    _random_has_been_set = false; // session key not yet set
 
     memset(_key, 0, sizeof(_key));
     memset(_nonce, 0, sizeof(_nonce));
     _nonce_len = 0;
     _nonce_u32 = 0;
 
+    memcpy(_key, _static_key, 32); // set key to static key to have some default
+
+    // auxiliary
+
     _nonce_u32_last_received = 0;
 
     _decrypt_ok = true;
-
-    // construct static key
-    crypto_blake2b(_static_key, 32, _static, 46);
-
-    // set key to static key to have some default
-    memcpy(_key, _static_key, 32);
 
     // statistics
     mac_errors = 0;
@@ -88,6 +93,12 @@ void tCrypto::SetPrivacyLevel(uint8_t privacy_level)
 }
 
 
+bool tCrypto::InvalidKeys(void) // to tell Tx or Rx that they can't connect
+{
+    return (_privacy_level > 0 && (_static_random == UINT64_MAX || _random == UINT64_MAX));
+}
+
+
 //-- handle session random and session key
 // The session random is transmitted encrypted, in the following format:
 //  0 ..  7: 8 bytes random
@@ -100,10 +111,8 @@ void tCrypto::SetSessionKey(uint64_t random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
-    if (random == 0 || random == UINT64_MAX) return; // don't accept these, should not happen TODO: what to do if it does?
-
     _random = random;
-    _random_valid = true;
+    _random_has_been_set = true;
 
     memcpy(key_source,      _static,  46); // 46 bytes
     memcpy(key_source + 46, &_random,  8); //  8 bytes // sum = 54 bytes
@@ -118,8 +127,6 @@ void tCrypto::GetEncryptedRandom(uint8_t random[16])
 uint8_t nonce_buf[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
-
-    if (!_random_valid) while(1){} // must not happen, must have been set before, just to ensure proper code flow
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, &_static_nonce_u32, 4);
@@ -145,7 +152,7 @@ uint8_t poly1305_key[32];
 uint8_t mac[16];
 uint64_t rand;
 
-    if (_random_valid) return; // has been set already
+    if (_random_has_been_set) return; // has been set already
 
     memset(nonce_buf, 0, 12);
     memcpy(nonce_buf, random + 8, 4); // random[8] ... random[11]
@@ -179,7 +186,7 @@ void tCrypto::Disconnected(void)
     // currently: for privacy level >= 2, session key stays always persistent
 
     if (_privacy_level <= 1) { // accept potentially new session random/session key
-        _random_valid = false;
+        _random_has_been_set = false;
     }
 }
 
