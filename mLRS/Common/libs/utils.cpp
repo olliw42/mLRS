@@ -58,6 +58,18 @@ int16_t i, len; // int16 to avoid underflow in len -1
 }
 
 
+// replacement for atoi(), which via strtol() pulls in _impure_data & stdio buffers (~390 bytes RAM)
+int32_t atoi32(const char* s)
+{
+    while (*s == ' ' || *s == '\t') s++;
+    bool neg = (*s == '-');
+    if (*s == '-' || *s == '+') s++;
+    int32_t v = 0;
+    while (*s >= '0' && *s <= '9') v = 10 * v + (*s++ - '0');
+    return (neg) ? -v : v;
+}
+
+
 //-- time functions
 
 // convert unix time (seconds since 1970, UTC) to date & time

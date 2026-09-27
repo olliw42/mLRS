@@ -105,6 +105,12 @@
 #endif
 
 
+// overrides newlib's __errno(), which drags in _impure_data & stdio buffers (~390 bytes RAM)
+// errno is set e.g. by sqrtf(), asinf()
+static int _mlrs_errno;
+extern "C" int* __errno(void) { return &_mlrs_errno; }
+
+
 
 // setup(), loop() streamlining between Arduino/STM code
 uint8_t restart_controller = 0;

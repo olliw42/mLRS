@@ -606,9 +606,9 @@ char ss[32];
                  ss[pos] = '\0';
             } else {
                 switch (state) {
-                case 1: major = atoi(ss); break;
-                case 3: minor = atoi(ss); break;
-                case 5: patch = atoi(ss); break;
+                case 1: major = atoi32(ss); break;
+                case 3: minor = atoi32(ss); break;
+                case 5: patch = atoi32(ss); break;
                 }
                 state++;
             }

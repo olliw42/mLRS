@@ -20,6 +20,7 @@ void strstrbufcpy(char* const res, const char* const src, uint16_t len);
 bool strbufeq(char* const s1, const char* const s2, uint16_t len);
 
 void remove_leading_zeros(char* const s);
+int32_t atoi32(const char* s);
 
 
 //-- time functions

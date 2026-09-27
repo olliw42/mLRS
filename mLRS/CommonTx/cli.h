@@ -250,7 +250,7 @@ bool param_set_val_fromstr(bool* const rx_param_changed, char* const svalue, uin
     switch (SetupParameter[param_idx].type) {
     case SETUP_PARAM_TYPE_INT8:
     case SETUP_PARAM_TYPE_LIST:{
-        int32_t value = atoi(svalue);
+        int32_t value = atoi32(svalue);
         return param_set_val_fromint(rx_param_changed, value, param_idx);
         }break;
     case SETUP_PARAM_TYPE_STR6:
@@ -443,7 +443,7 @@ uint8_t n;
     s[0] = '0'; // trick to make it easy
     for (uint8_t i = 0; i < strlen(s); i++) if (!isdigit(s[i])) return false;
 
-    *value = atoi(s);
+    *value = atoi32(s);
 
     return true;
 }
