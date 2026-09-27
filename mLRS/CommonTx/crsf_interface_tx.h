@@ -1153,7 +1153,8 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
         }break;
 
     case MSPX_STATUS: { // this is send by the rx shortly after MSP2_INAV_STATUS
-        uint32_t flight_mode_flags = *(uint32_t*)(msg->payload);
+        uint32_t flight_mode_flags;
+        memcpy(&flight_mode_flags, msg->payload, 4); // payload may not be 4-byte aligned
         inav_flight_mode_str5(flight_mode.flight_mode, flight_mode_flags, msp_inav_status_arming_flags);
         crsf_status[CRSF_ITEM_FLIGHT_MODE].updated = true;
         }break;
