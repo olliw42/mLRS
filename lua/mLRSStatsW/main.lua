@@ -27,6 +27,7 @@ ui.COLOR_EARTH = lcd.RGB(107, 142, 35)
 
 local mbStats = nil    
 local mbRssiList = nil
+local mbRssiListCountLast = 0
 
 
 local function decodeCrsfMbStatistics(command, packet)
@@ -74,9 +75,10 @@ local function decodeCrsfMbStatistics(command, packet)
     mbStats.fhss2_curr_i = (b >> 10) & 0x1F
     mbStats.fhss2_cnt    = (b >> 15) & 0x1F
     
-    if mbRssiList == nil then
+    if mbRssiList == nil or mbStats.fhss1_cnt ~= mbRssiListCountLast then
         mbRssiList = {}
         for i = 0, mbStats.fhss1_cnt - 1 do mbRssiList[i] = { rssi1 = 0, rssi2 = 0 } end
+        mbRssiListCountLast = mbStats.fhss1_cnt
     end    
     mbRssiList[mbStats.fhss1_curr_i] = { rssi1 = mbStats.rssi1, rssi2 = mbStats.rssi2 }
 end
@@ -192,13 +194,13 @@ local function drawIt(widget, event)
     x = 70
     y = 260
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_LIGHTGREY)
-    lcd.drawLine(x - 10, y, x + 23*15 + 10, y, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(x - 10, y - (110 - 90), x + 23*15 + 10, y - (110 - 90), SOLID, CUSTOM_COLOR)
-    lcd.drawLine(x - 10, y - (110 - 50), x + 23*15 + 10, y - (110 - 50), SOLID, CUSTOM_COLOR)
-    lcd.drawText(x-35, y-10, "-110", CUSTOM_COLOR+SMLSIZE)
-    lcd.drawText(x-35, y-10-20, "-90", CUSTOM_COLOR+SMLSIZE)
-    lcd.drawText(x-35, y-10-60, "-50", CUSTOM_COLOR+SMLSIZE)
-    
+    lcd.drawLine(x - 10, y, x + 24*15 + 10, y, SOLID, CUSTOM_COLOR)
+    lcd.drawLine(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90), SOLID, CUSTOM_COLOR)
+    lcd.drawLine(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50), SOLID, CUSTOM_COLOR)
+    lcd.drawText(x-15, y-9, "-110", CUSTOM_COLOR+RIGHT+SMLSIZE)
+    lcd.drawText(x-15, y-9-20, "-90", CUSTOM_COLOR+RIGHT+SMLSIZE)
+    lcd.drawText(x-15, y-9-60, "-50", CUSTOM_COLOR+RIGHT+SMLSIZE)
+
     if mbRssiList == nil then return end
     
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_YELLOW)
@@ -250,14 +252,9 @@ end
 
 
 local function refresh(widget, event, touchState)
-    local command, packet = nil, nil
     while true do
-        local c, p = crossfireTelemetryPop()
-        if c == nil or p == nil then break end
-        command = c
-        packet = p
-    end
-    if command ~= nil and packet ~= nil then
+         local command, packet = crossfireTelemetryPop()
+        if command == nil or packet == nil then break end
         decodeCrsfMbStatistics(command, packet)
     end
 
