@@ -27,16 +27,27 @@ You of course use the project fully at your own risk.
 
 There is still plenty of room for ideas and improvement, and in this sense the project is work in progress. It is however fair to call it stable and robust, and to perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX (formerly MAVLink for OpenTx) project, which yields a most fluid user experience.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX<sup>e</sup> project.
 
 It supports the SX1280/1, SX1276, SX1262, LLCC68, LR1121 and LR2021 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
-It provides 16 RC channels with the following layout (layout is equal in all operation modes):
-- CH1 - CH8: 8 channels with 11 bit resolution (CH1 - CH4 have a higher reliability margin)
-- CH9 - CH12: 4 channels with 8 bit resolution
-- CH13 - CH16: 4 channels with three steps (CH13, CH14 have a higher reliability margin) 
+### RC Channels Layout
 
-It provides these operation modes:
+mLRS supports two RC channel configurations: 16 channels and 32 channels.
+
+The 16-channel configuration provides the following channel layout (all channels are non-interlaced):
+- CH1 - CH8: 8 channels with 11-bit resolution (CH1 - CH4 have higher reception probability)
+- CH9 - CH12: 4 channels with 8-bit resolution
+- CH13 - CH16: 4 channels with three-position values (CH13, CH14 have higher reception probability)
+
+The 32-channel configuration provides the following channel layout:
+- CH1 - CH8: 8 channels with 11-bit resolution and higher reception probability (non-interlaced)
+- CH9 - CH16: 8 channels with 8-bit resolution (interlaced 1:2)
+- CH17 - CH32: 16 channels with three-position values (interlaced 1:4)
+
+### Operation Modes
+
+mLRS provides these operation modes:
 
 |  | 50 Hz | 31 Hz | 19 Hz | 19 Hz 7x | FLRC (111 Hz) | FSK (50 Hz) |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -46,7 +57,8 @@ It provides these operation modes:
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | -112 dBm | not for LR | not for LR |
 
-Further features:
+### Further Features
+
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
 - dual band: mLRS transmitters and receivers with two Semtech Lora chips working in different RF bands are supported (e.g. 2.4 GHz and 915/868 MHz). These provide full diversity, with simultaneous transmission on both RF bands in addition. 
 - adaptive ARQ/retransmission.
@@ -62,7 +74,6 @@ Further features:
     - MavlinkX for reduced packet loss and data compression
 - support of MSP and optimizations for INAV autopilot systems. Enables using the INAV telemetry widget, in-flight connection to the INAV configurator or MWP ground control, supports MSP-RC, and introduces MspX for reduced packet loss.
 - "except" and "ortho" features
-- support for buzzer, OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121, LR2021.
 
