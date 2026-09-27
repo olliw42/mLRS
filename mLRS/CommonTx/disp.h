@@ -195,6 +195,10 @@ class tTxDisp
 
 void tTxDisp::Init(void)
 {
+#ifdef DISPLAY_INIT
+    display_init();
+#endif
+
     i2c_init();
     i2c_setdeviceadr(SSD1306_ADR);
     initialized = (i2c_device_ready() == HAL_OK);

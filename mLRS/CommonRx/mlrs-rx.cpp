@@ -623,6 +623,7 @@ INITCONTROLLER_END
         }
 
         leds.Tick_ms(connected());
+        rfpower.Tick_ms();
 
         DECc(tick_1hz, SYSTICK_DELAY_MS(1000));
 

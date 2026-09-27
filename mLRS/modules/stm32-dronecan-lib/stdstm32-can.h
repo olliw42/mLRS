@@ -11,6 +11,8 @@
 // CAN_USE_FDCAN2_PB5PB6
 // CAN_USE_FDCAN_CLOCK_PCLK1
 // CAN_USE_FDCAN_CLOCK_PLL
+//
+// CAN_STB_NORMAL_LOW: CAN transceiver with STB pin
 //*******************************************************
 #ifndef STDSTM32_CAN_H
 #define STDSTM32_CAN_H
@@ -49,6 +51,25 @@ extern "C" {
 
 #define CAN_BITRATE             1000000
 #define CAN_FD_DATA_BITRATE     4000000
+
+
+//-------------------------------------------------------
+// Handler routines
+//-------------------------------------------------------
+
+#ifdef CAN_STB_NORMAL_LOW
+
+void can_stb_standby_mode(void)
+{
+    gpio_high(CAN_STB_NORMAL_LOW);
+}
+
+void can_stb_normal_mode(void)
+{
+    gpio_low(CAN_STB_NORMAL_LOW);
+}
+
+#endif
 
 
 //-------------------------------------------------------
@@ -118,6 +139,10 @@ void can_init(uint8_t canfd_enable) // canfd_enable is ignored, STM32F1 is class
 
 void can_init(uint8_t canfd_enable)
 {
+#ifdef CAN_STB_NORMAL_LOW
+    gpio_init(CAN_STB_NORMAL_LOW, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_DEFAULT); // standby mode
+#endif
+
     // GPIO initialization
     // PA11 = FDCAN1_RX
     // PA12 = FDCAN1_TX
@@ -185,6 +210,10 @@ void can_init(uint8_t canfd_enable)
         DBG_DC(dbg.puts("\nERROR: Failed to open CAN iface ");dbg.puts(s16toBCD_s(res));)
         return;
     }
+
+#ifdef CAN_STB_NORMAL_LOW
+    gpio_low(CAN_STB_NORMAL_LOW); // normal mode
+#endif
 }
 
 #endif // STM32G4
