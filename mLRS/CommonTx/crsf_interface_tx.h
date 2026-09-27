@@ -766,15 +766,24 @@ void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
     // SYSTEM_TIME.time_unix_usec is != 0 if AP::rtc() gives a value, so not GPS time strictly
     if (payload->time_unix_usec == 0) return; // not available
 
-    time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
-    struct tm* time_info = gmtime(&time_unix); // UTC
+    uint32_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970, UTC
+    uint32_t secs = time_unix % 86400;
 
-    gps_time.year = CRSF_REV_U16(time_info->tm_year + 1900); // EdgeTx since v2.12.?=? -> Date
-    gps_time.month = time_info->tm_mon + 1;
-    gps_time.day = time_info->tm_mday;
-    gps_time.hour = time_info->tm_hour;
-    gps_time.minute = time_info->tm_min;
-    gps_time.second = time_info->tm_sec;
+    // days to civil date (H. Hinnant's algorithm), avoids gmtime() which pulls in malloc & stdio
+    uint32_t days = time_unix / 86400 + 719468; // shift epoch to 0000-03-01
+    uint32_t era = days / 146097;
+    uint32_t doe = days - era * 146097;
+    uint32_t yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    uint32_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    uint32_t mp = (5 * doy + 2) / 153;
+    uint32_t month = (mp < 10) ? mp + 3 : mp - 9;
+
+    gps_time.year = CRSF_REV_U16(era * 400 + yoe + (month <= 2)); // EdgeTx since v2.12.?=? -> Date
+    gps_time.month = month;
+    gps_time.day = doy - (153 * mp + 2) / 5 + 1;
+    gps_time.hour = secs / 3600;
+    gps_time.minute = (secs / 60) % 60;
+    gps_time.second = secs % 60;
     gps_time.millisecond = CRSF_REV_U16((payload->time_unix_usec % 1000000) / 1000);
 
     crsf_status[CRSF_ITEM_GPS_TIME].updated = true;
