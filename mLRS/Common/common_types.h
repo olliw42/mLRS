@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include "setup_types.h"
+#include "libs/utils.h"
 
 
 #define ARRAY_LEN(x)  sizeof(x)/sizeof(x[0])
@@ -210,15 +211,6 @@ typedef enum {
     KEY_RIGHT,
     KEY_CENTER,
 } KEY_ENUM;
-
-
-//-- auxiliary functions
-
-void strbufstrcpy(char* const res, const char* const src, uint16_t len);
-void strstrbufcpy(char* const res, const char* const src, uint16_t len);
-bool strbufeq(char* const s1, const char* const s2, uint16_t len);
-
-void remove_leading_zeros(char* const s);
 
 
 #endif // COMMON_TYPES_H

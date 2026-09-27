@@ -17,7 +17,6 @@
 #ifdef DEVICE_HAS_JRPIN5
 
 #include "math.h"
-#include "time.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include "../Common/protocols/passthrough_protocol.h"
@@ -766,15 +765,15 @@ void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
     // SYSTEM_TIME.time_unix_usec is != 0 if AP::rtc() gives a value, so not GPS time strictly
     if (payload->time_unix_usec == 0) return; // not available
 
-    time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
-    struct tm* time_info = gmtime(&time_unix); // UTC
+    tDateTime dt;
+    datetime_from_unix_time(&dt, payload->time_unix_usec / 1000000); // standard unix time is in seconds since 1970, UTC
 
-    gps_time.year = CRSF_REV_U16(time_info->tm_year + 1900); // EdgeTx since v2.12.?=? -> Date
-    gps_time.month = time_info->tm_mon + 1;
-    gps_time.day = time_info->tm_mday;
-    gps_time.hour = time_info->tm_hour;
-    gps_time.minute = time_info->tm_min;
-    gps_time.second = time_info->tm_sec;
+    gps_time.year = CRSF_REV_U16(dt.year); // EdgeTx since v2.12.?=? -> Date
+    gps_time.month = dt.month;
+    gps_time.day = dt.day;
+    gps_time.hour = dt.hour;
+    gps_time.minute = dt.minute;
+    gps_time.second = dt.second;
     gps_time.millisecond = CRSF_REV_U16((payload->time_unix_usec % 1000000) / 1000);
 
     crsf_status[CRSF_ITEM_GPS_TIME].updated = true;

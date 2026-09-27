@@ -487,17 +487,6 @@ void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 }
 
 
-void remove_leading_zeros(char* const s)
-{
-int16_t i, len; // int16 to avoid underflow in len -1
-
-    len = strlen(s);
-    for (i = 0; i < len - 1; i++) {
-        if (s[i] != '0') break;
-    }
-    memmove(&s[0], &s[i], len - i + 1);
-}
-
 
 void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
@@ -627,41 +616,4 @@ char ss[32];
         }
     }
     return major * 10000 + minor * 100 + patch;
-}
-
-
-//-- auxiliary functions
-
-
-// copy a string into a buffer with max len chars
-void strbufstrcpy(char* const res, const char* const src, uint16_t len)
-{
-    memset(res, '\0', len);
-    for (uint16_t i = 0; i < len; i++) {
-        if (src[i] == '\0') return;
-        res[i] = src[i];
-    }
-}
-
-
-// copy a buffer into a string with max len chars (i.e. len + 1 size)
-void strstrbufcpy(char* const res, const char* const src, uint16_t len)
-{
-    memset(res, '\0', len + 1); // this ensures that res is terminated with a '\0'
-    for (uint16_t i = 0; i < len; i++) {
-        if (src[i] == '\0') return;
-        res[i] = src[i];
-    }
-}
-
-
-bool strbufeq(char* const s1, const char* const s2, uint16_t len)
-{
-    for (uint16_t i = 0; i < len; i++) {
-        if (s1[i] == '\0' && s2[i] == '\0') return true;
-        if (s1[i] == '\0') return false;
-        if (s2[i] == '\0') return false;
-        if (s1[i] != s2[i]) return false;
-    }
-    return true;
 }
