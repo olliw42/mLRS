@@ -14,6 +14,8 @@ local VERSION = {
 }
 
 
+-- entry format: { name, VALUE, min, max, default }; name is only the label shown in the radio UI
+-- values are passed to run() as arguments by position, not by name
 local input = {
     { "Enable", VALUE, 0, 1, 1 },
 }
