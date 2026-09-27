@@ -57,6 +57,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+//-- mLRS
+#define BLAKE2_NO_UNROLLING
+//-- mLRS end
+
 #ifdef MONOCYPHER_CPP_NAMESPACE
 namespace MONOCYPHER_CPP_NAMESPACE {
 #elif defined(__cplusplus)
