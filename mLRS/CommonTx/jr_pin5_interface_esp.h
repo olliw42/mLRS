@@ -25,13 +25,16 @@
 
 TaskHandle_t tx_done_task_handle = nullptr;
 
+// CRSF is normally inverted, but some radios use normal polarity, only relevant for half-duplex
+volatile bool pin5_inverted = true;
+
 void tx_done_task(void* parameter)
 {
     while (1) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         uart_wait_tx_done(1, pdMS_TO_TICKS(20));
         gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
-        gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
+        gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, pin5_inverted);
         uart_ll_rxfifo_rst(UART_LL_GET_HW(1)); // discards ghost byte caused by switching
     }
 }
@@ -90,7 +93,7 @@ class tPin5BridgeBase
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
     void pin5_getbuf(char* const buf, uint16_t len) { uart_getbuf(buf, len); }
     uint16_t pin5_bytes_available(void) { return uart_rx_bytesavailable(); }
-    void pin5_set_protocol(uint32_t baudrate);
+    void pin5_set_protocol(uint32_t baudrate, bool inverted);
 
     // only for half-duplex
     IRAM_ATTR void pin5_tx_enable(void);
@@ -184,10 +187,14 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
-void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate)
+void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
 {
     // no end()/begin(), so driver, event task, onReceive callback and pin routing stay intact
     UART_SERIAL_NO.updateBaudRate(baudrate);
+#ifndef JR_PIN5_FULL_DUPLEX
+    pin5_inverted = inverted;
+    pin5_rx_enable(); // apply polarity to rx pin
+#endif
 }
 
 
@@ -196,9 +203,9 @@ IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
 #ifndef JR_PIN5_FULL_DUPLEX
     // GPIO_MATRIX_CONST_ZERO_INPUT routes constant 0 to the matrix slot, per-chip value (ESP32 0x30, C3 0x1F, S3 0x3C)
     gpio_matrix_in(GPIO_MATRIX_CONST_ZERO_INPUT, U1RXD_IN_IDX, true); // disconnect RX from all pads, true here important
-    gpio_set_level((gpio_num_t)UART_USE_TX_IO, 0); // set inverted level
+    gpio_set_level((gpio_num_t)UART_USE_TX_IO, (pin5_inverted) ? 0 : 1); // set idle level
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_OUTPUT);
-    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, true, false);
+    gpio_matrix_out((gpio_num_t)UART_USE_TX_IO, U1TXD_OUT_IDX, pin5_inverted, false);
 #endif
 }
 
@@ -206,9 +213,9 @@ IRAM_ATTR void tPin5BridgeBase::pin5_tx_enable(void)
 IRAM_ATTR void tPin5BridgeBase::pin5_rx_enable(void)
 {
 #ifndef JR_PIN5_FULL_DUPLEX
-    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, GPIO_PULLDOWN_ONLY); // enable pulldown permanently
+    gpio_set_pull_mode((gpio_num_t)UART_USE_TX_IO, (pin5_inverted) ? GPIO_PULLDOWN_ONLY : GPIO_PULLUP_ONLY); // pull to idle level
     gpio_set_direction((gpio_num_t)UART_USE_TX_IO, GPIO_MODE_INPUT);
-    gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, true);
+    gpio_matrix_in((gpio_num_t)UART_USE_TX_IO, U1RXD_IN_IDX, pin5_inverted);
 #endif
 }
 

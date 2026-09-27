@@ -59,8 +59,9 @@ typedef enum {
 // NOTE: not all hardware supports more than 400k (e.g. those with diodes may not)
 // TODO: I guess we want a define to enable/disable autobauding
 #define CRSF_AUTOBAUD_MS  50
-#define CRSF_AUTOBAUD_BAUDS_LEN  3
-static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000 }; // 1843200
+#define CRSF_AUTOBAUD_BAUDS_LEN  4
+static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000, 400000 }; // 1843200
+static const bool txcrsf_bauds_inverted[CRSF_AUTOBAUD_BAUDS_LEN] = { true, true, true, false }; // last is 400k normal polarity
 
 
 class tTxCrsf : public tPin5BridgeBase, public tSerialBase
@@ -394,7 +395,7 @@ void tTxCrsf::autobaud_do(void)
 
         INCc(autobaud.baudrate_idx, CRSF_AUTOBAUD_BAUDS_LEN); // try next baudrate
         autobaud.channels_received_cnt = 0;
-        pin5_set_protocol(txcrsf_bauds[autobaud.baudrate_idx]);
+        pin5_set_protocol(txcrsf_bauds[autobaud.baudrate_idx], txcrsf_bauds_inverted[autobaud.baudrate_idx]);
     }
 
     if (autobaud.channels_received_cnt > 5) autobaud.is_running = false; // disable, sufficiently many valid frames received
