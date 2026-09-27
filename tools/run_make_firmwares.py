@@ -427,6 +427,7 @@ MLRS_SOURCES_COMMON = [
     os.path.join('Common','thirdparty','gdisp.c'),
     os.path.join('Common','thirdparty','thirdparty.cpp'),
     os.path.join('Common','libs','filters.cpp'),
+    os.path.join('Common','libs','utils.cpp'),
     os.path.join('Common','channel_order.cpp'),
     os.path.join('Common','common_stats.cpp'),
     os.path.join('Common','common_types.cpp'),
