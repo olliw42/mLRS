@@ -586,8 +586,10 @@ DBG_CRSF_32CH(dbg.puts(" c0x17 ");/*dbg.puts(u8toHEX_s(frame.c[4]));*/)
     if (crsfbridge_enabled &&
         frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE &&
         frame.payload[0] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
-        get_fifo.PutBuf(&frame.c[6], frame.c[5]);
-        crsf_envelop_use_mb = true;
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[2] + 5) && (frame.payload[2] <= CRSF_MB_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[3], frame.payload[2]);
+            crsf_envelop_use_mb = true;
 
 DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame.address));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame.len));
@@ -596,17 +598,21 @@ dbg.puts(" ");dbg.puts(u8toHEX_s(frame.c[3]));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[4] & 0x0F));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[5]));
 dbg.puts(" ");dbg.puts(u8toHEX_s(frame.c[6]));)
+        }
 
     } else
     if (crsfbridge_enabled && frame.frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
-        get_fifo.PutBuf(&frame.c[5], frame.c[4]);
-        crsf_envelop_use_mb = false;
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[1] + 4) && (frame.payload[1] <= CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[2], frame.payload[1]);
+            crsf_envelop_use_mb = false;
 
 DBG_CRSF_ENVELOPE(dbg.puts("\nc rx ");dbg.puts(u8toHEX_s(frame.address));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame.len));
 dbg.puts(" ");dbg.puts(u8toHEX_s(frame.frame_id));
 dbg.puts(" ");dbg.puts(u8toBCD_s((frame.c[3] >> 4) & 0x0F));
 dbg.puts(" ");dbg.puts(u8toBCD_s(frame.c[4]));)
+        }
 
     } else
     if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
@@ -825,7 +831,7 @@ uint8_t len;
 
     // MAVLink envelope
     uint16_t available = put_fifo.Available();
-    if (crsfbridge_enabled && (available > 20 || (tnow_ms - crsf_envelop_out_tlast_ms) > 9)) {
+    if (crsfbridge_enabled && available && (available > 20 || (tnow_ms - crsf_envelop_out_tlast_ms) > 9)) {
         if (crsf_envelop_use_mb) {
             crsf_envelope_out.mb.cmd = CRSF_MB_ENVELOPE_CMD;
             crsf_envelope_out.mb.seq = crsf_envelop_out_sequence;

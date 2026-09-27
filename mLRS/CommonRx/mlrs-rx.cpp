@@ -446,7 +446,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
     res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
 
-    if (res) {
+    if (res != CHECK_OK) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
 dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }
@@ -889,7 +889,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         // we didn't receive a valid frame
         frame_missed = false;
-        if ((connect_state >= CONNECT_STATE_SYNC) && valid_frame_received && !crypto.InvalidFrameDecrypted()) {
+        if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
             frame_missed = true;
             // reset sync counter, relevant if in sync
             // connect_sync_cnt = 0; // NO!! when in sync this means that we need to get five in a row, right!?!

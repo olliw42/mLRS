@@ -6,7 +6,7 @@
 // ESP TRNG
 //********************************************************
 #ifndef ESPLIB_TRNG_H
-#define ESPLIB_MCU_H
+#define ESPLIB_TRNG_H
 
 
 #ifdef ESP8266
