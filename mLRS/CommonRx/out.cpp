@@ -14,6 +14,9 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
+#define FOOL_32CH_FOR_TEST //comment for real world application
+
+
 extern uint16_t micros16(void);
 
 
@@ -163,9 +166,14 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
         send_sbus_rcdata(&rc, frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
+#ifdef FOOL_32CH_FOR_TEST
         // for testing we don't send 0x16 but send 0x17 with start channel = 0!
         //send_crsf_rcdata(&rc);
         if (rc.do_32channels) send_crsf_rcdata_0x17(&rc); else send_crsf_rcdata(&rc);
+#else
+        send_crsf_rcdata(&rc);
+        if (rc.do_32channels) send_crsf_rcdata_0x17(&rc);
+#endif
         break;
     }
 }
@@ -295,7 +303,11 @@ void tOutBase::send_crsf_rcdata_0x17(tRcData* const rc)
 {
 tCrsfSubsetRcChannelsPackedFrame_16x11bit frame;
 
+#ifdef FOOL_32CH_FOR_TEST
     frame.ch.starting_channel = 0; // for testing we don't send 0x16 but send 0x17 with start channel = 0!
+#else
+    frame.ch.starting_channel = 16;
+#endif
     frame.ch.res_configuration = 1;
     frame.ch.digital_switch_flag = 0;
 

@@ -14,6 +14,7 @@
 #define FAIL_ENABLED
 
 #define DBG_CRSF_32CH(x)
+// see also #define FOOL_32CH_FOR_TEST in out.cpp
 
 
 // we set the priorities here to have an overview, SysTick is at 15
