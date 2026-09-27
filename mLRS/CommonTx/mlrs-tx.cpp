@@ -140,6 +140,12 @@ tTxTasks tasks;
 // MAVLink & MSP
 //-------------------------------------------------------
 
+// temporary working buffer, to not burden stack
+// shared by the MAVLink and MSP handlers to save RAM, only used transiently, content is not kept
+#define TX_SCRATCH_BUF_SIZE  800
+
+alignas(4) uint8_t tx_scratch_buf[TX_SCRATCH_BUF_SIZE];
+
 #include "mavlink_interface_tx.h"
 
 tTxMavlink mavlink;

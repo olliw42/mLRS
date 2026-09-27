@@ -31,6 +31,7 @@ extern tSerialPorts Serials;
 extern tTxCrsf crsf;
 extern tStats stats;
 extern tTxTasks tasks;
+extern uint8_t tx_scratch_buf[TX_SCRATCH_BUF_SIZE];
 
 
 //#define RADIO_LINK_SYSTEM_ID      51 // SiK uses 51, 68
@@ -38,6 +39,8 @@ extern tTxTasks tasks;
 #define RADIO_LINK_SYSTEM_ID      (51 + Setup.Rx.MavlinkSystemID)
 
 #define MAVLINK_BUF_SIZE          300 // needs to be larger than max MAVLink frame size = 286 bytes
+
+STATIC_ASSERT(sizeof(fmav_message_t) + MAVLINK_BUF_SIZE <= TX_SCRATCH_BUF_SIZE, "TX_SCRATCH_BUF_SIZE too small for MAVLink")
 
 
 // keeps info on the vehicle
@@ -115,8 +118,9 @@ class tTxMavlink
     tFifo<char,512> fifo_link_out; // needs to be at least 82 + 280
     void parse_serial_in_link_out(void);
 
-    fmav_message_t msg_buf; // temporary working buffer, to not burden stack
-    uint8_t _buf[MAVLINK_BUF_SIZE]; // temporary working buffer, to not burden stack
+    // temporary working buffers, placed in the shared scratch buffer
+    fmav_message_t& msg_buf = *(fmav_message_t*)tx_scratch_buf;
+    uint8_t* const _buf = tx_scratch_buf + sizeof(fmav_message_t);
 
     // to inject RADIO_STATUS messages
     uint32_t radio_status_tlast_ms;

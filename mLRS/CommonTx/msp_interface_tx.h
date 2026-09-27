@@ -11,9 +11,6 @@
 #pragma once
 
 
-// TODO: share fixed buffers with mavlink interface
-
-
 #include "../Common/protocols/msp_protocol.h"
 #include "../Common/thirdparty/mspx.h"
 
@@ -24,9 +21,12 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tSerialPorts Serials;
 extern tTxCrsf crsf;
+extern uint8_t tx_scratch_buf[TX_SCRATCH_BUF_SIZE];
 
 
 #define MSP_BUF_SIZE  (MSP_FRAME_LEN_MAX + 16) // needs to be larger than max supported MSP frame size
+
+STATIC_ASSERT(MSP_BUF_SIZE <= TX_SCRATCH_BUF_SIZE, "TX_SCRATCH_BUF_SIZE too small for MSP")
 
 
 class tTxMsp
@@ -56,7 +56,7 @@ class tTxMsp
     tFifo<char,2*512> fifo_link_out; // needs to be at least ??
     void parse_serial_in_link_out(void);
 
-    uint8_t _buf[MSP_BUF_SIZE]; // temporary working buffer, to not burden stack
+    uint8_t* const _buf = tx_scratch_buf; // temporary working buffer, placed in the shared scratch buffer
 };
 
 
