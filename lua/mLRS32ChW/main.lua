@@ -6,7 +6,7 @@ local widgetName = "mLRS 32Ch Widget"
 ----------------------------------------------------------------------
 -- mLRS 32 Channels Lua Widget
 ----------------------------------------------------------------------
--- copy script to SCRIPTS\WIDGETS\mLRS32Ch folder on EdgeTx SD card
+-- copy script to SCRIPTS\WIDGETS\mLRS32ChW folder on the EdgeTx SD card
 
 
 local VERSION = {
@@ -46,16 +46,16 @@ end
 local function sendChannels0x17()
     local data = {}
     local pos = 1
-    
+
     data[pos] = 0x20 + 16 -- 11 bit, 16 channel start = 0x20 + 0x10 = 0x30
     pos = pos + 1
-    
+
     local bitBuffer = 0
     local bitCount = 0
---    for ch = 16, 31 do 
+--    for ch = 16, 31 do
 -- momentarily, for testing, we simply mirror channels 1 - 16
     for ch = 0, 15 do
-        value = outputToCrsf(getOutputValue(ch))
+        local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
         while bitCount >= 8 do
@@ -69,7 +69,7 @@ local function sendChannels0x17()
     if bitCount > 0 then
         data[pos] = bitBuffer & 0xFF
     end
-    
+
     return crossfireTelemetryPush(0x17, data)
 end
 
@@ -77,11 +77,11 @@ end
 local function sendChannels0x16() -- just for testing
     local data = {}
     local pos = 1
-    
+
     local bitBuffer = 0
     local bitCount = 0
     for ch = 0, 15 do
-        value = outputToCrsf(getOutputValue(ch))
+        local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
         while bitCount >= 8 do
@@ -91,16 +91,16 @@ local function sendChannels0x16() -- just for testing
             bitCount = bitCount - 8
         end
     end
-    
+
     data[pos] = 0
     pos = pos + 1
-    
+
     bitBuffer = 0
     bitCount = 0
---    for ch = 16, 31 do 
+--    for ch = 16, 31 do
 -- momentarily, for testing, we simply mirror channels 1 - 16
     for ch = 0, 15 do
-        value = outputToCrsf(getOutputValue(ch))
+        local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
         while bitCount >= 8 do
@@ -110,7 +110,7 @@ local function sendChannels0x16() -- just for testing
             bitCount = bitCount - 8
         end
     end
-    
+
     return crossfireTelemetryPush(0x16, data)
 end
 
@@ -121,9 +121,9 @@ end
 
 local function create(zone, options)
     local widget = { zone = zone, options = options }
-    
+
     widget.tlast_10ms = 0
-    
+
     return widget
 end
 
@@ -135,7 +135,7 @@ end
 
 local function background(widget)
     if widget.options.Enabled == 0 then return end
-  
+
     local tnow_10ms = getTime()
 
     if tnow_10ms - widget.tlast_10ms >= 20 then
@@ -148,15 +148,15 @@ end
 
 local function refresh(widget, event, touchState)
     lcd.drawText(0, 0, "32Ch", widget.options.Color)
-    
-    if widget.options.Enabled == 0 then 
+
+    if widget.options.Enabled == 0 then
         lcd.drawText(0, 20, "off", widget.options.Color)
-        return 
+        return
     end
     lcd.drawNumber(0, 20, outputToCrsf(getOutputValue(0)), widget.options.Color) -- to just show something moving
-  
+
     background(widget)
-  
+
     local zone = widget.zone
     if zone.w ~= LCD_W or zone.h ~= LCD_H then return end -- skip out if not full size widget
 
