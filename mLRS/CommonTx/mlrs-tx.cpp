@@ -1009,10 +1009,6 @@ IF_SX2(
         }
 #endif
 
-        stats.fhss_curr_i = fhss.CurrI_4mBridge();
-        stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
-        stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
-
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
             case CONNECT_STATE_LISTEN:

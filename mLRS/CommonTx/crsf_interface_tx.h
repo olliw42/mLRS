@@ -1554,10 +1554,10 @@ tCrsfMbStatistics lstats = {};
     lstats.bytes_transmitted = stats.bytes_transmitted.GetBytesPerSec();
     lstats.bytes_received = stats.bytes_received.GetBytesPerSec();
 
-    lstats.fhss1_curr_i = stats.fhss_curr_i;
+    lstats.fhss1_curr_i = fhss.GetCurrI();
     lstats.fhss1_cnt = fhss.Cnt();
-    lstats.fhss2_curr_i = 0;
-    lstats.fhss2_cnt = 0;
+    lstats.fhss2_curr_i = fhss.GetCurrI2();
+    lstats.fhss2_cnt = fhss.Cnt2();
 
     send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, &lstats, sizeof(tCrsfMbStatistics));
 }
