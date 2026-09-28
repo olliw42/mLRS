@@ -17,6 +17,7 @@ import pathlib
 import shutil
 import re
 import sys
+import subprocess
 
 
 #-- installation dependent
@@ -142,12 +143,13 @@ def printError(txt):
 #--------------------------------------------------
 
 def mlrs_esp_compile_all():
-    pio_run = '"'+find_pio()+'" run --project-dir "'+MLRS_PROJECT_DIR+'"'
-    
+    # argument list, not a shell string, so paths with spaces work on all OSes
+    pio_run = [find_pio(), 'run', '--project-dir', MLRS_PROJECT_DIR]
+
     print('Full Clean All')
-    os.system(pio_run+' --target fullclean')
+    subprocess.call(pio_run + ['--target', 'fullclean'])
     print('Build All')
-    os.system(pio_run)
+    subprocess.call(pio_run)
 
 
 
