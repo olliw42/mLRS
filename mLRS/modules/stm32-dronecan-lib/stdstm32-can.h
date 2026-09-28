@@ -11,6 +11,8 @@
 // CAN_USE_FDCAN2_PB5PB6
 // CAN_USE_FDCAN_CLOCK_PCLK1
 // CAN_USE_FDCAN_CLOCK_PLL
+// TODO:
+// CAN_USE_FDCAN2_PB12PB13
 //*******************************************************
 #ifndef STDSTM32_CAN_H
 #define STDSTM32_CAN_H
@@ -30,6 +32,10 @@ extern "C" {
     #define CAN_DC_HAL_INTFC    DC_HAL_CAN1 // TODO: this is currently defined in stm32-dronecan-driver.h
     #define CAN_RX_IO           IO_PA11
     #define CAN_TX_IO           IO_PA12
+#elif defined CAN_USE_FDCAN2_PB12PB13
+    #define CAN_DC_HAL_INTFC    DC_HAL_CAN2
+    #define CAN_RX_IO           IO_PB12
+    #define CAN_TX_IO           IO_PB13
 #elif defined CAN_USE_FDCAN2_PB5PB6
     #define CAN_DC_HAL_INTFC    DC_HAL_CAN2
     #define CAN_RX_IO           IO_PB5
