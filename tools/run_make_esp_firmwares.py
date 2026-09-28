@@ -20,9 +20,21 @@ import sys
 
 
 #-- installation dependent
-# TODO: effort at finding this automatically
 
-PIO_DIR = os.path.join("C:/",'Users','Olli','.platformio','penv','Scripts')
+def find_pio():
+    # PlatformIO CLI from the PATH, else from its default install location
+    for name in ('pio', 'platformio'):
+        pio = shutil.which(name)
+        if pio:
+            return pio
+    core_dir = os.environ.get('PLATFORMIO_CORE_DIR', os.path.join(os.path.expanduser('~'),'.platformio'))
+    scripts_dir = os.path.join(core_dir,'penv','Scripts' if os.name == 'nt' else 'bin')
+    for name in ('pio', 'platformio'):
+        pio = os.path.join(scripts_dir, name + ('.exe' if os.name == 'nt' else ''))
+        if os.path.exists(pio):
+            return pio
+    print('ERROR: PlatformIO not found, install it or add it to the PATH')
+    exit(1)
 
 
 
@@ -130,7 +142,7 @@ def printError(txt):
 #--------------------------------------------------
 
 def mlrs_esp_compile_all():
-    pio_run = os.path.join(PIO_DIR,'platformio.exe') + ' run --project-dir ' + MLRS_PROJECT_DIR
+    pio_run = '"'+find_pio()+'" run --project-dir "'+MLRS_PROJECT_DIR+'"'
     
     print('Full Clean All')
     os.system(pio_run+' --target fullclean')
