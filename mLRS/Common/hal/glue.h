@@ -52,7 +52,9 @@
 #include "stm32f3xx_hal_flash_ex.h"
 
 #endif
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G471xx || defined STM32G473xx || \
+    defined STM32G474xx || defined STM32G483xx || defined STM32G484xx || defined STM32G491xx || \
+    defined STM32G4A1xx
 
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_rcc.h"

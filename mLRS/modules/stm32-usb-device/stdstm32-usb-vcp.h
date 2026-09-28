@@ -19,7 +19,9 @@ extern "C" {
 #ifndef HAL_PCD_MODULE_ENABLED
   #error HAL_PCD_MODULE_ENABLED not defined, enable it in Core\Inc\stm32yyxx_hal_conf.h!
 #else
-#if !defined STM32G431xx && !defined STM32G441xx && !defined STM32G491xx && !defined STM32G474xx
+#if !defined STM32G431xx && !defined STM32G441xx && !defined STM32G471xx && !defined STM32G473xx && \
+    !defined STM32G474xx && !defined STM32G483xx && !defined STM32G484xx && !defined STM32G491xx && \
+    !defined STM32G4A1xx
   #warning NAK flow control not tested on non STM32G4 MCUs!
 #endif
 
