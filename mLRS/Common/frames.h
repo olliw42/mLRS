@@ -139,7 +139,7 @@ if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)
 
     // encrypt all frames except of GET_RX_SETUPDATA_STARTUP
     if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
-        // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
+        // encrypt data, move data to payload + N, copy nonce & mac into payload, correct len
         if (crypto.PrivacyLevel() >= 2) {
             crypto.Encrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // RC data + payload
         } else {
@@ -326,6 +326,8 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 // Rx Frames (send from Rx to Tx)
 //-------------------------------------------------------
 
+#ifdef DEVICE_IS_RECEIVER
+
 // update header info of a tRxFrame with new data, keep payload
 void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
@@ -382,11 +384,15 @@ uint16_t crc;
         frame->payload[i] = payload[i];
     }
 
-    // crypto
-    if ((type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
-        // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
+    // encrypt normal TX frames
+    // Note: FRAME_TYPE_TX_RX_CMD-FRAME_CMD_RX_SETUPDATA sends tRxCmdFrameRxSetupData,
+    // which is 82 bytes of size and thus payload_len = 82. It thus cannot be encrypted,
+    // since Encrypt() would then write beyond the payload area.
+    // It doesn't carry any secret data, so shouldn't be too bad.
+    if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_RX) {
+        // encrypt data, move data to payload + N, copy nonce & mac into payload, correct len
         crypto.Encrypt(frame->payload, payload_len, &payload_len);
-        frame->status.payload_len = payload_len;
+        frame->status.payload_len = payload_len; // adjust to new payload len
     }
 
     // finalize, crc
@@ -406,6 +412,8 @@ void pack_rxframe(
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
+#endif
+#ifdef DEVICE_IS_TRANSMITTER
 
 // check credentials of a tRxFrame (sync word, frame type, payload len, CRC)
 // returns 0 if OK !!
@@ -432,12 +440,15 @@ uint16_t crc;
 // unpack a normal tRxFrame, comes before any payload processing
 void unpack_rxframe(tRxFrame* const frame)
 {
-    if ((frame->status.frame_type == FRAME_TYPE_RX) && crypto.PrivacyLevel()) {
+   // decrypt normal TX frames
+   if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_RX) {
         uint8_t payload_len = frame->status.payload_len;
         crypto.Decrypt(frame->payload, payload_len, &payload_len);
-        frame->status.payload_len = payload_len;
+        frame->status.payload_len = payload_len; // adjust to new payload len
     }
 }
+
+#endif
 
 
 //-------------------------------------------------------

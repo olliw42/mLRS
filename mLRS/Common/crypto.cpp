@@ -69,7 +69,7 @@ void tCrypto::Init(
     // session secrets
 
     _session_random = 0;
-    _session_random_has_been_set = false; // session key not yet set
+    _session_key_has_been_set = false; // session key not yet set
 
     memset(_session_key, 0, sizeof(_session_key));
     memcpy(_session_key, _static_key, 32); // set key to static key to have some default
@@ -96,33 +96,34 @@ bool tCrypto::InvalidKeys(void) // to tell Tx or Rx that they can't connect
 //-- handle session random and session key
 
 // Tx: called in init sequence
-// Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA frame is received
+// Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame is received
 void tCrypto::SetSessionKey(uint64_t random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
     _session_random = random;
-    _session_random_has_been_set = true;
 
     memcpy(key_source,      _static_source,   46); // 46 bytes
     memcpy(key_source + 46, &_session_random,  8); //  8 bytes // sum = 54 bytes
 
     crypto_blake2b(_session_key, 32, key_source, 54);
+
+    _session_key_has_been_set = true;
 }
 
 // The session random is transmitted encrypted, in the following format:
-//  0 ..  7:  8 bytes random
-//  8 .. 19: 12 bytes startup random | bind random | startup nonce
+//  0 ..  7:  8 bytes session-random
+//  8 .. 19: 12 bytes startup-random | bind-random | startup-nonce
 // 20 .. 27:  8 bytes mac
 
-// only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA frame
+// only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame
 void tCrypto::EncryptSessionRandom(uint8_t random[28], uint64_t startup_random, uint64_t bind_random)
 {
 uint8_t nonce[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
 
-    if (!_session_random_has_been_set) while(1){} // must not happen, SetSessionKey() must be called before
+    if (!_session_key_has_been_set) while(1){} // must not happen, SetSessionKey() must be called before
 
     bind_random += _startup_nonce_u32;
     _startup_nonce_u32++; // ready it for next use
@@ -150,7 +151,7 @@ uint8_t poly1305_key[32];
 uint8_t mac[16];
 uint64_t session_random;
 
-    if (_session_random_has_been_set) return; // has already been set
+    if (_session_key_has_been_set) return; // has already been set
 
     memset(nonce, 0, 12);
     memcpy(nonce, random + 8, 12); // random[8] ... random[20 -1]
@@ -172,9 +173,9 @@ void tCrypto::Disconnected(void)
     // one needs to consider differences between re-powered, reconnected
     // currently: for privacy level >= 2, session key stays always persistent
 
-    if (_privacy_level <= 1) { // accept potentially new session random/session key
-        _session_random_has_been_set = false;
-    }
+//    if (_privacy_level <= 1) { // accept potentially new session random/session key
+//        _session_random_has_been_set = false;
+//    }
 }
 
 

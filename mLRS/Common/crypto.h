@@ -23,9 +23,9 @@ SecretKey handling:
 - replay attacks can be prevented by requiring the nonce to monotonously increase (not yet implemented)
 - privacy levels
     off: nothing
-    level 1: only encryption                      (3 bytes nonce, no authentication, no replay attack prevention)
-    level 2: encryption + authentication          (3 bytes nonce, 3 bytes mac, replay attack prevention)
-    level 3: stronger encryption + authentication (4 bytes nonce, 8 bytes mac, replay attack prevention)
+    level 1: only encryption                       only payload  (3 bytes nonce, no authentication, no replay attack prevention)
+    level 2: encryption + authentication           RC + payload  (3 bytes nonce, 3 bytes mac, replay attack prevention)
+    level 3: stronger encryption + authentication  RC + payload  (4 bytes nonce, 8 bytes mac, replay attack prevention)
 */
 //*******************************************************
 #ifndef CRYPTO_H
@@ -62,7 +62,7 @@ class tCrypto
     void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
     bool Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
-    uint64_t SessionRandom(void) { return (_session_random_has_been_set) ? _session_random : 0; } // Rx only, only for reporting, no function
+    uint64_t SessionRandom(void) { return (_session_key_has_been_set) ? _session_random : 0; } // Rx only, only for reporting, no function
 
     uint32_t mac_errors;
     uint32_t replay_counts;
@@ -78,8 +78,8 @@ class tCrypto
     uint32_t _startup_nonce_u32;
 
     uint64_t _session_random;
-    bool _session_random_has_been_set;
     uint8_t _session_key[32];
+    bool _session_key_has_been_set;
     uint32_t _nonce_u32;
 
     uint32_t _nonce_u32_last_received;
