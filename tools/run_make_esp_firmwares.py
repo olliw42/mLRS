@@ -9,7 +9,7 @@
  run_make_esp_firmwares.py
  generate esp fimrware files
  renames and copies files into tools/esp-build/firmware
- version 21.03.2026
+ version 29.09.2026
 ********************************************************
 '''
 import os
@@ -17,12 +17,28 @@ import pathlib
 import shutil
 import re
 import sys
+import subprocess
 
 
 #-- installation dependent
-# TODO: effort at finding this automatically
 
 PIO_DIR = os.path.join("C:/",'Users','Olli','.platformio','penv','Scripts')
+
+def find_pio_exe():
+    if os.name != 'posix':
+        return os.path.join(PIO_DIR,'platformio.exe')
+    # Mac/Linux: PlatformIO CLI from the PATH, else from its default install location
+    for name in ('pio', 'platformio'):
+        pio = shutil.which(name)
+        if pio:
+            return pio
+    core_dir = os.environ.get('PLATFORMIO_CORE_DIR', os.path.join(os.path.expanduser('~'),'.platformio'))
+    for name in ('pio', 'platformio'):
+        pio = os.path.join(core_dir,'penv','bin',name)
+        if os.path.exists(pio):
+            return pio
+    print('ERROR: PlatformIO not found, install it or add it to the PATH')
+    exit(1)
 
 
 
@@ -129,14 +145,19 @@ def printError(txt):
 # build system
 #--------------------------------------------------
 
-def mlrs_esp_compile_all():
-    pio_run = os.path.join(PIO_DIR,'platformio.exe') + ' run --project-dir ' + MLRS_PROJECT_DIR
-    
-    print('Full Clean All')
-    os.system(pio_run+' --target fullclean')
-    print('Build All')
-    os.system(pio_run)
+def run_pio(args):
+    if os.name == 'posix':
+        subprocess.call([find_pio_exe()] + args) # arg list, paths with spaces work
+    else:
+        os.system(find_pio_exe()+' '+' '.join(args)) # keeps colored output on Win
 
+
+def mlrs_esp_compile_all():
+    pio_args = ['run', '--project-dir', MLRS_PROJECT_DIR]
+    print('Full Clean All')
+    run_pio(pio_args + ['--target', 'fullclean'])
+    print('Build All')
+    run_pio(pio_args)
 
 
 #--------------------------------------------------
