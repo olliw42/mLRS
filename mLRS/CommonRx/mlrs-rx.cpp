@@ -267,8 +267,8 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         doParamsStore = true;
         break;
     case FRAME_CMD_GET_RX_SETUPDATA_WRELOAD:
-        setup_reload();
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        setup_reload();
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
     }
@@ -428,7 +428,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
     res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
 
-    if (res) {
+    if (res != CHECK_OK) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
 dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }

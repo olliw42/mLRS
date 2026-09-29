@@ -107,13 +107,6 @@ class tStats
 
     uint8_t transmit_seq_no;
 
-    // extra stats available with mBridge
-#ifdef DEVICE_IS_TRANSMITTER
-    bool rx1_valid;
-    bool rx2_valid;
-    uint8_t fhss_curr_i;
-#endif
-
     // moving average fields
 
 //    tLqCounterBase LQma_received;
