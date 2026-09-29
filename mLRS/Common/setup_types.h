@@ -579,6 +579,7 @@ typedef struct
     uint8_t Uid[12];
     uint64_t BindRandom;
     uint64_t SessionRandom;
+    uint64_t StartupRandom;
 } tGlobalConfig;
 
 

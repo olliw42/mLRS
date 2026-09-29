@@ -1069,23 +1069,18 @@ void setup_configure_config_crypto(void)
     memset(Config.Uid, 0xFF, 12);
     Config.BindRandom = UINT64_MAX;
     Config.SessionRandom = UINT64_MAX;
+    Config.StartupRandom = UINT64_MAX;
 
     mcu_uid(Config.Uid);
-#ifdef DEVICE_IS_TRANSMITTER
-  #if defined STM32G4 || defined STM32WL || defined ESP32 // trng is available, note. must match Privacy_allowed_mask
+#if defined DEVICE_IS_TRANSMITTER && \
+    (defined STM32G4 || defined STM32WL || defined ESP32) // trng is available, note, must match Privacy_allowed_mask
     // trng_get32() can return UINT32_MAX, so give it few chances, but terminate
     // if either is invalid and Privacy > 0, then we have a serious issue, system should fail to connect
     for (uint8_t i = 0; i < 4; i++) {
-        Config.BindRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
-        if (Config.BindRandom != 0 && Config.BindRandom != UINT64_MAX) break;
+        if (Config.BindRandom == UINT64_MAX) Config.BindRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.SessionRandom == UINT64_MAX) Config.SessionRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
+        if (Config.StartupRandom == UINT64_MAX) Config.StartupRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
     }
-    if (Config.BindRandom == 0) Config.BindRandom = UINT64_MAX; // invalidate it
-    for (uint8_t i = 0; i < 4; i++) {
-        Config.SessionRandom = ((uint64_t)trng_get32() << 32) + trng_get32();
-        if (Config.SessionRandom != 0 && Config.SessionRandom != UINT64_MAX) break;
-    }
-    if (Config.SessionRandom == 0) Config.SessionRandom = UINT64_MAX; // invalidate it
-  #endif
 #endif
 }
 

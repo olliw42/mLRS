@@ -501,8 +501,8 @@ uint8_t len;
 
     if (cmd == FRAME_CMD_GET_RX_SETUPDATA) { // add random session key
         // TODO: should we only send after startup, if privacy level >= 2?
-        crypto.GetEncryptedRandom(&(payload[1]));
-        len += 16;
+        crypto.EncryptSessionRandom(&(payload[1]), Config.StartupRandom, Config.BindRandom);
+        len += 28;
     }
 
     _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, len);

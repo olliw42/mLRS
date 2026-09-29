@@ -41,37 +41,39 @@ const crypto_level_t crypto_list[] = {
 // Crypto API
 //-------------------------------------------------------
 
-void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random)
+void tCrypto::Init(
+    uint8_t role,
+    char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random,
+    uint8_t privacy_level)
 {
     _role = role;
+
     _privacy_level = 0;
+    if (privacy_level < PRIVACY_LEVEL_NUM) _privacy_level = privacy_level;
 
     // static secrets
 
     _static_random = tx_random;
 
-    memset(_static, 0, sizeof(_static));
-    memcpy(_static,                   "mLRS key",    8); //  8 bytes
-    memcpy(_static + 8,               bind_phrase,   6); //  6 bytes
-    memcpy(_static + 8 + 6,           tx_uid,       12); // 12 bytes
-    memcpy(_static + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
-    memcpy(_static + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
+    memset(_static_source, 0, sizeof(_static_source));
+    memcpy(_static_source,                   "mLRS key",    8); //  8 bytes
+    memcpy(_static_source + 8,               bind_phrase,   6); //  6 bytes
+    memcpy(_static_source + 8 + 6,           tx_uid,       12); // 12 bytes
+    memcpy(_static_source + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
+    memcpy(_static_source + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
 
-    crypto_blake2b(_static_key, 32, _static, 46); // construct static key
+    crypto_blake2b(_static_key, 32, _static_source, 46); // construct static key
 
-    _static_nonce_u32 = 0; // is reused on each Tx power cycle, if there is concern, re-bind
+    _startup_nonce_u32 = 0; // is reused on each Tx power cycle, if there is concern, re-bind
 
     // session secrets
 
-    _random = 0;
-    _random_has_been_set = false; // session key not yet set
+    _session_random = 0;
+    _session_random_has_been_set = false; // session key not yet set
 
-    memset(_key, 0, sizeof(_key));
-    memset(_nonce, 0, sizeof(_nonce));
-    _nonce_len = 0;
+    memset(_session_key, 0, sizeof(_session_key));
+    memcpy(_session_key, _static_key, 32); // set key to static key to have some default
     _nonce_u32 = 0;
-
-    memcpy(_key, _static_key, 32); // set key to static key to have some default
 
     // auxiliary
 
@@ -85,25 +87,13 @@ void tCrypto::Init(uint8_t role, char* const bind_phrase, uint8_t tx_uid[12], ui
 }
 
 
-void tCrypto::SetPrivacyLevel(uint8_t privacy_level)
-{
-    if (privacy_level >= PRIVACY_LEVEL_NUM) return;
-
-    _privacy_level = privacy_level;
-}
-
-
 bool tCrypto::InvalidKeys(void) // to tell Tx or Rx that they can't connect
 {
-    return (_privacy_level > 0 && (_static_random == UINT64_MAX || _random == UINT64_MAX));
+    return (_privacy_level > 0 && (_static_random == UINT64_MAX || _session_random == UINT64_MAX));
 }
 
 
 //-- handle session random and session key
-// The session random is transmitted encrypted, in the following format:
-//  0 ..  7: 8 bytes random
-//  8 .. 11: 4 bytes nonce, starts with 0
-// 12 .. 15: 4 bytes mac
 
 // Tx: called in init sequence
 // Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA frame is received
@@ -111,70 +101,67 @@ void tCrypto::SetSessionKey(uint64_t random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
-    _random = random;
-    _random_has_been_set = true;
+    _session_random = random;
+    _session_random_has_been_set = true;
 
-    memcpy(key_source,      _static,  46); // 46 bytes
-    memcpy(key_source + 46, &_random,  8); //  8 bytes // sum = 54 bytes
+    memcpy(key_source,      _static_source,   46); // 46 bytes
+    memcpy(key_source + 46, &_session_random,  8); //  8 bytes // sum = 54 bytes
 
-    crypto_blake2b(_key, 32, key_source, 54);
+    crypto_blake2b(_session_key, 32, key_source, 54);
 }
 
+// The session random is transmitted encrypted, in the following format:
+//  0 ..  7:  8 bytes random
+//  8 .. 19: 12 bytes startup random | bind random | startup nonce
+// 20 .. 27:  8 bytes mac
 
 // only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA frame
-void tCrypto::GetEncryptedRandom(uint8_t random[16])
+void tCrypto::EncryptSessionRandom(uint8_t random[28], uint64_t startup_random, uint64_t bind_random)
 {
-uint8_t nonce_buf[12];
+uint8_t nonce[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
 
-    memset(nonce_buf, 0, 12);
-    memcpy(nonce_buf, &_static_nonce_u32, 4);
+    if (!_session_random_has_been_set) while(1){} // must not happen, SetSessionKey() must be called before
 
-    _static_nonce_u32++; // ready it for next use
+    bind_random += _startup_nonce_u32;
+    _startup_nonce_u32++; // ready it for next use
 
-    crypto_chacha20_ietf(random, (uint8_t*)&_random, 8, _static_key, nonce_buf, 1);
+    memset(nonce, 0, 12);
+    memcpy(nonce, &startup_random, 8);
+    memcpy(nonce + 8, &bind_random, 4);
 
-    memcpy(random + 8, nonce_buf, 4); // random[8] ... random[11]
+    crypto_chacha20_ietf(random, (uint8_t*)&_session_random, 8, _static_key, nonce, 1); // random[0] ... random[8 - 1]
 
-    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 0);
-    crypto_poly1305(mac, random, 12, poly1305_key);
+    memcpy(random + 8, nonce, 12); // random[8] ... random[20 - 1]
 
-    memcpy(random + 12, mac, 4); // random[12] ... random[15]
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
+    crypto_poly1305(mac, random, 20, poly1305_key); // mac over session random & nonce
+
+    memcpy(random + 20, mac, 8); // random[20] ... random[28 - 1]
 }
 
 
 // only Rx: called upon receive of a FRAME_CMD_GET_RX_SETUPDATA frame
-void tCrypto::SetSessionKeyFromEncryptedRandom(uint8_t random[16])
+void tCrypto::SetSessionKeyFromEncryptedRandom(uint8_t random[28])
 {
-uint8_t nonce_buf[12];
+uint8_t nonce[12];
 uint8_t poly1305_key[32];
 uint8_t mac[16];
-uint64_t rand;
+uint64_t session_random;
 
-    if (_random_has_been_set) return; // has been set already
+    if (_session_random_has_been_set) return; // has already been set
 
-    memset(nonce_buf, 0, 12);
-    memcpy(nonce_buf, random + 8, 4); // random[8] ... random[11]
+    memset(nonce, 0, 12);
+    memcpy(nonce, random + 8, 12); // random[8] ... random[20 -1]
 
-    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce_buf, 0);
-    crypto_poly1305(mac, random, 12, poly1305_key);
-    for (uint8_t i = 0; i < 4; i++) { if (random[12 + i] != mac[i]) return; } // authentication failed
+    crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
+    crypto_poly1305(mac, random, 20, poly1305_key); // mac over session random & nonce
+    for (uint8_t i = 0; i < 8; i++) { if (random[20 + i] != mac[i]) return; } // authentication failed
 
-    crypto_chacha20_ietf((uint8_t*)&rand, random, 8, _static_key, nonce_buf, 1);
+    crypto_chacha20_ietf((uint8_t*)&session_random, random, 8, _static_key, nonce, 1);
 
-    SetSessionKey(rand);
-}
-
-
-// only Rx
-bool tCrypto::InvalidFrameDecrypted(void)
-{
-    if (!_privacy_level) return false;
-
-    bool ok = _decrypt_ok;
-    _decrypt_ok = true; // reset it for next use, implies that InvalidFrameDecrypted() is only called once per cycle
-    return !ok;
+    SetSessionKey(session_random);
 }
 
 
@@ -186,7 +173,7 @@ void tCrypto::Disconnected(void)
     // currently: for privacy level >= 2, session key stays always persistent
 
     if (_privacy_level <= 1) { // accept potentially new session random/session key
-        _random_has_been_set = false;
+        _session_random_has_been_set = false;
     }
 }
 
@@ -223,78 +210,85 @@ bool tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 //-------------------------------------------------------
 
 // The data is transmitted encrypted, in the following format:
-//   3/4 bytes nonce
 //   0/3/8 bytes mac
+//   3/4 bytes nonce
 //   data
 
 void tCrypto::_encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
+uint8_t nonce[12];
+uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac[16];
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
     // update nonce
     _nonce_u32++;
-    _nonce_len = crypto_list[_privacy_level].nonce_len;
-    memcpy(_nonce, &_nonce_u32, _nonce_len); // _nonce[0] ... _nonce[nonce_len-1] = _nonce_u32
+
+    // create 12-byte nonce
+    memset(nonce, 0, 12);
+    memcpy(nonce, &_nonce_u32, nonce_len); // _nonce[0] ... _nonce[nonce_len - 1] = _nonce_u32
 
     // fake the nonce for role
-    _nonce[11] = (_role == RX) ? 0xAA : 0x55;
+    nonce[11] = (_role == RX) ? 0xAA : 0x55;
 
     // encrypt data at data[0]
-    _crypt_it(data, len);
+    _crypt_it(data, len, nonce);
 
     if (mac_len) {
         // MAC = poly1305(nonce || ciphertext)
-        _mac_it(mac, data, len);
+        _mac_it(mac, data, len, nonce, nonce_len);
     }
 
-    // move data to payload + mac_len + nonce_len
-    memmove(data + mac_len + _nonce_len, data, len); // NOT memcpy(), needs to copy from end towards beginning !!
+    // move data to data + mac_len + nonce_len
+    memmove(data + mac_len + nonce_len, data, len); // NOT memcpy(), needs to copy from end towards beginning !!
 
     // correct payload len for the mac and nonce
-    *payload_len += mac_len + _nonce_len;
+    *payload_len += mac_len + nonce_len;
 
     // copy mac into data
-    memcpy(data, mac, mac_len); // data[0] ... data[mac_len-1]
+    memcpy(data, mac, mac_len); // data[0] ... data[mac_len - 1]
 
     // copy nonce into data
-    memcpy(data + mac_len, _nonce, _nonce_len); // data[mac_len] ... data[mac_len+nonce_len-1]
+    memcpy(data + mac_len, nonce, nonce_len); // data[mac_len] ... data[mac_len + nonce_len - 1]
 }
 
 
 bool tCrypto::_decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
 uint8_t received_mac[LVL3_MAC_LEN];
-uint32_t received_nonce_u32;
+uint8_t nonce[12];
+uint32_t nonce_u32;
+uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac[16];
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
-    _nonce_len = crypto_list[_privacy_level].nonce_len;
-
-    if (len < mac_len + _nonce_len) {
+    if (len < mac_len + nonce_len) {
         *payload_len = 0; // TODO: what should we do ?
         return false;
     }
 
     // get mac from data
-    memcpy(received_mac, data, mac_len); // data[0] ... data[mac_len-1]
+    memcpy(received_mac, data, mac_len); // data[0] ... data[mac_len - 1]
 
     // get nonce from data
-    memcpy(_nonce, data + mac_len, _nonce_len); // data[mac_len] ... data[mac_len+nonce_len-1]
+    memset(nonce, 0, 12);
+    nonce_u32 = 0;
+    memcpy(nonce, data + mac_len, nonce_len); // data[mac_len] ... data[mac_len + nonce_len - 1]
+    memcpy(&nonce_u32, nonce, nonce_len);     // _nonce_u32 = _nonce[0] ... _nonce[nonce_len - 1]
 
     // correct len, payload_len for the mac and nonce
-    *payload_len -= mac_len + _nonce_len;
-    len -= mac_len + _nonce_len;
+    *payload_len -= mac_len + nonce_len;
+    len -= mac_len + nonce_len;
 
     // move data to data[0]
-    memmove(data, data + mac_len + _nonce_len, len); // NOT memcpy(), needs to copy from beginning towards end !!
+    memmove(data, data + mac_len + nonce_len, len); // NOT memcpy(), needs to copy from beginning towards end !!
 
     // fake the nonce for role
-    _nonce[11] = (_role == TX) ? 0xAA : 0x55;
+    nonce[11] = (_role == TX) ? 0xAA : 0x55;
 
     if (mac_len) {
         // calculate MAC over nonce + payload
-        _mac_it(mac, data, len);
+        _mac_it(mac, data, len, nonce, nonce_len);
 
         // comparison of mac_len byte mac
         bool ok = true;
@@ -310,17 +304,15 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // check nonce, don't accept previously seen nonces, to prevent replay attacks
     // do only for privacy levels > 1
     // TODO: what needs to be done upon connection loss? does it play well with ARQ?
-    received_nonce_u32 = 0;
-    memcpy(&received_nonce_u32, _nonce, _nonce_len); // _nonce_u32 = _nonce[0] ... _nonce[nonce_len-1]
-    if (_privacy_level >= 2 && received_nonce_u32 <= _nonce_u32_last_received) {
+    if (_privacy_level >= 2 && nonce_u32 <= _nonce_u32_last_received) {
         replay_counts++;
         //*payload_len = 0;
         //return false;
     }
-    _nonce_u32_last_received = received_nonce_u32;
+    _nonce_u32_last_received = nonce_u32;
 
     // decrypt data at data[0]
-    _crypt_it(data, len);
+    _crypt_it(data, len, nonce);
 
     return true;
 }
@@ -330,22 +322,22 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 // Monocypher interface
 //-------------------------------------------------------
 
-void tCrypto::_crypt_it(uint8_t* data, uint16_t len)
+void tCrypto::_crypt_it(uint8_t* data, uint16_t len, uint8_t nonce[12])
 {
 // Note: the counter does not have to start at 0, one just needs to use
 // different counter for each block, so always starting with 1 is fine
 
     crypto_chacha20_ietf(
-        data,     // cipher_text,
-        data,     // plain_text, same as cipher = in-place encoding
-        len,      // text_size,
-        _key,     // key[32],
-        _nonce,   // nonce[12],
-        1);       // ctr
+        data,         // cipher_text,
+        data,         // plain_text, same as cipher = in-place encoding
+        len,          // text_size,
+        _session_key, // key[32],
+        nonce,        // nonce[12],
+        1);           // ctr
 }
 
 
-void tCrypto::_mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len)
+void tCrypto::_mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len, uint8_t nonce[12], uint8_t nonce_len)
 {
 uint8_t poly1305_key[32];
 crypto_poly1305_ctx ctx;
@@ -358,12 +350,12 @@ crypto_poly1305_ctx ctx;
         poly1305_key, // cipher_text,
         NULL,         // plain_text, NULL = returns ChaCha20 keystream
         32,           // text_size,
-        _key,         // key[32],
-        _nonce,       // nonce[12],
+        _session_key, // key[32],
+        nonce,        // nonce[12],
         0);           // ctr
 
     crypto_poly1305_init(&ctx, poly1305_key);
-    crypto_poly1305_update(&ctx, _nonce, _nonce_len);
+    crypto_poly1305_update(&ctx, nonce, nonce_len);
     crypto_poly1305_update(&ctx, data, len);
     crypto_poly1305_final(&ctx, mac);
 }
