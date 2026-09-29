@@ -91,6 +91,15 @@ typedef struct
 
 //-- Tx Frame ----------
 
+// for reminder:
+// 11 bit: 1 .. 172 .. 1024 .. 1876 .. 2047
+//         pwm = ((int32_t)x - 1024) * 500 / 852 + 1500 (ca= x * 500 / 852 + 900, is slightly different)
+//             = 899us .. 1000us .. 1500us .. 2000us .. 2100us
+//             = -120% .. -100% .. 0% .. 100% .. 120%
+// 3-pos:  0 .. 1 .. 2
+//         rc  = 0, 1024, 2047
+//         pwm = 899us .. 1500us .. 2100us
+
 PACKED(
 typedef struct
 {
@@ -192,15 +201,15 @@ typedef struct
 
 typedef enum {
     FRAME_CMD_NONE = 0,
-    FRAME_CMD_RX_REBOOT,
-    FRAME_CMD_RX_BIND,
+    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
+    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
 
-    // these commands use the normal Tx/Rx frames, with re-purposed payload however
-    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
+    // some of these commands have additional data
+    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata  -> response with RX_SETUPDATA
     FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_SETUPDATA
-    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots
-    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters -> response with RX_SETUPDATA
+    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters  -> response with RX_SETUPDATA
+    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots (no extra data)
+    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters  -> response with RX_SETUPDATA
 } FRAME_CMD_ENUM;
 
 
@@ -236,7 +245,7 @@ typedef struct
 }) tCmdFrameRxParameters; // 24 bytes
 
 
-// send from Rx as response to GET_RX_SETUPDATA
+// send from Rx as response to command GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD
 PACKED(
 typedef struct
 {

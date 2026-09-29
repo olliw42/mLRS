@@ -32,12 +32,6 @@ void tStats::Init(uint8_t _maverage_period, uint16_t _frame_rate_hz, uint16_t _f
 
     Clear();
 
-#ifdef DEVICE_IS_TRANSMITTER
-    rx1_valid = false;
-    rx2_valid = false;
-    fhss_curr_i = UINT8_MAX;
-#endif
-
 //    LQma_valid_crc1.Init(_maverage_period);
 //    LQma_valid.Init(_maverage_period);
 //    LQma_received.Init(_maverage_period);

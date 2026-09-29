@@ -575,12 +575,6 @@ class tFhssBase
         return cnt;
     }
 
-    // Tx: for mBridge statistics
-    uint8_t CurrI_4mBridge(void)
-    {
-        return curr_i;
-    }
-
     // Tx: for CLI
     uint8_t ChList(uint8_t i) { return ch_list[i]; }
 
@@ -753,8 +747,6 @@ class tFhss
         return (uint32_t)SX128X_REG_TO_FREQ_MHZ(fhss2ndBand.FhssList(i));
 #endif
     }
-
-    uint8_t CurrI_4mBridge(void) { return fhss1stBand.CurrI_4mBridge(); }
 
   private:
     tFhssBase fhss1stBand;

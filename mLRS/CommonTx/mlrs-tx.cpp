@@ -587,7 +587,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     sxReadFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN);
     res = (antenna == ANTENNA_1) ? check_rxframe(&rxFrame) : check_rxframe(&rxFrame2);
 
-    if (res) {
+    if (res != CHECK_OK) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
 //dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }
@@ -989,10 +989,6 @@ IF_SX2(
             msp.FrameLost();
         }
 #endif
-
-        stats.fhss_curr_i = fhss.CurrI_4mBridge();
-        stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
-        stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
