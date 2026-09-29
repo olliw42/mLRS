@@ -9,7 +9,7 @@
  run_make_esp_firmwares.py
  generate esp fimrware files
  renames and copies files into tools/esp-build/firmware
- version 21.03.2026
+ version 29.09.2026
 ********************************************************
 '''
 import os
@@ -22,7 +22,8 @@ import subprocess
 
 #-- installation dependent
 
-def find_pio():
+# on a Win machine, the pio exe could be e.g. C:/Users/Olli/.platformio/penv/Scripts/platformio.exe
+def find_pio_exe():
     # PlatformIO CLI from the PATH, else from its default install location
     for name in ('pio', 'platformio'):
         pio = shutil.which(name)
@@ -144,7 +145,7 @@ def printError(txt):
 
 def mlrs_esp_compile_all():
     # argument list, not a shell string, so paths with spaces work on all OSes
-    pio_run = [find_pio(), 'run', '--project-dir', MLRS_PROJECT_DIR]
+    pio_run = [find_pio_exe(), 'run', '--project-dir', MLRS_PROJECT_DIR]
 
     print('Full Clean All')
     subprocess.call(pio_run + ['--target', 'fullclean'])
@@ -165,11 +166,16 @@ def mlrs_esp_copy_all_bin():
         if os.path.isdir(os.path.join(MLRS_PIO_BUILD_DIR,subdir)): # needs to use full path for the check to work
             print(subdir)
             file = os.path.join(MLRS_PIO_BUILD_DIR,subdir,'firmware.bin')
+            if not os.path.exists(file):
+                printError('  firmware.bin not found, skipped')
+                continue
             shutil.copy(file, os.path.join(firmwarepath,subdir+'-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR+'.bin'))
 
 
 #-- here we go
 if __name__ == "__main__":
+    if os.name == 'nt':
+        os.system('') # enables ANSI colors in the Win console, also for the PlatformIO output
     cmdline_target = ''
     cmdline_D_list = []
     cmdline_nopause = False
