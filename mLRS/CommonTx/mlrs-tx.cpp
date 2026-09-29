@@ -13,6 +13,9 @@
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
+#define DBG_CRSF_ENVELOPE(x)
+#define DBG_CRSF_32CH(x)
+
 
 // we set the priorities here to have an overview, SysTick is at 15, I2C is at 15, USB is at 0
 #define UART_IRQ_PRIORITY           10 // jrpin5 bridge, this needs to be high, when lower than DIO1, the module could stop sending via the bridge
@@ -37,6 +40,7 @@
 #include "../modules/esp-lib/esp-mcu.h"
 //xx #include "../modules/esp-lib/esp-adc.h"
 #include "../modules/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-trng.h"
 #include "../Common/hal/hal.h"
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
@@ -71,6 +75,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-adc.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #include "../Common/thirdparty/stdstm32-exti.h"
+#include "../Common/thirdparty/stdstm32-trng.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -114,6 +119,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -129,6 +135,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tCrypto crypto;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxInfo info;
@@ -258,6 +265,7 @@ void init_hw(void)
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
+    trng_init();
 
     leds_init();
     button_init();
@@ -284,7 +292,7 @@ void init_hw(void)
     sx2.Init();
 
     mbridge.Init(Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
+    crsf.Init(Config.UseCrsf, Config.UseCrsfBridge);
     in.Init(Config.UseIn);
 
     __enable_irq();
@@ -378,6 +386,7 @@ bool link_task_set(uint8_t task)
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
@@ -442,6 +451,9 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
         break;
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_STARTUP);
+        break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
         break;
@@ -465,7 +477,8 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> process_received_rxcmdframe(frame)
+//                               -> unpack_rxframe(frame)
+//                                  process_received_rxcmdframe(frame)
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
@@ -475,7 +488,7 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                 if (!sx_serial.available()) break;
                 uint8_t c = sx_serial.getc();
                 payload[payload_len++] = c;
@@ -514,6 +527,10 @@ if (!Config.IsDualBand && (fhss1_curr_i != fhss2_curr_i)) while(1){} // must not
     } else {
         pack_txcmdframe(&txFrame, &frame_stats, &rcData);
     }
+
+DBG_CRSF_32CH(dbg.puts("\nf ");
+dbg.puts(txFrame.status.is_32channels ? "32 " : "16 ");
+dbg.puts(u16toBCD_s(rcData.ch[16]));)
 }
 
 
@@ -532,6 +549,8 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     }
 
     if (!accept_payload) return; // frame has no fresh payload
+
+    unpack_rxframe(frame);
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
@@ -745,13 +764,19 @@ RESTARTCONTROLLER
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
-    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
+    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP); // we start with wanting to get rx setup data
 
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    crypto.Init(tCrypto::TX,
+        Setup.Common[Config.ConfigId].BindPhrase,
+        Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId],
+        Setup.Common[Config.ConfigId].Privacy);
+    crypto.SetSessionKey(Config.SessionRandom);
 
+    rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
     msp.Init(); // serial port selected by SerialPort
@@ -1019,8 +1044,10 @@ IF_SX2(
                     if (!connect_occured_once) {
                         stats.JustConnected();
                     }
-                    connect_state = CONNECT_STATE_CONNECTED;
-                    connect_occured_once = true;
+                    if (!crypto.InvalidKeys()) { // can't connect if crypto doesn't allow
+                        connect_state = CONNECT_STATE_CONNECTED;
+                        connect_occured_once = true;
+                    }
                 }
                 break;
             }
@@ -1048,7 +1075,11 @@ IF_SX2(
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            if (connect_occured_once) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            } else {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP);
+            }
         }
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
@@ -1071,7 +1102,9 @@ IF_SX2(
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER:
+            doParamsStore = true;
+            break;
         }
 
         // store parameters

@@ -13,6 +13,9 @@
 #define DEBUG_ENABLED
 #define FAIL_ENABLED
 
+#define DBG_CRSF_32CH(x)
+// see also #define FOOL_32CH_FOR_TEST in out.cpp
+
 
 // we set the priorities here to have an overview, SysTick is at 15
 #define CLOCK_IRQ_PRIORITY          10
@@ -96,6 +99,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -107,6 +111,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tCrypto crypto;
 
 
 // is required in bind.h
@@ -271,6 +276,12 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         setup_reload();
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
+    case FRAME_CMD_GET_RX_SETUPDATA_STARTUP:
+        // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        crypto.SetSessionKeyFromEncryptedRandomBuf(&frame->payload[1]);
+        Config.SessionRandom = crypto.SessionRandom(); // only for reporting
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        break;
     }
 }
 
@@ -297,7 +308,8 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
+//                               -> unpack_txframe(frame)
+//                                  rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
@@ -310,7 +322,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
@@ -371,14 +383,23 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
 
     stats.received_LQ_serial = frame->status.LQ_serial;
 
+    // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
+    // currently no way to detect that RC data should not be used
+    // would then have to do check_txframe() for both frames in case of diversity/dualband
+    bool ok = unpack_txframe(frame);
+
+DBG_CRSF_32CH(dbg.puts("\nf ");dbg.puts(frame->status.is_32channels ? "32 " : "16 ");)
+
     // copy rc1 data
     if (!do_payload) {
         // copy only channels of rc1 section and jump out
-        rcdata_rc1_from_txframe(&rcData, frame);
+        if (ok) rcdata_rc1_from_txframe(&rcData, frame);
+DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
         return;
     }
 
-    rcdata_from_txframe(&rcData, frame);
+    if (ok) rcdata_from_txframe(&rcData, frame);
+DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
@@ -580,7 +601,11 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    crypto.Init(tCrypto::RX,
+        Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid, Setup.tx_random[0],
+        Setup.Common[0].Privacy);
 
+    rcData.Init();
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
     msp.Init();
@@ -738,6 +763,9 @@ IF_SX2(
     if (doPostReceive) {
         doPostReceive = false;
 
+DBG_CRSF_32CH(dbg.puts("\nr ");dbg.puts(rcData.do_32channels ? "32 " : "16 ");
+dbg.puts(u16toBCD_s(rcData.ch[16]));)
+
         bool frame_received, valid_frame_received, invalid_frame_received;
         if (USE_ANTENNA1 && USE_ANTENNA2) {
             frame_received = (link_rx1_status > RX_STATUS_NONE) || (link_rx2_status > RX_STATUS_NONE);
@@ -824,7 +852,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
                 }
-                if (connect_sync_cnt >= connect_sync_cnt_max) {
+                if (connect_sync_cnt >= connect_sync_cnt_max && !crypto.InvalidKeys()) { // can't connect if crypto doesn't allow
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -882,6 +910,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
+        if (!connected()) crypto.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {
