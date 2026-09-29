@@ -22,17 +22,19 @@ import subprocess
 
 #-- installation dependent
 
-# on a Win machine, the pio exe could be e.g. C:/Users/Olli/.platformio/penv/Scripts/platformio.exe
+PIO_DIR = os.path.join("C:/",'Users','Olli','.platformio','penv','Scripts')
+
 def find_pio_exe():
-    # PlatformIO CLI from the PATH, else from its default install location
+    if os.name != 'posix':
+        return os.path.join(PIO_DIR,'platformio.exe')
+    # Mac/Linux: PlatformIO CLI from the PATH, else from its default install location
     for name in ('pio', 'platformio'):
         pio = shutil.which(name)
         if pio:
             return pio
     core_dir = os.environ.get('PLATFORMIO_CORE_DIR', os.path.join(os.path.expanduser('~'),'.platformio'))
-    scripts_dir = os.path.join(core_dir,'penv','Scripts' if os.name == 'nt' else 'bin')
     for name in ('pio', 'platformio'):
-        pio = os.path.join(scripts_dir, name + ('.exe' if os.name == 'nt' else ''))
+        pio = os.path.join(core_dir,'penv','bin',name)
         if os.path.exists(pio):
             return pio
     print('ERROR: PlatformIO not found, install it or add it to the PATH')
@@ -143,15 +145,19 @@ def printError(txt):
 # build system
 #--------------------------------------------------
 
+def run_pio(args):
+    if os.name == 'posix':
+        subprocess.call([find_pio_exe()] + args) # arg list, paths with spaces work
+    else:
+        os.system(find_pio_exe()+' '+' '.join(args)) # keeps colored output on Win
+
+
 def mlrs_esp_compile_all():
-    # argument list, not a shell string, so paths with spaces work on all OSes
-    pio_run = [find_pio_exe(), 'run', '--project-dir', MLRS_PROJECT_DIR]
-
+    pio_args = ['run', '--project-dir', MLRS_PROJECT_DIR]
     print('Full Clean All')
-    subprocess.call(pio_run + ['--target', 'fullclean'])
+    run_pio(pio_args + ['--target', 'fullclean'])
     print('Build All')
-    subprocess.call(pio_run)
-
+    run_pio(pio_args)
 
 
 #--------------------------------------------------
@@ -166,16 +172,11 @@ def mlrs_esp_copy_all_bin():
         if os.path.isdir(os.path.join(MLRS_PIO_BUILD_DIR,subdir)): # needs to use full path for the check to work
             print(subdir)
             file = os.path.join(MLRS_PIO_BUILD_DIR,subdir,'firmware.bin')
-            if not os.path.exists(file):
-                printError('  firmware.bin not found, skipped')
-                continue
             shutil.copy(file, os.path.join(firmwarepath,subdir+'-'+VERSIONONLYSTR+BRANCHSTR+HASHSTR+'.bin'))
 
 
 #-- here we go
 if __name__ == "__main__":
-    if os.name == 'nt':
-        os.system('') # enables ANSI colors in the Win console, also for the PlatformIO output
     cmdline_target = ''
     cmdline_D_list = []
     cmdline_nopause = False
