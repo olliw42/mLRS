@@ -33,7 +33,7 @@ SWC      PA14     SWDCLK                         SWCLK-JTCK, LPTIM1_OUT, I2C4_SM
 
 #define DELAY_USE_DWT
 
-#define EE_START_PAGE             252 // 512 kB flash, 2 kB page
+#define EE_START_PAGE             250 // 512 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
 #define MICROS_TIM_NAMEPREFIX     TIM3_
