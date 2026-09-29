@@ -119,7 +119,7 @@ uint16_t crc;
 
         ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
         frame->rcV2.ch16x_20x_24x_28x =
-            RC_TO_9POS(rc->ch[16 + ofs]) +        // 0..8, 9-pos
+            RC_TO_9POS(rc->ch[16 + ofs]) +        // 0 .. 8, 9-pos
             RC_TO_3POS(rc->ch[20 + ofs]) * 9 +    // 0 .. 1 .. 2, 3-pos
             RC_TO_3POS(rc->ch[24 + ofs]) * 9*3 +  // 0 .. 1 .. 2, 3-pos
             RC_TO_3POS(rc->ch[28 + ofs]) * 9*3*3; // 0 .. 1 .. 2, 3-pos
@@ -297,17 +297,18 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
         rc->ch[11 + ofs] = frame->rcV2.ch11_15 * 8;
 
         #define RC_FROM_9POS(x) (((uint32_t)x * 2046 + 4) / 8 + 1)
-        #define RC_FROM_3POS(x) (x * 1023 + 1) // equal to (x > 1) ? 2047 : ((x < 1) ? 1 : 1024)
+        #define RC_FROM_3POS(x) ((x > 1) ? 2047 : ((x < 1) ? 0 : 1024))
 
         ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
-        rc->ch[16 + ofs] = RC_FROM_9POS(frame->rcV2.ch16x_20x_24x_28x % 9);
-        rc->ch[17 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);
-        rc->ch[18 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);
-        rc->ch[19 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3);
+        rc->ch[16 + ofs] = RC_FROM_9POS(frame->rcV2.ch16x_20x_24x_28x % 9);             // 0 .. 8, 9-pos
+        rc->ch[17 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);       // 0 .. 2, 3-pos
+        rc->ch[18 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);   // 0 .. 2, 3-pos
+        rc->ch[19 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3); // 0 .. 2, 3-pos
     }
 }
 
 #endif
+
 
 //-------------------------------------------------------
 // Rx Frames (send from Rx to Tx)
