@@ -175,26 +175,27 @@ void tRxMsp::SendRcData(tRcData* const rc_out, bool frame_missed, bool failsafe)
     }
 
     if (rc_out->do_32channels) {
-        #define MSP_RC_2BIT(v)  (v >= 1536) ? 3 : ((v <= 512) ? 1 : 2) // 1 .. 2 .. 3, bits, 3-way
+        // Note: the 9-pos channels CH16-CH20 are broken down to three positions !
+        #define MSP_RC_FROM_2BIT(rc)  (rc >= 1500) ? 3 : ((rc <= 548) ? 1 : 2) // 1 .. 2 .. 3, bits, 3-way
         rc_channels_do_32 = true;
         rc_channels_16to32.resolutionMode = 0;
         rc_channels_16to32.startChannel = 16;
-        rc_channels_16to32.ch0 = MSP_RC_2BIT(rc_out->ch[16]);
-        rc_channels_16to32.ch1 = MSP_RC_2BIT(rc_out->ch[17]);
-        rc_channels_16to32.ch2 = MSP_RC_2BIT(rc_out->ch[18]);
-        rc_channels_16to32.ch3 = MSP_RC_2BIT(rc_out->ch[19]);
-        rc_channels_16to32.ch4 = MSP_RC_2BIT(rc_out->ch[20]);
-        rc_channels_16to32.ch5 = MSP_RC_2BIT(rc_out->ch[21]);
-        rc_channels_16to32.ch6 = MSP_RC_2BIT(rc_out->ch[22]);
-        rc_channels_16to32.ch7 = MSP_RC_2BIT(rc_out->ch[23]);
-        rc_channels_16to32.ch8 = MSP_RC_2BIT(rc_out->ch[24]);
-        rc_channels_16to32.ch9 = MSP_RC_2BIT(rc_out->ch[25]);
-        rc_channels_16to32.ch10 = MSP_RC_2BIT(rc_out->ch[26]);
-        rc_channels_16to32.ch11 = MSP_RC_2BIT(rc_out->ch[27]);
-        rc_channels_16to32.ch12 = MSP_RC_2BIT(rc_out->ch[28]);
-        rc_channels_16to32.ch13 = MSP_RC_2BIT(rc_out->ch[29]);
-        rc_channels_16to32.ch14 = MSP_RC_2BIT(rc_out->ch[30]);
-        rc_channels_16to32.ch15 = MSP_RC_2BIT(rc_out->ch[31]);
+        rc_channels_16to32.ch0 = MSP_RC_FROM_2BIT(rc_out->ch[16]);
+        rc_channels_16to32.ch1 = MSP_RC_FROM_2BIT(rc_out->ch[17]);
+        rc_channels_16to32.ch2 = MSP_RC_FROM_2BIT(rc_out->ch[18]);
+        rc_channels_16to32.ch3 = MSP_RC_FROM_2BIT(rc_out->ch[19]);
+        rc_channels_16to32.ch4 = MSP_RC_FROM_2BIT(rc_out->ch[20]);
+        rc_channels_16to32.ch5 = MSP_RC_FROM_2BIT(rc_out->ch[21]);
+        rc_channels_16to32.ch6 = MSP_RC_FROM_2BIT(rc_out->ch[22]);
+        rc_channels_16to32.ch7 = MSP_RC_FROM_2BIT(rc_out->ch[23]);
+        rc_channels_16to32.ch8 = MSP_RC_FROM_2BIT(rc_out->ch[24]);
+        rc_channels_16to32.ch9 = MSP_RC_FROM_2BIT(rc_out->ch[25]);
+        rc_channels_16to32.ch10 = MSP_RC_FROM_2BIT(rc_out->ch[26]);
+        rc_channels_16to32.ch11 = MSP_RC_FROM_2BIT(rc_out->ch[27]);
+        rc_channels_16to32.ch12 = MSP_RC_FROM_2BIT(rc_out->ch[28]);
+        rc_channels_16to32.ch13 = MSP_RC_FROM_2BIT(rc_out->ch[29]);
+        rc_channels_16to32.ch14 = MSP_RC_FROM_2BIT(rc_out->ch[30]);
+        rc_channels_16to32.ch15 = MSP_RC_FROM_2BIT(rc_out->ch[31]);
     }
 
     inject_rc_channels = true;
