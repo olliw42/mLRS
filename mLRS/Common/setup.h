@@ -111,7 +111,11 @@ void setup_configure_metadata(void)
     SetupMetaData.Mode_allowed_mask = 0b010110; // 31 Hz, 19 Hz, FSK
     #define MODE_DEFAULT  MODE_31HZ
 #elif defined DEVICE_HAS_SX127x
+  #ifdef DEVICE_HAS_SX127x_FSK
+    SetupMetaData.Mode_allowed_mask = 0b110000; // FSK, 19 Hz 7x
+  #else
     SetupMetaData.Mode_allowed_mask = 0b100000; // 19 Hz 7x, not editable
+  #endif
     #define MODE_DEFAULT  MODE_19HZ_7X
 #elif defined DEVICE_HAS_LR11xx
     // MULTIBAND
@@ -879,7 +883,10 @@ void setup_configure_config(uint8_t config_id)
     //     FrequencyBand;   <- set by configure_mode()
     //     is_lora;         <- set by configure_mode()
 
+    // SX127x doesn't allow 0x00 sync word bytes, so replace them, is done for all chips to stay compatible
     Config.Sx.FskSyncWord = Config.FrameSyncWord;
+    if ((Config.Sx.FskSyncWord & 0xFF00) == 0) Config.Sx.FskSyncWord |= 0x4A00; // 'J'
+    if ((Config.Sx.FskSyncWord & 0x00FF) == 0) Config.Sx.FskSyncWord |= 0x0050; // 'P'
     Config.Sx2.FskSyncWord = Config.Sx.FskSyncWord;
 
     Config.Sx.FlrcSyncWord = bind_dblword;
