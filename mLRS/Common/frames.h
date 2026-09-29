@@ -130,15 +130,16 @@ uint16_t crc;
         frame->payload[i] = payload[i];
     }
 
-    // crypto
-    if ((type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
+    // encrypt all frames except of GET_RX_SETUPDATA_STARTUP
+    if (crypto.PrivacyLevel() &&
+        !(type == FRAME_TYPE_TX_RX_CMD && frame->payload[0] == FRAME_CMD_GET_RX_SETUPDATA_STARTUP)) {
         // encrypt data, move data to payload + 3, copy nonce into payload, correct len for the nonce
         if (crypto.PrivacyLevel() >= 2) {
-            crypto.Encrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // all, RC data + payload
+            crypto.Encrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // RC data + payload
         } else {
             crypto.Encrypt(frame->payload, payload_len, &payload_len); // only payload
         }
-        frame->status.payload_len = payload_len;
+        frame->status.payload_len = payload_len; // adjust to new payload len
     }
 
     // finalize, crc
@@ -211,14 +212,16 @@ bool unpack_txframe(tTxFrame* const frame)
 {
 bool ok = true;
 
-    if ((frame->status.frame_type == FRAME_TYPE_TX) && crypto.PrivacyLevel()) {
+    // decrypt all frames except of GET_RX_SETUPDATA_STARTUP
+    if (crypto.PrivacyLevel() &&
+        !(frame->status.frame_type == FRAME_TYPE_TX_RX_CMD && frame->payload[0] == FRAME_CMD_GET_RX_SETUPDATA_STARTUP)) {
         uint8_t payload_len = frame->status.payload_len;
         if (crypto.PrivacyLevel() >= 2) {
-            ok = crypto.Decrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // all, RC data + payload
+            ok = crypto.Decrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // RC data + payload
         } else {
             ok = crypto.Decrypt(frame->payload, payload_len, &payload_len); // only payload
         }
-        frame->status.payload_len = payload_len;
+        frame->status.payload_len = payload_len; // adjust to new payload len
     }
 
     return ok;
