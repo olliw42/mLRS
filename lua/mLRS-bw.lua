@@ -1,6 +1,6 @@
 --local toolName = "TNS|mLRS Configurator|TNE"
 ----------------------------------------------------------------------
--- Copyright (c) MLRS project
+-- Copyright (c) mLRS Project
 -- GPL3
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 -- OlliW @ www.olliw.eu

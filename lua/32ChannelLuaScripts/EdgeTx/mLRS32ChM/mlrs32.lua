@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------
--- Copyright (c) OlliW @ www.olliw.eu
+-- Copyright (c) mLRS Project
 -- GPL3
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
