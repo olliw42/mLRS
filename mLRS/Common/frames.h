@@ -123,7 +123,7 @@ if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)
         #define RC_TO_9POS(rc_ch) ((rc_ch + 2) / 228)
         #define RC_TO_3POS(rc_ch) ((rc_ch >= 1536) ? 2 : ((rc_ch <= 512) ? 0 : 1))
 
-        ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
+        ofs = (frame->status.seq_no & 0x03); // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 1, 2, 3
         frame->rcV2.ch16x_20x_24x_28x =
             RC_TO_9POS(rc->ch[16 + ofs]) +        // 0 .. 8, 9-pos
             RC_TO_3POS(rc->ch[20 + ofs]) * 9 +    // 0 .. 1 .. 2, 3-pos
@@ -311,11 +311,11 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
         #define RC_FROM_9POS(x) (((uint32_t)x * 2046 + 4) / 8 + 1)
         #define RC_FROM_3POS(x) ((x > 1) ? 2047 : ((x < 1) ? 0 : 1024))
 
-        ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
+        ofs = (frame->status.seq_no & 0x03); // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 1, 2, 3
         rc->ch[16 + ofs] = RC_FROM_9POS(frame->rcV2.ch16x_20x_24x_28x % 9);             // 0 .. 8, 9-pos
-        rc->ch[17 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);       // 0 .. 2, 3-pos
-        rc->ch[18 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);   // 0 .. 2, 3-pos
-        rc->ch[19 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3); // 0 .. 2, 3-pos
+        rc->ch[20 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);       // 0 .. 2, 3-pos
+        rc->ch[24 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);   // 0 .. 2, 3-pos
+        rc->ch[28 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3); // 0 .. 2, 3-pos
     }
 }
 
