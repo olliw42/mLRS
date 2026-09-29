@@ -114,11 +114,15 @@ uint16_t crc;
         frame->rcV2.ch10_14 = rc->ch[10 + ofs] / 8;
         frame->rcV2.ch11_15 = rc->ch[11 + ofs] / 8;
 
+        #define RC_TO_9POS(rc_ch) ((rc_ch + 2) / 228)
+        #define RC_TO_3POS(rc_ch) ((rc_ch >= 1536) ? 2 : ((rc_ch <= 512) ? 0 : 1))
+
         ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
-        frame->rcV2.ch16_20_24_28 = (rc->ch[16 + ofs] >= 1536) ? 2 : ((rc->ch[16 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-        frame->rcV2.ch17_21_25_29 = (rc->ch[17 + ofs] >= 1536) ? 2 : ((rc->ch[17 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-        frame->rcV2.ch18_22_26_30 = (rc->ch[18 + ofs] >= 1536) ? 2 : ((rc->ch[18 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-        frame->rcV2.ch19_23_27_31 = (rc->ch[19 + ofs] >= 1536) ? 2 : ((rc->ch[19 + ofs] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+        frame->rcV2.ch16x_20x_24x_28x =
+            RC_TO_9POS(rc->ch[16 + ofs]) +        // 0..8, 9-pos
+            RC_TO_3POS(rc->ch[20 + ofs]) * 9 +    // 0 .. 1 .. 2, 3-pos
+            RC_TO_3POS(rc->ch[24 + ofs]) * 9*3 +  // 0 .. 1 .. 2, 3-pos
+            RC_TO_3POS(rc->ch[28 + ofs]) * 9*3*3; // 0 .. 1 .. 2, 3-pos
     }
 
     // pack the payload
@@ -292,11 +296,14 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
         rc->ch[10 + ofs] = frame->rcV2.ch10_14 * 8;
         rc->ch[11 + ofs] = frame->rcV2.ch11_15 * 8;
 
+        #define RC_FROM_9POS(x) (((uint32_t)x * 2046 + 4) / 8 + 1)
+        #define RC_FROM_3POS(x) (x * 1023 + 1) // equal to (x > 1) ? 2047 : ((x < 1) ? 1 : 1024)
+
         ofs = (frame->status.seq_no & 0x03) * 4; // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 4, 8, 12
-        rc->ch[16 + ofs] = (frame->rcV2.ch16_20_24_28 > 1) ? 2047 : ((frame->rcV2.ch16_20_24_28 < 1) ? 0 : 1024);
-        rc->ch[17 + ofs] = (frame->rcV2.ch17_21_25_29 > 1) ? 2047 : ((frame->rcV2.ch17_21_25_29 < 1) ? 0 : 1024);
-        rc->ch[18 + ofs] = (frame->rcV2.ch18_22_26_30 > 1) ? 2047 : ((frame->rcV2.ch18_22_26_30 < 1) ? 0 : 1024);
-        rc->ch[19 + ofs] = (frame->rcV2.ch19_23_27_31 > 1) ? 2047 : ((frame->rcV2.ch19_23_27_31 < 1) ? 0 : 1024);
+        rc->ch[16 + ofs] = RC_FROM_9POS(frame->rcV2.ch16x_20x_24x_28x % 9);
+        rc->ch[17 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);
+        rc->ch[18 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);
+        rc->ch[19 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3);
     }
 }
 

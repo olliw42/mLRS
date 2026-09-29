@@ -130,14 +130,11 @@ typedef struct
     uint16_t ch6  : 11;
     uint16_t ch7  : 11;
     uint16_t crc1;
-    uint8_t ch8_12;     // 0 .. 128 .. 255, 8 bits.  interlaced with :2
+    uint8_t ch8_12;     // 0 .. 128 .. 255, 8 bits.  interlaced with 1:2
     uint8_t ch9_13;     // 0 .. 128 .. 255, 8 bits
     uint8_t ch10_14;    // 0 .. 128 .. 255, 8 bits
     uint8_t ch11_15;    // 0 .. 128 .. 255, 8 bits
-    uint8_t ch16_20_24_28: 2; // 0 .. 1 .. 2, 2 bits, 3-way.  interlaced with :4
-    uint8_t ch17_21_25_29: 2;
-    uint8_t ch18_22_26_30: 2;
-    uint8_t ch19_23_27_31: 2;
+    uint8_t ch16x_20x_24x_28x; // 1x 9-pos and 3x 3-pos, interlaced with 1:4, = ch16 * 1 + ch20 * 9 + ch24 * 9*3 + ch289 * 9*3*3
 }) tFrameRcDataV2; // 11 bytes rc1 + 2 bytes crc1 + 5 bytes rc2 interlaced = 18 bytes
 
 
