@@ -237,28 +237,6 @@ const rfpower_t rfpower_list[] = {
 
 #endif
 
-//-------------------------------------------------------
-//-- 433 MHz/70 cm Band
-//-------------------------------------------------------
-
-//-- XRC Technologies NOVALINK 433MHz
-#ifdef POWER_PA_XRC_NOVALINK433
-#define POWER_PA_DEFINED
-
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1276_MAX          SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
-
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
-
-const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 100 },
-    { .dbm = POWER_10_DBM, .mW = 250 },
-    { .dbm = POWER_14_DBM, .mW = 500 },
-    { .dbm = POWER_17_DBM, .mW = 1000 },
-};
-
-#endif
 
 
 //-------------------------------------------------------

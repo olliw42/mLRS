@@ -42,9 +42,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
 {
   if(pcdHandle->Instance==USBD_INST)
   {
-#if defined STM32G431xx || defined STM32G441xx || defined STM32G471xx || defined STM32G473xx || \
-    defined STM32G474xx || defined STM32G483xx || defined STM32G484xx || defined STM32G491xx || \
-    defined STM32G4A1xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx || defined STM32G473xx
     // initialize HSI48, copied with adaption from SystemClock_Config()
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
@@ -60,9 +58,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USB;
 #if defined STM32F103xE
     PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
-#elif defined STM32G431xx || defined STM32G441xx || defined STM32G471xx || defined STM32G473xx || \
-      defined STM32G474xx || defined STM32G483xx || defined STM32G484xx || defined STM32G491xx || \
-      defined STM32G4A1xx
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx|| defined STM32G473xx
     // CubeMX is not adding this to SystemClock_Config(), but it is needed
     PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 #elif defined STM32F072xB

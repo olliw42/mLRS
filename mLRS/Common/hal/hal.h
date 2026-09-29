@@ -137,11 +137,11 @@ extern "C" { void delay_ms(uint16_t ms); }
 //-- XRC Technologies NOVALINK mLRS devices
 
 #ifdef TX_XRC_NOVALINK433_G473CE
-#include "xrc/tx-hal-xrc-novalink433-g473ce.h"
+#include "xrc-technologies/tx-hal-xrc-novalink433-g473ce.h"
 #endif
 
 #ifdef RX_XRC_NOVALINK433_G473CE
-#include "xrc/rx-hal-xrc-novalink433-g473ce.h"
+#include "xrc-technologies/rx-hal-xrc-novalink433-g473ce.h"
 #endif
 
 //-- FrsKy R9 system

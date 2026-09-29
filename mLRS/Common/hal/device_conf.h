@@ -89,14 +89,14 @@ The default selection of frequency bands can be overruled by feature defines.
 //-- XRC Technologies NOVALINK mLRS devices
 
 #ifdef TX_XRC_NOVALINK433_G473CE
-  #define DEVICE_NAME "XRC Tech NOVALINK 433MHz TX"
+  #define DEVICE_NAME "XRC NOVALINK 433 TX"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_433_MHZ
 #endif
 
 #ifdef RX_XRC_NOVALINK433_G473CE
-  #define DEVICE_NAME "XRC Tech NOVALINK 433MHz RX"
+  #define DEVICE_NAME "XRC NOVALINK 433 RX"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_433_MHZ
