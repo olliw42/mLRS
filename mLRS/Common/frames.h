@@ -499,8 +499,9 @@ uint8_t len;
     payload[0] = cmd;
     len = 1;
 
-    if (cmd == FRAME_CMD_GET_RX_SETUPDATA) { // add random session key
-        // TODO: should we only send after startup, if privacy level >= 2?
+    // CMD_GET_RX_SETUPDATA_STARTUP adds random session key
+    // TODO: should we only send if privacy level > 0?
+    if (cmd == FRAME_CMD_GET_RX_SETUPDATA_STARTUP) {
         crypto.EncryptSessionRandom(&(payload[1]), Config.StartupRandom, Config.BindRandom);
         len += 28;
     }

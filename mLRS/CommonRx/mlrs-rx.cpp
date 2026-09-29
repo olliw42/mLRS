@@ -261,9 +261,6 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
     case FRAME_CMD_GET_RX_SETUPDATA:
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
-        // crypto
-        crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
-        Config.SessionRandom = crypto.Random(); // only for reporting
         break;
     case FRAME_CMD_SET_RX_PARAMS:
         // received rx params, trigger sending RX_SETUPDATA in next transmission
@@ -275,8 +272,14 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         doParamsStore = true;
         break;
     case FRAME_CMD_GET_RX_SETUPDATA_WRELOAD:
-        setup_reload();
         // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        setup_reload();
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        break;
+    case FRAME_CMD_GET_RX_SETUPDATA_STARTUP:
+        // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        crypto.SetSessionKeyFromEncryptedRandom(&frame->payload[1]);
+        Config.SessionRandom = crypto.SessionRandom(); // only for reporting
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
     }

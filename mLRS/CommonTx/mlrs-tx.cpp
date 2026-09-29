@@ -386,6 +386,7 @@ bool link_task_set(uint8_t task)
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
@@ -449,6 +450,9 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
         break;
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
+        break;
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_STARTUP);
         break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
@@ -760,7 +764,7 @@ RESTARTCONTROLLER
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
-    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
+    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP); // we start with wanting to get rx setup data
 
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
@@ -1071,7 +1075,11 @@ IF_SX2(
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            if (connect_occured_once) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            } else {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP);
+            }
         }
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);

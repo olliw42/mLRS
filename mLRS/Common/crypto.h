@@ -59,7 +59,7 @@ class tCrypto
     void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
     bool Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
-    uint64_t Random(void) { return (_session_random_has_been_set) ? _session_random : 0; } // Rx only, only for reporting, no function
+    uint64_t SessionRandom(void) { return (_session_random_has_been_set) ? _session_random : 0; } // Rx only, only for reporting, no function
 
     uint32_t mac_errors;
     uint32_t replay_counts;
