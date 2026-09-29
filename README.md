@@ -43,7 +43,8 @@ The 16-channel configuration provides the following channel layout (all channels
 The 32-channel configuration provides the following channel layout:
 - CH1 - CH8: 8 channels with 11-bit resolution and higher reception probability (non-interlaced)
 - CH9 - CH16: 8 channels with 8-bit resolution (interlaced 1:2)
-- CH17 - CH32: 16 channels with three-position values (interlaced 1:4)
+- CH17 - CH20: 4 channels with 9-position values (interlaced 1:4)
+- CH21 - CH32: 13 channels with three-position values (interlaced 1:4)
 
 ### Operation Modes
 
