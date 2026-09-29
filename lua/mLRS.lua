@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-09-24', -- add a '.01' if needed for the day
+    script = '2026-09-29', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -714,18 +714,8 @@ local function doParamLoop()
             DEVICE_PARAM_LIST_expected_index = index + 1 -- prepare for next
             if DEVICE_PARAM_LIST == nil then
                 paramsError()
-            elseif index < 128 then
-                DEVICE_PARAM_LIST[index] = cmd
-                DEVICE_PARAM_LIST[index].typ = mb_to_u8(cmd.payload, 1)
-                DEVICE_PARAM_LIST[index].name = mb_to_string(cmd.payload, 2, 16)
-                DEVICE_PARAM_LIST[index].value = mb_to_value_or_str6(cmd.payload, 18, DEVICE_PARAM_LIST[index].typ)
-                DEVICE_PARAM_LIST[index].min = 0
-                DEVICE_PARAM_LIST[index].max = 0
-                DEVICE_PARAM_LIST[index].unit = ""
-                DEVICE_PARAM_LIST[index].options = {}
-                DEVICE_PARAM_LIST[index].allowed_mask = 65536
-                DEVICE_PARAM_LIST[index].editable = true
-            elseif index == 255 then -- EOL (end of list)
+            elseif index == 255 or (index < 128 and not connected and string.sub(mb_to_string(cmd.payload, 2, 16), 1, 2) == "Rx") then
+                -- EOL (end of list), or first Rx param without receiver (reload happens on connect)
                 if DEVICE_PARAM_LIST_errors == 0 then
                     updateDeviceParamCounts(2)
                     DEVICE_PARAM_LIST_complete = true
@@ -737,6 +727,17 @@ local function doParamLoop()
                     setPopupWTmo("Param Upload Errors ("..tostring(DEVICE_PARAM_LIST_errors)..")!\nTry Reload", 200)
                 end
                 DEVICE_DOWNLOAD_is_running = false
+            elseif index < 128 then
+                DEVICE_PARAM_LIST[index] = cmd
+                DEVICE_PARAM_LIST[index].typ = mb_to_u8(cmd.payload, 1)
+                DEVICE_PARAM_LIST[index].name = mb_to_string(cmd.payload, 2, 16)
+                DEVICE_PARAM_LIST[index].value = mb_to_value_or_str6(cmd.payload, 18, DEVICE_PARAM_LIST[index].typ)
+                DEVICE_PARAM_LIST[index].min = 0
+                DEVICE_PARAM_LIST[index].max = 0
+                DEVICE_PARAM_LIST[index].unit = ""
+                DEVICE_PARAM_LIST[index].options = {}
+                DEVICE_PARAM_LIST[index].allowed_mask = 65536
+                DEVICE_PARAM_LIST[index].editable = true
             else
                 paramsError()
             end
