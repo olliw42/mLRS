@@ -64,7 +64,7 @@ void tCrypto::Init(
 
     crypto_blake2b(_static_key, 32, _static_source, 46); // construct static key
 
-    _startup_nonce_u32 = 0; // is reused on each Tx power cycle, if there is concern, re-bind
+    _startup_nonce_u32 = 0;
 
     // session secrets
 
@@ -97,11 +97,11 @@ bool tCrypto::InvalidKeys(void) // to tell Tx or Rx that they can't connect
 
 // Tx: called in init sequence
 // Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame is received
-void tCrypto::SetSessionKey(uint64_t random)
+void tCrypto::SetSessionKey(uint64_t session_random)
 {
 uint8_t key_source[64]; // 46 + 8 = 54
 
-    _session_random = random;
+    _session_random = session_random;
 
     memcpy(key_source,      _static_source,   46); // 46 bytes
     memcpy(key_source + 46, &_session_random,  8); //  8 bytes // sum = 54 bytes
@@ -117,7 +117,7 @@ uint8_t key_source[64]; // 46 + 8 = 54
 // 20 .. 27:  8 bytes mac
 
 // only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame
-void tCrypto::EncryptSessionRandom(uint8_t random[28], uint64_t startup_random, uint64_t bind_random)
+void tCrypto::EncryptSessionRandom(uint8_t* const buf28, uint64_t startup_random, uint64_t bind_random)
 {
 uint8_t nonce[12];
 uint8_t poly1305_key[32];
@@ -132,19 +132,19 @@ uint8_t mac[16];
     memcpy(nonce, &startup_random, 8);
     memcpy(nonce + 8, &bind_random, 4);
 
-    crypto_chacha20_ietf(random, (uint8_t*)&_session_random, 8, _static_key, nonce, 1); // random[0] ... random[8 - 1]
+    crypto_chacha20_ietf(buf28, (uint8_t*)&_session_random, 8, _static_key, nonce, 1); // random[0] ... random[8 - 1]
 
-    memcpy(random + 8, nonce, 12); // random[8] ... random[20 - 1]
+    memcpy(buf28 + 8, nonce, 12); // random[8] ... random[20 - 1]
 
     crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
-    crypto_poly1305(mac, random, 20, poly1305_key); // mac over session random & nonce
+    crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
 
-    memcpy(random + 20, mac, 8); // random[20] ... random[28 - 1]
+    memcpy(buf28 + 20, mac, 8); // random[20] ... random[28 - 1]
 }
 
 
 // only Rx: called upon receive of a FRAME_CMD_GET_RX_SETUPDATA frame
-void tCrypto::SetSessionKeyFromEncryptedRandom(uint8_t random[28])
+void tCrypto::SetSessionKeyFromEncryptedRandomBuf(uint8_t* const buf28)
 {
 uint8_t nonce[12];
 uint8_t poly1305_key[32];
@@ -154,13 +154,13 @@ uint64_t session_random;
     if (_session_key_has_been_set) return; // has already been set
 
     memset(nonce, 0, 12);
-    memcpy(nonce, random + 8, 12); // random[8] ... random[20 -1]
+    memcpy(nonce, buf28 + 8, 12); // random[8] ... random[20 -1]
 
     crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
-    crypto_poly1305(mac, random, 20, poly1305_key); // mac over session random & nonce
-    for (uint8_t i = 0; i < 8; i++) { if (random[20 + i] != mac[i]) return; } // authentication failed
+    crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
+    for (uint8_t i = 0; i < 8; i++) { if (buf28[20 + i] != mac[i]) return; } // authentication failed
 
-    crypto_chacha20_ietf((uint8_t*)&session_random, random, 8, _static_key, nonce, 1);
+    crypto_chacha20_ietf((uint8_t*)&session_random, buf28, 8, _static_key, nonce, 1);
 
     SetSessionKey(session_random);
 }
@@ -215,6 +215,8 @@ bool tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 //   3/4 bytes nonce
 //   data
 
+// Note: The outside code must ensure that payload_len is adjusted correct,
+// so that payload_len + nonce_len + mac_len never exceeds the size of the payload buffer.
 void tCrypto::_encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 {
 uint8_t nonce[12];
@@ -263,7 +265,7 @@ uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac[16];
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
-    if (len < mac_len + nonce_len) {
+    if (len < mac_len + nonce_len || *payload_len < mac_len + nonce_len) {
         *payload_len = 0; // TODO: what should we do ?
         return false;
     }

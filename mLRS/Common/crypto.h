@@ -36,6 +36,9 @@ SecretKey handling:
 #include <inttypes.h>
 
 
+#define CRYPTO_STARTUP_RANDOM_BUF_LEN  28 // length of encrypted session random, nonce, mac
+
+
 class tCrypto
 {
   public:
@@ -49,9 +52,9 @@ class tCrypto
         char* const bind_phrase, uint8_t tx_uid[12], uint8_t rx_uid[12], uint64_t tx_random,
         uint8_t privacy_level);
 
-    void SetSessionKey(uint64_t random); // Tx only
-    void EncryptSessionRandom(uint8_t random[16], uint64_t startup_random, uint64_t bind_random); // Tx only
-    void SetSessionKeyFromEncryptedRandom(uint8_t random[16]); // Rx only
+    void SetSessionKey(uint64_t session_random); // Tx only
+    void EncryptSessionRandom(uint8_t* const buf28, uint64_t startup_random, uint64_t bind_random); // Tx only
+    void SetSessionKeyFromEncryptedRandomBuf(uint8_t* const buf28); // Rx only
 
     void Disconnected(void); // Rx only
 

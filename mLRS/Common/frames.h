@@ -199,13 +199,14 @@ uint16_t crc;
     fmav_crc_init(&crc);
     if (crypto.PrivacyLevel() >= 2) {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_LEN - 2); // don't do crc1
+        if (crc != frame->crc) return CHECK_ERROR_CRC1; // report an error as crc1 error
     } else {
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
         if (crc != crc1) return CHECK_ERROR_CRC1;
 
         fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + rc1_len, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - rc1_len - 2);
+        if (crc != frame->crc) return CHECK_ERROR_CRC;
     }
-    if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     // TODO: should we do the encryption here to capture RC data fakes ??
 
@@ -516,7 +517,7 @@ void _copy_cmdframerxparameters_to_rxsetup(tCmdFrameRxParameters* const rx_param
 // Tx: send cmd to Rx
 void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
-uint8_t payload[32]; // 1 + 16 = 17
+uint8_t payload[32]; // 1 + CRYPTO_STARTUP_RANDOM_BUF_LEN (=28) = 29
 uint8_t len;
 
     payload[0] = cmd;
@@ -526,7 +527,7 @@ uint8_t len;
     // TODO: should we only send if privacy level > 0?
     if (cmd == FRAME_CMD_GET_RX_SETUPDATA_STARTUP) {
         crypto.EncryptSessionRandom(&(payload[1]), Config.StartupRandom, Config.BindRandom);
-        len += 28;
+        len += CRYPTO_STARTUP_RANDOM_BUF_LEN;
     }
 
     _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, len);
