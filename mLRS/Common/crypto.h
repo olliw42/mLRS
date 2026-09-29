@@ -51,12 +51,14 @@ class tCrypto
     bool InvalidFrameDecrypted(void); // Rx only
     void Disconnected(void); // Rx only
 
+    bool InvalidKeys(void);
+
     uint8_t PrivacyLevel(void) { return _privacy_level; }
     uint16_t NonceLen(void);
     void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
     bool Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
 
-    uint64_t Random(void) { return (_random_valid) ? _random : 0; } // Rx only
+    uint64_t Random(void) { return (_random_has_been_set) ? _random : 0; } // Rx only, only for reporting, no function
 
     uint32_t mac_errors;
     uint32_t replay_counts;
@@ -65,11 +67,12 @@ class tCrypto
     uint8_t _role;
     uint8_t _privacy_level;
 
+    uint64_t _static_random;
     uint8_t _static[64];
     uint8_t _static_key[32];
     uint32_t _static_nonce_u32;
     uint64_t _random;
-    bool _random_valid;
+    bool _random_has_been_set;
     uint8_t _key[32];
     uint32_t _nonce_u32;
     uint8_t _nonce[12];
