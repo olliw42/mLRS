@@ -140,54 +140,53 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-        if (power_dbm >= POWER_30_DBM) { // -> 30
+        if (power_dbm >= POWER_33_DBM) { // -> 33
             *sx_power = 8;
+            *actual_power_dbm = 33;
+        } else if (power_dbm >= POWER_30_DBM) { // -> 30
+            *sx_power = 3;
             *actual_power_dbm = 30;
         } else if (power_dbm >= POWER_27_DBM) { // -> 27
-            *sx_power = 0;
+            *sx_power = -0;
             *actual_power_dbm = 27;
         } else if (power_dbm >= POWER_24_DBM) { // -> 24
             *sx_power = -3;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
-            *sx_power = -6;
+            *sx_power = -7;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) { // -> 17
-            *sx_power = -7;
+            *sx_power = -9;
             *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) { // -> 14
-            *sx_power = -12;
-            *actual_power_dbm = 14;
         } else {
             *sx_power = -16;
-            *actual_power_dbm = 10; // measures about 11 dBm
+            *actual_power_dbm = 11;
         }
     } else {
         uint8_t dac = 88;
-        if (power_dbm >= POWER_30_DBM) { // -> 30
+        if (power_dbm >= POWER_33_DBM) { // -> 33
             dac = 70;
             *sx_power = 3;
-            *actual_power_dbm = 30;
-        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+            *actual_power_dbm = 32;
+        } else if (power_dbm >= POWER_30_DBM) { // -> 30
             dac = 85;
             *sx_power = 0;
+            *actual_power_dbm = 30;
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+            *sx_power = -5;
             *actual_power_dbm = 27;
         } else if (power_dbm >= POWER_24_DBM) { // -> 24
-            *sx_power = -6;
+            *sx_power = -8;
             *actual_power_dbm = 24;
         } else if (power_dbm >= POWER_20_DBM) { // -> 20
-            *sx_power = -9;
+            *sx_power = -12;
             *actual_power_dbm = 20;
         } else if (power_dbm >= POWER_17_DBM) { // -> 17
-            *sx_power = -12;
-            *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) { // -> 14
             *sx_power = -15;
-            *actual_power_dbm = 14;
+            *actual_power_dbm = 17;
         } else {
-            dac = 150;
-            *sx_power = -18;
-            *actual_power_dbm = 10; // measures about 11 dBm
+            *sx_power = -17;
+            *actual_power_dbm = 14;
         }
         dacWrite(SX_PA_DAC_IO, dac);
     }
@@ -196,11 +195,11 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_14_DBM, .mW = 25 },
+    { .dbm = POWER_12_DBM, .mW = 16 },
     { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
+    { .dbm = POWER_33_DBM, .mW = 2000 },
 };
