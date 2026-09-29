@@ -9,13 +9,16 @@
 // Based on Monocypher, https://github.com/LoupVaillant/monocypher
 /*
 SecretKey handling:
-- on bind, a key root is exchanged, which is based on bind phrase, tx uid, rx uid, 8 byte random number
-  from that a secret static key is generated
-- on first connection two things happen
-    - a 8 byte random number from a TRNG is exchanged; the exchange is encrypted and
-      authenticated with 4 byte nonce and 4 byte mac using the static key
+- on bind, a key root is exchanged, which is based on bind phrase, tx uid, rx uid, 8-byte random number
+  from that a static key is generated
+  Note: the material used for constructing the static key is exchanged during binding in plain text.
+  Binding must thus be performed in a secure environment. If there is any suspicion that the static key
+  has been compromised, a new binding should be performed.
+- on first connection this happen
+    - a fresh 8-byte session random number is exchanged; the exchange is encrypted and
+      authenticated with a 12-byte random nonce and 8-byte mac using the static key
     - a secret session key is generated, which is based on
-      the key root data plus the 8-byte random value
+      the key root data plus the 8-byte session random number
 - depending on the privacy level, the nonce is 3 or 4 bytes, and a mac for authentication is 0, 3, or 8 bytes
 - replay attacks can be prevented by requiring the nonce to monotonously increase (not yet implemented)
 - privacy levels
