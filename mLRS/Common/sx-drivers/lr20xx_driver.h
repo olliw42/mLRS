@@ -695,7 +695,7 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 //-------------------------------------------------------
 // Driver for SX2
 //-------------------------------------------------------
-#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
+#if defined DEVICE_HAS_DIVERSITY || defined DEVICE_HAS_DIVERSITY_SINGLE_SPI || defined DEVICE_HAS_DUAL_LR20xx_LR20xx
 
 #ifndef SX2_BUSY
   #error SX2 must have a BUSY pin!
@@ -736,6 +736,7 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
         spib_deselect();
     }
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
     {
         spib_transfer(dataout, datain, len);
@@ -750,6 +751,22 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
     {
         spib_write(dataout, len);
     }
+#else
+    void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
+    {
+        spi_transfer(dataout, datain, len);
+    }
+
+    void SpiRead(uint8_t* datain, uint8_t len) override
+    {
+        spi_read(datain, len);
+    }
+
+    void SpiWrite(uint8_t* dataout, uint8_t len) override
+    {
+        spi_write(dataout, len);
+    }
+#endif
 
     //-- RF power interface
 
@@ -783,8 +800,12 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
     {
         Lr20xxDriverCommon::Init();
 
+#ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
         spib_init();
         spib_setnop(0x00); // 0x00 = NOP
+#else
+        // spi init done already by driver1
+#endif
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();
