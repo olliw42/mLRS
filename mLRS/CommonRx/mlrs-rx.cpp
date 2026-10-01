@@ -304,8 +304,7 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 //           -> pack_rx_frame(...) or pack_rxcmdframe(...)
 // receive
 //   isr:        -> irq2_status
-//   isr loop:   -> do_receive(antenna, do_clock_reset)
-//               -> link_rx1_status
+//   isr loop:   -> link_rx1/2_status = do_receive(antenna, do_clock_reset)
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
 //                               -> unpack_txframe(frame)
@@ -436,6 +435,7 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
 }
 
 
+// called in isr loop
 uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
 {
 uint8_t res;
@@ -473,6 +473,7 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 }
 
 
+// called in doPostReceive loop
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
@@ -522,6 +523,7 @@ tTxFrame* frame;
 }
 
 
+// called in doPostReceive loop
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     tarq.FrameMissed();
@@ -961,11 +963,12 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), stats.GetLQ_rc());
+            bool failsafe = (millis32()- rcData.tlast_update_ms > CONNECT_TMO_MS);
+            out.SendRcData(&rcData, frame_missed, failsafe, stats.GetLastRssi(), stats.GetLQ_rc());
             out.SendLinkStatistics();
-            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
-            msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
-            dronecan.SendRcData(out.GetRcDataPtr(), false);
+            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, failsafe);
+            msp.SendRcData(out.GetRcDataPtr(), frame_missed, failsafe);
+            dronecan.SendRcData(out.GetRcDataPtr(), failsafe);
             rfpower.Set(&rcData, Setup.Rx.PowerSwitchChannel, Setup.Rx.Power);
         } else {
             if (connect_occured_once) {

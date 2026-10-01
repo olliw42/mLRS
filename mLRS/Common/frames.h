@@ -16,6 +16,7 @@
 #include "hal/hal.h"
 
 
+extern volatile uint32_t millis32(void);
 extern tSetupMetaData SetupMetaData;
 extern tSetup Setup;
 extern tGlobalConfig Config;
@@ -248,6 +249,8 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
 
+    rc->tlast_update_ms = millis32();
+
     if (frame->status.is_32channels) {
         rc->do_32channels = true;
     }
@@ -277,6 +280,8 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
     if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
+
+    rc->tlast_update_ms = millis32();
 
     if (frame->status.is_32channels) {
         rc->do_32channels = true;
