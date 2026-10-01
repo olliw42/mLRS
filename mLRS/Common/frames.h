@@ -89,7 +89,8 @@ uint16_t crc;
     frame->status.payload_len = payload_len;
 
     // pack rc data
-if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame))) {
+//TODO if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame))) {
+if (1) {
 
     if (!frame->status.is_32channels) {
         // rcData: 0 .. 1024 .. 2047, 11 bits
@@ -146,7 +147,9 @@ if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)
     }
 
     // encrypt all frames except of GET_RX_SETUPDATA_STARTUP
-    if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
+//TODO     if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
+    // encrypt only normal TX frames
+    if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_TX) {
         CHECK_PAYLOAD_LEN(frame->status.payload_len,FRAME_TX_PAYLOAD_LEN);
         // encrypt data, move data to payload + N, copy nonce & mac into payload, correct len
         if (crypto.PrivacyLevel() >= 2) {
@@ -229,7 +232,9 @@ uint16_t crc;
 bool unpack_txframe(tTxFrame* const frame)
 {
     // decrypt all frames except of GET_RX_SETUPDATA_STARTUP
-    if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
+//TODO    if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
+    // decrypt only normal TX frames
+    if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_TX) {
         if (crypto.PrivacyLevel() >= 2) {
             // RC data + payload
             if (!crypto.Decrypt((uint8_t*)&(frame->rcV1), 18 + frame->status.payload_len)) return false;
@@ -247,7 +252,7 @@ bool unpack_txframe(tTxFrame* const frame)
 // fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
+//TODO    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
 
     rc->tlast_update_ms = millis32();
 
@@ -279,7 +284,7 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 // fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
+//TODO    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
 
     rc->tlast_update_ms = millis32();
 
@@ -399,7 +404,7 @@ uint16_t crc;
         frame->payload[i] = payload[i];
     }
 
-    // encrypt normal TX frames
+    // encrypt only normal RX frames
     // Note: FRAME_TYPE_TX_RX_CMD-FRAME_CMD_RX_SETUPDATA sends tRxCmdFrameRxSetupData,
     // which is 82 bytes of size and thus payload_len = 82. It thus cannot be encrypted,
     // since Encrypt() would then write beyond the payload area.
@@ -456,7 +461,7 @@ uint16_t crc;
 // unpack a normal tRxFrame, comes before any payload processing
 bool unpack_rxframe(tRxFrame* const frame)
 {
-    // decrypt normal TX frames
+    // decrypt only normal RX frames
     if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_RX) {
         if (!crypto.Decrypt(frame->payload, frame->status.payload_len)) {
             return false;
