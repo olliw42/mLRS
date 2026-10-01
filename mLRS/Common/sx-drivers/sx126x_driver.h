@@ -423,6 +423,7 @@ class Sx126xDriver : public Sx126xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 31.25 ns, SCK to NSS rising edge hold time
         spi_deselect();
+        delay_ns(600); // datasheet says T_SW = 600 ns max, NSS rising edge to BUSY high, must elapse before WaitOnBusy()
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
@@ -559,6 +560,7 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 31.25 ns, SCK to NSS rising edge hold time
         spib_deselect();
+        delay_ns(600); // datasheet says T_SW = 600 ns max, NSS rising edge to BUSY high, must elapse before WaitOnBusy()
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
