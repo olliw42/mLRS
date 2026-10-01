@@ -911,7 +911,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         if (!connected()) tarq.Disconnected();
-        if (!connected()) crypto.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
         if (!tick_1hz_commensurate) {

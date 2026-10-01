@@ -57,8 +57,6 @@ class tCrypto
     void EncryptSessionRandom(uint8_t* const buf28, uint64_t startup_random, uint64_t bind_random); // Tx only
     void SetSessionKeyFromEncryptedRandomBuf(uint8_t* const buf28); // Rx only
 
-    void Disconnected(void); // Rx only
-
     bool InvalidKeys(void);
 
     uint8_t PrivacyLevel(void) { return _privacy_level; }
@@ -87,8 +85,6 @@ class tCrypto
     uint32_t _nonce_u32;
 
     uint32_t _nonce_u32_last_received;
-
-    bool _decrypt_ok;
 
     void _encrypt_it(uint8_t* const data, uint8_t len);
     bool _decrypt_it(uint8_t* const data, uint8_t len);

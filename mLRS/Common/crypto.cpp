@@ -84,8 +84,6 @@ void tCrypto::Init(
 
     _nonce_u32_last_received = 0;
 
-    _decrypt_ok = true;
-
     // statistics
     mac_errors = 0;
     replay_counts = 0;
@@ -171,19 +169,6 @@ uint64_t session_random;
 }
 
 
-// only Rx: called when receiver is disconnected
-void tCrypto::Disconnected(void)
-{
-    // TODO: this needs carefully thinking through.
-    // one needs to consider differences between re-powered, reconnected
-    // currently: for privacy level >= 2, session key stays always persistent
-
-//    if (_privacy_level <= 1) { // accept potentially new session random/session key
-//        _session_random_has_been_set = false;
-//    }
-}
-
-
 //-- API miscellaneous
 
 uint16_t tCrypto::NonceLen(void)
@@ -206,8 +191,7 @@ bool tCrypto::Decrypt(uint8_t* const data, uint8_t len)
 {
     if (!_privacy_level) return true; // no encryption
 
-    _decrypt_ok = _decrypt_it(data, len);
-    return _decrypt_ok;
+    return _decrypt_it(data, len);
 }
 
 
