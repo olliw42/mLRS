@@ -37,6 +37,7 @@ SecretKey handling:
 
 
 #define CRYPTO_STARTUP_RANDOM_BUF_LEN  28 // length of encrypted session random, nonce, mac
+#define CRYPTO_NONCE_MAX_LEN  12 // maximum length of nonce and mac
 
 
 class tCrypto

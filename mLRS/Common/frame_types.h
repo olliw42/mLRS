@@ -285,6 +285,8 @@ typedef struct
 
 
 // send from Rx as response to command GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD, GET_RX_SETUPDATA_STARTUP
+// Note: This structure cannot be shortened by up to 12 bytes for nonce and MAC.
+// It can thus not be encrypted.
 PACKED(
 typedef struct
 {
@@ -320,6 +322,11 @@ typedef struct
 
 
 // send from Tx to do SET_RX_PARAMS
+// Note: The strange arrangement is to allow for encryption.
+// Unfortunately, the version and layout fields were placed at the end of the structure.
+// This prevents reserving the up to 12 bytes required for nonce and MAC.
+// Hence, on the Tx side these data are copied into the copy fields, and on the Rx side
+// are moved for privacy > 0 back to the end. This maintains backwards compatibility.
 PACKED(
 typedef struct
 {
@@ -337,10 +344,15 @@ typedef struct
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare4[24];
+    uint8_t spare3[12];
 
-    uint16_t tx_firmware_version_u16; // 16.64.64
-    uint16_t tx_setup_layout_u16; // 16.64.64
+    uint16_t tx_firmware_version_u16_new; // 16.64.64
+    uint16_t tx_setup_layout_u16_new; // 16.64.64
+
+    //---
+    uint8_t reserved_for_crypto[8]; // do not use
+    uint16_t tx_firmware_version_u16_old; // 16.64.64
+    uint16_t tx_setup_layout_u16_old; // 16.64.64
 }) tTxCmdFrameRxParams; // 64 bytes
 
 

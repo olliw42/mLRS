@@ -37,6 +37,13 @@ typedef enum {
 } CHECK_ENUM;
 
 
+#ifdef FAIL_ENABLED
+#define CHECK_PAYLOAD_LEN(l,m) if (l > m - crypto.NonceLen()) while(1){} // must not happen
+#else
+#define CHECK_PAYLOAD_LEN(l,m) if (l > m - crypto.NonceLen()) l = m - crypto.NonceLen(); // handle it gracefully and hope for the best
+#endif
+
+
 //-------------------------------------------------------
 // Tx Frames (send from Tx to Rx)
 //-------------------------------------------------------
@@ -139,6 +146,7 @@ if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)
 
     // encrypt all frames except of GET_RX_SETUPDATA_STARTUP
     if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
+        CHECK_PAYLOAD_LEN(payload_len,FRAME_TX_PAYLOAD_LEN);
         // encrypt data, move data to payload + N, copy nonce & mac into payload, correct len
         if (crypto.PrivacyLevel() >= 2) {
             crypto.Encrypt((uint8_t*)&(frame->rcV1), 18 + payload_len, &payload_len); // RC data + payload
@@ -391,6 +399,7 @@ uint16_t crc;
     // since Encrypt() would then write beyond the payload area.
     // It doesn't carry any secret data, so shouldn't be too bad.
     if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_RX) {
+        CHECK_PAYLOAD_LEN(payload_len,FRAME_RX_PAYLOAD_LEN);
         // encrypt data, move data to payload + N, copy nonce & mac into payload, correct len
         crypto.Encrypt(frame->payload, payload_len, &payload_len);
         frame->status.payload_len = payload_len; // adjust to new payload len
@@ -572,14 +581,19 @@ tRxCmdFrameRxSetupData* rx_setupdata = (tRxCmdFrameRxSetupData*)frame->payload;
 
 // Tx: send new receiver parameters with FRAME_CMD_SET_RX_PARAMS to Rx
 // we take the values from Tx' Setup.Rx structure
+// Note: The length must be adjusted to free the space for the nonce and MAC.
 void pack_txcmdframe_setrxparams(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc)
 {
 tTxCmdFrameRxParams rx_params = {};
 
     rx_params.cmd = FRAME_CMD_SET_RX_PARAMS;
 
-    rx_params.tx_firmware_version_u16 = version_to_u16(VERSION);
-    rx_params.tx_setup_layout_u16 = version_to_u16(SETUPLAYOUT);
+    rx_params.tx_firmware_version_u16_new = version_to_u16(VERSION);
+    rx_params.tx_setup_layout_u16_new = version_to_u16(SETUPLAYOUT);
+
+    // maintain the duplicates
+    rx_params.tx_firmware_version_u16_old = rx_params.tx_firmware_version_u16_new;
+    rx_params.tx_setup_layout_u16_old = rx_params.tx_setup_layout_u16_new;
 
     strbufstrcpy(rx_params.BindPhrase_6, Setup.Common[Config.ConfigId].BindPhrase, 6);
     rx_params.FrequencyBand = Setup.Common[Config.ConfigId].FrequencyBand;
@@ -589,13 +603,16 @@ tTxCmdFrameRxParams rx_params = {};
 
     _copy_rxsetup_to_cmdframerxparameters(&(rx_params.RxParams));
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
+    uint8_t payload_len = sizeof(rx_params) - crypto.NonceLen();
+
+    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, payload_len);
 }
 
 #endif
 #ifdef DEVICE_IS_RECEIVER
 
 // Rx: send FRAME_CMD_RX_SETUPDATA to Tx
+// Note: This frame is fixed 82 bytes payload len and cannot be encrypted
 void pack_rxcmdframe_rxsetupdata(tRxFrame* const frame, tFrameStats* const frame_stats)
 {
 tRxCmdFrameRxSetupData rx_setupdata = {};
@@ -629,6 +646,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
 
 // Rx: handle FRAME_CMD_SET_RX_PARAMS
 // new parameter values are stored in Rx' Setup.Rx fields
+// Note: This frame has shortened 64-12 payload len and can be encrypted
 void unpack_txcmdframe_setrxparams(tTxFrame* const frame)
 {
 tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
@@ -639,10 +657,16 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].Ortho = rx_params->Ortho;
     Setup.Common[0].Privacy = rx_params->Privacy;
 
-    // don't take over Rx parameters if there is a layout version missmatch
+    if (crypto.PrivacyLevel() == 0) {
+        // frame could come from an old transmitter, so take values at old location
+        rx_params->tx_firmware_version_u16_new = rx_params->tx_firmware_version_u16_old;
+        rx_params->tx_setup_layout_u16_new = rx_params->tx_setup_layout_u16_old;
+    }
+
+    // don't take over Rx parameters if there is a layout version mismatch
     // tx_setup_layout_u16 is 0 for versions < 10401
     // TODO: conversion ?
-    if (version_from_u16(rx_params->tx_setup_layout_u16) != (uint32_t)SETUPLAYOUT) return;
+    if (version_from_u16(rx_params->tx_setup_layout_u16_new) != (uint32_t)SETUPLAYOUT) return;
 
     _copy_cmdframerxparameters_to_rxsetup(&(rx_params->RxParams));
     // setup_sanitize_rx_config(); // should not ever be needed !

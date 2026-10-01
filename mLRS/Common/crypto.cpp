@@ -20,6 +20,11 @@
 #define LVL3_MAC_LEN    8
 
 
+#if LVL3_NONCE_LEN + LVL3_MAC_LEN != CRYPTO_NONCE_MAX_LEN
+#error CRYPTO_NONCE_MAX_LEN incompatible with nonce and MAC defines!
+#endif
+
+
 typedef struct {
     uint8_t nonce_len;
     uint8_t mac_len;
