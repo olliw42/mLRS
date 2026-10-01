@@ -54,7 +54,6 @@ typedef enum {
     TXCRSF_CMD_MODELID_SET = 0,
     TXCRSF_CMD_BIND_START,
     TXCRSF_CMD_BIND_STOP,
-    TXCRSF_CMD_MBRIDGE_IN,
 } TXCRSF_CMD_ENUM;
 
 
@@ -75,8 +74,6 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
     bool CommandReceived(uint8_t* const cmd);
-    uint8_t* GetPayloadPtr(void);
-    uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg);
@@ -755,23 +752,14 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
     if (mbridge_cmd_received) {
         mbridge_cmd_received = false;
         // TODO: we could check crc if we wanted to
-        *cmd = TXCRSF_CMD_MBRIDGE_IN;
+        mbridge.ParseCrsfFrame(frame.payload, frame.len - 2);
+        uint8_t mbcmd;
+        if (!mbridge.CommandReceived(&mbcmd)) return false; // this should not happen, right
+        *cmd = mbcmd;
         return true;
     }
 
     return false;
-}
-
-
-uint8_t* tTxCrsf::GetPayloadPtr(void)
-{
-    return frame.payload;
-}
-
-
-uint8_t tTxCrsf::GetPayloadLen(void)
-{
-    return frame.len - 2;
 }
 
 

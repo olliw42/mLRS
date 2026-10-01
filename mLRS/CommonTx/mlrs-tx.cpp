@@ -433,7 +433,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_reset();
 #ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
-        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
+        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleRequestCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
         mbridge.Unlock();
 #endif
@@ -1125,54 +1125,12 @@ IF_SX2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-IF_CRSF( // CRSF mBridge emulation
-    // handle an incoming command
-    uint8_t mbcmd;
-    if (mbridge.CommandReceived(&mbcmd)) {
-        switch (mbcmd) {
-        case MBRIDGE_CMD_REQUEST_INFO:
-            setup_reload();
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
-            } else {
-                mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
-            }
-            break;
-        case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
-        case MBRIDGE_CMD_PARAM_SET: {
-            bool rx_param_changed;
-            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-            if (param_changed && rx_param_changed && connected()) {
-                link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-                mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mBridge
-            }
-            }break;
-        case MBRIDGE_CMD_PARAM_STORE:
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-                mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mBridge
-            } else {
-                doParamsStore = true;
-            }
-            break;
-        case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(TASK_BIND_START); break;
-        case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(TASK_BIND_STOP); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(TASK_SYSTEM_BOOT); break;
-        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
-        case MBRIDGE_CMD_MODELID_SET:
-//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
-            config_id.Change(mbridge.GetModelId());
-            break;
-        }
-    }
-);
 IF_CRSF(
     crsf.Do();
     if (crsf.ChannelsUpdated(&rcData)) {
         rc_data_updated = true;
     }
-    uint8_t crsftask; uint8_t crsfcmd; uint8_t mbcmd;
+    uint8_t crsftask; uint8_t crsfcmd;
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
         switch (crsftask) {
@@ -1181,7 +1139,6 @@ IF_CRSF(
         case TXCRSF_SEND_LINK_STATISTICS_RX: crsf.SendLinkStatisticsRx(); break;
         case TXCRSF_SEND_LINK_STATISTICS_ALL: crsf.SendLinkStatisticsAll(); break;
         case TXCRSF_SEND_TELEMETRY_FRAME:
-            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
@@ -1201,9 +1158,34 @@ IF_CRSF(
             break;
         case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
         case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_MBRIDGE_IN:
-//dbg.puts("\ncrsf mbridge ");
-            mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
+
+        case MBRIDGE_CMD_REQUEST_INFO:
+            setup_reload();
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
+            } else {
+                mbridge.HandleRequestCmd(&crsfcmd);
+            }
+            break;
+        case MBRIDGE_CMD_REQUEST_CMD:
+            mbridge.HandleRequestCmd(mbridge.GetPayloadPtr());
+            break;
+        case MBRIDGE_CMD_PARAM_SET: {
+            bool rx_param_changed;
+            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+            if (param_changed && rx_param_changed && connected()) {
+                tasks.SetCrsfTask(TASK_RX_PARAM_SET);
+            }
+            }break;
+        case MBRIDGE_CMD_PARAM_STORE: tasks.SetCrsfTask(TASK_PARAM_STORE); break;
+        case MBRIDGE_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
+        case MBRIDGE_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetCrsfTask(TASK_SYSTEM_BOOT); break;
+        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetCrsfTask(TASK_ESPBRIDGE_FLASH); break;
+        case MBRIDGE_CMD_MODELID_SET:
+//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
+            config_id.Change(mbridge.GetModelId());
             break;
         }
     }
