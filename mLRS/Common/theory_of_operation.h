@@ -197,6 +197,13 @@ or
     x = (rc - 27) * 2 / 443
 
 
+Alternative:
+------------
+A simpler alternative is a regular spacing
+    rc  = ((uint32_t)x * 1023 + 2) / 4 + 1
+        = 1, 257, 513, 768, 1024, 1280, 1536, 1791, 2047
+    pwm = 899us, 1049us, 1200us, 1349us, 1500us, 1650us, 1800us, 1950us, 2100us
+
 
 
 
