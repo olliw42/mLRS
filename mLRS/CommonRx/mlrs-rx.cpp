@@ -403,7 +403,7 @@ DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
-        process_received_txcmdframe(frame);
+        if (ok) process_received_txcmdframe(frame);
         return;
     }
 
@@ -411,11 +411,12 @@ DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // output data on serial, but only if connected
     if (!connected()) return;
+    if (ok) {
+        sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-    sx_serial.putbuf(frame->payload, frame->status.payload_len);
-
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.serial_data_received.Inc();
+        stats.bytes_received.Add(frame->status.payload_len);
+        stats.serial_data_received.Inc();
+    }
 }
 
 

@@ -63,8 +63,8 @@ class tCrypto
 
     uint8_t PrivacyLevel(void) { return _privacy_level; }
     uint16_t NonceLen(void);
-    void Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
-    bool Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len);
+    void Encrypt(uint8_t* const data, uint8_t len);
+    bool Decrypt(uint8_t* const data, uint8_t len);
 
     uint64_t SessionRandom(void) { return (_session_key_has_been_set) ? _session_random : 0; } // Rx only, only for reporting, no function
 
@@ -90,8 +90,8 @@ class tCrypto
 
     bool _decrypt_ok;
 
-    void _encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
-    bool _decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len);
+    void _encrypt_it(uint8_t* const data, uint8_t len);
+    bool _decrypt_it(uint8_t* const data, uint8_t len);
 
     void _crypt_it(uint8_t* data, uint16_t len, uint8_t nonce[12]);
     void _mac_it(uint8_t mac[16], uint8_t* const data, uint16_t len, uint8_t nonce[12], uint8_t nonce_len);

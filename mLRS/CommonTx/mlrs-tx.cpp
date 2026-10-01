@@ -550,19 +550,21 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
 
     if (!accept_payload) return; // frame has no fresh payload
 
-    unpack_rxframe(frame);
+    bool ok = unpack_rxframe(frame);
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
-        process_received_rxcmdframe(frame);
+        if (ok) process_received_rxcmdframe(frame);
         return;
     }
 
     // output data on serial
-    sx_serial.putbuf(frame->payload, frame->status.payload_len);
+    if (ok) {
+        sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.serial_data_received.Inc();
+        stats.bytes_received.Add(frame->status.payload_len);
+        stats.serial_data_received.Inc();
+    }
 }
 
 

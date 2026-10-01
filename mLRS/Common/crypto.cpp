@@ -194,19 +194,19 @@ uint16_t tCrypto::NonceLen(void)
 }
 
 
-void tCrypto::Encrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+void tCrypto::Encrypt(uint8_t* const data, uint8_t len)
 {
     if (!_privacy_level) return; // no encryption
 
-    _encrypt_it(data, len, payload_len);
+    _encrypt_it(data, len);
 }
 
 
-bool tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+bool tCrypto::Decrypt(uint8_t* const data, uint8_t len)
 {
     if (!_privacy_level) return true; // no encryption
 
-    _decrypt_ok = _decrypt_it(data, len, payload_len);
+    _decrypt_ok = _decrypt_it(data, len);
     return _decrypt_ok;
 }
 
@@ -222,7 +222,7 @@ bool tCrypto::Decrypt(uint8_t* const data, uint8_t len, uint8_t* payload_len)
 
 // Note: The outside code must ensure that payload_len is adjusted correct,
 // so that payload_len + nonce_len + mac_len never exceeds the size of the payload buffer.
-void tCrypto::_encrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+void tCrypto::_encrypt_it(uint8_t* const data, uint8_t len)
 {
 uint8_t nonce[12];
 uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
@@ -250,9 +250,6 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // move data to data + mac_len + nonce_len
     memmove(data + mac_len + nonce_len, data, len); // NOT memcpy(), needs to copy from end towards beginning !!
 
-    // correct payload len for the mac and nonce
-    *payload_len += mac_len + nonce_len;
-
     // copy mac into data
     memcpy(data, mac, mac_len); // data[0] ... data[mac_len - 1]
 
@@ -261,7 +258,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 }
 
 
-bool tCrypto::_decrypt_it(uint8_t* const data, uint8_t len, uint8_t* payload_len)
+bool tCrypto::_decrypt_it(uint8_t* const data, uint8_t len)
 {
 uint8_t received_mac[LVL3_MAC_LEN];
 uint8_t nonce[12];
@@ -270,8 +267,7 @@ uint8_t nonce_len = crypto_list[_privacy_level].nonce_len;
 uint8_t mac[16];
 uint8_t mac_len = crypto_list[_privacy_level].mac_len;
 
-    if (len < mac_len + nonce_len || *payload_len < mac_len + nonce_len) {
-        *payload_len = 0; // TODO: what should we do ?
+    if (len < mac_len + nonce_len) {
         return false;
     }
 
@@ -284,8 +280,7 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     memcpy(nonce, data + mac_len, nonce_len); // data[mac_len] ... data[mac_len + nonce_len - 1]
     memcpy(&nonce_u32, nonce, nonce_len);     // _nonce_u32 = _nonce[0] ... _nonce[nonce_len - 1]
 
-    // correct len, payload_len for the mac and nonce
-    *payload_len -= mac_len + nonce_len;
+    // correct len for the mac and nonce
     len -= mac_len + nonce_len;
 
     // move data to data[0]
@@ -303,7 +298,6 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
         for (uint8_t i = 0; i < mac_len; i++) { if (mac[i] != received_mac[i]) ok = false; }
 
         if (!ok) { // authentication failed
-            *payload_len = 0; // pretend we didn't got data at all // TODO: what should we do ?
             mac_errors++;
             return false;
         }
@@ -314,7 +308,6 @@ uint8_t mac_len = crypto_list[_privacy_level].mac_len;
     // TODO: what needs to be done upon connection loss? does it play well with ARQ?
     if (_privacy_level >= 2 && nonce_u32 <= _nonce_u32_last_received) {
         replay_counts++;
-        //*payload_len = 0;
         //return false;
     }
     _nonce_u32_last_received = nonce_u32;
