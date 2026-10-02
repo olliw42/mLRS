@@ -401,7 +401,7 @@ DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         if (ok) process_received_txcmdframe(frame);
         return;
     }
@@ -809,7 +809,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && connected()
         if (!valid_frame_received) {
             mavlink.FrameLost();
             msp.FrameLost();

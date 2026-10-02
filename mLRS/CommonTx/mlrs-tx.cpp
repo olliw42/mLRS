@@ -553,7 +553,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     bool ok = unpack_rxframe(frame);
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         if (ok) process_received_rxcmdframe(frame);
         return;
     }
@@ -1008,7 +1008,7 @@ IF_SX2(
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && sx_serial.IsEnabled()
         // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
         if (!valid_frame_received) {
@@ -1077,7 +1077,7 @@ IF_SX2(
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
-            if (connect_occured_once) {
+            if (connect_occured_once && crypto.PrivacyLevel() >= 2) {
                 link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
             } else {
                 link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP);

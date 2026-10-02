@@ -49,48 +49,11 @@ typedef enum {
 // Tx Frames (send from Tx to Rx)
 //-------------------------------------------------------
 
-#define FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(f) \
-    (f->status.frame_type == FRAME_TYPE_TX_RX_CMD && f->payload[0] == FRAME_CMD_GET_RX_SETUPDATA_STARTUP)
-
-
 #ifdef DEVICE_IS_TRANSMITTER
 
-// lowest level routine to construct a tTxFrame, finalizes it
-// used by
-//   pack_txframe()
-//   pack_txcmdframe_cmd()
-//   pack_txcmdframe_setrxparams()
-void _pack_txframe_w_type(
-    tTxFrame* const frame,
-    uint8_t type,
-    tFrameStats* const frame_stats,
-    tRcData* const rc,
-    uint8_t* const payload,
-    uint8_t payload_len)
+void rcdata_to_txframe(tTxFrame* const frame, tRcData* const rc)
 {
-uint16_t crc;
-
-    if (payload_len > FRAME_TX_PAYLOAD_LEN) payload_len = FRAME_TX_PAYLOAD_LEN; // should never occur, but play it safe
-
-    memset((uint8_t*)frame, 0, sizeof(tTxFrame));
-
-    // generate header
-    frame->sync_word = Config.FrameSyncWord;
-    frame->status.seq_no = frame_stats->seq_no;
-    frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
-    frame->status.antenna = frame_stats->antenna;
-    frame->status.transmit_antenna = frame_stats->transmit_antenna;
-    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
-    frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
-    frame->status.fhss_index = frame_stats->tx_fhss_index;
-    frame->status.LQ_serial = frame_stats->LQ_serial;
-    frame->status.is_32channels = (rc->do_32channels) ? 1 : 0;
-    frame->status.payload_len = payload_len;
-
-    // pack rc data
-//TODO if (!(crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame))) {
-if (1) {
+//TODO: don't set for CMD frames which are not encrypted, if privacy >= 2
 
     if (!frame->status.is_32channels) {
         // rcData: 0 .. 1024 .. 2047, 11 bits
@@ -141,13 +104,48 @@ if (1) {
     }
 }
 
+
+// lowest level routine to construct a tTxFrame, finalizes it
+// used by
+//   pack_txframe()
+//   pack_txcmdframe_cmd()
+//   pack_txcmdframe_setrxparams()
+void _pack_txframe_w_type(
+    tTxFrame* const frame,
+    uint8_t type,
+    tFrameStats* const frame_stats,
+    tRcData* const rc,
+    uint8_t* const payload,
+    uint8_t payload_len)
+{
+uint16_t crc;
+
+    if (payload_len > FRAME_TX_PAYLOAD_LEN) payload_len = FRAME_TX_PAYLOAD_LEN; // should never occur, but play it safe
+
+    memset((uint8_t*)frame, 0, sizeof(tTxFrame));
+
+    // generate header
+    frame->sync_word = Config.FrameSyncWord;
+    frame->status.seq_no = frame_stats->seq_no;
+    frame->status.ack = frame_stats->ack;
+    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_CMD
+    frame->status.antenna = frame_stats->antenna;
+    frame->status.transmit_antenna = frame_stats->transmit_antenna;
+    frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
+    frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
+    frame->status.fhss_index = frame_stats->tx_fhss_index;
+    frame->status.LQ_serial = frame_stats->LQ_serial;
+    frame->status.is_32channels = (rc->do_32channels) ? 1 : 0;
+    frame->status.payload_len = payload_len;
+
+    // pack rc data
+    rcdata_to_txframe(frame, rc);
+
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
         frame->payload[i] = payload[i];
     }
 
-    // encrypt all frames except of GET_RX_SETUPDATA_STARTUP
-//TODO     if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
     // encrypt only normal TX frames
     if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_TX) {
         CHECK_PAYLOAD_LEN(frame->status.payload_len,FRAME_TX_PAYLOAD_LEN);
@@ -201,7 +199,7 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
@@ -231,8 +229,6 @@ uint16_t crc;
 // unpack a normal tTxFrame, comes before any RC data and payload processing
 bool unpack_txframe(tTxFrame* const frame)
 {
-    // decrypt all frames except of GET_RX_SETUPDATA_STARTUP
-//TODO    if (crypto.PrivacyLevel() && !FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) {
     // decrypt only normal TX frames
     if (crypto.PrivacyLevel() && frame->status.frame_type == FRAME_TYPE_TX) {
         if (crypto.PrivacyLevel() >= 2) {
@@ -252,7 +248,7 @@ bool unpack_txframe(tTxFrame* const frame)
 // fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-//TODO    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
+//TODO: reject for CMD frames which are not encrypted, if privacy >= 2
 
     rc->tlast_update_ms = millis32();
 
@@ -284,7 +280,7 @@ void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 // fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-//TODO    if (crypto.PrivacyLevel() >= 2 && FRAME_IS_CMD_GET_RX_SETUPDATA_STARTUP(frame)) return;
+//TODO: reject for CMD frames which are not encrypted, if privacy >= 2
 
     rc->tlast_update_ms = millis32();
 
@@ -356,7 +352,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     // keep !! frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -391,7 +387,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -405,7 +401,7 @@ uint16_t crc;
     }
 
     // encrypt only normal RX frames
-    // Note: FRAME_TYPE_TX_RX_CMD-FRAME_CMD_RX_SETUPDATA sends tRxCmdFrameRxSetupData,
+    // Note: FRAME_TYPE_CMD-FRAME_CMD_RX_SETUPDATA sends tRxCmdFrameRxSetupData,
     // which is 82 bytes of size and thus payload_len = 82. It thus cannot be encrypted,
     // since Encrypt() would then write beyond the payload area.
     // It doesn't carry any secret data, so shouldn't be too bad.
@@ -444,7 +440,7 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
@@ -553,7 +549,7 @@ uint8_t len;
         len += CRYPTO_STARTUP_RANDOM_BUF_LEN;
     }
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, len);
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, payload, len);
 }
 
 
@@ -619,7 +615,7 @@ tTxCmdFrameRxParams rx_params = {};
 
     uint8_t payload_len = sizeof(rx_params) - crypto.NonceLen();
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, payload_len);
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, (uint8_t*)&rx_params, payload_len);
 }
 
 #endif
@@ -654,7 +650,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
     rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
-    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
+    _pack_rxframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
 
 

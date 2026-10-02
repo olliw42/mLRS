@@ -26,7 +26,7 @@
 typedef enum {
     FRAME_TYPE_TX = 0x00,
     FRAME_TYPE_RX = 0x01,
-    FRAME_TYPE_TX_RX_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
+    FRAME_TYPE_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
 } FRAME_TYPE_ENUM;
 
 
@@ -239,8 +239,8 @@ typedef struct
 
 typedef enum {
     FRAME_CMD_NONE = 0,
-    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
-    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
+//not used    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
+//not used    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
 
     // some of these commands have additional data
     FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata  -> response with RX_SETUPDATA
