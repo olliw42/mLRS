@@ -667,8 +667,9 @@ tRxFrame* frame;
 
         process_received_frame(do_payload, frame);
 
-        stats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
-
+        if (link_rx_status_decrypt_ok) { // has been set in process_received_frame()
+            stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
+        }
     } else { // RX_STATUS_INVALID
     }
 

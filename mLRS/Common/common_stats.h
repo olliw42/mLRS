@@ -35,11 +35,11 @@ class tStats
     void Clear(void);                 // called then not connected
     void JustConnected(void);         // called upon first connection
 
-    void doFrameReceived(void);
+    void doFrameReceived(void);       // counts received frames, practically not very relevant
 #ifdef DEVICE_IS_RECEIVER
-    void doValidCrc1FrameReceived(void);
+    void doValidCrc1FrameReceived(void);  // counts received frames, which passed crc1 check, but not main crc
 #endif
-    void doValidFrameReceived(void);
+    void doValidFrameReceived(void);  // counts received frames, which also passed main crc check
 
     uint8_t GetTransmitBandwidthUsage(void);
     uint8_t GetReceiveBandwidthUsage(void);

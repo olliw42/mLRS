@@ -509,9 +509,10 @@ tTxFrame* frame;
 
         process_received_frame(do_payload, frame);
 
-        stats.doValidCrc1FrameReceived();
-        if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
-
+        if (link_rx_status_decrypt_ok) { // has been set in process_received_frame()
+            stats.doValidCrc1FrameReceived();
+            if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
+        }
     } else { // RX_STATUS_INVALID
     }
 
@@ -814,7 +815,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && connected()
-        if (!valid_frame_received) {
+        if (!valid_frame_received || !link_rx_status_decrypt_ok) {
             mavlink.FrameLost();
             msp.FrameLost();
         }
