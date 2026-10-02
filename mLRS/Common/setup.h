@@ -136,7 +136,7 @@ void setup_configure_metadata(void)
 #endif
 
     //-- Privacy: "off,lvl1,lvl2,lvl3"
-#if defined DEVICE_IS_TRANSMITTER && !(defined STM32G4 || defined STM32WL || defined ESP32)
+#if defined DEVICE_IS_TRANSMITTER && !(defined STM32G4 || defined ESP32) // || defined STM32WL
     SetupMetaData.Privacy_allowed_mask = 0; // not available, do not display
 #else
     SetupMetaData.Privacy_allowed_mask = 0b1111; // all
