@@ -219,6 +219,7 @@ void SX2_DIO_EXTI_IRQHandler(void)
 
 uint8_t link_rx1_status;
 uint8_t link_rx2_status;
+bool link_rx_status_decrypt_ok;
 
 
 //-- Tx/Rx cmd frame handling
@@ -385,32 +386,31 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     // TODO: in principle we would have to do this at check_txframe() level to capture RC data spoils
     // currently no way to detect that RC data should not be used
     // would then have to do check_txframe() for both frames in case of diversity/dualband
-    bool ok = unpack_txframe(frame);
+    link_rx_status_decrypt_ok = unpack_txframe(frame);
 
 DBG_CRSF_32CH(dbg.puts("\nf ");dbg.puts(frame->status.is_32channels ? "32 " : "16 ");)
 
     // copy rc1 data
     if (!do_payload) {
         // copy only channels of rc1 section and jump out
-        if (ok) rcdata_rc1_from_txframe(&rcData, frame);
+        if (link_rx_status_decrypt_ok) rcdata_rc1_from_txframe(&rcData, frame);
 DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
         return;
     }
 
-    if (ok) rcdata_from_txframe(&rcData, frame);
+    if (link_rx_status_decrypt_ok) rcdata_from_txframe(&rcData, frame);
 DBG_CRSF_32CH(dbg.puts(u16toBCD_s(rcData.ch[16]));)
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_CMD) {
-        if (ok) process_received_txcmdframe(frame);
+        if (link_rx_status_decrypt_ok) process_received_txcmdframe(frame);
         return;
     }
 
     link_task_reset(); // clear it if non-cmd frame is received
 
-    // output data on serial, but only if connected
-    if (!connected()) return;
-    if (ok) {
+    // output data on serial, but only if connected and decrypt is ok
+    if (connected() && link_rx_status_decrypt_ok) {
         sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
         stats.bytes_received.Add(frame->status.payload_len);
@@ -594,6 +594,7 @@ RESTARTCONTROLLER
     connect_listen_cnt = 0;
     connect_occured_once = false;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_rx_status_decrypt_ok = true;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
     doPostReceive2_cnt = 0;
@@ -673,6 +674,7 @@ INITCONTROLLER_END
         IF_ANTENNA2(sx2.SetToRx());
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+        link_rx_status_decrypt_ok = true;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
         break;
@@ -720,6 +722,7 @@ IF_SX(
             irq_status = 0;
             link_state = LINK_STATE_RECEIVE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+            link_rx_status_decrypt_ok = true;
             DBG_MAIN_SLIM(dbg.puts("1?");)
         }
     }//end of if(irq_status)
@@ -757,6 +760,7 @@ IF_SX2(
             irq2_status = 0;
             link_state = LINK_STATE_RECEIVE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+            link_rx_status_decrypt_ok = true;
             DBG_MAIN_SLIM(dbg.puts("2?");)
         }
     }//end of if(irq2_status)
@@ -779,9 +783,9 @@ dbg.puts(u16toBCD_s(rcData.ch[16]));)
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
+            frame_received = (link_rx1_status > RX_STATUS_NONE);             // INVALID, CRC1_VALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);    // CRC1_VALID, VALID
+            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // INVALID, = frame_received && !valid_frame_received
         }
 
 /*dbg.puts("\n> 1: ");
@@ -895,9 +899,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         // we didn't receive a valid frame
-        frame_missed = false;
         if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
-            frame_missed = true;
             // reset sync counter, relevant if in sync
             // connect_sync_cnt = 0; // NO!! when in sync this means that we need to get five in a row, right!?!
             // switch to transmit state
@@ -912,6 +914,15 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             sx2.SetToIdle();
         }
 
+        if (connect_state == CONNECT_STATE_LISTEN) {
+            link_task_reset();
+            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        }
+
+        // report to out/rc
+        frame_missed = (connect_state >= CONNECT_STATE_SYNC &&
+                        (!valid_frame_received || !link_rx_status_decrypt_ok));
+
         if (!connected()) tarq.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
@@ -920,11 +931,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
         stats.Next();
         if (!connected()) stats.Clear();
-
-        if (connect_state == CONNECT_STATE_LISTEN) {
-            link_task_reset();
-            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
-        }
 
         powerup.Do();
         if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();

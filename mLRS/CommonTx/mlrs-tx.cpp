@@ -346,6 +346,7 @@ void SX2_DIO_EXTI_IRQHandler(void)
 
 uint8_t link_rx1_status;
 uint8_t link_rx2_status;
+bool link_rx_status_decrypt_ok;
 
 
 //-- Tx/Rx cmd frame handling
@@ -550,16 +551,16 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
 
     if (!accept_payload) return; // frame has no fresh payload
 
-    bool ok = unpack_rxframe(frame);
+    link_rx_status_decrypt_ok = unpack_rxframe(frame);
 
     // handle cmd frame
     if (frame->status.frame_type == FRAME_TYPE_CMD) {
-        if (ok) process_received_rxcmdframe(frame);
+        if (link_rx_status_decrypt_ok) process_received_rxcmdframe(frame);
         return;
     }
 
     // output data on serial
-    if (ok) {
+    if (link_rx_status_decrypt_ok) {
         sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
         stats.bytes_received.Add(frame->status.payload_len);
@@ -764,6 +765,7 @@ RESTARTCONTROLLER
     connect_sync_cnt = 0;
     connect_occured_once = false;
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+    link_rx_status_decrypt_ok = true;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
     link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP); // we start with wanting to get rx setup data
@@ -894,6 +896,7 @@ INITCONTROLLER_END
         IF_ANTENNA2(sx2.SetToRx());
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+        link_rx_status_decrypt_ok = true;
         irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("r");)
         break;
@@ -929,6 +932,7 @@ IF_SX(
             irq_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+            link_rx_status_decrypt_ok = true;
             DBG_MAIN_SLIM(dbg.puts("1?");)
         }
     }//end of if(irq_status)
@@ -963,6 +967,7 @@ IF_SX2(
             irq2_status = 0;
             link_state = LINK_STATE_IDLE;
             link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+            link_rx_status_decrypt_ok = true;
             DBG_MAIN_SLIM(dbg.puts("2?");)
         }
     }//end of if(irq2_status)
@@ -983,8 +988,8 @@ IF_SX2(
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            frame_received = (link_rx1_status > RX_STATUS_NONE);          // INVALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID); // VALID
         }
 
         if (frame_received) { // frame received
@@ -1070,8 +1075,8 @@ IF_SX2(
         }
 
         link_state = LINK_STATE_TRANSMIT;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
+        link_rx_status_decrypt_ok = true;
 
         if (!connected()) rarq.Disconnected();
 
