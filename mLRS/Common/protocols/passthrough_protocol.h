@@ -635,6 +635,36 @@ bool tPassThrough::get_Battery1_0x5003(uint32_t* const data)
 }
 
 
+// cos for |x| <= pi/2, minimax fit, error < 2e-7
+static inline float pt_cos(float x)
+{
+    float x2 = x * x;
+    return 0.99999994f + x2 * (-0.49999905f + x2 * (0.041663583f + x2 * (-0.0013853704f + x2 * (2.3153932e-05f))));
+}
+
+// sin for |x| <= pi/2, error < 4e-6
+static inline float pt_sin(float x)
+{
+    float x2 = x * x;
+    return x * (1.0f + x2 * (-1.0f/6.0f + x2 * (1.0f/120.0f + x2 * (-1.0f/5040.0f + x2 * (1.0f/362880.0f)))));
+}
+
+// compass bearing of (east, north) in deg [0..360], error < 0.001 deg
+static inline float pt_atan2_deg(float east, float north)
+{
+    float ae = fabsf(east);
+    float an = fabsf(north);
+    if (ae == 0.0f && an == 0.0f) return 0.0f;
+    float z = (ae < an) ? ae / an : an / ae;
+    float z2 = z * z; // 6-term minimax fit of atan on [0,1]
+    float a = RAD2DEGF * z * (0.99997726f + z2 * (-0.33262347f + z2 * (0.19354346f + z2 * (-0.11643287f + z2 * (0.05265332f + z2 * (-0.01172120f))))));
+    if (ae > an) a = 90.0f - a;
+    if (north < 0.0f) a = 180.0f - a;
+    if (east < 0.0f) a = 360.0f - a;
+    return a;
+}
+
+
 bool tPassThrough::get_Home_0x5004(uint32_t* const data)
 {
     if (!pt_update[HOME_0x5004]) return false;
@@ -645,33 +675,37 @@ bool tPassThrough::get_Home_0x5004(uint32_t* const data)
     // since this might be have been called from home_position
     if (!global_position_int_received_once) return false;
 
-    float lon1 = (float)home_position.longitude * 1.0E-7f * DEG2RADF; // home position
+    // local flat-earth approximation on the WGS84 ellipsoid, avoids libm trig
+    int32_t dlat = global_position_int.lat - home_position.latitude; // in 1e-7 deg
+    int64_t dlon64 = (int64_t)global_position_int.lon - home_position.longitude;
+    if (dlon64 > 1800000000) dlon64 -= 3600000000; else if (dlon64 < -1800000000) dlon64 += 3600000000;
+
+    float cos_mid = pt_cos((float)(home_position.latitude + dlat / 2) * 1.0E-7f * DEG2RADF);
+    float sin2_mid = 1.0f - cos_mid * cos_mid;
+    float r_north = 6335439.0f * (1.0f + 0.0100416f * sin2_mid); // meridional radius, first order in e^2
+    float r_east = 6378137.0f * (1.0f + 0.0033472f * sin2_mid); // normal radius
+
+    float dlat_rad = (float)dlat * (1.0E-7f * DEG2RADF);
+    float dlon_rad = (float)dlon64 * (1.0E-7f * DEG2RADF);
+    float north = dlat_rad * r_north; // in m
+    float east = dlon_rad * cos_mid * r_east;
+
+    // great-circle initial bearing, to second order in dlon
     float lat1 = (float)home_position.latitude * 1.0E-7f * DEG2RADF;
-    float lon2 = (float)global_position_int.lon * 1.0E-7f * DEG2RADF; // current position
-    float lat2 = (float)global_position_int.lat * 1.0E-7f * DEG2RADF;
+    float cos_lat2 = pt_cos((float)global_position_int.lat * 1.0E-7f * DEG2RADF);
+    float gc_east = dlon_rad * cos_lat2 * r_east;
+    float gc_north = north + pt_sin(lat1) * cos_lat2 * dlon_rad * dlon_rad * 0.5f * r_north;
 
-    float cos_lat1 = cosf(lat1);
-    float cos_lat2 = cosf(lat2);
+    float direction_deg = pt_atan2_deg(gc_east, gc_north);
 
-    float direction = atan2f( sinf(lon2 - lon1) * cos_lat2 ,
-                              cos_lat1 * sinf(lat2) - sinf(lat1) * cos_lat2 * cosf(lon2 - lon1)
-                             );
-
-    float direction_deg = direction * RAD2DEGF;
-    if (direction_deg < 0.0f) direction_deg += 360.0f;
-
-    int16_t direction_i16 = (int16_t)direction_deg - 180;
+    int16_t direction_i16 = (int16_t)(direction_deg + 1.5f) - 180; // +1.5 to round to nearest 3° step
     if (direction_i16 < 0) direction_i16 += 360;
     if (direction_i16 > 359) direction_i16 -= 360;
     direction_i16 /= 3;
 
-    float sin_dlat_half = sinf((lat2 - lat1) * 0.5f);
-    float sin_dlon_half = sinf((lon2 - lon1) * 0.5f);
+    float distance = sqrtf(north * north + east * east);
 
-    float a = sin_dlat_half * sin_dlat_half + sin_dlon_half*sin_dlon_half * cos_lat1 * cos_lat2;
-    float distance = 6371.0E+3f * 2.0f * asinf(sqrtf(a));
-
-    int32_t pt_distance = distance;
+    int32_t pt_distance = (int32_t)(distance + 0.5f);
     int32_t pt_altitude_rel = global_position_int.relative_alt / 100;
     int32_t pt_direction = direction_i16;
 
