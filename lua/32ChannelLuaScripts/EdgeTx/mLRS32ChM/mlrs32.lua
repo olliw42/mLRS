@@ -10,7 +10,7 @@
 
 
 local VERSION = {
-    script = '2026-09-27.00', -- add a '.01' if needed for the day
+    script = '2026-10-03.00', -- add a '.01' if needed for the day
 }
 
 
@@ -55,9 +55,7 @@ local function sendChannels0x17()
 
     local bitBuffer = 0
     local bitCount = 0
---    for ch = 16, 31 do
--- momentarily, for testing, we simply mirror channels 1 - 16
-    for ch = 0, 15 do
+    for ch = 16, 31 do
         local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
@@ -100,9 +98,7 @@ local function sendChannels0x16() -- just for testing
 
     bitBuffer = 0
     bitCount = 0
---    for ch = 16, 31 do
--- momentarily, for testing, we simply mirror channels 1 - 16
-    for ch = 0, 15 do
+    for ch = 16, 31 do
         local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11

@@ -10,13 +10,14 @@ local widgetName = "mLRS 32Ch Widget"
 
 
 local VERSION = {
-    script = '2026-09-24.00', -- add a '.01' if needed for the day
+    script = '2026-10-03.00', -- add a '.01' if needed for the day
 }
 
 
 local options = {
     { "Color", COLOR, lcd.RGB(255, 255, 255) },
     { "Enabled", BOOL, 1 },
+    { "TestMode", BOOL, 0 },
 }
 
 
@@ -43,7 +44,7 @@ local function outputToCrsf(value)
 end
 
 
-local function sendChannels0x17()
+local function sendChannels0x17(testmode)
     local data = {}
     local pos = 1
 
@@ -52,9 +53,10 @@ local function sendChannels0x17()
 
     local bitBuffer = 0
     local bitCount = 0
---    for ch = 16, 31 do
--- momentarily, for testing, we simply mirror channels 1 - 16
-    for ch = 0, 15 do
+    
+    local start = 16
+    if testmode then start = 0 end
+    for ch = start, start+15 do
         local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
@@ -74,7 +76,7 @@ local function sendChannels0x17()
 end
 
 
-local function sendChannels0x16() -- just for testing
+local function sendChannels0x16(testmode) -- just for testing
     local data = {}
     local pos = 1
 
@@ -97,9 +99,9 @@ local function sendChannels0x16() -- just for testing
 
     bitBuffer = 0
     bitCount = 0
---    for ch = 16, 31 do
--- momentarily, for testing, we simply mirror channels 1 - 16
-    for ch = 0, 15 do
+    local start = 16
+    if testmode then start = 0 end
+    for ch = start, start+15 do
         local value = outputToCrsf(getOutputValue(ch))
         bitBuffer = bitBuffer | (value << bitCount)
         bitCount = bitCount + 11
@@ -140,7 +142,7 @@ local function background(widget)
 
     if tnow_10ms - widget.tlast_10ms >= 20 then
         widget.tlast_10ms = tnow_10ms
-        sendChannels0x17()
+        sendChannels0x17(widget.options.TestMode)
         --sendChannels0x16() -- just for testing
     end
 end

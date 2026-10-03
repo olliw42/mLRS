@@ -14,7 +14,7 @@
 #include "../Common/protocols/crsf_protocol.h"
 
 
-#define FOOL_32CH_FOR_TEST //comment for real world application
+//#define FOOL_32CH_FOR_TEST //comment for real world application
 
 
 extern uint16_t micros16(void);

@@ -167,6 +167,8 @@ We have the relation:
 Receiver side:
 --------------
 AP's 6-pos flight mode levels are described by the boundaries 1491 + (n-4)*130.
+see RC_Channel::read_6pos_switch()
+https://github.com/ArduPilot/ardupilot/blob/ArduPilot-4.7/libraries/RC_Channel/RC_Channel.cpp#L596-L623
 We try to account for this by aiming at
 
     pwm = (x - 4) * 130 + 1500
