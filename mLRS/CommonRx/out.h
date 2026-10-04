@@ -61,8 +61,8 @@ class tOutBase
     tRcData* GetRcDataPtr(void) { return &rc; }
 
   private:
-    void send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe);
-    void send_crsf_rcdata(tRcData* const rc);
+    void send_sbus_rcdata(bool frame_lost, bool failsafe);
+    void send_crsf_rcdata(void);
     void send_crsf_linkstatistics(tOutLinkStats* const lstats);
     void do_crsf(void);
 

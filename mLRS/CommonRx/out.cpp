@@ -97,7 +97,7 @@ void tOutBase::SetChannelOrder(uint8_t new_channel_order)
 
 void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsafe, int8_t rssi, uint8_t lq)
 {
-    memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify it !!
+    memcpy(&rc, rc_orig, sizeof(tRcData)); // copy rc data, to not modify the outside one !!
     channel_order.Apply(&rc);
 
     uint8_t failsafe_mode = setup->FailsafeMode;
@@ -160,10 +160,10 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
-        send_sbus_rcdata(&rc, frame_missed, failsafe);
+        send_sbus_rcdata(frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
-        send_crsf_rcdata(&rc);
+        send_crsf_rcdata();
         break;
     }
 }
@@ -216,31 +216,31 @@ void tOutBase::SendLinkStatisticsDisconnected(void)
 // SBus
 //-------------------------------------------------------
 
-void tOutBase::send_sbus_rcdata(tRcData* const rc, bool frame_lost, bool failsafe)
+void tOutBase::send_sbus_rcdata(bool frame_lost, bool failsafe)
 {
 tSBusFrame frame;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
-    frame.ch.ch0 = rc_to_sbus(rc->ch[0]);
-    frame.ch.ch1 = rc_to_sbus(rc->ch[1]);
-    frame.ch.ch2 = rc_to_sbus(rc->ch[2]);
-    frame.ch.ch3 = rc_to_sbus(rc->ch[3]);
-    frame.ch.ch4 = rc_to_sbus(rc->ch[4]);
-    frame.ch.ch5 = rc_to_sbus(rc->ch[5]);
-    frame.ch.ch6 = rc_to_sbus(rc->ch[6]);
-    frame.ch.ch7 = rc_to_sbus(rc->ch[7]);
-    frame.ch.ch8 = rc_to_sbus(rc->ch[8]);
-    frame.ch.ch9 = rc_to_sbus(rc->ch[9]);
-    frame.ch.ch10 = rc_to_sbus(rc->ch[10]);
-    frame.ch.ch11 = rc_to_sbus(rc->ch[11]);
-    frame.ch.ch12 = rc_to_sbus(rc->ch[12]);
-    frame.ch.ch13 = rc_to_sbus(rc->ch[13]);
-    frame.ch.ch14 = rc_to_sbus(rc->ch[14]);
-    frame.ch.ch15 = rc_to_sbus(rc->ch[15]);
+    frame.ch.ch0 = rc_to_sbus(rc.ch[0]);
+    frame.ch.ch1 = rc_to_sbus(rc.ch[1]);
+    frame.ch.ch2 = rc_to_sbus(rc.ch[2]);
+    frame.ch.ch3 = rc_to_sbus(rc.ch[3]);
+    frame.ch.ch4 = rc_to_sbus(rc.ch[4]);
+    frame.ch.ch5 = rc_to_sbus(rc.ch[5]);
+    frame.ch.ch6 = rc_to_sbus(rc.ch[6]);
+    frame.ch.ch7 = rc_to_sbus(rc.ch[7]);
+    frame.ch.ch8 = rc_to_sbus(rc.ch[8]);
+    frame.ch.ch9 = rc_to_sbus(rc.ch[9]);
+    frame.ch.ch10 = rc_to_sbus(rc.ch[10]);
+    frame.ch.ch11 = rc_to_sbus(rc.ch[11]);
+    frame.ch.ch12 = rc_to_sbus(rc.ch[12]);
+    frame.ch.ch13 = rc_to_sbus(rc.ch[13]);
+    frame.ch.ch14 = rc_to_sbus(rc.ch[14]);
+    frame.ch.ch15 = rc_to_sbus(rc.ch[15]);
 
     uint8_t flags = 0;
-    if (rc->ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
-    if (rc->ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
+    if (rc.ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
+    if (rc.ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
     if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
     if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
@@ -257,27 +257,27 @@ tSBusFrame frame;
 // Crsf
 //-------------------------------------------------------
 
-void tOutBase::send_crsf_rcdata(tRcData* const rc)
+void tOutBase::send_crsf_rcdata(void)
 {
 tCrsfRcChannelFrame frame;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
-    frame.ch.ch0 = rc_to_crsf(rc->ch[0]);
-    frame.ch.ch1 = rc_to_crsf(rc->ch[1]);
-    frame.ch.ch2 = rc_to_crsf(rc->ch[2]);
-    frame.ch.ch3 = rc_to_crsf(rc->ch[3]);
-    frame.ch.ch4 = rc_to_crsf(rc->ch[4]);
-    frame.ch.ch5 = rc_to_crsf(rc->ch[5]);
-    frame.ch.ch6 = rc_to_crsf(rc->ch[6]);
-    frame.ch.ch7 = rc_to_crsf(rc->ch[7]);
-    frame.ch.ch8 = rc_to_crsf(rc->ch[8]);
-    frame.ch.ch9 = rc_to_crsf(rc->ch[9]);
-    frame.ch.ch10 = rc_to_crsf(rc->ch[10]);
-    frame.ch.ch11 = rc_to_crsf(rc->ch[11]);
-    frame.ch.ch12 = rc_to_crsf(rc->ch[12]);
-    frame.ch.ch13 = rc_to_crsf(rc->ch[13]);
-    frame.ch.ch14 = rc_to_crsf(rc->ch[14]);
-    frame.ch.ch15 = rc_to_crsf(rc->ch[15]);
+    frame.ch.ch0 = rc_to_crsf(rc.ch[0]);
+    frame.ch.ch1 = rc_to_crsf(rc.ch[1]);
+    frame.ch.ch2 = rc_to_crsf(rc.ch[2]);
+    frame.ch.ch3 = rc_to_crsf(rc.ch[3]);
+    frame.ch.ch4 = rc_to_crsf(rc.ch[4]);
+    frame.ch.ch5 = rc_to_crsf(rc.ch[5]);
+    frame.ch.ch6 = rc_to_crsf(rc.ch[6]);
+    frame.ch.ch7 = rc_to_crsf(rc.ch[7]);
+    frame.ch.ch8 = rc_to_crsf(rc.ch[8]);
+    frame.ch.ch9 = rc_to_crsf(rc.ch[9]);
+    frame.ch.ch10 = rc_to_crsf(rc.ch[10]);
+    frame.ch.ch11 = rc_to_crsf(rc.ch[11]);
+    frame.ch.ch12 = rc_to_crsf(rc.ch[12]);
+    frame.ch.ch13 = rc_to_crsf(rc.ch[13]);
+    frame.ch.ch14 = rc_to_crsf(rc.ch[14]);
+    frame.ch.ch15 = rc_to_crsf(rc.ch[15]);
 
     frame.address = CRSF_ADDRESS_FLIGHT_CONTROLLER; // was CRSF_ADDRESS_BROADCAST, but ArduPilot changed in 4.5, @d5ba0b6
     frame.len = CRSF_RCCHANNEL_LEN + 2;
