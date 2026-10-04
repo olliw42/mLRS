@@ -26,7 +26,7 @@
 TaskHandle_t tx_done_task_handle = nullptr;
 
 // CRSF is normally inverted, but some radios use normal polarity, only relevant for half-duplex
-volatile bool pin5_inverted = true;
+volatile bool pin5_inverted = true; // not nice
 
 void tx_done_task(void* parameter)
 {
@@ -163,6 +163,8 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_init(void)
 {
+    pin5_inverted = true;
+
     uart_init();
 
     // onReceive uses the pin5_rx_callback function

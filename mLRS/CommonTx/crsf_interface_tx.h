@@ -16,6 +16,11 @@
 
 #ifdef DEVICE_HAS_JRPIN5
 
+#if defined STM32G4 || defined ESP32
+  // some devices are too slow for high baudrates, or don't support non-inverted pin5 (e.g. R9M)
+  #define CRSF_AUTOBAUD
+#endif
+
 #include "math.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
@@ -62,8 +67,8 @@ typedef enum {
 // TODO: I guess we want a define to enable/disable autobauding
 #define CRSF_AUTOBAUD_MS  50
 #define CRSF_AUTOBAUD_BAUDS_LEN  4
-static const uint32_t txcrsf_bauds[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000, 400000 }; // 1843200
-static const bool txcrsf_bauds_inverted[CRSF_AUTOBAUD_BAUDS_LEN] = { true, true, true, false }; // last is 400k normal polarity
+static const uint32_t txcrsf_baud[CRSF_AUTOBAUD_BAUDS_LEN] = { 400000, 921600, 1870000, 416666 };
+static const bool txcrsf_invert[CRSF_AUTOBAUD_BAUDS_LEN] = { true, true, true, false };
 
 
 class tTxCrsf : public tPin5BridgeBase, public tSerialBase
@@ -138,7 +143,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
         bool is_running;
         uint32_t tlast_ms;
         uint8_t cycles_cnt;
-        uint8_t baudrate_idx;
+        uint8_t protocol_idx;
         uint8_t channels_received_cnt;
     } autobaud;
     void autobaud_do(void);
@@ -384,6 +389,8 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 
 void tTxCrsf::autobaud_do(void)
 {
+#ifdef CRSF_AUTOBAUD
+
     if (!autobaud.is_running) return;
 
     uint32_t tnow_ms = millis32();
@@ -396,13 +403,14 @@ void tTxCrsf::autobaud_do(void)
         autobaud.tlast_ms = tnow_ms;
         autobaud.cycles_cnt--;
 
-        INCc(autobaud.baudrate_idx, CRSF_AUTOBAUD_BAUDS_LEN); // try next baudrate
+        INCc(autobaud.protocol_idx, CRSF_AUTOBAUD_BAUDS_LEN); // try next baudrate
         autobaud.channels_received_cnt = 0;
-        pin5_set_protocol(txcrsf_bauds[autobaud.baudrate_idx], txcrsf_bauds_inverted[autobaud.baudrate_idx]);
+        pin5_set_protocol(txcrsf_baud[autobaud.protocol_idx], txcrsf_invert[autobaud.protocol_idx]);
     }
 
     if (autobaud.channels_received_cnt > 5) autobaud.is_running = false; // disable, sufficiently many valid frames received
     if (!autobaud.cycles_cnt) autobaud.is_running = false; // disable, too many tries
+#endif
 }
 
 
@@ -428,9 +436,9 @@ void tTxCrsf::Init(bool enable_flag)
     autobaud.is_running = false;
     autobaud.tlast_ms = 0;
     autobaud.cycles_cnt = 20;
-    autobaud.baudrate_idx = 0;
+    autobaud.protocol_idx = 0;
     autobaud.channels_received_cnt = 0;
-#if defined STM32G4 || defined ESP32
+#ifdef CRSF_AUTOBAUD
     autobaud.is_running = true; // start with doing autobaud
 #endif
 

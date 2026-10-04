@@ -51,6 +51,9 @@ extern volatile uint32_t millis32(void);
   // internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
 #error JRPIN5_RX_TX_INVERT_SWAP_INTERNAL not suppoerted anymore. Use JRPIN5_FULL_INTERNAL_ON_TX/RX/TX_RX !
 #endif
+#if defined JRPIN5_DISABLE_TX_WHILE_RX
+#error JRPIN5_DISABLE_TX_WHILE_RX not suppoerted anymore !
+#endif
 
 
 //-------------------------------------------------------
@@ -116,7 +119,9 @@ class tPin5BridgeBase
     void pin5_init(void);
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
+#ifdef CRSF_AUTOBAUD
     void pin5_set_protocol(uint32_t baudrate, bool inverted);
+#endif
     bool pin5_inverted; // CRSF is normally inverted, but some radios use normal polarity
 
     // for in-isr processing
@@ -168,8 +173,6 @@ void tPin5BridgeBase::Init(void)
 
     txclock.Init();
 
-    pin5_inverted = true;
-
     pin5_init();
 
  //   pin5_set_protocol(1870000, true); // 1843200 //921600 //400000
@@ -188,6 +191,8 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_init(void)
 {
+    pin5_inverted = true;
+
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -245,15 +250,13 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
+#ifdef CRSF_AUTOBAUD
 void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
 {
 //    uart_rx_enableisr(DISABLE); // pin5_tx_enable(); // disables isr
     uart_setbaudrate(baudrate);
 
     pin5_inverted = inverted;
-#if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
-    if (inverted) { JRPIN5_TX_SET_INVERTED; JRPIN5_RX_SET_INVERTED; } else { JRPIN5_TX_SET_NORMAL; JRPIN5_RX_SET_NORMAL; }
-#endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX || defined JRPIN5_FULL_INTERNAL_ON_RX || defined JRPIN5_FULL_INTERNAL_ON_RX_TX
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXPinLevel(UART_UARTx, (inverted) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
@@ -265,6 +268,7 @@ void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
     uart_rx_flush();
 //    pin5_rx_enable(); // enables isr
 }
+#endif
 
 
 void tPin5BridgeBase::pin5_tx_enable(void)
@@ -273,9 +277,6 @@ void tPin5BridgeBase::pin5_tx_enable(void)
 
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_ENABLED;
-#endif
-#if defined JRPIN5_DISABLE_TX_WHILE_RX
-    uart_tx_enablepin(ENABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
     LL_USART_Disable(UART_UARTx);
@@ -300,9 +301,6 @@ void tPin5BridgeBase::pin5_rx_enable(void)
 {
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_DISABLED;
-#endif
-#if defined JRPIN5_DISABLE_TX_WHILE_RX
-    uart_tx_enablepin(DISABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
     LL_USART_Disable(UART_UARTx);
