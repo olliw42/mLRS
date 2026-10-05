@@ -64,7 +64,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
+    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -132,7 +132,7 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
@@ -191,9 +191,12 @@ void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 
 #endif
 
+
 //-------------------------------------------------------
 // Rx Frames (send from Rx to Tx)
 //-------------------------------------------------------
+
+#ifdef DEVICE_IS_RECEIVER
 
 // update header info of a tRxFrame with new data, keep payload
 void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
@@ -203,7 +206,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     // keep !! frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -238,7 +241,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -268,6 +271,8 @@ void pack_rxframe(
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
+#endif
+#ifdef DEVICE_IS_TRANSMITTER
 
 // check credentials of a tRxFrame (sync word, frame type, payload len, CRC)
 // returns 0 if OK !!
@@ -277,7 +282,7 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
@@ -289,6 +294,8 @@ uint16_t crc;
 
     return CHECK_OK;
 }
+
+#endif
 
 
 //-------------------------------------------------------
@@ -357,10 +364,12 @@ void _copy_cmdframerxparameters_to_rxsetup(tCmdFrameRxParameters* const rx_param
 void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
 uint8_t payload[1];
+uint8_t len;
 
     payload[0] = cmd;
+    len = 1;
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, 1);
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, payload, len);
 }
 
 
@@ -417,7 +426,7 @@ tTxCmdFrameRxParams rx_params = {};
 
     _copy_rxsetup_to_cmdframerxparameters(&(rx_params.RxParams));
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
 }
 
 #endif
@@ -451,7 +460,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
     rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
-    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
+    _pack_rxframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
 
 

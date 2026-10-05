@@ -534,7 +534,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     if (!accept_payload) return; // frame has no fresh payload
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
@@ -573,6 +573,7 @@ void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
 }
 
 
+// called in isr loop
 uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
 {
 uint8_t res;
@@ -605,6 +606,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 }
 
 
+// called in doPreTransmit loop
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
@@ -645,7 +647,7 @@ tRxFrame* frame;
 
         process_received_frame(do_payload, frame);
 
-        stats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
+        stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
     } else { // RX_STATUS_INVALID
     }
@@ -658,6 +660,7 @@ tRxFrame* frame;
 }
 
 
+// called in doPreTransmit loop
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     rarq.FrameMissed();
@@ -956,8 +959,8 @@ IF_SX2(
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            frame_received = (link_rx1_status > RX_STATUS_NONE);          // INVALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID); // VALID
         }
 
         if (frame_received) { // frame received
@@ -981,7 +984,7 @@ IF_SX2(
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && sx_serial.IsEnabled()
         // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
         if (!valid_frame_received) {
@@ -1041,8 +1044,7 @@ IF_SX2(
         }
 
         link_state = LINK_STATE_TRANSMIT;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
 
         if (!connected()) rarq.Disconnected();
 
