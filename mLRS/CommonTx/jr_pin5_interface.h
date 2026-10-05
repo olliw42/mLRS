@@ -120,7 +120,7 @@ class tPin5BridgeBase
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
 #ifdef CRSF_AUTOBAUD
-    void pin5_set_protocol(uint32_t baudrate, bool inverted);
+    bool pin5_set_protocol(uint32_t baudrate, bool inverted);
 #endif
     bool pin5_inverted; // CRSF is normally inverted, but some radios use normal polarity
 
@@ -251,7 +251,7 @@ void tPin5BridgeBase::pin5_init(void)
 
 
 #ifdef CRSF_AUTOBAUD
-void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
+bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted = true)
 {
 //    uart_rx_enableisr(DISABLE); // pin5_tx_enable(); // disables isr
     uart_setbaudrate(baudrate);
@@ -267,6 +267,7 @@ void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
     uart_tx_flush();
     uart_rx_flush();
 //    pin5_rx_enable(); // enables isr
+    return true;
 }
 #endif
 

@@ -93,7 +93,7 @@ class tPin5BridgeBase
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { uart_putbuf(buf, len); }
     void pin5_getbuf(char* const buf, uint16_t len) { uart_getbuf(buf, len); }
     uint16_t pin5_bytes_available(void) { return uart_rx_bytesavailable(); }
-    void pin5_set_protocol(uint32_t baudrate, bool inverted);
+    bool pin5_set_protocol(uint32_t baudrate, bool inverted);
 
     // only for half-duplex
     IRAM_ATTR void pin5_tx_enable(void);
@@ -189,14 +189,19 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
-void tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
+bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted = true)
 {
+#ifdef JR_PIN5_FULL_DUPLEX
+    if (!inverted) return false; // non-inverted not supported for full duplex
+#endif
+
     // no end()/begin(), so driver, event task, onReceive callback and pin routing stay intact
     UART_SERIAL_NO.updateBaudRate(baudrate);
 #ifndef JR_PIN5_FULL_DUPLEX
     pin5_inverted = inverted;
     pin5_rx_enable(); // apply polarity to rx pin
 #endif
+    return true;
 }
 
 
